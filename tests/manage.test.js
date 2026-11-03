@@ -108,7 +108,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   // a new recipe for a card to come: the beer batter the fish burger links to
   p = await L.open(b, '#/manage', { who: 'ann', extra: cfg(), wait: 1400 });
   await wait(p, () => !!document.getElementById('mg-q'));
-  await L.choose(p, '[data-mg="chip"][data-v="tocome"]'); await L.settle(p, 200);
+  await L.choose(p, '[data-mg="kind"][data-v="tocome"]'); await L.settle(p, 200);
   ok(await p.$('a[href="#/manage/new/beer-batter"]') !== null, 'Cards to come lists beer-batter');
   await p.click('a[href="#/manage/new/beer-batter"]');
   await editor(p);
@@ -201,6 +201,8 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await go(p, '#/recipes'); await L.settle(p, 300);
   ok(await p.$('a[href="#/r/side-salad"]') === null, 'hide: gone from the recipes');
   await go(p, '#/manage'); await L.settle(p, 200);
+  // what needs a look shows with its count, apart from the kinds of thing to show (3 Nov 2026)
+  ok(/Hidden · 1/.test(await p.evaluate(() => (document.querySelector('.mg-need') || {}).textContent || '')) && !(await p.$('.mg-kinds [data-v="hidden"]')), 'list: Hidden · 1 under Needs a look, not with Drawings and Templates');
   await L.choose(p, '[data-mg="chip"][data-v="hidden"]'); await L.settle(p, 200);
   ok(await p.$('#mg-results a[href="#/manage/r/side-salad"]') !== null, 'hide: listed under Hidden');
   await p.click('#mg-results a[href="#/manage/r/side-salad"]'); await editor(p);

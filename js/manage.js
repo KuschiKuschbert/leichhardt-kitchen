@@ -71,7 +71,13 @@
   function hasDraft(id) { return !!lsGet(draftKey(id)); }
 
   /* ---------- the recipe list (#/manage) ---------- */
-  var CHIPS = [['all', 'All'], ['dish', 'Dishes'], ['prep', 'Batch and components'], ['changed', 'Changed here'], ['new', 'New'], ['hidden', 'Hidden'], ['tocome', 'Cards to come'], ['filechanged', 'Book file changed'], ['drafts', 'Not saved yet'], ['drawings', 'Drawings'], ['templates', 'Templates'], ['mylib', 'Made in the book']];
+  /* What the list shows (3 Nov 2026, recipe editor audit L1): the kinds of thing in one row (Recipes, Drawings, Templates,
+     Made in the book, Cards to come), and under Recipes the kind of recipe and what needs a look, with counts. M.chip
+     keeps its values, so the filters work as before. */
+  var KINDS = [['all', 'Recipes'], ['drawings', 'Drawings'], ['templates', 'Templates'], ['mylib', 'Made in the book'], ['tocome', 'Cards to come']];
+  var SORTS = [['all', 'All recipes'], ['dish', 'Dishes'], ['prep', 'Batch and components']];
+  var STATES = [['drafts', 'Not saved yet'], ['filechanged', 'Book file changed'], ['changed', 'Changed here'], ['new', 'New'], ['hidden', 'Hidden']];
+  function kindOf(c) { return /^(drawings|templates|mylib|tocome)$/.test(c) ? c : 'all'; }
   // what the book says about a recipe: from js/data.js, changed here, new, hidden, and whether the file changed since
   function status(id) {
     var c = X.change(id), base = X.pristine(id);
@@ -88,8 +94,8 @@
     });
     return rows;
   }
-  function chipOk(row, st) {
-    var c = M.chip, k = row.r.kind;
+  function chipOk(row, st, chip) {
+    var c = chip || M.chip, k = row.r.kind;
     if (c === 'all') return true;
     if (c === 'dish') return !!DISH[k];
     if (c === 'prep') return !DISH[k];
@@ -153,11 +159,17 @@
     var q = M.q.trim().toLowerCase(), words = q ? q.split(/\s+/) : [];
     var toCome = A.toCome();
     var head = '<div class="mg-head"><h2 id="rtitle" tabindex="-1">Manage Recipes &amp; Drawings</h2>' +
-      '<p class="hint">Change any recipe in the book or add a new one. Staff see the change on their phones within half an hour, or straight away when they open the book. Write anything not confirmed yet in [square brackets].</p>' +
+      '<p class="hint">Change a recipe or add a new one. Staff see a saved change within half an hour. Put anything not confirmed yet in [square brackets].</p>' +
       '<div class="btn-row"><a class="btn dark" href="#/manage/new">New recipe</a></div></div>';
-    var chips = '<div class="chips scroll" role="group" aria-label="Show">' + CHIPS.map(function (c) {
+    var kind = kindOf(M.chip), n = {};
+    if (kind === 'all') listRows().forEach(function (row) { var st = status(row.id); STATES.forEach(function (s) { if (chipOk({ r: row.r }, st, s[0])) n[s[0]] = (n[s[0]] || 0) + 1; }); });
+    var chips = '<div class="chips scroll mg-kinds" role="group" aria-label="What to show">' + KINDS.map(function (c) {
+      return '<button type="button" class="chip" data-mg="kind" data-v="' + c[0] + '" aria-pressed="' + (kind === c[0]) + '">' + esc(c[1]) + (c[0] === 'tocome' && toCome.length ? ' · ' + toCome.length : '') + '</button>';
+    }).join('') + '</div>' + (kind !== 'all' ? '' : '<div class="mg-filters"><div class="chips" role="group" aria-label="Which recipes">' + SORTS.map(function (c) {
       return '<button type="button" class="chip" data-mg="chip" data-v="' + c[0] + '" aria-pressed="' + (M.chip === c[0]) + '">' + esc(c[1]) + '</button>';
-    }).join('') + '</div>';
+    }).join('') + '</div>' + (STATES.some(function (s) { return n[s[0]] || M.chip === s[0]; }) ? '<div class="chips mg-need" role="group" aria-label="Needs a look"><span class="label">Needs a look</span>' + STATES.filter(function (s) { return n[s[0]] || M.chip === s[0]; }).map(function (s) {
+      return '<button type="button" class="chip" data-mg="chip" data-v="' + s[0] + '" aria-pressed="' + (M.chip === s[0]) + '">' + esc(s[1]) + ' · ' + (n[s[0]] || 0) + '</button>';
+    }).join('') + '</div>' : '') + '</div>');
     var find = '<div class="field"><label class="label" for="mg-q">Find a recipe</label><input id="mg-q" class="search" type="search" data-f="q" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Name, card number or ingredient" value="' + esc(M.q) + '"></div>';
     var body;
     if (M.chip === 'templates' || M.chip === 'mylib') body = mineHTML(M.chip, words);
@@ -1013,7 +1025,7 @@
     var el = ev.target.closest('[data-mg]');
     if (!el) return;
     var a = el.getAttribute('data-mg'), i = +el.getAttribute('data-i'), v = el.getAttribute('data-v'), e = M.ed, d = e && e.d;
-    if (a === 'chip') { M.chip = v; M.more = false; if (MINE.off && (v === 'templates' || v === 'mylib')) loadMine(true); draw(); return; }
+    if (a === 'chip' || a === 'kind') { M.chip = v; M.more = false; if (MINE.off && (v === 'templates' || v === 'mylib')) loadMine(true); draw(); return; }
     if (a === 'mine-hide') { mineHide(v); return; }
     if (a === 'more') { M.more = true; draw(); return; }
     if (!e || !d) return;
