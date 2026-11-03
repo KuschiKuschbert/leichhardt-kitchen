@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Recipe Editor Options</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+/* Layout: one reading column of the Kitchen Book's paper, with wide figure rows for the screens and a live try-out bench. */
+:root {
+  --bg: #FBFAF7; --paper: #FFFFFF; --ink: #1C1D1F; --muted: #55585E; --line: #E0DBCF; --accent: #C2451A; --accent-soft: #FFF1E6;
+  --bar: #2B2A27; --bar-text: #FBF8F1; --good: #237347; --bad: #A3261B;
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1D1C1A; --paper: #262522; --ink: #F2EEE6; --muted: #B8B2A7; --line: #3A3833; --accent: #F08A4B; --accent-soft: #3A2A20; --bar: #121110; --bar-text: #FBF8F1; --good: #6CC593; --bad: #FF8B7A; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #1D1C1A; --paper: #262522; --ink: #F2EEE6; --muted: #B8B2A7; --line: #3A3833; --accent: #F08A4B; --accent-soft: #3A2A20; --bar: #121110; --bar-text: #FBF8F1; --good: #6CC593; --bad: #FF8B7A; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.55 var(--body); }
+.page { max-width: 1120px; margin: 0 auto; padding-block: 0 4rem; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); line-height: 1.05; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(2.4rem, 7vw, 4rem); letter-spacing: -.01em; }
+h2 { font-size: clamp(1.8rem, 4.5vw, 2.5rem); }
+h3 { font-size: 1.35rem; }
+p { margin: 0; }
+a { color: inherit; text-underline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.eyebrow { font: 700 .82rem/1.2 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+.muted { color: var(--muted); }
+.read { max-width: 68ch; }
+.band { background: var(--bar); color: var(--bar-text); }
+.band-in { max-width: 1120px; margin: 0 auto; padding-block: 2.2rem 2rem; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: .9rem; }
+.band .eyebrow { color: #F08A4B; }
+.band q { font-family: var(--display); font-size: 1.35rem; quotes: '\201C' '\201D'; color: #E8E2D6; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1px; background: #4a4741; border: 1px solid #4a4741; margin-top: .6rem; }
+.facts div { background: var(--bar); padding: .8rem 1rem; display: grid; gap: .2rem; }
+.facts b { font: 700 2.1rem/1 var(--display); color: #F08A4B; font-variant-numeric: tabular-nums; }
+.facts span { font-size: .92rem; color: #DDD7CB; }
+section { display: grid; gap: 1.1rem; padding-top: 2.6rem; }
+.rule { border-top: 2px solid var(--ink); padding-top: .6rem; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .4rem 1rem; }
+figure { margin: 0; display: grid; gap: .45rem; min-width: 0; }
+figure img { width: 100%; height: auto; display: block; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+figcaption { font-size: .88rem; color: var(--muted); }
+.shots { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); align-items: start; }
+.shots.wide { grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+.find { display: grid; gap: .1rem; border-top: 1px solid var(--ink); }
+.find details { border-bottom: 1px solid var(--line); }
+.find summary { cursor: pointer; list-style: none; display: grid; grid-template-columns: 3.2rem minmax(0, 1fr); gap: .8rem; padding: .7rem 0; align-items: baseline; }
+.find summary::-webkit-details-marker { display: none; }
+.find summary b { font: 700 1rem var(--display); color: var(--accent); letter-spacing: .04em; }
+.find summary span { font-weight: 600; }
+.find details p { padding: 0 0 .9rem 4rem; color: var(--muted); font-size: .95rem; }
+.find details[open] summary span { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 4px; }
+.opt { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: clamp(1rem, 3vw, 1.6rem); display: grid; gap: 1rem; }
+.opt.pick { border: 2px solid var(--accent); }
+.tagline { display: inline-flex; align-items: center; gap: .4rem; font: 700 .78rem/1 var(--display); letter-spacing: .1em; text-transform: uppercase; padding: .35rem .6rem; border-radius: 999px; background: var(--accent); color: #fff; }
+ul.points { margin: 0; padding-left: 1.1rem; display: grid; gap: .45rem; }
+ul.points b { font-weight: 700; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: .94rem; }
+th, td { text-align: left; vertical-align: top; padding: .65rem .8rem; border-bottom: 1px solid var(--line); }
+thead th { font: 700 .95rem var(--display); letter-spacing: .04em; text-transform: uppercase; background: var(--accent-soft); }
+tbody th { font-weight: 600; width: 24%; }
+td.win { font-weight: 600; }
+.bench { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 1rem; display: grid; gap: .8rem; }
+.bench-ctl { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 1.5px solid var(--ink); border-radius: 999px; overflow: hidden; }
+.seg button { border: 0; background: transparent; color: var(--ink); font: 600 .9rem var(--body); min-height: 40px; padding: 0 .9rem; cursor: pointer; }
+.seg button + button { border-left: 1.5px solid var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.stage { display: flex; justify-content: center; overflow: hidden; border-radius: 10px; background: repeating-linear-gradient(45deg, transparent 0 10px, rgba(128, 120, 105, .07) 10px 20px); padding: 1rem 0; }
+.stage .phone { width: 390px; max-width: 100%; height: 760px; border: 10px solid #1c1c1c; border-radius: 34px; overflow: hidden; background: #FBFAF7; }
+.stage .phone iframe { width: 100%; height: 100%; border: 0; display: block; }
+.stage .desk { width: 100%; max-width: 1080px; aspect-ratio: 1280 / 820; position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: #FBFAF7; }
+.stage .desk iframe { position: absolute; top: 0; left: 0; width: 1280px; height: 820px; border: 0; transform-origin: 0 0; }
+.next { background: var(--accent-soft); border-radius: 12px; padding: 1.2rem 1.4rem; display: grid; gap: .6rem; }
+.next ol { margin: 0; padding-left: 1.2rem; display: grid; gap: .4rem; }
+code { font-size: .88em; background: var(--accent-soft); padding: .05rem .3rem; border-radius: 4px; }
+footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--line); font-size: .85rem; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<header class="band">
+  <div class="band-in">
+    <p class="eyebrow">Kitchen Book · Manage Recipes &amp; Drawings · 3 Nov 2026</p>
+    <h1>Recipe and drawing editor</h1>
+    <q>I love what it can do but it needs a better UI/UX.</q>
+    <p class="read" style="color:#DDD7CB">An audit of the recipe list, the recipe form and the drawing editor, and two designs that keep every feature but show less at once. Both designs are working examples below. Nothing in the book has changed yet.</p>
+    <div class="facts" role="list">
+      <div role="listitem"><b>7,628 px</b><span>tall: the recipe form on a laptop. On a phone, about 13 screens of scrolling.</span></div>
+      <div role="listitem"><b>52 + 70</b><span>boxes and buttons to edit one 7-line burger.</span></div>
+      <div role="listitem"><b>33</b><span>drawing buttons at the same weight once a part is picked.</span></div>
+      <div role="listitem"><b>0 of 15</b><span>part buttons visible on a phone: they start under the Save bar.</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <section aria-labelledby="h-now">
+    <div class="rule"><h2 id="h-now">What gets in the way now</h2><span class="muted">Measured on the Chicken Burger, head chef by PIN, test data</span></div>
+    <div class="shots wide">
+      <figure><img src="previews/current-form-full.png" alt="The whole recipe form today in three columns: switches, card fields, ingredient rows of five boxes each, method, allergens, drawings and boxes." loading="lazy" width="1800" height="1875"><figcaption>The recipe form today, cut into three columns to fit. Ingredients start a screen and a half down; Drawings start nine screens down on a phone.</figcaption></figure>
+      <div class="shots">
+        <figure><img src="previews/current-draw-phone.png" alt="The drawing editor on a phone with the chips picked. The part's buttons are below the Save bar and the tab bar." loading="lazy" width="390" height="844"><figcaption>Phone, chips picked: Delete, Colours and Label are all below the Save bar.</figcaption></figure>
+        <figure><img src="previews/current-draw-desktop.png" alt="The drawing editor on a laptop: three rows of underlined tool words under the canvas and the library on the right." loading="lazy" width="1280" height="900"><figcaption>Laptop: three rows of tools, the part's bar under the Save bar.</figcaption></figure>
+      </div>
+    </div>
+    <div class="find">
+      <details><summary><b>R1</b><span>The recipe form is one page of 11 sections.</span></summary><p>7,628 px tall on a laptop, about 8,200 px on a phone. Ingredients start at 1,394 px, Method at 3,828 px, Drawings at 5,806 px on a phone.</p></details>
+      <details><summary><b>R2</b><span>Every ingredient row has 4 boxes and 4 buttons.</span></summary><p>266 px per ingredient. 52 boxes and 70 buttons for one burger, so nothing stands out.</p></details>
+      <details><summary><b>R3</b><span>The recipe link has two controls for one choice.</span></summary><p>A typed box (No link, type to find a recipe) and a "Choose Recipe link, ingredient N" picker on every row.</p></details>
+      <details><summary><b>R4</b><span>Rare fields come before common ones.</span></summary><p>The Show and Special switches and 10 card fields (AVC name, guest menu words, short name) sit above the first ingredient. The multiplier sits above the ingredient list.</p></details>
+      <details><summary><b>R5</b><span>Plate labels are edited in two places.</span></summary><p>The form's Drawings section edits pins (label, note, link, across %, down %, side, allergens). The drawing editor makes labels from the parts. It is not clear which wins.</p></details>
+      <details><summary><b>R6</b><span>Drawings are picked by file id.</span></summary><p>"Chicken Burger (burger)" and "burger-build" in dropdowns, no pictures.</p></details>
+      <details><summary><b>R7</b><span>No view of the card while editing.</span></summary><p>The form uses 740 px of a 1280 px laptop. The result shows only after Save and Open the card.</p></details>
+      <details><summary><b>D1</b><span>33 drawing actions look the same.</span></summary><p>18 tools and up to 15 part buttons, all underlined words. Draw it for me is the 14th tool.</p></details>
+      <details><summary><b>D2</b><span>On a phone the part's buttons are out of reach.</span></summary><p>They start at 768 px of 844, under the 99 px Save bar and the 68 px tab bar. Draw it for me sits under the Save bar too. On a 1280 x 900 laptop the part bar also starts under the Save bar.</p></details>
+      <details><summary><b>D3</b><span>Ten panels share one slot.</span></summary><p>Library, Servingware, Parts, Colours, Label, Change it, Template, Reuse, Library piece and Plating style open from buttons spread over two bars.</p></details>
+      <details><summary><b>D4</b><span>"Back" means send to the back.</span></summary><p>Everywhere else in the book Back goes to the last page. "Done" means stop picking.</p></details>
+      <details><summary><b>D5</b><span>Delete looks like Duplicate.</span></summary><p>It has Undo, so no confirm is needed, but it should look like a delete.</p></details>
+      <details><summary><b>L1</b><span>The list mixes three kinds of filter in one picker.</span></summary><p>Kinds (Dishes, Batch), states (Changed here, New, Hidden, Not saved yet, Book file changed, Cards to come) and other lists (Drawings, Templates, Made in the book) share one "All" picker.</p></details>
+      <details><summary><b>X1</b><span>An empty gap under the search boxes.</span></summary><p>About 110 px under Find a recipe and Find a drawing, from a shared style added on 2 Nov. A small fix of its own that needs no design choice.</p></details>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-a">
+    <div class="rule"><h2 id="h-a">A. Chapters and a studio</h2><span class="tagline">Recommended</span></div>
+    <div class="opt pick">
+      <p class="read">The recipe opens on Ingredients. Six short chapters replace the long form, with a rail on a computer and pills on a phone. A dot marks a chapter with an unsaved change. It is the same pattern as the admin Chef's Desk you chose on 1 November.</p>
+      <ul class="points read">
+        <li><b>Rows you type in.</b> Amount and name in the row; one arrow opens the note, one recipe link, allergens and moving.</li>
+        <li><b>Pictures, not file names</b> for the plate, side and build drawings.</li>
+        <li><b>Rare fields fold away</b> under More card details. Scale amounts becomes a button.</li>
+        <li><b>Studio:</b> one tool row with Draw it for me first. Picking a part swaps in its own row next to the canvas: Swap, Colour, Label, Arrange, More, a red Delete, Done. One panel with tabs: Library, Servingware, Labels, Check.</li>
+      </ul>
+      <div class="shots">
+        <figure><img src="previews/a-recipe-phone.png" alt="Design A on a phone: chapter pills, ingredient rows with amount and name boxes, one row opened." loading="lazy" width="780" height="1688"><figcaption>Phone: Ingredients, row 4 open.</figcaption></figure>
+        <figure><img src="previews/a-studio-phone.png" alt="Design A studio on a phone: the chips picked and their own row of buttons right above the canvas." loading="lazy" width="780" height="1688"><figcaption>Phone studio: the part's row sits above the canvas.</figcaption></figure>
+        <figure><img src="previews/a-recipe-desktop.png" alt="Design A on a laptop: chapter rail on the left, ingredient rows in the middle, an After saving summary on the right." loading="lazy" width="1280" height="900"><figcaption>Laptop: rail, rows and the After saving column.</figcaption></figure>
+        <figure><img src="previews/a-studio-desktop.png" alt="Design A studio on a laptop: part row over the canvas and a tabbed panel with the library on the right." loading="lazy" width="1280" height="900"><figcaption>Laptop studio: canvas and one tabbed panel.</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-b">
+    <div class="rule"><h2 id="h-b">B. Edit on the card</h2><span class="muted">The most direct, the bigger build</span></div>
+    <div class="opt">
+      <p class="read">The editor is the card staff see. In Edit every block has a pencil: the title, the plate, the allergens, each ingredient line, each method section and the boxes. Tap one and its fields open in a sheet; the card changes as you type. Preview hides the pencils.</p>
+      <ul class="points read">
+        <li><b>What you see is what staff get.</b> No Save then Open the card to check.</li>
+        <li><b>Previous and Next ingredient</b> in the sheet, to check a whole list in one pass.</li>
+        <li><b>Behind the card</b> holds Show, Special, the guest menu place, AVC name and earlier versions.</li>
+        <li><b>Full-screen studio:</b> canvas first, one dock at the thumb (Draw it for me, Add, Plate, Labels, Check, More), a small bar beside the picked part.</li>
+      </ul>
+      <div class="shots">
+        <figure><img src="previews/b-card-phone.png" alt="Design B on a phone: the recipe card with pencil chips on the title and the plate." loading="lazy" width="780" height="1688"><figcaption>Phone: the card in Edit.</figcaption></figure>
+        <figure><img src="previews/b-sheet-phone.png" alt="Design B on a phone: the sheet for ingredient 4 with amount, name, note and recipe link." loading="lazy" width="780" height="1688"><figcaption>Phone: an ingredient's sheet.</figcaption></figure>
+        <figure><img src="previews/b-sheet-desktop.png" alt="Design B on a laptop: the card on the left and the ingredient drawer on the right." loading="lazy" width="1280" height="900"><figcaption>Laptop: the drawer beside the card.</figcaption></figure>
+        <figure><img src="previews/b-studio-desktop.png" alt="Design B studio on a laptop: a full-screen plate with a floating bar beside the chips and a dock at the bottom." loading="lazy" width="1280" height="900"><figcaption>Laptop studio: the bar beside the part, the dock below.</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-try">
+    <div class="rule"><h2 id="h-try">Try them</h2><span class="muted">Example only. Nothing is saved or sent.</span></div>
+    <div class="bench">
+      <div class="bench-ctl">
+        <span class="seg" role="group" aria-label="Design"><button type="button" id="try-a" data-try="a" aria-pressed="true">A. Chapters</button><button type="button" id="try-b" data-try="b" aria-pressed="false">B. On the card</button></span>
+        <span class="seg" role="group" aria-label="Screen"><button type="button" id="try-phone" data-dev="phone" aria-pressed="true">Phone</button><button type="button" id="try-desk" data-dev="desk" aria-pressed="false">Computer</button></span>
+      </div>
+      <div class="stage" id="stage"></div>
+      <p class="muted" style="font-size:.9rem">Things to try: change an amount, open Drawings and the studio, tap the chips, drag them, Delete and Undo, Save with an empty name. Or open <a href="a.html" target="_blank" rel="noopener">A</a> and <a href="b.html" target="_blank" rel="noopener">B</a> full size.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-cmp">
+    <div class="rule"><h2 id="h-cmp">Side by side</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col"></th><th scope="col">Now</th><th scope="col">A. Chapters</th><th scope="col">B. On the card</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Change one amount on a phone</th><td>Change this recipe, scroll about 1,400 px, type, Save</td><td class="win">Change this recipe, type in the row, Save</td><td>Change this recipe, tap the line, type, Done, Save</td></tr>
+          <tr><th scope="row">Delete a part on a phone</th><td>Tap it, scroll past the Save bar, Delete, scroll back</td><td class="win">Tap it, Delete (row above the canvas)</td><td class="win">Tap it, Delete (bar beside the part)</td></tr>
+          <tr><th scope="row">Draw it for me on a phone</th><td>Scroll; the button is under the Save bar</td><td class="win">First button above the canvas</td><td class="win">First button in the dock</td></tr>
+          <tr><th scope="row">See the result while editing</th><td>No: Save, then Open the card</td><td>Allergens and unsaved chapters, on a laptop</td><td class="win">Yes, the card itself</td></tr>
+          <tr><th scope="row">Buttons with a part picked</th><td>33</td><td>7, the rest in two menus</td><td>5 beside the part, 6 in the dock</td></tr>
+          <tr><th scope="row">Fits what you already chose</th><td></td><td class="win">Follows the admin Chef's Desk</td><td>Follows the recipe card</td></tr>
+          <tr><th scope="row">Build</th><td></td><td class="win">About 6 small, separate changes</td><td>About 6 changes, two of them large</td></tr>
+          <tr><th scope="row">Main risk</th><td></td><td>Moving label editing for drawings made in the book</td><td>Sharing the staff card's code with the editor; a full-screen studio has to work with Back and saved drafts; most tests change</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-rec">
+    <div class="rule"><h2 id="h-rec">Recommendation: A</h2></div>
+    <div class="read" style="display:grid;gap:.8rem">
+      <p>A fixes every finding, matches the admin layout you already picked, and ships in small steps that each roll back on their own. It keeps the field names the drafts and tests rely on, so the risk to staff pages stays low.</p>
+      <p>B is the more striking idea and the most direct on a phone. It needs the staff card's code shared with the editor and a full-screen studio that has to behave with Back, sheets and saved drafts. That is more risk to pages staff use every shift.</p>
+      <p>The studios are independent of the recipe layouts. <b>A's chapters with B's full-screen studio</b> is a fair mix if B's studio feels better in the hand.</p>
+    </div>
+    <details class="opt">
+      <summary style="cursor:pointer;font-weight:700">Every capability stays: where each one goes</summary>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th scope="col">Capability</th><th scope="col">A</th><th scope="col">B</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Show in the book, Special, Finished</th><td>Card details</td><td>Behind the card</td></tr>
+            <tr><th scope="row">Name, id, card number, kind, where it belongs, portion line</th><td>Card details</td><td>Title sheet</td></tr>
+            <tr><th scope="row">Short name, guest menu words and place, AVC name, other names, tip and safety boxes, label note</th><td>More card details, Allergens</td><td>Behind the card, box sheets, allergen sheet</td></tr>
+            <tr><th scope="row">Ingredients: amount, name, note, link, allergens, order, add, remove, multiply</th><td>Rows and row details, Scale amounts</td><td>Ingredient sheet, Add an ingredient, Scale amounts</td></tr>
+            <tr><th scope="row">Method sections</th><td>Method</td><td>Section sheet</td></tr>
+            <tr><th scope="row">Allergens worked out or by hand, what the card shows, used in</th><td>Allergens, laptop column</td><td>Allergen sheet, the card</td></tr>
+            <tr><th scope="row">Plate, side and build drawings, labels and pins</th><td>Drawings, studio Labels</td><td>Plate block, studio Labels</td></tr>
+            <tr><th scope="row">Earlier versions, the book file's copy</th><td>Earlier versions</td><td>Behind the card</td></tr>
+            <tr><th scope="row">Kept drafts, changed on another device, book file changed, errors</th><td>Banners on the chapter</td><td>Banners above the card</td></tr>
+            <tr><th scope="row">Library, import SVG, text, line, arrow, box, oval</th><td>Library tab, Shapes</td><td>Add, More</td></tr>
+            <tr><th scope="row">Servingware and its options</th><td>Servingware tab</td><td>Plate</td></tr>
+            <tr><th scope="row">Draw it for me, another layout, tidy up, plating style, unsure picks</th><td>Tool row, More</td><td>Dock, More</td></tr>
+            <tr><th scope="row">Pick several, snap to centre, parts list, undo, redo, zoom</th><td>More, tool row</td><td>More, top bar</td></tr>
+            <tr><th scope="row">Part: swap, colours, label, order, duplicate, flip, stretch, split, library piece, change it, delete</th><td>Part row, Arrange, More</td><td>Part bar, More</td></tr>
+            <tr><th scope="row">Template, use for another recipe, start from a copy, newer library drawings</th><td>More, start panel</td><td>More, start panel</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <section aria-labelledby="h-next">
+    <div class="next">
+      <h2 id="h-next">What happens next</h2>
+      <p class="read">Reply with A, B, or a mix. Each step is then its own small change, tested at phone, tablet and laptop size. None of them changes who can save, what is read from the book or what is stored.</p>
+      <ol class="read">
+        <li>The search box gap (any choice).</li>
+        <li>A: rows you type in, one link control. B: the card drawn from the draft.</li>
+        <li>A: chapters. B: Edit, Preview and the block sheets.</li>
+        <li>Drawings with pictures and one home for labels.</li>
+        <li>The studio's tool row, part row and red Delete.</li>
+        <li>Studio panels, and the recipe list's filters.</li>
+      </ol>
+    </div>
+  </section>
+
+  <footer>Example pages use the public Chicken Burger card and the book's own drawings. Full findings, measurements and steps: <code>docs/recipe-editor-options/brief.md</code>.</footer>
+</main>
+<script>
+(function () {
+  var stage = document.getElementById('stage'), cur = { d: 'a', dev: 'phone' };
+  function fit() { var w = stage.querySelector('.desk'); if (!w) return; var f = w.querySelector('iframe'); f.style.transform = 'scale(' + (w.clientWidth / 1280) + ')'; }
+  function show() {
+    var src = cur.d + '.html';
+    stage.innerHTML = cur.dev === 'phone' ? '<div class="phone"><iframe title="Design ' + cur.d.toUpperCase() + ' on a phone" src="' + src + '"></iframe></div>' : '<div class="desk"><iframe title="Design ' + cur.d.toUpperCase() + ' on a computer" src="' + src + '"></iframe></div>';
+    Array.prototype.forEach.call(document.querySelectorAll('[data-try]'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-try') === cur.d); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-dev]'), function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-dev') === cur.dev); });
+    fit();
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-try], [data-dev]'); if (!t) return;
+    if (t.hasAttribute('data-try')) cur.d = t.getAttribute('data-try'); else cur.dev = t.getAttribute('data-dev');
+    show();
+  });
+  window.addEventListener('resize', fit);
+  show();
+})();
+</script>
+</body>
+</html>
