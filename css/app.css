@@ -2574,6 +2574,14 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-step-b:first-child { border-right: 0; border-radius: var(--r-act) 0 0 var(--r-act); }
 .su-step-b:last-child { border-left: 0; border-radius: 0 var(--r-act) var(--r-act) 0; }
 .su-filters { margin: 0.6rem 0 0.4rem; }
+/* One list (4 Nov 2026): rows off screen are skipped until scrolled to; the heights are remembered once drawn */
+.su-row { content-visibility: auto; contain-intrinsic-size: auto 150px; }
+.su-category { scroll-margin-top: 0.75rem; }
+.su-category:focus { outline: none; }
+.su-category:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.su-jumps { margin: 0.2rem 0 0.6rem; -webkit-mask-image: linear-gradient(to right, #000 86%, transparent); mask-image: linear-gradient(to right, #000 86%, transparent); }
+.su-jumps .chip { min-height: 38px; }
+.su-jumps .su-n { font-weight: 400; opacity: 0.8; }
 .su-filters .su-n { font-weight: 400; opacity: 0.8; }
 .su-asked { margin: 0.8rem 0; padding: 0.7rem 0.9rem; border-left: 3px solid var(--accent); background: var(--hit); }
 .su-asked h4 { margin: 0 0 0.3rem; font: 700 1.1rem var(--display); }

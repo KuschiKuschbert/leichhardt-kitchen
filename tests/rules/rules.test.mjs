@@ -290,6 +290,18 @@ await ok(deleteDoc(doc(anon, K + 'shifts/2026-10-21_ann')), false, 'shifts: staf
 await ok(setDoc(doc(owner, K + 'shifts/2026-10-01_old-hand'), sh({ day: '2026-10-01', by: 'old-hand' })), true, 'shifts: the head chef copies one as it is (move to a new kitchen PIN)');
 await ok(W([['config/main', { kitSecs: [{ id: 'grill', name: 'Grill', off: false }] }, true]], { id: 'sam' }), false, 'config: a sous chef cannot change the kitchen sections');
 await ok(setDoc(doc(owner, K + 'config/main'), { kitSecs: [{ id: 'grill', name: 'Grill', off: false }] }, { merge: true }), true, 'config: the head chef sets the kitchen sections');
+// One ping sound for the whole kitchen (head chef, 3 Nov 2026, docs/ping-sound.md): only the head chef's admin device
+// sets config/main.pingSound. Not a sous chef, staff or the head chef's PIN on another phone, and not slipped into a save
+// they are allowed to make.
+const sousSave = x => W([['config/main', Object.assign({ people: PEOPLE, staffIds: ['sam', 'ann', 'bo', 'cal', 'hd'], updated: 3, updatedBy: 'Sam' }, x), true]], { id: 'sam' });
+await ok(W([['config/main', { pingSound: 'timer' }, true]], { id: 'sam' }), false, 'ping sound: a sous chef cannot change it');
+await ok(W([['config/main', { pingSound: 'timer' }, true]], { id: 'ann' }), false, 'ping sound: staff cannot change it');
+await ok(W([['config/main', { pingSound: 'timer' }, true]], { id: 'hd' }), false, 'ping sound: the head chef\'s PIN on a phone that is not their admin device cannot change it');
+await ok(setDoc(doc(anon, K + 'config/main'), { pingSound: 'timer' }, { merge: true }), false, 'ping sound: signed out cannot change it');
+await ok(sousSave({ pingSound: 'timer' }), false, 'ping sound: not inside a sous chef\'s staff save');
+await ok(sousSave({}), true, 'ping sound: the same staff save without it goes through');
+await ok(W([['config/main', { pastEdit: { n: Date.now() }, pingSound: 'timer' }, true]], { id: 'sam' }), false, 'ping sound: not inside a sous chef\'s ping stamp');
+await ok(setDoc(doc(owner, K + 'config/main'), { pingSound: 'marimba' }, { merge: true }), true, 'ping sound: the head chef\'s admin device sets it');
 // the head chef's book: recipes changed or added in the book (#/manage)
 const rec = (x, r) => Object.assign({ r: Object.assign({ id: 'burger', kind: 'main', no: '02', forLine: 'Plate', name: 'Chicken Burger', yield: 'Per plate', ingredients: [{ q: '1', name: 'Burger bun', tags: ['Gluten'] }], pins: [], sections: [{ title: 'Cooking', steps: ['Toast the bun.'] }] }, r || {}), v: 1, upd: Date.now(), src: 'book', base: 'abcd1234', removed: false }, x || {});
 const pie = x => rec(Object.assign({ src: 'new', base: '' }, x || {}), { id: 'pie', name: 'Pie' });
