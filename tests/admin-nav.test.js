@@ -5,7 +5,7 @@ const L = require('./lib'); const { R, ok } = L.results();
   for (const width of [390, 768, 1280]) {
     const p = await L.open(b, '#/admin', { admin: true, width, height: 900, wait: 1800 });
     const groups = await p.locator('.a-group').evaluateAll(nodes => nodes.map(el => el.getAttribute('data-g')));
-    ok(JSON.stringify(groups) === JSON.stringify(['review', 'reports', 'records', 'today', 'settings']), width + ': five task-based admin sections');
+    ok(JSON.stringify(groups) === JSON.stringify(['dashboard', 'review', 'reports', 'records', 'today', 'settings']), width + ': the Dashboard, then five task-based admin sections');
     if (await p.locator('[data-k="ai-section"] + .ux-picker-trigger').isVisible()) await L.pick(p, '[data-k="ai-section"]', 'review');
     else await p.click('[data-g="review"]');
     ok(await p.locator('[data-t="references"]').count() === 1 && await p.locator('[data-t="training"]').count() === 1, width + ': Review desk offers item links and training');
