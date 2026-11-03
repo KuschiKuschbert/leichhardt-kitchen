@@ -45,7 +45,7 @@ async function enter(p, who, pin) {
   ok(await p.evaluate(prefix => Object.entries(__fake.dump()).filter(([k, d]) => k.startsWith(prefix) && d.name === 'Synthetic activity check' && d.by === 'fay').length === 1, key('functions') + '/'), 'the same functions-only session saves one attributed booking draft');
 
   await p.goto(L.BASE + '#/deliveries'); await p.waitForSelector('#dl-supplier');
-  await p.fill('#dl-supplier', 'Synthetic delivery'); await p.fill('#dl-chilled', '0'); await p.fill('#dl-frozen', '-18');
+  await p.fill('#dl-supplier', 'Synthetic delivery'); await p.click('[data-dl="mode"][data-mode="both"]'); await p.fill('#dl-chilled', '0'); await p.fill('#dl-frozen', '-18');
   await p.click('#dl-form button[type="submit"]');
   await L.waitFor(p, prefix => Object.entries(__fake.dump()).some(([k, d]) => k.startsWith(prefix) && d.supplier === 'Synthetic delivery' && d.by === 'fay'), key('deliveries') + '/');
   ok(await p.evaluate(prefix => Object.entries(__fake.dump()).filter(([k, d]) => k.startsWith(prefix) && d.supplier === 'Synthetic delivery' && d.receivedById === 'fay' && d.chilled === 0 && d.frozen === -18).length === 1, key('deliveries') + '/'), 'the same session records one attributed zero/negative delivery receipt');
