@@ -44,3 +44,7 @@ The tiles share the native print lifecycle, offline/source warning, retry and ac
 Example with synthetic bookings:
 
 ![Daily platter prep tiles](images/function-prep-sheet.png)
+
+## Working rules (moved from CLAUDE.md, 3 Nov 2026)
+
+Layout 2 is approved. The kitchen sheet and Service View print for people already authorised to open those views; the form and review print only for people who may already open them. Printing never saves, confirms, ticks a round or reads contacts. It takes a snapshot from loaded records, marks unsaved and offline copies, and isolates `#fn-print` with print CSS. Keep large bookings readable across pages. `tests/function-print.test.js` checks the print journeys and A4 PDFs.
