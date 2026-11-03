@@ -1,8 +1,8 @@
 # Loading and feedback proposals
 
-Requested 3 November 2026: upgrade the loading screens, the speed the book feels, and the toasts and messages around them, with two redesigns for each where it makes sense. **Awaiting the head chef's choice.** Nothing in the app has changed yet.
+Requested 4 November 2026: upgrade the loading screens, the speed the book feels, and the toasts and messages around them, with two redesigns for each where it makes sense. **Selected 4 November 2026: the recommended set.** A for opening the book, opening a kitchen page, taps, saving and toasts; B, the floating band, for signal and updates. The build follows the steps under "Build steps", each in its own pull request.
 
-Every option builds on **Ink in motion** (`docs/loading-motion.md`, approved earlier the same day). The traced icons, the pencil placeholder lines, reduced motion, and the rule that a tick or Saved only shows after the server confirms all stay. Two designs per moment, as asked; the whole-app audit brief's default of three was not used.
+Every option builds on **Ink in motion** (`docs/loading-motion.md`, approved 3 November 2026). The traced icons, the pencil placeholder lines, reduced motion, and the rule that a tick or Saved only shows after the server confirms all stay. Two designs per moment, as asked; the whole-app audit brief's default of three was not used.
 
 Open `index.html` to play each moment on three phones side by side (today, A, B) under one clock. All lines, names and times in it are examples.
 
@@ -80,17 +80,16 @@ Not yet checked: a real phone, an iPhone, real Firebase latency, a screen reader
 - Reduce motion removes traces, slides and fades; a known offline stops decorative traces.
 - Every message stays in Australian English, short, with no em dashes.
 
-## If the recommended set is chosen
+## Build steps (the recommended set)
 
-Small pull requests in this order, each with click tests at 390, 768 and 1280 px, the reads budget check and reduced motion:
+Small pull requests in this order, each with click tests at 390, 768 and 1280 px, the reads budget check and reduced motion. The shared helpers and words from the proposal ride with the step that first needs them, so no pull request changes code without changing what the team sees.
 
-1. **Fix the stale Undo** (LF-01, LF-02): a failed save removes its own Undo, and the older Undo keeps its full time. The test fails first on today's code.
-2. **Shared helpers and words**: one toast, one save state, the wording table, errors that stay. No look change yet.
-3. **Toasts: the docket slip** on every page, editors and landing included.
-4. **Saving: the button tells the story**, form by form, starting with pings, minutes and deliveries.
-5. **Signal: the floating band**, also carrying the update offer.
-6. **Opening and pages: steady shell and same page, filling in.** Touches `index.html` and the saved-shell lists, so it goes alone.
-7. **Speed: answer the tap first**, Recipes drawn in pieces, measured before and after on the same slowed phone. LF-07 (the late clock check) measured on a real phone alongside it.
+1. **Fix the stale Undo** (LF-01, LF-02): an Undo after a failed save does nothing wrong, and the older Undo keeps its full time. The test fails first on today's code.
+2. **Toasts: the docket slip** (LF-04, LF-05) on every page, the editors and the landing included, since all four toast copies share the same classes. Errors get a red edge and stay until OK. The editor copies are merged into one helper only if the change needs it (WA-10).
+3. **Saving: the button tells the story** (LF-06, LF-12), form by form, starting with pings, minutes and deliveries, with the save words from the wording table.
+4. **Signal: the floating band**, with All sent and the update offer (LF-03 for the box and the strip).
+5. **Opening and pages: steady shell and same page, filling in** (LF-03, LF-08, LF-10, LF-11). Touches `index.html` and the saved-shell lists, so it goes alone.
+6. **Speed: answer the tap first**, Recipes drawn in pieces, measured before and after on the same slowed phone. LF-07 (the late clock check) measured alongside it.
 
 Rollback for each is a revert of its own pull request; none of them writes new fields or needs a rules change.
 

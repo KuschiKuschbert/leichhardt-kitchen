@@ -116,7 +116,7 @@ table.glance { border-collapse: collapse; width: 100%; min-width: 760px; font-si
 .col-head .key { font: 700 1.5rem/1 var(--display); }
 .col-head .name { font: 700 1.15rem/1.1 var(--display); }
 .col.is-now .col-head .key { color: var(--faint); }
-.col.is-rec .col-head::after { content: "Recommended"; margin-left: auto; font: 700 .7rem/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: #fff; background: var(--accent-ink); padding: 5px 7px; border-radius: 4px; }
+.col.is-rec .col-head::after { content: "Chosen"; margin-left: auto; font: 700 .7rem/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: #fff; background: var(--accent-ink); padding: 5px 7px; border-radius: 4px; }
 .phone { position: relative; width: calc(390px * var(--s, .8)); height: calc(780px * var(--s, .8)); border-radius: calc(26px * var(--s, .8)); overflow: hidden; background: var(--bar); box-shadow: 0 0 0 calc(7px * var(--s, .8)) var(--ink), 0 14px 30px rgba(28, 29, 31, .18); margin: calc(7px * var(--s, .8)); }
 .readout { min-height: 1.4em; font: 600 .84rem/1.35 var(--body); color: var(--ink); }
 .readout b { font-weight: 700; color: var(--small-ink); }
@@ -385,9 +385,9 @@ footer.method { border-top: 1.5px solid var(--line); padding-top: 16px; color: v
 
 <main class="wrap">
   <header class="intro">
-    <p class="eyebrow">Kitchen Book · 3 November 2026</p>
+    <p class="eyebrow">Kitchen Book · 4 November 2026 · Recommended set chosen</p>
     <h1>Loading and Feedback Options</h1>
-    <p>An audit of every wait, save message and toast in the book, and <strong>two redesigns for each of six moments</strong>: opening the book, opening a kitchen page, a tap, a save, a toast with Undo, and lost signal. Each one starts from <strong>Ink in motion</strong>, chosen this morning: the traced icons, the pencil placeholder lines and the rule that a tick only shows once the server has it all stay.</p>
+    <p>An audit of every wait, save message and toast in the book, and <strong>two redesigns for each of six moments</strong>: opening the book, opening a kitchen page, a tap, a save, a toast with Undo, and lost signal. Each one starts from <strong>Ink in motion</strong>, chosen on 3 November: the traced icons, the pencil placeholder lines and the rule that a tick only shows once the server has it all stay.</p>
     <p>Press a button above a strip and all three phones play the same moment, under one clock. The first phone is how the book behaves today.</p>
   </header>
 
@@ -399,12 +399,12 @@ footer.method { border-top: 1.5px solid var(--line); padding-top: 16px; color: v
     <table class="glance">
       <thead><tr><th scope="col">Moment</th><th scope="col">What goes wrong now</th><th scope="col">A</th><th scope="col">B</th></tr></thead>
       <tbody>
-        <tr><td><a href="#opening">Opening the book</a></td><td>White page, then the whole book drops in at once. No way out if a file never arrives.</td><td><span class="pick">Pick</span> Steady shell: the bar, paper and tabs are there from the first frame</td><td>Cover page with a counted progress, like the installed app's splash</td></tr>
-        <tr><td><a href="#page">Opening a page</a></td><td>A loading card is swapped for the real page: lines jump 176 px, tabs go from 1 to 6.</td><td><span class="pick">Pick</span> Same page, filling in: drawn at its real size, words ink in place</td><td>Ready to write: the add box works before the list arrives</td></tr>
-        <tr><td><a href="#speed">Taps and page changes</a></td><td>First Recipes of the day: about 1.2 s with nothing new on screen.</td><td><span class="pick">Pick</span> Answer the tap first: heading at once, shelves in pieces</td><td>Start before the tap: Recipes drawn while the landing sits idle</td></tr>
-        <tr><td><a href="#saving">Saving a form</a></td><td>"Saving..." twice. Success and failure both in the same grey text.</td><td><span class="pick">Pick</span> The button tells the whole story: Saving, Saved, Try again</td><td>Saved stamp: a handwritten stamp stays on the record</td></tr>
-        <tr><td><a href="#toasts">Toasts and Undo</a></td><td>See-through pill over the line it is about. Errors vanish. A stale Undo ticks the line.</td><td><span class="pick">Pick</span> One docket slip on the tab bar, with a timer line</td><td>Undo where it happened: in the line itself</td></tr>
-        <tr><td><a href="#signal">Signal and updates</a></td><td>The No signal box pushes the list 77 px down, then vanishes with no "all sent".</td><td>Status on the chef hat ring and its menu</td><td><span class="pick">Pick</span> One floating band over the page, with "All sent"</td></tr>
+        <tr><td><a href="#opening">Opening the book</a></td><td>White page, then the whole book drops in at once. No way out if a file never arrives.</td><td><span class="pick">Chosen</span> Steady shell: the bar, paper and tabs are there from the first frame</td><td>Cover page with a counted progress, like the installed app's splash</td></tr>
+        <tr><td><a href="#page">Opening a page</a></td><td>A loading card is swapped for the real page: lines jump 176 px, tabs go from 1 to 6.</td><td><span class="pick">Chosen</span> Same page, filling in: drawn at its real size, words ink in place</td><td>Ready to write: the add box works before the list arrives</td></tr>
+        <tr><td><a href="#speed">Taps and page changes</a></td><td>First Recipes of the day: about 1.2 s with nothing new on screen.</td><td><span class="pick">Chosen</span> Answer the tap first: heading at once, shelves in pieces</td><td>Start before the tap: Recipes drawn while the landing sits idle</td></tr>
+        <tr><td><a href="#saving">Saving a form</a></td><td>"Saving..." twice. Success and failure both in the same grey text.</td><td><span class="pick">Chosen</span> The button tells the whole story: Saving, Saved, Try again</td><td>Saved stamp: a handwritten stamp stays on the record</td></tr>
+        <tr><td><a href="#toasts">Toasts and Undo</a></td><td>See-through pill over the line it is about. Errors vanish. A stale Undo ticks the line.</td><td><span class="pick">Chosen</span> One docket slip on the tab bar, with a timer line</td><td>Undo where it happened: in the line itself</td></tr>
+        <tr><td><a href="#signal">Signal and updates</a></td><td>The No signal box pushes the list 77 px down, then vanishes with no "all sent".</td><td>Status on the chef hat ring and its menu</td><td><span class="pick">Chosen</span> One floating band over the page, with "All sent"</td></tr>
       </tbody>
     </table>
   </div>
@@ -449,14 +449,13 @@ footer.method { border-top: 1.5px solid var(--line); padding-top: 16px; color: v
   </div>
 
   <section class="prose" aria-labelledby="build-h">
-    <h2 id="build-h" style="font-size:2rem">If the recommended set is chosen</h2>
-    <p>Small pull requests in this order, each with click tests at 390, 768 and 1280 px, the reads budget check and reduced motion:</p>
+    <h2 id="build-h" style="font-size:2rem">Build steps</h2>
+    <p>The head chef chose the recommended set on 4 November 2026. Small pull requests in this order, each with click tests at 390, 768 and 1280 px, the reads budget check and reduced motion:</p>
   </section>
   <ol class="steps">
     <li><b>Fix the stale Undo</b> (LF-01, LF-02). A failed save removes its own Undo, and the older Undo lasts its full time. Test fails first on today's code.</li>
-    <li><b>Shared helpers and words.</b> One toast and one save-state helper, the wording table, errors that stay. No look change yet.</li>
-    <li><b>Toasts: the docket slip</b> on every page, including the editors and the landing.</li>
-    <li><b>Saving: the button tells the story</b>, form by form, starting with pings, minutes and deliveries.</li>
+    <li><b>Toasts: the docket slip</b> on every page, including the editors and the landing. Errors get a red edge and stay.</li>
+    <li><b>Saving: the button tells the story</b>, form by form, starting with pings, minutes and deliveries, with the shared save words.</li>
     <li><b>Signal: the floating band</b>, also carrying the update offer.</li>
     <li><b>Opening and pages: steady shell and same page, filling in.</b> Touches <code>index.html</code> and the saved-shell file lists, so it goes last and alone.</li>
     <li><b>Speed: answer the tap first</b>, Recipes drawn in pieces. Measured before and after on the same slowed phone.</li>
