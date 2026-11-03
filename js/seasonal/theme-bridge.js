@@ -9,6 +9,8 @@
   let surface = 'work', route = location.hash || '#/', aboutOpen = false, panel = null, panelTheme = null;
   let handoffCount = 0, handoffTimer = 0, handoffTarget = null, handoffPending = false;
   const esc = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // Pi Day is the established short name; its official alternative stays in accessible labels.
+  const labelFor = theme => theme.id === 'fun-pi-day' ? 'Pi Day' : theme.label;
   function art(source, theme, className) {
     const markup = window.KB_THEME_BRAND?.style ? KB_THEME_BRAND.style(source, { themeId: theme.id }) : source;
     if (!className) return markup;
@@ -72,7 +74,7 @@
       panel.className = 'kb-occasion-panel kb-season-with-ticker';
       panel.setAttribute('aria-modal', 'true');
       panel.setAttribute('aria-labelledby', 'kb-occasion-title');
-      panel.innerHTML = '<div class="kb-occasion-panel-heading"><h2 id="kb-occasion-title">' + esc(state.theme.label) + '</h2><button class="kb-occasion-close" type="button" aria-label="Close occasion explanation">×</button></div><div data-kb-ticker></div><a class="kb-occasion-home" href="#/">Kitchen Book home</a>';
+      panel.innerHTML = '<div class="kb-occasion-panel-heading"><div class="kb-occasion-panel-copy"><h2 id="kb-occasion-title" aria-label="' + esc(state.theme.label) + '" title="' + esc(state.theme.label) + '">' + esc(labelFor(state.theme)) + '</h2><span class="kb-season-language-slot" data-kb-language></span></div><a class="kb-occasion-home" href="#/" aria-label="Kitchen Book home" title="Kitchen Book home">Home</a><button class="kb-occasion-close" type="button" aria-label="Close occasion explanation">×</button></div><div data-kb-ticker></div>';
       panel.querySelector('.kb-occasion-close').addEventListener('click', () => closeAbout(true));
       panel.addEventListener('cancel', event => { event.preventDefault(); closeAbout(true); });
       panel.addEventListener('click', event => {
@@ -84,7 +86,7 @@
       panel.showModal();
     }
     aboutButton()?.setAttribute('aria-expanded', 'true');
-    KB_CELEBRATION_TICKER.mount(panel.querySelector('[data-kb-ticker]'), state.theme, { mode: state.mode, surface: 'work' });
+    KB_CELEBRATION_TICKER.mount(panel.querySelector('[data-kb-ticker]'), state.theme, { mode: state.mode, surface: 'work', languageHost: panel.querySelector('[data-kb-language]') });
     positionPanel();
     panel.querySelector('.kb-occasion-close').focus({ preventScroll: true });
     publishSoon();
@@ -104,8 +106,7 @@
       if (brand) { originalBrands.set(start, brand); brand.replaceWith(button); } else start.append(button);
     }
     if (button.dataset.occasion !== state.theme.id) {
-      // Pi Day's official alternate name remains available in the accessible label and explanation.
-      const label = state.theme.id === 'fun-pi-day' ? 'Pi Day' : state.theme.label;
+      const label = labelFor(state.theme);
       button.innerHTML = '<span class="kb-occasion-title-art kb-occasion-glyph" aria-hidden="true">' + art(state.theme.icon, state.theme) + '</span><span class="kb-occasion-title-copy">' + esc(label) + '</span>';
       button.dataset.occasion = state.theme.id;
       button.setAttribute('aria-label', state.theme.label + ': About this occasion');
@@ -150,10 +151,10 @@
         note?.remove(); root.dataset.kbEffects = '';
         note = document.createElement('aside'); note.dataset.kbSeason = theme.id; note.dataset.kbSeasonLayout = 'home';
         note.className = 'kb-season-note kb-season-with-ticker'; note.setAttribute('aria-label', theme.label + ' seasonal detail');
-        note.innerHTML = '<div class="kb-season-heading"><div class="kb-season-note-art" aria-hidden="true">' + art(theme.scene, theme) + '</div><h3>' + esc(theme.label) + '</h3></div><div data-kb-ticker></div>';
+        note.innerHTML = '<div class="kb-season-heading"><div class="kb-season-note-art" aria-hidden="true">' + art(theme.icon, theme) + '</div><h3 aria-label="' + esc(theme.label) + '" title="' + esc(theme.label) + '">' + esc(labelFor(theme)) + '</h3><span class="kb-season-language-slot" data-kb-language></span></div><div data-kb-ticker></div>';
         home.before(note);
       }
-      KB_CELEBRATION_TICKER.mount(note.querySelector('[data-kb-ticker]'), theme, { mode: state.mode, surface: 'home' });
+      KB_CELEBRATION_TICKER.mount(note.querySelector('[data-kb-ticker]'), theme, { mode: state.mode, surface: 'home', languageHost: note.querySelector('[data-kb-language]') });
     } else {
       note?.remove();
       if (!aboutOpen && window.KB_CELEBRATION_TICKER?.status().themeId) KB_CELEBRATION_TICKER.clear();
@@ -161,7 +162,7 @@
       if (aboutOpen) {
         if (panelTheme !== theme.id) closeAbout(false);
         else if (panel?.isConnected) {
-          KB_CELEBRATION_TICKER.mount(panel.querySelector('[data-kb-ticker]'), theme, { mode: state.mode, surface: 'work' });
+          KB_CELEBRATION_TICKER.mount(panel.querySelector('[data-kb-ticker]'), theme, { mode: state.mode, surface: 'work', languageHost: panel.querySelector('[data-kb-language]') });
           aboutButton()?.setAttribute('aria-expanded', 'true');
         }
       }
