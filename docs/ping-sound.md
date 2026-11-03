@@ -28,6 +28,14 @@ All short, in the bright 800 to 1500 Hz range that cuts through extraction fans,
 
 Ids are saved in Firestore: never rename one. A new sound adds a line to `SOUNDS` and `SHAPES` in `js/chime.js` and a check to `tests/ping-sound.test.js`.
 
+## One sound for the whole kitchen
+
+Head chef, 3 November 2026: only the head chef (the admin) sets the ring tone for pings. Nobody else can pick another sound, and it is the same sound for everyone, on every device.
+
+- There is one setting, `config/main.pingSound`, and every device reads it. There is no per-phone, per-person or per-device sound, nothing kept on the phone, and no sound in Settings. Do not add one.
+- Only the verified admin writes it: the head chef's own Google device with their head chef PIN and its grant. The rules refuse it from sous chefs, staff, leads, view only, functions only, the shared tablet, signed-out phones and the head chef's PIN on any other phone, including inside a sous chef's staff save or ping stamp (`tests/rules/rules.test.mjs`, `tests/rules/client-shapes.test.mjs`).
+- A new pick reaches every phone through its config listener, with no reload. A phone can still be quieter (on silent, volume down, not tapped since the book opened), but it never plays a different sound.
+
 ## Choosing the sound
 
 Admin panel, Operations, **Shift pings**: the **Ping sound** block under the pings (its own chip under On this page). Each sound has **Play** to listen without changing anything. Tapping a sound plays it and saves it at once for every phone, with "Saved. Every phone plays Marimba when a ping pops up." The block shows only on the head chef's own Google device with their PIN and its grant (`pingSoundOK()`). Sous chefs write pings but do not see or change the sound.
@@ -45,7 +53,7 @@ Admin panel, Operations, **Shift pings**: the **Ping sound** block under the pin
 
 `js/chime.js` (`LK_CHIME`) makes each sound on the phone with Web Audio oscillators. There are no sound files, nothing downloaded or saved, and nothing for the security header. It is a startup file: in `index.html` before `js/prep.js`, in `SHELL` in `sw.js` and in both `js/upkeep.js` lists, so a phone with no signal still rings for the pings it already has. `js/prep.js` decides when (`noteChime()`, called from `noteOpen()`); `js/chime.js` only knows how each sound goes.
 
-Browsers let a page make a sound only after someone has touched it. The first tap or key on the page wakes the sound with one silent sample (Safari needs it inside the tap), then lets it sleep. A phone that had a call or locked its screen can come back interrupted, and the next tap wakes it again. Between sounds the audio is put to sleep, so a tablet on the pass does not hold its speaker open all shift. A sound that cannot start within 1.5 seconds is dropped, never played late. On Safari the audio session is set to `transient`, so music on the phone keeps playing (lowered for a moment) and a phone on silent stays silent.
+Browsers let a page make a sound only after someone has touched it. The first tap or key on the page wakes the sound with one silent sample (Safari needs it inside the tap), then lets it sleep. A phone that had a call or locked its screen can come back interrupted, and the next tap wakes it again. Between sounds the audio is put to sleep, so a tablet on the pass does not hold its speaker open all shift. A sound still waiting to start when someone taps the page, or once the screen is off, is dropped, so a sound the browser held back for a tap never rings late. There is no time limit: a slow phone still rings (a 1.5 second limit, timed by the phone's clock, dropped sounds on a busy test runner, 4 Nov 2026). On Safari the audio session is set to `transient`, so music on the phone keeps playing (lowered for a moment) and a phone on silent stays silent.
 
 Known limits, by design of the browsers:
 
@@ -55,7 +63,7 @@ Known limits, by design of the browsers:
 
 ## Tests
 
-`tests/ping-sound.test.js` counts the notes the real browser is asked to play (each oscillator's pitch): the admin block and its Play and pick, the save and the People save keeping it, Off, a staff phone at a ping's own time, no sound after Got it or from the bell, the start of a shift, an unknown value from Firestore, a sous chef seeing no block, and `js/chime.js` failing to load. `tests/seasonal-shell.test.js` checks the new startup file is in the saved shell and both update lists.
+`tests/ping-sound.test.js` counts the notes the real browser is asked to play (each oscillator's pitch): the admin block and its Play and pick, the save and the People save keeping it, Off, a staff phone at a ping's own time, no sound after Got it or from the bell, the start of a shift, an unknown value from Firestore, a sous chef seeing no block, and `js/chime.js` failing to load. It also checks the one-sound decision: no block for the head chef's PIN on another phone, no sound in Settings for staff or a sous chef, and a sous chef's phone switching from Marimba to Oven timer when the head chef picks it, with no reload, even when waking the sound is slow. A sound held back until a tap is checked not to ring late. `tests/rules/rules.test.mjs` refuses the sound from every other sign-in and inside the saves they may make. `tests/seasonal-shell.test.js` checks the new startup file is in the saved shell and both update lists.
 
 ## Rollback
 
@@ -65,3 +73,4 @@ Revert the pull request. Old code ignores `config/main.pingSound`, and the field
 
 The sound follows the pings sheet popping up by itself (`noteChime()` in `noteOpen()`), never a new timer, read or listener.
 `config/main.pingSound` is written only by the verified admin and carried by the People save; check it against `LK_CHIME` before use. Never rename a sound id.
+One sound for everyone on every device, set only by the head chef (3 Nov 2026): never add a per-phone, per-person or Settings sound.
