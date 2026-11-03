@@ -3155,3 +3155,17 @@ i.dsh-c-w { background: var(--dsh-w); } i.dsh-c-t { background: var(--dsh-t); }
 .dsh-items thead th { font-size: .78rem; font-weight: 600; color: var(--muted); }
 .dsh-items td { font-variant-numeric: tabular-nums; }
 .dsh-items .dsh-delta { margin-top: .2rem; }
+/* Needs you (Dashboard, step 3): a row per thing waiting, its state in a word and a mark, its page one tap away. */
+.dsh-needs { background: var(--beige); border-color: transparent; }
+.dsh-need-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.dsh-need { display: grid; grid-template-columns: 4px minmax(0, 1fr) auto; gap: .75rem; align-items: center; padding: .65rem 0; border-top: 1px solid var(--line); }
+.dsh-need:first-child { border-top: 0; }
+.dsh-need-mark { align-self: stretch; border-radius: 2px; background: var(--stone); }
+.dsh-need-due .dsh-need-mark { background: var(--accent); }
+.dsh-need-wait .dsh-need-mark { background: var(--stone); }
+.dsh-need p { margin: 0; }
+.dsh-need-title { font: 700 1.15rem/1.15 var(--display); overflow-wrap: anywhere; }
+.dsh-need-detail { color: var(--muted); font-size: .88rem; overflow-wrap: anywhere; }
+.dsh-need .btn { min-height: 44px; white-space: nowrap; }
+.dsh-clear { display: flex; gap: .5rem; align-items: center; margin: 0; font-size: .9rem; color: var(--muted); }
+@media (max-width: 560px) { .dsh-need { grid-template-columns: 4px minmax(0, 1fr); } .dsh-need .btn { grid-column: 2; justify-self: start; } }

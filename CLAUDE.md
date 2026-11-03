@@ -30,6 +30,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Admin visual design, selected A: The Chef's Desk | `docs/admin-design-options/brief.md` |
 | Admin dashboard, selected A with B's headlines (3 Nov 2026) | `docs/admin-dashboard-options/brief.md` |
 | Settings page for each role, selected A: One sorted page (3 Nov 2026) | `docs/settings-options/brief.md`, `docs/device-sessions.md` |
+| Seasonal celebration redesign, recommended set selected (3 Nov 2026) | `docs/celebration-options/brief.md` |
 | Recipe and drawing editor layout, selected A's chapters with B's full-screen studio (3 Nov 2026) | `docs/recipe-editor-options/brief.md` |
 | Shared controls, deferred search, table interactions and council audit | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
 | Loading, saving, measured progress and reduced motion | `docs/loading-motion.md` |
