@@ -28,6 +28,14 @@ All short, in the bright 800 to 1500 Hz range that cuts through extraction fans,
 
 Ids are saved in Firestore: never rename one. A new sound adds a line to `SOUNDS` and `SHAPES` in `js/chime.js` and a check to `tests/ping-sound.test.js`.
 
+## One sound for the whole kitchen
+
+Head chef, 3 November 2026: only the head chef (the admin) sets the ring tone for pings. Nobody else can pick another sound, and it is the same sound for everyone, on every device.
+
+- There is one setting, `config/main.pingSound`, and every device reads it. There is no per-phone, per-person or per-device sound, nothing kept on the phone, and no sound in Settings. Do not add one.
+- Only the verified admin writes it: the head chef's own Google device with their head chef PIN and its grant. The rules refuse it from sous chefs, staff, leads, view only, functions only, the shared tablet, signed-out phones and the head chef's PIN on any other phone, including inside a sous chef's staff save or ping stamp (`tests/rules/rules.test.mjs`, `tests/rules/client-shapes.test.mjs`).
+- A new pick reaches every phone through its config listener, with no reload. A phone can still be quieter (on silent, volume down, not tapped since the book opened), but it never plays a different sound.
+
 ## Choosing the sound
 
 Admin panel, Operations, **Shift pings**: the **Ping sound** block under the pings (its own chip under On this page). Each sound has **Play** to listen without changing anything. Tapping a sound plays it and saves it at once for every phone, with "Saved. Every phone plays Marimba when a ping pops up." The block shows only on the head chef's own Google device with their PIN and its grant (`pingSoundOK()`). Sous chefs write pings but do not see or change the sound.
@@ -55,7 +63,7 @@ Known limits, by design of the browsers:
 
 ## Tests
 
-`tests/ping-sound.test.js` counts the notes the real browser is asked to play (each oscillator's pitch): the admin block and its Play and pick, the save and the People save keeping it, Off, a staff phone at a ping's own time, no sound after Got it or from the bell, the start of a shift, an unknown value from Firestore, a sous chef seeing no block, and `js/chime.js` failing to load. `tests/seasonal-shell.test.js` checks the new startup file is in the saved shell and both update lists.
+`tests/ping-sound.test.js` counts the notes the real browser is asked to play (each oscillator's pitch): the admin block and its Play and pick, the save and the People save keeping it, Off, a staff phone at a ping's own time, no sound after Got it or from the bell, the start of a shift, an unknown value from Firestore, a sous chef seeing no block, and `js/chime.js` failing to load. It also checks the one-sound decision: no block for the head chef's PIN on another phone, no sound in Settings for staff or a sous chef, and a sous chef's phone switching from Marimba to Oven timer when the head chef picks it, with no reload. `tests/rules/rules.test.mjs` refuses the sound from every other sign-in and inside the saves they may make. `tests/seasonal-shell.test.js` checks the new startup file is in the saved shell and both update lists.
 
 ## Rollback
 

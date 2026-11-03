@@ -130,6 +130,40 @@ const picks = p => p.evaluate(() => [...document.querySelectorAll('.ps-pick')].m
   ok(!!(await p.$('[data-p="n-new"]')) && !(await p.$('.ps-block')), 'sous chef: Shift pings has no Ping sound block');
   await p.context().close();
 
+  // One sound for the whole kitchen (head chef, 3 Nov 2026): the head chef's PIN on a phone that is not their Google
+  // admin device writes pings but cannot pick the sound either, and no Settings page offers a sound of its own
+  p = await L.open(b, '#/prep', { admin: true, ownerGoogle: false, wait: 2000 });
+  await L.chef(p, 'pings'); await L.settle(p, 400);
+  ok(!!(await p.$('[data-p="n-new"]')) && !(await p.$('.ps-block')), 'head chef on a PIN only: Shift pings has no Ping sound block');
+  await p.context().close();
+  for (const who of ['ann', 'sam']) {
+    p = await L.open(b, '#/settings', { who, wait: 1500 });
+    const t = await p.evaluate(() => (document.querySelector('#main') || document.body).textContent);
+    ok(!/sound|ring ?tone/i.test(t) && !(await p.$('.ps-block, [data-p^="ps-"]')), who + ': Settings has no ping sound of its own');
+    await p.context().close();
+  }
+
+  // every phone plays the head chef's sound, and a new pick reaches a phone already open without a reload
+  p = await L.open(b, '#/prep', { who: 'sam', touch: true, init: listen, extra: withSound('marimba', Object.assign(ping('n4', 'Briefing at the pass', { tm: 900 }), ping('n5', 'Fryer oil change', { tm: 940 }))), wait: 2000 });
+  await p.tap('#rtitle'); await L.settle(p, 200);
+  await p.evaluate(() => { window.__osc = []; });
+  await p.clock.runFor(61 * 60000); await L.settle(p, 400);
+  await L.waitFor(p, () => !!document.querySelector('.nt')).catch(() => {});
+  await waitHeard(p, 3);
+  h = await heard(p);
+  ok(MARIMBA.every(f => count(h, f) === 1) && count(h, TIMER) === 0, 'sous chef phone: the 15:00 ping plays the head chef\'s Marimba (' + h.join(', ') + ')');
+  await p.tap('.nt-got'); await L.settle(p, 200);
+  await p.evaluate(k => { const d = window.__fake.dump(); window.__fake.write(k, Object.assign({}, d[k], { pingSound: 'timer' })); }, CFG);
+  await L.settle(p, 400);
+  await p.evaluate(() => { window.__osc = []; });
+  await p.clock.runFor(40 * 60000); await L.settle(p, 400);
+  await L.waitFor(p, () => /Fryer oil/.test((document.querySelector('.nt') || {}).textContent || '')).catch(() => {});
+  await waitHeard(p, 3);
+  h = await heard(p);
+  ok(count(h, TIMER) === 3 && MARIMBA.every(f => count(h, f) === 0), 'sous chef phone: after the head chef picks Oven timer, the 15:40 ping plays it with no reload (' + h.join(', ') + ')');
+  ok(p.errors.length === 0, 'one sound: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // js/chime.js does not load: the admin tab says so, the People save keeps the sound as stored, pings still pop up
   p = await L.open(b, '#/admin', { admin: true, adminPage: 'notes', extra: withSound('marimba'), block: 'js/chime\\.js', wait: 2000 });
   await L.adminTab(p, 'notes');
