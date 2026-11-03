@@ -95,21 +95,22 @@ function pagedFixture() {
   ok(p.errors.length === 0, 'optional-unit quantity journey: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // Review must reveal an invalid item hidden by another page or search, then its stock field behind Details.
+  // Review must reveal an invalid item hidden by a search (one list since 4 Nov 2026, no pages), on its own row.
   p = await open(b, pagedFixture());
-  await p.fill(qty('t-stock'), '2'); await action(p, 'next'); await ready(p, 'page-26');
+  await p.fill(qty('t-stock'), '2'); await ready(p, 'page-26');
   await p.fill(qty('page-25'), '5 kg'); await p.fill(qty('page-26'), 'some');
   await p.click('[data-item="page-26"] .su-item > summary'); await p.fill(stock('page-26'), 'not counted');
   await p.click('[data-item="page-26"] .su-item > summary');
-  await action(p, 'previous'); await ready(p); await p.fill('[data-sf="q"]', 'TEST STOCK');
-  ok(!(await p.$(qty('page-26'))), 'search hides the invalid second-page item before review');
+  await ready(p); await p.fill('[data-sf="q"]', 'TEST STOCK');
+  await L.waitFor(p, sel => !document.querySelector(sel), qty('page-26'), 5000);
+  ok(!(await p.$(qty('page-26'))), 'search hides the invalid item before review');
   await action(p, 'review');
   await L.waitFor(p, selector => { const el = document.querySelector(selector); return el && el.getAttribute('aria-invalid') === 'true' && el === document.activeElement; }, qty('page-26'), 5000);
   state = await fieldState(p, qty('page-26'));
-  ok(state.invalid && state.focused && /TEST PAGE ITEM 26/.test(state.message), 'review reveals the hidden page and names the exact quantity field');
-  ok(await p.$eval(qty('page-25'), el => el.value) === '5 kg' && await p.$eval(qty('page-26'), el => el.value) === 'some', 'revealing an error preserves quantities on that page');
-  await p.fill(qty('page-26'), '3 bags'); await action(p, 'previous'); await ready(p); await p.fill('[data-sf="q"]', 'TEST STOCK');
-  ok(await p.$eval(qty('t-stock'), el => el.value) === '2', 'the original first-page quantity survives validation and page changes');
+  ok(state.invalid && state.focused && /TEST PAGE ITEM 26/.test(state.message), 'review clears the search and names the exact quantity field');
+  ok(await p.$eval(qty('page-25'), el => el.value) === '5 kg' && await p.$eval(qty('page-26'), el => el.value) === 'some', 'revealing an error preserves the other quantities');
+  await p.fill(qty('page-26'), '3 bags'); await ready(p); await p.fill('[data-sf="q"]', 'TEST STOCK');
+  ok(await p.$eval(qty('t-stock'), el => el.value) === '2', 'the first quantity survives validation and searches');
   await action(p, 'review');
   await L.waitFor(p, selector => { const el = document.querySelector(selector); return el && el.getAttribute('aria-invalid') === 'true' && el === document.activeElement; }, stock('page-26'), 5000);
   state = await fieldState(p, stock('page-26'));
@@ -119,21 +120,21 @@ function pagedFixture() {
   await p.fill(stock('page-26'), '4');
   ok(!(await fieldState(p, stock('page-26'))).invalid, 'correcting stock clears its accessible field error');
   await action(p, 'review'); await reviewed(p); saved = await record(p);
-  ok(saved.lines.length === 3 && saved.lines.find(line => line.itemId === 'page-26').stock === '4 kg', 'corrected draft records all pages once with the confirmed stock unit');
-  ok(saved.lines.some(line => line.itemId === 't-stock' && line.qty === '2 kg') && saved.lines.some(line => line.itemId === 'page-25' && line.qty === '5 kg'), 'recording preserves the other pages\' reviewed quantities');
+  ok(saved.lines.length === 3 && saved.lines.find(line => line.itemId === 'page-26').stock === '4 kg', 'corrected draft records every item once with the confirmed stock unit');
+  ok(saved.lines.some(line => line.itemId === 't-stock' && line.qty === '2 kg') && saved.lines.some(line => line.itemId === 'page-25' && line.qty === '5 kg'), 'recording preserves the other reviewed quantities');
   ok(p.errors.length === 0, 'hidden-field validation journey: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // Review can be tapped before the search debounce runs. Validation must cancel that pending search.
   for (const kind of ['qty', 'stock']) {
     p = await open(b, pagedFixture(), 390);
-    await p.fill(qty('t-stock'), '2'); await action(p, 'next'); await ready(p, 'page-26');
+    await p.fill(qty('t-stock'), '2'); await ready(p, 'page-26');
     await p.fill(qty('page-25'), '5 kg'); await p.fill(qty('page-26'), kind === 'qty' ? 'some' : '3 bags');
     if (kind === 'stock') {
       await p.click('[data-item="page-26"] .su-item > summary'); await p.fill(stock('page-26'), 'not counted');
       await p.click('[data-item="page-26"] .su-item > summary');
     }
-    await action(p, 'previous'); await ready(p);
+    await ready(p);
     const immediate = await p.evaluate(kind => {
       const q = document.querySelector('[data-sf="q"]'); q.focus(); q.value = 'TEST STOCK'; q.dispatchEvent(new Event('input', { bubbles: true })); document.querySelector('[data-su="review"]').click();
       const invalid = document.querySelector('[data-sf="' + kind + '"][data-i="page-26"]');

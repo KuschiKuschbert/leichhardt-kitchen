@@ -357,11 +357,41 @@
       return '<li><b>' + esc(r.text || '') + '</b>' + (r.qty ? ', ' + esc(r.qty) : '') + '<span class="hint"> · ' + esc(r.addedBy || 'Staff') + (typeof r.addedAt === 'number' ? ' at ' + esc(T.clock(r.addedAt)) : '') + (it ? ' · matches ' + esc(it.name) : '') + '</span></li>';
     }).join(''); }).join('') + '</ul><p class="hint">Nothing is ticked off here. Others stay on the <a href="#/orders">Order list</a>.</p></section>';
   }
+  /* One list (design A, 4 Nov 2026), measured with 300 example items on a phone-speed CPU (Chrome at 4x slower):
+     redrawing the whole sheet for a keystroke in On hand took about 700 ms; changing only that row takes about 45 ms,
+     and skipping rows that are off screen (content-visibility on .su-row in css/app.css) keeps a full redraw near
+     345 ms. So On hand, Use, − and + change only their row and the counts. Filters, search, supplier changes and an
+     open Suggestions panel still draw the whole sheet. */
+  function rowEl(id) { return M.root ? Array.prototype.filter.call(M.root.querySelectorAll('.su-row'), function (r) { return r.getAttribute('data-item') === id; })[0] : null; }
+  function swap(el, html) { var t = document.createElement('div'); t.innerHTML = html; var n = t.firstElementChild; if (el && n) el.parentNode.replaceChild(n, el); return n; }
+  function refreshCounts() {
+    var d = draft(), n = Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length;
+    var chips = M.root.querySelector('.su-filters'); if (chips) swap(chips, filterChips(d));
+    var count = M.root.querySelector('.su-order-actions > .hint'); if (count) count.textContent = itemCount(n) + ' in this supplier draft';
+    var rb = M.root.querySelector('[data-su="review"]'); if (rb) rb.disabled = !n;
+  }
+  function redrawRow(id) {
+    var row = rowEl(id), i = item(id);
+    if (!row || !i || M.smart || M.mode !== 'order' || activeTask()) { draw(); return; }
+    // the focus and caret come back to the same box or button in the new row; after Use, to its To order box
+    var a = document.activeElement, inRow = !!a && row.contains(a), sf = inRow && a.getAttribute('data-sf'), su = inRow && a.getAttribute('data-su'), dd = inRow && a.getAttribute('data-d');
+    var pos = sf && typeof a.selectionStart === 'number' ? [a.selectionStart, a.selectionEnd] : null;
+    var next = swap(row, rowHTML(i));
+    var target = sf ? next.querySelector('[data-sf="' + sf + '"]') : su ? (next.querySelector('[data-su="' + su + '"]' + (dd ? '[data-d="' + dd + '"]' : '')) || next.querySelector('[data-sf="qty"]')) : null;
+    if (target) { target.focus({ preventScroll: true }); if (pos) try { target.setSelectionRange(pos[0], pos[1]); } catch (e) {} }
+    refreshCounts();
+  }
+  // Category jumps on one list: a chip per category, likely few first (in catalogue order), the counts beside them
+  function jumpsHTML(list) {
+    var cats = []; list.forEach(function (i) { var c = i.category || 'Other items'; var x = cats.filter(function (y) { return y[0] === c; })[0]; if (x) x[1]++; else cats.push([c, 1]); });
+    if (cats.length < 2) return '';
+    return '<nav class="chips scroll su-jumps" aria-label="Jump to a category">' + cats.map(function (c) { return '<button type="button" class="chip" data-su="jump" data-cat="' + esc(c[0]) + '">' + esc(c[0]) + ' <span class="su-n">' + c[1] + '</span></button>'; }).join('') + '</nav>';
+  }
   function orderHTML() {
     var s = supplier(), d = draft(), list = filterItems(false).filter(function (i) { return shown(i, d); }), last = ''; M.page = Math.max(0, Math.min(M.page, Math.ceil(list.length / 20) - 1));
     if (activeTask() === 'review') return reviewHTML();
-    var table = list.slice(M.page * 20, M.page * 20 + 20).map(function (i) { var title = i.category !== last ? '<div class="su-category">' + esc(i.category || 'Other items') + '</div>' : ''; last = i.category; return title + rowHTML(i); }).join('');
-    return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3><span class="hint">' + items().length + ' items</span></div>' + cutoffHTML() + latestHTML() + suggestionsHTML() + requestsHTML() + '<p class="hint">A number uses the order unit shown; type a unit for another, e.g. 2 kg. Par blank is Not set; 0 stays 0.</p>' + filterChips(d) + '<div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last order</span><span>To order</span></div>' + (table || '<p class="empty">' + (M.filter ? 'No items match this filter.' : 'No items match.') + '</p>') + pager(list) + '<div class="su-order-actions"><span class="hint">' + itemCount(Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length) + ' in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + historyHTML();
+    var table = list.map(function (i) { var title = i.category !== last ? '<div class="su-category" data-cat="' + esc(i.category || 'Other items') + '" tabindex="-1">' + esc(i.category || 'Other items') + '</div>' : ''; last = i.category; return title + rowHTML(i); }).join('');
+    return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3><span class="hint">' + items().length + ' items</span></div>' + cutoffHTML() + latestHTML() + suggestionsHTML() + requestsHTML() + '<p class="hint">A number uses the order unit shown; type a unit for another, e.g. 2 kg. Par blank is Not set; 0 stays 0.</p>' + filterChips(d) + jumpsHTML(list) + '<div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last order</span><span>To order</span></div>' + (table || '<p class="empty">' + (M.filter ? 'No items match this filter.' : 'No items match.') + '</p>') + '<div class="su-order-actions"><span class="hint">' + itemCount(Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length) + ' in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + historyHTML();
   }
   function sourceHTML(i) { return '<details class="su-source"><summary>Original record</summary><dl><dt>Item name</dt><dd>' + esc(i.manual ? 'Added manually' : i.source.name) + '</dd><dt>PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : i.source.par === '' ? 'Not set' : i.source.par) + '</dd><dt>Source</dt><dd>' + esc(i.manual ? 'Manual item' : i.source.file + ', page ' + i.source.page) + '</dd></dl></details>'; }
   function unitField(k, label, value) { return '<label class="field"><span class="label">' + label + '</span><input class="search" data-sf="' + k + '" value="' + esc(value || '') + '" list="su-unit-list" maxlength="40" placeholder="Unconfirmed"></label>'; }
@@ -655,6 +685,10 @@
     if (cmd === 'smart') { M.smart = !M.smart; draw(); if (M.smart) loadRequests(); }
     if (cmd === 'requests-retry') { M.requests = null; loadRequests(); }
     if (cmd === 'requests') loadRequests();
+    if (cmd === 'jump') {
+      var cat = el.getAttribute('data-cat'), head = Array.prototype.filter.call(M.root.querySelectorAll('.su-category'), function (h) { return h.getAttribute('data-cat') === cat; })[0];
+      if (head) { head.scrollIntoView({ block: 'start' }); head.focus({ preventScroll: true }); requestAnimationFrame(function () { requestAnimationFrame(function () { if (head.isConnected) head.scrollIntoView({ block: 'start' }); }); }); }
+    }
     if (cmd === 'filter') { M.filter = el.getAttribute('data-f') || ''; M.page = 0; draw(); }
     // − and + change the number in the box by one order unit; a typed unit after the number stays as it is
     if (cmd === 'step') {
@@ -663,11 +697,11 @@
         var n = Math.max(0, Math.round(((mm ? Number(mm[1].replace(',', '.')) : 0) + Number(el.getAttribute('data-d'))) * 1000) / 1000);
         var next = n > 0 ? String(n) + (mm && mm[2] ? mm[2] : '') : '';
         sd.qty[id] = next; if (next) sd.units.qty[id] = si.orderUnit; else delete sd.units.qty[id];
-        delete sd.suggestions[id]; M.review = null; clearEntryError('qty', id, next); draw();
+        delete sd.suggestions[id]; M.review = null; clearEntryError('qty', id, next); redrawRow(id);
       }
     }
-    if (cmd === 'apply') { var d = draft(), i = item(id), suggestion = i && C.suggestQuantity(i, latest(), d.stock[id] || '', fieldUnit('stock', i, d)); if (suggestion && !String(d.qty[id] || '').trim()) { d.qty[id] = suggestion.qty; d.units.qty[id] = suggestion.unit; d.suggestions[id] = suggestion; M.review = null; message('Suggestion added. Check its quantity and unit before ordering.'); } }
-    if (cmd === 'dismiss') { draft().dismissed[id] = true; draw(); }
+    if (cmd === 'apply') { var d = draft(), i = item(id), suggestion = i && C.suggestQuantity(i, latest(), d.stock[id] || '', fieldUnit('stock', i, d)); if (suggestion && !String(d.qty[id] || '').trim()) { d.qty[id] = suggestion.qty; d.units.qty[id] = suggestion.unit; d.suggestions[id] = suggestion; M.review = null; if (M.smart) message('Suggestion added. Check its quantity and unit before ordering.'); else { M.msg = ''; redrawRow(id); try { P.book().say('Suggestion added. Check its quantity and unit before ordering.'); } catch (e) {} } } }
+    if (cmd === 'dismiss') { draft().dismissed[id] = true; if (M.smart) draw(); else redrawRow(id); }
     if (cmd === 'additional') { M.additional = occurrenceKey(occurrence()); M.review = null; message('An additional order will keep the same cut-off link. Previous orders stay in history.'); }
     if (cmd === 'new-draft' && M.review && M.review.recorded) { draft().id = uuid('o'); M.additional = occurrenceKey(M.review.occurrence); M.review = null; M.err = ''; message('New draft started. The earlier order stays in history. Review this as an additional order.'); }
     if (cmd === 'cutoff-settings') { if (B().openCutoffs) B().openCutoffs(); else location.hash = '#/admin'; }
@@ -696,7 +730,7 @@
     if (f === 'q') { M.q = el.value; M.page = 0; draw(); return; }
     if (f === 'cutQ') { M.cutQ = el.value; draw(); return; }
     if (f === 'historyQ') { M.historyQ = el.value; draw(); return; } if (f === 'importQ') { M.importQ = el.value; draw(); return; }
-    if (f === 'qty' || f === 'stock') { draft()[f][id] = el.value; var enteredItem = item(id); if (String(el.value).trim() && enteredItem) draft().units[f][id] = f === 'qty' ? enteredItem.orderUnit : enteredItem.parUnit; else delete draft().units[f][id]; if (f === 'qty') delete draft().suggestions[id]; M.review = null; clearEntryError(f, id, el.value); if (M.smart || f === 'stock') draw(); else { var hint = el.closest('.su-qty').querySelector('.hint'); if (hint) hint.textContent = orderUnitHint(item(id), draft()); var count = M.root.querySelector('.su-order-actions > .hint'); if (count) count.textContent = itemCount(Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length) + ' in this supplier draft'; var reviewButton = M.root.querySelector('[data-su="review"]'); if (reviewButton) reviewButton.disabled = !Object.keys(draft().qty).some(function (k) { return String(draft().qty[k]).trim(); });
+    if (f === 'qty' || f === 'stock') { draft()[f][id] = el.value; var enteredItem = item(id); if (String(el.value).trim() && enteredItem) draft().units[f][id] = f === 'qty' ? enteredItem.orderUnit : enteredItem.parUnit; else delete draft().units[f][id]; if (f === 'qty') delete draft().suggestions[id]; M.review = null; clearEntryError(f, id, el.value); if (M.smart) draw(); else if (f === 'stock') redrawRow(id); else { var hint = el.closest('.su-qty').querySelector('.hint'); if (hint) hint.textContent = orderUnitHint(item(id), draft()); var count = M.root.querySelector('.su-order-actions > .hint'); if (count) count.textContent = itemCount(Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length) + ' in this supplier draft'; var reviewButton = M.root.querySelector('[data-su="review"]'); if (reviewButton) reviewButton.disabled = !Object.keys(draft().qty).some(function (k) { return String(draft().qty[k]).trim(); });
       // the row's Use chip steps aside once a quantity is typed; In this order keeps its count (no redraw, the caret stays)
       var use = Array.prototype.filter.call(M.root.querySelectorAll('.su-use'), function (b) { return b.getAttribute('data-i') === id; })[0]; if (use) use.hidden = !!String(el.value).trim();
       var inOrder = M.root.querySelector('[data-su="filter"][data-f="inorder"] .su-n'); if (inOrder) inOrder.textContent = Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length; } return; }

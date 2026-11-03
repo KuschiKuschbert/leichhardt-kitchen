@@ -6,7 +6,7 @@
 #app[data-kb-celebration-surface="work"] :is(.kb-motion-target,.kb-motion-addon path,.kb-saber-blade,.kb-horse-leg,.kb-horse-tail,.kb-clover-leaf,.kb-ambient-detail):not(.wtop *){animation:none!important;filter:none!important;will-change:auto!important}
 #app{--kb-tilt:4deg;--kb-rock:5deg;--kb-lift:-6px;--kb-slide:7px;--kb-halo:5px;--kb-breathe:.74;--kb-motion-period:6.5s}#app[data-motion-intensity="light"]{--kb-tilt:2deg;--kb-rock:2.5deg;--kb-lift:-3px;--kb-slide:3px;--kb-halo:2px;--kb-breathe:.87;--kb-motion-period:8s}
 #app.motion-gentle .kb-motion-target{transform-box:fill-box;transform-origin:center;will-change:transform;animation:kb-preview-accent var(--kb-motion-period) ease-in-out infinite;animation-delay:-1.4s}
-#app.motion-gentle .kb-motion-target[data-kb-motion="glow"]{animation-name:kb-preview-glow;will-change:filter,opacity}
+#app.motion-gentle .kb-motion-target[data-kb-motion="glow"]{animation-name:kb-preview-glow;will-change:opacity}
 #app.motion-gentle .kb-motion-target[data-kb-motion="sway"]{animation-name:kb-preview-sway;transform-origin:50% 8%}
 #app.motion-gentle .kb-motion-target[data-kb-motion="rock"]{animation-name:kb-preview-rock;transform-origin:50% 88%}
 #app.motion-gentle .kb-motion-target[data-kb-motion="wave"]{animation-name:kb-preview-water}
@@ -20,7 +20,8 @@
 #app.motion-paused .kb-motion-target,#app.motion-paused .kb-motion-addon path,#kb-festive-effects.motion-paused .complete-particle{animation-play-state:paused!important}
 .complete-particle{position:absolute;left:var(--x);top:-65px;width:var(--size);height:var(--size);opacity:0;animation:kb-preview-fall var(--duration) linear infinite;animation-delay:var(--delay);will-change:transform}.complete-particle svg{width:100%;height:100%;overflow:visible}.complete-particle.is-centre{--opacity:.24}.complete-particle.is-edge{--opacity:.7}#kb-festive-effects[data-motion-intensity="light"] .complete-particle.is-edge{--opacity:.52}.effect-snow .complete-particle{border-radius:50%;background:#fff;border:1px solid #9ca9b670;box-shadow:0 0 2px #64717b55}.effect-hearts .complete-particle,.effect-stars .complete-particle{animation-name:kb-preview-rise}.effect-powder .complete-particle{animation-name:kb-preview-powder;--opacity:.27}.effect-kite .complete-particle{animation-name:kb-preview-kite;--opacity:.6}.effect-confetti .complete-particle{animation-iteration-count:infinite}
 @keyframes kb-preview-accent{0%,100%{transform:translateY(0) rotate(calc(var(--kb-tilt) * -.3))}50%{transform:translateY(var(--kb-lift)) rotate(calc(var(--kb-tilt) * .3))}}
-@keyframes kb-preview-glow{0%,100%{opacity:var(--kb-breathe);filter:drop-shadow(0 0 0 #d6a74100)}50%{opacity:1;filter:drop-shadow(0 0 var(--kb-halo) #d6a741b3)}}
+/* Opacity only: an animated drop shadow repainted every frame (469 ms of each second on Diwali, slowed phone). */
+@keyframes kb-preview-glow{0%,100%{opacity:var(--kb-breathe)}50%{opacity:1}}
 @keyframes kb-preview-sway{0%,100%{transform:rotate(calc(var(--kb-tilt) * -1))}50%{transform:rotate(var(--kb-tilt))}}
 @keyframes kb-preview-rock{0%,100%{transform:rotate(calc(var(--kb-rock) * -1)) translateY(0)}50%{transform:rotate(var(--kb-rock)) translateY(calc(var(--kb-lift) * .4))}}
 @keyframes kb-preview-water{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(var(--kb-lift)) scaleY(.98)}}
@@ -57,7 +58,7 @@
 .kb-ambient-horizon.is-dawn{background:linear-gradient(90deg,#e7bd7429,transparent 18%,transparent 82%,#e7bd7429),linear-gradient(0deg,#e7bd7426,transparent 34%)}
 #kb-festive-effects[data-motion-intensity="light"] .kb-ambient-horizon{--kb-horizon-strength:.28;opacity:.15}
 /* Only decorative art receives these inner animations. They keep working when the note scrolls away. */
-#app.motion-gentle .kb-saber-blade,#kb-festive-effects .kb-saber-blade{transform-box:fill-box;transform-origin:center bottom;animation:kb-saber-ignite 7s ease-in-out infinite;animation-delay:var(--kb-saber-delay,0s);filter:drop-shadow(0 0 2px #9fc491);will-change:transform,opacity}
+#app.motion-gentle .kb-saber-blade,#kb-festive-effects .kb-saber-blade{transform-box:fill-box;transform-origin:center bottom;animation:kb-saber-ignite 7s ease-in-out infinite;animation-delay:var(--kb-saber-delay,0s);will-change:transform,opacity}
 #app.motion-gentle .kb-horse-leg,#kb-festive-effects .kb-horse-leg{transform-box:fill-box;transform-origin:center top;animation:kb-horse-gallop .72s ease-in-out infinite alternate}
 #app.motion-gentle .kb-horse-leg-front,#kb-festive-effects .kb-horse-leg-front{animation-delay:-.36s}
 #app.motion-gentle .kb-horse-tail,#kb-festive-effects .kb-horse-tail{transform-box:fill-box;transform-origin:right center;animation:kb-horse-tail .9s ease-in-out infinite alternate}
