@@ -78,6 +78,7 @@ After approval, implement small reversible units under the existing shipping rul
 | `js/deliveries.js` | Delivery received (`#/deliveries`): chilled and frozen temperatures. Loaded only when the page opens. `docs/delivery-received.md` |
 | `js/functions.js` | Functions: the schedule maths (also run by node), the kitchen band under the top bar, the function sheet, `#/fn`, the landing card. In `SHELL` |
 | `js/fnedit.js` | Manage functions (`#/functions`): the function managers' list and form, loaded by `js/app.js` only for someone ticked for Functions, not in `SHELL` |
+| `js/admin-dashboard.js` | The admin Dashboard (`LK_DASH`): headlines, tiles and charts from the nightly `analysis/dashboard` record. Loaded by `js/prep.js` only when the page opens, not in `SHELL`. `docs/admin-dashboard-options/brief.md` |
 | `js/controls.js` | Shared adaptive pickers, deferred search and report-table controls. Loaded in the atomic shell. `docs/adaptive-controls.md` |
 | `js/motion.js` | Ink in motion presentation helpers. Callers own wait, offline and acknowledgement states. `docs/loading-motion.md` |
 | `js/app.js` | Routing, top bar, recipe views (Pass, Tiles), recipe cards, settings, install, QR |

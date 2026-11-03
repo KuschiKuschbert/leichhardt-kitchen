@@ -39,7 +39,7 @@ Recommendation: build A, with B's three written headlines as one strip above the
 Small pull requests in this order, each with click tests at 390, 768 and 1280 px and the read budget check:
 
 1. Nightly dashboard numbers (done 3 Nov 2026). The nightly analysis job writes `analysis/dashboard` in the same atomic publish as the ranges, from the lines it already reads: no extra reads. The existing `analysis/{id}` rule already keeps it to the verified admin and to server writes, so no rules change. One row per finished day for 90 days: prep lines (all, written, ticked, rolled, written per section, minutes to tick per section), waste (lines, reasons, sections, items with unit and amount) and transfers out and in. Counted like Insights and Wastage; deleted and practice lines left out; never prices. `scripts/dashboard.mjs`, checked by `scripts/analysis-check.mjs`. The 90 day view has no earlier 90 days to compare with.
-2. The Dashboard chapter, tiles or brief, linked into the existing reports.
+2. The Dashboard chapter (3 Nov 2026). `js/admin-dashboard.js` (`LK_DASH`, API 1), loaded only when the page opens, like the proofreader. Two reads on open (`analysis/dashboard`, `analysis/health`), kept in memory until Refresh or a change of person; a failed read waits for Refresh. Each device opens the Dashboard once after the update (`lk.dash.intro`), then the last page is kept. Charts use HTML and SVG with a pointer and arrow-key reading and a table view. `tests/admin-dashboard.test.js`.
 3. Needs you, from counts the admin panel already reads.
 4. Week ahead and watch list (pins saved with the admin's records, in backups and PIN moves).
 
@@ -53,3 +53,11 @@ Checked: no sideways scroll at 390, 768 and 1440 px, no script errors, real Barl
 | A. The Pass board | B. The Morning brief |
 | --- | --- |
 | ![The Pass board](previews/a-desktop.png) | ![The Morning brief](previews/b-desktop.png) |
+
+## The Dashboard as built
+
+Synthetic test data only.
+
+| Desktop | Phone |
+| --- | --- |
+| ![Dashboard desktop](../images/admin-dashboard-desktop.png) | ![Dashboard phone](../images/admin-dashboard-phone.png) |
