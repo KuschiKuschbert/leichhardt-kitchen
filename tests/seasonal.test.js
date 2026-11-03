@@ -19,22 +19,22 @@ async function go(p, hash) {
   await p.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 }
 async function navFacts(p) {
+  // Work pages (3 Nov 2026): Kitchen Book and the chef hat stay, a stamp sits beside the name, a still edge runs along the bar.
   return p.evaluate(() => {
-    const header = document.querySelector('.wtop'), layer = header?.querySelector('.kb-nav-festive-effects');
-    const bounds = header?.getBoundingClientRect(), clip = layer?.getBoundingClientRect();
-    const style = layer && getComputedStyle(layer);
-    const visible = layer ? [...layer.querySelectorAll('.kb-navbar-particle')].filter(node => getComputedStyle(node).display !== 'none') : [];
+    const header = document.querySelector('.wtop'), edge = header?.querySelector('.kb-nav-edge'), stamp = header?.querySelector('.kb-occasion-stamp');
+    const bounds = header?.getBoundingClientRect(), e = edge?.getBoundingClientRect(), st = stamp?.getBoundingClientRect();
+    const name = document.querySelector('.wtop-brand b');
     return {
-      state: KB_EFFECTS.status(), layers: document.querySelectorAll('.kb-nav-festive-effects').length,
-      title: document.querySelectorAll('.kb-occasion-title').length,
-      label: document.querySelector('.kb-occasion-title-copy')?.textContent,
-      clip: Boolean(bounds && clip && Math.abs(bounds.left - clip.left) < 1 && Math.abs(bounds.right - clip.right) < 1 && clip.top >= bounds.top - 1 && clip.bottom <= bounds.bottom + 1 && style.overflow === 'hidden' && style.pointerEvents === 'none'),
-      ornaments: visible.filter(node => node.classList.contains('is-ornament')).map(node => node.dataset.navMotif),
-      floaters: visible.filter(node => !node.classList.contains('is-ornament')).length,
-      count: visible.length,
+      state: KB_EFFECTS.status(), edges: document.querySelectorAll('.kb-nav-edge').length, stamps: document.querySelectorAll('.kb-occasion-stamp').length,
+      brand: document.querySelectorAll('.wtop-brand').length, nameText: name?.textContent || '',
+      hat: Boolean(document.querySelector('.wtop-who svg')) && !document.querySelector('.wtop-who .kb-brand-art'),
+      inside: Boolean(bounds && e && e.top >= bounds.top - 1 && e.bottom <= bounds.bottom + 1 && e.left >= bounds.left - 1 && e.right <= bounds.right + 1 && getComputedStyle(edge).pointerEvents === 'none'),
+      stampTarget: st ? Math.min(st.width, st.height) : 0, stampHasArt: Boolean(stamp?.querySelector('svg')),
+      moving: header ? header.getAnimations({ subtree: true }).filter(a => a.playState === 'running' && a.effect?.target?.closest?.('.kb-nav-edge')).length : 0,
+      oldParts: document.querySelectorAll('.kb-nav-festive-effects,.kb-navbar-particle,.kb-occasion-title').length,
       viewportParticles: document.querySelectorAll('#kb-festive-effects .complete-particle,#kb-festive-effects .kb-ambient-horizon').length,
       infoButtons: document.querySelectorAll('.wtop-icons .kb-occasion-trigger').length,
-      activeAnimations: layer ? layer.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length : 0
+      edgeMotif: edge?.dataset.edgeMotif || ''
     };
   });
 }
@@ -128,16 +128,16 @@ async function cpuPerSecond(p, ms = 2000) {
     ok(await p.evaluate(() => KB_EFFECTS.status().ambientPreset === 'snow' && KB_EFFECTS.status().ambientCount > 0), 'Christmas snow moves across Home');
     await go(p, '#/recipes');
     let facts = await navFacts(p);
-    ok(facts.layers === 1 && facts.title === 1 && facts.infoButtons === 0, 'work header has one animated celebration title and no extra information button');
-    ok(facts.clip && facts.viewportParticles === 0 && facts.state.scope === 'navbar', 'work snow is clipped to the header');
-    ok(facts.count === 8 && facts.activeAnimations > 0, 'phone header keeps eight moving snow particles');
+    ok(facts.brand === 1 && facts.nameText === 'Kitchen Book' && facts.hat, 'work pages keep Kitchen Book and the chef hat');
+    ok(facts.stamps === 1 && facts.stampHasArt && facts.stampTarget >= 44 && facts.infoButtons === 0, 'one 44 px celebration stamp sits beside the name, with no extra button in the top bar');
+    ok(facts.edges === 1 && facts.inside && facts.moving === 0 && facts.oldParts === 0 && facts.viewportParticles === 0, 'a still festive edge runs inside the top bar and nothing moves behind the name or buttons');
     ok(await p.locator('.kb-season-note,#kb-occasion-panel').count() === 0, 'work content starts without the explanation in its way');
     ok(await p.evaluate(() => Boolean(document.querySelector('.wtop-who svg')) && !document.querySelector('.wtop-who .kb-brand-art')), 'the chef hat stays the chef hat on work pages');
     ok(await p.evaluate(() => KB_CELEBRATION_TICKER.status().timerCount === 0), 'closed work explanation has no language timer');
 
-    await p.click('.kb-occasion-title');
+    await p.click('.kb-occasion-stamp');
     await L.waitFor(p, () => KB_CELEBRATION_TICKER.status().fontsReady);
-    ok(await p.locator('#kb-occasion-panel').count() === 1 && await p.locator('.kb-occasion-title').getAttribute('aria-expanded') === 'true', 'celebration title opens its explanation');
+    ok(await p.locator('#kb-occasion-panel').count() === 1 && await p.locator('.kb-occasion-stamp').getAttribute('aria-expanded') === 'true', 'the stamp opens the celebration explanation');
     ok(await p.locator('#kb-occasion-panel a[href="#/"]').count() === 1, 'explanation has a clear Kitchen Book home link');
     ok(await p.evaluate(() => JSON.stringify(KB_CELEBRATION_TICKER.status().availableLocales) === JSON.stringify(['en', 'fil', 'ban', 'ne', 'hi', 'de'])), 'explanation includes all six requested languages in order');
     ok(await p.locator('.kb-ticker-picker,.kb-ticker-select,[data-ticker-language],select[name="language"]').count() === 0, 'there is no language picker');
@@ -162,10 +162,10 @@ async function cpuPerSecond(p, ms = 2000) {
     ok(await p.evaluate(before => KB_CELEBRATION_TICKER.status().automaticCycleCount > before, automaticBefore), 'languages advance automatically without a picker');
     ok(await p.locator('.kb-celebration-ticker button,.kb-ticker-controls').count() === 0, 'the automatic explanation has no pause button or empty controls row');
     await p.keyboard.press('Escape');
-    ok(await p.locator('#kb-occasion-panel').count() === 0 && await p.locator('.kb-occasion-title').evaluate(node => document.activeElement === node), 'Escape closes explanation and restores focus to the title');
+    ok(await p.locator('#kb-occasion-panel').count() === 0 && await p.locator('.kb-occasion-stamp').evaluate(node => document.activeElement === node), 'Escape closes explanation and restores focus to the stamp');
     ok(await p.evaluate(() => KB_CELEBRATION_TICKER.status().timerCount === 0), 'closing explanation releases its timer');
 
-    await p.click('.kb-occasion-title');
+    await p.click('.kb-occasion-stamp');
     await p.click('#kb-occasion-panel .kb-occasion-home');
     await L.waitFor(p, () => location.hash === '#/' && Boolean(document.querySelector('[data-kb-season="au-christmas-day"]')) && KB_CELEBRATION_TICKER.status().surface === 'home');
     ok(await p.evaluate(() => document.activeElement?.id === 'rtitle' && !document.querySelector('#kb-occasion-panel') && KB_CELEBRATION_TICKER.status().activeInstances === 1), 'the explanation Home link closes its modal and focuses the new Home heading');
@@ -192,7 +192,9 @@ async function cpuPerSecond(p, ms = 2000) {
     for (const id of coverage) {
       await theme(p, id);
       facts = await navFacts(p);
-      ok(facts.layers === 1 && facts.title === 1 && facts.clip && facts.viewportParticles === 0 && facts.activeAnimations > 0 && facts.state.navbarPreset, id + ': one moving clipped header with no body particles');
+      // Nyepi is a day of silence: its top bar has the stamp and no edge.
+      const quiet = id === 'bali-nyepi';
+      ok((quiet ? facts.edges === 0 : facts.edges === 1 && facts.inside && Boolean(facts.state.edgePreset)) && facts.moving === 0 && facts.stamps === 1 && facts.brand === 1 && facts.viewportParticles === 0, id + ': Kitchen Book, a stamp and ' + (quiet ? 'no edge' : 'a still edge') + ', with no body particles');
     }
 
     // Glow and steam days, and Star Wars Day's blades, on a work page and on Home.
@@ -218,20 +220,17 @@ async function cpuPerSecond(p, ms = 2000) {
     }
     await go(p, '#/recipes');
 
-    for (const [id, motif] of [['in-diwali', 'diya'], ['np-tihar', 'marigold-string'], ['bali-galungan', 'penjor'], ['bali-kuningan', 'tamiang'], ['ph-pahiyas', 'kiping'], ['ph-christmas-day', 'parol']]) {
+    for (const [id, motif] of [['in-diwali', 'flame'], ['np-tihar', 'marigold'], ['bali-kuningan', 'tamiang'], ['ph-lunar-new-year', 'lantern'], ['au-melbourne-cup', 'horses'], ['au-christmas-day', 'snow']]) {
       await theme(p, id);
       facts = await navFacts(p);
-      ok(facts.ornaments.includes(motif) && facts.floaters <= 3, id + ': phone preserves its identifying anchored ornament and limits floating detail');
+      ok(facts.edgeMotif === motif, id + ': the edge repeats the festival\u2019s own motif (' + facts.edgeMotif + ')');
     }
 
     await theme(p, 'fun-st-patricks-day');
     ok(await p.evaluate(() => {
-      const title = document.querySelector('.kb-occasion-title-art');
-      const leaves = [...title.querySelectorAll('.kb-clover-leaf')];
-      return leaves.length === 4 && leaves.every(leaf => getComputedStyle(leaf).fill === 'rgb(46, 139, 87)');
-    }), 'St Patrick’s Day has four distinct green leaves against the Kitchenbook orange');
-    await theme(p, 'fun-star-wars-day');
-    ok(await p.locator('.kb-nav-festive-effects .kb-saber-blade').count() > 0, 'Star Wars Day has animated lightsabre blades');
+      const leaves = [...document.querySelectorAll('.kb-occasion-stamp .kb-stamp path')].filter(path => getComputedStyle(path).fill === 'rgb(46, 139, 87)');
+      return leaves.length >= 4;
+    }), 'St Patrick\u2019s Day keeps its four green leaves in the stamp');
 
     await go(p, '#/prep');
     await p.fill('#p-text', 'Keep this seasonal draft');
@@ -244,15 +243,19 @@ async function cpuPerSecond(p, ms = 2000) {
     for (const route of ['#/orders', '#/waste', '#/transfers', '#/guides', '#/r/pork-belly', '#/settings']) {
       await go(p, route);
       facts = await navFacts(p);
-      ok(facts.clip && facts.viewportParticles === 0 && facts.layers === 1 && facts.title === 1, route + ': movements stay inside the header');
+      ok(facts.inside && facts.viewportParticles === 0 && facts.edges === 1 && facts.stamps === 1 && facts.brand === 1 && facts.moving === 0, route + ': Kitchen Book, the stamp and a still edge');
     }
 
     for (const width of [390, 768, 1280]) {
       await p.setViewportSize({ width, height: 844 });
       await theme(p, 'ph-independence-day');
-      ok(!(await L.overflow(p)), width + ': long celebration title fits without sideways scroll');
+      const bar = await p.evaluate(() => document.querySelector('.wtop').getBoundingClientRect().height);
+      await theme(p, 'off');
+      const plain = await p.evaluate(() => document.querySelector('.wtop').getBoundingClientRect().height);
+      await theme(p, 'ph-independence-day');
+      ok(!(await L.overflow(p)), width + ': the stamp fits without sideways scroll');
       facts = await navFacts(p);
-      ok(facts.clip && facts.layers === 1, width + ': resizing retains one correctly clipped navbar layer');
+      ok(facts.inside && facts.edges === 1 && Math.abs(bar - plain) < 1, width + ': the top bar keeps its height (' + Math.round(bar) + ' px) with a celebration on');
     }
 
     await go(p, '#/settings');
@@ -287,14 +290,14 @@ async function cpuPerSecond(p, ms = 2000) {
     ok(await p.locator('.wtop-brand').count() === 1, 'Settings Off restores the Kitchen Book heading');
 
     await theme(p, 'au-christmas-day', 'still');
-    ok(await p.evaluate(() => KB_EFFECTS.status().state === 'still' && !document.getAnimations().some(a => a.playState === 'running' && a.effect?.target?.closest?.('.kb-nav-festive-effects,.kb-occasion-title-art,.wtop-who'))), 'Still stops every seasonal header animation');
+    ok(await p.evaluate(() => KB_EFFECTS.status().state === 'still' && !document.getAnimations().some(a => a.playState === 'running' && a.effect?.target?.closest?.('.kb-nav-edge,.kb-occasion-stamp,.kb-hang,#kb-festive-effects'))), 'Still stops every seasonal header animation');
     await theme(p, 'au-christmas-day');
     await p.emulateMedia({ reducedMotion: 'reduce' });
     await p.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-    ok(await p.evaluate(() => KB_EFFECTS.status().state === 'reduced-motion' && !document.getAnimations().some(a => a.playState === 'running' && a.effect?.target?.closest?.('.kb-nav-festive-effects,.kb-occasion-title-art,.wtop-who'))), 'device reduced motion stops seasonal movement');
+    ok(await p.evaluate(() => KB_EFFECTS.status().state === 'reduced-motion' && !document.getAnimations().some(a => a.playState === 'running' && a.effect?.target?.closest?.('.kb-nav-edge,.kb-occasion-stamp,.kb-hang,#kb-festive-effects'))), 'device reduced motion stops seasonal movement');
     await p.emulateMedia({ reducedMotion: 'no-preference' });
     await theme(p, 'off');
-    ok(await p.locator('.kb-occasion-title,.kb-nav-festive-effects,.kb-season-note,#kb-occasion-panel').count() === 0 && await p.locator('.wtop-brand').count() === 1, 'Off removes festival UI and restores the original Kitchen Book title');
+    ok(await p.locator('.kb-occasion-stamp,.kb-nav-edge,.kb-season-note,#kb-occasion-panel').count() === 0 && await p.locator('.wtop-brand').count() === 1, 'Off removes festival UI and restores the original Kitchen Book title');
     ok(await p.evaluate(() => KB_CELEBRATION_TICKER.status().activeInstances === 0 && KB_CELEBRATION_TICKER.status().timerCount === 0), 'Off leaves no running explanation or timer');
     await p.reload(); await ready(p);
     ok(await p.evaluate(() => document.querySelector('#app').dataset.kbTheme === 'off'), 'Off is saved on this device across reloads');

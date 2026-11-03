@@ -24,12 +24,10 @@
   function isHome() { return /^#\/(?:\?.*)?$/.test(location.hash || '#/') && Boolean(root.querySelector('.wall-main .dockets')); }
   function aboutButton() { return root.querySelector('.kb-occasion-trigger'); }
   function restoreBrand() {
+    // Kitchen Book stays in the top bar (3 Nov 2026). Older pages replaced it with the celebration title; put it back.
     const start = root.querySelector('.wtop-start'), title = start?.querySelector('.kb-occasion-title');
-    if (title) {
-      const original = originalBrands.get(start);
-      if (original) title.replaceWith(original); else title.remove();
-    }
-    root.querySelectorAll('.wtop-icons .kb-occasion-trigger').forEach(button => button.remove());
+    if (title) { const original = originalBrands.get(start); if (original) title.replaceWith(original); else title.remove(); }
+    root.querySelectorAll('.kb-occasion-stamp,.wtop-icons .kb-occasion-trigger').forEach(button => button.remove());
   }
   function stopHandoff() {
     clearTimeout(handoffTimer); handoffTimer = 0;
@@ -92,25 +90,26 @@
     publishSoon();
   }
   function workControl() {
+    // Work pages keep Kitchen Book and the chef hat. A stamp beside the name opens the explanation.
     const start = root.querySelector('.wtop-start');
     if (!start) return null;
-    root.querySelectorAll('.wtop-icons .kb-occasion-trigger').forEach(button => button.remove());
-    let button = start.querySelector('.kb-occasion-title');
+    const title = start.querySelector('.kb-occasion-title');
+    if (title) { const original = originalBrands.get(start); if (original) title.replaceWith(original); else title.remove(); }
+    let button = start.querySelector('.kb-occasion-stamp');
     if (!button) {
       button = document.createElement('button'); button.type = 'button';
-      button.className = 'kb-occasion-trigger kb-occasion-title';
+      button.className = 'kb-occasion-trigger kb-occasion-stamp';
       button.setAttribute('aria-haspopup', 'dialog'); button.setAttribute('aria-controls', 'kb-occasion-panel');
       button.setAttribute('aria-expanded', String(aboutOpen));
       button.addEventListener('click', () => aboutOpen ? closeAbout(true) : openAbout());
       const brand = start.querySelector('.wtop-brand');
-      if (brand) { originalBrands.set(start, brand); brand.replaceWith(button); } else start.append(button);
+      if (brand) brand.after(button); else start.append(button);
     }
     if (button.dataset.occasion !== state.theme.id) {
-      const label = labelFor(state.theme);
-      button.innerHTML = '<span class="kb-occasion-title-art kb-occasion-glyph" aria-hidden="true">' + art(state.theme.icon, state.theme) + '</span><span class="kb-occasion-title-copy">' + esc(label) + '</span>';
+      button.innerHTML = '<span class="kb-occasion-glyph" aria-hidden="true">' + (window.KB_STAMPS?.svg(state.theme.id) || art(state.theme.icon, state.theme)) + '</span>';
       button.dataset.occasion = state.theme.id;
-      button.setAttribute('aria-label', state.theme.label + ': About this occasion');
-      button.title = state.theme.label + ' · About this occasion';
+      button.setAttribute('aria-label', state.theme.label + ': what it is');
+      button.title = state.theme.label;
       root.dataset.kbEffects = '';
     }
     if (handoffPending) handoff(button);
