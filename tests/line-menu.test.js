@@ -38,9 +38,9 @@ const vis = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); r
   ok(!(await p.$('#lm-sheet .lm-act')) && (await p.$$('#lm-sheet .lm-fix')).length === 2, 'staff phone: the ⋯ has Change amount and Move to section, no Remove');
   await p.context().close();
 
-  // laptop: Remove and the name stay in the line; a ⋯ shows only where it holds Change amount (3 Nov 2026)
+  // laptop: Remove and the name stay in the line; a ⋯ shows only on today's lines for someone ticked for Add (3 Nov 2026)
   p = await L.open(b, '#/prep', { width: 1280, height: 900, wait: 1500 });
-  ok(await vis(p, '.nb-row .nb-x') && await vis(p, '.nb-row .nb-wrote') && await p.evaluate(() => [...document.querySelectorAll('.nb-more')].filter(e => getComputedStyle(e).display !== 'none').every(e => e.classList.contains('nb-more-fix'))), 'laptop: Remove and the name in the line; a ⋯ only where it holds Change amount');
+  ok(await vis(p, '.nb-row .nb-x') && await vis(p, '.nb-row .nb-wrote') && await p.evaluate(() => [...document.querySelectorAll('.nb-more')].filter(e => getComputedStyle(e).display !== 'none').every(e => e.classList.contains('nb-more-fix'))), 'laptop: Remove and the name in the line; a ⋯ only on lines it may fix');
   await p.context().close();
 
   // orders on a phone: the same menu

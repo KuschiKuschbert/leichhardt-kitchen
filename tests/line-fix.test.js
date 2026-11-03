@@ -54,6 +54,16 @@ async function openMenu(p, sel) { await p.click(sel + ' .nb-more'); await L.sett
   await p.fill('#lm-v', '9 tubs'); await p.keyboard.press('Escape'); await L.settle(p, 200);
   ok(!(await p.$('#lm-sheet')) && (await doc(p, ['days', today, 'items', 'i1'])).qty === '2 tubs', 'Escape closes the form and saves nothing');
 
+  // a ticked line keeps its ⋯, so the row keeps its shape (a tick moves no row, 20 Oct 2026); the sheet then says who
+  // prepared it, with nothing to change
+  const h0 = await p.$eval('#nbr-i1', e => Math.round(e.getBoundingClientRect().height));
+  await p.click('#nbr-i1 .nb-box'); await L.settle(p, 400);
+  ok(await p.$eval('#nbr-i1', e => e.classList.contains('is-done')) && await p.$eval('#nbr-i1 .nb-more', e => getComputedStyle(e).display !== 'none'), 'ticked: the line keeps its ⋯');
+  ok(await p.$eval('#nbr-i1', e => Math.round(e.getBoundingClientRect().height)) === h0, 'ticked: the row keeps its height (' + h0 + ' px)');
+  await openMenu(p, '#nbr-i1');
+  ok(!(await p.$('#lm-sheet .lm-fix')) && /prepared by Ann/.test(await txt(p, '#lm-sheet .lm-who') || ''), 'ticked: the sheet says who prepared it, with no Change amount (' + await txt(p, '#lm-sheet .lm-who') + ')');
+  await p.keyboard.press('Escape'); await L.settle(p, 150);
+
   // a function's line keeps its numbers: no ⋯ for staff
   ok(!(await p.$('#nbr-fn1 .nb-more')), 'a function line has no Change amount');
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'staff phone: no sideways scroll, no page errors ' + p.errors.join(' | '));
