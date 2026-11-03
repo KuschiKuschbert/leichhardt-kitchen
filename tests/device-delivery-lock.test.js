@@ -8,10 +8,12 @@ const receiptList = p => p.evaluate(prefix => Object.entries(__fake.dump()).filt
 const values = p => p.evaluate(fields => Object.fromEntries(fields.map(name => [name, document.getElementById('dl-' + name).value])), fields);
 async function fill(p, supplier) {
   await p.fill('#dl-supplier', supplier);
-  await p.fill('#dl-time', '03:45');
+  // design A (3 Nov 2026): the time, the Both choice and the notes each open with one tap
+  await p.click('[data-dl="time"]'); await p.fill('#dl-time', '03:45');
+  await p.click('[data-dl="mode"][data-mode="both"]');
   await p.fill('#dl-chilled', '0');
   await p.fill('#dl-frozen', '-18.5');
-  await p.fill('#dl-note', 'Original receiving details');
+  await p.click('[data-dl="note"]'); await p.fill('#dl-note', 'Original receiving details');
 }
 async function unlock(p, id, pin) {
   const choice = p.locator('.p-name[data-id="' + id + '"]');
@@ -135,7 +137,7 @@ async function dailyLock(p) {
   await p.evaluate(() => LK_PREP.signOut(true)); await L.settle(p, 300);
   ok(!await p.evaluate(() => LK_DELIVERY.dirty()) && !await p.$('#dl-form'), 'manual sign-out clears the delivery draft and private screen');
   await unlock(p, 'bo', '3333');
-  ok(await p.inputValue('#dl-supplier') === '' && await p.inputValue('#dl-note') === '' && !(await receiptList(p)).length, 'the next signed-in person receives a fresh form and no previous receiver\'s payload');
+  ok(await p.inputValue('#dl-supplier') === '' && !(await p.$('#dl-note')) && await p.evaluate(() => LK_DELIVERY.dirty()) === false && !(await receiptList(p)).length, 'the next signed-in person receives a fresh form and no previous receiver\'s payload');
   ok(!p.errors.length, 'manual receiving handover has no browser errors ' + p.errors.join(' | '));
   await p.context().close(); await b.close(); L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
