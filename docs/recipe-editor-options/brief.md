@@ -2,7 +2,7 @@
 
 Requested 3 November 2026 by the head chef: "The recipe and drawing page seems a bit too complicated. I love what it can do but it needs a better UI/UX. Audit it and recommend two new designs."
 
-Status: **waiting for the head chef's choice.** No app code changed. The two designs are example pages with the public Chicken Burger card and the book's own drawings. They never read or write the book. The head chef asked for two designs, so this record has two, not the three the whole-app audit brief usually asks for.
+Status: **chosen 3 November 2026: A's chapters for the recipe form, with B's full-screen studio for drawings.** See Chosen, below. This record changes no app code; each build step is its own pull request. The two designs are example pages with the public Chicken Burger card and the book's own drawings. They never read or write the book. The head chef asked for two designs, so this record has two, not the three the whole-app audit brief usually asks for.
 
 Open the comparison: `docs/recipe-editor-options/index.html` (live at `/leichhardt-kitchen/docs/recipe-editor-options/` after merge). Try the designs: `a.html` and `b.html`.
 
@@ -80,6 +80,22 @@ The editor is the card staff see. In Edit every block is a button with a pencil:
 **A, Chapters and a studio.** It fixes every finding, follows the admin layout the head chef already chose, and can ship in small steps that each roll back on their own. It keeps the field ids and click names the tests and drafts rely on. B is the more striking idea and the most direct for a phone, but it needs the staff card's drawing code shared with the editor and a full-screen studio that has to work with Back, sheets and saved drafts. That is more risk to pages staff use every shift.
 
 The studio halves are independent. "A's recipe chapters with B's full-screen studio" is a fair mix if the head chef likes B's studio better.
+
+## Chosen (3 November 2026)
+
+The head chef: "I trust your recommendations and go with a mix of both." That is the mix recommended above:
+
+- **Recipe form, list and Drawings chapter from A.** Six chapters, rows you type in, pictures for drawings, rare fields folded away, kinds kept apart from states on the list.
+- **Studio from B.** Full screen, canvas first, one dock (Draw it for me, Add, Plate, Labels, Check, More), a small bar beside the picked part, panels in a drawer that keeps the canvas and Save in view.
+
+Acceptance for the build:
+
+1. Every capability in the table below stays reachable, for the head chef, sous chefs and admin, with today's permissions, reads, writes, drafts, version checks and save batches. No new Firestore reads or fields.
+2. The recipe opens on Ingredients. A chapter shows a dot for an unsaved change and a mark for a fix; an error jumps to its chapter and field. The field ids and `data-f` names stay, so kept drafts open as before.
+3. Amount and name are typed in the row; one recipe link control per row; Scale amounts opens a sheet.
+4. Drawings show as pictures. Labels on a drawing made in the book are changed in the studio; labels on the book's own drawings stay in the Drawings chapter.
+5. The studio covers the top bar and tab bar. Close and the book's Back return to the recipe and keep an unsaved drawing as a draft, as today. Escape closes an open drawer first. The picked part's bar has Swap, Colour, Label, More and a red Delete; arranging says "To the back", not "Back".
+6. No sideways scroll and no page errors at 390, 768 and 1280 px; keyboard reachable; the click tests updated in the same pull request as each step.
 
 ## Every capability stays
 
