@@ -53,3 +53,8 @@ This feature corrects source wording and prevents future spelling replacements. 
 - Manual backup, nightly backup and PIN copying preserve fields and audit records. The backup regression fails against the previous script because `proofHistory` is missing.
 
 Run the browser suite, rules suite and the existing `scripts/delivery-backup-check.mjs` emulator check. Publish the additive repair rules from the feature branch before merging the client. Existing unmodified lines retain their previous write contract. Require green Click tests, run `scripts/pre-merge.sh`, squash merge, then check Pages, the Lock probe and live tests. Roll back client defects with a revert PR while preserving stored history and private access. Old clients ignore the new word list until updated and cannot undo an acknowledged manual repair.
+
+## Working rules (moved from CLAUDE.md, 3 Nov 2026)
+
+Keep each admin repair or word revision atomic with immutable private `proofHistory`, using `W()`.
+Reuse the existing config listener and report caches; preserve all repair fields and history in backups and PIN moves.

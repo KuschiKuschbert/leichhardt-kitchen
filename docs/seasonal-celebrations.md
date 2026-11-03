@@ -39,3 +39,7 @@ Combined validation reproduced a recipe startup race on the previous live app as
 `tests/seasonal.test.js` exercises the real app with fake Firebase: main and variant header effects, mobile ornaments, Home/work handoff, all six languages, no picker, focus and typing, Settings, Still, Off and reduced motion. `tests/seasonal-calendar.test.js` checks dates, overlaps, boundaries and finite annual coverage. `tests/seasonal-shell.test.js` checks atomic asset membership and nested script syntax. Existing saved-copy and shell-generation browser checks cover the expanded shell. The full click suite and required PR gate precede release; the live click suite follows Pages publication.
 
 Revert this feature through a new PR to remove celebrations. Keep the current saved-shell generation protocol and access/session contract. The unused device preference is harmless and no kitchen records need reverting.
+
+## Working rules (moved from CLAUDE.md, 3 Nov 2026)
+
+Preserve Home ambience, work-navbar confinement, automatic six-language cycling, manual/Still/Off controls and the immutable offline shell.
