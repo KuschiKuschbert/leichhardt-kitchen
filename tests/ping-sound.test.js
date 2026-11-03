@@ -14,6 +14,19 @@ const ping = (id, text, x) => ({ [fsKey(['notes', id])]: Object.assign({ text, t
 const withSound = (v, extra) => Object.assign({ [CFG]: Object.assign(L.seed()[CFG], { pingSound: v }) }, extra || {});
 // every oscillator the page starts, by its pitch (Hz, rounded to 0.1)
 const listen = () => {
+  // window.__slow: waking the sound takes 3000 real turns of the page (a busy phone or test runner) while the test's
+  // clock runs on; window.__hold: the browser holds the sound back until window.__release() (as it does until a tap)
+  const A0 = window.AudioContext || window.webkitAudioContext;
+  if (A0) {
+    const r0 = A0.prototype.resume;
+    A0.prototype.resume = function () {
+      const q = r0.call(this);
+      if (window.__hold) return q.then(() => new Promise(res => (window.__held = window.__held || []).push(res)));
+      if (!window.__slow) return q;
+      return q.then(() => new Promise(res => { const ch = new MessageChannel(); let n = 0; ch.port1.onmessage = () => { if (++n > 3000) res(); else ch.port2.postMessage(0); }; ch.port2.postMessage(0); }));
+    };
+    window.__release = () => { window.__hold = false; (window.__held || []).splice(0).forEach(f => f()); };
+  }
   window.__osc = [];
   const A = window.AudioContext || window.webkitAudioContext;
   if (!A) return;
@@ -110,6 +123,18 @@ const picks = p => p.evaluate(() => [...document.querySelectorAll('.ps-pick')].m
   ok(p.errors.length === 0, 'Off: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // a sound the browser held back until someone tapped is dropped, never rung late on that tap
+  p = await L.open(b, '#/prep', { who: 'ann', touch: true, init: listen, extra: withSound('bell', ping('n6', 'Walk-in is full, use the freezer', { tm: 900 })), wait: 2000 });
+  await p.tap('#rtitle'); await L.settle(p, 200);
+  await p.evaluate(() => { window.__osc = []; window.__hold = true; });
+  await p.clock.runFor(61 * 60000); await L.settle(p, 400);
+  await L.waitFor(p, () => !!document.querySelector('.nt')).catch(() => {});
+  await p.tap('.nt-h'); await L.settle(p, 200);
+  await p.evaluate(() => window.__release()); await L.settle(p, 600);
+  ok(!!(await p.$('.nt')) && (await heard(p)).length === 0, 'held back: the ping pops up, and its sound held back until a tap does not ring late on that tap (' + (await heard(p)).join(', ') + ')');
+  ok(p.errors.length === 0, 'held back: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // the start of a shift with an unread ping rings too, and a value that is not one of the sounds (it comes from
   // Firestore) plays the Pass bell (the test browser lets a page play sound before a tap)
   p = await L.open(b, '#/prep', { who: 'ann', touch: true, board: true, init: listen, extra: withSound('<b>loud</b>', ping('n3', 'Safety: walk-in door sticks', { tag: 'safety', tm: 835 })), wait: 2000 });
@@ -128,6 +153,41 @@ const picks = p => p.evaluate(() => [...document.querySelectorAll('.ps-pick')].m
   p = await L.open(b, '#/prep', { who: 'sam', wait: 2000 });
   await L.chef(p, 'pings'); await L.settle(p, 400);
   ok(!!(await p.$('[data-p="n-new"]')) && !(await p.$('.ps-block')), 'sous chef: Shift pings has no Ping sound block');
+  await p.context().close();
+
+  // One sound for the whole kitchen (head chef, 3 Nov 2026): the head chef's PIN on a phone that is not their Google
+  // admin device writes pings but cannot pick the sound either, and no Settings page offers a sound of its own
+  p = await L.open(b, '#/prep', { admin: true, ownerGoogle: false, wait: 2000 });
+  await L.chef(p, 'pings'); await L.settle(p, 400);
+  ok(!!(await p.$('[data-p="n-new"]')) && !(await p.$('.ps-block')), 'head chef on a PIN only: Shift pings has no Ping sound block');
+  await p.context().close();
+  for (const who of ['ann', 'sam']) {
+    p = await L.open(b, '#/settings', { who, wait: 1500 });
+    const t = await p.evaluate(() => (document.querySelector('#main') || document.body).textContent);
+    ok(!/sound|ring ?tone/i.test(t) && !(await p.$('.ps-block, [data-p^="ps-"]')), who + ': Settings has no ping sound of its own');
+    await p.context().close();
+  }
+
+  // every phone plays the head chef's sound, and a new pick reaches a phone already open without a reload
+  p = await L.open(b, '#/prep', { who: 'sam', touch: true, init: listen, extra: withSound('marimba', Object.assign(ping('n4', 'Briefing at the pass', { tm: 900 }), ping('n5', 'Fryer oil change', { tm: 940 }))), wait: 2000 });
+  await p.tap('#rtitle'); await L.settle(p, 200);
+  await p.evaluate(() => { window.__osc = []; });
+  await p.clock.runFor(61 * 60000); await L.settle(p, 400);
+  await L.waitFor(p, () => !!document.querySelector('.nt')).catch(() => {});
+  await waitHeard(p, 3);
+  h = await heard(p);
+  ok(MARIMBA.every(f => count(h, f) === 1) && count(h, TIMER) === 0, 'sous chef phone: the 15:00 ping plays the head chef\'s Marimba (' + h.join(', ') + ')');
+  await p.tap('.nt-got'); await L.settle(p, 200);
+  await p.evaluate(k => { const d = window.__fake.dump(); window.__fake.write(k, Object.assign({}, d[k], { pingSound: 'timer' })); }, CFG);
+  await L.settle(p, 400);
+  // a busy phone: the sound takes a while to wake, and still rings (a 1.5 s limit dropped it on GitHub, 4 Nov 2026)
+  await p.evaluate(() => { window.__osc = []; window.__slow = true; });
+  await p.clock.runFor(40 * 60000); await L.settle(p, 400);
+  await L.waitFor(p, () => /Fryer oil/.test((document.querySelector('.nt') || {}).textContent || '')).catch(() => {});
+  await waitHeard(p, 3);
+  h = await heard(p);
+  ok(count(h, TIMER) === 3 && MARIMBA.every(f => count(h, f) === 0), 'sous chef phone: after the head chef picks Oven timer, the 15:40 ping plays it with no reload (' + h.join(', ') + ')');
+  ok(p.errors.length === 0, 'one sound: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // js/chime.js does not load: the admin tab says so, the People save keeps the sound as stored, pings still pop up
