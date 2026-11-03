@@ -63,6 +63,44 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
     await p.context().close();
   }
 
+  // Needs you: open mail, minutes still to sign and an overdue action, a transfer not back, each opening its page.
+  const ago = d => L.ymd(new Date(L.NOW - d * DAY));
+  const loan = { dir: 'out', venue: 'Venue B', person: 'Jo', text: 'Butter', amount: 2, unit: 'kg', note: '', addedBy: 'Bo', addedById: 'bo', addedAt: L.NOW - 9 * DAY, deleted: false, by: 'bo' };
+  const waiting = { ...extra, ...L.mail(),
+    [path('minutes', 'mx')]: { no: 3, v: 1, status: 'published', date: ago(5), start: '14:00', loc: 'Kitchen', chair: 'sam', taker: 'sam', att: [{ id: 'ann', st: 'present' }, { id: 'sam', st: 'present' }],
+      guests: '', decisions: 'Fryer oil every Monday', menu: '', safety: '', dates: '', other: '', acts: [{ text: 'Fix the cool room seal', who: 'sam', by: ago(2), st: 'open' }], next: '',
+      pubAt: L.NOW - 5 * DAY, removed: false, at: L.NOW - 5 * DAY, upd: L.NOW - 5 * DAY },
+    [path('minutes', 'mx', 'signs', '1_sam')]: { v: 1, st: 'read', at: L.NOW - 4 * DAY, name: 'Sam', by: 'sam' },
+    [path('transfers', ago(9), 'lines', 'l1')]: loan, [path('transferOpen', ago(9) + '_l1')]: { date: ago(9), lineId: 'l1', record: loan, open: true } };
+  for (const width of [390, 1280]) {
+    const q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width, height: 900, extra: waiting, wait: 1600 });
+    await ready(q);
+    await L.waitFor(q, () => { const t = (document.querySelector('.dsh-needs') || {}).textContent || ''; return /kitchen mails open/.test(t) && /still to sign/.test(t) && /not returned/.test(t); }, null, 10000).catch(() => {});
+    const needs = await L.txt(q, '.dsh-needs');
+    ok(/3 kitchen mails open/.test(needs), width + ': Needs you counts the open kitchen mail (' + needs.slice(0, 200) + ')');
+    ok(/Late/.test(needs) && /still to sign/.test(needs) && /1 of \d+ signed/.test(needs), width + ': Needs you says who has not signed the late minutes');
+    ok(/1 meeting action past the date/.test(needs), width + ': Needs you lists the overdue meeting action');
+    ok(/1 transfer not returned/.test(needs) && /Oldest: Butter to Venue B, 9 days/.test(needs), width + ': Needs you lists the transfer not back, with the oldest');
+    ok(/The nightly run finished\./.test(needs), width + ': the nightly run counts as clear when it finished');
+    ok(!await L.overflow(q), width + ': no sideways scroll with Needs you');
+    // The existing mail pop-up comes up by itself when mail is open; close it like a person would.
+    await q.evaluate(() => { const x = document.querySelector('.mlp-wrap [data-ml="later"]'); if (x) x.click(); }); await L.settle(q, 300);
+    await q.click('.dsh-needs [data-dsh="open"][data-t="mail"]'); await L.settle(q, 300);
+    ok(await q.evaluate(() => LK_PREP.state.atab) === 'mail', width + ': Open mail opens the Kitchen mail page');
+    await q.context().close();
+  }
+  let q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: 1280, extra, failReads: 'transferOpen', wait: 1600 });
+  await ready(q);
+  await L.waitFor(q, () => /Could not load the open transfers/.test(document.body.textContent), null, 8000).catch(() => {});
+  ok(/Could not load the open transfers/.test(await L.txt(q, '.dsh-needs')), 'a failed transfers read says so, never "nothing waiting"');
+  ok(!/Nothing waiting for[^.]*transfers/.test(await L.txt(q, '.dsh-needs')), 'a failed transfers read is not counted as clear');
+  await q.context().close();
+  q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: 1280, extra, wait: 1600 });
+  await ready(q);
+  await L.waitFor(q, () => /Nothing waiting/.test(document.body.textContent), null, 8000).catch(() => {});
+  ok(/Nothing waiting for [^.]*transfers\. The nightly run finished\./.test(await L.txt(q, '.dsh-needs')), 'with nothing waiting, Needs you says so in words');
+  await q.context().close();
+
   let p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: 390, extra, failReads: 'analysis/dashboard', wait: 1600 });
   await L.waitFor(p, () => /Could not load the dashboard numbers/.test(document.body.textContent), null, 8000);
   ok(await p.locator('.dsh-tile').count() === 0, 'a failed read says so and shows no numbers');
