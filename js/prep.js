@@ -2589,6 +2589,7 @@
       }),
       kitSecs: ksClean(cfg.kitSecs !== undefined ? cfg.kitSecs : ((S.config && S.config.kitSecs) || [])), showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
       sousMail: !!(S.config && S.config.sousMail === true),   // set only from the Kitchen mail tab (mlSousSet)
+      pingSound: pingSound(),   // set only from the Shift pings tab (pingSoundSet); kept as stored if js/chime.js did not load
       cutoffs: (function (l) { return CUT_OK ? cutClean(l) : (Array.isArray(l) ? l : []); })(S.config && S.config.cutoffs),   // set only from the Order cut-offs page (cutSave); kept as stored if js/cutoffs.js did not load
       sousIds: hold ? (hold.sousIds || []) : idsFor(cfg.people, isSousP), pingIds: hold ? (hold.pingIds || []) : idsFor(cfg.people, canPingP),
       fnIds: hold ? (hold.fnIds || []) : idsFor(cfg.people, fnP),
@@ -4554,7 +4555,7 @@
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() : at === 'people' ? (
+    var pane = INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Create/edit functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it. Function editing still has its own tick.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       '<p class="hint">Tick Create/edit functions beside a person, then save. Their kitchen role stays the same.</p>' + peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
@@ -4637,7 +4638,8 @@
     var pane = S.root && S.root.querySelector('.a-pane');
     if (!pane || pane.querySelector('.ai-desk, .ai-detail')) return [];
     var hs = pane.querySelectorAll('.a-sh');
-    if (!hs.length) hs = pane.querySelectorAll(':scope > .set-block > .label:first-child, :scope > .set-block > h3.a-ch-h, .ai-workspace > .set-block > .label');
+    // the Shift pings tab's editor and list sit in their own workspace (.n-ws), with Ping sound under them
+    if (!hs.length) hs = pane.querySelectorAll(':scope > .set-block > .label:first-child, :scope > .set-block > h3.a-ch-h, .ai-workspace > .set-block > .label, :scope > .n-ws > .n-ed > .set-block > .label:first-child, :scope > .n-ws > .n-lst > .n-lh .label:first-child');
     return Array.prototype.filter.call(hs, function (h) { return h.offsetParent && h.textContent.trim(); });
   }
   function adminJumps() {
@@ -6156,6 +6158,7 @@
     document.documentElement.classList.add('note-open');
     loadWNote();
     var got = el.querySelector('.nt-got') || el.querySelector('.nt-a') || el.querySelector('.nt-later'); if (got) got.focus({ preventScroll: true });
+    if (pv || (unread && (why === 'start' || why === 'due'))) noteChime();
   }
   /* how: 'got' (Got it: the pings are read; with minutes to sign the sheet goes on to them), 'read' (a link in a ping or
      Write or edit pings: read, and close), 'later' (Close, Escape, a tap outside, Back: put off for this person, they do
@@ -6182,6 +6185,46 @@
     if (noBack) setTimeout(sheetNext, 0); else sheetNext();
   }
   function noteMarkSeen() { lsSet(noteSeenKey(), JSON.stringify({ d: dayNow(), sig: noteSig(todaysNotes()) })); noteBell(); }
+  /* Ping sound (3 Nov 2026, head chef): so nobody misses a ping, the phone plays a sound when the pings sheet pops up by
+     itself with a new ping (noteOpen 'start' or 'due', so once for each ping that pops up, never from the bell), and with
+     Preview. The head chef picks one of five sounds, or Off, in the admin panel's Shift pings tab (pingSoundHTML()).
+     config/main.pingSound, written only by the verified admin (pingSoundSet(), the rules' isAdmin()), read on the config
+     listener every phone already has: no reads of its own. It comes from Firestore, so it is checked against the fixed
+     list in js/chime.js; nothing set, or anything else, is the Pass bell. docs/ping-sound.md */
+  function pingSound() {
+    var v = S.config && S.config.pingSound, C = window.LK_CHIME;
+    if (v === 'off') return 'off';
+    if (C) return C.has(v) ? v : C.first;
+    return typeof v === 'string' && /^[a-z]{1,16}$/.test(v) ? v : 'bell';   // js/chime.js did not load: kept as stored
+  }
+  function noteChime() { var v = pingSound(); if (v !== 'off' && window.LK_CHIME) window.LK_CHIME.play(v); }
+  // the head chef's own Google device with their PIN and its grant: the only one the rules let save the sound
+  function pingSoundOK() { return S.level === 'owner' && ownerHere(); }
+  function pingSoundHTML() {
+    var C = window.LK_CHIME;
+    if (!pingSoundOK()) return '';
+    if (!C) return '<section class="set-block ps-block"><span class="label">Ping sound</span><p class="warn">The ping sounds could not load on this device. Refresh the page to choose one.</p></section>';
+    var cur = S.psWant || pingSound(), busy = !!S.psWant;
+    var rows = C.list.concat([{ id: 'off', name: 'Off', say: 'No sound. Pings still pop up on the screen.' }]).map(function (o) {
+      return '<div class="ps-row"><button type="button" class="ps-pick" role="radio" data-p="ps-pick" data-v="' + esc(o.id) + '" aria-checked="' + (cur === o.id) + '"' + (busy ? ' disabled' : '') + '><strong>' + esc(o.name) + '</strong><span>' + esc(o.say) + '</span></button>' +
+        (o.id === 'off' ? '' : '<button type="button" class="btn ps-play" data-p="ps-play" data-v="' + esc(o.id) + '" aria-label="Play ' + esc(o.name) + '">Play</button>') + '</div>';
+    }).join('');
+    return '<section class="set-block ps-block"><span class="label" id="ps-h">Ping sound</span>' +
+      '<span class="hint">Every phone and tablet plays it when a ping pops up, so nobody misses one. Tap Play to listen first. A phone on silent stays silent, and a phone plays sounds only once someone has tapped it since the book opened.</span>' +
+      '<div class="ps-list" role="radiogroup" aria-labelledby="ps-h">' + rows + '</div><span class="saved" role="status">' + esc(S.psMsg || '') + '</span></section>';
+  }
+  // one small merge into config/main; every phone has it at once through its config listener
+  function pingSoundSet(v) {
+    var C = window.LK_CHIME, name = v === 'off' ? 'Off' : ((C && C.list.filter(function (o) { return o.id === v; })[0]) || {}).name;
+    if (!pingSoundOK() || !name || S.psWant) return;
+    if (v === pingSound()) { S.psMsg = ''; draw(); return; }
+    S.psWant = v; S.psMsg = 'Saving...'; draw();
+    sset(cfgDoc(), { pingSound: v }, true).then(function () {
+      S.psWant = ''; S.psMsg = v === 'off' ? 'Saved. Pings pop up with no sound now.' : 'Saved. Every phone plays ' + name + ' when a ping pops up.'; draw();
+    }, function (e) {
+      S.psWant = ''; S.psMsg = e && e.code === 'permission-denied' ? 'Not saved. Only the head chef\'s Google account can change the ping sound.' : 'Could not save. Check the connection and try again.'; draw();
+    });
+  }
   /* The start of a shift waits for the day's pings, minutes and this person's sign-offs, so the sheet opens once with
      everything. A read that failed is not waited for (it tries again later; the 10:30 pings still pop up). */
   function noteReads() {
@@ -8977,6 +9020,9 @@
     if (a === 'n-past') { S.nPastOpen = !S.nPastOpen; if (S.nPastOpen && !Array.isArray(S.nPast)) loadPastNotes(); else draw(); return; }
     if (a === 'n-seen') { loadSeen(id); return; }
     if (a === 'n-del') { removeNote(id); return; }
+    // Play only listens; picking a sound plays it too, then saves it for every phone
+    if (a === 'ps-play') { if (window.LK_CHIME) window.LK_CHIME.play(el.getAttribute('data-v')); return; }
+    if (a === 'ps-pick') { var pv2 = el.getAttribute('data-v'); if (window.LK_CHIME && pv2 !== 'off') window.LK_CHIME.play(pv2); pingSoundSet(pv2); return; }
     if (a === 'n-preview') {
       var pf = S.nf, pd = pf && pf.text.replace(/\s+/g, '') ? nfDraft(pf) : null;
       if (pd) noteOpen({ list: [pd], label: noteWhen(pd) + (pd.start > dayNow() ? ' (not saved yet)' : ' (not saved)') });
