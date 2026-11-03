@@ -19,7 +19,7 @@ async function open(b, options) {
   return p;
 }
 // Scale amounts opens the multiplier (3 Nov 2026); it stays open while it has something to say
-async function scale(p) { if (!await p.$('#mg-multiplier')) { await p.click('[data-mg="scale"]'); await L.waitFor(p, () => !!document.getElementById('mg-multiplier')); } }
+async function scale(p) { await L.reveal(p, '[data-mg="scale"]'); if (!await p.$('#mg-multiplier')) { await p.click('[data-mg="scale"]'); await L.waitFor(p, () => !!document.getElementById('mg-multiplier')); } }
 async function apply(p, factor) { await scale(p); await p.fill('#mg-multiplier', factor); await p.click('[data-mg="multiply"]'); }
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 // Hold this one authorised recipe response until the lazy editor has opened. This reproduces a slow
@@ -66,7 +66,7 @@ async function coldRecipeChecks(b) {
     ok(await p.locator('[data-mg="kept-use"]').count() === 1, 'late recipe recovery offers the existing kept draft');
     await p.click('[data-mg="kept-use"]');
     ok((await quantities(p))[0] === '200 g', 'accepting the kept draft restores its quantity instead of replacing it');
-    await p.fill('[data-f="ing.0.q"]', '123 g');
+    await L.reveal(p, '[data-f="ing.0.q"]'); await p.fill('[data-f="ing.0.q"]', '123 g');
     await p.evaluate(() => {
       const item = structuredClone(LK_RX.change('multiply-test'));
       item.v += 1; item.r.name = 'Later server copy';
@@ -169,9 +169,9 @@ async function coldRecipeChecks(b) {
       }
       await apply(p, '0,5');
       ok((await quantities(p))[0] === '50 g', 'decimal comma halves the current draft');
-      await p.fill('[data-f="ing.0.q"]', '60 g');
+      await L.reveal(p, '[data-f="ing.0.q"]'); await p.fill('[data-f="ing.0.q"]', '60 g');
       await L.openRow(p, 1);
-      await p.click('[data-mg="ing-up"][data-i="1"]');
+      await L.reveal(p, '[data-mg="ing-up"][data-i="1"]'); await p.click('[data-mg="ing-up"][data-i="1"]');
       await p.click('[data-mg="multiply-undo"]');
       ok(same((await quantities(p)).slice(0, 3), ['½ portion', '60 g', '1 1/2 L']), 'Undo follows moved rows and preserves a later manual quantity edit');
       await p.context().close();

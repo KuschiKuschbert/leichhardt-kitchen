@@ -19,14 +19,14 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   // a new batch recipe: saved, then its GN pan is drawn from its card by itself, linked and labelled
   p = await L.open(b, '#/manage/new', { who: 'ann', extra: cfg(), wait: 1400 });
   await editor(p);
-  await p.fill('#mg-name', 'Pickled Chillies');
-  await L.pick(p, '#mg-kind', 'batch');
+  await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Pickled Chillies');
+  await L.reveal(p, '#mg-kind'); await L.pick(p, '#mg-kind', 'batch');
   for (const [q, name] of [['500 g', 'Red chillies (sliced)'], ['300 ml', 'Cider vinegar'], ['200 g', 'Caster sugar'], ['10 g', 'Mustard seed']]) {
-    await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="ing-add"]'); await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
     const k = await p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
-    await p.fill('[data-f="ing.' + k + '.q"]', q); await p.fill('[data-f="ing.' + k + '.name"]', name);
+    await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k + '.q"]', q); await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k + '.name"]', name);
   }
-  await p.fill('#mg-ss-0', 'Simmer the vinegar, sugar and mustard seed to a syrup.\nAdd the sliced chillies.');
+  await L.reveal(p, '#mg-ss-0'); await p.fill('#mg-ss-0', 'Simmer the vinegar, sugar and mustard seed to a syrup.\nAdd the sliced chillies.');
   await L.settle(p, 200);
   await p.click('[data-mg="save"]');
   await wait(p, () => /Drawn:/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 30000);
@@ -40,7 +40,7 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   const rings = [...String(pan.svgF || '').matchAll(/<circle[^>]*fill="none"[^>]*stroke="(#[0-9A-Fa-f]{6})"/g)].map(m => hue(m[1])), fills = [...String(pan.svgF || '').matchAll(/<rect[^>]*fill="(#[0-9A-Fa-f]{6})"/g)].map(m => hue(m[1]));
   ok(rings.some(h => h >= 0 && (h <= 15 || h >= 345)) && fills.some(h => h >= 30 && h <= 50), 'new recipe: red chilli rings in a gold syrup (' + JSON.stringify({ rings: rings.slice(0, 3), fills }) + ')');
   // the open form took the new version: saving it again is not a clash
-  await p.fill('#mg-yield', '1 kg batch'); await L.settle(p, 150);
+  await L.reveal(p, '#mg-yield'); await p.fill('#mg-yield', '1 kg batch'); await L.settle(p, 150);
   await p.click('[data-mg="save"]');
   await wait(p, () => /Version 3/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 15000);
   await L.settle(p, 1500);
@@ -54,12 +54,12 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   // a new dish: its plate and its side view are drawn, the side view standing on that plate
   p = await L.open(b, '#/manage/new', { who: 'ann', extra: cfg(), wait: 1400 });
   await editor(p);
-  await p.fill('#mg-name', 'Rump on Mash');
-  await L.pick(p, '#mg-kind', 'main');
+  await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Rump on Mash');
+  await L.reveal(p, '#mg-kind'); await L.pick(p, '#mg-kind', 'main');
   for (const [q, name] of [['250 g', 'Rump steak (chargrilled)'], ['150 g', 'Mash'], ['50 ml', 'Pepper sauce']]) {
-    await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="ing-add"]'); await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
     const k = await p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
-    await p.fill('[data-f="ing.' + k + '.q"]', q); await p.fill('[data-f="ing.' + k + '.name"]', name);
+    await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k + '.q"]', q); await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k + '.name"]', name);
   }
   await L.settle(p, 200);
   await p.click('[data-mg="save"]');
@@ -77,9 +77,9 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
     const fs = window.LK_PREP.book().fs(), orig = fs.getDocFromServer; let last = '';
     fs.getDocFromServer = function (ref) { const k = (ref.path || []).join('/'), was = last; last = k; return /drawings\/rump-on-mash-plate$/.test(k) && /drawings\/rump-on-mash-side$/.test(was) ? Promise.reject({ code: 'unavailable' }) : orig.apply(this, arguments); };
   });
-  await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+  await L.reveal(p, '[data-mg="ing-add"]'); await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
   const kw = await p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
-  await p.fill('[data-f="ing.' + kw + '.q"]', '20 g'); await p.fill('[data-f="ing.' + kw + '.name"]', 'Watercress');
+  await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + kw + '.q"]', '20 g'); await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + kw + '.name"]', 'Watercress');
   await L.settle(p, 200);
   await p.click('[data-mg="save"]');
   await wait(p, () => /Redrawn:/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 30000);
@@ -129,21 +129,21 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   const PICK = 'chips-thick-cut', wingPicks = Object.assign(cfg(), { [fsKey(['book', 'matches'])]: { m: { 'chicken wings': PICK, 'chicken wing': PICK }, upd: L.NOW } });
   p = await L.open(b, '#/manage/new', { who: 'ann', extra: wingPicks, failReads: '/book/matches$', wait: 1400 });
   await editor(p);
-  await p.fill('#mg-name', 'Wing Bucket');
-  await L.pick(p, '#mg-kind', 'main');
+  await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Wing Bucket');
+  await L.reveal(p, '#mg-kind'); await L.pick(p, '#mg-kind', 'main');
   const ingLast = () => p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
-  await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+  await L.reveal(p, '[data-mg="ing-add"]'); await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
   let wk = await ingLast();
-  await p.fill('[data-f="ing.' + wk + '.q"]', '300 g'); await p.fill('[data-f="ing.' + wk + '.name"]', 'Chicken wings');
+  await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + wk + '.q"]', '300 g'); await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + wk + '.name"]', 'Chicken wings');
   await L.settle(p, 200);
   await p.click('[data-mg="save"]');
   await wait(p, () => /picks could not be read/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 30000);
   s = await store(p);
   ok(!s[fsKey(['drawings', 'wing-bucket-plate'])] && /Drawings not drawn again: your picks could not be read\./.test(await toasts(p)), 'picks unreadable on save: no plate drawn from a guess, and the save says so (' + await toasts(p) + ')');
   await p.evaluate(() => { window.__fake.failReads = null; });
-  await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+  await L.reveal(p, '[data-mg="ing-add"]'); await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
   wk = await ingLast();
-  await p.fill('[data-f="ing.' + wk + '.q"]', '20 g'); await p.fill('[data-f="ing.' + wk + '.name"]', 'Sea salt');
+  await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + wk + '.q"]', '20 g'); await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + wk + '.name"]', 'Sea salt');
   await L.settle(p, 200);
   await p.click('[data-mg="save"]');
   await wait(p, () => /Drawn:/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 30000);
@@ -195,9 +195,9 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   // the Cowboy candy card changes: the wings are drawn again with the new candy, the wings stay where they were put
   p = await L.open(b, '#/manage/r/cowboy-candy', { who: 'ann', extra: Object.assign({}, s, cfg()), wait: 1400 });
   await editor(p);
-  await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+  await L.reveal(p, '[data-mg="ing-add"]'); await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
   const k = await p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
-  await p.fill('[data-f="ing.' + k + '.q"]', '200 g'); await p.fill('[data-f="ing.' + k + '.name"]', 'Red capsicum (sliced)');
+  await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k + '.q"]', '200 g'); await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k + '.name"]', 'Red capsicum (sliced)');
   await L.settle(p, 200);
   await p.click('[data-mg="save"]');
   await wait(p, () => /Redrawn:/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 30000);
@@ -217,11 +217,11 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   // from the new card and links to it
   p = await L.open(b, '#/manage/new/french-topper', { who: 'ann', extra: cfg(), wait: 1400 });
   await editor(p);
-  await p.fill('#mg-name', 'French Topper');
+  await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'French Topper');
   for (const [q, name] of [['40 g', 'Brie (sliced)'], ['¼', 'Avocado (sliced)'], ['2 rashers', 'Bacon'], ['40 ml', 'Béarnaise']]) {
-    await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="ing-add"]'); await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
     const k2 = await p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
-    await p.fill('[data-f="ing.' + k2 + '.q"]', q); await p.fill('[data-f="ing.' + k2 + '.name"]', name);
+    await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k2 + '.q"]', q); await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k2 + '.name"]', name);
   }
   await L.settle(p, 200);
   await p.click('[data-mg="save"]');

@@ -62,11 +62,11 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await p.click('#mg-results a[href="#/manage/r/burger"]');
   await editor(p);
   ok(await p.inputValue('#mg-name') === 'Chicken Burger', 'the form opens with the burger as the book has it');
-  await p.fill('#mg-name', 'Chicken Burger Deluxe');
-  await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+  await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Chicken Burger Deluxe');
+  await L.reveal(p, '[data-mg="ing-add"]'); await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
   const n = await p.evaluate(() => document.querySelectorAll('.mg-ing').length);
-  await p.fill('[data-f="ing.' + (n - 1) + '.q"]', '3 slices');
-  await p.fill('[data-f="ing.' + (n - 1) + '.name"]', 'Pickles');
+  await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + (n - 1) + '.q"]', '3 slices');
+  await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + (n - 1) + '.name"]', 'Pickles');
   await L.settle(p, 500);
   ok(/Not saved yet/.test(await txt(p, '.mg-state') || '') && await p.evaluate(() => window.LK_MG.dirty() && window.LK_PREP.unsaved()), 'typing: the bar says Not saved yet, and sign out waits for it');
   ok(!!(await p.evaluate(() => localStorage.getItem('lk.mg.draft.burger'))), 'typing: a draft is kept on this device');
@@ -109,16 +109,16 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await p.click('[data-mg="save"]'); await L.settle(p, 300);
   ok(/Give the recipe a name/.test(await txt(p, '.mg-errs') || ''), 'checks: a recipe needs a name');
   ok(await p.evaluate(() => document.activeElement && document.activeElement.id === 'mg-name'), 'checks: the name box gets the focus');
-  await p.fill('#mg-name', 'Beer Batter');
-  await p.fill('#mg-yield', '2 L batch');
+  await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Beer Batter');
+  await L.reveal(p, '#mg-yield'); await p.fill('#mg-yield', '2 L batch');
   for (const [q, name] of [['500 g', 'Self-raising flour'], ['750 ml', 'Lager']]) {
-    await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="ing-add"]'); await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
     const k = await p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
-    await p.fill('[data-f="ing.' + k + '.q"]', q); await p.fill('[data-f="ing.' + k + '.name"]', name);
+    await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k + '.q"]', q); await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k + '.name"]', name);
     await L.openRow(p, k);
-    await L.choose(p, '[data-mg="tag"][data-i="' + k + '"][data-v="Gluten"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="tag"][data-i="'); await L.choose(p, '[data-mg="tag"][data-i="' + k + '"][data-v="Gluten"]'); await L.settle(p, 150);
   }
-  await p.fill('#mg-ss-0', 'Whisk the beer into the flour until smooth.\nRest 20 minutes in the cool room.');
+  await L.reveal(p, '#mg-ss-0'); await p.fill('#mg-ss-0', 'Whisk the beer into the flour until smooth.\nRest 20 minutes in the cool room.');
   await L.settle(p, 200);
   ok(/Gluten/.test(await txt(p, '.mg-alg-now') || ''), 'new card: the allergens follow the tagged ingredients');
   await p.click('[data-mg="save"]');
@@ -133,7 +133,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
 
   // the id of a new recipe must be free
   await go(p, '#/manage/new'); await editor(p);
-  await p.fill('#mg-name', 'Burger');
+  await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Burger');
   await p.click('[data-mg="save"]'); await L.settle(p, 300);
   ok(/already used/.test(await txt(p, '.mg-errs') || ''), 'checks: a new recipe cannot take an id in use');
   await p.click('[data-mg="undo-all"]'); await p.click('[data-mg="undo-all"]'); await L.settle(p, 200);
@@ -141,7 +141,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   // a change saved on another device after the form opened: the head chef picks
   await go(p, '#/manage/r/burger'); await editor(p);
   await p.evaluate(([k, v]) => window.__fake.write(k, v), [fsKey(['recipes', 'burger']), Object.assign({}, saved[fsKey(['recipes', 'burger'])], { v: 2, r: Object.assign({}, saved[fsKey(['recipes', 'burger'])].r, { name: 'Chicken Burger Other' }), upd: L.NOW - 60000 })]);
-  await p.fill('#mg-name', 'Chicken Burger Mine');
+  await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Chicken Burger Mine');
   await p.click('[data-mg="save"]');
   await wait(p, () => !!document.querySelector('[data-mg="mine"]'));
   ok(/Changed on another device/.test(await txt(p, '.mg-ed .warn') || '') && /Version 2/.test(await txt(p, '.mg-ed .warn') || ''), 'another device: the save stops and says version 2 was saved meanwhile');
@@ -153,7 +153,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
 
   // a refused save: the change stays on the device
   await p.evaluate(() => { window.__fake.mode = 'deny'; });
-  await p.fill('#mg-name', 'Chicken Burger Refused');
+  await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Chicken Burger Refused');
   await p.click('[data-mg="save"]');
   await wait(p, () => !!document.querySelector('.mg-bar .p-err'));
   ok(/refused/.test(await txt(p, '.mg-bar .p-err') || ''), 'refused: the bar says the book refused it');
@@ -170,7 +170,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   ok(await p.inputValue('#mg-name') === 'Chicken Burger Refused', 'draft: Keep editing them puts the change back in the form');
 
   // earlier versions: the other device's version 2 (kept when version 3 went over it) goes back in as the card
-  await p.click('[data-mg="hist"]');
+  await L.reveal(p, '[data-mg="hist"]'); await p.click('[data-mg="hist"]');
   await wait(p, () => document.querySelectorAll('.mg-hist li').length >= 1);
   ok(await p.evaluate(() => document.querySelectorAll('.mg-hist li').length) === 1 && /Version 2/.test(await txt(p, '.mg-hist') || ''), 'earlier versions: version 2 is listed');
   // the form holds the kept changes, so Open this version asks first (28 Oct 2026), then goes on the second tap
@@ -185,7 +185,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   // hide a recipe and put it back
   await go(p, '#/manage/r/side-salad'); await editor(p);
   ok(await p.getAttribute('[data-mg="sw-show"]', 'aria-checked') === 'true', 'hide: the Show in the book switch starts on');
-  await p.click('[data-mg="sw-show"]'); await L.settle(p, 100);
+  await L.reveal(p, '[data-mg="sw-show"]'); await p.click('[data-mg="sw-show"]'); await L.settle(p, 100);
   ok(await p.getAttribute('[data-mg="sw-show"]', 'aria-checked') === 'false', 'hide: the switch turns off');
   ok(/Not saved yet/.test(await txt(p, '.mg-state') || ''), 'hide: the switch waits for Save');
   await p.click('[data-mg="save"]');
@@ -197,7 +197,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await L.choose(p, '[data-mg="chip"][data-v="hidden"]'); await L.settle(p, 200);
   ok(await p.$('#mg-results a[href="#/manage/r/side-salad"]') !== null, 'hide: listed under Hidden');
   await p.click('#mg-results a[href="#/manage/r/side-salad"]'); await editor(p);
-  await p.click('[data-mg="sw-show"]'); await p.click('[data-mg="save"]');
+  await L.reveal(p, '[data-mg="sw-show"]'); await p.click('[data-mg="sw-show"]'); await p.click('[data-mg="save"]');
   await wait(p, () => /Version 2/.test((document.querySelector('.mg-toasts .p-toast') || {}).textContent || ''));
   await go(p, '#/recipes'); await L.settle(p, 300);
   ok(await p.$('a[href="#/r/side-salad"]') !== null, 'hide: put back in the book');
@@ -207,7 +207,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   const fileSpecials = (() => { const c = { window: {} }; require('vm').runInNewContext(require('fs').readFileSync(require('path').join(__dirname, '../js/data.js'), 'utf8'), c); return (c.window.LK_DATA.menuOrder.filter(m => m.title === 'Specials')[0] || { ids: [] }).ids; })();
   await go(p, '#/manage/r/caesar'); await editor(p);
   ok(await p.getAttribute('[data-mg="sw-special"]', 'aria-checked') === 'false', 'special: the switch starts off');
-  await p.click('[data-mg="sw-special"]'); await L.settle(p, 100);
+  await L.reveal(p, '[data-mg="sw-special"]'); await p.click('[data-mg="sw-special"]'); await L.settle(p, 100);
   ok(await p.inputValue('#mg-msec') === 'Specials', 'special: the menu section reads Specials');
   await p.click('[data-mg="save"]');
   // Wait for this save. The previous recipe's toast may still be visible.
@@ -231,9 +231,9 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   ok(await p.$$eval('#shelves a[href^="#/r/"]', els => els.map(e => e.getAttribute('href')).sort().join(',')) === fileSpecials.concat('caesar').map(id => '#/r/' + id).sort().join(','), 'special: the chip shows only the specials');
   await go(p, '#/manage/r/caesar'); await editor(p);
   ok(await p.getAttribute('[data-mg="sw-special"]', 'aria-checked') === 'true', 'special: the switch opens on');
-  await p.click('[data-mg="sw-special"]'); await L.settle(p, 100);
+  await L.reveal(p, '[data-mg="sw-special"]'); await p.click('[data-mg="sw-special"]'); await L.settle(p, 100);
   ok(await p.inputValue('#mg-msec') === '', 'special: off with no earlier section leaves it to pick');
-  await L.pick(p, '#mg-msec', 'Salads'); await p.click('[data-mg="save"]'); await toast(p);
+  await L.reveal(p, '#mg-msec'); await L.pick(p, '#mg-msec', 'Salads'); await p.click('[data-mg="save"]'); await toast(p);
   await go(p, '#/recipes'); await L.settle(p, 300);
   await specialsChip(fileSpecials.length);
   ok((await p.$$eval('[data-act="kind"]', els => els.map(e => e.textContent))).includes('Specials (' + fileSpecials.length + ')'), 'special: off takes the dish out of Specials');
@@ -245,7 +245,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await editor(p);
   const aioliOk = await p.$('#mg-name') !== null;
   if (aioliOk) {
-    await p.fill('#mg-yield', '1 L batch');
+    await L.reveal(p, '#mg-yield'); await p.fill('#mg-yield', '1 L batch');
     await p.click('[data-mg="save"]'); await toast(p);
     ok(/Saved\. Version 1\./.test(await toastText(p) || ''), 'head chef\'s Google device: saved');
   } else ok(false, 'head chef\'s Google device: the form opens');
@@ -256,7 +256,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   // index is saved with merge: its by has to be empty after the head chef's save, or the rules refuse it (bookBy()).
   p = await L.open(b, '#/manage/r/aioli', { who: 'sam', extra: cfg(), wait: 1400 });
   await editor(p);
-  await p.fill('#mg-yield', '800 ml batch');
+  await L.reveal(p, '#mg-yield'); await p.fill('#mg-yield', '800 ml batch');
   await p.click('[data-mg="save"]'); await toast(p);
   ok(/Saved\. Version 1\./.test(await toastText(p) || ''), 'after a sous chef: Sam saves version 1');
   s = await store(p);
@@ -264,7 +264,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await p.context().close();
   p = await L.open(b, '#/manage/r/aioli', { who: '', admin: true, extra: s, wait: 1400 });
   await editor(p);
-  await p.fill('#mg-yield', '1 L batch');
+  await L.reveal(p, '#mg-yield'); await p.fill('#mg-yield', '1 L batch');
   await p.click('[data-mg="save"]'); await toast(p);
   const ownSaid = await toastText(p) || await txt(p, '.mg-bar') || '';
   ok(/Saved\. Version 2\./.test(ownSaid), 'after a sous chef: the head chef\'s Google device saves version 2 (' + ownSaid.slice(0, 120) + ')');

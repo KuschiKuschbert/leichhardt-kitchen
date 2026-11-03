@@ -277,6 +277,9 @@
   function dirtyNote() {
     var el = M.root && M.root.querySelector('.mg-state');
     if (el) el.textContent = stateText();
+    // the chapters' dots and summaries follow typing without a redraw of the form (the focus stays in its box)
+    var nav = M.root && M.root.querySelector('.mg-chs');
+    if (nav && M.ed && M.ed.d) { var tmp = document.createElement('div'); tmp.innerHTML = chNavHTML(M.ed); nav.innerHTML = tmp.firstChild.innerHTML; }
     // typing does not draw the page again: Save follows here
     var sb = M.root && M.root.querySelector('[data-mg="save"]');
     if (sb && M.ed && M.ed.d && !M.ed.saving) sb.disabled = unchanged(M.ed);
@@ -378,11 +381,20 @@
       '<div class="mg-two">' + field('mg-no', 'Card number', 'no', d.no || '', { max: 8, mode: 'numeric' }) +
       '<div class="field"><label class="label" for="mg-kind">Kind</label><select id="mg-kind" class="search" data-f="kind">' + Object.keys(KIND).map(function (k) { return '<option value="' + k + '"' + (d.kind === k ? ' selected' : '') + '>' + esc(KIND[k]) + '</option>'; }).join('') + '</select></div></div>' +
       field('mg-for', 'Where it belongs', 'forLine', d.forLine || '', { max: 80, ph: 'Plate, or For the barramundi' }) +
-      field('mg-short', 'Short name (prep lines, optional)', 'short', d.short || '', { max: 40 }) +
       field('mg-yield', 'Portion or batch line', 'yield', d.yield || '', { max: 300, ph: 'Per plate, or 5 L batch' }) +
+      '<label class="mg-check"><input type="checkbox" data-f="done"' + (d.done ? ' checked' : '') + '> Finished: the card and its drawings are 100% done (green frame)</label></section>';
+  }
+  /* More card details (3 Nov 2026): the fields that rarely change, folded away. Always drawn, hidden while folded, so a
+     kept draft and a redraw keep what is in them. */
+  function moreCardHTML(e) {
+    var d = e.d, open = !!e.moreOpen;
+    return '<div class="mg-more"><button type="button" class="btn mg-more-b" data-mg="more-card" aria-expanded="' + open + '" aria-controls="mg-more-box">' + (open ? 'Fewer card details' : 'More card details') + '</button>' +
+      '<div class="mg-more-box" id="mg-more-box"' + (open ? '' : ' hidden') + '><section class="set-block mg-sec" aria-labelledby="mg-h-names"><h3 class="h3" id="mg-h-names">Other names</h3>' +
+      field('mg-short', 'Short name (prep lines, optional)', 'short', d.short || '', { max: 40 }) +
       field('mg-menu', 'How the guest menu describes it (optional)', 'menu', d.menu || '', { area: true, rows: 2, max: 400 }) +
       field('mg-avc', 'Name in AVC Live (optional)', 'avc', d.avc || '', { max: 120, hint: 'So a search for the AVC name finds the card. No prices or codes here.' }) +
-      '<label class="mg-check"><input type="checkbox" data-f="done"' + (d.done ? ' checked' : '') + '> Finished: the card and its drawings are 100% done (green frame)</label></section>';
+      field('mg-aka', 'Other names staff search for (optional)', 'aka', d.aka || '', { max: 200 }) + '</section>' +
+      menuHTML(e) + boxesHTML(e) + '</div></div>';
   }
   /* Ingredients (recipe editor, 3 Nov 2026, head chef's choice): the amount and the name are typed in the row; the note,
      the recipe link, the allergens and moving open from the row's arrow (e.open is the open row). The row shows what is
@@ -484,8 +496,7 @@
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-box"><h3 class="h3" id="mg-h-box">Boxes on the card (optional)</h3>' +
       '<div class="mg-two">' + field('mg-tipt', 'Tip box title', 'tip.title', tip.title, { max: 80, ph: 'iCombi' }) + field('mg-sft', 'Safety box title', 'safety.title', sf.title, { max: 80, ph: 'Hot oil' }) + '</div>' +
       field('mg-tipx', 'Tip box words', 'tip.text', tip.text, { area: true, rows: 2, max: 1000 }) +
-      field('mg-sfx', 'Safety box words (orange)', 'safety.text', sf.text, { area: true, rows: 2, max: 1000 }) +
-      field('mg-aka', 'Other names staff search for (optional)', 'aka', d.aka || '', { max: 200 }) + '</section>';
+      field('mg-sfx', 'Safety box words (orange)', 'safety.text', sf.text, { area: true, rows: 2, max: 1000 }) + '</section>';
   }
   function menuHTML(e) {
     if (!DISH[e.d.kind]) return '';
@@ -571,6 +582,38 @@
     if (!out) return '';
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-more"><h3 class="h3" id="mg-h-more">The book file</h3>' + out + '</section>';
   }
+  /* Chapters (recipe editor, 3 Nov 2026, head chef's choice): the form in six short parts, a rail on a computer and a row
+     of pills on a phone. Every chapter is drawn and the others are hidden, so a kept draft, an error link and the focus
+     after a redraw find their box wherever it is. A chapter shows a dot for a change not saved and ! for a fix. */
+  var CHS = [['ing', 'Ingredients'], ['method', 'Method'], ['alg', 'Allergens'], ['draw', 'Drawings'], ['card', 'Card details'], ['hist', 'Earlier versions']];
+  var CH_KEYS = { ing: ['ingredients'], method: ['sections'], alg: ['contains', 'check', 'labelNote'], draw: ['art', 'side', 'diagram', 'pins'] };
+  var AT_CH = { 'mg-name': 'card', 'mg-id': 'card', 'mg-h-ing': 'ing', 'mg-h-method': 'method' };
+  function chOf(e) { return e.ch || (e.isNew ? 'card' : 'ing'); }
+  function chChanged(e) {
+    var was = JSON.parse(e.snap), d0 = was[0] || {}, d = e.d, out = {}, known = {};
+    Object.keys(CH_KEYS).forEach(function (k) { out[k] = CH_KEYS[k].some(function (f) { known[f] = 1; return JSON.stringify(d[f]) !== JSON.stringify(d0[f]); }); });
+    out.card = Object.keys(Object.assign({}, d0, d)).some(function (f) { return !known[f] && JSON.stringify(d[f]) !== JSON.stringify(d0[f]); }) || JSON.stringify(e.menu) !== JSON.stringify(was[1]) || e.meta.removed !== was[2];
+    out.hist = e.meta.off !== was[3];
+    return out;
+  }
+  function chSum(e, k) {
+    var d = e.d;
+    if (k === 'ing') return d.ingredients.length + (d.ingredients.length === 1 ? ' line' : ' lines');
+    if (k === 'method') { var st = (d.sections || []).reduce(function (m, s) { return m + s.steps.length; }, 0); return (d.sections || []).length + ((d.sections || []).length === 1 ? ' section, ' : ' sections, ') + st + (st === 1 ? ' step' : ' steps'); }
+    if (k === 'alg') { var t = rollTags(A.rollFor(cleanRecipe(e))); return t.length ? t.join(', ') : 'None'; }
+    if (k === 'draw') { var w = [d.art ? (DISH[d.kind] ? 'plate' : 'pan') : '', d.side ? 'side' : '', d.diagram ? 'build' : ''].filter(Boolean); return (w.length ? w.join(', ') : 'None yet') + (DISH[d.kind] ? ', ' + (d.pins || []).length + ((d.pins || []).length === 1 ? ' label' : ' labels') : ''); }
+    if (k === 'card') return 'Card ' + (trimStr(d.no) || '-') + ', ' + (e.meta.removed ? 'hidden' : 'shown') + (e.menu.sec === A.specials ? ', special' : '');
+    return e.meta.v ? 'Version ' + e.meta.v : 'The book file';
+  }
+  function chNavHTML(e) {
+    var cur = chOf(e), chg = chChanged(e), bad = {};
+    (e.errs || []).forEach(function (x) { bad[AT_CH[x.at] || 'card'] = 1; });
+    return '<nav class="mg-chs" aria-label="Parts of this recipe">' + CHS.filter(function (c) { return !(c[0] === 'hist' && e.isNew); }).map(function (c, n) {
+      var k = c[0];
+      return '<button type="button" class="mg-chb" data-mg="ch" data-v="' + k + '" data-i="' + n + '"' + (cur === k ? ' aria-current="true"' : '') + '><span class="mg-chn">' + c[1] + '</span><small>' + esc(chSum(e, k)) + '</small>' +
+        (bad[k] ? '<span class="mg-chx" aria-hidden="true">!</span><span class="visually-hidden">, needs a fix</span>' : chg[k] ? '<span class="mg-chd" aria-hidden="true"></span><span class="visually-hidden">, changed, not saved</span>' : '') + '</button>';
+    }).join('') + '</nav>';
+  }
   function editorHTML() {
     var e = M.ed;
     if (e.missing !== undefined) return '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Recipe not found</h2><p>There is no recipe "' + esc(e.missing) + '" in the book.</p></div>';
@@ -584,8 +627,11 @@
       '<div class="btn-row"><button type="button" class="btn" data-mg="theirs">' + (armed('theirs') ? 'Tap again: your changes go' : 'Open theirs') + '</button><button type="button" class="btn dark" data-mg="mine">Save mine over it</button></div></div>' : '';
     var errs = e.errs.length ? '<div class="warn" role="alert"><span class="label">Not saved yet</span><ul class="mg-errs">' + e.errs.map(function (x) { return '<li><a href="#' + esc(x.at) + '" data-mg="goto" data-v="' + esc(x.at) + '">' + esc(x.msg) + '</a></li>'; }).join('') + '</ul></div>' : '';
     var warns = e.warns.length ? '<div class="box beige" role="note">' + e.warns.map(function (w) { return '<div>' + esc(w) + '</div>'; }).join('') + '</div>' : '';
+    var cur = chOf(e), part = function (k, html) { return '<div class="mg-ch" data-ch="' + k + '"' + (cur === k ? '' : ' hidden') + '>' + html + '</div>'; };
     return '<div class="mg-wrap mg-ed">' + linkList() + head + kept + fileNote + conflict + errs + warns +
-      swHTML(e) + basicsHTML(e) + ingHTML(e) + methodHTML(e) + allergenHTML(e) + drawingHTML(e) + menuHTML(e) + boxesHTML(e) + histHTML(e) + moreHTML(e) +
+      '<div class="mg-body">' + chNavHTML(e) + '<div class="mg-chap">' +
+      part('ing', ingHTML(e)) + part('method', methodHTML(e)) + part('alg', allergenHTML(e)) + part('draw', drawingHTML(e)) +
+      part('card', swHTML(e) + basicsHTML(e) + moreCardHTML(e)) + (e.isNew ? '' : part('hist', histHTML(e) + moreHTML(e))) + '</div></div>' +
       '<div class="mg-bar"><span class="mg-state" role="status">' + esc(stateText()) + '</span>' + (e.msg ? '<span class="p-err" role="alert">' + esc(e.msg) + '</span>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-mg="save"' + (e.saving ? ' disabled aria-busy="true"' : unchanged(e) ? ' disabled' : '') + '>' + (e.saving ? inkLabel('Saving...') : 'Save') + '</button>' +
       (dirty() ? '<button type="button" class="btn" data-mg="undo-all">' + (armed('undo-all') ? 'Tap again to undo all' : 'Undo all changes') + '</button>' : '') + '</div></div></div>';
@@ -767,7 +813,9 @@
     }).catch(function () {});
   }
   function focusId(id) {
-    var el = M.root && M.root.querySelector('#' + id);
+    var el = M.root && M.root.querySelector('#' + id), e = M.ed, box = el && el.closest('[data-ch]');
+    if (box && box.hidden && e && e.d) { e.ch = box.getAttribute('data-ch'); if (el.closest('.mg-more-box')) e.moreOpen = true; draw(); el = M.root.querySelector('#' + id); }
+    else if (el && el.closest('.mg-more-box[hidden]') && e && e.d) { e.moreOpen = true; draw(); el = M.root.querySelector('#' + id); }
     if (!el) return;
     el.scrollIntoView({ block: 'center' });
     if (el.focus) el.focus({ preventScroll: true });
@@ -955,7 +1003,9 @@
     if (a === 'mine') { save(true); return; }
     // a change while the kept box shows: the kept changes come back first, and this tap does nothing else (its row may
     // not be the same row in the kept changes)
-    if (e.kept && !/^(kept-use|kept-drop|hist|ing-tags|ing-open|scale|pin-pick|theirs)$/.test(a)) { keptBack(e); return; }
+    if (e.kept && !/^(kept-use|kept-drop|hist|ing-tags|ing-open|scale|ch|more-card|pin-pick|theirs)$/.test(a)) { keptBack(e); return; }
+    if (a === 'ch') { if (chOf(e) !== v) { e.ch = v; unarm(); draw(); var top = M.root.querySelector('.mg-body'); if (top && top.getBoundingClientRect().top < 0) top.scrollIntoView({ block: 'start' }); } return; }
+    if (a === 'more-card') { e.moreOpen = !e.moreOpen; draw(); return; }
     if (a === 'theirs') {
       // the changes typed here go: ask first, like Throw them away
       if (dirty() && !arm('theirs')) return;

@@ -52,12 +52,12 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     ok(await disabled(p, '[data-mg="save"]') === true, 'recipe form: Save is off on an untouched recipe');
     await force(p, '[data-mg="save"]'); await L.settle(p, 1200);
     ok(!(await store(p))[fsKey(['recipes', 'burger'])], 'recipe form: an untouched recipe saves nothing, even from a Save left on (the file\'s copy keeps winning)');
-    await p.fill('#mg-name', 'Chicken Burger ONE'); await L.settle(p, 700);
+    await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Chicken Burger ONE'); await L.settle(p, 700);
     ok(await disabled(p, '[data-mg="save"]') === false, 'recipe form: typing one change turns Save on');
     ok(((await draft(p, 'lk.mg.draft.burger')) || { e: { d: {} } }).e.d.name === 'Chicken Burger ONE', 'recipe form: the change is kept on this device');
     await go(p, '#/manage'); await go(p, '#/manage/r/burger'); await editor(p);
     ok(!!(await p.$('.mg-kept')) && await p.inputValue('#mg-name') !== 'Chicken Burger ONE', 'kept box: the form opens on the saved recipe, with Changes not saved yet');
-    await p.click('#mg-yield'); await L.settle(p, 150); await p.keyboard.type(' TWO'); await L.settle(p, 700);
+    await L.reveal(p, '#mg-yield'); await p.click('#mg-yield'); await L.settle(p, 150); await p.keyboard.type(' TWO'); await L.settle(p, 700);
     const d1 = await draft(p, 'lk.mg.draft.burger');
     ok(!(await p.$('.mg-kept')) && await p.inputValue('#mg-name') === 'Chicken Burger ONE' && /TWO$/.test(await p.inputValue('#mg-yield')), 'kept box: a tap in a box brings the kept changes back, and what is typed goes on them');
     ok(!!d1 && d1.e.d.name === 'Chicken Burger ONE' && /TWO$/.test(d1.e.d.yield), 'kept box: what is typed then is kept on this device with the kept changes (draft yield ' + (d1 && JSON.stringify(d1.e.d.yield)) + ')');
@@ -66,7 +66,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     // a button that changes the recipe while the box shows: the kept changes come back first, and the tap does nothing else
     await go(p, '#/manage/r/burger'); await editor(p);
     const n0 = await S(p, () => document.querySelectorAll('.mg-ing').length);
-    await p.click('[data-mg="ing-add"]'); await L.settle(p, 200);
+    await L.reveal(p, '[data-mg="ing-add"]'); await p.click('[data-mg="ing-add"]'); await L.settle(p, 200);
     ok(!(await p.$('.mg-kept')) && await p.inputValue('#mg-name') === 'Chicken Burger ONE' && await S(p, () => document.querySelectorAll('.mg-ing').length) === n0, 'kept box: Add an ingredient while it shows brings the kept changes back, with no row added to the saved copy');
     ok(/kept changes are back/.test(await toastNow(p)), 'kept box: the toast says the kept changes are back in the form');
     quiet(p, 'recipe form');
@@ -80,24 +80,24 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     // back to worked out from the ingredients drops the hand-set allergens and their notes: a second tap
     const notes = () => S(p, () => [...document.querySelectorAll('[data-f^="handfrom."]')].map(e => e.value).filter(Boolean).length);
     const had = await notes();
-    await L.choose(p, '[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="hand"][data-v="0"]'); await L.choose(p, '[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
     ok(had > 0 && await notes() === had && await txt(p, '[data-mg="hand"][data-v="0"]') === 'Tap again: hand-set allergens go', 'allergens: the first tap on Worked out from the ingredients keeps the hand-set ones and their notes');
     await fits(p, 'allergens armed at 390');
-    await L.choose(p, '[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="hand"][data-v="0"]'); await L.choose(p, '[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
     ok(await S(p, () => document.querySelectorAll('[data-f^="hand."]').length) === 0, 'allergens: the second tap works them out from the ingredients');
     // an ingredient with words in it: Remove asks first; an empty row goes in one tap
     const ings = () => S(p, () => document.querySelectorAll('.mg-ing').length);
     const i0 = await ings();
     // Remove sits behind the row's arrow (3 Nov 2026)
     await L.openRow(p, 0);
-    await p.click('[data-mg="ing-del"][data-i="0"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="ing-del"][data-i="0"]'); await p.click('[data-mg="ing-del"][data-i="0"]'); await L.settle(p, 150);
     ok(await ings() === i0 && await txt(p, '[data-mg="ing-del"][data-i="0"]') === 'Tap again to remove' && /^Tap again to remove/.test(await p.getAttribute('[data-mg="ing-del"][data-i="0"]', 'aria-label')), 'ingredients: the first tap on Remove keeps a filled ingredient and says Tap again to remove');
     await fits(p, 'ingredient Remove armed at 390');
-    await p.click('[data-mg="ing-del"][data-i="0"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="ing-del"][data-i="0"]'); await p.click('[data-mg="ing-del"][data-i="0"]'); await L.settle(p, 150);
     ok(await ings() === i0 - 1, 'ingredients: the second tap removes it');
-    await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="ing-add"]'); await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
     await L.openRow(p, i0 - 1);
-    await p.click('[data-mg="ing-del"][data-i="' + (i0 - 1) + '"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="ing-del"][data-i="'); await p.click('[data-mg="ing-del"][data-i="' + (i0 - 1) + '"]'); await L.settle(p, 150);
     ok(await ings() === i0 - 1, 'ingredients: an empty row added by mistake goes in one tap');
     quiet(p, 'recipe rows');
     await p.context().close();
@@ -108,10 +108,10 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     // a Pass label with words: Remove this label asks first
     const pins = () => S(p, () => document.querySelectorAll('.mg-pinrow').length);
     const p0 = await pins();
-    await p.click('.mg-pinrow [data-mg="pin-pick"][data-i="0"]'); await L.settle(p, 150);
-    await p.click('[data-mg="pin-del"][data-i="0"]'); await L.settle(p, 150);
+    await L.reveal(p, '.mg-pinrow [data-mg="pin-pick"][data-i="0"]'); await p.click('.mg-pinrow [data-mg="pin-pick"][data-i="0"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="pin-del"][data-i="0"]'); await p.click('[data-mg="pin-del"][data-i="0"]'); await L.settle(p, 150);
     ok(p0 > 0 && await pins() === p0 && await txt(p, '[data-mg="pin-del"][data-i="0"]') === 'Tap again to remove', 'Pass labels: the first tap on Remove this label keeps it and says Tap again to remove');
-    await p.click('[data-mg="pin-del"][data-i="0"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="pin-del"][data-i="0"]'); await p.click('[data-mg="pin-del"][data-i="0"]'); await L.settle(p, 150);
     ok(await pins() === p0 - 1, 'Pass labels: the second tap removes it');
     quiet(p, 'recipe labels');
     await p.context().close();
@@ -124,16 +124,16 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     const ex = Object.assign(cfg(), { [fsKey(['recipes', 'burger'])]: cur, [fsKey(['recipes', 'burger', 'hist', '1'])]: { was: old, at: L.NOW - 3e6 }, [fsKey(['book', 'index'])]: { r: { burger: 2 }, upd: L.NOW - 3e6 } });
     p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra: ex, wait: 1400 });
     await editor(p);
-    await p.fill('#mg-name', 'Chicken Burger UNSAVED'); await L.settle(p, 600);
-    await p.click('[data-mg="hist"]');
+    await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Chicken Burger UNSAVED'); await L.settle(p, 600);
+    await L.reveal(p, '[data-mg="hist"]'); await p.click('[data-mg="hist"]');
     await wait(p, () => !!document.querySelector('[data-mg="hist-use"]'));
-    await p.click('[data-mg="hist-use"]'); await L.settle(p, 300);
+    await L.reveal(p, '[data-mg="hist-use"]'); await p.click('[data-mg="hist-use"]'); await L.settle(p, 300);
     ok(await p.inputValue('#mg-name') === 'Chicken Burger UNSAVED' && await txt(p, '[data-mg="hist-use"]') === 'Not saved. Tap again', 'earlier versions: Open this version over changes asks first and keeps them');
     ok(((await draft(p, 'lk.mg.draft.burger')) || { e: { d: {} } }).e.d.name === 'Chicken Burger UNSAVED', 'earlier versions: the kept draft is still the changes');
-    await p.click('[data-mg="hist-use"]'); await L.settle(p, 300);
+    await L.reveal(p, '[data-mg="hist-use"]'); await p.click('[data-mg="hist-use"]'); await L.settle(p, 300);
     ok(await p.inputValue('#mg-name') === 'Old Burger v1', 'earlier versions: the second tap puts the version in the form');
     await p.click('[data-mg="undo-all"]'); await p.click('[data-mg="undo-all"]'); await L.settle(p, 200);
-    await p.fill('#mg-yield', 'MINE yield'); await L.settle(p, 600);
+    await L.reveal(p, '#mg-yield'); await p.fill('#mg-yield', 'MINE yield'); await L.settle(p, 600);
     await S(p, ([k, v]) => window.__fake.write(k, v), [fsKey(['recipes', 'burger']), Object.assign({}, cur, { v: 3, r: Object.assign({}, cur.r, { name: 'Chicken Burger Theirs' }), upd: L.NOW - 60000 })]);
     await p.click('[data-mg="save"]');
     await wait(p, () => !!document.querySelector('[data-mg="theirs"]'));
@@ -413,7 +413,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
   const keptRecipe = async (name, o) => {
     const q = await L.open(b, '#/manage/r/burger', Object.assign({ who: 'ann', extra: cfg(), wait: 1400 }, o || {}));
     await editor(q);
-    await q.fill('#mg-name', name); await L.settle(q, 700);
+    await L.reveal(q, '#mg-name'); await q.fill('#mg-name', name); await L.settle(q, 700);
     await go(q, '#/manage'); await go(q, '#/manage/r/burger'); await editor(q);
     return q;
   };
@@ -425,9 +425,9 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     // row is not a change, so the kept box stays until Down (3 Nov 2026)
     await L.openRow(p, 0);
     ok(!!(await p.$('.mg-kept')), 'kept buttons: opening a row leaves the kept box');
-    await p.click('[data-mg="ing-down"][data-i="0"]'); await L.settle(p, 200);
+    await L.reveal(p, '[data-mg="ing-down"][data-i="0"]'); await p.click('[data-mg="ing-down"][data-i="0"]'); await L.settle(p, 200);
     ok(!(await p.$('.mg-kept')) && await p.inputValue('#mg-name') === 'Chicken Burger KEPT' && JSON.stringify(await names(p)) === JSON.stringify(o0), 'kept buttons: Down while the box shows brings the kept changes back and moves nothing on the saved copy');
-    await p.click('[data-mg="ing-down"][data-i="0"]'); await L.settle(p, 700);
+    await L.reveal(p, '[data-mg="ing-down"][data-i="0"]'); await p.click('[data-mg="ing-down"][data-i="0"]'); await L.settle(p, 700);
     const o1 = await names(p);
     ok(o1[0] === o0[1] && o1[1] === o0[0], 'kept buttons: the next Down moves the ingredient');
     await go(p, '#/r/burger');
@@ -436,7 +436,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     // a recipe link box tapped while the box shows keeps the focus, so what is typed goes in it
     await go(p, '#/manage/r/burger'); await editor(p);
     await L.openRow(p, 1);
-    await p.click('#mg-link-1'); await L.settle(p, 200);
+    await L.reveal(p, '#mg-link-1'); await p.click('#mg-link-1'); await L.settle(p, 200);
     ok(!(await p.$('.mg-kept')) && await S(p, () => document.activeElement && document.activeElement.id) === 'mg-link-1', 'kept buttons: a tap in a recipe link box brings the kept changes back and keeps the focus there');
     await p.keyboard.type('Ranch'); await L.settle(p, 150);
     ok(/Ranch$/.test(await p.inputValue('#mg-link-1')), 'kept buttons: what is typed then goes in the link box');
@@ -446,7 +446,8 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
   await safe('recipe kept drag', async () => {
     p = await keptRecipe('Chicken Burger DRAG');
     const at = () => S(p, () => { const e = document.querySelector('.mg-pin[data-i="0"]'); return e ? e.style.left + ',' + e.style.top : ''; });
-    await p.locator('.mg-pin[data-i="0"]').scrollIntoViewIfNeeded();
+    // the chapter pills stay at the top while the page scrolls (3 Nov 2026): the label goes to the middle, clear of them
+    await L.reveal(p, '.mg-pin[data-i="0"]'); await p.$eval('.mg-pin[data-i="0"]', e => e.scrollIntoView({ block: 'center' })); await L.settle(p, 100);
     const a0 = await at(), bx = await p.$eval('.mg-pin[data-i="0"]', e => { const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
     await p.mouse.move(bx.x, bx.y); await p.mouse.down(); await p.mouse.move(bx.x + 40, bx.y + 30, { steps: 5 }); await p.mouse.up(); await L.settle(p, 300);
     ok(!(await p.$('.mg-kept')) && await p.inputValue('#mg-name') === 'Chicken Burger DRAG' && await at() === a0, 'kept drag: a Pass label dragged while the box shows brings the kept changes back, and the saved copy\'s label does not move (' + a0 + ' then ' + await at() + ')');
@@ -462,14 +463,14 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     const o0 = await names(p);
     // Remove on row 3 asks; Up moves it; the ingredient now in row 3 never asked, so its Remove asks first
     await L.openRow(p, 2);
-    await p.click('[data-mg="ing-del"][data-i="2"]'); await L.settle(p, 150);
-    await p.click('[data-mg="ing-up"][data-i="2"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="ing-del"][data-i="2"]'); await p.click('[data-mg="ing-del"][data-i="2"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="ing-up"][data-i="2"]'); await p.click('[data-mg="ing-up"][data-i="2"]'); await L.settle(p, 150);
     ok(await S(p, () => document.querySelector('.mg-ing.open [data-mg="ing-open"]').getAttribute('data-i')) === '1', 'row arm: the open row moves up with its ingredient');
     await L.openRow(p, 2);
     ok(await txt(p, '[data-mg="ing-del"][data-i="2"]') === 'Remove', 'row arm: after Up, the row now in that place reads Remove, not Tap again (' + await txt(p, '[data-mg="ing-del"][data-i="2"]') + ')');
-    await p.click('[data-mg="ing-del"][data-i="2"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="ing-del"][data-i="2"]'); await p.click('[data-mg="ing-del"][data-i="2"]'); await L.settle(p, 150);
     ok((await names(p)).length === o0.length && (await names(p))[2] === o0[1], 'row arm: one tap on its Remove keeps ' + o0[1] + ' and asks first');
-    await p.click('[data-mg="ing-del"][data-i="2"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="ing-del"][data-i="2"]'); await p.click('[data-mg="ing-del"][data-i="2"]'); await L.settle(p, 150);
     ok((await names(p)).length === o0.length - 1 && (await names(p)).indexOf(o0[1]) < 0, 'row arm: the second tap removes it');
     quiet(p, 'recipe row arm');
     await p.context().close();
@@ -493,9 +494,9 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     p = await L.open(b, '#/manage/r/flank', { who: 'ann', extra: cfg(), wait: 1400 });
     await editor(p);
     const hand = () => S(p, () => document.querySelectorAll('[data-f^="hand."]').length);
-    await L.choose(p, '[data-mg="hand"][data-v="1"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="hand"][data-v="1"]'); await L.choose(p, '[data-mg="hand"][data-v="1"]'); await L.settle(p, 150);
     const n1 = await hand();
-    await L.choose(p, '[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
+    await L.reveal(p, '[data-mg="hand"][data-v="0"]'); await L.choose(p, '[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
     ok(n1 > 0 && await hand() === 0, 'allergens: set by hand as the ingredients give them, Worked out from the ingredients goes back in one tap (' + n1 + ' then ' + await hand() + ')');
     quiet(p, 'recipe allergens match');
     await p.context().close();
@@ -573,7 +574,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
   await safe('hand-over editors', async () => {
     p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra: cfg(), settings: { shared: true }, wait: 1400 });
     await editor(p);
-    await p.fill('#mg-name', 'Chicken Burger SECRET'); await L.settle(p, 700);
+    await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Chicken Burger SECRET'); await L.settle(p, 700);
     await p.click('.wtop-who'); await L.settle(p, 150);
     await p.click('.wm [data-who="out"]'); await L.settle(p, 200);
     await p.click('.wm [data-who="out"]'); await L.settle(p, 900);
@@ -678,7 +679,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
   const UPD = [
     ['Delivery received', '#/deliveries', { wait: 1500 }, '#dl-chilled', q => q.fill('#dl-chilled', '4')],
     ['Supplier order', '#/suppliers/northside', { who: 'bo', extra: F.fixture(), wait: 1800 }, qty, q => q.fill(qty, '4 kg')],
-    ['Manage recipes', '#/manage/r/burger', { who: 'ann', extra: cfg(), wait: 1400 }, '#mg-name', q => q.fill('#mg-name', 'Chicken Burger UPD')],
+    ['Manage recipes', '#/manage/r/burger', { who: 'ann', extra: cfg(), wait: 1400 }, '#mg-name', async q => { await L.reveal(q, '#mg-name'); await q.fill('#mg-name', 'Chicken Burger UPD'); }],
     ['Manage functions', '#/functions/new', { who: 'ann', extra: cfg(), wait: 1500 }, '#fe-name', q => q.fill('#fe-name', 'Jones wedding')],
     ['the drawing editor', '#/manage/draw/new/burger/plate', { who: 'ann', extra: cfg(), wait: 1500 }, '.dw-svg', q => S(q, () => { window.LK_DRAW.addItem('rump'); })]
   ];
@@ -710,8 +711,8 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
       p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra: cfg(), width: w, height: 900, wait: 1400 });
       await editor(p);
       await L.openRow(p, 0);
-      await p.click('[data-mg="ing-del"][data-i="0"]'); await L.settle(p, 150);
-      await L.choose(p, '[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
+      await L.reveal(p, '[data-mg="ing-del"][data-i="0"]'); await p.click('[data-mg="ing-del"][data-i="0"]'); await L.settle(p, 150);
+      await L.reveal(p, '[data-mg="hand"][data-v="0"]'); await L.choose(p, '[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
       ok(await txt(p, '[data-mg="hand"][data-v="0"]') === 'Tap again: hand-set allergens go', w + ' recipe form: the allergen chip asks again');
       await fits(p, w + ' recipe form armed');
       await p.context().close();
