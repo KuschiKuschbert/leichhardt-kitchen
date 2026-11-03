@@ -822,6 +822,8 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 2. **Two recipes are hidden in the book but still in `js/data.js`** (29 Oct 2026): `chicken-adobo` (also first in Specials) and `pork-knuckle`. This is a dated static-source cleanup note. Recheck current public mirrors and hidden-recipe behaviour before acting. The owner still decides whether to remove the static entries or show the recipes again; no decision is made by this documentation update.
 
+3. **Loading, toasts and save feedback: choose a design** (3 Nov 2026). Two redesigns for each of six moments (opening the book, opening a kitchen page, taps, saving, toasts with Undo, signal and updates), playable side by side in [docs/loading-feedback-options/](docs/loading-feedback-options/brief.md), with the findings and a build order. The head chef picks; the recommended set is A, A, A, A, A and B. The stale Undo after a failed save (LF-01) is a bug fix that needs no choice.
+
 Remove each item here once it is done.
 
 ### Complete saved shells (2 November 2026)
