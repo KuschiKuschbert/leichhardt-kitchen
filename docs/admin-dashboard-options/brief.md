@@ -38,7 +38,7 @@ Recommendation: build A, with B's three written headlines as one strip above the
 
 Small pull requests in this order, each with click tests at 390, 768 and 1280 px and the read budget check:
 
-1. Nightly dashboard record, written by the existing nightly analysis job, verified admin only in the rules (looser for a new admin-only document: publish before the client).
+1. Nightly dashboard numbers (done 3 Nov 2026). The nightly analysis job writes `analysis/dashboard` in the same atomic publish as the ranges, from the lines it already reads: no extra reads. The existing `analysis/{id}` rule already keeps it to the verified admin and to server writes, so no rules change. One row per finished day for 90 days: prep lines (all, written, ticked, rolled, written per section, minutes to tick per section), waste (lines, reasons, sections, items with unit and amount) and transfers out and in. Counted like Insights and Wastage; deleted and practice lines left out; never prices. `scripts/dashboard.mjs`, checked by `scripts/analysis-check.mjs`. The 90 day view has no earlier 90 days to compare with.
 2. The Dashboard chapter, tiles or brief, linked into the existing reports.
 3. Needs you, from counts the admin panel already reads.
 4. Week ahead and watch list (pins saved with the admin's records, in backups and PIN moves).
