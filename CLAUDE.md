@@ -39,6 +39,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Function print copy | `docs/function-printing.md` |
 | Delivery temperatures | `docs/delivery-received.md` |
 | Shift ping recipients | `docs/ping-recipients.md` |
+| Ping sound and the head chef's choice of sound | `docs/ping-sound.md` |
 | Back arrow and page trail | `docs/navigation.md` |
 
 ## Whole-app audits
@@ -71,6 +72,7 @@ After approval, implement small reversible units under the existing shipping rul
 | `menu-survey.md` | The 120 Queensland menus behind the library (inspiration only, no prices) |
 | `js/amounts.js` | Reads typed amounts into a number and a unit (`LK_AMT.parse`, `.key`), shared with node. Before `js/prep.js`, in `SHELL` and both `js/upkeep.js` lists |
 | `js/learn.js` | Clocks when tomorrow's prep list was written on a night (`LK_LEARN.listStart`) and the usual time (`.usual`), shared with node (`scripts/nightly-learn.mjs`). Before `js/prep.js`, in `SHELL` and both `js/upkeep.js` lists. `tests/learn.test.js` |
+| `js/chime.js` | Ping sounds (`LK_CHIME`): five sounds made with Web Audio, played when the pings sheet pops up. Before `js/prep.js`, in `SHELL` and both `js/upkeep.js` lists. `docs/ping-sound.md` |
 | `js/cutoffs.js` | Order cut-offs: when each supplier's order closes and its reminder starts (`LK_CUT`), shared with node (`scripts/cutoff-push.mjs`). Before `js/prep.js`, in `SHELL` and both `js/upkeep.js` lists |
 | `js/suppliers.js`, `js/supplier-core.js`, `js/supplier-store.js` | The supplier workspace (`#/suppliers`): orders, catalogue, cut-off sheets. Loaded only for an authorised chef, not in `SHELL`. `docs/supplier-workspace.md` |
 | `js/deliveries.js` | Delivery received (`#/deliveries`): chilled and frozen temperatures. Loaded only when the page opens. `docs/delivery-received.md` |
@@ -276,3 +278,8 @@ Read `docs/ping-recipients.md` before changing recipients, queries or delivery. 
 Read `docs/proofreader-admin.md` before changing manual repairs or shared word protection.
 Keep each admin repair or word revision atomic with immutable private `proofHistory`, using `W()`.
 Reuse the existing config listener and report caches; preserve all repair fields and history in backups and PIN moves.
+
+## Ping sound (3 November 2026)
+
+Read `docs/ping-sound.md` before changing when a ping rings or the sounds. The sound follows the pings sheet popping up by itself (`noteChime()` in `noteOpen()`), never a new timer, read or listener.
+`config/main.pingSound` is written only by the verified admin and carried by the People save; check it against `LK_CHIME` before use. Never rename a sound id.
