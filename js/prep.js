@@ -5019,7 +5019,8 @@
     var l = ordQtyList(S.otext).slice(0, 3);
     if (!l.length) return '';
     sg('usual', 's');
-    return '<span class="nb-ql">Usual amount</span>' + l.map(function (x) { return '<button type="button" class="chip sq nb-qc" data-p="oqset" data-v="' + esc(x.q) + '">' + esc(x.q) + '</button>'; }).join('');
+    // "Add 5 L", like the prep list (3 Nov 2026, work pages redesign S6): a usual chip adds the line in one tap, with Undo
+    return '<span class="nb-ql">Usual amount</span>' + l.map(function (x) { return '<button type="button" class="chip sq nb-qc" data-p="oqset" data-v="' + esc(x.q) + '" aria-label="' + esc('Add ' + S.otext.trim() + ', ' + x.q) + '">Add ' + esc(x.q) + '</button>'; }).join('');
   }
   /* a line that rolled onto a later day is shown once, as its newest copy */
   function ordNewest(list) {
@@ -9193,9 +9194,9 @@
     }
     if (a === 'w-refresh') { loadWStats(true); if (whState().view === 'summary') loadStats(true); draw(); return; }
     if (a === 'miss-hide') { sset(docRef('misses', id), { hidden: true, q: ((S.misses || []).filter(function (x) { return x.id === id; })[0] || {}).q || id }, true).then(function () { loadMisses(true); }, failed); return; }
-    if (a === 'oqset') { S.oqty = el.getAttribute('data-v') || ''; draw(); var to = S.root.querySelector('[data-k="o-text"]'); if (to) to.focus(); return; }
-    // "Add 5 L": the usual amount goes in and the line is added in the same tap
+    // "Add 5 L": the usual amount goes in and the line is added in the same tap, on the prep list and the order list
     if (a === 'qset' || a === 'oqset') sg('usual', 't');
+    if (a === 'oqset') { S.oqty = el.getAttribute('data-v') || ''; if (S.otext.trim()) addOrder(); else { draw(); var to = S.root.querySelector('[data-k="o-text"]'); if (to) to.focus(); } return; }
     if (a === 'qset') { S.qty = el.getAttribute('data-v') || ''; if (S.text.trim()) addTyped(); else { draw(); var tq = S.root.querySelector('[data-k="p-text"]'); if (tq) tq.focus(); } return; }
     if (a === 'goto') { gotoRow(id); return; }
     if (a === 'start-toggle') { e.preventDefault(); S.startOpen = !S.startOpen; draw(); return; }
