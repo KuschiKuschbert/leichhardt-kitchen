@@ -179,6 +179,16 @@ async function cpuPerSecond(p, ms = 2000) {
       const locales = ['en', 'fil', 'ban', 'ne', 'hi', 'de'];
       return KB_COMPLETE_ART.length === 204 && KB_COMPLETE_ART.every(item => locales.every(code => typeof KB_CELEBRATION_COPY.events[item.id]?.[code] === 'string' && KB_CELEBRATION_COPY.events[item.id][code].trim()));
     }), 'all 204 manually available designs have complete sentences in all six languages');
+    // Stamps: every main festival and companion has one, and each is plain static SVG.
+    ok(await p.evaluate(ids => ids.every(id => window.KB_STAMPS?.has(id) || ['ph-salubong', 'ph-easter'].includes(id)), coverage), 'every main festival and companion has a stamp, except Salubong and Philippine Easter, which keep their drawing');
+    ok(await p.evaluate(ids => ids.filter(id => window.KB_STAMPS?.has(id)).every(id => {
+      const doc = new DOMParser().parseFromString(KB_STAMPS.svg(id), 'image/svg+xml'), root = doc.documentElement;
+      return !doc.querySelector('parsererror') && root.getAttribute('viewBox') === '0 0 32 32' && !doc.querySelector('[id],script,foreignObject,image');
+    }), coverage), 'stamps are plain 32 px SVG with no ids, scripts or images');
+    ok(await p.evaluate(() => ['in-navaratri', 'au-mothers-day', 'in-holi', 'np-holi'].every(id => {
+      const item = KB_COMPLETE_ART.find(t => t.id === id);
+      return item.icon.includes('data-kb-redrawn') && !/crossed|pichkari/i.test(item.motif);
+    })), 'Navaratri, Mother\u2019s Day and Holi use the redrawn marks with no red cross or syringe');
     for (const id of coverage) {
       await theme(p, id);
       facts = await navFacts(p);
@@ -253,6 +263,8 @@ async function cpuPerSecond(p, ms = 2000) {
     await p.click('[data-seasonal-selection="manual"]');
     ok(await p.locator('[data-seasonal-search]').evaluate(node => document.activeElement === node), 'Choose a celebration focuses its searchable collection');
     await p.fill('[data-seasonal-search]', 'Diwali');
+    await L.waitFor(p, () => document.querySelectorAll('.kb-seasonal-results .chip').length > 0);
+    ok(await p.evaluate(() => { const chips = [...document.querySelectorAll('.kb-seasonal-results .chip')]; return chips.length > 0 && chips.every(c => c.querySelector('.kb-seasonal-mark svg')); }), 'Choose a celebration shows each result with its stamp or drawing');
     await p.click('[data-seasonal-theme="in-diwali"]');
     await L.waitFor(p, () => document.querySelector('#app').dataset.kbTheme === 'in-diwali');
     ok(await p.locator('[data-seasonal-theme="in-diwali"]').getAttribute('aria-pressed') === 'true', 'a festival found in Settings applies immediately');
