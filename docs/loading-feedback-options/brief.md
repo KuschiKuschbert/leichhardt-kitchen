@@ -84,8 +84,8 @@ Not yet checked: a real phone, an iPhone, real Firebase latency, a screen reader
 
 Small pull requests in this order, each with click tests at 390, 768 and 1280 px, the reads budget check and reduced motion. The shared helpers and words from the proposal ride with the step that first needs them, so no pull request changes code without changing what the team sees.
 
-1. **Fix the stale Undo** (LF-01, LF-02): an Undo after a failed save does nothing wrong, and the older Undo keeps its full time. The test fails first on today's code.
-2. **Toasts: the docket slip** (LF-04, LF-05) on every page, the editors and the landing included, since all four toast copies share the same classes. Errors get a red edge and stay until OK. The editor copies are merged into one helper only if the change needs it (WA-10).
+1. **Fix the stale Undo** (LF-01, LF-02), built 4 Nov 2026 with this record: a failed save takes its own Undo with it, a Ticked Undo only ever unticks, and the older Undo keeps its full time. `tests/stale-undo.test.js`: 6 failed of 19 on the old code, 0 of 19 with the fix.
+2. **Toasts: the docket slip** (LF-04, LF-05), built 4 Nov 2026 with this record, on every page, the editors and the landing included, since all four toast copies share the same classes. Errors get a red edge and stay until OK. The editor copies stay separate for now (WA-10); their error toasts get the staying error look with step 3's editor follow-up.
 3. **Saving: the button tells the story** (LF-06, LF-12), form by form, starting with pings, minutes and deliveries, with the save words from the wording table.
 4. **Signal: the floating band**, with All sent and the update offer (LF-03 for the box and the strip).
 5. **Opening and pages: steady shell and same page, filling in** (LF-03, LF-08, LF-10, LF-11). Touches `index.html` and the saved-shell lists, so it goes alone.
