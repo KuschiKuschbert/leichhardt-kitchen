@@ -265,6 +265,7 @@ The final saved-copy case uses a separate native HTTP-cache context with 600-sec
 
 ## Head chef decisions
 
+- **3 November 2026, Supplier order and Delivery received redesign.** A, The Order Sheet, selected (`docs/receiving-design-options/brief.md`). Keep both pages and their flow, with no saved data or rules change. Build it in three small steps, Delivery received first. What came in? starts on Chilled each time; nothing about it is remembered on the phone. B's order check and temperature limits are not built.
 - **3 November 2026, seasonal themes approved for live release.** Keep the selected Kitchen Book drawing language, Santa-chef cap, green four-leaf clover, Melbourne Cup horse and animated lightsabre. Full ambience belongs on Home; work movement stays in the navbar. All six explanation languages cycle automatically, with no language picker. Remove the separate Pause languages button and its row to keep the explanation compact. Retain every manually selectable design and restrict Automatic to the main preset with confirmed dates. Apply the council's Philippine flag, Eid al-Adha, midnight-clock and mobile-ornament corrections. See [Seasonal celebrations](docs/seasonal-celebrations.md).
 - **1 November 2026, manual proofreader corrections.** The verified Google admin can restore original prep or order wording, edit a saved correction, protect individual words across staff devices and review private correction history. Use the existing Review desk design. Preserve quantities, status, original input and attribution. See [Admin proofreader](docs/proofreader-admin.md).
 - **1 November 2026, recipe multipliers.** Add multiplication to the recipe editor for head chef, admin and sous chefs only. The multiplier changes ingredient amounts in the draft for review before the usual Save.
@@ -821,7 +822,7 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 2. **Two recipes are hidden in the book but still in `js/data.js`** (29 Oct 2026): `chicken-adobo` (also first in Specials) and `pork-knuckle`. This is a dated static-source cleanup note. Recheck current public mirrors and hidden-recipe behaviour before acting. The owner still decides whether to remove the static entries or show the recipes again; no decision is made by this documentation update.
 
-3. **Choose a redesign for Supplier order and Delivery received** (3 Nov 2026). Two options with working phone mockups are in `docs/receiving-design-options/` (`brief.md`, `index.html`). A, The Order Sheet, is recommended: no saved data or rules change. B, The Supplier Docket, adds an order check on arrival and needs the head chef's temperature limits. One reading, chilled or frozen, already saves today; both options show one box at a time. Nothing in the app changes until the head chef chooses.
+3. **Build the Supplier order and Delivery received redesign** (A chosen 3 Nov 2026, `docs/receiving-design-options/brief.md`). Step 1 Delivery received, step 2 supplier rows, step 3 supplier strip, Share order text and admin delivery history. Remove this item when step 3 is merged.
 
 Remove each item here once it is done.
 

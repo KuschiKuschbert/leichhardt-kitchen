@@ -1,6 +1,6 @@
 # Supplier order and Delivery received: design options
 
-Requested by the head chef on 3 November 2026. Status: **waiting for the head chef's choice**. Nothing in the app changes until a direction is chosen. Recommended: **A, The Order Sheet**.
+Requested by the head chef on 3 November 2026. **A, The Order Sheet, was selected the same day** ("I trust your recommendations"). What came in? starts on Chilled each time. B is kept below as context only; its order check and temperature limits are not being built.
 
 The request: upgrade the supplier orders page (`#/suppliers`) and the Delivery received page (`#/deliveries`). One temperature, chilled or frozen, should be enough on a delivery. Come up with upgrades for each page and two redesigns, with a recommendation.
 
@@ -84,10 +84,10 @@ Tags: **Screen only** means no change to saved data or rules. **Your call** mean
 4. Nothing in A is thrown away. The expected-supplier chips, the On hand column and the Review bar are what B would build on.
 5. B's value depends on the head chef's limits and order checks. Those are easier to set after a few weeks of clean records with matching supplier names.
 
-## Head chef decisions needed
+## Head chef decisions (A selected, 3 November 2026)
 
-1. A or B (or A now and B's order check later).
-2. What came in? starts on Chilled every time, or remembers each supplier's last choice on that phone. Nothing is guessed when there is no last choice.
+1. A or B. Decided: A.
+2. What came in? starts on Chilled every time, or remembers each supplier's last choice on that phone. Decided: Chilled every time, so the phone keeps no new saved copy.
 3. For B only: the chilled and frozen limits. The Food Standards Code (Standard 3.2.2, clause 5) says chilled potentially hazardous food is received at 5 °C or colder and frozen food arrives frozen. The book sets no number until the head chef confirms it. Until then the mockup shows `[to come]`.
 
 ## Stays the same in both
