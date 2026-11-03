@@ -100,7 +100,7 @@ Tags: **Screen only** means no change to saved data or rules. **Your call** mean
 
 ## Notes for building A
 
-Step 1, Delivery received (`js/deliveries.js`, `css/app.css`):
+Step 1, Delivery received (`js/deliveries.js`, `css/app.css`). Built 3 November 2026; see `docs/delivery-received.md`, Design A on screen. The line under today's list reads "Not received yet today" rather than "Still expected", because the cut-offs say when a supplier delivers, not whether an order was placed:
 
 - The mode (Chilled, Frozen, Both) lives in the in-memory form only. The hidden box saves `null`, exactly as an empty box does now. A typed reading is never dropped silently: switching away from a box that holds a reading takes a second tap (the book's `arm()`), and the daily-lock draft keeps the mode.
 - The − key does not start pressed. A frozen reading above 0 °C shows its sign plainly before saving. This is a typing guard, not an acceptance limit.
