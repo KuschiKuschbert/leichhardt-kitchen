@@ -39,6 +39,16 @@ async function navFacts(p) {
   });
 }
 
+async function heavyMotion(p) {
+  // A filter or shadow animation repaints the drawing every frame. On Diwali that took 469 ms
+  // of every second on a slowed phone, against 13 ms for the same page without it.
+  return p.evaluate(() => document.getAnimations().filter(a => {
+    const t = a.effect && a.effect.target;
+    if (!(t instanceof Element) || !t.closest('.wtop,#kb-festive-effects,.kb-season-note')) return false;
+    return a.effect.getKeyframes().some(k => 'filter' in k || 'boxShadow' in k) || getComputedStyle(t).filter !== 'none';
+  }).map(a => a.animationName || 'animation'));
+}
+
 (async () => {
   const b = await L.start();
   let p;
@@ -111,6 +121,21 @@ async function navFacts(p) {
       facts = await navFacts(p);
       ok(facts.layers === 1 && facts.title === 1 && facts.clip && facts.viewportParticles === 0 && facts.activeAnimations > 0 && facts.state.navbarPreset, id + ': one moving clipped header with no body particles');
     }
+
+    // Glow and steam days, and Star Wars Day's blades, on a work page and on Home.
+    const glowDays = ['in-diwali', 'fun-halloween', 'fun-star-wars-day', 'in-pongal', 'ph-eid-al-fitr', 'au-christmas-eve'];
+    for (const id of glowDays) {
+      await theme(p, id);
+      const heavy = await heavyMotion(p);
+      ok(heavy.length === 0, id + ': work header moves only transform and opacity ' + heavy.join(' '));
+    }
+    await go(p, '#/');
+    for (const id of glowDays) {
+      await theme(p, id);
+      const heavy = await heavyMotion(p);
+      ok(heavy.length === 0, id + ': Home moves only transform and opacity ' + heavy.join(' '));
+    }
+    await go(p, '#/recipes');
 
     for (const [id, motif] of [['in-diwali', 'diya'], ['np-tihar', 'marigold-string'], ['bali-galungan', 'penjor'], ['bali-kuningan', 'tamiang'], ['ph-pahiyas', 'kiping'], ['ph-christmas-day', 'parol']]) {
       await theme(p, id);
