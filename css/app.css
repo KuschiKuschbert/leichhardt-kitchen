@@ -27,6 +27,30 @@
 .dl-readings dt { font-size: .875rem; color: var(--muted); }
 .dl-readings dd { margin: 0; font-weight: 700; font-size: 1.25rem; }
 .dl-note { margin: .4rem 0; white-space: pre-wrap; }
+/* Delivery received, design A (3 Nov 2026): time on one line, due-today chips, What came in? and one box at a time. */
+.dl-field[hidden], .dl-pair[hidden] { display: none; }
+.dl-when-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem .75rem; padding: 0 0 0 .75rem; border-radius: var(--r-act); background: var(--beige); }
+.dl-when-line > span { min-width: 0; overflow-wrap: anywhere; }
+.dl-due-pick { align-items: center; margin-top: -.4rem; }
+.dl-due-pick .hint { margin: 0 .2rem 0 0; }
+.dl-what { display: grid; gap: .45rem; }
+.dl-what .hint { margin: 0; }
+.dl-temps.one { grid-template-columns: minmax(0, 1fr); }
+.dl-temp { display: flex; align-items: stretch; min-height: 56px; border: 1.5px solid var(--edge); border-radius: var(--r-act); background: var(--paper); overflow: hidden; }
+.dl-temp:focus-within { outline: 2px solid var(--ink); outline-offset: 2px; }
+.dl-field .dl-temp input { flex: 1 1 auto; min-width: 0; min-height: 0; border: 0; border-radius: 0; padding: 0 .6rem; background: none; font: 700 1.6rem var(--display); font-variant-numeric: tabular-nums; }
+.dl-field .dl-temp input:focus-visible { outline: 0; }
+.dl-field .dl-temp input[aria-invalid="true"] { background: var(--hit); }
+.dl-sign { flex: 0 0 48px; border: 0; border-right: 1.5px solid var(--edge); background: var(--beige); color: var(--ink); font: 700 1.5rem var(--display); cursor: pointer; }
+.dl-sign[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.dl-sign:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
+.dl-unit { display: flex; align-items: center; padding: 0 .75rem; color: var(--muted); font-weight: 700; }
+.dl-sign-note:empty { display: none; }
+.dl-sign-note, .dl-hidden-note { margin: -.4rem 0 0; color: var(--small-ink); font-weight: 600; }
+.dl-form .dl-add-note { padding-left: 0; }
+.dl-actions .btn[type="submit"] { flex: 1 1 12rem; }
+.dl-waiting { margin: 1rem 0 0; padding-top: .9rem; border-top: 1px solid var(--line); color: var(--small-ink); }
+.dl-waiting b { color: var(--ink); }
 @media (max-width: 380px) { .dl-pair { grid-template-columns: 1fr; } }
 :root {
   --bg: #FBFAF7;

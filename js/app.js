@@ -986,7 +986,7 @@
       return;
     }
     root.innerHTML = mgNote('Delivery received', 'Opening delivery records...', ' ', 'orders');
-    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=4').catch(function (e) { deliveryLoad = null; throw e; });
+    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=5').catch(function (e) { deliveryLoad = null; throw e; });
     deliveryLoad.then(function () { if (parseRoute().name === 'deliveries') mountDeliveries(); }, function () {
       if (parseRoute().name === 'deliveries' && root.isConnected) root.innerHTML = mgNote('Could not open delivery records', 'Check the connection and try again.', '<button type="button" class="btn dark" data-delivery-retry>Try again</button>');
     });

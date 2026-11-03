@@ -1364,7 +1364,10 @@
       listSnap: listSnap,
       // the book's one two-tap helper (28 Oct 2026, js/draw.js and js/deliveries.js): arm(key, redraw) and armed(key).
       // js/fnedit.js keeps its own for now and does not use these, so FE_API stays as it is (README, Bringing the code in line)
-      arm: arm, armed: armed
+      arm: arm, armed: armed,
+      // the order cut-offs already on the phone (config/main, no read of its own): js/deliveries.js names the suppliers
+      // due today from their delivery days (3 Nov 2026). Empty where config/main is not readable (Functions-only)
+      cuts: cutList
     };
   }
   /* Supplier workspace (24 Oct 2026). This bridge shares the kitchen's sign-in, writer, clock and pending-write
