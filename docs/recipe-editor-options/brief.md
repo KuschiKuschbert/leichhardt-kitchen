@@ -109,6 +109,12 @@ Shipped in three pull requests, each step its own commit inside:
 
 Measured on the Chicken Burger: the recipe form opens 1,376 px tall on a phone (was about 8,200) and 1,236 px on a laptop (was 7,628); an ingredient row is 83 px closed (was 266).
 
+| Recipe form, phone | Recipe form, laptop |
+| --- | --- |
+| ![Chapters on a phone](../images/recipe-editor-chapters-phone.png) | ![Chapters on a laptop](../images/recipe-editor-chapters-desktop.png) |
+
+The [Drawings chapter](../images/recipe-editor-drawings-desktop.png) ([phone](../images/recipe-editor-drawings-phone.png)) and the [recipe list](../images/recipe-editor-list-desktop.png) ([phone](../images/recipe-editor-list-phone.png)) use the same look. Captures use the test stand-in's synthetic data and the real fonts.
+
 ## Every capability stays
 
 | Capability | A | B |
