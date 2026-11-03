@@ -14,7 +14,7 @@ const { R, ok } = L.results(), { txt } = L;
   const t1 = await txt(p, '.p-toast') || '';
   ok(/Not saved\. Ask the head chef/.test(t1) && !/PIN/.test(t1), 'rights refused: the message sends them to the head chef, not to the PIN (' + t1.trim() + ')');
   ok(/still in the box/.test(t1) && await p.inputValue('#p-text') === 'Crumb schnitzels', 'rights refused: the line is back in the box');
-  ok(await p.$('#pf1') === null && /Writing as\s*Ann/.test(await txt(p, '.nb-top') || ''), 'rights refused: Ann stays signed in');
+  ok(await p.$('#pf1') === null && await L.whoIs(p) === 'Ann', 'rights refused: Ann stays signed in');
   // a PIN that no longer counts: everything is refused, so the page asks for the PIN again
   await p.evaluate(() => { window.__fake.deny = null; window.__fake.mode = 'deny'; });
   await p.press('#p-text', 'Enter');

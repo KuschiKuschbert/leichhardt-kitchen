@@ -451,7 +451,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     ok(!(await reloaded(p)), 'update, no signal: the tap does not reload into an empty book');
     const u = await bar(p);
     ok(u && /^No signal\./.test(u.t) && u.fits, 'update, no signal: the strip says so, and it fits at 390 in a wide font (' + JSON.stringify(u) + ')');
-    ok(/Writing as/.test(await txt(p, '#prep-root') || ''), 'update, no signal: the prep list is still there');
+    ok(!!(await p.$('#prep-root .nb-left .nb-rows, #prep-root .nb-left .nb-title')), 'update, no signal: the prep list is still there');
     await p.context().setOffline(false);
     await L.settle(p, 300);
     await p.click('.upd-bar button');

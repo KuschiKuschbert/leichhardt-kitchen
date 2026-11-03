@@ -355,7 +355,8 @@ async function chefItems(page) {
   await page.click('.wtop-who'); await settle(page, 150);
   const l = await page.evaluate(() => [...document.querySelectorAll('.wm .wm-a')].map(e => e.getAttribute('data-v') || (e.getAttribute('data-who') === 'out' ? 'out' : (e.getAttribute('href') || '').replace('#/', ''))));
   await page.keyboard.press('Escape'); await settle(page, 100);
-  return l;
+  // Sign out sits on the person card at the top since 3 Nov 2026; the list keeps it last, as the menu had it before
+  return l.filter(x => x !== 'out').concat(l.includes('out') ? ['out'] : []);
 }
 /* Admin in the chef mark's menu (21 Oct 2026): 'signed' (Google sign-in done), 'outline' (Head chef PIN only) or 'none'. */
 async function admItem(page) {
@@ -369,6 +370,17 @@ async function chef(page, v) {
   await page.evaluate(() => { const g = document.querySelector('.nt-got'); if (g) g.click(); });
   await page.click('.wtop-who'); await settle(page, 150);
   await page.click('.wm [data-who="open"][data-v="' + v + '"]'); await settle(page, 400);
+}
+/* Who is signed in on this phone (3 Nov 2026: the "Writing as" row went from the four work pages; the chef hat says it). */
+const whoIs = page => page.evaluate(() => (window.LK_PREP && window.LK_PREP.whoName && window.LK_PREP.whoName()) || '');
+/* "Not you?" since 3 Nov 2026: the person card's Sign out in the chef hat menu. Opens the menu if it is closed and taps
+   it once. Returns the line under it: '' once signed out, "Not saved yet. Tap again to sign out" (or "Not sent yet.")
+   when the first tap only asks. */
+async function notYou(page) {
+  await page.evaluate(() => { const g = document.querySelector('.nt-got'); if (g) g.click(); });
+  if (!(await page.$('.wm'))) { await page.click('.wtop-who'); await settle(page, 150); }
+  await page.click('.wm [data-who="out"]'); await settle(page, 300);
+  return page.evaluate(() => { const s = document.querySelector('.wm-out small'); return s ? s.textContent.trim() : ''; });
 }
 /* Prints the results and sets the exit code, so run.js knows whether the file passed. */
 function report(results) {
@@ -456,4 +468,4 @@ async function clear(page, selector) {
     if (await button.isVisible()) await button.click();
   } else await input.fill('');
 }
-module.exports = { clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+module.exports = { whoIs, notYou, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
