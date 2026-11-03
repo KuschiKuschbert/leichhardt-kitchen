@@ -12,7 +12,7 @@
   function blank() {
     var collapsed = false; try { collapsed = localStorage.getItem('lk.sup.sidebar') === 'hide'; } catch (e) {}
     return { root: null, route: {}, routeKey: '', openItems: Object.create(null), suppliers: null, sid: '', mode: 'order', busy: false, err: '', msg: '', validation: null,
-      sidebar: !collapsed, q: '', group: '', page: 0, drafts: Object.create(null), history: Object.create(null),
+      sidebar: !collapsed, q: '', group: '', filter: '', page: 0, drafts: Object.create(null), history: Object.create(null),
       audit: Object.create(null), historyOpen: false, historyId: '', historyQ: '', smart: false, requests: null,
       requestsBusy: false, requestsError: '', requestsDay: '', cutQ: '', ed: null, supplierEd: null, review: null, additional: '',
       archive: '', reuse: '', importing: null, importMap: Object.create(null), importQ: '',
@@ -178,7 +178,14 @@
     options = options || {}; var iid = 'su-' + name;
     return '<label class="field" for="' + iid + '"><span class="label">' + label + '</span><input class="search" id="' + iid + '" data-sf="' + name + '" value="' + esc(value == null ? '' : value) + '"' + (options.readonly ? ' readonly' : '') + (options.type ? ' type="' + options.type + '"' : '') + (options.placeholder ? ' placeholder="' + esc(options.placeholder) + '"' : '') + (options.max ? ' maxlength="' + options.max + '"' : '') + (options.decimal ? ' inputmode="decimal"' : '') + '></label>';
   }
-  function supplierSelect() { return '<label class="field su-mobile-pick"><span class="label">Supplier</span><select class="search" data-sf="supplier">' + (M.suppliers || []).map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === M.sid ? ' selected' : '') + '>' + esc(s.name) + '</option>'; }).join('') + '</select></label>'; }
+  /* Today's cut-off beside each supplier (design A, step 3, 3 Nov 2026), from the cut-off occurrences already on the
+     phone: no read. "by 15:00" while open, "ordered" once ticked, nothing after it passed or with no cut-off today. */
+  function todayCut(s) {
+    if (!s || !s.cutoffId) return '';
+    var o = occurrences().filter(function (x) { return x.cutoffId === s.cutoffId && x.day === day(); })[0];
+    return !o ? '' : o.done ? 'ordered' : o.past ? '' : 'by ' + T.clock(o.at);
+  }
+  function supplierSelect() { return '<label class="field su-mobile-pick"><span class="label">Supplier</span><select class="search" data-sf="supplier">' + (M.suppliers || []).map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === M.sid ? ' selected' : '') + '>' + esc(s.name + (todayCut(s) ? ' · ' + todayCut(s) : '')) + '</option>'; }).join('') + '</select></label>'; }
   function statusHTML() {
     var task = activeTask(), note = M.armedLeave && (task === 'editor' || task === 'supplier' || task === 'import'), msg = M.armedLeave && !note ? '' : M.msg;
     var pending = M.review && task !== 'review' && (M.saving || M.review.uncertain) ? '<p id="su-recording-status" class="su-status" role="status">Recording for ' + esc(M.review.supplierName) + (M.saving ? ' is still in progress. ' : ' needs confirmation. ') + '<a href="#/suppliers/' + encodeURIComponent(M.review.sid) + '" data-su-recovery>Return to review</a>' + (M.saving ? ' to check its outcome.' : ' to retry safely.') + '</p>' : '';
@@ -189,7 +196,7 @@
       (canEdit() ? '<nav class="chips su-tools" aria-label="Supplier tools"><button type="button" class="chip" data-su="order-mode" aria-pressed="' + (M.mode === 'order') + '">Supplier order</button><button type="button" class="chip" data-su="manage" aria-pressed="' + (M.mode === 'manage') + '">Manage catalogue</button></nav>' : '');
   }
   function sidebarHTML() {
-    return '<aside class="su-side"><span class="label">Suppliers</span><nav aria-label="Suppliers">' + (M.suppliers || []).map(function (s) { return '<button type="button" class="chip su-pick" data-su="pick" data-sid="' + esc(s.id) + '" aria-pressed="' + (s.id === M.sid) + '"><span>' + esc(s.name) + '</span><small>' + s.items.filter(function (i) { return !i.archived; }).length + '</small></button>'; }).join('') + '</nav>' + (canEdit() ? '<div class="su-side-bottom">' + smallButton('add-supplier', 'Add supplier') + '</div>' : '') + '</aside>';
+    return '<aside class="su-side"><span class="label">Suppliers</span><nav aria-label="Suppliers">' + (M.suppliers || []).map(function (s) { return '<button type="button" class="chip su-pick" data-su="pick" data-sid="' + esc(s.id) + '" aria-pressed="' + (s.id === M.sid) + '"><span>' + esc(s.name) + (todayCut(s) ? '<em class="su-pick-cut' + (todayCut(s) === 'ordered' ? ' done' : '') + '">' + esc(todayCut(s)) + '</em>' : '') + '</span><small>' + s.items.filter(function (i) { return !i.archived; }).length + '</small></button>'; }).join('') + '</nav>' + (canEdit() ? '<div class="su-side-bottom">' + smallButton('add-supplier', 'Add supplier') + '</div>' : '') + '</aside>';
   }
   function emptyHTML() { return '<div class="empty"><h3 class="h3">No supplier catalogue yet</h3><p>Supplier goods and pars are private. The head chef can import the checked catalogue or add a supplier here.</p>' + (canEdit() ? '<div class="btn-row">' + button('import', 'Import catalogue', '', true) + button('add-supplier', 'Add supplier') + '</div>' : '<p class="hint">Ask the head chef to import the supplier sheets.</p>') + '</div>'; }
   function currentPar(i) { return i.par === '' ? 'Not set' : i.par; }
@@ -234,17 +241,36 @@
       var search = M.root.querySelector('[data-sf="q"]');
       if (search && window.LK_UX && window.LK_UX.resetSearch) window.LK_UX.resetSearch(search);
       M.validation = { id: e.field, field: e.code === 'stock' ? 'stock' : 'qty' };
-      M.q = ''; M.group = ''; M.page = Math.floor(index / 20);
-      if (e.code === 'stock') M.openItems[e.field] = true;
+      M.q = ''; M.group = ''; M.filter = ''; M.page = Math.floor(index / 20);
     }
     draw();
     if (M.validation) { var el = entryInput(M.validation.field, M.validation.id); if (el) { el.scrollIntoView({ block: 'center' }); el.focus({ preventScroll: true }); } }
   }
+  function itemCount(n) { return n + (n === 1 ? ' item' : ' items'); }
   function quantityText(q) { return !q.unit ? q.amount + ' (unit not set)' : q.qty; }
   function orderUnitHint(i, d) { var unit = entryUnit('qty', i, d); return unit ? 'Order unit: ' + unit : String(d.qty[i.id] || '').trim() ? 'Unit not set' : 'Unit optional'; }
+  /* Design A, step 2 (head chef, 3 Nov 2026): On hand sits on the row next to To order, and a counted top-up to par
+     shows as a Use chip on its own row (the same Apply as the Suggestions panel; nothing fills by itself). */
+  function topUp(i, d) {
+    if (String(d.qty[i.id] || '').trim() || d.dismissed[i.id] || !String(d.stock[i.id] || '').trim()) return null;
+    var p = null; try { p = C.suggestQuantity(i, latest(), d.stock[i.id] || '', fieldUnit('stock', i, d)); } catch (e) { p = null; }
+    return p && p.kind === 'topup' ? p : null;
+  }
+  function stepper(i, d, input) {
+    // − and + only where the order unit is confirmed, so a number always means that unit; typing still works
+    if (!i.orderUnit) return input;
+    return '<span class="su-step">' + '<button type="button" class="su-step-b" data-su="step" data-i="' + esc(i.id) + '" data-d="-1" aria-label="One less: ' + esc(i.name) + '">−</button>' + input +
+      '<button type="button" class="su-step-b" data-su="step" data-i="' + esc(i.id) + '" data-d="1" aria-label="One more: ' + esc(i.name) + '">+</button></span>';
+  }
   function rowHTML(i) {
-    var d = draft(), l = lastLine(i.id), h = hist(), source = i.source || {}, match = matchInfo().matches.filter(function (m) { return m.itemId === i.id; })[0];
-    return '<div class="su-row" data-item="' + esc(i.id) + '"><details class="su-item"' + (M.openItems[i.id] ? ' open' : '') + '><summary><b>' + esc(i.name) + '</b><span class="hint">Pack: ' + esc(i.pack || 'Not set') + ' · Details</span>' + (match ? '<span class="su-request">Staff request to check</span>' : '') + '</summary><div class="su-item-more"><dl><dt>Source</dt><dd>' + (i.manual ? 'Added manually' : esc(source.file) + ' · page ' + esc(source.page)) + '</dd><dt>Original PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : source.par === '' ? 'Not set' : source.par) + '</dd><dt>Par unit</dt><dd>' + esc(i.parUnit || 'Unconfirmed') + '</dd><dt>Order unit</dt><dd>' + esc(i.orderUnit || 'Unconfirmed') + '</dd></dl><label class="field"><span class="label">Stock counted for this order' + (entryUnit('stock', i, d) ? ' (' + esc(entryUnit('stock', i, d)) + ')' : String(d.stock[i.id] || '').trim() ? ' (unit not set)' : '') + '</span><input class="search" data-sf="stock" data-i="' + esc(i.id) + '" aria-label="Stock count: ' + esc(i.name) + '" placeholder="e.g. 4" value="' + esc(d.stock[i.id] || '') + '" maxlength="40"' + validationAttrs('stock', i.id) + '>' + entryError('stock', i) + '</label><p class="hint">Only compatible confirmed units or a verified pack conversion can produce a top-up.</p>' + (match ? '<p class="hint">Matched by the exact item name or an explicit alias. Check the staff order list before deciding the quantity.</p>' : '') + '</div></details><div class="su-par"><span class="su-mobile-label">Par</span><b>' + esc(currentPar(i)) + '</b><small>' + esc(i.parUnit || 'To confirm') + '</small></div><div class="su-last"><span class="su-mobile-label">Last order</span>' + esc(l ? quantityText(l) : !h.rows ? 'Loading' : latest() ? 'Not ordered' : 'No order yet') + '</div><label class="su-qty"><span class="su-mobile-label">To order</span><input class="search" data-sf="qty" data-i="' + esc(i.id) + '" aria-label="To order: ' + esc(i.name) + '" placeholder="e.g. 2" value="' + esc(d.qty[i.id] || '') + '" maxlength="40"' + validationAttrs('qty', i.id) + '><small class="hint">' + esc(orderUnitHint(i, d)) + '</small>' + entryError('qty', i) + '</label></div>';
+    var d = draft(), l = lastLine(i.id), h = hist(), source = i.source || {}, match = matchInfo().matches.filter(function (m) { return m.itemId === i.id; })[0], top = topUp(i, d);
+    var stockUnit = entryUnit('stock', i, d), qtyInput = '<input class="search" data-sf="qty" data-i="' + esc(i.id) + '" aria-label="To order: ' + esc(i.name) + '" placeholder="e.g. 2" value="' + esc(d.qty[i.id] || '') + '" maxlength="40"' + validationAttrs('qty', i.id) + '>';
+    return '<div class="su-row" data-item="' + esc(i.id) + '"><details class="su-item"' + (M.openItems[i.id] ? ' open' : '') + '><summary><b>' + esc(i.name) + '</b><span class="hint">Pack: ' + esc(i.pack || 'Not set') + ' · Details</span>' + (match ? '<span class="su-request">Staff asked for this</span>' : '') + '</summary><div class="su-item-more"><dl><dt>Source</dt><dd>' + (i.manual ? 'Added manually' : esc(source.file) + ' · page ' + esc(source.page)) + '</dd><dt>Original PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : source.par === '' ? 'Not set' : source.par) + '</dd><dt>Par unit</dt><dd>' + esc(i.parUnit || 'Unconfirmed') + '</dd><dt>Order unit</dt><dd>' + esc(i.orderUnit || 'Unconfirmed') + '</dd></dl>' +
+      '<p class="hint">Only compatible confirmed units or a verified pack conversion can produce a top-up.</p>' + (match ? '<p class="hint">Matched by the exact item name or an explicit alias. Check the staff order list before deciding the quantity.</p>' : '') + '</div></details>' +
+      '<div class="su-par"><span class="su-mobile-label">Par</span><b>' + esc(currentPar(i)) + '</b><small>' + esc(i.parUnit || 'To confirm') + '</small></div><div class="su-last"><span class="su-mobile-label">Last order</span>' + esc(l ? quantityText(l) : !h.rows ? 'Loading' : latest() ? 'Not ordered' : 'No order yet') + '</div>' +
+      '<label class="su-qty"><span class="su-mobile-label">To order</span>' + stepper(i, d, qtyInput) + '<small class="hint">' + esc(orderUnitHint(i, d)) + '</small>' + entryError('qty', i) + '</label>' +
+      '<div class="su-count"><label class="su-onhand"><span>On hand' + (stockUnit ? ' (' + esc(stockUnit) + ')' : String(d.stock[i.id] || '').trim() ? ' (unit not set)' : '') + '</span><input class="search" data-sf="stock" data-i="' + esc(i.id) + '" aria-label="Stock count: ' + esc(i.name) + '" placeholder="e.g. 4" value="' + esc(d.stock[i.id] || '') + '" maxlength="40"' + validationAttrs('stock', i.id) + '></label>' +
+      (top ? '<button type="button" class="su-use" data-su="apply" data-i="' + esc(i.id) + '" title="' + esc(top.reason) + '" aria-label="Use top-up ' + esc(quantityText(top)) + ' for ' + esc(i.name) + '">Top up ' + esc(quantityText(top)) + ' · Use</button>' : '') + entryError('stock', i) + '</div></div>';
   }
   function suggestionsHTML() {
     var d = draft(), suggestions = items().map(function (i) { var p = C.suggestQuantity(i, latest(), d.stock[i.id] || '', fieldUnit('stock', i, d)); return p ? { item: i, pick: p } : null; }).filter(function (s) { return s && !d.dismissed[s.item.id] && !String(d.qty[s.item.id] || '').trim(); });
@@ -288,7 +314,8 @@
   function linesHTML(lines) { return '<div class="su-lines">' + lines.map(function (l) { return '<div><span><b>' + esc(l.name) + '</b><small class="hint">Pack: ' + esc(l.pack || 'Not set') + '</small></span><strong>' + esc(quantityText(l)) + '</strong></div>'; }).join('') + '</div>'; }
   function reviewHTML() {
     var r = M.review;
-    return '<section class="su-review"><h2 id="rtitle" tabindex="-1">Review order</h2>' + statusHTML() + '<p>' + esc(r.supplierName) + ' · ' + r.lines.length + ' items</p>' + linesHTML(r.lines) + '<p>Record this only after you have placed the supplier order. This page sends nothing to the supplier.</p>' + (r.occurrence ? '<p class="hint">' + (r.additional ? 'Additional order for ' : 'Completes only ') + esc(r.occurrence.label || r.occurrence.day) + '.</p>' : '<p class="hint">No reminder linked. This records the supplier history only.</p>') + '<div class="btn-row">' + button('record', M.saving ? inkLabel('Recording...') : r.checking ? inkLabel('Checking cut-off...', 'orders') : r.uncertain ? 'Confirm recording again' : 'Record order placed', M.saving || r.checking ? ' disabled aria-busy="true"' : r.recorded ? ' disabled' : '', true) + (r.recorded ? button('new-draft', 'Start new draft', M.saving ? ' disabled' : '') : '') + button('copy-review', 'Copy order text', M.saving ? ' disabled' : '') + '</div></section>';
+    return '<section class="su-review"><h2 id="rtitle" tabindex="-1">Review order</h2>' + statusHTML() + '<p>' + esc(r.supplierName) + ' · ' + r.lines.length + ' items</p>' + linesHTML(r.lines) + '<p>Record this only after you have placed the supplier order. This page sends nothing to the supplier.</p>' + (r.occurrence ? '<p class="hint">' + (r.additional ? 'Additional order for ' : 'Completes only ') + esc(r.occurrence.label || r.occurrence.day) + '.</p>' : '<p class="hint">No reminder linked. This records the supplier history only.</p>') + '<div class="su-send"><b>1. Send it your usual way</b><div class="btn-row">' + (navigator.share ? button('share-review', 'Share order text', M.saving ? ' disabled' : '') : '') + button('copy-review', 'Copy order text', M.saving ? ' disabled' : '') + '</div><span class="hint">' + (navigator.share ? 'Share opens your phone\'s text, email or chat apps. ' : '') + 'The book sends nothing itself.</span></div>' +
+      '<b class="su-then">2. Then record it here</b><div class="btn-row">' + button('record', M.saving ? inkLabel('Recording...') : r.checking ? inkLabel('Checking cut-off...', 'orders') : r.uncertain ? 'Confirm recording again' : 'Record order placed', M.saving || r.checking ? ' disabled aria-busy="true"' : r.recorded ? ' disabled' : '', true) + (r.recorded ? button('new-draft', 'Start new draft', M.saving ? ' disabled' : '') : '') + '</div></section>';
   }
   function historyHTML() {
     var h = hist(), rows = h.rows || [], selected = rows.filter(function (o) { return o.id === M.historyId; })[0] || rows[0];
@@ -301,11 +328,40 @@
     if (h.more) body += '<div class="btn-row">' + button('history-more', 'Older orders', h.busy ? ' disabled' : '') + '</div>';
     return '<section class="su-disclosure"><button type="button" class="su-disclosure-button" data-su="history" aria-expanded="' + M.historyOpen + '">Order history <span class="hint">' + (M.historyOpen ? 'Hide' : 'Show') + '</span></button>' + (M.historyOpen ? '<div class="su-disclosure-body">' + body + '</div>' : '') + '</section>';
   }
+  // Counted below par: the same top-up maths as the Use chip, whether or not a quantity is typed yet
+  function low(i, d) { if (!String(d.stock[i.id] || '').trim()) return false; try { var p = C.suggestQuantity(i, latest(), d.stock[i.id], fieldUnit('stock', i, d)); return !!(p && p.kind === 'topup'); } catch (e) { return false; } }
+  function askedIds() { return M.requests ? matchInfo().matches.map(function (m) { return m.itemId; }) : null; }
+  function shown(i, d) {
+    if (M.filter === 'low') return low(i, d);
+    if (M.filter === 'asked') { var a = askedIds(); return !a || a.indexOf(i.id) >= 0; }
+    if (M.filter === 'inorder') return !!String(d.qty[i.id] || '').trim();
+    return true;
+  }
+  function filterChips(d) {
+    var all = items(), asked = askedIds(), count = function (f) { return all.filter(f).length; };
+    var chips = [['', 'All', all.length], ['low', 'Below par', count(function (i) { return low(i, d); })]]
+      .concat(asked ? [['asked', 'Asked for', count(function (i) { return asked.indexOf(i.id) >= 0; })]] : [])
+      .concat([['inorder', 'In this order', count(function (i) { return !!String(d.qty[i.id] || '').trim(); })]]);
+    if (M.filter === 'asked' && !asked) M.filter = '';
+    return '<div class="chips su-filters" role="group" aria-label="Show items">' + chips.map(function (c) { return '<button type="button" class="chip" data-su="filter" data-f="' + c[0] + '" aria-pressed="' + (M.filter === c[0]) + '">' + c[1] + ' <span class="su-n">' + c[2] + '</span></button>'; }).join('') + '</div>';
+  }
+  /* What staff asked for, in full: today's unfilled staff order lines that match this supplier's items exactly (name or
+     confirmed alias). Read on a tap only: one query (the same B().requests() the Suggestions panel uses). */
+  function requestsHTML() {
+    if (M.requestsBusy) return loading('Reading staff requests...', 'orders');
+    if (M.requestsError) return '<p class="hint">' + esc(M.requestsError) + ' ' + smallButton('requests-retry', 'Try again') + '</p>';
+    if (!M.requests) return '<div class="su-asked-ask">' + smallButton('requests', 'Show what staff asked for') + '</div>';
+    var m = matchInfo().matches;
+    if (!m.length) return '<p class="hint su-asked-none">No staff requests on today\'s Order list match this supplier\'s items. Others stay on the <a href="#/orders">Order list</a>.</p>';
+    return '<section class="su-asked" aria-labelledby="su-asked-h"><h4 id="su-asked-h">Staff asked for</h4><ul>' + m.map(function (x) { var it = item(x.itemId); return x.requests.map(function (r) {
+      return '<li><b>' + esc(r.text || '') + '</b>' + (r.qty ? ', ' + esc(r.qty) : '') + '<span class="hint"> · ' + esc(r.addedBy || 'Staff') + (typeof r.addedAt === 'number' ? ' at ' + esc(T.clock(r.addedAt)) : '') + (it ? ' · matches ' + esc(it.name) : '') + '</span></li>';
+    }).join(''); }).join('') + '</ul><p class="hint">Nothing is ticked off here. Others stay on the <a href="#/orders">Order list</a>.</p></section>';
+  }
   function orderHTML() {
-    var s = supplier(), list = filterItems(false), last = '', d = draft(); M.page = Math.max(0, Math.min(M.page, Math.ceil(list.length / 20) - 1));
+    var s = supplier(), d = draft(), list = filterItems(false).filter(function (i) { return shown(i, d); }), last = ''; M.page = Math.max(0, Math.min(M.page, Math.ceil(list.length / 20) - 1));
     if (activeTask() === 'review') return reviewHTML();
     var table = list.slice(M.page * 20, M.page * 20 + 20).map(function (i) { var title = i.category !== last ? '<div class="su-category">' + esc(i.category || 'Other items') + '</div>' : ''; last = i.category; return title + rowHTML(i); }).join('');
-    return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3><span class="hint">' + items().length + ' items</span></div>' + cutoffHTML() + latestHTML() + suggestionsHTML() + '<p class="hint">Current par from the catalogue. Blank is Not set; 0 stays 0. Enter a number, or include a unit, e.g. 2 kg. Numbers use the shown order unit; otherwise the quantity is saved without a unit.</p><div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last order</span><span>To order</span></div>' + (table || '<p class="empty">No items match.</p>') + pager(list) + '<div class="su-order-actions"><span class="hint">' + Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length + ' items in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + historyHTML();
+    return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3><span class="hint">' + items().length + ' items</span></div>' + cutoffHTML() + latestHTML() + suggestionsHTML() + requestsHTML() + '<p class="hint">A number uses the order unit shown; type a unit for another, e.g. 2 kg. Par blank is Not set; 0 stays 0.</p>' + filterChips(d) + '<div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last order</span><span>To order</span></div>' + (table || '<p class="empty">' + (M.filter ? 'No items match this filter.' : 'No items match.') + '</p>') + pager(list) + '<div class="su-order-actions"><span class="hint">' + itemCount(Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length) + ' in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + historyHTML();
   }
   function sourceHTML(i) { return '<details class="su-source"><summary>Original record</summary><dl><dt>Item name</dt><dd>' + esc(i.manual ? 'Added manually' : i.source.name) + '</dd><dt>PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : i.source.par === '' ? 'Not set' : i.source.par) + '</dd><dt>Source</dt><dd>' + esc(i.manual ? 'Manual item' : i.source.file + ', page ' + i.source.page) + '</dd></dl></details>'; }
   function unitField(k, label, value) { return '<label class="field"><span class="label">' + label + '</span><input class="search" data-sf="' + k + '" value="' + esc(value || '') + '" list="su-unit-list" maxlength="40" placeholder="Unconfirmed"></label>'; }
@@ -423,7 +479,7 @@
   }
   function pick(sid) {
     if (!leaveForm('pick:' + sid)) return;
-    M.sid = sid; M.route.cutoffId = ''; M.route.cutoffDay = ''; M.q = ''; M.group = ''; M.page = 0; M.review = null; M.additional = ''; M.historyOpen = false; M.auditOpen = false; M.historyId = ''; M.err = ''; M.msg = ''; M.validation = null; M.archive = ''; M.reuse = ''; draw(); loadHistory(false, false);
+    M.sid = sid; M.route.cutoffId = ''; M.route.cutoffDay = ''; M.q = ''; M.group = ''; M.filter = ''; M.page = 0; M.review = null; M.additional = ''; M.historyOpen = false; M.auditOpen = false; M.historyId = ''; M.err = ''; M.msg = ''; M.validation = null; M.archive = ''; M.reuse = ''; draw(); loadHistory(false, false);
   }
   function beginReview() {
     if (!canRead() || M.saving) return;
@@ -484,8 +540,15 @@
     var d = draft(); d.qty = Object.create(null); d.stock = Object.create(null); d.units = { qty: Object.create(null), stock: Object.create(null) }; d.suggestions = Object.create(null);
     order.lines.forEach(function (l) { var i = item(l.itemId); if (i && !i.archived) { d.qty[i.id] = l.qty; d.units.qty[i.id] = l.unit; } }); M.reuse = ''; M.msg = 'Previous quantities copied into this draft. Review them before ordering.'; draw();
   }
+  function orderText(lines, name) { return name + '\n' + lines.map(function (l) { return quantityText(l) + ' | ' + l.name; }).join('\n'); }
+  // The phone's own share sheet; the person picks the app and sends. A cancelled share says nothing; a failed one copies.
+  function shareOrder(lines, name) {
+    var text = orderText(lines, name);
+    if (!navigator.share) { copyOrder(lines, name); return; }
+    navigator.share({ title: name, text: text }).then(function () { message('Order text shared. Record it here once the order is placed.'); }, function (e) { if (!e || e.name !== 'AbortError') copyOrder(lines, name); });
+  }
   function copyOrder(lines, name) {
-    var text = name + '\n' + lines.map(function (l) { return quantityText(l) + ' | ' + l.name; }).join('\n');
+    var text = orderText(lines, name);
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { message('Order text copied. Nothing was sent.'); }, function () { copyFallback(text); }); else copyFallback(text);
   }
   function copyFallback(text) { M.msg = 'Copy is unavailable here. Select the order text below.'; draw(); var area = document.createElement('textarea'); area.className = 'search su-copy'; area.readOnly = true; area.value = text; area.setAttribute('aria-label', 'Order text to copy'); if (M.root) { M.root.appendChild(area); area.focus(); area.select(); } }
@@ -591,6 +654,18 @@
     if (cmd === 'order-mode' && leaveForm('order-mode')) orderMode();
     if (cmd === 'smart') { M.smart = !M.smart; draw(); if (M.smart) loadRequests(); }
     if (cmd === 'requests-retry') { M.requests = null; loadRequests(); }
+    if (cmd === 'requests') loadRequests();
+    if (cmd === 'filter') { M.filter = el.getAttribute('data-f') || ''; M.page = 0; draw(); }
+    // − and + change the number in the box by one order unit; a typed unit after the number stays as it is
+    if (cmd === 'step') {
+      var sd = draft(), si = item(id), cur = String(sd.qty[id] || '').trim(), mm = /^(\d+(?:[.,]\d+)?)(\s*\S.*)?$/.exec(cur);
+      if (si && si.orderUnit && (!cur || mm)) {
+        var n = Math.max(0, Math.round(((mm ? Number(mm[1].replace(',', '.')) : 0) + Number(el.getAttribute('data-d'))) * 1000) / 1000);
+        var next = n > 0 ? String(n) + (mm && mm[2] ? mm[2] : '') : '';
+        sd.qty[id] = next; if (next) sd.units.qty[id] = si.orderUnit; else delete sd.units.qty[id];
+        delete sd.suggestions[id]; M.review = null; clearEntryError('qty', id, next); draw();
+      }
+    }
     if (cmd === 'apply') { var d = draft(), i = item(id), suggestion = i && C.suggestQuantity(i, latest(), d.stock[id] || '', fieldUnit('stock', i, d)); if (suggestion && !String(d.qty[id] || '').trim()) { d.qty[id] = suggestion.qty; d.units.qty[id] = suggestion.unit; d.suggestions[id] = suggestion; M.review = null; message('Suggestion added. Check its quantity and unit before ordering.'); } }
     if (cmd === 'dismiss') { draft().dismissed[id] = true; draw(); }
     if (cmd === 'additional') { M.additional = occurrenceKey(occurrence()); M.review = null; message('An additional order will keep the same cut-off link. Previous orders stay in history.'); }
@@ -598,6 +673,7 @@
     if (cmd === 'cutoff-settings') { if (B().openCutoffs) B().openCutoffs(); else location.hash = '#/admin'; }
     if (cmd === 'review') beginReview(); if (cmd === 'record') record(); if (cmd === 'review-close') closeReview();
     if (cmd === 'copy-review' && M.review) copyOrder(M.review.lines, M.review.supplierName);
+    if (cmd === 'share-review' && M.review) shareOrder(M.review.lines, M.review.supplierName);
     if (cmd === 'history') { M.historyOpen = !M.historyOpen; draw(); if (M.historyOpen) loadHistory(true, false); }
     if (cmd === 'history-close') closeHistory();
     if (cmd === 'history-retry') { hist().rows = null; loadHistory(M.historyOpen, false); }
@@ -620,7 +696,10 @@
     if (f === 'q') { M.q = el.value; M.page = 0; draw(); return; }
     if (f === 'cutQ') { M.cutQ = el.value; draw(); return; }
     if (f === 'historyQ') { M.historyQ = el.value; draw(); return; } if (f === 'importQ') { M.importQ = el.value; draw(); return; }
-    if (f === 'qty' || f === 'stock') { draft()[f][id] = el.value; var enteredItem = item(id); if (String(el.value).trim() && enteredItem) draft().units[f][id] = f === 'qty' ? enteredItem.orderUnit : enteredItem.parUnit; else delete draft().units[f][id]; if (f === 'qty') delete draft().suggestions[id]; M.review = null; clearEntryError(f, id, el.value); if (M.smart || f === 'stock') draw(); else { var hint = el.closest('.su-qty').querySelector('.hint'); if (hint) hint.textContent = orderUnitHint(item(id), draft()); var count = M.root.querySelector('.su-order-actions > .hint'); if (count) count.textContent = Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length + ' items in this supplier draft'; var reviewButton = M.root.querySelector('[data-su="review"]'); if (reviewButton) reviewButton.disabled = !Object.keys(draft().qty).some(function (k) { return String(draft().qty[k]).trim(); }); } return; }
+    if (f === 'qty' || f === 'stock') { draft()[f][id] = el.value; var enteredItem = item(id); if (String(el.value).trim() && enteredItem) draft().units[f][id] = f === 'qty' ? enteredItem.orderUnit : enteredItem.parUnit; else delete draft().units[f][id]; if (f === 'qty') delete draft().suggestions[id]; M.review = null; clearEntryError(f, id, el.value); if (M.smart || f === 'stock') draw(); else { var hint = el.closest('.su-qty').querySelector('.hint'); if (hint) hint.textContent = orderUnitHint(item(id), draft()); var count = M.root.querySelector('.su-order-actions > .hint'); if (count) count.textContent = itemCount(Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length) + ' in this supplier draft'; var reviewButton = M.root.querySelector('[data-su="review"]'); if (reviewButton) reviewButton.disabled = !Object.keys(draft().qty).some(function (k) { return String(draft().qty[k]).trim(); });
+      // the row's Use chip steps aside once a quantity is typed; In this order keeps its count (no redraw, the caret stays)
+      var use = Array.prototype.filter.call(M.root.querySelectorAll('.su-use'), function (b) { return b.getAttribute('data-i') === id; })[0]; if (use) use.hidden = !!String(el.value).trim();
+      var inOrder = M.root.querySelector('[data-su="filter"][data-f="inorder"] .su-n'); if (inOrder) inOrder.textContent = Object.keys(draft().qty).filter(function (k) { return String(draft().qty[k]).trim(); }).length; } return; }
     if (M.ed && canEdit() && Object.prototype.hasOwnProperty.call(M.ed.value, f)) { disarmLeave(); M.ed.value[f] = f === 'aliases' ? el.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean) : f === 'factor' ? (el.value.trim() === '' ? 0 : Number(el.value)) : el.value; M.ed.more = !!(M.root.querySelector('.su-more') && M.root.querySelector('.su-more').open); saveSync(); }
     if (M.supplierEd && canEdit() && f === 'supplierName') { disarmLeave(); M.supplierEd.value.name = el.value; saveSync(); }
   });
