@@ -115,7 +115,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
     await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
     const k = await p.evaluate(() => document.querySelectorAll('.mg-ing').length - 1);
     await p.fill('[data-f="ing.' + k + '.q"]', q); await p.fill('[data-f="ing.' + k + '.name"]', name);
-    await p.click('[data-mg="ing-tags"][data-i="' + k + '"]'); await L.settle(p, 150);
+    await L.openRow(p, k);
     await L.choose(p, '[data-mg="tag"][data-i="' + k + '"][data-v="Gluten"]'); await L.settle(p, 150);
   }
   await p.fill('#mg-ss-0', 'Whisk the beer into the flour until smooth.\nRest 20 minutes in the cool room.');

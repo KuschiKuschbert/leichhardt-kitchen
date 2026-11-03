@@ -1964,6 +1964,31 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 .mg-ing .search, .mg-pinrow .search { height: 2.75rem; font-size: 1rem; }
 .mg-mini { gap: 0.4rem; }
 .mg-tags .chip { min-height: 40px; padding: 0 0.7rem; }
+/* Ingredient rows (3 Nov 2026, recipe editor): a ruled list. Amount and name in the row, one short line under it, the
+   note, link, allergens and moving behind the arrow. */
+.mg-sec-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; }
+.mg-sec-head .h3 { margin: 0; }
+.mg-ings { gap: 0; border-top: 1.5px solid var(--ink); }
+.mg-ings .mg-ing { gap: 0.25rem; padding: 0.45rem 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }
+.mg-ings .mg-ing.open { padding: 0.5rem 0.5rem 0.6rem; background: var(--paper); box-shadow: inset 4px 0 0 var(--accent); }
+.mg-ing-more { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 1.5px solid var(--edge); border-radius: var(--r-act); background: var(--paper); color: var(--ink); cursor: pointer; }
+.mg-ing-more svg { transition: rotate 0.15s ease-out; }
+.mg-ing-more[aria-expanded="true"] { border-color: var(--ink); }
+.mg-ing-more[aria-expanded="true"] svg { rotate: 180deg; }
+.mg-ing-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.35rem; min-width: 0; padding-left: 2.1rem; font-size: 0.8125rem; color: var(--muted); }
+.mg-ing-sum .tag { font-size: 0.75rem; padding: 0 0.4rem; color: var(--ink); }
+.mg-ing-sum .mg-ing-ln { border-color: var(--accent-ink); }
+.mg-ing-note { overflow-wrap: anywhere; }
+.mg-ing-open { display: flex; flex-direction: column; gap: 0.7rem; padding: 0.4rem 0 0 2.1rem; }
+.mg-ing-open .hint { margin: 0; }
+.mg-del { color: var(--tag); }
+/* the recipe link: its box and the shared picker read as one control */
+.mg-linkbox { display: flex; min-width: 0; }
+.mg-linkbox .mg-link { flex: 1 1 auto; min-width: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.mg-linkbox > .ux-picker-trigger { flex: 0 0 3rem; justify-content: center; padding: 0; border: 1.5px solid var(--ink); border-left: 0; border-radius: 0 var(--radius) var(--radius) 0; font-size: 0; }
+.mg-linkbox > .ux-picker-trigger::after { content: '\25BE'; font-size: 1.15rem; }
+.mg-scale-box { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.7rem 0.8rem; border-radius: var(--radius); background: var(--beige); }
+.mg-scale-box .hint { margin: 0; }
 .mg-tag.is-has { background: var(--ink); color: #fff; }
 .mg-tag.is-may { border-style: dashed; background: var(--beige); }
 .mg-step-sec { display: flex; flex-direction: column; gap: 0.5rem; padding-bottom: 0.8rem; border-bottom: 1px dashed var(--line); }
@@ -1992,7 +2017,8 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 @media (max-width: 599px) {
   .mg-wrap h2, .mg-note h2 { font-size: 1.8rem; }
   .mg-two { grid-template-columns: minmax(0, 1fr); }
-  .mg-ing-top .mg-q { flex-basis: 5.5rem; }
+  .mg-ing-top .mg-q { flex-basis: 4.75rem; }
+  .mg-ing-sum, .mg-ing-open { padding-left: 0; }
   .mg-hand-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .mg-hand-row input { grid-column: 1 / -1; }
 }

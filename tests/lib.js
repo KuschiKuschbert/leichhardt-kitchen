@@ -458,4 +458,10 @@ async function clear(page, selector) {
     if (await button.isVisible()) await button.click();
   } else await input.fill('');
 }
-module.exports = { clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+/* The recipe form's ingredient row k, opened (3 Nov 2026): its note, recipe link, allergens, Move and Remove sit behind
+   the row's arrow. Does nothing when the row is already open. */
+async function openRow(page, k) {
+  const sel = '[data-mg="ing-open"][data-i="' + k + '"]';
+  if (await page.getAttribute(sel, 'aria-expanded') !== 'true') { await page.click(sel); await settle(page, 150); }
+}
+module.exports = { openRow, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

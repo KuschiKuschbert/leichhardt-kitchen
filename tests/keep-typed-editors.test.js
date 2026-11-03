@@ -88,12 +88,15 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     // an ingredient with words in it: Remove asks first; an empty row goes in one tap
     const ings = () => S(p, () => document.querySelectorAll('.mg-ing').length);
     const i0 = await ings();
+    // Remove sits behind the row's arrow (3 Nov 2026)
+    await L.openRow(p, 0);
     await p.click('[data-mg="ing-del"][data-i="0"]'); await L.settle(p, 150);
     ok(await ings() === i0 && await txt(p, '[data-mg="ing-del"][data-i="0"]') === 'Tap again to remove' && /^Tap again to remove/.test(await p.getAttribute('[data-mg="ing-del"][data-i="0"]', 'aria-label')), 'ingredients: the first tap on Remove keeps a filled ingredient and says Tap again to remove');
     await fits(p, 'ingredient Remove armed at 390');
     await p.click('[data-mg="ing-del"][data-i="0"]'); await L.settle(p, 150);
     ok(await ings() === i0 - 1, 'ingredients: the second tap removes it');
     await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
+    await L.openRow(p, i0 - 1);
     await p.click('[data-mg="ing-del"][data-i="' + (i0 - 1) + '"]'); await L.settle(p, 150);
     ok(await ings() === i0 - 1, 'ingredients: an empty row added by mistake goes in one tap');
     quiet(p, 'recipe rows');
@@ -418,7 +421,10 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     p = await keptRecipe('Chicken Burger KEPT');
     const o0 = await names(p);
     ok(!!(await p.$('.mg-kept')), 'kept buttons: the kept box shows');
-    // Down leaves the focus where it is: the kept changes come back, and the move waits for a tap of its own
+    // Down leaves the focus where it is: the kept changes come back, and the move waits for a tap of its own. Opening a
+    // row is not a change, so the kept box stays until Down (3 Nov 2026)
+    await L.openRow(p, 0);
+    ok(!!(await p.$('.mg-kept')), 'kept buttons: opening a row leaves the kept box');
     await p.click('[data-mg="ing-down"][data-i="0"]'); await L.settle(p, 200);
     ok(!(await p.$('.mg-kept')) && await p.inputValue('#mg-name') === 'Chicken Burger KEPT' && JSON.stringify(await names(p)) === JSON.stringify(o0), 'kept buttons: Down while the box shows brings the kept changes back and moves nothing on the saved copy');
     await p.click('[data-mg="ing-down"][data-i="0"]'); await L.settle(p, 700);
@@ -429,6 +435,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     ok(/kept as a draft/.test(await toastNow(p)) && !!dk && dk.e.d.name === 'Chicken Burger KEPT' && dk.e.d.ingredients[0].name === o0[1], 'kept buttons: leaving keeps the kept name and the move (draft ' + (dk && dk.e.d.ingredients[0].name) + ')');
     // a recipe link box tapped while the box shows keeps the focus, so what is typed goes in it
     await go(p, '#/manage/r/burger'); await editor(p);
+    await L.openRow(p, 1);
     await p.click('#mg-link-1'); await L.settle(p, 200);
     ok(!(await p.$('.mg-kept')) && await S(p, () => document.activeElement && document.activeElement.id) === 'mg-link-1', 'kept buttons: a tap in a recipe link box brings the kept changes back and keeps the focus there');
     await p.keyboard.type('Ranch'); await L.settle(p, 150);
@@ -454,8 +461,11 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     await editor(p);
     const o0 = await names(p);
     // Remove on row 3 asks; Up moves it; the ingredient now in row 3 never asked, so its Remove asks first
+    await L.openRow(p, 2);
     await p.click('[data-mg="ing-del"][data-i="2"]'); await L.settle(p, 150);
     await p.click('[data-mg="ing-up"][data-i="2"]'); await L.settle(p, 150);
+    ok(await S(p, () => document.querySelector('.mg-ing.open [data-mg="ing-open"]').getAttribute('data-i')) === '1', 'row arm: the open row moves up with its ingredient');
+    await L.openRow(p, 2);
     ok(await txt(p, '[data-mg="ing-del"][data-i="2"]') === 'Remove', 'row arm: after Up, the row now in that place reads Remove, not Tap again (' + await txt(p, '[data-mg="ing-del"][data-i="2"]') + ')');
     await p.click('[data-mg="ing-del"][data-i="2"]'); await L.settle(p, 150);
     ok((await names(p)).length === o0.length && (await names(p))[2] === o0[1], 'row arm: one tap on its Remove keeps ' + o0[1] + ' and asks first');
@@ -699,6 +709,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     await safe(w + ' widths', async () => {
       p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra: cfg(), width: w, height: 900, wait: 1400 });
       await editor(p);
+      await L.openRow(p, 0);
       await p.click('[data-mg="ing-del"][data-i="0"]'); await L.settle(p, 150);
       await L.choose(p, '[data-mg="hand"][data-v="0"]'); await L.settle(p, 150);
       ok(await txt(p, '[data-mg="hand"][data-v="0"]') === 'Tap again: hand-set allergens go', w + ' recipe form: the allergen chip asks again');
