@@ -1273,6 +1273,38 @@
     out.push('Delivery temperatures');
     return out;
   }
+  /* Settings, The kitchen (the verified admin) and Team (sous chefs), 3 Nov 2026: what the kitchen is set to, from the
+     config/main the phone already has (no read). null until the settings are in, so nothing shows as none or 0. */
+  function kitchenInfo() {
+    if (S.configState !== 'ok' || !S.config) return null;
+    var c = S.config, ps = people(), see = staffSee(c);
+    return {
+      people: ps.length,
+      sous: ps.filter(function (p) { return p.id !== c.headId && (c.sousIds || []).indexOf(p.id) >= 0; }).length,
+      secs: kitSecs().map(function (x) { return String(x.name); }),
+      shown: FEATS.filter(function (f) { return see[f[0]]; }).map(function (f) { return f[1]; }),
+      hidden: FEATS.filter(function (f) { return !see[f[0]]; }).map(function (f) { return f[1]; }),
+      badges: c.showBadges !== false, sound: pingSound(), sousMail: c.sousMail === true,
+      fns: ps.filter(function (p) { return (c.fnIds || []).indexOf(p.id) >= 0; }).length,
+      cuts: cutList().length
+    };
+  }
+  /* The kitchen's rows open the admin page that saves each setting (the verified admin only, like the admin panel), and
+     Use a different kitchen PIN on this device (moved from the admin Tools tab to Settings, This phone, 3 Nov 2026):
+     forgets the kitchen PIN here only and opens the PIN screen. Settings asks for the second tap. */
+  var ADMIN_OPEN = ['people', 'notes', 'mail', 'cutoffs', 'tools'];
+  function adminOpen(tab) {
+    if (!adminTabs() || ADMIN_OPEN.indexOf(tab) < 0) return false;
+    S.atab = tab; lsSet('lk.prep.atab', tab);
+    if (location.hash === '#/admin') draw(); else location.hash = '#/admin';
+    return true;
+  }
+  function forgetPin() {
+    if (!adminTabs()) return false;
+    S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; stopLive(); gForget();
+    if (location.hash === '#/prep') draw(); else location.hash = '#/prep';
+    return true;
+  }
   // the person's section, the pushes on this phone or who they are changed: Settings draws again if what it shows did
   function meChanged() { try { window.dispatchEvent(new Event('lk-me')); } catch (e) {} }
   function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), head: whoHead(), tab: adminTabs(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK(), todo: todoOK() }; }
@@ -4615,7 +4647,7 @@
       '<div class="field"><label class="label" for="a-newpin">New 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
       '<div class="field"><label class="label" for="a-newpin2">Type it again</label><input id="a-newpin2" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin2" placeholder="4 digits" value="' + esc(S.newPin2 || '') + '"></div>' +
       '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>' + (armed('move-pin') ? 'Tap again to copy everything' : 'Copy everything to the new PIN') + '</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span>' +
-      '<div class="btn-row a-forget"><button type="button" class="btn" data-p="pin-forget">' + (armed('pin-forget') ? 'Tap again: this device forgets the kitchen PIN' : 'Use a different kitchen PIN on this device') + '</button></div><span class="hint">Forgets the kitchen PIN on this device only and asks for one again. Staff phones pick up a new PIN by themselves once the old rules are removed.</span></section>');
+      '<p class="hint a-forget">To use a different kitchen PIN on this device, open Settings, This phone.</p></section>');
     var resume = INTELLIGENCE_PAGES.indexOf(at) < 0 && intelligenceAllowed() && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_INTELLIGENCE.resumeHTML ? window.LK_INTELLIGENCE.resumeHTML(at) : '';
     if (at !== 'proofreader' && intelligenceAllowed() && proofModule()) resume += proofModule().resumeHTML(proofAdapter());
     var chapterNo = A_GROUPS.indexOf(ag) + 1;
@@ -9027,7 +9059,6 @@
     if (a === 'recipe-all') { S.recipeAll = true; draw(); var rse2 = S.root.querySelector('#p-rs'); if (rse2) rse2.focus({ preventScroll: true }); return; }
     if (a === 'pin-go') { submitKitchenPin(); return; }
     // head chef only (admin Tools tab): this device forgets the kitchen PIN and goes to the PIN screen of the prep book
-    if (a === 'pin-forget') { if (!arm('pin-forget')) return; S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; stopLive(); gForget(); if (location.hash === '#/admin') { location.hash = '#/prep'; return; } draw(); return; }
     if (a === 'retry') { cfgKey = ''; connect(); return; }
     if (a === 'notes-open') { if (canPing()) { S.notesOpen = true; if (!nfDirty()) { S.nf = null; S.nOpen = false; } S.nMsg = ''; loadNotes(); draw(); window.scrollTo(0, 0); } return; }
     if (a === 'n-new') { S.nf = nfNew(); S.nfSnap = JSON.stringify(S.nf); S.nOpen = true; S.nMsg = ''; draw(); var ntx = S.root.querySelector('[data-k="n-text"]'); if (ntx) { focusNoteText(ntx); } return; }
@@ -10098,7 +10129,7 @@
     chefOpen: chefOpen,
     // Settings (3 Nov 2026, docs/settings-options/brief.md): the person's role and permissions, the kitchen's ping sound,
     // and the cut-off pushes on this phone (the same pushOn() and pushOff() as the order list)
-    whoRole: whoRole, myCan: myCan, pingSound: pingSound,
+    whoRole: whoRole, myCan: myCan, pingSound: pingSound, kitchenInfo: kitchenInfo, adminOpen: adminOpen, forgetPin: forgetPin,
     push: function () { var w = pushWhoId(), st = w ? pushState() : ''; return { show: !!w, on: st === 'on', busy: !!S.pushBusy, msg: S.pushMsg || (st === 'ios' || st === 'denied' ? PUSH_SAY[st] : '') }; },
     pushSet: function (on) { if (on) pushOn(); else pushOff(); },
     secOpen: function () { ksOpen(true); },

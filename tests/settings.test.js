@@ -46,6 +46,13 @@ const caps = p => p.evaluate(() => [...document.querySelectorAll('.st-caps li')]
   const samCan = await caps(p);
   ok(samCan.indexOf('Remove prep lines') >= 0 && samCan.indexOf('Shift pings') >= 0 && samCan.indexOf('Manage staff') >= 0 && samCan.indexOf('Admin panel on this device') < 0, 'sous chef: What you can do (' + samCan + ')');
   ok((await rows(p)).indexOf('push') >= 0 && await value(p, 'push') === 'Off', 'sous chef: Cut-off pushes on this phone, Off');
+  ok(JSON.stringify(await groups(p)) === JSON.stringify(['You', 'This phone', 'Notifications', 'Team', 'About and help']), 'sous chef: a Team group, no The kitchen (' + (await groups(p)) + ')');
+  ok(await p.$('#st-find') === null && (await rows(p)).indexOf('kpin') < 0, 'sous chef: no Find a setting, no kitchen PIN row');
+  await L.setRow(p, 'setby');
+  ok(/Ping sound\s*Pass bell/.test(await L.txt(p, '#st-b-setby')) && /Only the head chef changes these/.test(await L.txt(p, '#st-b-setby')), 'sous chef: what the head chef set, read only');
+  await p.click('[data-row="staff"] .st-btn'); await L.settle(p, 400);
+  await L.waitFor(p, () => location.hash === '#/prep' && !!document.querySelector('[data-p="a-remove-person"]'), null, 8000);
+  ok(await p.evaluate(() => location.hash) === '#/prep' && !!(await p.$('[data-p="a-remove-person"]')), 'sous chef: Manage staff opens the staff list');
   ok(p.errors.length === 0, 'sous chef: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -56,6 +63,17 @@ const caps = p => p.evaluate(() => [...document.querySelectorAll('.st-caps li')]
   const headCan = await caps(p);
   ok(headCan.indexOf('Admin panel on this device') >= 0 && headCan.indexOf('Manage staff') < 0, 'head chef: Admin panel on this device, no Manage staff (' + headCan + ')');
   ok(/You set what everyone else can do in People/.test(await L.txt(p, '#st-b-can')), 'head chef: says where everyone\'s permissions are set');
+  ok(JSON.stringify(await groups(p)) === JSON.stringify(['You', 'This phone', 'Notifications', 'The kitchen', 'About and help']), 'head chef: The kitchen, no Team (' + (await groups(p)) + ')');
+  ok(await value(p, 'k-people') === '4 people, 1 sous chef' && await value(p, 'k-sound') === 'Pass bell' && await value(p, 'k-mail') === 'Off', 'head chef: the kitchen rows say what each is set to');
+  await p.fill('#st-find', 'sound'); await L.settle(p, 400);
+  const found = await p.evaluate(() => [...document.querySelectorAll('.st-row')].filter(r => !r.hidden).map(r => r.getAttribute('data-row')));
+  ok(JSON.stringify(found) === JSON.stringify(['ping', 'k-sound']), 'Find a setting: "sound" leaves the two ping sound rows (' + found + ')');
+  ok(await p.evaluate(() => [...document.querySelectorAll('.st-grp')].filter(g => !g.hidden).length) === 2, 'Find a setting: groups with nothing found go');
+  await p.fill('#st-find', 'zzzz'); await L.settle(p, 400);
+  ok(/No setting matches/.test(await L.txt(p, '.st-none')), 'Find a setting: says when nothing matches');
+  await p.fill('#st-find', ''); await p.click('.ux-search-clear').catch(() => {}); await L.settle(p, 400);
+  await p.click('[data-row="k-sound"] .st-btn'); await L.settle(p, 800);
+  ok(await p.evaluate(() => location.hash) === '#/admin' && await p.evaluate(() => localStorage.getItem('lk.prep.atab')) === 'notes', 'head chef: Ping sound for every phone opens the admin Shift pings page');
   ok(p.errors.length === 0, 'head chef: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

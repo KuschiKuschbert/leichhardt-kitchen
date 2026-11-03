@@ -1111,11 +1111,13 @@
   // a time as "3 Nov 2026, 14:02", kitchen time (Queensland)
   function stStamp(t) { var T = window.LK_TIME, d = T.day(t).split('-'); return +d[2] + ' ' + MONTHS[+d[1] - 1] + ' ' + d[0] + ', ' + T.clock(t); }
   /* one row: the button that opens it (label and value) and its body. o.aria names the body for the tests and screen
-     readers when it differs from the label; o.cls marks a row (st-qr: computers only); o.href makes the row a link. */
+     readers when it differs from the label; o.cls marks a row (st-qr: computers only); o.href makes the row a link and
+     o.act a button that does something straight away (data-act o.act, data-val o.val), with o.sub as a second line. */
   function stRow(id, label, value, body, o) {
     o = o || {};
-    var open = !!stOpen[id], v = '<span class="st-v"><span>' + esc(value || '') + '</span></span>';
-    if (o.href) return '<div class="st-row' + (o.cls ? ' ' + o.cls : '') + '" data-row="' + id + '"><a class="st-btn st-go" href="' + o.href + '"><span class="st-l">' + esc(label) + '</span>' + v + '</a></div>';
+    var open = !!stOpen[id], v = '<span class="st-v"><span>' + esc(value || '') + '</span></span>', sub = o.sub ? '<span class="st-sub">' + esc(o.sub) + '</span>' : '';
+    if (o.href) return '<div class="st-row' + (o.cls ? ' ' + o.cls : '') + '" data-row="' + id + '"><a class="st-btn st-go" href="' + o.href + '"><span class="st-l">' + esc(label) + '</span>' + v + sub + '</a></div>';
+    if (o.act) return '<div class="st-row' + (o.cls ? ' ' + o.cls : '') + '" data-row="' + id + '"><button type="button" class="st-btn st-go" data-act="' + o.act + '" data-val="' + esc(o.val || '') + '"><span class="st-l">' + esc(label) + '</span>' + v + sub + '</button></div>';
     return '<div class="st-row' + (o.cls ? ' ' + o.cls : '') + '" data-row="' + id + '">' +
       '<button type="button" class="st-btn" id="st-h-' + id + '" data-act="strow" data-val="' + id + '" data-k="strow:' + id + '" aria-expanded="' + open + '" aria-controls="st-b-' + id + '"><span class="st-l">' + esc(label) + '</span>' + v + '</button>' +
       '<div class="st-body set-block" id="st-b-' + id + '" role="region" aria-label="' + esc(o.aria || label) + '"' + (open ? '' : ' hidden') + '>' + body + '</div></div>';
@@ -1147,7 +1149,7 @@
     var P = window.LK_PREP;
     if (!P || !P.whoName) return '';
     var m = P.chefMenu ? P.chefMenu() : {}, pu = P.push ? P.push() : {};
-    return JSON.stringify([P.whoName(), P.whoRole && P.whoRole(), P.myCan && P.myCan(), m.sec, P.featOn && P.featOn('pings'), P.pingSound && P.pingSound(), pu.show, pu.on, pu.busy, pu.msg, P.offline && P.offline(), isAdminDevice()]);
+    return JSON.stringify([P.whoName(), P.whoRole && P.whoRole(), P.myCan && P.myCan(), m.sec, m.chef, m.tab, P.featOn && P.featOn('pings'), P.pingSound && P.pingSound(), pu.show, pu.on, pu.busy, pu.msg, P.offline && P.offline(), isAdminDevice(), P.kitchenInfo && P.kitchenInfo()]);
   }
   function stSeason() {
     var s = readJSON(LS, 'lk.seasonal.v1') || {}, sel = s.selection;
@@ -1156,6 +1158,41 @@
     var hit = (window.KB_COMPLETE_ART || []).filter(function (x) { return x && x.id === sel; })[0];
     return hit && typeof hit.label === 'string' ? hit.label : 'Automatic';
   }
+  function stSound(id) { return id === 'off' ? 'Off' : ((window.LK_CHIME && window.LK_CHIME.list.filter(function (x) { return x.id === id; })[0]) || {}).name || 'Pass bell'; }
+  function stList(a) { return a.length ? a.join(', ') : 'None'; }
+  /* The kitchen (the verified admin): each kitchen-wide setting with its value, opening the admin page that saves it
+     (LK_PREP.adminOpen()). Nothing moved out of the admin panel (head chef, 3 Nov 2026). */
+  var ST_WHERE = { people: 'Admin, Settings, People', notes: 'Admin, Operations, Shift pings', mail: 'Admin, Operations, Kitchen mail', cutoffs: 'Admin, Operations, Cut-offs', tools: 'Admin, Settings, Tools' };
+  function stKitchen(k) {
+    var row = function (id, label, value, tab) { return stRow(id, label, value, '', { act: 'stadmin', val: tab, sub: 'Changed in ' + ST_WHERE[tab] }); };
+    return row('k-people', 'People and roles', k ? plural(k.people, 'person', 'people') + ', ' + plural(k.sous, 'sous chef', 'sous chefs') : '', 'people') +
+      row('k-secs', 'Kitchen sections', k ? stList(k.secs) : '', 'people') +
+      row('k-pages', 'Pages staff see', k ? (k.hidden.length ? stList(k.shown) + '. Held back: ' + k.hidden.join(', ') : 'All three') : '', 'people') +
+      row('k-badges', 'Weekly top tickers on the prep book', k ? (k.badges ? 'Shown' : 'Hidden') : '', 'people') +
+      row('k-sound', 'Ping sound for every phone', k ? stSound(k.sound) : '', 'notes') +
+      row('k-mail', 'Sous chefs read Kitchen mail', k ? (k.sousMail ? 'On' : 'Off') : '', 'mail') +
+      row('k-fn', 'Who books functions', k ? plural(k.fns, 'person', 'people') : '', 'people') +
+      row('k-cuts', 'Order cut-offs', k ? plural(k.cuts, 'supplier', 'suppliers') : '', 'cutoffs') +
+      row('k-pin', 'Change the kitchen PIN', '', 'tools') +
+      row('k-backup', 'Backup', 'Every night at 03:30', 'tools');
+  }
+  /* Find a setting (the head chef, who sees more than 20 rows): hides the rows and groups that do not match, from the
+     words each row shows. What is typed is kept for the visit (stFind) and put back after a redraw (stAfter()). */
+  var stFind = '';
+  function stFilter() {
+    var q = stFind.trim().toLowerCase(), shown = 0;
+    Array.prototype.forEach.call(app.querySelectorAll('.st-grp'), function (g) {
+      var any = false, title = (g.querySelector('.st-gh .label') || {}).textContent || '';
+      Array.prototype.forEach.call(g.querySelectorAll('.st-row'), function (r) {
+        var hit = !q || (title + ' ' + r.querySelector('.st-btn').textContent).toLowerCase().indexOf(q) >= 0;
+        r.hidden = !hit; if (hit) any = true;
+      });
+      g.hidden = !any; if (any) shown++;
+    });
+    var none = app.querySelector('.st-none');
+    if (none) { none.hidden = !q || shown > 0; none.textContent = q && !shown ? 'No setting matches \u2018' + stFind.trim() + '\u2019. Try sound, PIN or sections.' : ''; }
+  }
+  function stAfter() { if (stFind && app.querySelector('#st-find')) stFilter(); }
   function stVersion() { var U = window.LK_UPDATE, st = U && U.state ? U.state() : ''; return st === 'ready' ? 'Update ready' : st === 'current' ? 'Up to date' : 'Not checked yet'; }
   function stVersionNote() { var U = window.LK_UPDATE, t = U && U.copied ? U.copied() : 0; return (t ? 'This copy of the book is from ' + stStamp(t) + '. ' : '') + 'The book updates by itself when nothing is waiting to send.'; }
   function viewSettings() {
@@ -1186,7 +1223,10 @@
       (adm ? stRow('practice', 'Practice mode', settings.practice ? 'On' : 'Off', '<p class="hint">For trying the book out or showing someone how it works. Lines written here while it is on are marked as practice: the book does not learn from them and the wastage summary leaves them out. A strip on the prep pages says it is on.</p>' +
         '<div class="chips" role="group" aria-label="Practice on this device"><button type="button" class="chip" data-act="setpractice" data-val="0" data-k="setpractice:0" aria-pressed="' + !settings.practice + '">Off</button><button type="button" class="chip" data-act="setpractice" data-val="1" data-k="setpractice:1" aria-pressed="' + !!settings.practice + '">On</button></div>', { aria: 'Practice on this device' }) +
         stRow('ticks', 'Ticked recipe steps', nTicks ? plural(nTicks, 'step', 'steps') + ' ticked' : 'None ticked', '<p class="hint">' + esc(plural(nTicks, 'step is', 'steps are')) + ' ticked. Ticks clear when you close the page.</p>' +
-        '<div class="btn-row"><button type="button" class="btn" data-act="clearticks" data-k="clearticks">Clear all ticks</button></div>', { aria: 'Ticked steps' }) : '');
+        '<div class="btn-row"><button type="button" class="btn" data-act="clearticks" data-k="clearticks">Clear all ticks</button></div>', { aria: 'Ticked steps' }) : '') +
+      // moved from the admin Tools tab (3 Nov 2026): the verified admin only, with the same second tap
+      (m.tab ? stRow('kpin', 'Kitchen PIN on this device', 'Saved', '<p class="hint">Forgets the kitchen PIN on this device only and asks for one again. Staff phones pick up a new PIN by themselves once the old rules are removed.</p>' +
+        '<div class="btn-row"><button type="button" class="btn" data-act="stkpin">Use a different kitchen PIN on this device</button></div>') : '');
     // Notifications: the kitchen's ping sound (the head chef picks it for every phone) and, for chefs, cut-off pushes
     var sound = who && P.featOn && P.featOn('pings') && P.pingSound ? P.pingSound() : '', pu = who && P.push ? P.push() : {};
     var soundName = sound === 'off' ? 'Off' : ((window.LK_CHIME && window.LK_CHIME.list.filter(function (x) { return x.id === sound; })[0]) || {}).name || 'Pass bell';
@@ -1195,6 +1235,12 @@
       (pu.show ? stRow('push', 'Cut-off pushes on this phone', pu.on ? 'On' : 'Off', '<p class="hint">A push on this phone when a supplier\'s reminder starts and an hour before its cut-off, even with the book closed. Only for suppliers nobody has ticked off yet. Also on the order list.</p>' +
         '<div class="btn-row"><button type="button" class="btn' + (pu.on ? '' : ' dark') + '" data-act="stpush" data-val="' + (pu.on ? '0' : '1') + '"' + (pu.busy ? ' disabled' : '') + '>' + (pu.on ? 'Turn pushes off' : 'Turn pushes on') + '</button></div>' +
         (pu.msg ? '<p class="hint" role="status">' + esc(pu.msg) + '</p>' : '')) : '');
+    // Team (sous chefs, not on the head chef's own device): Manage staff, and what the head chef set, read only
+    var k = who && P.kitchenInfo ? P.kitchenInfo() : null;
+    var team = m.chef && !m.tab ? stRow('staff', 'Manage staff', k ? plural(k.people, 'person', 'people') : '', '', { act: 'ststaff' }) +
+      stRow('setby', 'Set by the head chef', '', k ? '<dl class="st-kv">' + [['Ping sound', stSound(k.sound)], ['Pages staff see', stList(k.shown)], ['Kitchen sections', stList(k.secs)], ['Sous chefs read Kitchen mail', k.sousMail ? 'On' : 'Off'], ['Order cut-offs', plural(k.cuts, 'supplier', 'suppliers')]].map(function (x) {
+        return '<div><dt>' + esc(x[0]) + '</dt><dd>' + esc(x[1]) + '</dd></div>'; }).join('') + '</dl><p class="hint">Only the head chef changes these.</p>' : '<p class="hint">The kitchen\'s settings are not in yet.</p>') : '';
+    var kitchen = m.tab ? stKitchen(k) : '';
     // About and help
     var about = stRow('version', 'Version', stVersion(), '<p class="hint st-vnote">' + esc(stVersionNote()) + '</p><div class="btn-row"><button type="button" class="btn" data-act="updcheck" data-k="updcheck">Check for an update</button></div><p class="hint st-umsg" role="status"></p>') +
       stRow('qr', 'Open on another phone', 'QR code', '<div class="qr-row"><img class="qr-img" src="qr.svg" width="180" height="180" alt="QR code that opens the Kitchen Book">' +
@@ -1204,9 +1250,12 @@
       stRow('where', 'Where settings are saved', '', '<dl class="st-kv"><div><dt>This phone</dt><dd>Saved here only</dd></div><div><dt>You</dt><dd>Any phone you sign in on</dd></div><div><dt>The kitchen</dt><dd>Every phone, set by the head chef</dd></div></dl>');
     return '<div class="page">' + '<main id="main" class="settings st"><div class="st-head">' +
       '<h2 tabindex="-1" id="rtitle">Settings</h2><a class="btn dark" href="#/" data-act="done">Done</a></div>' + stCard() +
+      (m.tab ? '<div class="st-find"><label class="label" for="st-find">Find a setting</label><input id="st-find" type="search" class="search" autocomplete="off" placeholder="Sound, PIN, sections..." value="' + esc(stFind) + '"><p class="hint st-none" role="status" hidden></p></div>' : '') +
       stGroup('you', 'You', 'Follows you to any phone you sign in on.', you) +
       stGroup('phone', 'This phone', 'Saved on this phone or tablet only.', phone) +
       stGroup('alerts', 'Notifications', 'What this phone does when something needs you.', alerts) +
+      stGroup('team', 'Team', 'What a sous chef looks after.', team) +
+      stGroup('kitchen', 'The kitchen', 'Every phone in the kitchen. Only you change these. Each row opens the admin page that saves it.', kitchen) +
       stGroup('about', 'About and help', 'The book itself.', about) + '</main>' + footer() + '</div>';
   }
 
@@ -1403,6 +1452,7 @@
       var dockets = app.querySelector('.dockets'); if (dockets) dockets.classList.add('ink-docket-arrive');
     }
     paintRecipeStatus();
+    if (route.name === 'settings') stAfter();
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
     if (!locked && route.name === 'manage') mountManage(route); else if (window.LK_MG) window.LK_MG.unmount();
@@ -1601,6 +1651,7 @@
   // Enter (the Search key) drops the phone keyboard so the results can be seen
   app.addEventListener('keydown', function (e) { if (e.target.id === 'find' && e.key === 'Enter') { e.preventDefault(); e.target.blur(); } });
   app.addEventListener('input', function (e) {
+    if (e.target.id === 'st-find') { stFind = e.target.value; stFilter(); return; }
     if (e.target.id !== 'find') return;
     ui.query = e.target.value;
     var fw = e.target.closest('.find-wrap'); if (fw && fw.classList) fw.classList.toggle('has-q', !!ui.query);
@@ -1643,6 +1694,15 @@
       return;
     }
     if (act === 'stsec') { if (window.LK_PREP && window.LK_PREP.secOpen) window.LK_PREP.secOpen(); return; }
+    if (act === 'ststaff') { if (window.LK_PREP && window.LK_PREP.chefOpen) window.LK_PREP.chefOpen('staff'); return; }
+    if (act === 'stadmin') { if (window.LK_PREP && window.LK_PREP.adminOpen) window.LK_PREP.adminOpen(val); return; }
+    // the kitchen PIN on this device: a second tap within 4 seconds, like the admin Tools button it replaces
+    if (act === 'stkpin') {
+      if (el.classList.contains('is-armed')) { if (window.LK_PREP && window.LK_PREP.forgetPin) window.LK_PREP.forgetPin(); return; }
+      el.classList.add('is-armed'); el.textContent = 'Tap again: this device forgets the kitchen PIN';
+      setTimeout(function () { if (el.isConnected) { el.classList.remove('is-armed'); el.textContent = 'Use a different kitchen PIN on this device'; } }, 4000);
+      return;
+    }
     if (act === 'stplay') { if (window.LK_CHIME && window.LK_CHIME.has(val)) window.LK_CHIME.play(val); return; }
     if (act === 'stpush') { if (window.LK_PREP && window.LK_PREP.pushSet) window.LK_PREP.pushSet(val === '1'); return; }
     // Check for an update: the same header-only look as the automatic one (js/upkeep.js), no Firestore read

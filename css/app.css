@@ -280,6 +280,10 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 @media (prefers-reduced-motion: reduce) { .st-v::after { transition: none; } }
 .st-body.set-block { padding: 0.1rem 0 1.1rem; border-bottom: 0; min-width: 0; }
 .st-body[hidden] { display: none; }
+.st-grp[hidden] { display: none; }
+.st-sub { grid-column: 1 / -1; margin-top: -0.2rem; color: var(--faint); font-size: 0.82rem; }
+.st-find { display: grid; gap: 0.35rem; }
+.st-find .hint { margin: 0; }
 .st-body .hint, .st-body .saved { margin: 0; }
 .st-body .kb-seasonal-settings { padding: 0; border: 0; }
 .st-body .kb-seasonal-settings > h3 { display: none; }
