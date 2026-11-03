@@ -187,7 +187,10 @@ const waitReload = p => L.waitFor(p, () => window.__mark !== 1, null, 8000).catc
       Storage.prototype.removeItem = function (name) { if (name === key) throw new DOMException('Synthetic shared-state denial', 'SecurityError'); return remove.call(this, name); };
       indexedDB.deleteDatabase = function (name) { window.__healDeletes++; return drop(name); };
     }, TARGET_CACHE);
-    await boom(p); await L.settle(p, 500);
+    await boom(p);
+    // The repair checks the server (one HEAD) before it reaches the shared state, so wait for its answer:
+    // a fixed settle could end while the HEAD was still out on a slow runner (CI, 3 Nov 2026).
+    await L.waitFor(p, () => /could not be repaired/.test(LK_PREP.state.toast), null, 8000).catch(() => {});
     ok(await p.evaluate(key => window.__mark === 1 && localStorage.getItem(key) === 'keep' && !localStorage.getItem('lk.fsheal') && window.__healDeletes === 0 && /could not be repaired/.test(LK_PREP.state.toast), TARGET_CACHE), 'a real shared-state removal error stops before database deletion, daily marker and reload, with truthful feedback');
   });
   await b.close();

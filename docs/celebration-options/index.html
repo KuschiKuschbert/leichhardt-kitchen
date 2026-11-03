@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Celebrations Redesign</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Barlow+Condensed:wght@600;700&family=Caveat:wght@700&display=swap">
+<style>
+/* Layout: one reading column, option pairs side by side from 760 px, app mockups drawn in the Kitchen Book's own fixed colours. */
+:root{
+  --ground:#F2EFE8; --card:#FFFEFA; --ink:#1C1D1F; --muted:#5F5A50; --rule:#D9D4C8; --accent:#C2451A; --accent-fill:#E2602A; --on-accent:#FFFEFA;
+  --band:#2B2A27; --band-ink:#FBF8F1; --band-muted:#C9C3B6; --good:#2E7D4F; --soft:#F8E4D8;
+  --display:'Barlow Condensed','Arial Narrow',Arial,sans-serif; --body:'Barlow','Segoe UI',Roboto,Helvetica,Arial,sans-serif; --hand:'Caveat','Comic Sans MS',cursive;
+  /* The book's fixed colours, used only inside mockups so they look like the app in either theme. */
+  --app-bar:#2B2A27; --app-chalk:#FBF8F1; --app-paper:#FFFEFA; --app-kraft:#C8B591; --app-kraft-line:#BDA984; --app-ink:#1C1D1F; --app-accent:#E2602A; --app-accent-ink:#C2451A; --app-stone:#A39A88; --app-beige:#F2EFE8; --app-edge:#D9D4C8; --app-steel:#CFD3D8; --app-steel-dark:#A9AFB6; --app-green:#2E8B57; --app-page:#F8F6F1; --app-muted:#6A665E;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ground:#191816; --card:#24231F; --ink:#F1ECE2; --muted:#B3AC9F; --rule:#3B3934; --accent:#F08A5D; --accent-fill:#E2602A; --on-accent:#FFFEFA; --band:#0F0F0E; --band-ink:#FBF8F1; --band-muted:#A9A396; --good:#62BD8A; --soft:#3A2418; color-scheme:dark}}
+:root[data-theme="dark"]{--ground:#191816; --card:#24231F; --ink:#F1ECE2; --muted:#B3AC9F; --rule:#3B3934; --accent:#F08A5D; --accent-fill:#E2602A; --on-accent:#FFFEFA; --band:#0F0F0E; --band-ink:#FBF8F1; --band-muted:#A9A396; --good:#62BD8A; --soft:#3A2418; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--ink);font:400 1.0625rem/1.55 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.05;text-wrap:balance;margin:0}
+h2{font-size:clamp(1.9rem,4.4vw,2.6rem);text-transform:uppercase;letter-spacing:.01em}
+h3{font-size:1.45rem}
+p{margin:0}
+.prose{max-width:66ch}
+.eyebrow{font:700 .8rem/1.2 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.muted{color:var(--muted)}
+.small{font-size:.9rem}
+a{color:inherit;text-underline-offset:3px}
+a:focus-visible,button:focus-visible{outline:3px solid var(--accent-fill);outline-offset:3px;border-radius:6px}
+code{font:500 .88em/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:color-mix(in srgb,var(--rule) 55%,transparent);padding:.05em .35em;border-radius:4px;overflow-wrap:anywhere}
+.stack{display:grid;gap:14px}
+
+/* Masthead */
+.mast{background:var(--band);color:var(--band-ink);padding-block:28px 22px}
+.mast .eyebrow{color:#F0915F}
+.mast h1{font-size:clamp(2.6rem,8vw,4.4rem);text-transform:uppercase;margin-top:6px}
+.mast .lede{margin-top:12px;max-width:62ch;color:var(--band-muted);font-size:1.08rem}
+.mast-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.mast-stamps{display:flex;gap:6px;flex-wrap:wrap}
+.mast-stamps .stamp{width:34px;height:34px}
+nav.jump{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--ground);border-bottom:1px solid var(--rule)}
+nav.jump .wrap{display:flex;gap:8px;overflow-x:auto;padding-block:10px;scrollbar-width:none;mask-image:linear-gradient(90deg,#000 92%,transparent)}
+nav.jump a{flex:none;text-decoration:none;font:600 .95rem/1 var(--body);padding:9px 14px;border:1.5px solid var(--ink);border-radius:999px;min-height:40px;display:inline-flex;align-items:center}
+nav.jump a.hot{background:var(--accent-fill);border-color:var(--accent-fill);color:var(--on-accent)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--ground)}
+
+section{padding-block:44px 8px;scroll-margin-top:64px}
+.sec-head{display:grid;gap:8px;margin-bottom:18px}
+
+/* Urgent */
+.urgent{margin-top:22px;border:2px solid var(--accent-fill);background:var(--soft);border-radius:10px;padding:20px;display:grid;gap:14px}
+.urgent h2{font-size:clamp(1.6rem,4vw,2.1rem)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.stat{background:var(--card);border-radius:8px;padding:12px 14px}
+.stat b{display:block;font:700 2rem/1 var(--display);font-variant-numeric:tabular-nums;color:var(--accent)}
+.stat span{font-size:.92rem;color:var(--muted)}
+.days{display:flex;flex-wrap:wrap;gap:6px}
+.days span{font:600 .85rem/1 var(--body);padding:6px 9px;border-radius:999px;background:var(--card);border:1px solid var(--rule);font-variant-numeric:tabular-nums}
+
+/* Audit */
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;align-items:start}
+figure{margin:0;display:grid;gap:8px;min-width:0}
+figure img{display:block;width:100%;height:auto;border-radius:8px;border:1px solid var(--rule)}
+figcaption{font-size:.92rem;color:var(--muted)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:780px}
+.wide-shot{grid-column:1/-1}
+.findings{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-top:26px}
+.findings h3{font-size:1.2rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid var(--ink);padding-bottom:6px;margin-bottom:4px}
+.findings ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.findings li{display:grid;grid-template-columns:74px minmax(0,1fr);gap:10px;align-items:start;font-size:.97rem}
+.chip{display:inline-flex;justify-content:center;font:700 .72rem/1 var(--display);letter-spacing:.08em;text-transform:uppercase;padding:5px 6px;border-radius:4px;border:1.5px solid var(--accent);color:var(--accent);margin-top:2px;white-space:nowrap}
+.chip.now{background:var(--accent-fill);border-color:var(--accent-fill);color:var(--on-accent)}
+.chip.imp{border-color:var(--muted);color:var(--muted)}
+.tbl-wrap{overflow-x:auto;margin-top:22px}
+table{border-collapse:collapse;width:100%;min-width:520px;font-size:.95rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font:700 .8rem/1.2 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+td.n{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+tr.bad td{color:var(--accent);font-weight:600}
+
+/* Options */
+.options{display:grid;grid-template-columns:1fr;gap:22px}
+@media (min-width:760px){.options{grid-template-columns:1fr 1fr;align-items:start}}
+.opt{position:relative;background:var(--card);border:1px solid var(--rule);border-radius:10px 10px 0 0;padding:20px 18px 30px;display:grid;gap:14px;align-content:start;min-width:0;--z:8px;-webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/calc(2*var(--z)) 100%;mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/calc(2*var(--z)) 100%}
+.opt-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.opt-no{font:700 .9rem/1 var(--display);letter-spacing:.12em;color:var(--accent);text-transform:uppercase}
+.opt h3{font-size:1.75rem;text-transform:uppercase}
+.pick{font:700 1.55rem/1 var(--hand);color:var(--accent);transform:rotate(-3deg);white-space:nowrap}
+.opt ul{margin:0;padding-left:1.1em;display:grid;gap:6px}
+.facts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:.93rem;border-top:1px solid var(--rule);padding-top:12px}
+.facts dt{font:700 .78rem/1.5 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:0}
+.verdict{margin-top:22px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;padding:16px 18px;border-left:4px solid var(--accent-fill);background:var(--card);border-radius:0 8px 8px 0}
+.verdict .hand{font:700 1.9rem/1 var(--hand);color:var(--accent)}
+@media (max-width:520px){.verdict{grid-template-columns:1fr;gap:6px}}
+.both{margin-top:26px}
+.both h3{font-size:1.25rem;text-transform:uppercase;letter-spacing:.03em;margin-bottom:12px}
+.both-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.both-item{display:grid;gap:10px;align-content:start;min-width:0}
+.both-item p{font-size:.97rem}
+.tag{font:700 .72rem/1 var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* Icon rows */
+.icon-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;background:var(--app-bar);color:var(--app-chalk);border-radius:10px;padding:14px}
+.icon-cell{display:grid;justify-items:center;gap:6px;text-align:center;font-size:.8rem;line-height:1.25;min-width:0}
+.icon-cell b{font-weight:600}
+.icon-cell em{font-style:normal;color:#F3A27A}
+.i32 svg,.i32 .stamp{width:32px;height:32px;display:block}
+.i44 svg,.i44 .stamp{width:44px;height:44px;display:block}
+.i64 svg{width:64px;height:64px;display:block}
+.look{display:flex;gap:10px;align-items:center;justify-content:center;background:var(--app-bar);border-radius:8px;padding:10px 12px;flex-wrap:wrap}
+.look .grp{display:flex;gap:6px;align-items:center}
+.look .grp span{display:block}
+.look small{display:block;width:100%;text-align:center;color:var(--app-chalk);font-size:.8rem}
+.bar-ctx{--kb-festive-outline:var(--app-chalk);--kb-festive-ink:var(--app-chalk);--kb-festive-paper:var(--app-bar);--kb-festive-beige:var(--app-steel-dark);--kb-festive-accent:var(--app-accent);--kb-festive-accent-ink:var(--app-accent-ink);--kb-festive-stone:var(--app-stone);--kb-festive-steel:var(--app-steel);--kb-festive-steel-dark:var(--app-steel-dark);--kb-festive-edge:var(--app-edge);--kb-festive-clover:var(--app-green);
+  --g-disc:var(--app-paper);--g-ring:var(--app-paper);--g-ink:var(--app-ink);--g-accent:var(--app-accent);--g-paper:var(--app-paper);--g-stone:var(--app-stone);--g-green:var(--app-green)}
+.draw-ctx{--g-ink:var(--app-chalk);--g-paper:var(--app-bar);--g-accent:var(--app-accent);--g-stone:var(--app-stone);--g-green:var(--app-green)}
+.paper-ctx{--kb-festive-outline:var(--app-ink);--kb-festive-ink:var(--app-ink);--kb-festive-paper:var(--app-paper);--kb-festive-beige:var(--app-beige);--kb-festive-accent:var(--app-accent);--kb-festive-accent-ink:var(--app-accent-ink);--kb-festive-stone:var(--app-stone);--kb-festive-steel:var(--app-steel);--kb-festive-steel-dark:var(--app-steel-dark);--kb-festive-edge:var(--app-edge);--kb-festive-clover:var(--app-green);
+  --g-disc:var(--app-paper);--g-ring:var(--app-ink);--g-ink:var(--app-ink);--g-accent:var(--app-accent);--g-paper:var(--app-paper);--g-stone:var(--app-stone);--g-green:var(--app-green)}
+.ba{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.ba-cell{background:var(--app-bar);border-radius:8px;padding:10px 8px;display:grid;gap:6px;justify-items:center;color:var(--app-chalk);font-size:.8rem;text-align:center}
+.ba-cell .row{display:flex;align-items:center;gap:8px}
+.ba-cell .arrow{color:#F3A27A;font-weight:700}
+.stamp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:10px 6px;background:var(--app-bar);border-radius:10px;padding:14px 10px}
+.stamp-grid .icon-cell{font-size:.72rem;color:var(--app-chalk)}
+.stamp-paper{display:flex;gap:10px;flex-wrap:wrap;background:var(--app-page);border:1px solid var(--app-edge);border-radius:10px;padding:12px;color:var(--app-ink);align-items:center}
+
+/* Phone mockups */
+.mock-row{display:flex;flex-wrap:wrap;gap:16px;justify-content:center}
+.phone{width:min(300px,100%);border-radius:22px;padding:8px;background:#111;box-shadow:0 1px 0 #0002;flex:none}
+.screen{position:relative;border-radius:15px;overflow:hidden;background:var(--app-kraft);background-image:repeating-linear-gradient(115deg,transparent 0 6px,color-mix(in srgb,var(--app-kraft-line) 55%,transparent) 6px 7px);height:470px;color:var(--app-ink);isolation:isolate}
+.screen.short{height:auto}
+.screen.page{background:var(--app-page)}
+.m-bar{position:relative;z-index:3;height:46px;background:var(--app-bar);color:var(--app-chalk);display:flex;align-items:center;gap:8px;padding:0 8px 0 10px}
+.m-logo{font:700 1.35rem/1 var(--hand);color:var(--app-chalk);position:relative;padding-bottom:2px}
+.m-logo::after{content:"";position:absolute;left:0;right:2px;bottom:-1px;height:3px;border-radius:2px;background:var(--app-accent)}
+.m-name{font:700 1.12rem/1 var(--display);white-space:nowrap}
+.m-back{font:600 1.3rem/1 var(--body);width:22px;text-align:center}
+.m-icons{margin-left:auto;display:flex;gap:6px}
+.m-btn{width:32px;height:32px;border-radius:50%;border:1.6px solid var(--app-chalk);display:grid;place-items:center}
+.m-btn svg{width:17px;height:17px}
+.m-btn .ic32 svg{width:22px;height:22px}
+.m-sticker{display:grid;place-items:center;width:30px;height:30px;margin-left:2px;position:relative}
+.m-sticker .stamp{width:24px;height:24px}
+.m-sticker::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px dashed color-mix(in srgb,var(--app-chalk) 45%,transparent)}
+.m-content{position:relative;z-index:2;padding:12px 12px 0}
+.m-h{font:700 2rem/1 var(--hand);margin:6px 0 2px}
+.m-date{font:600 .82rem/1.2 var(--body);color:#4A453C;margin-bottom:10px}
+.m-board{background:var(--app-bar);color:var(--app-chalk);border-radius:6px;padding:9px 10px;margin-bottom:10px;position:relative;overflow:hidden}
+.m-board-head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:7px;align-items:center}
+.m-board-head svg{width:26px;height:26px;display:block}
+.m-board-head .stamp{width:24px;height:24px}
+.m-board-title{font:700 .95rem/1 var(--display);text-transform:uppercase}
+.m-board-lang{font:700 .9rem/1 var(--hand)}
+.m-board p{font-size:.74rem;line-height:1.45;margin-top:6px}
+.m-docket{position:relative;background:var(--app-paper);padding:10px 10px 14px;margin-bottom:8px;display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:8px;align-items:center;--z:5px;-webkit-mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/calc(2*var(--z)) 100%;mask:conic-gradient(from -45deg at bottom,#0000,#000 1deg 89deg,#0000 90deg) 50%/calc(2*var(--z)) 100%}
+.m-docket::before{content:"";position:absolute;top:4px;left:50%;width:8px;height:8px;border-radius:50%;background:var(--app-accent-ink)}
+.m-docket .ring{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--app-ink);display:grid;place-items:center}
+.m-docket .ring svg{width:17px;height:17px}
+.m-docket b{font:700 1.1rem/1 var(--display);letter-spacing:.02em;border-bottom:2px solid var(--app-ink);padding-bottom:3px}
+.m-docket i{font:700 .7rem/1 var(--display);color:var(--app-accent-ink);font-style:normal;letter-spacing:.1em}
+.m-under{padding:8px 12px;font-size:.78rem;color:var(--app-ink);display:flex;justify-content:space-between}
+.m-under u{font-weight:600}
+.m-today{margin:6px 12px 12px;border:1px solid var(--app-ink);border-radius:8px;background:var(--app-paper);padding:10px 12px;font:700 1.5rem/1 var(--hand)}
+
+/* Effects A: motifs behind the page, garland from the bar */
+.fx{position:absolute;inset:46px 0 0;z-index:1;pointer-events:none;overflow:hidden}
+.fx i{position:absolute;display:block;left:var(--x);bottom:-30px;width:var(--s,16px);height:var(--s,16px);opacity:.75;animation:fx-rise var(--d,14s) linear infinite;animation-delay:var(--dl,0s)}
+.fx i svg{width:100%;height:100%;display:block}
+@keyframes fx-rise{0%{transform:translate3d(0,0,0);opacity:0}10%,85%{opacity:.8}100%{transform:translate3d(var(--dx,10px),-460px,0);opacity:0}}
+.garland{position:absolute;left:0;right:0;top:46px;height:40px;z-index:4;pointer-events:none}
+.garland .hang{transform-origin:50% 0;animation:fx-sway 5s ease-in-out infinite;transform-box:fill-box}
+.garland .hang:nth-child(2n){animation-delay:-2.5s}
+@keyframes fx-sway{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+
+/* Effects B: edge strips and board scene */
+.edge{display:block;width:100%;height:12px;position:relative;z-index:3}
+.strip-list{display:grid;gap:10px}
+.strip{border-radius:8px;overflow:hidden;background:var(--app-page);border:1px solid var(--app-edge)}
+.strip .m-bar{height:40px}
+.strip-cap{font-size:.8rem;color:var(--app-muted);padding:4px 10px 6px}
+.scene-board{display:grid;grid-template-columns:118px minmax(0,1fr);gap:8px;align-items:center}
+.scene-board svg{width:118px;height:79px;display:block}
+.scene-wrap{position:relative;background:var(--app-paper);border-radius:4px;overflow:hidden;--kb-festive-outline:var(--app-ink);--kb-festive-ink:var(--app-ink);--kb-festive-paper:var(--app-paper);--kb-festive-beige:var(--app-beige);--kb-festive-accent:var(--app-accent);--kb-festive-accent-ink:var(--app-accent-ink);--kb-festive-stone:var(--app-stone);--kb-festive-steel:var(--app-steel);--kb-festive-steel-dark:var(--app-steel-dark);--kb-festive-edge:var(--app-edge)}
+.scene-wrap .mote{position:absolute;bottom:-6px;width:4px;height:4px;border-radius:50%;background:var(--app-accent);animation:mote 4.5s ease-in infinite}
+@keyframes mote{0%{transform:translateY(0);opacity:0}20%{opacity:.9}100%{transform:translateY(-70px);opacity:0}}
+
+/* Animation demos */
+.demo{background:var(--app-bar);border-radius:10px;padding:12px;color:var(--app-chalk);display:grid;gap:10px}
+.stage{position:relative;height:130px;border-radius:6px;overflow:hidden;background:linear-gradient(180deg,#34332F,#2B2A27)}
+.diyas{position:absolute;left:0;right:0;bottom:12px;display:flex;justify-content:space-around;padding:0 6%}
+.diya{width:44px;height:44px;position:relative}
+.diya svg{width:100%;height:100%;overflow:visible;display:block}
+.flame{transform-box:fill-box;transform-origin:50% 100%}
+.spark{position:absolute;bottom:40px;width:5px;height:5px;border-radius:50%;background:#F0B25A;opacity:0}
+.demo-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:.88rem}
+.demo-bar button{font:600 .95rem/1 var(--body);background:var(--app-chalk);color:var(--app-ink);border:0;border-radius:999px;padding:10px 16px;min-height:44px;cursor:pointer}
+.demo-bar output{font-variant-numeric:tabular-nums;color:#E8E2D6}
+#demoA.play .flame{animation:light .5s var(--dl) both}
+#demoA.play .spark{animation:spark 3s var(--dl) ease-out both}
+#demoA.play .flame.keep{animation:light .5s var(--dl) both,flicker 3.4s 4.4s ease-in-out infinite}
+#demoA.rest .flame.keep{animation:flicker 3.4s ease-in-out infinite}
+#demoB .flame{animation:flicker 2.6s ease-in-out infinite;animation-delay:var(--dl)}
+#demoB .spark{animation:spark 5s ease-out infinite;animation-delay:var(--dl)}
+@keyframes light{0%{transform:scale(0);opacity:0}70%{transform:scale(1.25);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes flicker{0%,100%{transform:scale(1,1);opacity:1}40%{transform:scale(.92,1.08);opacity:.85}70%{transform:scale(1.04,.95);opacity:.95}}
+@keyframes spark{0%{transform:translate(0,0);opacity:0}15%{opacity:1}100%{transform:translate(var(--dx,6px),-90px);opacity:0}}
+.timeline svg{width:100%;height:auto;display:block}
+.timeline text{font:600 11px/1 var(--body);fill:var(--muted)}
+
+/* Behaviour */
+.sheet{margin:8px 10px;background:var(--app-bar);color:var(--app-chalk);border-radius:8px;padding:10px;box-shadow:0 6px 18px #0004}
+.sheet-head{display:flex;align-items:center;gap:6px}
+.sheet-head b{font:700 .95rem/1 var(--display);text-transform:uppercase;flex:1}
+.sheet-head span{font:700 .9rem/1 var(--hand)}
+.sheet-head .x{width:28px;height:28px;border:1px solid var(--app-stone);border-radius:6px;display:grid;place-items:center;font-size:1rem}
+.sheet p{font-size:.74rem;line-height:1.45;margin-top:6px}
+.dim{position:absolute;inset:46px 0 0;background:#1c1d1f47;z-index:3}
+.laptop{overflow-x:auto;border-radius:10px;border:1px solid var(--rule)}
+.laptop-bar{min-width:520px;height:64px;background:var(--app-bar);color:var(--app-chalk);display:flex;align-items:center;gap:14px;padding:0 16px}
+.laptop-bar .brand{display:flex;align-items:center;gap:10px}
+.laptop-bar .eb{font:700 .62rem/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:#F0915F;display:flex;align-items:center;gap:6px}
+.laptop-bar .eb .stamp{width:18px;height:18px}
+.laptop-bar .nm{font:700 1.6rem/1 var(--display)}
+.laptop-bar .pills{display:flex;gap:6px;margin-left:auto}
+.laptop-bar .pills span{border:1.5px solid var(--app-chalk);border-radius:999px;padding:6px 11px;font:600 .8rem/1 var(--body)}
+.laptop-bar .pills span.on{background:var(--app-chalk);color:var(--app-ink)}
+.coming{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--app-paper);border:1px dashed var(--app-ink);border-radius:6px;padding:7px 9px;font-size:.78rem;color:var(--app-ink)}
+.coming .stamp{width:20px;height:20px;vertical-align:middle}
+.coming b{font:700 .78rem/1 var(--display);letter-spacing:.1em;text-transform:uppercase}
+.mini{background:var(--app-kraft);background-image:repeating-linear-gradient(115deg,transparent 0 6px,color-mix(in srgb,var(--app-kraft-line) 55%,transparent) 6px 7px);border-radius:10px;padding:12px;display:grid;gap:8px}
+.mini.page{background:var(--app-page);border:1px solid var(--app-edge)}
+.set{color:var(--app-ink);display:grid;gap:8px;font-size:.82rem}
+.set .lab{font:700 .72rem/1 var(--display);letter-spacing:.1em;text-transform:uppercase;color:var(--app-ink)}
+.set .search{border:1px solid var(--app-edge);border-radius:6px;padding:8px 10px;background:var(--app-paper);color:var(--app-muted)}
+.set .chips{display:flex;flex-wrap:wrap;gap:6px}
+.set .chips span{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--app-ink);border-radius:999px;padding:4px 10px 4px 4px;background:var(--app-paper)}
+.set .chips span.on{background:var(--app-ink);color:var(--app-chalk)}
+.set .chips .stamp{width:22px;height:22px}
+.set .dates{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:4px 8px;align-items:center}
+.set .dates .stamp{width:20px;height:20px}
+.set .dates span{font-variant-numeric:tabular-nums;color:var(--app-muted)}
+.note{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--app-paper);border:1px solid var(--app-edge);border-radius:6px;padding:8px 10px;color:var(--app-ink)}
+.note u{font-weight:700}
+
+/* Recommended set */
+.rec td:first-child{font:700 1.05rem/1.2 var(--display);text-transform:uppercase;white-space:nowrap}
+ol.build{margin:0;padding:0;list-style:none;display:grid;gap:10px;counter-reset:b}
+ol.build li{counter-increment:b;display:grid;grid-template-columns:40px minmax(0,1fr);gap:10px;align-items:start}
+ol.build li::before{content:counter(b);font:700 1.5rem/1 var(--display);color:var(--accent);text-align:right}
+.calls{display:grid;gap:12px;counter-reset:c}
+.call{background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;display:grid;gap:4px}
+.call b{font-weight:700}
+.keep-list{columns:2 260px;column-gap:28px;padding-left:1.1em;margin:0}
+.keep-list li{margin-bottom:6px;break-inside:avoid}
+footer{padding-block:40px 60px;color:var(--muted);font-size:.9rem}
+
+@media (prefers-reduced-motion: reduce){
+  .fx i,.garland .hang,.scene-wrap .mote,#demoA .flame,#demoA .spark,#demoB .flame,#demoB .spark{animation:none!important}
+  .fx i{bottom:auto;top:var(--top,40%);opacity:.6}
+  .spark{display:none}
+}
+</style>
+
+<header class="mast">
+  <div class="wrap mast-row">
+    <div>
+      <div class="eyebrow">Kitchen Book · Seasonal celebrations · Tuesday 3 November 2026</div>
+      <h1>Celebrations redesign</h1>
+      <p class="lede">What staff see today, what gets in the way, and two redesigns each for the icons, the effects, the animation and the behaviour. My pick is marked on each. The mockups use the book's own colours and type. Nothing here is built yet.</p>
+    </div>
+    <div class="mast-stamps bar-ctx" aria-hidden="true">
+      <span data-stamp="au-melbourne-cup"></span><span data-stamp="np-tihar"></span><span data-stamp="in-diwali"></span><span data-stamp="au-christmas-day"></span>
+    </div>
+  </div>
+</header>
+
+<nav class="jump" aria-label="Sections">
+  <div class="wrap">
+    <a class="hot" href="#act-now">Fix before Diwali</a>
+    <a href="#audit">Audit</a>
+    <a href="#icons">Icons</a>
+    <a href="#effects">Effects</a>
+    <a href="#animation">Animation</a>
+    <a href="#behaviour">Behaviour</a>
+    <a href="#recommended">Recommended set</a>
+    <a href="#your-calls">Your calls</a>
+  </div>
+</nav>
+
+<main>
+<div class="wrap">
+
+<section id="act-now" style="padding-top:8px">
+  <div class="urgent">
+    <div class="eyebrow">Act now, separate from the redesign</div>
+    <h2>Fix the glow before Diwali on Sunday 8 November</h2>
+    <p class="prose">The gentle glow animates a drop shadow on the celebration drawing. On a slow phone that takes most of the main thread. The lighter, opacity-only glow already exists in <code>css/seasonal-brand.css</code>, but <code>css/seasonal-effects.css</code> loads after it and defines an animation with the same name, so the heavy one wins.</p>
+    <div class="stats">
+      <div class="stat"><b>469 ms</b><span>of every second on Prep during Diwali. 8 ms with celebrations off.</span></div>
+      <div class="stat"><b>13 ms</b><span>on the same page with only that one animation paused.</span></div>
+      <div class="stat"><b>769 ms</b><span>of every second on Home during Diwali.</span></div>
+      <div class="stat"><b>80 of 204</b><span>designs use it, and 12 automatic days in the next year.</span></div>
+    </div>
+    <div class="days" aria-label="Automatic days that use the heavy glow">
+      <span>Sun 8 Nov Diwali</span><span>Thu 24 Dec Christmas Eve</span><span>Fri 1 Jan New Year's Day</span><span>Fri 15 Jan Pongal</span><span>Mon 8 Mar Nyepi</span><span>Tue 4 May Star Wars Day</span><span>Sat 4 Sep Ganesh Chaturthi</span><span>Sun 5 Sep Father's Day</span><span>Fri 1 Oct Coffee Day</span><span>Wed 20 Oct Chefs Day</span><span>Fri 29 Oct Diwali</span><span>Sun 31 Oct Halloween</span>
+    </div>
+    <p class="prose"><b>The fix:</b> one stylesheet change so the glow moves only opacity, plus a check in <code>tests/seasonal.test.js</code> that no celebration animation moves <code>filter</code>. That check fails on today's code. Nobody will see a difference except a slightly softer halo. It can ship as its own pull request today, whatever you choose below.</p>
+    <p class="small muted">Measured in the click-test browser with the CPU slowed 4 times and the Firebase stand-in. Halloween and Eid al-Fitr measured 373 and 368 ms on Prep. A phone with a good graphics chip does better, but the gap between 13 and 469 ms comes from that one animation.</p>
+  </div>
+</section>
+
+<section id="audit">
+  <div class="sec-head">
+    <div class="eyebrow">Audit</div>
+    <h2>What staff see today</h2>
+    <p class="prose muted">Screens from the real book with the Firebase stand-in, today's date and the real fonts. Celebrations went live today, so these show what the team is seeing now.</p>
+  </div>
+  <div class="shots">
+    <figure>
+      <img src="previews/now-cup-home-phone.png" alt="Home on a phone during Melbourne Cup Day. Two horses run across the Wastage and Transfers dockets and horseshoes sit on the date and the Recipes and Orders icons." width="390" height="844" loading="lazy">
+      <figcaption>Home, phone, Melbourne Cup Day. The motifs float above the page: horses run over the Wastage and Transfers dockets, horseshoes sit on the date and the docket icons.</figcaption>
+    </figure>
+    <figure>
+      <img src="previews/now-tihar-home-phone.png" alt="Home on a phone during Tihar. A column of beige beads and a star sit on the Pick a docket heading and the date." width="390" height="520" loading="lazy">
+      <figcaption>Home, phone, Tihar. The marigold string draws as beige beads across the heading and the date. The board keeps room for the longest of six languages.</figcaption>
+    </figure>
+    <figure class="wide-shot">
+      <div class="pair">
+        <img src="previews/now-cup-prep-phone.png" alt="Prep page header during Melbourne Cup. The celebration name replaces Kitchen Book, wraps to two lines, and horses run through the letters. The chef hat shows a horse and jockey." width="390" height="260" loading="lazy">
+        <img src="previews/now-off-prep-phone.png" alt="Prep page header with celebrations off. Kitchen Book and the chef hat." width="390" height="260" loading="lazy">
+      </div>
+      <figcaption>Prep, phone. Left, Melbourne Cup: the name replaces Kitchen Book, wraps to two lines (header 64 to 81 px) and horses run through the letters. The chef hat becomes a jockey. Right, celebrations off.</figcaption>
+    </figure>
+    <figure class="wide-shot">
+      <img src="previews/now-lny-prep-desk.png" alt="Prep page header on a laptop during Lunar New Year. Lanterns and stars show inside the Orders and Guides buttons and on the bell. The title wraps to two lines." width="1280" height="140" loading="lazy">
+      <figcaption>Prep, laptop, Lunar New Year. Lanterns and stars show through the Orders and Guides pills and over the bell. "Lunar New Year, Philippines" wraps to two lines.</figcaption>
+    </figure>
+  </div>
+
+  <div class="findings">
+    <div>
+      <h3>Icons</h3>
+      <ul>
+        <li><span class="chip">Fix</span><span>Navaratri's crossed dandiya and the ribbon on Mother's Day read as a red cross at 32 px. In a work app a red cross means delete or error.</span></li>
+        <li><span class="chip">Fix</span><span>Holi's pichkari reads as a syringe.</span></li>
+        <li><span class="chip imp">Improve</span><span>Ten marks lose their shape at 32 px, including Melbourne Cup, Easter, Ganesh Chaturthi, Durga Puja, Kuningan and Pahiyas.</span></li>
+        <li><span class="chip imp">Improve</span><span>Lookalikes: three mugs, two "1" calendars, two crescents. Easter and Chefs Day look like the chef hat.</span></li>
+        <li><span class="chip imp">Improve</span><span>All 204 designs carry a larger scene drawing (240 × 160) that the book never shows.</span></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Effects</h3>
+      <ul>
+        <li><span class="chip">Fix</span><span>Home motifs float above the dockets and the board. Taps still work, but words and Open buttons are covered.</span></li>
+        <li><span class="chip">Fix</span><span>On tablets and laptops, top bar motifs show through the nav pills and the bell.</span></li>
+        <li><span class="chip imp">Improve</span><span>Diwali, Tihar, Lunar New Year and Eid share the same five-point stars and dots.</span></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Animation</h3>
+      <ul>
+        <li><span class="chip now">Fix now</span><span>The heavy glow above.</span></li>
+        <li><span class="chip imp">Improve</span><span>Home runs 23 to 42 endless animations for as long as it is open, including all shift on the shared tablet. Nothing settles.</span></li>
+        <li><span class="chip imp">Improve</span><span>Every start reads all 204 designs and 1,224 sentences to show one: about 70 ms on a slow phone. With its fonts the feature adds 1.2 MB to the saved copy, 345 kB to download.</span></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Behaviour</h3>
+      <ul>
+        <li><span class="chip">Fix</span><span>The chef hat becomes the festival drawing (a jockey, a diya, a pumpkin). Staff find their menu by that hat, and it carries the mail count.</span></li>
+        <li><span class="chip">Fix</span><span>The celebration name replaces Kitchen Book on every work page for the whole day, and long names push the phone header from 64 to 81 px.</span></li>
+        <li><span class="chip imp">Improve</span><span>No lead-up. 45 of the next 365 days have a celebration, and nothing says Tihar starts on Saturday and Diwali on Sunday.</span></li>
+        <li><span class="chip imp">Improve</span><span>A chosen celebration stays until someone changes it. A shared tablet set to Halloween to have a look stays on Halloween for everyone.</span></li>
+        <li><span class="chip imp">Improve</span><span>Choose a celebration lists names only, eight at a time, with no picture and no dates.</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <caption class="small muted" style="text-align:left;caption-side:bottom;padding-top:8px">Main-thread work per second while the page sits open, CPU slowed 4 times. Repeat runs agreed within a few percent.</caption>
+      <thead><tr><th>Celebration and page</th><th class="n">Main thread per second</th><th class="n">Moving pieces</th></tr></thead>
+      <tbody>
+        <tr><td>Off, Prep</td><td class="n">8 ms</td><td class="n">0</td></tr>
+        <tr><td>Christmas, Prep</td><td class="n">12 ms</td><td class="n">10</td></tr>
+        <tr><td>Melbourne Cup, Prep</td><td class="n">11 ms</td><td class="n">12</td></tr>
+        <tr><td>Christmas, Home</td><td class="n">10 ms</td><td class="n">42</td></tr>
+        <tr class="bad"><td>Diwali, Prep</td><td class="n">469 ms</td><td class="n">7</td></tr>
+        <tr><td>Diwali, Prep, glow paused</td><td class="n">13 ms</td><td class="n">6</td></tr>
+        <tr class="bad"><td>Diwali, Home</td><td class="n">769 ms</td><td class="n">12</td></tr>
+        <tr class="bad"><td>Halloween, Prep</td><td class="n">373 ms</td><td class="n">6</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="icons">
+  <div class="sec-head">
+    <div class="eyebrow">1 · Icons</div>
+    <h2>Marks that read at 32 px</h2>
+    <p class="prose muted">The celebration mark shows at 32 px in the top bar and on the chef hat, and at 44 px on the Home board. The drawings were made at 64 px. Below, today's marks at the real top bar size, with what people are likely to see.</p>
+  </div>
+  <div class="icon-row bar-ctx" aria-label="Today's marks at 32 pixels on the top bar">
+    <div class="icon-cell"><span class="i32" data-now="in-navaratri"></span><b>Navaratri</b><em>a red cross</em></div>
+    <div class="icon-cell"><span class="i32" data-now="au-mothers-day"></span><b>Mother's Day</b><em>a cross on a vase</em></div>
+    <div class="icon-cell"><span class="i32" data-now="in-holi"></span><b>Holi</b><em>a syringe</em></div>
+    <div class="icon-cell"><span class="i32" data-now="au-easter-sunday"></span><b>Easter</b><em>a cat, or the chef hat</em></div>
+    <div class="icon-cell"><span class="i32" data-now="au-melbourne-cup"></span><b>Melbourne Cup</b><em>lines, no horse</em></div>
+    <div class="icon-cell"><span class="i32" data-now="in-durga-puja"></span><b>Durga Puja</b><em>a striped ball</em></div>
+    <div class="icon-cell"><span class="i32" data-now="in-ganesh-chaturthi"></span><b>Ganesh Chaturthi</b><em>a crown</em></div>
+    <div class="icon-cell"><span class="i32" data-now="bali-kuningan"></span><b>Kuningan</b><em>a ship's wheel</em></div>
+    <div class="icon-cell"><span class="i32" data-now="ph-pahiyas"></span><b>Pahiyas</b><em>a barn</em></div>
+    <div class="icon-cell"><span class="i32" data-now="fun-chefs-day"></span><b>Chefs Day</b><em>the chef hat itself</em></div>
+  </div>
+  <div class="look bar-ctx" style="margin-top:10px" aria-label="Lookalike marks">
+    <div class="grp i32"><span data-now="fun-valentines-day"></span><span data-now="au-fathers-day"></span><span data-now="fun-coffee-day"></span></div>
+    <div class="grp i32"><span data-now="au-new-years-day"></span><span data-now="np-nepali-new-year"></span></div>
+    <div class="grp i32"><span data-now="bali-nyepi"></span><span data-now="ph-eid-al-fitr"></span></div>
+    <small>Lookalikes: three mugs (Valentine's, Father's Day, Coffee Day), two calendars (New Year's Day, Nepali New Year), two crescents (Nyepi, Eid al-Fitr)</small>
+  </div>
+
+  <div class="options" style="margin-top:22px">
+    <article class="opt">
+      <div class="opt-top"><span class="opt-no">Option A</span></div>
+      <h3>Sharper drawings</h3>
+      <p>Keep one drawing per celebration in today's style. Redraw the 13 that fail at 32 px, give each lookalike its own object, and test every mark at 24, 32 and 44 px on the charcoal bar and on paper.</p>
+      <div class="ba bar-ctx" aria-label="Before and after redraws">
+        <div class="ba-cell"><div class="row"><span class="i44" data-now="in-navaratri"></span><span class="arrow">→</span><span class="i44 draw-ctx" data-draw="in-navaratri"></span></div>Navaratri: sticks side by side, no cross</div>
+        <div class="ba-cell"><div class="row"><span class="i44" data-now="in-holi"></span><span class="arrow">→</span><span class="i44 draw-ctx" data-draw="in-holi"></span></div>Holi: three heaps of gulal</div>
+        <div class="ba-cell"><div class="row"><span class="i44" data-now="au-mothers-day"></span><span class="arrow">→</span><span class="i44 draw-ctx" data-draw="au-mothers-day"></span></div>Mother's Day: tulips, no ribbon</div>
+        <div class="ba-cell"><div class="row"><span class="i44" data-now="au-melbourne-cup"></span><span class="arrow">→</span><span class="i44 draw-ctx" data-draw="au-melbourne-cup"></span></div>Melbourne Cup: one bold horse</div>
+        <div class="ba-cell"><div class="row"><span class="i44" data-now="au-easter-sunday"></span><span class="arrow">→</span><span class="i44 draw-ctx" data-draw="au-easter-sunday"></span></div>Easter: a patterned egg</div>
+        <div class="ba-cell"><div class="row"><span class="i44" data-now="in-ganesh-chaturthi"></span><span class="arrow">→</span><span class="i44 draw-ctx" data-draw="in-ganesh-chaturthi"></span></div>Ganesh Chaturthi: modak on a plate</div>
+      </div>
+      <dl class="facts">
+        <dt>Keeps</dt><dd>The drawing style you approved, the Santa-chef cap, the green clover, the horse and the lightsabre.</dd>
+        <dt>Changes</dt><dd>13 drawings, redrawn in place.</dd>
+        <dt>Limit</dt><dd>Thin chalk lines on charcoal still blur at 32 px. Detail stays fragile.</dd>
+        <dt>Size</dt><dd>Small. One pull request with a contact-sheet check.</dd>
+      </dl>
+    </article>
+    <article class="opt">
+      <div class="opt-top"><span class="opt-no">Option B</span><span class="pick">My pick</span></div>
+      <h3>Docket stamps</h3>
+      <p>Give each main celebration a stamp: a paper disc with one bold glyph and one orange accent, drawn on a 24 px grid like the docket icons on Home. Stamps go wherever the mark is small: the top bar, Settings and the board heading. The full drawings stay where there is room.</p>
+      <div class="stamp-grid bar-ctx" id="stampGrid" aria-label="All 36 proposed stamps at 32 pixels on the top bar"></div>
+      <div class="stamp-paper paper-ctx i44" aria-label="Stamps at 44 pixels on paper">
+        <span data-stamp="in-diwali"></span><span data-stamp="np-tihar"></span><span data-stamp="au-christmas-day"></span><span data-stamp="ph-lunar-new-year"></span><span data-stamp="fun-st-patricks-day"></span><span data-stamp="au-melbourne-cup"></span><span data-stamp="ph-independence-day"></span>
+      </div>
+      <dl class="facts">
+        <dt>Keeps</dt><dd>The Santa-chef cap, the clover green, the horse and the lightsabre as stamp glyphs. Flags keep their colours.</dd>
+        <dt>Changes</dt><dd>A second, simpler mark per celebration. The drawings show only at Home size.</dd>
+        <dt>Limit</dt><dd>36 stamps for the main set. The other 168 designs keep today's drawing.</dd>
+        <dt>Size</dt><dd>Medium. Glyphs exist as drafts on this page.</dd>
+      </dl>
+    </article>
+  </div>
+  <div class="verdict"><span class="hand">My pick</span><p><b>B, with A's redraws of Navaratri, Mother's Day and Holi.</b> A paper disc on the charcoal bar is the one thing that stays readable at 32 px, and it matches the docket icons staff already know. Those three drawings still show on Home at full size, so their red crosses and the syringe need fixing either way.</p></div>
+</section>
+
+<section id="effects">
+  <div class="sec-head">
+    <div class="eyebrow">2 · Effects</div>
+    <h2>Festive, never on top of the work</h2>
+    <p class="prose muted">Effects are the motifs that move: snow, horses, petals, lanterns. Today Home has them across the whole screen, above everything, and work pages have them inside the top bar, behind the nav pills.</p>
+  </div>
+  <div class="options">
+    <article class="opt">
+      <div class="opt-top"><span class="opt-no">Option A</span><span class="pick">My pick for Home</span></div>
+      <h3>Behind the words</h3>
+      <div class="mock-row">
+        <div class="phone" role="img" aria-label="Home on Diwali with a marigold garland hanging from the top bar and small lamps drifting behind the dockets">
+          <div class="screen">
+            <div class="m-bar"><span class="m-logo">KB</span><span class="m-name">Kitchen Book</span><span class="m-icons"><span class="m-btn" data-icon="bell"></span><span class="m-btn" data-icon="hat"></span></span></div>
+            <svg class="garland" viewBox="0 0 300 40" preserveAspectRatio="none" aria-hidden="true" data-garland></svg>
+            <div class="fx" data-fx="diwali"></div>
+            <div class="m-content">
+              <div class="m-h" style="margin-top:22px">Pick a docket</div>
+              <div class="m-date">Sunday 8 November</div>
+              <div class="m-board bar-ctx"><div class="m-board-head"><span data-now="in-diwali"></span><span class="m-board-title">Diwali / Deepavali</span><span class="m-board-lang">English</span></div><p>In India, Diwali celebrates light overcoming darkness through varied Hindu, Jain, Sikh and regional traditions.</p></div>
+              <div class="m-docket"><span class="ring" data-icon="plate"></span><b>RECIPES</b><i>No. 01</i></div>
+              <div class="m-docket"><span class="ring" data-icon="list"></span><b>PREP LIST</b><i>No. 02</i></div>
+              <div class="m-docket"><span class="ring" data-icon="box"></span><b>ORDERS</b><i>No. 03</i></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ul>
+        <li>The effects layer moves under the page. The board and the dockets cover it, so motifs show on the kraft between them and never over a word or a button.</li>
+        <li>Anchored ornaments hang from the top bar's edge (marigolds, lanterns, parol, penjor) instead of floating over the heading.</li>
+        <li>Each festival gets its own motifs: diya flames for Diwali, marigold heads for Tihar, lanterns and plum blossom for Lunar New Year, lanterns and crescents for Eid.</li>
+        <li>Work pages: motifs stay in the top bar, but only in the space beside the title, never behind the pills or the bell.</li>
+      </ul>
+      <dl class="facts">
+        <dt>Keeps</dt><dd>Full ambience on Home, as approved on 3 November.</dd>
+        <dt>Limit</dt><dd>On a phone the dockets fill most of the screen, so the motifs mostly show in the top third.</dd>
+      </dl>
+    </article>
+    <article class="opt">
+      <div class="opt-top"><span class="opt-no">Option B</span><span class="pick">My pick for work pages</span></div>
+      <h3>Edges and board</h3>
+      <div class="mock-row">
+        <div class="phone" role="img" aria-label="Home on Diwali with no floating motifs. The board shows a larger Diwali drawing with sparks rising inside it.">
+          <div class="screen">
+            <div class="m-bar"><span class="m-logo">KB</span><span class="m-name">Kitchen Book</span><span class="m-icons"><span class="m-btn" data-icon="bell"></span><span class="m-btn" data-icon="hat"></span></span></div>
+            <div class="m-content">
+              <div class="m-h">Pick a docket</div>
+              <div class="m-date">Sunday 8 November</div>
+              <div class="m-board">
+                <div class="scene-board"><div class="scene-wrap" data-scene="in-diwali"><i class="mote" style="left:30%;animation-delay:-1s"></i><i class="mote" style="left:55%;animation-delay:-2.6s"></i><i class="mote" style="left:72%;animation-delay:-3.8s"></i></div>
+                <div><div class="m-board-head" style="grid-template-columns:minmax(0,1fr) auto"><span class="m-board-title">Diwali / Deepavali</span><span class="m-board-lang">English</span></div><p>In India, Diwali celebrates light overcoming darkness through varied Hindu, Jain, Sikh and regional traditions.</p></div></div>
+              </div>
+              <div class="m-docket"><span class="ring" data-icon="plate"></span><b>RECIPES</b><i>No. 01</i></div>
+              <div class="m-docket"><span class="ring" data-icon="list"></span><b>PREP LIST</b><i>No. 02</i></div>
+              <div class="m-docket"><span class="ring" data-icon="box"></span><b>ORDERS</b><i>No. 03</i></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="strip-list" aria-label="Festive edges under the top bar on work pages">
+        <div class="strip"><div class="m-bar"><span class="m-back">‹</span><span class="m-name">Kitchen Book</span></div><svg class="edge" data-edge="marigold" aria-hidden="true"></svg><div class="strip-cap">Diwali and Tihar: marigolds</div></div>
+        <div class="strip"><div class="m-bar"><span class="m-back">‹</span><span class="m-name">Kitchen Book</span></div><svg class="edge" data-edge="lights" aria-hidden="true"></svg><div class="strip-cap">Christmas: fairy lights</div></div>
+        <div class="strip"><div class="m-bar"><span class="m-back">‹</span><span class="m-name">Kitchen Book</span></div><svg class="edge" data-edge="rail" aria-hidden="true"></svg><div class="strip-cap">Melbourne Cup: the running rail</div></div>
+        <div class="strip"><div class="m-bar"><span class="m-back">‹</span><span class="m-name">Kitchen Book</span></div><svg class="edge" data-edge="lanterns" aria-hidden="true"></svg><div class="strip-cap">Lunar New Year: lanterns</div></div>
+      </div>
+      <ul>
+        <li>Home: the celebration lives in the board. Its larger drawing, which the book already carries, moves inside the board only.</li>
+        <li>Work pages: a 12 px festive edge under the top bar. Nothing moves behind the title, the pills or the buttons.</li>
+      </ul>
+      <dl class="facts">
+        <dt>Changes</dt><dd>The approved full-screen ambience on Home.</dd>
+        <dt>Limit</dt><dd>Quieter. Some of the fun of the full screen goes.</dd>
+      </dl>
+    </article>
+  </div>
+  <div class="verdict"><span class="hand">My pick</span><p><b>A on Home, B's festive edge on work pages.</b> Home keeps the full ambience you approved, moved behind the words. Work pages are where people type during service, so they get a still edge that is plainly festive and never sits behind a button.</p></div>
+</section>
+
+<section id="animation">
+  <div class="sec-head">
+    <div class="eyebrow">3 · Animation</div>
+    <h2>A moment, then calm</h2>
+    <p class="prose muted">Today every motif loops for as long as the page is open. Press Play on each to compare. With reduced motion turned on, both stay still, as the book does now.</p>
+  </div>
+  <div class="options">
+    <article class="opt">
+      <div class="opt-top"><span class="opt-no">Option A</span><span class="pick">My pick</span></div>
+      <h3>Arrive, then settle</h3>
+      <div class="demo" id="demoA" aria-label="Demo: lamps light one by one with rising sparks for four seconds, then one flame keeps a slow flicker">
+        <div class="stage" data-diyas="A"></div>
+        <div class="demo-bar"><button type="button" id="playA">Play the arrival</button><output id="outA" aria-live="polite">At rest: 1 moving piece</output></div>
+      </div>
+      <div class="timeline" data-timeline="A" aria-hidden="true"></div>
+      <ul>
+        <li>A 4 second arrival the first time Home opens each kitchen day, and on Replay. Lamps light, horses gallop past once, snow flurries.</li>
+        <li>Then rest: at most 4 small, slow loops (12 s or longer) on Home.</li>
+        <li>Work pages: the stamp tucks in once when you arrive (it does now), then holds still.</li>
+      </ul>
+      <dl class="facts">
+        <dt>Changes</dt><dd>Home stops looping all day.</dd>
+        <dt>Good for</dt><dd>The shared tablet, which is open all shift.</dd>
+      </dl>
+    </article>
+    <article class="opt">
+      <div class="opt-top"><span class="opt-no">Option B</span></div>
+      <h3>Always on, lighter</h3>
+      <div class="demo" id="demoB" aria-label="Demo: every lamp flickers and sparks keep rising">
+        <div class="stage" data-diyas="B"></div>
+        <div class="demo-bar"><output aria-live="off">Always: 8 moving pieces</output></div>
+      </div>
+      <div class="timeline" data-timeline="B" aria-hidden="true"></div>
+      <ul>
+        <li>Keep continuous loops, but at most 8 moving pieces on Home and 4 in the top bar.</li>
+        <li>Slower loops (12 to 24 s), snow in two depths, a flicker per lamp.</li>
+        <li>No arrival moment.</li>
+      </ul>
+      <dl class="facts">
+        <dt>Keeps</dt><dd>The always-moving Home you approved.</dd>
+        <dt>Limit</dt><dd>Still moving at 15:00 on a Tuesday when nobody is looking.</dd>
+      </dl>
+    </article>
+  </div>
+  <div class="both">
+    <h3>Rules for either</h3>
+    <div class="both-grid">
+      <div class="both-item"><span class="tag">Engine</span><p>Move only <code>transform</code> and <code>opacity</code>. No <code>filter</code>, no shadows, nothing that changes layout.</p></div>
+      <div class="both-item"><span class="tag">Budget check</span><p>A click test opens Home and Prep for each of the 36 main festivals with the CPU slowed 4 times and fails above 20 ms of main-thread work per second.</p></div>
+      <div class="both-item"><span class="tag">Kept as is</span><p>Still, Subtle, Full, Replay, reduced motion, pause when the tab is hidden, and plain PIN and name screens.</p></div>
+    </div>
+  </div>
+  <div class="verdict"><span class="hand">My pick</span><p><b>A.</b> A short show when the book opens is the celebration. After that the book is a work tool again, and the shared tablet stops animating for the rest of the shift.</p></div>
+</section>
+
+<section id="behaviour">
+  <div class="sec-head">
+    <div class="eyebrow">4 · Behaviour</div>
+    <h2>Where the celebration lives</h2>
+    <p class="prose muted">Today the celebration takes over the work pages: its name replaces Kitchen Book, and its drawing replaces the chef hat. Both options give those back.</p>
+  </div>
+  <div class="options">
+    <article class="opt">
+      <div class="opt-top"><span class="opt-no">Option A</span></div>
+      <h3>Home holds it</h3>
+      <div class="mock-row">
+        <div class="phone" role="img" aria-label="Prep page on Diwali. The top bar shows Kitchen Book, the bell and the chef hat, with a marigold edge below.">
+          <div class="screen page short">
+            <div class="m-bar"><span class="m-back">‹</span><span class="m-name">Kitchen Book</span><span class="m-icons"><span class="m-btn" data-icon="bell"></span><span class="m-btn" data-icon="hat"></span></span></div>
+            <svg class="edge" data-edge="marigold" aria-hidden="true"></svg>
+            <div class="m-under"><span>Writing as <b>Sam</b></span><u>Not you?</u></div>
+            <div class="m-today">Today</div>
+          </div>
+        </div>
+      </div>
+      <ul>
+        <li>Work pages look as they do on any other day, plus the festive edge if you choose it.</li>
+        <li>The story is on the Home board only. Nothing to tap in the top bar during service.</li>
+      </ul>
+      <dl class="facts">
+        <dt>Changes</dt><dd>The tappable celebration title on work pages goes.</dd>
+        <dt>Limit</dt><dd>Someone who jumps straight to Prep from a saved link never sees what the day is.</dd>
+      </dl>
+    </article>
+    <article class="opt">
+      <div class="opt-top"><span class="opt-no">Option B</span><span class="pick">My pick</span></div>
+      <h3>A stamp beside the name</h3>
+      <div class="mock-row">
+        <div class="phone" role="img" aria-label="Prep page on Diwali. The top bar shows Kitchen Book with a small Diwali stamp beside it. Tapping it opens the explanation.">
+          <div class="screen page" style="height:230px">
+            <div class="m-bar"><span class="m-back">‹</span><span class="m-name">Kitchen Book</span><span class="m-sticker bar-ctx" data-stamp="in-diwali"></span><span class="m-icons"><span class="m-btn" data-icon="bell"></span><span class="m-btn" data-icon="hat"></span></span></div>
+            <svg class="edge" data-edge="marigold" aria-hidden="true"></svg>
+            <div class="m-under"><span>Writing as <b>Sam</b></span><u>Not you?</u></div>
+            <div class="dim"></div>
+            <div class="sheet" style="position:absolute;top:56px;left:0;right:0;z-index:4"><div class="sheet-head"><b>Diwali / Deepavali</b><span>English</span><span class="x">×</span></div><p>In India, Diwali celebrates light overcoming darkness through varied Hindu, Jain, Sikh and regional traditions.</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="laptop" role="img" aria-label="Laptop top bar: the small line above Kitchen Book reads Leichhardt Hotel Kitchen, Diwali, with a stamp">
+        <div class="laptop-bar bar-ctx">
+          <div class="brand"><span class="m-logo" style="font-size:1.8rem">KB</span><div><div class="eb">Leichhardt Hotel Kitchen · <span data-stamp="in-diwali"></span> Diwali</div><div class="nm">Kitchen Book</div></div></div>
+          <div class="pills"><span>Recipes</span><span class="on">Prep</span><span>Orders</span></div>
+          <span class="m-btn" data-icon="bell"></span><span class="m-btn" data-icon="hat"></span>
+        </div>
+      </div>
+      <ul>
+        <li>Kitchen Book and the chef hat come back. A stamp sits beside the name, a 44 px target that opens the explanation you approved, with its six languages.</li>
+        <li>On tablets and laptops the celebration joins the small line above Kitchen Book, so the bar stays the same height and width.</li>
+      </ul>
+      <dl class="facts">
+        <dt>Changes</dt><dd>The chalk celebration title in the top bar.</dd>
+        <dt>Check</dt><dd>Measure 390, 768 and 1280 px so Kitchen Book never wraps.</dd>
+      </dl>
+    </article>
+  </div>
+
+  <div class="both">
+    <h3>In both options</h3>
+    <div class="both-grid">
+      <div class="both-item">
+        <span class="tag">The chef hat stays the chef hat</span>
+        <div class="mini" style="background:var(--app-bar)"><div class="m-bar" style="height:auto;padding:0;background:none"><span class="m-name" style="font-size:.9rem;color:var(--app-chalk)">Diwali, top bar</span><span class="m-icons"><span class="m-btn" data-icon="bell"></span><span class="m-btn" data-icon="hat"></span></span></div></div>
+        <p>It opens each person's menu and carries the mail count. The celebration never replaces it.</p>
+      </div>
+      <div class="both-item">
+        <span class="tag">Coming up</span>
+        <div class="mini"><div class="coming bar-ctx" style="--g-ring:var(--app-ink)"><b>Coming up</b><span data-stamp="np-tihar"></span>Tihar, Saturday <span data-stamp="in-diwali"></span>Diwali, Sunday</div></div>
+        <p>Home shows the next celebrations in the coming 7 days, so people can plan a special or wish a colleague. From the same offline calendar, no reads.</p>
+      </div>
+      <div class="both-item">
+        <span class="tag">Long festivals count</span>
+        <div class="mini"><div class="m-board bar-ctx" style="margin:0"><div class="m-board-head"><span data-stamp="np-tihar"></span><span class="m-board-title">Tihar · day 3 of 5</span><span class="m-board-lang">English</span></div></div></div>
+        <p>Tihar, Navaratri, Durga Puja and Kadayawan show which day it is.</p>
+      </div>
+      <div class="both-item">
+        <span class="tag">Quiet days stay quiet</span>
+        <div class="mini"><div class="m-board bar-ctx" style="margin:0"><div class="m-board-head"><span data-stamp="bali-nyepi"></span><span class="m-board-title">Nyepi</span><span class="m-board-lang">English</span></div><p>Drawing only. No motifs, no arrival.</p></div></div>
+        <p>The 71 designs already marked reflective or civic (Nyepi, Buddha Jayanti, Anzac Day, Good Friday, Sorry Day and more) show their drawing still.</p>
+      </div>
+      <div class="both-item">
+        <span class="tag">A chosen one is a preview</span>
+        <div class="mini page"><div class="note paper-ctx"><span class="i32" data-stamp="fun-halloween"></span>Showing Halloween until 04:00. <u>Keep it</u></div></div>
+        <p>A celebration picked in Settings lasts until the 04:00 refresh unless someone taps Keep it. A tablet can't get stuck on Halloween.</p>
+      </div>
+      <div class="both-item">
+        <span class="tag">Choose a celebration</span>
+        <div class="mini page"><div class="set paper-ctx">
+          <div class="lab">Find a celebration</div><div class="search">Name, country or festival</div>
+          <div class="chips"><span class="on"><i data-stamp="in-diwali"></i>Diwali</span><span><i data-stamp="np-tihar"></i>Tihar</span><span><i data-stamp="au-christmas-day"></i>Christmas Day</span><span><i data-stamp="ph-lunar-new-year"></i>Lunar New Year</span></div>
+          <div class="lab" style="margin-top:4px">Coming up</div>
+          <div class="dates"><i data-stamp="np-tihar"></i><span>Sat 7 Nov</span>Tihar<i data-stamp="in-diwali"></i><span>Sun 8 Nov</span>Diwali<i data-stamp="au-christmas-day"></i><span>Thu 24 Dec</span>Christmas Eve<i data-stamp="au-christmas-day"></i><span>Fri 25 Dec</span>Christmas Day<i data-stamp="au-new-years-day"></i><span>Thu 31 Dec</span>New Year's Eve</div>
+        </div></div>
+        <p>Stamps beside each name, and the next five dates, so the list shows what each one looks like and when it comes.</p>
+      </div>
+    </div>
+  </div>
+  <div class="verdict"><span class="hand">My pick</span><p><b>B.</b> Work pages get their name and chef hat back, and the celebration is still one tap away on every page, without a third button in the top bar.</p></div>
+</section>
+
+<section id="recommended">
+  <div class="sec-head">
+    <div class="eyebrow">Recommended set</div>
+    <h2>What I would build</h2>
+  </div>
+  <div class="tbl-wrap" style="margin-top:0">
+    <table class="rec">
+      <thead><tr><th>Area</th><th>Pick</th><th>What changes for the team</th></tr></thead>
+      <tbody>
+        <tr><td>Icons</td><td>B, Docket stamps, plus 3 redraws</td><td>Clear marks at 32 px. No red crosses, no syringe.</td></tr>
+        <tr><td>Effects</td><td>A on Home, B's edge on work pages</td><td>Nothing covers a word or a button.</td></tr>
+        <tr><td>Animation</td><td>A, Arrive, then settle</td><td>A short show once a day, then calm.</td></tr>
+        <tr><td>Behaviour</td><td>B, A stamp beside the name</td><td>Kitchen Book and the chef hat stay. Tap the stamp for the story.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <h3 style="margin:28px 0 12px;font-size:1.3rem;text-transform:uppercase">Build order, one pull request each</h3>
+  <ol class="build">
+    <li><span><b>The glow fix</b>, with a check that fails on today's code. Before Sunday 8 November.</span></li>
+    <li><span><b>Hands off the work:</b> the chef hat stays, Home motifs move behind the dockets, top bar motifs keep out of the pills.</span></li>
+    <li><span><b>Arrive, then settle</b>, with the motion budget check for all 36 main festivals.</span></li>
+    <li><span><b>Stamps</b> for the main set, and the Navaratri, Mother's Day and Holi redraws.</span></li>
+    <li><span><b>Work top bar:</b> Kitchen Book back, the stamp beside it, the festive edge.</span></li>
+    <li><span><b>Coming up</b>, day counts, quiet days, the 04:00 preview and Settings with stamps.</span></li>
+    <li><span><b>Load less at start:</b> keep the main set in the saved copy and load the other 168 designs only when Choose a celebration opens.</span></li>
+  </ol>
+  <h3 style="margin:28px 0 12px;font-size:1.3rem;text-transform:uppercase">Stays the same</h3>
+  <ul class="keep-list">
+    <li>Automatic, the source-backed calendar and its 36 main festivals.</li>
+    <li>Six languages cycling automatically, with no language picker.</li>
+    <li>All 204 designs still choosable by hand.</li>
+    <li>Still, Subtle, Full, Replay and Off, saved on each device.</li>
+    <li>Reduced motion, and the pause when the tab is hidden.</li>
+    <li>No Firebase reads or writes, nothing about staff stored.</li>
+    <li>PIN, name and device-choice screens stay plain.</li>
+    <li>Works with no signal from the saved copy.</li>
+  </ul>
+</section>
+
+<section id="your-calls">
+  <div class="sec-head">
+    <div class="eyebrow">Your calls</div>
+    <h2>Changes to what you approved today</h2>
+    <p class="prose muted">These change decisions from 3 November, so they are yours to make. Tell me which picks you want, or a different mix, and I will start with the glow fix.</p>
+  </div>
+  <div class="calls">
+    <div class="call"><b>1. Give Kitchen Book back to work pages</b><span>The celebration becomes a stamp beside the name instead of replacing it.</span></div>
+    <div class="call"><b>2. Stamps at small sizes</b><span>The approved drawings stay on Home. The top bar, Settings and the board heading use stamps.</span></div>
+    <div class="call"><b>3. Motion settles after a 4 second arrival</b><span>Instead of looping all day on Home.</span></div>
+    <div class="call"><b>4. A chosen celebration lasts until 04:00 unless kept</b><span>Today it stays until someone changes it.</span></div>
+    <div class="call"><b>5. Who may change celebrations on the shared tablet?</b><span>Today anyone can, and it changes it for everyone on that tablet. Options: anyone (as now), or the head chef and sous chefs only.</span></div>
+  </div>
+</section>
+
+</div>
+</main>
+<footer><div class="wrap">Audit made on 3 November 2026 from the live code on main, the Firebase stand-in and the click-test browser. Times are Queensland time. Stamp glyphs on this page are first drafts for choosing a direction, not final artwork.</div></footer>
+
+<script>
+window.ART_NOW={"in-navaratri":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M11 9L54 52M54 9L11 52\" fill=\"none\" stroke=\"var(--kb-festive-accent)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path><path d=\"M13 11L52 50M52 11L13 50\" fill=\"none\" stroke=\"var(--kb-festive-accent)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path><circle cx=\"38.3\" cy=\"31.0\" r=\"3.87\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.3\"></circle><circle cx=\"36.45\" cy=\"35.45\" r=\"3.87\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.3\"></circle><circle cx=\"32.0\" cy=\"37.3\" r=\"3.87\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.3\"></circle><circle cx=\"27.55\" cy=\"35.45\" r=\"3.87\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.3\"></circle><circle cx=\"25.7\" cy=\"31.0\" r=\"3.87\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.3\"></circle><circle cx=\"27.55\" cy=\"26.55\" r=\"3.87\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.3\"></circle><circle cx=\"32.0\" cy=\"24.7\" r=\"3.87\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.3\"></circle><circle cx=\"36.45\" cy=\"26.55\" r=\"3.87\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.3\"></circle><circle cx=\"32\" cy=\"31\" r=\"3.15\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.3\"></circle></svg>"},"au-mothers-day":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M18 33L48 34L39 58H26Z\" fill=\"var(--kb-festive-edge)\"></path><path d=\"M29 38L21 14M33 37L34 10M37 39L48 19\" stroke=\"var(--kb-festive-stone)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path><g transform=\"translate(21 15) scale(0.7)\"><circle cx=\"8\" cy=\"0\" r=\"6\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.2\"></circle><circle cx=\"4.000000000000001\" cy=\"6.928203230275509\" r=\"6\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.2\"></circle><circle cx=\"-3.9999999999999982\" cy=\"6.92820323027551\" r=\"6\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.2\"></circle><circle cx=\"-8\" cy=\"9.797174393178826e-16\" r=\"6\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.2\"></circle><circle cx=\"-4.0000000000000036\" cy=\"-6.928203230275507\" r=\"6\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.2\"></circle><circle cx=\"4.000000000000001\" cy=\"-6.928203230275509\" r=\"6\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.2\"></circle><circle r=\"4\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.2\"></circle></g><g transform=\"translate(34 11) scale(0.7)\"><circle cx=\"8\" cy=\"0\" r=\"6\" fill=\"var(--kb-festive-paper)\" stroke-width=\"1.2\"></circle><circle cx=\"4.000000000000001\" cy=\"6.928203230275509\" r=\"6\" fill=\"var(--kb-festive-paper)\" stroke-width=\"1.2\"></circle><circle cx=\"-3.9999999999999982\" cy=\"6.92820323027551\" r=\"6\" fill=\"var(--kb-festive-paper)\" stroke-width=\"1.2\"></circle><circle cx=\"-8\" cy=\"9.797174393178826e-16\" r=\"6\" fill=\"var(--kb-festive-paper)\" stroke-width=\"1.2\"></circle><circle cx=\"-4.0000000000000036\" cy=\"-6.928203230275507\" r=\"6\" fill=\"var(--kb-festive-paper)\" stroke-width=\"1.2\"></circle><circle cx=\"4.000000000000001\" cy=\"-6.928203230275509\" r=\"6\" fill=\"var(--kb-festive-paper)\" stroke-width=\"1.2\"></circle><circle r=\"4\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.2\"></circle></g><g transform=\"translate(47 21) scale(0.65)\"><circle cx=\"8\" cy=\"0\" r=\"6\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.2\"></circle><circle cx=\"4.000000000000001\" cy=\"6.928203230275509\" r=\"6\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.2\"></circle><circle cx=\"-3.9999999999999982\" cy=\"6.92820323027551\" r=\"6\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.2\"></circle><circle cx=\"-8\" cy=\"9.797174393178826e-16\" r=\"6\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.2\"></circle><circle cx=\"-4.0000000000000036\" cy=\"-6.928203230275507\" r=\"6\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.2\"></circle><circle cx=\"4.000000000000001\" cy=\"-6.928203230275509\" r=\"6\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.2\"></circle><circle r=\"4\" fill=\"var(--kb-festive-accent)\" stroke-width=\"1.2\"></circle></g><path d=\"M24 44l15 8M38 44L25 53\" stroke=\"var(--kb-festive-accent)\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg>"},"in-holi":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M10 46L43 13L51 21L18 54Z\" fill=\"var(--kb-festive-accent)\"></path><path d=\"M40 10L54 24M7 50L12 55M42 7L48 1M52 11L61 7M56 23L63 23\" fill=\"none\"></path><circle cx=\"12\" cy=\"14\" r=\"7\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"7\" cy=\"28\" r=\"4\" fill=\"var(--kb-festive-accent)\"></circle><path d=\"M31 56Q40 39 51 56Z\" fill=\"var(--kb-festive-stone)\"></path></svg>"},"au-easter-sunday":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M18 31C7 20 13 10 23 19L23 26M40 29C51 14 45 6 37 20L34 28\" fill=\"var(--kb-festive-paper)\"></path><path d=\"M17 27a10 10 0 0 1 15-7a10 10 0 0 1 15 7a8 8 0 0 1-4 14V54H20V41a8 8 0 0 1-3-14Z\" fill=\"var(--kb-festive-paper)\"></path><path d=\"M20 46H43M18 18l3 7M40 18l-3 7\" stroke-width=\"2\"></path></svg>"},"au-melbourne-cup":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><g class=\"kb-racing-horse\" stroke-width=\"2.2\"><path class=\"kb-horse-tail\" d=\"M17 32C9 22 5 24 3 33C7 28 10 35 17 36\" fill=\"var(--kb-festive-accent-ink)\"></path><path class=\"kb-horse-leg kb-horse-leg-back\" d=\"M21 37L13 47L4 48M25 38L21 48L11 55\"></path><path class=\"kb-horse-leg kb-horse-leg-front\" d=\"M39 36L46 43L56 38M42 33L49 39L60 33\"></path><path d=\"M15 30C22 25 29 28 34 29L41 18L41 11L46 14L49 12L49 19L59 23Q62 27 57 29L49 26L43 35C37 43 25 41 16 36Z\" fill=\"var(--kb-festive-paper)\"></path><path d=\"M40 18L37 28M49 20L47 25\"></path><circle cx=\"50\" cy=\"21\" r=\".9\" fill=\"currentColor\" stroke=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></circle><path d=\"M24 28H35L33 35H23Z\" fill=\"var(--kb-festive-accent)\"></path><path d=\"M25 27L29 19L37 22L39 27L46 25\" fill=\"var(--kb-festive-accent)\"></path><path d=\"M29 28L25 34L32 38\"></path><circle cx=\"34\" cy=\"15\" r=\"4\" fill=\"var(--kb-festive-paper)\"></circle><path d=\"M29 14Q33 6 38 14Z\" fill=\"var(--kb-festive-accent)\"></path><path d=\"M38 15H41\"></path></g></svg>"},"in-durga-puja":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M15 16Q32 8 49 16V48Q32 57 15 48Z\" fill=\"var(--kb-festive-accent)\"></path><ellipse cx=\"15\" cy=\"32\" rx=\"7\" ry=\"16\" fill=\"var(--kb-festive-paper)\"></ellipse><ellipse cx=\"49\" cy=\"32\" rx=\"7\" ry=\"16\" fill=\"var(--kb-festive-paper)\"></ellipse><path d=\"M21 14L26 51L37 12L43 51M3 10L13 18M50 7L60 18\" fill=\"none\"></path><g transform=\"translate(7 50) rotate(-30) scale(0.45)\"><path d=\"M0 0Q-12-15 0-26Q12-15 0 0Z\" fill=\"var(--kb-festive-stone)\"></path><path d=\"M0-23V2\" fill=\"none\"></path></g></svg>"},"in-ganesh-chaturthi":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M7 53Q3 42 14 29Q25 42 21 53Z\" fill=\"var(--kb-festive-paper)\"></path><path d=\"M22 53Q17 31 33 12Q50 31 45 53Z\" fill=\"var(--kb-festive-paper)\"></path><path d=\"M44 53Q40 41 51 29Q62 41 58 53Z\" fill=\"var(--kb-festive-paper)\"></path><path d=\"M33 18V48M26 27L27 49M39 27L38 49\" fill=\"none\"></path></svg>"},"bali-kuningan":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><circle cx=\"23\" cy=\"29\" r=\"19\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"23\" cy=\"29\" r=\"11\" fill=\"var(--kb-festive-paper)\"></circle><path d=\"M5 29H41M23 11V47M10 16L36 42M10 42L36 16\" fill=\"none\" stroke-width=\"1.3\"></path><path d=\"M41 22L57 21L61 50L44 54Z\" fill=\"var(--kb-festive-stone)\"></path><path d=\"M44 28L58 29M45 35L59 36M46 42L59 43M48 23L52 52M54 23L57 51\" fill=\"none\" stroke-width=\"1\"></path></svg>"},"ph-pahiyas":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M5 24L32 6L59 24M11 24V57H53V24\" fill=\"var(--kb-festive-paper)\"></path><path d=\"M25 57V39H39V57\"></path><path d=\"M12 24Q6 34 12 42Q18 34 12 24Z\" fill=\"var(--kb-festive-accent)\"></path><path d=\"M22 24Q16 34 22 42Q28 34 22 24Z\" fill=\"var(--kb-festive-accent)\"></path><path d=\"M32 24Q26 34 32 42Q38 34 32 24Z\" fill=\"var(--kb-festive-stone)\"></path><path d=\"M42 24Q36 34 42 42Q48 34 42 24Z\" fill=\"var(--kb-festive-accent)\"></path><path d=\"M52 24Q46 34 52 42Q58 34 52 24Z\" fill=\"var(--kb-festive-accent)\"></path></svg>"},"fun-chefs-day":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M15 29A10 10 0 1 1 23 12a13 13 0 0 1 20 0a10 10 0 1 1 7 17V54H15Z\" fill=\"var(--kb-festive-paper)\"></path><path d=\"M15 43H50M24 33V39M34 30V39M43 33V39\" stroke-width=\"2\"></path></svg>"},"fun-valentines-day":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M9 32H42V44Q42 56 26 56Q9 56 9 44Z\" fill=\"var(--kb-festive-paper)\"></path><path d=\"M42 35H49a7 7 0 0 1 0 14H41\"></path><path d=\"M30 15C19 0 4 16 30 29C56 16 41 0 30 15Z\" fill=\"var(--kb-festive-accent)\" stroke-width=\"2\"></path></svg>"},"au-fathers-day":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M11 34H39V44A11 11 0 0 1 28 55H22A11 11 0 0 1 11 44Z\" fill=\"var(--kb-festive-paper)\"></path><path d=\"M39 36H46a7 7 0 0 1 0 14H38M19 23q-4-5 0-10M29 23q-4-5 0-10\"></path><path d=\"M40 6l4 7 8-2-2 8 6 5-8 3-1 9-6-6-8 4 1-9-7-4 8-4Z\" fill=\"var(--kb-festive-accent)\" stroke-width=\"2\"></path></svg>"},"fun-coffee-day":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M10 28H42V42Q42 55 26 55Q10 55 10 42Z\" fill=\"var(--kb-festive-paper)\"></path><path d=\"M42 32H48a8 8 0 0 1 0 16H41M17 18q-5-6 0-12M29 18q-5-6 0-12M5 58H51\"></path><ellipse cx=\"26\" cy=\"29\" rx=\"15\" ry=\"4\" fill=\"var(--kb-festive-accent-ink)\" stroke-width=\"2\"></ellipse></svg>"},"au-new-years-day":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M6 20H58V57H6Z\" fill=\"var(--kb-festive-paper)\"></path><path d=\"M6 29H58M17 15v10M47 15v10\"></path><path d=\"M28 39l6-4v15M27 51h14\"></path><path d=\"M18 10a15 15 0 0 1 28 0M32 2v4M13 6l4 3M51 6l-4 3\" stroke=\"var(--kb-festive-accent)\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg>"},"np-nepali-new-year":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><rect x=\"10\" y=\"12\" width=\"44\" height=\"44\" rx=\"3\" fill=\"var(--kb-festive-paper)\"></rect><path d=\"M10 24H54M21 6V17M43 6V17\"></path><path d=\"M28 33L33 30V47M27 48H39\" stroke=\"var(--kb-festive-accent)\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path><path d=\"M4 44Q-2 34 3 25M58 44Q66 34 61 25\" stroke=\"var(--kb-festive-stone)\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg>"},"bali-nyepi":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M39 6A24 24 0 1 0 57 43A25 25 0 0 1 39 6Z\" fill=\"var(--kb-festive-paper)\"></path><path d=\"M4 55Q19 47 33 55T61 55\" fill=\"none\" stroke-width=\"1.6\"></path></svg>"},"ph-eid-al-fitr":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M39 6A22 22 0 1 0 54 38A23 23 0 0 1 39 6Z\" fill=\"var(--kb-festive-accent)\"></path><polygon points=\"49.00,7.00 50.77,11.56 55.66,11.84 51.86,14.93 53.11,19.66 49.00,17.01 44.89,19.66 46.14,14.93 42.34,11.84 47.23,11.56\" fill=\"var(--kb-festive-accent)\"></polygon><path d=\"M12 54H50M19 49V43H43V49\"></path></svg>"},"in-diwali":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><g class=\"festival-glow\" transform=\"translate(32 35) scale(1)\"><path d=\"M-20 1Q0 30 20 1Z\" fill=\"var(--kb-festive-accent)\"></path><ellipse cx=\"0\" cy=\"1\" rx=\"20\" ry=\"5\" fill=\"var(--kb-festive-accent)\"></ellipse><path d=\"M0-2C-11-12-1-16 0-25C11-13 11-6 0-2Z\" fill=\"var(--kb-festive-accent)\"></path></g><polygon points=\"10.0,7.0 11.3,10.2 14.8,10.5 12.1,12.7 12.9,16.0 10.0,14.2 7.1,16.0 7.9,12.7 5.2,10.5 8.7,10.2\" fill=\"var(--kb-festive-accent)\"></polygon><polygon points=\"55.0,16.0 56.0,18.6 58.8,18.8 56.7,20.5 57.4,23.2 55.0,21.8 52.6,23.2 53.3,20.5 51.2,18.8 54.0,18.6\" fill=\"var(--kb-festive-accent)\"></polygon><path d=\"M13 56H51\" fill=\"none\"></path></svg>","scene":"<svg viewBox=\"0 0 240 160\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\" class=\"kb-brand-art\" data-kb-brand=\"kitchenbook\"><g class=\"festival-object\" transform=\"translate(55 14) scale(1.9)\"><g class=\"festival-glow\" transform=\"translate(32 35) scale(1)\"><path d=\"M-20 1Q0 30 20 1Z\" fill=\"var(--kb-festive-accent)\"></path><ellipse cx=\"0\" cy=\"1\" rx=\"20\" ry=\"5\" fill=\"var(--kb-festive-accent)\"></ellipse><path d=\"M0-2C-11-12-1-16 0-25C11-13 11-6 0-2Z\" fill=\"var(--kb-festive-accent)\"></path></g><polygon points=\"10.0,7.0 11.3,10.2 14.8,10.5 12.1,12.7 12.9,16.0 10.0,14.2 7.1,16.0 7.9,12.7 5.2,10.5 8.7,10.2\" fill=\"var(--kb-festive-accent)\"></polygon><polygon points=\"55.0,16.0 56.0,18.6 58.8,18.8 56.7,20.5 57.4,23.2 55.0,21.8 52.6,23.2 53.3,20.5 51.2,18.8 54.0,18.6\" fill=\"var(--kb-festive-accent)\"></polygon><path d=\"M13 56H51\" fill=\"none\"></path></g></svg>"},"np-tihar":{"icon":"<svg viewBox=\"0 0 64 64\" fill=\"none\" stroke=\"var(--kb-festive-outline)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M3 8Q32 31 61 8\"></path><circle cx=\"10.46\" cy=\"11.00\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"9.53\" cy=\"12.92\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"7.45\" cy=\"13.40\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"5.78\" cy=\"12.07\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"5.78\" cy=\"9.93\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"7.45\" cy=\"8.60\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"9.53\" cy=\"9.08\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"8\" cy=\"11\" r=\"1.3119999999999998\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"18.46\" cy=\"15.50\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"17.53\" cy=\"17.42\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"15.45\" cy=\"17.90\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"13.78\" cy=\"16.57\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"13.78\" cy=\"14.43\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"15.45\" cy=\"13.10\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"17.53\" cy=\"13.58\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"16\" cy=\"15.5\" r=\"1.3119999999999998\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"26.46\" cy=\"18.79\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"25.53\" cy=\"20.72\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"23.45\" cy=\"21.19\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"21.78\" cy=\"19.86\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"21.78\" cy=\"17.73\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"23.45\" cy=\"16.40\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"25.53\" cy=\"16.87\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"24\" cy=\"18.794228634059948\" r=\"1.3119999999999998\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"34.46\" cy=\"20.00\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"33.53\" cy=\"21.92\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"31.45\" cy=\"22.40\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"29.78\" cy=\"21.07\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"29.78\" cy=\"18.93\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"31.45\" cy=\"17.60\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"33.53\" cy=\"18.08\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"32\" cy=\"20\" r=\"1.3119999999999998\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"42.46\" cy=\"18.79\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"41.53\" cy=\"20.72\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"39.45\" cy=\"21.19\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"37.78\" cy=\"19.86\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"37.78\" cy=\"17.73\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"39.45\" cy=\"16.40\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"41.53\" cy=\"16.87\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"40\" cy=\"18.794228634059948\" r=\"1.3119999999999998\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"50.46\" cy=\"15.50\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"49.53\" cy=\"17.42\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"47.45\" cy=\"17.90\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"45.78\" cy=\"16.57\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"45.78\" cy=\"14.43\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"47.45\" cy=\"13.10\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"49.53\" cy=\"13.58\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"48\" cy=\"15.5\" r=\"1.3119999999999998\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"58.46\" cy=\"11.00\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"57.53\" cy=\"12.92\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"55.45\" cy=\"13.40\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"53.78\" cy=\"12.07\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"53.78\" cy=\"9.93\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"55.45\" cy=\"8.60\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"57.53\" cy=\"9.08\" r=\"1.763\" fill=\"var(--kb-festive-accent)\"></circle><circle cx=\"56\" cy=\"11.000000000000002\" r=\"1.3119999999999998\" fill=\"var(--kb-festive-accent)\"></circle><g class=\"festival-glow\" transform=\"translate(32 43) scale(0.65)\"><path d=\"M-16 0Q0-7 16 0Q11 16 0 16Q-11 16-16 0Z\" fill=\"var(--kb-festive-accent)\"></path><path d=\"M0-4C-12-14-1-20 0-29C13-16 10-9 0-4Z\" fill=\"var(--kb-festive-accent)\"></path><path d=\"M-13 2Q0 8 13 2\"></path></g></svg>"}};
+
+/* Proposed celebration stamps: one monoline glyph per festival on a 24 px grid, one orange accent.
+   F = accent fill, P = paper fill, S = stone fill, G = clover green. */
+(function () {
+  const F = 'var(--g-accent)', P = 'var(--g-paper)', S = 'var(--g-stone)', G = 'var(--g-green)', I = 'var(--g-ink)';
+  const tulip = (x, y) => '<path d="M' + (x - 2) + ' ' + (y - 2) + 'L' + (x - 1) + ' ' + (y - .4) + 'L' + x + ' ' + (y - 2.2) + 'L' + (x + 1) + ' ' + (y - .4) + 'L' + (x + 2) + ' ' + (y - 2) + 'V' + (y + .6) + 'A2 2 0 0 1 ' + (x - 2) + ' ' + (y + .6) + 'Z" fill="' + F + '"/>';
+  const leaf = a => '<path transform="rotate(' + a + ' 12 11.6)" d="M12 11.6C10 10.2 7.6 8.6 8.2 6.4C8.7 4.6 11 4.6 12 6.2C13 4.6 15.3 4.6 15.8 6.4C16.4 8.6 14 10.2 12 11.6Z" fill="' + G + '"/>';
+  const ring = (n, r, rx, ry, fill, cy = 12) => Array.from({ length: n }, (_, i) => '<ellipse cx="12" cy="' + (cy - r) + '" rx="' + rx + '" ry="' + ry + '" transform="rotate(' + (i * 360 / n) + ' 12 ' + cy + ')" fill="' + fill + '"/>').join('');
+  window.GLYPHS = {
+    'au-christmas-day': ['Christmas', '<path d="M4.5 16.5C5 10 8.5 5 13.5 5C17.5 5 19.8 7.6 19.4 10.8L17 11.6C17 9.4 15.6 8.4 13.8 8.8C13.2 11.6 12.6 14.2 12 16.5Z" fill="' + F + '"/><rect x="3.5" y="15.5" width="14" height="4.6" rx="2.3" fill="' + P + '"/><path d="M7.5 16.6v2.4M10.5 16.6v2.4M13.5 16.6v2.4" stroke-width="1.1"/><circle cx="19.2" cy="12.6" r="2.2" fill="' + P + '"/>'],
+    'au-new-years-day': ['New Year', '<circle cx="12" cy="13.5" r="7.5" fill="' + P + '"/><path d="M12 13.5V8M12 13.5V9.2"/><path d="M12 6.8v1M18.7 13.5h-1M12 20.2v-1M5.3 13.5h1" stroke-width="1.2"/><path d="M3.5 4.8l1.8 1.8M20.5 4.8l-1.8 1.8M12 1.8v1.6" stroke="' + F + '"/>'],
+    'fun-valentines-day': ['Valentine’s Day', '<path d="M12 20C4.2 14.6 3 9.4 6.4 6.6C8.9 4.6 11.2 5.8 12 8C12.8 5.8 15.1 4.6 17.6 6.6C21 9.4 19.8 14.6 12 20Z" fill="' + F + '"/>'],
+    'au-easter-sunday': ['Easter', '<path d="M12 3.2C7.6 3.2 5.4 10 5.4 14C5.4 18.2 8.3 20.8 12 20.8S18.6 18.2 18.6 14C18.6 10 16.4 3.2 12 3.2Z" fill="' + P + '"/><path d="M5.8 12.4l2-2 2.1 2 2.1-2 2 2 2.1-2 2 2" stroke="' + F + '"/><circle cx="9" cy="16.4" r="1" fill="' + F + '" stroke="none"/><circle cx="12" cy="16.9" r="1" fill="' + F + '" stroke="none"/><circle cx="15" cy="16.4" r="1" fill="' + F + '" stroke="none"/>'],
+    'au-mothers-day': ['Mother’s Day', '<path d="M12 20V10.5M12 20L8 12.5M12 20L16 12.5"/>' + tulip(12, 8) + tulip(7.6, 10.6) + tulip(16.4, 10.6) + '<path d="M8.6 15.2H15.4L13.6 21H10.4Z" fill="' + P + '"/>'],
+    'au-fathers-day': ['Father’s Day', '<path d="M5.5 3.2L10 5.6M18.5 3.2L14 5.6"/><path d="M10 4.6H14L13.3 7H10.7Z" fill="' + P + '"/><path d="M10.7 7L8.6 16.2L12 20.6L15.4 16.2L13.3 7Z" fill="' + F + '"/><path d="M9.6 11.5l4.6-2.2M9 14.6l5.8-2.8" stroke-width="1"/>'],
+    'au-melbourne-cup': ['Melbourne Cup', '<path d="M11 21C11 17.6 10.6 15.6 9.6 14.4L6.6 14.8C5 15 4 13.8 4.4 12.4L5.4 10.2C6.4 8 9.6 5.6 12.6 4.6L13.4 2.4L14.8 4.4L16.2 2.8L16.8 5.2C19.2 7 20 10.6 19.6 14C19.4 16.6 18.6 18.8 18.6 21Z" fill="' + P + '"/><path d="M17.2 6C18.9 8.3 19.2 11.2 18.7 14.2" stroke="' + F + '" stroke-width="2.2"/><path d="M6.4 11.2L12.2 9.8L13.6 13" stroke="' + F + '" stroke-width="1.2"/><circle cx="12" cy="8" r=".9" fill="' + I + '" stroke="none"/><circle cx="5.8" cy="12.7" r=".6" fill="' + I + '" stroke="none"/>'],
+    'fun-halloween': ['Halloween', '<ellipse cx="12" cy="14.2" rx="8.2" ry="6.6" fill="' + F + '"/><path d="M12 7.6V20.8M8.2 8.4C6.4 11.6 6.4 16.6 8.2 20M15.8 8.4C17.6 11.6 17.6 16.6 15.8 20"/><path d="M12 7.6L13.6 4.2" stroke-width="2"/>'],
+    'fun-star-wars-day': ['Star Wars Day', '<path d="M9 15L19.5 4.5" stroke="' + F + '" stroke-width="3.2"/><path d="M3.4 19.2L6.6 16L9.2 18.6L6 21.8Z" fill="' + P + '"/><path d="M5.6 15L10.2 19.6"/><circle cx="19" cy="15" r=".9" fill="' + I + '" stroke="none"/><circle cx="16" cy="19.5" r=".7" fill="' + I + '" stroke="none"/><circle cx="5" cy="6" r=".8" fill="' + I + '" stroke="none"/>'],
+    'fun-coffee-day': ['Coffee Day', '<path d="M4.6 10H16.2V14.8A5 5 0 0 1 11.2 19.8H9.6A5 5 0 0 1 4.6 14.8Z" fill="' + P + '"/><path d="M4.6 12H16.2" stroke="' + F + '" stroke-width="1.4"/><path d="M16.2 11.4H17.8A2.6 2.6 0 0 1 17.8 16.6H16.2"/><path d="M8.6 7.2C7.6 6 9.4 5 8.4 3.6M12.4 7.2C11.4 6 13.2 5 12.2 3.6" stroke="' + F + '"/>'],
+    'fun-chefs-day': ['Chefs Day', '<path d="M12 14.2C7.4 11.6 7.6 4.6 12 3.4C16.4 4.6 16.6 11.6 12 14.2Z" fill="' + P + '"/><path d="M12 14.2C10.4 10.6 10.4 6 12 3.4M12 14.2C13.6 10.6 13.6 6 12 3.4" stroke-width="1.1"/><path d="M12 14.4V21" stroke="' + F + '" stroke-width="2.6"/>'],
+    'fun-st-patricks-day': ['St Patrick’s Day', leaf(0) + leaf(90) + leaf(180) + leaf(270) + '<path d="M12.6 12.4C14.4 15.4 14.2 18.4 12 21" stroke="' + G + '" stroke-width="1.8"/>'],
+    'fun-world-food-day': ['World Food Day', '<path d="M12 13V3.2" stroke="' + S + '"/><path d="M12 6.4C10 6.2 9.4 4.6 10 3.8C11.2 4 12 5 12 6.4ZM12 6.4C14 6.2 14.6 4.6 14 3.8C12.8 4 12 5 12 6.4ZM12 9.6C10 9.4 9.4 7.8 10 7C11.2 7.2 12 8.2 12 9.6ZM12 9.6C14 9.4 14.6 7.8 14 7C12.8 7.2 12 8.2 12 9.6Z" fill="' + F + '" stroke-width="1"/><path d="M3.8 12.6H20.2A8.2 7.4 0 0 1 3.8 12.6Z" fill="' + P + '"/><path d="M9 20.6H15"/>'],
+    'in-diwali': ['Diwali', '<path d="M12 3.4C9.4 7.2 9.8 10.4 12 11.4C14.2 10.4 14.6 7.2 12 3.4Z" fill="' + F + '"/><path d="M3 13.2C5.8 13.8 18.2 13.8 21.6 12.4C20.4 18.4 16.6 20.4 12 20.4C7.4 20.4 3.8 18.2 3 13.2Z" fill="' + P + '"/><path d="M5.2 15.6C9.4 16.6 14.6 16.6 18.8 15.4" stroke="' + F + '" stroke-width="1.4"/>'],
+    'in-holi': ['Holi', '<ellipse cx="12" cy="17.4" rx="9" ry="3.2" fill="' + P + '"/><path d="M4.6 17C6.4 11.6 9.2 11.6 10.8 17Z" fill="' + F + '"/><path d="M9.4 17C11 10.6 13.6 10.6 15 17Z" fill="' + S + '"/><path d="M13.4 17C15 12.2 17.8 12.2 19.4 17Z" fill="' + P + '"/><circle cx="7" cy="7" r="1.3" fill="' + F + '" stroke="none"/><circle cx="12.4" cy="5" r="1.1" fill="' + S + '" stroke="none"/><circle cx="17.2" cy="7.6" r="1.4" fill="' + F + '" stroke="none"/>'],
+    'in-pongal': ['Pongal', '<path d="M6.4 11.4H17.6L19.2 15.8C19.2 20.8 4.8 20.8 4.8 15.8Z" fill="' + F + '"/><path d="M5.6 11.4H18.4"/><path d="M7 11.4C5.6 8.6 8.2 6.6 9.8 8.2C10.4 5.4 14 5.4 14.4 8.2C16 6.6 18.6 8.6 17 11.4Z" fill="' + P + '"/><path d="M8 15.6H16" stroke="' + P + '" stroke-width="1.4"/>'],
+    'in-onam': ['Onam', '<circle cx="12" cy="12" r="9" fill="' + P + '"/>' + ring(8, 5.6, 1.7, 2.6, F) + '<circle cx="12" cy="12" r="2.6" fill="' + S + '"/><circle cx="12" cy="12" r="9"/>'],
+    'in-ganesh-chaturthi': ['Ganesh Chaturthi', '<ellipse cx="12" cy="19.4" rx="9" ry="2.2" fill="' + F + '"/><path d="M7.6 10.6C6.8 13 3.6 14.2 4.2 16.8C5 18.6 10.2 18.6 11 16.8C11.6 14.2 8.4 13 7.6 10.6ZM16.4 10.6C15.6 13 12.4 14.2 13 16.8C13.8 18.6 19 18.6 19.8 16.8C20.4 14.2 17.2 13 16.4 10.6Z" fill="' + P + '"/><path d="M12 3.4C11.2 5.8 8 7 8.6 9.6C9.4 11.4 14.6 11.4 15.4 9.6C16 7 12.8 5.8 12 3.4Z" fill="' + P + '"/><path d="M7.6 12.2V17.4M16.4 12.2V17.4M12 5V10.4" stroke-width="1"/>'],
+    'in-navaratri': ['Navaratri', '<path d="M5.4 17.6L14 4.6M10 19.4L18.6 6.4" stroke-width="2.2"/><path d="M6.8 13.6l2.4 1.6M9.6 9.4L12 11M11.4 15.4l2.4 1.6M14.2 11.2l2.4 1.6" stroke="' + F + '" stroke-width="2"/><path d="M5.4 17.6L4 21.2M10 19.4L8.6 23" stroke="' + F + '" stroke-width="1.3"/>'],
+    'in-durga-puja': ['Durga Puja', '<path d="M5.6 9.4C5.6 7.2 16.4 7.2 16.4 9.4L15.6 18.6C15.6 20.8 6.4 20.8 6.4 18.6Z" fill="' + F + '"/><ellipse cx="11" cy="9" rx="5.4" ry="1.7" fill="' + P + '"/><path d="M6.2 12.6Q11 14 15.8 12.6M6.6 16.4Q11 17.8 15.4 16.4" stroke="' + P + '" stroke-width="1.4"/><path d="M16 8.4C17.2 5.4 19.4 3.6 21.4 3.2C20.8 5.6 19 7.6 16.6 8.8Z" fill="' + P + '" stroke-width="1"/><path d="M15.2 7.8C15.6 4.8 17 2.8 18.6 2C18.6 4.4 17.4 6.6 15.6 8" fill="' + P + '" stroke-width="1"/>'],
+    'in-dussehra': ['Dussehra', '<path d="M7 3Q18.4 12 7 21"/><path d="M7 3V21" stroke="' + S + '" stroke-width="1.1"/><path d="M3.4 12H18.6"/><path d="M17 9.4L21 12L17 14.6Z" fill="' + F + '"/><path d="M3.4 12l-1 -2M3.4 12l-1 2" stroke="' + F + '"/>'],
+    'np-dashain': ['Dashain', '<path d="M12 2.8L18.4 9.8L12 16.8L5.6 9.8Z" fill="' + F + '"/><path d="M12 2.8V16.8M5.6 9.8H18.4" stroke-width="1.1"/><path d="M12 16.8C9.6 18.4 14.4 19.4 12 21.2"/><path d="M10.6 18.6l1.4 -.6 1.4 .6" stroke="' + F + '" stroke-width="1.4"/>'],
+    'np-tihar': ['Tihar', '<path d="M2.6 6.6Q12 16.4 21.4 6.6" stroke="' + S + '" stroke-width="1.2"/>' + [[5.2, 9.2], [8.6, 11.6], [12, 12.4], [15.4, 11.6], [18.8, 9.2]].map(([x, y]) => '<circle cx="' + x + '" cy="' + y + '" r="2.3" fill="' + F + '"/><circle cx="' + x + '" cy="' + y + '" r=".7" fill="' + I + '" stroke="none"/>').join('') + '<path d="M12 15.6C10.8 17.6 11.2 19.6 12 20.4C12.8 19.6 13.2 17.6 12 15.6Z" fill="' + F + '"/>'],
+    'np-nepali-new-year': ['Nepali New Year', '<path d="M7.4 21C7.8 17 9.4 15.4 12 14.6" /><path d="M5.2 18.6C3.4 16.6 4 14 6.2 13.4C7.2 15.4 7 17.4 5.2 18.6ZM18.8 18.6C20.6 16.6 20 14 17.8 13.4C16.8 15.4 17 17.4 18.8 18.6Z" fill="' + S + '"/>' + Array.from({ length: 5 }, (_, i) => '<circle cx="12" cy="5.6" r="2.7" transform="rotate(' + (i * 72) + ' 12 9.2)" fill="' + F + '"/>').join('') + '<circle cx="12" cy="9.2" r="1.6" fill="' + P + '"/>'],
+    'np-buddha-jayanti': ['Buddha Jayanti', '<path d="M12 16.4C7.6 16.6 4.4 13.6 3.8 10.4C7 10.4 10.2 12.6 12 16.4ZM12 16.4C16.4 16.6 19.6 13.6 20.2 10.4C17 10.4 13.8 12.6 12 16.4Z" fill="' + P + '"/><path d="M12 5.4C9.2 8.6 9.4 13.4 12 16.4C14.6 13.4 14.8 8.6 12 5.4Z" fill="' + F + '"/><path d="M4 19.6Q12 17.4 20 19.6" stroke="' + S + '"/>'],
+    'bali-nyepi': ['Nyepi', '<path d="M3 21V14.4H4.8V11.4H6.4V8.4H8V5.8H9.6V21ZM21 21V14.4H19.2V11.4H17.6V8.4H16V5.8H14.4V21Z" fill="' + P + '"/><path d="M2.4 21H21.6"/><path d="M12.6 2.8A2.8 2.8 0 1 0 14.2 7.6A2.2 2.2 0 0 1 12.6 2.8Z" fill="' + F + '" stroke-width="1"/>'],
+    'bali-galungan': ['Galungan', '<path d="M6.4 21.2V9C6.4 4.4 11 2.4 15 3.4C18 4.2 19.6 7 18.8 10" stroke-width="1.8"/><path d="M7.2 6L6.8 9.6M9.2 4.4L9 8.4M11.8 3.4L11.8 7.6M14.4 3.4L14.6 7.4M16.8 4.4L16.6 7.8" stroke="' + S + '" stroke-width="1.3"/><path d="M18.8 10V12.2"/><path d="M17 12.2H20.6L18.8 17.6Z" fill="' + F + '"/><path d="M3.6 21.2H9.6"/><path d="M4.4 21.2V18.8H8.6V21.2" fill="' + P + '" stroke-width="1.2"/>'],
+    'bali-kuningan': ['Kuningan', '<path d="M12 1.4V3.8"/><circle cx="12" cy="11.8" r="8" fill="' + P + '"/>' + [0, 45, 90, 135].map(a => '<path d="M4 11.8H20" transform="rotate(' + a + ' 12 11.8)" stroke-width="1"/>').join('') + '<circle cx="12" cy="11.8" r="4.6" stroke="' + F + '" stroke-width="2.2"/><circle cx="12" cy="11.8" r="1.6" fill="' + F + '" stroke="none"/><path d="M8 19.2L7 22.4M12 19.8V23M16 19.2L17 22.4" stroke="' + S + '" stroke-width="1.4"/>'],
+    'ph-lunar-new-year': ['Lunar New Year', '<path d="M12 1.6V4.2"/><path d="M9.2 4.2H14.8V5.8H9.2ZM9.2 18.4H14.8V20H9.2Z" fill="' + P + '"/><ellipse cx="12" cy="12.1" rx="7" ry="6.4" fill="' + F + '"/><path d="M12 5.8V18.4M8.4 6.6C6.4 9.8 6.4 14.4 8.4 17.6M15.6 6.6C17.6 9.8 17.6 14.4 15.6 17.6" stroke-width="1.1"/><path d="M12 20V22.8" stroke="' + F + '" stroke-width="1.6"/>'],
+    'ph-eid-al-fitr': ['Eid al-Fitr', '<path d="M15.6 4.2A8.2 8.2 0 1 0 15.6 19.8A6.6 6.6 0 1 1 15.6 4.2Z" fill="' + F + '"/><path d="M17.6 7.4L18.2 9L19.9 9.1L18.6 10.2L19 11.9L17.6 11L16.2 11.9L16.6 10.2L15.3 9.1L17 9Z" fill="' + P + '" stroke-width="1"/>'],
+    'ph-eid-al-adha': ['Eid al-Adha', '<path d="M4.8 21V11.2C4.8 7.2 8.6 4.4 12 2.8C15.4 4.4 19.2 7.2 19.2 11.2V21Z" fill="' + P + '"/><path d="M8.4 21V12.2C8.4 9.8 10.2 8.2 12 7.2C13.8 8.2 15.6 9.8 15.6 12.2V21"/><path d="M8.6 16.6H15.4A3.4 2.6 0 0 1 8.6 16.6Z" fill="' + F + '"/>'],
+    'ph-sinulog': ['Sinulog', '<path d="M7 9.4H10V20.4H7ZM14 7.4H17V20.4H14Z" fill="' + P + '"/><path d="M8.5 4.4C7.6 6 7.8 7.6 8.5 8.4C9.2 7.6 9.4 6 8.5 4.4ZM15.5 2.4C14.6 4 14.8 5.6 15.5 6.4C16.2 5.6 16.4 4 15.5 2.4Z" fill="' + F + '" stroke-width="1"/><path d="M2.6 15.4C6 12.8 8.6 18.4 12 15.4S18 18 21.4 15.4" stroke="' + F + '" stroke-width="1.6"/>'],
+    'ph-pahiyas': ['Pahiyas', '<path d="M9.6 3.4C15 6 15.4 13.4 9.6 20.6C4 13.4 4.4 6 9.6 3.4Z" fill="' + F + '"/><path d="M9.6 4.6V19.4M9.6 9L7.2 7.4M9.6 12.4L6.6 10.6M9.6 9L12 7.4M9.6 12.4L12.6 10.6" stroke-width="1"/><path d="M14.8 6.4C19.4 8.8 19.8 14.6 14.8 20.4C12.8 17.8 12.2 15.2 12.6 12.8" fill="' + P + '"/>'],
+    'ph-panagbenga': ['Panagbenga', '<path d="M12 13V21.4M12 18.2C9.6 18.4 8.2 17 8 15.4C10.2 15.4 11.6 16.6 12 18.2Z"/>' + ring(6, 4.4, 2.4, 3.2, P, 9) + '<circle cx="12" cy="9" r="2.2" fill="' + F + '"/>'],
+    'ph-kadayawan': ['Kadayawan', '<circle cx="8.4" cy="10.6" r="2.7" fill="' + F + '"/><circle cx="15.8" cy="10.8" r="2.5" fill="' + F + '"/><circle cx="12.2" cy="9" r="3.1" fill="' + S + '"/><path d="M12.2 5.9C13.4 4.2 15 4 16 4.6C15.2 6 13.6 6.4 12.2 5.9Z" fill="' + P + '" stroke-width="1"/><path d="M4.4 12.6H19.6L17.6 20.4H6.4Z" fill="' + P + '"/><path d="M5.4 15.2H18.6M6 17.8H18M9.6 12.6L9.2 20.4M14.4 12.6L14.8 20.4" stroke-width="1"/>'],
+    'ph-independence-day': ['Independence Day, PH', '<path d="M4 4V21"/><path d="M4 5H21V10.4H4Z" fill="#0038A8" stroke-width="1"/><path d="M4 10.4H21V15.8H4Z" fill="#CE1126" stroke-width="1"/><path d="M4 5L11.2 10.4L4 15.8Z" fill="' + P + '" stroke-width="1"/><circle cx="6.8" cy="10.4" r="1.2" fill="#FCD116" stroke="none"/>']
+  };
+  window.stampSVG = function (id, opts = {}) {
+    const g = window.GLYPHS[id]; if (!g) return '';
+    const disc = opts.disc !== false;
+    return '<svg class="stamp" viewBox="0 0 32 32" aria-hidden="true" focusable="false">' + (disc ? '<circle cx="16" cy="16" r="15" fill="var(--g-disc)" stroke="var(--g-ring)" stroke-width="1.1"/>' : '') + '<g transform="translate(' + (disc ? 4 : 4) + ' ' + (disc ? 4 : 4) + ')' + (disc ? '' : ' scale(1)') + '" fill="none" stroke="var(--g-ink)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + g[1] + '</g></svg>';
+  };
+})();
+
+(function () {
+  'use strict';
+  var A = window.ART_NOW || {}, G = window.GLYPHS || {};
+  var ICON = {
+    bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15Z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></svg>',
+    hat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 14.5C4 14 3 11.5 4.2 9.6C5.4 7.8 7.6 8 8.4 8.6C8.8 6.4 10.4 5 12 5S15.2 6.4 15.6 8.6C16.4 8 18.6 7.8 19.8 9.6C21 11.5 20 14 17 14.5V19H7Z"/><path d="M7 16.5H17"/></svg>',
+    plate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="3.8" stroke-dasharray="1.6 1.6"/><path d="M3.5 5v5M2.5 5v3M4.5 5v3M3.5 10v9M20.5 5c-1.5 1-1.5 5 0 6v8"/></svg>',
+    list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3.5h6v2H9Z"/><path d="M8 10l1.3 1.3L11.5 9M8 15l1.3 1.3L11.5 14M13.5 10.5H16M13.5 15.5H16"/></svg>',
+    box: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3l8 4v10l-8 4-8-4V7Z"/><path d="M4 7l8 4 8-4M12 11v10M8 5l8 4"/></svg>'
+  };
+  function stamp(id, disc) { return window.stampSVG ? window.stampSVG(id, { disc: disc !== false }) : ''; }
+  document.querySelectorAll('[data-now]').forEach(function (n) { var a = A[n.dataset.now]; if (a) n.innerHTML = a.icon; });
+  document.querySelectorAll('[data-stamp]').forEach(function (n) { n.innerHTML = stamp(n.dataset.stamp); });
+  document.querySelectorAll('[data-draw]').forEach(function (n) {
+    var g = G[n.dataset.draw]; if (!g) return;
+    n.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="var(--g-ink)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' + g[1] + '</g></svg>';
+  });
+  document.querySelectorAll('[data-scene]').forEach(function (n) { var a = A[n.dataset.scene]; if (a && a.scene) n.insertAdjacentHTML('afterbegin', a.scene); });
+  document.querySelectorAll('[data-icon]').forEach(function (n) { n.innerHTML = ICON[n.dataset.icon] || ''; });
+
+  var grid = document.getElementById('stampGrid');
+  if (grid) Object.keys(G).forEach(function (id) {
+    var c = document.createElement('div'); c.className = 'icon-cell';
+    c.innerHTML = '<span class="i32">' + stamp(id) + '</span><span>' + G[id][0] + '</span>';
+    grid.append(c);
+  });
+
+  // Effects A: a marigold garland strung under the top bar, with small diyas hanging from it.
+  var gar = document.querySelector('[data-garland]');
+  if (gar) {
+    var s = '<path d="M0 2 Q75 26 150 6 Q225 26 300 2" fill="none" stroke="var(--app-stone)" stroke-width="1.2"/>';
+    var swag = function (x) { var a = x <= 150 ? [2, 26, 6] : [6, 26, 2], t = (x <= 150 ? x : x - 150) / 150; return (1 - t) * (1 - t) * a[0] + 2 * (1 - t) * t * a[1] + t * t * a[2]; };
+    for (var i = 0; i <= 20; i++) {
+      var x = i * 15, y = swag(x);
+      s += '<circle cx="' + x + '" cy="' + y.toFixed(1) + '" r="4.2" fill="var(--app-accent)" stroke="var(--app-ink)" stroke-width=".8"/><circle cx="' + x + '" cy="' + y.toFixed(1) + '" r="1.2" fill="var(--app-ink)"/>';
+    }
+    [60, 150, 240].forEach(function (x) {
+      var y = swag(x) + 4;
+      s += '<g class="hang"><path d="M' + x + ' ' + y.toFixed(1) + 'V22" stroke="var(--app-stone)" stroke-width="1"/><path d="M' + (x - 6) + ' 27 Q' + x + ' 34 ' + (x + 6) + ' 27Z" fill="var(--app-paper)" stroke="var(--app-ink)" stroke-width=".9"/><path d="M' + x + ' 20.5C' + (x - 2) + ' 23.5 ' + (x - 1.5) + ' 26 ' + x + ' 26.5C' + (x + 1.5) + ' 26 ' + (x + 2) + ' 23.5 ' + x + ' 20.5Z" fill="var(--app-accent)"/></g>';
+    });
+    gar.innerHTML = s;
+  }
+  // Effects A: diya flames and lamps drift up behind the board and the dockets.
+  var fx = document.querySelector('[data-fx]');
+  if (fx) {
+    var flame = '<svg viewBox="0 0 10 14"><path d="M5 1C1.5 6 2.5 11 5 13C7.5 11 8.5 6 5 1Z" fill="var(--app-accent)" stroke="var(--app-ink)" stroke-width=".7"/></svg>';
+    var lamp = '<svg viewBox="0 0 20 14"><path d="M10 1C8 4 8.4 6 10 7C11.6 6 12 4 10 1Z" fill="var(--app-accent)"/><path d="M1 8C3 13 17 13 19 8Z" fill="var(--app-paper)" stroke="var(--app-ink)" stroke-width=".8"/></svg>';
+    var spots = [[3, 12, 13, 0, 'f', 22], [92, 14, 15, -4, 'l', 30], [70, 10, 11, -7, 'f', 70], [86, 22, 17, -9, 'l', 55], [6, 18, 16, -11, 'l', 80], [48, 9, 12, -3, 'f', 18], [94, 10, 14, -12, 'f', 88], [30, 11, 15, -6, 'f', 60]];
+    spots.forEach(function (p) {
+      var el = document.createElement('i');
+      el.style.setProperty('--x', p[0] + '%'); el.style.setProperty('--s', (p[4] === 'l' ? 22 : p[1]) + 'px');
+      el.style.setProperty('--d', p[2] + 's'); el.style.setProperty('--dl', p[3] + 's'); el.style.setProperty('--top', p[5] + '%');
+      el.innerHTML = p[4] === 'l' ? lamp : flame; fx.append(el);
+    });
+  }
+  // Effects B: festive edges drawn as repeating patterns in the book's colours.
+  var EDGE = {
+    marigold: { w: 14, body: '<path d="M0 2.5H14" stroke="var(--app-stone)" stroke-width="1"/><circle cx="7" cy="6" r="4.4" fill="var(--app-accent)" stroke="var(--app-ink)" stroke-width=".7"/><circle cx="7" cy="6" r="1.3" fill="var(--app-ink)"/>' },
+    lights: { w: 18, body: '<path d="M0 2Q4.5 6 9 2T18 2" fill="none" stroke="var(--app-stone)" stroke-width="1"/><ellipse cx="4.5" cy="7.4" rx="2.2" ry="3.2" fill="var(--app-accent)" stroke="var(--app-ink)" stroke-width=".6"/><ellipse cx="13.5" cy="7.4" rx="2.2" ry="3.2" fill="var(--app-paper)" stroke="var(--app-ink)" stroke-width=".6"/>' },
+    rail: { w: 30, body: '<rect width="30" height="12" fill="var(--app-page)"/><path d="M0 3H30M0 7H30" stroke="var(--app-ink)" stroke-width="1"/><path d="M4 1V11" stroke="var(--app-ink)" stroke-width="1.6"/><path d="M17 3.6Q14.6 10 18.6 10.6Q22.6 10 20.2 3.6L19 4.2Q20.4 8.6 18.6 8.8Q16.8 8.6 18.2 4.2Z" fill="var(--app-accent)" stroke="var(--app-ink)" stroke-width=".4"/>' },
+    lanterns: { w: 24, body: '<path d="M0 1.5H24" stroke="var(--app-stone)" stroke-width="1"/><path d="M12 1.5V3" stroke="var(--app-ink)" stroke-width=".8"/><ellipse cx="12" cy="7" rx="4.6" ry="3.8" fill="var(--app-accent)" stroke="var(--app-ink)" stroke-width=".6"/><path d="M12 3.4V10.6" stroke="var(--app-ink)" stroke-width=".5"/><path d="M12 10.8V12" stroke="var(--app-accent)" stroke-width="1"/>' }
+  };
+  var edgeNo = 0;
+  document.querySelectorAll('[data-edge]').forEach(function (n) {
+    var e = EDGE[n.dataset.edge]; if (!e) return; var id = 'edge' + (++edgeNo);
+    n.setAttribute('viewBox', '0 0 300 12'); n.setAttribute('preserveAspectRatio', 'xMinYMid slice');
+    n.innerHTML = '<defs><pattern id="' + id + '" width="' + e.w + '" height="12" patternUnits="userSpaceOnUse">' + e.body + '</pattern></defs><rect width="300" height="12" fill="var(--app-page)"/><rect width="300" height="12" fill="url(#' + id + ')"/>';
+  });
+
+  // Animation demos: five lamps, sparks above them.
+  var diya = '<svg viewBox="0 0 44 44"><path class="flame" d="M22 6C17 13 18 19 22 21C26 19 27 13 22 6Z" fill="#F0A24A" stroke="#1C1D1F" stroke-width="1"/><path d="M4 26C7 38 37 38 40 26Z" fill="#FFFEFA" stroke="#1C1D1F" stroke-width="1.3"/><path d="M8 30C16 33 28 33 36 30" stroke="#E2602A" stroke-width="2" fill="none"/></svg>';
+  document.querySelectorAll('[data-diyas]').forEach(function (st) {
+    var row = document.createElement('div'); row.className = 'diyas';
+    for (var i = 0; i < 5; i++) { var d = document.createElement('span'); d.className = 'diya'; d.innerHTML = diya; var f = d.querySelector('.flame'); f.style.setProperty('--dl', (i * .35) + 's'); if (st.dataset.diyas === 'A' && i === 2) f.classList.add('keep'); if (st.dataset.diyas === 'B') f.style.setProperty('--dl', (-i * .7) + 's'); row.append(d); }
+    st.append(row);
+    for (var k = 0; k < 8; k++) { var sp = document.createElement('i'); sp.className = 'spark'; sp.style.left = (12 + k * 10.5) + '%'; sp.style.setProperty('--dl', (st.dataset.diyas === 'A' ? .2 + k * .3 : -k * .62) + 's'); sp.style.setProperty('--dx', ((k % 2 ? -1 : 1) * (4 + k)) + 'px'); st.append(sp); }
+  });
+  var dA = document.getElementById('demoA'), out = document.getElementById('outA'), timer = 0;
+  dA.classList.add('rest');
+  document.getElementById('playA').addEventListener('click', function () {
+    clearTimeout(timer); dA.classList.remove('play', 'rest'); void dA.offsetWidth; dA.classList.add('play');
+    out.textContent = 'Arriving: 13 moving pieces';
+    timer = setTimeout(function () { out.textContent = 'At rest: 1 moving piece'; }, 4400);
+  });
+
+  // Timelines: moving pieces over the first minute.
+  function tl(kind) {
+    var w = 460, h = 120, x0 = 34, y0 = 96, sx = (w - x0 - 10) / 60, sy = 6;
+    var pts = kind === 'A' ? [[0, 0], [0, 13], [4, 13], [5, 1], [60, 1]] : [[0, 8], [60, 8]];
+    var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + (x0 + p[0] * sx).toFixed(1) + ' ' + (y0 - p[1] * sy).toFixed(1); }).join(' ');
+    var area = d + ' L' + (x0 + 60 * sx) + ' ' + y0 + ' L' + x0 + ' ' + y0 + 'Z';
+    var grid = [0, 4, 8, 12].map(function (v) { return '<path d="M' + x0 + ' ' + (y0 - v * sy) + 'H' + (w - 10) + '" stroke="var(--rule)" stroke-width="1"/><text x="' + (x0 - 6) + '" y="' + (y0 - v * sy + 4) + '" text-anchor="end">' + v + '</text>'; }).join('');
+    var ticks = [0, 15, 30, 45, 60].map(function (t) { return '<text x="' + (x0 + t * sx) + '" y="' + (y0 + 16) + '" text-anchor="middle">' + t + ' s</text>'; }).join('');
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" role="img" aria-label="Moving pieces over the first minute">' + grid + ticks + '<path d="' + area + '" fill="var(--accent-fill)" opacity=".16"/><path d="' + d + '" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round"/><text x="' + (w - 10) + '" y="12" text-anchor="end">moving pieces, first minute after Home opens</text></svg>';
+  }
+  document.querySelectorAll('[data-timeline]').forEach(function (n) { n.innerHTML = tl(n.dataset.timeline); });
+})();
+</script>
+
+</html>
