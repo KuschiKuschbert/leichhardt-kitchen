@@ -27,6 +27,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Admin analysis, references, training records and nightly analysis | `docs/admin-intelligence.md` |
 | Admin autocorrect repairs, shared protected words and private correction history | `docs/proofreader-admin.md` |
 | Admin visual design, selected A: The Chef's Desk | `docs/admin-design-options/brief.md` |
+| Prep, Orders, Wastage, Transfers and chef hat redesign options (waiting for the head chef's choice) | `docs/work-pages-design-options/brief.md` |
 | Shared controls, deferred search, table interactions and council audit | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
 | Loading, saving, measured progress and reduced motion | `docs/loading-motion.md` |
 | Nightly backup format, protected decryption and isolated recovery checks | `docs/backup-recovery.md` |
