@@ -86,7 +86,7 @@
   function ring(c, t, v) {
     var end = t;
     [[1, 1, 1.5], [1.0035, 0.45, 1.3], [2.76, 0.3, 0.55], [5.4, 0.12, 0.22], [8.93, 0.05, 0.1]].forEach(function (p) {
-      end = Math.max(end, note(c, t, 1318.5 * p[0], 0.22 * v * p[1], 0.002, p[2]));
+      end = Math.max(end, note(c, t, 1318.5 * p[0], 0.38 * v * p[1], 0.002, p[2]));
     });
     return end;
   }
@@ -98,14 +98,16 @@
   // a marimba bar: a round note with a quick knock two octaves up (where a marimba bar's first overtone is tuned)
   function bar(c, t, f) {
     note(c, t, f * 4, 0.08, 0.002, 0.08); note(c, t, f * 9.9, 0.02, 0.002, 0.03);
-    return note(c, t, f, 0.32, 0.003, 0.5);
+    return note(c, t, f, 0.35, 0.003, 0.5);
   }
+  // levels set so all five are about as loud as each other (loudest 50 ms near -12 dB before the phone's volume)
   var SHAPES = {
     bell: function (c, t) { return ring(c, t, 1); },
-    order: function (c, t) { ring(c, t, 1); return ring(c, t + 0.17, 0.85); },
+    // the second ring lands on the first still ringing, so both are softer: as loud as the others, not twice as loud
+    order: function (c, t) { ring(c, t, 0.45); return ring(c, t + 0.17, 0.39); },
     chime: function (c, t) { bellNote(c, t, 784); return bellNote(c, t + 0.26, 1046.5); },   // G5 up to C6
     marimba: function (c, t) { bar(c, t, 784); bar(c, t + 0.12, 987.8); return bar(c, t + 0.24, 1174.7); },   // G, B, D
-    timer: function (c, t) { beep(c, t, 1480, 0.22, 0.12); beep(c, t + 0.2, 1480, 0.22, 0.12); return beep(c, t + 0.4, 1480, 0.22, 0.12); }
+    timer: function (c, t) { beep(c, t, 1480, 0.29, 0.12); beep(c, t + 0.2, 1480, 0.29, 0.12); return beep(c, t + 0.4, 1480, 0.29, 0.12); }
   };
 
   /* Plays one sound now. False when it cannot: an unknown sound, no Web Audio, or the sound could not be woken (nobody
