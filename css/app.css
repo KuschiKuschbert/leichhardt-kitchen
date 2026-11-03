@@ -2495,7 +2495,7 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-suggestion > div:first-child { flex: 1 1 15rem; min-width: 0; }
 .su-suggestion b { font-size: 0.9375rem; overflow-wrap: anywhere; }
 .su-suggestion p { margin: 0.35rem 0 0; }
-.su-table-head, .su-row { display: grid; grid-template-columns: minmax(0, 1fr) 4rem 7rem 8rem; gap: 0.75rem; }
+.su-table-head, .su-row { display: grid; grid-template-columns: minmax(0, 1fr) 4rem 7rem 10.5rem; gap: 0.75rem; }
 .su-table-head { padding: 0.6rem 0; border-top: 1.5px solid var(--ink); border-bottom: 1px solid var(--line); font: 700 0.8125rem var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); }
 .su-row { align-items: start; padding: 0.9rem 0; border-bottom: 1px solid var(--line); font-size: 0.9375rem; }
 .su-category { padding: 1.1rem 0 0.35rem; color: var(--small-ink); font: 700 0.875rem var(--display); letter-spacing: 0.04em; overflow-wrap: anywhere; }
@@ -2519,9 +2519,29 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-wrap input[aria-invalid="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .su-qty .search { width: 100%; min-height: 44px; height: auto; padding: 0.65rem 0.55rem; font-size: 1rem; }
 .su-mobile-label { display: none; }
+/* Design A, step 2 (3 Nov 2026): On hand on the row, the top-up Use chip, − and +, filters, staff requests, Review bar */
+.su-count { grid-column: 1 / 2; display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; min-width: 0; }
+.su-onhand { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.8125rem; color: var(--muted); }
+.su-onhand .search { width: 5.5rem; min-height: 40px; height: auto; padding: 0.4rem 0.5rem; font-size: 0.9375rem; }
+.su-count .su-entry-error { flex-basis: 100%; margin-top: 0; }
+.su-use { min-height: 36px; padding: 0 0.8rem; border: 1.5px dashed var(--small-ink); border-radius: var(--r-pick); background: var(--hit); color: var(--small-ink); font: 700 0.8125rem var(--body); cursor: pointer; }
+.su-use[hidden] { display: none; }
+.su-step { display: flex; align-items: stretch; }
+.su-step .search { min-width: 0; border-radius: 0; text-align: center; }
+.su-step-b { flex: 0 0 38px; min-height: 44px; border: 1.5px solid var(--edge); background: var(--beige); color: var(--ink); font: 700 1.2rem var(--body); cursor: pointer; }
+.su-step-b:first-child { border-right: 0; border-radius: var(--r-act) 0 0 var(--r-act); }
+.su-step-b:last-child { border-left: 0; border-radius: 0 var(--r-act) var(--r-act) 0; }
+.su-filters { margin: 0.6rem 0 0.4rem; }
+.su-filters .su-n { font-weight: 400; opacity: 0.8; }
+.su-asked { margin: 0.8rem 0; padding: 0.7rem 0.9rem; border-left: 3px solid var(--accent); background: var(--hit); }
+.su-asked h4 { margin: 0 0 0.3rem; font: 700 1.1rem var(--display); }
+.su-asked ul { margin: 0 0 0.3rem; padding-left: 1.1rem; }
+.su-asked li { overflow-wrap: anywhere; }
+.su-asked-ask { margin: 0.4rem 0; }
+.su-asked-ask .p-x { padding-left: 0; }
 .su-request { display: inline-block; color: var(--small-ink); font-size: 0.8125rem; margin-top: 0.35rem; }
 .su-order-actions, .su-pager { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem 1rem; margin: 1rem 0; }
-.su-order-actions { padding-top: 1rem; border-top: 1.5px solid var(--ink); }
+.su-order-actions { position: sticky; bottom: 0; z-index: 6; padding: 0.7rem 0; border-top: 1.5px solid var(--ink); background: var(--bg); }
 .su-history-dates { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .su-history-dates .chip { height: auto; padding: 0.55rem 0.75rem; white-space: normal; text-align: left; }
 .su-disclosure-body h4 { margin: 0.4rem 0 0; font: 700 1.2rem var(--display); }
@@ -2578,7 +2598,7 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 }
 @media (max-width: 1099px) {
   .su-layout { grid-template-columns: 10rem minmax(0, 1fr); gap: 1.25rem; }
-  .su-table-head, .su-row { grid-template-columns: minmax(0, 1fr) 3.3rem 5rem 6.5rem; gap: 0.55rem; }
+  .su-table-head, .su-row { grid-template-columns: minmax(0, 1fr) 3.3rem 5rem 9.5rem; gap: 0.55rem; }
   .su-catalogue-head, .su-catalogue-row { grid-template-columns: minmax(0, 1fr) 4rem 4rem 6rem; gap: 0.6rem; }
   .su-catalogue-row .btn { padding: 0 0.65rem; }
 }
@@ -2591,7 +2611,8 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
   .su-toolbar > .btn { align-self: flex-start; }
   .su-table-head, .su-catalogue-head { display: none; }
   .su-row { grid-template-columns: 3.2rem minmax(4rem, 0.8fr) minmax(7rem, 1.2fr); gap: 0.7rem; padding: 1rem 0; }
-  .su-item { grid-column: 1 / -1; }
+  .su-item, .su-count { grid-column: 1 / -1; }
+  .su-order-actions { bottom: var(--tabbar-h); margin: 0; }
   .su-mobile-label { display: block; margin-bottom: 0.5rem; color: var(--muted); font-size: 0.75rem; font-weight: 400; }
   .su-par, .su-last { padding-top: 0; }
   .su-par small { font-size: 0.75rem; }
