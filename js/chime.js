@@ -19,6 +19,7 @@
   ];
   var FIRST = 'bell';   // when nothing (or something unknown) is picked
   var ctx = null, out = null, woke = false, sleepT = 0;
+  var taps = 0;   // taps and keys on the page so far: a sound still waiting when one comes is never played (play())
 
   function has(id) { return SOUNDS.some(function (s) { return s[0] === id; }); }
   function maker() { return window.AudioContext || window.webkitAudioContext || null; }
@@ -48,6 +49,7 @@
      that), then asleep again. A phone that had a call or locked its screen can come back 'interrupted', which only a
      tap mends, so a tap then wakes it again. */
   function wake() {
+    taps++;
     if (woke && (!ctx || ctx.state !== 'interrupted')) return;
     var c = context();
     if (!c) return;
@@ -111,7 +113,9 @@
   };
 
   /* Plays one sound now. False when it cannot: an unknown sound, no Web Audio, or the sound could not be woken (nobody
-     has touched the page yet). A sound that cannot start within 1.5 seconds is dropped, never played late. */
+     has touched the page yet). A sound that is still waiting when someone taps the page, or once the screen is off,
+     is dropped: the browser was holding it back for a tap, so it would ring late. A slow phone still rings (no time
+     limit: a limit timed by the phone's clock dropped sounds on a busy phone, and in the tests' fast-forwarded clock). */
   function play(id) {
     if (!has(id)) return false;
     var c = context();
@@ -122,13 +126,13 @@
       sleepSoon(Math.max(0, end - c.currentTime) * 1000 + 400);
     }
     clearTimeout(sleepT);
-    var asked = Date.now();
+    var at = taps;
     try {
       // always through resume(): it also waits for a sleep already on its way, so a sound never starts frozen and
       // rings late when the sound wakes next
       var r = c.resume();
       if (!r || !r.then) { go(); return c.state === 'running'; }
-      r.then(function () { if (Date.now() - asked < 1500) go(); }, function () { woke = false; });
+      r.then(function () { if (taps === at && document.visibilityState !== 'hidden') go(); }, function () { woke = false; });
     } catch (e) { woke = false; return false; }
     return true;
   }
