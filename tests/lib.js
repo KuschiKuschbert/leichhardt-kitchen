@@ -477,4 +477,12 @@ async function reveal(page, sel) {
 async function chapter(page, k) {
   if (await page.getAttribute('[data-mg="ch"][data-v="' + k + '"]', 'aria-current') !== 'true') { await page.click('[data-mg="ch"][data-v="' + k + '"]'); await settle(page, 150); }
 }
-module.exports = { openRow, reveal, chapter, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+/* The drawing studio (3 Nov 2026): the tools not used on every drawing are under More, and a picked part's arranging,
+   copying and changing under its own More. Opens the one that holds sel, so a test can tap it. */
+async function dwShow(page, sel) {
+  if (await page.$(sel)) return;   // on the page already (a chip the shared picker stands in for counts too)
+  const part = /data-dw="(dup|front|fwd|bwd|back|flip|stretch|split|piece)"|data-v="edit"/.test(sel);
+  const opener = part ? '[data-dw="panel"][data-v="pmore"]' : '[data-dw="panel"][data-v="more"]';
+  if (await page.$(opener) && await page.getAttribute(opener, 'aria-pressed') !== 'true' && await page.getAttribute(opener, 'aria-expanded') !== 'true') { await page.click(opener); await settle(page, 150); }
+}
+module.exports = { openRow, reveal, chapter, dwShow, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

@@ -88,13 +88,13 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   w = await W(p);
   ok(Math.abs(w.els[1].r) > 30, 'turn handle: the piece turns (' + w.els[1].r + ' degrees)');
   // copy, flip, layers, delete, undo and redo
-  await p.click('[data-dw="dup"]'); await L.settle(p, 150);
+  await L.dwShow(p, '[data-dw="dup"]'); await p.click('[data-dw="dup"]'); await L.settle(p, 150);
   w = await W(p); ok(w.n === 3 && w.sel[0] === 2, 'Duplicate makes a copy and picks it');
-  await p.click('[data-dw="flip"]'); await L.settle(p, 150);
+  await L.dwShow(p, '[data-dw="flip"]'); await p.click('[data-dw="flip"]'); await L.settle(p, 150);
   w = await W(p); ok(w.els[2].flip === true, 'Flip');
-  await p.click('[data-dw="back"]'); await L.settle(p, 150);
+  await L.dwShow(p, '[data-dw="back"]'); await p.click('[data-dw="back"]'); await L.settle(p, 150);
   w = await W(p); ok(w.els[0].a === 'chicken-schnitzel@1' && w.els[0].flip === true && w.sel[0] === 0, 'Back puts the picked piece behind the others');
-  await p.click('[data-dw="front"]'); await L.settle(p, 150);
+  await L.dwShow(p, '[data-dw="front"]'); await p.click('[data-dw="front"]'); await L.settle(p, 150);
   w = await W(p); ok(w.els[2].flip === true && w.sel[0] === 2, 'Front brings it forward again');
   await p.click('[data-dw="del"]'); await L.settle(p, 150);
   w = await W(p); ok(w.n === 2, 'Delete');
@@ -123,12 +123,12 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   await L.choose(p, '[data-dw="setIng"][data-v="Crumbed chicken thigh"]'); await L.settle(p, 150);
   w = await W(p); ok(w.els[1].ing === 'Crumbed chicken thigh', 'Which ingredient: the schnitzel is labelled Crumbed chicken thigh');
   // text, line and shapes
-  await p.click('[data-dw="text"]'); await L.settle(p, 150);
+  await L.dwShow(p, '[data-dw="text"]'); await p.click('[data-dw="text"]'); await L.settle(p, 150);
   await p.fill('[data-dwf="el.s"]', 'Pass side'); await L.settle(p, 150);
   w = await W(p); ok(w.els[w.n - 1].t === 'text' && w.els[w.n - 1].s === 'Pass side', 'Text: a label with words');
-  await p.click('[data-dw="arrow"]'); await L.settle(p, 150);
+  await L.dwShow(p, '[data-dw="arrow"]'); await p.click('[data-dw="arrow"]'); await L.settle(p, 150);
   w = await W(p); ok(w.els[w.n - 1].t === 'line' && w.els[w.n - 1].arrow, 'Arrow');
-  await p.click('[data-dw="ellipse"]'); await L.settle(p, 150);
+  await L.dwShow(p, '[data-dw="ellipse"]'); await p.click('[data-dw="ellipse"]'); await L.settle(p, 150);
   w = await W(p); ok(w.els[w.n - 1].t === 'ellipse', 'Oval');
   await p.click('[data-dw="del"]'); await L.settle(p, 150);
   // the servingware swaps under the food
@@ -140,7 +140,8 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   await L.choose(p, '[data-dw="wfam"][data-v="plate"]'); await L.settle(p, 150);
   await L.choose(p, '.dw-ware .dw-tile >> nth=0'); await L.settle(p, 200);
   w = await W(p); ok(w.surf.fam === 'plate' && w.surf.size === 30, 'Servingware: back to the dinner plate');
-  // in this recipe, not on the plate yet: one tap adds it, labelled
+  // in this recipe, not on the plate yet: one tap adds it, labelled. The chips open with Add (3 Nov 2026, the studio)
+  if (await p.getAttribute('[data-dw="panel"][data-v="lib"]', 'aria-expanded') !== 'true') { await p.click('[data-dw="panel"][data-v="lib"]'); await L.settle(p, 200); }
   const chip = await p.$('.dw-miss .chip');
   ok(chip !== null, 'the ingredients not on the plate yet show as chips');
   // check the drawing
@@ -201,7 +202,7 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   p = await L.open(b, '#/manage/draw/new/burger/side', { who: 'ann', extra: cfg(), wait: 1400, width: 1280, height: 900 });
   await wait(p, () => !!document.querySelector('.dw-svg'), null, 15000);
   await p.evaluate(() => { window.LK_DRAW.addItem('rump', { x: 0, y: -10, ing: 'Crumbed chicken thigh' }); window.LK_DRAW.addItem('sausage', { x: 30, y: -30, ing: 'Burger bun' }); });
-  await p.click('[data-dw="labels"]'); await L.settle(p, 200);
+  await L.dwShow(p, '[data-dw="labels"]'); await p.click('[data-dw="labels"]'); await L.settle(p, 200);
   w = await W(p);
   ok(w.els.filter(e => e.t === 'text' && e.auto).length === 2 && w.els.some(e => e.t === 'text' && e.s === 'Burger bun' && e.lx != null), 'Label everything: a label with a line for each part');
   await p.click('[data-dw="save"]');
