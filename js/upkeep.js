@@ -11,6 +11,24 @@ function lkDirty() {
     return !!(p && (p.dirtyForUpdate ? p.dirtyForUpdate() : p.unsavedHere ? p.unsavedHere() : lkUnsaved() && !lkUnsent()));
   } catch (e) { return true; }
 }
+/* The floating band (4 Nov 2026, docs/loading-feedback-options, design B). The update offer below and the No signal /
+   Not sent yet / All sent band of the kitchen pages (js/prep.js) are fixed over the page, so nothing on the page moves
+   for them. They sit just under the top bar, and at the top of the screen once it has scrolled away (under the
+   Functions strip: css/app.css takes the lower of --band-top and --fn-stick). --band-top is where the top bar ends on
+   the screen. It is kept only while a band is up (html.has-upd, html.has-sync): on scroll, resize, a new page and the
+   fonts arriving, never on a timer. */
+var lkBandAt = null;
+function lkBandPlace() {
+  var de = document.documentElement;
+  if (!de.classList.contains('has-upd') && !de.classList.contains('has-sync')) return;
+  var top = document.querySelector('#app .wtop'), y = top ? Math.max(0, Math.round(top.getBoundingClientRect().bottom)) : 0;
+  if (y !== lkBandAt) { lkBandAt = y; de.style.setProperty('--band-top', y + 'px'); }
+}
+window.addEventListener('scroll', lkBandPlace, { passive: true });
+window.addEventListener('resize', lkBandPlace);
+// a new page draws a new top bar (js/app.js replaces what is in #app)
+(function () { var app = document.getElementById('app'); if (app && window.MutationObserver) new MutationObserver(lkBandPlace).observe(app, { childList: true }); }());
+try { if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', lkBandPlace); } catch (e) {}
 // Discard consent covers the words present at that decision, not later typing while the files arrive.
 var lkEdits = 0;
 ['input', 'change'].forEach(function (ev) { document.addEventListener(ev, function () { lkEdits++; }, { capture: true }); });
@@ -265,8 +283,9 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
       lkFresh(files, 'reload').then(function (got) { if (run !== me) return; if (got) land(); else if (!stop()) noSignal(); });
     });
   }
-  /* A slim strip at the top of the screen (21 Oct 2026), styled in css/app.css (.upd-bar), so it never sits with the
-     toasts at the bottom. It sticks to the top while the page scrolls. */
+  /* A slim band at the top of the screen (21 Oct 2026), styled in css/app.css (.upd-bar), so it never sits with the
+     toasts at the bottom. Since 4 Nov 2026 it slides down over the page just under the top bar, like the signal band,
+     instead of pushing the page 48 px down (lkBandPlace() above). While the signal band is up it waits behind it. */
   var barText = null, barBtn = null, calm = null;
   // a short note in the strip for 4 seconds, then the strip as it was
   function say(msg, btn) {
@@ -294,8 +313,11 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
     b.onclick = updateNow;
     reset();
     bar.appendChild(t); bar.appendChild(b); document.body.insertBefore(bar, document.getElementById('app') || document.body.firstChild);
-    // the strip keeps its usual height, taller only when its words need more room (Extra large text in a wide font):
-    // the bars that stick under it follow its real height (--upd-h, 48 px in css/app.css until this has measured it)
+    // placed out of sight first, then moved in, so it slides down from under the top bar (none with Reduce motion)
+    lkBandPlace(); void bar.offsetWidth; bar.classList.add('is-on');
+    // the band keeps its usual height, taller only when its words need more room (Extra large text in a wide font):
+    // the bars that stick to the top of a page sit under it at its real height (--upd-h, 48 px in css/app.css until
+    // this has measured it), and so does a jump. The page itself does not move for it.
     if (window.ResizeObserver) new ResizeObserver(function () { document.documentElement.style.setProperty('--upd-h', bar.offsetHeight + 'px'); }).observe(bar);
   }
   /* Update now, and the Reload buttons of a page loaded on its own that is a different version from the book (28 Oct
