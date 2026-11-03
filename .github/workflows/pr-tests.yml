@@ -25,7 +25,32 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Two commits: the pull request's merge commit and main under it, so the changed files can be listed.
+          fetch-depth: 2
+      # Docs only (3 Nov 2026, CLAUDE.md, Keeping usage down): when a pull request changes only Markdown files or
+      # files under docs/, nothing the book loads or the tests read has changed, so the 20 minute run is skipped and
+      # this check still passes for branch protection. Anything else, and every run by hand, runs it all.
+      - name: Is this pull request docs only?
+        id: scope
+        run: |
+          docs=false
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            docs=true
+            files=$(git diff --name-only --no-renames HEAD^1 HEAD) || docs=false
+            [ -n "$files" ] || docs=false
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              case "$f" in
+                docs/*|*.md) ;;
+                *) docs=false; echo "Not docs: $f"; break ;;
+              esac
+            done <<< "$files"
+          fi
+          echo "docs=$docs" >> "$GITHUB_OUTPUT"
+          echo "Docs only: $docs"
       - uses: actions/setup-node@v4
+        if: steps.scope.outputs.docs != 'true'
         with:
           node-version: 22
           cache: npm
@@ -34,24 +59,29 @@ jobs:
             tests/rules/package-lock.json
             scripts/package-lock.json
       - uses: actions/setup-java@v4
+        if: steps.scope.outputs.docs != 'true'
         with:
           distribution: temurin
           java-version: 21
       - name: Install
+        if: steps.scope.outputs.docs != 'true'
         working-directory: tests
         run: npm ci --no-audit --no-fund
       - name: Check the JavaScript parses
         run: for f in js/*.js js/lib/*.js sw.js; do node --check "$f" || exit 1; done
       - name: Click through this copy of the book
+        if: steps.scope.outputs.docs != 'true'
         working-directory: tests
         env:
           CHROME: /usr/bin/google-chrome
           JOBS: 4
         run: npm test
       - name: Check the rules on the Firestore emulator
+        if: steps.scope.outputs.docs != 'true'
         working-directory: tests/rules
         run: npm ci --no-audit --no-fund && npm test
       - name: Check the nightly learning counts on the emulator
+        if: steps.scope.outputs.docs != 'true'
         working-directory: scripts
         run: npm ci --no-audit --no-fund && ../tests/rules/node_modules/.bin/firebase emulators:exec --only firestore --project demo-test "node emulator-check.mjs && node transfer-index-check.mjs && node waste-range-check.mjs && node delivery-backup-check.mjs && node analysis-check.mjs && node capabilities-bootstrap-check.mjs && node backup-crypto-check.mjs && node backup-recovery-check.mjs && node rules-publisher-check.cjs"
       - name: Keep the screenshots of a failed run

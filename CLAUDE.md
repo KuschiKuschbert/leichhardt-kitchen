@@ -146,7 +146,7 @@ These hold for every session, every message and every change, however small. A h
 ## What GitHub enforces (checked 22 Oct 2026)
 - `main` is protected: the **Click tests** check must pass and the branch must be up to date with `main`; force pushes and deleting `main` are refused.
 - Not enforced by GitHub: reviews (none required, Claude merges by the head chef's decision of 21 Oct 2026), and the protection does not apply to admins. The main-branch guard hook (`scripts/guard-main.mjs`) stops Claude Code sessions from working on `main`; a person with admin rights can still push to it.
-- The **Click tests** job checks `js/*.js`, `js/lib/*.js` and `sw.js` parse, runs the click tests, then the rules checks on the Firestore emulator (`tests/rules`) and the nightly learning check (`scripts/emulator-check.mjs`), since 22 Oct 2026.
+- The **Click tests** job checks `js/*.js`, `js/lib/*.js` and `sw.js` parse, runs the click tests, then the rules checks on the Firestore emulator (`tests/rules`) and the nightly learning check (`scripts/emulator-check.mjs`), since 22 Oct 2026. A pull request that changes only `*.md` files or files under `docs/` passes after the parse check in about a minute (3 Nov 2026); do not put anything the book loads or a test reads under `docs/`.
 
 ## Things that are easy to break
 Short warnings. The full contract for each part is its section in `docs/code-contracts.md` (or the feature note in the table above): read it before you change that part.
