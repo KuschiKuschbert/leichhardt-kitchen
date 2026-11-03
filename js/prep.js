@@ -10154,9 +10154,9 @@
     supplier: supplierApi,
     chefMenu: chefMenu,
     chefOpen: chefOpen,
-    // Settings (3 Nov 2026, docs/settings-options/brief.md): the person's role and permissions, the kitchen's ping sound,
-    // and the cut-off pushes on this phone (the same pushOn() and pushOff() as the order list)
-    whoRole: whoRole, myCan: myCan, pingSound: pingSound, kitchenInfo: kitchenInfo, adminOpen: adminOpen, forgetPin: forgetPin,
+    // Settings (3 Nov 2026, docs/settings-options/brief.md): the person's role and permissions, the kitchen's settings
+    // for the verified admin, and the cut-off pushes on this phone (the same pushOn() and pushOff() as the order list)
+    whoRole: whoRole, myCan: myCan, kitchenInfo: kitchenInfo, adminOpen: adminOpen, forgetPin: forgetPin,
     push: function () { var w = pushWhoId(), st = w ? pushState() : ''; return { show: !!w, on: st === 'on', busy: !!S.pushBusy, msg: S.pushMsg || (st === 'ios' || st === 'denied' ? PUSH_SAY[st] : '') }; },
     pushSet: function (on) { if (on) pushOn(); else pushOff(); },
     secOpen: function () { ksOpen(true); },

@@ -16,10 +16,11 @@ const caps = p => p.evaluate(() => [...document.querySelectorAll('.st-caps li')]
   // Staff: their card, their rows, folded until tapped
   let p = await L.open(b, '#/settings', { who: 'ann', wait: 1500 });
   ok(await L.txt(p, '.st-you .st-name') === 'Ann' && /Staff/.test(await L.txt(p, '.st-you .st-role')), 'staff: the card says who is signed in and their role');
-  ok(JSON.stringify(await groups(p)) === JSON.stringify(['You', 'This phone', 'Notifications', 'About and help']), 'staff: You, This phone, Notifications, About and help (' + (await groups(p)) + ')');
+  ok(JSON.stringify(await groups(p)) === JSON.stringify(['You', 'This phone', 'About and help']), 'staff: You, This phone, About and help (' + (await groups(p)) + ')');
   const annRows = await rows(p);
   ok(annRows.indexOf('practice') < 0 && annRows.indexOf('ticks') < 0 && annRows.indexOf('push') < 0, 'staff: no Practice, Ticked steps or cut-off pushes (' + annRows + ')');
-  ok(annRows.indexOf('ping') >= 0 && await value(p, 'ping') === 'Pass bell', 'staff: the kitchen\'s ping sound, Pass bell by default');
+  // one ping sound for the whole kitchen, set only in the admin panel: no sound in Settings (head chef, 3 Nov 2026)
+  ok(!/sound/i.test(await L.txt(p, '#main')), 'staff: no ping sound in Settings');
   ok(await p.evaluate(() => [...document.querySelectorAll('.st-btn[data-act="strow"]')].every(e => e.getAttribute('aria-expanded') === 'false') && [...document.querySelectorAll('.st-body')].every(e => e.hidden && !e.offsetHeight)), 'staff: every row starts folded');
   await L.setRow(p, 'can');
   const annCan = await caps(p);
@@ -49,7 +50,7 @@ const caps = p => p.evaluate(() => [...document.querySelectorAll('.st-caps li')]
   ok(JSON.stringify(await groups(p)) === JSON.stringify(['You', 'This phone', 'Notifications', 'Team', 'About and help']), 'sous chef: a Team group, no The kitchen (' + (await groups(p)) + ')');
   ok(await p.$('#st-find') === null && (await rows(p)).indexOf('kpin') < 0, 'sous chef: no Find a setting, no kitchen PIN row');
   await L.setRow(p, 'setby');
-  ok(/Ping sound\s*Pass bell/.test(await L.txt(p, '#st-b-setby')) && /Only the head chef changes these/.test(await L.txt(p, '#st-b-setby')), 'sous chef: what the head chef set, read only');
+  ok(/Pages staff see/.test(await L.txt(p, '#st-b-setby')) && /Only the head chef changes these/.test(await L.txt(p, '#st-b-setby')) && !/sound/i.test(await L.txt(p, '#main')), 'sous chef: what the head chef set, read only, and no ping sound');
   await p.click('[data-row="staff"] .st-btn'); await L.settle(p, 400);
   await L.waitFor(p, () => location.hash === '#/prep' && !!document.querySelector('[data-p="a-remove-person"]'), null, 8000);
   ok(await p.evaluate(() => location.hash) === '#/prep' && !!(await p.$('[data-p="a-remove-person"]')), 'sous chef: Manage staff opens the staff list');
@@ -67,8 +68,8 @@ const caps = p => p.evaluate(() => [...document.querySelectorAll('.st-caps li')]
   ok(await value(p, 'k-people') === '4 people, 1 sous chef' && await value(p, 'k-sound') === 'Pass bell' && await value(p, 'k-mail') === 'Off', 'head chef: the kitchen rows say what each is set to');
   await p.fill('#st-find', 'sound'); await L.settle(p, 400);
   const found = await p.evaluate(() => [...document.querySelectorAll('.st-row')].filter(r => !r.hidden).map(r => r.getAttribute('data-row')));
-  ok(JSON.stringify(found) === JSON.stringify(['ping', 'k-sound']), 'Find a setting: "sound" leaves the two ping sound rows (' + found + ')');
-  ok(await p.evaluate(() => [...document.querySelectorAll('.st-grp')].filter(g => !g.hidden).length) === 2, 'Find a setting: groups with nothing found go');
+  ok(JSON.stringify(found) === JSON.stringify(['k-sound']), 'Find a setting: "sound" leaves the kitchen\'s ping sound row (' + found + ')');
+  ok(await p.evaluate(() => [...document.querySelectorAll('.st-grp')].filter(g => !g.hidden).length) === 1, 'Find a setting: groups with nothing found go');
   await p.fill('#st-find', 'zzzz'); await L.settle(p, 400);
   ok(/No setting matches/.test(await L.txt(p, '.st-none')), 'Find a setting: says when nothing matches');
   await p.fill('#st-find', ''); await p.click('.ux-search-clear').catch(() => {}); await L.settle(p, 400);

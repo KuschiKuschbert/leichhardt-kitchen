@@ -1149,7 +1149,7 @@
     var P = window.LK_PREP;
     if (!P || !P.whoName) return '';
     var m = P.chefMenu ? P.chefMenu() : {}, pu = P.push ? P.push() : {};
-    return JSON.stringify([P.whoName(), P.whoRole && P.whoRole(), P.myCan && P.myCan(), m.sec, m.chef, m.tab, P.featOn && P.featOn('pings'), P.pingSound && P.pingSound(), pu.show, pu.on, pu.busy, pu.msg, P.offline && P.offline(), isAdminDevice(), P.kitchenInfo && P.kitchenInfo()]);
+    return JSON.stringify([P.whoName(), P.whoRole && P.whoRole(), P.myCan && P.myCan(), m.sec, m.chef, m.tab, pu.show, pu.on, pu.busy, pu.msg, P.offline && P.offline(), isAdminDevice(), P.kitchenInfo && P.kitchenInfo()]);
   }
   function stSeason() {
     var s = readJSON(LS, 'lk.seasonal.v1') || {}, sel = s.selection;
@@ -1227,18 +1227,16 @@
       // moved from the admin Tools tab (3 Nov 2026): the verified admin only, with the same second tap
       (m.tab ? stRow('kpin', 'Kitchen PIN on this device', 'Saved', '<p class="hint">Forgets the kitchen PIN on this device only and asks for one again. Staff phones pick up a new PIN by themselves once the old rules are removed.</p>' +
         '<div class="btn-row"><button type="button" class="btn" data-act="stkpin">Use a different kitchen PIN on this device</button></div>') : '');
-    // Notifications: the kitchen's ping sound (the head chef picks it for every phone) and, for chefs, cut-off pushes
-    var sound = who && P.featOn && P.featOn('pings') && P.pingSound ? P.pingSound() : '', pu = who && P.push ? P.push() : {};
-    var soundName = sound === 'off' ? 'Off' : ((window.LK_CHIME && window.LK_CHIME.list.filter(function (x) { return x.id === sound; })[0]) || {}).name || 'Pass bell';
-    var alerts = (sound ? stRow('ping', 'Ping sound', soundName, '<p class="hint">' + (sound === 'off' ? 'The head chef turned the sound off. Pings still pop up.' : (head ? 'You choose it for every phone in the admin panel, Shift pings. ' : 'The head chef chooses it for every phone. ') + 'Play it to check this phone\'s volume.') + '</p>' +
-        '<div class="btn-row"><button type="button" class="btn" data-act="stplay" data-val="' + esc(sound) + '"' + (sound === 'off' || !window.LK_CHIME ? ' disabled' : '') + '>Play the ping sound</button></div>') : '') +
-      (pu.show ? stRow('push', 'Cut-off pushes on this phone', pu.on ? 'On' : 'Off', '<p class="hint">A push on this phone when a supplier\'s reminder starts and an hour before its cut-off, even with the book closed. Only for suppliers nobody has ticked off yet. Also on the order list.</p>' +
+    /* Notifications: for chefs, the cut-off pushes on this phone. No ping sound here: one sound for the whole kitchen,
+       set only by the head chef in the admin panel, and no sound in Settings (head chef, 3 Nov 2026, docs/ping-sound.md). */
+    var pu = who && P.push ? P.push() : {};
+    var alerts = (pu.show ? stRow('push', 'Cut-off pushes on this phone', pu.on ? 'On' : 'Off', '<p class="hint">A push on this phone when a supplier\'s reminder starts and an hour before its cut-off, even with the book closed. Only for suppliers nobody has ticked off yet. Also on the order list.</p>' +
         '<div class="btn-row"><button type="button" class="btn' + (pu.on ? '' : ' dark') + '" data-act="stpush" data-val="' + (pu.on ? '0' : '1') + '"' + (pu.busy ? ' disabled' : '') + '>' + (pu.on ? 'Turn pushes off' : 'Turn pushes on') + '</button></div>' +
         (pu.msg ? '<p class="hint" role="status">' + esc(pu.msg) + '</p>' : '')) : '');
     // Team (sous chefs, not on the head chef's own device): Manage staff, and what the head chef set, read only
     var k = who && P.kitchenInfo ? P.kitchenInfo() : null;
     var team = m.chef && !m.tab ? stRow('staff', 'Manage staff', k ? plural(k.people, 'person', 'people') : '', '', { act: 'ststaff' }) +
-      stRow('setby', 'Set by the head chef', '', k ? '<dl class="st-kv">' + [['Ping sound', stSound(k.sound)], ['Pages staff see', stList(k.shown)], ['Kitchen sections', stList(k.secs)], ['Sous chefs read Kitchen mail', k.sousMail ? 'On' : 'Off'], ['Order cut-offs', plural(k.cuts, 'supplier', 'suppliers')]].map(function (x) {
+      stRow('setby', 'Set by the head chef', '', k ? '<dl class="st-kv">' + [['Pages staff see', stList(k.shown)], ['Kitchen sections', stList(k.secs)], ['Sous chefs read Kitchen mail', k.sousMail ? 'On' : 'Off'], ['Order cut-offs', plural(k.cuts, 'supplier', 'suppliers')]].map(function (x) {
         return '<div><dt>' + esc(x[0]) + '</dt><dd>' + esc(x[1]) + '</dd></div>'; }).join('') + '</dl><p class="hint">Only the head chef changes these.</p>' : '<p class="hint">The kitchen\'s settings are not in yet.</p>') : '';
     var kitchen = m.tab ? stKitchen(k) : '';
     // About and help
@@ -1703,7 +1701,6 @@
       setTimeout(function () { if (el.isConnected) { el.classList.remove('is-armed'); el.textContent = 'Use a different kitchen PIN on this device'; } }, 4000);
       return;
     }
-    if (act === 'stplay') { if (window.LK_CHIME && window.LK_CHIME.has(val)) window.LK_CHIME.play(val); return; }
     if (act === 'stpush') { if (window.LK_PREP && window.LK_PREP.pushSet) window.LK_PREP.pushSet(val === '1'); return; }
     // Check for an update: the same header-only look as the automatic one (js/upkeep.js), no Firestore read
     if (act === 'updcheck') {
