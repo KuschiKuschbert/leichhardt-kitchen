@@ -139,3 +139,7 @@
 @media(min-width:720px){.kb-hang{--kb-hang-size:56px}.kb-hang-item{right:calc(4% + var(--kb-hang-i) * 9%)}}
 @media(prefers-reduced-motion:reduce){.kb-hang-item{animation:none!important}}
 @media print{.kb-hang{display:none!important}}
+/* Arrive, then settle (3 Nov 2026): arrival pieces play once; at rest the Home board drawing holds still. */
+#kb-festive-effects .complete-particle.is-arrival{animation-iteration-count:1;animation-fill-mode:both}
+#app.kb-at-rest .kb-season-note :is(svg,svg *){animation:none!important}
+#app.kb-at-rest .kb-season-note .kb-motion-addon{display:none}

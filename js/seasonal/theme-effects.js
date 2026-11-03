@@ -4,6 +4,9 @@
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const ownedSelector = '.kb-motion-target,.complete-particle,.kb-hang-item,.kb-motion-addon path,.kb-ambient-motion,.kb-saber-blade,.kb-horse-leg,.kb-horse-tail,.kb-clover-leaf,.kb-ambient-detail,.kb-navbar-particle,.kb-nav-horizon';
   let current = { theme: null, mode: 'still', density: 'festive', surface: 'work' }, paused = false, resizeTimer = 0, replayRevision = 0, navbarObserver = null;
+  // Home arrives once, then settles (3 Nov 2026): a short full show, then at most 4 slow pieces (2 on Subtle).
+  const ARRIVAL_MS = 4600, ARRIVAL_KEY = 'lk.seasonal.arrival';
+  let phase = null, arrivalTimer = 0, restPlan = null;
   const normalize = {
     kites: 'kite', 'diya-glow': 'glow', garland: 'sway', penjor: 'sway', lanterns: 'sway', eggs: 'rock', rosette: 'sway', racing: 'march',
     'memorial-glow': 'glow', 'vigil-halo': 'glow', 'candle-glow': 'glow', 'care-light': 'glow', 'civic-light': 'glow', 'horizon-breathe': 'glow',
@@ -186,12 +189,8 @@
     if (motif === 'powder') node.style.color = ['var(--kb-festive-accent)', 'var(--kb-festive-stone)', 'var(--kb-festive-steel-dark)', 'var(--kb-festive-beige)'][index % 4];
     return node;
   }
-  function renderAmbient(layer, design, visible) {
-    layer.dataset.ambientPreset = design.preset;
-    if (design.horizon || design.dawn) {
-      const horizon = document.createElement('div'); horizon.className = 'kb-ambient-horizon kb-ambient-motion' + (design.dawn ? ' is-dawn' : ''); horizon.setAttribute('aria-hidden', 'true'); layer.append(horizon);
-    }
-    const count = visible ? design.count : Math.max(4, Math.round(design.count * .55));
+  function ambientParticles(design, visible, count, rest) {
+    const nodes = [];
     for (let i = 0; i < count; i++) {
       const motif = design.motifs[i % design.motifs.length];
       let motion = design.motion;
@@ -199,9 +198,28 @@
       if (motion === 'race' && motif !== 'horse') motion = 'flutter';
       const node = ambientNode(motif, motion, i, visible);
       if (motif === 'horse') node.style.setProperty('--lane', (6 + (i % 3) * 5) + '%');
-      layer.append(node);
+      timing(node, i, rest);
+      nodes.push(node);
     }
-    renderHang(design, visible);
+    return nodes;
+  }
+  // Arrival pieces play once, quickly and staggered; resting pieces loop slowly (14 s or longer).
+  function timing(node, i, rest) {
+    node.classList.add(rest ? 'is-rest' : 'is-arrival');
+    node.style.setProperty('--duration', (rest ? 14 + i * 3 : 3.2 + (i % 5) * .25) + 's');
+    node.style.setProperty('--delay', (rest ? -2 - i * 4.1 : (i % 8) * .12) + 's');
+  }
+  function restLimit(visible) { return visible ? 4 : 2; }
+  function renderAmbient(layer, design, visible, arrive) {
+    layer.dataset.ambientPreset = design.preset;
+    if (design.horizon || design.dawn) {
+      const horizon = document.createElement('div'); horizon.className = 'kb-ambient-horizon kb-ambient-motion' + (design.dawn ? ' is-dawn' : ''); horizon.setAttribute('aria-hidden', 'true'); layer.append(horizon);
+    }
+    const hung = renderHang(design, visible);
+    // Anchored ornaments and the horizon keep moving at rest, so they count towards the resting pieces.
+    const restCount = Math.max(0, restLimit(visible) - hung - (design.horizon || design.dawn ? 1 : 0));
+    const fill = rest => ambientParticles(design, visible, rest ? restCount : (visible ? design.count : Math.max(4, Math.round(design.count * .55))), rest);
+    begin(layer, fill, arrive);
   }
   // Anchored cultural objects belong to the page, not the viewport. They hang from under the top bar
   // (garlands, lanterns, parol) or stand on the date line (diyas, pots) on the right of the heading,
@@ -209,7 +227,7 @@
   const hanging = new Set(['marigold-string', 'tamiang', 'endongan', 'lantern', 'kiping', 'parol', 'crescent']);
   function renderHang(design, visible) {
     const main = document.querySelector('#app .wall-main');
-    if (!main || !design.ornaments?.length) return;
+    if (!main || !design.ornaments?.length) return 0;
     const hang = document.createElement('div'); hang.className = 'kb-hang'; hang.setAttribute('aria-hidden', 'true'); hang.dataset.hangPreset = design.preset;
     const date = main.querySelector('.wall-date');
     hang.style.setProperty('--kb-stand-base', (date ? date.offsetTop + date.offsetHeight : 80) + 'px');
@@ -223,6 +241,7 @@
       hang.append(node);
     });
     main.prepend(hang);
+    return hang.children.length;
   }
   // Work pages use the same occasion-specific vocabulary inside a shallow, clipped header.
   // Distances are measured from that header so no decorative paint reaches recipes or inputs.
@@ -321,6 +340,7 @@
     current = { theme: theme && theme.id !== 'off' ? theme : null, mode: mode === 'gentle' ? 'gentle' : 'still', density: density === 'light' ? 'light' : 'festive', surface: surfaceFor(options) };
     const effect = effectFor(current.theme), stopped = !current.theme || current.mode === 'still' || reduced.matches;
     const ambient = ambientFor(current.theme);
+    clearTimeout(arrivalTimer); arrivalTimer = 0; phase = null; restPlan = null; app.classList.remove('kb-at-rest'); delete layer.dataset.phase;
     clean(); layer.replaceChildren(); delete layer.dataset.ambientPreset; app.dataset.motion = effect; app.dataset.motionIntensity = current.density; app.dataset.kbCelebrationSurface = current.surface; layer.dataset.motionIntensity = current.density; layer.dataset.surface = current.surface;
     app.classList.toggle('motion-still', stopped); app.classList.toggle('motion-gentle', !stopped); layer.className = 'effect-' + effect;
     if (!stopped) {
@@ -328,25 +348,56 @@
       if (current.surface === 'work') {
         renderNavbar(ambient, current.density === 'festive');
       } else if (current.surface === 'home' && ambient) {
-        renderAmbient(layer, ambient, current.density === 'festive');
+        renderAmbient(layer, ambient, current.density === 'festive', options?.arrive);
       } else if (current.surface === 'home' && particleEffects.has(effect)) {
         const visible = current.density === 'festive', amount = effect === 'snow' ? (visible ? 40 : 24) : effect === 'kite' ? (visible ? 3 : 2) : (visible ? 12 : 6);
-        for (let i = 0; i < amount; i++) {
-          const el = document.createElement('i'), centre = effect === 'snow' && i % 6 === 0;
-          el.className = 'complete-particle ' + (centre ? 'is-centre' : 'is-edge');
-          el.style.setProperty('--x', (centre ? 28 + (i * 13) % 43 : i % 2 ? 3 + (i * 3.3) % 13 : 85 + (i * 3.3) % 12) + '%');
-          el.style.setProperty('--size', (effect === 'snow' ? 2 + i % 4 : effect === 'kite' ? 27 : (visible ? 16 : 12) + i % 10) + 'px');
-          el.style.setProperty('--duration', (effect === 'confetti' ? 9 + i % 3 : effect === 'snow' ? 15 + i % 12 : 20 + i % 13) + 's');
-          el.style.setProperty('--delay', (-i * 2.1) + 's'); el.style.setProperty('--distance', 'calc(100dvh + 130px)'); el.style.setProperty('--drift', ((i % 2 ? -1 : 1) * (18 + i % 37)) + 'px'); el.style.setProperty('--turn', (i % 2 ? 60 : -55) + 'deg');
-          if (effect !== 'snow') el.innerHTML = branded(particles[effect]);
-          if (effect === 'powder') el.style.color = ['var(--kb-festive-accent)', 'var(--kb-festive-stone)', 'var(--kb-festive-steel-dark)', 'var(--kb-festive-beige)'][i % 4];
-          layer.append(el);
-        }
+        const fill = rest => {
+          const nodes = [];
+          for (let i = 0; i < (rest ? Math.min(amount, restLimit(visible)) : amount); i++) {
+            const el = document.createElement('i'), centre = effect === 'snow' && i % 6 === 0;
+            el.className = 'complete-particle ' + (centre ? 'is-centre' : 'is-edge');
+            el.style.setProperty('--x', (centre ? 28 + (i * 13) % 43 : i % 2 ? 3 + (i * 3.3) % 13 : 85 + (i * 3.3) % 12) + '%');
+            el.style.setProperty('--size', (effect === 'snow' ? 2 + i % 4 : effect === 'kite' ? 27 : (visible ? 16 : 12) + i % 10) + 'px');
+            el.style.setProperty('--distance', 'calc(100dvh + 130px)'); el.style.setProperty('--drift', ((i % 2 ? -1 : 1) * (18 + i % 37)) + 'px'); el.style.setProperty('--turn', (i % 2 ? 60 : -55) + 'deg');
+            timing(el, i, rest);
+            if (effect !== 'snow') el.innerHTML = branded(particles[effect]);
+            if (effect === 'powder') el.style.color = ['var(--kb-festive-accent)', 'var(--kb-festive-stone)', 'var(--kb-festive-steel-dark)', 'var(--kb-festive-beige)'][i % 4];
+            nodes.push(el);
+          }
+          return nodes;
+        };
+        begin(layer, fill, options?.arrive);
       }
     }
     pause(document.hidden); announce();
   }
+  // The first Home view of the kitchen day for this celebration arrives; later views open at rest.
+  function firstView(id) {
+    const stamp = (window.LK_TIME?.day?.() || '') + '|' + id;
+    // Saved on this device only. Out of date on the next kitchen day or for another celebration.
+    try { if (localStorage.getItem(ARRIVAL_KEY) === stamp) return false; localStorage.setItem(ARRIVAL_KEY, stamp); } catch (_) {}
+    return true;
+  }
+  function begin(layer, fill, force) {
+    const first = firstView(current.theme.id), arrive = !document.hidden && (force || first);
+    restPlan = { layer, fill };
+    if (!arrive) { settle(); return; }
+    phase = 'arrival'; layer.dataset.phase = 'arrival';
+    fill(false).forEach(node => layer.append(node));
+    arrivalTimer = setTimeout(settle, ARRIVAL_MS);
+  }
+  function settle() {
+    clearTimeout(arrivalTimer); arrivalTimer = 0;
+    if (!restPlan || !restPlan.layer.isConnected) return;
+    restPlan.layer.querySelectorAll('.is-arrival').forEach(node => node.remove());
+    if (phase !== 'rest') restPlan.fill(true).forEach(node => restPlan.layer.append(node));
+    phase = 'rest'; restPlan.layer.dataset.phase = 'rest';
+    document.querySelector('#app')?.classList.add('kb-at-rest');
+    announce();
+  }
   function pause(on) {
+    // A hidden tab skips the rest of the arrival rather than replaying it later.
+    if (on && phase === 'arrival') settle();
     paused = !!on;
     document.querySelector('#app')?.classList.toggle('motion-paused', paused);
     document.querySelector('#kb-festive-effects')?.classList.toggle('motion-paused', paused);
@@ -363,7 +414,7 @@
     const ambientAnimations = animations.filter(a => layer && layer.contains(a.effect.target));
     const navbar = document.querySelector('#app .wtop .kb-nav-festive-effects');
     const navbarAnimations = animations.filter(a => navbar && navbar.contains(a.effect.target));
-    return { state, effect, label, animationCount: state === 'running' ? running : animations.length, intensity: current.density, replayRevision, surface: current.surface, scope: current.surface === 'home' ? 'page' : 'navbar', ambientPreset: ambient ? ambient.preset : null, ambientLabel: ambient ? ambient.label : null, ambientCount: layer ? layer.querySelectorAll('.kb-ambient-particle,.kb-ambient-horizon').length : 0, hangCount: document.querySelectorAll('#app .kb-hang-item').length, ambientAnimationCount: state === 'running' ? ambientAnimations.filter(a => a.playState === 'running').length : ambientAnimations.length, navbarPreset: navbar?.dataset.navPreset || null, navbarCount: navbar ? navbar.querySelectorAll('.kb-navbar-particle,.kb-nav-horizon').length : 0, navbarAnimationCount: state === 'running' ? navbarAnimations.filter(a => a.playState === 'running').length : navbarAnimations.length };
+    return { state, effect, label, animationCount: state === 'running' ? running : animations.length, intensity: current.density, replayRevision, surface: current.surface, scope: current.surface === 'home' ? 'page' : 'navbar', ambientPreset: ambient ? ambient.preset : null, ambientLabel: ambient ? ambient.label : null, phase, ambientCount: layer ? layer.querySelectorAll('.kb-ambient-particle,.kb-ambient-horizon').length : 0, hangCount: document.querySelectorAll('#app .kb-hang-item').length, ambientAnimationCount: state === 'running' ? ambientAnimations.filter(a => a.playState === 'running').length : ambientAnimations.length, navbarPreset: navbar?.dataset.navPreset || null, navbarCount: navbar ? navbar.querySelectorAll('.kb-navbar-particle,.kb-nav-horizon').length : 0, navbarAnimationCount: state === 'running' ? navbarAnimations.filter(a => a.playState === 'running').length : navbarAnimations.length };
   }
   document.addEventListener('visibilitychange', () => pause(document.hidden));
   window.addEventListener('hashchange', () => {
@@ -371,5 +422,5 @@
   });
   reduced.addEventListener('change', () => render(current.theme, current.mode, current.density, { surface: current.surface }));
   window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => announce(), 100); });
-  window.KB_EFFECTS = { render, pause, reduced, status, coverage() { return Object.entries(ambientById).map(([id, preset]) => ({ id, preset, label: ambientDesigns[preset].label })); }, replay() { render(current.theme, current.mode, current.density, { surface: current.surface }); requestAnimationFrame(() => { if (current.theme && current.mode === 'gentle' && !reduced.matches && !paused && !document.hidden) { ownedAnimations().forEach(animation => { animation.currentTime = 0; animation.play(); }); replayRevision += 1; } announce(); }); } };
+  window.KB_EFFECTS = { render, pause, reduced, status, coverage() { return Object.entries(ambientById).map(([id, preset]) => ({ id, preset, label: ambientDesigns[preset].label })); }, settle, replay() { try { localStorage.removeItem(ARRIVAL_KEY); } catch (_) {} render(current.theme, current.mode, current.density, { surface: current.surface, arrive: true }); requestAnimationFrame(() => { if (current.theme && current.mode === 'gentle' && !reduced.matches && !paused && !document.hidden) { ownedAnimations().forEach(animation => { animation.currentTime = 0; animation.play(); }); replayRevision += 1; } announce(); }); } };
 })();

@@ -59,6 +59,29 @@ async function hangClear(p) {
   });
 }
 
+async function movingPieces(p) {
+  // One moving piece is a particle, a hanging ornament, a horizon or the board drawing, with whatever moves inside it.
+  return p.evaluate(() => {
+    const pieces = new Set();
+    document.getAnimations().forEach(a => {
+      if (a.playState !== 'running' || !(a instanceof CSSAnimation)) return;
+      const t = a.effect && a.effect.target;
+      const piece = t instanceof Element && t.closest('.complete-particle,.kb-hang-item,.kb-ambient-horizon,.kb-season-note');
+      if (piece) pieces.add(piece);
+    });
+    return pieces.size;
+  });
+}
+async function cpuPerSecond(p, ms = 2000) {
+  // Main-thread work per second with the CPU slowed 4 times, the way the audit measured it.
+  const cdp = await p.context().newCDPSession(p);
+  await cdp.send('Performance.enable'); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+  const read = async () => (await cdp.send('Performance.getMetrics')).metrics.find(m => m.name === 'TaskDuration').value;
+  const a = await read(); await L.sleep(ms); const z = await read();
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 }); await cdp.detach();
+  return (z - a) * 1000 / (ms / 1000);
+}
+
 (async () => {
   const b = await L.start();
   let p;
@@ -84,6 +107,21 @@ async function hangClear(p) {
       }
     }
     await p.setViewportSize({ width: 390, height: 844 });
+    // Arrive, then settle: Replay plays the full arrival, then Home rests with at most 4 slow pieces.
+    await theme(p, 'au-christmas-day');
+    await p.evaluate(() => KB_EFFECTS.replay());
+    await p.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    ok(await p.evaluate(() => KB_EFFECTS.status().phase === 'arrival') && await movingPieces(p) > 4, 'Replay plays the full Christmas arrival on Home');
+    await p.clock.runFor(5000);
+    await p.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    ok(await p.evaluate(() => KB_EFFECTS.status().phase === 'rest') && await movingPieces(p) <= 4, 'after about 4 seconds Home settles to at most 4 moving pieces');
+    await go(p, '#/recipes'); await go(p, '#/');
+    ok(await p.evaluate(() => KB_EFFECTS.status().phase === 'rest'), 'coming back to Home the same day opens at rest, with no second arrival');
+    for (const id of ['au-christmas-day', 'in-diwali', 'au-melbourne-cup']) {
+      await theme(p, id); await p.clock.runFor(5000);
+      const ms = await cpuPerSecond(p);
+      ok(ms < 60, id + ': Home at rest takes ' + Math.round(ms) + ' ms of main thread a second on a slowed phone (under 60)');
+    }
 
     await theme(p, 'au-christmas-day');
     ok(await p.locator('.kb-season-note').count() === 1 && await p.locator('.wtop-brand').count() === 1, 'Christmas Home keeps Kitchen Book branding and one explanation board');
@@ -159,6 +197,14 @@ async function hangClear(p) {
       await theme(p, id);
       const heavy = await heavyMotion(p);
       ok(heavy.length === 0, id + ': Home moves only transform and opacity ' + heavy.join(' '));
+    }
+    await go(p, '#/recipes');
+
+    await go(p, '#/');
+    for (const id of coverage) {
+      await theme(p, id); await p.clock.runFor(5000);
+      const pieces = await movingPieces(p), heavy = await heavyMotion(p);
+      ok(pieces <= 4 && heavy.length === 0, id + ': Home at rest moves ' + pieces + ' pieces, only transform and opacity');
     }
     await go(p, '#/recipes');
 
