@@ -108,11 +108,11 @@ Step 1, Delivery received (`js/deliveries.js`, `css/app.css`). Built 3 November 
 - Validation keeps field focus and `aria-describedby` (WA-07); messages name the box that is showing.
 - Tests: `deliveries.test.js`, `delivery-validation-focus.test.js`, `device-delivery-lock.test.js`, plus new checks for each mode, the hidden box saving `null`, a typed reading kept across a mode switch, and every role's chips.
 
-Step 2, Supplier order rows (`js/suppliers.js`, `css/app.css`). Built 3 November 2026; see `docs/supplier-workspace.md`, Order rows. The 20-item pages stay for now: the one-list change waits for a measurement on the largest real catalogue. The Use chip shows counted top-ups only; repeat-last-order suggestions stay in the Suggestions panel so every row does not carry a chip:
+Step 2, Supplier order rows (`js/suppliers.js`, `css/app.css`). Built 3 November 2026; see `docs/supplier-workspace.md`, Order rows. The one list followed on 4 November 2026 after a measurement with example catalogues of up to 300 items (`docs/supplier-workspace.md`, One list). The Use chip shows counted top-ups only; repeat-last-order suggestions stay in the Suggestions panel so every row does not carry a chip:
 
 - On hand moves out of Details onto the row (`d.stock`), with the captured-unit rules from the 25 October quantity correction. The Use chip runs the existing Apply path. − and + appear only when the order unit is confirmed.
 - Filters are client-side on the loaded catalogue. The staff request strip uses `M.requests` and `matchInfo()`; unmatched requests stay on the Order list.
-- Measure the one-list render on the largest catalogue before removing the 20-item pages; keep pages if it is slower.
+- Measure the one-list render on the largest catalogue before removing the 20-item pages; keep pages if it is slower. Done 4 November 2026: with row-only updates the one list is faster per keystroke than the pages were, so the pages went.
 - Bump the supplier UI revision (`SUP_API`) only if an older copy cannot run with the new one. Tests: the supplier files listed in `docs/supplier-workspace.md`, `keep-typed-editors`, `device-supplier-lock`.
 
 Step 3, strip, share and history. Built 3 November 2026; see `docs/supplier-workspace.md`, Sending, and `docs/delivery-received.md`, Admin history. The admin range is up to 92 days: the supplier chip strip reads cut-off times from `LK_CUT`. Share uses `navigator.share` with the existing Copy as the fallback, so no security header change. The admin delivery range is one `day` range query on tap (admin only, existing rules), with CSV through the shared helpers in `docs/report-exports.md`. Check `tests/read-budget.test.js`.
