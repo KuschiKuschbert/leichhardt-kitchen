@@ -1,6 +1,6 @@
 # Seasonal celebration redesign proposals
 
-Requested 3 November 2026, the day celebrations went live. **Not chosen yet.** The head chef asked for an audit of the holiday feature and two redesigns each for the icons, effects, animation and behaviour, with a recommendation. The interactive page with mockups is `index.html` in this folder; the screens in `previews/` come from the real book with the Firebase stand-in.
+Requested 3 November 2026, the day celebrations went live. **Selected 3 November 2026: the recommended set below.** Who may change celebrations on the shared tablet stays as it is (anyone). The build follows "Build steps", one pull request each. The head chef asked for an audit of the holiday feature and two redesigns each for the icons, effects, animation and behaviour, with a recommendation. The interactive page with mockups is `index.html` in this folder; the screens in `previews/` come from the real book with the Firebase stand-in.
 
 Read `docs/seasonal-celebrations.md` and `docs/seasonal-calendar.md` first. Several picks below change decisions approved on 3 November 2026; they are marked under "Head chef's calls".
 
@@ -47,7 +47,7 @@ Both behaviour designs also: keep the chef hat; show Coming up on Home for the n
 
 Automatic and the source-backed calendar, the six languages cycling with no picker, all 204 designs choosable, Still, Subtle, Full, Replay and Off per device, reduced motion and hidden-tab pause, no Firebase reads or writes, plain PIN and device-choice screens, offline from the saved copy.
 
-## Head chef's calls
+## Head chef's calls (answered 3 November 2026: 1 to 4 yes, 5 unchanged)
 
 1. Give Kitchen Book back to work pages, with the celebration as a stamp beside it (changes the approved chalk title).
 2. Stamps at small sizes; the approved drawings stay on Home.
