@@ -32,6 +32,7 @@ async function safe(label, fn) {
       await safe(label, async () => {
         const p = await L.open(b, form.route, { who: 'ann', width, settings: { text }, wait: 1000 });
         try {
+          if (form.route === '#/waste') await L.wLog(p);
           const selector = '[data-p="' + form.action + '"]';
           await L.waitFor(p, s => {
             const el = document.querySelector(s);

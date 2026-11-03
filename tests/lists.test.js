@@ -107,6 +107,7 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
 
   // wastage: the box to fix gets the cursor; reason sheet keeps Tab inside
   p = await L.open(b, '#/waste', { wait: 1500, touch: true });
+  await L.wLog(p);
   await p.click('.w-add .nb-addbtn');
   await L.settle(p, 150);
   ok(await active(p) === 'w-text', 'waste: no item, cursor goes to What was wasted');

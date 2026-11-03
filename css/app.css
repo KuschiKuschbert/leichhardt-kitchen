@@ -3056,3 +3056,38 @@ i.dsh-c-w { background: var(--dsh-w); } i.dsh-c-t { background: var(--dsh-t); }
 .dsh-items thead th { font-size: .78rem; font-weight: 600; color: var(--muted); }
 .dsh-items td { font-variant-numeric: tabular-nums; }
 .dsh-items .dsh-delta { margin-top: .2rem; }
+
+/* Wastage, Clean notebook (3 Nov 2026, work pages redesign A, docs/work-pages-design-options/brief.md): today's total
+   and a bar of the reasons first, then Log waste (and the review for chefs), then the entries. The form and the review
+   open as sheets drawn with the page (.w-sheet), on a phone from the bottom and in the middle column on a laptop. */
+.w-today { margin: 0 0 12px; padding: 0 12px; }
+.w-tot { margin: 0 0 6px; font-size: 0.9375rem; color: var(--muted); }
+.w-tot strong { margin-right: 4px; font: 700 1.5rem var(--display); color: var(--ink); }
+.w-bar { display: flex; gap: 2px; height: 10px; overflow: hidden; border-radius: 5px; background: var(--beige); }
+.w-seg { flex: 1 1 0; min-width: 8px; }
+.w-c-prep { background: #7A7F86; }
+.w-c-expired { background: #B83F15; }
+.w-c-fault { background: #E2602A; }
+.w-c-returned { background: #2F6F8F; }
+.w-c-excess { background: #5E7F35; }
+.w-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0 0; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--muted); }
+.w-legend li { display: inline-flex; align-items: center; gap: 5px; }
+.w-legend b { color: var(--ink); }
+.w-dot { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; }
+.w-acts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; padding: 0 12px; }
+.w-acts .btn { flex: 1 1 10rem; }
+.w-rvbtn { flex-direction: column; gap: 0; line-height: 1.2; }
+.w-rvbtn small { font-size: 0.75rem; font-weight: 500; color: var(--muted); }
+.w-ro { padding: 0 12px; }
+.w-sheet .w-review { margin: 0; max-width: none; }
+.w-sheet .sheet-x { width: 100%; margin-top: 10px; }
+.w-rpick { flex-wrap: nowrap; }
+.w-rbig { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); align-content: start; gap: 6px; }
+.w-rbig .w-rchip { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; min-height: 56px; height: auto; padding: 6px 10px; border-radius: 10px; text-align: left; white-space: normal; }
+.w-rbig .w-rchip strong { font-size: 0.9375rem; }
+.w-rbig .w-rchip span { font-size: 0.75rem; font-weight: 400; color: var(--muted); }
+.w-rbig .w-rchip[aria-checked="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.w-rbig .w-rchip[aria-checked="true"] span { color: #fff; }
+.nb-t .w-again { display: flex; align-items: center; width: max-content; min-height: 36px; height: auto; margin-top: 6px; padding: 0 12px; font: 600 0.8125rem var(--body); }
+.nb-t .w-again.is-on { display: block; min-height: 0; padding: 2px 0; border: 0; font-size: 0.8125rem; font-weight: 600; color: var(--muted); }
+@media (min-width: 720px) { .w-sheet { width: min(40rem, calc(100vw - 32px)); max-height: 86vh; max-height: 86dvh; } }

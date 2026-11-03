@@ -13,6 +13,7 @@ function riceTwice() {
 
   // wastage: "Logged often" fills item, unit, reason and section in one tap, and puts the cursor in Amount
   p = await L.open(b, '#/waste', { wait: 1500, extra: riceTwice() });
+  await L.wLog(p);
   const often = await p.$('[data-p="woften"]');
   ok(!!often && /Rice/.test(await often.textContent()), 'waste: Rice logged on two days shows under Logged often');
   if (often) await often.click();
@@ -20,21 +21,18 @@ function riceTwice() {
   const f = await p.evaluate(() => ({
     text: (document.getElementById('w-text') || {}).value,
     unit: (document.querySelector('[data-p="wunit"][aria-checked="true"]') || {}).textContent,
-    reason: (document.querySelector('.w-rbtn') || {}).textContent || (document.querySelector('.w-rchips [aria-pressed="true"]') || {}).textContent,
+    reason: (document.querySelector('.w-rbig [aria-checked="true"] strong') || {}).textContent,
     sec: (document.getElementById('w-sec') || {}).value,
     focus: document.activeElement && document.activeElement.getAttribute('data-k')
   }));
   ok(f.text === 'Rice' && f.unit === 'portions' && /Expired stock/.test(f.reason || '') && f.sec === 'Pans', 'waste: Logged often fills item, unit, reason and section ' + JSON.stringify(f));
   ok(f.focus === 'w-amt', 'waste: the cursor goes to Amount (' + f.focus + ')');
 
-  // wastage: the reason sheet closes with Escape and gives focus back to its button
-  await p.click('.w-rbtn');
-  await L.settle(p, 200);
-  ok(await p.$('.ux-picker') !== null, 'waste: the reason sheet opens');
+  // wastage: the Log waste sheet (3 Nov 2026, with the reasons as chips in it) closes with Escape and gives focus back to its button
   await p.keyboard.press('Escape');
   await L.settle(p, 250);
-  ok(await p.$('.ux-picker') === null, 'waste: Escape closes the reason sheet');
-  ok(await p.evaluate(() => !!document.activeElement && document.activeElement.classList.contains('w-rbtn')), 'waste: focus goes back to the reason button');
+  ok(await p.$('.w-sheet') === null, 'waste: Escape closes the Log waste sheet');
+  ok(await p.evaluate(() => !!document.activeElement && document.activeElement.classList.contains('w-logbtn')), 'waste: focus goes back to Log waste');
   ok(p.errors.length === 0, 'waste: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -50,6 +48,7 @@ function riceTwice() {
 
   // wastage: the summary cannot be read (bad signal): it does not break the page or the form
   p = await L.open(b, '#/waste', { wait: 1500, extra: riceTwice(), failReads: '/summary/waste$' });
+  await L.wLog(p);
   ok(await p.$('#w-text') !== null && await p.$('.w-row') !== null, 'waste: with the summary unreadable the form and today\'s entries still show');
   ok(await p.evaluate(() => window.__fake.reads.some(r => /\/summary\/waste$/.test(r))), 'waste: the summary was asked for');
   ok(p.errors.length === 0, 'waste, summary unreadable: no page errors ' + p.errors.join(' | '));

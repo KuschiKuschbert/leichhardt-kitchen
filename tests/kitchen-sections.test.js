@@ -96,7 +96,7 @@ const addLine = async (p, text, sec) => {
   ok(!(await p.$('.ks-wrap')), 'menu: Escape closes it');
 
   // wastage: the section box starts on the person's section
-  await p.evaluate(() => { location.hash = '#/waste'; }); await L.settle(p, 900);
+  await p.evaluate(() => { location.hash = '#/waste'; }); await L.settle(p, 900); await L.wLog(p);
   ok(await p.$eval('[data-k="w-sec"]', e => e.value) === 'Pass', 'waste: the section box starts on Pass');
   await p.context().close();
 

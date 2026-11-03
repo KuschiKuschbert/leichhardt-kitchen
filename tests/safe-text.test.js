@@ -44,7 +44,7 @@ async function check(b, hash, o, name, see, then) {
   const b = await L.start();
   await check(b, '#/prep', { who: 'ann' }, 'prep list', 'Line');
   await check(b, '#/orders', { who: 'ann' }, 'order list', 'Order');
-  await check(b, '#/waste', { who: 'sam' }, 'wastage', 'Waste', async p => { await p.fill('#w-text', 'Of'); await L.settle(p, 300); });
+  await check(b, '#/waste', { who: 'sam' }, 'wastage', 'Waste', async p => { await L.wLog(p); await p.fill('#w-text', 'Of'); await L.settle(p, 300); });
   await check(b, '#/transfers', { who: 'sam' }, 'transfers', 'Transfer', async p => {
     // the venue chip (from the line and the summary), then who came for it and what they often take, then a suggestion while typing
     await L.waitFor(p, () => !!document.querySelector('[data-p="tr-vpick"]'), null, 5000).catch(() => {});

@@ -89,6 +89,7 @@ const waitReload = p => L.waitFor(p, () => window.__mark !== 1, null, 8000).catc
     ['Supplier', '#/suppliers/northside', '[data-sf="qty"][data-i="t-stock"]', '4', F.fixture()]
   ]) await step(name + ' draft', async () => {
     p = await L.open(b, hash, { who: 'sam', extra, init: noUnload, wait: 1200 });
+    if (hash === '#/waste') await L.wLog(p);
     await p.locator(field).fill(value); await markCache(p);
     ok(await p.evaluate(() => LK_PREP.unsavedHere()), name + ': actual form is dirty before cache failure');
     await boom(p); await L.settle(p, 500);

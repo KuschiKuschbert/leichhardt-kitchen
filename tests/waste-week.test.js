@@ -22,6 +22,7 @@ extra[fsKey(['waste', yest, 'lines', 'y1'])] = { text: 'Mash', amount: 1.5, unit
     ok(!(await p.$('[data-p="wdel"]')) && !(await p.$('[data-p="wrestore"]')), who + ': no Remove or Put back on the wastage page');
     if (who === 'ann') ok(!(await p.$('#w-ra')) && !(await p.$('[data-p="wreview"]')), 'ann: no end-of-day review for staff');
     else {
+      await L.wReview(p);
       await L.waitFor(p, () => !!document.querySelector('[data-p="wreview"][data-v="page"]'));
       await p.fill('#w-ra', 'Chips cooked too early');
       await p.fill('#w-rc', 'Drop chips to order after 21:00');

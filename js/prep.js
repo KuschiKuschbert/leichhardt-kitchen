@@ -102,7 +102,7 @@
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinOff: false, pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: (lsGet('lk.dash.intro') && lsGet('lk.prep.atab')) || 'dashboard', ordDate: dayNow(), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
-    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
+    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
     adminsFor: '', adminsOff: null, level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
@@ -1245,6 +1245,7 @@
     if (window.LK_MG && window.LK_MG.drop) window.LK_MG.drop(); if (window.LK_FE && window.LK_FE.drop) window.LK_FE.drop();
     if (window.LK_UX) window.LK_UX.close();
     if (S.sheet) { S.sheet = ''; ovDone('reason'); } S.section = ''; S.secTyped = false;
+    if (S.wLog || S.wRv) { S.wLog = S.wRv = false; ovDone('wsheet'); }
     sessDrop(); ksClose(); noteClose('shut'); lmClose(); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; S.gf = null; S.gfSnap = ''; S.cutDraft = null; S.cutSnap = ''; S.bulk = ''; S.wrA = S.wrC = S.wpA = S.wpC = null; S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; tdReset(); dkf = null; dkSnap = ''; dkEditing = false; dkMsg = ''; dkOpen = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings and Manage staff (22 Oct 2026: the Minutes register is "See who has signed" at
@@ -1292,7 +1293,7 @@
     if (S.notesOpen && !nfDirty()) S.notesOpen = false;
     if (S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; }
   }
-  window.addEventListener('hashchange', function () { if (location.hash !== '#/prep') leftPrep(); if (S.sheet) wasteSheetClose(true); });
+  window.addEventListener('hashchange', function () { if (location.hash !== '#/prep') leftPrep(); if (S.sheet) wasteSheetClose(true); if ((S.wLog || S.wRv) && location.hash !== '#/waste') wSheetClose(true); });
   function chefOpen(k) {
     if (!isSous()) return;
     if (adminTabs()) { S.atab = k === 'pings' ? 'notes' : k === 'register' ? 'minutes' : 'people'; lsSet('lk.prep.atab', S.atab); if (location.hash === '#/admin') draw(); else location.hash = '#/admin'; return; }
@@ -1578,8 +1579,8 @@
   }
 
   /* ---------- item actions ---------- */
-  function newItem(extra) {
-    var p = me(), f = fb.fs, ref = f.doc(itemsCol(S.date));
+  function newItem(extra, date) {
+    var p = me(), f = fb.fs, ref = f.doc(itemsCol(date || S.date));
     var data = Object.assign({ text: '', station: '', qty: '', recipe: '', addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), done: false, deleted: false }, extra);
     amtOn(data); practiceOn(data);
     var pr = sset(ref, data); pr.id = ref.id; return pr;
@@ -5382,7 +5383,7 @@
     if (UNITS.indexOf(f.unit) < 0) { toast('Pick a unit.'); focusSel('.seg-b'); return; }
     // a big number for its unit is often grams typed with kg still picked: ask once (second tap on Log it)
     if (amt > (W_BIG[f.unit] || Infinity) && !arm('wbig:' + amt + f.unit)) { toast(amt + ' ' + f.unit + '? Check the unit. Tap Log it again if it is right.', null, 4000); focusSel('.seg-b[aria-checked="true"]'); return; }
-    if (!REASONS.some(function (r) { return r[0] === f.reason; })) { toast('Pick a reason.'); focusSel(window.matchMedia && window.matchMedia('(max-width: 719px)').matches ? '.w-rbtn' : '.w-rchips .chip'); return; }
+    if (!REASONS.some(function (r) { return r[0] === f.reason; })) { toast('Pick a reason.'); focusSel('.w-rbig .w-rchip'); return; }
     // the page may still be on yesterday's list just after midnight (typing does not redraw): the line goes on today's
     if (S.wDate !== dayNow()) { S.wDate = dayNow(); watchWaste(); }
     var secInfo = {}, sec = cleanSection(f.sec, secInfo) || mySec(), rm = matchRecipe(t), ref = fb.fs.doc(wCol(S.wDate));
@@ -5469,7 +5470,7 @@
     var ta = page ? S.wpA : S.wrA, tc = page ? S.wpC : S.wrC;
     var a = (ta != null ? ta : r.avoidable || '').trim().slice(0, 300), c = (tc != null ? tc : r.change || '').trim().slice(0, 300);
     var v = { avoidable: a, change: c, reviewBy: name, reviewAt: now() };
-    sset(wDay(d), v, true).then(function () { if (page) { S.wReview = v; S.wpA = S.wpC = null; } else S.wrA = S.wrC = null; rvSet(d, v); if (wAll()) whPatch(d, '', v); if (d >= shift(dayNow(), -3)) { S.wNoteFor = ''; lsSet('lk.w.note', ''); } toast('Review saved'); draw(); }, failed);
+    sset(wDay(d), v, true).then(function () { if (page) { S.wReview = v; S.wpA = S.wpC = null; if (S.wRv) { S.wRv = false; ovDone('wsheet'); } } else S.wrA = S.wrC = null; rvSet(d, v); if (wAll()) whPatch(d, '', v); if (d >= shift(dayNow(), -3)) { S.wNoteFor = ''; lsSet('lk.w.note', ''); } toast('Review saved'); draw(); }, failed);
   }
   /* the head chef's Google account: the only one the rules let read past wastage (22 Oct 2026) */
   function wAll() { return S.level === 'owner' && ownerHere(); }
@@ -5478,9 +5479,49 @@
     var del = wAll() && !x.deleted;
     return '<li class="nb-row w-row' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + (x.station ? '<br><span class="w-sec">' + esc(x.station) + '</span>' : '') + '</span>' +
       '<span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span> <span class="w-rs w-' + esc(x.reason) + '">' + esc(reasonName(x.reason)) + '</span>' + unsentMark(x) +
-      (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' +
+      (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + wAgainHTML(x) + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' +
       (del ? '<button type="button" class="p-x" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (x.deleted && wAll() ? '<button type="button" class="p-x" data-p="wrestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
+  }
+  /* Make it again (3 Nov 2026, work pages redesign, a piece of B on Wastage A): a cooking fault or expired stock logged
+     today puts the item on today's prep list in one tap, with its usual amount and the entry's section, and Undo. What
+     was tapped is kept in this tab only (S.wAgain); a double up on the prep list merges by itself (mergeDups()). */
+  function wAgainOk(x) { return !x.deleted && (x.reason === 'fault' || x.reason === 'expired') && x.date === dayNow() && can('add'); }
+  function wAgainHTML(x) {
+    if (!wAgainOk(x)) return '';
+    if (S.wAgain[x.date + '/' + x.id]) return '<span class="w-again is-on">On the prep list</span>';
+    return '<button type="button" class="chip sq w-again" data-p="w-again" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Make ' + x.text + ' again: add it to the prep list') + '">Make it again</button>';
+  }
+  function wAgain(date, id) {
+    var x = (S.wLines || []).filter(function (l) { return l.id === id && l.date === date; })[0], k = date + '/' + id;
+    if (!x || !wAgainOk(x) || S.wAgain[k]) return;
+    var dte = dayNow(), t = String(x.text || '').slice(0, 160), sec = x.station || '', rm = matchRecipe(t);
+    var made = newItem({ text: t, station: sec, recipe: rm ? rm.id : '', qty: usualQty(t) || '' }, dte);
+    S.wAgain[k] = made.id;
+    made.catch(function (e) { delete S.wAgain[k]; failed(e); draw(); });
+    draw();
+    toast('Added to the prep list' + (sec ? ', ' + sec : ''), { label: 'Undo', fn: function () { delete S.wAgain[k]; draw(); supd(itemRef(dte, made.id), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
+  }
+  /* Today's entries by reason, as one bar and a key under it (the bar is a picture of the key, so screen readers get the key) */
+  function wReasonBar(live) {
+    var n = {}; live.forEach(function (x) { n[x.reason] = (n[x.reason] || 0) + 1; });
+    var l = REASONS.filter(function (r) { return n[r[0]]; });
+    if (!l.length) return '';
+    return '<div class="w-bar" aria-hidden="true">' + l.map(function (r) { return '<span class="w-seg w-c-' + r[0] + '" style="flex-grow:' + n[r[0]] + '"></span>'; }).join('') + '</div>' +
+      '<ul class="w-legend">' + l.map(function (r) { return '<li><span class="w-dot w-c-' + r[0] + '" aria-hidden="true"></span>' + esc(r[1]) + ' <b>' + n[r[0]] + '</b></li>'; }).join('') + '</ul>';
+  }
+  /* Log waste and the end-of-day review open as sheets on the page (3 Nov 2026, work pages redesign A). They are drawn
+     from S.wLog and S.wRv with the page, like the form was, so a redraw during service keeps what is typed; Close keeps
+     it too. Back, Escape and the dimmed page close them. */
+  function wSheetOpen(which) {
+    S.wLog = which === 'log'; S.wRv = which === 'rv';
+    ovPush('wsheet', function () { wSheetClose(true); });
+    draw(); focusK(which === 'log' ? 'w-text' : 'w-ra');
+  }
+  function wSheetClose(noBack) {
+    if (!S.wLog && !S.wRv) return;
+    var wasLog = S.wLog; S.wLog = S.wRv = false;
+    ovDone('wsheet', noBack); draw(); focusSel(wasLog ? '.w-logbtn' : '.w-rvbtn');
   }
   /* Bottom sheet for picking one thing on a phone (the waste reason). Big rows, a hint under each, Cancel or tap outside to close. */
   var REASON_HINT = { prep: 'Trim, peel and offcuts', expired: 'Past its date or gone off', fault: 'Burnt, dropped or done wrong', returned: 'Sent back by a guest', excess: 'Made more than was needed' };
@@ -5509,35 +5550,46 @@
       '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty" data-k="w-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit || 'unit') + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' +
       secChipsHTML('w-sec', f.sec || mySec()) + '<div class="nb-sugg" id="w-sugg">' + wSuggHTML() + '</div>' +
       '<div class="w-pick"><span class="nb-ql" id="w-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="w-unit-l">' + UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="wunit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
-      '<div class="w-pick"><span class="nb-ql" id="w-reason-l">Reason</span><div class="w-rchips" role="radiogroup" aria-labelledby="w-reason-l">' + REASONS.map(function (r) { return '<button type="button" class="chip" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (f.reason === r[0]) + '">' + r[1] + '</button>'; }).join('') + '</div>' +
-      '<button type="button" class="w-rbtn' + (f.reason ? '' : ' is-empty') + '" data-p="sheet" data-v="reason" aria-haspopup="dialog">' + (f.reason ? esc(reasonName(f.reason)) : 'Pick a reason') + '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>' +
+      // the five reasons as big chips with what each means, on every screen (3 Nov 2026): no second sheet over this one,
+      // and data-adaptive="fixed" keeps js/controls.js from folding them into a Choose button
+      '<div class="w-pick w-rpick"><span class="nb-ql" id="w-reason-l">Reason</span><div class="w-rbig" role="radiogroup" aria-labelledby="w-reason-l" data-adaptive="fixed">' + REASONS.map(function (r) { return '<button type="button" class="chip w-rchip" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (f.reason === r[0]) + '"><strong>' + esc(r[1]) + '</strong><span>' + esc(REASON_HINT[r[0]] || '') + '</span></button>'; }).join('') + '</div></div>' +
       // the action is optional, so it folds until wanted (22 Oct 2026, Option B); a chip that fills it opens it
       '<div class="nb-add-row">' + (f.act || f.actOpen ? '<label class="visually-hidden" for="w-act">Action or how to stop it happening again</label><input id="w-act" class="nb-in nb-in-text" data-k="w-act" autocomplete="off" placeholder="Action or how to stop it happening again (optional)" maxlength="120" value="' + esc(f.act) + '">'
         : '<button type="button" class="w-actbtn" data-p="w-act-open">+ Add an action (optional)</button>') +
-      '<button type="submit" class="nb-addbtn">Log it</button></div></form>' : '<p class="hint">You can read the wastage log but not write in it.</p>';
+      '<button type="submit" class="nb-addbtn">Log it</button></div></form>' : '';
     // no signal and not loaded yet: the note, then only the lines this phone wrote since (listSnap), and no totals
     var offW = S.wState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var tot = offW ? '' : totalsText(wTotals(live));
     var body = S.wState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
       offW + (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (offW ? '' : S.wState !== 'ok' ? inkWait('Loading wastage...', 'waste', 4) : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
+    // today first (3 Nov 2026, work pages redesign A): the total and a bar of the reasons, then Log waste and, for chefs,
+    // the review, then the entries. The form and the review open as sheets.
+    var sum = tot ? '<div class="w-today"><p class="w-tot"><strong>' + esc(tot) + '</strong> logged today</p>' + wReasonBar(live) + '</div>' : '';
+    var rv = '';
+    if (rvChef()) {
+      loadPageReview();
+      var r = S.wReview;
+      rv = '<button type="button" class="btn w-rvbtn" data-p="w-rv" aria-haspopup="dialog">End-of-day review<small>' + (!r ? (S.wReviewErr ? 'Could not load it' : 'Loading...') : r.reviewBy ? 'Saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' ' + clock(r.reviewAt) : '') : 'Not written yet') + '</small></button>';
+    }
+    var acts = add || rv ? '<div class="w-acts">' + (add ? '<button type="button" class="btn dark w-logbtn" data-p="w-log" aria-haspopup="dialog">Log waste</button>' : '') + rv + '</div>' : '';
+    var logSheet = add && S.wLog ? '<div class="sheet-bg" data-p="w-log-close"></div><div class="sheet w-sheet" role="dialog" aria-modal="true" aria-labelledby="w-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="w-log-h">Log waste</h3>' +
+      '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' + add + '<button type="button" class="btn sheet-x" data-p="w-log-close">Close</button></div>' : '';
+    var rvSheet = rv && S.wRv ? '<div class="sheet-bg" data-p="w-rv-close"></div><div class="sheet w-sheet" role="dialog" aria-modal="true" aria-labelledby="w-rv-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="w-rv-h">End-of-day review</h3>' +
+      pageReviewHTML() + '<button type="button" class="btn sheet-x" data-p="w-rv-close">Close</button></div>' : '';
     return whoTopHTML(ksTagHTML()) +
-      '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + (tot ? ' &middot; ' + esc(tot) : '') + '</span></div>' +
+      '<section class="nb-page o-page w-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + '</span></div>' +
       (S.wState === 'offline' || S.wState !== 'ok' && !live.length ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div>') + '</header>' +
-      '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' +
-      // the form sits at the top, like the order list, so logging waste on a busy day never means scrolling past every entry
-      (add ? '<div class="nb-foot w-addtop">' + add + '</div>' : '') + '<div class="nb-body">' + body + '</div></section>' +
-      (rvChef() ? pageReviewHTML() : '') +
-      (wAll() ? '<p class="hint w-past">Past days and earlier reviews are in the <a href="#/admin" data-p="a-go-waste">admin panel, Wastage</a>.</p>' : '') + sheetHTML();
+      sum + acts + (can('add') ? '' : '<p class="hint w-ro">You can read the wastage log but not write in it.</p>') + '<div class="nb-body">' + body + '</div></section>' +
+      (wAll() ? '<p class="hint w-past">Past days and earlier reviews are in the <a href="#/admin" data-p="a-go-waste">admin panel, Wastage</a>.</p>' : '') + logSheet + rvSheet + sheetHTML();
   }
   function pageReviewHTML() {
-    loadPageReview();
-    if (!S.wReview) return '<section class="set-block w-review"><span class="label">End-of-day review</span>' + (S.wReviewErr ? '<p class="hint" role="status">Could not load today\'s review. Check the signal. The book tries again in a few minutes.</p>' : '<p class="hint">Loading...</p>') + '</section>';
+    if (!S.wReview) return S.wReviewErr ? '<p class="hint" role="status">Could not load today\'s review. Check the signal. The book tries again in a few minutes.</p>' : '<p class="hint">Loading...</p>';
     var r = S.wReview, ra = S.wpA != null ? S.wpA : (r.avoidable || ''), rc = S.wpC != null ? S.wpC : (r.change || '');
-    return '<section class="set-block w-review"><span class="label">End-of-day review</span>' +
+    return '<div class="w-review">' +
       '<div class="field"><label class="label" for="w-ra">Main avoidable waste today</label><textarea id="w-ra" class="w-ta" data-k="w-ra" maxlength="300" rows="2">' + esc(ra) + '</textarea></div>' +
       '<div class="field"><label class="label" for="w-rc">Prep or ordering change for the next shift</label><textarea id="w-rc" class="w-ta" data-k="w-rc" maxlength="300" rows="2">' + esc(rc) + '</textarea><span class="hint">This shows at the top of the next prep list.</span></div>' +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="wreview" data-v="page"' + (rvTyped(true) ? '' : ' disabled') + '>Save the review</button></div>' +
-      (r.reviewBy ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</section>';
+      (r.reviewBy ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</div>';
   }
   /* Last night's "change for the next shift" note, shown on the prep list (the latest of the last 3 days): three getDoc
      reads once a day per phone, kept in lk.w.note (out of date at the next kitchen day; a review saved on this phone
@@ -9182,6 +9234,9 @@
     // Last 7 days always counts today from the live list, whatever day was being browsed; the past days come from the day cache
     if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); draw(); return; }
     if (a === 'w-act-open') { S.wf.actOpen = true; draw(); focusSel('#w-act'); return; }
+    if (a === 'w-log') { wSheetOpen('log'); return; }
+    if (a === 'w-rv') { wSheetOpen('rv'); return; }
+    if (a === 'w-again') { wAgain(dt, id); return; }
     if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); if (S.sheet) wasteSheetClose(); else draw(); return; }
     if (a === 'sheet') {
       S.sheet = 'reason';
@@ -9413,6 +9468,10 @@
     if (e.key === 'Tab' && S.sheet) {
       var sh = S.root.querySelector('.sheet'); if (sh) trapTab(e, sh, 'button');
       return;
+    }
+    if ((S.wLog || S.wRv) && S.name === 'waste') {
+      if (e.key === 'Escape') { e.preventDefault(); wSheetClose(); return; }
+      var ws = S.root.querySelector('.w-sheet'); if (e.key === 'Tab' && ws) { trapTab(e, ws, 'button:not([disabled]), input, textarea'); return; }
     }
     if (e.key === 'Escape' && S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.getAttribute && e.target.getAttribute('data-k') === 'n-text') { e.preventDefault(); saveNote(); return; }
@@ -9960,6 +10019,7 @@
     if (a === 'mn-prev') { if (S.mf) { S.mf.prev = !S.mf.prev; draw(); } return true; }
     if (a === 'g-cancel') { if (gfDirty() && !arm('g-cancel')) return true; S.gf = null; S.gfSnap = ''; draw(); return true; }
     if (a === 'sheet-close') { wasteSheetClose(); return true; }
+    if (a === 'w-log-close' || a === 'w-rv-close') { wSheetClose(); return true; }
     if (a === 'staff-close') { if (draftDirty() && !arm('staff-close')) return true; S.staffOpen = false; S.draft = null; draw(); return true; }
     return false;
   }
@@ -9973,6 +10033,7 @@
       if (intelligenceLabel) return pick('intelligence-back', intelligenceLabel);
     }
     if (S.sheet) return pick('sheet-close', 'Back to wastage');
+    if (S.name === 'waste' && (S.wLog || S.wRv)) return pick(S.wLog ? 'w-log-close' : 'w-rv-close', 'Back to wastage');
     if (S.root.querySelector('.g-edit')) return pick('g-cancel', 'Back to guides');
     if (S.root.querySelector('.n-edit')) return pick('n-cancel', 'Back to pings');
     if (S.mf && S.mf.prev && (S.name === 'admin' && S.atab === 'minutes' || S.name === 'prep' && S.minOpen)) return pick('mn-prev', 'Back to writing');
@@ -9993,7 +10054,7 @@
      the recipe picker open on the prep pages, or a page loaded on its own with changes (Delivery received, Manage
      Recipes, Manage functions, Supplier order). */
   function unsavedHere() {
-    return !!(workLock() && S.lockHasDraft) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere() || !!S.sheet || !!S.recipeOpen || !!ptPop;
+    return !!(workLock() && S.lockHasDraft) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere() || !!S.sheet || !!S.wLog || !!S.wRv || !!S.recipeOpen || !!ptPop;
   }
   /* Words typed on the pages this file draws and not saved yet: half a prep, order, wastage or transfer line (the venue
      and person stay after Log it on purpose, so they do not count), kitchen mail, a to-do job, a review, the drinks run,

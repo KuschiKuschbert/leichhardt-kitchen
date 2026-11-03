@@ -458,4 +458,16 @@ async function clear(page, selector) {
     if (await button.isVisible()) await button.click();
   } else await input.fill('');
 }
-module.exports = { clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+// Wastage (3 Nov 2026, work pages redesign A): the form is in the Log waste sheet, and the end-of-day review in its own.
+// These open the sheet when it is not open already, and wait for its first box.
+async function wLog(page) {
+  if (await page.$('.w-sheet #w-text')) return;
+  await page.click('[data-p="w-log"]');
+  await waitFor(page, () => !!document.querySelector('.w-sheet #w-text'), null, 4000);
+}
+async function wReview(page) {
+  if (await page.$('.w-sheet #w-ra')) return;
+  await page.click('[data-p="w-rv"]');
+  await waitFor(page, () => !!document.querySelector('.w-sheet #w-ra'), null, 4000);
+}
+module.exports = { wLog, wReview, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

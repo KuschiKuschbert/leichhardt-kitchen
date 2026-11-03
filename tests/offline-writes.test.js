@@ -227,6 +227,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // 3. wastage at 390, no signal
   await step('3', async () => {
     p = await L.open(b, '#/waste', { wait: 1500 });
+    await L.wLog(p);
     await p.context().setOffline(true);
     await hold(p);
     await p.fill('#w-text', 'Rice');
@@ -306,6 +307,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     '#/prep': async p => { await p.fill('#p-text', 'Zest limes'); await p.press('#p-text', 'Enter'); return 'Zest limes'; },
     '#/orders': async p => { await p.fill('#o-text', 'Limes'); await p.fill('#o-qty', '1 kg'); await p.press('#o-text', 'Enter'); return 'Limes'; },
     '#/waste': async p => {
+      await L.wLog(p);
       await p.fill('#w-text', 'Bread'); await p.fill('#w-amt', '2');
       await p.evaluate(() => (document.querySelector('.w-rchips [data-v="excess"]') || document.querySelector('[data-p="wreason"][data-v="excess"]')).click());
       await L.settle(p, 100); await p.click('.w-add .nb-addbtn'); return 'Bread';
