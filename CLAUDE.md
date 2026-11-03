@@ -84,6 +84,7 @@ After approval, implement small reversible units under the existing shipping rul
 | `js/suppliers.js`, `js/supplier-core.js`, `js/supplier-store.js` | Supplier workspace (`#/suppliers`). Lazy, for an authorised chef. `docs/supplier-workspace.md` |
 | `js/deliveries.js` | Delivery received (`#/deliveries`). Lazy. `docs/delivery-received.md` |
 | `js/fnedit.js` | Manage functions (`#/functions`). Lazy, for someone ticked for Functions |
+| `js/admin-dashboard.js` | The admin Dashboard (`LK_DASH`): headlines, tiles and charts from the nightly `analysis/dashboard` record. Lazy, from `js/prep.js` when the page opens. `docs/admin-dashboard-options/brief.md` |
 | `js/analysis-core.js`, `js/admin-intelligence.js`, `js/proofreader-admin.js` | Admin Review desk: analysis maths (shared with node), the analysis workspace, the proofreader. Lazy, from `js/prep.js`, admin only. `docs/admin-intelligence.md`, `docs/proofreader-admin.md` |
 | `firestore.rules` | Rules template (see Never in this repo) |
 | `manifest.webmanifest`, `sw.js`, `icons/`, `icon.svg` | Installable app: manifest, service worker (saved shell generations), rope KB logo |
