@@ -102,11 +102,12 @@
   function svOf(k, act) { var r = svRec[k]; return r && (!r.act || r.act === (act || '')) ? r.st : ''; }
   // Saved is showing: every Save button of the form stays off, and its save refuses
   function svHeld(k) { var r = svRec[k]; return !!r && r.st === 'done' && !svGone(k, r); }
-  // Saved no longer belongs to what is on screen: another form is open, or the Save bar's form (which stays open) changed
-  function svGone(k, r) { return r.obj !== svObj(k) || (r.obj === undefined && r.form !== svForm(k)); }
+  // Saved no longer belongs to what is on screen: another form is open, or the form changed (something typed or picked)
+  function svGone(k, r) { return r.obj !== svObj(k) || r.form !== svForm(k); }
   /* draw() and the in-place refreshes ask first: an edit after a failed save puts the button back and takes the red line
-     away; another form opened, or a change on the staff list, while Saved shows ends Saved there and then (what the
-     saved form did after runs at once, and leaves the new form open), so the next Save is never held */
+     away; another form opened, or anything typed or picked in the form, while Saved shows ends Saved there and then.
+     What the saved form did after runs at once: it leaves another form open, and keeps a form typed in open with the
+     new words as a change to what was just saved (typed work is never lost), so the next Save is never held */
   function svTidy() {
     var any = false;
     Object.keys(svRec).forEach(function (k) {
@@ -6852,9 +6853,15 @@
       if (epoch !== accessEpoch) return;
       if (noteOn(data, t) || (was && noteOn(was, t))) { markPings(); noteJust((f.to ? 'direct/' : '') + ref.id, nk); }
       // Saved on the button for 1.2 s (saved as it stands, so leaving asks nothing), then the editor closes as before;
-      // the list is read again straight away, as before
-      S.nSaving = false; if (S.nf === f) S.nfSnap = JSON.stringify(f);
-      svDone('n', S.nf === f && S.nOpen, function () { if (epoch !== accessEpoch) return; if (S.nf === f) { S.nf = nfNew(); S.nOpen = false; } if (!S.nOpen) S.nMsg = 'Saved. Shows: ' + when + '.'; });
+      // the list is read again straight away, as before. Words typed meanwhile keep it open as a change to this ping
+      var saved = JSON.stringify(f), sid = f.id || (f.to ? 'direct/' : '') + ref.id;
+      S.nSaving = false; if (S.nf === f) S.nfSnap = saved;
+      svDone('n', S.nf === f && S.nOpen, function () {
+        if (epoch !== accessEpoch) return;
+        if (S.nf === f && nfDirty()) { var was = JSON.parse(saved); f.id = was.id = sid; S.nfSnap = JSON.stringify(was); }
+        else if (S.nf === f) { S.nf = nfNew(); S.nOpen = false; }
+        if (!S.nOpen || S.nf === f) S.nMsg = 'Saved. Shows: ' + when + '.';
+      });
       loadNotes(true); draw();
     }, function (e) {
       if (epoch !== accessEpoch) return;
@@ -7318,16 +7325,21 @@
     S.mSaving = publish ? 'pub' : 'draft'; S.mMsg = '';
     svStart('m', S.mSaving, function () { if (S.mf === f && S.mSaving) mnSay(''); }); draw();
     W(ops).then(function () {
-      S.mSaving = false; if (S.mf === f) S.mfSnap = mfSnap(f);
+      var saved = mfSnap(f);
+      S.mSaving = false; if (S.mf === f) S.mfSnap = saved;
       if (publish) delete S.mmine[ref.id + '_' + data.v + '_' + S.who];
       // the register and the drafts show what was saved at once, before the list is read again
       var rec = Object.assign({}, mnById(ref.id) || {}, data, { id: ref.id });
       S.mins = (S.mins || []).filter(function (m) { return m.id !== ref.id; }).concat([rec]);
-      // Published (or Saved) on the button for 1.2 s, then the form closes and the register opens on them, as before
+      // Published (or Saved) on the button for 1.2 s, then the form closes and the register opens on them, as before.
+      // Words typed meanwhile keep it open as a change to these minutes (the next save is their draft or next version)
       svDone('m', S.mf === f, function () {
-        if (S.mf === f) S.mf = null;
+        if (S.mf === f && mfDirty()) {
+          var was = JSON.parse(saved);
+          f.id = was.id = ref.id; f.status = was.status = data.status; f.v = was.v = data.v; f.orig = rec; S.mfSnap = JSON.stringify(was);
+        } else if (S.mf === f) S.mf = null;
         if (publish) { S.mSel = ref.id; toast('Minutes ' + pad(data.no) + ' published.'); }
-        if (!S.mf) mnSay(publish ? 'Minutes ' + pad(data.no) + (data.v > 1 ? ' version ' + data.v : '') + ' published at ' + clock(data.pubAt) + '. Staff can read and sign them now.' : 'Draft saved at ' + clock(data.upd) + '. Staff do not see drafts.', true);
+        if (!S.mf || S.mf === f) mnSay(publish ? 'Minutes ' + pad(data.no) + (data.v > 1 ? ' version ' + data.v : '') + ' published at ' + clock(data.pubAt) + '. Staff can read and sign them now.' : 'Draft saved at ' + clock(data.upd) + '. Staff do not see drafts.', true);
       });
       loadMinutes(true); if (publish) loadSigns(ref.id, true);
       draw();
@@ -8553,11 +8565,17 @@
       var mine = Object.assign({}, old || {}, data, { id: id });
       S.guides = (S.guides || []).filter(function (g) { return g.id !== id; }).concat([mine]); gKeep();
       try { window.dispatchEvent(new Event('lk-guides')); } catch (e) {}
-      // Saved on the button for 1.2 s (saved as it stands, so leaving asks nothing), then the editor closes as before
-      f.saving = false; f.busy = ''; f.progress = null; if (S.gf === f) S.gfSnap = gfSnap(f);
+      // Saved on the button for 1.2 s (saved as it stands, so leaving asks nothing), then the editor closes as before.
+      // Words typed meanwhile keep it open as a change to this guide; pages it saved are not sent again
+      var saved = gfSnap(f), said = 'Saved "' + title + '". ' + (data.who === 'all' ? 'Staff see' : gWhoName(data.who) + ' see') + ' it under Guides.';
+      f.saving = false; f.busy = ''; f.progress = null; if (S.gf === f) S.gfSnap = saved;
       svDone('g', S.gf === f, function () {
-        if (S.gf === f) { S.gf = null; S.gfSnap = ''; }
-        if (!S.gf) S.gMsg = 'Saved "' + title + '". ' + (data.who === 'all' ? 'Staff see' : gWhoName(data.who) + ' see') + ' it under Guides.';
+        if (S.gf === f && gfDirty()) {
+          var was = JSON.parse(saved); f.id = id;
+          if (f.pages && JSON.stringify(f.pages.map(function (p) { return p.k; })) === JSON.stringify(was[6])) { f.pages = null; was[6] = null; }
+          S.gfSnap = JSON.stringify(was); f.msg = said;
+        } else if (S.gf === f) { S.gf = null; S.gfSnap = ''; }
+        if (!S.gf) S.gMsg = said;
         lvReveal('guides');
       });
       S.gRetry = 0; draw(); loadGuides(true);

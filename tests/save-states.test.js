@@ -2,7 +2,8 @@
 // LF-12): Saving... once, on the button, at its own width; Saved with a tick for 1.2 s, only once the server answered,
 // then the form does what it did before; one line after 4 s while the save waits for the signal; a failure turns the
 // button into Try again with a red line under it that stays until the next try or an edit. Checked on the ping editor,
-// the guide editor and the staff list's Save bar, with the stand-in holding, failing and refusing writes.
+// the guide editor and the staff list's Save bar, with the stand-in holding, failing and refusing writes. Words typed
+// while Saved shows are kept (pings, guides, minutes).
 const L = require('./lib');
 const { R, ok } = L.results();
 
@@ -120,6 +121,26 @@ const count = (p, scope, word) => p.evaluate(([s, w]) => ((document.querySelecto
     await L.tap(p, '[data-p="n-save"]');
     await wait(p, () => !window.LK_PREP.state.nOpen, null, 4000);
     ok(await p.evaluate(id => { const d = window.__fake.dump(); return Object.entries(d).some(([k, v]) => k.endsWith('/notes/' + id) && v.text === 'Fryer two is back on') && Object.values(d).some(v => v && v.text === 'Walk-in is at 4 degrees'); }, fryer), 'ping: both saves are in the store');
+    // words typed while Saved shows are never lost: Saved ends, the editor stays open with them as a change to the
+    // ping just saved, and the next save changes that ping (no second ping)
+    await L.tap(p, '[data-p="n-new"]');
+    await wait(p, () => !!document.querySelector('[data-k="n-text"]'));
+    await p.fill('[data-k="n-text"]', 'Oysters in at 15:00');
+    await p.evaluate(() => { window.__fake.mode = 'hold'; });
+    await L.tap(p, '[data-p="n-save"]');
+    await pause(p);
+    await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
+    await wait(p, () => { const b = document.querySelector('[data-p="n-save"]'); return !!(b && b.querySelector('.ink-icon[data-state="done"]')); });
+    await p.type('[data-k="n-text"]', ', shuck to order');
+    await p.clock.runFor(1500);
+    await L.settle(p, 100);
+    s = await btn(p, '[data-p="n-save"]');
+    ok(await p.evaluate(() => window.LK_PREP.state.nOpen) && await p.inputValue('[data-k="n-text"]') === 'Oysters in at 15:00, shuck to order', 'ping typed during Saved: the editor stays open with the words (' + await p.inputValue('[data-k="n-text"]').catch(() => 'closed') + ')');
+    ok(s && s.text === 'Save changes' && !s.disabled && !s.done, 'ping typed during Saved: Saved ends and Save changes is on for the new words (' + JSON.stringify(s) + ')');
+    await p.clock.resume();
+    await L.tap(p, '[data-p="n-save"]');
+    await wait(p, () => !window.LK_PREP.state.nOpen, null, 4000);
+    ok(await p.evaluate(() => { const v = Object.entries(window.__fake.dump()).filter(([k, x]) => /\/notes\/[^/]+$/.test(k) && /^Oysters in at 15:00/.test(x.text)); return v.length === 1 && v[0][1].text === 'Oysters in at 15:00, shuck to order'; }), 'ping typed during Saved: the next save changes the same ping, no second one');
     ok(!(await L.overflow(p)), 'ping: no sideways scroll at 390 px');
     ok(p.errors.length === 0, 'ping: no page errors ' + p.errors.join(' | '));
     await p.context().close();
@@ -164,6 +185,44 @@ const count = (p, scope, word) => p.evaluate(([s, w]) => ((document.querySelecto
     await p.click('[data-p="g-save"]');
     await wait(p, () => window.LK_PREP.state.gf === null, null, 4000);
     ok(/Saved "Grill clean down"/.test(await p.evaluate(() => window.LK_PREP.state.gMsg)), 'guide retry: Try again saves it');
+    // steps typed while Saved shows are never lost, and the next save changes the same guide
+    await guide('Slicer clean');
+    await p.evaluate(() => { window.__fake.mode = 'hold'; });
+    await p.click('[data-p="g-save"]');
+    await pause(p);
+    await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
+    await wait(p, () => { const b = document.querySelector('[data-p="g-save"]'); return !!(b && b.querySelector('.ink-icon[data-state="done"]')); });
+    await p.focus('#g-steps'); await p.keyboard.press('Control+End'); await p.keyboard.type('\nUnplug it first.');
+    await p.clock.runFor(1500);
+    await L.settle(p, 100);
+    ok(!!(await p.$('.g-edit')) && /Unplug it first\.$/.test(await p.inputValue('#g-steps').catch(() => '')), 'guide typed during Saved: the editor stays open with the words');
+    s = await btn(p, '[data-p="g-save"]');
+    ok(s && s.text === 'Save changes' && !s.disabled, 'guide typed during Saved: Save changes is on for the new words (' + JSON.stringify(s) + ')');
+    await p.clock.resume();
+    await L.tap(p, '[data-p="g-save"]');
+    await wait(p, () => window.LK_PREP.state.gf === null, null, 4000);
+    ok(await p.evaluate(() => { const v = Object.entries(window.__fake.dump()).filter(([k, x]) => /\/guides\/[^/]+$/.test(k) && x.title === 'Slicer clean'); return v.length === 1 && /Unplug it first\.$/.test(v[0][1].steps); }), 'guide typed during Saved: the next save changes the same guide, no second one');
+    // minutes: words typed while Saved shows on a draft are kept, and the next save changes the same draft
+    await L.adminTab(p, 'minutes');
+    await wait(p, () => !!document.querySelector('[data-p="mn-new"]'));
+    await p.click('[data-p="mn-new"]');
+    await wait(p, () => !!document.querySelector('[data-k="mn-decisions"]'));
+    await p.fill('[data-k="mn-decisions"]', 'Probe every chicken');
+    await p.evaluate(() => { window.__fake.mode = 'hold'; });
+    await p.click('[data-p="mn-draft"]');
+    await pause(p);
+    await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
+    await wait(p, () => { const b = document.querySelector('[data-p="mn-draft"]'); return !!(b && b.querySelector('.ink-icon[data-state="done"]')); });
+    await p.focus('[data-k="mn-decisions"]'); await p.keyboard.press('Control+End'); await p.keyboard.type('\nLabel every tub');
+    await p.clock.runFor(1500);
+    await L.settle(p, 100);
+    ok(!!(await p.$('.mn-form')) && /Label every tub$/.test(await p.inputValue('[data-k="mn-decisions"]').catch(() => '')), 'minutes typed during Saved: the form stays open with the words');
+    s = await btn(p, '[data-p="mn-draft"]');
+    ok(s && s.text === 'Save draft' && !s.disabled, 'minutes typed during Saved: Save draft is on for the new words (' + JSON.stringify(s) + ')');
+    await p.clock.resume();
+    await L.tap(p, '[data-p="mn-draft"]');
+    await wait(p, () => !document.querySelector('.mn-form'), null, 4000);
+    ok(await p.evaluate(() => { const v = Object.entries(window.__fake.dump()).filter(([k, x]) => /\/minutes\/[^/]+$/.test(k) && /^Probe every chicken/.test(x.decisions || '')); return v.length === 1 && /Label every tub$/.test(v[0][1].decisions) && v[0][1].status === 'draft'; }), 'minutes typed during Saved: the next save changes the same draft, no second one');
     ok(p.errors.length === 0, 'guide: no page errors ' + p.errors.join(' | '));
     await p.context().close();
 
