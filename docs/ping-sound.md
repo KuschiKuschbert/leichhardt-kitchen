@@ -68,3 +68,9 @@ Known limits, by design of the browsers:
 ## Rollback
 
 Revert the pull request. Old code ignores `config/main.pingSound`, and the field can stay. Keep the saved-shell rule: the revert ships `index.html`, `SHELL` and both update lists together as a new complete generation (`docs/saved-shell-generations.md`).
+
+## Working rules (moved from CLAUDE.md, 3 Nov 2026)
+
+The sound follows the pings sheet popping up by itself (`noteChime()` in `noteOpen()`), never a new timer, read or listener.
+`config/main.pingSound` is written only by the verified admin and carried by the People save; check it against `LK_CHIME` before use. Never rename a sound id.
+One sound for everyone on every device, set only by the head chef (3 Nov 2026): never add a per-phone, per-person or Settings sound.
