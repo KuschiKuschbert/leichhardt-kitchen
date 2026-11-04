@@ -932,8 +932,12 @@
      It shows on the kitchen pages while the strip is on (stripOn()), so the Not sent marks and their room come and go
      with it. When a change waited while it was up and everything is sent with the signal there, it says All sent with
      the kitchen time for 3 seconds, then slides away. While it is up the update offer waits behind it (html.has-sync).
-     One element in document.body, so a page redraw does not slide it in again. No reads, no timer but its own 3 s. */
-  var band = null, bandSt = '', bandHad = false, bandTimer = null, bandOut = null;
+     One element in document.body, so a page redraw does not slide it in again. No reads, no timer but its own 3 s.
+     Put away (4 Nov 2026, weekly flaky report): with no signal it stays up, and it covered Back, Today and Forward on
+     the prep list at every width, so a cook could not change day until the signal came back. A tap on its words or a
+     swipe up puts it away, as the update band (js/upkeep.js putAway()). New words (Not sent yet, All sent) or the next
+     page bring it back. The update offer still waits behind it meanwhile, and the lines keep their Not sent marks. */
+  var band = null, bandSt = '', bandHad = false, bandTimer = null, bandOut = null, bandAway = false;
   var BAND_SAY = {
     off: '<strong>No signal.</strong> Keep the book open: your changes send when the signal is back.',
     wait: '<strong>Not sent yet.</strong> Other devices cannot see your latest changes yet. Keep the book open.'
@@ -952,8 +956,16 @@
   function bandShow(st) {
     if (bandSt === st) return;   // already says it (All sent keeps its time and its 3 seconds)
     clearTimeout(bandTimer); clearTimeout(bandOut); bandTimer = bandOut = null;
-    if (!band) { band = document.createElement('div'); band.className = 'p-sync'; band.setAttribute('role', 'status'); band.hidden = true; document.body.appendChild(band); }
-    bandSt = st; band.setAttribute('data-st', st);
+    if (!band) {
+      band = document.createElement('div'); band.className = 'p-sync'; band.setAttribute('role', 'status'); band.hidden = true; document.body.appendChild(band);
+      band.addEventListener('click', bandPutAway);
+      // a swipe up: the finger usually lifts above the band, so the lift is heard on the window
+      band.addEventListener('pointerdown', function (e) {
+        var id = e.pointerId, y = e.clientY;
+        window.addEventListener('pointerup', function up(ev) { if (ev.pointerId !== id) return; window.removeEventListener('pointerup', up); if (y - ev.clientY > 30) bandPutAway(); });
+      });
+    }
+    bandSt = st; bandAway = false; band.setAttribute('data-st', st);
     // one span, so the bold words and the rest wrap together inside the band
     band.innerHTML = '<span>' + (st === 'ok' ? '<strong>All sent ' + esc(clock(now())) + '.</strong> Everyone can see your changes.' : BAND_SAY[st]) + '</span>';
     document.documentElement.classList.add('has-sync');
@@ -963,8 +975,20 @@
     band.classList.add('is-on');
     if (st === 'ok') bandTimer = setTimeout(bandHide, 3000);
   }
+  // out of sight until its words change or the next page opens; html.has-sync stays, so the update offer still waits
+  function bandPutAway() {
+    if (!band || !bandSt || bandAway) return;
+    bandAway = true; band.classList.remove('is-on');
+  }
+  function bandBack() {
+    if (!band || !bandAway) return;
+    bandAway = false;
+    if (!bandSt) return;
+    if (typeof lkBandPlace === 'function') lkBandPlace();
+    void band.offsetWidth; band.classList.add('is-on');
+  }
   function bandHide() {
-    clearTimeout(bandTimer); bandTimer = null; bandHad = false;
+    clearTimeout(bandTimer); bandTimer = null; bandHad = false; bandAway = false;
     if (!band || !bandSt) return;
     bandSt = ''; band.classList.remove('is-on');
     clearTimeout(bandOut);
@@ -975,8 +999,9 @@
       document.documentElement.classList.remove('has-sync');
     }, 260);
   }
-  // leaving the kitchen pages for another page takes the band away, as the box in the page went with it
-  window.addEventListener('hashchange', function () { setTimeout(bandSync, 0); });
+  // leaving the kitchen pages for another page takes the band away, as the box in the page went with it; the next
+  // kitchen page brings back a band that was put away (both in one turn, so it never flashes on the way out)
+  window.addEventListener('hashchange', function () { setTimeout(function () { bandBack(); bandSync(); }, 0); });
   /* Two taps for anything that is hard to take back: the first tap arms the button ("Tap again..."), a second tap
      within 4 seconds does it. Left alone, the button goes back to normal by itself. redraw: the page that shows the
      button, when it is not the prep pages (the drawing editor and Delivery received, through bookApi()). */
