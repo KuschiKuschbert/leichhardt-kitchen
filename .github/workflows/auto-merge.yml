@@ -22,14 +22,18 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: auto-merge
-  cancel-in-progress: false
+# Three jobs (4 Nov 2026): a waiting run in a shared concurrency group is replaced by the next one, so one shared group
+# dropped the ready events of pull requests marked ready at the same moment. Each pull request now has its own group for
+# its switch; only the queue shares one, where dropping an older waiting run is harmless (the next reads current state).
 
 jobs:
-  queue:
+  switch:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 3
+    concurrency:
+      group: auto-merge-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
     env:
       GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
       REPO: ${{ github.repository }}
@@ -46,7 +50,7 @@ jobs:
 
       # The pull request that changed: ready and not held gets auto-merge, a draft or a held one loses it.
       - name: Switch auto-merge on or off for this pull request
-        if: steps.token.outputs.ok == 'true' && github.event_name == 'pull_request'
+        if: steps.token.outputs.ok == 'true'
         env:
           PR: ${{ github.event.pull_request.number }}
           DRAFT: ${{ github.event.pull_request.draft }}
@@ -62,14 +66,54 @@ jobs:
             echo "#$PR is ready: it merges when Click tests pass and it is up to date."
           fi
 
+  backfill:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Token set?
+        id: token
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::notice::AUTOMERGE_TOKEN is not set, so nothing is merged automatically (docs/auto-merge.md)."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
       # Run by hand once after the token is added: every pull request already ready and not held gets auto-merge.
       - name: Switch auto-merge on for pull requests already ready
-        if: steps.token.outputs.ok == 'true' && github.event_name == 'workflow_dispatch'
+        if: steps.token.outputs.ok == 'true'
         run: |
           for n in $(gh pr list -R "$REPO" --base main --state open --limit 50 --json number,isDraft,labels,isCrossRepository \
               --jq '.[] | select(.isDraft|not) | select(.isCrossRepository|not) | select([.labels[].name] | index("hold") | not) | .number'); do
             gh pr merge "$n" -R "$REPO" --auto --squash && echo "#$n: auto-merge on."
           done
+
+  queue:
+    needs: [switch, backfill]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: auto-merge-queue
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Token set?
+        id: token
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::notice::AUTOMERGE_TOKEN is not set, so nothing is merged automatically (docs/auto-merge.md)."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
 
       # The queue: oldest ready pull request first. Clean merges by itself; up to date and still testing means wait;
       # failed or in conflict is skipped until its session fixes it; behind is brought up to date (one, then stop).
