@@ -312,6 +312,21 @@ service cloud.firestore {
       return a.get('preparedBy', '') == b.get('preparedBy', '') && a.get('preparedById', '') == b.get('preparedById', '')
         && a.get('preparedAt', 0) == b.get('preparedAt', 0);
     }
+    // I'm on it (5 Nov 2026, head chef, round 2 of the work pages redesign): the first tap on a prep line stamps who is on
+    // it, the second ticks it. The stamp is a reported cook, like preparedBy: an active kitchen person, not functions
+    // only, with the time it was put on. It is empty on a new line and cleared with the tick; changing it takes Tick.
+    function onEmpty(d) { return d.get('onBy', '') == '' && d.get('onById', '') == '' && d.get('onAt', 0) == 0; }
+    function onPerson(d) {
+      return d.get('onBy', '') is string && d.onBy.size() > 0 && d.onBy.size() <= 80 && d.onBy.matches('.*[^ ].*')
+        && d.get('onById', '') is string && d.onById.size() > 0 && d.onById.size() <= 80
+        && d.onById in cfg().get('staffIds', []) && !functionOnly(d.onById)
+        && d.get('onAt', 0) is number && d.onAt > 0 && d.onAt <= request.time.toMillis() + 60000;
+    }
+    function onStampOk() {
+      let d = request.resource.data;
+      return !d.diff(resource.data).affectedKeys().hasAny(['onBy', 'onById', 'onAt'])
+        || onEmpty(d) || (d.get('done', false) != true && onPerson(d));
+    }
     function preparedPerson(d) {
       return d.get('preparedBy', '') is string && d.preparedBy.size() > 0 && d.preparedBy.size() <= 80 && d.preparedBy.matches('.*[^ ].*')
         && d.get('preparedById', '') is string && d.preparedById.size() > 0 && d.preparedById.size() <= 80
@@ -429,9 +444,9 @@ service cloud.firestore {
     function prepCapabilities(creating) {
       let d = request.resource.data;
       let changed = creating ? d.keys() : d.diff(resource.data).affectedKeys();
-      let ticks = ['done', 'doneAt', 'doneBy', 'doneById', 'preparedBy', 'preparedById', 'preparedAt'];
+      let ticks = ['done', 'doneAt', 'doneBy', 'doneById', 'preparedBy', 'preparedById', 'preparedAt', 'onBy', 'onById', 'onAt'];
       let removals = ['deleted', 'deletedBy', 'deletedAt', 'mergedInto'];
-      return creating ? capability(d.by, 'add') && d.get('done', false) != true && d.get('deleted', false) != true
+      return creating ? capability(d.by, 'add') && d.get('done', false) != true && d.get('deleted', false) != true && onEmpty(d)
           && d.get('addedAt', 0) is number && d.get('addedAt', 0) <= request.time.toMillis() + 60000
         : recorderKept()
           && (!changed.hasAny(ticks) || capability(d.by, 'tick'))
@@ -462,7 +477,7 @@ service cloud.firestore {
       let admin = isAdmin();
       let priority = statusEffectFirst(creating);
       return (admin || (priority && functionLine(day, id, true)) || (prepCapabilities(creating) && staff()) || (!priority && request.resource.data.get('fn', '') != '' && functionLine(day, id, true))) && lineOk(160) && lineWho(day, admin) && prepAttribution(admin)
-        && (creating ? proofLineCreate(admin) : tickKept(admin) && proofLineKept('prep', day, id, admin));
+        && (creating ? proofLineCreate(admin) : tickKept(admin) && proofLineKept('prep', day, id, admin) && onStampOk());
     }
     function orderLineWrite(day, id, creating) {
       let admin = isAdmin();

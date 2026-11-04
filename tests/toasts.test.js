@@ -14,7 +14,7 @@ const seeThrough = bg => { const m = /rgba\([^)]*,\s*([\d.]+)\)/.exec(bg || '');
   let p = await L.open(b, '#/prep', { wait: 1500 });
 
   // one toast: a solid slip sitting on the tab bar, no taller than 64 px, Undo a full target, its time left as a line
-  await L.tap(p, '[data-p="tick"][data-id="i1"]'); await L.settle(p, 300);
+  await L.tickPrep(p, '[data-p="tick"][data-id="i1"]'); await L.settle(p, 300);
   // on the work pages the add button is docked above the tab bar (4 Nov 2026), so the slip sits on that bar instead
   let t = await box(p, '.p-toast'), u = await box(p, '.p-toast-btn'), tb = await box(p, '.wk-dock') || await box(p, '.tabbar');
   ok(t && t.h <= 64, 'phone: "Ticked" is one slim slip (' + (t && t.h) + ' px tall)');
@@ -39,7 +39,7 @@ const seeThrough = bg => { const m = /rgba\([^)]*,\s*([\d.]+)\)/.exec(bg || '');
   ok((await item(p, 'i2')).deleted === true && (await item(p, 'i1')).done === true, 'tap on the words: nothing is undone');
 
   // a swipe down puts it away too, without pressing Undo
-  await L.tap(p, '[data-p="tick"][data-id="i6"]'); await L.settle(p, 300);
+  await L.tickPrep(p, '[data-p="tick"][data-id="i6"]'); await L.settle(p, 300);
   t = await box(p, '.p-toast');
   const x = 30 + (t ? (await p.evaluate(() => document.querySelector('.p-toast').getBoundingClientRect().left)) : 0), y = t ? t.top + t.h / 2 : 0;
   await p.mouse.move(x, y); await p.mouse.down(); await p.mouse.move(x, y + 25); await p.mouse.move(x, y + 60); await p.mouse.up();
@@ -67,7 +67,7 @@ const seeThrough = bg => { const m = /rgba\([^)]*,\s*([\d.]+)\)/.exec(bg || '');
   // an error has a red edge, no time line, and stays until OK (it went after 12 seconds before 4 Nov 2026)
   p = await L.open(b, '#/prep', { wait: 1500 });
   await p.evaluate(() => { window.__fake.mode = 'fail'; });
-  await L.tap(p, '[data-p="tick"][data-id="i3"]'); await L.settle(p, 800);
+  await L.tickPrep(p, '[data-p="tick"][data-id="i3"]'); await L.settle(p, 800);
   ok(await p.$('.p-toast.p-toast-bad') !== null && /Not saved/.test(await txt(p, '.p-toast-bad') || ''), 'error: the slip has the error look');
   ok(await p.evaluate(() => getComputedStyle(document.querySelector('.p-toast-bad'), '::before').content === 'none'), 'error: no time line');
   await p.clock.runFor(20000); await L.settle(p, 300);
@@ -79,7 +79,7 @@ const seeThrough = bg => { const m = /rgba\([^)]*,\s*([\d.]+)\)/.exec(bg || '');
 
   // on a laptop the slip is a docket at the bottom middle
   p = await L.open(b, '#/prep', { wait: 1500, width: 1280, height: 800 });
-  await L.tap(p, '[data-p="tick"][data-id="i1"]'); await L.settle(p, 300);
+  await L.tickPrep(p, '[data-p="tick"][data-id="i1"]'); await L.settle(p, 300);
   t = await box(p, '.p-toast');
   ok(t && t.w <= 545 && t.bottom <= 800 - 15 && !seeThrough(t.bg), '1280: a solid docket at the bottom middle (' + (t && t.w) + ' px wide)');
   ok(p.errors.length === 0, '1280: no page errors ' + p.errors.join(' | '));
@@ -88,7 +88,8 @@ const seeThrough = bg => { const m = /rgba\([^)]*,\s*([\d.]+)\)/.exec(bg || '');
   // the update notice is a slim solid band just under the top bar, over the page without moving it, away from the slip
   for (const w of [390, 1280]) {
     p = await L.open(b, '#/prep', { wait: 1500, width: w, height: w === 390 ? 844 : 800 });
-    await p.click('#nbr-i1 .nb-box'); await L.settle(p, 200); // a real tap: the book only reloads by itself before anyone touches it
+    // a real tap: the book only reloads by itself before anyone touches it (since 5 Nov 2026 the first tap puts you on the line)
+    await p.click('#nbr-i1 .nb-box'); await L.settle(p, 200);
     await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
     await L.waitFor(p, () => !!document.querySelector('.upd-bar'), null, 3000).catch(() => {});
     await p.evaluate(() => window.scrollTo(0, 0)); await L.settle(p, 400);

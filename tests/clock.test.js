@@ -29,7 +29,7 @@ const near = (a, b, ms) => typeof a === 'number' && Math.abs(a - b) <= ms;
   await p.fill('#p-text', 'Zest lemons');
   await p.press('#p-text', 'Enter');
   await L.settle(p, 800);
-  await p.click('[data-p="tick"][data-id="i2"]');
+  await L.tickPrep(p, '[data-p="tick"][data-id="i2"]');
   await L.settle(p, 800);
   s = await store(p);
   const added = Object.keys(s).filter(k => k.indexOf(fsKey(['days', today, 'items'])) === 0).map(k => s[k]).filter(x => x.text === 'Zest lemons')[0];

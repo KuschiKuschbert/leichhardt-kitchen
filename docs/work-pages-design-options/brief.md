@@ -67,5 +67,5 @@ The four pieces of B left for later, one pull request each, smallest first. The 
 | --- | --- | --- | --- |
 | R1 | Low and Out on order requests, Out first for chefs | this pull request | No rules change: the order line rules already take the field (a client shapes row proves it) |
 | R2 | Supplier groups on Orders for chefs; a supplier's order ticked only there | | Not built yet. Needs the read budget raised (a catalogue read per supplier a day) and where Pick supplier is remembered |
-| R3 | I'm on it: first tap stamps, second tap ticks | | Not built yet. New fields and a rules change, published first |
+| R3 | I'm on it: first tap stamps, second tap ticks | this pull request | The rules check only the new stamp fields, which no older page writes, so they publish with the merge |
 | R4 | Wall board on the shared kitchen tablet, view and tick | | Not built yet |

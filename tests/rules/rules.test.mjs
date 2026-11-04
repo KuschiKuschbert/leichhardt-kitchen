@@ -555,6 +555,19 @@ await ok(W([['config/main', { pastEdit: { n: Date.now() } }, true]], { id: 'sam'
 await ok(W([['config/main', { pastEdit: { n: 'now' } }, true]], { id: 'sam' }), false, 'pastEdit: the pings stamp is a number');
 await ok(W([['config/main', { pastEdit: { n: Date.now() } }, true]], { id: 'ann' }), false, 'pastEdit: staff cannot stamp the pings');
 await ok(W([['config/main', { pastEdit: { p: 'soon' } }, true]], { id: 'sam' }), false, 'pastEdit: times are numbers');
+// I'm on it (5 Nov 2026): a stamp names an active kitchen person, on an open line, never on a new line, with Tick
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'days/' + TODAY + '/items/on1'), line({ addedAt: Date.now() - 600000 })); });
+const ON = 'days/' + TODAY + '/items/on1', stamp = (id, name, x) => Object.assign({ onBy: name, onById: id, onAt: Date.now() }, x || {});
+await ok(W([[ON, stamp('ann', 'Ann'), true]], { id: 'ann' }), true, 'on it: Ann stamps herself on an open line');
+await ok(W([[ON, stamp('bo', 'Bo'), true]], { id: 'ann' }), true, 'on it: the shared device stamps the cook picked (Bo, recorded by Ann)');
+await ok(W([[ON, stamp('nobody', 'Nobody'), true]], { id: 'ann' }), false, 'on it: not someone off the staff list');
+await ok(W([[ON, stamp('ann', '', {}), true]], { id: 'ann' }), false, 'on it: a name is needed');
+await ok(W([[ON, stamp('ann', 'Ann', { onAt: Date.now() + 600000 }), true]], { id: 'ann' }), false, 'on it: no time ahead');
+await ok(W([[ON, stamp('ann', 'Ann', { onAt: 'now' }), true]], { id: 'ann' }), false, 'on it: the time is a number');
+await ok(W([[ON, { onBy: '', onById: '', onAt: 0 }, true]], { id: 'ann' }), true, 'on it: the stamp can be taken off (Undo)');
+await ok(W([['days/' + TODAY + '/items/on2', line({ addedAt: Date.now(), onBy: 'Ann', onById: 'ann', onAt: Date.now() })]], { id: 'ann' }), false, 'on it: a new line starts with nobody on it');
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'days/' + TODAY + '/items/on3'), line({ addedAt: Date.now() - 600000, done: true, doneBy: 'Ann', doneById: 'ann', doneAt: Date.now() - 60000 })); });
+await ok(W([['days/' + TODAY + '/items/on3', stamp('ann', 'Ann'), true]], { id: 'ann' }), false, 'on it: not on a line already ticked');
 // Wastage (22 Oct 2026): today's lines with the kitchen PIN, past days only for the head chef's Google account,
 // the review written by the head chef or a sous chef, the nightly summary read only
 const kday = ms => new Date(ms + 36000000).toISOString().slice(0, 10);
