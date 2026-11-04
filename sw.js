@@ -199,10 +199,17 @@ function shellRound(install) {
   return round;
 }
 function freshen(manual) {
-  // Update retry does not join a background round already older than the page's eight-second wait.
   if (fresh && fresh.alive) {
-    if (!manual || Date.now() - fresh.started < 8000) return fresh.promise;
-    expireShell(fresh);
+    // Update retry does not join a background round already older than the page's eight-second wait.
+    if (manual) { if (Date.now() - fresh.started < 8000) return fresh.promise; expireShell(fresh); }
+    // An opening joins a round only before its files are asked for (4 Nov 2026). After that the round can hold files
+    // from before a release that came out since, and finds nothing new, so this opening never heard lk-new. It gets one
+    // more round once that round ends, shared by every opening meanwhile. Unchanged files answer 304 and nothing is written.
+    else if (!fresh.asked) return fresh.promise;
+    else {
+      var round = fresh;
+      return round.next || (round.next = round.promise.then(function () { return freshen(); }));
+    }
   }
   fresh = shellRound(false); return fresh.promise;
 }
@@ -213,6 +220,8 @@ function freshRound(round, install) {
     var q = store.get('state'); q.onsuccess = function () { var s = q.result || { active: CACHE, previous: '', ticket: 0 }; s.ticket = (s.ticket || 0) + 1; round.ticket = s.ticket; store.put(s, 'state'); done(s); };
   })).then(function () { alive(); return chooseShell(); }).then(function (copy) {
     old = copy;
+    // from here an opening no longer joins this round (freshen())
+    round.asked = true;
     return Promise.all(shellFiles.map(function (file) {
       return Promise.all([fetch(file, { cache: 'no-cache', signal: round.controller.signal }), old ? old.cache.match(file) : null]).then(function (pair) {
         alive(); if (!pair[0].ok) throw new Error('Shell file unavailable');
