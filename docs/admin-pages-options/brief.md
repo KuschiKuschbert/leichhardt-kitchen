@@ -1,6 +1,6 @@
 # Admin pages redesign options
 
-Requested 4 November 2026. **Waiting for the head chef's choice.** No application code changes until then.
+Requested 4 November 2026. **Selected 4 November 2026: B, Four rooms, on the shared page kit** (the head chef took the recommendation). The build follows the steps under "Build steps", each in its own pull request. The baseline before the build is `main` at `ddf905e`.
 
 The head chef loves the Dashboard, but the other admin pages do not flow with its design. The request: a full update of the admin panel's pages, with three designs for a better and more modern organisation, each with pros and cons.
 
@@ -48,7 +48,7 @@ Recommendation: B on the shared page kit. It fixes both the look and the organis
 
 Who can see each page, private drafts, Back and Resume, acknowledged saves, record histories, the read budget (`tests/read-budget.test.js`) and the existing page ids inside the code, so old links and the Dashboard's tiles keep opening the right report. Nothing is removed. The comparison page has a table of where each of the 21 pages goes in each design.
 
-## If B is chosen
+## Build steps (B, chosen)
 
 Each its own pull request, with click tests at 390, 768 and 1280 px and the read budget check: 1. page kit; 2. four rooms in the rail and the phone room switch, page ids unchanged; 3. Today: To do with in-place tasks, the Dashboard under it; 4. Reports: one filter bar and the same report layout; 5. Team: person pages, with the role walk-through on the emulator; 6. Kitchen: settings rows, records and access; 7. remove the old chapter styles and update the notes. Keep a baseline tag on `main` first (CLAUDE.md, Big look changes).
 
