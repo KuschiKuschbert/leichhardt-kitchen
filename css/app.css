@@ -3410,7 +3410,7 @@ i.dsh-c-w { background: var(--dsh-w); } i.dsh-c-t { background: var(--dsh-t); }
 .w-rvbtn small { font-size: 0.75rem; font-weight: 500; color: var(--muted); }
 .w-ro { padding: 0 12px; }
 .w-sheet .w-review { margin: 0; max-width: none; }
-.w-sheet .sheet-x, .tr-sheet .sheet-x, .p-sheet .sheet-x { width: 100%; margin-top: 10px; }
+.w-sheet .sheet-x, .tr-sheet .sheet-x, .p-sheet .sheet-x, .o-sheet .sheet-x { width: 100%; margin-top: 10px; }
 .w-rpick { flex-wrap: nowrap; }
 .w-rbig { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); align-content: start; gap: 6px; }
 .w-rbig .w-rchip { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; min-height: 56px; height: auto; padding: 6px 10px; border-radius: 10px; text-align: left; white-space: normal; }
@@ -3420,10 +3420,10 @@ i.dsh-c-w { background: var(--dsh-w); } i.dsh-c-t { background: var(--dsh-t); }
 .w-rbig .w-rchip[aria-checked="true"] span { color: #fff; }
 .nb-t .w-again { display: flex; align-items: center; width: max-content; min-height: 36px; height: auto; margin-top: 6px; padding: 0 12px; font: 600 0.8125rem var(--body); }
 .nb-t .w-again.is-on { display: block; min-height: 0; padding: 2px 0; border: 0; font-size: 0.8125rem; font-weight: 600; color: var(--muted); }
-@media (min-width: 720px) { .w-sheet, .tr-sheet, .p-sheet { width: min(40rem, calc(100vw - 32px)); max-height: 86vh; max-height: 86dvh; } }
+@media (min-width: 720px) { .w-sheet, .tr-sheet, .p-sheet, .o-sheet { width: min(40rem, calc(100vw - 32px)); max-height: 86vh; max-height: 86dvh; } }
 /* A toast while a wastage sheet is open (3 Nov 2026): at the top of the screen, above the sheet, so its Undo can be
    tapped and the form under it stays clear */
-html:has(.w-sheet, .tr-sheet, .p-sheet) .p-toasts { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; z-index: 62; flex-direction: column; }
+html:has(.w-sheet, .tr-sheet, .p-sheet, .o-sheet) .p-toasts { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; z-index: 62; flex-direction: column; }
 
 /* Transfers, Clean notebook (3 Nov 2026, work pages redesign A): Still out first, with how long each earlier day's
    transfer has been out (.tr-age, darker from 7 days), the return tick on the left, and a pick-up in the Log a transfer
@@ -3452,3 +3452,17 @@ button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; curs
 .nb-why { display: inline-block; padding: 0 6px; border: 1.5px solid var(--muted); border-radius: 999px; font: 600 0.75rem var(--body); color: var(--muted); white-space: nowrap; }
 .nb-hd-tonight { margin-top: 0.8rem; border-top: 2px dashed var(--rule); padding-top: 0.5rem; }
 .nb-tonight-sd { margin: 0 0 0.3rem; }
+
+/* Orders, Clean notebook (3 Nov 2026, work pages redesign A): one list (today, then Waiting from earlier days), Ordered
+   today folded under its count, Add a line as a sheet (.o-sheet, like the prep list), and for chefs a date chip and
+   Delivery arrived in the row above the page. */
+@media (max-width: 719px) { .o-page { padding-bottom: 76px; } }
+.o-nav { align-items: center; flex-wrap: wrap; }
+.o-nav .o-deliv { text-decoration: none; }
+.o-ro { padding: 0 12px; }
+.o-wait { margin-top: 0.6rem; }
+.o-wait-h { margin-top: 0.4rem; }
+.o-done summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; list-style: none; }
+.o-done summary::-webkit-details-marker { display: none; }
+.o-done summary::after { content: ''; width: 8px; height: 8px; margin-left: 10px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }
+.o-done[open] summary::after { transform: rotate(-135deg); }

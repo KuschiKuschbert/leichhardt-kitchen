@@ -316,7 +316,7 @@ async function open(browser, hash, o) {
   // that the form is not there still means it; tests of the sheet itself use L.pLog() (tests/prep-a.test.js).
   for (const m of ['fill', 'press', 'type', 'focus', 'click', 'inputValue', 'getAttribute', '$eval']) {
     const orig = page[m].bind(page);
-    page[m] = async (sel, ...rest) => { if (typeof sel === 'string' && PREP_FORM.test(sel)) await prepForm(page); return orig(sel, ...rest); };
+    page[m] = async (sel, ...rest) => { if (typeof sel === 'string' && PREP_FORM.test(sel)) await prepForm(page, sel); return orig(sel, ...rest); };
   }
   const origLocator = page.locator.bind(page);
   page.locator = (sel, ...rest) => {
@@ -324,7 +324,7 @@ async function open(browser, hash, o) {
     if (typeof sel !== 'string' || !PREP_FORM.test(sel)) return loc;
     // count() is left alone, like page.$; the actions open the sheet first
     const acts = ['fill', 'press', 'type', 'focus', 'click', 'inputValue', 'evaluate', 'elementHandle', 'getAttribute'];
-    return new Proxy(loc, { get: (t, k) => acts.includes(k) ? async (...a) => { await prepForm(page); return t[k](...a); } : (typeof t[k] === 'function' ? t[k].bind(t) : t[k]) });
+    return new Proxy(loc, { get: (t, k) => acts.includes(k) ? async (...a) => { await prepForm(page, sel); return t[k](...a); } : (typeof t[k] === 'function' ? t[k].bind(t) : t[k]) });
   };
   page.loading = 0;   // requests still out, for settle()
   page.urls = [];     // every address the page asked for, in order (routed answers leave no resource timing)
@@ -485,13 +485,15 @@ async function pick(page, selector, value) {
   await settle(page, 250);
 }
 
-const PREP_FORM = /#p-(text|qty|section)\b|data-k="p-(text|qty|section)"/;
-async function prepForm(page) {
-  if (await page.$('.p-sheet #p-text') || !(await page.$('[data-p="write"]'))) return;
-  await pLog(page);
+// the prep list's and the order list's add forms are in Add a line sheets (3 Nov 2026, work pages redesign A)
+const PREP_FORM = /#p-(text|qty|section)\b|data-k="p-(text|qty|section)"|#o-(text|qty)\b|data-k="o-(text|qty)"/;
+async function prepForm(page, sel) {
+  const order = /o-(text|qty)/.test(sel || ''), open = order ? '[data-p="o-write"]' : '[data-p="write"]', box = order ? '.o-sheet #o-text' : '.p-sheet #p-text';
+  if (await page.$(box) || !(await page.$(open))) return;
+  if (order) await oLog(page); else await pLog(page);
 }
 async function clear(page, selector) {
-  if (PREP_FORM.test(selector)) await prepForm(page);
+  if (PREP_FORM.test(selector)) await prepForm(page, selector);
   const input = page.locator(selector).first();
   if (await input.getAttribute('data-smart-search')) {
     const button = input.locator('..').locator('.ux-search-clear');
@@ -542,4 +544,9 @@ async function pLog(page) {
   await page.evaluate(() => document.querySelector('[data-p="write"]').click());
   await waitFor(page, () => !!document.querySelector('.p-sheet #p-text'), null, 4000);
 }
-module.exports = { pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+async function oLog(page) {
+  if (await page.$('.o-sheet #o-text')) return;
+  await page.evaluate(() => document.querySelector('[data-p="o-write"]').click());
+  await waitFor(page, () => !!document.querySelector('.o-sheet #o-text'), null, 4000);
+}
+module.exports = { oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
