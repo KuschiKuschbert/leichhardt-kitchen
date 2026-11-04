@@ -4284,9 +4284,11 @@
   /* A line ticked on this phone stays where it is, struck through, for 3.5 seconds before it leaves the list. */
   var LINGER = 3500;
   function lingers(x) { return x.done && !x.deleted && x.doneById === S.who && now() - (x.doneAt || 0) < LINGER; }
-  function pageBody(items, date) {
-    /* ticked lines leave the list and show under Done today in Handy. Sections with nothing left to do are hidden. */
-    var shown = items.filter(function (x) { return (S.showRemoved || !x.deleted) && inTab(x); });
+  function pageBody(items, date, board) {
+    /* ticked lines leave the list and show under Done today in Handy. Sections with nothing left to do are hidden.
+       board: the wall board (wallOn()): every section, each in its own column, function platters in theirs, no removed
+       lines */
+    var shown = items.filter(function (x) { return board ? !x.deleted : (S.showRemoved || !x.deleted) && inTab(x); });
     shown.sort(sortItems);
     var order = [], seen = {}, twins = {};
     dupGroups(items).forEach(function (g) { twins[dupKey(g[0].text)] = g; });
@@ -4294,19 +4296,21 @@
     /* Tonight, for tomorrow (3 Nov 2026, work pages redesign A): on today's list, on All, the open lines written after
        tonight's list was started (cutFor(), the same cut the rollover uses) sit last under their own heading, because
        they go on tomorrow's list. No read: the cut comes from the day's own lines and summary/learned. */
-    var TONIGHT = '\u0001tonight', cut = !S.tab && date === dayNow() ? cutFor(date, items) : -1;
-    function secOf(x) { if (cut >= 0 && !x.done && !x.deleted && writtenLate(x, date, cut)) return TONIGHT; return S.tab === FN_TAB ? 'Function platters' : S.tab || x.station || ''; }
+    var TONIGHT = '\u0001tonight', FNS = 'Function platters', FNCOL = '\u0002fn', cut = !S.tab && date === dayNow() ? cutFor(date, items) : -1;
+    function secOf(x) { if (board && x.fn) return FNCOL; if (cut >= 0 && !x.done && !x.deleted && writtenLate(x, date, cut)) return TONIGHT; return S.tab === FN_TAB ? FNS : S.tab || x.station || ''; }
     shown.forEach(function (x) { var k = secOf(x); if (!seen[k]) { seen[k] = 1; order.push(k); } });
-    if (seen[TONIGHT]) order = order.filter(function (k) { return k !== TONIGHT; }).concat([TONIGHT]);
+    [FNCOL, TONIGHT].forEach(function (last) { if (seen[last]) order = order.filter(function (k) { return k !== last; }).concat([last]); });
     return order.map(function (sec) {
       var all = shown.filter(function (x) { return secOf(x) === sec; });
       var live = all.filter(function (x) { return !x.deleted; });
       var rows = all.filter(function (x) { return !(x.done && !x.deleted) || lingers(x); });
       if (!rows.length) return '';
-      if (sec === TONIGHT) return '<div class="nb-hd nb-hd-tonight"><span>Tonight, for tomorrow</span><span>' + live.length + '</span></div><p class="nb-sd nb-tonight-sd">On tomorrow\'s list. Tick here if it gets done tonight.</p>' +
+      var name = sec === FNCOL ? FNS : sec || (board ? 'No section' : ''), out;
+      if (sec === TONIGHT) out = '<div class="nb-hd nb-hd-tonight"><span>Tonight, for tomorrow</span><span>' + live.length + '</span></div><p class="nb-sd nb-tonight-sd">On tomorrow\'s list. Tick here if it gets done tonight.</p>' +
         '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, (x.station ? '<span class="nb-also">' + esc(x.station) + '</span>' : '') + alsoHTML(x, x.station || '', twins)); }).join('') + '</ul>';
-      return (sec ? '<div class="nb-hd"><span>' + esc(sec) + '</span><span>' + live.filter(function (x) { return x.done; }).length + '/' + live.length + '</span></div>' : '') +
-        '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, alsoHTML(x, sec, twins)); }).join('') + '</ul>';
+      else out = (name ? '<div class="nb-hd"><span>' + esc(name) + '</span><span>' + live.filter(function (x) { return x.done; }).length + '/' + live.length + '</span></div>' : '') +
+        '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, alsoHTML(x, sec === FNCOL ? FNS : sec, twins)); }).join('') + '</ul>';
+      return board ? '<section class="wb-col" aria-label="' + esc(sec === TONIGHT ? 'Tonight, for tomorrow' : name) + '">' + out + '</section>' : out;
     }).join('');
   }
   /* "Add from the recipes" opens a panel that floats over the list (it does not push the list or the add form around).
@@ -4481,6 +4485,12 @@
   function whoTopHTML() {
     return me() ? '' : '<div class="nb-top"><span></span><span class="p-links">' + notYouHTML() + '</span></div>';
   }
+  /* Wall board (5 Nov 2026, head chef, round 2 of the work pages redesign, as drawn in B): on the shared kitchen tablet,
+     today's prep list as one column per section, like dockets on the rail. View and tick: the rows and their ticks are
+     the list's own (rowHTML), so I'm on it and Who's on it? work the same. Wall board at the end of the section tabs
+     turns it on, List on the board turns it off. A choice for this tablet, kept in lk.wall ('1'): never out of date,
+     like the text size, and only a shared device reads it, so a personal phone always gets the list. */
+  function wallOn() { return shared() && S.name === 'prep' && S.date === dayNow() && lsGet('lk.wall') === '1'; }
   function listHTML() {
     var today = dayNow();
     if (S.date !== today && !canBrowse() && !S.user) { S.date = today; S.tab = ''; watchItems(); }
@@ -4491,13 +4501,16 @@
     var fnLive = S.items.filter(function (x) { return !x.deleted && x.fn; }), fnOpen = fnLive.filter(function (x) { return !x.done; }).length;
     var daily = S.items.filter(function (x) { return !x.deleted && !x.fn; });
     if (S.tab === FN_TAB && !fnLive.length) S.tab = '';
+    var wall = wallOn();
+    if (wall) S.tab = '';
     var live = S.tab === FN_TAB ? fnLive : daily, doneN = live.filter(function (x) { return x.done; }).length;
     var removed = S.items.filter(function (x) { return x.deleted; });
     var secs = {}, tabs = [];
     daily.forEach(function (x) { [x.station].concat(x.also || []).forEach(function (n) { if (n && !secs[n]) { secs[n] = 1; tabs.push(n); } }); });
     var fnTab = fnLive.length ? '<button type="button" class="nb-tab nb-tab-fn" data-p="tab" data-v="' + FN_TAB + '" aria-pressed="' + (S.tab === FN_TAB) + '">Functions' + (fnOpen ? ' <span class="nb-tab-n">' + fnOpen + '</span>' : '') + '</button>' : '';
     var tabHTML = tabs.length || fnTab ? '<nav class="nb-tabs" aria-label="Sections"><button type="button" class="nb-tab" data-p="tab" data-v="" aria-pressed="' + !S.tab + '">All</button>' +
-      tabs.map(function (t) { return '<button type="button" class="nb-tab" data-p="tab" data-v="' + esc(t) + '" aria-pressed="' + (S.tab === t) + '">' + esc(t) + '</button>'; }).join('') + fnTab + '</nav>' : '';
+      tabs.map(function (t) { return '<button type="button" class="nb-tab" data-p="tab" data-v="' + esc(t) + '" aria-pressed="' + (S.tab === t) + '">' + esc(t) + '</button>'; }).join('') + fnTab +
+      (shared() && S.date === today && tabs.length > 1 ? '<button type="button" class="nb-tab nb-tab-wall" data-p="wall" data-v="1">Wall board</button>' : '') + '</nav>' : '';
     // Closing soon and the waste review note: above the lines on phones and tablets (.nb-lc), at the top of Handy on big
     // screens (.nb-rc), so they do not push the lines down; CSS shows one of the two
     // (with no signal and the day not loaded, Closing soon gives no count of the lines left open: it would count only
@@ -4530,6 +4543,15 @@
     // the add form as a sheet (3 Nov 2026), drawn with the page from S.pLog like Log waste, so a redraw keeps what is typed
     var pSheet = add && S.pLog ? '<div class="sheet-bg" data-p="p-log-close"></div><div class="sheet p-sheet" role="dialog" aria-modal="true" aria-labelledby="p-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="p-log-h">Add to prep</h3>' + add +
       (!can('del') ? '<p class="hint nb-who">Wrote the wrong thing? Undo it straight away, or ask the head chef or a sous chef to remove it.</p>' : '') + '<button type="button" class="btn sheet-x" data-p="p-log-close">Close</button></div>' : '';
+    if (wall) {
+      // the board has no Handy page: everything ticked off says so on the board itself
+      if (live.length && doneN === live.length && !fnOpen) todayEmpty = '<p class="nb-empty">Everything on today\'s list is ticked off.</p>';
+      return whoTopHTML() + badgeStrip() + '<section class="wb" aria-labelledby="rtitle"><header class="nb-ph wb-h"><div class="wb-t"><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
+        (S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>') +
+        '<button type="button" class="chip wb-list" data-p="wall" data-v="0">List</button>' + (add ? dockBtn('nb-addline', 'write', 'Add a line') : '') + '</header>' +
+        (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') + (flags ? '<div class="wb-flags">' + flags + '</div>' : '') + offNote +
+        '<div class="wb-cols">' + pageBody(S.items, S.date, true) + '</div>' + todayEmpty + '</section>' + pSheet;
+    }
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today<span class="nb-qsub"> and quick add</span>' : 'Done on ' + esc(dayShort(S.date))) + '</span></div></header>' +
       '<div class="nb-body nb-side">' + sideH + '</div></section>';
     return whoTopHTML() +
@@ -9916,6 +9938,8 @@
     if (a === 'day') { S.date = shift(S.date, +el.getAttribute('data-d')); S.tab = ''; watchItems(); draw(); return; }
     if (a === 'today') { S.date = dayNow(); S.tab = ''; watchItems(); draw(); return; }
     if (a === 'tab') { S.tab = el.getAttribute('data-v') || ''; draw(); return; }
+    // the wall board on the shared kitchen tablet (wallOn()), kept for this tablet; focus goes to the way back
+    if (a === 'wall') { lsSet('lk.wall', el.getAttribute('data-v') === '1' ? '1' : ''); S.tab = ''; draw(); var wb = S.root && S.root.querySelector('[data-p="wall"]'); if (wb) wb.focus(); return; }
     if (a === 'tick') { tick(dt || S.date, id); return; }
     if (a === 'del') { removeItem(dt || S.date, id, false); return; }
     if (a === 'restore') { removeItem(dt || S.date, id, true); return; }
