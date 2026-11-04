@@ -58,6 +58,7 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   p = await L.open(b, '#/manage/draw/new/burger/plate', { who: 'ann', extra: cfg(), wait: 1400, width: 1280, height: 900 });
   await wait(p, () => !!document.querySelector('.dw-svg'), null, 15000);
   ok(await p.$('.dw-svg') !== null && await p.$('.dw-panel #dw-q') !== null, 'new drawing: the canvas opens with the library');
+  ok(await p.evaluate(() => { const d = document.querySelector('.dw-drawer'), s = document.querySelector('.dw-svg'); if (!d || !s) return false; const a = d.getBoundingClientRect(), c = s.getBoundingClientRect(); return a.left >= c.right - 1 && a.right <= innerWidth + 1; }), 'computer: the library opens in a drawer on the right, beside the canvas');
   ok(await p.evaluate(() => !!document.querySelector('.dw-surf circle, .dw-surf path')), 'new drawing: a dinner plate is under it');
   await p.fill('#dw-q', 'rump'); await L.settle(p, 300);
   ok(await p.$('.dw-tile[data-v="rump"]') !== null, 'library search: rump finds the rump steak');
@@ -88,13 +89,13 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   w = await W(p);
   ok(Math.abs(w.els[1].r) > 30, 'turn handle: the piece turns (' + w.els[1].r + ' degrees)');
   // copy, flip, layers, delete, undo and redo
-  await p.click('[data-dw="dup"]'); await L.settle(p, 150);
+  await L.dwShow(p, '[data-dw="dup"]'); await p.click('[data-dw="dup"]'); await L.settle(p, 150);
   w = await W(p); ok(w.n === 3 && w.sel[0] === 2, 'Duplicate makes a copy and picks it');
-  await p.click('[data-dw="flip"]'); await L.settle(p, 150);
+  await L.dwShow(p, '[data-dw="flip"]'); await p.click('[data-dw="flip"]'); await L.settle(p, 150);
   w = await W(p); ok(w.els[2].flip === true, 'Flip');
-  await p.click('[data-dw="back"]'); await L.settle(p, 150);
+  await L.dwShow(p, '[data-dw="back"]'); await p.click('[data-dw="back"]'); await L.settle(p, 150);
   w = await W(p); ok(w.els[0].a === 'chicken-schnitzel@1' && w.els[0].flip === true && w.sel[0] === 0, 'Back puts the picked piece behind the others');
-  await p.click('[data-dw="front"]'); await L.settle(p, 150);
+  await L.dwShow(p, '[data-dw="front"]'); await p.click('[data-dw="front"]'); await L.settle(p, 150);
   w = await W(p); ok(w.els[2].flip === true && w.sel[0] === 2, 'Front brings it forward again');
   await p.click('[data-dw="del"]'); await L.settle(p, 150);
   w = await W(p); ok(w.n === 2, 'Delete');
@@ -123,12 +124,12 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   await L.choose(p, '[data-dw="setIng"][data-v="Crumbed chicken thigh"]'); await L.settle(p, 150);
   w = await W(p); ok(w.els[1].ing === 'Crumbed chicken thigh', 'Which ingredient: the schnitzel is labelled Crumbed chicken thigh');
   // text, line and shapes
-  await p.click('[data-dw="text"]'); await L.settle(p, 150);
+  await L.dwShow(p, '[data-dw="text"]'); await p.click('[data-dw="text"]'); await L.settle(p, 150);
   await p.fill('[data-dwf="el.s"]', 'Pass side'); await L.settle(p, 150);
   w = await W(p); ok(w.els[w.n - 1].t === 'text' && w.els[w.n - 1].s === 'Pass side', 'Text: a label with words');
-  await p.click('[data-dw="arrow"]'); await L.settle(p, 150);
+  await L.dwShow(p, '[data-dw="arrow"]'); await p.click('[data-dw="arrow"]'); await L.settle(p, 150);
   w = await W(p); ok(w.els[w.n - 1].t === 'line' && w.els[w.n - 1].arrow, 'Arrow');
-  await p.click('[data-dw="ellipse"]'); await L.settle(p, 150);
+  await L.dwShow(p, '[data-dw="ellipse"]'); await p.click('[data-dw="ellipse"]'); await L.settle(p, 150);
   w = await W(p); ok(w.els[w.n - 1].t === 'ellipse', 'Oval');
   await p.click('[data-dw="del"]'); await L.settle(p, 150);
   // the servingware swaps under the food
@@ -140,7 +141,8 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   await L.choose(p, '[data-dw="wfam"][data-v="plate"]'); await L.settle(p, 150);
   await L.choose(p, '.dw-ware .dw-tile >> nth=0'); await L.settle(p, 200);
   w = await W(p); ok(w.surf.fam === 'plate' && w.surf.size === 30, 'Servingware: back to the dinner plate');
-  // in this recipe, not on the plate yet: one tap adds it, labelled
+  // in this recipe, not on the plate yet: one tap adds it, labelled. The chips open with Add (3 Nov 2026, the studio)
+  if (await p.getAttribute('[data-dw="panel"][data-v="lib"]', 'aria-expanded') !== 'true') { await p.click('[data-dw="panel"][data-v="lib"]'); await L.settle(p, 200); }
   const chip = await p.$('.dw-miss .chip');
   ok(chip !== null, 'the ingredients not on the plate yet show as chips');
   // check the drawing
@@ -201,7 +203,7 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   p = await L.open(b, '#/manage/draw/new/burger/side', { who: 'ann', extra: cfg(), wait: 1400, width: 1280, height: 900 });
   await wait(p, () => !!document.querySelector('.dw-svg'), null, 15000);
   await p.evaluate(() => { window.LK_DRAW.addItem('rump', { x: 0, y: -10, ing: 'Crumbed chicken thigh' }); window.LK_DRAW.addItem('sausage', { x: 30, y: -30, ing: 'Burger bun' }); });
-  await p.click('[data-dw="labels"]'); await L.settle(p, 200);
+  await L.dwShow(p, '[data-dw="labels"]'); await p.click('[data-dw="labels"]'); await L.settle(p, 200);
   w = await W(p);
   ok(w.els.filter(e => e.t === 'text' && e.auto).length === 2 && w.els.some(e => e.t === 'text' && e.s === 'Burger bun' && e.lx != null), 'Label everything: a label with a line for each part');
   await p.click('[data-dw="save"]');
@@ -219,12 +221,12 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   await wait(p, () => !!document.querySelector('[data-mg="draw"][data-v="burger-plate"]'), null, 10000);
   ok(await p.$('[data-mg="draw"][data-v="burger-plate"]') !== null && await p.$('[data-mg="draw"][data-v="new:side"]') !== null, 'recipe form: Change this drawing and Draw the side view in the book');
   const k = await p.evaluate(() => [...document.querySelectorAll('[data-f$=".name"][data-f^="ing."]')].findIndex(x => x.value === 'Crumbed chicken thigh'));
-  await p.fill('[data-f="ing.' + k + '.name"]', 'Crumbed thigh'); await L.settle(p, 500);
+  await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k + '.name"]', 'Crumbed thigh'); await L.settle(p, 500);
   await p.click('[data-mg="save"]'); await wait(p, () => /Saved/.test((document.querySelector('.mg-toasts .p-toast') || {}).textContent || ''));
   s = await store(p);
   const pin = ((s[fsKey(['recipes', 'burger'])] || { r: {} }).r.pins || [])[0] || {};
   ok(pin.label === 'Crumbed thigh' && pin.ing === 'Crumbed thigh', 'rename: the Pass label made from the drawing follows the new name');
-  await p.click('[data-mg="draw"][data-v="burger-plate"]');
+  await L.reveal(p, '[data-mg="draw"][data-v="burger-plate"]'); await p.click('[data-mg="draw"][data-v="burger-plate"]');
   await wait(p, () => !!(window.LK_DRAW && window.LK_DRAW.open() && document.querySelector('.dw-svg')), null, 15000);
   ok((await W(p)).els.some(e => e.ing === 'Crumbed thigh'), 'rename: the part on the plate follows it too');
   // the drawing in the book still has the old name: Save is on, and the bar says why (29 Oct 2026)
@@ -238,6 +240,24 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   ok(!(await L.overflow(p)), 'phone: no sideways scroll');
   await p.click('.dw-tile[data-dw="add"] >> nth=0'); await L.settle(p, 200);
   ok((await W(p)).n === 1, 'phone: a tap on a library drawing puts it on the plate');
+  // the studio (3 Nov 2026): full screen, one dock, the picked part's bar on screen above it, one drawer
+  const box = sel => p.evaluate(s => { const e = document.querySelector(s); if (!e) return null; const r = e.getBoundingClientRect(); return { t: r.top, b: r.bottom, l: r.left, r: r.right, w: innerWidth, h: innerHeight }; }, sel);
+  let bx = await box('.dw-studio');
+  ok(bx && bx.t <= 0 && bx.b >= bx.h - 1 && bx.l <= 0 && bx.r >= bx.w - 1 && await p.evaluate(() => getComputedStyle(document.querySelector('.dw-studio')).position === 'fixed'), 'studio: the drawing fills the screen over the book\'s bars');
+  ok(await p.evaluate(() => { const d = [...document.querySelectorAll('.dw-dock button')]; return d.length >= 5 && d.every(x => { const r = x.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; }); }), 'studio: every dock button is on screen');
+  if (await p.$('.dw-drawer')) { await p.click('.dw-drawer [data-dw="shut"]'); await L.settle(p, 200); }
+  ok(!(await p.$('.dw-drawer')), 'studio: Done closes the drawer');
+  await p.click('.dw-el[data-i="0"]'); await L.settle(p, 200);
+  const sb = await box('.dw-selbar'), dock = await box('.dw-dock');
+  ok(sb && dock && sb.t >= 0 && sb.b <= dock.t && sb.l >= 0 && sb.r <= sb.w, 'phone: the picked part\'s bar is on screen, above the dock (' + JSON.stringify(sb) + ')');
+  ok(await p.$('.dw-selbar .dw-del') !== null && await p.$('.dw-selbar [data-dw="none"]') !== null && await p.$('.dw-selbar [data-v="pmore"]') !== null, 'phone: the part\'s bar has More, a red Delete and Done');
+  await p.click('.dw-dock [data-v="lib"]'); await L.settle(p, 200);
+  ok(await p.$('.dw-drawer') !== null && await p.getAttribute('.dw-dock [data-v="lib"]', 'aria-expanded') === 'true', 'studio: Add opens the library in the drawer');
+  await p.keyboard.press('Escape'); await L.settle(p, 200);
+  ok(!(await p.$('.dw-drawer')) && await p.$('.dw-selbar') !== null, 'studio: Escape closes the drawer first and keeps the part picked');
+  await p.keyboard.press('Escape'); await L.settle(p, 200);
+  ok(!(await p.$('.dw-selbar')), 'studio: Escape again lets go of the part');
+  ok(!(await L.overflow(p)) && errs(p).length === 0, 'studio: no sideways scroll and no page errors ' + errs(p).join(' | '));
   await p.context().close();
 
   await b.close();

@@ -281,7 +281,7 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
   function busy(msg) {
     if (!barText) return;
     clearTimeout(calm);
-    if (window.LK_MOTION) barText.innerHTML = window.LK_MOTION.label(msg, 'chef', navigator.onLine === false ? 'still' : 'busy'); else barText.textContent = msg;
+    if (window.LK_MOTION) barText.innerHTML = window.LK_MOTION.label(msg, 'chef', 'busy'); else barText.textContent = msg;
     barBtn.textContent = 'Update now';
     calm = setTimeout(reset, 12000);
   }
@@ -381,21 +381,30 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
      The reload after Discard and update is the one the person already said yes to, so for a moment
      around it letGo() is true and the book does not ask again. Date.now(): time passing on the phone. */
   var letGoAt = 0;
-  window.LK_UPDATE = { now: updateNow, letGo: function () { return !!letGoAt && Date.now() - letGoAt < 3000; } };
+  /* Settings, About and help (3 Nov 2026, docs/settings-options/brief.md): state() says whether this copy is the newest
+     the book has heard of ('ready' when an update was found, 'current' after an answer, '' before one); copied() is when
+     the copy running was published (its Last-Modified, ms, 0 when not known yet); check() is Check for an update: the same
+     look as the automatic one (a header-only request, no Firestore) and it answers 'ready', 'current' or 'nosignal'. A new
+     version found this way shows the Update now strip like any other. */
+  window.LK_UPDATE = { now: updateNow, letGo: function () { return !!letGoAt && Date.now() - letGoAt < 3000; },
+    state: function () { return found ? 'ready' : base === null ? '' : 'current'; },
+    copied: function () { var t = base ? Date.parse(base.split('|')[0]) : NaN; return isFinite(t) ? t : 0; },
+    check: function () { return check(false).catch(function () { return 'nosignal'; }); } };
   function check(returned) {
     lastCheck = Date.now();
-    Promise.all([stamp(), savedAt]).then(function (x) {
+    return Promise.all([stamp(), savedAt]).then(function (x) {
       var s = x[0], was = x[1];
-      if (!s || s === '|') return;
+      if (!s || s === '|') return 'nosignal';
       // the first answer: the saved copy this page opened from, or with none the version running
       if (base === null) base = was && was !== '|' ? was : s;
       // back after 5 minutes away with an update already found (the worker's lk-new, so the server's stamp is the one
       // this look already knew): it updates now, as it does for a stamp that changed. It used to wait for 2 minutes
       // untouched, so a cook who tapped straight away kept the old version.
-      if (s === base) { if (found && returned && !lkTyping()) reloadNow(false, true); return; }
+      if (s === base) { if (found && returned && !lkTyping()) reloadNow(false, true); return found ? 'ready' : 'current'; }
       found = true;
       if (returned && !lkTyping()) reloadNow(false, true); else showBar();
-    });
+      return 'ready';
+    }).then(function (r) { try { window.dispatchEvent(new Event('lk-upd')); } catch (e) {} return r; });
   }
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); return; }
@@ -428,6 +437,7 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
     if (e.data !== 'lk-new') return;
     if (shellUnavailable) { shellUnavailable = false; if (barText) reset(); }
     found = true;
+    try { window.dispatchEvent(new Event('lk-upd')); } catch (err) {}
     if (Date.now() - opened < 8000 && lkTouch <= opened && !lkTyping() && navigator.onLine !== false) {
       try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) { showBar(); return; } localStorage.setItem('lk.upd.last', String(Date.now())); } catch (err) {}
       location.reload();

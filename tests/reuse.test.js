@@ -52,20 +52,22 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   await p.click('[data-dw="undo"]'); await L.settle(p, 200);
   // split into pieces
   await p.click('.dw-el[data-i="0"]'); await L.settle(p, 200);
-  ok(await p.$('.dw-selbar [data-dw="split"]') !== null, 'split: offered for the picture');
-  await p.click('.dw-selbar [data-dw="split"]'); await L.settle(p, 400);
+  // Split sits under the picked part's More (3 Nov 2026, the studio)
+  await L.dwShow(p, '[data-dw="split"]');
+  ok(await p.$('[data-dw="split"]') !== null, 'split: offered for the picture');
+  await p.click('[data-dw="split"]'); await L.settle(p, 400);
   w = await S(p);
   ok(w.els.length > 5 && w.els.every(e => e.t === 'raw' && e.bx), 'split: the picture is ' + w.els.length + ' pieces, each with its own box');
   const bx = await p.evaluate(() => { const r = window.LK_DRAW.render, d = window.LK_DRAW.state().d; return d.els.map(e => r.bbox(e)); });
   ok(bx.every(q => q[0] > -125 && q[2] < 125 && q[1] > -125 && q[3] < 125), 'split: every piece stays where it was on the plate');
   await shot(p, 'split');
   // a piece as a library piece: picked, named, saved; the search finds it
-  await p.click('[data-dw="many"]'); await L.settle(p, 100);
+  await L.dwShow(p, '[data-dw="many"]'); await p.click('[data-dw="many"]'); await L.settle(p, 100);
   await p.click('[data-dw="panel"][data-v="parts"]'); await L.settle(p, 200);
   const n = w.els.length;
   await p.click('.dw-parts [data-dw="pick"][data-v="' + (n - 1) + '"]'); await L.settle(p, 100);
   await p.click('.dw-parts [data-dw="pick"][data-v="' + (n - 2) + '"]'); await L.settle(p, 100);
-  await p.click('.dw-selbar [data-dw="piece"]'); await L.settle(p, 200);
+  await L.dwShow(p, '[data-dw="piece"]'); await p.click('[data-dw="piece"]'); await L.settle(p, 200);
   ok(await p.$('#dw-h-pc') !== null && await p.$('.dw-pc-prev svg') !== null, 'library piece: the form shows what will be saved');
   await p.fill('[data-dwf="pc.name"]', 'Leichhardt burger top');
   await L.pick(p, '[data-dwf="pc.cat"]', 'bread');
@@ -78,7 +80,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   ok(await p.evaluate(() => window.LK_LIB.search('leichhardt burger top').some(it => it.name === 'Leichhardt burger top' && it.mine) && window.LK_LIB.search('house bun lid').length > 0), 'library piece: the search finds it by its name and its words');
   ok(await p.$('.dw-tile[data-v^="my-"]') !== null, 'library piece: shown in the library');
   // save as a template
-  await p.click('[data-dw="panel"][data-v="tpl"]'); await L.settle(p, 200);
+  await L.dwShow(p, '[data-dw="panel"][data-v="tpl"]'); await p.click('[data-dw="panel"][data-v="tpl"]'); await L.settle(p, 200);
   await p.fill('[data-dwf="tplname"]', 'Burger and chips, pieces');
   await p.click('[data-dw="tpl-save"]');
   await saved(p);
@@ -112,7 +114,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   // Use for another recipe: a copy of the rump's drawing opens for the 500 g rump; the rump's stays as it was
   p = await open('#/manage/draw/rump-250-plate', store2);
   await wait(p, () => window.LK_DRAW.state().d.els.length > 0, null, 10000);
-  await p.click('[data-dw="panel"][data-v="reuse"]'); await L.settle(p, 200);
+  await L.dwShow(p, '[data-dw="panel"][data-v="reuse"]'); await p.click('[data-dw="panel"][data-v="reuse"]'); await L.settle(p, 200);
   await L.pick(p, '[data-dwf="reuse"]', 'rump-500');
   await p.click('[data-dw="reuse-go"]');
   await wait(p, () => { const d = window.LK_DRAW.state().d; return !!d && d.rid === 'rump-500' && d.els.length > 0; }, null, 10000);
@@ -165,8 +167,8 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
 
   // the manage page: Templates and Made in the book list them; Hide takes one out of the editor
   p = await L.open(b, '#/manage', { who: 'ann', extra: Object.assign({}, store3, cfg()), wait: 1200 });
-  await wait(p, () => !!document.querySelector('[data-mg="chip"][data-v="templates"]'), null, 10000);
-  await L.choose(p, '[data-mg="chip"][data-v="templates"]');
+  await wait(p, () => !!document.querySelector('[data-mg="kind"][data-v="templates"]'), null, 10000);
+  await L.choose(p, '[data-mg="kind"][data-v="templates"]');
   await wait(p, () => !!document.querySelector('[data-mg="mine-hide"]'));
   ok(/Burger and chips, pieces/.test(await txt(p, '.mg-list') || ''), 'manage: Templates lists the template');
   await p.click('[data-mg="mine-hide"]'); await L.settle(p, 100);
@@ -175,7 +177,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   s = await store(p);
   const tpl2 = s[tplKey] || {};
   ok(tpl2.removed === true && tpl2.v === 2 && tpl2.els.length === n, 'manage: Hide (tapped twice) saves version 2, hidden, the rest kept');
-  await L.choose(p, '[data-mg="chip"][data-v="mylib"]');
+  await L.choose(p, '[data-mg="kind"][data-v="mylib"]');
   await wait(p, () => /Leichhardt burger top/.test((document.querySelector('.mg-list') || {}).textContent || ''));
   ok(/Leichhardt burger top/.test(await txt(p, '.mg-list') || '') && /Pie plate, cream/.test(await txt(p, '.mg-list') || ''), 'manage: Made in the book lists the pieces and the servingware');
   ok(!errs(p).length, 'manage: no page errors ' + errs(p).join(' | '));

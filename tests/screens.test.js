@@ -13,7 +13,8 @@ const cfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'so
   await p.click('.wtop-who'); await L.settle(p, 200);
   const bg = await p.evaluate(() => { const e = document.querySelector('.wm-bg'); return e ? getComputedStyle(e).backgroundColor : ''; });
   ok(/rgba\(28, 29, 31, 0\.45\)/.test(bg), 'chef menu: the page behind is dimmed (' + bg + ')');
-  await p.mouse.click(10, 800); await L.settle(p, 200);
+  // since 3 Nov 2026 the menu is a sheet from the bottom on a phone: the dimmed page is above it
+  await p.mouse.click(10, 150); await L.settle(p, 200);
   ok(!(await p.$('.wm')), 'chef menu: a tap on the dimmed page closes it');
   // the section tabs on a phone fade at their edge
   const mask = await p.evaluate(() => { const e = document.querySelector('.nb-tabs'); if (!e) return 'none'; const s = getComputedStyle(e); return s.maskImage || s.webkitMaskImage || 'none'; });
@@ -30,6 +31,10 @@ const cfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'so
   // the recipe link: a box that finds recipes as you type, from one list for the whole form
   p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra: cfg(), wait: 1500 });
   await L.waitFor(p, () => !!document.getElementById('mg-name'), null, 10000);
+  // the link box sits behind an ingredient row's arrow (3 Nov 2026): open the first row without a link
+  const k0 = await p.evaluate(() => LK_MG && document.querySelectorAll('.mg-ing').length ? [...document.querySelectorAll('.mg-ing')].findIndex(li => !li.querySelector('.mg-ing-ln')) : -1);
+  await L.openRow(p, k0);
+  await L.waitFor(p, () => !!document.querySelector('input.mg-link + .ux-picker-trigger'), null, 5000).catch(() => {});
   ok(await p.evaluate(() => document.querySelectorAll('input.mg-link:not([list]) + .ux-picker-trigger').length > 0), 'manage: recipe links keep free entry and offer an adaptive picker');
   ok(await p.evaluate(() => document.querySelectorAll('#mg-rx option').length) > 50, 'manage: one list of recipes for the whole form');
   const k = await p.evaluate(() => [...document.querySelectorAll('input.mg-link[data-fl^="ing."]')].findIndex(e => !e.getAttribute('data-id')));

@@ -2,7 +2,9 @@
 // tell whether the minutes went out. The button said nothing, the register still showed the older minutes. Now the
 // button says Publishing..., a save with no answer after 4 s says it is waiting for the signal, and a publish that went
 // through says so on screen, in a toast and in the register (with its time). A refused publish or missing attendance
-// is said where the head chef is looking, on a phone with a long staff list.
+// is said where the head chef is looking, on a phone with a long staff list. Since 4 Nov 2026 Publishing... is on the
+// button only, the button says Published with a tick before the form closes, and a refusal makes it Try again with
+// the reason in red.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -47,15 +49,17 @@ const store = p => p.evaluate(() => window.__fake.dump());
   await p.click('[data-p="mn-pub"]'); await L.settle(p, 200);
   ok(/Publishing\.\.\./.test(await txt(p, '[data-p="mn-pub"]') || ''), 'publishing: the button says Publishing...');
   s = await say(p);
-  ok(s && /^Publishing\.\.\.$/.test(s.t), 'publishing: the message says Publishing... (' + (s && s.t) + ')');
+  ok(!s, 'publishing: Publishing... is not said again under the button (' + (s && s.t) + ')');
   await L.waitFor(p, () => /Waiting for the signal/.test((document.querySelector('.mn-say:not(:empty)') || {}).textContent || ''), null, 7000).catch(() => {});
   s = await say(p);
   // 27 Oct 2026: a write waiting for the signal lives only in this tab's memory, so it says to keep the book open, not "kept on this device"
   ok(s && /Waiting for the signal\. Keep the book open: the minutes go to the team when the signal is back/.test(s.t) && !/kept on this device/.test(s.t) && s.seen, 'no answer after 4 s: it says it is waiting for the signal and to keep the book open, on screen (' + JSON.stringify(s) + ')');
   ok(!!(await p.$('.mn-form')), 'still waiting: the form stays open');
 
-  // the signal is back: the publish goes through
+  // the signal is back: the publish goes through, Published on the button, then the form closes
   await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
+  await L.waitFor(p, () => { const b = document.querySelector('[data-p="mn-pub"]'); return !!(b && b.querySelector('.ink-icon[data-state="done"]')); }, null, 3000).catch(() => {});
+  ok(/^Published$/.test(await txt(p, '[data-p="mn-pub"]') || ''), 'published: the button says Published with a tick before the form closes (' + await txt(p, '[data-p="mn-pub"]') + ')');
   await L.waitFor(p, () => /published at/.test((document.querySelector('.mn-say:not(:empty)') || {}).textContent || ''), null, 5000).catch(() => {});
   s = await say(p);
   ok(s && /^Minutes 02 published at \d\d:\d\d\. Staff can read and sign them now\.$/.test(s.t) && s.seen, 'published: the message names the minutes and the time, on screen (' + JSON.stringify(s) + ')');
@@ -78,6 +82,7 @@ const store = p => p.evaluate(() => window.__fake.dump());
   await p.click('[data-p="mn-pub"]'); await L.settle(p, 400);
   s = await say(p);
   ok(s && /^Not published\. Only the head chef can write minutes/.test(s.t) && s.seen, 'refused: it says Not published, on screen (' + JSON.stringify(s) + ')');
+  ok(await p.$eval('.mn-say:not(:empty)', e => e.classList.contains('p-err') && e.getAttribute('role') === 'alert').catch(() => false) && /^Try again$/.test(await txt(p, '[data-p="mn-pub"]') || ''), 'refused: the reason is red and the button says Try again');
   ok(/Probe every chicken/.test(await p.$eval('[data-k="mn-decisions"]', e => e.value).catch(() => '')), 'refused: the form keeps what was written');
 
   ok(!(await L.overflow(p)), 'minutes publish: no sideways scroll');

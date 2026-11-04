@@ -357,7 +357,8 @@ async function chefItems(page) {
   await page.click('.wtop-who'); await settle(page, 150);
   const l = await page.evaluate(() => [...document.querySelectorAll('.wm .wm-a')].map(e => e.getAttribute('data-v') || (e.getAttribute('data-who') === 'out' ? 'out' : (e.getAttribute('href') || '').replace('#/', ''))));
   await page.keyboard.press('Escape'); await settle(page, 100);
-  return l;
+  // Sign out sits on the person card at the top since 3 Nov 2026; the list keeps it last, as the menu had it before
+  return l.filter(x => x !== 'out').concat(l.includes('out') ? ['out'] : []);
 }
 /* Admin in the chef mark's menu (21 Oct 2026): 'signed' (Google sign-in done), 'outline' (Head chef PIN only) or 'none'. */
 async function admItem(page) {
@@ -367,10 +368,28 @@ async function admItem(page) {
   await page.keyboard.press('Escape'); await settle(page, 100);
   return s;
 }
+/* Settings rows open in place (3 Nov 2026, docs/settings-options/brief.md): opens the row with this id if it is folded,
+   so its control can be tapped. The controls are on the page while folded, just hidden. */
+async function setRow(page, id) {
+  const b = page.locator('[data-act="strow"][data-val="' + id + '"]');
+  await b.waitFor({ timeout: 8000 });
+  if (await b.getAttribute('aria-expanded') !== 'true') { await b.click(); await settle(page, 100); }
+}
 async function chef(page, v) {
   await page.evaluate(() => { const g = document.querySelector('.nt-got'); if (g) g.click(); });
   await page.click('.wtop-who'); await settle(page, 150);
   await page.click('.wm [data-who="open"][data-v="' + v + '"]'); await settle(page, 400);
+}
+/* Who is signed in on this phone (3 Nov 2026: the "Writing as" row went from the four work pages; the chef hat says it). */
+const whoIs = page => page.evaluate(() => (window.LK_PREP && window.LK_PREP.whoName && window.LK_PREP.whoName()) || '');
+/* "Not you?" since 3 Nov 2026: the person card's Sign out in the chef hat menu. Opens the menu if it is closed and taps
+   it once. Returns the line under it: '' once signed out, "Not saved yet. Tap again to sign out" (or "Not sent yet.")
+   when the first tap only asks. */
+async function notYou(page) {
+  await page.evaluate(() => { const g = document.querySelector('.nt-got'); if (g) g.click(); });
+  if (!(await page.$('.wm'))) { await page.click('.wtop-who'); await settle(page, 150); }
+  await page.click('.wm [data-who="out"]'); await settle(page, 300);
+  return page.evaluate(() => { const s = document.querySelector('.wm-out small'); return s ? s.textContent.trim() : ''; });
 }
 /* Prints the results and sets the exit code, so run.js knows whether the file passed. */
 function report(results) {
@@ -458,4 +477,50 @@ async function clear(page, selector) {
     if (await button.isVisible()) await button.click();
   } else await input.fill('');
 }
-module.exports = { clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+// Wastage (3 Nov 2026, work pages redesign A): the form is in the Log waste sheet, and the end-of-day review in its own.
+// These open the sheet when it is not open already, and wait for its first box.
+async function wLog(page) {
+  if (await page.$('.w-sheet #w-text')) return;
+  // a click in the page, like fill(), so a sheet that came up by itself (the pings) does not stop the test
+  await page.evaluate(() => document.querySelector('[data-p="w-log"]').click());
+  await waitFor(page, () => !!document.querySelector('.w-sheet #w-text'), null, 4000);
+}
+async function wReview(page) {
+  if (await page.$('.w-sheet #w-ra')) return;
+  await page.evaluate(() => document.querySelector('[data-p="w-rv"]').click());
+  await waitFor(page, () => !!document.querySelector('.w-sheet #w-ra'), null, 4000);
+}
+// Transfers (3 Nov 2026, work pages redesign A): the form is in the Log a transfer sheet
+async function xLog(page) {
+  if (await page.$('.tr-sheet #tr-text')) return;
+  await page.evaluate(() => document.querySelector('[data-p="tr-log"]').click());
+  await waitFor(page, () => !!document.querySelector('.tr-sheet #tr-text'), null, 4000);
+}
+/* The recipe form's ingredient row k, opened (3 Nov 2026): its note, recipe link, allergens, Move and Remove sit behind
+   the row's arrow. Does nothing when the row is already open. */
+async function openRow(page, k) {
+  const sel = '[data-mg="ing-open"][data-i="' + k + '"]';
+  await reveal(page, sel);
+  if (await page.getAttribute(sel, 'aria-expanded') !== 'true') { await page.click(sel); await settle(page, 150); }
+}
+/* The recipe form's chapters (3 Nov 2026): opens the chapter, and More card details, that holds the box or button sel,
+   so a test can type in it or tap it. Does nothing when it is already on screen or not on the page. */
+async function reveal(page, sel) {
+  const where = () => page.evaluate(s => { const el = document.querySelector(s); if (!el) return null; const ch = el.closest('[data-ch]'); return { ch: ch && ch.hidden ? ch.getAttribute('data-ch') : '', more: !!el.closest('.mg-more-box[hidden]') }; }, sel);
+  let w = await where(); if (!w) return;
+  if (w.ch) { await page.click('[data-mg="ch"][data-v="' + w.ch + '"]'); await settle(page, 150); w = await where() || {}; }
+  if (w.more) { await page.click('[data-mg="more-card"]'); await settle(page, 150); }
+}
+// opens a chapter of the recipe form by its key: ing, method, alg, draw, card, hist
+async function chapter(page, k) {
+  if (await page.getAttribute('[data-mg="ch"][data-v="' + k + '"]', 'aria-current') !== 'true') { await page.click('[data-mg="ch"][data-v="' + k + '"]'); await settle(page, 150); }
+}
+/* The drawing studio (3 Nov 2026): the tools not used on every drawing are under More, and a picked part's arranging,
+   copying and changing under its own More. Opens the one that holds sel, so a test can tap it. */
+async function dwShow(page, sel) {
+  if (await page.$(sel)) return;   // on the page already (a chip the shared picker stands in for counts too)
+  const part = /data-dw="(dup|front|fwd|bwd|back|flip|stretch|split|piece)"|data-v="edit"/.test(sel);
+  const opener = part ? '[data-dw="panel"][data-v="pmore"]' : '[data-dw="panel"][data-v="more"]';
+  if (await page.$(opener) && await page.getAttribute(opener, 'aria-pressed') !== 'true' && await page.getAttribute(opener, 'aria-expanded') !== 'true') { await page.click(opener); await settle(page, 150); }
+}
+module.exports = { whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

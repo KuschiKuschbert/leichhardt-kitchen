@@ -273,6 +273,59 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .settings { display: flex; flex-direction: column; gap: 1.5rem; }
 .set-block { display: flex; flex-direction: column; gap: 0.6rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--line); }
 .set-block:last-child { border-bottom: 0; }
+/* Settings, sorted by who a setting is for (3 Nov 2026, docs/settings-options/brief.md): your card, then groups of rows.
+   A row's button says what it is set to and opens the row in place; on a computer the group's name sits in a left column. */
+.settings.st { width: 100%; max-width: 62rem; margin: 0 auto; gap: 1.6rem; }
+.st-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.st-you { display: grid; gap: 0.8rem; padding: 1rem 1.1rem 1.1rem; background: var(--paper); border: 1.5px solid var(--ink); border-radius: var(--radius); min-width: 0; }
+.st-you.is-out { background: var(--beige); border-color: var(--edge); }
+.st-you-top { display: flex; align-items: center; gap: 0.8rem; min-width: 0; }
+.st-you-top > div { min-width: 0; }
+.st-ring { flex: 0 0 auto; display: grid; place-items: center; width: 52px; height: 52px; border: 3px solid var(--accent); border-radius: 50%; background: var(--hit); font: 700 1.5rem/1 var(--display); }
+.st-name { margin: 0; font: 700 1.9rem/1.05 var(--display); overflow-wrap: anywhere; }
+.st-role { margin: 0.2rem 0 0; color: var(--muted); font-size: 0.95rem; }
+.st-role:empty { display: none; }
+.st-dev { margin: 0; padding-top: 0.7rem; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.9rem; }
+.st-dev b { color: var(--ink); }
+.st-out { flex-direction: column; gap: 0; }
+.st-out small { color: var(--small-ink); font-size: 0.8rem; font-weight: 600; }
+.st-out small:empty { display: none; }
+.st-grp { display: grid; gap: 0.35rem; min-width: 0; }
+.st-gh { display: grid; gap: 0.2rem; padding-bottom: 0.35rem; }
+.st-gh .label { margin: 0; }
+.st-gh .hint { margin: 0; font-size: 0.875rem; }
+.st-rows { min-width: 0; border-top: 1.5px solid var(--ink); }
+.st-row { border-bottom: 1px solid var(--line); }
+.st-btn { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.8rem; width: 100%; min-height: 56px; padding: 0.55rem 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
+.st-l { min-width: 0; font-weight: 600; }
+.st-v { display: flex; align-items: center; gap: 0.4rem; min-width: 0; max-width: 16ch; color: var(--muted); font-size: 0.9rem; }
+.st-v > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-v::after { content: '\203A'; color: var(--faint); font-size: 1.35rem; line-height: 1; transition: transform 0.15s; }
+.st-btn[aria-expanded="true"] .st-v::after { transform: rotate(90deg); }
+@media (hover: hover) and (pointer: fine) { .st-btn:hover .st-l { text-decoration: underline; } }
+@media (prefers-reduced-motion: reduce) { .st-v::after { transition: none; } }
+.st-body.set-block { padding: 0.1rem 0 1.1rem; border-bottom: 0; min-width: 0; }
+.st-body[hidden] { display: none; }
+.st-grp[hidden] { display: none; }
+.st-sub { grid-column: 1 / -1; margin-top: -0.2rem; color: var(--faint); font-size: 0.82rem; }
+.st-find { display: grid; gap: 0.35rem; }
+.st-find .hint { margin: 0; }
+.st-body .hint, .st-body .saved { margin: 0; }
+.st-body .kb-seasonal-settings { padding: 0; border: 0; }
+.st-body .kb-seasonal-settings > h3 { display: none; }
+.st-caps { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+.st-caps li { padding: 0.3rem 0.6rem; border: 1px solid var(--edge); border-radius: 6px; background: var(--paper); font-size: 0.875rem; font-weight: 600; }
+.st-kv { display: grid; margin: 0; }
+.st-kv div { display: flex; justify-content: space-between; gap: 1rem; padding: 0.45rem 0; border-bottom: 1px dashed var(--line); font-size: 0.92rem; }
+.st-kv dt { color: var(--muted); }
+.st-kv dd { margin: 0; font-weight: 600; text-align: right; }
+@media (min-width: 900px) {
+  .st-you { grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto; align-items: center; gap: 1.4rem; }
+  .st-dev { padding: 0 0 0 1.4rem; border-top: 0; border-left: 1px solid var(--line); }
+  .st-grp { grid-template-columns: 15rem minmax(0, 1fr); gap: 0 2.5rem; }
+  .st-gh { align-content: start; padding-top: 0.9rem; }
+  .st-v { max-width: 30ch; }
+}
 .a-ids { padding: 0.8rem 1rem; border: 1.5px solid var(--accent); border-left-width: 6px; border-radius: 10px; background: var(--paper); margin-bottom: 1rem; }
 .a-ids-list { margin: 0; padding-left: 1.2rem; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 48px; padding: 0 1.2rem; border-radius: var(--r-act); border: 1.5px solid var(--ink); background: var(--paper); font-weight: 700; cursor: pointer; text-decoration: none; }
@@ -514,7 +567,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
   .a-list .a-person { margin: 0; }
 }
 @media (max-width: 599px) { .a-pane .set-block { padding: 1.2rem 0 1.4rem; } }
-.a-pane .set-block.a-savebar:not(:has(.a-unsaved)):not(:has(.saved:not(:empty))) { display: none; }
+.a-pane .set-block.a-savebar:not(:has(.a-unsaved, .sv-line:not(:empty), .sv-btn[data-sv])) { display: none; }
 .a-pane .set-block:has([data-p="a-save"]) { position: sticky; bottom: 0; z-index: 11; padding: 0.8rem 1rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--paper); box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.08); }
 @media (max-width: 719px) { .nb-badges { order: 5; } }
 
@@ -900,8 +953,8 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 }
 
 /* Settings: the QR code to open the book on a phone. Shown on computers and wide tablets only, not on phones. */
-.set-qr { display: none; }
-@media (min-width: 900px) { .set-qr { display: flex; } }
+.st-row.st-qr { display: none; }
+@media (min-width: 900px) { .st-row.st-qr { display: block; } }
 .qr-row { display: flex; align-items: center; gap: 1.5rem; }
 .qr-img { flex: 0 0 auto; width: 180px; height: 180px; padding: 8px; border: 2px solid var(--ink); border-radius: var(--radius); background: #fff; }
 .qr-url { margin: 0.4rem 0 0.2rem; font-weight: 700; }
@@ -1433,7 +1486,6 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
    target, and "Use a different kitchen PIN" (admin Tools tab) is kept apart from the move to a new PIN. */
 .p-toast { display: flex; align-items: center; gap: 0.6rem; width: max-content; }
 .p-toast-btn { min-height: 44px; min-width: 64px; padding: 0 1rem; border-radius: 22px; flex: none; }
-@media (max-width: 719px) { .p-toast { bottom: 84px; } }
 .a-forget { margin-top: 1.6rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 
 /* Not sent yet: no signal, or changes still waiting for the server (prep pages) */
@@ -1683,6 +1735,43 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .wm-adm[aria-current="page"] { background: var(--hit); }
 .wm-adm .adm-n { position: static; margin-left: auto; flex: 0 0 auto; border-color: var(--paper); line-height: 16px; }   /* the count centred like on the hat, not the row's 1.25 */
 .wtop-btn.wtop-who { position: relative; }
+/* The chef hat's menu (3 Nov 2026, work pages redesign, the head chef's 24 Oct pick): a sheet from the bottom on a phone,
+   a panel under the hat from 720 px. A person card with Sign out, then Kitchen and Chef tiles three across (rectangles:
+   each one opens something), then Settings. It fits a sous chef's whole menu on a 390 by 844 phone with no scroll. */
+.wm { width: min(23rem, calc(100vw - 16px)); padding: 6px 8px 8px; max-height: calc(100dvh - 90px); }
+.wm-grip { display: none; }
+@media (max-width: 719px) {
+  .wm { top: auto !important; right: 0 !important; left: 0; bottom: 0; width: 100%; max-height: calc(100dvh - 40px); border-width: 2px 0 0; border-radius: 16px 16px 0 0; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+    padding: 2px max(12px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); }
+  .wm-grip { display: block; width: 40px; height: 4px; margin: 6px auto 4px; border-radius: 2px; background: var(--edge); }
+}
+.wm-me { display: flex; align-items: center; gap: 10px; padding: 4px 4px 6px; }
+.wm-av { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--accent-ink); color: #fff; font: 700 1.35rem/1 var(--display); }
+.wm-me-n { display: flex; flex-direction: column; min-width: 0; }
+.wm-me-n b { font: 700 1.3rem/1.1 var(--display); overflow-wrap: anywhere; }
+.wm-me-n small { color: var(--muted); font-size: 0.8125rem; }
+.wm .wm-out { margin: 0 0 2px; border: 1.5px solid var(--ink); border-radius: var(--r-act); }
+.wm .wm-sh { margin: 10px 2px 6px; padding-top: 8px; border-top: 1.5px solid var(--line); }
+.wm-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.wm-grid + .wm-set, .wm-out + .wm-set, .wm-in + .wm-set { margin-top: 8px; }
+.wm .wm-tile { position: relative; flex-direction: column; justify-content: center; gap: 4px; min-height: 70px; padding: 8px 4px; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); text-align: center; }
+button.wm-a.wm-tile { text-align: center; }
+.wm-tile span { align-items: center; }
+.wm-tile b { font-size: 0.8125rem; font-weight: 600; line-height: 1.15; overflow-wrap: anywhere; }
+.wm-tile small { font-size: 0.75rem; line-height: 1.2; }
+.wm-tile[aria-current="page"] { background: var(--hit); }
+.wm-tile.wm-adm .adm-n { position: absolute; top: -7px; right: -5px; margin: 0; }
+.wm .wm-set { border-top: 1.5px solid var(--line); border-radius: 0 0 8px 8px; }
+/* who is signed in, on the hat itself: their initial in a small disc; on a shared screen their first name next to it too
+   (phones and tablets; from 1100 to 1399 px the top bar has no room, from 1400 px every name shows as before) */
+.wtop-av { position: absolute; right: -5px; bottom: -5px; min-width: 19px; height: 19px; padding: 0 3px; border: 2px solid var(--bar); border-radius: 10px; background: var(--bar-text); color: var(--bar); font: 700 0.6875rem/15px var(--display); text-align: center; }
+.wtop-who[aria-expanded="true"] .wtop-av { background: #fff; color: var(--accent-ink); }
+@media (max-width: 1099px) {
+  .wtop-btn.wtop-who.is-shared { width: auto; max-width: 9.5rem; padding: 0 0.75rem 0 0.5rem; gap: 0.35rem; border-radius: 999px; }
+  .wtop-who.is-shared .wtop-lbl { display: inline; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+  .wtop-who.is-shared .wtop-av { display: none; }
+}
+@media (min-width: 720px) and (max-width: 1099px) { .wtop:has(.wtop-who.is-shared.on) .rb-text { display: none; } }
 .adm-n { position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--accent); color: var(--ink); border: 2px solid var(--bar); font-size: 0.6875rem; font-weight: 700; line-height: 16px; text-align: center; box-sizing: border-box; }
 .ml-urgent { margin: 0 0 12px; padding: 10px 12px; border-left: 4px solid var(--accent); background: var(--hit); border-radius: 6px; }
 .ml-roster { margin: -4px 0 12px; padding: 10px 12px; border: 1.5px dashed var(--ink); border-radius: 8px; background: var(--beige); }
@@ -1816,16 +1905,46 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 @media (min-width: 720px) { .dk-name { white-space: nowrap; } .dk-top { flex-wrap: wrap; row-gap: 0.25rem; } }
 @media (min-width: 1100px) { .dk-name { font-size: 2rem; } }
 
-/* Small toasts (21 Oct 2026): one 48 px pill, words short enough for two lines on a phone (cut at three), so a toast covers as little of the list as it
-   can. The prep pages hold them in one stack (.p-toasts): a second Undo shrinks the older one to a chip above
-   ("Undo removed Pick coriander"), and a swipe down or a tap on the words puts a toast away early. */
-.p-toasts { position: fixed; left: 1rem; right: 1rem; bottom: 1.2rem; z-index: 40; display: flex; flex-direction: column-reverse; align-items: center; gap: 0.4rem; pointer-events: none; }
-.p-toasts .p-toast { position: static; transform: none; pointer-events: auto; touch-action: pan-x; max-width: min(34rem, 100%); }
-.p-toast.p-toast-plain { padding-right: 1rem; }
-.p-toast-msg { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; padding: 0.35rem 0; }
-.p-toast.p-toast-old { min-height: 0; padding: 2px; max-width: min(22rem, 100%); }
-.p-toast-chip { display: block; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; border-color: rgba(255, 255, 255, 0.6); font-weight: 600; }
-@media (max-width: 719px) { .p-toasts { bottom: 84px; } }
+/* The docket slip (4 Nov 2026, design A in docs/loading-feedback-options/brief.md; it replaces the see-through pill of
+   21 Oct 2026). One solid paper slip: on a phone it spans the width and sits on the tab bar, or on a page's sticky Save
+   bar; from 720 px it is a docket at the bottom middle. A toast with a button shows its time left as an orange line
+   along the top. An error (.p-toast-bad) has a red edge and no line, and stays until it is put away. The older Undo is
+   a dark tab on top of the slip ("Undo removed Pick coriander"). A swipe down or a tap on the words puts it away
+   early, and while a slip is up the page gets room below its last line, so nothing stays hidden behind it. The words
+   are still cut at three lines; the whole message is read out (#lk-live). */
+.p-toasts { position: fixed; left: 0; right: 0; bottom: var(--toast-lift, var(--tabbar-h)); z-index: 40; display: flex; flex-direction: column-reverse; align-items: stretch; gap: 0; pointer-events: none; }
+.p-toasts .p-toast { position: relative; left: auto; bottom: auto; transform: none; pointer-events: auto; touch-action: pan-x; display: flex; align-items: center; gap: 0.75rem; width: auto; max-width: none; min-height: 60px; margin: 0; padding: 6px 10px 6px 16px; border: 0; border-top: 2.5px solid var(--ink); border-radius: 0; background: #FFFEFA; color: var(--ink); box-shadow: 0 -6px 16px rgba(28, 29, 31, 0.14); text-shadow: none; font-weight: 600; line-height: 1.3; }
+.p-toasts .p-toast.p-toast-in { animation: slip-in 0.18s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.p-toasts .p-toast.p-toast-plain { padding-right: 16px; }
+.p-toast-msg { flex: 1 1 auto; min-width: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; padding: 0.35rem 0; }
+.p-toasts .p-toast-btn { flex: none; min-height: 44px; min-width: 72px; padding: 0 1rem; border: 0; border-radius: var(--r-act); background: var(--ink); color: #fff; font-weight: 700; }
+.p-toasts .p-toast-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.p-toasts .p-toast[style*="--toast-life"]::before { content: ""; position: absolute; left: 0; right: 0; top: -2.5px; height: 3px; background: var(--accent); transform-origin: 0 50%; animation: slip-time var(--toast-life) linear var(--toast-since, 0ms) forwards; }
+/* an error: #9B2716 is the red of the book's other error text (Delivery received), 8:1 with white */
+.p-toasts .p-toast.p-toast-bad { border-top-color: #9B2716; background: #FFF6F3; }
+.p-toasts .p-toast-bad .p-toast-btn { background: #9B2716; }
+.p-toasts .p-toast.p-toast-old { align-self: flex-start; min-height: 0; margin: 0 0 0 12px; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.p-toasts .p-toast-chip { display: block; max-width: min(22rem, calc(100vw - 24px)); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; border-radius: 8px 8px 0 0; font-weight: 600; }
+@keyframes slip-in { from { translate: 0 10px; opacity: 0.4; } to { translate: 0 0; opacity: 1; } }
+@keyframes slip-time { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+/* on a phone: no tab bar, no lift; a sticky Save bar lifts the slip above it; the page makes room for the slip */
+@media (max-width: 719px) {
+  body:not(:has(.tabbar)) { --toast-lift: 0px; }
+  body:has(.mg-bar, .fe-bar, .ai-task-actions) { --toast-lift: calc(var(--tabbar-h) + 72px); }
+  body:has(.p-toasts .p-toast) #app:not(:has(.wall)) { padding-bottom: calc(76px + 64px); }
+}
+@media (min-width: 720px) {
+  .p-toasts { left: 50%; right: auto; bottom: var(--toast-lift, 1.2rem); width: min(34rem, calc(100vw - 2rem)); transform: translateX(-50%); }
+  body:has(.mg-bar, .fe-bar) { --toast-lift: 84px; }
+  .p-toasts .p-toast { border: 1.5px solid var(--ink); border-top-width: 2.5px; border-radius: 10px; box-shadow: 0 8px 22px rgba(28, 29, 31, 0.18); }
+  .p-toasts .p-toast.p-toast-bad { border-color: #9B2716; }
+  .p-toasts .p-toast[style*="--toast-life"]::before { left: 10px; right: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .p-toasts .p-toast.p-toast-in { animation: none; }
+  .p-toasts .p-toast[style*="--toast-life"]::before { display: none; }
+}
+@media print { .p-toasts { display: none !important; } }
 
 /* The update notice (21 Oct 2026) is a slim strip at the top of the screen, never with the toasts at the bottom. While
    it shows, the bars that stick to the top of a page stick just under it. */
@@ -1848,18 +1967,18 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 #prep-root:has(.a-nav) > .p-sync { position: static; }
 @media print { .upd-bar { display: none; } }
 
-/* Frosted toasts and chef hat menu (20 Oct 2026, see-through toasts 21 Oct 2026): the toasts and the update strip are
-   66 % dark with a light blur, so the lines behind them still show, and the words stay at 5:1 or better even over a
-   white card. The chef hat menu is 70 % with a strong blur. Only where the browser can blur (a see-through box
-   without the blur makes the words harder to read), and solid for anyone who asks for less transparency. */
+/* Frosted update strip and chef hat menu (20 Oct 2026; the toasts were see-through from 21 Oct 2026 until the solid
+   docket slip of 4 Nov 2026): the update strip is 66 % dark with a light blur, so the lines behind it still show, and
+   the words stay at 5:1 or better even over a white card. The chef hat menu is 70 % with a strong blur. Only where the
+   browser can blur (a see-through box without the blur makes the words harder to read), and solid for anyone who asks
+   for less transparency. */
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .p-toast, .upd-bar { background: rgba(28, 29, 31, 0.66); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); -webkit-backdrop-filter: blur(6px) saturate(1.4); backdrop-filter: blur(6px) saturate(1.4); }
-  .p-toast { border: 1px solid rgba(255, 255, 255, 0.22); }
+  .upd-bar { background: rgba(28, 29, 31, 0.66); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); -webkit-backdrop-filter: blur(6px) saturate(1.4); backdrop-filter: blur(6px) saturate(1.4); }
   .upd-bar { border-bottom: 1px solid rgba(255, 255, 255, 0.22); }
   .wm { background: rgba(255, 255, 255, 0.7); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.8); -webkit-backdrop-filter: blur(22px) saturate(1.8); backdrop-filter: blur(22px) saturate(1.8); }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .p-toast, .upd-bar { background: var(--ink); border: 0; text-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .upd-bar { background: var(--ink); border: 0; text-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
   .wm { background: var(--paper); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
@@ -1916,6 +2035,9 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 @media (prefers-reduced-motion: no-preference) {
   @keyframes menu-in { from { opacity: 0; translate: 0 -4px; } to { opacity: 1; translate: 0 0; } }
   .wm { animation: menu-in 0.14s ease-out; }
+  /* on a phone the menu is a sheet: it comes up from the bottom */
+  @keyframes sheet-in { from { opacity: 0.6; translate: 0 32px; } to { opacity: 1; translate: 0 0; } }
+  @media (max-width: 719px) { .wm { animation: sheet-in 0.14s ease-out; } }
 }
 @media (prefers-reduced-motion: reduce) {
   :where(button:not(:disabled), a[href], summary):not([aria-disabled="true"]) { scale: none !important; translate: none !important; }
@@ -1931,6 +2053,10 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 .mg-wrap h2, .mg-note h2 { margin: 0; font-family: var(--display); font-weight: 700; font-size: 2.2rem; line-height: 1.05; }
 .mg-head { display: flex; flex-direction: column; gap: 0.6rem; }
 .mg-head .p-x { align-self: flex-start; display: inline-flex; align-items: center; text-decoration: none; }
+/* the list's two rows (3 Nov 2026): the kinds of thing, then which recipes and what needs a look */
+.mg-filters { display: flex; flex-direction: column; gap: 0.5rem; }
+.mg-need { align-items: center; }
+.mg-need .label { margin-right: 0.2rem; color: var(--small-ink); }
 .mg-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-top: 1.5px solid var(--ink); }
 .mg-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; border-bottom: 1px solid var(--line); min-height: 56px; padding: 0.2rem 0; }
 .mg-rlink { display: flex; align-items: center; gap: 0.75rem; flex: 1 1 auto; min-width: 0; min-height: 56px; color: var(--ink); text-decoration: none; }
@@ -1964,6 +2090,65 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 .mg-ing .search, .mg-pinrow .search { height: 2.75rem; font-size: 1rem; }
 .mg-mini { gap: 0.4rem; }
 .mg-tags .chip { min-height: 40px; padding: 0 0.7rem; }
+/* Ingredient rows (3 Nov 2026, recipe editor): a ruled list. Amount and name in the row, one short line under it, the
+   note, link, allergens and moving behind the arrow. */
+.mg-sec-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; }
+.mg-sec-head .h3 { margin: 0; }
+.mg-ings { gap: 0; border-top: 1.5px solid var(--ink); }
+.mg-ings .mg-ing { gap: 0.25rem; padding: 0.45rem 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }
+.mg-ings .mg-ing.open { padding: 0.5rem 0.5rem 0.6rem; background: var(--paper); box-shadow: inset 4px 0 0 var(--accent); }
+.mg-ing-more { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 1.5px solid var(--edge); border-radius: var(--r-act); background: var(--paper); color: var(--ink); cursor: pointer; }
+.mg-ing-more svg { transition: rotate 0.15s ease-out; }
+.mg-ing-more[aria-expanded="true"] { border-color: var(--ink); }
+.mg-ing-more[aria-expanded="true"] svg { rotate: 180deg; }
+.mg-ing-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.35rem; min-width: 0; padding-left: 2.1rem; font-size: 0.8125rem; color: var(--muted); }
+.mg-ing-sum .tag { font-size: 0.75rem; padding: 0 0.4rem; color: var(--ink); }
+.mg-ing-sum .mg-ing-ln { border-color: var(--accent-ink); }
+.mg-ing-note { overflow-wrap: anywhere; }
+.mg-ing-open { display: flex; flex-direction: column; gap: 0.7rem; padding: 0.4rem 0 0 2.1rem; }
+.mg-ing-open .hint { margin: 0; }
+.mg-del { color: var(--tag); }
+/* the recipe link: its box and the shared picker read as one control */
+.mg-linkbox { display: flex; min-width: 0; }
+.mg-linkbox .mg-link { flex: 1 1 auto; min-width: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.mg-linkbox > .ux-picker-trigger { flex: 0 0 3rem; justify-content: center; padding: 0; border: 1.5px solid var(--ink); border-left: 0; border-radius: 0 var(--radius) var(--radius) 0; font-size: 0; }
+.mg-linkbox > .ux-picker-trigger::after { content: '\25BE'; font-size: 1.15rem; }
+/* Chapters (3 Nov 2026, recipe editor): a row of pills that stays at the top on a phone or tablet, a rail from 1000 px.
+   Every chapter is drawn; the ones not shown are hidden. */
+.mg-body { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.mg-chap { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.mg-ch { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.mg-ch[hidden] { display: none; }
+.mg-chs { position: sticky; top: var(--fn-stick, 0px); z-index: 10; display: flex; gap: 0.45rem; margin: 0 -1rem; padding: 0.5rem 1rem; overflow-x: auto; scrollbar-width: none; background: var(--bg); border-bottom: 1px solid var(--line); -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 2rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 2rem), transparent); }
+.mg-chs::-webkit-scrollbar { display: none; }
+.mg-chs::after { content: ''; flex: 0 0 1.5rem; }
+.mg-chb { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 0.4rem; min-height: 44px; padding: 0 0.9rem; border: 1.5px solid var(--ink); border-radius: var(--r-pick); background: var(--paper); color: var(--ink); font: 600 0.9375rem var(--body); cursor: pointer; }
+.mg-chb small { display: none; }
+.mg-chb[aria-current="true"] { background: var(--ink); color: #fff; }
+.mg-chd { flex: 0 0 auto; width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--accent); }
+.mg-chx { flex: 0 0 auto; font-weight: 800; color: var(--tag); }
+.mg-chb[aria-current="true"] .mg-chx { color: #FFB4A8; }
+html.has-upd .mg-chs { top: calc(var(--fn-stick, 0px) + var(--upd-h)); }
+@media (min-width: 1000px) {
+  .mg-wrap.mg-ed { max-width: 66rem; }
+  .mg-ed .mg-body { display: grid; grid-template-columns: 14rem minmax(0, 46rem); gap: 2rem; align-items: start; }
+  .mg-chs { top: calc(var(--fn-stick, 0px) + 1rem); flex-direction: column; gap: 0; margin: 0; padding: 0; overflow: visible; border: 0; background: none; -webkit-mask-image: none; mask-image: none; }
+  .mg-chs::after { display: none; }
+  .mg-chb { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; width: 100%; min-height: 60px; padding: 0.5rem 0.6rem; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: none; text-align: left; }
+  .mg-chb:last-child { border-bottom: 1px solid var(--line); }
+  .mg-chn { font: 700 1.2rem/1.1 var(--display); }
+  .mg-chb small { display: block; grid-column: 1; margin-top: 0.1rem; font-size: 0.8125rem; font-weight: 400; color: var(--muted); overflow-wrap: anywhere; }
+  .mg-chb .mg-chd, .mg-chb .mg-chx { grid-column: 2; grid-row: 1 / span 2; }
+  .mg-chb[aria-current="true"] { background: var(--paper); color: var(--ink); box-shadow: inset 4px 0 0 var(--accent-ink); }
+  .mg-chb[aria-current="true"] .mg-chx { color: var(--tag); }
+  .mg-ed .mg-bar { grid-column: 2; }
+}
+.mg-more { display: flex; flex-direction: column; gap: 1rem; }
+.mg-more-b { align-self: flex-start; }
+.mg-more-box { display: flex; flex-direction: column; gap: 1rem; }
+.mg-more-box[hidden] { display: none; }
+.mg-scale-box { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.7rem 0.8rem; border-radius: var(--radius); background: var(--beige); }
+.mg-scale-box .hint { margin: 0; }
 .mg-tag.is-has { background: var(--ink); color: #fff; }
 .mg-tag.is-may { border-style: dashed; background: var(--beige); }
 .mg-step-sec { display: flex; flex-direction: column; gap: 0.5rem; padding-bottom: 0.8rem; border-bottom: 1px dashed var(--line); }
@@ -1973,6 +2158,17 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 .mg-hand-a { font-weight: 700; }
 .mg-alg-now { display: flex; flex-direction: column; gap: 0.35rem; }
 .mg-change { margin: 0; padding: 0.6rem 0.8rem; border-left: 4px solid var(--accent); background: var(--hit); }
+/* Drawings (3 Nov 2026): the plate with its labels, then one card per other drawing with its picture */
+.mg-dh { margin: 0; font: 700 1.25rem/1.1 var(--display); }
+.mg-dplate { display: flex; flex-direction: column; gap: 0.6rem; }
+.mg-dcards { display: grid; gap: 0.8rem; }
+@media (min-width: 720px) { .mg-dcards { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.mg-dcard { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.7rem; align-items: start; padding: 0.8rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+.mg-dpic { display: flex; align-items: center; justify-content: center; width: 5.5rem; height: 5.5rem; overflow: hidden; border-radius: 8px; background: #F4F1EA; text-align: center; }
+.mg-dpic .hint { padding: 0.3rem; font-size: 0.75rem; }
+.mg-dpic-svg { width: 100%; height: 100%; }
+.mg-dbody { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.mg-dbody .hint { margin: 0; }
 .mg-art-one .mg-art { display: block; width: 100%; max-width: 22rem; height: auto; margin: 0 auto; }
 .mg-stage { position: relative; width: 100%; max-width: 26rem; margin: 0 auto; }
 .mg-stage .mg-art { display: block; width: 100%; height: auto; }
@@ -1992,7 +2188,8 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 @media (max-width: 599px) {
   .mg-wrap h2, .mg-note h2 { font-size: 1.8rem; }
   .mg-two { grid-template-columns: minmax(0, 1fr); }
-  .mg-ing-top .mg-q { flex-basis: 5.5rem; }
+  .mg-ing-top .mg-q { flex-basis: 4.75rem; }
+  .mg-ing-sum, .mg-ing-open { padding-left: 0; }
   .mg-hand-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .mg-hand-row input { grid-column: 1 / -1; }
 }
@@ -2001,12 +2198,32 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 /* The drawing editor (#/manage/draw, js/draw.js, 21 Oct 2026): classes dw-, clicks data-dw. On a phone the canvas sticks
    to the top while the tools and the library scroll under it; from 900 px the canvas is on the left and the panels on
    the right. The picked part has a dashed box, an orange square to size it and a round handle above it to turn it. */
+/* The studio (3 Nov 2026, head chef's choice B): the page covers the book's bars while it is open, the canvas fills it,
+   one dock at the thumb, the picked part's bar beside the part, one drawer (right from 900 px, from the bottom below). */
 .dw { display: flex; flex-direction: column; gap: 0.9rem; width: 100%; }
 .dw h2 { margin: 0; font-family: var(--display); font-weight: 700; font-size: 2rem; line-height: 1.05; }
-.dw-main { display: flex; flex-direction: column; gap: 0.9rem; min-width: 0; }
-.dw-left, .dw-right { display: flex; flex-direction: column; gap: 0.7rem; min-width: 0; }
-.dw-stage { position: sticky; top: var(--fn-stick, 0px); z-index: 8; background: var(--bg); padding: 0.3rem 0; }
-.dw-svg { display: block; width: 100%; height: auto; max-height: 44vh; background: #F4F1EA; border: 1.5px solid var(--edge); border-radius: var(--radius); touch-action: none; user-select: none; -webkit-user-select: none; }
+html:has(.dw-studio) { overflow: hidden; }
+.dw-studio { position: fixed; inset: 0; z-index: 35; display: flex; flex-direction: column; gap: 0; background: #EFEBE3; }
+html.has-upd .dw-studio { top: var(--upd-h); }
+.dw-top { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.6rem; padding: calc(0.5rem + env(safe-area-inset-top, 0px)) max(0.75rem, env(safe-area-inset-right, 0px)) 0.5rem max(0.75rem, env(safe-area-inset-left, 0px)); background: var(--bar); color: var(--bar-text); }
+.dw-top .btn { min-height: 44px; padding: 0 0.8rem; border-color: #6B675F; background: transparent; color: var(--bar-text); }
+.dw-top .btn.dark { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
+.dw-top .btn:disabled { opacity: 0.45; }
+.dw-top .btn.dark:disabled { background: #6B675F; border-color: #6B675F; color: #CFC9BE; opacity: 1; }
+.dw-ttl { flex: 1 1 4rem; min-width: 0; display: flex; flex-direction: column; }
+.dw-ttl h2 { color: var(--bar-text); font-size: 1.35rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dw-ttl small { color: var(--bar-accent); font-weight: 600; font-size: 0.8125rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dw-top-acts { flex: 0 0 auto; display: flex; gap: 0.3rem; }
+@media (max-width: 599px) {
+  .dw-top .btn { padding: 0 0.55rem; } .dw-top .ink-busy-button { min-width: 4.5rem; } .dw-ttl h2 { font-size: 1.15rem; }
+}
+.dw-top .mg-state { flex: 1 1 100%; color: #DDD7CB; font-size: 0.8125rem; font-weight: 600; }
+.dw-top .p-err { flex: 1 1 100%; color: #FFB4A8; }
+.dw-notes { flex: 0 0 auto; display: flex; flex-direction: column; gap: 0.5rem; max-height: 30vh; overflow: auto; padding: 0.6rem max(0.75rem, env(safe-area-inset-right, 0px)) 0.6rem max(0.75rem, env(safe-area-inset-left, 0px)); background: var(--bg); border-bottom: 1px solid var(--line); }
+.dw-main { position: relative; flex: 1 1 auto; display: grid; grid-template-columns: minmax(0, 1fr); min-height: 0; min-width: 0; }
+.dw-left { position: relative; display: flex; min-height: 0; min-width: 0; }
+.dw-stage { position: relative; flex: 1 1 auto; display: flex; align-items: center; justify-content: center; min-height: 0; min-width: 0; padding: 0.75rem 0.75rem calc(5.5rem + env(safe-area-inset-bottom, 0px)); }
+.dw-svg { display: block; width: 100%; height: 100%; max-height: 100%; background: #F4F1EA; border: 1.5px solid var(--edge); border-radius: var(--radius); touch-action: none; user-select: none; -webkit-user-select: none; }
 .dw-svg:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .dw-el { cursor: move; }
 .dw-box { fill: none; stroke: var(--accent-ink); stroke-width: 1; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; pointer-events: none; }
@@ -2015,13 +2232,38 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 .dw-size { cursor: nwse-resize; fill: var(--accent); }
 .dw-turn { cursor: grab; }
 .dw-guide { stroke: #2E7DD7; stroke-width: 1; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; pointer-events: none; }
-.dw-zoom { position: absolute; right: 0.5rem; bottom: 0.8rem; display: flex; gap: 0.3rem; }
+.dw-zoom { position: absolute; right: 1.1rem; top: 1.1rem; display: flex; gap: 0.3rem; }
 .dw-zoom .p-x { min-width: 44px; background: rgba(255, 255, 255, 0.92); }
-.dw-tools, .dw-selbar { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.dw-tools { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.dw-tools .p-x, .dw-selbar .p-x { color: var(--ink); }
 .dw-tools .p-x[aria-pressed="true"], .dw-selbar .p-x[aria-pressed="true"] { background: var(--ink); color: #fff; }
 .dw-add { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
-.dw-selbar { padding: 0.5rem; border: 1.5px solid var(--accent); border-radius: var(--radius); background: var(--hit); }
-.dw-selname { flex: 1 1 100%; font-weight: 700; }
+/* the dock: at the thumb, over the bottom of the canvas */
+.dw-dock { position: absolute; z-index: 6; left: 0; right: 0; bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px)); width: max-content; margin: 0 auto; display: flex; gap: 0.15rem; max-width: calc(100% - 1.5rem); padding: 0.3rem; overflow-x: auto; scrollbar-width: none; background: var(--bar); border-radius: 16px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25); }
+.dw-dock::-webkit-scrollbar { display: none; }
+.dw-dk { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 3.3rem; min-height: 52px; padding: 0.3rem 0.5rem; border: 0; border-radius: 12px; background: transparent; color: var(--bar-text); font: 600 0.75rem/1.1 var(--body); cursor: pointer; }
+.dw-dk svg { width: 22px; height: 22px; }
+.dw-dk.hero { background: var(--accent-ink); }
+.dw-dk.hero span { max-width: 4.2rem; text-align: center; }
+.dw-dk[aria-expanded="true"] { background: #4A4741; }
+.dw-dk:focus-visible { outline: 3px solid var(--bar-accent); outline-offset: 2px; }
+/* the picked part's bar, placed beside the part by placeSel() */
+.dw-selbar { position: absolute; z-index: 3; top: 0.75rem; left: 0.75rem; display: flex; flex-wrap: nowrap; align-items: center; gap: 0.1rem; max-width: calc(100% - 12px); padding: 0.25rem; overflow-x: auto; scrollbar-width: none; background: var(--paper); border: 1.5px solid var(--ink); border-radius: 12px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18); }
+.dw-selbar::-webkit-scrollbar { display: none; }
+.dw-selbar .p-x { flex: 0 0 auto; min-height: 40px; padding: 0 0.6rem; font-size: 0.875rem; font-weight: 700; text-decoration: none; border-radius: 8px; white-space: nowrap; }
+.dw-selname { flex: 0 1 auto; max-width: 9rem; padding: 0 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 1rem var(--display); }
+.dw-selbar .dw-del { color: var(--tag); }
+@media (max-width: 599px) {
+  /* the part's name is on the canvas already; on a phone its bar keeps the room for its buttons */
+  .dw-selname { display: none; }
+  .dw-dock { gap: 0; }
+  .dw-dk { min-width: 2.9rem; padding: 0.3rem 0.3rem; font-size: 0.6875rem; }
+  .dw-dk.hero span { max-width: 3.4rem; }
+}
+/* the drawer */
+.dw-drawer { position: absolute; z-index: 5; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 0.7rem; max-height: 58%; overflow: auto; padding: 0.6rem max(0.9rem, env(safe-area-inset-right, 0px)) calc(5.5rem + env(safe-area-inset-bottom, 0px)) max(0.9rem, env(safe-area-inset-left, 0px)); background: var(--bg); border-radius: 16px 16px 0 0; box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.2); }
+.dw-drawer-head { position: sticky; top: -0.6rem; z-index: 1; display: flex; justify-content: flex-end; margin: -0.6rem -0.9rem 0; padding: 0.5rem 0.9rem; background: var(--bg); }
+.dw-drawer .dw-panel { border: 0; padding: 0; background: none; }
 .dw-miss { display: flex; flex-direction: column; gap: 0.4rem; }
 .dw-check ul { margin: 0; padding-left: 1.1rem; }
 /* Draw it for me (js/smart.js): the note on what the book drew, and the ingredients it was not sure about */
@@ -2056,13 +2298,13 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 .dw-swb { width: 36px; height: 36px; min-height: 36px; border-radius: 50%; border: 1.5px solid var(--ink); cursor: pointer; }
 .dw-parts { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; }
 @media (min-width: 900px) {
-  .dw-main { display: grid; grid-template-columns: minmax(0, 3fr) minmax(18rem, 2fr); align-items: start; }
-  .dw-left { position: sticky; top: 0.5rem; }
-  .dw-stage { position: relative; }
-  .dw-svg { max-height: 70vh; }
+  .dw-main.has-drawer { grid-template-columns: minmax(0, 1fr) minmax(22rem, 26rem); }
+  .dw-drawer { position: relative; inset: auto; max-height: none; border-radius: 0; border-left: 1px solid var(--line); box-shadow: none; padding-bottom: 1.5rem; }
+  .dw-top .mg-state { flex: 0 1 auto; order: 1; }
+  .dw-ttl { order: 0; }
+  .dw-top-acts { order: 2; }
 }
-@media (max-width: 599px) { .dw h2 { font-size: 1.6rem; } .dw-stage { margin: 0 -0.25rem; } }
-@media print { .dw-tools, .dw-selbar, .dw-zoom, .dw-right, .dw-ovl, .dw-bar { display: none !important; } }
+@media print { .dw-tools, .dw-selbar, .dw-zoom, .dw-drawer, .dw-dock, .dw-ovl, .dw-bar { display: none !important; } .dw-studio { position: static; } }
 
 /* ---------- Functions (21 Oct 2026): the band under the top bar, the function sheet, #/fn, the landing card (js/functions.js)
    and the function managers' list and form (js/fnedit.js). Kitchen classes are fn-, the managers' form fe-. ---------- */
@@ -2542,6 +2784,47 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-jumps { margin: 0.2rem 0 0.6rem; -webkit-mask-image: linear-gradient(to right, #000 86%, transparent); mask-image: linear-gradient(to right, #000 86%, transparent); }
 .su-jumps .chip { min-height: 38px; }
 .su-jumps .su-n { font-weight: 400; opacity: 0.8; }
+/* List first on a phone or tablet (4 Nov 2026, the Prep list's rule from work pages design A): the cut-off and the
+   last order fold into one line, the heading is one line, the picker and search lose their visible labels. */
+.su-info-line { display: none; }
+@media (max-width: 899px) {
+  /* one line at normal text; at Extra large text Refresh drops under the title rather than off the screen */
+  .su-head { flex-wrap: wrap; align-items: center; gap: 0.5rem; padding-bottom: 0.5rem; border-bottom-width: 2px; }
+  .su-head > div { flex: 1 1 auto; }
+  .su-head .eyebrow, .su-head .hint { display: none; }
+  .su-head h2 { margin: 0; font-size: 1.75rem; }
+  .su-head .btn { min-height: 40px; padding: 0 0.8rem; }
+  .su-tools { margin-top: 0.5rem; }
+  .su-tools .chip { min-height: 36px; }
+  .su-supplier-title { display: none; }
+  .su-toolbar { margin-bottom: 0.5rem; }
+  .su-toolbar .label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  /* the picker keeps to one line (the name and today's cut-off), cut with an ellipsis rather than a second line */
+  .su-toolbar .ux-picker-trigger { display: block; width: 100%; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: left; }
+  .su-category { padding-top: 0.6rem; }
+  /* the Review bar stays one row: the count wraps beside the button instead of pushing it onto a second row */
+  #supplier-root .su-order-actions { flex-wrap: nowrap; }
+  #supplier-root .su-order-actions > .hint { flex: 1 1 auto; min-width: 0; }
+  #supplier-root .su-order-actions > .btn { flex: none; }
+  .su-info-line { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; width: 100%; min-height: 44px; padding: 0.4rem 0.75rem; border: 0; border-left: 3px solid var(--accent); border-radius: 0; background: var(--hit); color: var(--ink); font: 600 0.8125rem var(--body); text-align: left; cursor: pointer; }
+  .su-info-line.attn { border-left-color: var(--small-ink); }
+  .su-info-line > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+  .su-info-more { flex: none; color: var(--small-ink); text-decoration: underline; }
+  .su-info-body { display: none; }
+  .su-info.open .su-info-body { display: block; margin-top: 0.5rem; }
+  .su-filters { margin-top: 0.5rem; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(to right, #000 86%, transparent); mask-image: linear-gradient(to right, #000 86%, transparent); }
+  .su-filters::-webkit-scrollbar { display: none; }
+  .su-filters .chip { flex: 0 0 auto; min-height: 38px; }
+  .su-filters::after { content: ''; flex: 0 0 1.75rem; }
+}
+/* Narrow rows, the Prep list's rule (adaptive-controls, narrow Prep A): below 360 px, or below 480 px with Extra large
+   text, Par and Last order share a line and To order takes its own, so nothing is cut at the row's edge */
+@media (max-width: 359px) { .su-row { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); } .su-row .su-qty { grid-column: 1 / -1; } }
+@media (max-width: 479px) { html[data-text="xlarge"] .su-row { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); } html[data-text="xlarge"] .su-row .su-qty { grid-column: 1 / -1; } }
+@media (max-width: 719px) {
+  .su-toolbar { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 0.5rem; }
+  .su-toolbar > .btn, .su-toolbar > .su-groups { grid-column: 1 / -1; }
+}
 .su-filters .su-n { font-weight: 400; opacity: 0.8; }
 .su-asked { margin: 0.8rem 0; padding: 0.7rem 0.9rem; border-left: 3px solid var(--accent); background: var(--hit); }
 .su-asked h4 { margin: 0 0 0.3rem; font: 700 1.1rem var(--display); }
@@ -2605,13 +2888,9 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-audit-row > b, .su-audit-row > span { display: block; }
 .su-audit-row p { margin: 0.4rem 0; }
 .su-copy { min-height: 9rem; height: auto; font-size: 0.9375rem; padding: 0.75rem; }
-/* Keep the extra supplier tool within the phone's short menu while every action keeps its 48 px target. */
-@media (max-width: 719px) {
-  .wm { padding: 2px 4px; }
-  .wm-h:not(.wm-sh) { margin: 2px 10px; }
-  .wm-sh { margin: 2px 10px; padding-top: 2px; }
-  .wm-out { margin-top: 0; }
-}
+/* The phone's chef hat menu is a sheet of tiles since 3 Nov 2026 (its own block next to .wm-me): every item fits without
+   the older squeeze that kept the list menu short. */
+@media (max-width: 719px) { .wm-h:not(.wm-sh) { margin: 2px 10px; } }
 @media (max-width: 1099px) {
   .su-layout { grid-template-columns: 10rem minmax(0, 1fr); gap: 1.25rem; }
   .su-table-head, .su-row { grid-template-columns: minmax(0, 1fr) 3.3rem 5rem 9.5rem; gap: 0.55rem; }
@@ -2907,6 +3186,8 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 .ux-picker-trigger:disabled { opacity: .55; cursor: default; }
 .ux-picker-trigger:focus-visible, .ux-picker button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .ux-search { display: inline-grid; position: relative; grid-template-columns: minmax(0, 1fr); min-width: 0; width: 100%; flex: 1 1 10rem; }
+/* In a field the label and box stack in a column, where flex-basis is a height: 10rem left 110 px under the box (3 Nov 2026) */
+.field > .ux-search { flex: 0 0 auto; }
 .ux-search > input { grid-area: 1 / 1; width: 100%; min-width: 0; padding-right: 3rem !important; }
 .ux-search > input::-webkit-search-cancel-button { display: none; }
 .ux-search-clear { position: relative; grid-area: 1 / 1; align-self: center; justify-self: end; min-width: 44px; min-height: 44px; border: 0; background: transparent; color: var(--ink); font: 1.5rem var(--body); }
@@ -2993,6 +3274,17 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 .ink-busy-button:disabled[aria-busy="true"] { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; opacity: 1; cursor: wait; }
 .ink-busy-button:disabled[aria-busy="true"] .ink-icon { --ink-stroke: #FFF1E6; color: inherit; }
 .ink-busy-button .ink-icon[data-state="done"] { color: inherit; }
+/* Save states (4 Nov 2026, Saving A): the button's words sit over hidden copies of its idle and busy words, so Save,
+   Saving..., Saved and Try again keep one width. The copies are not read out. Saved is green while it shows. */
+.sv-btn { display: inline-grid; place-items: center; }
+.sv-btn > .sv-now, .sv-btn::before, .sv-btn::after { grid-area: 1 / 1; }
+.sv-btn > .sv-now { display: inline-flex; align-items: center; justify-content: center; min-width: 0; max-width: 100%; }
+.sv-btn::before, .sv-btn::after { visibility: hidden; white-space: nowrap; pointer-events: none; }
+.sv-btn::before { content: attr(data-idle); content: attr(data-idle) / ""; }
+.sv-btn::after { content: attr(data-wide); content: attr(data-wide) / ""; padding-inline-start: calc(22px + .5rem); }
+.sv-btn[data-sv="done"]:disabled { background: var(--done-ink); border-color: var(--done-ink); color: #fff; opacity: 1; cursor: default; }
+.sv-line.p-err, .sv-slow { display: block; margin: 0; }
+.sv-slow { font-size: .875rem; font-weight: 600; color: var(--ink); }
 .ink-startup { max-width: 38rem; margin: 2rem auto; padding: 0 1.25rem; }
 .ink-startup-name { margin: 0 0 .5rem; font: 700 2.4rem/1.05 var(--display); }
 .ink-docket-arrive > .docket { animation: ink-docket-in .34s cubic-bezier(.2, .8, .2, 1) both; transform-origin: 50% 6px; }
@@ -3014,6 +3306,13 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
   .ink-docket-arrive > .docket { translate: none; rotate: none; }
   .ink-progress > progress::-webkit-progress-value { transition: none; }
   .ink-skeleton-box { rotate: none; }
+}
+/* One section control (3 Nov 2026, work pages redesign S2): the kitchen's sections as chips under the section box on
+   the prep list and wastage, in one row that scrolls sideways on a phone and fades at its edge */
+.sec-chips { margin-top: 0.5rem; }
+@media (max-width: 719px) {
+  .sec-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); padding-right: 1.5rem; }
+  .sec-chips::-webkit-scrollbar { display: none; }
 }
 
 /* Admin Dashboard (3 Nov 2026, The Pass board with three headlines; js/admin-dashboard.js). dsh- classes only. */
@@ -3124,3 +3423,93 @@ i.dsh-c-w { background: var(--dsh-w); } i.dsh-c-t { background: var(--dsh-t); }
 .dsh-need .btn { min-height: 44px; white-space: nowrap; }
 .dsh-clear { display: flex; gap: .5rem; align-items: center; margin: 0; font-size: .9rem; color: var(--muted); }
 @media (max-width: 560px) { .dsh-need { grid-template-columns: 4px minmax(0, 1fr); } .dsh-need .btn { grid-column: 2; justify-self: start; } }
+/* The week ahead (Dashboard, step 4): beside Needs you on a wide screen, under it on a phone. */
+.dsh-pair { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: .9rem; align-items: start; }
+.dsh-wk-links { display: flex; gap: 1rem; align-items: center; }
+.dsh-wk-links a.dsh-more { display: inline-flex; align-items: center; }
+.dsh-wk { list-style: none; margin: 0; padding: 0; display: grid; }
+.dsh-wk-day { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr) 4rem; gap: .7rem; align-items: start; padding: .55rem 0; border-top: 1px solid var(--line); }
+.dsh-wk-day:first-child { border-top: 0; }
+.dsh-wk-d { margin: 0; font: 700 1.05rem/1.1 var(--display); }
+.dsh-wk-d small { display: block; font: 500 .76rem var(--body); color: var(--muted); }
+.dsh-wk-day ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .2rem; font-size: .9rem; min-width: 0; }
+.dsh-wk-day li { overflow-wrap: anywhere; }
+.dsh-wk-kind { font: 700 .66rem var(--display); letter-spacing: .12em; text-transform: uppercase; margin-right: .4rem; color: var(--muted); }
+.dsh-wk-fn .dsh-wk-kind { color: var(--ink); }
+.dsh-wk-cut .dsh-wk-kind { color: var(--small-ink); }
+.dsh-wk-fn a { color: var(--ink); font-weight: 600; }
+.dsh-wk-none { margin: 0; color: var(--muted); font-size: .9rem; }
+.dsh-wk-load { align-self: center; height: 8px; border-radius: 4px; background: var(--beige); position: relative; overflow: hidden; }
+.dsh-wk-load i { position: absolute; inset: 0 auto 0 0; background: var(--dsh-h3); border-radius: 4px; }
+i.dsh-c-load { background: var(--dsh-h3); }
+@media (max-width: 1100px) { .dsh-pair { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) { .dsh-wk-day { grid-template-columns: 4.6rem minmax(0, 1fr); } .dsh-wk-load { grid-column: 2; } }
+/* Fix a line (3 Nov 2026, work pages redesign S5): the ⋯ also shows on a laptop when it holds Change amount (and Move to
+   section on the prep list); its sheet shows the current value under each action and turns into a small form */
+.nb-more.nb-more-fix { display: inline-flex; align-items: center; justify-content: center; }
+.lm-sheet .lm-fix { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.lm-sheet .lm-fix small { font-weight: 400; color: var(--muted); }
+.lm-form { display: grid; gap: 0.6rem; }
+.lm-form .nb-in { width: 100%; min-height: 44px; font-size: 1.0625rem; }
+.lm-form .btn-row { margin-top: 0.25rem; }
+
+/* Wastage, Clean notebook (3 Nov 2026, work pages redesign A, docs/work-pages-design-options/brief.md): today's total
+   and a bar of the reasons first, then Log waste (and the review for chefs), then the entries. The form and the review
+   open as sheets drawn with the page (.w-sheet), on a phone from the bottom and in the middle column on a laptop. */
+.w-today { margin: 0 0 12px; padding: 0 12px; }
+.w-tot { margin: 0 0 6px; font-size: 0.9375rem; color: var(--muted); }
+.w-tot strong { margin-right: 4px; font: 700 1.5rem var(--display); color: var(--ink); }
+.w-bar { display: flex; gap: 2px; height: 10px; overflow: hidden; border-radius: 5px; background: var(--beige); }
+.w-seg { flex: 1 1 0; min-width: 8px; }
+.w-c-prep { background: #7A7F86; }
+.w-c-expired { background: #B83F15; }
+.w-c-fault { background: #E2602A; }
+.w-c-returned { background: #2F6F8F; }
+.w-c-excess { background: #5E7F35; }
+.w-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0 0; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--muted); }
+.w-legend li { display: inline-flex; align-items: center; gap: 5px; }
+.w-legend b { color: var(--ink); }
+.w-dot { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; }
+.w-acts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; padding: 0 12px; }
+.w-acts .btn { flex: 1 1 10rem; }
+.w-rvbtn { flex-direction: column; gap: 0; line-height: 1.2; }
+.w-rvbtn small { font-size: 0.75rem; font-weight: 500; color: var(--muted); }
+.w-ro { padding: 0 12px; }
+.w-sheet .w-review { margin: 0; max-width: none; }
+.w-sheet .sheet-x, .tr-sheet .sheet-x { width: 100%; margin-top: 10px; }
+.w-rpick { flex-wrap: nowrap; }
+.w-rbig { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); align-content: start; gap: 6px; }
+.w-rbig .w-rchip { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; min-height: 56px; height: auto; padding: 6px 10px; border-radius: 10px; text-align: left; white-space: normal; }
+.w-rbig .w-rchip strong { font-size: 0.9375rem; }
+.w-rbig .w-rchip span { font-size: 0.75rem; font-weight: 400; color: var(--muted); }
+.w-rbig .w-rchip[aria-checked="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.w-rbig .w-rchip[aria-checked="true"] span { color: #fff; }
+.nb-t .w-again { display: flex; align-items: center; width: max-content; min-height: 36px; height: auto; margin-top: 6px; padding: 0 12px; font: 600 0.8125rem var(--body); }
+.nb-t .w-again.is-on { display: block; min-height: 0; padding: 2px 0; border: 0; font-size: 0.8125rem; font-weight: 600; color: var(--muted); }
+@media (min-width: 720px) { .w-sheet, .tr-sheet { width: min(40rem, calc(100vw - 32px)); max-height: 86vh; max-height: 86dvh; } }
+/* A toast while a wastage sheet is open (3 Nov 2026): at the top of the screen, above the sheet, so its Undo can be
+   tapped and the form under it stays clear */
+html:has(.w-sheet, .tr-sheet) .p-toasts { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; z-index: 62; flex-direction: column; }
+
+/* Transfers, Clean notebook (3 Nov 2026, work pages redesign A): Still out first, with how long each earlier day's
+   transfer has been out (.tr-age, darker from 7 days), the return tick on the left, and a pick-up in the Log a transfer
+   sheet (.tr-basket) that saves each item as its own line. */
+.tr-age { display: inline-block; padding: 0 6px; border: 1.5px solid var(--muted); border-radius: 999px; font: 600 0.75rem var(--body); color: var(--muted); white-space: nowrap; vertical-align: 0.15em; }
+.tr-age.is-old { border-color: var(--tag); background: var(--tag); color: #fff; }
+.tr-outstanding .tr-row > .tr-return-box { order: -1; }
+.tr-basket { margin: 6px 0; }
+.tr-basket ul { margin: 4px 0 0; padding: 0; list-style: none; }
+.tr-basket li { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; border-bottom: 1px solid var(--rule); font-size: 0.9375rem; }
+.tr-bk-x { min-height: 44px; padding: 0 6px; border: 0; background: none; color: var(--muted); font: 600 0.8125rem var(--body); text-decoration: underline; cursor: pointer; }
+.tr-addrow { justify-content: space-between; align-items: center; }
+.tr-addrow .tr-bk-add { min-height: 44px; }
+/* The watch list (Dashboard, step 5): pinned sections, wasted items and people, each with its trend. */
+.dsh-wl-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.dsh-wl { display: grid; grid-template-columns: minmax(0, 1fr) 9rem auto; gap: .9rem; align-items: center; padding: .6rem 0; border-top: 1px solid var(--line); }
+.dsh-wl:first-child { border-top: 0; }
+.dsh-wl p { margin: 0; }
+.dsh-wl .btn { min-height: 44px; }
+.dsh-wl-add { display: grid; gap: .5rem; padding: .7rem 0; border-top: 1px solid var(--line); }
+.dsh-wl-opts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
+.dsh-watch > .btn { justify-self: start; }
+@media (max-width: 560px) { .dsh-wl { grid-template-columns: minmax(0, 1fr) auto; } .dsh-wl .dsh-spark { grid-column: 1 / -1; grid-row: 2; } }

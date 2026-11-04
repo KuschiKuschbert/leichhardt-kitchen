@@ -17,13 +17,22 @@ const listen = () => {
   // window.__slow: waking the sound takes 3000 real turns of the page (a busy phone or test runner) while the test's
   // clock runs on; window.__hold: the browser holds the sound back until window.__release() (as it does until a tap)
   const A0 = window.AudioContext || window.webkitAudioContext;
+  // window.__waking: wake-ups (resume) the page asked for and the browser has not answered yet. js/chime.js starts its
+  // notes as the answer comes in, so a check reads the notes once this is 0, however long a busy runner takes
+  window.__waking = 0;
   if (A0) {
     const r0 = A0.prototype.resume;
-    A0.prototype.resume = function () {
+    const ask = function () {
       const q = r0.call(this);
       if (window.__hold) return q.then(() => new Promise(res => (window.__held = window.__held || []).push(res)));
       if (!window.__slow) return q;
       return q.then(() => new Promise(res => { const ch = new MessageChannel(); let n = 0; ch.port1.onmessage = () => { if (++n > 3000) res(); else ch.port2.postMessage(0); }; ch.port2.postMessage(0); }));
+    };
+    A0.prototype.resume = function () {
+      const out = ask.call(this), answered = () => queueMicrotask(() => { window.__waking--; });   // after the page's own then()
+      window.__waking++;
+      out.then(answered, answered);
+      return out;
     };
     window.__release = () => { window.__hold = false; (window.__held || []).splice(0).forEach(f => f()); };
   }
@@ -38,7 +47,9 @@ const listen = () => {
   };
 };
 const heard = p => p.evaluate(() => (window.__osc || []).slice());
-const waitHeard = (p, n) => L.waitFor(p, n => (window.__osc || []).length >= n, n, 4000).catch(() => {});
+// the browser has answered every wake-up the page asked for, so every note it was going to play has started. It
+// used to wait at most 4 s for a count of notes (GitHub read none once, 3 to 4 Nov 2026).
+const waitHeard = p => L.waitFor(p, () => window.__waking === 0, null, 20000).catch(() => {});
 const BELL = 1318.5, ORDER = [BELL, BELL], MARIMBA = [784, 987.8, 1174.7], TIMER = 1480;
 const count = (l, f) => l.filter(x => x === f).length;
 const picks = p => p.evaluate(() => [...document.querySelectorAll('.ps-pick')].map(e => e.getAttribute('data-v') + (e.getAttribute('aria-checked') === 'true' ? '*' : '')));
@@ -60,7 +71,7 @@ const picks = p => p.evaluate(() => [...document.querySelectorAll('.ps-pick')].m
   // written the Pass bell, the same as nothing set)
   const before = (await store(p))[CFG].pingSound;
   await p.click('[data-p="ps-play"][data-v="marimba"]');
-  await waitHeard(p, 3);
+  await waitHeard(p);
   let h = await heard(p);
   ok(MARIMBA.every(f => count(h, f) === 1), 'admin: Play Marimba plays its three notes, G, B and D (' + h.join(', ') + ')');
   ok((before === undefined || before === 'bell') && (await store(p))[CFG].pingSound === before && (await picks(p))[0] === 'bell*', 'admin: Play saves nothing and leaves the Pass bell picked');
@@ -69,7 +80,7 @@ const picks = p => p.evaluate(() => [...document.querySelectorAll('.ps-pick')].m
   await p.evaluate(() => { window.__osc = []; });
   await p.click('[data-p="ps-pick"][data-v="timer"]');
   await L.waitFor(p, () => (window.__fake.dump()[Object.keys(window.__fake.dump()).find(k => /config\/main$/.test(k))] || {}).pingSound === 'timer', null, 4000).catch(() => {});
-  await waitHeard(p, 3);
+  await waitHeard(p);
   h = await heard(p);
   let s = await store(p);
   ok(s[CFG].pingSound === 'timer', 'admin: picking Oven timer saves config/main.pingSound (' + s[CFG].pingSound + ')');
@@ -100,7 +111,7 @@ const picks = p => p.evaluate(() => [...document.querySelectorAll('.ps-pick')].m
   ok(await p.$('.nt') === null, 'staff: no popup before the ping\'s time');
   await p.clock.runFor(61 * 60000); await L.settle(p, 400);
   await L.waitFor(p, () => !!document.querySelector('.nt')).catch(() => {});
-  await waitHeard(p, 10);
+  await waitHeard(p);
   h = await heard(p);
   ok(!!(await p.$('.nt')) && count(h, BELL) === ORDER.length, 'staff: the ping pops up at 15:00 and Order up rings twice (' + h.join(', ') + ')');
   await p.evaluate(() => { window.__osc = []; });
@@ -139,7 +150,7 @@ const picks = p => p.evaluate(() => [...document.querySelectorAll('.ps-pick')].m
   // Firestore) plays the Pass bell (the test browser lets a page play sound before a tap)
   p = await L.open(b, '#/prep', { who: 'ann', touch: true, board: true, init: listen, extra: withSound('<b>loud</b>', ping('n3', 'Safety: walk-in door sticks', { tag: 'safety', tm: 835 })), wait: 2000 });
   await L.waitFor(p, () => !!document.querySelector('.nt')).catch(() => {});
-  await waitHeard(p, 5);
+  await waitHeard(p);
   h = await heard(p);
   ok(/walk-in door/.test(await txt(p, '.nt') || '') && count(h, BELL) === 1 && count(h, TIMER) === 0, 'start of shift: the sheet comes up with the ping, and an unknown sound from Firestore plays the Pass bell once (' + h.join(', ') + ')');
   await p.evaluate(() => { window.__osc = []; });
@@ -174,7 +185,7 @@ const picks = p => p.evaluate(() => [...document.querySelectorAll('.ps-pick')].m
   await p.evaluate(() => { window.__osc = []; });
   await p.clock.runFor(61 * 60000); await L.settle(p, 400);
   await L.waitFor(p, () => !!document.querySelector('.nt')).catch(() => {});
-  await waitHeard(p, 3);
+  await waitHeard(p);
   h = await heard(p);
   ok(MARIMBA.every(f => count(h, f) === 1) && count(h, TIMER) === 0, 'sous chef phone: the 15:00 ping plays the head chef\'s Marimba (' + h.join(', ') + ')');
   await p.tap('.nt-got'); await L.settle(p, 200);
@@ -184,7 +195,7 @@ const picks = p => p.evaluate(() => [...document.querySelectorAll('.ps-pick')].m
   await p.evaluate(() => { window.__osc = []; window.__slow = true; });
   await p.clock.runFor(40 * 60000); await L.settle(p, 400);
   await L.waitFor(p, () => /Fryer oil/.test((document.querySelector('.nt') || {}).textContent || '')).catch(() => {});
-  await waitHeard(p, 3);
+  await waitHeard(p);
   h = await heard(p);
   ok(count(h, TIMER) === 3 && MARIMBA.every(f => count(h, f) === 0), 'sous chef phone: after the head chef picks Oven timer, the 15:40 ping plays it with no reload (' + h.join(', ') + ')');
   ok(p.errors.length === 0, 'one sound: no page errors ' + p.errors.join(' | '));

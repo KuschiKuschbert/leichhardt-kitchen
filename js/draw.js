@@ -29,7 +29,7 @@
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP, LIB = window.LK_LIB;
   var esc = A.esc;
   // Optional in lazy files: an older saved shell keeps its existing text feedback.
-  function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || (navigator.onLine === false ? 'still' : 'busy')) : esc(text); }
+  function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || 'busy') : esc(text); }
   function B() { return P.book(); }
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
   function n1(x) { return Math.round(x * 10) / 10; }
@@ -565,31 +565,75 @@
     return '<div class="dw-stage"><svg class="dw-svg" viewBox="' + viewBox() + '" tabindex="0" role="application" aria-roledescription="drawing canvas" aria-label="' + esc(d.name + '. ' + d.els.length + (d.els.length === 1 ? ' part' : ' parts') + (W.sel.length ? ', ' + W.sel.length + ' picked' : '') + '. Arrow keys move the picked part, Delete removes it.') + '">' +
       '<g class="dw-surf" data-surf="1">' + svgS(d) + '</g><g class="dw-els">' + d.els.map(function (el, k) { return '<g class="dw-el' + (W.sel.indexOf(k) >= 0 ? ' on' : '') + '" data-i="' + k + '">' + elSVG(el) + '</g>'; }).join('') + '</g>' +
       '<g class="dw-ovl">' + selOverlay() + '</g></svg>' +
-      '<div class="dw-zoom" role="group" aria-label="Zoom"><button type="button" class="p-x" data-dw="zout" aria-label="Zoom out">-</button><button type="button" class="p-x" data-dw="fit">Fit</button><button type="button" class="p-x" data-dw="zin" aria-label="Zoom in">+</button></div></div>';
+      '<div class="dw-zoom" role="group" aria-label="Zoom"><button type="button" class="p-x" data-dw="zout" aria-label="Zoom out">-</button><button type="button" class="p-x" data-dw="fit">Fit</button><button type="button" class="p-x" data-dw="zin" aria-label="Zoom in">+</button></div>' + selHTML() + '</div>';
+  }
+  // the picked part's bar sits just above the part (clear of the turn handle), or under it when there is no room
+  function placeSel() {
+    var st = W.root && W.root.querySelector('.dw-stage'), bar = st && st.querySelector('.dw-selbar');
+    if (!bar) return;
+    var on = st.querySelectorAll('.dw-el.on, .dw-ovl .dw-turn'), s = st.getBoundingClientRect(), b = null;
+    Array.prototype.forEach.call(on, function (n) { var r = n.getBoundingClientRect(); b = b ? { l: Math.min(b.l, r.left), t: Math.min(b.t, r.top), r: Math.max(b.r, r.right), btm: Math.max(b.btm, r.bottom) } : { l: r.left, t: r.top, r: r.right, btm: r.bottom }; });
+    if (!b) return;
+    var h = bar.offsetHeight, w = bar.offsetWidth, top = b.t - s.top - h - 8;
+    if (top < 6) top = Math.min(s.height - h - 6, b.btm - s.top + 10);
+    bar.style.top = Math.max(6, top) + 'px';
+    bar.style.left = Math.max(6, Math.min(s.width - w - 6, (b.l + b.r) / 2 - s.left - w / 2)) + 'px';
   }
   function btn(a, label, o) { o = o || {}; return '<button type="button" class="' + (o.cls || 'p-x') + (o.busy != null ? ' ink-busy-button' : '') + '" data-dw="' + a + '"' + (o.v != null ? ' data-v="' + esc(o.v) + '"' : '') + (o.on != null ? ' aria-pressed="' + !!o.on + '"' : '') + (o.dis ? ' disabled' : '') + (o.busy ? ' aria-busy="true"' : '') + (o.aria ? ' aria-label="' + esc(o.aria) + '"' : '') + '>' + (o.busy ? inkLabel('Saving...') : esc(label)) + '</button>'; }
-  function toolsHTML() {
-    var side = W.d.slot === 'side' || W.d.slot === 'build';
-    return '<div class="dw-tools" role="toolbar" aria-label="Drawing tools">' +
-      btn('panel', 'Add from the library', { v: 'lib', on: W.panel === 'lib', cls: 'p-x dw-add' }) + btn('text', 'Text') + btn('line', 'Line') + btn('arrow', 'Arrow') + btn('rect', 'Box') + btn('ellipse', 'Oval') +
-      (side ? '' : btn('panel', 'Servingware', { v: 'ware', on: W.panel === 'ware' })) + btn('panel', 'Parts', { v: 'parts', on: W.panel === 'parts' }) +
-      btn('undo', 'Undo', { dis: !W.undo.length }) + btn('redo', 'Redo', { dis: !W.redo.length }) +
-      btn('many', 'Pick several', { on: W.many }) + btn('snap', 'Snap to centre', { on: W.snap !== false }) +
-      (side ? btn('labels', 'Label everything') : '') + btn('check', 'Check the drawing') + smart('tools') +
-      btn('panel', 'Save as a template', { v: 'tpl', on: W.panel === 'tpl' }) + (W.d.isNew ? '' : btn('panel', 'Use for another recipe', { v: 'reuse', on: W.panel === 'reuse' })) + '</div>';
+  /* The studio (3 Nov 2026, head chef's choice: B's full-screen studio). The canvas fills the screen; one dock at the
+     thumb (Draw it for me, Add, Plate, Parts, Check, More); a small bar beside the picked part; one drawer for the panels.
+     Every button keeps its data-dw name, so the commands, the drafts and the tests' clicks work as before. */
+  var DI = {
+    spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/>',
+    add: '<path d="M12 5v14M5 12h14"/>', plate: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/>',
+    parts: '<path d="M4 6h16M4 12h16M4 18h10"/>', check: '<path d="M5 12l4 4 10-10"/>', more: '<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>'
+  };
+  function dk(a, label, icon, o) {
+    o = o || {};
+    return '<button type="button" class="dw-dk' + (o.hero ? ' hero' : '') + '" data-dw="' + a + '"' + (o.v != null ? ' data-v="' + o.v + '"' : '') + (o.exp != null ? ' aria-expanded="' + !!o.exp + '"' : '') + '>' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + DI[icon] + '</svg><span>' + esc(label) + '</span></button>';
   }
+  function dockHTML() {
+    var side = W.d.slot === 'side' || W.d.slot === 'build', S = window.LK_SMART && window.LK_SMART.ui;
+    return '<nav class="dw-dock" aria-label="Studio">' + (S ? dk('sm-draw', W.d.els.length ? 'Draw again' : 'Draw it for me', 'spark', { hero: true }) : '') +
+      dk('panel', 'Add', 'add', { v: 'lib', exp: W.panel === 'lib' }) + (side ? '' : dk('panel', 'Plate', 'plate', { v: 'ware', exp: W.panel === 'ware' })) +
+      dk('panel', 'Parts', 'parts', { v: 'parts', exp: W.panel === 'parts' }) + dk('check', 'Check', 'check', { exp: W.panel === 'check' }) + dk('panel', 'More', 'more', { v: 'more', exp: W.panel === 'more' }) + '</nav>';
+  }
+  // the tools not used on every drawing
+  function moreHTML() {
+    var side = W.d.slot === 'side' || W.d.slot === 'build', S = window.LK_SMART && window.LK_SMART.ui;
+    return '<section class="dw-panel" aria-labelledby="dw-h-more"><h3 class="h3" id="dw-h-more">More tools</h3>' +
+      '<span class="label">Draw by hand</span><div class="dw-tools">' + btn('text', 'Text') + btn('line', 'Line') + btn('arrow', 'Arrow') + btn('rect', 'Box') + btn('ellipse', 'Oval') + '</div>' +
+      '<span class="label">Lay it out</span><div class="dw-tools">' + (S && !side ? btn('sm-again', 'Try another layout') + btn('sm-tidy', 'Tidy up') + btn('panel', 'Plating style', { v: 'style' }) : '') + (side ? btn('labels', 'Label everything') : '') +
+      btn('many', 'Pick several', { on: W.many }) + btn('snap', 'Snap to centre', { on: W.snap !== false }) + '</div>' +
+      '<span class="label">Keep and reuse</span><div class="dw-tools">' + btn('panel', 'Save as a template', { v: 'tpl' }) + (W.d.isNew ? '' : btn('panel', 'Use for another recipe', { v: 'reuse' })) + '</div></section>';
+  }
+  // the picked part's own bar: the few things done most, the rest under More
   function selHTML() {
     if (!W.sel.length) return '';
     var one = W.sel.length === 1 ? W.d.els[W.sel[0]] : null;
-    return '<div class="dw-selbar" role="toolbar" aria-label="The picked part"><span class="dw-selname">' + esc(one ? nameOfEl(one) : W.sel.length + ' parts picked') + '</span>' +
-      btn('dup', 'Duplicate') + btn('del', 'Delete') + btn('front', 'Front') + btn('fwd', 'Forward') + btn('bwd', 'Backward') + btn('back', 'Back') +
+    return '<div class="dw-selbar" role="toolbar" aria-label="' + esc(one ? nameOfEl(one) : W.sel.length + ' parts picked') + '"><span class="dw-selname">' + esc(one ? nameOfEl(one) : W.sel.length + ' parts') + '</span>' +
       (isPiece(one) && one.ing && (W.d.slot === 'plate' || W.d.slot === 'pan') ? btn('swap', 'Swap') : '') +
-      (isPiece(one) ? btn('flip', 'Flip') + btn('panel', 'Colours', { v: 'colour', on: W.panel === 'colour' }) + btn('stretch', 'Stretch', { on: W.stretch }) : '') +
-      (one && one.t === 'raw' ? btn('split', 'Split into pieces') : '') +
-      (W.sel.some(function (i) { return isPiece(W.d.els[i]); }) ? btn('piece', 'Save as a library piece') : '') +
+      (isPiece(one) ? btn('panel', 'Colour', { v: 'colour', on: W.panel === 'colour' }) : '') +
       (isPiece(one) && (W.d.slot === 'plate' || W.d.slot === 'pan' || W.d.slot === 'side' || W.d.slot === 'build') ? btn('panel', one.ing ? 'Label: ' + one.ing : 'Which ingredient?', { v: 'label', on: W.panel === 'label' }) : '') +
-      (one && one.t !== 'item' ? btn('panel', 'Change it', { v: 'edit', on: W.panel === 'edit' }) : '') +
-      btn('none', 'Done') + '</div>';
+      btn('panel', 'More', { v: 'pmore', on: W.panel === 'pmore' }) + btn('del', 'Delete', { cls: 'p-x dw-del' }) + btn('none', 'Done') + '</div>';
+  }
+  // More for the picked part: arranging, copying and changing it
+  function partMoreHTML() {
+    var one = W.sel.length === 1 ? W.d.els[W.sel[0]] : null;
+    return '<section class="dw-panel" aria-labelledby="dw-h-pm"><h3 class="h3" id="dw-h-pm">' + esc(one ? nameOfEl(one) : W.sel.length + ' parts picked') + '</h3>' +
+      '<span class="label">Arrange</span><div class="dw-tools">' + btn('front', 'To the front') + btn('fwd', 'Forward') + btn('bwd', 'Backward') + btn('back', 'To the back') + '</div>' +
+      '<span class="label">Change</span><div class="dw-tools">' + btn('dup', 'Duplicate') + (isPiece(one) ? btn('flip', 'Flip') + btn('stretch', 'Stretch', { on: W.stretch }) : '') +
+      (one && one.t === 'raw' ? btn('split', 'Split into pieces') : '') + (one && one.t !== 'item' ? btn('panel', 'Change it', { v: 'edit' }) : '') + '</div>' +
+      (W.sel.some(function (i) { return isPiece(W.d.els[i]); }) ? '<span class="label">Keep</span><div class="dw-tools">' + btn('piece', 'Save as a library piece') + '</div>' : '') + '</section>';
+  }
+  // the drawer: the open panel, and what Draw it for me was not sure about until it is closed
+  function drawerHTML() {
+    var p = W.panel === 'pmore' && !W.sel.length ? '' : W.panel, unsure = !!(W.smart && W.smart.unsure && W.smart.unsure.length && W.unsureShut !== W.smart);
+    if (!p && !unsure && !(W.d.isNew && !W.d.els.length && !W.started)) return '';
+    if (p === 'check' && !W.check) W.check = check();   // a change clears the last check: while its panel is open it checks again
+    var body = smart('panel') + (p === 'lib' || !p ? startHTML() : '') + (p === 'lib' ? missingHTML() : '') + (p === 'check' ? checkHTML() : '') + (p === 'more' ? moreHTML() : p === 'pmore' ? partMoreHTML() : panelHTML());
+    return '<aside class="dw-drawer" aria-label="Studio panel"><div class="dw-drawer-head"><button type="button" class="btn dw-shut" data-dw="shut">Done</button></div>' + body + '</aside>';
   }
   function missingHTML() {
     var m = missingIngs();
@@ -703,10 +747,14 @@
     var newer = d.els.some(function (el) { var it = el.t === 'item' && itemOf(el.a); return it && it.id + '@' + it.v !== el.a; }) ? '<div class="box beige" role="note"><span class="label">Newer library drawings</span><div>Some pieces have a newer drawing in the library. This drawing keeps its own copy until you ask.</div><div class="btn-row">' + btn('newer', 'Use the newer drawings', { cls: 'btn' }) + '</div></div>' : '';
     var empty = nothingDrawn(d);
     var state = W.saving || stateWords(d);
-    return '<div class="dw"><div class="mg-head"><h2 id="rtitle" tabindex="-1">' + esc((r ? r.name : d.rid) + ': ' + SLOT_NAME[d.slot].toLowerCase()) + '</h2></div>' + kept + conflict + newer +
-      '<div class="dw-main"><div class="dw-left">' + canvasHTML() + toolsHTML() + selHTML() + '</div><div class="dw-right">' + smart('panel') + startHTML() + missingHTML() + checkHTML() + panelHTML() + '</div></div>' +
-      '<div class="mg-bar dw-bar"><span class="mg-state" role="status">' + esc(state) + '</span>' + (W.msg ? '<span class="p-err" role="alert">' + esc(W.msg) + '</span>' : '') +
-      '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-dw="save"' + (W.saving ? ' disabled aria-busy="true"' : empty || unchanged(d) ? ' disabled' : '') + '>' + (W.saving ? inkLabel('Saving...') : 'Save') + '</button></div></div></div>';
+    var drawer = drawerHTML();
+    return '<div class="dw dw-studio"><div class="dw-bar dw-top"><button type="button" class="btn dw-close" data-act="back" aria-label="Close the studio and go back to the recipe">Close</button>' +
+      '<div class="dw-ttl"><h2 id="rtitle" tabindex="-1">' + esc(SLOT_NAME[d.slot]) + '</h2><small>' + esc(r ? r.name : d.rid) + '</small></div>' +
+      '<div class="dw-top-acts">' + btn('undo', 'Undo', { dis: !W.undo.length, cls: 'btn' }) + btn('redo', 'Redo', { dis: !W.redo.length, cls: 'btn' }) +
+      '<button type="button" class="btn dark ink-busy-button" data-dw="save"' + (W.saving ? ' disabled aria-busy="true"' : empty || unchanged(d) ? ' disabled' : '') + '>' + (W.saving ? inkLabel('Saving...') : 'Save') + '</button></div>' +
+      '<span class="mg-state" role="status">' + esc(state) + '</span>' + (W.msg ? '<span class="p-err" role="alert">' + esc(W.msg) + '</span>' : '') + '</div>' +
+      (kept || conflict || newer ? '<div class="dw-notes">' + kept + conflict + newer + '</div>' : '') +
+      '<div class="dw-main' + (drawer ? ' has-drawer' : '') + '"><div class="dw-left">' + canvasHTML() + dockHTML() + '</div>' + drawer + '</div></div>';
   }
   // drawing the page takes a typed box away, and its change event can ask for another draw while this one runs: that
   // one is left out (the page drawn now already has the change)
@@ -720,6 +768,7 @@
     var a = document.activeElement, keep = a && W.root.contains(a) ? (a.getAttribute('data-dwf') ? '[data-dwf="' + a.getAttribute('data-dwf') + '"]' : a.classList.contains('dw-svg') ? '.dw-svg' : a.getAttribute('data-dw') ? '[data-dw="' + a.getAttribute('data-dw') + '"]' + (a.getAttribute('data-v') != null ? '[data-v="' + a.getAttribute('data-v') + '"]' : '') : '') : '';
     var y = window.scrollY, ps = a && a.selectionStart;
     W.root.innerHTML = pageHTML();
+    placeSel();
     window.dispatchEvent(new Event('lk-nav'));
     window.scrollTo(0, y);
     if (keep) { var el = W.root.querySelector(keep); if (el) { el.focus({ preventScroll: true }); if (ps != null && el.setSelectionRange) try { el.setSelectionRange(ps, ps); } catch (e) {} } }
@@ -731,6 +780,7 @@
     var svg = st.querySelector('.dw-svg'), had = document.activeElement === svg;
     var tmp = document.createElement('div'); tmp.innerHTML = canvasHTML();
     st.parentNode.replaceChild(tmp.firstChild, st);
+    placeSel();
     if (had) W.root.querySelector('.dw-svg').focus({ preventScroll: true });
   }
 
@@ -750,12 +800,13 @@
     var d = W.d, one = W.sel.length === 1 ? d.els[W.sel[0]] : null, c = centre();
     switch (a) {
       case 'panel': W.panel = W.panel === v ? '' : v; if (v !== 'lib' || !W.panel) { W.pendingIng = ''; W.swap = null; } draw(); return;
+      case 'shut': W.panel = ''; W.pendingIng = ''; W.swap = null; W.started = true; if (W.smart) W.unsureShut = W.smart; draw(); return;
       case 'undo': undo(); return;
       case 'redo': redo(); return;
       case 'many': W.many = !W.many; draw(); return;
       case 'snap': W.snap = W.snap === false; draw(); return;
       case 'stretch': W.stretch = !W.stretch; draw(); return;
-      case 'none': W.sel = []; if (/colour|label|edit/.test(W.panel)) W.panel = ''; draw(); return;
+      case 'none': W.sel = []; if (/colour|label|edit|pmore/.test(W.panel)) W.panel = ''; draw(); return;
       case 'zin': W.view.z = Math.min(6, W.view.z * 1.4); drawCanvas(); return;
       case 'zout': W.view.z = Math.max(0.5, W.view.z / 1.4); if (W.view.z <= 1) W.view.x = W.view.y = 0; drawCanvas(); return;
       case 'fit': W.view = { z: 1, x: 0, y: 0 }; drawCanvas(); return;
@@ -765,7 +816,7 @@
       case 'rect': addShape({ t: 'rect', x: n1(c[0]), y: n1(c[1]), w: 60, h: 40, rr: 4, fill: 'none', stroke: '#1C1D1F' }); return;
       case 'ellipse': addShape({ t: 'ellipse', x: n1(c[0]), y: n1(c[1]), w: 60, h: 40, fill: 'none', stroke: '#1C1D1F' }); return;
       case 'labels': before(); labelAll(); changed(); say('Labels added'); return;
-      case 'check': W.check = check(); draw(); return;
+      case 'check': W.check = check(); W.panel = 'check'; draw(); return;
       case 'cat': W.cat = v; W.sub = ''; W.more = 0; draw(); return;
       case 'sub': W.sub = v; W.more = 0; draw(); return;
       case 'more': W.more += 36; draw(); return;
@@ -808,11 +859,14 @@
         draw(); var s = W.root.querySelector('.dw-svg'); if (s && el0 && el0.closest('.dw-check')) s.focus({ preventScroll: true }); return;
       }
     }
+    // on a phone Draw it for me and Try another layout close the drawer, so the plate it draws is in view (on a computer
+    // the drawer sits beside it and keeps its note); anything it is not sure about opens the drawer by itself
+    if ((a === 'sm-draw' || a === 'sm-again') && window.innerWidth < 900 && /^(lib|more|parts|check)?$/.test(W.panel)) { W.panel = ''; W.started = true; }
     if (window.LK_SMART && window.LK_SMART.ui && window.LK_SMART.ui.cmd && window.LK_SMART.ui.cmd(a, v, W)) return;
     if (!W.sel.length || keptFirst()) return;
     before();
     if (a === 'dup') { var add = W.sel.map(function (i) { var e = clone(d.els[i]); e.x = n1((e.x || 0) + 8); e.y = n1((e.y || 0) + 8); if (e.t === 'line') e.pts = pts(e).map(function (p) { return f(p[0] + 8) + ',' + f(p[1] + 8); }).join(' '); delete e.fixed; return e; }); d.els = d.els.concat(add); W.sel = add.map(function (x, k) { return d.els.length - add.length + k; }); }
-    else if (a === 'del') { d.els = d.els.filter(function (x, i) { return W.sel.indexOf(i) < 0; }); W.sel = []; if (/colour|label|edit/.test(W.panel)) W.panel = ''; }
+    else if (a === 'del') { d.els = d.els.filter(function (x, i) { return W.sel.indexOf(i) < 0; }); W.sel = []; if (/colour|label|edit|pmore/.test(W.panel)) W.panel = ''; }
     else if (/^(front|back|fwd|bwd)$/.test(a)) reorder(a);
     else if (a === 'flip') W.sel.forEach(function (i) { d.els[i].flip = !d.els[i].flip; });
     else if (a === 'tintc' && isPiece(one)) { var it = itemOf(one.a); one.cm = tintMap(bodyOf(one.a), (it && it.side && it.side.c) || coloursIn(bodyOf(one.a))[0], v); }
@@ -1057,6 +1111,7 @@
     var typing = /^(INPUT|TEXTAREA|SELECT)$/.test(ev.target.tagName), mod = ev.ctrlKey || ev.metaKey, k = ev.key;
     if (mod && !typing && (k === 'z' || k === 'Z')) { ev.preventDefault(); if (ev.shiftKey) redo(); else undo(); return; }
     if (mod && !typing && (k === 'y' || k === 'Y')) { ev.preventDefault(); redo(); return; }
+    if (k === 'Escape' && !typing && !ev.target.classList.contains('dw-svg') && (W.panel || W.sel.length)) { ev.preventDefault(); if (W.panel) cmd('shut'); else cmd('none'); var sv = W.root.querySelector('.dw-svg'); if (sv) sv.focus({ preventScroll: true }); return; }
     if (!ev.target.classList.contains('dw-svg')) return;
     if (mod && (k === 'd' || k === 'D')) { ev.preventDefault(); cmd('dup'); return; }
     if (k === 'Delete' || k === 'Backspace') { ev.preventDefault(); cmd('del'); return; }
@@ -1497,7 +1552,7 @@
     var t = W.root.querySelector('#rtitle'); if (t) t.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }
-  function note(title, text, waiting) { return '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">' + esc(title) + '</h2>' + (waiting && window.LK_MOTION ? window.LK_MOTION.status(text, { icon: 'recipes', state: navigator.onLine === false ? 'still' : 'busy', rows: 3 }) : '<p>' + esc(text) + '</p>') + '</div>'; }
+  function note(title, text, waiting) { return '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">' + esc(title) + '</h2>' + (waiting && window.LK_MOTION ? window.LK_MOTION.status(text, { icon: 'recipes', state: 'busy', rows: 3 }) : '<p>' + esc(text) + '</p>') + '</div>'; }
   function mount(root, sub) {
     var key = sub.join('/');
     var owner = identity();

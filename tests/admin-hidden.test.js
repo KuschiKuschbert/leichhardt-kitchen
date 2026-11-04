@@ -48,6 +48,7 @@ const { R, ok } = L.results(), { txt } = L;
   ok(await p.$('[data-act="device-choice"]') !== null, 'head chef settings: protected device type');
   ok(await L.admItem(p) === 'signed', 'head chef settings: Admin in the chef hat menu');
   // signing out on that device drops them again without a reload, and the device type chosen stays
+  await L.setRow(p, 'device');
   await p.click('[data-act="device-choice"]'); await p.click('[data-device="shared"]');
   await L.waitFor(p, () => LK_DEVICE.mode() === 'shared' && !LK_PREP.privateAccess());
   ok(await p.$('[data-act="device-choice"]') === null && await p.$('[data-act="clearticks"]') === null && await p.$('[aria-label="This device"]') !== null, 'head chef signed out: saved device summary stays, protected controls close');

@@ -31,7 +31,8 @@ const go = async (p, h, selector) => {
 const writes = p => p.evaluate(() => window.__fake.writes.flat().filter(w => /\/(recipes|drawings|functions|fncontact|suppliers|cutdone|book)(\/|$)/.test(w.path)).length);
 async function step(p, destination, selector, name) {
   const before = await hash(p);
-  await p.click(back);
+  // the drawing studio covers the book's top bar: its own Close is the same Back (3 Nov 2026)
+  await p.click(await p.$('.dw-studio .dw-close') ? '.dw-studio .dw-close' : back);
   await L.waitFor(p, v => location.hash === v.to || location.hash !== v.before, { to: destination, before }, 6000).catch(() => false);
   await L.settle(p, 200);
   const actual = await hash(p), reached = actual === destination;
@@ -63,7 +64,7 @@ async function walk(p, paths, name) {
 
   p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra, wait: 1500 });
   await wait(p, '#mg-name');
-  await p.fill('#mg-name', 'Exact recipe draft after parent return');
+  await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Exact recipe draft after parent return');
   if (await step(p, '#/manage', '#mg-q', 'Direct recipe editor')) {
     const kept = await p.evaluate(() => JSON.parse(localStorage.getItem('lk.mg.draft.burger') || 'null'));
     ok(kept && kept.e.d.name === 'Exact recipe draft after parent return', 'Direct recipe editor: the final name is kept before leaving');
@@ -117,7 +118,7 @@ async function walk(p, paths, name) {
   await wait(p, '#o-text'); await p.fill('#o-text', 'Exact underlying order draft'); await p.fill('#o-qty', '3 tubs');
   await go(p, '#/manage', '#mg-q');
   await p.click('#mg-results a[href="#/manage/r/burger"]'); await wait(p, '#mg-name');
-  await p.fill('#mg-name', 'Exact draft reopened by Forward');
+  await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Exact draft reopened by Forward');
   if (await step(p, '#/manage', '#mg-q', 'Existing recipe parent') && await step(p, '#/orders', '#o-text', 'Existing recipe origin')) {
     ok(await p.inputValue('#o-text') === 'Exact underlying order draft' && await p.inputValue('#o-qty') === '3 tubs', 'Existing recipe origin: underlying unsaved order values stay intact');
     await p.goForward(); await wait(p, '#mg-q');

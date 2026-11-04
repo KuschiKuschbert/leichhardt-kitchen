@@ -6,8 +6,8 @@
   var generation = 0, stop = null, watchKey = '', context = '', recorder = '', timer = null;
   var M = blank();
   // Optional in lazy files: an older saved shell keeps its existing text feedback.
-  function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || (navigator.onLine === false ? 'still' : 'busy')) : esc(text); }
-  function loading(text, icon, rows) { return window.LK_MOTION ? window.LK_MOTION.status(text, { icon: icon, state: navigator.onLine === false ? 'still' : 'busy', rows: rows || 0 }) : '<p class="hint" role="status">' + esc(text) + '</p>'; }
+  function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || 'busy') : esc(text); }
+  function loading(text, icon, rows) { return window.LK_MOTION ? window.LK_MOTION.status(text, { icon: icon, state: 'busy', rows: rows || 0 }) : '<p class="hint" role="status">' + esc(text) + '</p>'; }
   // What came in? (3 Nov 2026, head chef chose design A): Chilled, Frozen or Both. It starts on Chilled every time and
   // lives in this form's memory only. A box that is not showing saves null, exactly like an empty box before.
   var MODES = [['chilled', 'Chilled'], ['frozen', 'Frozen'], ['both', 'Both']];

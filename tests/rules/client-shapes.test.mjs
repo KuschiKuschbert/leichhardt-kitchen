@@ -238,6 +238,10 @@ row('js/prep.js pastRead() (admin Reports): a past day\'s wastage lines', { ok: 
 row('js/prep.js watchXOpen(): open loans listener (transferOpen, open == true)', { ok: KITCHEN, asks: KITCHEN, run: db => listen(query(C(db, 'transferOpen'), where('open', '==', true))) });
 row('js/prep.js dashHTML() loans(): the admin Dashboard\'s open loans, one query (transferOpen, open == true)', { ok: KITCHEN, asks: GOOGLE, run: db => getDocs(query(C(db, 'transferOpen'), where('open', '==', true))) });
 row('js/prep.js dashHTML() get(): the admin Dashboard\'s nightly numbers and run health (analysis/dashboard, analysis/health)', { ok: GOOGLE, asks: GOOGLE, run: db => Promise.all([getDocFromServer(D(db, 'analysis/dashboard')), getDocFromServer(D(db, 'analysis/health'))]) });
+row('js/prep.js dashHTML() watch(): the admin Dashboard\'s watch list get (dashwatch/main)', { ok: GOOGLE, asks: GOOGLE, run: db => getDocFromServer(D(db, 'dashwatch/main')) });
+row('js/prep.js dashHTML() saveWatch(): the admin Dashboard\'s watch list set (dashwatch/main)', { ok: GOOGLE, asks: GOOGLE, run: (db, w, r) => W(r, [['set', 'dashwatch/main', { list: ['sec:Larder', 'person:ann'], v: 2, at: Date.now() }]]) });
+row('js/prep.js dashHTML() saveWatch(): a watch list longer than 12 is refused (never sent: the Dashboard caps at 12)', { ok: [], asks: [], run: (db, w, r) => W(r, [['set', 'dashwatch/main', { list: Array.from({ length: 13 }, (x, i) => 'sec:S' + i), v: 3, at: Date.now() }]]) });
+row('js/prep.js dashHTML() saveWatch(): a watch list record under another id is refused (never sent)', { ok: [], asks: [], run: (db, w, r) => W(r, [['set', 'dashwatch/other', { list: [], v: 1, at: Date.now() }]]) });
 row('js/prep.js watchXfer(): today\'s transfer lines listener', { ok: KITCHEN, asks: KITCHEN, run: db => listen(C(db, `transfers/${TODAY}/lines`)) });
 row('js/prep.js loadXSum(): summary/transfers get', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, 'summary/transfers')) });
 row('js/prep.js xferStatsHTML() (admin Reports): a past day\'s transfer lines', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, `transfers/${PAST}/lines`)) });
@@ -504,6 +508,13 @@ row('js/prep.js resetPin(): Reset PIN (staffpins and pinset deleted, pinOpen mer
 row('js/prep.js toggleUrgent(): mark a prep line urgent', { ok: ADDS, asks: ADDS,
   prep: r => put({ [`days/${TODAY}/items/${MINE(r)}`]: line() }),
   run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { urgent: true, urgentBy: NAME[r], urgentById: w, urgentAt: Date.now() }]]) });
+// Fix a line (3 Nov 2026, work pages redesign S5): the ⋯ menu's Change amount and Move to section, for anyone with Add
+row('js/prep.js lmFixSave(): change a prep line\'s amount and section', { ok: ADDS, asks: ADDS,
+  prep: r => put({ [`days/${TODAY}/items/${MINE(r)}`]: line() }),
+  run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { qty: '3 tubs', qn: 3, qu: 'tub', station: 'Sauce' }]]) });
+row('js/prep.js lmFixSave(): change an order line\'s amount', { ok: ADDS, asks: ADDS,
+  prep: r => put({ [`orders/${TODAY}/lines/${MINE(r)}`]: { text: 'Cream', qty: '4 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: NOW - 3600000, ordered: false, deleted: false, by: 'ann' } }),
+  run: (db, w, r) => W(r, [['upd', `orders/${TODAY}/lines/${MINE(r)}`, { qty: '6 L', qn: 6, qu: 'L' }]]) });
 row('js/prep.js mergeDups(): a double up merged into the line it repeats', { ok: DELS, asks: DELS.filter(r => r !== 'owner'),
   prep: r => put({ [`days/${TODAY}/items/${MINE(r)}`]: line(), [`days/${TODAY}/items/${MINE(r)}-2`]: line({ qty: '1 kg', qn: 1 }) }),
   run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { qty: '3 kg', qn: 3, qu: 'kg' }],

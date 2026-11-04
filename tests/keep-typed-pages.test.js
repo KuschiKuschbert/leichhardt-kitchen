@@ -83,6 +83,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
   for (const w of [390, 768, 1280]) {
     await safe(w + ' review', async () => {
       p = await L.open(b, '#/waste', { who: 'sam', width: w, height: w > 400 ? 900 : 844, wait: 1500 });
+      await L.wReview(p);
       const sel = '[data-p="wreview"][data-v="page"]';
       await L.waitFor(p, s => !!document.querySelector(s), sel, 8000);
       ok(await off(p, sel) === true, w + ' review: Save the review is off with nothing typed');
@@ -99,6 +100,9 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
         await p.click(sel); await L.settle(p, 700);
         const rv = (await store(p))[fsKey(['waste', today])] || {};
         ok(rv.change === 'Drop chips to order after 21:00' && rv.reviewBy === 'Sam' && /Review saved/.test(await txt(p, '.p-toast') || ''), w + ' review: a changed review saves (' + JSON.stringify(rv) + ')');
+        // 3 Nov 2026: Save closes the review sheet; opened again, Save is off
+        ok(!(await p.$('.w-sheet')) && /Saved by Sam/.test(await txt(p, '.w-rvbtn') || ''), w + ' review: once saved, the sheet closes and the button says who saved it');
+        await L.wReview(p);
         ok(await off(p, sel) === true, w + ' review: once saved, Save is off again');
       }
       ok(p.errors.length === 0, w + ' review: no page errors ' + p.errors.join(' | '));
@@ -109,6 +113,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
   // another chef's review untouched: a forced Save keeps their name on it
   await safe('review by Bo', async () => {
     p = await L.open(b, '#/waste', { who: 'sam', extra: rvBo, wait: 1500 });
+    await L.wReview(p);
     const sel = '[data-p="wreview"][data-v="page"]';
     await L.waitFor(p, () => /Over-portioned chips/.test((document.querySelector('#w-ra') || {}).value || ''), null, 8000);
     ok(await off(p, sel) === true, 'review by Bo: Save the review is off on Bo\'s review left as it is');
@@ -238,8 +243,9 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
       { id: 'ann', name: 'Ann', role: 'staff', add: true, tick: true, del: false, active: true },
       { id: 'bo', name: 'Bo', role: 'sous', add: true, tick: true, del: true, active: true }];
     p = await L.open(b, '#/waste', { who: 'sam', settings: { shared: true }, extra: { [fsKey(['config', 'main'])]: { people, sousIds: ['sam', 'bo'], showBadges: true } }, wait: 1500 });
-    await L.waitFor(p, () => !!document.querySelector('#w-ra'), null, 8000);
+    await L.wReview(p);
     await p.fill('#w-ra', 'Sam half typed this'); await L.settle(p, 100);
+    await p.keyboard.press('Escape'); await L.settle(p, 150);
     await p.click('.wtop-who'); await L.settle(p, 150);
     await p.click('.wm [data-who="out"]'); await L.settle(p, 300);
     await p.click('.wm [data-who="out"]'); await L.settle(p, 500);
@@ -248,7 +254,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     await p.click('.p-name[data-id="bo"]'); await L.settle(p, 300);
     await p.fill('#pf1', '3333'); await L.settle(p, 1500);
     await S(p, () => { location.hash = '#/waste'; }); await L.settle(p, 800);
-    await L.waitFor(p, () => !!document.querySelector('#w-ra'), null, 8000);
+    await L.waitFor(p, () => !!document.querySelector('[data-p="w-rv"]'), null, 8000); await L.wReview(p);
     ok(await S(p, () => window.LK_PREP.state.who) === 'bo' && await p.inputValue('#w-ra') === '' && !(await S(p, () => window.LK_PREP.unsaved())) && await off(p, '[data-p="wreview"][data-v="page"]') === true, 'review hand-over: Bo gets an empty review box, nothing not saved, and Save off');
     ok(p.errors.length === 0, 'review hand-over: no page errors ' + p.errors.join(' | '));
     await p.context().close();
@@ -256,11 +262,12 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
   // the waste reason sheet left open, and a section typed on the prep list, go with the person too
   await safe('sheet hand-over', async () => {
     p = await L.open(b, '#/waste', { who: 'sam', settings: { shared: true }, wait: 1500 });
-    await L.waitFor(p, () => !!document.querySelector('[data-p="sheet"]'), null, 8000);
-    await p.click('[data-p="sheet"]'); await L.settle(p, 200);
-    ok(await S(p, () => window.LK_PREP.state.sheet) === 'reason' && await S(p, () => window.LK_PREP.unsaved()), 'sheet hand-over: the reason sheet open counts as open');
+    // 3 Nov 2026: the reasons are chips in the Log waste sheet, so the sheet left open is that one
+    await L.waitFor(p, () => !!document.querySelector('[data-p="w-log"]'), null, 8000);
+    await L.wLog(p);
+    ok(await S(p, () => window.LK_PREP.state.wLog) === true && await S(p, () => window.LK_PREP.unsaved()), 'sheet hand-over: the Log waste sheet open counts as open');
     await S(p, () => window.LK_PREP.signOut(true, true)); await L.settle(p, 500);
-    ok(!(await S(p, () => window.LK_PREP.state.sheet)) && !(await S(p, () => window.LK_PREP.unsaved())) && !(await p.$('.sheet')), 'sheet hand-over: the idle lock closes it, so nothing holds the next person\'s Sign out or the self-update');
+    ok(!(await S(p, () => window.LK_PREP.state.wLog)) && !(await S(p, () => window.LK_PREP.unsaved())) && !(await p.$('.sheet')), 'sheet hand-over: the idle lock closes it, so nothing holds the next person\'s Sign out or the self-update');
     await p.context().close();
   });
   await safe('section hand-over', async () => {
@@ -269,7 +276,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     await p.fill('#p-section', 'Larder'); await p.fill('#p-text', 'Peel garlic');
     await p.press('#p-text', 'Enter'); await L.settle(p, 500);
     ok(await p.inputValue('#p-section') === 'Larder', 'section hand-over: the section typed stays for Sam\'s next line');
-    await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 500);
+    await L.notYou(p); await L.settle(p, 500);
     await L.waitFor(p, () => !!document.querySelector('.p-name[data-id="bo"]'), null, 8000);
     await p.click('.p-name[data-id="bo"]'); await L.settle(p, 300);
     await p.fill('#pf1', '3333'); await L.settle(p, 1500);
@@ -293,6 +300,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
   for (const [label, hash, who, sel, words] of PAGES) {
     await safe(label, async () => {
       p = await L.open(b, hash, { who, wait: 1500 });
+      if (sel === '#w-text') await L.wLog(p); else if (sel === '#w-ra') await L.wReview(p); else if (sel === '#tr-text') await L.xLog(p);
       await L.waitFor(p, s => !!document.querySelector(s), sel, 8000);
       ok(!(await asks(p)), label + ': nothing typed, a reload does not ask');
       await p.fill(sel, words); await L.settle(p, 150);
@@ -306,6 +314,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
   // a transfer logged: the venue and person stay for the next item of the same pick-up, and do not count
   await safe('transfer logged', async () => {
     p = await L.open(b, '#/transfers', { who: 'ann', wait: 1500 });
+    await L.xLog(p);
     await L.waitFor(p, () => !!document.querySelector('#tr-venue'), null, 8000);
     await p.fill('#tr-venue', 'Riviera'); await p.fill('#tr-person', 'Jess');
     ok(!(await asks(p)), 'transfer: a venue and a person alone do not ask');

@@ -30,10 +30,12 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Admin autocorrect repairs, shared protected words and private correction history | `docs/proofreader-admin.md` |
 | Admin visual design, selected A: The Chef's Desk | `docs/admin-design-options/brief.md` |
 | Admin dashboard, selected A with B's headlines (3 Nov 2026) | `docs/admin-dashboard-options/brief.md` |
+| Prep, Orders, Wastage, Transfers and chef hat redesign, selected: shared fixes, then A with four pieces of B (3 Nov 2026), built in steps | `docs/work-pages-design-options/brief.md` |
+| Settings page for each role, selected A: One sorted page (3 Nov 2026) | `docs/settings-options/brief.md`, `docs/device-sessions.md` |
 | Seasonal celebration redesign, recommended set selected (3 Nov 2026) | `docs/celebration-options/brief.md` |
 | Recipe and drawing editor layout, selected A's chapters with B's full-screen studio (3 Nov 2026) | `docs/recipe-editor-options/brief.md` |
 | Shared controls, deferred search, table interactions and council audit | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
-| Loading, saving, measured progress and reduced motion | `docs/loading-motion.md` |
+| Loading, saving, measured progress and reduced motion | `docs/loading-motion.md` (current), `docs/loading-feedback-options/brief.md` (recommended set chosen 4 Nov 2026, findings and build steps) |
 | Nightly backup format, protected decryption and isolated recovery checks | `docs/backup-recovery.md` |
 | Suppliers, order history, cut-off sheets | `docs/supplier-workspace.md` |
 | Supplier order and Delivery received redesign, selected A: The Order Sheet (3 Nov 2026) | `docs/receiving-design-options/brief.md` |
@@ -161,7 +163,7 @@ Measured on 2 and 3 November 2026: about 45 pull requests in two days, 100 Click
 ## What GitHub enforces (checked 22 Oct 2026)
 - `main` is protected: the **Click tests** check must pass and the branch must be up to date with `main`; force pushes and deleting `main` are refused.
 - Not enforced by GitHub: reviews (none required, Claude merges by the head chef's decision of 21 Oct 2026), and the protection does not apply to admins. The main-branch guard hook (`scripts/guard-main.mjs`) stops Claude Code sessions from working on `main`; a person with admin rights can still push to it.
-- The **Click tests** job checks `js/*.js`, `js/lib/*.js` and `sw.js` parse, runs the click tests, then the rules checks on the Firestore emulator (`tests/rules`) and the nightly learning check (`scripts/emulator-check.mjs`), since 22 Oct 2026. A pull request that changes only `*.md` files or files under `docs/` passes after the parse check in about a minute (3 Nov 2026); do not put anything the book loads or a test reads under `docs/`. Since 3 Nov 2026 the browser files run in four shares on four runners at once, with the rules beside them, about 7 minutes instead of 25; the job named **Click tests** collects them. A failed file runs once more on its own: a pass then shows as a "passed on retry" warning, and the same file passing on retry twice is a bug for its own pull request. When a run fails, read its annotations or summary first (`gh api repos/<owner>/<repo>/check-runs/<id>/annotations`), not the whole log.
+- The **Click tests** job checks `js/*.js`, `js/lib/*.js` and `sw.js` parse, runs the click tests, then the rules checks on the Firestore emulator (`tests/rules`) and the nightly learning check (`scripts/emulator-check.mjs`), since 22 Oct 2026. A pull request that changes only `*.md` files or files under `docs/` passes after the parse check in about a minute (3 Nov 2026); do not put anything the book loads or a test reads under `docs/`. Since 3 Nov 2026 the browser files run in four shares on four runners at once, with the rules beside them, about 7 minutes instead of 25; the job named **Click tests** collects them. A file still running after 10 minutes is stopped and counted as failed (`FILE_TIMEOUT`, 4 Nov 2026), so a hang no longer holds a runner to its 30 minute limit. A failed file runs once more on its own: a pass then shows as a "passed on retry" warning, and the same file passing on retry twice is a bug for its own pull request. When a run fails, read its annotations or summary first (`gh api repos/<owner>/<repo>/check-runs/<id>/annotations`), not the whole log.
 
 ## Things that are easy to break
 Short warnings. The full contract for each part is its section in `docs/code-contracts.md` (or the feature note in the table above): read it before you change that part.
