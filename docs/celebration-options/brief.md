@@ -74,9 +74,9 @@ One pull request each, with click tests at 390, 768 and 1280 px:
 | 1. The glow fix | #484 |
 | 2 and 3. Home behind the words, the chef hat, arrive then settle | #488 |
 | 4 and 5. Stamps, the three redraws, the work top bar | #490 |
-| 6. Coming up, day counts, quiet days, Settings dates, and no picker (4 Nov 2026) instead of the 04:00 preview | The pull request after #492 |
+| 6. Coming up, day counts, quiet days, Settings dates, and no picker (4 Nov 2026) instead of the 04:00 preview | #494 |
 | 7. The other designs only when Choose a celebration opens | Not needed: nobody picks a celebration (4 Nov 2026), so the designs outside the calendar are never shown. They stay in the catalogue for the click tests; dropping them from the start would save about 12 ms per start on a normal phone |
 
-Still to do: the cultural-symbol review of the Nyepi, Galungan, Kuningan, Sinulog, Ganesh Chaturthi and Durga Puja stamps asked for below. They shipped in #490 without it.
+The cultural-symbol review of the Nyepi, Galungan, Kuningan, Sinulog, Ganesh Chaturthi and Durga Puja stamps asked for below was done on 4 Nov 2026, after they shipped in #490: five redrawn in #508, Ganesh Chaturthi kept (`docs/seasonal-celebrations.md`, Stamp review).
 
 The stamp glyphs in `index.html` are first drafts for choosing a direction, not final artwork. The cultural-symbol council should review the Nyepi, Galungan, Kuningan, Sinulog, Ganesh Chaturthi and Durga Puja stamps before they ship.
