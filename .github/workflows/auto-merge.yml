@@ -9,14 +9,21 @@
 # Live click tests or Publish rules. Without the secret this workflow only says so and does nothing.
 name: Auto-merge
 
+# When the queue looks (4 Nov 2026): a pull request changes, main moves, Click tests finish on any pull request, every
+# 20 minutes, and by hand. The schedule is only the fallback: GitHub delays or drops scheduled runs when it is busy,
+# most at the start of an hour, and on 4 Nov 2026 it ran once all evening. So it runs off the hour, and the end of
+# every Click tests run moves the queue on. (check_suite is no use here: GitHub does not send it for Actions runs.)
 on:
   pull_request:
     branches: [main]
     types: [opened, reopened, ready_for_review, converted_to_draft, labeled, unlabeled, synchronize]
   push:
     branches: [main]
+  workflow_run:
+    workflows: [PR click tests]
+    types: [completed]
   schedule:
-    - cron: '*/20 * * * *'
+    - cron: '7,27,47 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -97,7 +104,8 @@ jobs:
     needs: [switch, backfill]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # Up to 10 minutes of asking GitHub about an UNKNOWN pull request, plus the rest of the pass.
+    timeout-minutes: 15
     concurrency:
       group: auto-merge-queue
       cancel-in-progress: false
@@ -117,19 +125,36 @@ jobs:
 
       # The queue: oldest ready pull request first. Clean merges by itself; up to date and still testing means wait;
       # failed or in conflict is skipped until its session fixes it; behind is brought up to date (one, then stop).
+      # UNKNOWN means GitHub has not worked out yet whether it merges cleanly. It never stops the queue (4 Nov 2026: #516
+      # stayed UNKNOWN for over 50 minutes and #517 and #520 waited behind it). The queue asks GitHub again every 10
+      # seconds (asking also starts GitHub's check), at least once and until 10 minutes after that pull request last
+      # changed; the whole pass shares one wait. Worked out by then: handled as what it is. Still UNKNOWN: skipped this
+      # pass. Nothing is kept between passes, so a later pass reads it fresh and takes it up once GitHub knows.
+      # tests/auto-merge-queue.test.js runs this step with a stand-in for gh: keep GitHub expressions out of it.
       - name: Move the queue on by one
         if: steps.token.outputs.ok == 'true'
         run: |
+          grace=600; every=10; waited=0   # seconds: GitHub's time after a change, between asks, waited so far this pass
           gh pr list -R "$REPO" --base main --state open --limit 50 \
-            --json number,isDraft,labels,mergeStateStatus,autoMergeRequest,isCrossRepository,createdAt \
+            --json number,isDraft,labels,mergeStateStatus,autoMergeRequest,isCrossRepository,createdAt,updatedAt \
             --jq 'sort_by(.createdAt) | .[] | select(.isDraft|not) | select(.isCrossRepository|not)
                   | select(.autoMergeRequest != null) | select([.labels[].name] | index("hold") | not)
-                  | "\(.number) \(.mergeStateStatus)"' > queue.txt
-          echo "Ready pull requests, oldest first:"; cat queue.txt
-          while read -r n state; do
+                  | "\(.number) \(.mergeStateStatus) \(now - (.updatedAt | fromdateiso8601) | floor)"' > queue.txt
+          echo "Ready pull requests, oldest first (number, state, seconds since it last changed):"; cat queue.txt
+          # The list is read on its own handle, so no command in the loop can swallow lines of it.
+          while read -r n state since <&3; do
+            if [ "$state" = "UNKNOWN" ]; then
+              asks=$(( (grace - since - waited + every - 1) / every )); [ "$asks" -ge 1 ] || asks=1
+              for ((i = 0; i < asks; i++)); do
+                sleep "$every"; waited=$((waited + every))
+                state=$(gh api "repos/$REPO/pulls/$n" --jq '(.mergeable_state // "unknown") | ascii_upcase') || state=UNKNOWN
+                state=${state:-UNKNOWN}
+                if [ "$state" != "UNKNOWN" ]; then echo "#$n: GitHub has worked it out: $state."; break; fi
+              done
+            fi
             case "$state" in
               CLEAN|HAS_HOOKS|UNSTABLE) echo "#$n is merging."; exit 0 ;;
-              UNKNOWN) echo "#$n is still being worked out by GitHub: wait."; exit 0 ;;
+              UNKNOWN) echo "#$n is still UNKNOWN to GitHub, $(( (since + waited) / 60 )) min after its last change: skipped this pass. The next pass looks again."; continue ;;
               DIRTY) echo "#$n has a conflict: skipped until its session fixes it."; continue ;;
             esac
             set +e; gh pr checks "$n" -R "$REPO" --required >/dev/null 2>&1; c=$?; set -e
@@ -140,5 +165,5 @@ jobs:
               exit 0
             fi
             echo "#$n is $state: skipped."
-          done < queue.txt
+          done 3< queue.txt
           echo "Nothing to move."
