@@ -127,15 +127,16 @@ The head chef found the order sheet took a lot of scrolling on a phone before or
 
 | | Before | After |
 | --- | --- | --- |
-| First item starts | 1,186 px | 538 px |
-| First To order box | 1,284 px | 636 px (above the Review bar at 709 px) |
+| First item starts | 1,186 px | 512 px |
+| First To order box | 1,284 px | 656 px to its bottom edge (the Review bar starts at 709 px) |
 | Visible screen above the tabs | 776 px | 776 px |
 
 - **Under 900 px:** the heading is one line (no eyebrow or description, a smaller Refresh); the second supplier name and item count go (the picker shows the name, the All chip the count); the picker and search lose their visible labels (screen readers keep them) and sit side by side under 720 px; the filter chips are one sideways row that fades at its edge.
-- **One info line** (`infoHTML()`): "Order by Wed 4 Nov 15:00 · last order Mon 2 Nov". More opens the cut-off card and the last order; Less folds them. It opens by itself when an order is already marked as placed (Additional order lives in the card) or the last order could not be read, until a tap decides. A supplier change starts folded again. From 900 px the line is hidden and both blocks show open, as before.
+- **One info line** (`infoHTML()`): "Order by 15:00 today · last order Mon 2 Nov" (the weekday instead of today when it closes on another day). More opens the cut-off card and the last order; Less folds them. It opens by itself when an order is already marked as placed (Additional order lives in the card) or the last order could not be read, until a tap decides. A supplier change starts folded again. From 900 px the line is hidden and both blocks show open, as before.
 - **Staff requests** is a chip at the end of the filter row (the same one query on a tap). Once the requests are in it becomes Asked for: with matches the filter switches on and the strip shows above the matched rows; with none the page says so.
 - **Below the list, at every width:** the Suggestions panel, the staff requests strip when Asked for is off, the help line, then Order history.
 - **Extra large text and narrow phones.** The heading may wrap, so Refresh drops under the title rather than off the screen (the first GitHub run caught Refresh 4 px past the edge at 370 px with Extra large text). Rows follow the Prep list's narrow rule (`docs/adaptive-controls.md`, narrow Prep A): below 360 px, or below 480 px with Extra large text, Par and Last order share a line and To order takes its own, so nothing is cut at a row's edge (it was 22 px at 330 px and 32 px at 320 px). Checked from 390 down to 320 px at normal and Extra large text.
+- **Keeping clear of the Review bar.** The GitHub runner's fonts are slightly larger than the local test browser's: the first run there put the first To order box at 680 px against a bar at 678 px, because the bar's count wrapped it onto two rows and the picker took two lines. Now the picker is one line cut with an ellipsis, the info line is short enough for one line, the category heading has less space above it, and the Review bar stays one row (the count wraps beside the button). Locally that leaves 53 px between the box and the bar at 390 px, and 9 px at 360 px.
 
 No schema, rules, reads or saved data change. `tests/supplier-rows.test.js` (57 checks) adds the first To order box above the Review bar at 390 px, Extra large text at 370 and 330 px (2 failed of 57 before the wrap and narrow-row fix), the folded line, More and Less, the line opening by itself for a placed order, the laptop keeping both blocks open, and the chip opening Asked for. On the old layout these fail (the first To order box at 1,330 px, no line, no chip).
 

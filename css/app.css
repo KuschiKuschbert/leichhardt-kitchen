@@ -2685,7 +2685,14 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
   .su-supplier-title { display: none; }
   .su-toolbar { margin-bottom: 0.5rem; }
   .su-toolbar .label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-  .su-info-line { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; width: 100%; min-height: 44px; padding: 0.4rem 0.75rem; border: 0; border-left: 3px solid var(--accent); border-radius: 0; background: var(--hit); color: var(--ink); font: 600 0.875rem var(--body); text-align: left; cursor: pointer; }
+  /* the picker keeps to one line (the name and today's cut-off), cut with an ellipsis rather than a second line */
+  .su-toolbar .ux-picker-trigger { display: block; width: 100%; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: left; }
+  .su-category { padding-top: 0.6rem; }
+  /* the Review bar stays one row: the count wraps beside the button instead of pushing it onto a second row */
+  #supplier-root .su-order-actions { flex-wrap: nowrap; }
+  #supplier-root .su-order-actions > .hint { flex: 1 1 auto; min-width: 0; }
+  #supplier-root .su-order-actions > .btn { flex: none; }
+  .su-info-line { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; width: 100%; min-height: 44px; padding: 0.4rem 0.75rem; border: 0; border-left: 3px solid var(--accent); border-radius: 0; background: var(--hit); color: var(--ink); font: 600 0.8125rem var(--body); text-align: left; cursor: pointer; }
   .su-info-line.attn { border-left-color: var(--small-ink); }
   .su-info-line > span:first-child { min-width: 0; overflow-wrap: anywhere; }
   .su-info-more { flex: none; color: var(--small-ink); text-decoration: underline; }

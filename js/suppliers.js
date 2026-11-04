@@ -393,12 +393,18 @@
   }
   /* The Prep list's phone rule (work pages design A, Clean notebook, #464): the list first, extras folded to one line.
      Under 900 px the cut-off card and the last order fold into this line; from 900 px both show open (css/app.css). */
-  function shortDate(ms) { return typeof ms === 'number' && isFinite(ms) ? new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Brisbane', weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(ms)) : ''; }
+  // "Mon 2 Nov" in kitchen time, no comma, so the line stays short
+  function shortDate(ms) {
+    if (typeof ms !== 'number' || !isFinite(ms)) return '';
+    var f = function (o) { return new Intl.DateTimeFormat('en-AU', Object.assign({ timeZone: 'Australia/Brisbane' }, o)).format(new Date(ms)); };
+    return f({ weekday: 'short' }) + ' ' + f({ day: 'numeric' }) + ' ' + f({ month: 'short' });
+  }
   function infoHTML() {
     // it opens by itself when something needs a look: an order already marked as placed (Additional order lives
     // in the card) or a last order that could not be read; a tap on the line decides after that
     var o = occurrence(), h = hist(), l = latest(), parts = [], attn = !!h.err || !!(o && o.done), open = M.infoOpen === null ? attn : M.infoOpen;
-    if (o) parts.push(o.done ? 'Order marked as placed' : 'Order by ' + (typeof o.at === 'number' ? shortDate(o.at) + ' ' + T.clock(o.at) : occurrenceLabel(o)));
+    // short enough for one line on a phone: "Order by 15:00 today", or the weekday when it closes on another day
+    if (o) parts.push(o.done ? 'Order marked as placed' : 'Order by ' + (typeof o.at === 'number' ? T.clock(o.at) + (T.day(o.at) === day() ? ' today' : ' ' + new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Brisbane', weekday: 'short' }).format(new Date(o.at))) : occurrenceLabel(o)));
     parts.push(h.busy && !h.rows ? 'reading the last order' : h.err ? 'last order not read' : l ? 'last order ' + shortDate(l.at) : 'no order recorded yet');
     var line = parts.join(' · ');
     return '<div class="su-info' + (open ? ' open' : '') + '"><button type="button" class="su-info-line' + (attn ? ' attn' : '') + '" data-su="info" aria-expanded="' + open + '" aria-controls="su-info-body"><span>' + esc(line.charAt(0).toUpperCase() + line.slice(1)) + '</span><span class="su-info-more" aria-hidden="true">' + (open ? 'Less' : 'More') + '</span></button>' +
