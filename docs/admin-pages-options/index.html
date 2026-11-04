@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admin Pages Redesign</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+/* Layout: the Kitchen Book's own world. A charcoal band like the app's top bar, then warm paper with
+   one column of findings, three option sections with live mockups, and two comparison tables.
+   Single light look by choice: the mockups show a light-only app, so the page around them matches it. */
+:root {
+  --bg: #FBFAF7; --paper: #FFFFFF; --ink: #1C1D1F; --muted: #55585E; --faint: #6B7077;
+  --accent: #E2602A; --tag: #B83F15; --beige: #F2EFE8; --line: #E0DBCF; --edge: #D9D4C8;
+  --bar: #2B2A27; --bar-text: #FBF8F1; --bar-accent: #F08A4B;
+  --good: #237347; --good-tint: #EAF5EE; --bad: #B3261E; --bad-tint: #FBE9E7; --chip: #EDEAE2;
+  --display: 'Barlow Condensed', 'Arial Narrow', 'Roboto Condensed', sans-serif;
+  --body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --r-act: 8px; --r-pick: 999px; --radius: 10px;
+  color-scheme: light;
+}
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--body); }
+* { box-sizing: border-box; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.pg-wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.pg-band { background: var(--bar); color: var(--bar-text); }
+.pg-band .pg-wrap { padding-block: 40px 36px; }
+.pg-kick { margin: 0 0 10px; font: 600 12px/1.3 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--bar-accent); }
+.pg-band h1 { margin: 0; font: 700 clamp(2.6rem, 6vw, 4.4rem)/0.95 var(--display); letter-spacing: -.02em; text-wrap: balance; }
+.pg-lede { max-width: 62ch; margin: 16px 0 0; font-size: 1.08rem; color: #E9E4D8; }
+.pg-jump { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.pg-jump a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 1.5px solid #8C857A; border-radius: var(--r-pick); color: var(--bar-text); text-decoration: none; font-weight: 600; }
+.pg-jump a b { font: 700 1.15rem var(--display); color: var(--bar-accent); }
+.pg-jump a:hover { border-color: var(--bar-text); }
+section.pg-sec { padding-block: 44px 8px; }
+.pg-sec > .pg-wrap > h2, .pg-h2 { margin: 0 0 6px; font: 700 clamp(1.9rem, 3.4vw, 2.6rem)/1 var(--display); letter-spacing: -.01em; text-wrap: balance; }
+.pg-sub { margin: 0 0 22px; max-width: 70ch; color: var(--muted); }
+.pg-brief { margin: 0; padding: 20px 22px; border-left: 4px solid var(--accent); background: var(--paper); border-radius: 0 var(--radius) var(--radius) 0; max-width: 80ch; }
+.pg-brief p { margin: 0 0 10px; } .pg-brief p:last-child { margin: 0; }
+.pg-brief .pg-small { font-size: .9rem; color: var(--muted); }
+code { font: 500 .88em ui-monospace, 'SF Mono', Menlo, monospace; background: var(--beige); padding: 1px 5px; border-radius: 4px; }
+.pg-finds { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0 32px; margin: 0; padding: 0; list-style: none; counter-reset: f; }
+.pg-finds li { padding: 16px 0 18px; border-top: 1px solid var(--line); counter-increment: f; min-width: 0; }
+.pg-finds li h3 { margin: 0 0 6px; font: 700 1.3rem/1.1 var(--display); }
+.pg-finds li h3::before { content: counter(f) "  "; color: var(--tag); }
+.pg-finds li p { margin: 0; color: var(--muted); font-size: .95rem; }
+.pg-finds b { color: var(--ink); }
+.pg-kit { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin: 0; padding: 0; list-style: none; }
+.pg-kit li { background: var(--paper); border: 1px solid var(--edge); border-radius: var(--radius); padding: 16px 18px; min-width: 0; }
+.pg-kit li b { display: block; font: 700 1.15rem/1.15 var(--display); margin-bottom: 4px; }
+.pg-kit li span { color: var(--muted); font-size: .94rem; }
+/* option sections */
+.pg-opt { border-top: 3px solid var(--ink); margin-top: 28px; padding-top: 26px; scroll-margin-top: 12px; }
+.pg-opt-head { display: grid; grid-template-columns: auto 1fr; gap: 6px 18px; align-items: start; }
+.pg-letter { grid-row: span 2; font: 700 clamp(3.4rem, 8vw, 5.2rem)/.8 var(--display); color: var(--accent); }
+.pg-opt-head h2 { margin: 0; font: 700 clamp(2rem, 4vw, 2.9rem)/1 var(--display); text-wrap: balance; }
+.pg-opt-head p { margin: 0; max-width: 72ch; color: var(--muted); }
+.pg-map { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 6px; padding: 0; list-style: none; }
+.pg-map li { padding: 6px 12px; border-radius: var(--r-pick); background: var(--beige); font: 600 .88rem/1.3 var(--body); }
+.pg-map li small { font-weight: 400; color: var(--muted); }
+.pg-pages { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 18px 0 14px; }
+.pg-pages > span { font: 600 12px var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.pg-pages button { min-height: 44px; padding: 0 16px; border: 1.5px solid var(--edge); border-radius: var(--r-pick); background: transparent; color: var(--ink); font: 600 .95rem var(--body); cursor: pointer; }
+.pg-pages button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bar-text); }
+.pg-frames { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .pg-frames { grid-template-columns: minmax(0, 1fr); } .pg-frames .pg-phone { max-width: 360px; } }
+.pg-frame { margin: 0; min-width: 0; }
+.pg-frame figcaption { margin: 0 0 8px; font: 600 12px var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+.pg-frame figcaption i { font-style: normal; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.pg-stage { position: relative; overflow: hidden; border-radius: 12px; border: 1px solid var(--edge); background: var(--bg); box-shadow: 0 1px 0 var(--edge), 0 10px 30px -18px rgba(43, 42, 39, .45); }
+.pg-phone .pg-stage { border: 8px solid var(--bar); border-radius: 28px; }
+.pg-stage > .scr { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.pg-pc { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; margin-top: 26px; }
+@media (max-width: 760px) { .pg-pc { grid-template-columns: 1fr; } }
+.pg-pc h3 { margin: 0 0 8px; font: 700 1.35rem var(--display); display: flex; align-items: center; gap: 8px; }
+.pg-pc h3 .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--good); }
+.pg-pc .con h3 .dot { background: var(--bad); }
+.pg-pc ul { margin: 0 0 18px; padding: 0; list-style: none; }
+.pg-pc li { padding: 9px 0; border-top: 1px solid var(--line); font-size: .96rem; }
+.pg-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1px; margin: 6px 0 0; background: var(--edge); border: 1px solid var(--edge); border-radius: var(--radius); overflow: hidden; }
+.pg-facts div { background: var(--paper); padding: 12px 14px; min-width: 0; }
+.pg-facts dt { font: 600 11px var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.pg-facts dd { margin: 4px 0 0; font-size: .95rem; }
+.pg-facts dd b { font: 700 1.25rem/1.1 var(--display); display: block; }
+.pg-tbl-wrap { overflow-x: auto; border: 1px solid var(--edge); border-radius: var(--radius); background: var(--paper); }
+table.pg-tbl { border-collapse: collapse; width: 100%; min-width: 760px; font-size: .93rem; }
+.pg-tbl th, .pg-tbl td { text-align: left; vertical-align: top; padding: 10px 14px; border-top: 1px solid var(--line); }
+.pg-tbl thead th { border-top: 0; background: var(--beige); font: 700 1.05rem var(--display); }
+.pg-tbl tbody th { font-weight: 600; width: 19%; }
+.pg-tbl td.same { color: var(--faint); }
+.pg-rec { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px 36px; }
+@media (max-width: 760px) { .pg-rec { grid-template-columns: 1fr; } }
+.pg-rec p { margin: 0 0 12px; }
+.pg-steps { margin: 0; padding-left: 1.3em; }
+.pg-steps li { padding: 4px 0; }
+.pg-foot { padding-block: 40px 56px; color: var(--muted); font-size: .9rem; }
+
+/* ===== Mockups: the app's own tokens and pieces, prefixed m- ===== */
+.scr { width: 1100px; background: var(--bg); color: var(--ink); font: 400 15px/1.4 var(--body); container-type: inline-size; text-align: left; }
+.scr.ph { width: 390px; height: 844px; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
+.scr.ph::-webkit-scrollbar { display: none; }
+.m-app { min-height: 100%; display: flex; flex-direction: column; }
+.m-top { display: flex; align-items: center; gap: 22px; padding: 14px 32px; background: var(--bar); color: var(--bar-text); border-bottom: 3px solid #C9C3B7; }
+.m-back { font: 700 26px/1 var(--body); }
+.m-brand { font: 700 30px/1 var(--display); letter-spacing: -.01em; white-space: nowrap; }
+.m-brand small { display: block; font: 600 10px/1.4 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--bar-accent); }
+.m-nav { display: flex; gap: 6px; margin-left: auto; }
+.m-nav span { padding: 6px 13px; border: 1.5px solid var(--bar-text); border-radius: var(--r-pick); font-weight: 600; font-size: 14px; }
+.m-ics { display: flex; gap: 8px; margin-left: 12px; }
+.m-ic { width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid var(--bar-text); display: grid; place-items: center; }
+.m-ic.hat { background: var(--bar-text); color: var(--bar); position: relative; }
+.m-ic svg { width: 20px; height: 20px; }
+.m-ic.hat::after { content: "3"; position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); color: #fff; font: 700 10px/16px var(--body); text-align: center; }
+.m-acct { display: flex; justify-content: space-between; padding: 10px 32px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--line); }
+.m-acct b { color: var(--ink); font-weight: 600; }
+.m-acct u { color: var(--ink); font-weight: 600; }
+.m-body { flex: 1; display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 32px; padding: 22px 32px 40px; align-items: start; }
+.m-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.m-tabbar { display: none; }
+.m-only-ph { display: none; }
+.m-eyebrow { font: 600 11px/1.3 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--tag); }
+.m-h1 { margin: -8px 0 0; font: 700 46px/1 var(--display); letter-spacing: -.02em; }
+.m-h2 { margin: 0; font: 700 26px/1.05 var(--display); }
+.m-intro { margin: -8px 0 0; color: var(--muted); font-size: 14px; }
+.m-tabs { display: flex; gap: 22px; border-bottom: 1px solid var(--line); overflow: hidden; white-space: nowrap; }
+.m-tabs span { padding: 8px 0 10px; font-weight: 600; color: var(--muted); border-bottom: 3px solid transparent; margin-bottom: -1px; }
+.m-tabs span.on { color: var(--ink); border-color: var(--accent); }
+.m-tool { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.m-sp { flex: 1; }
+.m-pill { display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border: 1.5px solid var(--edge); border-radius: var(--r-pick); font-weight: 600; font-size: 13.5px; white-space: nowrap; background: var(--bg); }
+.m-pill.on { background: var(--ink); border-color: var(--ink); color: var(--bar-text); }
+.m-pill.sm { min-height: 30px; padding: 0 11px; font-size: 12.5px; }
+.m-btn { display: inline-flex; align-items: center; min-height: 36px; padding: 0 14px; border: 1.5px solid var(--ink); border-radius: var(--r-act); font-weight: 600; font-size: 13.5px; white-space: nowrap; background: var(--paper); }
+.m-btn.dark { background: var(--ink); color: var(--bar-text); }
+.m-btn.acc { background: var(--tag); border-color: var(--tag); color: #fff; }
+.m-btn.off { background: #C9C3B7; border-color: #C9C3B7; color: #fff; }
+.m-btn.bad { color: var(--bad); border-color: var(--bad); }
+.m-seg { display: inline-flex; border: 1.5px solid var(--ink); border-radius: var(--r-pick); overflow: hidden; }
+.m-seg span { padding: 6px 14px; font-weight: 600; font-size: 13px; }
+.m-seg span.on { background: var(--ink); color: var(--bar-text); }
+.m-search { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px; border: 1.5px solid var(--edge); border-radius: var(--r-act); background: var(--paper); color: var(--faint); font-size: 13.5px; min-width: 200px; }
+.m-search::before { content: ""; width: 11px; height: 11px; border: 2px solid var(--faint); border-radius: 50%; flex: none; }
+.m-range { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.m-range::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+.m-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.m-tiles.t3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.m-tile { background: var(--paper); border: 1px solid var(--edge); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.m-tl { font-size: 13px; font-weight: 600; color: var(--muted); }
+.m-tn { font: 700 30px/1 var(--body); letter-spacing: -.01em; white-space: nowrap; }
+.m-tn small { font-size: 15px; font-weight: 600; margin-left: 3px; }
+.m-tf { font-size: 12px; color: var(--muted); }
+.m-chip { align-self: flex-start; padding: 2px 8px; border-radius: var(--r-pick); background: var(--chip); font-size: 12px; font-weight: 600; color: var(--muted); }
+.m-chip.bad { background: var(--bad-tint); color: var(--bad); }
+.m-chip.good { background: var(--good-tint); color: var(--good); }
+.m-chip.warn { background: #FDEBDD; color: var(--tag); }
+.m-spark { width: 100%; height: 26px; display: block; }
+.m-card { background: var(--paper); border: 1px solid var(--edge); border-radius: var(--radius); padding: 14px 16px; min-width: 0; }
+.m-card-h { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin-bottom: 10px; }
+.m-card-h h3 { margin: 0; font: 700 18px/1.15 var(--body); }
+.m-card-h .m-cnt { color: var(--muted); font-size: 13px; }
+.m-link { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; font-size: 13.5px; }
+.m-row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.m-row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.m-bars { display: flex; flex-direction: column; gap: 7px; }
+.m-bar { display: grid; grid-template-columns: 120px minmax(0, 1fr) 34px; gap: 10px; align-items: center; font-size: 13px; }
+.m-bt { position: relative; height: 12px; }
+.m-bt i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 3px; }
+.m-bt b { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
+.m-bv { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.m-note { font-size: 12.5px; color: var(--muted); }
+table.m-t { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.m-t th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 7px 8px; border-bottom: 1.5px solid var(--ink); white-space: nowrap; }
+.m-t td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.m-t td.b { font-weight: 700; }
+.m-t td.r { text-align: right; }
+.m-more { padding-top: 10px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.m-ck { display: inline-block; width: 20px; height: 20px; border: 1.5px solid var(--ink); border-radius: 4px; vertical-align: middle; position: relative; }
+.m-ck.on { background: var(--ink); }
+.m-ck.on::after { content: ""; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px; border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.m-ck.dim { opacity: .35; }
+.m-sw { display: inline-block; width: 38px; height: 22px; border-radius: 11px; background: #C9C3B7; position: relative; flex: none; }
+.m-sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; }
+.m-sw.on { background: var(--good); }
+.m-sw.on::after { left: 19px; }
+.m-swrow { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 13.5px; border-top: 1px solid var(--line); }
+.m-swrow:first-of-type { border-top: 0; }
+.m-swrow span:first-child { flex: 1; }
+.m-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.m-tag { padding: 3px 10px; border-radius: var(--r-pick); background: var(--beige); font-size: 12.5px; font-weight: 600; }
+.m-tag.fs { background: var(--tag); color: #fff; }
+.m-mail { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 4px 12px; align-items: start; padding: 11px 12px 11px 14px; border-top: 1px solid var(--line); position: relative; }
+.m-mail:first-child { border-top: 0; }
+.m-mail.hot::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 2px; background: var(--tag); }
+.m-circ { width: 26px; height: 26px; border: 1.5px solid var(--ink); border-radius: 50%; }
+.m-mail p { margin: 0; font-size: 15px; }
+.m-meta { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 12.5px; color: var(--muted); }
+.m-meta b { color: var(--ink); }
+.m-dl { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px 12px; margin: 0; font-size: 14px; }
+.m-dl dt { color: var(--muted); }
+.m-dl dd { margin: 0; font-weight: 600; }
+.m-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.m-field span.m-in { letter-spacing: 0; text-transform: none; font-size: 15px; font-weight: 500; color: var(--ink); min-height: 40px; display: flex; align-items: center; padding: 0 12px; border: 1.5px solid var(--edge); border-radius: var(--r-act); background: var(--paper); }
+.m-savebar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; margin-top: 10px; background: var(--beige); border-radius: var(--r-act); font-size: 13px; }
+.m-savebar b { flex: 1; }
+.m-picker { display: none; }
+.m-label { font: 600 11px/1.3 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+
+/* Option A: the Dashboard's rail, unchanged */
+.a-rail { display: flex; flex-direction: column; gap: 2px; padding-right: 16px; border-right: 1px solid var(--line); }
+.m-railh { font: 600 11px/1.3 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 2px 10px 12px; }
+.a-ch { display: flex; gap: 12px; padding: 11px 10px; font-weight: 600; font-size: 15px; border-left: 3px solid transparent; }
+.a-ch span { font-size: 11px; color: var(--muted); padding-top: 3px; }
+.a-ch.on { background: var(--beige); border-left-color: var(--accent); }
+.a-ch.on span { color: var(--tag); }
+
+/* Option B: four rooms */
+.b-rail { display: flex; flex-direction: column; gap: 4px; }
+.b-room { padding: 12px 14px; border-radius: var(--radius); display: flex; flex-direction: column; gap: 1px; }
+.b-room b { font: 700 25px/1 var(--display); }
+.b-room small { font-size: 12.5px; color: var(--muted); }
+.b-room small.hot { color: var(--tag); font-weight: 600; }
+.b-room.on { background: var(--ink); color: var(--bar-text); }
+.b-room.on small { color: #D8D2C6; }
+.b-rooms-ph { display: none; }
+.b-band { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; background: var(--beige); border-radius: var(--radius); }
+.b-band .m-label { margin-right: 2px; }
+.b-band .m-pill { background: var(--paper); }
+.b-head { display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.b-head .k { grid-row: span 2; font: 600 11px/1.6 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--bad); padding-top: 4px; }
+.b-head h3 { margin: 0; font: 700 23px/1.1 var(--display); text-wrap: balance; }
+.b-head p { margin: 0; font-size: 13.5px; color: var(--muted); }
+.b-colchart { display: flex; align-items: flex-end; gap: 3px; height: 70px; padding-top: 6px; }
+.b-colchart i { flex: 1; background: var(--accent); border-radius: 2px 2px 0 0; min-height: 3px; }
+.b-colchart i.w { background: #F2B48F; }
+.b-list-h { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-bottom: 8px; border-bottom: 1.5px solid var(--ink); }
+.b-list-h h3 { margin: 0 auto 0 0; font: 700 18px var(--body); }
+.b-split { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 26px; align-items: start; }
+.b-split.wide { grid-template-columns: minmax(0, 1fr) 340px; }
+.b-plist { display: flex; flex-direction: column; }
+.b-prow { padding: 11px 12px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 1px; }
+.b-prow b { font-size: 15.5px; }
+.b-prow small { font-size: 12.5px; color: var(--muted); }
+.b-prow.on { background: var(--paper); border: 1px solid var(--edge); border-left: 4px solid var(--accent); border-radius: 6px; }
+.b-sect { padding-top: 12px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.b-sect > .m-label { color: var(--ink); }
+.b-todo-g { display: flex; flex-direction: column; }
+.b-todo-g > .m-label { padding: 12px 0 6px; }
+.b-todo { display: flex; gap: 12px; align-items: baseline; padding: 10px 12px; border-top: 1px solid var(--line); position: relative; }
+.b-todo.hot::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 4px; border-radius: 2px; background: var(--tag); }
+.b-todo.on { background: var(--paper); border: 1px solid var(--edge); border-radius: 6px; }
+.b-todo b { font-weight: 600; font-size: 14.5px; flex: 1; }
+.b-todo small { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.b-task { background: var(--paper); border: 1px solid var(--edge); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 12px; position: sticky; top: 0; }
+.b-task h2 { margin: 0; font: 700 30px/1.05 var(--display); text-wrap: balance; }
+.b-dash { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding-top: 14px; border-top: 3px solid var(--ink); }
+.b-dash .k { font: 600 11px var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.b-dash .k.bad { color: var(--bad); }
+.b-dash h4 { margin: 3px 0 0; font: 700 18px/1.15 var(--display); }
+.b-group { display: flex; flex-direction: column; }
+.b-group > .m-label { padding: 16px 0 6px; }
+.b-set { display: grid; grid-template-columns: 200px minmax(0, 1fr) auto; gap: 12px; align-items: baseline; padding: 12px 4px; border-top: 1px solid var(--line); font-size: 14.5px; }
+.b-set b { font-weight: 700; }
+.b-set span { color: var(--muted); }
+.b-set i { font-style: normal; color: var(--faint); font-size: 18px; }
+.b-set.open { background: var(--paper); border: 1px solid var(--edge); border-radius: var(--radius); padding: 14px 16px; grid-template-columns: 200px minmax(0, 1fr) auto; }
+.b-set.open .b-in { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 0; padding-top: 6px; }
+.b-sup { display: grid; grid-template-columns: 190px 1fr 1fr auto; gap: 10px; align-items: center; padding: 9px 0; border-top: 1px solid var(--line); font-size: 13.5px; }
+.b-sup b { font-weight: 600; }
+
+/* Option C: the workbench */
+.c-body { grid-template-columns: 210px minmax(0, 1fr); gap: 24px; padding-top: 18px; }
+.c-rail { display: flex; flex-direction: column; font-size: 13.5px; background: var(--paper); border: 1px solid var(--edge); border-radius: var(--radius); padding: 10px 8px; }
+.c-find { display: flex; align-items: center; gap: 6px; padding: 0 10px; min-height: 34px; margin-bottom: 6px; border: 1.5px solid var(--edge); border-radius: var(--r-act); color: var(--faint); font-size: 13px; }
+.c-find::before { content: ""; width: 9px; height: 9px; border: 2px solid var(--faint); border-radius: 50%; }
+.c-g { font: 600 10.5px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 12px 10px 5px; }
+.c-it { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; border-radius: 6px; font-weight: 500; }
+.c-it.on { background: var(--ink); color: var(--bar-text); font-weight: 600; }
+.c-it em { font-style: normal; font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 9px; background: var(--accent); color: #fff; }
+.c-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px 12px; }
+.c-head .c-t { display: flex; flex-direction: column; margin-right: auto; }
+.c-head h1 { margin: 0; font: 700 34px/1 var(--display); }
+.c-stat { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: var(--paper); border: 1px solid var(--edge); border-radius: var(--radius); }
+.c-stat > div { padding: 10px 14px; border-left: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.c-stat > div:first-child { border-left: 0; }
+.c-stat b { font: 700 22px/1.1 var(--body); white-space: nowrap; }
+.c-stat small { font-size: 12px; color: var(--muted); }
+.c-split { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 0; background: var(--paper); border: 1px solid var(--edge); border-radius: var(--radius); overflow: hidden; align-items: stretch; }
+.c-list { border-right: 1px solid var(--edge); display: flex; flex-direction: column; min-width: 0; }
+.c-lh { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; border-bottom: 1px solid var(--edge); background: var(--bg); }
+.c-lh .m-search { min-width: 0; flex: 1 1 140px; min-height: 32px; }
+.c-day { font: 600 10.5px/1 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 10px 12px 4px; }
+.c-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 10px; padding: 9px 12px; border-top: 1px solid var(--line); position: relative; align-items: center; }
+.c-row .c-a { grid-row: span 2; width: 30px; height: 30px; border-radius: 50%; background: var(--beige); display: grid; place-items: center; font: 700 13px var(--body); }
+.c-row b { font-size: 14.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.c-row small { grid-column: 2 / 4; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.c-row .c-r { font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.c-row.on { background: var(--hit, #FFF1E6); }
+.c-row.on::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); }
+.c-row.hot .c-a { background: var(--tag); color: #fff; }
+.c-detail { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.c-detail h2 { margin: 0; font: 700 32px/1 var(--display); text-wrap: balance; }
+.c-big { font: 700 34px/1 var(--body); }
+.c-dfoot { margin-top: auto; display: flex; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); align-items: center; }
+.c-dfoot .m-note { flex: 1; }
+.c-days { display: flex; gap: 5px; }
+.c-days span { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--edge); display: grid; place-items: center; font-weight: 600; font-size: 12.5px; }
+.c-days span.on { background: var(--ink); border-color: var(--ink); color: var(--bar-text); }
+.c-menu { display: none; }
+
+/* ===== Phone layout of every mockup (container width under 600 px) ===== */
+@container (max-width: 600px) {
+  .m-top { padding: 10px 14px; gap: 12px; }
+  .m-brand { font-size: 24px; } .m-brand small { display: none; }
+  .m-nav { display: none; }
+  .m-ics { margin-left: auto; }
+  .m-ic { width: 34px; height: 34px; }
+  .m-acct { padding: 8px 16px; font-size: 11px; }
+  .m-body, .c-body { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px 24px; }
+  .a-rail, .b-rail, .c-rail { display: none; }
+  .m-picker { display: flex; justify-content: space-between; align-items: center; width: 100%; font-size: 13px; color: var(--muted); padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .m-picker b { color: var(--ink); padding: 6px 14px; border: 1.5px solid var(--ink); border-radius: var(--r-pick); font-size: 14px; }
+  .m-main { gap: 12px; width: 100%; }
+  .m-h1 { font-size: 38px; }
+  .m-tabs { gap: 16px; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+  .m-tabs span { font-size: 14px; }
+  .m-tool { flex-wrap: wrap; }
+  .m-tool .m-hide-ph, .m-hide-ph { display: none !important; }
+  .m-only-ph { display: revert; }
+  .m-search { min-width: 0; flex: 1 1 100%; }
+  .m-tiles, .m-tiles.t3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .m-tn { font-size: 25px; }
+  .m-row2, .m-row3 { grid-template-columns: minmax(0, 1fr); }
+  .m-bar { grid-template-columns: 96px minmax(0, 1fr) 28px; }
+  .m-t.ph-stack thead { display: none; }
+  .m-t.ph-stack tr { display: grid; grid-template-columns: 1fr auto; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .m-t.ph-stack td { border: 0; padding: 1px 0; }
+  .m-t.ph-stack td.ph-x { display: none; }
+  .m-t.ph-stack td.ph-sub { grid-column: 1 / -1; font-size: 12.5px; color: var(--muted); }
+  .m-tabbar { display: flex; justify-content: space-around; position: sticky; bottom: 0; margin-top: auto; padding: 10px 4px 12px; background: var(--bar); color: var(--bar-text); border-top: 3px solid var(--accent); font: 700 9.5px var(--body); letter-spacing: .04em; text-transform: uppercase; z-index: 3; }
+  .m-tabbar span { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .m-tabbar span::before { content: ""; width: 18px; height: 16px; border: 1.6px solid var(--bar-text); border-radius: 4px; }
+  /* B */
+  .b-rooms-ph { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; border: 1.5px solid var(--ink); border-radius: var(--r-pick); overflow: hidden; }
+  .b-rooms-ph span { text-align: center; padding: 8px 0; font-weight: 700; font-size: 13px; }
+  .b-rooms-ph span.on { background: var(--ink); color: var(--bar-text); }
+  .b-band { padding: 8px 10px; }
+  .b-band .m-note { display: none; }
+  .b-head h3 { font-size: 21px; }
+  .b-split, .b-split.wide { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .b-split.ph-detail > .b-plist, .b-split.ph-detail > .b-left { display: none; }
+  .b-split.ph-list > .b-task { display: none; }
+  .b-dash { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .b-set, .b-set.open { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; }
+  .b-set span { grid-column: 1; grid-row: 2; font-size: 13px; }
+  .b-set i { grid-row: 1 / span 2; grid-column: 2; align-self: center; }
+  .b-sup { grid-template-columns: 1fr auto; gap: 2px 8px; }
+  .b-sup .ph-x { display: none; }
+  /* C */
+  .c-menu { display: flex; align-items: center; gap: 10px; width: 100%; padding-bottom: 10px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+  .c-menu b { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border: 1.5px solid var(--ink); border-radius: var(--r-act); color: var(--ink); font-size: 14px; }
+  .c-menu b::before { content: ""; width: 14px; height: 10px; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); box-shadow: inset 0 4px 0 -2px var(--ink); }
+  .c-head h1 { font-size: 30px; }
+  .c-stat { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .c-stat > div:nth-child(3) { border-left: 0; }
+  .c-stat > div:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .c-split { grid-template-columns: minmax(0, 1fr); }
+  .c-split .c-list { border-right: 0; }
+  .c-split.ph-list > .c-detail { display: none; }
+  .c-split.ph-detail > .c-list { display: none; }
+  .c-detail h2 { font-size: 30px; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+<header class="pg-band">
+  <div class="pg-wrap">
+    <p class="pg-kick">Leichhardt Kitchen Book · Admin panel · 4 November 2026</p>
+    <h1>Admin pages: three designs</h1>
+    <p class="pg-lede">The Dashboard set a new standard. The other admin pages still look and behave like the older panel. Here is what drifts, the fixes every option shares, and three ways to organise the whole panel around the Dashboard's design. Pick one, or mix parts.</p>
+    <nav class="pg-jump" aria-label="Jump to an option">
+      <a href="#option-a"><b>A</b> The Pass board everywhere</a>
+      <a href="#option-b"><b>B</b> Four rooms</a>
+      <a href="#option-c"><b>C</b> The workbench</a>
+      <a href="#compare">Compare</a>
+    </nav>
+  </div>
+</header>
+
+<section class="pg-sec">
+  <div class="pg-wrap">
+    <h2>The brief</h2>
+    <p class="pg-sub">Your request, rewritten for a senior engineer.</p>
+    <blockquote class="pg-brief">
+      <p>The admin panel's information architecture and visual language are inconsistent. The new Dashboard (<code>js/admin-dashboard.js</code>, Pass board with written headlines) sets the bar: one toolbar, numbers first, trend chips, cards and charts with drill-through. The other 20 pages across the six chapters predate it and do not share its page anatomy, typography, control sizes, block styles or navigation depth.</p>
+      <p>Audit every admin page against the Dashboard. Propose three distinct, concrete directions for organising and styling the whole panel so it reads as one system. For each: mockups at phone (390 px) and laptop widths, the navigation model, where every existing page and control lands (no feature lost), the impact on reads, rules, roles and tests, the build in pull requests, and pros and cons.</p>
+      <p class="pg-small">No application changes until the head chef chooses. Roles, rules, read budgets, private drafts, Back and Resume, and save acknowledgements stay as they are in every option. All names and figures in the mockups are examples.</p>
+    </blockquote>
+  </div>
+</section>
+
+<section class="pg-sec">
+  <div class="pg-wrap">
+    <h2>What drifts from the Dashboard today</h2>
+    <p class="pg-sub">Measured on 4 November 2026 by opening all 21 admin pages with the test stand-in at 1280 and 390 px.</p>
+    <ol class="pg-finds">
+      <li><h3>Up to four levels of navigation</h3><p>Chapter rail, then page pills, then <b>On this page</b> chips, then a view switch. Reports › Insights has 7 jump chips, Team has 9 over two lines, Wastage adds History, Summary and Daily reviews. The Dashboard has one level.</p></li>
+      <li><h3>Controls before content</h3><p>On Wastage, four rows of controls sit between the title and the first number: a 352 px period box, the view switch, a <b>156 px tall</b> search box and More filters. On a phone the first entry starts about <b>1,130 px</b> down. The Dashboard has one row: period and Refresh.</p></li>
+      <li><h3>Numbers last, in small type</h3><p>Wastage, Transfers and Team show totals as small inline text. Only Insights' Overview has big numbers. No page but the Dashboard uses its tiles, trend lines or <b>Up 14, worse</b> chips.</p></li>
+      <li><h3>Two surface styles, four heading styles</h3><p>The Dashboard uses white cards. Every other page uses flat ruled blocks, beige table heads and black segmented switches. Headings come numbered and orange (Insights), condensed with a kicker (Review desk), plain bold (the rest) and as card titles (Dashboard).</p></li>
+      <li><h3>Very long pages</h3><p>Team is <b>3,800 px</b> on a laptop and 5,690 px on a phone, with 6 search boxes and 6 tables. Insights is 4,000 px. People is 2,480 px because every person is an open form: name box, role dropdown, four ticks, two links.</p></li>
+      <li><h3>Help text before the work</h3><p>Backup has eight lines of explanation before Download a backup. Order cut-offs has four before Add a supplier. Kitchen mail has three before the first message.</p></li>
+      <li><h3>Things said twice, or split up</h3><p>Dashboard tiles repeat Insights' Overview. Insights' By person repeats Team. The Training queue and saved Assessments sit in different chapters. Suppliers &amp; pars is a page with two links.</p></li>
+      <li><h3>Controls in many sizes</h3><p>Period choice is a 352 px dropdown on Wastage, a small pill on Insights and pill buttons on the Dashboard. Search boxes run from 36 to 156 px tall. Role is a dropdown inside a table cell.</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="pg-sec">
+  <div class="pg-wrap">
+    <h2>Shared fixes in every option</h2>
+    <p class="pg-sub">This page kit is step 1 whichever design you pick, so it can start safely before you decide the layout.</p>
+    <ul class="pg-kit">
+      <li><b>One page header</b><span>Where you are, the title, one line of help, then one toolbar row: period pills like the Dashboard's, filters as pills, Refresh and Export at the right.</span></li>
+      <li><b>Numbers first</b><span>The Dashboard's tiles where a page has numbers: the number, the change in words and colour, a small trend line. Only numbers the page already counts.</span></li>
+      <li><b>One block style per job</b><span>Numbers and charts in cards. Lists and tables ruled, with their own search in the block header. Settings as rows that say what they are set to.</span></li>
+      <li><b>One size for controls</b><span>Pills choose, rectangles act, text boxes one height. No full-width dropdowns, no tall search boxes.</span></li>
+      <li><b>Two levels of navigation at most</b><span>Chapter and page. On this page only on pages longer than two screens.</span></li>
+      <li><b>Help after the work</b><span>One line under the title. The rest opens from How this works.</span></li>
+      <li><b>The Dashboard's honest states</b><span>A failed read says Could not load, with Refresh. Never 0 or nobody. Waiting uses Ink in motion.</span></li>
+    </ul>
+  </div>
+</section>
+
+<section class="pg-sec">
+  <div class="pg-wrap">
+    <h2>The three designs</h2>
+    <p class="pg-sub">Each design shows the same four jobs so you can compare like with like: a report (Wastage), the team (People), an inbox (Kitchen mail) and a setting (Order cut-offs). The laptop mockup is drawn at 1100 px and scaled to fit; scroll inside the phone.</p>
+
+    <article class="pg-opt" id="option-a" data-opt="a">
+      <div class="pg-opt-head">
+        <span class="pg-letter" aria-hidden="true">A</span>
+        <h2>The Pass board everywhere</h2>
+        <p>Keep the six chapters and all 21 pages where they are. Rebuild each page with the Dashboard's anatomy: one toolbar, tiles with trends, then cards for charts, tables and settings. The smallest change to where things live, the biggest change to how they look.</p>
+      </div>
+      <ul class="pg-map" aria-label="Chapters in option A">
+        <li>Dashboard</li><li>Review desk <small>Item links, Training, Proofreader</small></li><li>Reports <small>Item evidence, Insights, Wastage, Transfers, Learning, Team</small></li><li>Saved records <small>Links, Assessments, Guides</small></li><li>Operations <small>Mail, Pings, Minutes, Suppliers, Cut-offs</small></li><li>Settings <small>People, Backup and PIN</small></li>
+      </ul>
+      <div class="pg-pages" role="group" aria-label="Page shown in option A"><span>Show</span></div>
+      <div class="pg-frames">
+        <figure class="pg-frame pg-laptop"><figcaption>Laptop <i>scaled to fit</i></figcaption><div class="pg-stage" data-w="1100"></div></figure>
+        <figure class="pg-frame pg-phone"><figcaption>Phone, 390 px <i>scrolls</i></figcaption><div class="pg-stage" data-w="390"></div></figure>
+      </div>
+      <div class="pg-pc">
+        <div class="pro"><h3><span class="dot"></span>Pros</h3><ul>
+          <li>Nothing moves. Every page, bookmark and habit stays where it is.</li>
+          <li>The Dashboard's look reaches every page, so the panel finally reads as one thing.</li>
+          <li>Lowest risk: page ids, tests' page helper, reads and rules are unchanged.</li>
+          <li>Ships one chapter at a time, each pull request useful on its own.</li>
+        </ul></div>
+        <div class="con"><h3><span class="dot"></span>Cons</h3><ul>
+          <li>Does not fix the organisation: still 6 chapters and 21 pages, and the overlaps stay (Dashboard and Insights, Training apart from Assessments).</li>
+          <li>Brings cards back to every page, which reverses the 22 Oct 2026 decision "Fewer boxes on the admin panel".</li>
+          <li>Longest on a phone: tiles and card padding add height to already long pages.</li>
+          <li>Tiles on settings pages can feel forced; some pages have little worth counting.</li>
+        </ul></div>
+      </div>
+      <dl class="pg-facts">
+        <div><dt>Build</dt><dd><b>About 6 pull requests</b>Page kit, then one per chapter</dd></div>
+        <div><dt>Relearning</dt><dd><b>Low</b>Same places, new look</dd></div>
+        <div><dt>Reads and rules</dt><dd><b>No change</b>Tiles use numbers each page already has</dd></div>
+        <div><dt>Tests</dt><dd><b>Small</b>Chef's Desk and nav selectors</dd></div>
+        <div><dt>Best if</dt><dd><b>You like where things are</b>and only the look bothers you</dd></div>
+      </dl>
+    </article>
+
+    <article class="pg-opt" id="option-b" data-opt="b">
+      <div class="pg-opt-head">
+        <span class="pg-letter" aria-hidden="true">B</span>
+        <h2>Four rooms</h2>
+        <p>Sort the panel by the job, not the data. <b>Today</b> is the Dashboard with Needs you grown into one To do list you can work through in place. <b>Reports</b> share one filter bar. <b>Team</b> gives each person one page. <b>Kitchen</b> is every setting as a row that says what it is set to, like the Settings page you chose on 3 Nov.</p>
+      </div>
+      <ul class="pg-map" aria-label="Rooms in option B">
+        <li>Today <small>To do: mail, sign-offs, item links, training, proofreader, transfers. Then the Dashboard</small></li><li>Reports <small>Prep, Wastage, Transfers, Orders, Item evidence, Learning</small></li><li>Team <small>People with a page each, Assessments, Habits</small></li><li>Kitchen <small>Sections, cut-offs, suppliers, pings, minutes, guides, records, access, backup, PIN</small></li>
+      </ul>
+      <div class="pg-pages" role="group" aria-label="Page shown in option B"><span>Show</span></div>
+      <div class="pg-frames">
+        <figure class="pg-frame pg-laptop"><figcaption>Laptop <i>scaled to fit</i></figcaption><div class="pg-stage" data-w="1100"></div></figure>
+        <figure class="pg-frame pg-phone"><figcaption>Phone, 390 px <i>scrolls</i></figcaption><div class="pg-stage" data-w="390"></div></figure>
+      </div>
+      <div class="pg-pc">
+        <div class="pro"><h3><span class="dot"></span>Pros</h3><ul>
+          <li>Opens on what needs you, and each item is done without leaving Today.</li>
+          <li>Six chapters become four, with no page pills inside Today or Kitchen.</li>
+          <li>Pick a period once and every report keeps it.</li>
+          <li>"How is Sam going?" has one answer: access, activity and training on one page.</li>
+          <li>Reuses three patterns you already chose: the Dashboard, the Review desk's focused task and the Settings rows.</li>
+        </ul></div>
+        <div class="con"><h3><span class="dot"></span>Cons</h3><ul>
+          <li>The most relearning. Pages you know move rooms, and the 1 Nov chapter list changes.</li>
+          <li>The person page brings activity and training together, so it must keep saying "Ticks record activity. They do not confirm skill."</li>
+          <li>More to build and test: a role walk-through for the person page and Today's in-place tasks.</li>
+          <li>Kitchen becomes a long list of rows on a phone, though each row is one line.</li>
+        </ul></div>
+      </div>
+      <dl class="pg-facts">
+        <div><dt>Build</dt><dd><b>About 9 pull requests</b>Kit, rooms, To do, filters, person page, Kitchen rows</dd></div>
+        <div><dt>Relearning</dt><dd><b>High at first</b>Then fewer places to look</dd></div>
+        <div><dt>Reads and rules</dt><dd><b>No new reads, no rules</b>Person page reuses today's queries</dd></div>
+        <div><dt>Tests</dt><dd><b>Medium</b>Page helper, nav, roles walk</dd></div>
+        <div><dt>Best if</dt><dd><b>You want it simpler</b>and work by task more than by report</dd></div>
+      </dl>
+    </article>
+
+    <article class="pg-opt" id="option-c" data-opt="c">
+      <div class="pg-opt-head">
+        <span class="pg-letter" aria-hidden="true">C</span>
+        <h2>The workbench</h2>
+        <p>Every page in one rail, with counts and a Find box, so any page is one tap away. Each page is a list on the left and the chosen thing on the right: a message, a person, a supplier, a wastage line. On a phone the list opens the detail full screen. The most app-like of the three.</p>
+      </div>
+      <ul class="pg-map" aria-label="Rail groups in option C">
+        <li>Dashboard</li><li>To review <small>Item links, Training, Proofreader</small></li><li>Reports <small>Prep, Wastage, Transfers, Orders and team, Learning, Item evidence</small></li><li>Kitchen <small>Mail, Pings, Minutes, Cut-offs, Suppliers</small></li><li>Records <small>Links, Assessments, Guides</small></li><li>Settings <small>People, Kitchen setup, Backup and PIN</small></li>
+      </ul>
+      <div class="pg-pages" role="group" aria-label="Page shown in option C"><span>Show</span></div>
+      <div class="pg-frames">
+        <figure class="pg-frame pg-laptop"><figcaption>Laptop <i>scaled to fit</i></figcaption><div class="pg-stage" data-w="1100"></div></figure>
+        <figure class="pg-frame pg-phone"><figcaption>Phone, 390 px <i>scrolls</i></figcaption><div class="pg-stage" data-w="390"></div></figure>
+      </div>
+      <div class="pg-pc">
+        <div class="pro"><h3><span class="dot"></span>Pros</h3><ul>
+          <li>One level of navigation: every page and its count is visible at once.</li>
+          <li>Editing one thing at a time: no more open forms for every person or supplier.</li>
+          <li>Most on screen at once on a laptop. Fast to move between pages.</li>
+          <li>Scales: a new page is one more line in the rail.</li>
+        </ul></div>
+        <div class="con"><h3><span class="dot"></span>Cons</h3><ul>
+          <li>The biggest rebuild: most pages' layout and many test selectors change.</li>
+          <li>Reverses the 1 Nov choice to keep page choices beside the title, not in a second sidebar level.</li>
+          <li>Suits mail, people and suppliers; long reads like Insights fit a list less well.</li>
+          <li>Laptop and phone differ more: the phone needs an Admin menu and full-screen details.</li>
+          <li>Counts in the rail need the Needs you numbers; until they load the rail shows none, never 0.</li>
+        </ul></div>
+      </div>
+      <dl class="pg-facts">
+        <div><dt>Build</dt><dd><b>About 11 pull requests</b>Kit, rail, list and detail, then each page family</dd></div>
+        <div><dt>Relearning</dt><dd><b>Medium</b>Everything visible, new layout</dd></div>
+        <div><dt>Reads and rules</dt><dd><b>No new reads, no rules</b>Rail counts reuse Needs you</dd></div>
+        <div><dt>Tests</dt><dd><b>Large</b>Most admin selectors change</dd></div>
+        <div><dt>Best if</dt><dd><b>You work on a laptop</b>and jump between many pages</dd></div>
+      </dl>
+    </article>
+  </div>
+</section>
+
+<section class="pg-sec" id="compare">
+  <div class="pg-wrap">
+    <h2>Side by side</h2>
+    <p class="pg-sub">Every option keeps who can see each page, private drafts, Back and Resume, acknowledged saves and the read budget.</p>
+    <div class="pg-tbl-wrap" tabindex="0" role="region" aria-label="Comparison of the three designs">
+      <table class="pg-tbl">
+        <thead><tr><th scope="col"></th><th scope="col">A. Pass board everywhere</th><th scope="col">B. Four rooms</th><th scope="col">C. The workbench</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Idea</th><td>Same pages, the Dashboard's look</td><td>Fewer places, sorted by the job</td><td>Everything in one rail, list and detail</td></tr>
+          <tr><th scope="row">Chapters</th><td>6, unchanged</td><td>4 rooms</td><td>6 groups, all 22 pages shown</td></tr>
+          <tr><th scope="row">Navigation levels</th><td>2 (chapter, page tabs)</td><td>2 (room, report tabs)</td><td>1 (rail), then list and detail</td></tr>
+          <tr><th scope="row">Main fix</th><td>Visual consistency</td><td>Organisation and consistency</td><td>Speed and focus on a laptop</td></tr>
+          <tr><th scope="row">Overlaps fixed</th><td class="same">No</td><td>Yes: To do, person page, shared filters</td><td>Partly: Records and Review together in one rail</td></tr>
+          <tr><th scope="row">Phone</th><td>Longest pages</td><td>Room switch at the top, To do first</td><td>Admin menu, list, then full-screen detail</td></tr>
+          <tr><th scope="row">Changes an earlier decision</th><td>22 Oct: fewer boxes</td><td>1 Nov: the chapter list</td><td>1 Nov: no second sidebar level</td></tr>
+          <tr><th scope="row">New reads or rules</th><td class="same">None</td><td class="same">None</td><td class="same">None</td></tr>
+          <tr><th scope="row">Build</th><td>About 6 pull requests</td><td>About 9</td><td>About 11</td></tr>
+          <tr><th scope="row">Risk</th><td>Low</td><td>Medium</td><td>Medium to high</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="pg-sec">
+  <div class="pg-wrap">
+    <h2>Where every page goes</h2>
+    <p class="pg-sub">Nothing is removed in any option. Page ids stay the same inside the code, so old links and the Dashboard's tiles keep opening the right report.</p>
+    <div class="pg-tbl-wrap" tabindex="0" role="region" aria-label="Where every admin page goes in each design">
+      <table class="pg-tbl">
+        <thead><tr><th scope="col">Today</th><th scope="col">A</th><th scope="col">B</th><th scope="col">C</th></tr></thead>
+        <tbody id="pg-where"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="pg-sec">
+  <div class="pg-wrap">
+    <h2>Recommendation</h2>
+    <div class="pg-rec">
+      <div>
+        <p><b>B, Four rooms, built on the shared page kit.</b> It answers both halves of the request: the pages look like the Dashboard, and the panel is easier to find your way around. It reuses three patterns you already chose, so the new parts are familiar. It adds no reads and no rules.</p>
+        <p>If you want the least disruption, choose <b>A</b>: same places, new look. Choose <b>C</b> if you mostly work at a laptop and jump between many pages.</p>
+        <p>Mixing works too. A's tiles and cards fit B's reports. C's list and detail fits B's Team and Kitchen mail.</p>
+      </div>
+      <div>
+        <p><b>If B is chosen, the build order</b> (each its own pull request, with click tests at 390, 768 and 1280 px and the read budget check):</p>
+        <ol class="pg-steps">
+          <li>Page kit: header, toolbar, tiles, cards, ruled lists, settings rows.</li>
+          <li>Four rooms in the rail and the phone room switch, page ids unchanged.</li>
+          <li>Today: To do with in-place tasks, the Dashboard under it.</li>
+          <li>Reports: one filter bar and the same report layout.</li>
+          <li>Team: person pages, with the role walk-through on the emulator.</li>
+          <li>Kitchen: settings rows, records and access.</li>
+          <li>Tidy up: remove the old chapter styles and update the notes.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="pg-foot">
+  <div class="pg-wrap">All names, numbers, suppliers and messages in the mockups are examples, not the kitchen's records. No prices or supplier codes are shown or needed. Drafted 4 November 2026 for the head chef's choice.</div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+  // ---------- example data ----------
+  var W = [
+    ['Wed 4 Nov', '13:30', 'Chips', '2 kg', 'Excess production', 'Fryer', 'Bo'],
+    ['Wed 4 Nov', '09:10', 'Brisket', '0.5 kg', 'Excess production', 'Larder', 'Ann'],
+    ['Tue 3 Nov', '21:40', 'Garlic aioli', '1 L', 'Expired stock', 'Larder', 'Sam'],
+    ['Tue 3 Nov', '15:05', 'Brioche buns', '6 each', 'Damaged', 'Pass', 'Jo'],
+    ['Mon 2 Nov', '22:15', 'Brisket', '1 kg', 'Excess production', 'Larder', 'Ann']
+  ];
+  var P = [
+    ['Sam', 'Sous chef', [1, 1, 1, 0], 'Mostly Larder · in today'],
+    ['Ann', 'Staff', [1, 1, 0, 0], 'Mostly Grill · in today'],
+    ['Bo', 'Staff', [1, 1, 0, 0], 'Mostly Fryers'],
+    ['Jo', 'Lead', [1, 1, 0, 1], 'Mostly Pass'],
+    ['Kai', 'View only', [0, 0, 0, 0], 'Reads the book'],
+    ['Head chef', 'Head chef', [1, 1, 1, 0], 'You']
+  ];
+  var M = [
+    ['Food safety', 1, 'Cool room door seal is torn at the bottom', 'Bo', 'Wed 4 Nov, 12:00', '2 h ago', 'Today'],
+    ['Equipment', 1, 'Fryer 2 thermostat reads 20 degrees low', 'Ann', 'Wed 4 Nov, 03:00', '11 h ago', 'Today'],
+    ['Idea', 0, 'Pickle the leftover red onion for the burgers', 'Sam', 'Wed 4 Nov, 09:00', '5 h ago', 'This week']
+  ];
+  var CU = [
+    ['B&amp;E Chicken', 'Mon, Thu', '15:00 the day before', '4 hours before', ''],
+    ['PFD', 'Tue, Fri', '14:00 the day before', '6 hours before', 'Today 14:00'],
+    ['Simon George Fruit and Veg', 'Mon to Sat', '16:00 the day before', '4 hours before', ''],
+    ['A La Carte Meats', 'Wed', '12:00 Monday', 'The night before', '']
+  ];
+  var WASTE_DAYS = [1, 2, 1, 0, 1, 2, 3, 1, 0, 1, 1, 2, 1, 0, 2, 1, 1, 0, 1, 2, 1, 1, 0, 2, 3, 2, 3, 2, 3, 3];
+  var SPARK_UP = [1, 1, 2, 1, 1, 2, 1, 2, 2, 1, 2, 3, 3, 4, 3, 4];
+  var SPARK_FLAT = [3, 3, 4, 3, 3, 4, 3, 3, 4, 3, 3, 4, 3, 3, 3, 4];
+  var SPARK_JAG = [6, 7, 5, 7, 6, 8, 5, 7, 6, 7, 5, 8, 6, 7, 6, 7];
+
+  // ---------- small pieces ----------
+  function spark(pts) {
+    var max = Math.max.apply(null, pts), min = Math.min.apply(null, pts), n = pts.length - 1;
+    var d = pts.map(function (p, i) { return (i * 100 / n).toFixed(1) + ',' + (24 - (p - min) / ((max - min) || 1) * 19).toFixed(1); }).join(' ');
+    return '<svg class="m-spark" viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,28 ' + d + ' 100,28" fill="#F2EFE8"/><polyline points="' + d + '" fill="none" stroke="#1C1D1F" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>';
+  }
+  function tile(label, num, unit, chip, kind, pts, foot) {
+    return '<div class="m-tile"><div class="m-tl">' + label + '</div><div class="m-tn">' + num + (unit ? '<small>' + unit + '</small>' : '') + '</div>' +
+      (chip ? '<span class="m-chip ' + (kind || '') + '">' + (kind === 'bad' ? '▲ ' : '') + chip + '</span>' : '') + (pts ? spark(pts) : '') + (foot ? '<div class="m-tf">' + foot + '</div>' : '') + '</div>';
+  }
+  function bars(rows, max) {
+    return '<div class="m-bars">' + rows.map(function (r) {
+      return '<div class="m-bar"><span>' + r[0] + '</span><span class="m-bt"><i style="width:' + (r[1] / max * 100) + '%"></i>' + (r[2] != null ? '<b style="left:' + (r[2] / max * 100) + '%"></b>' : '') + '</span><span class="m-bv">' + r[1] + '</span></div>';
+    }).join('') + '</div>';
+  }
+  function cols(vals) { var mx = Math.max.apply(null, vals); return '<div class="b-colchart">' + vals.map(function (v, i) { return '<i class="' + (i < vals.length - 7 ? 'w' : '') + '" style="height:' + Math.max(4, v / mx * 100) + '%"></i>'; }).join('') + '</div>'; }
+  function ck(on, dim) { return '<span class="m-ck' + (on ? ' on' : '') + (dim ? ' dim' : '') + '"></span>'; }
+  function sw(on) { return '<span class="m-sw' + (on ? ' on' : '') + '"></span>'; }
+  var BELL = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 20.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+  var HAT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.5 14.5c-2.4 0-3.6-1.8-3.2-3.6.4-1.9 2.4-2.6 4-2 .6-2.3 2.3-3.4 3.7-3.4s3.1 1.1 3.7 3.4c1.6-.6 3.6.1 4 2 .4 1.8-.8 3.6-3.2 3.6z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 14.5h8v4H8z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>';
+  function chrome(rail, picker, main, bodyClass) {
+    return '<div class="m-app"><div class="m-top"><span class="m-back">‹</span><div class="m-brand"><small>Leichhardt Hotel kitchen</small>Kitchen Book</div>' +
+      '<div class="m-nav"><span>Recipes</span><span>Prep</span><span>Orders</span><span>Wastage</span><span>Transfers</span><span>Guides</span></div>' +
+      '<div class="m-ics"><span class="m-ic">' + BELL + '</span><span class="m-ic hat">' + HAT + '</span></div></div>' +
+      '<div class="m-acct"><span>Google account: <b>headchef@example</b></span><u>Sign out of Google</u></div>' +
+      '<div class="m-body ' + (bodyClass || '') + '">' + rail + '<div class="m-main">' + picker + main + '</div></div>' +
+      '<div class="m-tabbar"><span>Recipes</span><span>Prep</span><span>Orders</span><span>Wastage</span><span>Transfers</span><span>Guides</span></div></div>';
+  }
+  function wasteTable(withRemove) {
+    return '<table class="m-t ph-stack"><thead><tr><th>When</th><th>Item</th><th>Amount</th><th>Reason</th><th>Section</th><th>Logged by</th>' + (withRemove ? '<th></th>' : '') + '</tr></thead><tbody>' +
+      W.map(function (w) { return '<tr><td class="ph-x">' + w[0] + ', ' + w[1] + '</td><td class="b">' + w[2] + '</td><td class="r">' + w[3] + '</td><td class="ph-sub">' + w[4] + '<span class="m-only-ph"> · ' + w[5] + ' · ' + w[6] + ' · ' + w[0].slice(0, 3) + ' ' + w[1] + '</span></td><td class="ph-x">' + w[5] + '</td><td class="ph-x">' + w[6] + '</td>' + (withRemove ? '<td class="ph-x r"><span class="m-link">Remove</span></td>' : '') + '</tr>'; }).join('') + '</tbody></table>';
+  }
+
+  // ---------- A: the Pass board everywhere ----------
+  var A_CH = [['01', 'Dashboard'], ['02', 'Review desk'], ['03', 'Reports'], ['04', 'Saved records'], ['05', 'Operations (3)'], ['06', 'Settings']];
+  function aRail(on) { return '<aside class="a-rail"><div class="m-railh">Admin panel</div>' + A_CH.map(function (c) { return '<div class="a-ch' + (c[1].indexOf(on) === 0 ? ' on' : '') + '"><span>' + c[0] + '</span>' + c[1] + '</div>'; }).join('') + '</aside>'; }
+  function aPick(on) { return '<div class="m-picker"><span>Admin section</span><b>' + on + ' ▾</b></div>'; }
+  function aHead(no, chap, title, tabs, on) {
+    return '<div class="m-eyebrow">' + chap + ' / ' + no + '</div><h1 class="m-h1">' + title + '</h1><div class="m-tabs">' + tabs.map(function (t) { return '<span class="' + (t === on ? 'on' : '') + '">' + t + '</span>'; }).join('') + '</div>';
+  }
+  var OPS = ['Kitchen mail (3)', 'Shift pings', 'Minutes', 'Suppliers &amp; pars', 'Order cut-offs'];
+  var A = {
+    waste: function () {
+      return chrome(aRail('Reports'), aPick('Reports'),
+        aHead('03', 'Reports', 'Wastage', ['Item evidence', 'Insights', 'Wastage', 'Transfers', 'Learning', 'Team'], 'Wastage') +
+        '<div class="m-tool"><span class="m-pill">7 days</span><span class="m-pill on">30 days</span><span class="m-pill">90 days</span><span class="m-pill m-hide-ph">Custom ▾</span><span class="m-seg m-hide-ph"><span class="on">History</span><span>Summary</span><span>Daily reviews</span></span><span class="m-sp"></span><span class="m-btn">Refresh</span><span class="m-btn">Export CSV</span></div>' +
+        '<div class="m-range">Mon 5 Oct to Wed 4 Nov, compared with the 30 days before.</div>' +
+        '<div class="m-tiles">' + tile('Wastage lines', '44', '', 'Up 14, worse', 'bad', SPARK_UP, 'Lines logged, not dollars.') + tile('Amount, by unit', '22.5', 'kg', 'Up 4 kg, worse', 'bad', SPARK_UP, 'Also 6 L and 14 each.') +
+        tile('Days with waste', '19', 'of 30', 'Same as before', '', SPARK_FLAT, 'Days with a line logged.') + tile('Top reason', '37', 'of 44', 'Excess production', 'warn', null, 'Expired stock 5, Damaged 2.') + '</div>' +
+        '<div class="m-row2"><div class="m-card"><div class="m-card-h"><h3>By reason</h3><span class="m-cnt">The dark mark is the 30 days before.</span></div>' + bars([['Excess production', 37, 26], ['Expired stock', 5, 3], ['Damaged', 2, 1]], 40) + '</div>' +
+        '<div class="m-card"><div class="m-card-h"><h3>By section</h3></div>' + bars([['Larder', 21, 14], ['Fryer', 12, 9], ['Pass', 7, 5], ['Grill', 4, 2]], 24) + '</div></div>' +
+        '<div class="m-card"><div class="m-card-h"><h3>Every entry</h3><span class="m-cnt">44 entries</span><span class="m-sp"></span><span class="m-search">Search items, reasons or notes</span><span class="m-pill sm m-hide-ph">Newest first ▾</span></div>' + wasteTable(true) + '<div class="m-more">Show 39 more</div></div>');
+    },
+    people: function () {
+      return chrome(aRail('Settings'), aPick('Settings'),
+        aHead('06', 'Settings', 'People', ['People', 'Backup and PIN'], 'People') +
+        '<div class="m-tool"><span class="m-search">Search names</span><span class="m-pill on">Everyone 6</span><span class="m-pill">Sous chefs 1</span><span class="m-pill">Staff 3</span><span class="m-pill m-hide-ph">View only 1</span><span class="m-sp"></span><span class="m-btn dark">Add a person</span></div>' +
+        '<div class="m-tiles">' + tile('People', '6', '', null, '', null, 'Including you.') + tile('Can write', '5', '', null, '', null, 'Kai reads only.') + tile('Functions ticked', '1', '', null, '', null, 'Jo books functions.') + tile('Kitchen sections', '7', '', null, '', null, 'Asked once a day.') + '</div>' +
+        '<div class="m-card"><div class="m-card-h"><h3>The team</h3><span class="m-cnt">Tick what each person may do, then save.</span></div>' +
+        '<table class="m-t ph-stack"><thead><tr><th>Name</th><th>Role</th><th>Write</th><th>Tick</th><th>Remove</th><th>Functions</th><th></th></tr></thead><tbody>' +
+        P.map(function (p) { var me = p[1] === 'Head chef'; return '<tr><td class="b">' + p[0] + '</td><td class="ph-sub"><span class="m-pill sm">' + p[1] + (me ? '' : ' ▾') + '</span><span class="m-only-ph"> ' + p[2].map(function (v, i) { return v ? ['Write', 'Tick', 'Remove', 'Functions'][i] : ''; }).filter(Boolean).join(' · ') + '</span></td>' + p[2].map(function (v) { return '<td class="ph-x">' + ck(v, me) + '</td>'; }).join('') + '<td class="ph-x r"><span class="m-link">More ▾</span></td></tr>'; }).join('') +
+        '</tbody></table><div class="m-savebar"><b>1 change: Jo is now a Lead.</b><span class="m-btn">Undo</span><span class="m-btn dark">Save changes</span></div></div>' +
+        '<div class="m-row3"><div class="m-card"><div class="m-card-h"><h3>Kitchen sections</h3></div><div class="m-chips"><span class="m-tag">Grill</span><span class="m-tag">Pass</span><span class="m-tag">Fryers</span><span class="m-tag">Hot larder</span><span class="m-tag">Larder</span><span class="m-tag">Salads and dessert</span><span class="m-tag">Prep</span></div></div>' +
+        '<div class="m-card"><div class="m-card-h"><h3>Staff see</h3></div><div class="m-swrow"><span>Guides</span>' + sw(1) + '</div><div class="m-swrow"><span>Shift pings</span>' + sw(1) + '</div><div class="m-swrow"><span>Meeting minutes</span>' + sw(1) + '</div></div>' +
+        '<div class="m-card"><div class="m-card-h"><h3>Badges</h3></div><div class="m-swrow"><span>Weekly top tickers on the prep book</span>' + sw(1) + '</div></div></div>');
+    },
+    mail: function () {
+      return chrome(aRail('Operations'), aPick('Operations'),
+        aHead('05', 'Operations', 'Kitchen mail', OPS, 'Kitchen mail (3)') +
+        '<div class="m-tool"><span class="m-search">Search mail</span><span class="m-pill on">Open 3</span><span class="m-pill">Food safety 1</span><span class="m-pill m-hide-ph">This week 1</span><span class="m-sp"></span><span class="m-pill m-hide-ph">Most urgent first ▾</span></div>' +
+        '<div class="m-tiles">' + tile('Open', '3', '', 'Up 2, more waiting', 'bad', SPARK_UP) + tile('Food safety', '1', '', 'Needs today', 'warn') + tile('Oldest open', '11', 'h', null, '', null, 'Fryer 2 thermostat.') + tile('Dealt with, 30 days', '12', '', 'Same as before', '', SPARK_FLAT) + '</div>' +
+        '<div class="m-card"><div class="m-card-h"><h3>Open</h3><span class="m-cnt">Most urgent first. Opening marks them seen.</span></div>' +
+        M.map(function (m) { return '<div class="m-mail' + (m[1] ? ' hot' : '') + '"><span class="m-circ"></span><div><p>' + m[2] + '</p><div class="m-meta"><span class="m-tag' + (m[0] === 'Food safety' ? ' fs' : '') + '">' + m[0] + '</span><b>' + m[3] + '</b><span>' + m[5] + '</span></div></div><span class="m-pill sm m-hide-ph">' + m[6] + ' ▾</span></div>'; }).join('') + '</div>' +
+        '<div class="m-row2"><div class="m-card"><div class="m-card-h"><h3>Done in the last 30 days</h3><span class="m-cnt">12</span><span class="m-sp"></span><span class="m-link">Show</span></div></div>' +
+        '<div class="m-card"><div class="m-card-h"><h3>Sharing</h3></div><div class="m-swrow"><span>Sous chefs can read kitchen mail and tick it off</span>' + sw(0) + '</div></div></div>');
+    },
+    cutoffs: function () {
+      return chrome(aRail('Operations'), aPick('Operations'),
+        aHead('05', 'Operations', 'Order cut-offs', OPS, 'Order cut-offs') +
+        '<div class="m-tool"><span class="m-note">You and the sous chefs get a bar before each cut-off. <span class="m-link">How this works</span></span><span class="m-sp"></span><span class="m-btn">Add a supplier</span><span class="m-btn off">Save cut-offs</span></div>' +
+        '<div class="m-tiles t3">' + tile('Suppliers', '4', '', null, '', null, 'With cut-offs set.') + tile('Next cut-off', '14:00', '', 'PFD, in 2 h', 'warn', null, 'Reminder bar since 08:00.') + tile('Pushes on this device', 'Off', '', null, '', null, 'Turn on below.') + '</div>' +
+        '<div class="m-card"><div class="m-card-h"><h3>Suppliers and cut-offs</h3></div><table class="m-t ph-stack"><thead><tr><th>Supplier</th><th>Delivers</th><th>Order by</th><th>Remind us</th><th></th></tr></thead><tbody>' +
+        CU.map(function (c) { return '<tr><td class="b">' + c[0] + (c[4] ? ' <span class="m-chip warn">' + c[4] + '</span>' : '') + '</td><td class="ph-sub">' + c[1] + '<span class="m-only-ph"> · by ' + c[2] + '</span></td><td class="ph-x">' + c[2] + '</td><td class="ph-x"><span class="m-pill sm">' + c[3] + ' ▾</span></td><td class="ph-x r"><span class="m-link">Change</span></td></tr>'; }).join('') + '</tbody></table></div>' +
+        '<div class="m-card"><div class="m-card-h"><h3>Pushes on this device</h3><span class="m-sp"></span><span class="m-btn acc">Turn pushes on</span></div><div class="m-note">A push when a reminder starts and an hour before each cut-off, even with the book closed.</div></div>');
+    }
+  };
+
+  // ---------- B: four rooms ----------
+  var B_ROOMS = [['Today', '3 to do', 1], ['Reports', 'Waste up 14', 0], ['Team', '6 people', 0], ['Kitchen', 'PFD cut-off 14:00', 1]];
+  function bRail(on) { return '<aside class="b-rail">' + B_ROOMS.map(function (r) { return '<div class="b-room' + (r[0] === on ? ' on' : '') + '"><b>' + r[0] + '</b><small class="' + (r[2] && r[0] !== on ? 'hot' : '') + '">' + r[1] + '</small></div>'; }).join('') + '</aside>'; }
+  function bPick(on) { return '<div class="b-rooms-ph">' + B_ROOMS.map(function (r) { return '<span class="' + (r[0] === on ? 'on' : '') + '">' + r[0] + (r[0] === 'Today' ? ' 3' : '') + '</span>'; }).join('') + '</div>'; }
+  var B = {
+    waste: function () {
+      return chrome(bRail('Reports'), bPick('Reports'),
+        '<div class="b-band"><span class="m-label">Showing</span><span class="m-pill">30 days ▾</span><span class="m-pill">All sections ▾</span><span class="m-pill m-hide-ph">Everyone ▾</span><span class="m-note">Applies to every report.</span><span class="m-sp"></span><span class="m-btn">Refresh</span></div>' +
+        '<div class="m-tabs"><span>Prep</span><span class="on">Wastage</span><span>Transfers</span><span>Orders</span><span>Item evidence</span><span>Learning</span></div>' +
+        '<h1 class="m-h1" style="margin-top:2px">Wastage</h1>' +
+        '<div class="b-head"><span class="k">Worse</span><h3>Waste is up: 44 lines in 30 days, 14 more than the 30 before.</h3><p>Excess production was 37 of them. Larder logged the most (21).</p></div>' +
+        '<div class="m-tiles t3">' + tile('Lines logged', '44', '', 'Up 14, worse', 'bad', SPARK_UP) + tile('Amount, by unit', '22.5', 'kg', 'Also 6 L, 14 each', '', SPARK_UP) + tile('Days with waste', '19', 'of 30', 'Same as before', '', SPARK_FLAT) + '</div>' +
+        '<div class="m-card"><div class="m-card-h"><h3>Lines each day</h3><span class="m-cnt">The last 7 days are darker.</span><span class="m-sp"></span><span class="m-link">Show as a table</span></div>' + cols(WASTE_DAYS) + '</div>' +
+        '<div class="b-list-h"><h3>Every entry · 44</h3><span class="m-pill sm on">History</span><span class="m-pill sm">Summary</span><span class="m-pill sm m-hide-ph">Daily reviews</span><span class="m-search m-hide-ph">Search entries</span><span class="m-btn m-hide-ph">Export CSV</span></div>' + wasteTable(true));
+    },
+    people: function () {
+      return chrome(bRail('Team'), bPick('Team'),
+        '<div class="m-tabs"><span class="on">People</span><span>Assessments</span><span>Habits</span></div>' +
+        '<div class="b-split ph-detail"><div class="b-plist"><div class="m-tool" style="padding-bottom:10px"><span class="m-search" style="min-width:0;flex:1">Search names</span><span class="m-btn dark">Add</span></div>' +
+        P.map(function (p, i) { return '<div class="b-prow' + (i === 0 ? ' on' : '') + '"><b>' + p[0] + '</b><small>' + p[1] + ' · ' + p[3] + '</small></div>'; }).join('') + '</div>' +
+        '<div class="m-main"><span class="m-link m-only-ph">‹ Team</span><div class="m-eyebrow">Team / person</div><div class="m-tool"><h1 class="m-h1" style="margin:0">Sam</h1><span class="m-pill on">Sous chef ▾</span><span class="m-sp"></span><span class="m-note">In today · Larder</span></div>' +
+        '<div class="b-sect"><span class="m-label">Can</span><div class="m-chips"><span class="m-pill on">✓ Write</span><span class="m-pill on">✓ Tick</span><span class="m-pill on">✓ Remove</span><span class="m-pill">Functions</span></div></div>' +
+        '<div class="b-sect"><span class="m-label">Last 30 days</span><div class="m-tiles t3">' + tile('Lines written', '62', '', 'Same as before', '', SPARK_JAG) + tile('Ticked off', '141', '', 'Up 12', 'good', SPARK_UP) + tile('Main section', '60', '%', 'Larder', '', null) + '</div><div class="m-note">Ticks record activity. They do not confirm skill.</div></div>' +
+        '<div class="b-sect"><span class="m-label">Training</span><table class="m-t"><tbody><tr><td class="b">Larder</td><td>Confident</td><td class="m-note">Assessed 12 Oct</td></tr><tr><td class="b">Grill</td><td>In training</td><td class="m-note">Since 20 Oct</td></tr></tbody></table><span class="m-btn" style="align-self:flex-start">Add an assessment</span></div>' +
+        '<div class="b-sect"><span class="m-label">Access</span><div class="m-tool"><span class="m-link">Reset PIN</span><span class="m-link">Stopped working here</span><span class="m-sp"></span><span class="m-btn dark">Save Sam</span></div></div></div></div>');
+    },
+    mail: function () {
+      var task = '<aside class="b-task"><div class="m-eyebrow">Food safety · from Bo · Wed 12:00</div><h2>Cool room door seal is torn at the bottom</h2><div><div class="m-label" style="margin-bottom:6px">How soon</div><div class="m-chips"><span class="m-pill on">Today</span><span class="m-pill">This week</span><span class="m-pill">Whenever</span></div></div>' +
+        '<div class="m-tool"><span class="m-btn dark">Dealt with</span><span class="m-btn">Next: Fryer 2 ›</span></div><div class="m-note">Opening marks it seen, so Bo knows you have read it.</div></aside>';
+      return chrome(bRail('Today'), bPick('Today'),
+        '<div class="m-eyebrow">Today · Wed 4 Nov</div><h1 class="m-h1">To do</h1><p class="m-intro">3 kitchen mails, 1 sign-off, 8 reviews and 1 transfer.</p>' +
+        '<div class="b-split wide ph-list"><div class="b-left">' +
+        '<div class="b-todo-g"><span class="m-label">Kitchen mail · 3</span>' + M.map(function (m, i) { return '<div class="b-todo' + (m[0] === 'Food safety' ? ' hot' : '') + (i === 0 ? ' on' : '') + '"><b>' + m[2] + '</b><small>' + m[0] + ' · ' + m[3] + ' · ' + m[5] + '</small></div>'; }).join('') + '</div>' +
+        '<div class="b-todo-g"><span class="m-label">To sign · 1</span><div class="b-todo"><b>Meeting minutes No. 3</b><small>1 of 4 signed · late</small></div></div>' +
+        '<div class="b-todo-g"><span class="m-label">Review desk · 8</span><div class="b-todo"><b>3 item links to check</b><small>Oldest 2 days</small></div><div class="b-todo"><b>5 training reviews</b><small>2 in training</small></div></div>' +
+        '<div class="b-todo-g"><span class="m-label">Transfers · 1</span><div class="b-todo"><b>Butter to Venue B, not back</b><small>9 days</small></div></div></div>' + task + '</div>' +
+        '<div class="b-dash"><div><span class="k">Steady</span><h4>90% of Tuesday\'s prep list was ticked off.</h4></div><div><span class="k bad">Worse</span><h4>Waste is up: 21 lines in 7 days, 7 the week before.</h4></div><div><span class="k">Slowest section</span><h4>Garnish: typical 3 h 30 min to tick.</h4></div></div>' +
+        '<span class="m-link">The Dashboard\'s tiles, week ahead and charts follow here ›</span>');
+    },
+    cutoffs: function () {
+      function row(t, v, open) { return '<div class="b-set"><b>' + t + '</b><span>' + v + '</span><i>›</i></div>'; }
+      return chrome(bRail('Kitchen'), bPick('Kitchen'),
+        '<h1 class="m-h1">Kitchen</h1><p class="m-intro">How the kitchen is set up. Each row says what it is set to; tap to change it.</p>' +
+        '<div class="b-group"><span class="m-label">The kitchen</span>' + row('Kitchen sections', 'Grill, Pass, Fryers, Hot larder and 3 more') +
+        '<div class="b-set open"><b>Order cut-offs</b><span>4 suppliers · next: PFD today 14:00</span><i>⌃</i><div class="b-in">' +
+        CU.map(function (c) { return '<div class="b-sup"><b>' + c[0] + '</b><span class="ph-x">' + c[1] + '</span><span class="ph-x">by ' + c[2] + '</span><span class="m-pill sm">' + c[3] + ' ▾</span></div>'; }).join('') +
+        '<div class="m-tool" style="padding-top:10px"><span class="m-btn">Add a supplier</span><span class="m-btn off">Save cut-offs</span><span class="m-sp"></span><span class="m-note">Pushes on this device: Off</span><span class="m-link">Turn on</span></div></div></div>' +
+        row('Suppliers &amp; pars', 'Catalogue and supplier order') + row('Shift pings', '2 set · sound: Pass bell') + row('Meeting minutes', 'No. 3 published · 1 of 4 signed') + row('Guides', '12 guides') + '</div>' +
+        '<div class="b-group"><span class="m-label">Records</span>' + row('Confirmed item links', '48 links') + row('Proofreader words', '6 protected') + '</div>' +
+        '<div class="b-group"><span class="m-label">Access and safety</span>' + row('Pages staff see', 'Guides, Shift pings, Minutes') + row('Badges', 'On') + row('Kitchen mail for sous chefs', 'Off') + row('Backup', 'Nightly at 03:30 · last run finished') + row('Kitchen PIN', 'Change the PIN') + '</div>');
+    }
+  };
+
+  // ---------- C: the workbench ----------
+  var C_RAIL = [['', [['Dashboard']]], ['To review', [['Item links', 3], ['Training', 5], ['Proofreader']]], ['Reports', [['Prep'], ['Wastage'], ['Transfers'], ['Orders and team'], ['Learning'], ['Item evidence']]],
+    ['Kitchen', [['Kitchen mail', 3], ['Shift pings'], ['Minutes'], ['Cut-offs'], ['Suppliers &amp; pars']]], ['Records', [['Confirmed links'], ['Assessments'], ['Guides']]], ['Settings', [['People'], ['Kitchen setup'], ['Backup and PIN']]]];
+  function cRail(on) {
+    return '<aside class="c-rail"><span class="c-find">Find a page, person or item</span>' + C_RAIL.map(function (g) {
+      return (g[0] ? '<div class="c-g">' + g[0] + '</div>' : '') + g[1].map(function (it) { return '<div class="c-it' + (it[0] === on ? ' on' : '') + '"><span>' + it[0] + '</span>' + (it[1] ? '<em>' + it[1] + '</em>' : '') + '</div>'; }).join('');
+    }).join('') + '</aside>';
+  }
+  function cMenu(group, on) { return '<div class="c-menu"><b>Admin menu</b><span>' + group + ' › ' + on + '</span></div>'; }
+  var C = {
+    waste: function () {
+      return chrome(cRail('Wastage'), cMenu('Reports', 'Wastage'),
+        '<div class="c-head"><div class="c-t"><span class="m-eyebrow">Reports</span><h1>Wastage</h1></div><span class="m-pill">7 days</span><span class="m-pill on">30 days</span><span class="m-pill">90 days</span><span class="m-btn m-hide-ph">Export CSV</span></div>' +
+        '<div class="c-stat"><div><small>Lines logged</small><b>44</b><span class="m-chip bad">▲ Up 14, worse</span></div><div><small>Amount, by unit</small><b>22.5 kg</b><small>6 L · 14 each</small></div><div><small>Days with waste</small><b>19 of 30</b><small>Same as before</small></div><div><small>Top reason</small><b>37</b><small>Excess production</small></div></div>' +
+        '<div class="c-split ph-list"><div class="c-list"><div class="c-lh"><span class="m-search">Search entries</span><span class="m-pill sm on">History</span><span class="m-pill sm">Summary</span><span class="m-pill sm">Daily</span></div>' +
+        ['Wed 4 Nov', 'Tue 3 Nov', 'Mon 2 Nov'].map(function (d) { return '<div class="c-day">' + d + '</div>' + W.filter(function (w) { return w[0] === d; }).map(function (w, i) { return '<div class="c-row' + (w[2] === 'Chips' ? ' on' : '') + '"><span class="c-a">' + w[2][0] + '</span><b>' + w[2] + '</b><span class="c-r">' + w[3] + '</span><small>' + w[4] + ' · ' + w[5] + ' · ' + w[6] + ' · ' + w[1] + '</small></div>'; }).join(''); }).join('') +
+        '<div class="c-day">39 more</div></div>' +
+        '<div class="c-detail"><span class="m-eyebrow">Wastage line · Wed 4 Nov, 13:30</span><h2>Chips</h2><div class="c-big">2 kg</div><dl class="m-dl"><dt>Reason</dt><dd>Excess production</dd><dt>Section</dt><dd>Fryer</dd><dt>Logged by</dt><dd>Bo</dd><dt>Note</dt><dd>None</dd></dl>' +
+        '<div class="m-card" style="background:var(--bg)"><div class="m-card-h"><h3>Chips in these 30 days</h3><span class="m-cnt">3 lines · 4.5 kg</span></div>' + spark([0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1]) + '</div>' +
+        '<div class="c-dfoot"><span class="m-note">Removed lines stay in the history and can be put back.</span><span class="m-btn bad">Remove</span></div></div></div>');
+    },
+    people: function () {
+      return chrome(cRail('People'), cMenu('Settings', 'People'),
+        '<div class="c-head"><div class="c-t"><span class="m-eyebrow">Settings</span><h1>People</h1></div><span class="m-btn dark m-hide-ph">Add a person</span></div>' +
+        '<div class="c-split ph-detail"><div class="c-list"><div class="c-lh"><span class="m-search">Search names</span><span class="m-pill sm on">All 6</span><span class="m-pill sm">Sous 1</span><span class="m-pill sm">Staff 3</span></div>' +
+        P.map(function (p) { return '<div class="c-row' + (p[0] === 'Jo' ? ' on' : '') + '"><span class="c-a">' + p[0][0] + '</span><b>' + p[0] + '</b><span class="c-r m-note">' + p[1] + '</span><small>' + (p[2].map(function (v, i) { return v ? ['Write', 'Tick', 'Remove', 'Functions'][i] : ''; }).filter(Boolean).join(' · ') || 'Reads only') + '</small></div>'; }).join('') + '</div>' +
+        '<div class="c-detail"><span class="m-link m-only-ph">‹ People</span><span class="m-eyebrow">Person</span><h2>Jo</h2><label class="m-field">Name<span class="m-in">Jo</span></label>' +
+        '<div><div class="m-label" style="margin-bottom:6px">Role</div><div class="m-chips"><span class="m-pill sm">Sous chef</span><span class="m-pill sm on">Lead</span><span class="m-pill sm">Staff</span><span class="m-pill sm">View only</span><span class="m-pill sm">Functions coordinator</span></div></div>' +
+        '<div><div class="m-label" style="margin-bottom:2px">Can</div><div class="m-swrow"><span>Write lines</span>' + sw(1) + '</div><div class="m-swrow"><span>Tick lines off</span>' + sw(1) + '</div><div class="m-swrow"><span>Remove lines</span>' + sw(0) + '</div><div class="m-swrow"><span>Create and edit functions</span>' + sw(1) + '</div></div>' +
+        '<div class="m-tool"><span class="m-btn">Reset PIN</span><span class="m-btn">Stopped working here</span></div>' +
+        '<div class="c-dfoot"><span class="m-note">1 change not saved: role.</span><span class="m-btn">Undo</span><span class="m-btn dark">Save Jo</span></div></div></div>');
+    },
+    mail: function () {
+      return chrome(cRail('Kitchen mail'), cMenu('Kitchen', 'Kitchen mail'),
+        '<div class="c-head"><div class="c-t"><span class="m-eyebrow">Kitchen</span><h1>Kitchen mail</h1></div><span class="m-pill m-hide-ph">Most urgent first ▾</span></div>' +
+        '<div class="c-split ph-list"><div class="c-list"><div class="c-lh"><span class="m-search">Search mail</span><span class="m-pill sm on">Open 3</span><span class="m-pill sm">Food safety 1</span><span class="m-pill sm">Done 12</span></div>' +
+        M.map(function (m, i) { return '<div class="c-row' + (m[0] === 'Food safety' ? ' hot' : '') + (i === 0 ? ' on' : '') + '"><span class="c-a">' + m[3][0] + '</span><b>' + m[2] + '</b><span class="c-r m-note">' + m[5] + '</span><small>' + m[0] + ' · ' + m[3] + ' · ' + m[6] + '</small></div>'; }).join('') +
+        '<div class="c-day">Sharing</div><div class="m-swrow" style="padding:4px 12px 12px"><span>Sous chefs can read kitchen mail</span>' + sw(0) + '</div></div>' +
+        '<div class="c-detail"><span class="m-eyebrow">Food safety · from Bo</span><h2>Cool room door seal is torn at the bottom</h2><div class="m-meta"><b>Bo</b><span>Wed 4 Nov, 12:00 (2 h ago)</span><span class="m-chip good">Seen</span></div>' +
+        '<div><div class="m-label" style="margin-bottom:6px">How soon</div><div class="m-chips"><span class="m-pill on">Today</span><span class="m-pill">This week</span><span class="m-pill">Whenever</span></div></div>' +
+        '<div class="c-dfoot"><span class="m-note">Tick it off when it is dealt with.</span><span class="m-btn dark">Dealt with</span></div></div></div>');
+    },
+    cutoffs: function () {
+      var D = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+      return chrome(cRail('Cut-offs'), cMenu('Kitchen', 'Cut-offs'),
+        '<div class="c-head"><div class="c-t"><span class="m-eyebrow">Kitchen</span><h1>Order cut-offs</h1></div><span class="m-btn m-hide-ph">Turn pushes on</span><span class="m-btn dark m-hide-ph">Add a supplier</span></div>' +
+        '<div class="c-split ph-list"><div class="c-list"><div class="c-lh"><span class="m-search">Search suppliers</span></div>' +
+        CU.map(function (c) { return '<div class="c-row' + (c[0] === 'PFD' ? ' on' : '') + '"><span class="c-a">' + c[0].replace('&amp;', '&')[0] + '</span><b>' + c[0] + '</b><span class="c-r">' + (c[4] ? '<span class="m-chip warn">' + c[4] + '</span>' : '') + '</span><small>' + c[1] + ' · by ' + c[2] + '</small></div>'; }).join('') + '</div>' +
+        '<div class="c-detail"><span class="m-eyebrow">Supplier</span><h2>PFD</h2><div><div class="m-label" style="margin-bottom:6px">Delivers</div><div class="c-days">' + D.map(function (d, i) { return '<span class="' + (i === 1 || i === 4 ? 'on' : '') + '">' + d + '</span>'; }).join('') + '</div></div>' +
+        '<label class="m-field">Order by<span class="m-in">14:00 the day before</span></label>' +
+        '<div><div class="m-label" style="margin-bottom:6px">Remind us</div><div class="m-chips"><span class="m-pill sm">4 hours before</span><span class="m-pill sm on">6 hours before</span><span class="m-pill sm">8 hours before</span><span class="m-pill sm">All day</span></div></div>' +
+        '<div class="c-dfoot"><span class="m-note">Next reminder bar: today from 08:00.</span><span class="m-btn">Undo</span><span class="m-btn dark">Save PFD</span></div></div></div>');
+    }
+  };
+
+  var T = { a: A, b: B, c: C };
+  var PAGES = [['waste', 'Wastage report'], ['people', 'People'], ['mail', 'Kitchen mail'], ['cutoffs', 'Order cut-offs']];
+
+  // ---------- scaling the drawn screens to fit their frame ----------
+  function fit(stage) {
+    var w = +stage.getAttribute('data-w'), scr = stage.firstElementChild;
+    if (!scr) return;
+    var k = Math.min(1, stage.clientWidth / w);
+    scr.style.transform = 'scale(' + k + ')';
+    stage.style.height = Math.ceil(scr.offsetHeight * k) + 'px';
+  }
+  var ro = 'ResizeObserver' in window ? new ResizeObserver(function (es) { es.forEach(function (e) { var st = e.target.classList.contains('pg-stage') ? e.target : e.target.parentElement; if (st) fit(st); }); }) : null;
+
+  function show(art, pg) {
+    var opt = art.getAttribute('data-opt'), html = T[opt][pg]();
+    art.querySelectorAll('.pg-stage').forEach(function (st) {
+      var ph = st.getAttribute('data-w') === '390';
+      st.innerHTML = '<div class="scr' + (ph ? ' ph' : '') + '" aria-hidden="true">' + html + '</div>';
+      if (ro) { ro.observe(st); ro.observe(st.firstElementChild); }
+      fit(st);
+      // a phone's tab strip shows the open tab, the way the real strip scrolls to it
+      st.querySelectorAll('.m-tabs').forEach(function (t) { var on = t.querySelector('.on'); if (on && on.offsetLeft + on.offsetWidth > t.clientWidth - 24) t.scrollLeft = on.offsetLeft - 8; });
+    });
+    art.querySelectorAll('.pg-pages button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-pg') === pg)); });
+    var lap = art.querySelector('.pg-laptop');
+    var name = PAGES.filter(function (p) { return p[0] === pg; })[0][1];
+    lap.setAttribute('aria-label', 'Option ' + opt.toUpperCase() + ', ' + name + ' page on a laptop. Example data.');
+    art.querySelector('.pg-phone').setAttribute('aria-label', 'Option ' + opt.toUpperCase() + ', ' + name + ' page on a phone. Example data.');
+  }
+
+  document.querySelectorAll('.pg-opt').forEach(function (art) {
+    var box = art.querySelector('.pg-pages');
+    PAGES.forEach(function (p) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.setAttribute('data-pg', p[0]); b.id = 'pg-' + art.getAttribute('data-opt') + '-' + p[0]; b.textContent = p[1];
+      b.addEventListener('click', function () { show(art, p[0]); });
+      box.appendChild(b);
+    });
+    show(art, 'waste');
+  });
+  window.addEventListener('resize', function () { document.querySelectorAll('.pg-stage').forEach(fit); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { document.querySelectorAll('.pg-stage').forEach(fit); });
+
+  // ---------- where every page goes ----------
+  var WHERE = [
+    ['Dashboard', 'Same, first chapter', 'Today, under To do', 'Dashboard, top of the rail'],
+    ['Review desk › Item links', 'Same, as a page tab', 'Today › To do, opens in place', 'To review › Item links'],
+    ['Review desk › Training', 'Same', 'Today › To do; on each person in Team', 'To review › Training'],
+    ['Review desk › Proofreader', 'Same', 'Today › To do; protected words in Kitchen › Records', 'To review › Proofreader'],
+    ['Reports › Item evidence', 'Same', 'Reports › Item evidence', 'Reports › Item evidence'],
+    ['Reports › Insights', 'Same; its 7 parts become cards', 'Reports › Prep', 'Reports › Prep'],
+    ['Reports › Wastage', 'Same', 'Reports › Wastage', 'Reports › Wastage'],
+    ['Reports › Transfers', 'Same', 'Reports › Transfers', 'Reports › Transfers'],
+    ['Reports › Learning', 'Same', 'Reports › Learning', 'Reports › Learning'],
+    ['Reports › Team', 'Same', 'Team › Habits and each person; the order list parts in Reports › Orders', 'Reports › Orders and team'],
+    ['Saved records › Confirmed links', 'Same', 'Kitchen › Records', 'Records › Confirmed links'],
+    ['Saved records › Assessments', 'Same', 'Team › Assessments, and on each person', 'Records › Assessments'],
+    ['Saved records › Guides', 'Same', 'Kitchen › Guides', 'Records › Guides'],
+    ['Operations › Kitchen mail', 'Same; sharing switch in its own card', 'Today › To do; sharing in Kitchen › Access', 'Kitchen › Kitchen mail'],
+    ['Operations › Shift pings and ping sound', 'Same', 'Kitchen › Shift pings', 'Kitchen › Shift pings'],
+    ['Operations › Minutes and register', 'Same', 'Kitchen › Meeting minutes; signing in Today', 'Kitchen › Minutes'],
+    ['Operations › Suppliers &amp; pars', 'Same', 'Kitchen › Suppliers &amp; pars', 'Kitchen › Suppliers &amp; pars'],
+    ['Operations › Order cut-offs and pushes', 'Same', 'Kitchen › Order cut-offs', 'Kitchen › Cut-offs'],
+    ['Settings › People', 'Same', 'Team › People, a page each', 'Settings › People'],
+    ['Settings › Kitchen sections, Badges, New pages', 'Cards on People', 'Kitchen rows', 'Settings › Kitchen setup'],
+    ['Settings › Backup and PIN', 'Same', 'Kitchen › Access and safety', 'Settings › Backup and PIN']
+  ];
+  document.getElementById('pg-where').innerHTML = WHERE.map(function (r) { return '<tr><th scope="row">' + r[0] + '</th>' + r.slice(1).map(function (c) { return '<td' + (/^Same\b/.test(c) && c.length < 6 ? ' class="same"' : '') + '>' + c + '</td>'; }).join('') + '</tr>'; }).join('');
+})();
+</script>
+</body>
+</html>
