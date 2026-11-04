@@ -311,6 +311,8 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .st-find { display: grid; gap: 0.35rem; }
 .st-find .hint { margin: 0; }
 .st-body .hint, .st-body .saved { margin: 0; }
+/* Kitchen, Overview: a row's editor opens under it (admin pages step 6, part 2) with the team list's Save bar */
+.k-body { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; padding: 0.1rem 0 1.1rem; }
 .st-body .kb-seasonal-settings { padding: 0; border: 0; }
 .st-body .kb-seasonal-settings > h3 { display: none; }
 .st-caps { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
@@ -591,7 +593,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 }
 @media (max-width: 599px) { .a-pane .set-block { padding: 1.2rem 0 1.4rem; } }
 .a-pane .set-block.a-savebar:not(:has(.a-unsaved, .sv-line:not(:empty), .sv-btn[data-sv])) { display: none; }
-.a-pane .set-block:has([data-p="a-save"]) { position: sticky; bottom: 0; z-index: 11; padding: 0.8rem 1rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--paper); box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.08); }
+.a-pane .set-block.a-savebar { position: sticky; bottom: 0; z-index: 11; padding: 0.8rem 1rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--paper); box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.08); }
 @media (max-width: 719px) { .nb-badges { order: 5; } }
 
 /* people table */
@@ -647,7 +649,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .tabbar a[aria-current="page"] { color: var(--accent-ink); box-shadow: inset 0 3px 0 var(--accent); }
 @media (max-width: 719px) { #app { padding-bottom: 76px; } }
 /* The admin Save bar sits above the phone tab bar (68px). */
-@media (max-width: 719px) { .a-pane .set-block:has([data-p="a-save"]) { bottom: var(--tabbar-h); } }
+@media (max-width: 719px) { .a-pane .set-block.a-savebar { bottom: var(--tabbar-h); } }
 @media (min-width: 720px) { .pnav { display: flex; gap: 0.5rem; } .tabbar { display: none; } }
 
 /* ---------- landing page: the docket wall ---------- */
@@ -3110,7 +3112,7 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 .a-pp-assess small { display: block; color: var(--muted); }
 @media (max-width: 599px) { .p-admin.ad-admin .a-pane .a-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; } .p-admin.ad-admin .a-pane .a-tile > strong { font-size: 1.9rem; } }
 .p-admin.ad-admin .a-pane .p-bulk { width: 100%; min-width: 0; }
-.p-admin.ad-admin .a-pane .set-block:has([data-p="a-save"]) { z-index: 11; padding: .8rem 1rem; border: 1px solid var(--edge); border-top: 2px solid var(--ink); border-radius: var(--r-act); background: var(--paper); }
+.p-admin.ad-admin .a-pane .set-block.a-savebar { z-index: 11; padding: .8rem 1rem; border: 1px solid var(--edge); border-top: 2px solid var(--ink); border-radius: var(--r-act); background: var(--paper); }
 .p-admin.ad-admin .a-tablewrap { max-width: 100%; border-width: 1px; border-radius: 0; }
 .p-admin.ad-admin .a-table td, .p-admin.ad-admin .a-table th { padding-top: .7rem; padding-bottom: .7rem; }
 .p-admin.ad-admin .a-table input[type="checkbox"] { flex-shrink: 0; }
@@ -3243,7 +3245,7 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
   .p-admin.ad-admin .ai-editor { padding-bottom: calc(8rem + env(safe-area-inset-bottom, 0px)); }
   .p-admin.ad-admin .ai-task-actions { position: fixed; z-index: 29; left: 0; right: 0; bottom: var(--tabbar-h); gap: .6rem; margin: 0; padding: .75rem 1rem; border-top: 1px solid var(--edge); background: var(--bg); box-shadow: 0 -3px 14px rgba(28, 29, 31, .06); }
   .p-admin.ad-admin .ai-task-actions > .btn { flex: 1 1 0; min-width: 0; min-height: 48px; padding: .7rem .6rem; font-size: .875rem; }
-  .p-admin.ad-admin .a-pane .set-block:has([data-p="a-save"]) { bottom: var(--tabbar-h); }
+  .p-admin.ad-admin .a-pane .set-block.a-savebar { bottom: var(--tabbar-h); }
   .p-admin.ad-admin .a-pane .a-ids { padding: .85rem; }
 }
 @media (hover: hover) and (pointer: fine) {

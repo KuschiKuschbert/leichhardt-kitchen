@@ -1,5 +1,6 @@
-// New pages held back from staff: the head chef unticks Guides, Shift pings or Meeting minutes under New pages in the
-// People tab, and Staff no longer see the links, the bell, the popup or the minutes card. Sous chefs and leads still do.
+// New pages held back from staff: the head chef unticks Guides, Shift pings or Meeting minutes in the Pages staff
+// see row of the admin panel's Kitchen, Overview (Team, People until 5 Nov 2026), and Staff no longer see the links,
+// the bell, the popup or the minutes card. Sous chefs and leads still do.
 // With nothing saved yet (staffSee missing) everyone sees everything, as before.
 const L = require('./lib');
 const R = [];
@@ -31,14 +32,14 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   const b = await L.start();
   let p, s;
 
-  // admin: New pages shows three ticks, all on while nothing is saved; unticking them saves staffSee
+  // admin: Kitchen, Overview, the Pages staff see row (on Team, People until 5 Nov 2026) shows three ticks, all on while
+  // nothing is saved; unticking them saves staffSee
   p = await L.open(b, '#/admin', { admin: true, extra: world(), wait: 1800 });
   await p.click('.nt-got', { timeout: 3000 }).catch(() => {});
   await L.settle(p, 200);
-  await L.adminTab(p, 'people');
-  await L.settle(p, 300);
+  await L.kitchenRow(p, 'see');
   const ticks = await p.evaluate(() => Array.prototype.map.call(document.querySelectorAll('[data-a="staffsee"]'), e => e.getAttribute('data-f') + ':' + e.checked).join(','));
-  ok(ticks === 'guides:true,pings:true,minutes:true', 'admin: New pages has Guides, Shift pings and Meeting minutes, all ticked to start (' + ticks + ')');
+  ok(ticks === 'guides:true,pings:true,minutes:true', 'admin: Pages staff see has Guides, Shift pings and Meeting minutes, all ticked to start (' + ticks + ')');
   ok(/Staff see Guides/.test(await txt(p, '.a-feats') || ''), 'admin: the ticks say Staff see ...');
   for (const f of ['guides', 'pings', 'minutes']) await p.click('[data-a="staffsee"][data-f="' + f + '"]');
   await p.click('[data-p="a-save"]');

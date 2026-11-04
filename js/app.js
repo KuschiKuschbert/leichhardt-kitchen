@@ -1235,14 +1235,15 @@
   function stSound(id) { return id === 'off' ? 'Off' : ((window.LK_CHIME && window.LK_CHIME.list.filter(function (x) { return x.id === id; })[0]) || {}).name || 'Pass bell'; }
   function stList(a) { return a.length ? a.join(', ') : 'None'; }
   /* The kitchen (the verified admin): each kitchen-wide setting with its value, opening the admin page that saves it
-     (LK_PREP.adminOpen()). Nothing moved out of the admin panel (head chef, 3 Nov 2026). */
-  var ST_WHERE = { people: 'Admin, Team, People', notes: 'Admin, Kitchen, Shift pings', mail: 'Admin, Today, Kitchen mail', cutoffs: 'Admin, Kitchen, Order cut-offs', tools: 'Admin, Kitchen, Backup and PIN' };
+     (LK_PREP.adminOpen()). Nothing moved out of the admin panel (head chef, 3 Nov 2026). Sections, pages staff see and
+     top tickers open Kitchen's Overview with their row open ('kitchen-home:secs', 5 Nov 2026). */
+  var ST_WHERE = { people: 'Admin, Team, People', 'kitchen-home:secs': 'Admin, Kitchen, Overview', 'kitchen-home:see': 'Admin, Kitchen, Overview', 'kitchen-home:badges': 'Admin, Kitchen, Overview', notes: 'Admin, Kitchen, Shift pings', mail: 'Admin, Today, Kitchen mail', cutoffs: 'Admin, Kitchen, Order cut-offs', tools: 'Admin, Kitchen, Backup and PIN' };
   function stKitchen(k) {
     var row = function (id, label, value, tab) { return stRow(id, label, value, '', { act: 'stadmin', val: tab, sub: 'Changed in ' + ST_WHERE[tab] }); };
     return row('k-people', 'People and roles', k ? plural(k.people, 'person', 'people') + ', ' + plural(k.sous, 'sous chef', 'sous chefs') : '', 'people') +
-      row('k-secs', 'Kitchen sections', k ? stList(k.secs) : '', 'people') +
-      row('k-pages', 'Pages staff see', k ? (k.hidden.length ? stList(k.shown) + '. Held back: ' + k.hidden.join(', ') : 'All three') : '', 'people') +
-      row('k-badges', 'Weekly top tickers on the prep book', k ? (k.badges ? 'Shown' : 'Hidden') : '', 'people') +
+      row('k-secs', 'Kitchen sections', k ? stList(k.secs) : '', 'kitchen-home:secs') +
+      row('k-pages', 'Pages staff see', k ? (k.hidden.length ? stList(k.shown) + '. Held back: ' + k.hidden.join(', ') : 'All three') : '', 'kitchen-home:see') +
+      row('k-badges', 'Weekly top tickers on the prep book', k ? (k.badges ? 'Shown' : 'Hidden') : '', 'kitchen-home:badges') +
       row('k-sound', 'Ping sound for every phone', k ? stSound(k.sound) : '', 'notes') +
       row('k-mail', 'Sous chefs read Kitchen mail', k ? (k.sousMail ? 'On' : 'Off') : '', 'mail') +
       row('k-fn', 'Who books functions', k ? plural(k.fns, 'person', 'people') : '', 'people') +

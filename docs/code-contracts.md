@@ -42,7 +42,7 @@ Drinks run (`#/drinks`): each person writes only `drinks/<their id>`. The first 
 
 ## Kitchen sections
 
-Kitchen sections: the head chef sets them in the admin People tab (`config/main.kitSecs`, part of the staff draft; the owner's full save keeps them, a sous chef's save never sends them). Staff and leads pick one after their PIN, once a day (`ksCheck()` / `ksOpen()` in `js/prep.js`, `lk.sec.<id>`, one read of `shifts/<today>_<id>`); the head chef and sous chefs get their role by themselves. `mySec()` is the default section for prep lines, Quick add and wastage when the box is left alone; a typed section still wins. A pick holds for that kitchen day only (`ksGet()` checks the date), so everyone is off their section at midnight with nothing to clear. The picker is a bottom sheet appended to `document.body` with `data-ks` clicks and `ks-` classes; the admin block uses `a-ks-` and `ks-` click names. No sections set up means nobody is asked, which keeps the other click tests free of the popup.
+Kitchen sections: the head chef sets them in the Kitchen sections row of the admin Kitchen, Overview (`config/main.kitSecs`, part of the staff draft, saved with the team list's one Save; the owner's full save keeps them, a sous chef's save never sends them). Staff and leads pick one after their PIN, once a day (`ksCheck()` / `ksOpen()` in `js/prep.js`, `lk.sec.<id>`, one read of `shifts/<today>_<id>`); the head chef and sous chefs get their role by themselves. `mySec()` is the default section for prep lines, Quick add and wastage when the box is left alone; a typed section still wins. A pick holds for that kitchen day only (`ksGet()` checks the date), so everyone is off their section at midnight with nothing to clear. The picker is a bottom sheet appended to `document.body` with `data-ks` clicks and `ks-` classes; the admin block uses `a-ks-` and `ks-` click names. No sections set up means nobody is asked, which keeps the other click tests free of the popup.
 
 ## Admin nav
 
@@ -58,7 +58,7 @@ Guides keep each PDF page or photo as a picture in its own Firestore record (`gu
 
 ## Pages held back from staff (featOn)
 
-Guides, Shift pings and Meeting minutes can be held back from staff (New pages in the admin People tab, `staffSee` in `config/main`). Any new link, card or read for those pages checks `featOn('guides' | 'pings' | 'minutes')` in `js/prep.js` (`LK_PREP.featOn` in `js/app.js`). It is worked out from the staff list and the person on the phone, kept in `lk.feat`, and `lk-feat` tells `js/app.js` to redraw the menus.
+Guides, Shift pings and Meeting minutes can be held back from staff (the Pages staff see row of the admin Kitchen, Overview, `staffSee` in `config/main`). Any new link, card or read for those pages checks `featOn('guides' | 'pings' | 'minutes')` in `js/prep.js` (`LK_PREP.featOn` in `js/app.js`). It is worked out from the staff list and the person on the phone, kept in `lk.feat`, and `lk-feat` tells `js/app.js` to redraw the menus.
 
 ## Double ups (mergeDups)
 
