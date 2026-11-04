@@ -2,7 +2,7 @@
    This module decorates static app markup and never reads or writes kitchen records. */
 (function () {
   'use strict';
-  const originalHats = new WeakMap(), originalBrands = new WeakMap(), root = document.getElementById('app'), layer = document.createElement('div');
+  const originalBrands = new WeakMap(), root = document.getElementById('app'), layer = document.createElement('div');
   layer.id = 'kb-festive-effects'; layer.setAttribute('aria-hidden', 'true'); document.body.append(layer);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   let state = { theme: null, mode: 'still', density: 'festive' }, frame = 0, publishFrame = 0;
@@ -131,14 +131,7 @@
     }
     const theme = gated() ? null : state.theme, signature = (theme ? theme.id : 'off') + '|' + state.mode + '|' + state.density + '|' + surface;
     root.dataset.kbTheme = theme ? theme.id : 'off'; root.dataset.kbCelebrationSurface = surface;
-    const button = root.querySelector('.wtop-who'), hat = button && button.querySelector('svg');
-    if (button && hat) {
-      if (!originalHats.has(button)) originalHats.set(button, hat.outerHTML);
-      if (button.dataset.kbTheme !== signature) {
-        hat.outerHTML = theme ? art(theme.icon, theme, 'kb-festive-hat') : originalHats.get(button);
-        button.dataset.kbTheme = signature; root.dataset.kbEffects = '';
-      }
-    }
+    // The chef hat opens each person's menu and carries the mail count, so a celebration never replaces it (3 Nov 2026).
     let note = root.querySelector('[data-kb-season]');
     const home = surface === 'home' ? root.querySelector('.wall-main .dockets') : null;
     if (!theme) {
