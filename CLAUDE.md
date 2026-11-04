@@ -30,7 +30,8 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Admin autocorrect repairs, shared protected words and private correction history | `docs/proofreader-admin.md` |
 | Admin visual design, selected A: The Chef's Desk | `docs/admin-design-options/brief.md` |
 | Admin dashboard, selected A with B's headlines (3 Nov 2026) | `docs/admin-dashboard-options/brief.md` |
-| Prep, Orders, Wastage, Transfers and chef hat redesign, selected: shared fixes, then A with four pieces of B (3 Nov 2026), built in steps | `docs/work-pages-design-options/brief.md` |
+| Admin pages redesign, selected B: Four rooms on the shared page kit (4 Nov 2026), built in steps | `docs/admin-pages-options/brief.md` |
+| Prep, Orders, Wastage, Transfers and chef hat redesign, selected: shared fixes, then A with four pieces of B (3 Nov 2026), built in steps, the last on 4 Nov 2026 | `docs/work-pages-design-options/brief.md` |
 | Settings page for each role, selected A: One sorted page (3 Nov 2026) | `docs/settings-options/brief.md`, `docs/device-sessions.md` |
 | Seasonal celebration redesign, recommended set selected (3 Nov 2026) | `docs/celebration-options/brief.md` |
 | Recipe and drawing editor layout, selected A's chapters with B's full-screen studio (3 Nov 2026) | `docs/recipe-editor-options/brief.md` |
@@ -172,7 +173,7 @@ Short warnings. The full contract for each part is its section in `docs/code-con
 - **One clock.** Anything saved, or compared with a saved time, uses `now()` (`LK_TIME.now()` outside `js/prep.js`). Today's date, hours and weekdays use `dayNow()` and `T.day`, `T.hour`, `T.mins`, `T.dow`, `T.clock`, `T.at` (Queensland). Never `new Date()` or `Date.now()` for those; `Date.now()` is only for time passing on the phone. Do not name a local variable `now` or `dayNow`.
 - **Writes.** Every write goes through `W()` in `js/prep.js`; the rules refuse a direct `setDoc`. Ask `canW()`, never `S.tok`. PIN tries are one every 20 seconds per person, so a test that types two PINs for one person waits 21 seconds.
 - **Security header.** `index.html` lists every outside service the book may load; a new one goes there and is a head chef decision. Inline `<script>` and `onclick=` do not run. pdf.js: change `PDFJS` in `js/prep.js` and the header together.
-- **Test helpers.** `L.waitFor`, not `page.waitForFunction`; `L.settle(p, ms)`, not `p.waitForTimeout(ms)`. A check on something read from Firestore waits for that thing itself.
+- **Test helpers.** `L.waitFor`, not `page.waitForFunction`; `L.settle(p, ms)`, not `p.waitForTimeout(ms)`. A check on something read from Firestore waits for that thing itself. A file's top-level catch calls `process.exit(1)`, never only `process.exitCode = 1` (`tests/exit-on-error.test.js`).
 - **Names stay apart per feature.** Classes and click attributes are per feature (`.rail` on the Pass, `.wtop` for the landing and top bar; `data-note`, `data-p`, `data-act`; `dk-` landing dockets, `dr-` drinks; `td` is a table cell, to-do is `todo-`). Check `css/app.css` and the feature's section first.
 - **Sheets and popups** go on `document.body`, one at a time through `sheetBusy()` and `sheetNext()`. Nothing opens by itself over Who are you? (`namesUp()`) or a live Undo.
 - **No new listeners or polling.** Listeners are only for today's live data. Pings, minutes, mail, to-do, drinks, guides and recipe changes are read on open, once a day or after 30 minutes away; each section says exactly when.

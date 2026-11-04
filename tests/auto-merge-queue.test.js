@@ -53,17 +53,28 @@ fs.mkdirSync(bin);
 const script = path.join(tmp, 'queue.sh');
 const body = stepScript(yml, 'Move the queue on by one');
 fs.writeFileSync(script, body);
+// The switch step too, for the retry on switching auto-merge on.
+const switchScript = path.join(tmp, 'switch.sh');
+fs.writeFileSync(switchScript, stepScript(yml, 'Switch auto-merge on or off for this pull request'));
 
 // The stand-in for gh. The scenario file holds the list, each pull request's REST answers in turn (the last repeats;
 // FAIL makes that call fail) and each pull request's checks on its newest commit (runs: a list of sets, one per
 // gh pr checks --json call, the last repeats; none listed means all green). gh pr checks --required answers from the
 // checks last shown, the way gh does: no checks at all or no required one is exit 1, the required one running is 8,
 // failed is 1, passed is 0. The required check is "Click tests", which GitHub only adds when every share is done.
+// listFail fails that many list calls first; put and merge hold each pull request's Update branch and auto-merge
+// answers in turn (ok or FAIL).
 fs.writeFileSync(path.join(bin, 'gh'), `#!/usr/bin/env node
 const fs = require('fs'), { spawnSync } = require('child_process');
 const F = process.env.FIX, st = JSON.parse(fs.readFileSync(F, 'utf8')), a = process.argv.slice(2);
 fs.appendFileSync(process.env.CALLS, 'gh ' + a.join(' ') + '\\n');
 const opt = k => { const i = a.indexOf(k); return i >= 0 ? a[i + 1] : null; };
+function next(key, num, dflt) {
+  const seq = (st[key] || {})[num] || [dflt], v = seq.length > 1 ? seq.shift() : seq[0];
+  fs.writeFileSync(F, JSON.stringify(st));
+  return v;
+}
+function fail() { process.stderr.write('HTTP 502'); process.exit(1); }
 function out(data) {
   const expr = opt('--jq');
   if (!expr) { process.stdout.write(JSON.stringify(data) + '\\n'); return; }
@@ -72,6 +83,7 @@ function out(data) {
   process.stdout.write(r.stdout);
 }
 if (a[0] === 'pr' && a[1] === 'list') {
+  if (st.listFail) { st.listFail--; fs.writeFileSync(F, JSON.stringify(st)); fail(); }
   const keep = (opt('--json') || '').split(',');
   out(st.list.map(p => Object.fromEntries(keep.map(k => [k, k in p ? p[k] : null]))));
 } else if (a[0] === 'pr' && a[1] === 'checks') {
@@ -89,6 +101,7 @@ if (a[0] === 'pr' && a[1] === 'list') {
   if (!req.length) { process.stderr.write("no required checks reported on the 'branch' branch\\n"); process.exit(1); }
   process.exit(req.some(c => c.bucket === 'pending') ? 8 : req.some(c => c.bucket === 'fail' || c.bucket === 'cancel') ? 1 : 0);
 } else if (a[0] === 'api' && a[1] === '-X' && a[2] === 'PUT' && /\\/update-branch$/.test(a[3])) {
+  if (next('put', a[3].split('/')[4], 'ok') === 'FAIL') fail();
   out({ message: 'Updating pull request branch.' });
 } else if (a[0] === 'api' && /^repos\\/[^/]+\\/[^/]+\\/pulls\\/\\d+$/.test(a[1])) {
   const num = a[1].split('/').pop(), seq = (st.rest || {})[num] || ['unknown'];
@@ -96,6 +109,8 @@ if (a[0] === 'pr' && a[1] === 'list') {
   fs.writeFileSync(F, JSON.stringify(st));
   if (v === 'FAIL') { process.stderr.write('HTTP 502'); process.exit(1); }
   out({ number: +num, mergeable_state: v });
+} else if (a[0] === 'pr' && a[1] === 'merge') {
+  if (next('merge', a[2], 'ok') === 'FAIL') fail();
 } else { process.stderr.write('stand-in gh has no answer for: ' + a.join(' ') + '\\n'); process.exit(9); }
 `, { mode: 0o755 });
 // The stand-in for sleep: writes it down and returns at once, so ten minutes of waiting takes no time.
@@ -124,13 +139,15 @@ const pr = (number, state, changedAgo, more) => Object.assign({
   updatedAt: ago(changedAgo == null ? 3600 : changedAgo)
 }, more || {});
 
-function pass(name, scenario) {
+// opts: script (another step), env (more variables for it), fails (the step is expected to end with an error).
+function pass(name, scenario, opts) {
+  opts = opts || {};
   const fix = path.join(tmp, 'fix.json'), calls = path.join(tmp, 'calls.log');
   fs.writeFileSync(fix, JSON.stringify(Object.assign({ green: C.green }, scenario)));
   fs.writeFileSync(calls, '');
-  const r = spawnSync('bash', ['-e', script], {
+  const r = spawnSync('bash', ['-e', opts.script || script], {
     cwd: tmp, encoding: 'utf8', timeout: 120000,
-    env: Object.assign({}, process.env, { PATH: bin + path.delimiter + process.env.PATH, REPO: 'kitchen/book', GH_TOKEN: 'stand-in', FIX: fix, CALLS: calls })
+    env: Object.assign({}, process.env, { PATH: bin + path.delimiter + process.env.PATH, REPO: 'kitchen/book', GH_TOKEN: 'stand-in', FIX: fix, CALLS: calls }, opts.env || {})
   });
   const log = fs.readFileSync(calls, 'utf8').split('\n').filter(Boolean);
   const res = {
@@ -138,10 +155,13 @@ function pass(name, scenario) {
     updated: log.filter(l => / -X PUT /.test(l)).map(l => +l.match(/pulls\/(\d+)\/update-branch/)[1]),
     asked: log.filter(l => /^gh api repos\/[^ ]+\/pulls\/\d+ /.test(l)).map(l => +l.match(/pulls\/(\d+) /)[1]),
     checked: log.filter(l => /^gh pr checks /.test(l)).map(l => +l.split(' ')[3]),
+    merged: log.filter(l => /^gh pr merge /.test(l)).map(l => +l.split(' ')[3]),
+    listed: log.filter(l => /^gh pr list /.test(l)).length,
     slept: log.filter(l => /^sleep /.test(l)).reduce((t, l) => t + (+l.split(' ')[1] || 0), 0)
   };
   console.log('-- ' + name + '\n' + res.out.trim().split('\n').map(l => '   | ' + l).join('\n'));
-  ok(res.code === 0, name + ': the step ends without an error (exit ' + res.code + ')');
+  if (opts.fails) ok(res.code !== 0, name + ': the step ends with an error, so the run shows red (exit ' + res.code + ')');
+  else ok(res.code === 0, name + ': the step ends without an error (exit ' + res.code + ')');
   return res;
 }
 const count = (list, x) => list.filter(v => v === x).length;
@@ -273,7 +293,27 @@ r = pass('UNKNOWN wait first, then no Click tests', {
 ok(r.slept <= 600 - 60 + 10, 'the pass shares one wait between UNKNOWN and no Click tests (' + r.slept + ' s)');
 eq(r.updated, [614], 'both skipped, #614 is brought up to date');
 
-// 7. The triggers: the end of Click tests moves the queue, and the schedule is off the hour.
+// 7. GitHub errors are retried: three tries, 10 and 20 seconds apart (4 Nov 2026 outage).
+r = pass('Update branch fails twice, then works', { list: [pr(600, 'BEHIND'), pr(601, 'BEHIND')], put: { 600: ['FAIL', 'FAIL', 'ok'] } });
+eq(r.updated, [600, 600, 600], 'Update branch is tried three times');
+eq(r.slept, 30, '10 and then 20 seconds between tries');
+ok(/#600 brought up to date/.test(r.out), 'the third try brings #600 up to date');
+r = pass('Update branch fails three times', { list: [pr(602, 'BEHIND'), pr(603, 'BEHIND')], put: { 602: ['FAIL'] } });
+eq(r.updated, [602, 602, 602], 'three tries, then it stops');
+ok(/::warning::#602: GitHub refused to bring it up to date three times/.test(r.out), 'a warning says so, and the next pass tries again');
+r = pass('the list fails once', { list: [pr(604, 'BEHIND')], listFail: 1 });
+eq([r.listed, r.updated], [2, [604]], 'the list is read again and the queue moves');
+r = pass('the list fails three times', { list: [pr(605, 'BEHIND')], listFail: 3 }, { fails: true });
+eq([r.listed, r.updated], [3, []], 'three tries, nothing brought up to date on an empty read');
+const sw = { script: switchScript, env: { SAME: 'true', DRAFT: 'false', HOLD: 'false', PR: '610' } };
+r = pass('switch: auto-merge fails once, then works', { merge: { 610: ['FAIL', 'ok'] } }, sw);
+eq([r.merged, r.slept], [[610, 610], 10], 'switching auto-merge on is tried again after 10 seconds');
+r = pass('switch: auto-merge fails three times', { merge: { 610: ['FAIL'] } }, Object.assign({ fails: true }, sw));
+eq(r.merged, [610, 610, 610], 'three tries, then the switch job shows red so someone looks');
+r = pass('switch: a draft', { merge: { 611: ['FAIL'] } }, { script: switchScript, env: { SAME: 'true', DRAFT: 'true', HOLD: 'false', PR: '611' } });
+eq(r.merged, [611], 'switching auto-merge off is tried once and never fails the job');
+
+// 8. The triggers: the end of Click tests moves the queue, and the schedule is off the hour.
 const clickName = (fs.readFileSync(path.join(root, '.github', 'workflows', 'pr-tests.yml'), 'utf8').match(/^name: (.+)$/m) || [])[1];
 ok(new RegExp('workflow_run:\\s*\\n\\s*workflows: \\[' + clickName + '\\]\\s*\\n\\s*types: \\[completed\\]').test(yml),
   'the queue runs when "' + clickName + '" completes (the name in pr-tests.yml)');

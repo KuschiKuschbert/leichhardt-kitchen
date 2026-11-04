@@ -46,7 +46,8 @@ const store = page => page.evaluate(() => window.__fake.dump());
   // waste: the head chef (Google device, signed in as a chef) removes today's entry, Undo, put back
   p = await L.open(b, '#/waste', { wait: 1500, admin: true });
   await L.waitFor(p, () => !!document.querySelector('[data-p="wdel"][data-id="w1"]'));
-  await p.click('[data-p="wdel"][data-id="w1"]');
+  // on a phone, Remove sits in the line's ⋯ with Change amount (4 Nov 2026)
+  await L.lineAct(p, '[data-p="wdel"][data-id="w1"]');
   await L.settle(p, 300);
   ok(/Removed Chips from the wastage log/.test(await txt(p, '.p-toast')), 'waste: remove shows toast with Undo');
   ok(await p.$('[data-p="wrestore"][data-id="w1"]') !== null, 'waste: removed entry shows Put back');

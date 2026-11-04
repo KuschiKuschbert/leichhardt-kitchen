@@ -121,6 +121,12 @@ const fnDoc = (name, date) => M.derive({ v: 1, status: 'confirmed', name, date, 
   ok(/Could not load the team's drinks/.test(await page(p)), 'drinks: says it could not load the team\'s drinks');
   ok(!(await ls(p, 'lk.drinks')), 'drinks: no empty drinks list kept on the phone');
   await go(p, '#/prep');
+  // Lemons has waited more than 3 seconds, so the band says Not sent yet over Back, Today and Forward: a cook taps it
+  // away first (4 Nov 2026, tests/signal-band.test.js). The click below used to get through only while the page was
+  // still moving, so under load it failed (weekly flaky report).
+  ok(await until(p, () => !!document.querySelector('.p-sync.is-on[data-st="wait"]')), 'prep, lines waiting with no signal: the band says Not sent yet');
+  await p.click('.p-sync span'); await L.settle(p, 400);
+  ok(await p.evaluate(() => !document.querySelector('.p-sync.is-on')), 'prep: a tap on the band puts it away');
   await p.click('[data-p="day"][data-d="1"]'); await L.settle(p, 400);
   await p.click('[data-p="today"]'); await L.settle(p, 600);
   t = await page(p);

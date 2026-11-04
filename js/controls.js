@@ -17,6 +17,19 @@
     var attrs = slice(el.attributes).filter(function (a) { return /^data-(k|f|fl|sf|i|sid|col|dwf|ai-field)$/.test(a.name); });
     return el.tagName.toLowerCase() + attrs.map(function (a) { return '[' + a.name + '="' + CSS.escape(a.value) + '"]'; }).join('');
   }
+  /* The box a picker was opened from, as the page is now (4 Nov 2026). A page that draws again while the picker is open
+     (another phone saved, a list came in) puts a new box in its place, and a choice sent to the old one was lost. The
+     choice goes to the new box, found by the same id or data- name that draw() uses to put the cursor back. Nothing when
+     there is not exactly one such box, it is switched off, or it does not offer the choice: never guess. */
+  function liveSource(el, trigger, values) {
+    if (el.isConnected) return el;
+    var sel = trigger && trigger._uxSelector;
+    if (!sel || sel === el.tagName.toLowerCase()) return null;
+    var found = document.querySelectorAll(sel), now = found.length === 1 ? found[0] : null;
+    if (!now || now.tagName !== el.tagName || now.disabled || now.readOnly) return null;
+    if (now.tagName === 'SELECT' && !values.every(function (v) { return slice(now.options).some(function (o) { return o.value === v; }); })) return null;
+    return now;
+  }
   function emit(el, type) { syncing = true; try { el.dispatchEvent(new Event(type, { bubbles: true })); } finally { syncing = false; } }
   function restoreFocus(input) {
     var s = searches.get(input), restoring = s && s.restoringFocus;
@@ -256,7 +269,12 @@
       AdaptivePicker({ label: label, trigger: b, threshold: select.dataset.threshold == null ? 12 : +select.dataset.threshold, multiple: select.multiple,
         value: slice(select.selectedOptions).map(function (o) { return o.value; }),
         items: slice(select.options).map(function (o) { return { value: o.value, label: (o.parentNode.tagName === 'OPTGROUP' ? o.parentNode.label + ': ' : '') + o.textContent, disabled: o.disabled || (o.parentNode.tagName === 'OPTGROUP' && o.parentNode.disabled) }; }),
-        onChange: function (values) { slice(select.options).forEach(function (o) { o.selected = values.indexOf(o.value) >= 0; }); update(); b.removeAttribute('aria-invalid'); if (select._uxError) { select._uxError.remove(); select._uxError = null; b.removeAttribute('aria-describedby'); } emit(select, 'input'); emit(select, 'change'); }
+        onChange: function (values) {
+          var el = liveSource(select, b, values), t = el && el._uxTrigger || b; if (!el) return;
+          slice(el.options).forEach(function (o) { o.selected = values.indexOf(o.value) >= 0; }); if (el._uxUpdate) el._uxUpdate();
+          t.removeAttribute('aria-invalid'); if (el._uxError) { el._uxError.remove(); el._uxError = null; t.removeAttribute('aria-describedby'); }
+          emit(el, 'input'); emit(el, 'change');
+        }
       });
     });
     select._uxUpdate = update;
@@ -272,7 +290,7 @@
     b.addEventListener('click', function () {
       var dl = document.getElementById(listId), items = dl ? slice(dl.options).map(function (o) { return { value: o.value, label: o.label || o.value }; }) : [];
       AdaptivePicker({ label: label, trigger: b, items: items, value: [input.value], custom: true, customValue: input.value,
-        onChange: function (values) { input.value = values[0] || ''; update(); emit(input, 'input'); emit(input, 'change'); }
+        onChange: function (values) { var el = liveSource(input, b, values); if (!el) return; el.value = values[0] || ''; if (el._uxUpdate) el._uxUpdate(); emit(el, 'input'); emit(el, 'change'); }
       });
     });
     input.addEventListener('invalid', function (e) { e.preventDefault(); b.focus(); });

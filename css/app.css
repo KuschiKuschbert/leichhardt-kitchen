@@ -432,7 +432,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-box svg { width: 33px; height: 33px; }
 .nb-tt { cursor: pointer; }
 /* Not sent (27 Oct 2026): in a slot inside the words (.nb-mk), so on a phone it wraps with them like Urgent and never
-   narrows them (who wrote a line, .nb-by, is hidden there). Shown only while the No signal or Not sent yet strip is up. */
+   narrows them. Shown only while the No signal or Not sent yet strip is up. */
 .nb-unsent, .nb-held { display: inline-block; margin-left: 0.3rem; vertical-align: 0.25em; padding: 0 0.4rem; border-radius: 999px; background: var(--accent-ink); color: #fff; font: 700 0.75rem/1.5 var(--body); white-space: nowrap; }
 /* the mark's room while the strip is up, so a tick only fills it and no row moves: the same box, unseen, and its words
    come from CSS so the row's text stays clean */
@@ -441,8 +441,13 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-box[aria-pressed="true"] { color: var(--done); }
 .nb-box:disabled { opacity: 0.45; cursor: default; }
 .nb-t { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+/* One line layout (S4, 4 Nov 2026, as drawn in the agreed work pages design): the words, then a small second line
+   with who and when (section or venue where the list is not grouped by it), on all four lists. Always drawn, so a
+   tick that changes it never moves a row. */
+.nb-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.nb-meta { display: block; min-height: 1.35em; font: 400 0.75rem/1.35 var(--body); color: var(--muted); overflow-wrap: anywhere; }
+.nb-row.is-done .nb-meta { text-decoration: none; }
 .nb-q { font-size: 1.25rem; color: var(--muted); margin-left: 0.3rem; }
-.nb-by { flex: 0 0 auto; font-family: var(--body); font-size: 0.75rem; color: var(--muted); }
 .nb-go { flex: 0 0 auto; font-family: var(--display); font-weight: 700; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); text-decoration: none; border-bottom: 1.5px dotted var(--accent-ink); }
 .nb-x { flex: 0 0 auto; min-height: 44px; padding: 0 0.5rem; border: 0; background: none; font-family: var(--body); font-weight: 600; font-size: 0.8125rem; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .nb-row.is-done .nb-t { text-decoration: line-through; text-decoration-thickness: 2px; color: #6b665c; }
@@ -494,7 +499,6 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
   .nb-nav .p-dateinput { flex: 1 1 7rem; min-width: 0; }
   .nb-title { font-size: 2.6rem; }
   .nb-row { font-size: 1.5rem; }
-  .nb-by { display: none; }
 }
 
 /* badges, insights and charts */
@@ -751,9 +755,8 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 /* Wastage log */
 .w-rule { margin: 0 0 8px; padding: 0 12px; font-size: 0.8125rem; color: var(--muted); }
 .w-row { align-items: start; }
-.w-time, .w-sec, .w-rs { font-family: var(--body); }
+.w-time, .w-rs { font-family: var(--body); }
 .w-time { min-width: 3.4rem; font-variant-numeric: tabular-nums; font-size: 0.875rem; color: var(--muted); }
-.w-sec { font-size: 0.75rem; }
 .w-amt { font-weight: 700; white-space: nowrap; }
 .w-rs { display: inline-block; padding: 0 6px; border: 1.5px solid var(--ink); border-radius: 999px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
 .w-act { display: block; font-size: 0.8125rem; color: var(--muted); }
@@ -771,7 +774,6 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .tr-field .chiprow:empty, #tr-often:empty { display: none; }
 .tr-way { display: inline-block; padding: 0 7px; border: 1.5px solid var(--ink); border-radius: 999px; font: 700 0.75rem var(--body); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; vertical-align: 0.1em; }
 .tr-way-out { background: var(--ink); color: #fff; }
-.tr-who { display: block; font-family: var(--body); font-size: 0.875rem; font-weight: 600; }
 @media (min-width: 720px) { .tr-two { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 1rem; } }
 
 /* four dockets on the landing wall */
@@ -989,13 +991,14 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .sheet-o span { font-size: 0.875rem; color: var(--muted); }
 .sheet-o[aria-checked="true"] { background: var(--hit); }
 .sheet-o[aria-checked="true"] strong::after { content: '  \2713'; color: var(--accent-ink); }
-/* the line menu (22 Oct 2026, Option B): on a phone Remove and who wrote the line sit behind the ⋯ */
+/* the line menu (22 Oct 2026, Option B): on a phone Remove sits behind the ⋯; who wrote the line is on its second
+   line since 4 Nov 2026 (S4), on every width */
 .nb-more { display: none; flex: 0 0 auto; width: 44px; min-height: 44px; padding: 0; border: 0; background: none; font: 700 1.25rem var(--body); letter-spacing: 0.05em; color: var(--muted); cursor: pointer; }
 .lm-who { margin: 0 0 6px; font-size: 0.9375rem; color: var(--muted); }
 .lm-act strong { color: var(--small-ink); }
 @media (max-width: 719px) {
   .nb-more { display: inline-flex; align-items: center; justify-content: center; }
-  .nb-row:has(.nb-more) .nb-wrote, .nb-row:has(.nb-more) .nb-x, .nb-row:has(.nb-more) > .p-x { display: none; }
+  .nb-row:has(.nb-more) .nb-x, .nb-row:has(.nb-more) > .p-x { display: none; }
 }
 .sheet-x { width: 100%; margin-top: 12px; }
 html.sheet-open, html.sheet-open body { overflow: hidden; }
@@ -1319,7 +1322,6 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 /* on a phone each group takes the room its word needs, so "Today (3)" is not cut short (22 Oct 2026) */
 @media (max-width: 479px) { .a-group { flex: 1 1 auto; padding: 0 0.35rem; font-size: 0.9375rem; } }
 .a-group[aria-current="page"] { background: var(--ink); color: #fff; }
-.a-section-picker { display: none; }
 .ai-workspace { min-width: 0; }
 .ai-list { list-style: none; padding: 0; margin: 1rem 0; }
 .ai-list > li { padding: 0.8rem 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
@@ -1330,7 +1332,7 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .ai-metrics dd { font-weight: 700; margin: 0.35rem 0 0; }
 .ai-editor { display: grid; gap: 0.75rem; }
 .ai-fields { display: grid; gap: 0.75rem; min-width: 0; margin: 0; padding: 0; border: 0; }
-.ai-editor .search, .ai-workspace input, .a-section-picker select { width: 100%; min-width: 0; max-width: 100%; }
+.ai-editor .search, .ai-workspace input { width: 100%; min-width: 0; max-width: 100%; }
 .ai-message { padding: 0.75rem; background: var(--paper); border: 1px solid var(--ink); border-radius: var(--radius); }
 /* Review desk: keep the next task beside its context on a laptop, and give one task the phone screen. */
 .ai-desk { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; align-items: start; margin: 1rem 0 1.5rem; }
@@ -1385,8 +1387,6 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 }
 @media (max-width: 719px) {
   .p-admin .a-groups { display: none; }
-  .a-section-picker { display: flex; align-items: center; gap: 0.75rem; font-weight: 700; }
-  .a-section-picker select { min-height: 44px; flex: 1; font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--ink); border-radius: 6px; padding: 0.4rem; }
 }
 @media (min-width: 1100px) {
   .p-admin { max-width: 80rem; display: grid; grid-template-columns: 12rem minmax(0, 1fr); column-gap: 1.5rem; align-items: start; }
@@ -1513,20 +1513,18 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 @media (max-width: 359px) {
   #prep-root.is-book .nb-left .nb-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 0.2rem 0.35rem; align-items: start; padding-top: 0.5rem; padding-bottom: 0.5rem; }
   #prep-root.is-book .nb-left .nb-box { grid-column: 1; grid-row: 1; align-self: start; margin: 0; }
-  #prep-root.is-book .nb-left .nb-t { grid-column: 2; grid-row: 1; }
+  #prep-root.is-book .nb-left .nb-main { grid-column: 2; grid-row: 1; }
   #prep-root.is-book .nb-left .nb-q { display: block; margin: 0.2rem 0 0; white-space: normal; }
   #prep-root.is-book .nb-left .nb-marks { margin: 0.2rem 0 0; vertical-align: baseline; }
-  #prep-root.is-book .nb-left .nb-by { display: none; }
   #prep-root.is-book .nb-left .nb-acts { grid-column: 2; grid-row: 2; justify-content: flex-start; flex-wrap: wrap; gap: 0; }
   #prep-root.is-book .nb-left .nb-acts .nb-star + * { margin-left: 0; }
 }
 @media (max-width: 479px) {
   html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 0.2rem 0.35rem; align-items: start; padding-top: 0.5rem; padding-bottom: 0.5rem; }
   html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-box { grid-column: 1; grid-row: 1; align-self: start; margin: 0; }
-  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-t { grid-column: 2; grid-row: 1; }
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-main { grid-column: 2; grid-row: 1; }
   html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-q { display: block; margin: 0.2rem 0 0; white-space: normal; }
   html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-marks { margin: 0.2rem 0 0; vertical-align: baseline; }
-  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-by { display: none; }
   html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-acts { grid-column: 2; grid-row: 2; justify-content: flex-start; flex-wrap: wrap; gap: 0; }
   html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-acts .nb-star + * { margin-left: 0; }
 }
@@ -1959,9 +1957,10 @@ html.has-sync .upd-bar.is-on { transform: translateY(-110%); visibility: hidden;
 .upd-bar span { min-width: 0; overflow-wrap: anywhere; }
 /* The update band can stay up for a while, so the bars that stick to the top of a page (search, admin nav, drawing
    stage) sit under it once they stick, and a jump lands below it, as with the update strip before (24 Oct 2026: they
-   slid 46 px under it). They slide down with it rather than jump. The signal band is short-lived: it sits over them
-   for a moment and moves nothing. --fn-pad is the Functions strip's height while today has a function it could show
-   (js/functions.js strip()). */
+   slid 46 px under it). They slide down with it rather than jump. The signal band moves nothing: with no signal it can
+   stay up too, so like the update band a tap on its words or a swipe up puts it away (js/prep.js bandPutAway(), 4 Nov
+   2026: it covered Back, Today and Forward on the prep list). --fn-pad is the Functions strip's height while today has
+   a function it could show (js/functions.js strip()). */
 html.has-upd { --upd-h: 48px; }
 html { scroll-padding-top: calc(var(--fn-pad, 0px) + var(--upd-h, 0px)); }
 html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(var(--fn-stick, 0px) + var(--upd-h)); }
@@ -2293,8 +2292,18 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .dw-un { display: flex; flex-direction: column; gap: 0.35rem; padding-top: 0.5rem; border-top: 1px solid var(--edge); }
 .dw-un:first-of-type { border-top: 0; padding-top: 0; }
 .dw-un .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+/* More tools and the part's More as tiles in groups (4 Nov 2026, studio step 3): an icon and a word each */
+.dw-tgrp { display: grid; gap: 0.4rem; }
+.dw-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(5.75rem, 1fr)); gap: 0.5rem; }
+.dw-tool { display: grid; justify-items: center; align-content: center; gap: 0.3rem; min-height: 72px; padding: 0.5rem 0.35rem; border: 1.5px solid var(--line); border-radius: 12px; background: var(--paper); color: var(--ink); font: 600 0.82rem/1.15 var(--body); text-align: center; cursor: pointer; }
+.dw-tool svg { width: 22px; height: 22px; }
+.dw-tool[aria-pressed="true"] { border-color: var(--ink); background: #FFFFFF; box-shadow: inset 0 0 0 1.5px var(--ink); }
+.dw-tool[aria-pressed="true"]::after { content: "On"; font-size: 0.7rem; font-weight: 700; color: var(--done-ink, var(--ink)); }
+/* Add food: the recipe first, the other ways to start at the bottom */
+.dw-allon { margin: 0; }
+.dw-other { border-style: dashed; }
 /* Reuse (js/draw.js): Start from, a new library piece, an SVG file, saved servingware */
-.dw-start { display: block; border-color: var(--accent); }
+.dw-start { display: block; }
 .dw-start summary { display: flex; align-items: center; min-height: 44px; font-weight: 700; cursor: pointer; }
 .dw-start[open] summary { margin-bottom: 0.4rem; }
 .dw-start > * + * { margin-top: 0.6rem; }
@@ -3014,19 +3023,26 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 .p-admin.ad-admin > .p-bar strong { color: var(--ink); font-weight: 600; }
 .p-admin.ad-admin .ad-layout { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; min-width: 0; }
 .p-admin.ad-admin .a-nav { position: sticky; top: calc(var(--fn-stick, 0px) + var(--upd-h, 0px)); z-index: 12; min-width: 0; margin: 0 0 1.3rem; padding: .5rem 0 .8rem; border: 0; border-bottom: 1px solid var(--line); background: var(--bg); transform: none; transition: none; }
-.p-admin.ad-admin .a-section-picker { display: flex; align-items: center; justify-content: space-between; gap: .75rem; font: 600 .8125rem var(--body); color: var(--muted); }
-.p-admin.ad-admin .a-section-picker select { flex: 0 1 17rem; width: auto; max-width: 70%; min-width: 0; min-height: 44px; padding: .55rem .75rem; border: 1px solid var(--ink); border-radius: var(--r-pick); background: var(--paper); color: var(--ink); font: 600 .9375rem var(--body); }
-.p-admin.ad-admin .a-groups { display: none; }
+/* The four rooms (4 Nov 2026, design B): one row of four on a phone and a tablet, a rail on a laptop (below). */
+.p-admin.ad-admin .a-groups { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 0; border-radius: var(--r-pick); overflow: hidden; background: var(--paper); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.p-admin.ad-admin .a-group { min-width: 0; min-height: 44px; padding: 0 .3rem; border: 0; border-left: 1.5px solid var(--ink); border-radius: 0; background: transparent; color: var(--ink); font: 700 .9375rem/1.2 var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.p-admin.ad-admin .a-group:first-child { border-left: 0; }
+.p-admin.ad-admin .a-group[aria-current="page"] { background: var(--ink); color: var(--paper); }
 .p-admin.ad-admin .ad-nav-label { display: none; }
 .p-admin.ad-admin .ad-main { min-width: 0; padding: 0; }
 .p-admin.ad-admin .ad-heading { margin: 0 0 1.15rem; padding: .35rem 0 1.35rem; border-bottom: 3px solid var(--ink); }
 .p-admin.ad-admin .ad-eyebrow { display: block; margin: 0 0 .55rem; color: var(--small-ink); font: 700 .8125rem/1.3 var(--display); letter-spacing: .13em; text-transform: uppercase; overflow-wrap: anywhere; }
 .p-admin.ad-admin .ad-title { margin: 0; font: 700 clamp(2.75rem, 4.7vw, 4.2rem)/1 var(--display); letter-spacing: -.025em; overflow-wrap: anywhere; }
 .p-admin.ad-admin .ad-intro { max-width: 42rem; margin: .8rem 0 0; color: var(--muted); font-size: 1rem; line-height: 1.5; }
-.p-admin.ad-admin .a-tabs { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: .45rem; margin: 0 0 1.25rem; padding: 0; border: 0; overflow: visible; -webkit-mask-image: none; mask-image: none; }
+/* The page kit, part 2 (4 Nov 2026, docs/admin-pages-options/brief.md): the page tabs are one underlined row, like the
+   Dashboard's. When they do not fit (a phone) the row scrolls sideways, fades at its edge and shows the open tab. */
+.p-admin.ad-admin .a-tabs { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: stretch; gap: 1.5rem; margin: 0 0 1.25rem; padding: 0; border: 0; border-bottom: 1px solid var(--line); overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -webkit-mask-image: none; mask-image: none; }
+.p-admin.ad-admin .a-tabs.is-scroll { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 2.5rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 2.5rem), transparent); }
 .p-admin.ad-admin .a-tabs::after, .p-admin.ad-admin .a-onpage::after { display: none; }
-.p-admin.ad-admin .a-tab { flex: 0 1 auto; min-width: 0; min-height: 44px; padding: .6rem .95rem; border: 1px solid var(--edge); border-radius: var(--r-pick); background: transparent; color: var(--muted); font: 600 .875rem/1.25 var(--body); text-align: left; white-space: normal; overflow-wrap: anywhere; }
-.p-admin.ad-admin .a-tab[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+.p-admin.ad-admin .a-tabs.is-scroll::after { display: block; content: ''; flex: 0 0 1.5rem; }
+@media (min-width: 600px) { .p-admin.ad-admin .a-tabs { flex-wrap: wrap; row-gap: 0; overflow: visible; } }
+.p-admin.ad-admin .a-tab { flex: 0 0 auto; min-width: 0; min-height: 44px; margin-bottom: -1px; padding: .6rem 0 .5rem; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: transparent; color: var(--muted); font: 600 .9375rem/1.25 var(--body); text-align: left; white-space: nowrap; }
+.p-admin.ad-admin .a-tab[aria-pressed="true"] { border-bottom-color: var(--accent); background: transparent; color: var(--ink); }
 .p-admin.ad-admin .a-onpage { position: static; flex-direction: row; flex-wrap: wrap; gap: .25rem .5rem; margin: 0 0 1rem; padding: 0 0 .65rem; border-bottom: 1px solid var(--line); overflow: visible; -webkit-mask-image: none; mask-image: none; }
 .p-admin.ad-admin .a-onpage .chip { min-width: 0; min-height: 44px; padding: .5rem .35rem; line-height: 1.3; white-space: normal; text-align: left; overflow-wrap: anywhere; }
 .p-admin.ad-admin .a-onpage .a-jumpbtn { flex: 0 1 auto; flex-wrap: wrap; min-width: 0; max-width: 100%; min-height: 44px; padding-block: .5rem; white-space: normal; text-align: left; }
@@ -3045,6 +3061,12 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 .p-admin.ad-admin .a-pane .btn { padding: .65rem 1rem; line-height: 1.3; }
 .p-admin.ad-admin .a-pane .search { height: auto; min-height: 46px; padding: .65rem .8rem; border-color: var(--ink); border-radius: var(--r-act); font-size: 1rem; }
 .p-admin.ad-admin .a-pane .search:focus { border-color: var(--ink); }
+/* The page kit, part 1 (4 Nov 2026, docs/admin-pages-options/brief.md): one size for every control. A search is at most
+   36rem wide, a dropdown 20rem and a 4 digit PIN box 14rem; Export, Download CSV and a role in the staff table stay on one line. */
+.p-admin.ad-admin .a-pane :is(.ux-search, input[type="search"]:not(.ux-search > input), input.search:not(.ux-search > input)) { max-width: 36rem; }
+.p-admin.ad-admin .a-pane input.search[data-k^="a-newpin"]:not([type="search"]) { max-width: 14rem; }
+.p-admin.ad-admin .a-pane :is(.a-export > summary, .a-export .btn, .a-table .ux-picker-trigger) { white-space: nowrap; overflow-wrap: normal; }
+.p-admin.ad-admin .a-pane .ux-picker-trigger { max-width: 20rem; }
 .p-admin.ad-admin .a-pane .p-bulk { width: 100%; min-width: 0; }
 .p-admin.ad-admin .a-pane .set-block:has([data-p="a-save"]) { z-index: 11; padding: .8rem 1rem; border: 1px solid var(--edge); border-top: 2px solid var(--ink); border-radius: var(--r-act); background: var(--paper); }
 .p-admin.ad-admin .a-tablewrap { max-width: 100%; border-width: 1px; border-radius: 0; }
@@ -3133,12 +3155,9 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 @media (min-width: 1000px) {
   .p-admin.ad-admin .ad-layout { grid-template-columns: 11.75rem minmax(0, 1fr); column-gap: 2.25rem; }
   .p-admin.ad-admin .a-nav { top: calc(var(--fn-stick, 0px) + var(--upd-h, 0px) + 1rem); margin: 0; padding: 1.3rem 1.2rem 1.5rem 0; border: 0; border-right: 1px solid var(--line); max-height: calc(100dvh - var(--fn-stick, 0px) - var(--upd-h, 0px) - 2rem); overflow-y: auto; }
-  .p-admin.ad-admin .a-section-picker { display: none; }
   .p-admin.ad-admin .a-groups { display: flex; flex-direction: column; gap: .4rem; padding: 0; border: 0; border-radius: 0; background: transparent; overflow: visible; }
-  .p-admin.ad-admin .a-group { display: flex; flex: 0 0 auto; align-items: center; gap: .65rem; width: 100%; min-height: 48px; padding: .65rem .6rem; border: 0; border-radius: 0; background: transparent; color: var(--ink); font: 600 .9375rem/1.35 var(--body); text-align: left; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
-  .p-admin.ad-admin .a-group[aria-current="page"] { background: var(--beige); box-shadow: inset 3px 0 var(--accent); }
-  .p-admin.ad-admin .ad-nav-number { flex: 0 0 1.2rem; color: var(--muted); font-size: .6875rem; font-weight: 400; font-variant-numeric: tabular-nums; }
-  .p-admin.ad-admin .a-group[aria-current="page"] .ad-nav-number { color: var(--small-ink); }
+  .p-admin.ad-admin .a-group { display: flex; flex: 0 0 auto; align-items: center; gap: .65rem; width: 100%; min-height: 52px; padding: .65rem .7rem; border: 0; border-radius: 0; background: transparent; color: var(--ink); font: 700 1.5rem/1.1 var(--display); text-align: left; white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+  .p-admin.ad-admin .a-group[aria-current="page"] { background: var(--beige); box-shadow: inset 3px 0 var(--accent); color: var(--ink); }
   .p-admin.ad-admin .ad-nav-label { display: block; margin: 0 0 1.3rem .6rem; color: var(--muted); font: 700 .75rem/1.3 var(--display); letter-spacing: .12em; text-transform: uppercase; }
   .p-admin.ad-admin .ad-main { padding-top: 1rem; }
 }
@@ -3166,8 +3185,9 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
   .p-admin.ad-admin .ad-title { font-size: 3rem; }
   .p-admin.ad-admin .ad-intro { display: none; }
   .p-admin.ad-admin .ad-eyebrow { font-size: .75rem; letter-spacing: .1em; }
-  .p-admin.ad-admin .a-tabs { gap: .4rem; margin-bottom: 1.1rem; }
-  .p-admin.ad-admin .a-tab { padding: .55rem .85rem; }
+  .p-admin.ad-admin .a-tabs { gap: 1.15rem; margin-bottom: 1.1rem; }
+  .p-admin.ad-admin .a-nav { padding-block: .4rem .55rem; }
+  .p-admin.ad-admin .a-tab { padding: .55rem 0 .45rem; }
   .p-admin.ad-admin .a-pane .set-block { padding-block: 1.2rem 1.4rem; }
   .p-admin.ad-admin .ai-desk { gap: 0; margin-top: 1rem; }
   .p-admin.ad-admin .ai-desk:not(.has-detail) { margin-top: .6rem; }
@@ -3185,8 +3205,8 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
   .p-admin.ad-admin .a-pane .a-ids { padding: .85rem; }
 }
 @media (hover: hover) and (pointer: fine) {
+  .p-admin.ad-admin .a-tab:not([aria-pressed="true"]):hover { border-bottom-color: var(--edge); background: transparent; color: var(--ink); }
   .p-admin.ad-admin .a-group:not([aria-current="page"]):hover,
-  .p-admin.ad-admin .a-tab:not([aria-pressed="true"]):hover,
   .p-admin.ad-admin .ai-queue .ai-review-row:hover { background: var(--beige); }
 }
 @media print {
@@ -3226,6 +3246,9 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 .ux-search { display: inline-grid; position: relative; grid-template-columns: minmax(0, 1fr); min-width: 0; width: 100%; flex: 1 1 10rem; }
 /* In a field the label and box stack in a column, where flex-basis is a height: 10rem left 110 px under the box (3 Nov 2026) */
 .field > .ux-search { flex: 0 0 auto; }
+/* In a column (a settings block, a labelled filter) a search keeps one line's height: its 10rem width basis was taken
+   as its height there, 156 px on admin Wastage (4 Nov 2026). */
+.set-block > .ux-search, .a-f > .ux-search { flex: 0 0 auto; }
 .ux-search > input { grid-area: 1 / 1; width: 100%; min-width: 0; padding-right: 3rem !important; }
 .ux-search > input::-webkit-search-cancel-button { display: none; }
 .ux-search-clear { position: relative; grid-area: 1 / 1; align-self: center; justify-self: end; min-width: 44px; min-height: 44px; border: 0; background: transparent; color: var(--ink); font: 1.5rem var(--body); }
@@ -3262,7 +3285,6 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
   .ux-picker-grip { position: absolute; top: 0; left: 25%; width: 50%; height: 26px; touch-action: none; }
   .ux-picker-grip::after { content: ''; display: block; width: 40px; height: 4px; margin: 9px auto; border-radius: 4px; background: var(--muted); }
   .ux-picker-options { max-height: 57dvh; }
-  .a-section-picker > .ux-picker-trigger { max-width: 70%; }
 }
 @media (prefers-reduced-motion: reduce) { .ux-picker[open] { animation: none; } }
 @media print { .ux-picker, .ux-search-clear, .ux-active-filters { display: none !important; } }

@@ -78,16 +78,32 @@ const same = (a, b) => (a || []).slice().sort().join(',') === b.slice().sort().j
   await L.settle(p, 300);
   // Finish the returning owner's canonical setup save before editing this fixture's original Staff row.
   await L.waitFor(p, () => { const c = LK_PREP.state.config; return ['addIds', 'tickIds', 'delIds'].every(k => c[k].includes(c.headId)) && !LK_PREP.unsent(); });
-  // Match the SDK: unrelated writes do not re-emit identical config. Real data/auth/metadata changes still arrive.
-  await p.evaluate(() => { __fake.quiet = true; });
+  // A redraw while the picker is open (any write tells every listener again) no longer loses the choice: see below
   await L.pick(p, '#a-r2', 'sous');
   await L.waitFor(p, () => LK_PREP.state.draft.people.find(x => x.id === 'bo').role === 'sous' && !document.querySelector('[data-p="a-save"]').disabled);
-  await p.evaluate(() => { __fake.quiet = false; });
   await p.click('[data-p="a-save"]');
   await L.settle(p, 400);
   s = await store(p);
   ok(same(s[CFG].sousIds, ['sam', 'bo', 'head']) && same(s[CFG].pingIds, ['sam', 'bo', 'head']) && same(s[CFG].staffIds, ['sam', 'ann', 'bo', 'head']), 'admin: Save writes sousIds, pingIds and staffIds from the roles');
   ok(await p.$('.a-ids') === null, 'admin: no card after the head chef saves');
+  await p.context().close();
+
+  // admin: another phone saves the staff list while the Role picker is open. The page draws again under the picker, so
+  // the Role box the picker came from is gone. The choice still lands on Bo's row as it is now (4 Nov 2026: it went to
+  // the old box and was lost, and the step above timed out on a busy runner).
+  p = await L.open(b, '#/admin', { admin: true, extra: cfg(), wait: 1800 });
+  await L.adminTab(p, 'people');
+  await L.waitFor(p, () => { const c = LK_PREP.state.config; return ['addIds', 'tickIds', 'delIds'].every(k => c[k].includes(c.headId)) && !LK_PREP.unsent(); });
+  await p.evaluate(() => { const s = document.querySelector('#a-r2'); s.dataset.was = '1'; s.nextElementSibling.click(); });
+  await L.waitFor(p, () => !!document.querySelector('.ux-picker[open]'));
+  await p.evaluate(path => { const c = JSON.parse(JSON.stringify(__fake.dump()[path])); c.people.push({ id: 'cal', name: 'Cal', role: 'staff', add: true, tick: true, del: false, ping: false, active: true }); __fake.write(path, c); }, CFG);
+  const redrawn = await L.waitFor(p, () => !document.querySelector('#a-r2[data-was]') && LK_PREP.state.draft.people.some(x => x.id === 'cal')).catch(() => false);
+  ok(redrawn && await p.$('.ux-picker[open]') !== null, 'admin redraw: Cal from the other phone is on the list and the picker is still open');
+  await p.locator('.ux-picker [data-index="2"]').click();   // Sous chef (head, lead, sous, staff, ...)
+  const kept = await L.waitFor(p, () => LK_PREP.state.draft.people.find(x => x.id === 'bo').role === 'sous' && !document.querySelector('[data-p="a-save"]').disabled, null, 3000).catch(() => false);
+  ok(kept, 'admin redraw: Bo is Sous chef in the draft and Save is on (' + await p.evaluate(() => LK_PREP.state.draft.people.find(x => x.id === 'bo').role) + ')');
+  ok(/Sous chef/.test(await txt(p, '#a-r2-picker') || ''), 'admin redraw: Bo\'s Role box says Sous chef (' + await txt(p, '#a-r2-picker') + ')');
+  ok(p.errors.length === 0, 'admin redraw: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // sous chef's staff page: adding a person sends people and staffIds, nothing else

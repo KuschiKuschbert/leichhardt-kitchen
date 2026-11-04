@@ -4,7 +4,7 @@ Approved 2 November 2026. This replaces the earlier tab-only Google login, perso
 
 ## What the team sees
 
-Every browser or installed app without a version 2 device choice asks how it is used when the new version opens. Existing shared-device settings do not silently answer the new question. The same warm-paper dialog becomes a bottom sheet on a phone. Choosing a device type does not grant access or a role. Recipes remain public.
+Every browser or installed app without a version 2 device choice asks how it is used when the new version opens. Existing shared-device settings do not silently answer the new question. The same warm-paper dialog becomes a bottom sheet on a phone. Choosing a device type does not grant access or a role. Recipes remain public. **View recipes for now**, Escape or Back closes the question until the person signs in, taps **Choose device**, forgets the device in Settings or opens the book again; the kitchen settings or the clock arriving later never bring it back on its own (4 Nov 2026).
 
 - **My own device:** remembered for this browser or installed app and bound to the first person who successfully enters their PIN. No idle logout, including personal computers. Kitchen access locks at 04:00 Queensland time. The same person's PIN unlocks the new day. Their Google identity remains remembered, so the head chef does not need to repeat Google login every morning or after an update.
 - **Shared kitchen screen:** any authorised staff member may enter their own PIN. A 10-minute idle lock and the 04:00 boundary clear this device's PIN and Google login. Other devices keep their own independent sessions.
