@@ -35,3 +35,6 @@
 #app.motion-gentle .kb-horse-leg,#app.motion-gentle .kb-horse-tail,#app.motion-gentle .kb-clover-leaf,#kb-festive-effects .kb-ambient-detail{animation-timing-function:var(--kb-festive-ease)}
 #kb-festive-effects .kb-ambient-particle[data-ambient-motion="saber"],#kb-festive-effects .kb-ambient-particle[data-ambient-motion="twinkle"],#kb-festive-effects .kb-ambient-particle[data-ambient-motion="sway"],#kb-festive-effects .kb-ambient-particle[data-ambient-motion="breathe"],#kb-festive-effects .kb-ambient-particle[data-ambient-motion="quiet"]{animation-timing-function:var(--kb-festive-ease)}
 @media print{.kb-season-note-art{background-image:none}}
+/* Stamps (3 Nov 2026): a paper disc with one bold glyph, wherever the celebration mark is small. */
+.kb-stamp{display:block;--kb-stamp-disc:#FFFEFA;--kb-stamp-ring:var(--ink,#1C1D1F);--kb-stamp-ink:var(--ink,#1C1D1F);--kb-stamp-accent:var(--accent,#E2602A);--kb-stamp-stone:var(--stone,#A39A88);--kb-stamp-green:var(--done,#2E8B57)}
+.wtop .kb-stamp,.kb-season-note .kb-stamp,.kb-occasion-panel .kb-stamp{--kb-stamp-ring:#FFFEFA}
