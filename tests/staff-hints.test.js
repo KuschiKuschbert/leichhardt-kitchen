@@ -14,6 +14,7 @@ const { R, ok } = L.results(), { txt } = L;
   ok(await p.$('.nb-who') === null, 'prep, sous chef: no such line (they can remove)');
   await p.context().close();
   p = await L.open(b, '#/orders', { who: 'ann', wait: 1500 });
+  await L.oLog(p);   // the line is in the Add a line sheet, under the add box (3 Nov 2026)
   ok(/Only the head chef or a sous chef ticks a line as ordered/.test(await txt(p, '.nb-who') || ''), 'orders, staff: the line explains the greyed tick box');
   ok(await p.$('[data-p="otick"][disabled]') !== null, 'orders, staff: the tick box is still shown greyed');
   ok(p.errors.length === 0, 'orders, staff: no page errors ' + p.errors.join(' | '));

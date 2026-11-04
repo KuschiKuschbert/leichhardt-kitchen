@@ -600,8 +600,6 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .o-page { max-width: 46rem; }
 .o-used { display: block; margin-top: 0.15rem; font-family: var(--body); font-size: 0.8125rem; color: var(--muted); }
 .o-used a { color: var(--accent-ink); text-decoration: underline dotted; }
-.o-n { display: inline-block; margin-left: 0.3rem; padding: 0 0.4rem; border-radius: 999px; background: var(--ink); color: #fff; font: 700 0.75rem var(--body); vertical-align: middle; }
-.o-who { display: block; margin-top: 0.15rem; font-family: var(--body); font-size: 0.8125rem; color: var(--muted); }
 .o-page .nb-row .p-x { margin-left: 0.4rem; }
 .o-nav { flex-wrap: wrap; }
 .o-days { display: inline-flex; flex-wrap: nowrap; gap: 0.5rem; }

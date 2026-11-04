@@ -36,12 +36,14 @@ const draws = async (page, sel) => { for (let i = 0; i < 3; i++) { await page.cl
   p = await L.open(b, '#/orders', { extra, fakeMode: 'fail', wait: 3000 });
   const o1 = await reads(p, '/orders/');
   ok(o1 >= 8, 'orders: the rollover read today and the past days once (' + o1 + ' reads)');
-  await draws(p, '[data-p="otoday"]');
+  // three redraws: the Add a line sheet opened and closed (the day chips went, 3 Nov 2026)
+  for (let i = 0; i < 3; i++) { await p.evaluate(() => document.querySelector('[data-p="o-write"]').click()); await L.settle(p, 150); await p.keyboard.press('Escape'); await L.settle(p, 150); }
   await L.settle(p, 600);
   const o2 = await reads(p, '/orders/');
   ok(o2 === o1, 'orders: redraws after the failed rollover read nothing more (' + (o2 - o1) + ')');
   await p.clock.runFor(5 * 60000 + 2000);
-  await draws(p, '[data-p="otoday"]');
+  // three redraws: the Add a line sheet opened and closed (the day chips went, 3 Nov 2026)
+  for (let i = 0; i < 3; i++) { await p.evaluate(() => document.querySelector('[data-p="o-write"]').click()); await L.settle(p, 150); await p.keyboard.press('Escape'); await L.settle(p, 150); }
   await L.settle(p, 800);
   const o3 = await reads(p, '/orders/');
   ok(o3 === o2 + 8, 'orders: five minutes later it tries once more, 8 reads (' + (o3 - o2) + ')');

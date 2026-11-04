@@ -72,15 +72,16 @@ async function log(p, text, amt, unit, before) {
   ok(p.errors.length === 0, 'review: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // orders: a suggestion fills the usual amount; the tick keeps its name; the day buttons stay on one row
+  // orders: a suggestion fills the usual amount; the tick keeps its name; the date chip and Delivery arrived on one row
   p = await L.open(b, '#/orders', { wait: 1500, extra });
   await p.fill('#o-text', 'Duck'); await L.settle(p, 250);
   const os = await p.$('[data-p="osugg"]:has-text("Duck fat")');
   ok(!!os && /2 tubs/.test(await os.textContent()), 'orders: typing Duck suggests Duck fat with its usual 2 tubs');
   if (os) { await os.click(); await L.settle(p, 250); }
   ok(await p.inputValue('#o-qty') === '2 tubs', 'orders: the suggestion fills the usual 2 tubs (' + await p.inputValue('#o-qty') + ')');
-  const tops = await p.evaluate(() => [...document.querySelectorAll('.o-days .chip')].map(e => Math.round(e.getBoundingClientRect().top)));
-  ok(tops.length === 3 && tops.every(t => t === tops[0]), 'orders: back, Today and forward sit on one row at 390 (' + tops + ')');
+  // the date chip and Delivery arrived (3 Nov 2026, the day chips went): one row at 390
+  const mids = await p.evaluate(() => [...document.querySelectorAll('.o-nav #o-day, .o-nav .o-deliv')].map(e => { const r = e.getBoundingClientRect(); return Math.round(r.top + r.height / 2); }));
+  ok(mids.length === 2 && Math.abs(mids[0] - mids[1]) <= 4, 'orders: the date chip and Delivery arrived sit on one row at 390 (' + mids + ')');
   await L.tap(p, '[data-p="otick"][data-id="o1"]'); await L.settle(p, 400);
   const lab = await p.evaluate(() => { const e = document.querySelector('[data-p="otick"][data-id="o1"]'); return e ? [e.getAttribute('aria-label'), e.getAttribute('aria-pressed')] : null; });
   ok(!lab || (lab[0] === 'Ordered: Milk' && lab[1] === 'true'), 'orders: a ticked line still reads "Ordered: Milk", pressed (' + lab + ')');
