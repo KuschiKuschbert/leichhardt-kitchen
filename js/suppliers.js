@@ -12,7 +12,7 @@
   function blank() {
     var collapsed = false; try { collapsed = localStorage.getItem('lk.sup.sidebar') === 'hide'; } catch (e) {}
     return { root: null, route: {}, routeKey: '', openItems: Object.create(null), suppliers: null, sid: '', mode: 'order', busy: false, err: '', msg: '', validation: null,
-      sidebar: !collapsed, q: '', group: '', filter: '', page: 0, drafts: Object.create(null), history: Object.create(null),
+      sidebar: !collapsed, q: '', group: '', filter: '', infoOpen: null, requestsWant: false, page: 0, drafts: Object.create(null), history: Object.create(null),
       audit: Object.create(null), historyOpen: false, historyId: '', historyQ: '', smart: false, requests: null,
       requestsBusy: false, requestsError: '', requestsDay: '', cutQ: '', ed: null, supplierEd: null, review: null, additional: '',
       archive: '', reuse: '', importing: null, importMap: Object.create(null), importQ: '',
@@ -164,8 +164,11 @@
     if ((M.requests !== null && M.requestsDay === day()) || M.requestsBusy) return;
     var g = generation; M.requestsBusy = true; M.requestsError = ''; draw();
     Promise.resolve().then(function () { return B().requests(); }).then(function (r) {
-      if (g !== generation) return; M.requests = Array.isArray(r) ? r : r && r.lines || []; M.requestsDay = day(); M.requestsBusy = false; draw();
-    }, function (e) { if (g === generation) { M.requestsBusy = false; M.requestsError = errorText(e); draw(); } });
+      if (g !== generation) return; M.requests = Array.isArray(r) ? r : r && r.lines || []; M.requestsDay = day(); M.requestsBusy = false;
+      // asked for from the chip: show what staff asked for at once, or say there is nothing for this supplier
+      if (M.requestsWant) { M.requestsWant = false; if (matchInfo().matches.length) { M.filter = 'asked'; M.page = 0; } else M.msg = 'No staff requests on today\'s Order list match this supplier\'s items. Others stay on the Order list.'; }
+      draw();
+    }, function (e) { if (g === generation) { M.requestsBusy = false; M.requestsWant = false; M.requestsError = errorText(e); draw(); } });
   }
   function loadAudit() {
     var sid = M.sid, a = M.audit[sid]; if (a && (a.busy || a.rows)) return;
@@ -343,14 +346,15 @@
       .concat(asked ? [['asked', 'Asked for', count(function (i) { return asked.indexOf(i.id) >= 0; })]] : [])
       .concat([['inorder', 'In this order', count(function (i) { return !!String(d.qty[i.id] || '').trim(); })]]);
     if (M.filter === 'asked' && !asked) M.filter = '';
-    return '<div class="chips su-filters" role="group" aria-label="Show items">' + chips.map(function (c) { return '<button type="button" class="chip" data-su="filter" data-f="' + c[0] + '" aria-pressed="' + (M.filter === c[0]) + '">' + c[1] + ' <span class="su-n">' + c[2] + '</span></button>'; }).join('') + '</div>';
+    // Staff requests are one query on a tap (B().requests()): the chip reads them, then becomes Asked for
+    var ask = asked ? '' : M.requestsBusy ? '<button type="button" class="chip" disabled aria-busy="true">Reading staff requests...</button>' :
+      M.requestsError ? '<button type="button" class="chip" data-su="requests-retry" title="' + esc(M.requestsError) + '">Staff requests: try again</button>' : '<button type="button" class="chip" data-su="requests">Staff requests</button>';
+    return '<div class="chips su-filters" role="group" aria-label="Show items">' + chips.map(function (c) { return '<button type="button" class="chip" data-su="filter" data-f="' + c[0] + '" aria-pressed="' + (M.filter === c[0]) + '">' + c[1] + ' <span class="su-n">' + c[2] + '</span></button>'; }).join('') + ask + '</div>';
   }
   /* What staff asked for, in full: today's unfilled staff order lines that match this supplier's items exactly (name or
      confirmed alias). Read on a tap only: one query (the same B().requests() the Suggestions panel uses). */
   function requestsHTML() {
-    if (M.requestsBusy) return loading('Reading staff requests...', 'orders');
-    if (M.requestsError) return '<p class="hint">' + esc(M.requestsError) + ' ' + smallButton('requests-retry', 'Try again') + '</p>';
-    if (!M.requests) return '<div class="su-asked-ask">' + smallButton('requests', 'Show what staff asked for') + '</div>';
+    if (!M.requests || M.requestsBusy) return '';
     var m = matchInfo().matches;
     if (!m.length) return '<p class="hint su-asked-none">No staff requests on today\'s Order list match this supplier\'s items. Others stay on the <a href="#/orders">Order list</a>.</p>';
     return '<section class="su-asked" aria-labelledby="su-asked-h"><h4 id="su-asked-h">Staff asked for</h4><ul>' + m.map(function (x) { var it = item(x.itemId); return x.requests.map(function (r) {
@@ -387,11 +391,24 @@
     if (cats.length < 2) return '';
     return '<nav class="chips scroll su-jumps" aria-label="Jump to a category">' + cats.map(function (c) { return '<button type="button" class="chip" data-su="jump" data-cat="' + esc(c[0]) + '">' + esc(c[0]) + ' <span class="su-n">' + c[1] + '</span></button>'; }).join('') + '</nav>';
   }
+  /* The Prep list's phone rule (work pages design A, Clean notebook, #464): the list first, extras folded to one line.
+     Under 900 px the cut-off card and the last order fold into this line; from 900 px both show open (css/app.css). */
+  function shortDate(ms) { return typeof ms === 'number' && isFinite(ms) ? new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Brisbane', weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(ms)) : ''; }
+  function infoHTML() {
+    // it opens by itself when something needs a look: an order already marked as placed (Additional order lives
+    // in the card) or a last order that could not be read; a tap on the line decides after that
+    var o = occurrence(), h = hist(), l = latest(), parts = [], attn = !!h.err || !!(o && o.done), open = M.infoOpen === null ? attn : M.infoOpen;
+    if (o) parts.push(o.done ? 'Order marked as placed' : 'Order by ' + (typeof o.at === 'number' ? shortDate(o.at) + ' ' + T.clock(o.at) : occurrenceLabel(o)));
+    parts.push(h.busy && !h.rows ? 'reading the last order' : h.err ? 'last order not read' : l ? 'last order ' + shortDate(l.at) : 'no order recorded yet');
+    var line = parts.join(' · ');
+    return '<div class="su-info' + (open ? ' open' : '') + '"><button type="button" class="su-info-line' + (attn ? ' attn' : '') + '" data-su="info" aria-expanded="' + open + '" aria-controls="su-info-body"><span>' + esc(line.charAt(0).toUpperCase() + line.slice(1)) + '</span><span class="su-info-more" aria-hidden="true">' + (open ? 'Less' : 'More') + '</span></button>' +
+      '<div id="su-info-body" class="su-info-body">' + cutoffHTML() + latestHTML() + '</div></div>';
+  }
   function orderHTML() {
     var s = supplier(), d = draft(), list = filterItems(false).filter(function (i) { return shown(i, d); }), last = ''; M.page = Math.max(0, Math.min(M.page, Math.ceil(list.length / 20) - 1));
     if (activeTask() === 'review') return reviewHTML();
     var table = list.map(function (i) { var title = i.category !== last ? '<div class="su-category" data-cat="' + esc(i.category || 'Other items') + '" tabindex="-1">' + esc(i.category || 'Other items') + '</div>' : ''; last = i.category; return title + rowHTML(i); }).join('');
-    return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3><span class="hint">' + items().length + ' items</span></div>' + cutoffHTML() + latestHTML() + suggestionsHTML() + requestsHTML() + '<p class="hint">A number uses the order unit shown; type a unit for another, e.g. 2 kg. Par blank is Not set; 0 stays 0.</p>' + filterChips(d) + jumpsHTML(list) + '<div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last order</span><span>To order</span></div>' + (table || '<p class="empty">' + (M.filter ? 'No items match this filter.' : 'No items match.') + '</p>') + '<div class="su-order-actions"><span class="hint">' + itemCount(Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length) + ' in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + historyHTML();
+    return toolbarHTML() + '<div class="su-supplier-title"><h3 class="h3">' + esc(s.name) + '</h3><span class="hint">' + items().length + ' items</span></div>' + infoHTML() + filterChips(d) + jumpsHTML(list) + (M.filter === 'asked' ? requestsHTML() : '') + '<div class="su-table-head"><span>Item / pack</span><span>Par</span><span>Last order</span><span>To order</span></div>' + (table || '<p class="empty">' + (M.filter ? 'No items match this filter.' : 'No items match.') + '</p>') + '<div class="su-order-actions"><span class="hint">' + itemCount(Object.keys(d.qty).filter(function (k) { return String(d.qty[k]).trim(); }).length) + ' in this supplier draft</span>' + button('review', 'Review order', Object.keys(d.qty).some(function (k) { return String(d.qty[k]).trim(); }) ? '' : ' disabled', true) + '</div>' + (M.filter === 'asked' ? '' : requestsHTML()) + suggestionsHTML() + '<p class="hint su-help">A number uses the order unit shown; type a unit for another, e.g. 2 kg. Par blank is Not set; 0 stays 0.</p>' + historyHTML();
   }
   function sourceHTML(i) { return '<details class="su-source"><summary>Original record</summary><dl><dt>Item name</dt><dd>' + esc(i.manual ? 'Added manually' : i.source.name) + '</dd><dt>PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : i.source.par === '' ? 'Not set' : i.source.par) + '</dd><dt>Source</dt><dd>' + esc(i.manual ? 'Manual item' : i.source.file + ', page ' + i.source.page) + '</dd></dl></details>'; }
   function unitField(k, label, value) { return '<label class="field"><span class="label">' + label + '</span><input class="search" data-sf="' + k + '" value="' + esc(value || '') + '" list="su-unit-list" maxlength="40" placeholder="Unconfirmed"></label>'; }
@@ -509,7 +526,7 @@
   }
   function pick(sid) {
     if (!leaveForm('pick:' + sid)) return;
-    M.sid = sid; M.route.cutoffId = ''; M.route.cutoffDay = ''; M.q = ''; M.group = ''; M.filter = ''; M.page = 0; M.review = null; M.additional = ''; M.historyOpen = false; M.auditOpen = false; M.historyId = ''; M.err = ''; M.msg = ''; M.validation = null; M.archive = ''; M.reuse = ''; draw(); loadHistory(false, false);
+    M.sid = sid; M.route.cutoffId = ''; M.route.cutoffDay = ''; M.q = ''; M.group = ''; M.filter = ''; M.infoOpen = null; M.page = 0; M.review = null; M.additional = ''; M.historyOpen = false; M.auditOpen = false; M.historyId = ''; M.err = ''; M.msg = ''; M.validation = null; M.archive = ''; M.reuse = ''; draw(); loadHistory(false, false);
   }
   function beginReview() {
     if (!canRead() || M.saving) return;
@@ -683,8 +700,9 @@
     if (cmd === 'manage' && canEdit() && leaveForm('manage')) { M.mode = 'manage'; M.review = null; M.q = ''; M.group = ''; M.page = 0; draw(); }
     if (cmd === 'order-mode' && leaveForm('order-mode')) orderMode();
     if (cmd === 'smart') { M.smart = !M.smart; draw(); if (M.smart) loadRequests(); }
-    if (cmd === 'requests-retry') { M.requests = null; loadRequests(); }
-    if (cmd === 'requests') loadRequests();
+    if (cmd === 'requests-retry') { M.requests = null; M.requestsWant = true; loadRequests(); }
+    if (cmd === 'requests') { M.requestsWant = true; loadRequests(); }
+    if (cmd === 'info') { var box = el.closest('.su-info'); M.infoOpen = !(box && box.classList.contains('open')); draw(); }
     if (cmd === 'jump') {
       var cat = el.getAttribute('data-cat'), head = Array.prototype.filter.call(M.root.querySelectorAll('.su-category'), function (h) { return h.getAttribute('data-cat') === cat; })[0];
       if (head) { head.scrollIntoView({ block: 'start' }); head.focus({ preventScroll: true }); requestAnimationFrame(function () { requestAnimationFrame(function () { if (head.isConnected) head.scrollIntoView({ block: 'start' }); }); }); }

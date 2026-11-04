@@ -2617,6 +2617,34 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-jumps { margin: 0.2rem 0 0.6rem; -webkit-mask-image: linear-gradient(to right, #000 86%, transparent); mask-image: linear-gradient(to right, #000 86%, transparent); }
 .su-jumps .chip { min-height: 38px; }
 .su-jumps .su-n { font-weight: 400; opacity: 0.8; }
+/* List first on a phone or tablet (4 Nov 2026, the Prep list's rule from work pages design A): the cut-off and the
+   last order fold into one line, the heading is one line, the picker and search lose their visible labels. */
+.su-info-line { display: none; }
+@media (max-width: 899px) {
+  .su-head { flex-wrap: nowrap; align-items: center; gap: 0.5rem; padding-bottom: 0.5rem; border-bottom-width: 2px; }
+  .su-head .eyebrow, .su-head .hint { display: none; }
+  .su-head h2 { margin: 0; font-size: 1.75rem; }
+  .su-head .btn { min-height: 40px; padding: 0 0.8rem; }
+  .su-tools { margin-top: 0.5rem; }
+  .su-tools .chip { min-height: 36px; }
+  .su-supplier-title { display: none; }
+  .su-toolbar { margin-bottom: 0.5rem; }
+  .su-toolbar .label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .su-info-line { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; width: 100%; min-height: 44px; padding: 0.4rem 0.75rem; border: 0; border-left: 3px solid var(--accent); border-radius: 0; background: var(--hit); color: var(--ink); font: 600 0.875rem var(--body); text-align: left; cursor: pointer; }
+  .su-info-line.attn { border-left-color: var(--small-ink); }
+  .su-info-line > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+  .su-info-more { flex: none; color: var(--small-ink); text-decoration: underline; }
+  .su-info-body { display: none; }
+  .su-info.open .su-info-body { display: block; margin-top: 0.5rem; }
+  .su-filters { margin-top: 0.5rem; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(to right, #000 86%, transparent); mask-image: linear-gradient(to right, #000 86%, transparent); }
+  .su-filters::-webkit-scrollbar { display: none; }
+  .su-filters .chip { flex: 0 0 auto; min-height: 38px; }
+  .su-filters::after { content: ''; flex: 0 0 1.75rem; }
+}
+@media (max-width: 719px) {
+  .su-toolbar { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 0.5rem; }
+  .su-toolbar > .btn, .su-toolbar > .su-groups { grid-column: 1 / -1; }
+}
 .su-filters .su-n { font-weight: 400; opacity: 0.8; }
 .su-asked { margin: 0.8rem 0; padding: 0.7rem 0.9rem; border-left: 3px solid var(--accent); background: var(--hit); }
 .su-asked h4 { margin: 0 0 0.3rem; font: 700 1.1rem var(--display); }
