@@ -9051,6 +9051,13 @@
     // Keep the initiating writer if a PIN session is still opening. No supplier catalogue read is needed.
     return sessP ? track(Promise.resolve(sessP).then(save, save)) : save();
   }
+  /* The chef hat's Supplier order tile (4 Nov 2026, a piece of B in the agreed work pages design): today's next cut-off
+     not ticked yet, "PFD 14:00", for the chefs who get the cut-off bar. From what the bar already holds, no read. */
+  function cutHat() {
+    if (!cutWho()) return '';
+    var m = T.mins(), done = cutDone(), c = cutToday().filter(function (x) { return x.at > m && !done[x.key]; })[0];
+    return c ? c.s.name + ' ' + hhmm(c.at) : '';
+  }
   function cutBandHTML() {
     if (!cutWho()) return '';
     var m = T.mins(), done = cutDone(), xs = cutOn(0).concat(cutOn(1)).filter(function (c) { return cutOnNow(c, m) && !done[c.key]; });
@@ -10582,7 +10589,7 @@
     signOut: function (force, quiet) { if (sendFirst()) { toast(SEND_FIRST); return false; } return signOutPerson(force, quiet); },
     sendFirst: sendFirst,
     minNudge: minNudgeHTML,
-    cutSlot: cutSlot,
+    cutSlot: cutSlot, cutHat: cutHat,
     mailInfo: mlInfo,
     mailTab: mailTab,
     saveConfig: saveConfig,
