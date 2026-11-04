@@ -567,7 +567,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
   .a-list .a-person { margin: 0; }
 }
 @media (max-width: 599px) { .a-pane .set-block { padding: 1.2rem 0 1.4rem; } }
-.a-pane .set-block.a-savebar:not(:has(.a-unsaved)):not(:has(.saved:not(:empty))) { display: none; }
+.a-pane .set-block.a-savebar:not(:has(.a-unsaved, .sv-line:not(:empty), .sv-btn[data-sv])) { display: none; }
 .a-pane .set-block:has([data-p="a-save"]) { position: sticky; bottom: 0; z-index: 11; padding: 0.8rem 1rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--paper); box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.08); }
 @media (max-width: 719px) { .nb-badges { order: 5; } }
 
@@ -2739,6 +2739,47 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-jumps { margin: 0.2rem 0 0.6rem; -webkit-mask-image: linear-gradient(to right, #000 86%, transparent); mask-image: linear-gradient(to right, #000 86%, transparent); }
 .su-jumps .chip { min-height: 38px; }
 .su-jumps .su-n { font-weight: 400; opacity: 0.8; }
+/* List first on a phone or tablet (4 Nov 2026, the Prep list's rule from work pages design A): the cut-off and the
+   last order fold into one line, the heading is one line, the picker and search lose their visible labels. */
+.su-info-line { display: none; }
+@media (max-width: 899px) {
+  /* one line at normal text; at Extra large text Refresh drops under the title rather than off the screen */
+  .su-head { flex-wrap: wrap; align-items: center; gap: 0.5rem; padding-bottom: 0.5rem; border-bottom-width: 2px; }
+  .su-head > div { flex: 1 1 auto; }
+  .su-head .eyebrow, .su-head .hint { display: none; }
+  .su-head h2 { margin: 0; font-size: 1.75rem; }
+  .su-head .btn { min-height: 40px; padding: 0 0.8rem; }
+  .su-tools { margin-top: 0.5rem; }
+  .su-tools .chip { min-height: 36px; }
+  .su-supplier-title { display: none; }
+  .su-toolbar { margin-bottom: 0.5rem; }
+  .su-toolbar .label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  /* the picker keeps to one line (the name and today's cut-off), cut with an ellipsis rather than a second line */
+  .su-toolbar .ux-picker-trigger { display: block; width: 100%; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: left; }
+  .su-category { padding-top: 0.6rem; }
+  /* the Review bar stays one row: the count wraps beside the button instead of pushing it onto a second row */
+  #supplier-root .su-order-actions { flex-wrap: nowrap; }
+  #supplier-root .su-order-actions > .hint { flex: 1 1 auto; min-width: 0; }
+  #supplier-root .su-order-actions > .btn { flex: none; }
+  .su-info-line { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; width: 100%; min-height: 44px; padding: 0.4rem 0.75rem; border: 0; border-left: 3px solid var(--accent); border-radius: 0; background: var(--hit); color: var(--ink); font: 600 0.8125rem var(--body); text-align: left; cursor: pointer; }
+  .su-info-line.attn { border-left-color: var(--small-ink); }
+  .su-info-line > span:first-child { min-width: 0; overflow-wrap: anywhere; }
+  .su-info-more { flex: none; color: var(--small-ink); text-decoration: underline; }
+  .su-info-body { display: none; }
+  .su-info.open .su-info-body { display: block; margin-top: 0.5rem; }
+  .su-filters { margin-top: 0.5rem; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(to right, #000 86%, transparent); mask-image: linear-gradient(to right, #000 86%, transparent); }
+  .su-filters::-webkit-scrollbar { display: none; }
+  .su-filters .chip { flex: 0 0 auto; min-height: 38px; }
+  .su-filters::after { content: ''; flex: 0 0 1.75rem; }
+}
+/* Narrow rows, the Prep list's rule (adaptive-controls, narrow Prep A): below 360 px, or below 480 px with Extra large
+   text, Par and Last order share a line and To order takes its own, so nothing is cut at the row's edge */
+@media (max-width: 359px) { .su-row { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); } .su-row .su-qty { grid-column: 1 / -1; } }
+@media (max-width: 479px) { html[data-text="xlarge"] .su-row { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); } html[data-text="xlarge"] .su-row .su-qty { grid-column: 1 / -1; } }
+@media (max-width: 719px) {
+  .su-toolbar { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 0.5rem; }
+  .su-toolbar > .btn, .su-toolbar > .su-groups { grid-column: 1 / -1; }
+}
 .su-filters .su-n { font-weight: 400; opacity: 0.8; }
 .su-asked { margin: 0.8rem 0; padding: 0.7rem 0.9rem; border-left: 3px solid var(--accent); background: var(--hit); }
 .su-asked h4 { margin: 0 0 0.3rem; font: 700 1.1rem var(--display); }
@@ -3188,6 +3229,17 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 .ink-busy-button:disabled[aria-busy="true"] { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; opacity: 1; cursor: wait; }
 .ink-busy-button:disabled[aria-busy="true"] .ink-icon { --ink-stroke: #FFF1E6; color: inherit; }
 .ink-busy-button .ink-icon[data-state="done"] { color: inherit; }
+/* Save states (4 Nov 2026, Saving A): the button's words sit over hidden copies of its idle and busy words, so Save,
+   Saving..., Saved and Try again keep one width. The copies are not read out. Saved is green while it shows. */
+.sv-btn { display: inline-grid; place-items: center; }
+.sv-btn > .sv-now, .sv-btn::before, .sv-btn::after { grid-area: 1 / 1; }
+.sv-btn > .sv-now { display: inline-flex; align-items: center; justify-content: center; min-width: 0; max-width: 100%; }
+.sv-btn::before, .sv-btn::after { visibility: hidden; white-space: nowrap; pointer-events: none; }
+.sv-btn::before { content: attr(data-idle); content: attr(data-idle) / ""; }
+.sv-btn::after { content: attr(data-wide); content: attr(data-wide) / ""; padding-inline-start: calc(22px + .5rem); }
+.sv-btn[data-sv="done"]:disabled { background: var(--done-ink); border-color: var(--done-ink); color: #fff; opacity: 1; cursor: default; }
+.sv-line.p-err, .sv-slow { display: block; margin: 0; }
+.sv-slow { font-size: .875rem; font-weight: 600; color: var(--ink); }
 .ink-startup { max-width: 38rem; margin: 2rem auto; padding: 0 1.25rem; }
 .ink-startup-name { margin: 0 0 .5rem; font: 700 2.4rem/1.05 var(--display); }
 .ink-docket-arrive > .docket { animation: ink-docket-in .34s cubic-bezier(.2, .8, .2, 1) both; transform-origin: 50% 6px; }

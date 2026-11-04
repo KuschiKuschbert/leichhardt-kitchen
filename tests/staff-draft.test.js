@@ -42,6 +42,8 @@ const elsewhere = (page, change) => page.evaluate(([k, ch]) => {
   ok(!!byName(s, 'Eve'), 'people: the person added here is saved');
   ok(!!byName(s, 'Annie') && !byName(s, 'Ann'), 'people: the rename from the other phone is kept, not wiped');
   ok(!!byName(s, 'Dee'), 'people: the person the other phone added is kept');
+  // the button says Saved for 1.2 s, then the line under it says so (4 Nov 2026)
+  await L.waitFor(p, () => /Saved/.test((document.querySelector('.saved') || {}).textContent || ''), null, 4000).catch(() => {});
   ok(/Saved/.test(await txt(p, '.saved')), 'people: the save message shows');
   ok(await p.$('.a-stale') === null, 'people: the stale hint is gone after saving');
   ok(p.errors.length === 0, 'people: no page errors ' + p.errors.join(' | '));
