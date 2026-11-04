@@ -93,4 +93,4 @@ const bounded = (promise, label) => { let timer; return Promise.race([promise, n
     process.removeListener('unhandledRejection', onUnhandled);
   }
   L.report(R);
-})().catch(error => { console.error(error); console.log(R.join('\n')); process.exitCode = 1; });
+})().catch(error => { console.error(error); console.log(R.join('\n')); process.exit(1); });

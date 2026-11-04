@@ -171,4 +171,4 @@ const button = (kind = 'fn', action = 'cancel') => '[data-' + kind + '="status"]
     await p.close(); p = null;
   } finally { if (p && !p.isClosed()) await p.close(); await b.close(); }
   L.report(R);
-})().catch(e => { console.error(e); process.exitCode = 1; });
+})().catch(e => { console.error(e); process.exit(1); });

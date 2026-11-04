@@ -31,4 +31,4 @@ const day = L.ymd(new Date(L.NOW)), cutoff = Date.parse(day + 'T04:00:00+10:00')
   ok(!(await p.locator('#pt-sheet').count()), 'a recovered completion does not reopen the old picker');
   ok(!p.errors.length, 'recovered prep has no browser errors ' + p.errors.join(' | '));
   await p.context().close(); await b.close(); L.report(R);
-})().catch(e => { console.error(e); process.exitCode = 1; });
+})().catch(e => { console.error(e); process.exit(1); });

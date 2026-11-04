@@ -35,7 +35,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   p = await open('#/manage/draw/new/burger/plate');
   await L.dwAdd(p);
   await wait(p, () => !!document.querySelector('.dw-start [data-dw="from"][data-v="book:burger"]'));
-  ok(/Start from a copy of the book's drawing/.test(await txt(p, '.dw-start summary') || '') && !(await p.$eval('.dw-start', e => e.open)) && await p.$('.dw-panel #dw-q') !== null, 'start from: one closed line offers the book\'s drawing of the burger, with the library open below');
+  ok(/Start from a copy of the book's drawing/.test(await txt(p, '.dw-start summary') || '') && !(await p.$eval('.dw-start', e => e.open)) && await p.$('.dw-panel #dw-q') !== null && await p.evaluate(() => { const q = document.getElementById('dw-q'), st = document.querySelector('.dw-start'); return !!(q.compareDocumentPosition(st) & Node.DOCUMENT_POSITION_FOLLOWING) && !!st.closest('.dw-other'); }), 'start from: one closed line at the bottom of Add food, under Other ways to start, offers the book\'s drawing of the burger');
   await p.click('.dw-start summary'); await L.settle(p, 150);
   await p.click('.dw-start [data-dw="from"][data-v="book:burger"]');
   await wait(p, () => window.LK_DRAW.state().d.els.length === 1);

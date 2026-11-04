@@ -60,4 +60,4 @@ async function unlock(p, id, pin) {
   await unlock(p, 'ann', '2222');
   ok(await p.locator('[data-k="p-text"]').inputValue() === 'Half-written prep', 'same-person daily unlock restores the unsubmitted prep text');
   await p.context().close(); await b.close(); L.report(R);
-})().catch(e => { console.error(e); process.exitCode = 1; });
+})().catch(e => { console.error(e); process.exit(1); });

@@ -48,6 +48,39 @@ const { R, ok } = L.results();
   ok(!p.errors.length, 'cross-tab setup has no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // A dismissed first prompt stays closed. Hung 4 Nov 2026 (Back after Forget, below): Forget's ask waited behind the
+  // discard confirmation's Back, a config answer opened the prompt at once, Back dismissed it, then the waiting ask
+  // opened a second prompt over Recipes. Both checks below failed on every run before the fix.
+  p = await L.open(b, '#/recipes', { who: '', deviceUnclassified: true, wait: 400 });
+  await L.waitFor(p, () => !!document.querySelector('#lk-device-choice[open]'));
+  // dismissed before the kitchen settings arrive (about a second here, longer on a phone): their arrival, and a later
+  // clock check, each run resume(), which asked again
+  await p.click('[data-device-cancel]');
+  await L.waitFor(p, () => LK_PREP.state.configState === 'ok', null, 8000); await L.settle(p, 300);
+  await p.evaluate(() => window.dispatchEvent(new Event('lk-clock'))); await L.settle(p, 300);
+  ok(await p.evaluate(() => !document.querySelector('#lk-device-choice') && !LK_DEVICE.classified() && location.hash === '#/recipes'), 'an automatic recheck (settings arriving, clock or sign-in) does not reopen a prompt the person dismissed');
+  await p.evaluate(() => LK_DEVICE.request());
+  ok(await L.waitFor(p, () => !!document.querySelector('#lk-device-choice[open]')).catch(() => false), 'an explicit ask (sign in, Choose device, Forget) opens the prompt again after a dismissal');
+  await p.keyboard.press('Escape');
+  await L.waitFor(p, () => !document.querySelector('#lk-device-choice') && !(history.state && history.state.lkOv));
+  const raced = await p.evaluate(async () => {
+    const frames = n => new Promise(r => { const f = () => (n-- > 0 ? requestAnimationFrame(f) : r()); f(); });
+    // an earlier overlay closes with its own Back; an explicit ask waits behind it
+    const closeEarlier = LK_PREP.pickerOverlay(() => {});
+    closeEarlier(false);
+    LK_DEVICE.request();
+    await new Promise(r => addEventListener('popstate', r, { once: true }));
+    // the Back has landed, the waiting ask has not opened yet: a second ask opens the prompt at once
+    LK_DEVICE.request();
+    const opened = !!document.querySelector('#lk-device-choice[open]');
+    document.querySelector('#lk-device-choice [data-device-cancel]').click();
+    await frames(4); await new Promise(r => setTimeout(r, 100));
+    return { opened, after: !!document.querySelector('#lk-device-choice') };
+  });
+  ok(raced.opened && !raced.after, 'an ask still waiting behind an earlier overlay does not reopen a prompt dismissed meanwhile ' + JSON.stringify(raced));
+  ok(!p.errors.length, 'dismissed prompt checks have no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   p = await L.open(b, '#/settings', { who: 'ann', wait: 800 });
   ok(await p.locator('[aria-label="This device"] [data-act="device-choice"]').count() === 1, 'the unlocked owner of a personal device can change its type in Settings');
   await L.setRow(p, 'device');
@@ -92,4 +125,6 @@ const { R, ok } = L.results();
   ok(!p.errors.length, 'device setup history has no browser errors ' + p.errors.join(' | '));
   await p.context().close();
   await b.close(); L.report(R);
-})().catch(e => { console.error(e); process.exitCode = 1; });
+// Exit on an error: the connection to the run's shared Chrome keeps node alive, so a thrown waitFor used to wait for
+// the 600 s FILE_TIMEOUT (4 Nov 2026) instead of failing in seconds.
+})().catch(e => { console.error(e); process.exit(1); });
