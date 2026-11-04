@@ -4755,9 +4755,33 @@
         { h: 'Tick', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'tick', o.p.tick, 'Tick', isHeadP(o.p)); } },
         { h: 'Remove', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'del', o.p.del, 'Remove', isHeadP(o.p)); } },
         { h: 'Create/edit functions', cls: 'a-c', html: function (o) { return cb(o, 'perm', 'fn', o.p.fn, 'Create and edit functions', false); } },
-        { h: '', cls: 'a-act', html: function (o) { return '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(o.p.id) + '">' + (armed('pin:' + o.p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' + removePersonBtn(o.p, o.i); } }
+        { h: '', cls: 'a-act', html: function (o) { return (o.p.id && !o.p.isNew ? '<button type="button" class="p-x" data-p="a-person" data-id="' + esc(o.p.id) + '">Open page</button>' : '') + '<button type="button" class="p-x" data-p="a-reset-pin" data-id="' + esc(o.p.id) + '">' + (armed('pin:' + o.p.id) ? 'Tap again to reset' : 'Reset PIN') + '</button>' + removePersonBtn(o.p, o.i); } }
       ]
     });
+  }
+  /* A page for each person (5 Nov 2026, admin pages step 5, design B): what they may do, read from the team list (it is
+     changed there, and only that list's Save writes it, so the canonical capability lists keep their one save path), and
+     their activity over the shared report period, counted by the Team report's own code (teamData, habit). Reads: the
+     same 60 days of prep lines the Team report reads (loadStats), once per visit and kept in memory. */
+  function personPageHTML(d, id, saveBlock) {
+    var p = d.people.filter(function (x) { return x.id === id; })[0];
+    var back = '<p><button type="button" class="p-link" data-p="a-person-back">\u2039 All people</button></p>';
+    if (!p) return '<section class="set-block">' + back + '<p class="hint">This person is not on the team list any more.</p></section>' + saveBlock;
+    var head = isHeadP(p), can = [['add', 'Write'], ['tick', 'Tick'], ['del', 'Remove'], ['fn', 'Create and edit functions']].filter(function (c) { return c[0] !== 'fn' && head || p[c[0]]; }).map(function (c) { return c[1]; });
+    var top = '<section class="set-block a-personpage">' + back + '<span class="label">' + esc(p.name || 'No name yet') + '</span>' +
+      '<p class="a-pp-role"><b>' + esc((ROLES[p.role] || {}).name || 'No role') + '</b>' + (p.active === false ? ', off the list' : '') + '. Can: ' + esc(can.length ? can.join(', ') : 'read only') + '.</p>' +
+      '<p class="hint">Change the role and ticks in the team list, then save.</p>';
+    var st = S.stats, n = S.statsRange;
+    if (!st || st.loading) return top + inkWait('Loading the last ' + n + ' days...', 'chef', 3) + '</section>' + saveBlock;
+    var miss = st.miss && st.miss.length ? '<p class="p-err" role="status">' + st.miss.length + ' day' + (st.miss.length === 1 ? '' : 's') + ' could not be read, so these numbers may be low. The book tries again by itself.</p>' : '';
+    var td = teamData(n), r = td.per[id], note = '<p class="hint">Ticks record activity. They do not confirm skill. Use them as a prompt for a chat, not a verdict.</p>';
+    if (!r || !r.w && !r.t) return top + miss + '<h3 class="a-ch-h">Last ' + n + ' days</h3><p class="hint">No lines written or ticked off in the last ' + n + ' days.</p>' + note + '</section>' + saveBlock;
+    var h = habit(r, td), daysW = Object.keys(r.days).length, secs = Object.keys(r.tsecs).sort(function (a, b) { return r.tsecs[b] - r.tsecs[a]; });
+    var tiles = [[r.w, 'lines written'], [r.t, 'lines ticked off'], [daysW + ' of ' + n, 'days with lines written']];
+    if (h.top) tiles.push([Math.round(h.share * 100) + '%', 'in ' + h.top + ', the main section']);
+    return top + miss + '<h3 class="a-ch-h">Last ' + n + ' days</h3><div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' +
+      (secs.length ? '<p class="a-pp-secs">Ticked off by section: ' + secs.slice(0, 6).map(function (k) { return esc(k) + ' ' + r.tsecs[k]; }).join(', ') + '.</p>' : '') +
+      (r.last ? '<p class="hint">Last wrote a line on ' + esc(dayShort(r.last)) + '. The period is the one every report shares.</p>' : '') + note + '</section>' + saveBlock;
   }
   /* The sous chef's Staff page: a short list of names with Remove. Same helper, rows as cards. */
   function staffListHTML(d) {
@@ -5042,7 +5066,7 @@
     }
     if (!S.draft) startDraft();
     var d = S.draft, owner = S.level === 'owner';
-    if (owner && ['insights', 'team', 'waste', 'transfers', 'learning'].indexOf(S.atab || 'overview') >= 0) { watchActivity(); loadStats(false); }
+    if (owner && (['insights', 'team', 'waste', 'transfers', 'learning'].indexOf(S.atab || 'overview') >= 0 || S.atab === 'people' && S.personId)) { watchActivity(); loadStats(false); }
     // the Google account, not the person: the chef hat's Sign out is for the person (Prep is in the top bar and tab bar)
     var bar = '<div class="p-bar"><span>Google account: <strong>' + esc(S.user.email) + '</strong></span><span class="p-links"><button type="button" class="p-link" data-p="signout">' + (armed('signout:sent') ? 'Not sent yet.' : armed('signout') ? notSaved() + '. Tap again' : 'Sign out of Google') + '</button></span></div>';
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
@@ -5063,7 +5087,7 @@
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = at === 'dashboard' ? dashHTML() : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' ? (
+    var pane = at === 'dashboard' ? dashHTML() : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Create/edit functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it. Function editing still has its own tick.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       '<p class="hint">Tick Create/edit functions beside a person, then save. Their kitchen role stays the same.</p>' + peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
@@ -9846,8 +9870,8 @@
     // Add a line (3 Nov 2026, work pages redesign A): the add form opens as a sheet, like Log waste
     if (a === 'write') { wSheetOpen('plog'); return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
-    if (a === 'a-group') { if (intelligenceBusy()) return; var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2].filter(function (t) { return t !== 'mail' || mlOwner(); })[0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); } return; }
-    if (a === 'a-tab') { if (intelligenceBusy()) return; S.atab = el.getAttribute('data-t'); S.agLast = S.agLast || {}; S.agLast[adminGroupOf(S.atab)[0]] = S.atab; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); return; }
+    if (a === 'a-group') { if (intelligenceBusy()) return; S.personId = ''; var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2].filter(function (t) { return t !== 'mail' || mlOwner(); })[0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); } return; }
+    if (a === 'a-tab') { if (intelligenceBusy()) return; S.personId = ''; S.atab = el.getAttribute('data-t'); S.agLast = S.agLast || {}; S.agLast[adminGroupOf(S.atab)[0]] = S.atab; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); return; }
     if (a === 'staff-open') { if (isSous()) { startDraft(); S.staffOpen = true; draw(); seedPinOpen(); } return; }
     if (a === 'add-recipe') { addRecipe(id); return; }
     // a change waiting to send holds Sign in with Google, with no second tap past it (review, 29 Oct 2026): the sign-in
@@ -9865,6 +9889,9 @@
     }
     if (a === 'sec-hide') { hideSection(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'a-reset-pin') { resetPin(id); return; }
+    // a person's page (admin pages step 5): open it from their row, and back to the list (also the top bar's Back)
+    if (a === 'a-person') { S.personId = id; draw(); adminToTop(); return; }
+    if (a === 'a-person-back') { S.personId = ''; draw(); adminToTop(); return; }
     if (a === 'range') { var rv = el.getAttribute('data-v'); if (S.atab === 'waste') { if (!whCanChange()) return; whState().period = rv; if (/^(7|14|30)$/.test(rv)) S.statsRange = +rv; } else setReportDays(+rv); draw(); return; }
     // on Team, the order days too (28 Oct 2026): a day that could not load stayed under "Refresh reads the newest"
     if (a === 'stats-refresh') { loadStats(true); if (el.getAttribute('data-v') === 'team') loadOrdStats(true); draw(); return; }
@@ -10594,6 +10621,7 @@
     if (a === 'mn-close') { S.minOpen = false; if (!mfDirty()) S.mf = null; draw(); return true; }
     if (a === 'mn-cancel') { if (mfDirty() && !arm('mn-cancel')) return true; S.mf = null; S.mMsg = ''; draw(); return true; }
     if (a === 'mn-prev') { if (S.mf) { S.mf.prev = !S.mf.prev; draw(); } return true; }
+    if (a === 'a-person-back') { S.personId = ''; draw(); return true; }
     if (a === 'g-cancel') { if (gfDirty() && !arm('g-cancel')) return true; S.gf = null; S.gfSnap = ''; draw(); return true; }
     if (a === 'sheet-close') { wasteSheetClose(); return true; }
     if (a === 'w-log-close' || a === 'w-rv-close' || a === 'tr-log-close' || a === 'p-log-close' || a === 'o-log-close') { wSheetClose(); return true; }
@@ -10616,6 +10644,7 @@
     if (S.root.querySelector('.g-edit')) return pick('g-cancel', 'Back to guides');
     if (S.root.querySelector('.n-edit')) return pick('n-cancel', 'Back to pings');
     if (S.mf && S.mf.prev && (S.name === 'admin' && S.atab === 'minutes' || S.name === 'prep' && S.minOpen)) return pick('mn-prev', 'Back to writing');
+    if (S.name === 'admin' && S.atab === 'people' && S.personId) return pick('a-person-back', 'Back to all people');
     if (S.root.querySelector('.mn-form')) return pick('mn-cancel', 'Back to minutes');
     if (S.name === 'prep') {
       if (S.root.querySelector('.p-minutes-page')) return pick('mn-close', 'Back to prep list');
