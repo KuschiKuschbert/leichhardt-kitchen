@@ -64,19 +64,13 @@
     'kiping': { label: 'Colourful leaf-shaped kiping strings sway at the book edges', motifs: ['mote'], motion: 'rise', count: 9, ornaments: ['kiping', 'kiping', 'kiping'] },
     'panagbenga-flowers': { label: 'Outlined flowers and warm paper-tone petals tumbling slowly', motifs: ['flower', 'pink-petal', 'marigold-petal'], motion: 'flutter', count: 20 },
     'kadayawan-harvest': { label: 'Harvest leaves moving beside durian and mangosteen ornaments', motifs: ['leaf', 'sprig'], motion: 'flutter', count: 14, ornaments: ['durian', 'mangosteen'] },
-    'philippine-ribbons': { label: 'Eight-ray sun glints and flowing paper ribbons', motifs: ['sun', 'civic-ribbon'], motion: 'ribbon', count: 14 },
-    'pasko-parol': { label: 'Hanging parol stars and tails with warm Christmas twinkles', motifs: ['star', 'mote'], motion: 'twinkle', count: 12, ornaments: ['parol', 'parol'] },
-    'salubong-dawn': { label: 'Pale petals drift through a softly moving dawn light', motifs: ['cream-petal', 'lotus-petal', 'mote'], motion: 'quiet', count: 14, dawn: true },
-    'easter-petals': { label: 'Pale Easter petals drifting with gentle warm light', motifs: ['cream-petal', 'pink-petal', 'mote'], motion: 'flutter', count: 14 }
+    'philippine-ribbons': { label: 'Eight-ray sun glints and flowing paper ribbons', motifs: ['sun', 'civic-ribbon'], motion: 'ribbon', count: 14 }
   };
   const ambientById = {};
   function assignAmbient(preset, ids) { ids.forEach(id => { ambientById[id] = preset; }); }
-  assignAmbient('snow', ['au-christmas-day', 'au-christmas-eve', 'au-boxing-day', 'in-christmas', 'np-christmas', 'bali-christmas']);
-  assignAmbient('pasko-parol', ['ph-christmas-day']);
+  assignAmbient('snow', ['au-christmas-day', 'au-christmas-eve', 'au-boxing-day']);
   assignAmbient('eggs-petals', ['au-easter-sunday']);
-  assignAmbient('salubong-dawn', ['ph-salubong', 'ph-easter']);
-  assignAmbient('easter-petals', ['in-easter', 'bali-easter']);
-  assignAmbient('new-year-streamers', ['au-new-years-day', 'au-new-years-eve', 'ph-new-years-day', 'ph-new-years-eve', 'bali-new-year']);
+  assignAmbient('new-year-streamers', ['au-new-years-day', 'au-new-years-eve']);
   assignAmbient('hearts', ['fun-valentines-day']);
   assignAmbient('bouquet-petals', ['au-mothers-day']);
   assignAmbient('steam-ribbons', ['au-fathers-day']);
@@ -88,7 +82,7 @@
   assignAmbient('four-leaf-clovers', ['fun-st-patricks-day']);
   assignAmbient('grain-leaves', ['fun-world-food-day']);
   assignAmbient('diya-lights', ['in-diwali']);
-  assignAmbient('powder', ['in-holi', 'np-holi']);
+  assignAmbient('powder', ['in-holi']);
   assignAmbient('pongal-harvest', ['in-pongal']);
   assignAmbient('pookkalam-petals', ['in-onam']);
   assignAmbient('modak-marigold', ['in-ganesh-chaturthi']);
@@ -98,19 +92,18 @@
   assignAmbient('dashain-kites', ['np-dashain']);
   assignAmbient('tihar-garlands', ['np-tihar']);
   assignAmbient('baisakh-leaves', ['np-nepali-new-year']);
-  assignAmbient('lotus-ripples', ['np-buddha-jayanti', 'in-buddha-purnima', 'bali-waisak']);
+  assignAmbient('lotus-ripples', ['np-buddha-jayanti']);
   assignAmbient('quiet-night', ['bali-nyepi']);
   assignAmbient('penjor-breeze', ['bali-galungan']);
   assignAmbient('kuningan-ornaments', ['bali-kuningan']);
-  assignAmbient('lanterns', ['ph-lunar-new-year', 'bali-lunar-new-year']);
-  assignAmbient('eid-fitr-lights', ['ph-eid-al-fitr', 'in-eid-al-fitr', 'np-eid-al-fitr', 'bali-eid-fitr']);
-  assignAmbient('eid-adha-light', ['ph-eid-al-adha', 'in-eid-al-adha', 'np-eid-al-adha', 'bali-eid-adha']);
+  assignAmbient('lanterns', ['ph-lunar-new-year']);
+  assignAmbient('eid-fitr-lights', ['ph-eid-al-fitr']);
+  assignAmbient('eid-adha-light', ['ph-eid-al-adha']);
   assignAmbient('sinulog-flow', ['ph-sinulog']);
   assignAmbient('kiping', ['ph-pahiyas']);
   assignAmbient('panagbenga-flowers', ['ph-panagbenga']);
   assignAmbient('kadayawan-harvest', ['ph-kadayawan']);
   assignAmbient('philippine-ribbons', ['ph-independence-day']);
-  window.KB_AMBIENT_PRESETS = Object.freeze({ ...ambientById });
   const C = { cream: '#fffefa', gold: '#d6ac55', orange: '#e2602a', rose: '#c9868d', green: '#758a68', blue: '#6a8597' };
   function motifSvg(body, w = 40, h = 48) { return svg(body, w, h); }
   const petal = colour => motifSvg('<path d="M20 7C40 2 39 31 20 40C1 31 0 2 20 7Z" fill="' + colour + '"/><path d="M20 13q-5 10 0 23" opacity=".35"/>');
@@ -167,7 +160,6 @@
     'mangosteen': motifSvg('<circle cx="20" cy="27" r="16" fill="#897180"/><path d="M20 12Q3 3 9 17Q13 22 20 17Q27 22 31 17Q37 3 20 12Z" fill="' + C.green + '"/><path d="M20 12V6"/>'),
     'sun': motifSvg('<circle cx="20" cy="24" r="7" fill="' + C.gold + '"/>' + [0, 45, 90, 135, 180, 225, 270, 315].map(a => '<path d="M18 13L20 5L22 13" transform="rotate(' + a + ' 20 24)" fill="' + C.gold + '" stroke-width="1"/>').join('')),
     'civic-ribbon': motifSvg('<path d="M2 5Q40 9 20 25T36 44" stroke="' + C.blue + '" stroke-width="4"/><path d="M10 3Q36 13 14 30T29 45" stroke="#b75a4d" stroke-width="2"/>'),
-    'parol': motifSvg('<path d="M20 1v6M9 32l-2 15M31 32l2 15" stroke="' + C.gold + '"/><circle cx="20" cy="22" r="17" fill="' + C.cream + '"/><path d="M20 6L24 17L36 17L26 25L30 37L20 30L10 37L14 25L4 17L16 17Z" fill="' + C.gold + '"/><path d="M20 6V30M4 17L30 37M36 17L10 37" stroke="' + C.orange + '" stroke-width="1"/>')
   };
   function ambientFor(theme) {
     const preset = theme && ambientById[theme.id];
@@ -212,19 +204,19 @@
   function restLimit(visible) { return visible ? 4 : 2; }
   function renderAmbient(layer, design, visible, arrive) {
     layer.dataset.ambientPreset = design.preset;
-    if (design.horizon || design.dawn) {
-      const horizon = document.createElement('div'); horizon.className = 'kb-ambient-horizon kb-ambient-motion' + (design.dawn ? ' is-dawn' : ''); horizon.setAttribute('aria-hidden', 'true'); layer.append(horizon);
+    if (design.horizon) {
+      const horizon = document.createElement('div'); horizon.className = 'kb-ambient-horizon kb-ambient-motion'; horizon.setAttribute('aria-hidden', 'true'); layer.append(horizon);
     }
     const hung = renderHang(design, visible);
     // Anchored ornaments and the horizon keep moving at rest, so they count towards the resting pieces.
-    const restCount = Math.max(0, restLimit(visible) - hung - (design.horizon || design.dawn ? 1 : 0));
+    const restCount = Math.max(0, restLimit(visible) - hung - (design.horizon ? 1 : 0));
     const fill = rest => ambientParticles(design, visible, rest ? restCount : (visible ? design.count : Math.max(4, Math.round(design.count * .55))), rest);
     begin(layer, fill, arrive);
   }
   // Anchored cultural objects belong to the page, not the viewport. They hang from under the top bar
-  // (garlands, lanterns, parol) or stand on the date line (diyas, pots) on the right of the heading,
+  // (garlands, lanterns, kiping) or stand on the date line (diyas, pots) on the right of the heading,
   // behind the board and dockets, so they scroll with Home and never sit on a word or a button.
-  const hanging = new Set(['marigold-string', 'tamiang', 'endongan', 'lantern', 'kiping', 'parol', 'crescent']);
+  const hanging = new Set(['marigold-string', 'tamiang', 'endongan', 'lantern', 'kiping', 'crescent']);
   function renderHang(design, visible) {
     const main = document.querySelector('#app .wall-main');
     if (!main || !design.ornaments?.length) return 0;
@@ -252,7 +244,7 @@
     'puja-flowers': 'shiuli', 'dussehra-leaves': 'compound-leaf', 'dashain-kites': 'kite', 'tihar-garlands': 'marigold', 'baisakh-leaves': 'leaf',
     'lotus-ripples': 'lotus-petal', 'penjor-breeze': 'cane-leaf', 'kuningan-ornaments': 'tamiang', 'lanterns': 'lantern', 'eid-fitr-lights': 'small-crescent',
     'eid-adha-light': 'star', 'sinulog-flow': 'mote', 'kiping': 'marigold-petal', 'panagbenga-flowers': 'flower', 'kadayawan-harvest': 'leaf',
-    'philippine-ribbons': 'sun', 'pasko-parol': 'parol', 'salubong-dawn': 'cream-petal', 'easter-petals': 'cream-petal'
+    'philippine-ribbons': 'sun'
   };
   const EDGE_SPECIAL = {
     // Christmas fairy lights and the Melbourne Cup running rail are drawn as their own repeats.

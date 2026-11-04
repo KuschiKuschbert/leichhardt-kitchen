@@ -53,7 +53,6 @@
 #kb-festive-effects .kb-ambient-particle[data-ambient-motif="night-star"]{--opacity:.48}
 #kb-festive-effects .kb-ambient-particle[data-ambient-motif="steam"]{--opacity:.32}
 .kb-ambient-horizon{position:absolute;inset:0;border:0;--kb-horizon-strength:.6;opacity:.28;background:linear-gradient(90deg,#5164772b,transparent 18%,transparent 82%,#5164772b),linear-gradient(0deg,#6a85972b,transparent 30%);animation:kb-ambient-horizon 14s ease-in-out infinite;transform-origin:center bottom}
-.kb-ambient-horizon.is-dawn{background:linear-gradient(90deg,#e7bd7429,transparent 18%,transparent 82%,#e7bd7429),linear-gradient(0deg,#e7bd7426,transparent 34%)}
 #kb-festive-effects[data-motion-intensity="light"] .kb-ambient-horizon{--kb-horizon-strength:.28;opacity:.15}
 /* Only decorative art receives these inner animations. They keep working when the note scrolls away. */
 #app.motion-gentle .kb-saber-blade,#kb-festive-effects .kb-saber-blade{transform-box:fill-box;transform-origin:center bottom;animation:kb-saber-ignite 7s ease-in-out infinite;animation-delay:var(--kb-saber-delay,0s);will-change:transform,opacity}

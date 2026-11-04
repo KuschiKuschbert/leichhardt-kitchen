@@ -1,6 +1,6 @@
 # Seasonal calendar
 
-The calendar selects one of the 36 approved main festival families, plus Christmas Eve, Boxing Day and New Year’s Eve, the same on every device. Nobody picks a celebration (head chef, 4 November 2026), so the optional designs are not shown. These are celebration dates, not a roster or substitute public-holiday calendar.
+The calendar selects one of the 36 approved main festival families, plus Christmas Eve, Boxing Day and New Year’s Eve, the same on every device. Nobody picks a celebration (head chef, 4 November 2026), so the book keeps only these 39 designs; the optional ones were removed the same day. These are celebration dates, not a roster or substitute public-holiday calendar.
 
 `js/seasonal/calendar.js` is a public, offline date registry. It reads no kitchen records and makes no network requests. Its caller supplies `LK_TIME.day()` after the corrected Queensland clock is ready. The resolver never reads the phone’s current date or timezone. A changed clock or new kitchen day must ask the resolver again.
 

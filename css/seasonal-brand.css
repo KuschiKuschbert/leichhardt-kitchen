@@ -29,7 +29,6 @@
 #kb-festive-effects .complete-particle[data-ambient-motif="powder"]>.kb-brand-art,#kb-festive-effects.effect-powder .complete-particle>.kb-brand-art{color:inherit}
 #kb-festive-effects.effect-snow .complete-particle,#kb-festive-effects .kb-ambient-particle[data-ambient-motif="snow"]{background:var(--kb-festive-paper);border:1px solid color-mix(in srgb,var(--kb-festive-steel-dark) 50%,transparent);box-shadow:none;border-radius:var(--kb-festive-pill)}
 .kb-ambient-horizon{background:linear-gradient(90deg,color-mix(in srgb,var(--kb-festive-steel-dark) 17%,transparent),transparent 18%,transparent 82%,color-mix(in srgb,var(--kb-festive-steel-dark) 17%,transparent)),linear-gradient(0deg,color-mix(in srgb,var(--kb-festive-steel) 18%,transparent),transparent 30%)}
-.kb-ambient-horizon.is-dawn{background:linear-gradient(90deg,color-mix(in srgb,var(--kb-festive-accent) 12%,transparent),transparent 18%,transparent 82%,color-mix(in srgb,var(--kb-festive-accent) 12%,transparent)),linear-gradient(0deg,color-mix(in srgb,var(--kb-festive-beige) 24%,transparent),transparent 34%)}
 .kb-brand-art .kb-saber-blade>:first-child[fill]{fill:var(--kb-festive-accent)}
 .kb-brand-art .kb-saber-blade>:first-child[stroke]{stroke:var(--kb-festive-accent)}
 #app.motion-gentle .kb-horse-leg,#app.motion-gentle .kb-horse-tail,#app.motion-gentle .kb-clover-leaf,#kb-festive-effects .kb-ambient-detail{animation-timing-function:var(--kb-festive-ease)}

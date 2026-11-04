@@ -50,7 +50,15 @@ ok(calendar.forYear(2027).automaticIds.length === 28 && calendar.forYear(2027).m
 });
 ok(calendar.forYear(2028).manualOnlyIds.includes('in-diwali') && active('2028-11-08') !== 'in-diwali', 'annual Hindu dates expire rather than repeating last year\u2019s Gregorian date');
 ok(active('2027-03-20') !== 'ph-eid-al-fitr', 'Eid al-Fitr 2026 proclamation does not leak into 2027');
-ok(!calendar.coverage.perpetualIds.includes('au-australia-day') && !calendar.coverage.perpetualIds.includes('au-summer'), 'automatic mode excludes optional civic and seasonal designs');
+// Nobody picks a celebration (4 Nov 2026), so the catalogue holds exactly the designs the calendar can show, and nothing else.
+{
+  const vm = require('vm'), fs = require('fs'), w = {}; w.window = w;
+  for (const f of ['au-global', 'india', 'nepal', 'bali', 'philippines', 'catalog']) vm.runInNewContext(fs.readFileSync(require.resolve('../js/seasonal/' + f + '.js'), 'utf8'), w);
+  const art = new Set(w.KB_COMPLETE_ART.map(t => t.id)), named = new Set();
+  for (let t = Date.UTC(2025, 0, 1); t < Date.UTC(2033, 0, 1); t += 864e5) (calendar.candidates(new Date(t).toISOString().slice(0, 10)) || []).forEach(r => named.add(r.id));
+  ok(named.size === 39 && art.size === named.size && [...named].every(id => art.has(id)), 'the catalogue holds the ' + named.size + ' designs the calendar can show (2025 to 2032), and only those (' + art.size + ')');
+  ok(w.KB_COMPLETE_ART.every(t => !('scene' in t)), 'no design carries the large scene drawing the book never showed');
+}
 ok(calendar.coverage.timeZone === 'Australia/Brisbane', 'calendar documents the corrected kitchen date boundary');
 const records = calendar.records();
 ok(records.every(row => /^https:\/\//.test(row.source) && row.sourceTitle && row.reviewedOn === '2026-11-03'), 'every annual record carries a review date and source');

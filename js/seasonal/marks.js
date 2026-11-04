@@ -6,7 +6,7 @@
   'use strict';
   const art = window.KB_COMPLETE_ART || [];
 
-  // Approved redraws in the catalogue's own drawing style. The larger scenes are not shown anywhere and stay as they were.
+  // Approved redraws in the catalogue's own drawing style.
   const draw = body => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" data-kb-redrawn="2026-11-03">' + body + '</svg>';
   const holi = { motif: 'Three heaps of gulal colour on a plate, with colour drifting above', body: '<ellipse cx="32" cy="46.4" rx="24" ry="8.5" fill="#fffefa"/><path d="M12.3 45.3C17 31 24.5 31 28.8 45.3Z" fill="#e2602a"/><path d="M25 45.3C29.3 28.3 36.3 28.3 40 45.3Z" fill="#a39a88"/><path d="M35.7 45.3C40 32.5 47.5 32.5 51.7 45.3Z" fill="#fffefa"/><circle cx="18.7" cy="18.7" r="3.5" fill="#e2602a" stroke="none"/><circle cx="33" cy="13.3" r="3" fill="#a39a88" stroke="none"/><circle cx="45.9" cy="20.3" r="3.7" fill="#e2602a" stroke="none"/>' };
   const REDRAWN = {
@@ -15,7 +15,7 @@
     // Tulips in a paper wrap; the ribbon that read as a cross is gone.
     'au-mothers-day': { motif: 'Three tulips in a paper wrap', body: '<path d="M32 53.3V28M32 53.3L21.3 33.3M32 53.3L42.7 33.3" stroke="#758a68" stroke-width="3"/>' + [[32, 21.3], [20.3, 28.3], [43.7, 28.3]].map(([x, y]) => '<path d="M' + (x - 5.3) + ' ' + (y - 5.3) + 'L' + (x - 2.7) + ' ' + (y - 1) + 'L' + x + ' ' + (y - 5.9) + 'L' + (x + 2.7) + ' ' + (y - 1) + 'L' + (x + 5.3) + ' ' + (y - 5.3) + 'V' + (y + 1.6) + 'A5.3 5.3 0 0 1 ' + (x - 5.3) + ' ' + (y + 1.6) + 'Z" fill="#e2602a"/>').join('') + '<path d="M22.9 40.5H41.1L36.3 56H27.7Z" fill="#fffefa"/>' },
     // Gulal heaps instead of the pichkari, which read as a syringe.
-    'in-holi': holi, 'np-holi': holi
+    'in-holi': holi
   };
   art.forEach(item => {
     const redraw = REDRAWN[item.id];
@@ -26,7 +26,6 @@
 
   // Stamps. Colours come from --kb-stamp-* so each place can set the ring for a dark or a light background.
   const F = 'var(--kb-stamp-accent)', P = 'var(--kb-stamp-disc)', S = 'var(--kb-stamp-stone)', G = 'var(--kb-stamp-green)', I = 'var(--kb-stamp-ink)';
-  const star = (x, y, R, r) => { const pts = []; for (let i = 0; i < 10; i++) { const a = (i * 36 - 90) * Math.PI / 180, q = i % 2 ? r : R; pts.push((x + q * Math.cos(a)).toFixed(2) + ',' + (y + q * Math.sin(a)).toFixed(2)); } return '<polygon points="' + pts.join(' ') + '" fill="' + F + '"/>'; };
   const tulip = (x, y) => '<path d="M' + (x - 2) + ' ' + (y - 2) + 'L' + (x - 1) + ' ' + (y - .4) + 'L' + x + ' ' + (y - 2.2) + 'L' + (x + 1) + ' ' + (y - .4) + 'L' + (x + 2) + ' ' + (y - 2) + 'V' + (y + .6) + 'A2 2 0 0 1 ' + (x - 2) + ' ' + (y + .6) + 'Z" fill="' + F + '"/>';
   const leaf = a => '<path transform="rotate(' + a + ' 12 11.6)" d="M12 11.6C10 10.2 7.6 8.6 8.2 6.4C8.7 4.6 11 4.6 12 6.2C13 4.6 15.3 4.6 15.8 6.4C16.4 8.6 14 10.2 12 11.6Z" fill="' + G + '"/>';
   const ring = (n, r, rx, ry, fill, cy = 12) => Array.from({ length: n }, (_, i) => '<ellipse cx="12" cy="' + (cy - r) + '" rx="' + rx + '" ry="' + ry + '" transform="rotate(' + (i * 360 / n) + ' 12 ' + cy + ')" fill="' + fill + '"/>').join('');
@@ -67,19 +66,11 @@
     'ph-panagbenga': ['Panagbenga', '<path d="M12 13V21.4M12 18.2C9.6 18.4 8.2 17 8 15.4C10.2 15.4 11.6 16.6 12 18.2Z"/>' + ring(6, 4.4, 2.4, 3.2, P, 9) + '<circle cx="12" cy="9" r="2.2" fill="' + F + '"/>'],
     'ph-kadayawan': ['Kadayawan', '<circle cx="8.4" cy="10.6" r="2.7" fill="' + F + '"/><circle cx="15.8" cy="10.8" r="2.5" fill="' + F + '"/><circle cx="12.2" cy="9" r="3.1" fill="' + S + '"/><path d="M12.2 5.9C13.4 4.2 15 4 16 4.6C15.2 6 13.6 6.4 12.2 5.9Z" fill="' + P + '" stroke-width="1"/><path d="M4.4 12.6H19.6L17.6 20.4H6.4Z" fill="' + P + '"/><path d="M5.4 15.2H18.6M6 17.8H18M9.6 12.6L9.2 20.4M14.4 12.6L14.8 20.4" stroke-width="1"/>'],
     'ph-independence-day': ['Independence Day, PH', '<path d="M4 4V21"/><path d="M4 5H21V10.4H4Z" fill="#0038A8" stroke-width="1"/><path d="M4 10.4H21V15.8H4Z" fill="#CE1126" stroke-width="1"/><path d="M4 5L11.2 10.4L4 15.8Z" fill="' + P + '" stroke-width="1"/><circle cx="6.8" cy="10.4" r="1.2" fill="#FCD116" stroke="none"/>'],
-    // Pasko keeps its own parol rather than the Santa-chef cap; Boxing Day is a wrapped gift.
-    'parol': ['Pasko', '<circle cx="12" cy="10.4" r="7.6" fill="' + P + '"/>' + star(12, 10.4, 6.2, 2.6) + '<path d="M8.4 17.2L6.8 22.4M12 18V22.8M15.6 17.2L17.2 22.4" stroke="' + F + '" stroke-width="1.4"/>'],
+    // Boxing Day is a wrapped gift.
     'gift': ['Boxing Day', '<path d="M4.6 11H19.4V20.6H4.6Z" fill="' + P + '"/><path d="M3.6 7.8H20.4V11H3.6Z" fill="' + F + '"/><path d="M12 7.8V20.6" stroke="' + F + '" stroke-width="2.2"/><path d="M12 7.8C9.2 3.8 6 5.6 8.4 7.8M12 7.8C14.8 3.8 18 5.6 15.6 7.8"/>'],
   };
-  // Regional styles and calendar companions share their family's stamp. Salubong and Philippine Easter keep their own drawing.
-  const SAME = {
-    'au-christmas-eve': 'au-christmas-day', 'in-christmas': 'au-christmas-day', 'np-christmas': 'au-christmas-day', 'bali-christmas': 'au-christmas-day', 'ph-christmas-day': 'parol', 'au-boxing-day': 'gift',
-    'au-new-years-eve': 'au-new-years-day', 'ph-new-years-day': 'au-new-years-day', 'ph-new-years-eve': 'au-new-years-day', 'bali-new-year': 'au-new-years-day',
-    'in-easter': 'au-easter-sunday', 'bali-easter': 'au-easter-sunday', 'np-holi': 'in-holi',
-    'in-eid-al-fitr': 'ph-eid-al-fitr', 'np-eid-al-fitr': 'ph-eid-al-fitr', 'bali-eid-fitr': 'ph-eid-al-fitr',
-    'in-eid-al-adha': 'ph-eid-al-adha', 'np-eid-al-adha': 'ph-eid-al-adha', 'bali-eid-adha': 'ph-eid-al-adha',
-    'bali-lunar-new-year': 'ph-lunar-new-year', 'in-buddha-purnima': 'np-buddha-jayanti', 'bali-waisak': 'np-buddha-jayanti'
-  };
+  // Calendar companions share their family's stamp; Boxing Day has its own.
+  const SAME = { 'au-christmas-eve': 'au-christmas-day', 'au-boxing-day': 'gift', 'au-new-years-eve': 'au-new-years-day' };
   const glyph = id => GLYPHS[id] || GLYPHS[SAME[id]] || null;
   function svg(id) {
     const g = glyph(id);
