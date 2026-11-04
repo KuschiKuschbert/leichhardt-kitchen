@@ -274,6 +274,38 @@
       (rows.length ? '<ul class="dsh-need-list">' + rows.join('') + '</ul>' : '') + ok + '</section>';
   }
 
+  /* ---------- The week ahead: functions, order cut-offs and how busy each weekday usually is ---------- */
+  function usual() {
+    // written prep lines per weekday, the last 28 finished days of the nightly numbers
+    var rows = state.data.days.slice(-28), sumW = [0, 0, 0, 0, 0, 0, 0], cnt = [0, 0, 0, 0, 0, 0, 0];
+    rows.forEach(function (r) { var d = dow(r.day); sumW[d] += r.p.w; cnt[d]++; });
+    var avg = sumW.map(function (v, i) { return cnt[i] ? v / cnt[i] : null; }), have = avg.filter(function (v) { return v != null; });
+    var mean = have.length ? have.reduce(function (a, b) { return a + b; }, 0) / have.length : 0;
+    return { avg: avg, max: Math.max.apply(null, have.concat([1])), mean: mean };
+  }
+  function weekHTML() {
+    var w = api.week ? api.week() : null;
+    if (!w) return '';
+    var u = usual(), body = w.days.map(function (d, i) {
+      var name = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : DAYS[d.dow];
+      var items = d.fns.map(function (f) {
+        return '<li class="dsh-wk-fn"><span class="dsh-wk-kind">' + (f.draft ? 'Draft' : 'Function') + '</span><a href="#/fn/' + encodeURIComponent(f.id) + '">' + esc(f.name) + '</a>' +
+          (f.start ? ', ' + esc(f.start) : '') + ', ' + (f.guests == null ? 'guests not known yet' : f.guests + ' guests') + '</li>';
+      }).concat((d.cuts || []).map(function (c) { return '<li class="dsh-wk-cut"><span class="dsh-wk-kind">Cut-off</span>' + esc(c.name) + ' ' + esc(c.at) + ', ' + esc(c.what) + '</li>'; }));
+      var a = u.avg[d.dow], busy = a != null && u.mean && a >= u.mean * 1.2;
+      if (busy) items.push('<li class="dsh-wk-busy"><span class="dsh-wk-kind">Usually busy</span>About ' + Math.round(a) + ' prep lines</li>');
+      return '<li class="dsh-wk-day"><p class="dsh-wk-d">' + esc(name) + '<small>' + esc(dayLabel(d.day)) + '</small></p>' +
+        (items.length ? '<ul>' + items.join('') + '</ul>' : '<p class="dsh-wk-none">Nothing booked</p>') +
+        (a != null ? '<span class="dsh-wk-load" role="img" aria-label="' + esc('Usual prep load on ' + DAYS[d.dow] + ': about ' + Math.round(a) + ' lines') + '"><i style="width:' + Math.round(100 * a / u.max) + '%"></i></span>' : '<span></span>') + '</li>';
+    }).join('');
+    var note = w.fns === 'error' ? '<p class="p-err" role="status">Could not load the functions. The days below show cut-offs only.</p>' :
+      w.fns === 'offline' ? '<p class="hint" role="status">No signal. Functions show when the phone is back online.</p>' :
+      w.fns === 'loading' ? '<p class="hint" role="status">Loading the functions...</p>' : w.fns === 'none' ? '<p class="hint">Functions are not loaded on this device.</p>' : '';
+    var cutNote = w.days[0].cuts === null ? '<p class="hint">Cut-offs could not be worked out on this device.</p>' : '';
+    return '<section class="dsh-panel dsh-week" aria-label="The week ahead"><div class="dsh-panel-head"><h3 class="a-ch-h">The week ahead</h3><span class="dsh-wk-links"><a class="dsh-more" href="#/fn">Functions</a><button type="button" class="dsh-more" data-dsh="open" data-t="cutoffs">Cut-offs</button></span></div>' +
+      note + cutNote + '<p class="dsh-legend"><span><i class="dsh-c-load"></i>Usual prep load for the weekday, last 4 weeks</span></p><ul class="dsh-wk">' + body + '</ul></section>';
+  }
+
   /* ---------- the page ---------- */
   function freshHTML() {
     var h = state.health, d = state.data, failed = h && h.status === 'failed' && n(h.at) > d.at;
@@ -299,7 +331,7 @@
     charts = {};
     return head + freshHTML() + '<p class="hint dsh-range">' + esc(dayLabel(cur[0].day) + ' to ' + dayLabel(cur[cur.length - 1].day)) +
       (have < len ? '. Only ' + have + ' finished days so far.' : prev ? ', compared with the ' + len + ' days before.' : '. The nightly run keeps 90 days, so there is no earlier period to compare.') + ' Today is counted tonight.</p>' +
-      headlinesHTML() + tilesHTML(cur, have >= len ? prev : null, len) + needsHTML() +
+      headlinesHTML() + tilesHTML(cur, have >= len ? prev : null, len) + '<div class="dsh-pair">' + needsHTML() + weekHTML() + '</div>' +
       '<div class="dsh-grid">' + lineHTML(cur, len) + reasonsHTML(cur, have >= len ? prev : null) + heatHTML(cur) + itemsHTML(cur, have >= len ? prev : null) + '</div></section>';
   }
 
@@ -351,7 +383,7 @@
     var a = el.getAttribute('data-dsh');
     if (a === 'period') { var v = +el.getAttribute('data-v'); if ([7, 30, 90].indexOf(v) >= 0) { state.period = v; redraw(); } return; }
     if (a === 'refresh') { if (!state.loading) { state.data = undefined; load(true); redraw(); } return; }
-    if (a === 'open') { var t = el.getAttribute('data-t'); if (['insights', 'waste', 'transfers', 'mail', 'minutes'].indexOf(t) >= 0) api.open(t, state.period); }
+    if (a === 'open') { var t = el.getAttribute('data-t'); if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs'].indexOf(t) >= 0) api.open(t, state.period); }
   }
   window.LK_DASH = { API: API, render: render, click: click, reset: reset };
 })();
