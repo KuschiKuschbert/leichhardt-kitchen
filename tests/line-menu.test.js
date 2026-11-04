@@ -1,6 +1,6 @@
-// The line menu (22 Oct 2026, Option B): on a phone, Remove and who wrote a line sit behind a ⋯ on the line, so the item
-// and the amount lead. The sheet dims the page and closes on the backdrop, Cancel and Escape; Remove in it removes the
-// line with Undo, as before. On a laptop the line keeps Remove and the name, and there is no ⋯.
+// The line menu (22 Oct 2026, Option B): on a phone, Remove sits behind a ⋯ on the line, so the item and the amount
+// lead; who wrote it is on the line's small second line (4 Nov 2026, S4). The sheet dims the page and closes on the
+// backdrop, Cancel and Escape; Remove in it removes the line with Undo, as before. On a laptop the line keeps Remove.
 const L = require('./lib');
 const { R, ok } = L.results();
 const vis = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); return !!e && e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden'; }, sel);
@@ -10,7 +10,7 @@ const vis = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); r
   // phone, sous chef Sam (may remove)
   let p = await L.open(b, '#/prep', { wait: 1500 });
   ok(await vis(p, '.nb-row .nb-more'), 'phone: the line shows ⋯');
-  ok(!(await vis(p, '.nb-row:has(.nb-more) .nb-x')) && !(await vis(p, '.nb-row:has(.nb-more) .nb-wrote')), 'phone: Remove and the name are not in the line');
+  ok(!(await vis(p, '.nb-row:has(.nb-more) .nb-x')) && await vis(p, '.nb-row:has(.nb-more) .nb-meta .nb-wrote'), 'phone: Remove is not in the line; the name is, on its second line');
   const id = await p.evaluate(() => document.querySelector('.nb-row .nb-more').getAttribute('data-id'));
   await p.click('.nb-row .nb-more'); await L.settle(p, 200);
   ok(await vis(p, '#lm-sheet .sheet') && await vis(p, '#lm-sheet .sheet-bg'), 'phone: ⋯ opens a sheet over a dimmed page');

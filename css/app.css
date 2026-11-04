@@ -432,7 +432,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-box svg { width: 33px; height: 33px; }
 .nb-tt { cursor: pointer; }
 /* Not sent (27 Oct 2026): in a slot inside the words (.nb-mk), so on a phone it wraps with them like Urgent and never
-   narrows them (who wrote a line, .nb-by, is hidden there). Shown only while the No signal or Not sent yet strip is up. */
+   narrows them. Shown only while the No signal or Not sent yet strip is up. */
 .nb-unsent, .nb-held { display: inline-block; margin-left: 0.3rem; vertical-align: 0.25em; padding: 0 0.4rem; border-radius: 999px; background: var(--accent-ink); color: #fff; font: 700 0.75rem/1.5 var(--body); white-space: nowrap; }
 /* the mark's room while the strip is up, so a tick only fills it and no row moves: the same box, unseen, and its words
    come from CSS so the row's text stays clean */
@@ -441,8 +441,13 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-box[aria-pressed="true"] { color: var(--done); }
 .nb-box:disabled { opacity: 0.45; cursor: default; }
 .nb-t { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+/* One line layout (S4, 4 Nov 2026, as drawn in the agreed work pages design): the words, then a small second line
+   with who and when (section or venue where the list is not grouped by it), on all four lists. Always drawn, so a
+   tick that changes it never moves a row. */
+.nb-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.nb-meta { display: block; min-height: 1.35em; font: 400 0.75rem/1.35 var(--body); color: var(--muted); overflow-wrap: anywhere; }
+.nb-row.is-done .nb-meta { text-decoration: none; }
 .nb-q { font-size: 1.25rem; color: var(--muted); margin-left: 0.3rem; }
-.nb-by { flex: 0 0 auto; font-family: var(--body); font-size: 0.75rem; color: var(--muted); }
 .nb-go { flex: 0 0 auto; font-family: var(--display); font-weight: 700; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); text-decoration: none; border-bottom: 1.5px dotted var(--accent-ink); }
 .nb-x { flex: 0 0 auto; min-height: 44px; padding: 0 0.5rem; border: 0; background: none; font-family: var(--body); font-weight: 600; font-size: 0.8125rem; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .nb-row.is-done .nb-t { text-decoration: line-through; text-decoration-thickness: 2px; color: #6b665c; }
@@ -494,7 +499,6 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
   .nb-nav .p-dateinput { flex: 1 1 7rem; min-width: 0; }
   .nb-title { font-size: 2.6rem; }
   .nb-row { font-size: 1.5rem; }
-  .nb-by { display: none; }
 }
 
 /* badges, insights and charts */
@@ -751,9 +755,8 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 /* Wastage log */
 .w-rule { margin: 0 0 8px; padding: 0 12px; font-size: 0.8125rem; color: var(--muted); }
 .w-row { align-items: start; }
-.w-time, .w-sec, .w-rs { font-family: var(--body); }
+.w-time, .w-rs { font-family: var(--body); }
 .w-time { min-width: 3.4rem; font-variant-numeric: tabular-nums; font-size: 0.875rem; color: var(--muted); }
-.w-sec { font-size: 0.75rem; }
 .w-amt { font-weight: 700; white-space: nowrap; }
 .w-rs { display: inline-block; padding: 0 6px; border: 1.5px solid var(--ink); border-radius: 999px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
 .w-act { display: block; font-size: 0.8125rem; color: var(--muted); }
@@ -771,7 +774,6 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .tr-field .chiprow:empty, #tr-often:empty { display: none; }
 .tr-way { display: inline-block; padding: 0 7px; border: 1.5px solid var(--ink); border-radius: 999px; font: 700 0.75rem var(--body); letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; vertical-align: 0.1em; }
 .tr-way-out { background: var(--ink); color: #fff; }
-.tr-who { display: block; font-family: var(--body); font-size: 0.875rem; font-weight: 600; }
 @media (min-width: 720px) { .tr-two { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem 1rem; } }
 
 /* four dockets on the landing wall */
@@ -989,13 +991,14 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .sheet-o span { font-size: 0.875rem; color: var(--muted); }
 .sheet-o[aria-checked="true"] { background: var(--hit); }
 .sheet-o[aria-checked="true"] strong::after { content: '  \2713'; color: var(--accent-ink); }
-/* the line menu (22 Oct 2026, Option B): on a phone Remove and who wrote the line sit behind the ⋯ */
+/* the line menu (22 Oct 2026, Option B): on a phone Remove sits behind the ⋯; who wrote the line is on its second
+   line since 4 Nov 2026 (S4), on every width */
 .nb-more { display: none; flex: 0 0 auto; width: 44px; min-height: 44px; padding: 0; border: 0; background: none; font: 700 1.25rem var(--body); letter-spacing: 0.05em; color: var(--muted); cursor: pointer; }
 .lm-who { margin: 0 0 6px; font-size: 0.9375rem; color: var(--muted); }
 .lm-act strong { color: var(--small-ink); }
 @media (max-width: 719px) {
   .nb-more { display: inline-flex; align-items: center; justify-content: center; }
-  .nb-row:has(.nb-more) .nb-wrote, .nb-row:has(.nb-more) .nb-x, .nb-row:has(.nb-more) > .p-x { display: none; }
+  .nb-row:has(.nb-more) .nb-x, .nb-row:has(.nb-more) > .p-x { display: none; }
 }
 .sheet-x { width: 100%; margin-top: 12px; }
 html.sheet-open, html.sheet-open body { overflow: hidden; }
@@ -1513,20 +1516,18 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 @media (max-width: 359px) {
   #prep-root.is-book .nb-left .nb-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 0.2rem 0.35rem; align-items: start; padding-top: 0.5rem; padding-bottom: 0.5rem; }
   #prep-root.is-book .nb-left .nb-box { grid-column: 1; grid-row: 1; align-self: start; margin: 0; }
-  #prep-root.is-book .nb-left .nb-t { grid-column: 2; grid-row: 1; }
+  #prep-root.is-book .nb-left .nb-main { grid-column: 2; grid-row: 1; }
   #prep-root.is-book .nb-left .nb-q { display: block; margin: 0.2rem 0 0; white-space: normal; }
   #prep-root.is-book .nb-left .nb-marks { margin: 0.2rem 0 0; vertical-align: baseline; }
-  #prep-root.is-book .nb-left .nb-by { display: none; }
   #prep-root.is-book .nb-left .nb-acts { grid-column: 2; grid-row: 2; justify-content: flex-start; flex-wrap: wrap; gap: 0; }
   #prep-root.is-book .nb-left .nb-acts .nb-star + * { margin-left: 0; }
 }
 @media (max-width: 479px) {
   html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 0.2rem 0.35rem; align-items: start; padding-top: 0.5rem; padding-bottom: 0.5rem; }
   html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-box { grid-column: 1; grid-row: 1; align-self: start; margin: 0; }
-  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-t { grid-column: 2; grid-row: 1; }
+  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-main { grid-column: 2; grid-row: 1; }
   html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-q { display: block; margin: 0.2rem 0 0; white-space: normal; }
   html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-marks { margin: 0.2rem 0 0; vertical-align: baseline; }
-  html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-by { display: none; }
   html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-acts { grid-column: 2; grid-row: 2; justify-content: flex-start; flex-wrap: wrap; gap: 0; }
   html[data-text="xlarge"] #prep-root.is-book .nb-left .nb-acts .nb-star + * { margin-left: 0; }
 }
