@@ -57,12 +57,15 @@ jobs:
           SAME: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
           HOLD: ${{ contains(github.event.pull_request.labels.*.name, 'hold') }}
         run: |
+          # GitHub calls are tried three times, 10 and 20 seconds apart: one GitHub error must not cost a pull request its
+          # auto-merge or stall the queue (4 Nov 2026, a GraphQL outage did both).
+          retry() { for i in 1 2 3; do "$@" && return 0; [ "$i" = 3 ] || sleep $((i * 10)); done; return 1; }
           if [ "$SAME" != "true" ]; then echo "From a fork: never merged automatically."; exit 0; fi
           if [ "$DRAFT" = "true" ] || [ "$HOLD" = "true" ]; then
             gh pr merge "$PR" -R "$REPO" --disable-auto 2>/dev/null || true
             echo "#$PR is a draft or held: auto-merge off."
           else
-            gh pr merge "$PR" -R "$REPO" --auto --squash
+            retry gh pr merge "$PR" -R "$REPO" --auto --squash
             echo "#$PR is ready: it merges when Click tests pass and it is up to date."
           fi
 
@@ -88,9 +91,12 @@ jobs:
       - name: Switch auto-merge on for pull requests already ready
         if: steps.token.outputs.ok == 'true'
         run: |
+          # GitHub calls are tried three times, 10 and 20 seconds apart: one GitHub error must not cost a pull request its
+          # auto-merge or stall the queue (4 Nov 2026, a GraphQL outage did both).
+          retry() { for i in 1 2 3; do "$@" && return 0; [ "$i" = 3 ] || sleep $((i * 10)); done; return 1; }
           for n in $(gh pr list -R "$REPO" --base main --state open --limit 50 --json number,isDraft,labels,isCrossRepository \
               --jq '.[] | select(.isDraft|not) | select(.isCrossRepository|not) | select([.labels[].name] | index("hold") | not) | .number'); do
-            gh pr merge "$n" -R "$REPO" --auto --squash && echo "#$n: auto-merge on."
+            retry gh pr merge "$n" -R "$REPO" --auto --squash && echo "#$n: auto-merge on." || echo "#$n: GitHub refused three times; run this again later."
           done
 
   queue:
@@ -120,7 +126,10 @@ jobs:
       - name: Move the queue on by one
         if: steps.token.outputs.ok == 'true'
         run: |
-          gh pr list -R "$REPO" --base main --state open --limit 50 \
+          # GitHub calls are tried three times, 10 and 20 seconds apart: one GitHub error must not cost a pull request its
+          # auto-merge or stall the queue (4 Nov 2026, a GraphQL outage did both).
+          retry() { for i in 1 2 3; do "$@" && return 0; [ "$i" = 3 ] || sleep $((i * 10)); done; return 1; }
+          retry gh pr list -R "$REPO" --base main --state open --limit 50 \
             --json number,isDraft,labels,mergeStateStatus,autoMergeRequest,isCrossRepository,createdAt \
             --jq 'sort_by(.createdAt) | .[] | select(.isDraft|not) | select(.isCrossRepository|not)
                   | select(.autoMergeRequest != null) | select([.labels[].name] | index("hold") | not)
@@ -129,14 +138,16 @@ jobs:
           while read -r n state; do
             case "$state" in
               CLEAN|HAS_HOOKS|UNSTABLE) echo "#$n is merging."; exit 0 ;;
-              UNKNOWN) echo "#$n is still being worked out by GitHub: wait."; exit 0 ;;
               DIRTY) echo "#$n has a conflict: skipped until its session fixes it."; continue ;;
             esac
             set +e; gh pr checks "$n" -R "$REPO" --required >/dev/null 2>&1; c=$?; set -e
             if [ "$c" = "8" ]; then echo "#$n is testing: wait."; exit 0; fi
+            # GitHub has not worked out whether it merges (it can stay so for hours after an outage): skip it this time
+            # instead of holding every pull request behind it. Testing ones were already waited for above.
+            if [ "$state" = "UNKNOWN" ]; then echo "#$n: GitHub cannot say yet whether it merges; skipped this time."; continue; fi
             if [ "$c" != "0" ]; then echo "#$n failed Click tests: skipped until its session fixes it."; continue; fi
             if [ "$state" = "BEHIND" ]; then
-              gh api -X PUT "repos/$REPO/pulls/$n/update-branch" >/dev/null && echo "#$n brought up to date: it tests, then merges."
+              retry gh api -X PUT "repos/$REPO/pulls/$n/update-branch" >/dev/null && echo "#$n brought up to date: it tests, then merges." || echo "#$n: GitHub refused to bring it up to date three times."
               exit 0
             fi
             echo "#$n is $state: skipped."
