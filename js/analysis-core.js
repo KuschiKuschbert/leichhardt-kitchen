@@ -115,7 +115,7 @@
     return out.sort(function (a, b) { return (a.assessment && a.assessment.status === 'in-training' ? 0 : 1) - (b.assessment && b.assessment.status === 'in-training' ? 0 : 1) || b.ticks - a.ticks || String(a.person.name || '').localeCompare(String(b.person.name || '')) || a.section.localeCompare(b.section); });
   }
   var api = { key: key, daily: daily, aggregate: aggregate, resolve: resolve, identity: identity, sources: sources,
-    linkQueue: linkQueue, trainingRecent: trainingRecent, trainingSections: trainingSections, sectionAssessment: sectionAssessment, trainingTicks: trainingTicks, trainingQueue: trainingQueue };
+    prepPerson: prepPerson, linkQueue: linkQueue, trainingRecent: trainingRecent, trainingSections: trainingSections, sectionAssessment: sectionAssessment, trainingTicks: trainingTicks, trainingQueue: trainingQueue };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else window.LK_ANALYSIS = api;
 })();

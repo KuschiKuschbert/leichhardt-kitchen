@@ -37,7 +37,7 @@ assert.equal((await get('current')).generation, generation);
 // The Dashboard record: counted like Insights and Wastage, published with the same generation, no prices.
 const K2 = db.collection('kitchens').doc('000001'), d2 = '2026-10-29', t0 = Date.parse(d2 + 'T00:00:00Z');
 await db.recursiveDelete(K2);
-const prep = { a: { text: 'Slaw', station: 'Larder', addedAt: t0, done: true, doneAt: t0 + 90 * 60000 }, b: { text: 'Steak', station: 'Grill', addedAt: t0 },
+const prep = { a: { text: 'Slaw', station: 'Larder', addedAt: t0, done: true, doneAt: t0 + 90 * 60000, doneById: 'cy' }, b: { text: 'Steak', station: 'Grill', addedAt: t0 },
   c: { text: 'Rolled', station: 'Grill', rolled: 1 }, d: { text: 'Ahead', rolled: 1, ahead: true }, e: { text: 'Gone', deleted: true, done: true },
   f: { text: 'Practice', tst: true, done: true }, g: { text: 'Herbs', addedAt: t0, done: true, doneAt: t0 + 30 * 60000 } };
 for (const [id, x] of Object.entries(prep)) await K2.collection('days').doc(d2).collection('items').doc(id).set(x);
@@ -56,7 +56,7 @@ const board = (await K2.collection('analysis').doc('dashboard').get()).data();
 assert.equal(board.generation, (await K2.collection('analysis').doc('current').get()).data().generation, 'The dashboard publishes with its generation.');
 assert.deepEqual(board.days.map(x => x.day), ['2026-10-28', '2026-10-29', '2026-10-30'], 'One row for every finished day, today left out.');
 const row = board.days[1];
-assert.deepEqual(row.p, { n: 5, w: 3, t: 2, r: 1, sec: { Larder: 1, Grill: 1, General: 1 }, mins: { Larder: [90], General: [30] } }, 'Prep counts match Insights.');
+assert.deepEqual(row.p, { n: 5, w: 3, t: 2, r: 1, sec: { Larder: 1, Grill: 1, General: 1 }, mins: { Larder: [90], General: [30] }, who: { cy: 1 } }, 'Prep counts match Insights, with ticks per person.');
 assert.deepEqual(row.w, { n: 3, reason: { excess: 2, expired: 1 }, sec: { Larder: 2, General: 1 }, items: [{ t: 'Brisket', u: 'kg', a: 2, n: 2 }, { t: 'Rolls', u: 'each', a: 0, n: 1 }] }, 'Waste counts lines and amounts.');
 assert.deepEqual(row.x, { out: 1, in: 1 }, 'Transfers count out and in, not deleted lines.');
 assert.equal(JSON.stringify(board).includes('price'), false);
