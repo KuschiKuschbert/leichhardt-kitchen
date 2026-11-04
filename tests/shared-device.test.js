@@ -69,4 +69,4 @@ async function unlock(p, id = 'sam', pin = '1111') {
   ok(await p.evaluate(() => LK_DEVICE.mode() === 'shared' && !LK_DEVICE.ownerId() && !LK_PREP.privateAccess() && !LK_PREP.state.user), 'Settings changes the explicit profile and ends the previous PIN and Google access');
   ok(!p.errors.length, 'shared Settings: no page errors ' + p.errors.join(' | ')); await p.context().close();
   await b.close(); L.report(R);
-})().catch(e => { console.error(e); process.exitCode = 1; });
+})().catch(e => { console.error(e); process.exit(1); });

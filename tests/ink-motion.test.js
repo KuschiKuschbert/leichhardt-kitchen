@@ -106,4 +106,4 @@ const retainedSearch = p => p.evaluate(() => document.getElementById('find') ===
   } finally { await b.close(); }
   R.forEach(line => console.log(line));
   if (R.some(line => line.startsWith('FAIL'))) process.exitCode = 1;
-})().catch(error => { R.forEach(line => console.log(line)); console.error(error); process.exitCode = 1; });
+})().catch(error => { R.forEach(line => console.log(line)); console.error(error); process.exit(1); });

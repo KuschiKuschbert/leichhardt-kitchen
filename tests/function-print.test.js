@@ -185,4 +185,4 @@ async function a4(p, filename) {
     await browser.close();
   }
   L.report(R);
-})().catch(e => { console.error(e); process.exitCode = 1; });
+})().catch(e => { console.error(e); process.exit(1); });
