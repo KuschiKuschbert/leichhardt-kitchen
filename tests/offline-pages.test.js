@@ -197,6 +197,7 @@ async function fits(p, what, back) {
   await until(p, () => !!document.querySelector('[data-mg="chip"]'));
   await cold(p);
   await go(p, '#/manage/draw/new/burger/plate');
+  await L.dwAdd(p);
   await until(p, () => !!document.querySelector('.dw-start'));
   await p.click('.dw-start summary'); await L.settle(p, 300);
   t = await text(p, '.dw-start');

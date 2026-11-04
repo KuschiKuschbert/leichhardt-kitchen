@@ -2234,6 +2234,13 @@
   /* Start here, numbered in place (3 Nov 2026, work pages redesign A): the three lines to do first carry 1, 2 and 3 on
      the list itself, with why when the line does not say it already (Usually takes, Waiting since). Same picks as
      before (startHere()), the same rule for when they show: today, for someone who may tick, 4 or more open lines. */
+  /* The page's add button (work pages redesign A, 3 Nov 2026, as drawn in the agreed options page): one full-width bar
+     with a plus, docked above the tab bar on a phone (.wk-dock), in the page header on wider screens, the count beside it.
+     The same on Prep, Orders, Wastage and Transfers. */
+  function dockBtn(cls, p, label) {
+    return '<div class="wk-dock"><button type="button" class="btn dark ' + cls + '" data-p="' + p + '" aria-haspopup="dialog">' +
+      '<svg class="wk-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>' + label + '</button></div>';
+  }
   function startNums(live) {
     var out = {};
     if (!can('tick') || S.date !== dayNow() || S.tab === FN_TAB) return out;
@@ -4367,7 +4374,7 @@
     if (offNote) todayEmpty = '';
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
       // Done today sits behind the count (3 Nov 2026, work pages redesign A): a tap on "3 of 13 done" goes to it
-      (S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : doneN ? '<button type="button" class="nb-prog nb-progbtn" data-p="donejump" aria-label="' + doneN + ' of ' + live.length + ' done. Show Done today">' + doneN + ' of ' + live.length + ' done</button>' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>') + (add ? '<button type="button" class="btn dark nb-addline" data-p="write" aria-haspopup="dialog">Add a line</button>' : '') + '</header>' +
+      (S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : doneN ? '<button type="button" class="nb-prog nb-progbtn" data-p="donejump" aria-label="' + doneN + ' of ' + live.length + ' done. Show Done today">' + doneN + ' of ' + live.length + ' done</button>' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>') + (add ? dockBtn('nb-addline', 'write', 'Add a line') : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
       '<div class="nb-body">' + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + offNote + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       (addNote || removed.length && can('del') ? '<div class="nb-foot">' + addNote + (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div>' : '') + '</section>';
@@ -5575,7 +5582,7 @@
     return whoTopHTML() + tabs +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Order list</h2><span class="nb-date">' + esc(longDate(S.ordDate)) + '</span></div>' +
       (S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') +
-      (add ? '<button type="button" class="btn dark nb-addline" data-p="o-write" aria-haspopup="dialog">Add a line</button>' : '') + '</header>' +
+      (add ? dockBtn('nb-addline', 'o-write', 'Add to the order') : '') + '</header>' +
       (onToday ? cutOrdHTML() : '') +
       (can('add') || S.ordDate !== today ? '' : '<p class="hint o-ro">You can read the order list but not write in it.</p>') +
       closeoutHTML(null, S.ordDate) +
@@ -5898,15 +5905,16 @@
       var r = S.wReview;
       rv = '<button type="button" class="btn w-rvbtn" data-p="w-rv" aria-haspopup="dialog">End-of-day review<small>' + (!r ? (S.wReviewErr ? 'Could not load it' : 'Loading...') : r.reviewBy ? 'Saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' ' + clock(r.reviewAt) : '') : 'Not written yet') + '</small></button>';
     }
-    var acts = add || rv ? '<div class="w-acts">' + (add ? '<button type="button" class="btn dark w-logbtn" data-p="w-log" aria-haspopup="dialog">Log waste</button>' : '') + rv + '</div>' : '';
+    // Log waste docked like every page's add button; the review is one button at the foot of the entries (as drawn)
+    var rvFoot = rv ? '<div class="w-rvfoot">' + rv + '<p class="hint">Chefs only. What you write shows on the next prep list.</p></div>' : '';
     var logSheet = add && S.wLog ? '<div class="sheet-bg" data-p="w-log-close"></div><div class="sheet w-sheet" role="dialog" aria-modal="true" aria-labelledby="w-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="w-log-h">Log waste</h3>' +
       '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' + add + '<button type="button" class="btn sheet-x" data-p="w-log-close">Close</button></div>' : '';
     var rvSheet = rv && S.wRv ? '<div class="sheet-bg" data-p="w-rv-close"></div><div class="sheet w-sheet" role="dialog" aria-modal="true" aria-labelledby="w-rv-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="w-rv-h">End-of-day review</h3>' +
       pageReviewHTML() + '<button type="button" class="btn sheet-x" data-p="w-rv-close">Close</button></div>' : '';
     return whoTopHTML() +
       '<section class="nb-page o-page w-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + '</span></div>' +
-      (S.wState === 'offline' || S.wState !== 'ok' && !live.length ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div>') + '</header>' +
-      sum + acts + (can('add') ? '' : '<p class="hint w-ro">You can read the wastage log but not write in it.</p>') + '<div class="nb-body">' + body + '</div></section>' +
+      (S.wState === 'offline' || S.wState !== 'ok' && !live.length ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div>') + (add ? dockBtn('w-logbtn', 'w-log', 'Log waste') : '') + '</header>' +
+      sum + (can('add') ? '' : '<p class="hint w-ro">You can read the wastage log but not write in it.</p>') + '<div class="nb-body">' + body + '</div>' + rvFoot + '</section>' +
       (wAll() ? '<p class="hint w-past">Past days and earlier reviews are in the <a href="#/admin" data-p="a-go-waste">admin panel, Wastage</a>.</p>' : '') + logSheet + rvSheet + sheetHTML();
   }
   function pageReviewHTML() {
@@ -6272,12 +6280,12 @@
       earlierNote + (openRows.length ? '<ul class="nb-rows tr-outstanding">' + openRows.map(xRow).join('') + '</ul>' : '') + todayNote +
       (!openRows.length && !earlierNote && !todayNote ? '<p class="nb-empty">Nothing is out. When another venue takes stock, or we take some from them, log it here so it comes back.</p>' : '');
     var doneHTML = done.length ? '<h3 class="a-ch-h">Done today</h3><ul class="nb-rows tr-done">' + done.map(xRow).join('') + '</ul>' : '';
-    var acts = add ? '<div class="w-acts"><button type="button" class="btn dark tr-logbtn" data-p="tr-log" aria-haspopup="dialog">Log a transfer</button></div>' : '<p class="hint w-ro">You can read the transfer list but not write in it.</p>';
+    var acts = add ? '' : '<p class="hint w-ro">You can read the transfer list but not write in it.</p>';
     var sheet = add && S.xLog ? '<div class="sheet-bg" data-p="tr-log-close"></div><div class="sheet tr-sheet" role="dialog" aria-modal="true" aria-labelledby="tr-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="tr-log-h">Log a transfer</h3>' +
       '<p class="w-rule">Stock shared with the other venues, both ways. Write the amount and unit, not a price.</p>' + add + '<button type="button" class="btn sheet-x" data-p="tr-log-close">Close</button></div>' : '';
     return whoTopHTML() +
       '<section class="nb-page o-page tr-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Transfers</h2><span class="nb-date">' + esc(longDate(S.xDate)) + (sub ? ' &middot; ' + esc(sub) : '') + '</span></div>' +
-      (S.xState === 'offline' || S.xState !== 'ok' && !live.length ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' transfer' : ' transfers') + '</div>') + '</header>' +
+      (S.xState === 'offline' || S.xState !== 'ok' && !live.length ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' transfer' : ' transfers') + '</div>') + (add ? dockBtn('tr-logbtn', 'tr-log', 'Log a transfer') : '') + '</header>' +
       acts + '<div class="nb-body">' + stillOut + doneHTML + '</div></section>' +
       (wAll() ? '<p class="hint w-past">Past days and the totals per venue are in the <a href="#/admin" data-p="tr-go-admin">admin panel, Transfers</a>.</p>' : '') + sheet;
   }

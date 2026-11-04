@@ -29,8 +29,8 @@ async function log(p, text, amt, unit, before) {
   await L.wLog(p);
 
   ok(await p.getAttribute('#w-amt', 'placeholder') === 'Amount (kg)', 'waste: the amount box says the unit (' + await p.getAttribute('#w-amt', 'placeholder') + ')');
-  // 3 Nov 2026 (work pages redesign A): Log waste sits above the day's entries, and the form is in its sheet
-  ok(await p.evaluate(() => document.querySelector('.w-logbtn').getBoundingClientRect().top < document.querySelector('.w-row').getBoundingClientRect().top && !!document.querySelector('.w-sheet #w-text')), 'waste: Log waste sits above the day\'s entries and opens the form');
+  // 3 Nov 2026 (work pages redesign A): Log waste is docked above the tab bar, and the form is in its sheet
+  ok(await L.docked(p, '.w-logbtn') && await p.evaluate(() => !!document.querySelector('.w-sheet #w-text')), 'waste: Log waste is docked above the tab bar and opens the form');
 
   await log(p, 'Chips', '500', 'kg');
   ok((await saved(p, 'Chips')).length === 1 && /500 kg\? Check the unit/.test(await txt(p, '.p-toast') || ''), 'waste: 500 kg asks first and saves nothing new');
