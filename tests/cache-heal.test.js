@@ -35,7 +35,7 @@ const toldNotRepaired = p => p.evaluate(() => window.__toasts.some(t => /could n
   ok(await loaded, 'a broken offline copy reloads the page');
   await L.settle(p, 1200);
   ok(await p.evaluate(key => !window.__mark && localStorage.getItem(key) === null && !!localStorage.getItem('lk.fsheal'), TARGET_CACHE), 'the offline copy is gone and the day is noted');
-  ok(await p.$('.p-name, .p-list, #p-text') !== null, 'the prep list opens again after the reload');
+  ok(await p.$('.p-name, .p-list, #p-text, [data-p="write"]') !== null, 'the prep list opens again after the reload');
   ok(await p.evaluate(() => localStorage.getItem('lk.prep.pin')) === L.PIN, 'the kitchen PIN is kept');
   await boom(p);
   await L.settle(p, 1500);

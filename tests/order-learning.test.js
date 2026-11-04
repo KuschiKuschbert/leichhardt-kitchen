@@ -20,6 +20,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
 
   // suggestions and usual amounts from what was learned
   p = await L.open(b, '#/orders', { who: 'ann', wait: 1800, extra });
+  await L.oLog(p);   // the regulars are in the Add a line sheet (3 Nov 2026)
   ok(/Lemons/.test(await txt(p, '.w-often')) && /2 kg/.test(await txt(p, '.w-often')), 'regulars: an item learned on this weekday is suggested, with its usual amount');
   ok(!/Old thing/.test(await txt(p, '.w-often')), 'regulars: a hidden learned item is not suggested');
   await p.click('#o-text');

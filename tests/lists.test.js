@@ -74,7 +74,7 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   ok(p.errors.length === 0, 'prep: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // orders: ticked line keeps its place, toast with Undo; regulars say Tap to add; Everything to order has Undo
+  // orders: ticked line keeps its place, toast with Undo; regulars say Tap to add; a line waiting from earlier days has Undo
   const oh = {};
   for (let k = 1; k <= 6; k++) oh[fsKey(['orders', past(k), 'lines', 'h' + k])] = { text: 'Eggs', qty: '15 dozen', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - k * 86400000, ordered: true, deleted: false };
   oh[fsKey(['orders', past(1), 'lines', 'old1'])] = { text: 'Cream', qty: '2 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 86400000, ordered: false, deleted: false };
@@ -89,19 +89,23 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   await L.settle(p, 300);
   s = await store(p);
   ok(s[fsKey(['orders', today, 'lines', 'o1'])].ordered === false, 'orders: Undo takes the tick back');
+  // the regulars and their one tap are in the Add a line sheet (3 Nov 2026, work pages redesign A)
+  await L.oLog(p);
   ok(/Tap to add/.test(await p.evaluate(() => (document.querySelector('.w-often .nb-ql') || {}).textContent || '')), 'orders: regulars say Tap to add');
   await p.click('[data-p="oreg"]');
   await L.settle(p, 300);
   ok(/^Added to the order list\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'orders: one tap regular says Added to the order list (' + await txt(p, '.p-toast') + ')');
-  await p.click('[data-p="oview"][data-v="all"]');
-  await L.settle(p, 600);
-  await p.evaluate(() => { const g = [...document.querySelectorAll('[data-p="ogroup"]')].find(b => /Cream/.test(b.getAttribute('aria-label'))); g.click(); });
+  await p.keyboard.press('Escape'); await L.settle(p, 300);
+  // Waiting from earlier days (one list, 3 Nov 2026): yesterday's Cream rolled over; its tick says Ordered, with Undo
+  const cid = 'r' + today.replace(/-/g, '') + '-old1';
+  await L.waitFor(p, id => !!document.querySelector('.o-wait [data-p="otick"][data-id="' + id + '"]'), cid, 6000);
+  await p.click('.o-wait [data-p="otick"][data-id="' + cid + '"]');
   await L.settle(p, 400);
-  ok(/^Ordered( \d+ lines)?\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'orders: Everything to order tick says Ordered (' + await txt(p, '.p-toast') + ')');
+  ok(/^Ordered\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'orders: a line waiting from earlier days ticks with Ordered and Undo (' + await txt(p, '.p-toast') + ')');
   await p.click('.p-toast-btn');
   await L.settle(p, 400);
   s = await store(p);
-  ok(s[fsKey(['orders', past(1), 'lines', 'old1'])].ordered === false, 'orders: Everything to order Undo works');
+  ok(s[fsKey(['orders', today, 'lines', cid])].ordered === false, 'orders: and Undo takes it back');
   ok(p.errors.length === 0, 'orders: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
