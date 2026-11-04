@@ -58,25 +58,29 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(p.errors.length === 0, 'waste: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // kitchen PIN: the name screen has no forget button any more; the admin Tools tab has it, with two taps
+  // kitchen PIN: the name screen has no forget button; Settings, This phone has it for the head chef (moved from the
+  // admin Tools tab, 3 Nov 2026), with two taps
   p = await L.open(b, '#/prep', { who: '', wait: 1500 });
-  ok(await p.$('[data-p="pin-forget"]') === null, 'who screen: no "Use a different kitchen PIN" button for staff');
+  ok(await p.$('[data-p="pin-forget"]') === null && await p.$('[data-act="stkpin"]') === null, 'who screen: no "Use a different kitchen PIN" button for staff');
   await p.context().close();
   p = await L.open(b, '#/admin', { admin: true, wait: 1800 });
   await L.adminTab(p, 'tools');
   await L.settle(p, 200);
-  ok(/Use a different kitchen PIN/.test(await txt(p, '[data-p="pin-forget"]')), 'admin Tools: button reads "Use a different kitchen PIN on this device"');
-  await p.click('[data-p="pin-forget"]');
+  ok(await p.$('[data-p="pin-forget"]') === null && /open Settings, This phone/.test(await txt(p, '.a-forget')), 'admin Tools: says the button is in Settings now');
+  await p.evaluate(() => { location.hash = '#/settings'; }); await L.settle(p, 400);
+  await L.setRow(p, 'kpin');
+  ok(/Use a different kitchen PIN/.test(await txt(p, '[data-act="stkpin"]')), 'Settings: button reads "Use a different kitchen PIN on this device"');
+  await p.click('[data-act="stkpin"]');
   await L.settle(p, 150);
-  ok(/Tap again/.test(await txt(p, '[data-p="pin-forget"]')), 'admin Tools: first tap asks for a second tap');
-  ok(await p.evaluate(() => localStorage.getItem('lk.prep.pin')) === L.PIN, 'admin Tools: PIN still kept after one tap');
+  ok(/Tap again/.test(await txt(p, '[data-act="stkpin"]')), 'Settings: first tap asks for a second tap');
+  ok(await p.evaluate(() => localStorage.getItem('lk.prep.pin')) === L.PIN, 'Settings: PIN still kept after one tap');
   await L.settle(p, 4300);
-  ok(/Use a different kitchen PIN/.test(await txt(p, '[data-p="pin-forget"]')), 'admin Tools: goes back to normal after 4 s');
-  await p.click('[data-p="pin-forget"]'); await L.settle(p, 100); await p.click('[data-p="pin-forget"]');
+  ok(/Use a different kitchen PIN/.test(await txt(p, '[data-act="stkpin"]')), 'Settings: goes back to normal after 4 s');
+  await p.click('[data-act="stkpin"]'); await L.settle(p, 100); await p.click('[data-act="stkpin"]');
   await L.settle(p, 400);
-  ok(await p.evaluate(() => localStorage.getItem('lk.prep.pin')) === null, 'admin Tools: two taps forget the PIN');
-  ok(await p.evaluate(() => location.hash) === '#/prep' && await p.$('#p-pin') !== null, 'admin Tools: then shows the PIN screen of the prep book');
-  ok(p.errors.length === 0, 'admin Tools: no page errors ' + p.errors.join(' | '));
+  ok(!(await p.evaluate(() => localStorage.getItem('lk.prep.pin'))), 'Settings: two taps forget the PIN');
+  ok(await p.evaluate(() => location.hash) === '#/prep' && await p.$('#p-pin') !== null, 'Settings: then shows the PIN screen of the prep book');
+  ok(p.errors.length === 0, 'kitchen PIN in Settings: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // staff list (sous chef): Remove takes two taps, leaving with unsaved changes takes two taps

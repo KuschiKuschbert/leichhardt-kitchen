@@ -367,6 +367,13 @@ async function admItem(page) {
   await page.keyboard.press('Escape'); await settle(page, 100);
   return s;
 }
+/* Settings rows open in place (3 Nov 2026, docs/settings-options/brief.md): opens the row with this id if it is folded,
+   so its control can be tapped. The controls are on the page while folded, just hidden. */
+async function setRow(page, id) {
+  const b = page.locator('[data-act="strow"][data-val="' + id + '"]');
+  await b.waitFor({ timeout: 8000 });
+  if (await b.getAttribute('aria-expanded') !== 'true') { await b.click(); await settle(page, 100); }
+}
 async function chef(page, v) {
   await page.evaluate(() => { const g = document.querySelector('.nt-got'); if (g) g.click(); });
   await page.click('.wtop-who'); await settle(page, 150);
@@ -490,4 +497,4 @@ async function reveal(page, sel) {
 async function chapter(page, k) {
   if (await page.getAttribute('[data-mg="ch"][data-v="' + k + '"]', 'aria-current') !== 'true') { await page.click('[data-mg="ch"][data-v="' + k + '"]'); await settle(page, 150); }
 }
-module.exports = { wLog, wReview, openRow, reveal, chapter, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+module.exports = { wLog, wReview, openRow, reveal, chapter, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
