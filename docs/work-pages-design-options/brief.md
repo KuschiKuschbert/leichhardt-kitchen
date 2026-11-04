@@ -58,3 +58,14 @@ Recorded in `docs/head-chef-decisions.md` (3 Nov 2026); it was open item 3 in `d
 | Check | The add button docked above the tab bar on all four pages as drawn, the review at the foot of Wastage, Delivery arrived as a chip | #515 | Live 4 Nov 2026 |
 
 Also on 4 Nov 2026: cooking words like sear and poach are no longer spell-corrected (#472), found while building step 2.
+
+### Round 2 (head chef, 5 Nov 2026)
+
+The four pieces of B left for later, one pull request each, smallest first. The choices are in `docs/head-chef-decisions.md`.
+
+| Step | What | Pull request | State |
+| --- | --- | --- | --- |
+| R1 | Low and Out on order requests, Out first for chefs | this pull request | No rules change: the order line rules already take the field (a client shapes row proves it) |
+| R2 | Supplier groups on Orders for chefs; a supplier's order ticked only there | | Not built yet. Needs the read budget raised (a catalogue read per supplier a day) and where Pick supplier is remembered |
+| R3 | I'm on it: first tap stamps, second tap ticks | | Not built yet. New fields and a rules change, published first |
+| R4 | Wall board on the shared kitchen tablet, view and tick | | Not built yet |

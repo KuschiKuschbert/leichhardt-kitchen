@@ -363,6 +363,8 @@ row('js/prep.js dailyFlush(): daily/<day>_<tag> (usage counts)', { ok: KITCHEN, 
   run: (db, w, r) => W(r, [['set', `daily/${YDAY}_${r}`, { day: YDAY, tag: r, sg: {}, pf: {}, at: Date.now() }]]) });
 row('js/prep.js addOrder(): an order line', { ok: ADDS, asks: ADDS,
   run: (db, w, r) => W(r, [['set', `orders/${TODAY}/lines/${MINE(r)}`, { text: 'Lemons', qty: '2 kg', qn: 2, qu: 'kg', recipes: [], addedBy: NAME[r], addedById: w, addedAt: Date.now(), ordered: false, deleted: false }]]) });
+row('js/prep.js addOrder(): an order line marked Out (need, 5 Nov 2026)', { ok: ADDS, asks: ADDS,
+  run: (db, w, r) => W(r, [['set', `orders/${TODAY}/lines/n-${r}`, { text: 'Lemons', qty: '2 kg', qn: 2, qu: 'kg', recipes: [], addedBy: NAME[r], addedById: w, addedAt: Date.now(), ordered: false, deleted: false, need: 'out' }]]) });
 row('js/prep.js orderedOp(): tick an order line ordered', { ok: CHEFS, asks: CHEFS,
   prep: r => put({ [`orders/${TODAY}/lines/${MINE(r)}`]: { text: 'Cream', qty: '4 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: NOW - 3600000, ordered: false, deleted: false, by: 'ann' } }),
   run: (db, w, r) => W(r, [['upd', `orders/${TODAY}/lines/${MINE(r)}`, { ordered: true, orderedBy: NAME[r], orderedAt: Date.now() }]]) });
