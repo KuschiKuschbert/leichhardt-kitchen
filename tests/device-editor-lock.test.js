@@ -20,7 +20,7 @@ async function prepare(b, c, boundary) {
   if (c.name === 'drawing') {
     await p.fill('#dw-q', 'rump');
     await p.click('.dw-tile[data-v="rump"]');
-    await p.click('[data-dw="dup"]');
+    await L.dwShow(p, '[data-dw="dup"]'); await p.click('[data-dw="dup"]');
   } else {
     await L.reveal(p, c.field); await p.fill(c.field, c.value);
     if (c.name === 'function') await p.fill('[data-ff="phone"]', '0400 000 000');
