@@ -3081,6 +3081,11 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 .p-admin.ad-admin .a-pane .a-tile > strong { font: 700 2.2rem/1 var(--display); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .p-admin.ad-admin .a-pane .a-tile .a-d { justify-self: start; margin: 0; padding: .15rem .55rem; border-radius: .6rem; background: var(--beige); color: var(--muted); font-size: .8rem; font-weight: 600; line-height: 1.3; }
 .p-admin.ad-admin .a-pane .a-tile .a-d.is-worse { background: var(--dsh-bad-tint); color: var(--dsh-bad); }
+/* a person's saved assessments (admin pages step 5, 5 Nov 2026): a ruled list, newest first */
+.a-pp-assess { list-style: none; margin: 0; padding: 0; }
+.a-pp-assess li { padding: .6rem 0; border-top: 1px solid var(--line); }
+.a-pp-assess li:first-child { border-top: 0; }
+.a-pp-assess small { display: block; color: var(--muted); }
 @media (max-width: 599px) { .p-admin.ad-admin .a-pane .a-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; } .p-admin.ad-admin .a-pane .a-tile > strong { font-size: 1.9rem; } }
 .p-admin.ad-admin .a-pane .p-bulk { width: 100%; min-width: 0; }
 .p-admin.ad-admin .a-pane .set-block:has([data-p="a-save"]) { z-index: 11; padding: .8rem 1rem; border: 1px solid var(--edge); border-top: 2px solid var(--ink); border-radius: var(--r-act); background: var(--paper); }

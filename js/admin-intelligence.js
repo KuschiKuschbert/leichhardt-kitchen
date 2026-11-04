@@ -509,6 +509,23 @@
     API: 3,
     reset: reset, dirty: function () { return !!state.draft; },
     busy: function () { return validContext() && state.busy; }, back: back, backLabel: backLabel, resumeHTML: resumeHTML,
+    // A person's page in Team (admin pages step 5, 5 Nov 2026). Both are optional parts of API 3: a book without them
+    // keeps its link to Assessments. personTraining: the person's saved assessments, newest first, from the list the
+    // Assessments page reads (one read per record, once per visit, kept in memory); undefined while it loads, null when
+    // the read failed. showPerson: the Assessments page and the training queue open on that person.
+    personTraining: function (id, adapter) {
+      api = adapter; if (!api.allowed()) { reset(); return null; }
+      if (context !== api.context()) { reset(); context = api.context(); }
+      var records = data('training', true);
+      if (state.errors.training) return null;
+      if (!records) return undefined;
+      var names = {}, recipes = api.recipes(); api.people().forEach(function (p) { names[p.id] = p.name; });
+      return records.filter(function (r) { return r.personId === id; }).sort(trainingRecent).map(function (r) {
+        var recipe = recipes.filter(function (x) { return x.id === r.recipeId; })[0];
+        return { subject: String(r.recipeId ? (recipe ? recipe.name : r.recipeId) : r.section || ''), scope: r.recipeId ? 'Recipe' : 'Section', status: trainingStatus(r.status), day: String(r.day || ''), assessor: names[r.assessorId] || 'Former team member' };
+      });
+    },
+    showPerson: function (id) { state.person = typeof id === 'string' ? id : ''; state.reviewedTraining = []; },
     html: function (page, adapter) {
       api = adapter; if (!api.allowed()) { reset(); return ''; }
       if (context !== api.context()) { reset(); context = api.context(); }
