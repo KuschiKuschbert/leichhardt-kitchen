@@ -165,8 +165,8 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
 
   // the manage page: Templates and Made in the book list them; Hide takes one out of the editor
   p = await L.open(b, '#/manage', { who: 'ann', extra: Object.assign({}, store3, cfg()), wait: 1200 });
-  await wait(p, () => !!document.querySelector('[data-mg="chip"][data-v="templates"]'), null, 10000);
-  await L.choose(p, '[data-mg="chip"][data-v="templates"]');
+  await wait(p, () => !!document.querySelector('[data-mg="kind"][data-v="templates"]'), null, 10000);
+  await L.choose(p, '[data-mg="kind"][data-v="templates"]');
   await wait(p, () => !!document.querySelector('[data-mg="mine-hide"]'));
   ok(/Burger and chips, pieces/.test(await txt(p, '.mg-list') || ''), 'manage: Templates lists the template');
   await p.click('[data-mg="mine-hide"]'); await L.settle(p, 100);
@@ -175,7 +175,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   s = await store(p);
   const tpl2 = s[tplKey] || {};
   ok(tpl2.removed === true && tpl2.v === 2 && tpl2.els.length === n, 'manage: Hide (tapped twice) saves version 2, hidden, the rest kept');
-  await L.choose(p, '[data-mg="chip"][data-v="mylib"]');
+  await L.choose(p, '[data-mg="kind"][data-v="mylib"]');
   await wait(p, () => /Leichhardt burger top/.test((document.querySelector('.mg-list') || {}).textContent || ''));
   ok(/Leichhardt burger top/.test(await txt(p, '.mg-list') || '') && /Pie plate, cream/.test(await txt(p, '.mg-list') || ''), 'manage: Made in the book lists the pieces and the servingware');
   ok(!errs(p).length, 'manage: no page errors ' + errs(p).join(' | '));
