@@ -64,6 +64,7 @@ async function unlock(p, id = 'sam', pin = '1111') {
 
   p = await L.open(b, '#/settings', { admin: true, deviceMode: 'own', wait: 1800 });
   await L.waitFor(p, () => !!document.querySelector('[data-act="device-choice"]'), null, 8000);
+  await L.setRow(p, 'device');
   await p.click('[data-act="device-choice"]'); await p.click('[data-device="shared"]'); await L.settle(p, 400);
   ok(await p.evaluate(() => LK_DEVICE.mode() === 'shared' && !LK_DEVICE.ownerId() && !LK_PREP.privateAccess() && !LK_PREP.state.user), 'Settings changes the explicit profile and ends the previous PIN and Google access');
   ok(!p.errors.length, 'shared Settings: no page errors ' + p.errors.join(' | ')); await p.context().close();
