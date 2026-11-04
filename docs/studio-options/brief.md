@@ -1,6 +1,6 @@
 # Drawing studio: audit and two designs
 
-Status: **proposal, 4 November 2026.** The head chef asked for the studio to feel less overwhelming. This record changes no app code. The head chef picks a design, then each build step ships as its own pull request.
+Status: **chosen 4 November 2026: B, Quiet canvas, with more colours for the servingware.** See Chosen, below. The head chef asked for the studio to feel less overwhelming. This record changes no app code; each build step ships as its own pull request.
 
 The studio shipped on 4 November 2026 (#499, step 5 of the [recipe editor record](../recipe-editor-options/brief.md)). The comparison page is [index.html](index.html); the two working examples are [a.html](a.html) and [b.html](b.html).
 
@@ -117,15 +117,23 @@ The shared fixes help either way and can ship first.
 | -, Fit, + | Fit; pinch, wheel, + and - keys | Same |
 | Escape closes a panel, then lets go of the part | Same | Same |
 
-## Steps after the choice
+## Chosen (4 November 2026)
 
-1. Shared fixes 1, 4, 8 and 9: the part's bar fits a phone, one way to close, Fit only, a one-line top bar.
-2. Shared fixes 2 and 3: panels under the canvas, never on it; the note once.
-3. Shared fixes 5 and 6: Plate as pictures; Add starts with the recipe.
-4. Shared fix 7: tiles for More tools and the part's More.
-5. The chosen layout: B's bar at the thumb (the dock becomes the bar, the part's bar moves into it, Draw it for me on the empty plate), or A's steps.
+The head chef chose **B, Quiet canvas**, and asked for **more colours for the servingware** as well.
 
-Each step is its own pull request in `js/draw.js` and `css/app.css`, keeps every `data-dw` name, and adds its checks to `tests/draw.test.js` (sizes at 390, 768 and 1280 px, nothing off screen, nothing over the picked part).
+- Plates and bowls: many more colours than today's seven (white, cream, black, grey, blue, green, terracotta), shown as swatches, with any colour as well.
+- Boards: more wood tones than today's three (light, medium, dark).
+- Everything else as B above, with the nine shared fixes.
+
+## Build
+
+Three pull requests, each keeping every `data-dw` name and adding its checks to `tests/draw.test.js` (sizes at 390, 768 and 1280 px, nothing off screen, nothing over the picked part):
+
+| Step | What changes | Fixes |
+| --- | --- | --- |
+| 1 | The Plate panel shows its plates, bowls and boards as pictures, and their colours as swatches: many more colours for plates and bowls, any colour too, and more wood tones for boards | 5, and the new colours |
+| 2 | The quiet canvas: one bar at the thumb instead of the dock and the floating part bar; panels under the drawing, never on it; Draw it for me on the empty plate and its note once; one way to close; Fit only; a one-line top bar | 1, 2, 3, 4, 8, 9 |
+| 3 | Add starts with the recipe; More tools and the part's More as tiles in groups | 6, 7 |
 
 ## How the design pages were checked
 
