@@ -139,7 +139,7 @@ async function noErrors(p, label) { ok(p.errors.length === 0, label + ': no page
   // An Undo left from the previous chef must not be carried into the next chef's session.
   p = await open(b, '#/orders', { deviceMode: 'shared' }); await ready(p);
   await p.click(button); await saved(p); await undoReady(p);
-  await p.click('.nb-top [data-p="who-change"]');
+  await L.notYou(p);
   await L.waitFor(p, () => !!document.querySelector('.p-name[data-id="bo"]'), null, 10000);
   await p.click('.p-name[data-id="bo"]'); await p.type('#pf1', '3333');
   await L.waitFor(p, () => window.LK_PREP.whoName() === 'Bo' && window.LK_PREP.supplier().read(), null, 10000);

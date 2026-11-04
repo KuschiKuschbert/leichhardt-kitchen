@@ -53,6 +53,7 @@ const box = p => p.inputValue('#p-section');
 
   // wastage: the same chips under its section box
   const q = await L.open(b, '#/waste', { wait: 1500, extra });
+  await L.wLog(q);
   ok(!(await q.$('#w-sec + .ux-picker-trigger')) && (await q.$$('.sec-chips [data-p="sec-pick"][data-sk="w-sec"]')).length >= 2, 'wastage: section chips, no Choose Section picker');
   await q.click('.sec-chips [data-p="sec-pick"][data-sk="w-sec"][data-v="Larder"]'); await L.settle(q, 200);
   ok(await q.inputValue('#w-sec') === 'Larder', 'wastage: a tap puts Larder in the section box');

@@ -12,7 +12,9 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 2. **Two recipes are hidden in the book but still in `js/data.js`** (29 Oct 2026): `chicken-adobo` (also first in Specials) and `pork-knuckle`. This is a dated static-source cleanup note. Recheck current public mirrors and hidden-recipe behaviour before acting. The owner still decides whether to remove the static entries or show the recipes again; no decision is made by this documentation update.
 
-3. **Celebrations: the stamp review** (4 Nov 2026, [build record](celebration-options/brief.md)). The cultural-symbol review of the Nyepi, Galungan, Kuningan, Sinulog, Ganesh Chaturthi and Durga Puja stamps, which shipped in #490 without it. The head chef asked for it on 4 Nov 2026.
+3. **Build the work pages redesign** (chosen 3 Nov 2026, see `docs/head-chef-decisions.md`). Seven steps in [the options brief](docs/work-pages-design-options/brief.md), one pull request each. Remove this item when the last step is live.
+
+4. **Celebrations: the stamp review** (4 Nov 2026, [build record](celebration-options/brief.md)). The cultural-symbol review of the Nyepi, Galungan, Kuningan, Sinulog, Ganesh Chaturthi and Durga Puja stamps, which shipped in #490 without it. The head chef asked for it on 4 Nov 2026.
 
 Remove each item here once it is done.
 
@@ -34,7 +36,6 @@ Done on 2 November 2026:
 Still to do:
 - one toast helper (23 Oct 2026): `js/manage.js`, `js/fnedit.js` and `js/draw.js` each build their own toast on the page body. They load only for the head chef or a function manager, so they were left as they are when `js/app.js`'s copy for Signed out went into `toast()` in `js/prep.js` (`plainToast()`). Hand them the prep one through `LK_PREP.book()`, with the file falling back to its own when the book has none, so `MG_API`, `FE_API` and the files' `API` stay as they are (a new number shuts the page with no signal on phones that kept the older file, see Installing it as an app, the service worker).
 - one two-tap helper (28 Oct 2026): `js/manage.js` and `js/fnedit.js` each keep their own `arm()` and `armed()` (and `js/fnedit.js` clears its own when a function is removed). `js/draw.js` and `js/deliveries.js` use the prep one (`arm(key, redraw)` and `armed(key)` in `LK_PREP.book()`) since 28 Oct 2026. Move the other two onto it the same way, keeping `MG_API`, `FE_API` and the files' `API` as they are (each falls back to its own when the book has none).
-
 
 - two nits from the review of the no-signal fixes (28 Oct 2026), each needing more than a line: the cut-off bar keeps its no-signal words after its listener is refused (`cutWatch()`'s error callback leaves `cutState` at `'offline'`; the stand-in needs to refuse a listener started with no signal once the signal is back to check it); `loadAdmins()`, `pickName()` and `loadMine()` say No signal for every failure that is not a refusal, the daily read limit too (say it only for `unavailable` or `deadline-exceeded`).
 

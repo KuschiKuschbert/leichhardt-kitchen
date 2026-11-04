@@ -7,6 +7,7 @@ const vis = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); r
   const b = await L.start();
 
   let p = await L.open(b, '#/waste', { who: 'ann', wait: 1500 });
+  await L.wLog(p);
   ok(!(await p.$('#w-act')) && await vis(p, '.w-actbtn'), 'wastage: the action is folded under "+ Add an action (optional)"');
   await p.click('.w-actbtn'); await L.settle(p, 200);
   ok(await vis(p, '#w-act') && await p.evaluate(() => document.activeElement && document.activeElement.id === 'w-act'), 'wastage: a tap opens the action box with the cursor in it');

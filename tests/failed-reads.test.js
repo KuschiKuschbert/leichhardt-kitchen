@@ -28,6 +28,7 @@ async function fits(p, what, back) {
 
   // wastage: the summary cannot be read. The form and today's entries still work, nothing is cached, and it is read again later
   p = await L.open(b, '#/waste', { wait: 1500, extra, failReads: '/summary/waste$' });
+  await L.wLog(p);
   ok(await p.$('#w-text') !== null && await p.$('.w-row') !== null, 'waste: with the summary unreadable the form and today\'s entries still show');
   ok(!(await p.$('[data-p="woften"]')), 'waste: no Logged often chips without the summary');
   ok(!(await cached(p, 'lk.w.sum')), 'waste: nothing is cached for today');
@@ -35,6 +36,7 @@ async function fits(p, what, back) {
   await p.clock.fastForward('06:00');
   await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 600);
   await p.evaluate(() => { location.hash = '#/waste'; });
+  await L.wLog(p);
   await L.waitFor(p, () => !!document.querySelector('[data-p="woften"]'));
   ok(/Rice/.test(await txt(p, '.w-often') || ''), 'waste: after the wait it reads the summary again and shows Rice under Logged often');
   ok(/Rice/.test(await cached(p, 'lk.w.sum') || ''), 'waste: the summary is cached for the day');

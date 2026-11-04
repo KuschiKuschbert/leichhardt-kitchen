@@ -16,7 +16,8 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.click('[data-p="mn-all"]', { timeout: 2000 }).catch(() => {});
   await L.settle(p, 100);
   await p.click('[data-p="mn-pub"]'); await L.settle(p, 150);
-  await p.click('[data-p="mn-pub"]'); await L.settle(p, 600);
+  // Published shows on the button for 1.2 s, then the form closes (4 Nov 2026)
+  await p.click('[data-p="mn-pub"]'); await L.waitFor(p, () => !document.querySelector('.mn-form'), null, 5000).catch(() => {}); await L.settle(p, 300);
   let s = await store(p);
   const key = Object.keys(s).find(k => /\/minutes\/[^/]+$/.test(k) && s[k].status === 'published');
   ok(!!key && s[key].v === 1, 'published: version 1 is in the store (' + (key ? 'v' + s[key].v : 'none') + ')');
@@ -29,7 +30,8 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.fill('[data-k="mn-decisions"]', 'New fryer oil every Monday and Thursday');
   await p.click('[data-p="mn-pub"]'); await L.settle(p, 150);
   ok(/Tap again to publish/.test(await txt(p, '[data-p="mn-pub"]') || ''), 'change: publishing as a new version asks for a second tap');
-  await p.click('[data-p="mn-pub"]'); await L.settle(p, 600);
+  // Published shows on the button for 1.2 s, then the form closes (4 Nov 2026)
+  await p.click('[data-p="mn-pub"]'); await L.waitFor(p, () => !document.querySelector('.mn-form'), null, 5000).catch(() => {}); await L.settle(p, 300);
   s = await store(p);
   ok(s[key] && s[key].v === 2 && s[key].status === 'published' && /Thursday/.test(s[key].decisions), 'new version: the minutes are version 2 with the new words');
   const hist = s[key.replace(/\/minutes\/[^/]+$/, '/minutes/' + id + '/hist/1')];
