@@ -262,7 +262,7 @@
   let edgeCount = 0;
   function renderEdge(design) {
     const header = document.querySelector('#app .wtop');
-    if (!header || !design || design.motion === 'twinkle' && design.horizon) return;
+    if (!header || !design) return;
     const special = EDGE_SPECIAL[design.preset], motif = EDGE_MOTIF[design.preset] || design.motifs.find(m => !['mote', 'snow', 'steam'].includes(m)) || design.motifs[0];
     const art = special ? '' : branded(ambientArt[motif] || '');
     if (!special && !art) return;
@@ -305,7 +305,9 @@
     const app = document.querySelector('#app'), layer = document.querySelector('#kb-festive-effects');
     if (!app || !layer) return;
     current = { theme: theme && theme.id !== 'off' ? theme : null, mode: mode === 'gentle' ? 'gentle' : 'still', density: density === 'light' ? 'light' : 'festive', surface: surfaceFor(options) };
-    const effect = effectFor(current.theme), stopped = !current.theme || current.mode === 'still' || reduced.matches;
+    // Reflective and civic days (Nyepi, Buddha Jayanti, Anzac Day, Good Friday...) stay quiet: drawing and stamp only.
+    const quiet = Boolean(current.theme && current.theme.classification && current.theme.classification !== 'celebratory');
+    const effect = effectFor(current.theme), stopped = !current.theme || current.mode === 'still' || reduced.matches || quiet;
     const ambient = ambientFor(current.theme);
     clearTimeout(arrivalTimer); arrivalTimer = 0; phase = null; restPlan = null; app.classList.remove('kb-at-rest'); delete layer.dataset.phase;
     clean(); layer.replaceChildren(); delete layer.dataset.ambientPreset; app.dataset.motion = effect; app.dataset.motionIntensity = current.density; app.dataset.kbCelebrationSurface = current.surface; layer.dataset.motionIntensity = current.density; layer.dataset.surface = current.surface;
@@ -313,7 +315,7 @@
     if (!stopped) {
       targets().forEach(art => { art.classList.add('kb-motion-target'); art.dataset.kbMotion = particleEffects.has(effect) ? (effect === 'stars' ? 'glow' : 'accent') : effect; if (effect === 'steam') addSteam(art); });
       if (current.surface === 'work') {
-        renderEdge(ambient);
+        // The still edge is drawn below, for Still and reduced motion too.
       } else if (current.surface === 'home' && ambient) {
         renderAmbient(layer, ambient, current.density === 'festive', options?.arrive);
       } else if (current.surface === 'home' && particleEffects.has(effect)) {
@@ -336,6 +338,9 @@
         begin(layer, fill, options?.arrive);
       }
     }
+    // The edge does not move, so Still and reduced motion keep it; quiet days have none.
+    if (current.theme && current.surface === 'work' && !quiet) renderEdge(ambient);
+    app.dataset.kbQuiet = quiet ? 'true' : 'false';
     pause(document.hidden); announce();
   }
   // The first Home view of the kitchen day for this celebration arrives; later views open at rest.
@@ -380,7 +385,7 @@
     const layer = document.querySelector('#kb-festive-effects');
     const ambientAnimations = animations.filter(a => layer && layer.contains(a.effect.target));
     const edge = document.querySelector('#app .wtop .kb-nav-edge');
-    return { state, effect, label, animationCount: state === 'running' ? running : animations.length, intensity: current.density, replayRevision, surface: current.surface, scope: current.surface === 'home' ? 'page' : 'navbar', ambientPreset: ambient ? ambient.preset : null, ambientLabel: ambient ? ambient.label : null, phase, ambientCount: layer ? layer.querySelectorAll('.kb-ambient-particle,.kb-ambient-horizon').length : 0, hangCount: document.querySelectorAll('#app .kb-hang-item').length, ambientAnimationCount: state === 'running' ? ambientAnimations.filter(a => a.playState === 'running').length : ambientAnimations.length, edgePreset: edge?.dataset.edgePreset || null, edgeMotif: edge?.dataset.edgeMotif || null };
+    return { state, effect, label, animationCount: state === 'running' ? running : animations.length, intensity: current.density, replayRevision, surface: current.surface, scope: current.surface === 'home' ? 'page' : 'navbar', ambientPreset: ambient ? ambient.preset : null, ambientLabel: ambient ? ambient.label : null, quiet: Boolean(current.theme && current.theme.classification && current.theme.classification !== 'celebratory'), phase, ambientCount: layer ? layer.querySelectorAll('.kb-ambient-particle,.kb-ambient-horizon').length : 0, hangCount: document.querySelectorAll('#app .kb-hang-item').length, ambientAnimationCount: state === 'running' ? ambientAnimations.filter(a => a.playState === 'running').length : ambientAnimations.length, edgePreset: edge?.dataset.edgePreset || null, edgeMotif: edge?.dataset.edgeMotif || null };
   }
   document.addEventListener('visibilitychange', () => pause(document.hidden));
   window.addEventListener('hashchange', () => {

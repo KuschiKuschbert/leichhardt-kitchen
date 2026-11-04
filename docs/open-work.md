@@ -14,7 +14,9 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 3. **Build the work pages redesign** (chosen 3 Nov 2026, see `docs/head-chef-decisions.md`). Seven steps in [the options brief](docs/work-pages-design-options/brief.md), one pull request each. Remove this item when the last step is live.
 
-4. **Build the drawing studio B, quiet canvas, with more servingware colours** (chosen 4 Nov 2026, see `docs/head-chef-decisions.md`). Three steps in [the studio options brief](studio-options/brief.md), one pull request each. Remove this item when the last step is live.
+4. **Celebrations: the stamp review** (4 Nov 2026, [build record](celebration-options/brief.md)). The cultural-symbol review of the Nyepi, Galungan, Kuningan, Sinulog, Ganesh Chaturthi and Durga Puja stamps, which shipped in #490 without it. The head chef asked for it on 4 Nov 2026.
+
+5. **Build the drawing studio B, quiet canvas, with more servingware colours** (chosen 4 Nov 2026, see `docs/head-chef-decisions.md`). Three steps in [the studio options brief](studio-options/brief.md), one pull request each. Remove this item when the last step is live.
 
 Remove each item here once it is done.
 

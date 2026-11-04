@@ -887,7 +887,8 @@
   function recoverWrites(id) {
     writeTickets.slice().forEach(function (t) { if (t.uid !== S.uid || t.person !== id || t.pin !== S.pin || t.admin && !ownerHere()) return; if (t.phase === 'blocked') t.start(); else t.release(); });
   }
-  function notifySent() { if (!pending && !writeTickets.length) { try { window.dispatchEvent(new Event('lk-sent')); } catch (e) {} } }
+  // everything sent: the chef hat's Sign out (lk-sent), and the signal band's All sent (bandSync())
+  function notifySent() { if (!pending && !writeTickets.length) { try { window.dispatchEvent(new Event('lk-sent')); } catch (e) {} bandSync(); } }
   function installWriteRecovery(fs, raw) {
     function loginOnly(ref) { var path = ref && ref.path || ''; if (Array.isArray(path)) path = path.join('/'); return /\/(sessions|tries|staffpins|pinset)\//.test(path); }
     ['setDoc', 'updateDoc', 'deleteDoc'].forEach(function (method) {
@@ -925,12 +926,57 @@
   // a reload or closing the tab while writes wait would lose them, so the browser asks first (27 Oct 2026). A phone that
   // closes the app in the background does not ask, which is why the strip says to keep the book open.
   window.addEventListener('beforeunload', function (e) { if (sendingNow()) { e.preventDefault(); e.returnValue = ''; } });
-  function syncHTML() {
-    var st = stripOn();
-    if (!st) return '';
-    return '<div class="p-sync" role="status">' + (st === 'off' ? '<strong>No signal.</strong> Keep the book open: your changes send when the signal is back.' :
-      '<strong>Not sent yet.</strong> Other devices cannot see your latest changes yet. Keep the book open.') + '</div>';
+  /* The signal band (4 Nov 2026, docs/loading-feedback-options, design B, LF-03). No signal and Not sent yet slide down
+     over the page just under the top bar (css/app.css .p-sync, placed by lkBandPlace() in js/upkeep.js), so the lines
+     never move under a finger. Before, a box at the top of the page pushed the list down 77 px and went with no word.
+     It shows on the kitchen pages while the strip is on (stripOn()), so the Not sent marks and their room come and go
+     with it. When a change waited while it was up and everything is sent with the signal there, it says All sent with
+     the kitchen time for 3 seconds, then slides away. While it is up the update offer waits behind it (html.has-sync).
+     One element in document.body, so a page redraw does not slide it in again. No reads, no timer but its own 3 s. */
+  var band = null, bandSt = '', bandHad = false, bandTimer = null, bandOut = null;
+  var BAND_SAY = {
+    off: '<strong>No signal.</strong> Keep the book open: your changes send when the signal is back.',
+    wait: '<strong>Not sent yet.</strong> Other devices cannot see your latest changes yet. Keep the book open.'
+  };
+  function bandSync() {
+    var here = !!(S.root && document.body.contains(S.root)), st = here ? stripOn() : '';
+    if (st) { if (sendingNow()) bandHad = true; bandShow(st); return; }
+    if (bandSt === 'off' || bandSt === 'wait') {
+      var mine = here && bandHad && privateAccess();
+      // the signal is back and the last change is on its way (the strip waits 3 seconds before it says Not sent yet)
+      if (mine && !offline && sendingNow()) { bandShow('wait'); return; }
+      if (mine && !offline) { bandShow('ok'); return; }
+      bandHide();
+    } else if (bandSt === 'ok' && !(here && privateAccess())) bandHide();
   }
+  function bandShow(st) {
+    if (bandSt === st) return;   // already says it (All sent keeps its time and its 3 seconds)
+    clearTimeout(bandTimer); clearTimeout(bandOut); bandTimer = bandOut = null;
+    if (!band) { band = document.createElement('div'); band.className = 'p-sync'; band.setAttribute('role', 'status'); band.hidden = true; document.body.appendChild(band); }
+    bandSt = st; band.setAttribute('data-st', st);
+    // one span, so the bold words and the rest wrap together inside the band
+    band.innerHTML = '<span>' + (st === 'ok' ? '<strong>All sent ' + esc(clock(now())) + '.</strong> Everyone can see your changes.' : BAND_SAY[st]) + '</span>';
+    document.documentElement.classList.add('has-sync');
+    if (typeof lkBandPlace === 'function') lkBandPlace();
+    // placed out of sight first, then moved in: it slides down from under the top bar (none with Reduce motion)
+    if (band.hidden) { band.hidden = false; void band.offsetWidth; }
+    band.classList.add('is-on');
+    if (st === 'ok') bandTimer = setTimeout(bandHide, 3000);
+  }
+  function bandHide() {
+    clearTimeout(bandTimer); bandTimer = null; bandHad = false;
+    if (!band || !bandSt) return;
+    bandSt = ''; band.classList.remove('is-on');
+    clearTimeout(bandOut);
+    // gone once it has slid away (0.22 s in css/app.css), then the update offer comes back
+    bandOut = setTimeout(function () {
+      bandOut = null; if (bandSt) return;
+      band.hidden = true; band.textContent = ''; band.removeAttribute('data-st');
+      document.documentElement.classList.remove('has-sync');
+    }, 260);
+  }
+  // leaving the kitchen pages for another page takes the band away, as the box in the page went with it
+  window.addEventListener('hashchange', function () { setTimeout(bandSync, 0); });
   /* Two taps for anything that is hard to take back: the first tap arms the button ("Tap again..."), a second tap
      within 4 seconds does it. Left alone, the button goes back to normal by itself. redraw: the page that shows the
      button, when it is not the prep pages (the drawing editor and Delivery received, through bookApi()). */
@@ -5157,7 +5203,7 @@
     var bodyEl = S.root.querySelector('.nb-body'), keepScroll = bodyEl ? S.root.querySelectorAll('.nb-body') : null, scrolls = [];
     if (keepScroll) Array.prototype.forEach.call(keepScroll, function (b) { scrolls.push(b.scrollTop); });
     if (key) ae._uxRedrawing = true;
-    try { S.root.innerHTML = syncHTML() + practiceHTML() + bodyHTML() + toastHTML(); }
+    try { S.root.innerHTML = practiceHTML() + bodyHTML() + toastHTML(); }
     finally { if (key) delete ae._uxRedrawing; }
     if (S.toast) plainAway();
     S.root.classList.toggle('is-book', S.name === 'prep' && !!S.root.querySelector('.nb'));
@@ -5174,6 +5220,7 @@
     if (S.name === 'admin') adminJumps();
     if (ptPop) ptDraw();
     rendering = false;
+    bandSync();
     window.dispatchEvent(new Event('lk-back'));
   }
 
@@ -5326,7 +5373,8 @@
     var l = ordQtyList(S.otext).slice(0, 3);
     if (!l.length) return '';
     sg('usual', 's');
-    return '<span class="nb-ql">Usual amount</span>' + l.map(function (x) { return '<button type="button" class="chip sq nb-qc" data-p="oqset" data-v="' + esc(x.q) + '">' + esc(x.q) + '</button>'; }).join('');
+    // "Add 5 L", like the prep list (3 Nov 2026, work pages redesign S6): a usual chip adds the line in one tap, with Undo
+    return '<span class="nb-ql">Usual amount</span>' + l.map(function (x) { return '<button type="button" class="chip sq nb-qc" data-p="oqset" data-v="' + esc(x.q) + '" aria-label="' + esc('Add ' + S.otext.trim() + ', ' + x.q) + '">Add ' + esc(x.q) + '</button>'; }).join('');
   }
   /* a line that rolled onto a later day is shown once, as its newest copy */
   function ordNewest(list) {
@@ -9633,9 +9681,9 @@
     }
     if (a === 'w-refresh') { loadWStats(true); if (whState().view === 'summary') loadStats(true); draw(); return; }
     if (a === 'miss-hide') { sset(docRef('misses', id), { hidden: true, q: ((S.misses || []).filter(function (x) { return x.id === id; })[0] || {}).q || id }, true).then(function () { loadMisses(true); }, failed); return; }
-    if (a === 'oqset') { S.oqty = el.getAttribute('data-v') || ''; draw(); var to = S.root.querySelector('[data-k="o-text"]'); if (to) to.focus(); return; }
-    // "Add 5 L": the usual amount goes in and the line is added in the same tap
+    // "Add 5 L": the usual amount goes in and the line is added in the same tap, on the prep list and the order list
     if (a === 'qset' || a === 'oqset') sg('usual', 't');
+    if (a === 'oqset') { S.oqty = el.getAttribute('data-v') || ''; if (S.otext.trim()) addOrder(); else { draw(); var to = S.root.querySelector('[data-k="o-text"]'); if (to) to.focus(); } return; }
     if (a === 'qset') { S.qty = el.getAttribute('data-v') || ''; if (S.text.trim()) addTyped(); else { draw(); var tq = S.root.querySelector('[data-k="p-text"]'); if (tq) tq.focus(); } return; }
     if (a === 'goto') { gotoRow(id); return; }
     if (a === 'start-toggle') { e.preventDefault(); S.startOpen = !S.startOpen; draw(); return; }
