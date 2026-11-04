@@ -182,6 +182,7 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 | `scripts/nightly-backup.mjs`, `scripts/backup-crypto.mjs`, `.github/workflows/nightly-backup.yml` | Nightly included-data export at 03:30 kitchen time; authenticated encryption and a runner decrypt/byte comparison before encrypted-artifact upload, retained 90 days. [Coverage, decryption and recovery limits](docs/backup-recovery.md) |
 | `scripts/fold-recipes.mjs`, `tests/fold-recipes.test.js` | Folds the head chef's recipe changes from a Backup file into `js/data.js` (report first, `--write` to change the file; see Recipes changed in the book) |
 | `.github/workflows/cutoff-push.yml`, `scripts/cutoff-push.mjs` | Phone pushes for order cut-offs, every 10 minutes (see Order cut-offs) |
+| `.github/workflows/auto-merge.yml` | Merges a ready pull request once Click tests pass and brings `main` into ready pull requests one at a time (needs the `AUTOMERGE_TOKEN` secret; [auto-merge](docs/auto-merge.md)) |
 | `.github/workflows/pr-tests.yml` | Runs the click tests on every pull request to `main` (the **Click tests** check), and on request |
 | `.github/workflows/live-tests.yml` | Runs the click tests against the live site after each GitHub Pages deploy, and on request |
 | `manifest.webmanifest`, `sw.js`, `icons/`, `icon.svg` | Installable app: manifest, service worker (saved copy first, newest files fetched behind it), icons |

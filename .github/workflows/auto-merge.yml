@@ -1,0 +1,100 @@
+# Merge when green, one pull request at a time (head chef, 4 Nov 2026). docs/auto-merge.md.
+#
+# A pull request marked ready (not a draft) and without the "hold" label gets GitHub's auto-merge (squash): it
+# merges by itself once Click tests pass and it is up to date with main. When main moves, only the oldest ready pull
+# request that is behind is brought up to date, so the others do not all run Click tests again.
+#
+# It acts with AUTOMERGE_TOKEN, a fine-grained token of the repository owner (contents and pull requests: read and
+# write, this repository only). A merge made with the built-in GITHUB_TOKEN would not start the Pages deploy, the
+# Live click tests or Publish rules. Without the secret this workflow only says so and does nothing.
+name: Auto-merge
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, ready_for_review, converted_to_draft, labeled, unlabeled, synchronize]
+  push:
+    branches: [main]
+  schedule:
+    - cron: '*/20 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auto-merge
+  cancel-in-progress: false
+
+jobs:
+  queue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Token set?
+        id: token
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::notice::AUTOMERGE_TOKEN is not set, so nothing is merged automatically (docs/auto-merge.md)."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The pull request that changed: ready and not held gets auto-merge, a draft or a held one loses it.
+      - name: Switch auto-merge on or off for this pull request
+        if: steps.token.outputs.ok == 'true' && github.event_name == 'pull_request'
+        env:
+          PR: ${{ github.event.pull_request.number }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+          SAME: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+          HOLD: ${{ contains(github.event.pull_request.labels.*.name, 'hold') }}
+        run: |
+          if [ "$SAME" != "true" ]; then echo "From a fork: never merged automatically."; exit 0; fi
+          if [ "$DRAFT" = "true" ] || [ "$HOLD" = "true" ]; then
+            gh pr merge "$PR" -R "$REPO" --disable-auto 2>/dev/null || true
+            echo "#$PR is a draft or held: auto-merge off."
+          else
+            gh pr merge "$PR" -R "$REPO" --auto --squash
+            echo "#$PR is ready: it merges when Click tests pass and it is up to date."
+          fi
+
+      # Run by hand once after the token is added: every pull request already ready and not held gets auto-merge.
+      - name: Switch auto-merge on for pull requests already ready
+        if: steps.token.outputs.ok == 'true' && github.event_name == 'workflow_dispatch'
+        run: |
+          for n in $(gh pr list -R "$REPO" --base main --state open --limit 50 --json number,isDraft,labels,isCrossRepository \
+              --jq '.[] | select(.isDraft|not) | select(.isCrossRepository|not) | select([.labels[].name] | index("hold") | not) | .number'); do
+            gh pr merge "$n" -R "$REPO" --auto --squash && echo "#$n: auto-merge on."
+          done
+
+      # The queue: oldest ready pull request first. Clean merges by itself; up to date and still testing means wait;
+      # failed or in conflict is skipped until its session fixes it; behind is brought up to date (one, then stop).
+      - name: Move the queue on by one
+        if: steps.token.outputs.ok == 'true'
+        run: |
+          gh pr list -R "$REPO" --base main --state open --limit 50 \
+            --json number,isDraft,labels,mergeStateStatus,autoMergeRequest,isCrossRepository,createdAt \
+            --jq 'sort_by(.createdAt) | .[] | select(.isDraft|not) | select(.isCrossRepository|not)
+                  | select(.autoMergeRequest != null) | select([.labels[].name] | index("hold") | not)
+                  | "\(.number) \(.mergeStateStatus)"' > queue.txt
+          echo "Ready pull requests, oldest first:"; cat queue.txt
+          while read -r n state; do
+            case "$state" in
+              CLEAN|HAS_HOOKS|UNSTABLE) echo "#$n is merging."; exit 0 ;;
+              UNKNOWN) echo "#$n is still being worked out by GitHub: wait."; exit 0 ;;
+              DIRTY) echo "#$n has a conflict: skipped until its session fixes it."; continue ;;
+            esac
+            set +e; gh pr checks "$n" -R "$REPO" --required >/dev/null 2>&1; c=$?; set -e
+            if [ "$c" = "8" ]; then echo "#$n is testing: wait."; exit 0; fi
+            if [ "$c" != "0" ]; then echo "#$n failed Click tests: skipped until its session fixes it."; continue; fi
+            if [ "$state" = "BEHIND" ]; then
+              gh api -X PUT "repos/$REPO/pulls/$n/update-branch" >/dev/null && echo "#$n brought up to date: it tests, then merges."
+              exit 0
+            fi
+            echo "#$n is $state: skipped."
+          done < queue.txt
+          echo "Nothing to move."
