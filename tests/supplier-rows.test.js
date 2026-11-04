@@ -53,16 +53,16 @@ async function open(b, width) {
   await p.fill(qty('t-stock'), '1.5 kg'); await p.click('[data-su="step"][data-i="t-stock"][data-d="1"]'); await L.settle(p, 150);
   ok(await p.inputValue(qty('t-stock')) === '2.5 kg', '+ keeps the typed unit');
 
-  // What staff asked for: one read on a tap, shown in full, with an Asked for filter.
-  ok(!(await p.$('[data-su="filter"][data-f="asked"]')), 'Asked for is not offered before the requests are read');
+  // What staff asked for: a Staff requests chip in the filter row reads them once, then shows Asked for.
+  ok(!(await p.$('[data-su="filter"][data-f="asked"]')) && !!(await p.$('.su-filters [data-su="requests"]')), 'Staff requests sits in the filter row; Asked for is not offered before the requests are read');
   const before = await orderReads(p);
   await p.click('[data-su="requests"]');
   await L.waitFor(p, () => !!document.querySelector('.su-asked'), null, 5000);
-  ok(await orderReads(p) - before === 1, 'Show what staff asked for costs one query');
+  ok(await orderReads(p) - before === 1, 'the Staff requests chip costs one query');
   const asked = await txt(p, '.su-asked');
   ok(/Test stock request/.test(asked) && /2 kg/.test(asked) && /Ann at 13:00/.test(asked) && /TEST STOCK 1KG BAG/.test(asked), 'the strip names the request, its amount, who asked, when, and the matched item');
-  await p.click('[data-su="filter"][data-f="asked"]'); await L.settle(p, 150);
-  ok((await p.$$eval('.su-row', els => els.map(e => e.getAttribute('data-item')))).join() === 't-stock', 'Asked for shows the matched item only');
+  ok(await p.getAttribute('[data-su="filter"][data-f="asked"]', 'aria-pressed') === 'true' && (await p.$$eval('.su-row', els => els.map(e => e.getAttribute('data-item')))).join() === 't-stock', 'the chip opens Asked for with the matched item only');
+  ok(await p.evaluate(() => document.querySelector('.su-asked').getBoundingClientRect().top < document.querySelector('.su-row').getBoundingClientRect().top), 'the strip sits above the matched rows while Asked for is on');
   await p.click('[data-su="filter"][data-f=""]');
 
   // Review still records exactly what was typed.
@@ -117,6 +117,39 @@ async function open(b, width) {
   ok(await p.inputValue('input[data-sf="qty"][data-i="b3"]') === '1' && await p.evaluate(() => { const a = document.activeElement; return a.getAttribute('data-su') === 'step' && a.getAttribute('data-i') === 'b3' && a.getAttribute('data-d') === '1'; }), '+ changes its row and keeps the focus on +');
   ok(!(await L.overflow(p)) && !p.errors.length, 'one list at 390 px: no sideways scroll, no page errors ' + p.errors.join(' | '));
   await p.context().close();
+
+  // List first on a phone (4 Nov 2026, the Prep list's rule): the first To order box is on the first screen above the
+  // Review bar (it was 1,284 px down), the cut-off and last order fold into one line, and the laptop keeps them open.
+  p = await open(b, 390);
+  const first = await p.evaluate(() => ({ qty: document.querySelector('input[data-sf="qty"]').getBoundingClientRect().bottom, bar: document.querySelector('.su-order-actions').getBoundingClientRect().top }));
+  ok(first.qty <= first.bar, '390 px: the first To order box is on the first screen, above the Review bar (' + Math.round(first.qty) + ' px, bar at ' + Math.round(first.bar) + ')');
+  ok(await p.isVisible('.su-info-line') && !(await p.isVisible('.su-cutoff')) && !(await p.isVisible('.su-latest')), '390 px: the cut-off card and the last order fold into one line');
+  ok(/Order by .*15:00/.test(await txt(p, '.su-info-line')) && /last order/.test(await txt(p, '.su-info-line')), 'the line says when the order closes and when the last order was');
+  await p.click('[data-su="info"]'); await L.settle(p, 150);
+  ok(await p.isVisible('.su-cutoff') && await p.isVisible('.su-latest') && await p.getAttribute('[data-su="info"]', 'aria-expanded') === 'true', 'More opens the cut-off card and the last order');
+  await p.click('[data-su="info"]'); await L.settle(p, 150);
+  ok(!(await p.isVisible('.su-cutoff')), 'Less folds them again');
+  ok(!p.errors.length, 'folded line: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  // an order already marked as placed opens the line by itself, so Additional order is in sight before Review
+  const placed = F.fixture({ [F.key(['cutdone', F.today + '_northside'])]: { day: F.today, sid: 'northside', on: true, at: L.NOW - 60000, by: 'sam' } });
+  p = await L.open(b, '#/suppliers/northside', { who: 'bo', extra: placed, wait: 1800, width: 390, height: 844 });
+  await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"]'), null, 15000);
+  await L.waitFor(p, () => /marked as placed/.test((document.querySelector('.su-info-line') || {}).textContent || ''), null, 5000);
+  ok(await p.isVisible('[data-su="additional"]'), 'an order already marked as placed opens the line with Additional order in sight');
+  await p.context().close();
+  p = await open(b, 1280);
+  ok(!(await p.isVisible('.su-info-line')) && await p.isVisible('.su-cutoff') && await p.isVisible('.su-latest'), '1280 px: the cut-off card and the last order stay open, no folded line');
+  await p.context().close();
+  // Extra large text on narrow phones: the heading may wrap (Refresh stays on screen) and To order takes its own line
+  // below 480 px, the Prep list's narrow rule, so nothing scrolls sideways or is cut at a row's edge
+  for (const width of [370, 330]) {
+    p = await L.open(b, '#/suppliers/northside', { who: 'sam', width, height: 844, settings: { shared: true, text: 'xlarge' }, extra: F.fixture(), wait: 1800 });
+    await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"]'), null, 15000);
+    const fit = await p.evaluate(() => ({ refresh: document.querySelector('[data-su="refresh"]').getBoundingClientRect().right, row: (r => r.scrollWidth - r.clientWidth)(document.querySelector('[data-item="t-stock"]')) }));
+    ok(!(await L.overflow(p)) && fit.refresh <= width && fit.row <= 1, width + ' px, Extra large text: no sideways scroll, Refresh on screen, no row cut at its edge (' + JSON.stringify(fit) + ')');
+    await p.context().close();
+  }
 
   // Phone: the Review bar stays above the tabs while the list scrolls; no sideways scroll at any width.
   for (const width of [390, 768, 1280]) {
