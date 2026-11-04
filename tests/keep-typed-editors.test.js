@@ -178,7 +178,8 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
   });
   await safe('drawing kept 3', async () => {
     p = await keptDrawing();
-    const bx = await p.$eval('.dw-svg', e => { const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; });
+    // the top of the canvas: on a phone the studio's drawer covers its lower half (3 Nov 2026)
+    const bx = await p.$eval('.dw-svg', e => { const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height * 0.2 }; });
     await p.mouse.click(bx.x, bx.y); await L.settle(p, 300);
     ok(!(await p.$('.mg-kept')) && await S(p, () => window.LK_DRAW.state().d.els.length) === 1 && /kept drawing is back/.test(await toastNow(p)), 'drawing: a touch on the drawing while the kept box shows brings the kept drawing back');
     quiet(p, 'drawing kept 3');
@@ -507,7 +508,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     p = await L.open(b, '#/manage/draw/new/burger/plate', { who: 'ann', extra: cfg(), wait: 1500 });
     await canvas(p);
     await S(p, () => { window.LK_DRAW.addItem('rump'); });
-    await p.click('[data-dw="text"]'); await L.settle(p, 200);
+    await L.dwShow(p, '[data-dw="text"]'); await p.click('[data-dw="text"]'); await L.settle(p, 200);
     await p.click('[data-dw="save"]');
     await wait(p, () => /\/manage\/draw\/burger-plate$/.test(location.hash) && !window.LK_DRAW.state().saving, null, 10000);
     await L.settle(p, 600);
@@ -517,7 +518,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
       if (!(await p.$('[data-dw="pick"][data-v="' + i + '"]'))) { await p.click('[data-dw="panel"][data-v="parts"]'); await L.settle(p, 150); }
       await p.click('[data-dw="pick"][data-v="' + i + '"]'); await L.settle(p, 150);
     };
-    const changeIt = async () => { await p.click('[data-dw="panel"][data-v="edit"]'); await L.settle(p, 150); };
+    const changeIt = async () => { await L.dwShow(p, '[data-dw="panel"][data-v="edit"]'); await p.click('[data-dw="panel"][data-v="edit"]'); await L.settle(p, 150); };
     // a saved drawing: words typed in a label turn Save on, and the bar says so, with only the drawing drawn again
     await pickPart(ti); await changeIt();
     await p.fill('[data-dwf="el.s"]', 'Label two'); await L.settle(p, 200);
