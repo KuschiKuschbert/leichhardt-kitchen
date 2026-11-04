@@ -256,6 +256,7 @@ A checked entry marks an audited rendering site. Route navigation, canvas object
 - Desktop modal from 768 px; bottom sheet below 768 px. Focus trap, Escape, backdrop, drag handle, safe area and reduced motion.
 - Compact choices at 12 items or fewer; extended deferred search above 12; windowed list above 100.
 - Multi-select drafts apply together. Free-entry autocomplete retains an explicit custom-value path.
+- A page that draws again while a picker is open (another phone saved, a list came in) replaces the field the picker came from. The choice goes to the field that took its place, found by the same `id` or `data-` name `draw()` uses to put the cursor back (`liveSource()` in `js/controls.js`, 4 Nov 2026). Nothing is applied when there is not exactly one such field, it is switched off, or it no longer offers the choice. Before, the choice went to the old field and was lost; `tests/people-ids.test.js` checks it on the admin People tab's Role box.
 - Search retains the committed result set while replacing a query, restores on accidental blur, and resets explicitly.
 - Admin lists sort the complete filtered data before pagination, with three-state headers, filters and removable active badges. Calendar and heatmap coordinates retain their meaning; their row filters are separate from chronological cells.
 
