@@ -260,6 +260,7 @@ async function cpuPerSecond(p, ms = 2000) {
 
     await go(p, '#/settings');
     await L.waitFor(p, () => Boolean(document.querySelector('#kb-seasonal-settings [data-seasonal-selection="auto"]')));
+    await L.setRow(p, 'season');
     await p.click('[data-seasonal-selection="auto"]');
     await L.waitFor(p, () => document.querySelector('#app').dataset.kbTheme === 'au-melbourne-cup');
     ok(await p.locator('[data-seasonal-selection="auto"]').getAttribute('aria-pressed') === 'true', 'Settings switches back to the automatic kitchen calendar');
