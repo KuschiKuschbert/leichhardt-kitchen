@@ -4735,7 +4735,7 @@
         });
       },
       open: function (tab, days) {
-        if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs'].indexOf(tab) < 0 || (tab === 'mail' && !mlOwner())) return;
+        if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references', 'training'].indexOf(tab) < 0 || (tab === 'mail' && !mlOwner())) return;
         if (tab === 'insights' || tab === 'waste') S.statsRange = days === 7 ? 7 : 30;
         S.atab = tab; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(tab)[0]] = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop();
       }
@@ -4774,9 +4774,9 @@
   function intelligenceBusy() { return proofBusy() || !!(intelligenceVisible() && window.LK_INTELLIGENCE.busy && window.LK_INTELLIGENCE.busy()); }
   function intelligenceHTML(page) {
     if (!intelligenceAllowed()) return '';
-    if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS) {
+    if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS || !window.LK_ANALYSIS.linkQueue) {
       if (!intelligenceLoading && !intelligenceError) {
-        intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=2').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=3'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
+        intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=3').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=4'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS || !window.LK_ANALYSIS.linkQueue) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
       }
       return '<section class="set-block"><h3 class="label">Admin workspace</h3><p class="hint" role="status">' + (intelligenceError ? 'Could not load the workspace. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
     }
