@@ -5111,7 +5111,7 @@
     return Array.prototype.filter.call(hs, function (h) { return h.offsetParent && h.textContent.trim(); });
   }
   function adminJumps() {
-    // the page tabs are one row (4 Nov 2026): when it scrolls sideways it fades at its edge and the open tab is in view
+    // the page tabs (4 Nov 2026): on a phone one row that, when it scrolls sideways, fades at its edge and shows the open tab
     var tabs = S.root && S.root.querySelector('.a-tabs');
     if (tabs) {
       tabs.classList.toggle('is-scroll', tabs.scrollWidth > tabs.clientWidth + 1);

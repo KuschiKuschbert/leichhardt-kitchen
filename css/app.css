@@ -3022,7 +3022,7 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 .p-admin.ad-admin .ad-layout { display: grid; grid-template-columns: minmax(0, 1fr); align-items: start; min-width: 0; }
 .p-admin.ad-admin .a-nav { position: sticky; top: calc(var(--fn-stick, 0px) + var(--upd-h, 0px)); z-index: 12; min-width: 0; margin: 0 0 1.3rem; padding: .5rem 0 .8rem; border: 0; border-bottom: 1px solid var(--line); background: var(--bg); transform: none; transition: none; }
 /* The four rooms (4 Nov 2026, design B): one row of four on a phone and a tablet, a rail on a laptop (below). */
-.p-admin.ad-admin .a-groups { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1.5px solid var(--ink); border-radius: var(--r-pick); overflow: hidden; background: var(--paper); }
+.p-admin.ad-admin .a-groups { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 0; border-radius: var(--r-pick); overflow: hidden; background: var(--paper); box-shadow: inset 0 0 0 1.5px var(--ink); }
 .p-admin.ad-admin .a-group { min-width: 0; min-height: 44px; padding: 0 .3rem; border: 0; border-left: 1.5px solid var(--ink); border-radius: 0; background: transparent; color: var(--ink); font: 700 .9375rem/1.2 var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .p-admin.ad-admin .a-group:first-child { border-left: 0; }
 .p-admin.ad-admin .a-group[aria-current="page"] { background: var(--ink); color: var(--paper); }
@@ -3038,6 +3038,7 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 .p-admin.ad-admin .a-tabs.is-scroll { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 2.5rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 2.5rem), transparent); }
 .p-admin.ad-admin .a-tabs::after, .p-admin.ad-admin .a-onpage::after { display: none; }
 .p-admin.ad-admin .a-tabs.is-scroll::after { display: block; content: ''; flex: 0 0 1.5rem; }
+@media (min-width: 600px) { .p-admin.ad-admin .a-tabs { flex-wrap: wrap; row-gap: 0; overflow: visible; } }
 .p-admin.ad-admin .a-tab { flex: 0 0 auto; min-width: 0; min-height: 44px; margin-bottom: -1px; padding: .6rem 0 .5rem; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: transparent; color: var(--muted); font: 600 .9375rem/1.25 var(--body); text-align: left; white-space: nowrap; }
 .p-admin.ad-admin .a-tab[aria-pressed="true"] { border-bottom-color: var(--accent); background: transparent; color: var(--ink); }
 .p-admin.ad-admin .a-onpage { position: static; flex-direction: row; flex-wrap: wrap; gap: .25rem .5rem; margin: 0 0 1rem; padding: 0 0 .65rem; border-bottom: 1px solid var(--line); overflow: visible; -webkit-mask-image: none; mask-image: none; }
@@ -3183,6 +3184,7 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
   .p-admin.ad-admin .ad-intro { display: none; }
   .p-admin.ad-admin .ad-eyebrow { font-size: .75rem; letter-spacing: .1em; }
   .p-admin.ad-admin .a-tabs { gap: 1.15rem; margin-bottom: 1.1rem; }
+  .p-admin.ad-admin .a-nav { padding-block: .4rem .55rem; }
   .p-admin.ad-admin .a-tab { padding: .55rem 0 .45rem; }
   .p-admin.ad-admin .a-pane .set-block { padding-block: 1.2rem 1.4rem; }
   .p-admin.ad-admin .ai-desk { gap: 0; margin-top: 1rem; }
