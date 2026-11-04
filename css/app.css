@@ -3072,6 +3072,16 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 .p-admin.ad-admin .a-pane input.search[data-k^="a-newpin"]:not([type="search"]) { max-width: 14rem; }
 .p-admin.ad-admin .a-pane :is(.a-export > summary, .a-export .btn, .a-table .ux-picker-trigger) { white-space: nowrap; overflow-wrap: normal; }
 .p-admin.ad-admin .a-pane .ux-picker-trigger { max-width: 20rem; }
+/* The page kit on the reports (5 Nov 2026, admin pages step 4): every report's numbers are the Dashboard's tiles, a card
+   each with the number, what it counts under it and the change from the period before as a chip. One component (.a-tile)
+   serves Insights, Wastage, Transfers, Team and Learning. */
+.p-admin.ad-admin .a-pane .a-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(10.5rem, 100%), 1fr)); gap: .7rem; margin: .5rem 0 .2rem; padding: 0; border: 0; }
+.p-admin.ad-admin .a-pane .a-tile { display: grid; gap: .3rem; align-content: start; min-width: 0; padding: .8rem .85rem .75rem; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); }
+.p-admin.ad-admin .a-pane .a-tile > span { font-size: .86rem; font-weight: 600; line-height: 1.3; color: var(--muted); }
+.p-admin.ad-admin .a-pane .a-tile > strong { font: 700 2.2rem/1 var(--display); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.p-admin.ad-admin .a-pane .a-tile .a-d { justify-self: start; margin: 0; padding: .15rem .55rem; border-radius: .6rem; background: var(--beige); color: var(--muted); font-size: .8rem; font-weight: 600; line-height: 1.3; }
+.p-admin.ad-admin .a-pane .a-tile .a-d.is-worse { background: var(--dsh-bad-tint); color: var(--dsh-bad); }
+@media (max-width: 599px) { .p-admin.ad-admin .a-pane .a-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; } .p-admin.ad-admin .a-pane .a-tile > strong { font-size: 1.9rem; } }
 .p-admin.ad-admin .a-pane .p-bulk { width: 100%; min-width: 0; }
 .p-admin.ad-admin .a-pane .set-block:has([data-p="a-save"]) { z-index: 11; padding: .8rem 1rem; border: 1px solid var(--edge); border-top: 2px solid var(--ink); border-radius: var(--r-act); background: var(--paper); }
 .p-admin.ad-admin .a-tablewrap { max-width: 100%; border-width: 1px; border-radius: 0; }
@@ -3381,7 +3391,9 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 }
 
 /* Admin Dashboard (3 Nov 2026, The Pass board with three headlines; js/admin-dashboard.js). dsh- classes only. */
-.dsh { --dsh-bad: #9B2716; --dsh-bad-tint: #FBE9E5; --dsh-w: #2A78D6; --dsh-t: #EB6834;
+/* worse in red, shared by the Dashboard and the reports' tiles (5 Nov 2026) */
+.p-admin.ad-admin { --dsh-bad: #9B2716; --dsh-bad-tint: #FBE9E5; }
+.dsh { --dsh-w: #2A78D6; --dsh-t: #EB6834;
   --dsh-h1: #FCEBDF; --dsh-h2: #F7C8A8; --dsh-h3: #EE9A66; --dsh-h4: #C9531F; --dsh-h5: #8E3613; display: grid; gap: 1.1rem; }
 .dsh .hint { margin: 0; }
 .dsh-tools { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; }
