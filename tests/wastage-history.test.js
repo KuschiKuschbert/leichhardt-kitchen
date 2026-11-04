@@ -39,7 +39,7 @@ async function csv(p) {
 (async () => {
   const b = await L.start();
   let p = await report(b);
-  ok(await p.$eval('[data-k="wh-period"]', e => e.value) === '30', 'opens History with 30 days, independently of the other admin reports');
+  ok(await p.$eval('[data-k="wh-period"]', e => e.value) === '30', 'opens History with 30 days, the period every report starts on');
   ok(!!(await p.$('[data-p="wh-view"][data-v="history"][aria-pressed="true"]')), 'History is the selected view');
   ok((await rows(p)).some(x => /Fish fillets/.test(x)) && !(await rows(p)).some(x => /Removed fish/.test(x)), 'logged entries show, removed entries start hidden');
   ok(!(await p.$('.wh-report img')) && /<img src=x/.test((await rows(p)).join(' ')), 'entry text is escaped');

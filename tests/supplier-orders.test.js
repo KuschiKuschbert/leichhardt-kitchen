@@ -77,14 +77,12 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   ok((await band(p)).join() === 'Veg', 'another phone: PFD, ticked elsewhere, is not on the bar');
   await p.context().close();
 
-  // Chef to-do: the same tick list at the top
-  p = await L.open(b, '#/todo', { who: 'sam', extra: extra(), wait: 1500 });
-  await L.waitFor(p, () => !!document.querySelector('.todo-cut .cut-box'), null, 10000);
+  // Chef to-do: the same list at the top, to see, not to tick (ticked on the order list only, 5 Nov 2026)
+  p = await L.open(b, '#/todo', { who: 'sam', extra: extra(tickOf('veg', 'sam', L.NOW - 600000)), wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('.todo-cut .cut-mark'), null, 10000);
   ok(/Supplier orders today/.test(await txt(p, '.todo-cut')), 'Chef to-do: Supplier orders today at the top');
-  await p.click('.todo-cut li:nth-child(3) .cut-box');
-  await L.waitFor(p, () => { const e = document.querySelector('.todo-cut li:nth-child(3) .cut-box'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
-  s = await store(p);
-  ok(s[CD('veg')] && s[CD('veg')].on === true && s[CD('veg')].by === 'sam', 'Chef to-do: ticking Veg there saves it for everyone');
+  ok(!(await p.$('.todo-cut button, .todo-cut [data-p="cut-tick"]')) && /Ordered by Sam/.test(await txt(p, '.todo-cut li:nth-child(3)')) && /✓/.test(await txt(p, '.todo-cut li:nth-child(3) .cut-mark')), 'Chef to-do: Veg shows ticked by Sam, with no tick box to tap');
+  ok(!!(await p.$('.todo-cut a[href="#/orders"]')) && /Tick them on the order list/.test(await txt(p, '.todo-cut')), 'Chef to-do: says where to tick them, with a link');
   ok(!(await L.overflow(p)), 'Chef to-do: fits a phone');
   ok(p.errors.length === 0, 'Chef to-do: no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -102,13 +100,13 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   ok(await p.evaluate(() => !window.__fake.bill.some(x => /\/cutdone/.test(x.path))), 'staff: the ticks are never read');
   await p.context().close();
 
-  // The head chef's remembered Google account and daily PIN: Chef to-do ticks as the head chef.
-  p = await L.open(b, '#/todo', { admin: true, who: '', extra: extra(), wait: 2000 });
-  await L.waitFor(p, () => !!document.querySelector('.todo-cut .cut-box:not([disabled])'), null, 10000);
-  await p.click('.todo-cut li:nth-child(2) .cut-box');
-  await L.waitFor(p, () => { const e = document.querySelector('.todo-cut li:nth-child(2) .cut-box'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
+  // The head chef's remembered Google account and daily PIN: the order list ticks as the head chef.
+  p = await L.open(b, '#/orders', { admin: true, who: '', extra: extra(), wait: 2000 });
+  await L.waitFor(p, () => !!document.querySelector('.cut-tl .cut-box:not([disabled])'), null, 10000);
+  await p.click('.cut-tl li:nth-child(2) .cut-box');
+  await L.waitFor(p, () => { const e = document.querySelector('.cut-tl li:nth-child(2) .cut-box'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
   s = await store(p);
-  ok(s[CD('pfd')] && s[CD('pfd')].by === s[CFG].headId && /Ordered by Head chef/.test(await txt(p, '.todo-cut li:nth-child(2) .cut-st')), 'Google account: ticks as the head chef on their daily PIN');
+  ok(s[CD('pfd')] && s[CD('pfd')].by === s[CFG].headId && /Ordered by Head chef/.test(await txt(p, '.cut-tl li:nth-child(2) .cut-st')), 'Google account: ticks as the head chef on their daily PIN');
   await p.context().close();
 
   // the Google account on the landing page, nobody signed in: the ticks are read as soon as the account is checked, so a
@@ -119,9 +117,12 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   await L.waitFor(p, () => { const e = document.getElementById('cut-band'); return e && !e.hidden && e.textContent.indexOf('Veg') >= 0 && e.textContent.indexOf('PFD') < 0; }, null, 8000);
   ok((await band(p)).join() === 'Veg', 'Google account, landing page: PFD, ticked by a sous chef, is not on the bar');
   ok(await p.evaluate(() => !window.__fake.writes.some(ops => ops.some(o => /config\/main$/.test(o.path)))), 'Google account, landing page: nothing wrote the kitchen settings on the way (the real path)');
-  await p.click('#cut-band [data-cut="done"]');
+  ok(!(await p.$('#cut-band button')), 'Google account, landing page: the bar has no tick');
+  await p.evaluate(() => { location.hash = '#/orders'; });
+  await L.waitFor(p, () => !!document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="veg|"]:not([disabled])'), null, 10000);
+  await p.click('.cut-tl [data-p="cut-tick"][data-id^="veg|"]');
   await L.waitFor(p, () => { const e = document.getElementById('cut-band'); return e && e.hidden; }, null, 10000);
-  ok(true, 'Google account, landing page: Ordered on the bar clears it at once');
+  ok(true, 'Google account: Veg ticked on the order list clears the bar at once');
   await p.context().close();
 
   // an all-day cut-off at 01:00 tomorrow is pushed from 22:00 tonight (4 hours before), so it shows on the list from

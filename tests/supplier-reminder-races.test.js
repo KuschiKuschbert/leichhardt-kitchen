@@ -1,15 +1,16 @@
-// A reminder confirmation owns only its own completion stamp. Later completions must survive old callbacks.
+// A reminder confirmation owns only its own completion stamp. Later completions must survive old callbacks. Since
+// 5 Nov 2026 the confirmation is the order list's tick (a supplier's order is ticked there only), not the bar's Order done.
 const L = require('./lib');
 const F = require('./supplier-fixtures');
 const { R, ok } = L.results();
 const completion = F.key(['cutdone', F.today + '_northside']);
-const button = '#cut-band [data-cut="done"][data-id^="northside|"]';
+const button = '.cut-tl [data-p="cut-tick"][data-id^="northside|"]';
 const undo = p => p.getByRole('button', { name: 'Undo', exact: true });
 const record = p => p.evaluate(k => window.__fake.dump()[k], completion);
 const writes = p => p.evaluate(k => window.__fake.writes.flat().filter(o => o.path === k), completion);
 async function open(b) {
   const p = await L.open(b, '#/orders', { who: 'sam', extra: F.fixture(), wait: 1500 });
-  await L.waitFor(p, () => !!document.querySelector('#cut-band [data-cut="done"][data-id^="northside|"]:not([disabled])'), null, 10000);
+  await L.waitFor(p, () => { const t = document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="northside|"]:not([disabled])'); return !!t && t.getAttribute('aria-pressed') === 'false'; }, null, 10000);
   return p;
 }
 async function replace(p, by) {
@@ -51,7 +52,7 @@ async function replace(p, by) {
     await undo(p).click();
     await L.settle(p, 300);
     ok(JSON.stringify(await record(p)) === JSON.stringify(after), by + ': old Undo does not uncheck a newer completion');
-    ok((await writes(p)).length === 1 && !(await p.$(button)), by + ': old Undo writes nothing and keeps the reminder completed');
+    ok((await writes(p)).length === 1 && await p.$eval(button, e => e.getAttribute('aria-pressed')) === 'true' && !(await p.$('#cut-band a.cut-n[href*="/northside/"]')), by + ': old Undo writes nothing and keeps the reminder completed');
     ok(p.errors.length === 0, by + ': stale Undo has no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
