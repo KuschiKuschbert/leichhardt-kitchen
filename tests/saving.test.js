@@ -71,6 +71,7 @@ const { R, ok } = L.results(), { txt } = L;
 
   // waste: form back on failure
   p = await L.open(b, '#/waste', { wait: 1500 });
+  await L.wLog(p);
   await p.evaluate(() => { window.__fake.mode = 'fail'; });
   await p.fill('#w-text', 'Rice');
   await p.fill('#w-amt', '1.5');

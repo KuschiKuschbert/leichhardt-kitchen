@@ -139,12 +139,17 @@ const reads = (p, re) => p.evaluate(s => window.__fake.reads.filter(k => new Reg
   // Loading... for good, and does not read again on every draw
   p = await L.open(b, '#/waste', { who: 'sam', cold: '/waste/\\d{4}-\\d\\d-\\d\\d$', wait: 1800 });
   const revRe = new RegExp('/waste/' + today + '$');
-  ok(await until(p, () => /Could not load today's review\. Check the signal\./.test((document.querySelector('.w-review') || {}).textContent || '')), 'wastage review with no signal: says it could not load (' + (await txt(p, '.w-review') || '') + ')');
+  // 3 Nov 2026: the review button says so, and its sheet says what to do
+  ok(await until(p, () => /Could not load it/.test((document.querySelector('.w-rvbtn') || {}).textContent || '')), 'wastage review with no signal: the button says it could not load (' + (await txt(p, '.w-rvbtn') || '') + ')');
+  await L.wReview(p).catch(() => {});
+  ok(/Could not load today's review\. Check the signal\./.test(await txt(p, '.w-sheet') || ''), 'wastage review with no signal: its sheet says it could not load (' + (await txt(p, '.w-sheet') || '') + ')');
+  await p.keyboard.press('Escape'); await L.settle(p, 150); await L.wLog(p);
   const w0 = await reads(p, revRe);
   for (const u of ['g', 'kg', 'L', 'kg']) { await L.choose(p, '[data-p="wunit"][data-v="' + u + '"]'); await L.settle(p, 150); }
   const w1 = await reads(p, revRe);
   ok(w1 === w0 && w0 <= 1, 'wastage review with no signal: no read on every draw (' + w0 + ' then ' + w1 + ')');
   await fits(p, 'wastage with the review note', 390);
+  await p.keyboard.press('Escape'); await L.settle(p, 150); await L.wReview(p).catch(() => {});
   await warm(p);
   ok(await until(p, () => !!document.getElementById('w-ra')), 'wastage review, signal back: the review form shows by itself');
   ok(p.errors.length === 0, 'wastage review: no page errors ' + p.errors.join(' | '));
