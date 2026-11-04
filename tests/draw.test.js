@@ -63,6 +63,10 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   ok(JSON.stringify(await p.evaluate(() => [...document.querySelectorAll('.dw-ctx button')].map(x => x.innerText.trim()))) === '["Add food","Plate","Check","More"]', 'new drawing: the bar has Add food, Plate, Check and More, with no count on Check');
   await L.dwAdd(p);
   ok(await p.getAttribute('.dw-ctx [data-v="lib"]', 'aria-expanded') === 'true' && await p.$('.dw-panel #dw-q') !== null, 'Add food opens the library');
+  // Add food starts with the recipe (studio step 3): its ingredients not on the plate yet, then Find a drawing, then the
+  // other ways to start (a copy, an SVG file) at the bottom
+  const addOrder = await p.evaluate(() => { const at = s => { const e = document.querySelector('.dw-drawer ' + s); return e ? [...document.querySelectorAll('.dw-drawer *')].indexOf(e) : -1; }; return [at('.dw-miss'), at('#dw-q'), at('.dw-tile[data-dw="add"]'), at('.dw-other .dw-start'), at('.dw-other [data-dwf="svgfile"]')]; });
+  ok(addOrder.every(x => x >= 0) && addOrder.every((x, i) => !i || x > addOrder[i - 1]) && /^Add food$/.test(await txt(p, '#dw-h-lib') || '') && /Other ways to start/.test(await txt(p, '.dw-other h3') || ''), 'Add food: the recipe\'s ingredients first, then Find a drawing and the library, then Other ways to start: a copy and Import a drawing (' + addOrder.join(', ') + ')');
   ok(await p.evaluate(() => { const d = document.querySelector('.dw-drawer'), s = document.querySelector('.dw-svg'); if (!d || !s) return false; const a = d.getBoundingClientRect(), c = s.getBoundingClientRect(); return a.left >= c.right - 1 && a.right <= innerWidth + 1; }), 'computer: the library opens in a drawer on the right, beside the canvas');
   ok(await p.evaluate(() => !!document.querySelector('.dw-surf circle, .dw-surf path')), 'new drawing: a dinner plate is under it');
   await p.fill('#dw-q', 'rump'); await L.settle(p, 300);
@@ -290,6 +294,8 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   await p.click('.dw-selbar [data-v="pmore"]'); await L.settle(p, 200);
   const part = await box('.dw-el.on'); dr = await box('.dw-drawer');
   ok(part && dr && part.b <= dr.t + 1 && await p.getAttribute('.dw-selbar [data-v="pmore"]', 'aria-expanded') === 'true', 'phone: the part\'s More opens under the canvas, the part stays in view above it');
+  const pm = await p.evaluate(() => [...document.querySelectorAll('.dw-drawer .dw-tgrp')].map(g => g.querySelector('.label').textContent.trim()).join(', '));
+  ok(pm === 'Arrange, Change, Keep' && await p.evaluate(() => { const t = [...document.querySelectorAll('.dw-drawer .dw-tool')]; return t.length >= 7 && t.every(x => x.querySelector('svg') && x.querySelector('span').textContent.trim()); }), 'the part\'s More: tiles with an icon and a word, grouped Arrange, Change and Keep (' + pm + ')');
   await p.keyboard.press('Escape'); await L.settle(p, 200);
   ok(!(await p.$('.dw-drawer')) && await p.$('.dw-selbar') !== null, 'studio: Escape closes the panel first and keeps the part picked');
   await p.keyboard.press('Escape'); await L.settle(p, 200);
@@ -298,6 +304,11 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   // a tap on the plate closes the open panel
   await p.click('.dw-ctx [data-v="more"]'); await L.settle(p, 200);
   ok(await p.$('.dw-drawer [data-dw="panel"][data-v="parts"]') !== null && await p.$('.dw-drawer [data-dw="text"]') !== null, 'More: the parts list and the drawing tools are under More');
+  // tiles in groups (studio step 3): each tool an icon and a word, a switch that is on says On
+  const groups = () => p.evaluate(() => [...document.querySelectorAll('.dw-drawer .dw-tgrp')].map(g => g.querySelector('.label').textContent.trim() + ':' + g.querySelectorAll('.dw-tool').length));
+  const tilesOk = () => p.evaluate(() => { const t = [...document.querySelectorAll('.dw-drawer .dw-tool')]; return t.length > 0 && t.every(x => x.querySelector('svg') && x.querySelector('span').textContent.trim() && x.getBoundingClientRect().height >= 44) && !document.querySelector('.dw-drawer .dw-tools'); });
+  ok(JSON.stringify(await groups()) === '["Draw it for me:4","Draw by hand:5","Pick and place:3","Keep and reuse:1"]' && await tilesOk(), 'More tools: tiles with an icon and a word in four groups (' + (await groups()).join(', ') + ')');
+  ok(await p.getAttribute('.dw-drawer [data-dw="snap"]', 'aria-pressed') === 'true' && await p.getAttribute('.dw-drawer [data-dw="many"]', 'aria-pressed') === 'false', 'More tools: Snap to centre shows it is on, Pick several that it is off');
   st = await box('.dw-stage');
   await p.mouse.click(st.l + 20, st.t + 20); await L.settle(p, 250);
   ok(!(await p.$('.dw-drawer')), 'studio: a tap on the plate closes the open panel');

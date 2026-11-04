@@ -595,8 +595,24 @@
     check: '<path d="M5 12l4 4 10-10"/>', more: '<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>',
     colour: '<path d="M12 3c-4 5-6 8-6 11a6 6 0 0012 0c0-3-2-6-6-11z"/>', label: '<path d="M4 12V5h7l9 9-7 7-9-9z"/><circle cx="8" cy="9" r="1.2"/>',
     del: '<path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/>', edit: '<path d="M4 20h4L19 9l-4-4L4 16v4z"/>', close: '<path d="M6 6l12 12M18 6L6 18"/>',
-    undo: '<path d="M9 7L4 12l5 5"/><path d="M4 12h10a5 5 0 010 10h-2"/>', redo: '<path d="M15 7l5 5-5 5"/><path d="M20 12H10a5 5 0 000 10h2"/>'
+    undo: '<path d="M9 7L4 12l5 5"/><path d="M4 12h10a5 5 0 010 10h-2"/>', redo: '<path d="M15 7l5 5-5 5"/><path d="M20 12H10a5 5 0 000 10h2"/>',
+    again: '<path d="M4 12a8 8 0 0114-5l2 2"/><path d="M20 4v5h-5"/><path d="M20 12a8 8 0 01-14 5l-2-2"/><path d="M4 20v-5h5"/>', tidy: '<path d="M4 6h16M4 12h10M4 18h16"/>',
+    style: '<circle cx="12" cy="12" r="8"/><path d="M12 4v16"/>', labels: '<path d="M4 12V5h7l9 9-7 7-9-9z"/><path d="M14 4h6v6"/>', text: '<path d="M5 6h14M12 6v13"/>', line: '<path d="M5 19L19 5"/>',
+    arrow: '<path d="M5 19L19 5M10 5h9v9"/>', box: '<rect x="4" y="6" width="16" height="12" rx="1"/>', oval: '<ellipse cx="12" cy="12" rx="9" ry="6"/>',
+    list: '<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>', many: '<rect x="3" y="3" width="8" height="8"/><rect x="13" y="13" width="8" height="8"/>',
+    snap: '<path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="3"/>', tpl: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 9h16"/>',
+    reuse: '<path d="M7 7h11l-3-3M17 17H6l3 3"/>', front: '<rect x="8" y="8" width="11" height="11" rx="1"/><path d="M5 15V5h10"/>',
+    back: '<rect x="5" y="5" width="11" height="11" rx="1"/><path d="M19 9v10H9"/>', up: '<path d="M12 19V5M6 11l6-6 6 6"/>', down: '<path d="M12 5v14M6 13l6 6 6-6"/>',
+    dup: '<rect x="8" y="8" width="11" height="11" rx="2"/><path d="M5 15V5h10"/>', flip: '<path d="M12 3v18M8 7L3 12l5 5M16 7l5 5-5 5"/>',
+    stretch: '<path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/>', split: '<path d="M6 4l6 8-6 8M18 4l-6 8 6 8"/>', swap: '<path d="M4 8h13l-3-3M20 16H7l3 3"/>',
+    keep: '<path d="M6 3h12v18l-6-4-6 4z"/>', svg: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>'
   };
+  // a tile in More and the part's More (4 Nov 2026, studio step 3): an icon and a word, so the tools look like buttons
+  function tool(a, label, icon, o) {
+    o = o || {};
+    return '<button type="button" class="dw-tool" data-dw="' + a + '"' + (o.v != null ? ' data-v="' + esc(o.v) + '"' : '') + (o.on != null ? ' aria-pressed="' + !!o.on + '"' : '') + '>' + ico(icon) + '<span>' + esc(label) + '</span></button>';
+  }
+  function tools(name, list) { return list ? '<div class="dw-tgrp"><span class="label">' + esc(name) + '</span><div class="dw-tiles">' + list + '</div></div>' : ''; }
   function ico(k) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + DI[k] + '</svg>'; }
   function dk(a, label, icon, o) {
     o = o || {};
@@ -619,36 +635,36 @@
     return '<nav class="dw-ctx" aria-label="Studio">' + dk('panel', 'Add food', 'add', { v: 'lib', exp: W.panel === 'lib' }) + (side ? '' : dk('panel', 'Plate', 'plate', { v: 'ware', exp: W.panel === 'ware' })) +
       dk('check', 'Check', 'check', { exp: W.panel === 'check', n: n, aria: n ? 'Check: ' + n + (n === 1 ? ' thing' : ' things') + ' to look at' : 'Check' }) + dk('panel', 'More', 'more', { v: 'more', exp: W.panel === 'more' }) + '</nav>';
   }
-  // the tools not used on every drawing, in groups
+  // the tools not used on every drawing, as tiles in groups
   function moreHTML() {
     var d = W.d, side = d.slot === 'side' || d.slot === 'build', S = window.LK_SMART && window.LK_SMART.ui;
     return '<section class="dw-panel" aria-labelledby="dw-h-more"><h3 class="h3" id="dw-h-more">More tools</h3>' +
-      (S || side ? '<span class="label">Draw it for me</span><div class="dw-tools">' + (S ? btn('sm-draw', d.els.length ? 'Draw it again' : 'Draw it for me') : '') + (S && !side ? btn('sm-again', 'Try another layout') + btn('sm-tidy', 'Tidy up') + btn('panel', 'Plating style', { v: 'style' }) : '') + (side ? btn('labels', 'Label everything') : '') + '</div>' : '') +
-      '<span class="label">Draw by hand</span><div class="dw-tools">' + btn('text', 'Text') + btn('line', 'Line') + btn('arrow', 'Arrow') + btn('rect', 'Box') + btn('ellipse', 'Oval') + '</div>' +
-      '<span class="label">Pick and place</span><div class="dw-tools">' + btn('panel', 'Parts list', { v: 'parts' }) + btn('many', 'Pick several', { on: W.many }) + btn('snap', 'Snap to centre', { on: W.snap !== false }) + '</div>' +
-      '<span class="label">Keep and reuse</span><div class="dw-tools">' + btn('panel', 'Save as a template', { v: 'tpl' }) + (d.isNew ? '' : btn('panel', 'Use for another recipe', { v: 'reuse' })) + '</div></section>';
+      tools('Draw it for me', (S ? tool('sm-draw', d.els.length ? 'Draw it again' : 'Draw it for me', 'spark') : '') + (S && !side ? tool('sm-again', 'Try another layout', 'again') + tool('sm-tidy', 'Tidy up', 'tidy') + tool('panel', 'Plating style', 'style', { v: 'style' }) : '') + (side ? tool('labels', 'Label everything', 'labels') : '')) +
+      tools('Draw by hand', tool('text', 'Text', 'text') + tool('line', 'Line', 'line') + tool('arrow', 'Arrow', 'arrow') + tool('rect', 'Box', 'box') + tool('ellipse', 'Oval', 'oval')) +
+      tools('Pick and place', tool('panel', 'Parts list', 'list', { v: 'parts' }) + tool('many', 'Pick several', 'many', { on: W.many }) + tool('snap', 'Snap to centre', 'snap', { on: W.snap !== false })) +
+      tools('Keep and reuse', tool('panel', 'Save as a template', 'tpl', { v: 'tpl' }) + (d.isNew ? '' : tool('panel', 'Use for another recipe', 'reuse', { v: 'reuse' }))) + '</section>';
   }
   function canSwap(el) { return !!(isPiece(el) && el.ing && (W.d.slot === 'plate' || W.d.slot === 'pan')); }
-  // More for the picked part: arranging, copying and changing it
+  // More for the picked part: arranging, copying and changing it, as tiles in groups
   function partMoreHTML() {
     var one = W.sel.length === 1 ? W.d.els[W.sel[0]] : null;
     return '<section class="dw-panel" aria-labelledby="dw-h-pm"><h3 class="h3" id="dw-h-pm">' + esc(one ? nameOfEl(one) : W.sel.length + ' parts picked') + '</h3>' +
-      '<span class="label">Arrange</span><div class="dw-tools">' + btn('front', 'To the front') + btn('fwd', 'Forward') + btn('bwd', 'Backward') + btn('back', 'To the back') + '</div>' +
-      '<span class="label">Change</span><div class="dw-tools">' + (canSwap(one) ? btn('swap', 'Swap for another drawing') : '') + btn('dup', 'Duplicate') + (isPiece(one) ? btn('flip', 'Flip') + btn('stretch', 'Stretch', { on: W.stretch }) : '') +
-      (one && one.t === 'raw' ? btn('split', 'Split into pieces') : '') + (one && one.t !== 'item' ? btn('panel', 'Change it', { v: 'edit' }) : '') + '</div>' +
-      (W.sel.some(function (i) { return isPiece(W.d.els[i]); }) ? '<span class="label">Keep</span><div class="dw-tools">' + btn('piece', 'Save as a library piece') + '</div>' : '') + '</section>';
+      tools('Arrange', tool('front', 'To the front', 'front') + tool('fwd', 'Forward', 'up') + tool('bwd', 'Backward', 'down') + tool('back', 'To the back', 'back')) +
+      tools('Change', (canSwap(one) ? tool('swap', 'Swap drawing', 'swap') : '') + tool('dup', 'Duplicate', 'dup') + (isPiece(one) ? tool('flip', 'Flip', 'flip') + tool('stretch', 'Stretch', 'stretch', { on: W.stretch }) : '') +
+        (one && one.t === 'raw' ? tool('split', 'Split into pieces', 'split') : '') + (one && one.t !== 'item' ? tool('panel', 'Change it', 'edit', { v: 'edit' }) : '')) +
+      (W.sel.some(function (i) { return isPiece(W.d.els[i]); }) ? tools('Keep', tool('piece', 'Save as a library piece', 'keep')) : '') + '</section>';
   }
   // the drawer: the open panel, and what Draw it for me was not sure about until it is closed
   function drawerHTML() {
     var p = W.panel === 'pmore' && !W.sel.length ? '' : W.panel, unsure = !!(W.smart && W.smart.unsure && W.smart.unsure.length && W.unsureShut !== W.smart);
     if (!p && !unsure) return '';
     if (p === 'check' && !W.check) W.check = check();   // a change clears the last check: while its panel is open it checks again
-    var body = smart('panel') + (p === 'lib' ? startHTML() : '') + (p === 'lib' ? missingHTML() : '') + (p === 'check' ? checkHTML() : '') + (p === 'more' ? moreHTML() : p === 'pmore' ? partMoreHTML() : panelHTML());
+    var body = smart('panel') + (p === 'check' ? checkHTML() : '') + (p === 'more' ? moreHTML() : p === 'pmore' ? partMoreHTML() : panelHTML());
     return '<aside class="dw-drawer" aria-label="Studio panel"><div class="dw-drawer-head"><button type="button" class="dw-shut" data-dw="shut" aria-label="Close the panel">' + ico('close') + '</button></div>' + body + '</aside>';
   }
   function missingHTML() {
     var m = missingIngs();
-    if (!m.length) return '';
+    if (!m.length) return W.d.els.length && (rec() || {}).ingredients ? '<p class="hint dw-allon">Every ingredient in the recipe is on the ' + (W.d.slot === 'pan' ? 'pan' : W.d.slot === 'plate' ? 'plate' : 'drawing') + '.</p>' : '';
     return '<div class="dw-miss"><span class="label">In this recipe, not on the ' + (W.d.slot === 'pan' ? 'pan' : 'plate') + ' yet</span><div class="chips">' + m.map(function (i) {
       return '<button type="button" class="chip" data-dw="ing" data-v="' + esc(ingName(i)) + '">+ ' + esc(ingName(i)) + '</button>';
     }).join('') + '</div></div>';
@@ -672,16 +688,23 @@
     else list = LIB.items.filter(function (it) { return (!o.cat || it.cat === o.cat) && (!o.sub || it.sub === o.sub); });
     if (!W.q.trim() && !W.cat) list = list.filter(function (it) { return !it.of; });
     var shown = list.slice(0, 36 + W.more);
-    return '<section class="dw-panel" aria-labelledby="dw-h-lib"><h3 class="h3" id="dw-h-lib">Library</h3>' +
-      (W.swap ? '<p class="hint">Pick the drawing to swap in for <b>' + esc(W.pendingIng) + '</b>. It takes the part\'s place and stays when the book draws the plate again.</p>' : W.pendingIng ? '<p class="hint">Pick the drawing for <b>' + esc(W.pendingIng) + '</b>. It is labelled with that ingredient.</p>' : '') +
+    // Add food (4 Nov 2026, studio step 3): what is in the recipe and not on it yet first, then Find a drawing, then the
+    // other ways to start at the bottom
+    return '<section class="dw-panel" aria-labelledby="dw-h-lib"><h3 class="h3" id="dw-h-lib">' + (W.swap ? 'Swap the drawing' : 'Add food') + '</h3>' +
+      (W.swap ? '<p class="hint">Pick the drawing to swap in for <b>' + esc(W.pendingIng) + '</b>. It takes the part\'s place and stays when the book draws the plate again.</p>' : W.pendingIng ? '<p class="hint">Pick the drawing for <b>' + esc(W.pendingIng) + '</b>. It is labelled with that ingredient.</p>' : missingHTML()) +
       '<div class="field"><label class="label" for="dw-q">Find a drawing</label><input id="dw-q" class="search" type="search" data-dwf="q" autocomplete="off" spellcheck="false" placeholder="For example: chips, pepper sauce, lemon wedge" value="' + esc(W.q) + '"></div>' +
       '<div class="chips scroll" role="group" aria-label="Category">' + btn('cat', 'All', { v: '', on: !W.cat, cls: 'chip' }) + cats.map(function (c) { return btn('cat', c.name, { v: c.id, on: W.cat === c.id, cls: 'chip' }); }).join('') + '</div>' +
       (W.cat ? '<div class="chips scroll" role="group" aria-label="Kind">' + btn('sub', 'All ' + (cats.filter(function (c) { return c.id === W.cat; })[0] || {}).name.toLowerCase(), { v: '', on: !W.sub, cls: 'chip' }) + LIB.subs(W.cat).map(function (s) { return btn('sub', s, { v: s, on: W.sub === s, cls: 'chip' }); }).join('') + '</div>' : '') +
-      '<div class="btn-row"><label class="btn dw-imp">Import a drawing (SVG)<input type="file" class="dw-file" accept=".svg,image/svg+xml" data-dwf="svgfile"></label></div>' +
       '<p class="hint" role="status">' + list.length + (list.length === 1 ? ' drawing' : ' drawings') + '. Tap one to put it on the ' + (W.d.slot === 'pan' ? 'pan' : W.d.slot === 'plate' ? 'plate' : 'drawing') + ', or drag it there.</p>' +
       '<div class="dw-lib">' + shown.map(function (it) {
         return '<button type="button" class="dw-tile" data-dw="add" data-v="' + esc(it.id) + '" aria-label="' + esc(it.name) + '">' + thumb(it) + '<span>' + esc(it.name) + '</span></button>';
-      }).join('') + '</div>' + (list.length > shown.length ? '<div class="btn-row">' + btn('more', 'Show more', { cls: 'btn' }) + '</div>' : '') + '</section>';
+      }).join('') + '</div>' + (list.length > shown.length ? '<div class="btn-row">' + btn('more', 'Show more', { cls: 'btn' }) + '</div>' : '') + '</section>' +
+      (W.swap || W.pendingIng ? '' : otherHTML());
+  }
+  function otherHTML() {
+    var start = startHTML();
+    return '<section class="dw-panel dw-other" aria-labelledby="dw-h-other"><h3 class="h3" id="dw-h-other">' + (start ? 'Other ways to start' : 'Your own drawing') + '</h3>' + start +
+      '<div class="btn-row"><label class="btn dw-imp">Import a drawing (SVG)<input type="file" class="dw-file" accept=".svg,image/svg+xml" data-dwf="svgfile"></label></div></section>';
   }
   /* The Plate panel (4 Nov 2026, studio B): the kinds as chips, the pieces as pictures, the colour as swatches (many more
      than before, and any colour), and the rest behind one button. The chips and pictures stay as they are: data-adaptive
@@ -1314,7 +1337,7 @@
     return o ? '<svg viewBox="' + esc(o.viewBox) + '" aria-hidden="true" focusable="false">' + o.body + '</svg>' : '';
   }
   function tplThumb(t) { return '<svg viewBox="' + esc(t.vb || '-110 -110 220 220') + '" aria-hidden="true" focusable="false"><g data-surf="1">' + t.svgS + '</g>' + t.svgF + '</svg>'; }
-  // a new, empty drawing: start blank (the library is below), or from a copy
+  // a new, empty drawing: start from a copy (at the bottom of Add food, under Other ways to start)
   function startHTML() {
     var d = W.d, r = rec();
     if (!d.isNew || d.els.length || W.started) return '';
@@ -1322,7 +1345,7 @@
     var tpls = MINE.tpl.filter(function (t) { return t.slot === d.slot; }), others = X.arts().filter(function (x) { return x.slot === d.slot && !x.removed; });
     var tile = function (code, label, pic) { return '<button type="button" class="dw-tile" data-dw="from" data-v="' + esc(code) + '">' + pic + '<span>' + esc(label) + '</span></button>'; };
     // one line until it is opened, so the library stays where it is
-    return '<details class="dw-panel dw-start"' + (W.startOpen ? ' open' : '') + '><summary data-dw="start-open">Start from a copy' + (own ? ' of the book\'s drawing' : '') + (tpls.length ? ', a template' : '') + ' or another drawing</summary><p class="hint">Draw from blank with the library below, or start from a copy. What you start from stays as it is.</p>' +
+    return '<details class="dw-start"' + (W.startOpen ? ' open' : '') + '><summary data-dw="start-open">Start from a copy' + (own ? ' of the book\'s drawing' : '') + (tpls.length ? ', a template' : '') + ' or another drawing</summary><p class="hint">Draw it for me or the library above start from a clear plate. A copy starts from a drawing that is done. What you copy stays as it is.</p>' +
       (own || tpls.length ? '<div class="dw-lib">' + (own ? tile('book:' + own, 'The book\'s drawing of ' + (r ? r.name : d.rid), bookThumb(d.slot, own)) : '') + tpls.map(function (t) { return tile('tpl:' + t.id, 'Template: ' + t.name, tplThumb(t)); }).join('') + '</div>' : '') +
       (!MINE.loaded ? '<p class="hint">Looking for templates...</p>' : MINE.off ? '<p class="hint" role="status">No signal. Your templates show when the phone is back online.</p>' : '') +
       '<div class="field"><label class="label" for="dw-from">Or a copy of another drawing</label><select id="dw-from" class="search" data-dwf="fromsel"><option value="">Pick a drawing</option>' +
