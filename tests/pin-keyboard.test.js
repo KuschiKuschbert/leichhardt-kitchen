@@ -23,7 +23,7 @@ const active = p => p.evaluate(() => { const a = document.activeElement; return 
   ok((await active(p)) === 'pf1:numeric', 'own PIN: the box is there and has focus straight after the tap on the name (' + await active(p) + ')');
   await p.keyboard.type('2222');
   await L.settle(p, 900);
-  ok(/Writing as\s*Ann/.test(await txt(p, '.nb-top') || ''), 'own PIN typed straight in: Ann is signed in (' + (await txt(p, '.nb-top') || '').trim() + ')');
+  ok(await L.whoIs(p) === 'Ann', 'own PIN typed straight in: Ann is signed in (' + await L.whoIs(p) + ')');
   ok(p.errors.length === 0, 'pin keyboard phone: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -52,7 +52,7 @@ const active = p => p.evaluate(() => { const a = document.activeElement; return 
   ok(/One more thing, Kim/.test(await txt(p, '#prep-root') || ''), 'new person: asked for a usual drink straight after the PIN');
   await p.click('[data-p="dk-skip"]');
   await L.settle(p, 300);
-  ok(/Writing as\s*Kim/.test(await txt(p, '.nb-top') || ''), 'new person: signed in with the PIN typed early (' + (await txt(p, '.nb-top') || '').trim() + ')');
+  ok(await L.whoIs(p) === 'Kim', 'new person: signed in with the PIN typed early (' + await L.whoIs(p) + ')');
   ok(p.errors.length === 0, 'pin keyboard new person: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   await b.close();

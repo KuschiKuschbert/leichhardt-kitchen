@@ -25,11 +25,13 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
   for (const who of ['ann', 'sam']) {
     const p = await L.open(b, '#/transfers', { extra, who, wait: 1500 });
     await L.waitFor(p, () => !!document.querySelector('.tr-row'));
+    await L.xLog(p);
     const body = await txt(p, '.o-page') || '';
     ok(/Transfers/.test(await txt(p, '#rtitle') || '') && /Brioche buns/.test(body) && !/Milk/.test(body), who + ': the page shows today\'s Brioche buns and not yesterday\'s Milk');
     ok(/To Riviera, Jess came for it/.test(body) && /1 out/.test(await txt(p, '.nb-date') || ''), who + ': a row says where it went and who came for it, the header counts it');
     ok(!(await p.$('[data-p="tr-del"]')) && !(await p.$('.w-past')), who + ': no Remove and no admin link');
-    ok(await p.evaluate(() => document.querySelector('#tr-venue').getBoundingClientRect().top < document.querySelector('.tr-row').getBoundingClientRect().top), who + ': the form sits above the day\'s transfers');
+    // 3 Nov 2026 (work pages redesign A): Log a transfer sits above the lists and opens the form as a sheet
+    ok(await p.evaluate(() => document.querySelector('.tr-logbtn').getBoundingClientRect().top < document.querySelector('.tr-row').getBoundingClientRect().top && !!document.querySelector('.tr-sheet #tr-venue')), who + ': Log a transfer sits above the day\'s transfers and opens the form');
 
     // nothing typed: the checks say what is missing, in order, and nothing is saved
     await p.click('.tr-add .nb-addbtn'); await L.settle(p, 250);
@@ -118,6 +120,7 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
     ok(!!await p.$('[data-k="pf1"]') && !await p.$('.tr-row'), 'shared tablet: transfers are hidden behind the idle PIN lock');
     await p.click('[data-p="who-change"]'); await L.settle(p, 200);
     await p.click('.p-name[data-id="ann"]'); await L.settle(p,250); await p.keyboard.type('2222'); await L.settle(p,1000);
+    await L.xLog(p);
     await p.fill('#tr-venue', 'Riviera'); await p.fill('#tr-person', 'Jess'); await p.fill('#tr-text', 'Cream'); await p.fill('#tr-amt', '2');
     await L.choose(p, '[data-p="tr-unit"][data-v="L"]');
     await p.click('.tr-add .nb-addbtn'); await L.settle(p, 300);
