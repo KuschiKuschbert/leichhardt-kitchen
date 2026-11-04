@@ -5032,7 +5032,8 @@
       '<section class="set-block a-feats"><span class="label">New pages</span><span class="hint">You, sous chefs and leads always see these. Untick one to hide it from Staff and View only until the team is ready.</span>' +
       FEATS.map(function (f) { return '<label class="a-check"><input type="checkbox" data-a="staffsee" data-f="' + f[0] + '"' + (d.staffSee[f[0]] ? ' checked' : '') + '> Staff see ' + f[1] + '</label>'; }).join('') + '</section>' + saveBlock
     ) : (
-      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, prep lines, orders, wastage, delivery temperatures and transfers between venues from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, function bookings with their contacts and earlier versions, the chef to-do list, what the prep and order lists have learned, tallies and the guides\' words) as one file on this device. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files). The book is also backed up on the server every night at 03:30; download one here when you want a copy on this computer.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
+      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds as one file on this device. The server also backs the book up every night at 03:30.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div>' +
+        '<details class="a-how"><summary>What a backup holds</summary><p class="hint">People, prep lines, orders, wastage, delivery temperatures and transfers between venues from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, function bookings with their contacts and earlier versions, the chef to-do list, what the prep and order lists have learned, tallies and the guides\' words. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files).</p></details></section>' +
       '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is the lock on the whole book, so keep it to staff only. Writing needs a person\'s own PIN as well.</span>' +
       '<p class="hint a-step"><strong>Step 1.</strong> Ask for the new PIN to be added to the security rules. <strong>Step 2.</strong> Type it twice below and copy everything to it. The old PIN keeps working until its rules are removed.</p>' +
       '<div class="field"><label class="label" for="a-newpin">New 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
@@ -5116,6 +5117,13 @@
     return Array.prototype.filter.call(hs, function (h) { return h.offsetParent && h.textContent.trim(); });
   }
   function adminJumps() {
+    // the page tabs are one row (4 Nov 2026): when it scrolls sideways it fades at its edge and the open tab is in view
+    var tabs = S.root && S.root.querySelector('.a-tabs');
+    if (tabs) {
+      tabs.classList.toggle('is-scroll', tabs.scrollWidth > tabs.clientWidth + 1);
+      var cur = tabs.classList.contains('is-scroll') && tabs.querySelector('[aria-pressed="true"]');
+      if (cur) { var tr = tabs.getBoundingClientRect(), cr = cur.getBoundingClientRect(); if (cr.left < tr.left || cr.right > tr.right - 40) tabs.scrollLeft += cr.left - tr.left - 16; }
+    }
     var row = S.root && S.root.querySelector('.a-onpage');
     if (!row) return;
     var hs = adminHeads();
@@ -9320,7 +9328,8 @@
         '<p class="hint cut-say">' + esc(cutSay(s)) + '</p>' +
         '<button type="button" class="p-x" data-p="cut-rm" data-i="' + i + '" aria-label="' + esc('Remove ' + (s.name || 'this supplier')) + '">' + (armed('cut-rm:' + i) ? 'Tap again to remove' : 'Remove') + '</button></li>';
     }).join('');
-    return '<section class="set-block a-cut"><span class="label">Order cut-offs</span><span class="hint">You and the sous chefs get a bar at the top of every page from the time you pick under Remind us (4 hours before unless you change it) until the cut-off passes. It turns orange in the last hour. An early cut-off is reminded from the night before. Today\'s cut-offs show on the order list. Tick the days the supplier delivers, then when the order has to be in.</span>' +
+    return '<section class="set-block a-cut"><span class="label">Order cut-offs</span><span class="hint">Tick the days the supplier delivers, then when the order has to be in.</span>' +
+      '<details class="a-how"><summary>How reminders work</summary><p class="hint">You and the sous chefs get a bar at the top of every page from the time you pick under Remind us (4 hours before unless you change it) until the cut-off passes. It turns orange in the last hour. An early cut-off is reminded from the night before. Today\'s cut-offs show on the order list.</p></details>' +
       (rows ? '<ul class="cut-eds">' + rows + '</ul>' : '<p class="hint">No suppliers yet, so nobody is reminded.</p>') +
       '<div class="btn-row"><button type="button" class="btn" data-p="cut-add">Add a supplier</button>' + (d.length ? '' : '<button type="button" class="btn" data-p="cut-usual">Add ' + esc(CUT_USUAL.map(function (x) { return x.name; }).join(', ')) + '</button>') + '</div>' +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="cut-save"' + (owner && cutDirty() && !S.cutBusy ? '' : ' disabled') + '>Save cut-offs</button><button type="button" class="btn" data-p="cut-undo"' + (cutDirty() ? '' : ' disabled') + '>' + (armed('cut-undo') ? 'Tap again to undo' : 'Undo unsaved changes') + '</button></div>' +
@@ -10165,11 +10174,14 @@
   function mlFilters() { return [['all', 'All']].concat(ML_CATS.map(function (c) { return [c[0], c[1], function (x) { return x.cat === c[0]; }]; })); }
   function mailAdminHTML() {
     if (!mlHead()) return mlListHTML('Kitchen mail', 'What the team wrote to Chef, most urgent first. Chef has let the sous chefs read it. Tick a line when it is dealt with. Seen is still for Chef.');
-    return mlListHTML('Kitchen mail', 'What the team wrote to you, most urgent first: food safety, then Today, This week and Whenever, oldest first. Opening this list marks everything on it as seen, so the sender knows you have read it. Tick a line when it is dealt with.',
+    return mlListHTML('Kitchen mail', ['What the team wrote to you, most urgent first. Tick a line when it is dealt with.', 'Food safety comes first, then Today, This week and Whenever, oldest first. Opening this list marks everything on it as seen, so the sender knows you have read it.'],
       '<div class="ml-sous"><label class="a-check"><input type="checkbox" data-k="ml-sous"' + (mlSousOn() ? ' checked' : '') + '> Sous chefs can read kitchen mail and tick it off</label>' +
       '<span class="hint">Off: only you read it. On: a sous chef signed in with their PIN reads it under Kitchen mail in the chef hat menu, ticks lines off and changes how soon they matter. Seen still means you have read it.</span></div>');
   }
+  // hint is one line of help, or [one line, the rest under How this works] (4 Nov 2026, the admin page kit)
   function mlListHTML(title, hint, foot) {
+    var how = Array.isArray(hint) ? '<details class="a-how"><summary>How this works</summary><p class="hint">' + hint[1] + '</p></details>' : '';
+    if (how) hint = hint[0];
     loadMail(); loadMailDone();
     if (!mlOpen || mlErr) return '<section class="set-block"><span class="label">' + title + '</span><p class="hint">' + (mlErr ? 'Could not load the mail. Check the signal. The book tries again in a few minutes.' : 'Loading...') + '</p></section>';
     var done = (mlDone || []).slice().sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
@@ -10177,7 +10189,7 @@
     // "Nothing ticked off" from a read that failed (a list read earlier stays under the note)
     var doneNote = mlDoneErr ? '<p class="hint" role="status">Could not load the done mail. Check the signal. The book tries again in a few minutes.</p>' : mlDoneIn ? '' : '<p class="hint">Loading...</p>';
     var doneBody = mlDoneIn ? lvHTML({ key: 'maildone', items: done, step: 15, noun: ['message', 'messages'], ph: 'Search done mail', find: mlFind, filters: mlFilters(), card: mlRow, empty: 'Nothing ticked off in the last 30 days.' }) : '';
-    return '<section class="set-block ml-admin"><span class="label">' + title + '</span><span class="hint">' + hint + '</span>' +
+    return '<section class="set-block ml-admin"><span class="label">' + title + '</span><span class="hint">' + hint + '</span>' + how +
       lvHTML({ key: 'mail', items: mlOpen, step: 20, noun: ['open message', 'open messages'], ph: 'Search mail', find: mlFind, filters: mlFilters(),
         sorts: [['pri', 'Most urgent first', function (a, b) { return mlRank(a) - mlRank(b) || (a.at || 0) - (b.at || 0); }], ['new', 'Newest first', function (a, b) { return (b.at || 0) - (a.at || 0); }], ['old', 'Oldest first', function (a, b) { return (a.at || 0) - (b.at || 0); }]],
         card: mlRow, empty: 'No open mail. Everything is dealt with.' }) + mlSeenSoon() +

@@ -1,4 +1,5 @@
-// The admin page kit, part 1 (4 Nov 2026, docs/admin-pages-options/brief.md): every admin page's controls are one size.
+// The admin page kit (4 Nov 2026, docs/admin-pages-options/brief.md). Part 1: every admin page's controls are one size.
+// Part 2: the page tabs are one underlined row with the open tab in view, and long help folds under How this works.
 // Opens all 21 admin pages at 390 and 1280 px and measures what a person taps or types into. Example data only.
 const L = require('./lib');
 const { R, ok } = L.results();
@@ -42,7 +43,19 @@ const oneLine = (p, sel) => p.evaluate(s => [...document.querySelectorAll(s)].fi
       }
       const pick = await oneLine(p, '.a-pane .a-table .ux-picker-trigger');
       ok(pick.every(x => x.h <= 52), width + ' ' + t + ': a role in the staff table sits on one line (' + JSON.stringify(pick.filter(x => x.h > 52)) + ')');
+      // part 2: the page tabs are one row, and the open one can be seen in it
+      const row = await p.evaluate(() => { const n = document.querySelector('.a-tabs'); if (!n) return null; const r = n.getBoundingClientRect(), on = n.querySelector('[aria-pressed="true"]'), o = on && on.getBoundingClientRect();
+        return { h: Math.round(r.height), inView: !!o && o.left >= r.left - 1 && o.right <= r.right + 1, pill: on ? getComputedStyle(on).borderTopLeftRadius : '' }; });
+      if (row) ok(row.h <= 56 && row.inView && row.pill === '0px', width + ' ' + t + ': the page tabs are one underlined row with the open tab in view (' + JSON.stringify(row) + ')');
       ok(!await L.overflow(p), width + ' ' + t + ': no sideways scroll');
+    }
+    // part 2: one line of help, the rest under How this works, closed until tapped
+    for (const [t, words] of [['mail', 'marks everything on it as seen'], ['cutoffs', 'turns orange in the last hour'], ['tools', 'PIN fingerprints']]) {
+      await L.adminTab(p, t); await L.settle(p, 400);
+      await p.evaluate(() => { const x = document.querySelector('.mlp-wrap [data-ml="later"]'); if (x) x.click(); });
+      const h = await p.evaluate(w => { const d = [...document.querySelectorAll('.a-pane details.a-how')].find(x => x.textContent.includes(w)); if (!d) return null; const lead = d.parentElement.querySelector(':scope > .hint');
+        return { open: d.open, lead: lead ? Math.round(lead.getBoundingClientRect().height) : 0, line: lead ? parseFloat(getComputedStyle(lead).lineHeight) || 20 : 20 }; }, words);
+      ok(h && !h.open && h.lead > 0 && h.lead <= 3 * h.line + 2, width + ' ' + t + ': one short line of help, the rest under How this works (' + JSON.stringify(h) + ')');
     }
     // the Wastage filters hide a box under More filters: open it and measure that too
     await L.adminTab(p, 'waste'); await L.settle(p, 400);
