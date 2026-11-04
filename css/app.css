@@ -3121,6 +3121,13 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
   .ink-progress > progress::-webkit-progress-value { transition: none; }
   .ink-skeleton-box { rotate: none; }
 }
+/* One section control (3 Nov 2026, work pages redesign S2): the kitchen's sections as chips under the section box on
+   the prep list and wastage, in one row that scrolls sideways on a phone and fades at its edge */
+.sec-chips { margin-top: 0.5rem; }
+@media (max-width: 719px) {
+  .sec-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); padding-right: 1.5rem; }
+  .sec-chips::-webkit-scrollbar { display: none; }
+}
 
 /* Admin Dashboard (3 Nov 2026, The Pass board with three headlines; js/admin-dashboard.js). dsh- classes only. */
 .dsh { --dsh-bad: #9B2716; --dsh-bad-tint: #FBE9E5; --dsh-w: #2A78D6; --dsh-t: #EB6834;
