@@ -27,3 +27,7 @@ Rollback the UI through a fresh PR while retaining the directnotes restrictions,
 
 - [Firestore rules and queries](https://firebase.google.com/docs/firestore/security/rules-query): rules do not filter query results; recipient queries must prove their permitted scope.
 - [Create a Firestore index](https://firebase.google.com/docs/firestore/reference/rest/v1/projects.databases.collectionGroups.indexes/create): additive index creation returns an operation which must complete before client queries are released.
+
+## Working rules (moved from CLAUDE.md, 3 Nov 2026)
+
+Keep individual text in `directnotes`, outside legacy Everyone queries. Match the real personal session in Firestore; stale `pingIds` must not grant private management access. Recipient/author/creation time stay fixed. Publish tested rules and the additive recipient/date index from the feature branch before merging client code. Backups, PIN moves, receipts and shared-device clearing must retain both kinds of pings.

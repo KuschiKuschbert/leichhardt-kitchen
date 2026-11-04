@@ -10,7 +10,14 @@ const receipt = (day, supplier) => ({ day, supplier, receivedAt: L.NOW - 60000 -
 extra[key('deliveries', 'older')] = receipt(past, 'Earlier supplier');
 const open = async (b, o = {}) => { const p = await L.open(b, '#/deliveries', { extra, wait: 1800, ...o }); await p.waitForSelector('#dl-supplier'); return p; };
 const records = p => p.evaluate(prefix => Object.entries(window.__fake.dump()).filter(([k]) => k.startsWith(prefix)).map(([id, d]) => ({ id, ...d })), key('deliveries') + '/');
-const fill = async (p, c = '3.5', f = '-18.5') => { await p.fill('#dl-supplier', 'Test supplier'); await p.fill('#dl-chilled', c); await p.fill('#dl-frozen', f); await p.fill('#dl-note', 'Chicken and frozen goods'); };
+// What came in? (3 Nov 2026): pick the choice that matches the readings given, then fill only the boxes showing
+const mode = (p, m) => p.click('[data-dl="mode"][data-mode="' + m + '"]');
+const openTime = async p => { if (!await p.isVisible('#dl-time')) await p.click('[data-dl="time"]'); };
+const fill = async (p, c = '3.5', f = '-18.5') => {
+  await p.fill('#dl-supplier', 'Test supplier'); await mode(p, c && f ? 'both' : f ? 'frozen' : 'chilled');
+  if (c) await p.fill('#dl-chilled', c); if (f) await p.fill('#dl-frozen', f);
+  if (!await p.$('#dl-note')) await p.click('[data-dl="note"]'); await p.fill('#dl-note', 'Chicken and frozen goods');
+};
 const save = async p => { await p.click('#dl-form button[type="submit"]'); await L.settle(p, 1000); };
 (async () => {
   const b = await L.start();
@@ -28,12 +35,12 @@ const save = async p => { await p.click('#dl-form button[type="submit"]'); await
   }
   let p = await open(b, { who: 'ann' });
   await save(p); ok(/supplier name/.test(await p.locator('#dl-save-note').innerText()), 'empty supplier is rejected');
-  await p.fill('#dl-supplier', 'Test supplier'); await save(p); ok(/either|both|Enter a chiller/.test(await p.locator('#dl-save-note').innerText()), 'at least one reading is required');
+  await p.fill('#dl-supplier', 'Test supplier'); await save(p); ok(/Enter the chilled reading/.test(await p.locator('#dl-save-note').innerText()), 'at least one reading is required');
   for (const value of ['abc', '-101', '101', '1e2']) {
     await p.fill('#dl-chilled', value); await save(p); ok(/Enter a temperature/.test(await p.locator('#dl-save-note').innerText()), 'invalid reading rejected: ' + value);
   }
   ok(await p.$eval('#dl-time', e => e.type === 'time' && e.step === '60'), 'delivery arrival uses a minute picker');
-  await p.fill('#dl-chilled', '3,5'); await p.fill('#dl-time', '23:59'); await save(p); ok(/future/.test(await p.locator('#dl-save-note').innerText()), 'future receipt time is rejected');
+  await p.fill('#dl-chilled', '3,5'); await openTime(p); await p.fill('#dl-time', '23:59'); await save(p); ok(/future/.test(await p.locator('#dl-save-note').innerText()), 'future receipt time is rejected');
   await p.fill('#dl-time', '13:45'); await save(p);
   let saved = (await records(p)).find(x => x.supplier === 'Test supplier');
   ok(saved && saved.chilled === 3.5 && saved.frozen === null && saved.receivedAt === L.NOW - 15 * 60000, 'comma decimal and changed delivery time persist, unused temperature stays null');
@@ -72,7 +79,7 @@ const save = async p => { await p.click('#dl-form button[type="submit"]'); await
   ok(/Could not read/.test(await p.locator('.dl-history').innerText()) && !/No deliveries/.test(await p.locator('.dl-history').innerText()), 'history read failure shows an error, never an empty history');
   await p.evaluate(() => { window.__fake.failReads = null; }); await p.click('[data-dl="refresh"]'); await L.settle(p, 300);
   ok(/Earlier supplier/.test(await p.locator('.dl-receipts').innerText()), 'refresh recovers a failed history read');
-  await p.fill('#dl-day', past); await fill(p, '4', ''); await save(p);
+  await openTime(p); await p.fill('#dl-day', past); await fill(p, '4', ''); await save(p);
   ok((await records(p)).some(x => x.day === past && x.supplier === 'Test supplier' && x.by === 'head' && x.receivedById === 'head' && x.receivedBy === 'Head'), 'the verified head-chef device records a past delivery with the authenticated receiver');
   ok(/Test supplier/.test(await p.locator('.dl-receipts').innerText()), 'past-date save appears immediately without another history read');
   await p.context().close();
@@ -80,6 +87,83 @@ const save = async p => { await p.click('#dl-form button[type="submit"]'); await
   ok(!await p.$('#dl-form, .dl-receipt') && /Who are you/.test(await p.locator('body').innerText()), 'direct delivery URL requires a personal sign-in'); await p.context().close();
   p = await L.open(b, '#/deliveries', { extra, who: 'ann', block: 'js/deliveries\\.js', wait: 1500 });
   ok(!!await p.$('[data-delivery-retry]') && /Could not open/.test(await p.locator('#delivery-root').innerText()), 'failed module download has a retry state'); await p.context().close();
+  // Design A (3 Nov 2026): What came in? starts on Chilled and shows one box; Frozen and Both show their own.
+  p = await open(b, { who: 'ann' });
+  ok(await p.getAttribute('[data-dl="mode"][data-mode="chilled"]', 'aria-checked') === 'true' && await p.isVisible('#dl-chilled') && !await p.isVisible('#dl-frozen'), 'one reading: Chilled is picked first and only its box shows');
+  ok(!await p.isVisible('#dl-time') && /14:00 today/.test(await p.locator('.dl-when-line').innerText()) && !await p.$('#dl-note'), 'time sits on one line and the notes stay folded until asked for');
+  await p.fill('#dl-supplier', 'Mode supplier'); await p.fill('#dl-chilled', '4'); await mode(p, 'frozen');
+  ok(!await p.isVisible('#dl-chilled') && await p.isVisible('#dl-frozen') && /chilled reading \(4 °C\) is not saved with Frozen/.test(await p.locator('.dl-hidden-note').innerText()), 'a reading in a box that hides is kept and the page says it will not be saved');
+  await p.focus('#dl-frozen'); await p.click('[data-dl="sign"][data-for="frozen"]');
+  ok(await p.inputValue('#dl-frozen') === '-' && await p.getAttribute('[data-dl="sign"][data-for="frozen"]', 'aria-pressed') === 'true' && await p.evaluate(() => document.activeElement.id === 'dl-frozen'), 'the − key starts a negative reading and hands the focus back to the box');
+  await p.keyboard.type('18.5'); await save(p);
+  let rec = (await records(p)).find(x => x.supplier === 'Mode supplier');
+  ok(rec && rec.frozen === -18.5 && rec.chilled === null, 'Frozen saves the frozen reading only; the hidden chilled reading is not saved');
+  ok(await p.getAttribute('[data-dl="mode"][data-mode="chilled"]', 'aria-checked') === 'true' && !await p.$('.dl-hidden-note'), 'after a save the next delivery starts on Chilled again');
+  await p.fill('#dl-supplier', 'Mode supplier'); await mode(p, 'frozen'); await p.fill('#dl-frozen', '18');
+  ok(/Reads as \+18 °C/.test(await p.locator('#dl-sign-note').innerText()), 'a frozen reading above zero shows its sign before saving');
+  await p.click('[data-dl="sign"][data-for="frozen"]');
+  ok(await p.inputValue('#dl-frozen') === '-18' && (await p.locator('#dl-sign-note').innerText()) === '', 'the − key makes it negative and the sign note goes');
+  await p.click('[data-dl="sign"][data-for="frozen"]');
+  ok(await p.inputValue('#dl-frozen') === '18', 'the − key takes the minus away again');
+  await mode(p, 'both'); await save(p);
+  ok(/Enter both readings/.test(await p.locator('#dl-save-note').innerText()) && await p.getAttribute('#dl-chilled', 'aria-invalid') === 'true', 'Both asks for both readings');
+  await p.focus('[data-dl="mode"][data-mode="both"]'); await p.keyboard.press('ArrowLeft');
+  ok(await p.getAttribute('[data-dl="mode"][data-mode="frozen"]', 'aria-checked') === 'true' && await p.evaluate(() => document.activeElement.getAttribute('data-mode') === 'frozen'), 'arrow keys move the What came in? choice and keep the focus on it');
+  await p.click('[data-dl="clear"]'); await p.click('[data-dl="clear"]'); await L.settle(p, 150);
+  ok(await p.inputValue('#dl-supplier') === '' && await p.getAttribute('[data-dl="mode"][data-mode="chilled"]', 'aria-checked') === 'true', 'Clear form starts again on Chilled');
+  await mode(p, 'frozen'); await p.clock.runFor(61000); await L.settle(p, 300);
+  ok(await p.getAttribute('[data-dl="mode"][data-mode="frozen"]', 'aria-checked') === 'true' && /14:01 today/.test(await p.locator('.dl-when-line').innerText()), 'an untouched form follows the clock and keeps the choice');
+  ok(!p.errors.length, 'What came in? journeys: no page errors ' + p.errors.join(' | ')); await p.context().close();
+
+  // Due today: chips from the order cut-offs already on the phone fill the supplier exactly; no new read.
+  const dow = new Date(L.NOW + 10 * 3600000).getUTCDay();
+  const cuts = [{ id: 'meat', name: 'Meat test supplier', dd: [dow], at: 600, pre: 1, lead: 240 }, { id: 'dairy', name: 'Dairy test supplier', dd: [dow, (dow + 3) % 7], at: 660, pre: 1, lead: 240 },
+    { id: 'dry', name: 'Dry test supplier', dd: [(dow + 2) % 7], at: 700, pre: 2, lead: 240 }];
+  const dueExtra = { ...extra, [key('config', 'main')]: { ...cfg, cutoffs: cuts } };
+  for (const who of ['ann', 'sam']) {
+    p = await open(b, { who, extra: dueExtra });
+    const chips = await p.$$eval('[data-dl="sup"]', els => els.map(e => e.getAttribute('data-name')));
+    ok(chips.join('|') === 'Meat test supplier|Dairy test supplier', who + ': suppliers due today by the cut-offs are offered, others are not');
+    ok(/Not received yet today:\s*Meat test supplier, Dairy test supplier/.test(await p.locator('.dl-history').innerText()), who + ': suppliers due today with no receipt are named under today\'s list');
+    const before = await p.evaluate(() => (window.__fake.reads || []).length);
+    await p.click('[data-dl="sup"][data-name="Dairy test supplier"]');
+    ok(await p.evaluate(n => (window.__fake.reads || []).length - n, before) === 0, who + ': picking a chip reads nothing');
+    ok(await p.inputValue('#dl-supplier') === 'Dairy test supplier' && await p.getAttribute('[data-dl="sup"][data-name="Dairy test supplier"]', 'aria-pressed') === 'true', who + ': a chip fills the supplier with the exact name');
+    await p.fill('#dl-chilled', '3'); await save(p);
+    rec = (await records(p)).find(x => x.supplier === 'Dairy test supplier' && x.by === (who === 'ann' ? 'ann' : 'sam'));
+    ok(!!rec && rec.chilled === 3 && rec.frozen === null, who + ': the chip\'s name is saved on the receipt');
+    await L.waitFor(p, () => !/Dairy test supplier/.test((document.querySelector('.dl-waiting') || {}).textContent || ''));
+    ok(/Not received yet today:\s*Meat test supplier$/.test((await p.locator('.dl-waiting').innerText()).trim()), who + ': a received supplier leaves the not-received line');
+    ok(!p.errors.length, who + ': due-today journey has no page errors ' + p.errors.join(' | ')); await p.context().close();
+  }
+  // A Functions-only login cannot read config/main: the plain box, no chips, nothing named as not received.
+  p = await open(b, { who: 'fay', extra: dueExtra });
+  ok(!await p.$('[data-dl="sup"]') && !await p.$('.dl-waiting') && await p.isVisible('#dl-supplier'), 'functions-only: no cut-off chips, the supplier box still works');
+  await p.context().close();
+
+  // Admin history (design A, step 3, 3 Nov 2026): From and To in one query, a supplier filter and the shared CSV.
+  const older = L.ymd(new Date(L.NOW - 3 * 86400000));
+  const histExtra = { ...extra, [key('deliveries', 'three')]: { ...receipt(older, 'Other test supplier'), receivedAt: L.NOW - 3 * 86400000, chilled: null, frozen: -21, note: '=SUM(A1)' } };
+  p = await open(b, { who: 'head', admin: true, extra: histExtra });
+  ok(await p.isVisible('#dl-view-day') && await p.isVisible('#dl-view-to') && !(await p.$('#dl-sup-filter')), 'admin: From and To are offered; no supplier filter for a single supplier');
+  let reads = await p.evaluate(() => (window.__fake.reads || []).filter(k => /\/deliveries$/.test(k)).length);
+  await p.fill('#dl-view-day', older); await p.dispatchEvent('#dl-view-day', 'change');
+  await L.waitFor(p, () => /Other test supplier/.test((document.querySelector('.dl-receipts') || {}).textContent || ''), null, 5000);
+  const listed = await p.locator('.dl-history').innerText();
+  ok(/Other test supplier/.test(listed) && /Earlier supplier/.test(listed) && /\(4 days\)/.test(listed) && /2 deliveries/.test(listed), 'admin: From 3 days ago to today lists every receipt in the range');
+  ok(await p.evaluate(n => (window.__fake.reads || []).filter(k => /\/deliveries$/.test(k)).length - n, reads) === 1, 'admin: the range is one query');
+  await p.selectOption('#dl-sup-filter', 'Earlier supplier', { force: true }); // the shared picker sets the hidden select (js/controls.js) await L.settle(p, 200);
+  ok(!/Other test supplier/.test(await p.locator('.dl-receipts').innerText()) && /1 delivery/.test(await p.locator('.dl-history').innerText()), 'admin: the supplier filter narrows the list without a read');
+  await p.selectOption('#dl-sup-filter', '', { force: true }); await L.settle(p, 200);
+  const pending = p.waitForEvent('download'); await p.click('[data-dl="csv"]'); const file = await pending, chunks = [];
+  for await (const chunk of await file.createReadStream()) chunks.push(chunk);
+  const csv = Buffer.concat(chunks).toString('utf8');
+  ok(file.suggestedFilename() === 'leichhardt-deliveries-' + older + '-to-' + today + '.csv' && csv.charCodeAt(0) === 0xFEFF, 'admin: CSV downloads with the range in its name and the shared BOM');
+  ok(csv.includes('Date,Time,Supplier,Chilled (°C),Frozen (°C),Items / notes,Received by') && csv.includes(older + ',') && csv.includes(',-21,') && csv.includes("'=SUM(A1)"), 'admin: CSV keeps numbers as numbers, an empty chilled cell and marks formula-like notes as text');
+  await p.fill('#dl-view-to', L.ymd(new Date(L.NOW - 4 * 86400000))); await p.dispatchEvent('#dl-view-to', 'change'); await L.settle(p, 300);
+  ok(await p.inputValue('#dl-view-day') === L.ymd(new Date(L.NOW - 4 * 86400000)), 'admin: a To before From moves From with it');
+  ok(!p.errors.length, 'admin history: no page errors ' + p.errors.join(' | ')); await p.context().close();
+
   // Layout and screenshots use synthetic people and delivery data only.
   fs.mkdirSync('shots', { recursive: true });
   for (const width of [390, 768, 1280]) {

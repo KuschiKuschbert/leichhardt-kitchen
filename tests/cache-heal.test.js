@@ -104,6 +104,9 @@ const waitReload = p => L.waitFor(p, () => window.__mark !== 1, null, 8000).catc
     ok(await preserved(p) && await p.evaluate(() => LK_PREP.unsent() && LK_PREP.state.who === 'ann'), 'uncertain save keeps its original recorder, pending marker and live SDK before acknowledgement');
     await p.evaluate(() => { __fake.mode = 'ok'; __fake.release(); });
     ok(await waitReload(p), 'acknowledgement resumes the deferred clean repair without another error or manual replay');
+    // The reloaded book brings the Firebase stand-in back only after its scripts load: about 900 ms on the live site
+    // (4 Nov 2026), so wait for the stand-in itself, then give a replayed duplicate the same 700 ms to show.
+    await L.waitFor(p, () => !!window.__fake && typeof window.__fake.dump === 'function', null, 8000).catch(() => {});
     await L.settle(p, 700);
     ok(await p.evaluate(() => Object.values(__fake.dump()).filter(v => v && v.text === 'Original recorder cache recovery' && v.by === 'ann').length === 1), 'the acknowledged operation remains exactly once with Ann as recorder after repair');
   });
@@ -187,7 +190,10 @@ const waitReload = p => L.waitFor(p, () => window.__mark !== 1, null, 8000).catc
       Storage.prototype.removeItem = function (name) { if (name === key) throw new DOMException('Synthetic shared-state denial', 'SecurityError'); return remove.call(this, name); };
       indexedDB.deleteDatabase = function (name) { window.__healDeletes++; return drop(name); };
     }, TARGET_CACHE);
-    await boom(p); await L.settle(p, 500);
+    await boom(p);
+    // The repair checks the server (one HEAD) before it reaches the shared state, so wait for its answer:
+    // a fixed settle could end while the HEAD was still out on a slow runner (CI, 3 Nov 2026).
+    await L.waitFor(p, () => /could not be repaired/.test(LK_PREP.state.toast), null, 8000).catch(() => {});
     ok(await p.evaluate(key => window.__mark === 1 && localStorage.getItem(key) === 'keep' && !localStorage.getItem('lk.fsheal') && window.__healDeletes === 0 && /could not be repaired/.test(LK_PREP.state.toast), TARGET_CACHE), 'a real shared-state removal error stops before database deletion, daily marker and reload, with truthful feedback');
   });
   await b.close();

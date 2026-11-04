@@ -82,3 +82,42 @@ No schema, rules, reads or saved data change. The daily-lock release uses suppli
 ### Daily PIN lock, 2 November 2026
 
 An automatic daily or idle privacy lock hides private supplier data and keeps only the original person's draft quantities, captured units, catalogue edit and pending order id in memory. The same person's PIN restores the form; explicit handover or lost permission clears it. Catalogue/history caches and transaction contexts are invalidated, so a transaction never replays automatically under a new session. An interrupted transaction requires a fresh user retry with the same order id and stale-data checks. A renewed owner grant for that same identity also preserves the draft. Read [device sessions](device-sessions.md) before changing these boundaries.
+
+### Order rows, design A step 2, 3 November 2026
+
+The head chef chose design A (`docs/receiving-design-options/brief.md`). Only the order sheet's screen changes; the catalogue, order, link and audit records are unchanged.
+
+- **On hand on the row.** The stock count (`d.stock`, the same captured-unit rules as the 25 October correction) moved out of Details onto the row as On hand. Details keeps the source record. A stock error no longer needs Details opened.
+- **Top-up Use chip.** When a count is typed, the units are confirmed and the count is below par, the row shows the `C.suggestQuantity` top-up as **Top up 7 kg · Use** (`data-su="apply"`, the same Apply path as the Suggestions panel, reason in its title). Nothing fills by itself. Typing a quantity hides it without a redraw; a dismissed suggestion stays dismissed. Repeat-last-order suggestions stay in the panel only.
+- **− and +.** Only where `orderUnit` is confirmed, so a number always means that unit. They move the leading number by one (three decimals kept), keep a typed unit, and empty the box at zero (never save 0). They capture the order unit like typing does.
+- **Filters.** All, Below par (a counted top-up exists, whether or not a quantity is typed), Asked for (only after the requests are read) and In this order. `M.filter` is cleared by a supplier change and by a validation reveal, so an invalid field is never filtered away.
+- **What staff asked for.** A tap on Show what staff asked for runs the existing `B().requests()` once (one query of today's unfilled staff order lines). Matched requests list the text, amount, who asked and when, and the matched item. Unmatched requests stay on the Order list. Nothing is ticked off.
+- **Review bar.** `.su-order-actions` sticks to the bottom of the screen (above the tab bar on a phone) with the draft count and Review order.
+- The help line is one sentence. The lazy file is `js/suppliers.js?v=11`; `LK_SUP.api` stays 9 because the mount contract is unchanged.
+
+No schema, rules, reads on open or saved data change. `tests/supplier-rows.test.js` (31 checks) covers On hand on the row, the Use chip, the filters, − and +, the one-query requests strip, Review and the bar above the tabs at 390 px. The existing supplier files pass with three updated checks (the stock field is on the row, the On hand label, the lazy URL).
+
+### Sending, design A step 3, 3 November 2026
+
+- **Today's cut-off on the supplier list.** The sidebar chip and the phone's supplier picker show "by 15:00" for an open cut-off today and "ordered" once its tick is on, from the cut-off occurrences already on the phone (no read). Nothing shows after the cut-off passed or for a supplier with no cut-off today.
+- **Send, then record.** Review shows **1. Send it your usual way** with **Share order text** (only where `navigator.share` exists; it opens the phone's own share sheet with the same text as Copy) and **Copy order text**, then **2. Then record it here** with Record order placed. A cancelled share says nothing; a failed one falls back to Copy. Sharing writes nothing; Record order placed stays the only save. No new outside service or security header change: the share sheet belongs to the phone.
+- `js/suppliers.js?v=11` carries steps 2 and 3; `LK_SUP.api` stays 9. `tests/supplier-rows.test.js` (36 checks) covers the cut-off label, the Share order text and the button showing only with a share sheet.
+
+### One list, 4 November 2026
+
+The order sheet shows the whole supplier on one list; the 20-item pages stay only in Manage catalogue. Measured before the change, with example catalogues in Chrome at 4x slower CPU (a phone-speed stand-in), timing a keystroke in On hand and a filter tap from Node because the test clock freezes the page's own:
+
+| Items | Keystroke, pages of 20 | Keystroke, one list redrawing everything | Keystroke, one list (as built) | Full redraw, one list (as built) |
+| --- | --- | --- | --- | --- |
+| 60 | 67 ms | 124 ms | 23 ms | 86 ms |
+| 120 | 69 ms | 254 ms | 26 ms | 143 ms |
+| 300 | 79 ms | 697 ms (worst 1.3 s) | 46 ms | 360 ms |
+
+- **Only the row changes.** On hand, Use, − and + replace their own row (`redrawRow()` in `js/suppliers.js`), give the focus and caret back to the same box or button (after Use, the To order box), and refresh the filter counts and the Review bar. Filters, search, a supplier change and an open Suggestions panel still draw the whole sheet. A Use from the row says "Suggestion added" to screen readers instead of drawing the status line.
+- **Rows off screen are skipped.** `.su-row` has `content-visibility: auto` with a 150 px placeholder height that the browser replaces with the real height once a row is drawn.
+- **Category jumps.** A chip per category (catalogue order, with counts; a sideways row that fades at its edge) scrolls its heading to the top, and again two frames later once the skipped rows above it have their real height. A supplier with one category shows no chips.
+- A validation reveal still clears the search and the filter and focuses the field; there is no page to switch to any more.
+- `js/suppliers.js?v=12`, `LK_SUP.api` stays 9. No schema, rules, reads or saved data change.
+
+Tests: `tests/supplier-rows.test.js` adds a 300-item example supplier: all rows on the sheet with no Next, a jump chip per category and Seafood's heading at the top after a jump, and a keystroke, Use and + replacing only their own row (another row's node survives) with the focus and caret kept. Those three checks failed while the sheet still redrew in full (3 failed of 46) and pass with the row updates (46 of 46). `tests/supplier-quantity-entry.test.js` no longer steps through pages to reach item 26 and waits for the search before checking it hid the item.
+
