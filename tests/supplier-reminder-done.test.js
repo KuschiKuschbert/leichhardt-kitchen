@@ -21,7 +21,9 @@ async function saved(p, key, on) {
 }
 async function undoReady(p) { await undo(p).waitFor({ state: 'visible' }); }
 async function open(b, hash, options) { return L.open(b, hash || '#/orders', Object.assign({ who: 'sam', extra: F.fixture(), wait: 1500 }, options || {})); }
-async function noErrors(p, label) { ok(p.errors.length === 0, label + ': no page errors ' + p.errors.join(' | ')); }
+// blocked: the test blocks the supplier tools, which the order list asks for to group a chef's requests (5 Nov 2026), so
+// the browser's own note that they failed to load is expected there, and nothing else is
+async function noErrors(p, label, blocked) { const e = p.errors.filter(x => !(blocked && /Failed to load resource: net::ERR_FAILED/.test(x))); ok(e.length === 0, label + ': no page errors ' + e.join(' | ')); }
 
 (async () => {
   const b = await L.start();
@@ -46,7 +48,7 @@ async function noErrors(p, label) { ok(p.errors.length === 0, label + ': no page
     await undo(p).click(); await saved(p, completion, false); await ready(p);
     ok(protectedRecords(await dump(p)) === before, 'Undo restores the reminder without touching orders or history');
     ok((await writes(p)).length === 2 && (await writes(p))[1].data.on === false, 'completion and Undo make one reminder write each');
-    await noErrors(p, linked ? 'linked completion and Undo' : 'unlinked completion and Undo');
+    await noErrors(p, linked ? 'linked completion and Undo' : 'unlinked completion and Undo', true);
     await p.context().close();
   }
 

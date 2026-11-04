@@ -2417,6 +2417,12 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .cut-box { width: 44px; height: 44px; padding: 0; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: #fff; font-size: 1.4rem; font-weight: 700; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .cut-box[aria-pressed="true"] { background: var(--done); border-color: var(--done); }
 .cut-box:disabled { opacity: 0.5; cursor: default; }
+/* Supplier groups on today's order list for chefs (5 Nov 2026, round 2): each cut-off's tick row heads its requests */
+.o-sups .o-sup { margin: 0.4rem 0 1rem; }
+.o-sup > .cut-tl { margin-bottom: 0.15rem; }
+.o-sup-acts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.45rem 0 0; }
+.o-sup-empty { margin: 0.25rem 0 0; }
+.o-sup-none { border-top: 1.5px solid var(--rule); padding-top: 0.5rem; }
 /* Chef to-do shows the supplier orders without a tick (ticked on the order list only, 5 Nov 2026): the same box, not a button */
 .cut-mark { width: 30px; height: 30px; margin: 7px; border-width: 1.5px; font-size: 1rem; cursor: default; }
 .cut-o.is-done .cut-mark { background: var(--done); border-color: var(--done); }
