@@ -11,7 +11,9 @@
   is held back and printed in one piece when it ends, so the log reads the same as one at a time. The slowest files
   are listed at the end.
   On GitHub (3 Nov 2026, CLAUDE.md, Keeping usage down):
-    SHARD=2/4 npm test            only every fourth file, starting with the second, so four runners share the work
+    SHARD=2/4 npm test            the second of four equal shares of the work, so four runners share it (4 Nov 2026: by
+                                  the seconds in tests/timings.json, longest files first, each to the lightest share)
+    UPDATE_TIMINGS=1              after the run, write this run's seconds for the files it ran into tests/timings.json
     QUIET=1                       a file that passes prints one line; a file that fails prints in full
     FILE_TIMEOUT=480              a file still running after 480 s is stopped and counted as failed (retried with RETRY)
     RETRY=1                       a file that fails runs once more on its own; passing then is reported as a warning
@@ -28,12 +30,27 @@ if (pick.length && !files.length) {
   console.error('Use npm test to run all files, or choose a filename substring.');
   process.exit(1);
 }
-// SHARD=k/n: the k-th of n equal shares, by place in the sorted list, so every file runs in exactly one share.
+// How long each file usually takes (tests/timings.json, seconds on GitHub). A file not listed counts as the median, so a
+// new test file still lands in exactly one share. Without the file every file counts the same.
+const timingsPath = path.join(__dirname, 'timings.json');
+let known = {};
+try { known = JSON.parse(fs.readFileSync(timingsPath, 'utf8')).seconds || {}; } catch (e) {}
+const listed = Object.values(known).filter(v => typeof v === 'number' && v > 0).sort((a, b) => a - b);
+const median = listed.length ? listed[Math.floor(listed.length / 2)] : 1;
+const cost = f => (typeof known[f] === 'number' && known[f] > 0) ? known[f] : median;
+// Longest first: on one runner the slow files start at once instead of finishing last; across runners each file goes to
+// the share with the least work so far. The order is fixed (seconds, then name), so every runner works out the same split
+// and every file runs in exactly one share.
+files.sort((a, b) => cost(b) - cost(a) || (a < b ? -1 : 1));
+// SHARD=k/n: the k-th of n shares of about equal seconds.
 const shard = /^(\d+)\/(\d+)$/.exec(process.env.SHARD || '');
 if (shard) {
   const k = +shard[1], n = +shard[2];
   if (!(n >= 1 && k >= 1 && k <= n)) { console.error('SHARD must be k/n with 1 <= k <= n, not ' + process.env.SHARD); process.exit(1); }
-  for (let i = files.length - 1; i >= 0; i--) if (i % n !== k - 1) files.splice(i, 1);
+  const load = new Array(n).fill(0), mine = [];
+  files.forEach(f => { let b = 0; for (let i = 1; i < n; i++) if (load[i] < load[b]) b = i; load[b] += cost(f); if (b === k - 1) mine.push(f); });
+  files.length = 0; files.push(...mine);
+  console.log('Share ' + k + ' of ' + n + ': ' + files.length + ' files, about ' + Math.round(load[k - 1] / 60) + ' minutes of work.');
 }
 const quiet = process.env.QUIET === '1', retry = process.env.RETRY === '1';
 // FILE_TIMEOUT=480: a file still running after that many seconds is stopped and counted as failed (then retried with
@@ -90,6 +107,15 @@ function runFile(f) {
   }
   console.log('\nSlowest: ' + done.slice().sort((a, b) => b.s - a.s).slice(0, 5).map(r => r.f + ' ' + r.s.toFixed(0) + ' s').join(', '));
   console.log('Whole run: ' + ((Date.now() - t0) / 60000).toFixed(1) + ' min, ' + jobs + ' at a time.');
+  if (process.env.UPDATE_TIMINGS === '1') {
+    const seconds = Object.assign({}, known);
+    done.forEach(r => { seconds[r.f] = Math.max(1, Math.round(r.s)); });
+    let note = '';
+    try { note = JSON.parse(fs.readFileSync(timingsPath, 'utf8'))._note || ''; } catch (e) {}
+    const sorted = {}; Object.keys(seconds).sort().forEach(f => { sorted[f] = seconds[f]; });
+    fs.writeFileSync(timingsPath, JSON.stringify({ _note: note, seconds: sorted }, null, 1) + '\n');
+    console.log('Wrote the seconds of ' + done.length + ' files to tests/timings.json.');
+  }
   if (flaky.length) console.log('\nPassed on retry: ' + flaky.map(r => r.f).join(', '));
   console.log('\n' + (failed.length ? 'FAILED: ' + failed.join(', ') : 'All ' + files.length + ' test files passed.'));
   process.exit(failed.length ? 1 : 0);
