@@ -649,8 +649,7 @@ service cloud.firestore {
       allow create: if isAdmin() || (staff() && capability(request.resource.data.by, 'add') && nearDay(day) && xferOk());
       // Change amount (4 Nov 2026): an open loan, today's line, as the person on this phone's PIN (the head chef's
       // Google device too), with its open copy in the same write. Asked first: Return and Remove never change the amount,
-      // and running their checks before this one takes the rules past their 1000 step limit. Written with && and ||,
-      // not a ? : choice, which the published rules service refused to compile (503) on 4 Nov 2026.
+      // and running their checks before this one takes the rules past their 1000 step limit.
       allow update: if (xferAmt() && staff() && isToday(day) && resource.data.get('returned', false) == false
           && request.resource.data.unit in ['g', 'kg', 'L', 'pieces', 'packs', 'boxes'] && amountChange()
           && getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/transferOpen/$(day + '_' + line)).data.record == request.resource.data)
