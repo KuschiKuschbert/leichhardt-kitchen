@@ -127,10 +127,11 @@ jobs:
         run: npm ci --no-audit --no-fund && ../tests/rules/node_modules/.bin/firebase emulators:exec --only firestore --project demo-test "node emulator-check.mjs && node transfer-index-check.mjs && node waste-range-check.mjs && node delivery-backup-check.mjs && node analysis-check.mjs && node capabilities-bootstrap-check.mjs && node backup-crypto-check.mjs && node backup-recovery-check.mjs && node rules-publisher-check.cjs"
 
   test:
-    # This name is the required check. It always reports, so a skipped or failed part never leaves it waiting.
+    # This name is the required check. It reports whenever the run was not cancelled, so a skipped or failed part
+    # never leaves it waiting. A run cancelled by a newer push reports nothing, so no false failure wakes a session.
     name: Click tests
     needs: [scope, browser, rules]
-    if: always()
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
