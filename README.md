@@ -244,7 +244,7 @@ npm test
 
 ## Remembered device sign-in and updates (2 November 2026)
 
-The next opening of the updated app asks **My own device** or **Shared kitchen screen** once, then remembers it. Personal devices stay signed in through idle time and updates, with a daily PIN unlock after **04:00 Queensland time**. The head chef's Google identity stays remembered. Shared screens lock after 10 minutes idle and at 04:00, clearing this device's PIN and Google login at either lock. The existing prep list and shared completion picker keep their layout and behaviour.
+The next opening of the updated app asks **My own device** or **Shared kitchen screen** once, then remembers it. **View recipes for now** closes the question until the person signs in or taps **Choose device** (4 Nov 2026). Personal devices stay signed in through idle time and updates, with a daily PIN unlock after **04:00 Queensland time**. The head chef's Google identity stays remembered. Shared screens lock after 10 minutes idle and at 04:00, clearing this device's PIN and Google login at either lock. The existing prep list and shared completion picker keep their layout and behaviour.
 
 **Update now** takes one tap when there is no actual unsaved work. Drafts show **Keep working / Discard and update**; unsent writes always wait for the server. See [device sessions](docs/device-sessions.md) for the server contract, migration, recovery and publication order. This replaces older session and update wording below.
 
