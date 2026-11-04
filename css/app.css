@@ -3055,6 +3055,12 @@ input:is([type="date"], [type="time"]):disabled, input:is([type="date"], [type="
 .p-admin.ad-admin .a-pane .btn { padding: .65rem 1rem; line-height: 1.3; }
 .p-admin.ad-admin .a-pane .search { height: auto; min-height: 46px; padding: .65rem .8rem; border-color: var(--ink); border-radius: var(--r-act); font-size: 1rem; }
 .p-admin.ad-admin .a-pane .search:focus { border-color: var(--ink); }
+/* The page kit, part 1 (4 Nov 2026, docs/admin-pages-options/brief.md): one size for every control. A search is at most
+   36rem wide, a dropdown 20rem and a 4 digit PIN box 14rem; Export, Download CSV and a role in the staff table stay on one line. */
+.p-admin.ad-admin .a-pane :is(.ux-search, input[type="search"]:not(.ux-search > input), input.search:not(.ux-search > input)) { max-width: 36rem; }
+.p-admin.ad-admin .a-pane input.search[data-k^="a-newpin"]:not([type="search"]) { max-width: 14rem; }
+.p-admin.ad-admin .a-pane :is(.a-export > summary, .a-export .btn, .a-table .ux-picker-trigger) { white-space: nowrap; overflow-wrap: normal; }
+.p-admin.ad-admin .a-pane .ux-picker-trigger { max-width: 20rem; }
 .p-admin.ad-admin .a-pane .p-bulk { width: 100%; min-width: 0; }
 .p-admin.ad-admin .a-pane .set-block:has([data-p="a-save"]) { z-index: 11; padding: .8rem 1rem; border: 1px solid var(--edge); border-top: 2px solid var(--ink); border-radius: var(--r-act); background: var(--paper); }
 .p-admin.ad-admin .a-tablewrap { max-width: 100%; border-width: 1px; border-radius: 0; }
@@ -3236,6 +3242,9 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 .ux-search { display: inline-grid; position: relative; grid-template-columns: minmax(0, 1fr); min-width: 0; width: 100%; flex: 1 1 10rem; }
 /* In a field the label and box stack in a column, where flex-basis is a height: 10rem left 110 px under the box (3 Nov 2026) */
 .field > .ux-search { flex: 0 0 auto; }
+/* In a column (a settings block, a labelled filter) a search keeps one line's height: its 10rem width basis was taken
+   as its height there, 156 px on admin Wastage (4 Nov 2026). */
+.set-block > .ux-search, .a-f > .ux-search { flex: 0 0 auto; }
 .ux-search > input { grid-area: 1 / 1; width: 100%; min-width: 0; padding-right: 3rem !important; }
 .ux-search > input::-webkit-search-cancel-button { display: none; }
 .ux-search-clear { position: relative; grid-area: 1 / 1; align-self: center; justify-self: end; min-width: 44px; min-height: 44px; border: 0; background: transparent; color: var(--ink); font: 1.5rem var(--body); }
