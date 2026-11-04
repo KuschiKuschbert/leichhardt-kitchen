@@ -52,8 +52,9 @@ const cfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'so
   await p.click('.docket[href="#/settings"]', { timeout: 2000 }).catch(() => {});
   await p.evaluate(() => { location.hash = '#/r/laksa'; }); await L.settle(p, 300);
   await p.evaluate(() => { location.hash = '#/settings'; }); await L.settle(p, 400);
-  const order = await p.evaluate(() => [...document.querySelectorAll('.settings .set-block .label')].map(e => e.textContent));
-  ok(order[0] === 'Text size', 'settings: Text size comes first (' + order.slice(0, 3) + ')');
+  const order = await p.evaluate(() => [...document.querySelectorAll('[aria-labelledby="st-g-phone"] .st-btn .st-l')].map(e => e.textContent));
+  ok(order[0] === 'Text size', 'settings: Text size comes first on This phone (' + order.slice(0, 3) + ')');
+  await L.setRow(p, 'opens');
   // Opens with: each view shows a computer and a phone preview; tapping one marks it and the recipes open with it
   ok(await p.evaluate(() => [...document.querySelectorAll('.view-opt')].map(e => e.querySelectorAll('.vo-desk svg, .vo-phone svg').length).join()) === '2,2', 'settings: The Pass and Tiles each show a computer and a phone preview');
   await L.choose(p, '[data-k="setview:tiles"]'); await L.settle(p, 300);
