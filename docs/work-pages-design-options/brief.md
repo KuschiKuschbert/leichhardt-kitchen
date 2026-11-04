@@ -44,9 +44,13 @@ Recorded in `docs/head-chef-decisions.md` (3 Nov 2026); open item 3 in `docs/ope
 | Step | What | Pull request | State |
 | --- | --- | --- | --- |
 | 1 | Chef hat bottom sheet, the Writing as row goes (S1) | #464, with this record | Built, merging |
-| 2 | One section control, one amount control, one line layout (S2 to S4) | | Next |
-| 3 | Change amount and Move section (S5), one meaning for usual chips (S6) | | |
-| 4 | Wastage A, with Make it again | | |
-| 5 | Transfers A, with the pick-up basket and the age tag | | |
-| 6 | Prep A | | |
+| 2 | One section control (S2): section chips on Prep and Wastage | #473 | Live 4 Nov 2026 |
+| 2 | One amount control and one line layout (S3, S4) | | Folded into steps 6 and 7 (Wastage and Transfers already take a number and unit chips) |
+| 3 | Change amount and Move section (S5) | #479 | Live 4 Nov 2026 |
+| 3 | One meaning for usual chips (S6): Add 4 L on Orders | #480 | Merging |
+| 4 | Wastage A, with Make it again | #481, merged inside #482 | Live 4 Nov 2026 |
+| 5 | Transfers A, with the pick-up basket and the age tag | #482 | Live 4 Nov 2026 |
+| 6 | Prep A | | Next |
 | 7 | Orders A, with Delivery arrived for chefs | | |
+
+Also on 4 Nov 2026: cooking words like sear and poach are no longer spell-corrected (#472), found while building step 2.
