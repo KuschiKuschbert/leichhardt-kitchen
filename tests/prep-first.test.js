@@ -1,6 +1,6 @@
 // The prep list's first screen on a phone (usability U9b): Start here is one line until tapped, a Done today button
 // jumps to the ticked lines, and Quick add sits in the add box (and only there: Handy's copy is for big screens). The
-// "Writing as" line stays one line: your own place for ticks is in the Top tickers strip (23 Oct 2026).
+// Writing as row is gone (3 Nov 2026, who is signed in is on the chef hat): your own place for ticks is in the Top tickers strip (23 Oct 2026).
 const L = require('./lib');
 const { R, ok } = L.results();
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -32,8 +32,8 @@ const top = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); r
   [['Sam', 5], ['Ann', 4], ['Kim', 3], ['Bo', 2]].forEach(([name, n]) => { for (let k = 0; k < n; k++) week[fsKey(['days', ago(1 + k % 3), 'items', 'w' + name + k])] = { text: name + ' job ' + k, station: 'Larder', qty: '', recipe: '', addedBy: 'Sam', addedById: 'sam', addedAt: L.NOW - (1 + k % 3) * 86400000, done: true, doneBy: name, doneById: name.toLowerCase(), doneAt: L.NOW - (1 + k % 3) * 86400000 + 3600000, deleted: false }; });
   p = await L.open(b, '#/prep', { who: 'bo', wait: 1600, extra: week });
   await L.waitFor(p, () => !!document.querySelector('.nb-badges'), null, 6000).catch(() => {});
-  const topLine = await p.evaluate(() => { const e = document.querySelector('.nb-top'); return e ? { h: Math.round(e.getBoundingClientRect().height), t: e.textContent } : { h: -1, t: '' }; });
-  ok(topLine.h > 0 && topLine.h < 50 && /Writing as\s*Bo/.test(topLine.t) && !/ticks/.test(topLine.t), 'phone: "Writing as Bo" and "Not you?" stay one line, with no rank on it (' + topLine.h + ' px, ' + topLine.t.trim() + ')');
+  // no Writing as row (3 Nov 2026): Bo is on the hat as an initial, and no rank sits anywhere above the list
+  ok(!(await p.$('.nb-top')) && await L.txt(p, '.wtop-who .wtop-av') === 'B' && await L.whoIs(p) === 'Bo', 'phone: no Writing as row, Bo\'s initial on the hat');
   const strip = (await L.txt(p, '.nb-badges') || '').replace(/\s+/g, ' ');
   ok(/Sam 1st, 5 ticks/.test(strip) && /Kim 3rd, 3 ticks/.test(strip) && /You: 4th, 2 ticks/.test(strip), 'phone: Top tickers shows the top 3 and "You: 4th, 2 ticks" (' + strip + ')');
   ok(await p.evaluate(() => document.querySelector('.nb-badges').getAttribute('aria-label')) === 'Top tickers, last 7 days', 'phone: the strip is read out as "Top tickers, last 7 days"');

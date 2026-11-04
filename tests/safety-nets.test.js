@@ -163,6 +163,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
 
   // the same Undo on every add: wastage (head chef and sous chefs), and an order line after a spelling fix
   p = await L.open(b, '#/waste', { wait: 1500 });
+  await L.wLog(p);
   await p.fill('#w-text', 'Rice');
   await p.fill('#w-amt', '1.5');
   await p.evaluate(() => { const b = document.querySelector('.w-rchips [data-v="excess"]') || document.querySelector('[data-p="wreason"][data-v="excess"]'); b.click(); });
@@ -178,6 +179,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.context().close();
 
   p = await L.open(b, '#/waste', { who: 'ann', wait: 1500 });
+  await L.wLog(p);
   await p.fill('#w-text', 'Rice');
   await p.fill('#w-amt', '2');
   await p.evaluate(() => { const b = document.querySelector('.w-rchips [data-v="excess"]') || document.querySelector('[data-p="wreason"][data-v="excess"]'); b.click(); });

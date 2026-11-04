@@ -102,7 +102,7 @@
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinOff: false, pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: (lsGet('lk.dash.intro') && lsGet('lk.prep.atab')) || 'dashboard', ordDate: dayNow(), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
-    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
+    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, xLog: false, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
     adminsFor: '', adminsOff: null, level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
@@ -1245,6 +1245,7 @@
     if (window.LK_MG && window.LK_MG.drop) window.LK_MG.drop(); if (window.LK_FE && window.LK_FE.drop) window.LK_FE.drop();
     if (window.LK_UX) window.LK_UX.close();
     if (S.sheet) { S.sheet = ''; ovDone('reason'); } S.section = ''; S.secTyped = false;
+    if (S.wLog || S.wRv || S.xLog) { S.wLog = S.wRv = S.xLog = false; ovDone('wsheet'); }
     sessDrop(); ksClose(); noteClose('shut'); lmClose(); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; S.gf = null; S.gfSnap = ''; S.cutDraft = null; S.cutSnap = ''; S.bulk = ''; S.wrA = S.wrC = S.wpA = S.wpC = null; S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; tdReset(); dkf = null; dkSnap = ''; dkEditing = false; dkMsg = ''; dkOpen = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings and Manage staff (22 Oct 2026: the Minutes register is "See who has signed" at
@@ -1307,7 +1308,9 @@
   }
   // the person's section, the pushes on this phone or who they are changed: Settings draws again if what it shows did
   function meChanged() { try { window.dispatchEvent(new Event('lk-me')); } catch (e) {} }
-  function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), head: whoHead(), tab: adminTabs(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK(), todo: todoOK() }; }
+  // the role on the chef hat menu's person card (3 Nov 2026): Head chef for headId, otherwise the role's name (whoRole())
+  function roleName() { if (!me()) return ''; return whoHead() ? 'Head chef' : whoRole(); }
+  function chefMenu() { return { role: roleName(), minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), head: whoHead(), tab: adminTabs(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK(), todo: todoOK() }; }
   /* Functions (21 Oct 2026): who may enter and change function bookings. The person signed in with their own PIN and
      ticked for Functions (config/main fnIds, which only the head chef's Google account saves), or the head chef's Google
      device with nobody signed in. Being Head chef or Functions coordinator is not enough without the tick. The rules
@@ -1345,7 +1348,7 @@
     if (S.notesOpen && !nfDirty()) S.notesOpen = false;
     if (S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; }
   }
-  window.addEventListener('hashchange', function () { if (location.hash !== '#/prep') leftPrep(); if (S.sheet) wasteSheetClose(true); });
+  window.addEventListener('hashchange', function () { if (location.hash !== '#/prep') leftPrep(); if (S.sheet) wasteSheetClose(true); if ((S.wLog || S.wRv) && location.hash !== '#/waste' || S.xLog && location.hash !== '#/transfers') wSheetClose(true); });
   function chefOpen(k) {
     if (!isSous()) return;
     if (adminTabs()) { S.atab = k === 'pings' ? 'notes' : k === 'register' ? 'minutes' : 'people'; lsSet('lk.prep.atab', S.atab); if (location.hash === '#/admin') draw(); else location.hash = '#/admin'; return; }
@@ -1636,8 +1639,8 @@
   }
 
   /* ---------- item actions ---------- */
-  function newItem(extra) {
-    var p = me(), f = fb.fs, ref = f.doc(itemsCol(S.date));
+  function newItem(extra, date) {
+    var p = me(), f = fb.fs, ref = f.doc(itemsCol(date || S.date));
     var data = Object.assign({ text: '', station: '', qty: '', recipe: '', addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), done: false, deleted: false }, extra);
     amtOn(data); practiceOn(data);
     var pr = sset(ref, data); pr.id = ref.id; return pr;
@@ -4158,12 +4161,12 @@
     var h = fnNeedHidden(); h[x.day] = (h[x.day] || []).concat([x.k]).slice(-200);
     lsSet('lk.fnneed', JSON.stringify(h)); draw();
   }
-  /* The line above the prep list, the order list and wastage: who is writing and "Not you?" (22 Oct 2026). One helper, so
-     the three pages say it the same way. tail: what follows the name on that page (HTML, already escaped). The tab bar
-     or the pill menu is always on screen, so the line has no link to the prep list (23 Oct 2026). */
-  function whoTopHTML(tail) {
-    var p = me();
-    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + (tail || '') : '') + '</span><span class="p-links">' + notYouHTML() + '</span></div>';
+  /* Who is writing (3 Nov 2026, work pages redesign S1): the prep list, the order list, wastage and transfers no longer
+     open with a "Writing as" row. Who is signed in shows on the chef hat (their initial, and on a shared screen their
+     first name), its menu opens on a person card with Sign out (the same handover "Not you?" was), and today's section
+     is My section in that menu. Only a page with nobody on a PIN keeps the lone "Not you?" it always had. */
+  function whoTopHTML() {
+    return me() ? '' : '<div class="nb-top"><span></span><span class="p-links">' + notYouHTML() + '</span></div>';
   }
   function listHTML() {
     var today = dayNow();
@@ -4210,7 +4213,7 @@
       (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div></section>';
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today<span class="nb-qsub"> and quick add</span>' : 'Done on ' + esc(dayShort(S.date))) + '</span></div></header>' +
       '<div class="nb-body nb-side">' + sideH + '</div></section>';
-    return whoTopHTML(ksTagHTML() + (can('tick') ? '' : ' (read only)')) +
+    return whoTopHTML() +
       (canBrowse() ? '<div class="nb-nav"><button type="button" class="chip" data-p="day" data-d="-1" aria-label="Back one day">&lsaquo;</button>' +
       '<button type="button" class="chip" data-p="today" aria-pressed="' + (S.date === today) + '">Today</button>' +
       '<label class="visually-hidden" for="p-day">Pick a date</label><input id="p-day" type="date" class="p-dateinput" data-k="p-day" value="' + esc(S.date) + '">' +
@@ -5394,7 +5397,7 @@
     var body = view === 'all' ? ordAllHTML() :
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
         offO + ordOverdueHTML(overdue, today) + (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (overdue.length || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))));
-    return whoTopHTML('') + tabs +
+    return whoTopHTML() + tabs +
       '<section class="nb-page o-page' + (view === 'all' ? ' o-all' : '') + '"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
       (view === 'day' && S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
       (view === 'day' && S.ordDate === today ? cutOrdHTML() : '') +
@@ -5528,7 +5531,7 @@
     if (UNITS.indexOf(f.unit) < 0) { toast('Pick a unit.'); focusSel('.seg-b'); return; }
     // a big number for its unit is often grams typed with kg still picked: ask once (second tap on Log it)
     if (amt > (W_BIG[f.unit] || Infinity) && !arm('wbig:' + amt + f.unit)) { toast(amt + ' ' + f.unit + '? Check the unit. Tap Log it again if it is right.', null, 4000); focusSel('.seg-b[aria-checked="true"]'); return; }
-    if (!REASONS.some(function (r) { return r[0] === f.reason; })) { toast('Pick a reason.'); focusSel(window.matchMedia && window.matchMedia('(max-width: 719px)').matches ? '.w-rbtn' : '.w-rchips .chip'); return; }
+    if (!REASONS.some(function (r) { return r[0] === f.reason; })) { toast('Pick a reason.'); focusSel('.w-rbig .w-rchip'); return; }
     // the page may still be on yesterday's list just after midnight (typing does not redraw): the line goes on today's
     if (S.wDate !== dayNow()) { S.wDate = dayNow(); watchWaste(); }
     var secInfo = {}, sec = cleanSection(f.sec, secInfo) || mySec(), rm = matchRecipe(t), ref = fb.fs.doc(wCol(S.wDate));
@@ -5615,7 +5618,7 @@
     var ta = page ? S.wpA : S.wrA, tc = page ? S.wpC : S.wrC;
     var a = (ta != null ? ta : r.avoidable || '').trim().slice(0, 300), c = (tc != null ? tc : r.change || '').trim().slice(0, 300);
     var v = { avoidable: a, change: c, reviewBy: name, reviewAt: now() };
-    sset(wDay(d), v, true).then(function () { if (page) { S.wReview = v; S.wpA = S.wpC = null; } else S.wrA = S.wrC = null; rvSet(d, v); if (wAll()) whPatch(d, '', v); if (d >= shift(dayNow(), -3)) { S.wNoteFor = ''; lsSet('lk.w.note', ''); } toast('Review saved'); draw(); }, failed);
+    sset(wDay(d), v, true).then(function () { if (page) { S.wReview = v; S.wpA = S.wpC = null; if (S.wRv) { S.wRv = false; ovDone('wsheet'); } } else S.wrA = S.wrC = null; rvSet(d, v); if (wAll()) whPatch(d, '', v); if (d >= shift(dayNow(), -3)) { S.wNoteFor = ''; lsSet('lk.w.note', ''); } toast('Review saved'); draw(); }, failed);
   }
   /* the head chef's Google account: the only one the rules let read past wastage (22 Oct 2026) */
   function wAll() { return S.level === 'owner' && ownerHere(); }
@@ -5624,9 +5627,49 @@
     var del = wAll() && !x.deleted;
     return '<li class="nb-row w-row' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + (x.station ? '<br><span class="w-sec">' + esc(x.station) + '</span>' : '') + '</span>' +
       '<span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span> <span class="w-rs w-' + esc(x.reason) + '">' + esc(reasonName(x.reason)) + '</span>' + unsentMark(x) +
-      (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' +
+      (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + wAgainHTML(x) + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' +
       (del ? '<button type="button" class="p-x" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (x.deleted && wAll() ? '<button type="button" class="p-x" data-p="wrestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
+  }
+  /* Make it again (3 Nov 2026, work pages redesign, a piece of B on Wastage A): a cooking fault or expired stock logged
+     today puts the item on today's prep list in one tap, with its usual amount and the entry's section, and Undo. What
+     was tapped is kept in this tab only (S.wAgain); a double up on the prep list merges by itself (mergeDups()). */
+  function wAgainOk(x) { return !x.deleted && (x.reason === 'fault' || x.reason === 'expired') && x.date === dayNow() && can('add'); }
+  function wAgainHTML(x) {
+    if (!wAgainOk(x)) return '';
+    if (S.wAgain[x.date + '/' + x.id]) return '<span class="w-again is-on">On the prep list</span>';
+    return '<button type="button" class="chip sq w-again" data-p="w-again" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Make ' + x.text + ' again: add it to the prep list') + '">Make it again</button>';
+  }
+  function wAgain(date, id) {
+    var x = (S.wLines || []).filter(function (l) { return l.id === id && l.date === date; })[0], k = date + '/' + id;
+    if (!x || !wAgainOk(x) || S.wAgain[k]) return;
+    var dte = dayNow(), t = String(x.text || '').slice(0, 160), sec = x.station || '', rm = matchRecipe(t);
+    var made = newItem({ text: t, station: sec, recipe: rm ? rm.id : '', qty: usualQty(t) || '' }, dte);
+    S.wAgain[k] = made.id;
+    made.catch(function (e) { delete S.wAgain[k]; failed(e); draw(); });
+    draw();
+    toast('Added to the prep list' + (sec ? ', ' + sec : ''), { label: 'Undo', fn: function () { delete S.wAgain[k]; draw(); supd(itemRef(dte, made.id), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
+  }
+  /* Today's entries by reason, as one bar and a key under it (the bar is a picture of the key, so screen readers get the key) */
+  function wReasonBar(live) {
+    var n = {}; live.forEach(function (x) { n[x.reason] = (n[x.reason] || 0) + 1; });
+    var l = REASONS.filter(function (r) { return n[r[0]]; });
+    if (!l.length) return '';
+    return '<div class="w-bar" aria-hidden="true">' + l.map(function (r) { return '<span class="w-seg w-c-' + r[0] + '" style="flex-grow:' + n[r[0]] + '"></span>'; }).join('') + '</div>' +
+      '<ul class="w-legend">' + l.map(function (r) { return '<li><span class="w-dot w-c-' + r[0] + '" aria-hidden="true"></span>' + esc(r[1]) + ' <b>' + n[r[0]] + '</b></li>'; }).join('') + '</ul>';
+  }
+  /* Log waste, the end-of-day review and Log a transfer open as sheets on the page (3 Nov 2026, work pages redesign A).
+     They are drawn from S.wLog, S.wRv and S.xLog with the page, like the forms were, so a redraw during service keeps what
+     is typed; Close keeps it too. Back, Escape and the dimmed page close them. which: 'log', 'rv' or 'xlog'. */
+  function wSheetOpen(which) {
+    S.wLog = which === 'log'; S.wRv = which === 'rv'; S.xLog = which === 'xlog';
+    ovPush('wsheet', function () { wSheetClose(true); });
+    draw(); focusK(which === 'log' ? 'w-text' : which === 'rv' ? 'w-ra' : S.xf.venue ? 'tr-text' : 'tr-venue');
+  }
+  function wSheetClose(noBack) {
+    if (!S.wLog && !S.wRv && !S.xLog) return;
+    var back = S.wLog ? '.w-logbtn' : S.wRv ? '.w-rvbtn' : '.tr-logbtn'; S.wLog = S.wRv = S.xLog = false;
+    ovDone('wsheet', noBack); draw(); focusSel(back);
   }
   /* Bottom sheet for picking one thing on a phone (the waste reason). Big rows, a hint under each, Cancel or tap outside to close. */
   var REASON_HINT = { prep: 'Trim, peel and offcuts', expired: 'Past its date or gone off', fault: 'Burnt, dropped or done wrong', returned: 'Sent back by a guest', excess: 'Made more than was needed' };
@@ -5655,35 +5698,46 @@
       '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty" data-k="w-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit || 'unit') + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' +
       secChipsHTML('w-sec', f.sec || mySec()) + '<div class="nb-sugg" id="w-sugg">' + wSuggHTML() + '</div>' +
       '<div class="w-pick"><span class="nb-ql" id="w-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="w-unit-l">' + UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="wunit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
-      '<div class="w-pick"><span class="nb-ql" id="w-reason-l">Reason</span><div class="w-rchips" role="radiogroup" aria-labelledby="w-reason-l">' + REASONS.map(function (r) { return '<button type="button" class="chip" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (f.reason === r[0]) + '">' + r[1] + '</button>'; }).join('') + '</div>' +
-      '<button type="button" class="w-rbtn' + (f.reason ? '' : ' is-empty') + '" data-p="sheet" data-v="reason" aria-haspopup="dialog">' + (f.reason ? esc(reasonName(f.reason)) : 'Pick a reason') + '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>' +
+      // the five reasons as big chips with what each means, on every screen (3 Nov 2026): no second sheet over this one,
+      // and data-adaptive="fixed" keeps js/controls.js from folding them into a Choose button
+      '<div class="w-pick w-rpick"><span class="nb-ql" id="w-reason-l">Reason</span><div class="w-rbig" role="radiogroup" aria-labelledby="w-reason-l" data-adaptive="fixed">' + REASONS.map(function (r) { return '<button type="button" class="chip w-rchip" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (f.reason === r[0]) + '"><strong>' + esc(r[1]) + '</strong><span>' + esc(REASON_HINT[r[0]] || '') + '</span></button>'; }).join('') + '</div></div>' +
       // the action is optional, so it folds until wanted (22 Oct 2026, Option B); a chip that fills it opens it
       '<div class="nb-add-row">' + (f.act || f.actOpen ? '<label class="visually-hidden" for="w-act">Action or how to stop it happening again</label><input id="w-act" class="nb-in nb-in-text" data-k="w-act" autocomplete="off" placeholder="Action or how to stop it happening again (optional)" maxlength="120" value="' + esc(f.act) + '">'
         : '<button type="button" class="w-actbtn" data-p="w-act-open">+ Add an action (optional)</button>') +
-      '<button type="submit" class="nb-addbtn">Log it</button></div></form>' : '<p class="hint">You can read the wastage log but not write in it.</p>';
+      '<button type="submit" class="nb-addbtn">Log it</button></div></form>' : '';
     // no signal and not loaded yet: the note, then only the lines this phone wrote since (listSnap), and no totals
     var offW = S.wState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var tot = offW ? '' : totalsText(wTotals(live));
     var body = S.wState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
       offW + (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (offW ? '' : S.wState !== 'ok' ? inkWait('Loading wastage...', 'waste', 4) : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
-    return whoTopHTML(ksTagHTML()) +
-      '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + (tot ? ' &middot; ' + esc(tot) : '') + '</span></div>' +
+    // today first (3 Nov 2026, work pages redesign A): the total and a bar of the reasons, then Log waste and, for chefs,
+    // the review, then the entries. The form and the review open as sheets.
+    var sum = tot ? '<div class="w-today"><p class="w-tot"><strong>' + esc(tot) + '</strong> logged today</p>' + wReasonBar(live) + '</div>' : '';
+    var rv = '';
+    if (rvChef()) {
+      loadPageReview();
+      var r = S.wReview;
+      rv = '<button type="button" class="btn w-rvbtn" data-p="w-rv" aria-haspopup="dialog">End-of-day review<small>' + (!r ? (S.wReviewErr ? 'Could not load it' : 'Loading...') : r.reviewBy ? 'Saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' ' + clock(r.reviewAt) : '') : 'Not written yet') + '</small></button>';
+    }
+    var acts = add || rv ? '<div class="w-acts">' + (add ? '<button type="button" class="btn dark w-logbtn" data-p="w-log" aria-haspopup="dialog">Log waste</button>' : '') + rv + '</div>' : '';
+    var logSheet = add && S.wLog ? '<div class="sheet-bg" data-p="w-log-close"></div><div class="sheet w-sheet" role="dialog" aria-modal="true" aria-labelledby="w-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="w-log-h">Log waste</h3>' +
+      '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' + add + '<button type="button" class="btn sheet-x" data-p="w-log-close">Close</button></div>' : '';
+    var rvSheet = rv && S.wRv ? '<div class="sheet-bg" data-p="w-rv-close"></div><div class="sheet w-sheet" role="dialog" aria-modal="true" aria-labelledby="w-rv-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="w-rv-h">End-of-day review</h3>' +
+      pageReviewHTML() + '<button type="button" class="btn sheet-x" data-p="w-rv-close">Close</button></div>' : '';
+    return whoTopHTML() +
+      '<section class="nb-page o-page w-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + '</span></div>' +
       (S.wState === 'offline' || S.wState !== 'ok' && !live.length ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div>') + '</header>' +
-      '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' +
-      // the form sits at the top, like the order list, so logging waste on a busy day never means scrolling past every entry
-      (add ? '<div class="nb-foot w-addtop">' + add + '</div>' : '') + '<div class="nb-body">' + body + '</div></section>' +
-      (rvChef() ? pageReviewHTML() : '') +
-      (wAll() ? '<p class="hint w-past">Past days and earlier reviews are in the <a href="#/admin" data-p="a-go-waste">admin panel, Wastage</a>.</p>' : '') + sheetHTML();
+      sum + acts + (can('add') ? '' : '<p class="hint w-ro">You can read the wastage log but not write in it.</p>') + '<div class="nb-body">' + body + '</div></section>' +
+      (wAll() ? '<p class="hint w-past">Past days and earlier reviews are in the <a href="#/admin" data-p="a-go-waste">admin panel, Wastage</a>.</p>' : '') + logSheet + rvSheet + sheetHTML();
   }
   function pageReviewHTML() {
-    loadPageReview();
-    if (!S.wReview) return '<section class="set-block w-review"><span class="label">End-of-day review</span>' + (S.wReviewErr ? '<p class="hint" role="status">Could not load today\'s review. Check the signal. The book tries again in a few minutes.</p>' : '<p class="hint">Loading...</p>') + '</section>';
+    if (!S.wReview) return S.wReviewErr ? '<p class="hint" role="status">Could not load today\'s review. Check the signal. The book tries again in a few minutes.</p>' : '<p class="hint">Loading...</p>';
     var r = S.wReview, ra = S.wpA != null ? S.wpA : (r.avoidable || ''), rc = S.wpC != null ? S.wpC : (r.change || '');
-    return '<section class="set-block w-review"><span class="label">End-of-day review</span>' +
+    return '<div class="w-review">' +
       '<div class="field"><label class="label" for="w-ra">Main avoidable waste today</label><textarea id="w-ra" class="w-ta" data-k="w-ra" maxlength="300" rows="2">' + esc(ra) + '</textarea></div>' +
       '<div class="field"><label class="label" for="w-rc">Prep or ordering change for the next shift</label><textarea id="w-rc" class="w-ta" data-k="w-rc" maxlength="300" rows="2">' + esc(rc) + '</textarea><span class="hint">This shows at the top of the next prep list.</span></div>' +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="wreview" data-v="page"' + (rvTyped(true) ? '' : ' disabled') + '>Save the review</button></div>' +
-      (r.reviewBy ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</section>';
+      (r.reviewBy ? '<span class="hint">Last saved by ' + esc(r.reviewBy) + (r.reviewAt ? ' at ' + clock(r.reviewAt) : '') + '.</span>' : '') + '</div>';
   }
   /* Last night's "change for the next shift" note, shown on the prep list (the latest of the last 3 days): three getDoc
      reads once a day per phone, kept in lk.w.note (out of date at the next kitchen day; a review saved on this phone
@@ -5728,7 +5782,7 @@
   var X_UNITS = ['g', 'kg', 'L', 'pieces', 'packs', 'boxes'];
   var X_BIG = { g: 5000, kg: 50, L: 50, pieces: 500, packs: 50, boxes: 30 };
   var X_DAYS = 30;
-  function xBlank(keep) { keep = keep || {}; return { dir: keep.dir || 'out', venue: keep.venue || '', person: keep.person || '', text: '', amt: '', unit: keep.unit || 'kg', note: '', noteOpen: false, amtAuto: false }; }
+  function xBlank(keep) { keep = keep || {}; return { dir: keep.dir || 'out', venue: keep.venue || '', person: keep.person || '', text: '', amt: '', unit: keep.unit || 'kg', note: '', noteOpen: false, amtAuto: false, basket: [] }; }
   function xCol(date) { return fb.fs.collection.apply(null, [fb.db].concat(base(), ['transfers', date, 'lines'])); }
   function xRef(date, id) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['transfers', date, 'lines', id])); }
   // A small index of open transfers, including old days. The dated line remains the history.
@@ -5887,31 +5941,53 @@
     var v = xStr(x.venue, 40), p = xStr(x.person, 40);
     return x.dir === 'in' ? 'From ' + v + (p ? ', ' + p + ' gave it' : '') : 'To ' + v + (p ? ', ' + p + ' came for it' : '');
   }
+  /* One item of a pick-up, checked and read: { t, amt, unit, changes }, or null after saying what is missing */
+  function xItem(f) {
+    var dir = f.dir === 'in' ? 'in' : 'out', pr = proofread(f.text.trim()), t = (pr.text || '').slice(0, 80), amt = parseFloat(String(f.amt).replace(',', '.'));
+    if (!t) { toast(dir === 'out' ? 'Write what they took.' : 'Write what we took.'); focusK('tr-text'); return null; }
+    if (!(amt > 0) || amt >= 100000) { toast('Write the amount as a number.'); focusK('tr-amt'); return null; }
+    if (X_UNITS.indexOf(f.unit) < 0) { toast('Pick a unit.'); focusSel('.tr-units .seg-b'); return null; }
+    // a big number for its unit is often grams typed with kg still picked: ask once (second tap on Log it)
+    if (amt > (X_BIG[f.unit] || Infinity) && !arm('xbig:' + amt + f.unit)) { toast(amt + ' ' + f.unit + '? Check the unit. Tap again if it is right.', null, 4000); focusSel('.tr-units .seg-b[aria-checked="true"]'); return null; }
+    return { t: t, amt: amt, unit: f.unit, changes: pr.changes };
+  }
+  /* A pick-up (3 Nov 2026, work pages redesign A): Add another item puts the item in the sheet's list and empties the
+     item and amount; Log it saves every item of the list, and the one in the boxes, each as its own line. */
+  function xBasketAdd() {
+    var f = S.xf, it = xItem(f); if (!it) return;
+    f.basket = (f.basket || []).concat([it]).slice(0, 30);
+    f.text = ''; f.amt = ''; f.amtAuto = false;
+    draw(); focusK('tr-text');
+  }
   function addXfer() {
     var f = S.xf, p = me();
     if (!can('add')) return;
     var dir = f.dir === 'in' ? 'in' : 'out', venue = xVenueOf(f.venue) || xStr(f.venue, 40), person = xStr(f.person, 40);
-    var pr = proofread(f.text.trim()), t = (pr.text || '').slice(0, 80), amt = parseFloat(String(f.amt).replace(',', '.'));
     if (!venue) { toast(dir === 'out' ? 'Write which venue took it.' : 'Write which venue it came from.'); focusK('tr-venue'); return; }
     if (dir === 'out' && !person) { toast('Write who came for it.'); focusK('tr-person'); return; }
-    if (!t) { toast(dir === 'out' ? 'Write what they took.' : 'Write what we took.'); focusK('tr-text'); return; }
-    if (!(amt > 0) || amt >= 100000) { toast('Write the amount as a number.'); focusK('tr-amt'); return; }
-    if (X_UNITS.indexOf(f.unit) < 0) { toast('Pick a unit.'); focusSel('.tr-units .seg-b'); return; }
-    // a big number for its unit is often grams typed with kg still picked: ask once (second tap on Log it)
-    if (amt > (X_BIG[f.unit] || Infinity) && !arm('xbig:' + amt + f.unit)) { toast(amt + ' ' + f.unit + '? Check the unit. Tap Log it again if it is right.', null, 4000); focusSel('.tr-units .seg-b[aria-checked="true"]'); return; }
-    // the page may still be on yesterday's list just after midnight (typing does not redraw): the line goes on today's
+    var items = (f.basket || []).slice();
+    // the boxes count when anything is in them, or when the list is empty (then they say what is missing)
+    if (f.text.trim() || String(f.amt).trim() || !items.length) { var one = xItem(f); if (!one) return; items.push(one); }
+    // the page may still be on yesterday's list just after midnight (typing does not redraw): the lines go on today's
     if (S.xDate !== dayNow()) { S.xDate = dayNow(); watchXfer(); }
-    var date = S.xDate, ref = fb.fs.doc(xCol(date)), unit = f.unit;
-    var record = practiceOn({ dir: dir, venue: venue, person: person, text: t, amount: amt, unit: unit, note: xStr(f.note, 120),
-      addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), deleted: false });
-    xWrite(date, ref.id, record).catch(function (e) { failed(e, function () { if (!S.xf.text.trim()) S.xf = f; }); });
-    // the next item of the same pick-up keeps the way, the venue, the person and the unit
-    S.xf = xBlank({ dir: dir, venue: venue, person: person, unit: unit });
+    var date = S.xDate, note = xStr(f.note, 120), at = now(), saved = [];
+    items.forEach(function (it, k) {
+      var ref = fb.fs.doc(xCol(date));
+      // a millisecond apart, so the pick-up keeps the order it was written in
+      var record = practiceOn({ dir: dir, venue: venue, person: person, text: it.t, amount: it.amt, unit: it.unit, note: note,
+        addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: at + k, deleted: false });
+      saved.push({ id: ref.id, record: record });
+      xWrite(date, ref.id, record).catch(function (e) { failed(e, function () { if (!S.xf.text.trim() && !(S.xf.basket || []).length) S.xf = f; }); });
+    });
+    // the next pick-up keeps the way, the venue, the person and the unit
+    S.xf = xBlank({ dir: dir, venue: venue, person: person, unit: items[items.length - 1].unit });
     draw(); focusK('tr-text');
-    var msg = 'Logged: ' + (dir === 'out' ? venue + ' took ' + num(amt) + ' ' + unit + ' ' + t : 'we took ' + num(amt) + ' ' + unit + ' ' + t + ' from ' + venue) +
-      (pr.changes.length ? '. Corrected ' + pr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') : '');
+    var changes = [].concat.apply([], items.map(function (it) { return it.changes; }));
+    var what = items.length === 1 ? num(items[0].amt) + ' ' + items[0].unit + ' ' + items[0].t : items.length + ' items';
+    var msg = 'Logged: ' + (dir === 'out' ? venue + ' took ' + what : 'we took ' + what + ' from ' + venue) +
+      (changes.length ? '. Corrected ' + changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') : '');
     // Undo like the wastage log: the rules let only the head chef or a sous chef take a line back, so staff are told who can
-    if (canBrowse()) toast(msg, { label: 'Undo', fn: function () { xWrite(date, ref.id, { deleted: true, deletedBy: (me() || {}).name || 'Head chef', deletedAt: now() }, record).catch(failed); } });
+    if (canBrowse()) toast(msg, { label: 'Undo', fn: function () { saved.forEach(function (x) { xWrite(date, x.id, { deleted: true, deletedBy: (me() || {}).name || 'Head chef', deletedAt: now() }, x.record).catch(failed); }); } });
     else toast(msg + '. Wrong? Ask the head chef.', null, 6000);
   }
   /* Remove or put back a transfer: the head chef's Google account only (the admin log, or this page on that device).
@@ -5939,13 +6015,20 @@
     if (!x.deleted && x.returned && (wAll() || isSous() || (can('tick') && me() && me().id === x.returnedById && now() - x.returnedAt < 120000))) tick = '<button type="button" class="chip sq" data-p="tr-unreturn" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '"' + (returning ? ' disabled' : '') + '>Undo return</button>';
     return tick;
   }
+  /* How long an earlier day's transfer has been out (3 Nov 2026, a piece of B): a tag after the words, darker from 7 days */
+  function xAge(x) {
+    var d = Math.round((parseYmd(dayNow()) - parseYmd(x.date)) / 86400000);
+    if (!(d >= 1) || d > 3660) return '';
+    return ' <span class="tr-age' + (d >= 7 ? ' is-old' : '') + '" title="' + esc('Since ' + longDate(x.date)) + '">' + (d === 1 ? '1 day' : d + ' days') + '<span class="visually-hidden"> out, since ' + esc(longDate(x.date)) + '</span></span>';
+  }
   function xRow(x) {
-    var out = x.dir !== 'in';
+    var out = x.dir !== 'in', open = !x.deleted && !x.returned;
     var ret = x.returned ? '<span class="w-act">Returned ' + esc(x.returnedBy || '') + (x.returnedAt ? ' · ' + esc(longDate(T.day(x.returnedAt))) + ' ' + clock(x.returnedAt) : '') + '</span>' : '';
     var tick = xReturnBtn(x);
-    return '<li class="nb-row tr-row' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + '</span>' +
-      '<span class="nb-t"><span class="tr-way tr-way-' + (out ? 'out' : 'in') + '">' + (out ? 'Out' : 'In') + '</span> <strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' + unsentMark(x) +
-      '<span class="tr-who">' + esc(xWho(x)) + '</span>' + (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + ret + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' + tick + xBtn(x) + '</li>';
+    // the return tick on the left, where every other list ticks (3 Nov 2026); Not returned stays on the right
+    return '<li class="nb-row tr-row' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '">' + (open ? tick : '') + '<span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + '</span>' +
+      '<span class="nb-t"><span class="tr-way tr-way-' + (out ? 'out' : 'in') + '">' + (out ? 'Out' : 'In') + '</span> <strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' + (open ? xAge(x) : '') + unsentMark(x) +
+      '<span class="tr-who">' + esc(xWho(x)) + '</span>' + (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + ret + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' + (open ? '' : tick) + xBtn(x) + '</li>';
   }
   // the venue and person chips, and the often taken chips that follow the venue (redrawn while the venue is typed)
   function xVenueChips() {
@@ -5966,7 +6049,7 @@
     if (a) a.innerHTML = xVenueChips(); if (b) b.innerHTML = xPeopleChips(); if (c) c.innerHTML = xOftenHTML();
   }
   function xFormHTML() {
-    var f = S.xf, out = f.dir !== 'in';
+    var f = S.xf, out = f.dir !== 'in', bk = f.basket || [];
     return '<form class="nb-add tr-add" data-p-form="tradd">' +
       '<div class="w-pick tr-dirs"><span class="nb-ql" id="tr-dir-l">Which way</span><div class="seg" role="radiogroup" aria-labelledby="tr-dir-l">' + [['out', 'They took from us'], ['in', 'We took from them']].map(function (d) {
         return '<button type="button" class="seg-b" role="radio" data-p="tr-dir" data-v="' + d[0] + '" aria-checked="' + (f.dir === d[0]) + '">' + d[1] + '</button>'; }).join('') + '</div></div>' +
@@ -5979,11 +6062,15 @@
       '<div class="w-pick tr-units"><span class="nb-ql" id="tr-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="tr-unit-l">' + X_UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="tr-unit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
       // the note is optional, so it folds until wanted, like the wastage action
       '<div class="nb-add-row">' + (f.note || f.noteOpen ? '<label class="visually-hidden" for="tr-note">Note</label><input id="tr-note" class="nb-in nb-in-text tr-note" data-k="tr-note" autocomplete="off" placeholder="Note, for example: giving it back Friday (optional)" maxlength="120" value="' + esc(f.note) + '">'
-        : '<button type="button" class="w-actbtn" data-p="tr-note-open">+ Add a note (optional)</button>') +
-      '<button type="submit" class="nb-addbtn">Log it</button></div></form>';
+        : '<button type="button" class="w-actbtn" data-p="tr-note-open">+ Add a note (optional)</button>') + '</div>' +
+      // the pick-up so far: each item becomes its own line when it is logged
+      (bk.length ? '<div class="tr-basket"><span class="nb-ql">In this pick-up</span><ul>' + bk.map(function (it, i) { return '<li><span>' + esc(it.t) + ' <b>' + esc(num(it.amt) + ' ' + it.unit) + '</b></span><button type="button" class="tr-bk-x" data-p="tr-bk-del" data-i="' + i + '" aria-label="' + esc('Take ' + it.t + ' out of the pick-up') + '">Take out</button></li>'; }).join('') + '</ul></div>' : '') +
+      '<div class="nb-add-row tr-addrow"><button type="button" class="btn tr-bk-add" data-p="tr-bk-add">+ Add another item</button><button type="submit" class="nb-addbtn">' + (bk.length ? 'Log the pick-up' : 'Log it') + '</button></div></form>';
   }
-  /* The transfer list is for logging, like wastage (head chef decision, 23 Oct 2026): the form and today's transfers from
-     the whole team. Past days, totals and corrections are in the admin panel (Reports, Transfers). */
+  /* The transfer list is for logging, like wastage (head chef decision, 23 Oct 2026): today's transfers from the whole
+     team, and what is still out from earlier days. Past days, totals and corrections are in the admin panel (Reports,
+     Transfers). Since 3 Nov 2026 (work pages redesign A) the page opens on Still out: earlier days with how long each has
+     been out, then today's, each with its return tick on the left; then what was done today. The form opens as a sheet. */
   function xferHTML() {
     var today = dayNow();
     if (S.xDate !== today) { S.xDate = today; watchXfer(); }
@@ -5994,21 +6081,26 @@
     // no signal and not loaded yet: the note, then only the lines this phone wrote since (listSnap), and no counts
     var offX = S.xState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var sub = offX ? '' : [nOut ? nOut + ' out' : '', nIn ? nIn + ' in' : ''].filter(Boolean).join(', ');
-    var add = can('add') ? xFormHTML() : '<p class="hint">You can read the transfer list but not write in it.</p>';
-    var outstanding = (S.xOpen || []).filter(function (x) { return x.date !== today && !x.deleted && !x.returned; }).sort(byTime);
-    var openBody = '<h3 class="a-ch-h">Still outstanding</h3><p class="hint">Tick the box only when the full amount has been returned. Items stay here across days.</p>' +
-      (S.xOpenState === 'error' ? '<p class="p-err">Could not load outstanding transfers. This list may be incomplete. Reload to try again.</p>' :
-      S.xOpenState === 'offline' ? '<p class="nb-empty" role="status">No signal. This list shows when the phone is back online.</p>' :
-      S.xOpenState !== 'ok' ? inkWait('Loading outstanding transfers...', 'transfers', 2) :
-      outstanding.length ? '<ul class="nb-rows tr-outstanding">' + outstanding.map(function (x) { return '<li class="hint">' + esc(longDate(x.date)) + '</li>' + xRow(x); }).join('') + '</ul>' : '<p class="hint">No outstanding transfers from earlier days.</p>');
-    var body = S.xState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
-      offX + (shown.length ? '<ul class="nb-rows">' + shown.map(xRow).join('') + '</ul>' : (offX ? '' : S.xState !== 'ok' ? inkWait('Loading transfers...', 'transfers', 4) : '<p class="nb-empty">No transfers for ' + esc(dayName(S.xDate).toLowerCase()) + ' yet. When another venue takes stock, or we take some from them, log it here.</p>'));
-    return whoTopHTML(ksTagHTML()) +
-      '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Transfers</h2><span class="nb-date">' + esc(longDate(S.xDate)) + (sub ? ' &middot; ' + esc(sub) : '') + '</span></div>' +
+    var add = can('add') ? xFormHTML() : '';
+    var earlier = (S.xOpen || []).filter(function (x) { return x.date !== today && !x.deleted && !x.returned; }).sort(byTime);
+    var todayOpen = shown.filter(function (x) { return !x.deleted && !x.returned; }), done = shown.filter(function (x) { return x.deleted || x.returned; });
+    var earlierNote = S.xOpenState === 'error' ? '<p class="p-err">Could not load what is still out from earlier days. This list may be incomplete. Reload to try again.</p>' :
+      S.xOpenState === 'offline' ? '<p class="nb-empty" role="status">No signal. What is still out from earlier days shows when the phone is back online.</p>' :
+      S.xOpenState !== 'ok' ? inkWait('Loading what is still out...', 'transfers', 2) : '';
+    var todayNote = S.xState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : offX || (S.xState !== 'ok' ? inkWait('Loading transfers...', 'transfers', 4) : '');
+    var openRows = earlier.concat(todayOpen);
+    var stillOut = '<h3 class="a-ch-h">Still out</h3>' + (openRows.length ? '<p class="hint">Tick the box only when the full amount is back. Earlier days say how long they have been out.</p>' : '') +
+      earlierNote + (openRows.length ? '<ul class="nb-rows tr-outstanding">' + openRows.map(xRow).join('') + '</ul>' : '') + todayNote +
+      (!openRows.length && !earlierNote && !todayNote ? '<p class="nb-empty">Nothing is out. When another venue takes stock, or we take some from them, log it here so it comes back.</p>' : '');
+    var doneHTML = done.length ? '<h3 class="a-ch-h">Done today</h3><ul class="nb-rows tr-done">' + done.map(xRow).join('') + '</ul>' : '';
+    var acts = add ? '<div class="w-acts"><button type="button" class="btn dark tr-logbtn" data-p="tr-log" aria-haspopup="dialog">Log a transfer</button></div>' : '<p class="hint w-ro">You can read the transfer list but not write in it.</p>';
+    var sheet = add && S.xLog ? '<div class="sheet-bg" data-p="tr-log-close"></div><div class="sheet tr-sheet" role="dialog" aria-modal="true" aria-labelledby="tr-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="tr-log-h">Log a transfer</h3>' +
+      '<p class="w-rule">Stock shared with the other venues, both ways. Write the amount and unit, not a price.</p>' + add + '<button type="button" class="btn sheet-x" data-p="tr-log-close">Close</button></div>' : '';
+    return whoTopHTML() +
+      '<section class="nb-page o-page tr-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Transfers</h2><span class="nb-date">' + esc(longDate(S.xDate)) + (sub ? ' &middot; ' + esc(sub) : '') + '</span></div>' +
       (S.xState === 'offline' || S.xState !== 'ok' && !live.length ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' transfer' : ' transfers') + '</div>') + '</header>' +
-      '<p class="w-rule">Stock shared with the other venues, both ways. Write the amount and unit, not a price.</p>' +
-      '<div class="nb-foot w-addtop">' + add + '</div><div class="nb-body">' + openBody + '<h3 class="a-ch-h">Today</h3>' + body + '</div></section>' +
-      (wAll() ? '<p class="hint w-past">Past days and the totals per venue are in the <a href="#/admin" data-p="tr-go-admin">admin panel, Transfers</a>.</p>' : '');
+      acts + '<div class="nb-body">' + stillOut + doneHTML + '</div></section>' +
+      (wAll() ? '<p class="hint w-past">Past days and the totals per venue are in the <a href="#/admin" data-p="tr-go-admin">admin panel, Transfers</a>.</p>' : '') + sheet;
   }
   // Next on the venue, the person or the item goes to the next empty box instead of sending the form half filled
   function trNext(k) {
@@ -6028,6 +6120,9 @@
   }
   function trClick(a, el) {
     var f = S.xf, id = el.getAttribute('data-id'), dt = el.getAttribute('data-d'), v = el.getAttribute('data-v') || '', i = +el.getAttribute('data-i');
+    if (a === 'tr-log') { wSheetOpen('xlog'); return; }
+    if (a === 'tr-bk-add') { xBasketAdd(); return; }
+    if (a === 'tr-bk-del') { f.basket = (f.basket || []).filter(function (x, k) { return k !== i; }); draw(); focusK('tr-text'); return; }
     if (a === 'tr-dir') { f.dir = v === 'in' ? 'in' : 'out'; draw(); return; }
     if (a === 'tr-unit') { if (X_UNITS.indexOf(v) >= 0) f.unit = v; draw(); return; }
     if (a === 'tr-vpick') { f.venue = xStr(v, 40); draw(); focusK(f.person.trim() ? (f.text.trim() ? 'tr-amt' : 'tr-text') : 'tr-person'); return; }
@@ -8983,12 +9078,6 @@
     var s = kitSecs().filter(function (x) { return x.id === v.sec; })[0];
     return s ? s.name : '';   // renamed today: the new name; taken off the list: none
   }
-  /* "Writing as Ann" on the prep list and wastage: the section next to it, a tap changes it */
-  function ksTagHTML() {
-    var p = me(); if (!ksPicks(p)) return '';
-    var n = mySec();
-    return ' <button type="button" class="p-link ks-tag" data-ks="change" aria-label="' + esc(n ? 'Your section today: ' + n + '. Change it' : 'Pick your section for today') + '">' + esc(n || 'Pick a section') + '</button>';
-  }
   /* after the PIN (and when the book opens on a new day): staff and leads are asked once a day, chefs are given their role */
   function ksCheck() {
     if (!kitchenAccess() || !S.configFull) return;
@@ -9061,7 +9150,6 @@
     if (a === 'pick') { ksPick(el.getAttribute('data-v')); return; }
     if (a === 'skip') { ksSkip(); return; }
     if (a === 'close') { ksClose(); return; }
-    if (a === 'change') { ksOpen(true); return; }
   });
   document.addEventListener('keydown', function (e) {
     if (!ksPop) return;
@@ -9329,6 +9417,9 @@
     // Last 7 days always counts today from the live list, whatever day was being browsed; the past days come from the day cache
     if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); draw(); return; }
     if (a === 'w-act-open') { S.wf.actOpen = true; draw(); focusSel('#w-act'); return; }
+    if (a === 'w-log') { wSheetOpen('log'); return; }
+    if (a === 'w-rv') { wSheetOpen('rv'); return; }
+    if (a === 'w-again') { wAgain(dt, id); return; }
     if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); if (S.sheet) wasteSheetClose(); else draw(); return; }
     if (a === 'sheet') {
       S.sheet = 'reason';
@@ -9560,6 +9651,10 @@
     if (e.key === 'Tab' && S.sheet) {
       var sh = S.root.querySelector('.sheet'); if (sh) trapTab(e, sh, 'button');
       return;
+    }
+    if ((S.wLog || S.wRv) && S.name === 'waste' || S.xLog && S.name === 'transfers') {
+      if (e.key === 'Escape') { e.preventDefault(); wSheetClose(); return; }
+      var ws = S.root.querySelector('.w-sheet, .tr-sheet'); if (e.key === 'Tab' && ws) { trapTab(e, ws, 'button:not([disabled]), input, textarea'); return; }
     }
     if (e.key === 'Escape' && S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.getAttribute && e.target.getAttribute('data-k') === 'n-text') { e.preventDefault(); saveNote(); return; }
@@ -10107,6 +10202,7 @@
     if (a === 'mn-prev') { if (S.mf) { S.mf.prev = !S.mf.prev; draw(); } return true; }
     if (a === 'g-cancel') { if (gfDirty() && !arm('g-cancel')) return true; S.gf = null; S.gfSnap = ''; draw(); return true; }
     if (a === 'sheet-close') { wasteSheetClose(); return true; }
+    if (a === 'w-log-close' || a === 'w-rv-close' || a === 'tr-log-close') { wSheetClose(); return true; }
     if (a === 'staff-close') { if (draftDirty() && !arm('staff-close')) return true; S.staffOpen = false; S.draft = null; draw(); return true; }
     return false;
   }
@@ -10120,6 +10216,8 @@
       if (intelligenceLabel) return pick('intelligence-back', intelligenceLabel);
     }
     if (S.sheet) return pick('sheet-close', 'Back to wastage');
+    if (S.name === 'waste' && (S.wLog || S.wRv)) return pick(S.wLog ? 'w-log-close' : 'w-rv-close', 'Back to wastage');
+    if (S.name === 'transfers' && S.xLog) return pick('tr-log-close', 'Back to transfers');
     if (S.root.querySelector('.g-edit')) return pick('g-cancel', 'Back to guides');
     if (S.root.querySelector('.n-edit')) return pick('n-cancel', 'Back to pings');
     if (S.mf && S.mf.prev && (S.name === 'admin' && S.atab === 'minutes' || S.name === 'prep' && S.minOpen)) return pick('mn-prev', 'Back to writing');
@@ -10140,7 +10238,7 @@
      the recipe picker open on the prep pages, or a page loaded on its own with changes (Delivery received, Manage
      Recipes, Manage functions, Supplier order). */
   function unsavedHere() {
-    return !!(workLock() && S.lockHasDraft) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere() || !!S.sheet || !!S.recipeOpen || !!ptPop;
+    return !!(workLock() && S.lockHasDraft) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere() || !!S.sheet || !!S.wLog || !!S.xLog || !!S.recipeOpen || !!ptPop;
   }
   /* Words typed on the pages this file draws and not saved yet: half a prep, order, wastage or transfer line (the venue
      and person stay after Log it on purpose, so they do not count), kitchen mail, a to-do job, a review, the drinks run,
@@ -10152,7 +10250,7 @@
      does not either. */
   function typedHere() {
     return !!(proofModule() && proofModule().dirty()) || !!(window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.dirty()) || draftsDirty() || !!mlf.text.trim() || tdDirty() || dkDirty() || rvTyped(true) || rvTyped(false) ||
-      !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim());
+      !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim() || !!(S.xf.basket || []).length);
   }
   function dirtyForUpdate() {
     return !!(workLock() && S.lockHasDraft) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere();

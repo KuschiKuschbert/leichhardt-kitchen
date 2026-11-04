@@ -183,11 +183,11 @@ const cutReady = (p, selector) => L.waitFor(p, s => {
       // what the head chef's Google account left on the device: a function started (a customer's contact), a recipe and a drawing changed
       await S(p, () => { localStorage.setItem('lk.fe.draft.new', JSON.stringify({ id: 'x', isNew: true, d: { name: 'Smith 50th', cname: 'Jo Smith', phone: '0400 000 000' } })); localStorage.setItem('lk.mg.draft.burger', '{"at":1,"e":{"id":"burger"}}'); localStorage.setItem('lk.dw.draft.burger-plate', '{"at":1,"els":[]}'); });
       await p.fill('[data-k="' + k + '"]', 'Peel garlic'); await L.settle(p, 150);
-      await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 300);
+      const asked = await L.notYou(p);
       const s = await S(p, k => ({ user: !!window.LK_PREP.state.user, text: (document.querySelector('[data-k="' + k + '"]') || {}).value, admin: localStorage.getItem('lk.admin') }), k);
-      ok(s.user && s.text === 'Peel garlic' && s.admin === '1' && await txt(p, '.nb-top [data-p="who-change"]') === 'Not saved. Tap again', w + ' ' + route + ': one tap on Not you? keeps the Google account and the line, and asks again ' + JSON.stringify(s));
+      ok(s.user && s.text === 'Peel garlic' && s.admin === '1' && asked === 'Not saved yet. Tap again to sign out', w + ' ' + route + ': one tap on Not you? Sign out keeps the Google account and the line, and asks again ' + JSON.stringify(s) + ' ' + asked);
       await fits(p, w + ' ' + route + ' Not you? asking');
-      await L.tap(p, '.nb-top [data-p="who-change"]'); await L.settle(p, 600);
+      await L.notYou(p); await L.settle(p, 600);
       ok(await S(p, () => !window.LK_PREP.state.user) && !!(await p.$('.p-name')), w + ' ' + route + ': the second tap signs Google out to Who are you?');
       const left = await S(p, () => ['lk.fe.draft.new', 'lk.mg.draft.burger', 'lk.dw.draft.burger-plate'].filter(k => localStorage.getItem(k)));
       ok(!left.length, w + ' ' + route + ': and takes the function, recipe and drawing drafts with it, like Sign out (left ' + JSON.stringify(left) + ')');
@@ -337,6 +337,7 @@ const cutReady = (p, selector) => L.waitFor(p, s => {
   // the wastage page's review and the admin Daily reviews form are two drafts: the form's day arrows keep the page's
   await safe('review', async () => {
     p = await owner(b, '#/waste');
+    await L.waitFor(p, () => !!document.querySelector('[data-p="w-rv"]'), null, 8000); await L.wReview(p);
     await L.waitFor(p, () => !!document.querySelector('.w-review #w-ra'), null, 8000);
     await p.fill('.w-review #w-ra', 'Too much rice cooked');
     await S(p, () => { location.hash = '#/admin'; }); await L.settle(p, 500);
@@ -353,7 +354,7 @@ const cutReady = (p, selector) => L.waitFor(p, s => {
     await fits(p, 'Daily reviews asking');
     await p.click('[data-p="wh-review-cancel"]'); await L.settle(p, 200);
     ok(await p.inputValue('.a-rvform #w-ra') === '', 'Daily reviews: the second tap cancels the edits');
-    await S(p, () => { location.hash = '#/waste'; }); await L.waitFor(p, () => !!document.querySelector('.w-review #w-ra'), null, 8000);
+    await S(p, () => { location.hash = '#/waste'; }); await L.waitFor(p, () => !!document.querySelector('[data-p="w-rv"]'), null, 8000); await L.wReview(p);
     ok(await p.inputValue('.w-review #w-ra') === 'Too much rice cooked', 'wastage page: the review typed there is still in its box');
     ok(p.errors.length === 0, 'review: no page errors ' + p.errors.join(' | '));
     await p.context().close();
