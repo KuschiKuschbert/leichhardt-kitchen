@@ -337,6 +337,7 @@ const cutReady = (p, selector) => L.waitFor(p, s => {
   // the wastage page's review and the admin Daily reviews form are two drafts: the form's day arrows keep the page's
   await safe('review', async () => {
     p = await owner(b, '#/waste');
+    await L.waitFor(p, () => !!document.querySelector('[data-p="w-rv"]'), null, 8000); await L.wReview(p);
     await L.waitFor(p, () => !!document.querySelector('.w-review #w-ra'), null, 8000);
     await p.fill('.w-review #w-ra', 'Too much rice cooked');
     await S(p, () => { location.hash = '#/admin'; }); await L.settle(p, 500);
@@ -353,7 +354,7 @@ const cutReady = (p, selector) => L.waitFor(p, s => {
     await fits(p, 'Daily reviews asking');
     await p.click('[data-p="wh-review-cancel"]'); await L.settle(p, 200);
     ok(await p.inputValue('.a-rvform #w-ra') === '', 'Daily reviews: the second tap cancels the edits');
-    await S(p, () => { location.hash = '#/waste'; }); await L.waitFor(p, () => !!document.querySelector('.w-review #w-ra'), null, 8000);
+    await S(p, () => { location.hash = '#/waste'; }); await L.waitFor(p, () => !!document.querySelector('[data-p="w-rv"]'), null, 8000); await L.wReview(p);
     ok(await p.inputValue('.w-review #w-ra') === 'Too much rice cooked', 'wastage page: the review typed there is still in its box');
     ok(p.errors.length === 0, 'review: no page errors ' + p.errors.join(' | '));
     await p.context().close();
