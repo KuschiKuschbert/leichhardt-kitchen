@@ -103,3 +103,21 @@ No schema, rules, reads on open or saved data change. `tests/supplier-rows.test.
 - **Send, then record.** Review shows **1. Send it your usual way** with **Share order text** (only where `navigator.share` exists; it opens the phone's own share sheet with the same text as Copy) and **Copy order text**, then **2. Then record it here** with Record order placed. A cancelled share says nothing; a failed one falls back to Copy. Sharing writes nothing; Record order placed stays the only save. No new outside service or security header change: the share sheet belongs to the phone.
 - `js/suppliers.js?v=11` carries steps 2 and 3; `LK_SUP.api` stays 9. `tests/supplier-rows.test.js` (36 checks) covers the cut-off label, the Share order text and the button showing only with a share sheet.
 
+### One list, 4 November 2026
+
+The order sheet shows the whole supplier on one list; the 20-item pages stay only in Manage catalogue. Measured before the change, with example catalogues in Chrome at 4x slower CPU (a phone-speed stand-in), timing a keystroke in On hand and a filter tap from Node because the test clock freezes the page's own:
+
+| Items | Keystroke, pages of 20 | Keystroke, one list redrawing everything | Keystroke, one list (as built) | Full redraw, one list (as built) |
+| --- | --- | --- | --- | --- |
+| 60 | 67 ms | 124 ms | 23 ms | 86 ms |
+| 120 | 69 ms | 254 ms | 26 ms | 143 ms |
+| 300 | 79 ms | 697 ms (worst 1.3 s) | 46 ms | 360 ms |
+
+- **Only the row changes.** On hand, Use, − and + replace their own row (`redrawRow()` in `js/suppliers.js`), give the focus and caret back to the same box or button (after Use, the To order box), and refresh the filter counts and the Review bar. Filters, search, a supplier change and an open Suggestions panel still draw the whole sheet. A Use from the row says "Suggestion added" to screen readers instead of drawing the status line.
+- **Rows off screen are skipped.** `.su-row` has `content-visibility: auto` with a 150 px placeholder height that the browser replaces with the real height once a row is drawn.
+- **Category jumps.** A chip per category (catalogue order, with counts; a sideways row that fades at its edge) scrolls its heading to the top, and again two frames later once the skipped rows above it have their real height. A supplier with one category shows no chips.
+- A validation reveal still clears the search and the filter and focuses the field; there is no page to switch to any more.
+- `js/suppliers.js?v=12`, `LK_SUP.api` stays 9. No schema, rules, reads or saved data change.
+
+Tests: `tests/supplier-rows.test.js` adds a 300-item example supplier: all rows on the sheet with no Next, a jump chip per category and Seafood's heading at the top after a jump, and a keystroke, Use and + replacing only their own row (another row's node survives) with the focus and caret kept. Those three checks failed while the sheet still redrew in full (3 failed of 46) and pass with the row updates (46 of 46). `tests/supplier-quantity-entry.test.js` no longer steps through pages to reach item 26 and waits for the search before checking it hid the item.
+
