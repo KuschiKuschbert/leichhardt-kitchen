@@ -193,6 +193,7 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 | `scripts/fold-recipes.mjs`, `tests/fold-recipes.test.js` | Folds the head chef's recipe changes from a Backup file into `js/data.js` (report first, `--write` to change the file; see Recipes changed in the book) |
 | `.github/workflows/cutoff-push.yml`, `scripts/cutoff-push.mjs` | Phone pushes for order cut-offs, every 10 minutes (see Order cut-offs) |
 | `.github/workflows/auto-merge.yml` | Merges a ready pull request once Click tests pass and brings `main` into ready pull requests one at a time (needs the `AUTOMERGE_TOKEN` secret; [auto-merge](docs/auto-merge.md)) |
+| `.claude/skills/service-council/`, `scripts/council-check.mjs`, `.github/workflows/council-check.yml` | The service council a session runs before anything major (5 Nov 2026): is it needed, does it keep the book quick in service, then three designs and a recommendation. The Council check shows red on a ready pull request that changes the app without a `Verdict:` line; it never stops a merge |
 | `.github/workflows/flaky-report.yml`, `scripts/flaky-report.mjs` | Every Monday morning: one issue listing the click test files that needed a second try, hit the 10 minute limit or failed on the live site that week, with which ones to fix |
 | `.github/workflows/pr-tests.yml` | Runs the click tests on every pull request to `main` (the **Click tests** check), and on request |
 | `.github/workflows/live-tests.yml` | Runs the click tests against the live site after each GitHub Pages deploy, and on request |

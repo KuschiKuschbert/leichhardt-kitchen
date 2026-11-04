@@ -16,6 +16,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 
 | Changing | Read |
 | --- | --- |
+| A new page, tab, button, setting, sheet or workflow; how a service task is done; removing a feature; any design choice | `.claude/skills/service-council/SKILL.md`: run the service council first (5 Nov 2026) |
 | Whole-app audit, consistency, redundancy, security and performance review | `docs/whole-app-audit.md` (brief), `docs/ux-council-audit.md` (evidence), `docs/whole-app-inventory.md` (route coverage) |
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over anything older in this file) |
 | Head chef decisions; open items and older code to bring in line; how each prep and admin part works | `docs/head-chef-decisions.md`, `docs/open-work.md`, `docs/prep-book.md` (search, then read the part) |
@@ -54,6 +55,16 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Seasonal celebrations, festival dates and their sources | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md` |
 | Admin flow baseline behind The Chef's Desk | `docs/admin-flow-spec.md` |
 | Smoker batch cards and what was left out (30 Oct 2026) | `docs/smoker-batches.md` |
+
+## Service council (5 Nov 2026)
+
+Before building anything major (a new page, tab, button, setting, sheet or workflow, a change to how a service task is done, removing a feature, any design choice), run the council in `.claude/skills/service-council/SKILL.md`. Round 1: five critical reviewers ask whether it is needed and adds value. Round 2: three really different designs with pros and cons, scored by the council and a screen designer, which recommends one or a mix. The council advises; the head chef decides. Show the head chef the verdict, and then the designs, before building. Small changes get the quick check, fixes none. Every pull request that changes the app has a `Verdict:` line (the Council check shows red without one, but never stops a merge).
+
+**Service rules** (head chef, 5 Nov 2026). The book is used in a busy service: quick to read, few taps.
+- The main job of each work page (add a line, tick a line, find a recipe) is one tap from its tab.
+- No new tab, top bar or tab bar button, or pop-up on a service page without the head chef's OK.
+- Nothing appears over a list during service unless it stops a mistake.
+- A change that adds taps or takes away visible lines says why it is worth it: count the taps for the main task and the lines on a 390 px phone, before and after.
 
 ## Whole-app audits
 
@@ -103,6 +114,7 @@ After approval, implement small reversible units under the existing shipping rul
 | `.claude/settings.json`, `scripts/guard-main.mjs` | The main-branch guard: a Claude Code hook that refuses edits and commits on `main` |
 | `scripts/pre-merge.sh`, `.github/pull_request_template.md` | Run before merging (open pull requests, worktrees, whether `main` moved); the pull request sections |
 | `.github/workflows/auto-merge.yml` | Merges a ready pull request once Click tests pass and brings `main` in one at a time, with the `AUTOMERGE_TOKEN` secret. `docs/auto-merge.md`. `tests/auto-merge-queue.test.js` runs the queue step (found by its name, "Move the queue on by one") with a stand-in for `gh`: change the two together |
+| `.claude/skills/service-council/`, `scripts/council-check.mjs`, `.github/workflows/council-check.yml` | The service council (when it runs, the two rounds, the reviewer briefs) and the Council check: red on a ready pull request that changes the app without a `Verdict:` line. Advice only, not required. `tests/council-check.test.js` |
 | `scripts/flaky-report.mjs`, `.github/workflows/flaky-report.yml` | Every Monday 07:13: the files that passed only on retry, hit the 10 minute limit or failed on the live site, kept in one issue (label `flaky-report`). `tests/flaky-report.test.js` |
 | `.github/workflows/pr-tests.yml` | The **Click tests** check on every pull request to `main` (branch protection requires it) |
 | `.github/workflows/publish-rules.yml`, `scripts/publish-rules.sh`, `.github/workflows/lock-probe.yml`, `.github/workflows/live-tests.yml` | Publish the rules from GitHub (secrets `FIREBASE_SA`, `KITCHEN_PIN`, `OWNER_EMAIL`) or from your own computer, prove the lock on the live book after (`tests/rules/probe.mjs`, also weekly), and run the click tests on the live site after each Pages deploy. `docs/rules-publication.md` |
@@ -143,7 +155,7 @@ Measured on 2 and 3 November 2026: about 45 pull requests in two days, 100 Click
 - **Push when the work is finished.** Each push cancels the running Click tests and starts again. Make the fixes, run the files you changed (How changes ship, step 2), then push once.
 - **Wait without spending.** One check-in per pull request (about 50 minutes, then 4 hours). Do not poll, do not re-read a pull request that has not changed, and do not reply to a notice that needs nothing.
 - **A timing failure is not your bug until it repeats.** When Click tests fails on a test your change does not touch, read the failing test's name first. Re-run once; if it fails again, or a different timing test fails, say so in the pull request and fix it in its own pull request.
-- **Agents only where they pay.** Use parallel agents for design councils and wide audits. Do a lookup, a single file or a known fix yourself.
+- **Agents only where they pay.** Use parallel agents for the service council (once per major decision, not per push) and wide audits. Do a lookup, a single file or a known fix yourself.
 - **Few sessions at once.** Three or four open pull requests merge smoothly; eight make each other run Click tests again and again. Group small changes to one page in one pull request when they share the same files.
 - **Keep "Require branches to be up to date before merging" on** (head chef, 4 Nov 2026). `main` goes straight to the phones, so every pull request is tested against the exact `main` it joins; two that pass alone can still break together. Cut the catch-up cost with fewer sessions and the queue bringing `main` in one pull request at a time, not by turning the setting off. A merge queue would remove the waiting but needs an organisation-owned repository.
 - **Ready means merge when green.** Mark a pull request ready when it is finished and stop: the Auto-merge workflow merges it and brings `main` in one at a time (How changes ship, step 7). No waiting, no polling for the merge.
@@ -152,7 +164,7 @@ Measured on 2 and 3 November 2026: about 45 pull requests in two days, 100 Click
 - The title says what changes for the team, in plain words: "Recipes opens faster and taps answer at once", not "Refactor backHome".
 - The body says why first, with measured numbers when there are any (times, sizes, counts), then one line per file or part changed, then the tests added or changed.
 - Same writing style as everything else: no em dashes, short sentences.
-- `.github/pull_request_template.md` holds the sections every pull request fills in (why, what changes for the team, files, tests, reads and rules, rollback). Open work in progress as a draft.
+- `.github/pull_request_template.md` holds the sections every pull request fills in (why, council, what changes for the team, files, tests, reads and rules, rollback). Open work in progress as a draft.
 - Branch names: `feat/`, `fix/`, `docs/`, `ci/`, `ux/` plus a short name, or the `claude/...` name the app gives a session. One owner per worktree: a session works only in the worktree it made or was given.
 
 ## Rollback, dependencies and secrets

@@ -1,0 +1,41 @@
+# Council check (head chef, 5 Nov 2026, .claude/skills/service-council/SKILL.md).
+# A ready pull request that changes the app says what the service council decided in a "Verdict:" line, or
+# "Verdict: Not needed (bug fix)". Pull requests that change only docs/, tests/, .github/, .claude/ or Markdown files
+# need none. Advice only: this is not a required check, so a red one never stops a merge or the Auto-merge queue
+# (which waits on PR click tests alone). It runs again when the description is edited. tests/council-check.test.js.
+name: Council check
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: council-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  council:
+    name: Council verdict
+    # Drafts are work in progress: checked once marked ready.
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/council-check.mjs
+          sparse-checkout-cone-mode: false
+      - name: Does it say what the council decided?
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          BODY: ${{ github.event.pull_request.body }}
+        run: |
+          gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename' > files.txt
+          node scripts/council-check.mjs files.txt
