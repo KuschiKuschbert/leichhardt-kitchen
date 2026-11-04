@@ -582,7 +582,7 @@ await ok(W([['waste/' + WT + '/lines/t1', wline({ deleted: true }), true]], { id
 await ok(W([['waste/' + WT + '/lines/t1', { deleted: true, deletedBy: 'Sam', deletedAt: 5 }, true]], { id: 'sam' }), false, 'waste: a sous chef cannot remove Ann\'s entry (head chef decision, 22 Oct 2026)');
 await ok(W([['waste/' + WT + '/lines/s1', wline({ addedBy: 'Sam', addedById: 'sam', addedAt: Date.now() })]], { id: 'sam' }), true, 'waste: Sam logs an entry');
 await ok(W([['waste/' + WT + '/lines/s1', { deleted: true, deletedBy: 'Sam', deletedAt: Date.now() }, true]], { id: 'sam' }), true, 'waste: Sam undoes his own entry straight after');
-await ok(W([['waste/' + WT + '/lines/s1', { amount: 9 }, true]], { id: 'sam' }), false, 'waste: Sam cannot change the amount');
+await ok(W([['waste/' + WT + '/lines/s1', { amount: 9 }, true]], { id: 'sam' }), false, 'waste: Sam cannot change the amount of an entry he removed');
 await ok(W([['waste/' + WT + '/lines/s2', wline({ addedBy: 'Sam', addedById: 'sam', addedAt: Date.now() - 600000 })]], { id: 'sam' }), true, 'waste: an entry Sam logged 10 minutes ago');
 await ok(W([['waste/' + WT + '/lines/s2', { deleted: true, deletedBy: 'Sam', deletedAt: Date.now() }, true]], { id: 'sam' }), false, 'waste: Sam cannot undo it 10 minutes later');
 await ok(updateDoc(doc(owner, K + 'waste/' + WY + '/lines/y1'), { deleted: true, deletedBy: 'Head chef', deletedAt: 5 }), true, 'waste: the head chef\'s Google account removes a past entry');
@@ -602,6 +602,26 @@ await ok(getDoc(doc(anon, K + 'daily/2026-10-21_abc123')), false, 'daily: a PIN 
 await ok(getDoc(doc(owner, K + 'daily/2026-10-21_abc123')), true, 'daily: the head chef\'s Google account reads them');
 await ok(W([['summary/waste', { day: WT, items: [] }]], { id: 'sam' }), false, 'summary: no phone writes it, not even a sous chef');
 await ok(setDoc(doc(owner, K + 'summary/waste'), { day: WT, items: [] }), true, 'summary: the head chef may copy it (moving the kitchen PIN)');
+// Change amount (4 Nov 2026, the line's ⋯): the person who logged it, the head chef or a sous chef, today, on a line not
+// removed; only the amount, its unit, was (the amount before), chgBy and chgAt
+const amt = (a, u, was, x) => Object.assign({ amount: a, unit: u, was, chgBy: 'Ann', chgAt: Date.now() }, x || {});
+const WA = 'waste/' + WT + '/lines/t1';
+await ok(W([[WA, { amount: 1.5 }, true]], { id: 'ann' }), false, 'waste amount: a new amount without the old one kept is refused');
+await ok(W([[WA, amt(1.5, 'kg', { amount: 3, unit: 'kg' }), true]], { id: 'ann' }), false, 'waste amount: was must be the amount before');
+await ok(W([[WA, amt(1.5, 'kg', { amount: 2, unit: 'kg' }, { text: 'Fries' }), true]], { id: 'ann' }), false, 'waste amount: the name cannot change with it');
+await ok(W([[WA, amt(2, 'kg', { amount: 2, unit: 'kg' }), true]], { id: 'ann' }), false, 'waste amount: the same amount is not a change');
+await ok(W([[WA, amt(2, 'tubs', { amount: 2, unit: 'kg' }), true]], { id: 'ann' }), false, 'waste amount: only the wastage units');
+await ok(W([[WA, amt(0, 'kg', { amount: 2, unit: 'kg' }), true]], { id: 'ann' }), false, 'waste amount: more than nothing');
+await ok(W([[WA, amt(1.5, 'kg', { amount: 2, unit: 'kg' }, { chgAt: Date.now() + 600000 }), true]], { id: 'ann' }), false, 'waste amount: no time ahead');
+await ok(W([[WA, amt(1.5, 'kg', { amount: 2, unit: 'kg' }), true]], { id: 'bo' }), false, 'waste amount: Bo cannot change Ann\'s entry');
+await ok(W([[WA, amt(1.5, 'kg', { amount: 2, unit: 'kg' }), true]], { id: 'bo', as: 'ann' }), false, 'waste amount: nor as Ann from his phone');
+await ok(W([[WA, amt(1.5, 'kg', { amount: 2, unit: 'kg' }), true]], { id: 'ann' }), true, 'waste amount: Ann changes her own entry, the old amount kept');
+await ok(W([[WA, amt(500, 'g', { amount: 1.5, unit: 'kg' }, { chgBy: 'Sam' }), true]], { id: 'sam' }), true, 'waste amount: a sous chef changes Ann\'s entry');
+await ok(W([[WA, amt(2, 'kg', { amount: 500, unit: 'g' }, { chgBy: 'Hedy' }), true]], { id: 'hd' }), true, 'waste amount: the head chef on her PIN changes it back');
+await ok(W([['waste/' + WT + '/lines/s1', amt(1, 'kg', { amount: 2, unit: 'kg' }, { chgBy: 'Sam' }), true]], { id: 'sam' }), false, 'waste amount: not on a removed entry');
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'waste/' + WY + '/lines/y2'), wline({ addedAt: Date.now() - 86400000 })); });
+await ok(W([['waste/' + WY + '/lines/y2', amt(1, 'kg', { amount: 2, unit: 'kg' }), true]], { id: 'ann' }), false, 'waste amount: not on a past day');
+await ok(W([['waste/' + WY + '/lines/y2', amt(1, 'kg', { amount: 2, unit: 'kg' }, { chgBy: 'Sam' }), true]], { id: 'sam' }), false, 'waste amount: not on a past day, a sous chef either');
 // Transfers between venues (23 Oct 2026): like wastage, today's lines with the kitchen PIN and past days only for the
 // head chef's Google account. Tighter than wastage: only the known fields, a day near today, the writer's own id, no
 // time ahead, and Remove, Put back and Undo change only the removed fields
@@ -713,6 +733,35 @@ await ok(returnLoan(unreturn), false, 'returns: staff Undo expires after two min
 await ok(returnLoan(unreturn, 'sam'), true, 'returns: a chef may reopen an older confirmation');
 const fresh = xline({ by: 'ann', addedAt: Date.now() });
 await ok(W([['transfers/' + WT + '/lines/new-loan', fresh], ['transferOpen/' + WT + '_new-loan', indexRecord(fresh, WT, 'new-loan')]], { id: 'ann' }), true, 'returns: a new loan and its index are saved together');
+// Change amount on an open loan today (4 Nov 2026): the line and its open copy in one write, as for a return
+let loanNow = fresh;
+async function amtLoan(fields, id = 'ann', index = {}, path = 'new-loan', day = WT) {
+  const next = { ...loanNow, ...fields, by: id };
+  return W([['transfers/' + day + '/lines/' + path, fields, true], ['transferOpen/' + day + '_' + path, indexRecord({ ...next, ...index }, day, path)]], { id });
+}
+await ok(W([['transfers/' + WT + '/lines/new-loan', amt(3, 'kg', { amount: 2, unit: 'kg' }), true]], { id: 'ann' }), false, 'transfer amount: without its open copy, refused');
+await ok(amtLoan(amt(3, 'kg', { amount: 2, unit: 'kg' }), 'ann', { amount: 99 }), false, 'transfer amount: an open copy that does not match is refused');
+await ok(amtLoan(amt(3, 'portions', { amount: 2, unit: 'kg' })), false, 'transfer amount: only the transfer units');
+await ok(amtLoan(amt(3, 'kg', { amount: 2, unit: 'kg' }, { venue: 'Causeway' })), false, 'transfer amount: the venue cannot change with it');
+await ok(amtLoan(amt(3, 'kg', { amount: 2, unit: 'kg' }), 'bo'), false, 'transfer amount: Bo cannot change Ann\'s loan');
+await ok(amtLoan(amt(3, 'kg', { amount: 2, unit: 'kg' })), true, 'transfer amount: Ann changes her own open loan, with its open copy');
+loanNow = { ...loanNow, ...amt(3, 'kg', { amount: 2, unit: 'kg' }), by: 'ann' };
+await ok(getDoc(doc(anon, K + 'transferOpen/' + WT + '_new-loan')), false, 'transfer amount: the open list reads it');
+const samAmt = amt(4, 'packs', { amount: 3, unit: 'kg' }, { chgBy: 'Sam' });
+await ok(amtLoan(samAmt, 'sam'), true, 'transfer amount: a sous chef changes Ann\'s loan');
+loanNow = { ...loanNow, ...samAmt, by: 'sam' };
+const backLoan = { ...loanNow, returned: true, returnedBy: 'Ann', returnedById: 'ann', returnedAt: Date.now() - 60000 };
+await env.withSecurityRulesDisabled(async ctx => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, K + 'transfers/' + WT + '/lines/back-loan'), backLoan);
+  await setDoc(doc(db, K + 'transferOpen/' + WT + '_back-loan'), indexRecord(backLoan, WT, 'back-loan'));
+  await setDoc(doc(db, K + 'transfers/' + WY + '/lines/old-loan'), fresh);
+  await setDoc(doc(db, K + 'transferOpen/' + WY + '_old-loan'), indexRecord(fresh, WY, 'old-loan'));
+});
+loanNow = backLoan;
+await ok(amtLoan(amt(1, 'kg', { amount: 4, unit: 'packs' }, { chgBy: 'Sam' }), 'sam', {}, 'back-loan'), false, 'transfer amount: not on a loan already back');
+loanNow = fresh;
+await ok(amtLoan(amt(1, 'kg', { amount: 2, unit: 'kg' }), 'ann', {}, 'old-loan', WY), false, 'transfer amount: not on a past day\'s loan');
 
 // PIN sessions (22 Oct 2026): a phone signed in anonymously writes a PIN try first (one per person every 20 s), then
 // opens a session if that try was right; writes go through the session
