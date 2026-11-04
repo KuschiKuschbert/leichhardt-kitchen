@@ -236,6 +236,8 @@ row('js/prep.js pastRead() (admin Reports): a past day\'s wastage lines', { ok: 
 
 // transfers
 row('js/prep.js watchXOpen(): open loans listener (transferOpen, open == true)', { ok: KITCHEN, asks: KITCHEN, run: db => listen(query(C(db, 'transferOpen'), where('open', '==', true))) });
+row('js/prep.js dashHTML() loans(): the admin Dashboard\'s open loans, one query (transferOpen, open == true)', { ok: KITCHEN, asks: GOOGLE, run: db => getDocs(query(C(db, 'transferOpen'), where('open', '==', true))) });
+row('js/prep.js dashHTML() get(): the admin Dashboard\'s nightly numbers and run health (analysis/dashboard, analysis/health)', { ok: GOOGLE, asks: GOOGLE, run: db => Promise.all([getDocFromServer(D(db, 'analysis/dashboard')), getDocFromServer(D(db, 'analysis/health'))]) });
 row('js/prep.js watchXfer(): today\'s transfer lines listener', { ok: KITCHEN, asks: KITCHEN, run: db => listen(C(db, `transfers/${TODAY}/lines`)) });
 row('js/prep.js loadXSum(): summary/transfers get', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, 'summary/transfers')) });
 row('js/prep.js xferStatsHTML() (admin Reports): a past day\'s transfer lines', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, `transfers/${PAST}/lines`)) });
@@ -309,6 +311,8 @@ row('js/fnedit.js loadHist(): every earlier version (functions/<id>/hist)', { ok
 // deliveries
 row('js/deliveries.js load(): today\'s receipts listener (deliveries, day == today)', { ok: ALL, asks: ALL, run: db => listen(query(C(db, 'deliveries'), where('day', '==', TODAY))) });
 row('js/deliveries.js load(): a past day from the server (admin)', { ok: GOOGLE, asks: GOOGLE, run: db => getDocsFromServer(query(C(db, 'deliveries'), where('day', '==', PAST))) });
+row('js/deliveries.js load(): the admin From to To range, up to 92 days (3 Nov 2026)', { ok: GOOGLE, asks: GOOGLE,
+  run: db => getDocsFromServer(query(C(db, 'deliveries'), where('day', '>=', kday(NOW - 91 * DAY)), where('day', '<=', TODAY))) });
 row('js/deliveries.js save(): the retry check of a new receipt id', { ok: ALL, asks: ALL, run: (db, w, r) => getDocFromServer(D(db, 'deliveries/new-' + r)) });
 
 // Manage Recipes & Drawings
