@@ -89,6 +89,34 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
     ok(await q.evaluate(() => LK_PREP.state.atab) === 'mail', width + ': Open mail opens the Kitchen mail page');
     await q.context().close();
   }
+  // The week ahead: functions from the live list, cut-offs from the head chef's settings, the usual busy days. No reads.
+  const M = require('../js/functions.js'), today = L.ymd(new Date(L.NOW)), d2 = M.addDays(today, 2), d1 = M.addDays(today, 1);
+  const fnAt = (ymd, hm) => M.kat(ymd, M.hmMin(hm));
+  const booking = (id, o) => M.derive({ id, v: 1, status: o.status || 'confirmed', name: o.name, date: o.date, start: fnAt(o.date, '18:00'), loc: 'Beer garden', guests: 60, gu: false, mode: 'all', notes: '', kc: '', kcBy: '', kcAt: 0,
+    rounds: [{ at: fnAt(o.date, '18:30'), note: '' }], lines: [{ rid: 'antipasto-platter', name: 'Antipasto Platter', unit: 'platter', spec: '', fp: '', qty: 3, u: M.toU([3]) }], was: {}, chg: [], cBy: 'fay', cAt: L.NOW - DAY, confBy: 'fay', confAt: L.NOW - DAY, by: 'fay', upd: L.NOW - 3600000,
+    ...(o.status === 'cancelled' ? { canBy: 'fay', canAt: L.NOW - 1800000 } : {}) });
+  const cfgKey = path('config', 'main'), dow2 = new Date(d2 + 'T12:00:00Z').getUTCDay();
+  const weekly = { ...extra, [cfgKey]: { ...L.seed()[cfgKey], cutoffs: [{ id: 'pfd', name: 'PFD', dd: [dow2], at: 15 * 60, pre: 1 }] },
+    [path('functions', 'f1')]: booking('f1', { name: 'Smith 50th', date: d2 }), [path('functions', 'f2')]: booking('f2', { name: 'Called off', date: d2, status: 'cancelled' }),
+    [path('functions', 'f3')]: booking('f3', { name: '<img src=x onerror="window.__dshInjected=3">', date: today }) };
+  for (const width of [390, 1280]) {
+    const q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width, height: 900, extra: weekly, wait: 1600 });
+    await ready(q);
+    await L.waitFor(q, () => /Smith 50th/.test((document.querySelector('.dsh-week') || {}).textContent || ''), null, 10000).catch(() => {});
+    const days = await q.$$eval('.dsh-wk-day', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
+    ok(days.length === 7 && /^Today/.test(days[0]) && /^Tomorrow/.test(days[1]), width + ': the week ahead shows today and the next 6 days (' + days.length + ')');
+    ok(/Smith 50th, 18:00, 60 guests/.test(days[2]), width + ': a booking shows on its day with its time and guests (' + days[2] + ')');
+    ok(!/Called off/.test(days.join(' ')), width + ': a cancelled booking is left out');
+    ok(/Cut-off ?PFD 15:00/.test(days[1]), width + ': the supplier cut-off shows on the day the order closes (' + days[1] + ')');
+    ok(days.some(d => /Usually busy ?About \d+ prep lines/.test(d)), width + ': the usually busy weekdays are marked');
+    ok(await q.locator('.dsh-wk-fn a[href="#/fn/f1"]').count() === 1, width + ': a booking links to its function sheet');
+    ok(await q.evaluate(() => window.__dshInjected) === undefined && days[0].includes('<img'), width + ': a function name shows as words, never markup');
+    ok(!await L.overflow(q), width + ': no sideways scroll with the week ahead');
+    await q.click('.dsh-week [data-dsh="open"][data-t="cutoffs"]'); await L.settle(q, 300);
+    ok(await q.evaluate(() => LK_PREP.state.atab) === 'cutoffs', width + ': Cut-offs opens the order cut-offs page');
+    await q.context().close();
+  }
+
   let q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: 1280, extra, failReads: 'transferOpen', wait: 1600 });
   await ready(q);
   await L.waitFor(q, () => /Could not load the open transfers/.test(document.body.textContent), null, 8000).catch(() => {});

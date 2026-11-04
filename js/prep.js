@@ -4489,6 +4489,9 @@
         }
         return out;
       },
+      // The week ahead: functions from the live list js/functions.js already keeps for the band, and cut-offs worked out
+      // from config/main with LK_CUT. No reads.
+      week: function () { var w = dashWeek(); dashWeekSig = JSON.stringify(w); return w; },
       // Transfers not returned: one query of the open loans when the Dashboard opens and on Refresh (one read each, at least 1).
       loans: function () {
         if (!intelligenceAllowed()) return Promise.reject({ code: 'permission' });
@@ -4497,7 +4500,7 @@
         });
       },
       open: function (tab, days) {
-        if (['insights', 'waste', 'transfers', 'mail', 'minutes'].indexOf(tab) < 0 || (tab === 'mail' && !mlOwner())) return;
+        if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs'].indexOf(tab) < 0 || (tab === 'mail' && !mlOwner())) return;
         if (tab === 'insights' || tab === 'waste') S.statsRange = days === 7 ? 7 : 30;
         S.atab = tab; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(tab)[0]] = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop();
       }
@@ -4505,6 +4508,24 @@
     if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=1').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
     return '<section class="set-block"><h3 class="label">Dashboard</h3><p class="hint" role="status">' + (dashError ? 'Could not load the dashboard. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
   }
+  function dashWeek() {
+    var fn = window.LK_FN, F = fn && fn.state ? fn.state() : null, list = fn ? fn.list() : [], cuts = CUT_OK ? cutList() : null, out = [];
+    for (var i = 0; i < 7; i++) {
+      var d = shift(dayNow(), i), dow = parseYmd(d).getDay();
+      out.push({ day: d, dow: dow,
+        fns: list.filter(function (f) { return f.date === d && (f.status === 'confirmed' || f.status === 'draft'); }).map(function (f) {
+          return { id: String(f.id || ''), name: String(f.name || 'Function'), guests: f.gu ? null : (+f.guests || 0), start: typeof f.start === 'number' && f.start > 0 ? hhmm(T.mins(f.start)) : '', draft: f.status === 'draft' };
+        }).sort(function (a, b) { return a.start < b.start ? -1 : a.start > b.start ? 1 : 0; }),
+        cuts: cuts ? window.LK_CUT.on(cuts, dow).map(function (c) { return { name: c.s.name, at: hhmm(c.at), what: window.LK_CUT.forText(c) }; }) : null });
+    }
+    return { fns: !fn ? 'none' : F && F.state === 'error' ? 'error' : F && F.state === 'ok' ? 'ok' : F && F.state === 'offline' ? 'offline' : 'loading', days: out };
+  }
+  // The functions listener can answer after the Dashboard is drawn: draw again only when the week ahead would change.
+  var dashWeekSig = '';
+  window.addEventListener('lk-fn', function () {
+    if (S.name !== 'admin' || S.atab !== 'dashboard' || !intelligenceAllowed() || !dashModule() || !S.root || !document.body.contains(S.root)) return;
+    if (JSON.stringify(dashWeek()) !== dashWeekSig) draw();
+  });
   document.addEventListener('click', function (e) { var el = e.target.closest('[data-dsh]'), m = dashModule(); if (el && S.root && S.root.contains(el) && intelligenceAllowed() && m) { e.preventDefault(); m.click(el); } });
 
   var intelligenceLoading = null, intelligenceError = false;
