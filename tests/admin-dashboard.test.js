@@ -78,6 +78,16 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
     await L.waitFor(q, () => { const t = (document.querySelector('.dsh-needs') || {}).textContent || ''; return /kitchen mails open/.test(t) && /still to sign/.test(t) && /not returned/.test(t); }, null, 10000).catch(() => {});
     const needs = await L.txt(q, '.dsh-needs');
     ok(/3 kitchen mails open/.test(needs), width + ': Needs you counts the open kitchen mail (' + needs.slice(0, 200) + ')');
+    // To do (4 Nov 2026, design B): at the top of Today, with the open mail itself, most urgent first, worked in place
+    ok(await q.evaluate(() => { const t = document.querySelector('.dsh-needs'), tools = document.querySelector('.dsh-tools'); return !!t && !!tools && /To do/.test(t.querySelector('h3').textContent) && !!(t.compareDocumentPosition(tools) & Node.DOCUMENT_POSITION_FOLLOWING); }), width + ': To do comes first on Today, above the numbers');
+    const rows = await q.$$eval('.dsh-needs .dsh-ml .ml-row', els => els.map(e => e.querySelector('.ml-text').textContent));
+    ok(rows.length === 3 && /Cool room door seal/.test(rows[0]) && /Fryer 2/.test(rows[1]), width + ': To do lists the open mail, food safety first (' + rows.join(' | ') + ')');
+    await L.waitFor(q, () => ['m1', 'm2', 'm3'].every(id => (window.__fake.dump()['kitchens/000000/mail/' + id] || {}).seen === true), null, 8000).catch(() => {});
+    ok(await q.evaluate(() => ['m1', 'm2', 'm3'].every(id => (window.__fake.dump()['kitchens/000000/mail/' + id] || {}).seen === true)), width + ': mail shown in To do counts as seen, as on Kitchen mail');
+    ok(await q.locator('.mlp-wrap').count() === 0, width + ': the mail pop-up stays away while To do shows the mail');
+    await q.click('.dsh-needs .ml-row:first-child [data-p="ml-tick"]');
+    await L.waitFor(q, () => (window.__fake.dump()['kitchens/000000/mail/m2'] || {}).done === true && document.querySelectorAll('.dsh-needs .dsh-ml .ml-row').length === 2, null, 8000).catch(() => {});
+    ok(await q.evaluate(() => (window.__fake.dump()['kitchens/000000/mail/m2'] || {}).done === true) && /2 kitchen mails open/.test(await L.txt(q, '.dsh-needs')) && await q.locator('.dsh-needs .dsh-ml .ml-row').count() === 2, width + ': ticking a line in To do marks it done and takes it off the list');
     ok(/Late/.test(needs) && /still to sign/.test(needs) && /1 of \d+ signed/.test(needs), width + ': Needs you says who has not signed the late minutes');
     ok(/1 meeting action past the date/.test(needs), width + ': Needs you lists the overdue meeting action');
     ok(/3 item links to check/.test(needs) && /5 training reviews/.test(needs) && /2 in training/.test(needs), width + ': Needs you shows the Review desk counts from the nightly run');
