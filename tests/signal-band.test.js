@@ -109,6 +109,20 @@ const unsentOn = (p, id) => p.evaluate(i => { const m = document.querySelector('
     u = await band(p, '.upd-bar');
     ok(u && u.seen && u.want != null && Math.abs(u.top - u.want) <= 1, '390: the update band comes back after (' + JSON.stringify(u) + ')');
     ok(moved(l1, await lines(p, ids)) === 0, '390: the bands came and went and no line moved');
+    // put away (4 Nov 2026): a tap on its words puts the update band away until the next page opens
+    await p.click('.upd-bar span'); await L.settle(p, 400);
+    u = await band(p, '.upd-bar');
+    ok(u && !u.visible, '390: a tap on the words puts the update band away (' + JSON.stringify(u) + ')');
+    ok(moved(l1, await lines(p, ids)) === 0, '390: putting it away moves no line');
+    await p.evaluate(() => { location.hash = '#/orders'; }); await L.settle(p, 800);
+    u = await band(p, '.upd-bar');
+    ok(u && u.visible, '390: the next page brings the update band back (' + JSON.stringify(u) + ')');
+    // a swipe up puts it away too; the button still updates
+    const ub = await p.evaluate(() => { const r = document.querySelector('.upd-bar span').getBoundingClientRect(); return { x: r.left + 10, y: r.top + r.height / 2 }; });
+    await p.mouse.move(ub.x, ub.y); await p.mouse.down(); await p.mouse.move(ub.x, ub.y - 20); await p.mouse.move(ub.x, ub.y - 45); await p.mouse.up();
+    await L.settle(p, 400);
+    u = await band(p, '.upd-bar');
+    ok(u && !u.visible, '390: a swipe up puts it away too (' + JSON.stringify(u) + ')');
     ok(p.errors.length === 0, '390: no page errors ' + p.errors.join(' | '));
   });
 

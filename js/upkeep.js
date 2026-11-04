@@ -290,6 +290,7 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
   // a short note in the strip for 4 seconds, then the strip as it was
   function say(msg, btn) {
     if (!barText) return;
+    bringBack();
     barText.textContent = msg; barBtn.textContent = btn;
     clearTimeout(calm);
     calm = setTimeout(reset, 4000);
@@ -299,13 +300,29 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
   // the reload was turned down
   function busy(msg) {
     if (!barText) return;
+    bringBack();
     clearTimeout(calm);
     if (window.LK_MOTION) barText.innerHTML = window.LK_MOTION.label(msg, 'chef', 'busy'); else barText.textContent = msg;
     barBtn.textContent = 'Update now';
     calm = setTimeout(reset, 12000);
   }
+  /* Put away (4 Nov 2026, the default the head chef was told): the update band can stay up for a whole shift and covers
+     the first 48 px under the top bar, so a tap on its words or a swipe up puts it away until the next page opens.
+     Update now still runs when the book sits idle and at 04:00 (the guards above), and any update note brings it back. */
+  var away = false;
+  function putAway() {
+    if (!bar || away) return;
+    away = true; bar.classList.remove('is-on'); document.documentElement.classList.remove('has-upd');
+  }
+  function bringBack() {
+    if (!bar || !away) return;
+    away = false; document.documentElement.classList.add('has-upd');
+    lkBandPlace(); void bar.offsetWidth; bar.classList.add('is-on');
+  }
+  window.addEventListener('hashchange', bringBack);
   function showBar() {
-    if (bar || !document.body) return;
+    if (bar) { bringBack(); return; }
+    if (!document.body) return;
     bar = document.createElement('div'); bar.setAttribute('role', 'status'); bar.className = 'upd-bar';
     document.documentElement.classList.add('has-upd');
     var t = barText = document.createElement('span'); t.textContent = 'New version available.';
@@ -313,6 +330,13 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
     b.onclick = updateNow;
     reset();
     bar.appendChild(t); bar.appendChild(b); document.body.insertBefore(bar, document.getElementById('app') || document.body.firstChild);
+    t.addEventListener('click', putAway);
+    // a swipe up: the finger usually lifts above the band, so the lift is heard on the window
+    bar.addEventListener('pointerdown', function (e) {
+      if (e.target === b) return;
+      var id = e.pointerId, y = e.clientY;
+      window.addEventListener('pointerup', function up(ev) { if (ev.pointerId !== id) return; window.removeEventListener('pointerup', up); if (y - ev.clientY > 30) putAway(); });
+    });
     // placed out of sight first, then moved in, so it slides down from under the top bar (none with Reduce motion)
     lkBandPlace(); void bar.offsetWidth; bar.classList.add('is-on');
     // the band keeps its usual height, taller only when its words need more room (Extra large text in a wide font):
