@@ -134,11 +134,22 @@ jobs:
       # seconds (asking also starts GitHub's check), at least once and until 10 minutes after that pull request last
       # changed; the whole pass shares one wait. Worked out by then: handled as what it is. Still UNKNOWN: skipped this
       # pass. Nothing is kept between passes, so a later pass reads it fresh and takes it up once GitHub knows.
+      # Testing means a PR click tests check on the newest commit is still running. Click tests runs in shares on
+      # several runners and the required "Click tests" check only appears when every share is done, so asking for the
+      # required check alone read a pull request in the middle of its run as failed (4 Nov 2026: #520). No PR click
+      # tests check at all: just pushed, so the queue asks again like UNKNOWN; still none 10 minutes after the change
+      # means Click tests never started on that commit (#516 on 4 Nov 2026), skipped until its session pushes again.
       # tests/auto-merge-queue.test.js runs this step with a stand-in for gh: keep GitHub expressions out of it.
       - name: Move the queue on by one
         if: steps.token.outputs.ok == 'true'
         run: |
           grace=600; every=10; waited=0   # seconds: GitHub's time after a change, between asks, waited so far this pass
+          # PR click tests checks on a pull request's newest commit: "how many, how many still running".
+          click() {
+            gh pr checks "$1" -R "$REPO" --json workflow,bucket \
+              --jq '[.[] | select(.workflow == "PR click tests")] | "\(length) \([.[] | select(.bucket == "pending")] | length)"' \
+              2>/dev/null || echo "0 0"
+          }
           # The list and Update branch are tried three times, 10 and 20 seconds apart, as in switch: one GitHub error must
           # not stall the queue until the next pass.
           retry() { for i in 1 2 3; do "$@" && return 0; [ "$i" = 3 ] || sleep $((i * 10)); done; return 1; }
@@ -164,6 +175,13 @@ jobs:
               UNKNOWN) echo "#$n is still UNKNOWN to GitHub, $(( (since + waited) / 60 )) min after its last change: skipped this pass. The next pass looks again."; continue ;;
               DIRTY) echo "#$n has a conflict: skipped until its session fixes it."; continue ;;
             esac
+            read -r total running <<< "$(click "$n")"
+            while [ "${total:-0}" = 0 ] && [ $((since + waited)) -lt "$grace" ]; do
+              sleep "$every"; waited=$((waited + every))
+              read -r total running <<< "$(click "$n")"
+            done
+            if [ "${running:-0}" -gt 0 ]; then echo "#$n is testing: wait."; exit 0; fi
+            if [ "${total:-0}" = 0 ]; then echo "#$n has no Click tests on its newest commit, $(( (since + waited) / 60 )) min after its last change: skipped until its session pushes again."; continue; fi
             set +e; gh pr checks "$n" -R "$REPO" --required >/dev/null 2>&1; c=$?; set -e
             if [ "$c" = "8" ]; then echo "#$n is testing: wait."; exit 0; fi
             if [ "$c" != "0" ]; then echo "#$n failed Click tests: skipped until its session fixes it."; continue; fi

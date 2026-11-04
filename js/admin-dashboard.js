@@ -238,7 +238,10 @@
     return '<div class="dsh-panel"><div class="dsh-panel-head"><h3 class="a-ch-h">Most wasted</h3><button type="button" class="dsh-more" data-dsh="open" data-t="waste">All items</button></div><p class="hint">By lines logged. Amounts as typed, by unit.</p>' + body + '</div>';
   }
 
-  /* ---------- Needs you: what is waiting, each row opening its page ---------- */
+  /* ---------- To do (4 Nov 2026, design B, docs/admin-pages-options/brief.md): what is waiting, at the top of Today.
+     The open kitchen mail is listed with the Kitchen mail page's own rows, ticked off and given a new "how soon" in
+     place; every other row opens its page. Shown before the numbers, so it never waits for the nightly record. ---------- */
+  var MAIL_MAX = 8;
   function daysSince(day, today) { return Math.max(0, Math.round((Date.parse(today + 'T12:00:00Z') - Date.parse(day + 'T12:00:00Z')) / 86400000)); }
   function needRow(kind, tag, title, detail, open, label) {
     return '<li class="dsh-need dsh-need-' + kind + '"><span class="dsh-need-mark" aria-hidden="true"></span><div><p class="dsh-tag dsh-tag-' + (kind === 'due' ? 'bad' : kind === 'ok' ? 'good' : 'flat') + '">' + esc(tag) + '</p><p class="dsh-need-title">' + esc(title) + '</p>' +
@@ -249,7 +252,12 @@
     // Kitchen mail: the open messages the panel already read when the book opened.
     if (nd.mail === undefined) {} else if (nd.mail === 'error') rows.push(needRow('wait', 'Not checked', 'Kitchen mail', 'Could not load the mail. The book tries again by itself.', 'mail', 'Open mail'));
     else if (nd.mail === 'loading') rows.push(needRow('wait', 'Checking', 'Kitchen mail', 'Still loading.', '', ''));
-    else if (nd.mail.n) rows.push(needRow('due', nd.mail.fresh ? 'New' : 'Open', nd.mail.n + ' kitchen mail' + (nd.mail.n === 1 ? '' : 's') + ' open', nd.mail.fresh ? nd.mail.fresh + ' not read yet.' : 'All read, not done yet.', 'mail', 'Open mail'));
+    else if (nd.mail.n) {
+      // the rows come from js/prep.js (mlRow, every field through esc()); an older book without mailRows keeps the one line
+      var mr = api.mailRows ? api.mailRows(MAIL_MAX) : null;
+      rows.push(needRow('due', nd.mail.fresh ? 'New' : 'Open', nd.mail.n + ' kitchen mail' + (nd.mail.n === 1 ? '' : 's') + ' open', nd.mail.fresh ? nd.mail.fresh + ' not read yet.' : 'All read, not done yet.', 'mail', mr ? 'All kitchen mail' : 'Open mail') +
+        (mr && mr.html ? '<li class="dsh-todo-mail"><ul class="dsh-ml" aria-label="Open kitchen mail, most urgent first">' + mr.html + '</ul>' + (mr.more ? '<p class="hint">' + n(mr.more) + ' more in Kitchen mail.</p>' : '') + '</li>' : ''));
+    }
     else clear.push('kitchen mail');
     // Meeting minutes: who still has to sign the latest, and actions past their date.
     if (nd.minutes === 'error') rows.push(needRow('wait', 'Not checked', 'Meeting minutes', 'Could not load the sign-offs.', 'minutes', 'Open minutes'));
@@ -260,9 +268,9 @@
       if (nd.minutes.overdue) rows.push(needRow('due', 'Overdue', nd.minutes.overdue + ' meeting action' + (nd.minutes.overdue === 1 ? '' : 's') + ' past the date', 'From the minutes of ' + nd.minutes.label + '.', 'minutes', 'Open minutes'));
     }
     // The Review desk queues, counted by the nightly run with the Review desk's own code (counts only).
-    var q = state.data.needs;
+    var q = state.data && state.data.needs;
     if (q) {
-      if (q.links) rows.push(needRow('wait', 'To review', q.links + ' item link' + (q.links === 1 ? '' : 's') + ' to check', 'Recorded names with no confirmed recipe or supplier link. Counted at ' + api.clock(state.data.at) + '.', 'references', 'Review desk'));
+      if (q.links) rows.push(needRow('wait', 'To review', q.links + ' item link' + (q.links === 1 ? '' : 's') + ' to check', 'Recorded names with no confirmed recipe or supplier link. Counted at ' + api.clock(state.data.at) + '.', 'references', 'Item links'));
       else clear.push('item links');
       if (q.training) rows.push(needRow('wait', 'Training', q.training + ' training review' + (q.training === 1 ? '' : 's'), (q.inTraining ? q.inTraining + ' in training. ' : '') + 'People and sections without a confirmed assessment. Counted at ' + api.clock(state.data.at) + '.', 'training', 'Training'));
       else clear.push('training');
@@ -278,10 +286,12 @@
       } else clear.push('transfers');
     }
     // The nightly run: a failed run, or numbers more than a day and a half old.
-    var h = state.health, failed = h && h.status === 'failed' && n(h.at) > state.data.at, stale = api.now() - state.data.at > 36 * 3600000;
+    // the nightly run, once its record is in (the numbers below say when they are loading or could not load)
+    var h = state.health, dd = state.data, failed = !!dd && !!h && h.status === 'failed' && n(h.at) > dd.at, stale = !!dd && api.now() - dd.at > 36 * 3600000;
     if (failed || stale) rows.push(needRow('due', 'Nightly run', failed ? 'The last nightly run did not finish' : 'The nightly numbers are more than a day old', 'The numbers here are from ' + api.clock(state.data.at) + '. The Nightly learning run in GitHub needs a look.', '', ''));
-    var ok = clear.length || !(failed || stale) ? '<p class="dsh-clear"><span class="dsh-dot" aria-hidden="true"></span>' + (clear.length ? 'Nothing waiting for ' + esc(clear.join(', ').replace(/, ([^,]*)$/, ' or $1')) + '. ' : '') + (failed || stale ? '' : 'The nightly run finished.') + '</p>' : '';
-    return '<section class="dsh-panel dsh-needs" aria-label="Needs you"><div class="dsh-panel-head"><h3 class="a-ch-h">Needs you</h3><span class="hint">' + (rows.length ? rows.length + ' to look at' : 'All clear') + '</span></div>' +
+    var fine = !!dd && !(failed || stale);
+    var ok = clear.length || fine ? '<p class="dsh-clear"><span class="dsh-dot" aria-hidden="true"></span>' + (clear.length ? 'Nothing waiting for ' + esc(clear.join(', ').replace(/, ([^,]*)$/, ' or $1')) + '. ' : '') + (fine ? 'The nightly run finished.' : '') + '</p>' : '';
+    return '<section class="dsh-panel dsh-needs" aria-label="To do"><div class="dsh-panel-head"><h3 class="a-ch-h">To do</h3><span class="hint">' + (rows.length ? rows.length + ' to look at' : 'All clear') + '</span></div>' +
       (rows.length ? '<ul class="dsh-need-list">' + rows.join('') + '</ul>' : '') + ok + '</section>';
   }
 
@@ -420,7 +430,7 @@
     load(false);
     // Opened once on this device: from now on the panel returns to the last page used (lk.dash.intro, never out of date).
     if (api.seen) api.seen();
-    var head = '<section class="set-block dsh">' + toolsHTML();
+    var head = '<section class="set-block dsh">' + needsHTML() + toolsHTML();
     if (state.loading && state.data === undefined) return head + api.wait('Loading the dashboard...') + '</section>';
     if (state.error) return head + '<p class="p-err" role="status">Could not load the dashboard numbers. Check the connection and tap Refresh.</p></section>';
     if (!state.data) return head + '<p class="hint" role="status">The dashboard numbers come from the nightly run at 03:00. They will be here after the next run.</p></section>';
@@ -429,7 +439,7 @@
     charts = {};
     return head + freshHTML() + '<p class="hint dsh-range">' + esc(dayLabel(cur[0].day) + ' to ' + dayLabel(cur[cur.length - 1].day)) +
       (have < len ? '. Only ' + have + ' finished days so far.' : prev ? ', compared with the ' + len + ' days before.' : '. The nightly run keeps 90 days, so there is no earlier period to compare.') + ' Today is counted tonight.</p>' +
-      headlinesHTML() + tilesHTML(cur, have >= len ? prev : null, len) + '<div class="dsh-pair">' + needsHTML() + weekHTML() + '</div>' + watchHTML(cur, have >= len ? prev : null, len) +
+      headlinesHTML() + tilesHTML(cur, have >= len ? prev : null, len) + weekHTML() + watchHTML(cur, have >= len ? prev : null, len) +
       '<div class="dsh-grid">' + lineHTML(cur, len) + reasonsHTML(cur, have >= len ? prev : null) + heatHTML(cur) + itemsHTML(cur, have >= len ? prev : null) + '</div></section>';
   }
 
