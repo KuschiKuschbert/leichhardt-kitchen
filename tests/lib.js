@@ -98,7 +98,7 @@ function mail() {
 const QUIET = 120;
 function track() {
   if (window.__lkSettle) return;
-  const st = window.__lkSettle = { muts: 0, timers: new Map() };
+  const st = window.__lkSettle = { muts: 0, timers: new Map(), idle: new Map() };
   const now = () => performance.now();
   new MutationObserver(() => { st.muts++; }).observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
   const sT = window.setTimeout, cT = window.clearTimeout;
@@ -109,12 +109,23 @@ function track() {
     return id;
   };
   window.clearTimeout = function (id) { st.timers.delete(id); return cT.call(window, id); };
+  // an idle callback is a timer too (opening Recipes draws its other groups in them): due by its timeout, at most 50 ms
+  if (window.requestIdleCallback) {
+    const sI = window.requestIdleCallback, cI = window.cancelIdleCallback;
+    window.requestIdleCallback = function (fn, o) {
+      const id = sI.call(window, function () { st.idle.delete(id); if (typeof fn === 'function') return fn.apply(this, arguments); }, o);
+      st.idle.set(id, now() + Math.min(50, (o && o.timeout) || 50));
+      return id;
+    };
+    window.cancelIdleCallback = function (id) { st.idle.delete(id); return cI.call(window, id); };
+  }
   // a scroll (a smooth jump to the method) is a change too, while it moves
   window.addEventListener('scroll', () => { st.muts++; }, { capture: true, passive: true });
   // busy: anything that would still change the page before the time "until" (on the page's own clock)
   st.check = until => {
     let busy = false;
     for (const due of st.timers.values()) if (due <= until) { busy = true; break; }
+    for (const due of st.idle.values()) if (due <= until) { busy = true; break; }
     if (!busy && document.getAnimations) busy = document.getAnimations().some(a => a.playState === 'running' && a.effect && a.effect.getTiming().iterations !== Infinity);
     return { muts: st.muts, busy };
   };
