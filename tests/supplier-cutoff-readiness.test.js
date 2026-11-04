@@ -28,16 +28,16 @@ async function saved(p, on) { await L.waitFor(p, ([k, v]) => { const d = window.
   const b = await L.start();
   let p;
 
-  // Linked and unlinked, with the supplier tools held back: the tick saves at once and asks for none of them
+  // Linked and unlinked, with the supplier tools held back from the start (the order list asks for them to group a
+  // chef's requests by supplier, since 5 Nov 2026): the tick saves at once, asks for none of them and waits for none
   for (const linked of [true, false]) {
     const name = linked ? 'linked' : 'unlinked';
-    p = await open(b, linked);
-    let asked = 0;
-    await p.context().route(/\/js\/supplier-(core|store)\.js(?:\?|$)|\/js\/suppliers\.js(?:\?|$)/, async route => { asked++; await new Promise(() => {}); });
+    p = await open(b, linked, { hold: 'js/supplier-(core|store)\\.js|js/suppliers\\.js' });
+    const tools = () => p.urls.filter(u => /\/js\/(suppliers|supplier-core|supplier-store)\.js(?:\?|$)/.test(u)).length, asked = tools();
     await p.click(tick); await saved(p);
     await L.waitFor(p, s => !document.querySelector(s), reminder, 10000);
     ok((await dump(p))[completion].by === 'sam' && await pressed(p) === 'true', name + ': the tick saves as the chef and shows ticked');
-    ok(asked === 0 && await p.evaluate(() => location.hash === '#/orders' && !window.LK_SUP_CORE), name + ': no supplier tools are loaded and no supplier sheet opens');
+    ok(tools() === asked && await p.evaluate(() => location.hash === '#/orders' && !window.LK_SUP_CORE), name + ': no supplier tools are loaded and no supplier sheet opens');
     ok((await completionWrites(p)).length === 1, name + ': one completion write');
     ok(p.errors.length === 0, name + ': no page errors ' + p.errors.join(' | '));
     await p.context().close();

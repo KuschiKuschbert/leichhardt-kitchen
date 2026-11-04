@@ -66,6 +66,6 @@ The four pieces of B left for later, one pull request each, smallest first. The 
 | Step | What | Pull request | State |
 | --- | --- | --- | --- |
 | R1 | Low and Out on order requests, Out first for chefs | this pull request | No rules change: the order line rules already take the field (a client shapes row proves it) |
-| R2 | Supplier groups on Orders for chefs; a supplier's order ticked only there | | Not built yet. Needs the read budget raised (a catalogue read per supplier a day) and where Pick supplier is remembered |
+| R2 | Supplier groups on Orders for chefs; a supplier's order ticked only there | #538 (ticks), this pull request (groups) | Pick supplier, remembered, still to come (R2c, a new record and rules) |
 | R3 | I'm on it: first tap stamps, second tap ticks | | Not built yet. New fields and a rules change, published first |
 | R4 | Wall board on the shared kitchen tablet, view and tick | | Not built yet |
