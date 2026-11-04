@@ -4975,12 +4975,6 @@
       loadGuides: loadGuides, guides: function () { return gLive().map(function (g) { return { id: g.id, title: g.title }; }); }
     });
   }
-  document.addEventListener('change', function (e) {
-    if (!e.target.matches('[data-k="ai-section"]') || !intelligenceAllowed()) return;
-    if (intelligenceBusy()) { e.target.value = adminGroupOf(S.atab || 'dashboard')[0]; return; }
-    var group = A_GROUPS.filter(function (g) { return g[0] === e.target.value; })[0];
-    if (group) { S.atab = (S.agLast || {})[group[0]] || group[2][0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); }
-  });
   function adminHTML() {
     if (S.authState !== 'ready' && !S.user) {
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + inkWait('Loading...', 'chef') + '</section>';
@@ -5014,9 +5008,10 @@
     if (at === 'mail' && !mlOwner()) at = S.atab = 'notes';
     // Review desk groups the two queues; saved records and reports remain separate. Existing page ids still work.
     var navBusy = intelligenceBusy(), mlN = mlInfo().n, ag = adminGroupOf(at), agTabs = ag[2].filter(function (t) { return t !== 'overview' && (t !== 'mail' || mlOwner()); });
-    // The selected Chef's Desk keeps chapters in one rail, with the current page's choices beside its title.
-    var chapters = '<aside class="a-nav"><p class="ad-nav-label">Admin panel</p><label class="a-section-picker">Admin section<select data-k="ai-section" aria-label="Admin section"' + (navBusy ? ' disabled' : '') + '>' + A_GROUPS.map(function (g) { return '<option value="' + g[0] + '"' + (ag[0] === g[0] ? ' selected' : '') + '>' + g[1] + '</option>'; }).join('') + '</select></label><nav class="a-groups" aria-label="Admin sections">' + A_GROUPS.map(function (g, i) {
-      return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '"' + (navBusy ? ' disabled' : '') + ' aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '"><span class="ad-nav-number" aria-hidden="true">0' + (i + 1) + '</span><span>' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</span></button>';
+    // The four rooms (4 Nov 2026, design B, docs/admin-pages-options/brief.md): a rail on a laptop and one row of four on
+    // a phone, with the room's pages as tabs beside its title. Page ids are the same as before the rooms.
+    var chapters = '<aside class="a-nav"><p class="ad-nav-label">Admin panel</p><nav class="a-groups" aria-label="Admin rooms">' + A_GROUPS.map(function (g) {
+      return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '"' + (navBusy ? ' disabled' : '') + ' aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '"><span>' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</span></button>';
     }).join('') + '</nav></aside>';
     var tabsBar = (agTabs.length > 1 ? '<nav class="a-tabs" aria-label="' + esc(ag[1]) + ' pages">' + agTabs.map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t + '"' + (navBusy ? ' disabled' : '') + ' aria-pressed="' + (at === t || at === 'overview' && t === 'references') + '">' + A_TAB_NAMES[t] + (t === 'mail' && mlN ? ' (' + mlN + ')' : '') + '</button>';
@@ -5042,8 +5037,7 @@
       '<p class="hint a-forget">To use a different kitchen PIN on this device, open Settings, This phone.</p></section>');
     var resume = INTELLIGENCE_PAGES.indexOf(at) < 0 && intelligenceAllowed() && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_INTELLIGENCE.resumeHTML ? window.LK_INTELLIGENCE.resumeHTML(at) : '';
     if (at !== 'proofreader' && intelligenceAllowed() && proofModule()) resume += proofModule().resumeHTML(proofAdapter());
-    var chapterNo = A_GROUPS.indexOf(ag) + 1;
-    return '<div class="p-admin ad-admin">' + bar + '<div class="ad-layout">' + chapters + '<div class="ad-main"><header class="ad-heading"><p class="ad-eyebrow">Kitchen administration <span aria-hidden="true">/ 0' + chapterNo + '</span></p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + ag[1] + '</h2><p class="ad-intro">' + A_GROUP_NOTES[ag[0]] + '</p></header>' + tabsBar + '<div class="a-pane">' + (owner ? idCardHTML() : '') + resume + pane + '</div></div></div></div>';
+    return '<div class="p-admin ad-admin">' + bar + '<div class="ad-layout">' + chapters + '<div class="ad-main"><header class="ad-heading"><p class="ad-eyebrow">Kitchen administration</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + ag[1] + '</h2><p class="ad-intro">' + A_GROUP_NOTES[ag[0]] + '</p></header>' + tabsBar + '<div class="a-pane">' + (owner ? idCardHTML() : '') + resume + pane + '</div></div></div></div>';
   }
   /* the same Remove button on the admin People tab and the sous chef's staff list, with a second tap to be sure */
   /* Head chef decision D6 (20 Oct 2026): someone who leaves is taken off the list, not deleted, so their name stays on
@@ -5102,9 +5096,9 @@
       (supplierEdit() ? '<div class="btn-row"><a class="btn dark" href="#/suppliers/manage">Manage catalogue</a><a class="btn" href="#/suppliers">Supplier order</a></div>' : '<p class="hint">Only the head chef changes suppliers and pars. Sous chefs can use <a href="#/suppliers">Supplier order</a>.</p>') + '</section>';
   }
   var A_TAB_NAMES = { dashboard: 'Dashboard', overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
-  var A_GROUPS = [['dashboard', 'Dashboard', ['dashboard']], ['review', 'Review desk', ['overview', 'references', 'training', 'proofreader']], ['reports', 'Reports', ['analysis', 'insights', 'waste', 'transfers', 'learning', 'team']], ['records', 'Saved records', ['reference-records', 'training-records', 'guides']], ['today', 'Operations', ['mail', 'notes', 'minutes', 'suppliers', 'cutoffs']], ['settings', 'Settings', ['people', 'tools']]];
-  var A_GROUP_NOTES = { dashboard: 'How the kitchen is going, and where to look next.', review: 'One item or assessment at a time. Your unfinished work stays here.', reports: 'Read the recorded activity and follow it back to its source.', records: 'Find confirmed links, assessments and the kitchen guides.', today: 'Keep the kitchen informed and ready for the next shift.', settings: 'Look after the team, kitchen access and the book\'s backup.' };
-  function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[2]; }
+  var A_GROUPS = [['today', 'Today', ['dashboard', 'overview', 'references', 'training', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people', 'training-records']], ['kitchen', 'Kitchen', ['cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']]];
+  var A_GROUP_NOTES = { today: 'What needs you, and how the kitchen is going.', reports: 'Read the recorded activity and follow it back to its source.', team: 'Who is in the kitchen, what each person may do, and their assessments.', kitchen: 'How the kitchen is set up, its records, the backup and the PIN.' };
+  function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
      and the chart headings in it), so a long page is one tap from any part. Built from the page after each draw, so a
      new block on any admin page gets its chip by itself. Hidden when a page has fewer than two parts. */
@@ -5117,7 +5111,7 @@
     return Array.prototype.filter.call(hs, function (h) { return h.offsetParent && h.textContent.trim(); });
   }
   function adminJumps() {
-    // the page tabs are one row (4 Nov 2026): when it scrolls sideways it fades at its edge and the open tab is in view
+    // the page tabs (4 Nov 2026): on a phone one row that, when it scrolls sideways, fades at its edge and shows the open tab
     var tabs = S.root && S.root.querySelector('.a-tabs');
     if (tabs) {
       tabs.classList.toggle('is-scroll', tabs.scrollWidth > tabs.clientWidth + 1);
