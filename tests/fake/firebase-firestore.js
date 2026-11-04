@@ -214,7 +214,7 @@ function colRefused(ref, list) {
   if (isAdmin(ref)) return false;
   // only the head chef's Google account: PIN fingerprints, the usage counts, the minutes' earlier versions, and the
   // lists of who has a PIN and of every mail's status (one record by id is for the kitchen)
-  if (c === 'staffpins' || c === 'daily' || c === 'proofHistory' || (c === 'minutes' && rel[2] === 'hist')) return true;
+  if (c === 'staffpins' || c === 'daily' || c === 'proofHistory' || c === 'dashwatch' || (c === 'minutes' && rel[2] === 'hist')) return true;
   if (list && (c === 'pinset' || c === 'mailstat')) return true;
   // recipes and drawings are public, their earlier versions are for the kitchen
   if ((c === 'recipes' || c === 'drawings') && rel[2] === 'hist' && !kitchenReader(ref)) return true;

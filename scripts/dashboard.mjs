@@ -3,6 +3,8 @@
 // written lines are not rolled copies, ticked counts every ticked line, rolled counts carried-over copies, and the
 // time to tick is from writing a line to ticking it. Deleted lines and practice lines (tst) are left out.
 // Waste is lines and amounts only: never prices (the repository is public and AVC Live costs stay out of the book).
+import { createRequire } from 'node:module';
+const core = createRequire(import.meta.url)('../js/analysis-core.js');
 const SEC = 'General';
 const text = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim().slice(0, 80);
 const live = x => x && !x.deleted && !x.tst;
@@ -10,7 +12,8 @@ const bump = (o, k, n = 1) => { o[k] = (o[k] || 0) + n; };
 const rolledN = x => Math.max(0, (x.rolled || 0) - (x.ahead ? 1 : 0));
 
 export function dashDay(day, input) {
-  const p = { n: 0, w: 0, t: 0, r: 0, sec: {}, mins: {} };
+  // who: ticks per person id (the worker who prepared it, else who ticked it), for the Dashboard's watch list
+  const p = { n: 0, w: 0, t: 0, r: 0, sec: {}, mins: {}, who: {} };
   for (const x of input.prep || []) {
     if (!live(x)) continue;
     p.n++;
@@ -19,6 +22,8 @@ export function dashDay(day, input) {
     else { p.w++; bump(p.sec, sec); }
     if (x.done) {
       p.t++;
+      const by = core.prepPerson(x);
+      if (typeof by === 'string' && by && by.length <= 80) bump(p.who, by);
       // Minutes from written to ticked, per section, so any period and section can take a true median.
       if (!x.rolled && typeof x.addedAt === 'number' && typeof x.doneAt === 'number' && x.doneAt > x.addedAt) {
         (p.mins[sec] = p.mins[sec] || []).push(Math.max(1, Math.round((x.doneAt - x.addedAt) / 60000)));
