@@ -14,6 +14,8 @@ chef's verified Google account and the existing shared-device chef gate.
 
 - Periods: last 7, 14 or 30 days; this month to date; previous calendar month;
   previous three complete calendar months; custom inclusive dates, up to 366 days.
+  7, 14 and 30 days are shared with the other admin reports (5 Nov 2026); the longer
+  choices stay on Wastage, and an unsaved daily review keeps Wastage's own period.
 - Dates use the book's Queensland clock. Display the exact start and end dates.
 - Item search, section, reason, weekday, person and unit apply to History,
   Summary and CSV. Removed records are optional in History and CSV, clearly

@@ -54,7 +54,7 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
     ok(await p.evaluate(() => window.__dshInjected) === undefined && (await L.txt(p, '.dsh-items')).includes('<img'), width + ': item names from the record are shown as words, never markup');
 
     await p.click('.dsh-tile[data-t="waste"]'); await L.settle(p, 300);
-    ok(await p.evaluate(() => LK_PREP.state.atab) === 'waste' && await p.evaluate(() => LK_PREP.state.statsRange) === 7, width + ': a tile opens its report with the same period');
+    ok(await p.evaluate(() => LK_PREP.state.atab) === 'waste' && await p.evaluate(() => LK_PREP.state.statsRange) === 7 && await p.evaluate(() => (LK_PREP.state.wh || {}).period) === '7', width + ': a tile opens its report with the same period, and Wastage shows it');
     await L.adminTab(p, 'dashboard');
     await ready(p);
     ok(await dashReads(p) === 2, width + ': coming back reuses the numbers already read');
