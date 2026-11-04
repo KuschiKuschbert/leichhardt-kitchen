@@ -47,6 +47,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Shift ping recipients | `docs/ping-recipients.md` |
 | Ping sound and the head chef's choice of sound | `docs/ping-sound.md` |
 | Back arrow and page trail | `docs/navigation.md` |
+| Merging: ready means merge when green, the one-at-a-time queue, the token | `docs/auto-merge.md` |
 | Seasonal celebrations, festival dates and their sources | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md` |
 | Admin flow baseline behind The Chef's Desk | `docs/admin-flow-spec.md` |
 | Smoker batch cards and what was left out (30 Oct 2026) | `docs/smoker-batches.md` |
@@ -98,6 +99,7 @@ After approval, implement small reversible units under the existing shipping rul
 | `tests/` | Click tests (Playwright with a stand-in for Firebase in `tests/fake/`). `tests/rules/`: the rules on the emulator |
 | `.claude/settings.json`, `scripts/guard-main.mjs` | The main-branch guard: a Claude Code hook that refuses edits and commits on `main` |
 | `scripts/pre-merge.sh`, `.github/pull_request_template.md` | Run before merging (open pull requests, worktrees, whether `main` moved); the pull request sections |
+| `.github/workflows/auto-merge.yml` | Merges a ready pull request once Click tests pass and brings `main` in one at a time, with the `AUTOMERGE_TOKEN` secret. `docs/auto-merge.md` |
 | `.github/workflows/pr-tests.yml` | The **Click tests** check on every pull request to `main` (branch protection requires it) |
 | `.github/workflows/publish-rules.yml`, `scripts/publish-rules.sh`, `.github/workflows/lock-probe.yml`, `.github/workflows/live-tests.yml` | Publish the rules from GitHub (secrets `FIREBASE_SA`, `KITCHEN_PIN`, `OWNER_EMAIL`) or from your own computer, prove the lock on the live book after (`tests/rules/probe.mjs`, also weekly), and run the click tests on the live site after each Pages deploy. `docs/rules-publication.md` |
 | `scripts/nightly-learn.mjs`, `scripts/nightly-analysis.mjs`, `scripts/analysis.mjs`, `scripts/dashboard.mjs`, `.github/workflows/nightly-learning.yml` | Nightly at 03:00 kitchen time: learning counts (`learned`, `ordlearned`), `summary/waste` and `summary/transfers`, then the analysis (`analysisDaily`, `analysis/*`, the admin Dashboard's numbers), published only after every read succeeds. The phones never write learning counts. `docs/admin-intelligence.md` |
@@ -128,7 +130,7 @@ These hold for every session, every message and every change, however small. A h
 4. After merging, wait for GitHub Pages (about a minute), then check the live site. The **Live click tests** workflow runs the click tests against the live site by itself after each Pages deploy (and from the Actions tab); read its result.
 5. Keep `README.md` in step with every change: the overview there, the detail in `docs/prep-book.md` or the feature's note, a decision in `docs/head-chef-decisions.md`.
 6. Before merging, run `scripts/pre-merge.sh` and follow the ground rules above.
-7. **Claude merges, without asking** (head chef, 21 Oct 2026). Once the **Click tests** check is green, `scripts/pre-merge.sh` shows nothing else merging and `README.md` is in step, squash merge the pull request, then do step 4 and report the live result. This covers every change, rules and data included; the publish order in step 3 still applies. Ask only when something is genuinely the head chef's call (a recipe amount not confirmed, a choice between two behaviours), not to get permission to merge.
+7. **Ready means merge when green** (head chef, 4 Nov 2026, `docs/auto-merge.md`). Work in progress is a draft. Mark a pull request ready only when it is finished, its tests pass and `README.md` is in step: the Auto-merge workflow then merges it once Click tests pass, bringing `main` in one pull request at a time. Do not merge it or bring `main` in yourself; fix a conflict or failed check, which the queue skips. Anything that is the head chef's call stays a draft or gets the `hold` label. The publish order in step 3 still applies. Then do step 4 and report the live result. Until the `AUTOMERGE_TOKEN` secret is set (the workflow prints a notice), the session merges as before (head chef, 21 Oct 2026) when its user has asked.
 
 ## Keeping usage down (3 Nov 2026)
 Measured on 2 and 3 November 2026: about 45 pull requests in two days, 100 Click tests runs at 20 minutes each (33 hours of runner time; 21 cancelled by a newer push, 16 failed on timing), and 52 "merge `main` into the branch" commits across 40 pull requests. Most of the cost was repeated test runs and reading big files, not the work itself.
@@ -140,7 +142,7 @@ Measured on 2 and 3 November 2026: about 45 pull requests in two days, 100 Click
 - **Agents only where they pay.** Use parallel agents for design councils and wide audits. Do a lookup, a single file or a known fix yourself.
 - **Few sessions at once.** Three or four open pull requests merge smoothly; eight make each other run Click tests again and again. Group small changes to one page in one pull request when they share the same files.
 - **Keep "Require branches to be up to date before merging" on** (head chef, 4 Nov 2026). `main` goes straight to the phones, so every pull request is tested against the exact `main` it joins; two that pass alone can still break together. Cut the catch-up cost with fewer sessions and bringing `main` in once, not by turning the setting off. A merge queue would remove the waiting but needs an organisation-owned repository.
-- **The head chef can say "merge when green"** in the first message. In a cloud session that is the ask the session needs to merge by itself; without it, the session stops and asks.
+- **Ready means merge when green.** Mark a pull request ready when it is finished and stop: the Auto-merge workflow merges it and brings `main` in one at a time (How changes ship, step 7). No waiting, no polling for the merge.
 
 ## Commits and pull requests
 - The title says what changes for the team, in plain words: "Recipes opens faster and taps answer at once", not "Refactor backHome".
