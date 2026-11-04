@@ -1959,9 +1959,10 @@ html.has-sync .upd-bar.is-on { transform: translateY(-110%); visibility: hidden;
 .upd-bar span { min-width: 0; overflow-wrap: anywhere; }
 /* The update band can stay up for a while, so the bars that stick to the top of a page (search, admin nav, drawing
    stage) sit under it once they stick, and a jump lands below it, as with the update strip before (24 Oct 2026: they
-   slid 46 px under it). They slide down with it rather than jump. The signal band is short-lived: it sits over them
-   for a moment and moves nothing. --fn-pad is the Functions strip's height while today has a function it could show
-   (js/functions.js strip()). */
+   slid 46 px under it). They slide down with it rather than jump. The signal band moves nothing: with no signal it can
+   stay up too, so like the update band a tap on its words or a swipe up puts it away (js/prep.js bandPutAway(), 4 Nov
+   2026: it covered Back, Today and Forward on the prep list). --fn-pad is the Functions strip's height while today has
+   a function it could show (js/functions.js strip()). */
 html.has-upd { --upd-h: 48px; }
 html { scroll-padding-top: calc(var(--fn-pad, 0px) + var(--upd-h, 0px)); }
 html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(var(--fn-stick, 0px) + var(--upd-h)); }

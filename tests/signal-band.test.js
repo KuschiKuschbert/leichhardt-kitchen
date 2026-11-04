@@ -168,6 +168,57 @@ const unsentOn = (p, id) => p.evaluate(i => { const m = document.querySelector('
     });
   }
 
+  // 3b. Put away (4 Nov 2026, weekly flaky report): with no signal the band stays up, and it covered the prep list's
+  // Back, Today and Forward at every width, so a cook could not change day until the signal came back (the click tests
+  // in offline-open.test.js got through only while the page was still moving). A tap on its words or a swipe up puts it
+  // away, as the update band; new words (Not sent yet, All sent) or the next page bring it back.
+  const dayBtns = () => p.evaluate(() => ['[data-p="day"][data-d="-1"]', '[data-p="today"]', '[data-p="day"][data-d="1"]'].map(q => {
+    const e = document.querySelector(q); if (!e) return 'none';
+    const r = e.getBoundingClientRect(), h = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
+    return h && (h === e || e.contains(h)) ? 'open' : h && h.closest('.p-sync') ? 'band' : 'other';
+  }).join(' '));
+  for (const w of [390, 768, 1280]) {
+    await step('away ' + w, async () => {
+      p = await L.open(b, '#/prep', { width: w, wait: 1500 });
+      const ids = await above(p, 'i1');
+      await offer(p);
+      await hold(p);
+      await p.evaluate(() => document.querySelector('#nbr-i1 .nb-box').click());
+      await L.settle(p, 300);
+      await p.context().setOffline(true);
+      await L.settle(p, 600);
+      const l0 = await lines(p, ids);
+      let s = await band(p, '.p-sync');
+      ok(s && s.seen && /^No signal\./.test(s.text), w + ', no signal: the band is up (day buttons: ' + await dayBtns() + ')');
+      await p.click('.p-sync span'); await L.settle(p, 400);
+      s = await band(p, '.p-sync');
+      ok(s && !s.visible, w + ', no signal: a tap on its words puts the band away (' + JSON.stringify(s) + ')');
+      ok(await dayBtns() === 'open open open', w + ', band put away: Back, Today and Forward can be tapped (' + await dayBtns() + ')');
+      ok(moved(l0, await lines(p, ids)) === 0, w + ', band put away: no line moves');
+      const u = await band(p, '.upd-bar');
+      ok(u && !u.visible, w + ', band put away: the update band still waits behind it (' + JSON.stringify(u) + ')');
+      ok(await unsentOn(p, 'i1') === 'shown', w + ', band put away: the ticked line still says Not sent');
+      await p.click('[data-p="day"][data-d="1"]'); await L.settle(p, 500);
+      await p.click('[data-p="today"]'); await L.settle(p, 500);
+      s = await band(p, '.p-sync');
+      ok(s && !s.visible && await p.evaluate(() => window.LK_PREP.state.date === LK_TIME.day(LK_TIME.now())), w + ', band put away: a day forward and Today work, and the band stays away (' + JSON.stringify(s) + ')');
+      // new words bring it back: the signal back with the tick still waiting
+      await p.context().setOffline(false); await L.settle(p, 500);
+      s = await band(p, '.p-sync');
+      ok(s && s.seen && /^Not sent yet\./.test(s.text), w + ', signal back, the tick still waiting: Not sent yet comes back (' + JSON.stringify(s) + ')');
+      // a swipe up puts it away too, and the next page brings it back
+      const at = await p.evaluate(() => { const r = document.querySelector('.p-sync span').getBoundingClientRect(); return { x: r.left + 10, y: r.top + r.height / 2 }; });
+      await p.mouse.move(at.x, at.y); await p.mouse.down(); await p.mouse.move(at.x, at.y - 20); await p.mouse.move(at.x, at.y - 45); await p.mouse.up();
+      await L.settle(p, 400);
+      s = await band(p, '.p-sync');
+      ok(s && !s.visible, w + ': a swipe up puts it away too (' + JSON.stringify(s) + ')');
+      await p.evaluate(() => { location.hash = '#/orders'; }); await L.settle(p, 800);
+      s = await band(p, '.p-sync');
+      ok(s && s.seen && /^Not sent yet\./.test(s.text), w + ': the next page brings it back (' + JSON.stringify(s) + ')');
+      ok(p.errors.length === 0, w + ': no page errors ' + p.errors.join(' | '));
+    });
+  }
+
   // 4. Reduce motion: no slide. Print: no band.
   await step('motion and print', async () => {
     p = await L.open(b, '#/prep', { wait: 1500 });

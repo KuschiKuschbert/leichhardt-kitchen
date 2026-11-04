@@ -341,6 +341,34 @@ async function swOpen(b, hash, o) {
     delete over['/js/learn.js'];
   }
 
+  // A second opening while the first opening's round is still out (4 Nov 2026, weekly flaky report): the worker let the
+  // second opening share that round, whose files had come before the new version did. Nothing new, so no lk-new: the
+  // book stayed on the old version until the strip offered it. Under load the "just opened" checks above failed that
+  // way (6 times in a day). Now an opening shares a round only before its files are asked for; after that it gets one
+  // more round once that round is done. Here js/art.js holds the first round until the second opening has come.
+  {
+    q = await swOpen(b, '#/recipes', { base, wait: 800 });
+    const qc = q.context();
+    await L.sleep(2000);   // the worker's round for that opening
+    let release = null, served = 0, held = 0;
+    const gate = new Promise(r => { release = r; });
+    const data = u => new URL(u).pathname === '/js/data.js', art = u => new URL(u).pathname === '/js/art.js';
+    // js/data.js is read from the server here, so the first round surely has the version from before
+    await qc.route(data, async r => { const res = await r.fetch(); served++; return r.fulfill({ response: res }); });
+    await qc.route(art, async r => { held++; await gate; return r.fallback(); });
+    await q.reload({ waitUntil: 'load' });
+    for (let i = 0; i < 200 && !(served && held); i++) await L.sleep(50);
+    const first = served + '/' + held;
+    newData(7);
+    await q.evaluate(() => localStorage.removeItem('lk.upd.last'));
+    await q.reload({ waitUntil: 'load' });
+    release();
+    const took = await until(q, () => window.__v === 7, 10000);
+    ok(first === '1/1' && took, 'a second opening while the first one\'s round is still out: the book takes up the version that came in between (first round ' + first + ' served/held, new version on screen ' + took + ')');
+    await qc.close();
+    delete over['/js/data.js'];
+  }
+
   // A new worker saves the shell past the browser's own cache (28 Oct 2026): GitHub Pages lets the browser keep a file
   // for 10 minutes, and the install used to take it from there, so it could save a file from before the deploy next to
   // new ones. The tests' routes turn the browser's cache off, so this one runs with none, on a bare page that only
