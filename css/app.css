@@ -472,6 +472,16 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
   /* a row that scrolls sideways fades at its edge, so there is clearly more (22 Oct 2026); the spacer lets the last tab clear the fade */
   -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent); }
 .nb-tabs::after { content: ''; flex: 0 0 1.25rem; }
+/* Wall board (5 Nov 2026): the shared kitchen tablet's prep list, one column per section like dockets on the rail. The
+   columns wrap instead of scrolling sideways; a phone gets one column. */
+.wb { display: flex; flex-direction: column; gap: 0.8rem; }
+.wb-h { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.75rem; }
+.wb-t { margin-right: auto; }
+.wb-cols { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 1rem 1.25rem; align-items: start; }
+.wb-col { min-width: 0; border-top: 3px solid var(--ink); }
+.wb-col .nb-hd { margin-top: 0.2rem; }
+/* view and tick: the urgent toggle, Remove and More stay on the list; the recipe link stays here */
+.wb .nb-row .nb-star, .wb .nb-row .nb-x, .wb .nb-row .nb-more { display: none; }
 .nb-tab { flex: 0 0 auto; min-height: 44px; padding: 0 0.9rem; border-radius: 20px; border: 1.5px solid var(--ink); background: var(--paper); font-family: var(--display); font-weight: 700; font-size: 0.9375rem; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; color: var(--ink); }
 .nb-tab[aria-pressed="true"] { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
 .a-scroll { overflow-x: auto; }
