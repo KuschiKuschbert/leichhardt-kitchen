@@ -35,9 +35,9 @@ const onTop = (p, sel) => p.evaluate(s => {
     p = await L.open(b, '#/admin', { admin: true, width: w, height: 900, wait: 1800 });
     const picker = await p.locator('[data-k="ai-section"] + .ux-picker-trigger').isVisible();
     const groupControl = group => picker ? '[data-k="ai-section"] + .ux-picker-trigger' : '[data-p="a-group"][data-g="' + group + '"]';
-    v = await onTop(p, groupControl('settings'));
-    ok(v === true, w + ' admin: the Settings group can be seen and tapped (' + v + ')');
-    for (const [group, label] of [['review', 'Review desk'], ['reports', 'Reports'], ['records', 'Saved records'], ['today', 'Operations'], ['settings', 'Settings']]) {
+    v = await onTop(p, groupControl('kitchen'));
+    ok(v === true, w + ' admin: the Kitchen room can be seen and tapped (' + v + ')');
+    for (const [group, label] of [['today', 'Today'], ['reports', 'Reports'], ['team', 'Team'], ['kitchen', 'Kitchen']]) {
       v = await onTop(p, groupControl(group));
       if (picker) ok(await p.locator('[data-k="ai-section"] option[value="' + group + '"]').count() === 1, w + ' admin: the section picker offers ' + label);
       ok(v === true, w + ' admin: the ' + label + ' group can be seen and tapped (' + v + ')');

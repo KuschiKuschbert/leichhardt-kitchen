@@ -107,11 +107,8 @@ const searchReferences = async (p, text) => {
       return { id: document.activeElement && document.activeElement.id, value: document.getElementById('ai-section').value };
     });
     ok(sectionFocus.id === 'ai-section-picker' && sectionFocus.value === 'Grill', width + ': a background redraw keeps focus and value in the training section field (' + JSON.stringify(sectionFocus) + ')');
-    const sectionKeys = await p.evaluate(() => ({
-      navigation: document.querySelector('.a-section-picker select').getAttribute('data-k'),
-      editor: document.getElementById('ai-section').getAttribute('data-k')
-    }));
-    ok(sectionKeys.navigation !== sectionKeys.editor, width + ': admin navigation and training section use distinct focus keys (' + JSON.stringify(sectionKeys) + ')');
+    const sectionKeys = await p.evaluate(() => { const k = document.getElementById('ai-section').getAttribute('data-k'); return { editor: k, uses: document.querySelectorAll('[data-k="' + k + '"]').length }; });
+    ok(sectionKeys.uses === 1, width + ': the training section field has a focus key of its own (' + JSON.stringify(sectionKeys) + ')');
 
     await L.pick(p, '#ai-status', 'confirmed'); await L.pick(p, '#ai-assessorId', 'sam');
     await p.click('[data-ai="save-next"]');

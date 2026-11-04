@@ -30,7 +30,7 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
   for (const width of [390, 768, 1280]) {
     const p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width, height: 900, extra, wait: 1600 });
     await ready(p);
-    ok(await L.txt(p, '.ad-title') === 'Dashboard' && await p.evaluate(() => LK_PREP.state.atab) === 'dashboard', width + ': a first visit opens the Dashboard chapter');
+    ok(await L.txt(p, '.ad-title') === 'Today' && await p.evaluate(() => LK_PREP.state.atab) === 'dashboard', width + ': a first visit opens Today on the Dashboard');
     ok(await p.locator('.dsh-head').count() === 3, width + ': three written headlines sit above the tiles');
     const heads = await L.txt(p, '.dsh-heads');
     ok(/Waste is up: \d+ lines in the last 7 days, 7 the 7 before\./.test(heads) && /Garnish was the slowest section to tick/.test(heads), width + ': headlines say what changed in plain words (' + heads.slice(0, 160) + ')');
@@ -88,7 +88,7 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
     await q.evaluate(() => { const x = document.querySelector('.mlp-wrap [data-ml="later"]'); if (x) x.click(); }); await L.settle(q, 300);
     await q.click('.dsh-needs [data-dsh="open"][data-t="mail"]'); await L.settle(q, 300);
     ok(await q.evaluate(() => LK_PREP.state.atab) === 'mail', width + ': Open mail opens the Kitchen mail page');
-    await q.click('[data-p="a-group"][data-g="dashboard"]').catch(() => L.adminTab(q, 'dashboard')); await ready(q);
+    await L.adminTab(q, 'dashboard'); await ready(q);
     await q.evaluate(() => { const x = document.querySelector('.mlp-wrap [data-ml="later"]'); if (x) x.click(); }); await L.settle(q, 200);
     await q.click('.dsh-needs [data-dsh="open"][data-t="references"]'); await L.settle(q, 300);
     ok(await q.evaluate(() => LK_PREP.state.atab) === 'references', width + ': the item links row opens the Review desk');
