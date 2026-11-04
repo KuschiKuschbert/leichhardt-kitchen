@@ -2674,7 +2674,9 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
    last order fold into one line, the heading is one line, the picker and search lose their visible labels. */
 .su-info-line { display: none; }
 @media (max-width: 899px) {
-  .su-head { flex-wrap: nowrap; align-items: center; gap: 0.5rem; padding-bottom: 0.5rem; border-bottom-width: 2px; }
+  /* one line at normal text; at Extra large text Refresh drops under the title rather than off the screen */
+  .su-head { flex-wrap: wrap; align-items: center; gap: 0.5rem; padding-bottom: 0.5rem; border-bottom-width: 2px; }
+  .su-head > div { flex: 1 1 auto; }
   .su-head .eyebrow, .su-head .hint { display: none; }
   .su-head h2 { margin: 0; font-size: 1.75rem; }
   .su-head .btn { min-height: 40px; padding: 0 0.8rem; }
@@ -2694,6 +2696,10 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
   .su-filters .chip { flex: 0 0 auto; min-height: 38px; }
   .su-filters::after { content: ''; flex: 0 0 1.75rem; }
 }
+/* Narrow rows, the Prep list's rule (adaptive-controls, narrow Prep A): below 360 px, or below 480 px with Extra large
+   text, Par and Last order share a line and To order takes its own, so nothing is cut at the row's edge */
+@media (max-width: 359px) { .su-row { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); } .su-row .su-qty { grid-column: 1 / -1; } }
+@media (max-width: 479px) { html[data-text="xlarge"] .su-row { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); } html[data-text="xlarge"] .su-row .su-qty { grid-column: 1 / -1; } }
 @media (max-width: 719px) {
   .su-toolbar { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 0.5rem; }
   .su-toolbar > .btn, .su-toolbar > .su-groups { grid-column: 1 / -1; }

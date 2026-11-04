@@ -141,6 +141,15 @@ async function open(b, width) {
   p = await open(b, 1280);
   ok(!(await p.isVisible('.su-info-line')) && await p.isVisible('.su-cutoff') && await p.isVisible('.su-latest'), '1280 px: the cut-off card and the last order stay open, no folded line');
   await p.context().close();
+  // Extra large text on narrow phones: the heading may wrap (Refresh stays on screen) and To order takes its own line
+  // below 480 px, the Prep list's narrow rule, so nothing scrolls sideways or is cut at a row's edge
+  for (const width of [370, 330]) {
+    p = await L.open(b, '#/suppliers/northside', { who: 'sam', width, height: 844, settings: { shared: true, text: 'xlarge' }, extra: F.fixture(), wait: 1800 });
+    await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"]'), null, 15000);
+    const fit = await p.evaluate(() => ({ refresh: document.querySelector('[data-su="refresh"]').getBoundingClientRect().right, row: (r => r.scrollWidth - r.clientWidth)(document.querySelector('[data-item="t-stock"]')) }));
+    ok(!(await L.overflow(p)) && fit.refresh <= width && fit.row <= 1, width + ' px, Extra large text: no sideways scroll, Refresh on screen, no row cut at its edge (' + JSON.stringify(fit) + ')');
+    await p.context().close();
+  }
 
   // Phone: the Review bar stays above the tabs while the list scrolls; no sideways scroll at any width.
   for (const width of [390, 768, 1280]) {
