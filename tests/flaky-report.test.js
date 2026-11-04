@@ -24,7 +24,7 @@ const R = [], ok = (c, m) => R.push((c ? 'PASS ' : 'FAIL ') + m);
   ok(/\| `people-ids.test.js` \| 2 \| 0 \| 0 \| .* \| Yes \|/.test(body), 'two second tries means fix it');
   ok(/\| `offline-writes.test.js` \| 1 \| 1 \| 0 \| .* \| Yes \|/.test(body) && /\| `pin-sessions.test.js` \| 0 \| 0 \| 1 \| .* \| Yes \|/.test(body), 'a 10 minute stop or a live failure means fix it after one');
   ok(/pull request runs only .*`chef-menu.test.js` \(1\)/.test(body) && !/\| `chef-menu.test.js`/.test(body), 'a pull request run failure alone is listed apart, not in the table');
-  ok(!/—/.test(body), 'no em dashes in the report');
+  ok(!/\u2014/.test(body), 'no em dashes in the report');
   const quiet = F.report([], { now: '2026-11-04T09:00:00Z', runs: 3 });
   ok(/Nothing to fix/.test(quiet) && !/\|/.test(quiet), 'a clean week says there is nothing to fix');
   // the whole run against a stand-in API: annotations are read only for browser jobs with more than the usual two
