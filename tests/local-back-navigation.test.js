@@ -115,7 +115,8 @@ const configWrites = p => p.evaluate(() => __fake.writes.flat().filter(w => /\/c
   await p.context().close();
 
   p = await L.open(b, '#/prep', { admin: true, who: '', wait: 1500 });
-  await go(p, '#/admin'); await L.adminTab(p, 'people');
+  // Kitchen's Overview has three groups, so a phone offers On this page (People has one block since 5 Nov 2026)
+  await go(p, '#/admin'); await L.adminTab(p, 'kitchen-home');
   await L.waitFor(p, () => !!document.querySelector('.a-jumpbtn'));
   await p.click('.a-jumpbtn'); await p.goBack(); await L.settle(p, 250);
   ok(!await p.$('#aj-sheet') && await hash(p) === '#/admin', 'admin jump sheet: native Back keeps the admin page');

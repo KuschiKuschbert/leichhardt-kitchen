@@ -1458,8 +1458,14 @@
      forgets the kitchen PIN here only and opens the PIN screen. Settings asks for the second tap. */
   /* Kitchen, Overview (5 Nov 2026, admin pages step 6, design B): every kitchen setting as a row that says what it is set
      to, in the Settings page's own rows, opening the admin page that changes it. Values from kitchenInfo(): no reads,
-     and nothing shows as none or 0 before the settings are in. */
-  function kitchenHomeHTML() {
+     and nothing shows as none or 0 before the settings are in.
+     Part 2 (5 Nov 2026, head chef: go ahead): Kitchen sections, Pages staff see and Weekly top tickers open in place, one
+     at a time (S.kOpen), as design B drew them; they were on Team, People. They edit the team list's own draft and save
+     with its one Save (draftOf(), adminSave()), so the canonical capability lists keep their one save path
+     (docs/staff-capabilities.md). A closed row draws nothing behind it: the sections' who is on today reads (loadShifts)
+     only once that row is open. */
+  var K_ROWS = { secs: 'Kitchen sections', see: 'Pages staff see', badges: 'Weekly top tickers' };
+  function kitchenHomeHTML(d, saveBlock) {
     var k = kitchenInfo(), plural = function (n, one, many) { return n + ' ' + (n === 1 ? one : many); };
     var list = function (a) { return a.length ? a.join(', ') : 'None'; };
     var sound = function (id) { return id === 'off' ? 'Off' : ((window.LK_CHIME && window.LK_CHIME.list.filter(function (x) { return x.id === id; })[0]) || {}).name || 'Pass bell'; };
@@ -1467,21 +1473,36 @@
       return '<div class="st-row"><button type="button" class="st-btn st-go" data-p="k-open" data-t="' + tab + '"><span class="st-l">' + esc(label) + '</span><span class="st-v"><span>' + esc(k ? value : '') + '</span></span>' +
         (where ? '<span class="st-sub">' + esc(where) + '</span>' : '') + '</button></div>';
     };
+    var edit = function (id, label, value, body) {
+      var open = S.kOpen === id;
+      return '<div class="st-row k-row"><button type="button" class="st-btn" id="k-h-' + id + '" data-p="k-row" data-r="' + id + '" data-k="k-row:' + id + '" aria-expanded="' + open + '"' + (open ? ' aria-controls="k-b-' + id + '"' : '') + '><span class="st-l">' + esc(label) + '</span><span class="st-v"><span>' + esc(k ? value : '') + '</span></span></button>' +
+        (open ? '<div class="st-body k-body" id="k-b-' + id + '" role="region" aria-label="' + esc(label) + '">' + body() + saveBlock + '</div>' : '') + '</div>';
+    };
     var group = function (title, rows) { return '<section class="set-block k-home"><h3 class="a-ch-h">' + title + '</h3><div class="st-rows">' + rows + '</div></section>'; };
-    return '<p class="hint k-home-lead">Each row says what it is set to. Tap it to change it.</p>' +
+    // unsaved changes in a row that is closed: its Save bar shows under the first line, so they are not lost from sight
+    var held = !S.kOpen && draftPages().some(function (x) { return x !== 'people'; });
+    return '<p class="hint k-home-lead">Each row says what it is set to. Tap it to change it.</p>' + (held ? saveBlock : '') +
       group('The kitchen', row('Order cut-offs', k ? plural(k.cuts, 'supplier', 'suppliers') : '', 'cutoffs') + row('Suppliers & pars', 'Catalogue and pars', 'suppliers') +
-        row('Kitchen sections', k ? list(k.secs) : '', 'people', 'Team, People') + row('Shift pings', k ? 'Sound: ' + sound(k.sound) : '', 'notes') +
+        edit('secs', 'Kitchen sections', k ? list(k.secs) : '', function () { return ksAdminHTML(d); }) + row('Shift pings', k ? 'Sound: ' + sound(k.sound) : '', 'notes') +
         row('Meeting minutes', 'Write and publish', 'minutes') + row('Guides', 'How-to guides', 'guides')) +
-      group('The team\'s access', row('Pages staff see', k ? (k.hidden.length ? list(k.shown) + '. Held back: ' + k.hidden.join(', ') : 'All three') : '', 'people', 'Team, People') +
-        row('Weekly top tickers on the prep book', k ? (k.badges ? 'Shown' : 'Hidden') : '', 'people', 'Team, People') +
+      group('The team\'s access', edit('see', 'Pages staff see', k ? (k.hidden.length ? list(k.shown) + '. Held back: ' + k.hidden.join(', ') : 'All three') : '', function () {
+          return '<p class="hint">You, sous chefs and leads always see these. Untick one to hide it from Staff and View only until the team is ready.</p><div class="a-feats">' +
+            FEATS.map(function (f) { return '<label class="a-check"><input type="checkbox" data-a="staffsee" data-f="' + f[0] + '"' + (d.staffSee[f[0]] ? ' checked' : '') + '> Staff see ' + f[1] + '</label>'; }).join('') + '</div>';
+        }) +
+        edit('badges', 'Weekly top tickers on the prep book', k ? (k.badges ? 'Shown' : 'Hidden') : '', function () {
+          return '<label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label>';
+        }) +
         (mlOwner() ? row('Sous chefs read Kitchen mail', k ? (k.sousMail ? 'On' : 'Off') : '', 'mail', 'Today, Kitchen mail') : '') +
         row('Who books functions', k ? plural(k.fns, 'person', 'people') : '', 'people', 'Team, People')) +
       group('Records and safety', row('Confirmed item links', 'Names linked to recipes and supplier items', 'reference-records') +
         row('Backup', 'Every night at 03:30', 'tools') + row('Kitchen PIN', 'Change the PIN', 'tools'));
   }
-  var ADMIN_OPEN = ['people', 'notes', 'mail', 'cutoffs', 'tools'];
+  var ADMIN_OPEN = ['people', 'kitchen-home', 'notes', 'mail', 'cutoffs', 'tools'];
+  // 'kitchen-home:secs' opens Kitchen's Overview with that row open and in view (Settings, 5 Nov 2026)
   function adminOpen(tab) {
-    if (!adminTabs() || ADMIN_OPEN.indexOf(tab) < 0) return false;
+    var part = String(tab || '').split(':'), row = part[1] || '';
+    if (!adminTabs() || ADMIN_OPEN.indexOf(part[0]) < 0 || row && (part[0] !== 'kitchen-home' || !K_ROWS[row])) return false;
+    tab = part[0]; S.personId = ''; if (row) { S.kOpen = row; S.kJump = row; }
     S.atab = tab; lsSet('lk.prep.atab', tab);
     if (location.hash === '#/admin') draw(); else location.hash = '#/admin';
     return true;
@@ -5161,13 +5182,10 @@
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = at === 'dashboard' ? dashHTML() : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'kitchen-home' ? kitchenHomeHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
+    var pane = at === 'dashboard' ? dashHTML() : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'kitchen-home' ? kitchenHomeHTML(d, saveBlock) : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Create/edit functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it. Function editing still has its own tick.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
-      '<p class="hint">Tick Create/edit functions beside a person, then save. Their kitchen role stays the same.</p>' + peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
-      '<section class="set-block"><span class="label">Badges</span><label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label></section>' +
-      '<section class="set-block a-feats"><span class="label">New pages</span><span class="hint">You, sous chefs and leads always see these. Untick one to hide it from Staff and View only until the team is ready.</span>' +
-      FEATS.map(function (f) { return '<label class="a-check"><input type="checkbox" data-a="staffsee" data-f="' + f[0] + '"' + (d.staffSee[f[0]] ? ' checked' : '') + '> Staff see ' + f[1] + '</label>'; }).join('') + '</section>' + saveBlock
+      '<p class="hint">Tick Create/edit functions beside a person, then save. Their kitchen role stays the same.</p>' + peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + saveBlock
     ) : (
       '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds as one file on this device. The server also backs the book up every night at 03:30.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div>' +
         '<details class="a-how"><summary>What a backup holds</summary><p class="hint">People, prep lines, orders, wastage, delivery temperatures and transfers between venues from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, function bookings with their contacts and earlier versions, the chef to-do list, what the prep and order lists have learned, tallies and the guides\' words. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files).</p></details></section>' +
@@ -5227,11 +5245,19 @@
     if (line && line2 && line.outerHTML !== line2.outerHTML) line.replaceWith(line2);
   }
   ['change', 'input'].forEach(function (ev) { document.addEventListener(ev, function (e) { if (e.target && e.target.getAttribute && e.target.getAttribute('data-a')) setTimeout(saveBarRefresh, 0); }, true); });
+  /* The team list (Team, People) and Kitchen's sections, pages staff see and top tickers rows share one draft and one Save
+     (5 Nov 2026, admin pages step 6), so the Save bar names where the unsaved changes are when one is not what is open. */
+  var DRAFT_PARTS = [['people', 'people', 'People'], ['secs', 'kitSecs', 'Kitchen sections'], ['see', 'staffSee', 'Pages staff see'], ['badges', 'showBadges', 'Weekly top tickers']];
+  function draftPages() {
+    var old = draftBase(); if (!S.draft || !old) return [];
+    return DRAFT_PARTS.filter(function (g) { return JSON.stringify(S.draft[g[1]]) !== JSON.stringify(old[g[1]]); }).map(function (g) { return g[0]; });
+  }
   function saveBarHTML() {
-    var n = draftChanges();
+    var n = draftChanges(), pg = draftPages(), here = S.name !== 'admin' || S.atab === 'people' ? 'people' : S.atab === 'kitchen-home' ? S.kOpen : '';
+    var where = pg.length > 1 || pg.length === 1 && pg[0] !== here ? ': ' + DRAFT_PARTS.filter(function (g) { return pg.indexOf(g[0]) >= 0; }).map(function (g) { return g[2]; }).join(', ') : '';
     return '<section class="set-block a-savebar">' + staleHint() + '<div class="btn-row">' + svButton({ k: 'a', p: 'a-save', idle: 'Save changes', busy: S.busy, off: !n }) +
       '<button type="button" class="btn" data-p="a-reset"' + (n ? '' : ' disabled') + '>' + (armed('a-reset') ? 'Tap again to undo ' + (n === 1 ? 'it' : 'all ' + n) : 'Undo unsaved changes') + '</button>' +
-      (n ? '<span class="a-unsaved">' + n + ' unsaved change' + (n === 1 ? '' : 's') + '</span>' : '') + '</div>' + svLine('a', S.busy, S.saveMsg) + '</section>';
+      (n ? '<span class="a-unsaved">' + n + ' unsaved change' + (n === 1 ? '' : 's') + where + '</span>' : '') + '</div>' + svLine('a', S.busy, S.saveMsg) + '</section>';
   }
   function supplierAdminHTML() {
     return '<section class="set-block"><h2 class="p-h">Suppliers &amp; pars</h2><p>Current pars, manual items and the original supplier records are kept in the catalogue.</p>' +
@@ -5347,6 +5373,20 @@
     window.scrollTo({ top: Math.max(0, window.scrollY + tg.getBoundingClientRect().top - adminTopEdge() - 10), behavior: 'smooth' });
   }
   /* A new page starts with its chapter title. Task Back restores its queue position separately. */
+  /* A Kitchen row just opened (a tap, or Settings) stays in view: the row above may have closed, or the page opened at its
+     top. Only on the Overview, and only once the row is drawn. */
+  function kRowInView() {
+    var r = S.kJump; if (!r) return;
+    if (S.atab !== 'kitchen-home') { S.kJump = ''; return; }
+    if (!(S.root && S.root.querySelector('#k-h-' + r))) return;
+    S.kJump = '';
+    // after the move to the top that a page opened from another page makes once it is drawn (render() in js/app.js)
+    setTimeout(function () {
+      var hb = S.root && S.root.querySelector('#k-h-' + r); if (!hb) return;
+      var edge = adminTopEdge() + 8, top = hb.getBoundingClientRect().top;
+      if (top < edge || top > window.innerHeight - 160) window.scrollTo(0, Math.max(0, window.scrollY + top - edge));
+    }, 0);
+  }
   function adminToTop() {
     window.scrollTo(0, 0);
     adminScroll(true);
@@ -5457,7 +5497,7 @@
       if (back) back.focus({ preventScroll: true }); else focusPin();
     }
     else focusPin();
-    if (S.name === 'admin') adminJumps();
+    if (S.name === 'admin') { adminJumps(); kRowInView(); }
     if (ptPop) ptDraw();
     rendering = false;
     bandSync();
@@ -9530,7 +9570,7 @@
   }
 
   /* ---------- kitchen sections: where each person works today (21 Oct 2026) ----------
-     The head chef sets the kitchen's sections in the admin panel's People tab (config/main kitSecs: id, name, off).
+     The head chef sets the kitchen's sections in the admin panel's Kitchen, Overview (config/main kitSecs: id, name, off).
      Staff and leads pick one straight after their PIN, once a day, in a bottom sheet appended to document.body (clicks use
      data-ks, classes ks-). That is their default section for the day: a prep line, a Quick add or a wastage entry with
      the section box left alone goes under it. The head chef and sous chefs are not asked: their section is their role.
@@ -9630,8 +9670,9 @@
     if (e.key === 'Tab') trapTab(e, ksPop);
   });
 
-  /* The admin People tab: the sections themselves (part of the staff draft, saved with Save changes), who is on which
-     today and who worked where over the last 14 days (one small query when the tab opens, once a day per page load). */
+  /* Admin, Kitchen, the Kitchen sections row (on Team, People until 5 Nov 2026): the sections themselves (part of the staff
+     draft, saved with Save changes), who is on which today and who worked where over the last 14 days (one small query
+     when the row opens, once a day per page load). */
   function ksClean(list) {
     var on = {};
     var out = (list || []).map(function (x) { return { id: String(x.id || ''), name: String(x.name || '').replace(/\s+/g, ' ').trim().slice(0, 40), off: !!x.off }; })
@@ -9641,7 +9682,7 @@
   var shiftsFor = '', shiftsBusy = false;
   function loadShifts(force) {
     if (!kitchenAccess() || !S.configFull) return;
-    // a failed read (no signal) waits 5 minutes: the admin People tab asks on every draw
+    // a failed read (no signal) waits 5 minutes: Kitchen's sections row asks on every draw while it is open
     if (!fb || shiftsBusy || (!force && (shiftsFor === dayNow() || waiting('shifts')))) return;
     shiftsBusy = true;
     var f = fb.fs;
@@ -9663,7 +9704,8 @@
       return '<li class="a-ks-row' + (s.off ? ' is-off' : '') + '"><label class="visually-hidden" for="a-ks' + i + '">Section name</label><input id="a-ks' + i + '" class="search" data-k="a-ks' + i + '" data-a="ksec" data-i="' + i + '" maxlength="40" autocomplete="off" placeholder="Section name" value="' + esc(s.name) + '"' + (s.off ? ' disabled' : '') + '>' +
         '<button type="button" class="p-x" data-p="ks-rm" data-i="' + i + '" aria-label="' + esc((s.off ? 'Put back: ' : 'Remove: ') + (s.name || 'this section')) + '">' + (s.off ? 'Put back' : armed('ks-rm:' + s.id) ? 'Tap again to remove' : 'Remove') + '</button></li>';
     }).join('');
-    var out = '<section class="set-block a-ks"><span class="label">Kitchen sections</span><span class="hint">Staff and leads pick one of these straight after their PIN, once a day. Their prep lines and wastage go under it unless they write another section. You and the sous chefs are not asked: your section is your role. Renaming a section keeps its history. Save changes at the bottom to put them live.</span>' +
+    // in its Kitchen row, under the row's own name (5 Nov 2026), so no label of its own
+    var out = '<section class="set-block a-ks"><span class="hint">Staff and leads pick one of these straight after their PIN, once a day. Their prep lines and wastage go under it unless they write another section. You and the sous chefs are not asked: your section is your role. Renaming a section keeps its history. Save changes at the bottom to put them live.</span>' +
       (rows ? '<ul class="a-ks-list">' + rows + '</ul>' : '<p class="hint">No sections yet, so nobody is asked.</p>') +
       '<div class="btn-row"><button type="button" class="btn" data-p="ks-add">Add a section</button>' + (list.length ? '' : '<button type="button" class="btn" data-p="ks-usual">Add ' + esc(KS_USUAL.join(', ')) + '</button>') + '</div>';
     if (!kitSecs().length && !(S.shifts || []).length) return out + '</section>';
@@ -9966,6 +10008,7 @@
     if (a === 'sec-hide') { hideSection(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'a-reset-pin') { resetPin(id); return; }
     // a Kitchen Overview row opens the page that changes its setting, in whichever room it lives
+    if (a === 'k-row') { var kr = el.getAttribute('data-r'); if (!K_ROWS[kr]) return; S.kOpen = S.kOpen === kr ? '' : kr; S.kJump = S.kOpen; draw(); return; }
     if (a === 'k-open') { var kt = el.getAttribute('data-t'); if (intelligenceBusy() || !A_TAB_NAMES[kt] || kt === 'mail' && !mlOwner()) return; S.personId = ''; S.atab = kt; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(kt)[0]] = kt; lsSet('lk.prep.atab', kt); draw(); adminToTop(); return; }
     // a person's page (admin pages step 5): open it from their row, and back to the list (also the top bar's Back)
     if (a === 'a-person') { S.personId = id; draw(); adminToTop(); return; }

@@ -227,7 +227,7 @@ const cutReady = (p, selector) => L.waitFor(p, s => {
     await L.tap(p, '[data-p="g-prm"][data-i="0"]'); await L.settle(p, 200);
     ok(await S(p, () => window.LK_PREP.state.gf.pages.length) === 0, 'guide page: the second tap removes it');
     // a new kitchen section with its name typed asks a second tap; a blank one goes in one
-    await L.adminTab(p, 'people'); await L.waitFor(p, () => !!document.querySelector('[data-p="ks-add"]'), null, 8000);
+    await L.kitchenRow(p, 'secs'); await L.waitFor(p, () => !!document.querySelector('[data-p="ks-add"]'), null, 8000);
     const secs = () => S(p, () => (window.LK_PREP.state.draft.kitSecs || []).length);
     await p.click('[data-p="ks-add"]'); await L.settle(p, 150);
     await p.fill('[data-k="a-ks0"]', 'Pastry'); await L.settle(p, 100);

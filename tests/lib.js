@@ -469,6 +469,15 @@ async function adminTab(page, t) {
   }, t);
   await settle(page, 250);
 }
+/* Opens a row of the admin Kitchen Overview in place: secs (Kitchen sections), see (Pages staff see) or badges (Weekly
+   top tickers), on Team, People until 5 Nov 2026. A row already open stays open. */
+async function kitchenRow(page, r, ms) {
+  await adminTab(page, 'kitchen-home');
+  const state = await page.evaluate(r => { const b = document.querySelector('[data-p="k-row"][data-r="' + r + '"]'); return b ? b.getAttribute('aria-expanded') : null; }, r);
+  if (state === null) throw new Error('kitchenRow: no Kitchen row ' + r);
+  if (state !== 'true') await page.click('[data-p="k-row"][data-r="' + r + '"]');
+  await settle(page, ms || 300);
+}
 /* Remove (or Put back) a prep or order line the way the page offers it: on a phone through the line's ⋯ menu (22 Oct
    2026, Option B), on a laptop with the button in the line. sel is the line's own button, e.g. '[data-p="del"][data-id="i2"]'. */
 async function lineAct(page, sel) {
@@ -620,4 +629,4 @@ async function dwAdd(page) {
   }
   await waitFor(page, () => !!document.getElementById('dw-q'), null, 15000);
 }
-module.exports = { tickPrep, docked, oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, dwAdd, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+module.exports = { tickPrep, docked, oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, dwAdd, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, kitchenRow, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

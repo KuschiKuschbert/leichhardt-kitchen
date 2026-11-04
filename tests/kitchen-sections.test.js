@@ -149,10 +149,13 @@ const addLine = async (p, text, sec) => {
   ok(!s[fsKey(['shifts', today + '_ann'])], 'none set up: nothing written');
   await p.context().close();
 
-  // the head chef sets them up in the admin People tab
+  // the head chef sets them up in the admin panel's Kitchen, Overview, in the Kitchen sections row (on Team, People until
+  // 5 Nov 2026)
   p = await L.open(b, '#/admin', { admin: true, wait: 1800 });
   await L.adminTab(p, 'people'); await L.settle(p, 300);
-  ok(/Kitchen sections/.test(await txt(p, '.a-ks') || ''), 'admin: the People tab has Kitchen sections');
+  ok(!(await p.$('.a-ks')), 'admin: Team, People no longer has Kitchen sections');
+  await L.kitchenRow(p, 'secs');
+  ok(/Staff and leads pick one of these/.test(await txt(p, '#k-b-secs .a-ks') || '') && await p.evaluate(() => !!document.querySelector('[data-g="kitchen"][aria-current="page"]')), 'admin: Kitchen, Overview opens Kitchen sections in its row');
   await tap(p, '[data-p="ks-usual"]'); await L.settle(p, 200);
   ok(await p.evaluate(() => document.querySelectorAll('.a-ks-row').length) === 7, 'admin: the usual seven are added');
   await p.fill('[data-k="a-ks6"]', 'Prep and butchery');
@@ -177,7 +180,7 @@ const addLine = async (p, text, sec) => {
     [fsKey(['shifts', L.ymd(new Date(L.NOW - 86400000)) + '_ann'])]: { day: L.ymd(new Date(L.NOW - 86400000)), sec: 'pass', name: 'Pass', auto: false, at: L.NOW - 86400000, by: 'ann' }
   };
   p = await L.open(b, '#/admin', { admin: true, extra: withSecs(shifts), wait: 1800 });
-  await L.adminTab(p, 'people'); await L.settle(p, 600);
+  await L.kitchenRow(p, 'secs', 600);
   const board = await txt(p, '.a-ks-today') || '';
   ok(/Grill\s*Ann/.test(board) && /Sous chef\s*Sam/.test(board) && /Pass\s*Nobody yet/.test(board), 'admin: On today shows Ann on Grill and Sam as Sous chef (' + board + ')');
   const days = await txt(p, '[data-lvb="ks-days"]') || '';
@@ -187,7 +190,7 @@ const addLine = async (p, text, sec) => {
   // the same with who is on unreadable (no signal, a lost read, 28 Oct 2026): it says it could not load, never
   // "Nobody yet" for every section and "Nobody has picked a section yet", and comes in once the signal is back
   p = await L.open(b, '#/admin', { admin: true, extra: withSecs(shifts), failReads: '/shifts$', wait: 1800 });
-  await L.adminTab(p, 'people'); await L.settle(p, 600);
+  await L.kitchenRow(p, 'secs', 600);
   const blk = await txt(p, '.a-ks') || '';
   ok(/Could not load who is on today\. Check the signal\./.test(blk) && !/Nobody yet|Nobody has picked a section yet/.test(blk), 'admin, who is on unreadable: says it could not load, not Nobody yet (' + blk.slice(-160) + ')');
   ok(!(await L.overflow(p)), 'admin, who is on unreadable: no sideways scroll at 390');
