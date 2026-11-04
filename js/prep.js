@@ -175,8 +175,8 @@
     items: [], itemsState: 'idle', showRemoved: false,
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinOff: false, pinData: null, pf1: '', pf2: '', pinMsg: '',
-    sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: (lsGet('lk.dash.intro') && lsGet('lk.prep.atab')) || 'dashboard', ordDate: dayNow(), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
-    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
+    sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: (lsGet('lk.dash.intro') && lsGet('lk.prep.atab')) || 'dashboard', ordDate: dayNow(), ordLines: [], ordState: 'idle', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
+    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, oLog: false, oDoneOpen: false, startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
     adminsFor: '', adminsOff: null, level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
@@ -1382,7 +1382,7 @@
     if (window.LK_MG && window.LK_MG.drop) window.LK_MG.drop(); if (window.LK_FE && window.LK_FE.drop) window.LK_FE.drop();
     if (window.LK_UX) window.LK_UX.close();
     if (S.sheet) { S.sheet = ''; ovDone('reason'); } S.section = ''; S.secTyped = false;
-    if (S.wLog || S.wRv || S.xLog || S.pLog) { S.wLog = S.wRv = S.xLog = S.pLog = false; ovDone('wsheet'); }
+    if (S.wLog || S.wRv || S.xLog || S.pLog || S.oLog) { S.wLog = S.wRv = S.xLog = S.pLog = S.oLog = false; ovDone('wsheet'); }
     sessDrop(); ksClose(); noteClose('shut'); lmClose(); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; S.gf = null; S.gfSnap = ''; S.cutDraft = null; S.cutSnap = ''; S.bulk = ''; S.wrA = S.wrC = S.wpA = S.wpC = null; S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; tdReset(); dkf = null; dkSnap = ''; dkEditing = false; dkMsg = ''; dkOpen = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings and Manage staff (22 Oct 2026: the Minutes register is "See who has signed" at
@@ -1485,7 +1485,7 @@
     if (S.notesOpen && !nfDirty()) S.notesOpen = false;
     if (S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; }
   }
-  window.addEventListener('hashchange', function () { if (location.hash !== '#/prep') leftPrep(); if (S.sheet) wasteSheetClose(true); if ((S.wLog || S.wRv) && location.hash !== '#/waste' || S.xLog && location.hash !== '#/transfers' || S.pLog && location.hash !== '#/prep') wSheetClose(true); });
+  window.addEventListener('hashchange', function () { if (location.hash !== '#/prep') leftPrep(); if (S.sheet) wasteSheetClose(true); if ((S.wLog || S.wRv) && location.hash !== '#/waste' || S.xLog && location.hash !== '#/transfers' || S.pLog && location.hash !== '#/prep' || S.oLog && location.hash !== '#/orders') wSheetClose(true); });
   function chefOpen(k) {
     if (!isSous()) return;
     if (adminTabs()) { S.atab = k === 'pings' ? 'notes' : k === 'register' ? 'minutes' : 'people'; lsSet('lk.prep.atab', S.atab); if (location.hash === '#/admin') draw(); else location.hash = '#/admin'; return; }
@@ -5247,7 +5247,7 @@
   /* ---------- the order list ----------
      Everyone writes today's order list. The head chef and sous chefs see what is still to order across the last 14 days,
      or any single day, and tick lines off as ordered. Lines whose name matches a recipe ingredient link to those recipes. */
-  var ORD_DAYS = 14, ORD_HIDE = 10 * 60000, ordHideTimer = null;
+  var ORD_HIDE = 10 * 60000, ordHideTimer = null;
   function ordCol(date) { return fb.fs.collection.apply(null, [fb.db].concat(base(), ['orders', date, 'lines'])); }
   function ordRef(date, id) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['orders', date, 'lines', id])); }
   function okey(t) { return String(t || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
@@ -5279,18 +5279,7 @@
       S.ordState = k === 'wait' ? 'offline' : 'ok'; draw();
     }, function () { S.ordState = 'error'; draw(); });
   }
-  function loadOrdAll(force) {
-    if (!kitchenAccess() || !S.configFull) return;
-    if (!fb || S.ordBusy || S.configState !== 'ok') return;
-    if (!force && Date.now() - S.ordAllAt < 60000) return;
-    S.ordBusy = true; S.ordAllAt = Date.now();
-    var today = dayNow(), dates = [], i;
-    for (i = 0; i < ORD_DAYS; i++) dates.push(shift(today, -i));
-    var miss = 0;
-    Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (s) { return s.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { miss++; return []; }); })).then(function (lists) {
-      S.ordAll = [].concat.apply([], lists); S.ordAllMiss = miss; S.ordBusy = false; draw();
-    });
-  }
+
   /* Everything to order is read once (14 days) and then kept in step on the phone: today's lines come from the live list,
      and a tick or remove on an older line is applied to the copy here. No re-reading after every tap. */
   function ordReload() { draw(); }
@@ -5438,14 +5427,7 @@
     setOrdered(date, id, on).then(function () { ordPatch(date, id, { ordered: on }); }, failed);
     if (on) toast('Ordered', { label: 'Undo', fn: function () { tickOrderLine(date, id, false); } });
   }
-  function tickOrderGroup(key) {
-    var lines = ordNewest(ordAllLines()).filter(function (x) { return !x.deleted && !x.ordered && okey(x.text) === key; });
-    if (!lines.length || !canBrowse()) return;
-    W(lines.map(function (x) { return orderedOp(x.date, x.id, true); })).then(function () { lines.forEach(function (x) { ordPatch(x.date, x.id, { ordered: true }); }); }, failed);
-    toast('Ordered' + (lines.length > 1 ? ' ' + lines.length + ' lines' : ''), { label: 'Undo', fn: function () {
-      W(lines.map(function (x) { return orderedOp(x.date, x.id, false); })).then(function () { lines.forEach(function (x) { ordPatch(x.date, x.id, { ordered: false }); }); }, failed);
-    } });
-  }
+
   function removeOrderLine(date, id, restore) {
     if (!canBrowse() || !can('del')) return;
     var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0];
@@ -5485,33 +5467,9 @@
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (canBrowse() && can('del') && x.deleted ? '<button type="button" class="p-x" data-p="orestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
   }
-  function ordGroups() {
-    var map = {}, order = [];
-    ordNewest(ordAllLines()).filter(function (x) { return !x.deleted && !x.ordered; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).forEach(function (x) {
-      var k = okey(x.text); if (!k) return;
-      if (!map[k]) { map[k] = { key: k, text: x.text, lines: [] }; order.push(k); }
-      map[k].lines.push(x); map[k].text = x.text;
-    });
-    return order.map(function (k) { return map[k]; }).sort(function (a, b) { return a.text.localeCompare(b.text); });
-  }
+
   var MISS_TEXT = 'Could not load every day. Check the signal. The book tries again by itself in a few minutes.';
-  function ordAllHTML() {
-    if (S.ordBusy && !(S.ordAll || []).length) return inkWait('Loading the last ' + ORD_DAYS + ' days...', 'orders', 4);
-    var gs = ordGroups(), miss = S.ordAllMiss ? '<p class="hint o-miss" role="alert">' + MISS_TEXT + '</p>' : '';
-    if (!gs.length && miss) return miss;
-    if (!gs.length) return '<p class="nb-empty">Nothing waiting to be ordered. Anything written in the last ' + ORD_DAYS + ' days has been ticked off.</p>';
-    return miss + '<p class="hint">' + gs.length + ' item' + (gs.length === 1 ? '' : 's') + ' still to order from the last ' + ORD_DAYS + ' days. Tick one to mark every line for it as ordered.</p><ul class="nb-rows">' + gs.map(function (g) {
-      var first = g.lines[0];
-      return '<li class="nb-row o-group"><button type="button" class="nb-box" data-p="ogroup" data-k2="' + esc(g.key) + '" aria-label="' + esc('Ordered: ' + g.text) + '">' + BOX + '</button>' +
-        '<span class="nb-t">' + esc(g.text) + (g.lines.length > 1 ? ' <span class="o-n">x' + g.lines.length + '</span>' : '') +
-        '<span class="o-who">' + g.lines.map(function (x) {
-          // a rolled copy: who first wrote it and the day it was first written, as By day shows it (23 Oct 2026; it said
-          // "Rolled over" and today). A very old copy with no origBy keeps "Rolled over".
-          var who = x.rolled ? (x.origBy || 'Rolled over') : (x.addedBy || '?'), day = x.rolled ? (x.since || x.rolledFrom || x.date) : x.date;
-          return esc((x.qty ? x.qty + ' ' : '') + '(' + who + ', ' + dayShort(day) + ')');
-        }).join(' &middot; ') + '</span>' + recipeChips(first) + '</span></li>';
-    }).join('') + '</ul>';
-  }
+
   function dayShort(s) { return parseYmd(s).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); }
   function loadOrdHist() {
     if (!kitchenAccess() || !S.configFull) return;
@@ -5573,9 +5531,10 @@
   function ordersHTML() {
     // loadLearned: the order rollover and Closing soon need when tomorrow's list is written (summary/learned, once a day)
     if (can('add')) { loadOrdHist(); loadWSum(); loadOrdLearned(); loadLearned(); }
-    var br = canBrowse(), view = br ? (S.ordView || 'day') : 'day', today = dayNow();
+    // one list (3 Nov 2026, work pages redesign A): today, then what is waiting from earlier days; By day and Everything
+    // to order went, chefs pick another day with the date chip
+    var br = canBrowse(), today = dayNow(), onToday = S.ordDate === today;
     if (!br && S.ordDate !== today) { S.ordDate = today; watchOrders(); }
-    if (view === 'all') loadOrdAll(false);
     if (S.ordDate === today && S.ordState === 'ok') ordRoll();
     var live = (S.ordLines || []).filter(function (x) { return !x.deleted; });
     var nOrd = live.filter(function (x) { return x.ordered; }).length;
@@ -5585,35 +5544,45 @@
     var nextHide = Infinity;
     if (S.ordDate === today) live.forEach(function (x) { if (x.ordered && x.orderedAt) { var left = x.orderedAt + ORD_HIDE - now(); if (left > 0 && left < nextHide) nextHide = left; } });
     if (nextHide < Infinity) ordHideTimer = setTimeout(function () { if (S.name === 'orders') draw(); }, nextHide + 500);
-    var tabs = br ? '<div class="nb-nav o-nav"><button type="button" class="chip" data-p="oview" data-v="day" aria-pressed="' + (view === 'day') + '">By day</button><button type="button" class="chip" data-p="oview" data-v="all" aria-pressed="' + (view === 'all') + '">Everything to order</button>' +
-      (view === 'day' ? '<span class="o-days"><button type="button" class="chip" data-p="oday" data-d="-1" aria-label="Back one day">&lsaquo;</button><button type="button" class="chip" data-p="otoday" aria-pressed="' + (S.ordDate === today) + '">Today</button><button type="button" class="chip" data-p="oday" data-d="1" aria-label="Forward one day">&rsaquo;</button></span>' : '') + '</div>' : '';
+    var tabs = br ? '<div class="nb-nav o-nav"><label class="visually-hidden" for="o-day">Pick a date</label><input id="o-day" type="date" class="p-dateinput o-dateinput" data-k="o-day" value="' + esc(S.ordDate) + '">' +
+      (onToday ? '<a class="chip o-deliv" href="#/deliveries">Delivery arrived</a>' : '<button type="button" class="chip" data-p="otoday">Back to today</button>') + '</div>' : '';
     var add = can('add') && S.ordDate === today ?
       '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" enterkeyhint="done" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
       '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' +
-      '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintFull()) + '</p>' + oRegsHTML() + '</form>' : (S.ordDate === today ? '<p class="hint">You can read the order list but not write in it.</p>' : '');
-    var overdue = view === 'day' && S.ordDate === today ? shown.filter(function (x) { return !x.ordered && ordWait(x, today) > ORD_LATE; }) : [];
+      '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintFull()) + '</p>' + oRegsHTML() + '</form>' : '';
+    var overdue = onToday ? shown.filter(function (x) { return !x.ordered && ordWait(x, today) > ORD_LATE; }) : [];
     if (overdue.length) shown = shown.filter(function (x) { return overdue.indexOf(x) < 0; });
+    // waiting from earlier days: today's lines that rolled over (the ones more than 3 days old in their own block, as
+    // before); what was written today comes first
+    var earlier = onToday ? shown.filter(function (x) { return rolledN(x) > 0 && !x.ordered; }) : [];
+    var own = shown.filter(function (x) { return earlier.indexOf(x) < 0; }), byAdded = function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); };
+    var waitHTML = overdue.length || earlier.length ? '<div class="o-wait"><h3 class="nb-sh o-wait-h">Waiting from earlier days (' + (overdue.length + earlier.length) + ')</h3>' +
+      ordOverdueHTML(overdue, today) + (earlier.length ? '<ul class="nb-rows">' + earlier.slice().sort(byAdded).map(ordRow).join('') + '</ul>' : '') + '</div>' : '';
     var moved = live.filter(function (x) { return shown.indexOf(x) < 0 && overdue.indexOf(x) < 0; }).sort(function (a, b) { return (b.orderedAt || 0) - (a.orderedAt || 0); });
     var removedO = (S.ordLines || []).filter(function (x) { return x.deleted; });
-    var removedBox = view === 'day' && removedO.length && canBrowse() && can('del') ? '<button type="button" class="nb-link" data-p="oremoved">' + (S.oShowRemoved ? 'Hide' : 'Show') + ' removed (' + removedO.length + ')</button>' +
+    var removedBox = removedO.length && canBrowse() && can('del') ? '<button type="button" class="nb-link" data-p="oremoved">' + (S.oShowRemoved ? 'Hide' : 'Show') + ' removed (' + removedO.length + ')</button>' +
       (S.oShowRemoved ? '<ul class="nb-rows">' + removedO.map(ordRow).join('') + '</ul>' : '') : '';
-    var orderedBox = view === 'day' && moved.length ? '<h3 class="nb-sh">Ordered today (' + moved.length + ')</h3><ul class="nb-done">' + moved.map(function (x) {
+    // Ordered today, folded (3 Nov 2026): one line with the count, open on a tap
+    var orderedBox = moved.length ? '<details class="o-done"' + (S.oDoneOpen ? ' open' : '') + '><summary data-p="o-done-toggle"><span class="nb-sh">Ordered today (' + moved.length + ')</span></summary><ul class="nb-done">' + moved.map(function (x) {
       return '<li data-ln="' + esc(x.date + '/' + x.id) + '"><span class="nb-dt">' + (x.orderedAt ? clock(x.orderedAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + unsentMark(x) + '</span><span class="nb-dw">' + esc(x.orderedBy || '') + '</span>' +
         (canBrowse() ? '<button type="button" class="p-x nb-undo" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="true" aria-label="' + esc('Not ordered after all: ' + x.text) + '">Undo</button>' : '') + '</li>';
-    }).join('') + '</ul>' : '';
+    }).join('') + '</ul></details>' : '';
     // no signal and the list not loaded yet: the note first, then only the lines this phone wrote since (listSnap)
     var offO = S.ordState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
-    var body = view === 'all' ? ordAllHTML() :
+    var body =
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
-        offO + ordOverdueHTML(overdue, today) + (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (overdue.length || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))));
+        offO + (own.length ? '<ul class="nb-rows">' + own.slice().sort(byAdded).map(ordRow).join('') + '</ul>' : (waitHTML || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))) + waitHTML);
     return whoTopHTML() + tabs +
-      '<section class="nb-page o-page' + (view === 'all' ? ' o-all' : '') + '"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
-      (view === 'day' && S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
-      (view === 'day' && S.ordDate === today ? cutOrdHTML() : '') +
-      /* the add box is at the top, so it is always in reach; on big screens the list and the ordered-today list sit side by side below it */
-      (view === 'day' && add ? '<div class="nb-foot o-add">' + add + (canBrowse() ? '' : '<p class="hint nb-who">Only the head chef or a sous chef ticks a line as ordered or removes it. Wrote the wrong thing? Undo it straight away, or ask them.</p>') + '</div>' : '') +
-      (view === 'day' ? closeoutHTML(null, S.ordDate) : '') +
-      '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>';
+      '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Order list</h2><span class="nb-date">' + esc(longDate(S.ordDate)) + '</span></div>' +
+      (S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') +
+      (add ? '<button type="button" class="btn dark nb-addline" data-p="o-write" aria-haspopup="dialog">Add a line</button>' : '') + '</header>' +
+      (onToday ? cutOrdHTML() : '') +
+      (can('add') || S.ordDate !== today ? '' : '<p class="hint o-ro">You can read the order list but not write in it.</p>') +
+      closeoutHTML(null, S.ordDate) +
+      '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>' +
+      // the add form as a sheet (3 Nov 2026), like Add a line on the prep list
+      (add && S.oLog ? '<div class="sheet-bg" data-p="o-log-close"></div><div class="sheet o-sheet" role="dialog" aria-modal="true" aria-labelledby="o-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="o-log-h">Add to the order list</h3>' + add +
+        (canBrowse() ? '' : '<p class="hint nb-who">Only the head chef or a sous chef ticks a line as ordered or removes it. Wrote the wrong thing? Undo it straight away, or ask them.</p>') + '<button type="button" class="btn sheet-x" data-p="o-log-close">Close</button></div>' : '');
   }
 
 
@@ -5872,13 +5841,13 @@
      They are drawn from S.wLog, S.wRv and S.xLog with the page, like the forms were, so a redraw during service keeps what
      is typed; Close keeps it too. Back, Escape and the dimmed page close them. which: 'log', 'rv' or 'xlog'. */
   function wSheetOpen(which) {
-    S.wLog = which === 'log'; S.wRv = which === 'rv'; S.xLog = which === 'xlog'; S.pLog = which === 'plog';
+    S.wLog = which === 'log'; S.wRv = which === 'rv'; S.xLog = which === 'xlog'; S.pLog = which === 'plog'; S.oLog = which === 'olog';
     ovPush('wsheet', function () { wSheetClose(true); });
-    draw(); focusK(which === 'log' ? 'w-text' : which === 'rv' ? 'w-ra' : which === 'plog' ? 'p-text' : S.xf.venue ? 'tr-text' : 'tr-venue');
+    draw(); focusK(which === 'log' ? 'w-text' : which === 'rv' ? 'w-ra' : which === 'plog' ? 'p-text' : which === 'olog' ? 'o-text' : S.xf.venue ? 'tr-text' : 'tr-venue');
   }
   function wSheetClose(noBack) {
-    if (!S.wLog && !S.wRv && !S.xLog && !S.pLog) return;
-    var back = S.wLog ? '.w-logbtn' : S.wRv ? '.w-rvbtn' : S.pLog ? '.nb-addline' : '.tr-logbtn'; S.wLog = S.wRv = S.xLog = S.pLog = false;
+    if (!S.wLog && !S.wRv && !S.xLog && !S.pLog && !S.oLog) return;
+    var back = S.wLog ? '.w-logbtn' : S.wRv ? '.w-rvbtn' : S.pLog || S.oLog ? '.nb-addline' : '.tr-logbtn'; S.wLog = S.wRv = S.xLog = S.pLog = S.oLog = false;
     ovDone('wsheet', noBack); draw(); focusSel(back);
   }
   /* Bottom sheet for picking one thing on a phone (the waste reason). Big rows, a hint under each, Cancel or tap outside to close. */
@@ -9611,10 +9580,9 @@
     if (a === 'odel') { removeOrderLine(el.getAttribute('data-d'), id); return; }
     if (a === 'orestore') { removeOrderLine(el.getAttribute('data-d'), id, true); return; }
     if (a === 'oremoved') { S.oShowRemoved = !S.oShowRemoved; draw(); return; }
-    if (a === 'ogroup') { tickOrderGroup(el.getAttribute('data-k2')); return; }
-    if (a === 'oview') { S.ordView = el.getAttribute('data-v'); if (S.ordView === 'all') loadOrdAll(false); draw(); return; }
-    if (a === 'oday') { S.ordDate = shift(S.ordDate, +el.getAttribute('data-d')); watchOrders(); draw(); return; }
     if (a === 'otoday') { S.ordDate = dayNow(); watchOrders(); draw(); return; }
+    if (a === 'o-write') { wSheetOpen('olog'); return; }
+    if (a === 'o-done-toggle') { e.preventDefault(); S.oDoneOpen = !S.oDoneOpen; draw(); return; }
     if (a === 'osugg') { var st = (S.osugg || [])[i]; if (st) { S.otext = st; if (!S.oqty.trim()) S.oqty = (ordQtyList(st)[0] || {}).q || ''; draw(); var oe = S.root.querySelector('[data-k="o-text"]'); if (oe) { oe.focus(); try { oe.setSelectionRange(oe.value.length, oe.value.length); } catch (x) {} } } return; }
     if (a === 'who') { pickName(id); return; }
     if (a === 'who-change') {
@@ -9864,6 +9832,7 @@
     if (k === 'mn-older') { S.mSel = el.value; loadSigns(el.value, true); draw(); return; }
     if (k && k.indexOf('mn-') === 0) { mfSet(k, el); saveSync(); return; }
     if (k === 'p-day') { if (el.value) { S.date = el.value; S.tab = ''; watchItems(); draw(); } return; }
+    if (k === 'o-day') { if (/^\d{4}-\d\d-\d\d$/.test(el.value) && canBrowse()) { S.ordDate = el.value; watchOrders(); draw(); } return; }
     if (k === 'n-start') { if (S.nf && el.value) { S.nf.start = el.value; if (S.nf.until && S.nf.until < el.value) S.nf.until = ''; draw(); } return; }
     if (k === 'n-until') { if (S.nf) { S.nf.until = el.value; S.nf.run = !!el.value; draw(); } return; }
     if (k === 'n-to') { if (S.nf && !S.nf.id) { S.nf.to = el.value; } return; }
@@ -9903,9 +9872,9 @@
       var sh = S.root.querySelector('.sheet'); if (sh) trapTab(e, sh, 'button');
       return;
     }
-    if ((S.wLog || S.wRv) && S.name === 'waste' || S.xLog && S.name === 'transfers' || S.pLog && S.name === 'prep') {
+    if ((S.wLog || S.wRv) && S.name === 'waste' || S.xLog && S.name === 'transfers' || S.pLog && S.name === 'prep' || S.oLog && S.name === 'orders') {
       if (e.key === 'Escape') { e.preventDefault(); wSheetClose(); return; }
-      var ws = S.root.querySelector('.w-sheet, .tr-sheet, .p-sheet'); if (e.key === 'Tab' && ws) { trapTab(e, ws, 'button:not([disabled]), input, textarea'); return; }
+      var ws = S.root.querySelector('.w-sheet, .tr-sheet, .p-sheet, .o-sheet'); if (e.key === 'Tab' && ws) { trapTab(e, ws, 'button:not([disabled]), input, textarea'); return; }
     }
     if (e.key === 'Escape' && S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.getAttribute && e.target.getAttribute('data-k') === 'n-text') { e.preventDefault(); saveNote(); return; }
@@ -10453,7 +10422,7 @@
     if (a === 'mn-prev') { if (S.mf) { S.mf.prev = !S.mf.prev; draw(); } return true; }
     if (a === 'g-cancel') { if (gfDirty() && !arm('g-cancel')) return true; S.gf = null; S.gfSnap = ''; draw(); return true; }
     if (a === 'sheet-close') { wasteSheetClose(); return true; }
-    if (a === 'w-log-close' || a === 'w-rv-close' || a === 'tr-log-close' || a === 'p-log-close') { wSheetClose(); return true; }
+    if (a === 'w-log-close' || a === 'w-rv-close' || a === 'tr-log-close' || a === 'p-log-close' || a === 'o-log-close') { wSheetClose(); return true; }
     if (a === 'staff-close') { if (draftDirty() && !arm('staff-close')) return true; S.staffOpen = false; S.draft = null; draw(); return true; }
     return false;
   }
@@ -10469,6 +10438,7 @@
     if (S.sheet) return pick('sheet-close', 'Back to wastage');
     if (S.name === 'waste' && (S.wLog || S.wRv)) return pick(S.wLog ? 'w-log-close' : 'w-rv-close', 'Back to wastage');
     if (S.name === 'transfers' && S.xLog) return pick('tr-log-close', 'Back to transfers');
+    if (S.name === 'orders' && S.oLog) return pick('o-log-close', 'Back to the order list');
     if (S.root.querySelector('.g-edit')) return pick('g-cancel', 'Back to guides');
     if (S.root.querySelector('.n-edit')) return pick('n-cancel', 'Back to pings');
     if (S.mf && S.mf.prev && (S.name === 'admin' && S.atab === 'minutes' || S.name === 'prep' && S.minOpen)) return pick('mn-prev', 'Back to writing');
@@ -10488,8 +10458,8 @@
   /* Something not saved on this device apart from a change waiting to send (LK_PREP.unsaved() is this or a write
      waiting): words typed here (typedHere(): a line half typed, an admin draft, a review, the drinks run), a sheet or
      the recipe picker open on the prep pages, or a page loaded on its own with changes (Delivery received, Manage
-     Recipes, Manage functions, Supplier order). Prep's Add a line sheet open with nothing typed in it is not unsaved
-     work (its words are in typedHere()), so it does not hold back the 04:00 refresh or a repair reload. */
+     Recipes, Manage functions, Supplier order). The Add a line sheets on Prep and Orders open with nothing typed in
+     them are not unsaved work (their words are in typedHere()), so it does not hold back the 04:00 refresh or a repair reload. */
   function unsavedHere() {
     return !!(workLock() && S.lockHasDraft) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere() || !!S.sheet || !!S.wLog || !!S.xLog || !!S.recipeOpen || !!ptPop;
   }

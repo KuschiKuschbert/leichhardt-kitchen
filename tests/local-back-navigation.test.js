@@ -35,7 +35,7 @@ const configWrites = p => p.evaluate(() => __fake.writes.flat().filter(w => /\/c
   await p.click('[data-p="n-new"]');
   await p.fill('#n-text', 'Check the pass before service.');
   await go(p, '#/orders');
-  ok(!!await p.$('#o-text'), 'pings: a page change opens the order list');
+  ok(!!await p.$('.o-page [data-p="o-write"]'), 'pings: a page change opens the order list');
   await go(p, '#/prep');
   if (!await p.$('#n-text')) await L.chef(p, 'pings');
   ok(await p.inputValue('#n-text') === 'Check the pass before service.', 'pings: returning preserves the unfinished ping');

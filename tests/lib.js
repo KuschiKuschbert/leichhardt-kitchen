@@ -314,7 +314,8 @@ async function open(browser, hash, o) {
   // Prep's add form is in the Add a line sheet since 3 Nov 2026 (work pages redesign A). A test that reaches for one of its
   // boxes by selector while the sheet is closed taps Add a line first, the way a cook does. page.$ is left alone, so a check
   // that the form is not there still means it; tests of the sheet itself use L.pLog() (tests/prep-a.test.js). A click on
-  // the page behind an open Add a line sheet closes the sheet first, the way a cook does (prepAway).
+  // the page behind an open Add a line sheet closes the sheet first, the way a cook does (prepAway). The same for the
+  // order list's Add a line sheet (L.oLog(), tests/orders-a.test.js).
   for (const m of ['fill', 'press', 'type', 'focus', 'click', 'tap', 'inputValue', 'getAttribute', '$eval']) {
     const orig = page[m].bind(page);
     page[m] = async (sel, ...rest) => {
@@ -491,20 +492,22 @@ async function pick(page, selector, value) {
   await settle(page, 250);
 }
 
-const PREP_FORM = /#p-(text|qty|section)\b|data-k="p-(text|qty|section)"|data-p="(recipe-toggle|quick)"|\.nb-qadd\b/;
+// the prep list's and the order list's add forms are in Add a line sheets (3 Nov 2026, work pages redesign A)
+const PREP_FORM = /#p-(text|qty|section)\b|data-k="p-(text|qty|section)"|data-p="(recipe-toggle|quick)"|\.nb-qadd\b|#o-(text|qty)\b|data-k="o-(text|qty)"|data-p="oreg"/;
 async function prepForm(page, sel) {
-  if (await page.$('.p-sheet #p-text') || !(await page.$('[data-p="write"]'))) return;
+  const order = /o-(text|qty)|oreg/.test(sel || ''), open = order ? '[data-p="o-write"]' : '[data-p="write"]', box = order ? '.o-sheet #o-text' : '.p-sheet #p-text';
+  if (await page.$(box) || !(await page.$(open))) return;
   // something the selector names already on screen (Handy's Quick add on a laptop): no sheet needed
   if (sel && await page.evaluate(s => { try { return [...document.querySelectorAll(s)].some(e => e.getClientRects().length); } catch (e) { return false; } }, sel)) return;
-  await pLog(page);
+  if (order) await oLog(page); else await pLog(page);
 }
 async function prepAway(page, sel) {
   const shut = await page.evaluate(s => {
-    const sh = document.querySelector('.p-sheet'); if (!sh) return false;
+    const sh = document.querySelector('.p-sheet, .o-sheet'); if (!sh) return false;
     let el = null; try { el = document.querySelector(s); } catch (e) { return false; }
     // not when the target is in the sheet, a toast, or a picker or sheet opened over it
     if (!el || sh.contains(el) || el.closest('.sheet-bg, .p-toast, dialog, .sheet, [role="dialog"]')) return false;
-    const c = sh.querySelector('[data-p="p-log-close"]'); if (c) c.click(); return !!c;
+    const c = sh.querySelector('[data-p="p-log-close"], [data-p="o-log-close"]'); if (c) c.click(); return !!c;
   }, sel).catch(() => false);
   if (shut) await settle(page, 100);
 }
@@ -560,6 +563,11 @@ async function pLog(page) {
   await page.evaluate(() => document.querySelector('[data-p="write"]').click());
   await waitFor(page, () => !!document.querySelector('.p-sheet #p-text'), null, 4000);
 }
+async function oLog(page) {
+  if (await page.$('.o-sheet #o-text')) return;
+  await page.evaluate(() => document.querySelector('[data-p="o-write"]').click());
+  await waitFor(page, () => !!document.querySelector('.o-sheet #o-text'), null, 4000);
+}
 /* The drawing studio (3 Nov 2026): the tools not used on every drawing are under More, and a picked part's arranging,
    copying and changing under its own More. Opens the one that holds sel, so a test can tap it. */
 async function dwShow(page, sel) {
@@ -568,4 +576,4 @@ async function dwShow(page, sel) {
   const opener = part ? '[data-dw="panel"][data-v="pmore"]' : '[data-dw="panel"][data-v="more"]';
   if (await page.$(opener) && await page.getAttribute(opener, 'aria-pressed') !== 'true' && await page.getAttribute(opener, 'aria-expanded') !== 'true') { await page.click(opener); await settle(page, 150); }
 }
-module.exports = { pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+module.exports = { oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
