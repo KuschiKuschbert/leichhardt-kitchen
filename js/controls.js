@@ -280,13 +280,14 @@
   // Explicit choice actions exclude command buttons such as tick, delete, add and page navigation.
   var choiceActions = {
     'data-act': 'view free lens amode kind setview settext setshared setpractice',
-    'data-p': 'tr-vpick tr-ppick range heat calm hrm lv-f wunit wreason tr-dir tr-unit n-tag n-dow n-quick n-mode mn-ast g-cat g-fcat g-fwho dk-pick cut-day ml-cat ml-pri todo-for',
+    'data-p': 'tr-vpick tr-ppick range heat calm hrm lv-f wunit punit ounit wreason tr-dir tr-unit n-tag n-dow n-quick n-mode mn-ast g-cat g-fcat g-fwho dk-pick cut-day ml-cat ml-pri todo-for',
     'data-mg': 'chip hand', 'data-fe': 'chip mode', 'data-dw': 'sm-st cat sub wfam ware tintc setIng', 'data-ai': 'range', 'data-su': 'group history-order'
   };
   function choiceAction(b) { var found; Object.keys(choiceActions).some(function (attr) { var v = b.getAttribute(attr); if (v && choiceActions[attr].split(' ').indexOf(v) >= 0) { found = attr + ':' + v; return true; } return false; }); return found; }
   function choiceLabel(button) { var name = button.querySelector('.vo-name'); return name ? name.firstChild.textContent.trim() : button.textContent.trim() || button.getAttribute('aria-label') || 'Choice'; }
   var pairedActions = ['data-p:tr-dir', 'data-p:heat', 'data-p:hrm', 'data-p:n-mode', 'data-act:amode', 'data-act:setpractice', 'data-fe:mode'];
-  var unitActions = ['data-p:tr-unit', 'data-p:wunit'];
+  // the units under an amount (Wastage, Transfers, and since 4 Nov 2026 Prep and Orders, S3): one-tap chips in place
+  var unitActions = ['data-p:tr-unit', 'data-p:wunit', 'data-p:punit', 'data-p:ounit'];
   function fixedThreeChoices(action, buttons) {
     var values = action === 'data-p:ml-pri' ? ['today', 'week', 'any'] : action === 'data-p:dk-pick' && buttons.every(function (b) { return b.getAttribute('data-f') === 'size'; }) ? ['small', 'reg', 'large'] : null;
     return !!values && buttons.length === 3 && buttons.every(function (b, i) { return b.getAttribute('data-v') === values[i]; });

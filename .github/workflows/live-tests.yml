@@ -19,13 +19,13 @@ concurrency:
 jobs:
   test:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
-    # Four shares on four runners at once, like the pull request check (3 Nov 2026): one runner took 24 minutes of
+    # Five shares on five runners at once, like the pull request check (3 Nov 2026, five since 4 Nov): one runner took 24 minutes of
     # its 30. A failed file runs once more on its own (a warning if it then passes); failures are in the summary.
-    name: Live ${{ matrix.shard }} of 4
+    name: Live ${{ matrix.shard }} of 5
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -44,7 +44,7 @@ jobs:
           BASE: https://kuschikuschbert.github.io/leichhardt-kitchen/
           CHROME: /usr/bin/google-chrome
           JOBS: 4
-          SHARD: ${{ matrix.shard }}/4
+          SHARD: ${{ matrix.shard }}/5
           QUIET: '1'
           RETRY: '1'
           FILE_TIMEOUT: '600'

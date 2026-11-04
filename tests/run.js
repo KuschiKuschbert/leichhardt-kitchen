@@ -11,7 +11,7 @@
   is held back and printed in one piece when it ends, so the log reads the same as one at a time. The slowest files
   are listed at the end.
   On GitHub (3 Nov 2026, CLAUDE.md, Keeping usage down):
-    SHARD=2/4 npm test            the second of four equal shares of the work, so four runners share it (4 Nov 2026: by
+    SHARD=2/5 npm test            the second of five equal shares of the work, so five runners share it (4 Nov 2026: by
                                   the seconds in tests/timings.json, longest files first, each to the lightest share)
     UPDATE_TIMINGS=1              after the run, write this run's seconds for the files it ran into tests/timings.json
     QUIET=1                       a file that passes prints one line; a file that fails prints in full

@@ -402,14 +402,18 @@
   function bookEdit() { return !!(window.LK_PREP && window.LK_PREP.bookEdit && window.LK_PREP.bookEdit()); }
   // Functions in the chef hat's menu: only for someone the head chef ticked for Functions (or the head chef's Google device)
   function fnOK() { return !!(window.LK_PREP && window.LK_PREP.fnOK && window.LK_PREP.fnOK()); }
+  /* Small lines on the chef hat's tiles (4 Nov 2026, a piece of B in the agreed work pages design): only what the book
+     already knows, "1 to sign" on Meeting minutes, "Today 18:00" on Functions, "PFD 14:00" on Supplier order */
+  function tileLine(s) { return s ? '<small class="wm-due">' + esc(s) + '</small>' : ''; }
+  function fnLine() { return window.LK_FN && window.LK_FN.hatLine ? window.LK_FN.hatLine() : ''; }
   function fnItem() {
     var on = parseRoute().name === 'functions' ? ' aria-current="page"' : '';
-    return '<a class="wm-a wm-tile wm-fn" href="#/functions" data-who="go"' + on + '>' + ICON.cal + '<span><b>Functions</b></span></a>';
+    return '<a class="wm-a wm-tile wm-fn" href="#/functions" data-who="go"' + on + '>' + ICON.cal + '<span><b>Functions</b>' + tileLine(fnLine()) + '</span></a>';
   }
   // Everyone else signed in reads the confirmed functions, today and the next days (#/fn); booking stays with the managers
   function fnViewItem() {
     var on = parseRoute().name === 'fn' ? ' aria-current="page"' : '';
-    return '<a class="wm-a wm-tile wm-fv" href="#/fn" data-who="go"' + on + '>' + ICON.cal + '<span><b>Functions</b></span></a>';
+    return '<a class="wm-a wm-tile wm-fv" href="#/fn" data-who="go"' + on + '>' + ICON.cal + '<span><b>Functions</b>' + tileLine(fnLine()) + '</span></a>';
   }
   /* Chef to-do (#/todo, 23 Oct 2026): the head chef and the sous chefs with their PIN, or the head chef's Google device
      with nobody signed in (js/prep.js todoOK). Staff never get the row, and the rules keep the list from them. */
@@ -426,7 +430,7 @@
   // the no-signal sentence while the kitchen's settings are not loaded and there is no signal (js/prep.js), otherwise ''
   function offline() { return window.LK_PREP && window.LK_PREP.offline ? window.LK_PREP.offline() : ''; }
   function supplierItem() {
-    return '<a class="wm-a wm-tile wm-supplier" href="#/suppliers" data-who="go"' + (parseRoute().name === 'suppliers' ? ' aria-current="page"' : '') + '>' + ICON.truck + '<span><b>Supplier order</b></span></a>';
+    return '<a class="wm-a wm-tile wm-supplier" href="#/suppliers" data-who="go"' + (parseRoute().name === 'suppliers' ? ' aria-current="page"' : '') + '>' + ICON.truck + '<span><b>Supplier order</b>' + tileLine(window.LK_PREP && window.LK_PREP.cutHat ? window.LK_PREP.cutHat() : '') + '</span></a>';
   }
   function manageItem() {
     var on = parseRoute().name === 'manage' ? ' aria-current="page"' : '';

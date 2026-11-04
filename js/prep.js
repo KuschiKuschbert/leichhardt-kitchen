@@ -2213,6 +2213,20 @@
     l.forEach(function (x) { tot += x.n; });
     return l.length && l[0].n >= 2 && l[0].n / tot >= 0.5 ? l[0].q : '';
   }
+  /* One amount control (S3, 4 Nov 2026, as drawn in the agreed work pages design): under the amount box on Prep and
+     Orders, the units as chips, like Wastage and Transfers. The box still reads "2 tubs" typed. A chip puts its unit
+     after the number in the box ("2" becomes "2 tubs", "2 kg" becomes "2 tubs") and lights while the box says that
+     unit; with no number yet the unit goes in with the cursor before it, so the number is typed next. */
+  var P_UNITS = ['tubs', 'L', 'kg', 'batch', 'portions'], O_UNITS = ['L', 'kg', 'box', 'packs', 'bunches'];
+  function unitKey(u) { return String(u || '').trim().toLowerCase().replace(/(es|s)$/, ''); }
+  function qtySplit(q) { var m = /^\s*([\d.,\/\u00bc-\u00be]+(?:\s*[-\u2013]\s*[\d.,\/\u00bc-\u00be]+)?)?\s*(.*?)\s*$/.exec(String(q || '')); return { n: m && m[1] || '', u: m && m[2] || '' }; }
+  function unitChipsHTML(kind, q) {
+    var cur = unitKey(qtySplit(q).u);
+    return '<span class="nb-ql" id="' + kind + '-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="' + kind + '-unit-l">' + (kind === 'o' ? O_UNITS : P_UNITS).map(function (u) {
+      return '<button type="button" class="seg-b" role="radio" data-p="' + kind + 'unit" data-v="' + u + '" aria-checked="' + (!!cur && unitKey(u) === cur) + '">' + u + '</button>';
+    }).join('') + '</div>';
+  }
+  function withUnit(q, u) { var n = qtySplit(q).n; return n ? n + ' ' + u : ' ' + u; }
   function qtyChipsHTML() {
     if (S.qty.trim() || S.text.trim().length < 3) return '';
     var l = qtyList(S.text).slice(0, 3);
@@ -4361,7 +4375,7 @@
       '<div class="nb-add-row"><label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" autocapitalize="sentences" placeholder="Write a new line..." maxlength="160" value="' + esc(S.text) + '">' +
       '<label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section || (S.secTyped ? '' : mySec())) + '">' +
       '<label class="visually-hidden" for="p-qty">Amount</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.qty) + '">' +
-      '<button type="submit" class="nb-addbtn">Add</button></div>' + secChipsHTML('p-section', S.section || (S.secTyped ? '' : mySec())) + '<div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : '';
+      '<button type="submit" class="nb-addbtn">Add</button></div>' + secChipsHTML('p-section', S.section || (S.secTyped ? '' : mySec())) + '<div class="w-pick nb-units" id="p-units">' + unitChipsHTML('p', S.qty) + '</div><div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : '';
     // no form (another day, or read only): the reason sits at the foot of the list, and there is no Add a line
     var addNote = add ? '' : S.date !== today ? '<p class="hint">You are looking at ' + esc(dayName(S.date)) + '. Lines are added on Today only.</p>' : '<p class="hint">You can read the book but not write in it. Ask the head chef if that is wrong.</p>';
     var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
@@ -5556,7 +5570,7 @@
     var add = can('add') && S.ordDate === today ?
       '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" enterkeyhint="done" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
       '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' +
-      '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintFull()) + '</p>' + oRegsHTML() + '</form>' : '';
+      '<div class="w-pick nb-units" id="o-units">' + unitChipsHTML('o', S.oqty) + '</div><div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintFull()) + '</p>' + oRegsHTML() + '</form>' : '';
     var overdue = onToday ? shown.filter(function (x) { return !x.ordered && ordWait(x, today) > ORD_LATE; }) : [];
     if (overdue.length) shown = shown.filter(function (x) { return overdue.indexOf(x) < 0; });
     // waiting from earlier days: today's lines that rolled over (the ones more than 3 days old in their own block, as
@@ -9051,6 +9065,13 @@
     // Keep the initiating writer if a PIN session is still opening. No supplier catalogue read is needed.
     return sessP ? track(Promise.resolve(sessP).then(save, save)) : save();
   }
+  /* The chef hat's Supplier order tile (4 Nov 2026, a piece of B in the agreed work pages design): today's next cut-off
+     not ticked yet, "PFD 14:00", for the chefs who get the cut-off bar. From what the bar already holds, no read. */
+  function cutHat() {
+    if (!cutWho()) return '';
+    var m = T.mins(), done = cutDone(), c = cutToday().filter(function (x) { return x.at > m && !done[x.key]; })[0];
+    return c ? c.s.name + ' ' + hhmm(c.at) : '';
+  }
   function cutBandHTML() {
     if (!cutWho()) return '';
     var m = T.mins(), done = cutDone(), xs = cutOn(0).concat(cutOn(1)).filter(function (c) { return cutOnNow(c, m) && !done[c.key]; });
@@ -9680,6 +9701,16 @@
     if (a === 'miss-hide') { sset(docRef('misses', id), { hidden: true, q: ((S.misses || []).filter(function (x) { return x.id === id; })[0] || {}).q || id }, true).then(function () { loadMisses(true); }, failed); return; }
     // "Add 5 L": the usual amount goes in and the line is added in the same tap, on the prep list and the order list
     if (a === 'qset' || a === 'oqset') sg('usual', 't');
+    if (a === 'punit' || a === 'ounit') {
+      var ou = a === 'ounit', uv = el.getAttribute('data-v');
+      if ((ou ? O_UNITS : P_UNITS).indexOf(uv) < 0) return;
+      var uq = withUnit(ou ? S.oqty : S.qty, uv);
+      if (ou) { S.oqty = uq; S.oqtyAuto = ''; } else S.qty = uq;
+      draw();
+      var ub = S.root.querySelector(ou ? '#o-qty' : '#p-qty');
+      if (ub) { ub.focus(); var ua = qtySplit(uq).n ? uq.length : 0; try { ub.setSelectionRange(ua, ua); } catch (e) {} }
+      return;
+    }
     if (a === 'oqset') { S.oqty = el.getAttribute('data-v') || ''; if (S.otext.trim()) addOrder(); else { draw(); var to = S.root.querySelector('[data-k="o-text"]'); if (to) to.focus(); } return; }
     if (a === 'qset') { S.qty = el.getAttribute('data-v') || ''; if (S.text.trim()) addTyped(); else { draw(); var tq = S.root.querySelector('[data-k="p-text"]'); if (tq) tq.focus(); } return; }
     if (a === 'goto') { gotoRow(id); return; }
@@ -9800,7 +9831,7 @@
     if (k === 'pf2') { var p2 = S.pf2.length; S.pf2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf2; pinCells(el); if (p2 < 4 && S.pf2.length === 4 && /^\d{4}$/.test(S.pf1)) submitPin(); return; }
     if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var suggestionBox = S.root.querySelector('#p-sugg'); if (suggestionBox) suggestionBox.innerHTML = suggestHTML(); var qs = S.root.querySelector('#p-qsugg'); if (qs) qs.innerHTML = qtyChipsHTML(); return; }
     if (k === 'o-text') { S.otext = el.value; var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); oAutoQty(); return; }
-    if (k === 'o-qty') { if (S.oqtyAuto && S.oqtyAuto !== el.value) sg('ordfill', 'e'); S.oqty = el.value; S.oqtyAuto = ''; return; }
+    if (k === 'o-qty') { if (S.oqtyAuto && S.oqtyAuto !== el.value) sg('ordfill', 'e'); S.oqty = el.value; S.oqtyAuto = ''; var ou2 = S.root.querySelector('#o-units'); if (ou2) ou2.innerHTML = unitChipsHTML('o', S.oqty); return; }
     if (k === 'g-q') { S.gq = el.value; var gl = S.root.querySelector('#g-list'); if (gl) gl.innerHTML = gListHTML(); var gWrap = el.closest('.g-qwrap'); if (gWrap) gWrap.classList.toggle('has-q', !!S.gq); return; }
     if (k === 'g-title' || k === 'g-sum' || k === 'g-steps' || k === 'g-kw') {
       if (!S.gf) return;
@@ -9816,7 +9847,7 @@
     if (k === 'w-act') { S.wf.act = el.value; return; }
     // the admin panel's Daily reviews form and the wastage page each keep their own (rvTyped())
     if (k === 'w-ra' || k === 'w-rc') { if (el.closest('.a-rvform')) { if (k === 'w-ra') S.wrA = el.value; else S.wrC = el.value; } else if (k === 'w-ra') S.wpA = el.value; else S.wpC = el.value; saveSync(); return; }
-    if (k === 'p-qty') { S.qty = el.value; var qs2 = S.root.querySelector('#p-qsugg'); if (qs2) qs2.innerHTML = qtyChipsHTML(); return; }
+    if (k === 'p-qty') { S.qty = el.value; var qs2 = S.root.querySelector('#p-qsugg'); if (qs2) qs2.innerHTML = qtyChipsHTML(); var pu = S.root.querySelector('#p-units'); if (pu) pu.innerHTML = unitChipsHTML('p', S.qty); return; }
     if (k === 'p-section') { S.section = el.value; S.secTyped = !!el.value.trim(); return; }
     if (k === 'p-rs') { S.recipeSearch = el.value; S.recipeOpen = true; draw(); return; }
     var a = el.getAttribute && el.getAttribute('data-a');
@@ -10582,7 +10613,7 @@
     signOut: function (force, quiet) { if (sendFirst()) { toast(SEND_FIRST); return false; } return signOutPerson(force, quiet); },
     sendFirst: sendFirst,
     minNudge: minNudgeHTML,
-    cutSlot: cutSlot,
+    cutSlot: cutSlot, cutHat: cutHat,
     mailInfo: mlInfo,
     mailTab: mailTab,
     saveConfig: saveConfig,
