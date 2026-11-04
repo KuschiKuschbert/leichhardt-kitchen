@@ -146,6 +146,8 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   ok(/100 kB at most/.test(await txt(p, '.dw-bar .p-err') || ''), 'SVG import: a file over 100 kB is refused');
   // servingware saved as a preset
   await L.choose(p, '[data-dw="panel"][data-v="ware"]'); await L.settle(p, 200);
+  // Save this servingware sits under Size, shape and finish (4 Nov 2026, the Plate panel)
+  if (!(await p.$('[data-dw="ware-save"]'))) { await p.click('[data-dw="wfine"]'); await L.settle(p, 150); }
   await p.click('[data-dw="ware-save"]'); await L.settle(p, 100);
   await p.fill('[data-dwf="wname"]', 'Pie plate, cream');
   await p.click('[data-dw="ware-save-go"]'); await saved(p);
