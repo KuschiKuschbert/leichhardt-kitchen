@@ -219,12 +219,12 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   await wait(p, () => !!document.querySelector('[data-mg="draw"][data-v="burger-plate"]'), null, 10000);
   ok(await p.$('[data-mg="draw"][data-v="burger-plate"]') !== null && await p.$('[data-mg="draw"][data-v="new:side"]') !== null, 'recipe form: Change this drawing and Draw the side view in the book');
   const k = await p.evaluate(() => [...document.querySelectorAll('[data-f$=".name"][data-f^="ing."]')].findIndex(x => x.value === 'Crumbed chicken thigh'));
-  await p.fill('[data-f="ing.' + k + '.name"]', 'Crumbed thigh'); await L.settle(p, 500);
+  await L.reveal(p, '[data-f="ing.'); await p.fill('[data-f="ing.' + k + '.name"]', 'Crumbed thigh'); await L.settle(p, 500);
   await p.click('[data-mg="save"]'); await wait(p, () => /Saved/.test((document.querySelector('.mg-toasts .p-toast') || {}).textContent || ''));
   s = await store(p);
   const pin = ((s[fsKey(['recipes', 'burger'])] || { r: {} }).r.pins || [])[0] || {};
   ok(pin.label === 'Crumbed thigh' && pin.ing === 'Crumbed thigh', 'rename: the Pass label made from the drawing follows the new name');
-  await p.click('[data-mg="draw"][data-v="burger-plate"]');
+  await L.reveal(p, '[data-mg="draw"][data-v="burger-plate"]'); await p.click('[data-mg="draw"][data-v="burger-plate"]');
   await wait(p, () => !!(window.LK_DRAW && window.LK_DRAW.open() && document.querySelector('.dw-svg')), null, 15000);
   ok((await W(p)).els.some(e => e.ing === 'Crumbed thigh'), 'rename: the part on the plate follows it too');
   // the drawing in the book still has the old name: Save is on, and the bar says why (29 Oct 2026)

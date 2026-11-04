@@ -4,7 +4,7 @@ Requested 1 November 2026. In the existing recipe form, the head chef, sous chef
 
 ## Behaviour and acceptance
 
-- Ingredients has a Multiply amounts by box and Apply multiplier. A positive decimal such as 2 or 0.5 scales the current draft. Typing a factor alone changes no recipe data. Invalid, zero, negative and non-finite factors change nothing and explain the error.
+- Ingredients has a Scale amounts button (3 November 2026, recipe editor redesign). It opens the Multiply amounts by box and Apply multiplier, which stay open while they show a result or a message. A positive decimal such as 2 or 0.5 scales the current draft. Typing a factor alone changes no recipe data. Invalid, zero, negative and non-finite factors change nothing and explain the error.
 - Clear numbers, decimals, common fractions, metric units, piece counts, kitchen measures and simple ranges multiply. Units and qualifiers such as About and total stay as written. The shared `LK_AMT.scale()` reuses the amount reader's fraction maths without changing `parse()`, order grouping or learning.
 - Blank amounts, placeholders, alternatives and unclear text stay as written. The form lists those ingredients under Check by hand. Results use up to six decimal places; amounts outside the representable range stay for the chef to check.
 - The portion or batch line and method stay as written. They mix serving sizes, temperatures and timings, so the form explicitly asks the chef to check them before saving. Linked recipes themselves, ingredient notes, allergens and drawings are not multiplied.
