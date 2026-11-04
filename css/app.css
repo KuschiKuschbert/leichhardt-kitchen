@@ -1953,6 +1953,9 @@ button.wm-a.wm-tile { text-align: center; }
    lead words at 6.8:1. While the signal band is up the update band waits behind it (html.has-sync). */
 .upd-bar, .p-sync { position: fixed; left: 0; right: 0; top: max(var(--fn-stick, 0px), var(--band-top, 0px)); z-index: 19; box-sizing: border-box; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin: 0; padding: 2px 0.5rem 2px 1rem; border-left: 5px solid var(--accent); background: var(--ink); color: #fff; font: 600 0.95rem/1.35 var(--body); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18); transform: translateY(-110%); visibility: hidden; transition: transform 0.22s cubic-bezier(0.3, 0.7, 0.2, 1), visibility 0s linear 0.22s; }
 .upd-bar.is-on, .p-sync.is-on { transform: none; visibility: visible; transition: transform 0.22s cubic-bezier(0.3, 0.7, 0.2, 1), visibility 0s; }
+/* the full-screen drawing studio (.dw-studio, layer 35) covers the top bar: there the bands sit over it at the very top
+   of the screen, as the update strip did before 4 Nov 2026 (layer 45, under the sheets at 60 and up) */
+body:has(.dw-studio) .upd-bar, body:has(.dw-studio) .p-sync { top: 0; z-index: 45; }
 html.has-sync .upd-bar.is-on { transform: translateY(-110%); visibility: hidden; transition: transform 0.22s cubic-bezier(0.3, 0.7, 0.2, 1), visibility 0s linear 0.22s; }
 .p-sync[hidden] { display: none; }
 .p-sync { justify-content: flex-start; padding: 0.55rem 0.9rem 0.55rem 1rem; font-weight: 400; }
