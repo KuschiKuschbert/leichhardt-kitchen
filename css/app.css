@@ -3282,3 +3282,11 @@ i.dsh-c-w { background: var(--dsh-w); } i.dsh-c-t { background: var(--dsh-t); }
 i.dsh-c-load { background: var(--dsh-h3); }
 @media (max-width: 1100px) { .dsh-pair { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 560px) { .dsh-wk-day { grid-template-columns: 4.6rem minmax(0, 1fr); } .dsh-wk-load { grid-column: 2; } }
+/* Fix a line (3 Nov 2026, work pages redesign S5): the ⋯ also shows on a laptop when it holds Change amount (and Move to
+   section on the prep list); its sheet shows the current value under each action and turns into a small form */
+.nb-more.nb-more-fix { display: inline-flex; align-items: center; justify-content: center; }
+.lm-sheet .lm-fix { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.lm-sheet .lm-fix small { font-weight: 400; color: var(--muted); }
+.lm-form { display: grid; gap: 0.6rem; }
+.lm-form .nb-in { width: 100%; min-height: 44px; font-size: 1.0625rem; }
+.lm-form .btn-row { margin-top: 0.25rem; }
