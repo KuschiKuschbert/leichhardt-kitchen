@@ -1278,13 +1278,12 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .o-cols { display: block; }
 @media (min-width: 1000px) {
   .o-page { max-width: 72rem; }
-  .o-page:not(.o-all) .o-cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 2.5rem; align-items: start; }
-  .o-page:not(.o-all) .o-ordered { padding-top: 0.2rem; }
-  .o-page:not(.o-all) .o-ordered .nb-sh { margin-top: 0.9rem; }
+  .o-page .o-cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 2.5rem; align-items: start; }
+  .o-page .o-ordered { padding-top: 0.2rem; }
+  .o-page .o-ordered .nb-sh { margin-top: 0.9rem; }
   .o-page .o-add .nb-add-row { flex-wrap: nowrap; }
   .o-page .o-add .nb-in-text { flex: 5 1 0; min-width: 0; }
   .o-page .o-add .nb-in-qty { flex: 1 1 0; min-width: 6rem; }
-  .o-page.o-all { max-width: 52rem; }
 }
 
 /* ---------- big admin lists: search, filter chips, sort, Show more ---------- */

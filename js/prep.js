@@ -5153,7 +5153,7 @@
   /* ---------- the order list ----------
      Everyone writes today's order list. The head chef and sous chefs see what is still to order across the last 14 days,
      or any single day, and tick lines off as ordered. Lines whose name matches a recipe ingredient link to those recipes. */
-  var ORD_DAYS = 14, ORD_HIDE = 10 * 60000, ordHideTimer = null;
+  var ORD_HIDE = 10 * 60000, ordHideTimer = null;
   function ordCol(date) { return fb.fs.collection.apply(null, [fb.db].concat(base(), ['orders', date, 'lines'])); }
   function ordRef(date, id) { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['orders', date, 'lines', id])); }
   function okey(t) { return String(t || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
@@ -5438,7 +5438,7 @@
     if (can('add')) { loadOrdHist(); loadWSum(); loadOrdLearned(); loadLearned(); }
     // one list (3 Nov 2026, work pages redesign A): today, then what is waiting from earlier days; By day and Everything
     // to order went, chefs pick another day with the date chip
-    var br = canBrowse(), view = 'day', today = dayNow(), onToday = S.ordDate === today;
+    var br = canBrowse(), today = dayNow(), onToday = S.ordDate === today;
     if (!br && S.ordDate !== today) { S.ordDate = today; watchOrders(); }
     if (S.ordDate === today && S.ordState === 'ok') ordRoll();
     var live = (S.ordLines || []).filter(function (x) { return !x.deleted; });
@@ -5455,7 +5455,7 @@
       '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" enterkeyhint="done" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
       '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' +
       '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintFull()) + '</p>' + oRegsHTML() + '</form>' : '';
-    var overdue = view === 'day' && S.ordDate === today ? shown.filter(function (x) { return !x.ordered && ordWait(x, today) > ORD_LATE; }) : [];
+    var overdue = onToday ? shown.filter(function (x) { return !x.ordered && ordWait(x, today) > ORD_LATE; }) : [];
     if (overdue.length) shown = shown.filter(function (x) { return overdue.indexOf(x) < 0; });
     // waiting from earlier days: today's lines that rolled over (the ones more than 3 days old in their own block, as
     // before); what was written today comes first
@@ -5465,10 +5465,10 @@
       ordOverdueHTML(overdue, today) + (earlier.length ? '<ul class="nb-rows">' + earlier.slice().sort(byAdded).map(ordRow).join('') + '</ul>' : '') + '</div>' : '';
     var moved = live.filter(function (x) { return shown.indexOf(x) < 0 && overdue.indexOf(x) < 0; }).sort(function (a, b) { return (b.orderedAt || 0) - (a.orderedAt || 0); });
     var removedO = (S.ordLines || []).filter(function (x) { return x.deleted; });
-    var removedBox = view === 'day' && removedO.length && canBrowse() && can('del') ? '<button type="button" class="nb-link" data-p="oremoved">' + (S.oShowRemoved ? 'Hide' : 'Show') + ' removed (' + removedO.length + ')</button>' +
+    var removedBox = removedO.length && canBrowse() && can('del') ? '<button type="button" class="nb-link" data-p="oremoved">' + (S.oShowRemoved ? 'Hide' : 'Show') + ' removed (' + removedO.length + ')</button>' +
       (S.oShowRemoved ? '<ul class="nb-rows">' + removedO.map(ordRow).join('') + '</ul>' : '') : '';
     // Ordered today, folded (3 Nov 2026): one line with the count, open on a tap
-    var orderedBox = view === 'day' && moved.length ? '<details class="o-done"' + (S.oDoneOpen ? ' open' : '') + '><summary data-p="o-done-toggle"><span class="nb-sh">Ordered today (' + moved.length + ')</span></summary><ul class="nb-done">' + moved.map(function (x) {
+    var orderedBox = moved.length ? '<details class="o-done"' + (S.oDoneOpen ? ' open' : '') + '><summary data-p="o-done-toggle"><span class="nb-sh">Ordered today (' + moved.length + ')</span></summary><ul class="nb-done">' + moved.map(function (x) {
       return '<li data-ln="' + esc(x.date + '/' + x.id) + '"><span class="nb-dt">' + (x.orderedAt ? clock(x.orderedAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + unsentMark(x) + '</span><span class="nb-dw">' + esc(x.orderedBy || '') + '</span>' +
         (canBrowse() ? '<button type="button" class="p-x nb-undo" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="true" aria-label="' + esc('Not ordered after all: ' + x.text) + '">Undo</button>' : '') + '</li>';
     }).join('') + '</ul></details>' : '';
@@ -5478,12 +5478,12 @@
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
         offO + (own.length ? '<ul class="nb-rows">' + own.slice().sort(byAdded).map(ordRow).join('') + '</ul>' : (waitHTML || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))) + waitHTML);
     return whoTopHTML() + tabs +
-      '<section class="nb-page o-page' + (view === 'all' ? ' o-all' : '') + '"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
-      (view === 'day' && S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') +
+      '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Order list</h2><span class="nb-date">' + esc(longDate(S.ordDate)) + '</span></div>' +
+      (S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') +
       (add ? '<button type="button" class="btn dark nb-addline" data-p="o-write" aria-haspopup="dialog">Add a line</button>' : '') + '</header>' +
-      (view === 'day' && S.ordDate === today ? cutOrdHTML() : '') +
+      (onToday ? cutOrdHTML() : '') +
       (can('add') || S.ordDate !== today ? '' : '<p class="hint o-ro">You can read the order list but not write in it.</p>') +
-      (view === 'day' ? closeoutHTML(null, S.ordDate) : '') +
+      closeoutHTML(null, S.ordDate) +
       '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>' +
       // the add form as a sheet (3 Nov 2026), like Add a line on the prep list
       (add && S.oLog ? '<div class="sheet-bg" data-p="o-log-close"></div><div class="sheet o-sheet" role="dialog" aria-modal="true" aria-labelledby="o-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="o-log-h">Add to the order list</h3>' + add +
