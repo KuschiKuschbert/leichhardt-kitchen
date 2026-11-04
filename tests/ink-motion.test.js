@@ -52,12 +52,19 @@ const retainedSearch = p => p.evaluate(() => document.getElementById('find') ===
       window.dispatchEvent(new Event('offline'));
     });
     ok(await p.evaluate(() => document.documentElement.classList.contains('ink-offline')) && await loops(p) === 0, 'the real offline event stops waiting loops immediately');
+    await p.evaluate(() => {
+      // A config read can finish while disconnected and redraw the still-pending script loader.
+      window.dispatchEvent(new Event('lk-cfg'));
+      window.__inkOfflineIcon = document.querySelector('#mg-root .ink-icon');
+    });
+    ok(await loops(p) === 0 && /Opening the recipe editor/.test(await L.txt(p, '#mg-root')), 'a config redraw while offline keeps the pending editor readable without restarting motion');
     ok(await p.locator('#mg-root .ink-icon svg > g:first-child').count() === 1, 'offline motion leaves the readable native icon in place');
     await p.evaluate(() => {
       Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => true });
       window.dispatchEvent(new Event('online'));
     });
-    ok(await loops(p) > 0, 'an ongoing request can show ink again when the connection returns');
+    ok(await loops(p) > 0, 'an ongoing request resumes ink after an offline config redraw when the connection returns');
+    ok(await p.evaluate(() => document.querySelector('#mg-root .ink-icon') === window.__inkOfflineIcon), 'reconnection resumes the existing icon without another DOM redraw');
     releaseEditor();
     await p.locator('[data-act="mgretry"]').waitFor({ state: 'visible' });
     ok(/Could not open the recipe editor/.test(await L.txt(p, '#mg-root')) && await p.locator('#mg-root .ink-icon[data-state="busy"]').count() === 0, 'a failed lazy download replaces busy feedback with an honest retry state');
