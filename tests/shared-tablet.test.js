@@ -39,7 +39,7 @@ async function idle(p) { await p.clock.runFor(11 * 60000); await L.settle(p, 300
   ok(/Too many wrong tries/.test(await txt(p, '.p-card') || ''), 'three wrong PINs make Bo wait');
   await p.click('[data-p="who-change"]'); await L.settle(p, 200);
   await pin(p, 'ann', '2222');
-  ok(/Writing as\s*Ann/.test(await txt(p, '.nb-top') || ''), 'Ann can still sign in straight after');
+  ok(await L.whoIs(p) === 'Ann', 'Ann can still sign in straight after');
   ok(p.errors.length === 0, 'shared tablet: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -71,7 +71,7 @@ async function idle(p) { await p.clock.runFor(11 * 60000); await L.settle(p, 300
   ok(await p.evaluate(() => !localStorage.getItem('lk.prep.lock') && !!localStorage.getItem('lk.prep.lock.bo')), 'old shared wait: moved to that person');
   await p.click('[data-p="who-change"]'); await L.settle(p, 200);
   await pin(p, 'ann', '2222');
-  ok(/Writing as\s*Ann/.test(await txt(p, '.nb-top') || ''), 'old shared wait: the next person is not held up');
+  ok(await L.whoIs(p) === 'Ann', 'old shared wait: the next person is not held up');
   await p.context().close();
 
   // a personal phone with nobody picked still opens on the names, as before

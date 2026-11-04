@@ -26,9 +26,11 @@ async function log(p, text, amt, unit, before) {
 (async () => {
   const b = await L.start();
   let p = await L.open(b, '#/waste', { wait: 1500, extra, touch: true });
+  await L.wLog(p);
 
   ok(await p.getAttribute('#w-amt', 'placeholder') === 'Amount (kg)', 'waste: the amount box says the unit (' + await p.getAttribute('#w-amt', 'placeholder') + ')');
-  ok(await p.evaluate(() => document.querySelector('#w-text').getBoundingClientRect().top < document.querySelector('.w-row').getBoundingClientRect().top), 'waste: the form sits above the day\'s entries');
+  // 3 Nov 2026 (work pages redesign A): Log waste sits above the day's entries, and the form is in its sheet
+  ok(await p.evaluate(() => document.querySelector('.w-logbtn').getBoundingClientRect().top < document.querySelector('.w-row').getBoundingClientRect().top && !!document.querySelector('.w-sheet #w-text')), 'waste: Log waste sits above the day\'s entries and opens the form');
 
   await log(p, 'Chips', '500', 'kg');
   ok((await saved(p, 'Chips')).length === 1 && /500 kg\? Check the unit/.test(await txt(p, '.p-toast') || ''), 'waste: 500 kg asks first and saves nothing new');

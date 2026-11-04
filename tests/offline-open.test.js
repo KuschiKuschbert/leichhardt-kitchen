@@ -110,13 +110,15 @@ const fnDoc = (name, date) => M.derive({ v: 1, status: 'confirmed', name, date, 
   await go(p, '#/transfers');
   t = await page(p);
   ok(t.indexOf(NO_LIST) >= 0 && !/No transfers for/.test(t) && !/0 transfers/.test(t), 'transfers: says there is no signal, not that there are none');
-  ok(t.split('This list shows when the phone is back online').length === 3 && !/No outstanding transfers from earlier days/.test(t), 'still outstanding: says there is no signal, not that there are none');
-  // a transfer logged now also writes its open record (xWrite): Still outstanding must not take that as the whole list
+  // 3 Nov 2026 (work pages redesign A): one Still out list, with its own no-signal line for the earlier days
+  ok(t.indexOf('What is still out from earlier days shows when the phone is back online') >= 0 && !/Nothing is out/.test(t), 'still out: says there is no signal, not that there are none');
+  // a transfer logged now also writes its open record (xWrite): Still out must not take that as the whole list
+  await L.xLog(p);
   await p.fill('#tr-venue', 'Riviera'); await p.fill('#tr-person', 'Jess'); await p.fill('#tr-text', 'Pesto jars'); await p.fill('#tr-amt', '2');
   await L.choose(p, '[data-p="tr-unit"][data-v="L"]');
   await p.click('.tr-add .nb-addbtn'); await L.settle(p, 700);
   t = await page(p);
-  ok(t.split('This list shows when the phone is back online').length === 3 && !/No outstanding transfers from earlier days/.test(t), 'transfers, one logged with no signal: Still outstanding still says there is no signal, not that there are none (' + t.slice(0, 200) + ')');
+  ok(t.indexOf('What is still out from earlier days shows when the phone is back online') >= 0 && t.indexOf('This list shows when the phone is back online') >= 0 && !/Nothing is out/.test(t), 'transfers, one logged with no signal: Still out still says there is no signal, not that there are none (' + t.slice(0, 200) + ')');
   ok(/Pesto jars/.test(t) && !/\d+ (out|in)\b|\d+ transfers?\b/.test(await head(p)), 'transfers, one logged with no signal: it shows under the note, with no count');
   await go(p, '#/drinks');
   ok(/Could not load the team's drinks/.test(await page(p)), 'drinks: says it could not load the team\'s drinks');
