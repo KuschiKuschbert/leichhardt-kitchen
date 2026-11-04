@@ -137,6 +137,7 @@ Measured on 2 and 3 November 2026: about 45 pull requests in two days, 100 Click
 - **A timing failure is not your bug until it repeats.** When Click tests fails on a test your change does not touch, read the failing test's name first. Re-run once; if it fails again, or a different timing test fails, say so in the pull request and fix it in its own pull request.
 - **Agents only where they pay.** Use parallel agents for design councils and wide audits. Do a lookup, a single file or a known fix yourself.
 - **Few sessions at once.** Three or four open pull requests merge smoothly; eight make each other run Click tests again and again. Group small changes to one page in one pull request when they share the same files.
+- **Keep "Require branches to be up to date before merging" on** (head chef, 4 Nov 2026). `main` goes straight to the phones, so every pull request is tested against the exact `main` it joins; two that pass alone can still break together. Cut the catch-up cost with fewer sessions and bringing `main` in once, not by turning the setting off. A merge queue would remove the waiting but needs an organisation-owned repository.
 - **The head chef can say "merge when green"** in the first message. In a cloud session that is the ask the session needs to merge by itself; without it, the session stops and asks.
 
 ## Commits and pull requests
