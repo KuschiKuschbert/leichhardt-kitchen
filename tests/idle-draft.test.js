@@ -27,4 +27,4 @@ const has = p => p.evaluate(() => !!(LK_PREP.state.draft && LK_PREP.state.draft.
     ok(!p.errors.length, deviceMode + ': no page errors ' + p.errors.join(' | ')); await p.context().close();
   }
   await b.close(); L.report(R);
-})().catch(e => { console.error(e); process.exitCode = 1; });
+})().catch(e => { console.error(e); process.exit(1); });
