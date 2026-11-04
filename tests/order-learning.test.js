@@ -14,6 +14,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   const dw = {}; dw[dow] = 4;
   extra[fsKey(['ordlearned', 'paper-towels'])] = { text: 'Paper towels', uses: 9, dow: {}, qtys: { '6-rolls': { q: '6 rolls', n: 5 } } };
   extra[fsKey(['ordlearned', 'lemons'])] = { text: 'Lemons', uses: 12, dow: dw, qtys: { '2-kg': { q: '2 kg', n: 6 } } };
+  extra[fsKey(['ordlearned', 'cream'])] = { text: 'Cream', uses: 5, dow: {}, qtys: { '2-l': { q: '2 L', n: 2 }, '4-l': { q: '4 L', n: 2 }, '1-l': { q: '1 L', n: 1 } } };
   extra[fsKey(['ordlearned', 'old-thing'])] = { text: 'Old thing', uses: 20, dow: dw, qtys: {}, hidden: true };
   extra[fsKey(['orders', back(20), 'lines', 's1'])] = { text: 'Saffron', qty: '1 g', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 20 * 86400000, ordered: true, deleted: false };
 
@@ -50,6 +51,18 @@ const store = page => page.evaluate(() => window.__fake.dump());
   const lw = await p.evaluate(() => window.__fake.writes.filter(w => w.some(o => /\/(ordlearned|learned|learnlog)\//.test(o.path))).length);
   ok(lw === 0, 'adding lines writes nothing to what was learned (the server does it at night)');
   ok(await p.evaluate(() => { const e = (window.LK_PREP.state.ordLearned || []).find(x => x.id === 'paper-towels'); return e && e.uses === 10 && e.qtys['6-rolls'].n === 6; }), 'this phone keeps its own copy in step for suggestions');
+  // one meaning for usual chips (3 Nov 2026, work pages redesign S6): with no clear usual amount, the chips say "Add 4 L"
+  // and add the line in one tap, with Undo, like the prep list. Before, a tap only filled the amount box.
+  await L.clear(p, '#o-text'); await L.clear(p, '#o-qty');
+  await p.click('#o-text'); await p.keyboard.type('Cream'); await L.settle(p, 200);
+  const cq = await p.evaluate(() => [...document.querySelectorAll('#o-sugg [data-p="oqset"]')].map(e => e.textContent + '|' + e.getAttribute('aria-label')));
+  ok(await p.inputValue('#o-qty') === '' && cq.includes('Add 4 L|Add Cream, 4 L'), 'usual chips: no clear amount, so chips that say Add (' + cq.join(', ') + ')');
+  await p.click('#o-sugg [data-p="oqset"][data-v="4 L"]'); await L.settle(p, 400);
+  const cream = Object.entries(await store(p)).filter(([k, v]) => k.indexOf(fsKey(['orders', today, 'lines'])) === 0 && v.text === 'Cream');
+  ok(cream.length === 1 && cream[0][1].qty === '4 L' && !cream[0][1].deleted, 'usual chips: one tap adds Cream, 4 L (' + cream.map(c => c[1].qty).join(', ') + ')');
+  ok(await p.inputValue('#o-text') === '' && await p.inputValue('#o-qty') === '' && /Added to the order list/.test(await txt(p, '.p-toast') || ''), 'usual chips: the boxes empty and the toast offers Undo');
+  await p.click('.p-toast-btn'); await L.settle(p, 400);
+  ok(!!cream[0] && ((await store(p))[cream[0][0]] || {}).deleted === true, 'usual chips: Undo takes Cream off again');
   ok(p.errors.length === 0, 'learning: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
