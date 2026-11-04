@@ -71,9 +71,10 @@ async function signOut(p) {
   ok(!st.authed && /One try every 20 seconds/.test(st.msg), 'a second try within 20 seconds waits (' + st.msg + ')');
   await p.clock.runFor(25000); await L.settle(p, 300);
   await p.fill('#pf1', '1111');
-  // the PIN check is a real-time hash and a write: wait for its answer, not a fixed pause (a busy runner took over 900 ms)
-  await L.waitFor(p, () => window.LK_PREP.state.authed || !/^Checking/.test(window.LK_PREP.state.pinMsg || '') && window.LK_PREP.state.pf1 === '', null, 15000).catch(() => {});
-  await L.waitFor(p, () => window.LK_PREP.state.authed, null, 5000).catch(() => {});
+  // Wait for what is checked: this phone's session on the server and the page signed in. The PIN check is a real-time
+  // hash and three server answers, and a try the page dates within 20 s of the last goes in by itself after 21 s (a
+  // busy runner, #476): longer than the 15 + 5 s message waits this replaces. A refused PIN ends the wait at once.
+  await L.waitFor(p, r => { const u = window.__fakeUid(), st = window.LK_PREP.state; return st.authed && !!u && !!window.__fake.dump()[r + '/sessions/' + u] || /not right|Could not/.test(st.pinMsg || ''); }, root, 30000).catch(() => {});
   st = await state(p); s = await sessOf(p);
   ok(st.authed && s && s.by === 'sam' && s.pinAt === 99, 'then the PIN opens a new session with the new PIN time (' + JSON.stringify(s) + ')');
   await tickSelf(p, 'i3');
