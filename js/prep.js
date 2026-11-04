@@ -179,7 +179,7 @@
     retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, oLog: false, oDoneOpen: false, startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
-    adminsFor: '', adminsOff: null, level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
+    adminsFor: '', adminsOff: null, level: '', stats: null, statsRange: 30, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: '', toastAct: null
   };
   var accessEpoch = 0;
@@ -4941,7 +4941,7 @@
       },
       open: function (tab, days) {
         if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references', 'training'].indexOf(tab) < 0 || (tab === 'mail' && !mlOwner())) return;
-        if (tab === 'insights' || tab === 'waste') S.statsRange = days === 7 ? 7 : 30;
+        if (tab === 'insights' || tab === 'waste' || tab === 'transfers') setReportDays(days === 7 ? 7 : 30);
         S.atab = tab; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(tab)[0]] = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop();
       }
     });
@@ -7921,6 +7921,16 @@
     });
   }
   function whReviewDirty() { return rvTyped(false); }
+  /* One period for every report (5 Nov 2026, admin pages step 4, design B): 7, 14 or 30 days chosen on Insights, Team,
+     Transfers or Wastage, or by a Dashboard tile, is the period of all of them; it starts at 30 days, like the Dashboard.
+     Wastage's longer choices (this month, last month, three months, custom dates) stay on Wastage, and Wastage keeps its
+     own while a daily review there is not saved. No reads: Insights reads its 60 days whatever the period. */
+  function setReportDays(n) {
+    if ([7, 14, 30].indexOf(n) < 0) return;
+    S.statsRange = n;
+    var wh = whState();
+    if (wh.period !== String(n) && (wh.view !== 'reviews' || !whReviewDirty())) { wh.period = String(n); wh.msg = ''; S.rvDate = ''; S.wrA = S.wrC = null; }
+  }
   function whCanChange() {
     if (whState().view !== 'reviews' || !whReviewDirty()) return true;
     toast('Save the review or cancel its edits before changing dates or views.'); return false;
@@ -9855,7 +9865,7 @@
     }
     if (a === 'sec-hide') { hideSection(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'a-reset-pin') { resetPin(id); return; }
-    if (a === 'range') { if (S.atab === 'waste') { if (!whCanChange()) return; whState().period = el.getAttribute('data-v'); } else S.statsRange = +el.getAttribute('data-v'); draw(); return; }
+    if (a === 'range') { var rv = el.getAttribute('data-v'); if (S.atab === 'waste') { if (!whCanChange()) return; whState().period = rv; if (/^(7|14|30)$/.test(rv)) S.statsRange = +rv; } else setReportDays(+rv); draw(); return; }
     // on Team, the order days too (28 Oct 2026): a day that could not load stayed under "Refresh reads the newest"
     if (a === 'stats-refresh') { loadStats(true); if (el.getAttribute('data-v') === 'team') loadOrdStats(true); draw(); return; }
     if (!S.draft) return;
@@ -9913,6 +9923,7 @@
         var prior = whRange();
         if (['7', '14', '30', 'this', 'last', 'months3', 'custom'].indexOf(el.value) < 0) return;
         wh.period = el.value; wh.msg = ''; S.rvDate = ''; S.wrA = S.wrC = null;
+        if (/^(7|14|30)$/.test(wh.period)) S.statsRange = +wh.period;   // the other reports follow (setReportDays)
         if (wh.period === 'custom') { wh.from = prior.from; wh.to = prior.to; wh.draftFrom = prior.from; wh.draftTo = prior.to; }
       } else if (k === 'wh-from' || k === 'wh-to') { wh[k === 'wh-from' ? 'draftFrom' : 'draftTo'] = el.value; return; }
       else if (k === 'wh-search') wh.q = el.value.slice(0, 160);
