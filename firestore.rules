@@ -547,7 +547,7 @@ service cloud.firestore {
         || (staff() && isToday(day) && amountChange(['g', 'kg', 'L', 'portions', 'pieces']));
       allow delete: if false;
     }
-    // Change amount (4 Nov 2026, head chef decision, the line's ⋯ on Wastage and Transfers): the person who logged the
+    // Change amount (4 Nov 2026, head chef decision, the line's More menu on Wastage and Transfers): the person who logged the
     // line, the head chef or a sous chef, as themselves and ticked for Add, on a line not removed. Only the amount, its
     // unit and the record of the change; was is the amount before, so the history keeps every amount the line had.
     function amountChange(units) {
@@ -599,6 +599,8 @@ service cloud.firestore {
         && d.get('tst', false) is bool;
     }
     // Remove, Put back and Undo: only the removed fields (and the writer), each of the right type.
+    // a transfer line update that changes the amount, its unit or the record of a change (Change amount, 4 Nov 2026)
+    function xferAmt() { return request.resource.data.diff(resource.data).affectedKeys().hasAny(['amount', 'unit', 'was']); }
     function xferDel() {
       let d = request.resource.data;
       return onlyKeys(['deleted', 'deletedBy', 'deletedAt', 'by'])
@@ -646,14 +648,14 @@ service cloud.firestore {
       allow create: if isAdmin() || (staff() && capability(request.resource.data.by, 'add') && nearDay(day) && xferOk());
       // Change amount (4 Nov 2026): an open loan, today's line, as the person on this phone's PIN (the head chef's
       // Google device too), with its open copy in the same write. Asked first: Return and Remove never change the amount,
-      // and running their checks before this one takes the rules past their 1000 step limit.
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasAny(['amount', 'unit', 'was'])
-        ? (staff() && isToday(day) && resource.data.get('returned', false) == false
+      // and running their checks before this one takes the rules past their 1000 step limit. Written with && and ||,
+      // not a ? : choice, which the published rules service refused to compile (503) on 4 Nov 2026.
+      allow update: if (xferAmt() && staff() && isToday(day) && resource.data.get('returned', false) == false
           && amountChange(['g', 'kg', 'L', 'pieces', 'packs', 'boxes'])
           && getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/transferOpen/$(day + '_' + line)).data.record == request.resource.data)
-        : ((writer() && (isAdmin() || capability(request.resource.data.by, 'tick')) && xferReturn(day, line)) || (isAdmin() && xferDel())
+        || (!xferAmt() && ((writer() && (isAdmin() || capability(request.resource.data.by, 'tick')) && xferReturn(day, line)) || (isAdmin() && xferDel())
           || (staff() && sousBy() && resource.data.get('addedById', '') == request.resource.data.by
-            && request.time.toMillis() - resource.data.get('addedAt', 0) < 120000 && xferDel()));
+            && request.time.toMillis() - resource.data.get('addedAt', 0) < 120000 && xferDel())));
       allow delete: if false;
     }
     // What was wasted in the last 14 days, written each night by the server (scripts/nightly-learn.mjs, service account).
