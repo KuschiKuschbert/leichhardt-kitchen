@@ -45,6 +45,12 @@ const waste = { a: { text: 'Brisket', amount: 1.5, unit: 'kg', reason: 'excess',
   c: { text: 'Brisket', amount: 9, unit: 'kg', deleted: true }, d: { text: 'Rolls', amount: '2', unit: 'each', reason: 'expired' } };
 for (const [id, x] of Object.entries(waste)) await K2.collection('waste').doc(d2).collection('lines').doc(id).set(x);
 for (const [id, x] of Object.entries({ a: { dir: 'out', text: 'Milk' }, b: { dir: 'in', text: 'Eggs' }, c: { dir: 'out', text: 'Old', deleted: true } })) await K2.collection('transfers').doc(d2).collection('lines').doc(id).set(x);
+await K2.collection('references').doc('ai-slaw').set({ alias: 'Slaw', label: 'Slaw', recipeId: 'slaw' });
+await K2.collection('config').doc('main').set({ people: [{ id: 'ann', name: 'Ann' }, { id: 'cy', name: 'Cy' }, { id: 'dee', name: 'Dee' }, { id: 'gone', name: 'Gone', active: false }],
+  kitSecs: [{ id: 'larder', name: 'Larder' }, { id: 'grill', name: 'Grill', off: true }] });
+await K2.collection('training').doc('t1').set({ personId: 'ann', section: 'Larder', status: 'confirmed', day: d2 });
+await K2.collection('training').doc('t2').set({ personId: 'dee', section: 'Larder', status: 'in-training', day: d2 });
+await K2.collection('training').doc('t3').set({ personId: 'cy', section: 'Larder', recipeId: 'slaw', status: 'confirmed', day: d2 });
 await analyse(K2, { days: 3, at });
 const board = (await K2.collection('analysis').doc('dashboard').get()).data();
 assert.equal(board.generation, (await K2.collection('analysis').doc('current').get()).data().generation, 'The dashboard publishes with its generation.');
@@ -54,5 +60,7 @@ assert.deepEqual(row.p, { n: 5, w: 3, t: 2, r: 1, sec: { Larder: 1, Grill: 1, Ge
 assert.deepEqual(row.w, { n: 3, reason: { excess: 2, expired: 1 }, sec: { Larder: 2, General: 1 }, items: [{ t: 'Brisket', u: 'kg', a: 2, n: 2 }, { t: 'Rolls', u: 'each', a: 0, n: 1 }] }, 'Waste counts lines and amounts.');
 assert.deepEqual(row.x, { out: 1, in: 1 }, 'Transfers count out and in, not deleted lines.');
 assert.equal(JSON.stringify(board).includes('price'), false);
+// Needs you: Slaw is linked, so 6 of 7 recorded names wait; Cy (recipe only) and Dee (in training) need a Larder review.
+assert.deepEqual(board.needs, { links: 6, training: 2, inTraining: 1 }, 'Needs you counts the Review desk queues: ' + JSON.stringify(board.needs));
 await db.recursiveDelete(K2);
 console.log('PASS analysis worker attribution, dashboard counts, old-client re-ticks, reruns, corrections, atomic publication, read budget and generation retention');
