@@ -8,7 +8,7 @@
 # Shape (3 Nov 2026, CLAUDE.md, Keeping usage down). One runner took 20 to 25 minutes for the 200 browser files,
 # close to the 30 minute limit. Now:
 #   scope       lists the changed files and checks the JavaScript parses (seconds)
-#   browser     the browser files in four shares on four runners at once (SHARD=k/4), each failed file retried
+#   browser     the browser files in five shares of equal work on five runners at once (SHARD=k/5, 4 Nov 2026), each failed file retried
 #               once on its own (RETRY=1, reported as a warning), passing files on one line each (QUIET=1)
 #   rules       the rules on the emulator and the nightly job checks, beside the browser shares
 #   Click tests passes only when scope, every browser share and rules passed, or when the pull request is docs only
@@ -64,7 +64,7 @@ jobs:
         run: for f in js/*.js js/lib/*.js sw.js; do node --check "$f" || exit 1; done
 
   browser:
-    name: Browser ${{ matrix.shard }} of 4
+    name: Browser ${{ matrix.shard }} of 5
     needs: scope
     if: needs.scope.outputs.docs != 'true'
     runs-on: ubuntu-latest
@@ -72,7 +72,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -88,7 +88,7 @@ jobs:
         env:
           CHROME: /usr/bin/google-chrome
           JOBS: 4
-          SHARD: ${{ matrix.shard }}/4
+          SHARD: ${{ matrix.shard }}/5
           QUIET: '1'
           RETRY: '1'
           FILE_TIMEOUT: '600'
