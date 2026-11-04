@@ -14,7 +14,7 @@ const gaps = p => p.evaluate(() => [...document.querySelectorAll('.ux-search')].
 }));
 const pages = [
   ['#/manage', 'Find a recipe', p => L.waitFor(p, () => !!document.getElementById('mg-q'), null, 15000)],
-  ['#/manage/draw/new/burger/plate', 'Find a drawing', p => L.waitFor(p, () => !!document.getElementById('dw-q'), null, 20000)],
+  ['#/manage/draw/new/burger/plate', 'Find a drawing', p => L.dwAdd(p)],
   ['#/guides', 'Guides search', p => L.settle(p, 600)],
   // the admin wastage history's Logged by box sits in a stacked admin field (.a-f), the same column as a field
   ['#/admin', 'Wastage Logged by', async p => {
