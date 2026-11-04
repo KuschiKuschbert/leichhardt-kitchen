@@ -286,6 +286,9 @@
     zoom: '<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5.5 8.5 H11.5 M13 13 L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
     plate: '<svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="9" r="3.5" fill="#E2602A"/></svg>',
     cal: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="15" r="1.6" fill="currentColor"/></svg>',
+    temp: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14.5V5a2 2 0 0 1 4 0v9.5a4 4 0 1 1-4 0Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M12 11v6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
+    truck: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 6h11v10h-11ZM13.5 9.5h4l3 3.5v3h-7Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="1.8" fill="var(--paper)" stroke="currentColor" stroke-width="1.9"/><circle cx="17" cy="17.5" r="1.8" fill="var(--paper)" stroke="currentColor" stroke-width="1.9"/></svg>',
+    spot: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6-5.4-6-11a6 6 0 0 1 12 0c0 5.6-6 11-6 11Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.2" fill="none" stroke="currentColor" stroke-width="1.9"/></svg>',
     pen: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="14" r="6.5" fill="none" stroke="currentColor" stroke-width="1.9"/><circle cx="9" cy="14" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M14.5 9.5 L20 4 L21.5 5.5 L16 11" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"/></svg>'
   };
 
@@ -352,14 +355,14 @@
     var on = parseRoute().name === 'admin' ? ' aria-current="page"' : '';
     if (!isAdminDevice()) {
       if (!(window.LK_PREP && window.LK_PREP.headPin && window.LK_PREP.headPin())) return '';
-      return '<a class="wm-a wm-adm" href="#/admin" data-who="go"' + on + '>' + ICON.key + '<span><b>Admin panel</b><small>Sign in with Google</small></span></a>';
+      return '<a class="wm-a wm-tile wm-adm" href="#/admin" data-who="go"' + on + '>' + ICON.key + '<span><b>Admin panel</b><small>Sign in with Google</small></span></a>';
     }
     var n = mailOpen(), P = window.LK_PREP;
     // the open mail shows once in the menu, as the same orange count as on the hat (22 Oct 2026). While some of it is new
     // and the head chef is the one here (their PIN, or nobody signed in), the item opens the Mail tab (23 Oct 2026). A sous
     // chef on that tablet still lands on the last page, so the mail is not marked seen for Chef by someone else.
     var toMail = n && P.mailInfo().fresh && (!P.whoName() || (P.headPin && P.headPin()));
-    return '<a class="wm-a wm-adm is-signed" href="#/admin" data-who="' + (toMail ? 'admmail' : 'go') + '"' + on + (n ? ' aria-label="Admin panel, ' + n + ' open kitchen mail"' : '') + '>' + ICON.key + '<span><b>Admin panel</b></span>' + mailBadge(n) + '</a>';
+    return '<a class="wm-a wm-tile wm-adm is-signed" href="#/admin" data-who="' + (toMail ? 'admmail' : 'go') + '"' + on + (n ? ' aria-label="Admin panel, ' + n + ' open kitchen mail"' : '') + '>' + ICON.key + '<span><b>Admin panel</b></span>' + mailBadge(n) + '</a>';
   }
   /* The chalk KB logo (letters drawn as paths, so it needs no font). The same mark is the app icon and the browser tab icon. */
   var LOGO_MARK = '<svg class="rb-mark" viewBox="40 60 432 380" width="56" height="49" aria-hidden="true" focusable="false"><path d="M113.44999999999999 365.98Q109.03 363.26 105.28999999999999 359.35Q101.54999999999998 355.44 103.58999999999999 348.3Q103.25 344.22 104.1 340.48Q104.94999999999999 336.74 105.28999999999999 335.38Q106.99 335.38 107.32999999999998 333.51Q107.66999999999999 331.64 107.66999999999999 330.28Q107.66999999999999 327.56 109.71 321.1Q111.75 314.64 113.78999999999999 307.5Q116.50999999999999 301.72 119.05999999999999 295.26Q121.60999999999999 288.8 121.60999999999999 287.44Q121.60999999999999 284.72 122.96999999999998 281.83000000000004Q124.32999999999998 278.94 126.03 276.22Q127.72999999999999 272.14 128.57999999999998 267.21Q129.43 262.28 129.43 259.56Q131.47 255.14 133.85 250.04Q136.23 244.94 137.59 239.5Q139.63 233.71999999999997 143.70999999999998 222.32999999999998Q147.79 210.94 152.20999999999998 199.38Q155.26999999999998 192.92 158.16 185.95Q161.05 178.98 163.43 174.04999999999998Q165.81 169.11999999999998 166.82999999999998 169.11999999999998Q166.82999999999998 169.11999999999998 166.82999999999998 167.92999999999998Q166.82999999999998 166.73999999999998 166.82999999999998 165.38Q166.82999999999998 163.67999999999998 169.54999999999998 158.75Q172.26999999999998 153.82 174.64999999999998 148.38Q178.05 143.27999999999997 179.41 138.69Q180.76999999999998 134.1 180.76999999999998 134.1Q180.76999999999998 134.1 182.13 131.89Q183.49 129.67999999999998 184.85 128.32Q193.69 123.55999999999997 199.98000000000002 123.55999999999997Q206.27 123.55999999999997 208.65 131.71999999999997Q211.37 139.2 211.03 142.08999999999997Q210.69 144.98 208.65 149.05999999999997Q205.93 155.17999999999998 201.51 164.52999999999997Q197.09 173.88 192.32999999999998 184.42Q187.57 194.95999999999998 183.32 204.64999999999998Q179.07 214.34 176.51999999999998 221.14Q173.97 227.94 173.97 229.64L159.69 264.65999999999997Q158.32999999999998 267.03999999999996 155.26999999999998 276.73Q152.20999999999998 286.42 148.13 299.85Q144.05 313.28 139.8 327.04999999999995Q135.55 340.82 131.47 352.04Q129.43 357.82 127.73 361.73Q126.03 365.64 124.33 367.68Q122.63 369.72 120.25 369.72Q118.88999999999999 369.72 117.19 368.70000000000005Q115.49 367.68 113.44999999999999 365.98ZM233.81 365.3Q230.75 365.64 225.48000000000002 362.40999999999997Q220.21 359.18 214.26 354.42Q208.31 349.66 203.04 344.56Q197.76999999999998 339.46 194.70999999999998 335.72Q189.26999999999998 327.9 180.94 314.64Q172.61 301.38 168.53 286.76Q166.14999999999998 275.88 163.6 269.25Q161.05 262.62 161.05 257.52L161.39 236.44L186.20999999999998 234.74Q187.91 253.1 191.64999999999998 265.17Q195.39 277.24 200.49 286.76Q204.57 295.6 209.5 304.1Q214.43 312.6 220.55 318.38Q228.37 326.88 234.49 330.96000000000004Q240.61 335.04 243.67000000000002 335.04Q250.13 338.1 253.19 340.82000000000005Q256.25 343.54 257.27 345.58000000000004Q258.28999999999996 347.62 257.95 349.32Q258.28999999999996 350.34 257.61 353.90999999999997Q256.93 357.48 255.57 361.05Q254.21 364.62 251.83 365.64Q249.45 368.02 245.70999999999998 368.53Q241.97 369.04 233.81 365.3ZM154.93 235.42 179.75 217.06Q180.76999999999998 216.04 185.7 211.45Q190.63 206.85999999999999 204.91 195.98L249.79 159.6Q258.28999999999996 155.17999999999998 265.42999999999995 149.73999999999998Q272.57 144.29999999999998 277.33000000000004 141.23999999999998Q283.11 137.16 289.23 132.74Q295.35 128.32 296.71000000000004 128.66Q299.43 127.29999999999998 303.16999999999996 131.20999999999998Q306.90999999999997 135.11999999999998 309.46 140.39Q312.01 145.66 311.67 148.38Q312.35 151.77999999999997 310.65000000000003 154.15999999999997Q308.95000000000005 156.54 301.81 160.61999999999998Q293.31 164.35999999999999 288.38 167.76Q283.45000000000005 171.16 282.77 172.85999999999999Q282.77 172.85999999999999 275.63 178.29999999999998Q268.49 183.73999999999998 258.63 190.54Q245.03 199.72 236.36 206.69Q227.69 213.66 224.97 217.73999999999998Q223.61 217.73999999999998 222.42000000000002 218.76Q221.23 219.78 219.87 219.44Q219.87 219.44 217.15 221.31Q214.43 223.18 213.07 225.21999999999997Q212.39 226.92 210.18 229.64Q207.97 232.35999999999999 204.91 232.01999999999998Q202.53 233.38 196.41 237.63Q190.29 241.88 183.66 246.98Q177.03 252.07999999999998 172.26999999999998 256.15999999999997Q167.51 260.24 167.17000000000002 260.91999999999996ZM318.47 374.48Q303.85 364.96 301.3 355.44Q298.75 345.92 307.93 340.14Q309.96999999999997 338.78 315.91999999999996 339.79999999999995Q321.87 340.82 324.93 343.88Q331.73 350.0 340.4 351.53Q349.07 353.06 361.65 349.66Q375.93 345.24 383.58000000000004 338.61Q391.23 331.98 400.75 320.42Q407.89 311.24 410.78 302.4Q413.66999999999996 293.56 413.5 286.25Q413.33000000000004 278.94 409.93 275.2Q401.43 263.3 388.85 258.71000000000004Q376.27 254.12 355.87 259.56Q353.49 259.9 348.73 260.91999999999996Q343.97 261.94 340.23 262.78999999999996Q336.49 263.64 336.15 263.64Q333.77 264.32 332.40999999999997 264.32Q331.05 264.32 329.18 267.54999999999995Q327.31 270.78 323.57 280.80999999999995Q319.83 290.84 312.35 311.58Q305.21 332.32 300.28 340.99Q295.35 349.66 291.61 348.81Q287.87 347.96 283.11 341.5Q280.39 336.74 277.15999999999997 330.96000000000004Q273.93 325.18 277.33 319.06Q279.03 316.0 280.04999999999995 313.45Q281.07 310.9 282.77 304.44Q284.46999999999997 299.34 289.4 286.59Q294.33 273.84 301.13 256.66999999999996Q307.93 239.5 315.40999999999997 221.14Q322.89 202.78 329.86 186.45999999999998Q336.83 170.14 341.59 158.92Q346.35 148.38 347.37 143.62Q348.39 138.85999999999999 346.69 138.51999999999998Q346.69 136.82 345.66999999999996 135.29Q344.65 133.76 344.99 132.39999999999998Q344.99 131.04 350.94 128.65999999999997Q356.89 126.27999999999997 363.69 124.23999999999998Q370.49 122.19999999999999 373.55 122.88Q375.25 122.88 377.63 122.71Q380.01 122.53999999999999 380.01 121.17999999999998Q381.03 121.17999999999998 386.46999999999997 120.49999999999999Q391.90999999999997 119.82 398.37 120.49999999999997Q421.15 122.53999999999999 435.77 133.58999999999997Q450.39 144.64 450.05 168.78Q449.71000000000004 174.55999999999997 445.29 183.73999999999998Q440.87 192.92 434.24 202.1Q427.61 211.28 420.13 218.07999999999998Q415.71000000000004 221.82 410.78000000000003 225.73Q405.85 229.64 402.28000000000003 232.19Q398.71000000000004 234.74 398.71000000000004 234.74Q398.71000000000004 234.74 401.43 235.76Q404.15 236.77999999999997 407.21000000000004 237.8Q422.85 243.57999999999998 431.86 252.42Q440.87 261.26 444.61 276.9Q445.97 282.0 444.78000000000003 289.48Q443.59000000000003 296.96 441.55 304.27Q439.51 311.58 437.13 316.68Q434.75 319.06 433.39 321.61Q432.03 324.15999999999997 432.03 324.15999999999997Q432.03 324.84 429.31 329.42999999999995Q426.59000000000003 334.02 422.85 339.46Q419.11 344.9 415.71000000000004 348.98Q412.31 351.7 406.02 356.63Q399.73 361.56 392.42 366.32Q385.11 371.08 378.65 373.46Q369.13 377.54 357.4 379.07000000000005Q345.67 380.6 335.13 379.41Q324.59 378.22 318.47 374.48ZM342.95 233.38Q342.95 233.38 348.56 232.19Q354.17 231.0 360.97 229.47Q367.77 227.94 371.17 226.57999999999998Q372.87 225.56 376.1 223.86Q379.33 222.16 382.73 218.76Q387.49 214.34 392.93 208.73Q398.37 203.11999999999998 403.64 196.65999999999997Q408.90999999999997 190.2 412.65 182.72Q420.47 170.48 421.15000000000003 165.04Q421.83000000000004 159.6 417.40999999999997 155.17999999999998Q414.35 151.44 408.91 149.57Q403.47 147.7 397.18 147.52999999999997Q390.89 147.35999999999999 385.11 149.05999999999997Q380.69 150.42 378.31 152.29Q375.93 154.16 375.93 157.89999999999998Q375.93 160.95999999999998 374.06 164.19Q372.19 167.42 370.49 169.11999999999998Q370.15 171.5 368.28 173.70999999999998Q366.40999999999997 175.92 366.40999999999997 175.92Q366.40999999999997 177.28 362.15999999999997 184.25Q357.90999999999997 191.22 353.15 204.14Q347.03 218.76 344.99 225.22Q342.95 231.68 342.95 233.38Z" fill="#FBF8F1" transform="rotate(-6 256 256)"/><path d="M90 400 C190 378 300 374 430 388" fill="none" stroke="#E2602A" stroke-width="28" stroke-linecap="round"/></svg>';
@@ -382,12 +385,17 @@
      check waiting): then the no-signal sentence in place of Sign in, which would forget the person or the head chef mark.
      Each item is one line (shortened 22 Oct 2026); a second line shows only when it changes: today's section, Sign in
      with Google, and Sign out's "Not saved yet" (or "Not sent yet"). js/prep.js says when the person changes (lk-who). */
+  // the first letter of a name, for the disc on the hat and the menu's person card (a letter, never a symbol or space)
+  function initial(n) { var m = String(n || '').trim().match(/[A-Za-z0-9\u00C0-\u024F]/); return m ? m[0].toUpperCase() : '?'; }
   function whoMark(flip) {
     var n = window.LK_PREP && window.LK_PREP.whoName ? window.LK_PREP.whoName() : '';
     var rn = parseRoute().name, here = rn === 'settings' || rn === 'admin' ? ' aria-current="page"' : '';
     // open kitchen mail shows as a count on the hat, as it did on the Admin key
     var ml = mailOpen(), mt = ml ? ', ' + ml + ' open kitchen mail' : '';
-    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + (n && flip ? ' flip' : '') + '" data-who="menu" aria-haspopup="true" aria-expanded="' + !!wmenu + '"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + '<span class="wtop-lbl wtop-who-n">' + esc(n.split(' ')[0]) + '</span>' + mailBadge(ml) + '</button>';
+    // who is signed in shows on the hat itself (3 Nov 2026, the Writing as row went): their initial in a small disc, and on
+    // a shared screen their first name next to it, so the next cook sees at a glance whose phone it is
+    var sh = n && window.LK_DEVICE && window.LK_DEVICE.mode() === 'shared' ? ' is-shared' : '';
+    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + sh + (n && flip ? ' flip' : '') + '" data-who="menu" aria-haspopup="true" aria-expanded="' + !!wmenu + '"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + (n ? '<span class="wtop-av" aria-hidden="true">' + esc(initial(n)) + '</span>' : '') + '<span class="wtop-lbl wtop-who-n">' + esc(n.split(' ')[0]) + '</span>' + mailBadge(ml) + '</button>';
   }
   /* Manage Recipes & Drawings (21 Oct 2026): the head chef only (js/prep.js bookEdit: their PIN as Head chef, or their
      Google device with nobody else signed in). Everyone else reads the recipes as before. */
@@ -396,33 +404,33 @@
   function fnOK() { return !!(window.LK_PREP && window.LK_PREP.fnOK && window.LK_PREP.fnOK()); }
   function fnItem() {
     var on = parseRoute().name === 'functions' ? ' aria-current="page"' : '';
-    return '<a class="wm-a wm-fn" href="#/functions" data-who="go"' + on + '>' + ICON.cal + '<span><b>Functions</b></span></a>';
+    return '<a class="wm-a wm-tile wm-fn" href="#/functions" data-who="go"' + on + '>' + ICON.cal + '<span><b>Functions</b></span></a>';
   }
   // Everyone else signed in reads the confirmed functions, today and the next days (#/fn); booking stays with the managers
   function fnViewItem() {
     var on = parseRoute().name === 'fn' ? ' aria-current="page"' : '';
-    return '<a class="wm-a wm-fv" href="#/fn" data-who="go"' + on + '>' + ICON.cal + '<span><b>Functions</b></span></a>';
+    return '<a class="wm-a wm-tile wm-fv" href="#/fn" data-who="go"' + on + '>' + ICON.cal + '<span><b>Functions</b></span></a>';
   }
   /* Chef to-do (#/todo, 23 Oct 2026): the head chef and the sous chefs with their PIN, or the head chef's Google device
      with nobody signed in (js/prep.js todoOK). Staff never get the row, and the rules keep the list from them. */
   function todoOK() { return !!(window.LK_PREP && window.LK_PREP.todoOK && window.LK_PREP.todoOK()); }
   function todoItem() {
     var on = parseRoute().name === 'todo' ? ' aria-current="page"' : '';
-    return '<a class="wm-a wm-todo" href="#/todo" data-who="go"' + on + '>' + ICON.todo + '<span><b>Chef to-do</b></span></a>';
+    return '<a class="wm-a wm-tile wm-todo" href="#/todo" data-who="go"' + on + '>' + ICON.todo + '<span><b>Chef to-do</b></span></a>';
   }
   function deliveryItem() {
     if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
-    return '<a class="wm-a wm-delivery" href="#/deliveries" data-who="go"' + (parseRoute().name === 'deliveries' ? ' aria-current="page"' : '') + '>' + ICON.doc + '<span><b>Delivery received</b></span></a>';
+    return '<a class="wm-a wm-tile wm-delivery" href="#/deliveries" data-who="go"' + (parseRoute().name === 'deliveries' ? ' aria-current="page"' : '') + '>' + ICON.temp + '<span><b>Delivery received</b></span></a>';
   }
   function supplierOK() { return !!(window.LK_PREP && window.LK_PREP.supplier && window.LK_PREP.supplier().read()); }
   // the no-signal sentence while the kitchen's settings are not loaded and there is no signal (js/prep.js), otherwise ''
   function offline() { return window.LK_PREP && window.LK_PREP.offline ? window.LK_PREP.offline() : ''; }
   function supplierItem() {
-    return '<a class="wm-a wm-supplier" href="#/suppliers" data-who="go"' + (parseRoute().name === 'suppliers' ? ' aria-current="page"' : '') + '>' + ICON.todo + '<span><b>Supplier order</b></span></a>';
+    return '<a class="wm-a wm-tile wm-supplier" href="#/suppliers" data-who="go"' + (parseRoute().name === 'suppliers' ? ' aria-current="page"' : '') + '>' + ICON.truck + '<span><b>Supplier order</b></span></a>';
   }
   function manageItem() {
     var on = parseRoute().name === 'manage' ? ' aria-current="page"' : '';
-    return '<a class="wm-a wm-mg" href="#/manage" data-who="go"' + on + '>' + ICON.pen + '<span><b>Recipes &amp; drawings</b></span></a>';
+    return '<a class="wm-a wm-tile wm-mg" href="#/manage" data-who="go"' + on + '>' + ICON.pen + '<span><b>Recipes &amp; drawings</b></span></a>';
   }
   /* The chef mark's menu, appended to document.body (a top bar redraw does not remove it). Clicks use data-who. */
   var wmenu = null;
@@ -432,6 +440,12 @@
     var b = app.querySelector('.wtop-who');
     if (b) { b.setAttribute('aria-expanded', 'false'); if (back) b.focus({ preventScroll: true }); }
   }
+  /* The chef hat's menu (3 Nov 2026, the head chef's 24 Oct pick, built out in the work pages redesign): on a phone it
+     comes up from the bottom as a sheet, in thumb reach; from 720 px it is a panel under the hat. A person card on top
+     (name, role, and Sign out, which hands the phone over the way "Not you?" on the page did), then tiles in two groups,
+     Kitchen and Chef, three across, and Settings. A sous chef's whole menu fits a 390 by 844 phone with no scroll. A
+     tile's small line only says what the book already knows (minutes to sign, today's section, Sign in with Google);
+     nothing is read to fill it. Every tappable item is still a .wm-a (the Tab trap and L.chefItems() read them). */
   function whoMenuOpen(btn) {
     var n = window.LK_PREP && window.LK_PREP.whoName ? window.LK_PREP.whoName() : '';
     if (wmenu) return;
@@ -439,29 +453,40 @@
     var r = btn.getBoundingClientRect(), el = document.createElement('div');
     el.className = 'wm-wrap';
     var set = '<a class="wm-a wm-set" href="#/settings" data-who="go"' + (parseRoute().name === 'settings' ? ' aria-current="page"' : '') + '>' + ICON.gear + '<span><b>Settings</b></span></a>';
-    el.innerHTML = '<div class="wm-bg" data-who="close"></div><nav class="wm" aria-label="' + (n ? esc(n) : 'Menu') + '" style="top:' + Math.round(r.bottom + 8) + 'px;right:' + Math.max(8, Math.round(window.innerWidth - r.right)) + 'px">' +
-      (n ? '<p class="wm-h">Signed in as <b>' + esc(n) + '</b></p>' +
-        (m.head || fnOnly ? '' : '<a class="wm-a" href="#/mail" data-who="go">' + ICON.mail + '<span><b>Kitchen mail</b></span></a>') +
-        (fnOnly ? '' : '<a class="wm-a" href="#/drinks" data-who="go">' + ICON.cup + '<span><b>Drinks run</b></span></a>') +
-        // a second line only while minutes wait to be signed (23 Oct 2026)
-        (m.minutes ? '<a class="wm-a" href="#/minutes" data-who="go">' + ICON.doc + '<span><b>Meeting minutes</b>' + (m.toSign ? '<small class="wm-due">' + m.toSign + ' to sign</small>' : '') + '</span></a>' : '') +
-        (m.fn ? fnItem() : fnViewItem()) + deliveryItem() +
-        (m.sec ? '<button type="button" class="wm-a" data-who="sec" data-v="section">' + ICON.chef + '<span><b>My section</b><small>' + esc(m.sec) + '</small></span></button>' : '') +
-        (m.chef || adm || m.book ? '<p class="wm-h wm-sh">Chef</p>' + adm : '') + (m.book ? manageItem() : '') +
-        (m.chef ? '<button type="button" class="wm-a" data-who="open" data-v="pings">' + ICON.bell + '<span><b>Shift pings</b></span></button>' : '') +
-        (m.todo ? todoItem() : '') + (supplierOK() ? supplierItem() : '') +
-        (m.chef && !m.tab ? '<button type="button" class="wm-a" data-who="open" data-v="staff">' + ICON.team + '<span><b>Manage staff</b></span></button>' : '') +
-        set +
+    var tile = function (attrs, icon, label, small) { return '<' + (/^href/.test(attrs) ? 'a' : 'button type="button"') + ' class="wm-a wm-tile" ' + attrs + '>' + icon + '<span><b>' + label + '</b>' + (small || '') + '</span></' + (/^href/.test(attrs) ? 'a' : 'button') + '>'; };
+    var grid = function (h, xs) { xs = xs.filter(Boolean).join(''); return xs ? (h ? '<p class="wm-h wm-sh">' + h + '</p>' : '') + '<div class="wm-grid">' + xs + '</div>' : ''; };
+    var body;
+    if (n) {
+      body = '<div class="wm-me"><span class="wm-av" aria-hidden="true">' + esc(initial(n)) + '</span><span class="wm-me-n"><span class="visually-hidden">Signed in as </span><b>' + esc(n) + '</b>' + (m.role ? '<small>' + esc(m.role) + '</small>' : '') + '</span></div>' +
         // the empty line is where the first tap says "Not saved yet", or "Not sent yet" when only a change waits to send
         // (the click handler below)
-        '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Sign out</b><small aria-live="polite"></small></span></button>'
+        '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Not ' + esc(n.split(' ')[0]) + '? Sign out</b><small aria-live="polite"></small></span></button>' +
+        grid('Kitchen', [
+          m.head || fnOnly ? '' : tile('href="#/mail" data-who="go"', ICON.mail, 'Kitchen mail'),
+          fnOnly ? '' : tile('href="#/drinks" data-who="go"', ICON.cup, 'Drinks run'),
+          // a small line only while minutes wait to be signed (23 Oct 2026)
+          m.minutes ? tile('href="#/minutes" data-who="go"', ICON.doc, 'Meeting minutes', m.toSign ? '<small class="wm-due">' + m.toSign + ' to sign</small>' : '') : '',
+          m.fn ? fnItem() : fnViewItem(), deliveryItem(),
+          m.sec ? tile('data-who="sec" data-v="section"', ICON.spot, 'My section', '<small>' + esc(m.sec) + '</small>') : ''
+        ]) +
+        grid(m.chef || adm || m.book || supplierOK() ? 'Chef' : '', [
+          adm, m.book ? manageItem() : '',
+          m.chef ? tile('data-who="open" data-v="pings"', ICON.bell, 'Shift pings') : '',
+          m.todo ? todoItem() : '', supplierOK() ? supplierItem() : '',
+          m.chef && !m.tab ? tile('data-who="open" data-v="staff"', ICON.team, 'Manage staff') : ''
+        ]) + set;
+    } else {
       // with no signal before the kitchen's settings are in, who is on this phone is not known yet, not "nobody": no
       // Sign in, which would forget them (28 Oct 2026)
-      : (offline() ? '<p class="wm-h">' + esc(offline()) + '</p>' : '<p class="wm-h">Nobody signed in on this phone</p>' +
-        '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b></span></a>') + adm + deliveryItem() + (bookEdit() ? manageItem() : '') + (todoOK() ? todoItem() : '') + (supplierOK() ? supplierItem() : '') + (fnOK() ? fnItem() : '') + set) + '</nav>';
+      body = (offline() ? '<p class="wm-h">' + esc(offline()) + '</p>' : '<p class="wm-h">Nobody signed in on this phone</p>' +
+        '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b></span></a>') +
+        grid('', [adm, deliveryItem(), bookEdit() ? manageItem() : '', todoOK() ? todoItem() : '', supplierOK() ? supplierItem() : '', fnOK() ? fnItem() : '']) + set;
+    }
+    el.innerHTML = '<div class="wm-bg" data-who="close"></div><nav class="wm" aria-label="' + (n ? esc(n) : 'Menu') + '" style="top:' + Math.round(r.bottom + 8) + 'px;right:' + Math.max(8, Math.round(window.innerWidth - r.right)) + 'px"><span class="wm-grip" aria-hidden="true"></span>' + body + '</nav>';
     document.body.appendChild(el); wmenu = el;
     btn.setAttribute('aria-expanded', 'true');
-    var first = el.querySelector('.wm-a'); if (first) first.focus({ preventScroll: true });
+    // focus starts on the first tile, not on Sign out, so a stray Enter never hands the phone over
+    var first = el.querySelector('.wm-tile') || el.querySelector('.wm-a'); if (first) first.focus({ preventScroll: true });
   }
   document.addEventListener('click', function (e) {
     var el = e.target.closest && e.target.closest('[data-who]');

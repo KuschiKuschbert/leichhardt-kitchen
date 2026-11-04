@@ -13,10 +13,16 @@ const P = (id, name, role) => ({ id, name, role, add: true, tick: true, del: rol
 // Ann is the head chef here (headId) and ticked for Functions, Sam a sous chef, Bo staff
 const headCfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'head'), P('bo', 'Bo', 'staff')], headId: 'ann', sousIds: ['sam', 'ann'], pingIds: ['sam', 'ann'], fnIds: ['ann'], showBadges: true } });
 // the open menu: each row's height, the second lines with words in them, Sign out's live line and the whole menu
-const menuBox = p => p.evaluate(() => {
-  const m = document.querySelector('.wm'), r = m.getBoundingClientRect(), o = document.querySelector('.wm-out small');
-  return { rows: [...m.querySelectorAll('.wm-a')].map(e => Math.round(e.getBoundingClientRect().height)), small: [...m.querySelectorAll('.wm-a small')].map(e => e.textContent.trim()).filter(Boolean),
-    live: o ? o.getAttribute('aria-live') : null, h: Math.round(r.height), b: Math.round(r.bottom), r: Math.round(r.right), w: innerWidth, vh: innerHeight };
+const menuBox = p => p.evaluate(async () => {
+  await Promise.all(document.querySelector('.wm').getAnimations().map(a => a.finished.catch(() => {})));   // measured after the slide up
+  const m = document.querySelector('.wm'), r = m.getBoundingClientRect(), o = document.querySelector('.wm-out'), a = document.activeElement;
+  const tiles = [...m.querySelectorAll('.wm-tile')];
+  return { tiles: tiles.map(e => { const q = e.getBoundingClientRect(); return [Math.round(q.width), Math.round(q.height)]; }), out: o ? Math.round(o.getBoundingClientRect().height) : 0,
+    outText: o ? o.querySelector('b').textContent.trim() : '', me: [...m.querySelectorAll('.wm-me-n b, .wm-me-n small')].map(e => e.textContent.trim()).join('|'),
+    small: [...m.querySelectorAll('.wm-a small')].map(e => e.textContent.trim()).filter(Boolean), live: o ? o.querySelector('small').getAttribute('aria-live') : null,
+    icons: new Set(tiles.map(e => (e.querySelector('svg') || {}).innerHTML)).size, icons2: tiles.length,
+    focus: a && a.classList.contains('wm-tile') ? 'tile' : a && a.classList.contains('wm-out') ? 'out' : (a && a.className) || '',
+    h: Math.round(r.height), t: Math.round(r.top), b: Math.round(r.bottom), r: Math.round(r.right), sh: m.scrollHeight, ch: m.clientHeight, w: innerWidth, vh: innerHeight };
 });
 const GONE = ['copy', 'print', 'ocopy', 'oprint', 'dk-share', 'mn-print', 'g-print', 'print-tab'];
 const noPrint = p => p.evaluate(g => {
@@ -48,7 +54,8 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
     const heads = await p.evaluate(() => [...document.querySelectorAll('.nb-side .nb-sh')].map(e => e.textContent.trim()));
     ok(heads.indexOf('Tools') < 0 && !(await p.$('.nb-tools')), who + ' ' + w + ' px: no Tools in Handy (' + heads.join(', ') + ')');
     await p.click('.wtop-who'); await L.settle(p, 150);
-    const box = await p.evaluate(() => { const r = document.querySelector('.wm').getBoundingClientRect(); return { l: r.left, r: r.right, b: r.bottom, w: innerWidth, h: innerHeight }; });
+    // the sheet slides up 32 px as it opens: measure it once that is done (a busy runner can be mid-slide after 150 ms)
+    const box = await p.evaluate(async () => { const m = document.querySelector('.wm'); await Promise.all(m.getAnimations().map(a => a.finished.catch(() => {}))); const r = m.getBoundingClientRect(); return { l: r.left, r: r.right, b: r.bottom, w: innerWidth, h: innerHeight }; });
     ok(box.l >= 0 && box.r <= box.w && box.b <= box.h, who + ' ' + w + ' px: the chef menu fits on the screen (' + JSON.stringify(box) + ')');
     ok(!(await L.overflow(p)), who + ' ' + w + ' px: no sideways scroll with the menu open (' + await L.overflow(p) + ')');
     await p.keyboard.press('Escape');
@@ -58,7 +65,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   // what the menu offers
   p = await L.open(b, '#/recipes', { who: 'ann', wait: 1800 });
   let m = await L.chefItems(p);
-  ok(m.join(',') === 'mail,drinks,fn,deliveries,settings,out', 'staff, nothing published: Kitchen mail, Drinks run, Functions to read, Settings and Sign out, no Meeting minutes, no Chef group (' + m + ')');
+  ok(m.join(',') === 'mail,drinks,fn,deliveries,settings,out', 'staff, nothing published: Kitchen mail, Drinks run, Functions to read, Settings and Sign out (on the person card), no Meeting minutes, no Chef group (' + m + ')');
   ok(!m.includes('prep'), 'staff: the old Prep list item is gone');
   await p.context().close();
   // once Chef has published minutes, Meeting minutes joins the staff menu
@@ -77,14 +84,19 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   p = await L.open(b, '#/recipes', { who: 'sam', wait: 1800 });
   m = await L.chefItems(p);
   ok(m.join(',') === 'mail,drinks,minutes,fn,deliveries,manage,pings,todo,suppliers,staff,settings,out', 'sous chef: the Chef group has Shift pings, Chef to-do, Supplier order and Manage staff, the register is in Meeting minutes (' + m + ')');
-  // the short menu: 48 px rows, no second line with nothing to say, Sign out's line read out when it changes
+  // the menu as a sheet of tiles (3 Nov 2026, the head chef's 24 Oct pick): a person card with Sign out, tiles big enough
+  // to tap, no second line with nothing to say, Sign out's line read out when it changes, and all of it on one phone
+  // screen with no scroll (it was 621 px of menu in a 506 px box)
   await p.click('.wtop-who'); await L.settle(p, 150);
   let box = await menuBox(p);
-  ok(box.rows.every(h => h >= 48 && h <= 49), 'sous chef 390 px: every menu row is 48 px (' + box.rows + ')');
+  ok(box.tiles.length === 10 && box.tiles.every(x => x[0] >= 64 && x[1] >= 64), 'sous chef 390 px: ten tiles, each at least 64 px each way (' + JSON.stringify(box.tiles) + ')');
+  ok(box.out >= 48, 'sous chef 390 px: Sign out is a full 48 px button (' + box.out + ')');
+  ok(box.me === 'Sam|Sous chef' && box.outText === 'Not Sam? Sign out', 'sous chef: the person card says Sam, Sous chef, and Not Sam? Sign out (' + box.me + ', ' + box.outText + ')');
   ok(!box.small.length, 'sous chef: no second lines in the menu (' + box.small.join(' | ') + ')');
   ok(box.live === 'polite', 'sous chef: Sign out\'s second line is read out when it changes');
-  // 540: Chef to-do (23 Oct 2026) added one 48 px row to the 481 px menu
-  ok(box.h < 540, 'sous chef 390 px: the menu is under 540 px tall (' + box.h + ', 481 before Chef to-do, 579 before the short menu)');
+  ok(box.b >= box.vh - 1 && box.sh <= box.ch + 1 && box.t >= 0, 'sous chef 390 px: a sheet from the bottom of the screen that holds the whole menu with no scroll (' + JSON.stringify(box) + ')');
+  ok(box.focus === 'tile', 'sous chef: the menu opens with the first tile focused, not Sign out (' + box.focus + ')');
+  ok(box.icons === box.icons2, 'sous chef: every tile has its own icon');
   await p.click('.wm a[href="#/minutes"]'); await L.settle(p, 600);
   await L.waitFor(p, () => !!document.querySelector('[data-p="mn-sous"]'), null, 5000).catch(() => {});
   ok(!!(await p.$('[data-p="mn-sous"]')), 'sous chef: Meeting minutes has See who has signed');
@@ -128,18 +140,17 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   ok(p.errors.length === 0, 'sign out: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // Every device keeps the original writer while a write waits. Neither repeated Sign out nor Not you? can abandon it,
+  // Every device keeps the original writer while a write waits. Repeated Sign out cannot abandon it,
   // including when another line is half typed. Once acknowledged, the ordinary draft-discard choice is available.
   p = await L.open(b, '#/prep', { who: 'sam', wait: 1800, fakeMode: 'hold' });
   await p.fill('#p-text', 'Peel garlic'); await p.keyboard.press('Enter'); await L.settle(p, 3600);
   ok(await p.evaluate(() => window.LK_PREP.unsent() && document.querySelector('#p-text').value === ''), 'not sent: the line waits for the server and nothing is typed');
-  await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 200);
-  ok(await signedIn(p) && await txt(p, '.nb-top [data-p="who-change"]') === 'Not sent yet.', 'not sent: Not you? keeps the original writer and explains the pending change');
-  await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 200);
-  ok(await signedIn(p) && await p.evaluate(() => LK_PREP.unsent()), 'not sent: a repeated Not you? cannot hand over pending work');
+  ok(!(await p.$('.nb-top [data-p="who-change"]')), 'not sent: the page has no Not you? of its own any more (3 Nov 2026), Sign out in the hat menu is the handover');
   await p.click('.wtop-who'); await L.settle(p, 150);
   await p.click('.wm [data-who="out"]'); await L.settle(p, 200);
-  ok(await signedIn(p) && await txt(p, '.wm-out small') === 'Not sent yet.', 'not sent: Sign out explains that the change must finish sending');
+  ok(await signedIn(p) && await txt(p, '.wm-out small') === 'Not sent yet.', 'not sent: Sign out keeps the original writer and explains that the change must finish sending');
+  await p.click('.wm [data-who="out"]'); await L.settle(p, 200);
+  ok(await signedIn(p) && await p.evaluate(() => LK_PREP.unsent()), 'not sent: a repeated Sign out cannot hand over pending work');
   await p.keyboard.press('Escape'); await L.settle(p, 150);
   await p.fill('#p-text', 'Pick parsley');
   await p.click('.wtop-who'); await L.settle(p, 150);
@@ -192,16 +203,17 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   ok(p.errors.length === 0, 'recipe picker: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // "Not you?" does what Sign out does (23 Oct 2026): a line typed asks a second tap, and the line goes with the person
+  // "Not Ann? Sign out" on the person card is the old "Not you?" (23 Oct 2026, moved 3 Nov 2026): a line typed asks a
+  // second tap, and the line goes with the person on a shared screen
   p = await L.open(b, '#/prep', { who: 'ann', deviceMode: 'shared', wait: 1800 });
   await p.fill('#p-text', 'Pick parsley');
-  await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 200);
-  ok(await signedIn(p) && /Not saved\. Tap again/.test(await txt(p, '.nb-top [data-p="who-change"]') || ''), 'Not you? with a line typed: the first tap asks again (' + await txt(p, '.nb-top [data-p="who-change"]') + ')');
-  await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 400);
+  const first = await L.notYou(p);
+  ok(await signedIn(p) && first === 'Not saved yet. Tap again to sign out', 'Not you? with a line typed: the first tap asks again (' + first + ')');
+  await L.notYou(p); await L.settle(p, 200);
   ok(!(await signedIn(p)) && /Who are you\?/.test(await txt(p, '#prep-root') || ''), 'Not you?: the second tap asks who is writing');
   await p.click('.p-name[data-id="bo"]'); await L.settle(p, 300);
   await p.keyboard.type('3333'); await L.settle(p, 900);
-  ok(/Writing as\s*Bo/.test(await txt(p, '.nb-top') || '') && await p.inputValue('#p-text') === '', 'Not you?: Bo signs in and the previous person typed line is cleared');
+  ok(await L.whoIs(p) === 'Bo' && await p.inputValue('#p-text') === '', 'Not you?: Bo signs in and the previous person typed line is cleared');
   ok(p.errors.length === 0, 'Not you?: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -241,7 +253,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   p = await L.open(b, '#/recipes', { who: 'sam', settings: { text: 'xlarge' }, wait: 1800 });
   await p.click('.wtop-who'); await L.settle(p, 150);
   box = await menuBox(p);
-  ok(box.b <= box.vh && box.r <= box.w && box.rows.every(h => h >= 48), 'extra large text: the menu fits on the screen, rows at least 48 px (' + JSON.stringify(box) + ')');
+  ok(box.b <= box.vh && box.r <= box.w && box.t >= 0 && box.out >= 48 && box.tiles.every(x => x[1] >= 64), 'extra large text: the menu fits on the screen, Sign out 48 px and tiles 64 px or more (it may scroll) (' + JSON.stringify(box) + ')');
   ok(!(await L.overflow(p)), 'extra large text: no sideways scroll with the menu open (' + await L.overflow(p) + ')');
   await p.context().close();
 
@@ -262,7 +274,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   ok(m.join(',') === 'drinks,minutes,functions,deliveries,admin,manage,pings,todo,suppliers,settings,out', 'head chef on her Google device: no Kitchen mail, no Manage staff, Chef to-do and Supplier order (' + m + ')');
   await p.click('.wtop-who'); await L.settle(p, 150);
   box = await menuBox(p);
-  ok(box.h < 563, 'head chef on her Google device, 390 px: the menu is under two thirds of the screen (' + box.h + ', 710 before)');
+  ok(box.sh <= box.ch + 1 && box.b >= box.vh - 1 && box.me === 'Ann|Head chef', 'head chef on her Google device, 390 px: the whole menu on one screen, no scroll, the card says Head chef (' + JSON.stringify(box) + ', 710 px of list before 22 Oct)');
   await p.keyboard.press('Escape'); await L.settle(p, 100);
   await L.chef(p, 'pings'); await L.settle(p, 400);
   ok(await p.evaluate(() => location.hash) === '#/admin' && !!(await p.$('[data-p="a-tab"][data-t="notes"][aria-pressed="true"]')), 'head chef on her Google device: Shift pings opens the admin Shift pings page');
@@ -278,7 +290,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   m = await L.chefItems(p);
   ok(m.join(',') === 'functions,deliveries,settings,out', 'function manager: Functions where everyone has it (' + m + ')');
   await p.click('.wtop-who'); await L.settle(p, 150);
-  ok(!(await p.$('.wm .wm-sh')), 'function manager: no Chef heading over Functions');
+  ok(!(await p.evaluate(() => [...document.querySelectorAll('.wm .wm-sh')].some(e => e.textContent.trim() === 'Chef'))), 'function manager: no Chef heading over Functions');
   await p.context().close();
 
   // minutes published: See who has signed sits in the top bar of Meeting minutes, once, for a chef only

@@ -143,7 +143,7 @@ async function open(b, options = {}) {
     ok(!(await p.$('#pt-sheet')) && prepared(await item(p, 'i1'), 'ann', 'ann') && prepared(await item(p, 'i2'), 'ann', 'ann'), 'personal-phone boxes and words stay one tap and record self attribution');
     await p.fill('#p-text', 'Wash parsley'); await p.fill('#p-section', 'Larder'); await p.fill('#p-qty', '2 bunches'); await p.press('#p-text', 'Enter'); await L.settle(p, 350);
     ok(await p.evaluate(() => Object.values(__fake.dump()).some(x => x && x.text === 'Wash parsley' && x.qty === '2 bunches' && x.addedById === 'ann' && !x.preparedById)), 'normal Add retains item, section, quantity and creator without a doer picker');
-    await p.goto(L.BASE + '#/waste'); await L.settle(p, 500);
+    await p.goto(L.BASE + '#/waste'); await L.settle(p, 500); await L.wLog(p);
     await p.fill('#w-text', 'Carrot trimmings'); await p.fill('#w-amt', '0.2');
     await p.evaluate(() => (document.querySelector('.w-rchips [data-v="prep"]') || document.querySelector('[data-p="wreason"][data-v="prep"]')).click());
     await p.locator('.w-add .nb-addbtn').click(); await L.settle(p, 350);
@@ -152,7 +152,7 @@ async function open(b, options = {}) {
 
   await step('genuine sign-ins reorder choices', async () => {
     p = await open(b); const initial = (await current(p)).here;
-    await p.locator('[data-p="who-change"]').first().click(); await L.settle(p, 300);
+    await L.notYou(p); await L.settle(p, 300);
     await p.locator('.p-name[data-id="bo"]').click(); await L.settle(p, 250);
     await p.fill('#pf1', '9999'); await L.settle(p, 500);
     ok(await p.evaluate(old => localStorage.getItem('lk.prep.here') === old, initial), 'a wrong personal PIN never updates device sign-in recency');

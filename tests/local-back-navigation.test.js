@@ -191,9 +191,13 @@ const configWrites = p => p.evaluate(() => __fake.writes.flat().filter(w => /\/c
   noErrors(p, 'delayed function sheet close'); await p.context().close();
 
   p = await L.open(b, '#/recipes', { wait: 1500 });
-  await go(p, '#/waste'); await p.fill('#w-text', 'Chips'); await p.fill('#w-amt', '2');
-  await p.click('[data-p="sheet"][data-v="reason"]'); await p.goBack(); await L.settle(p, 250);
-  ok(!await p.$('.sheet') && await hash(p) === '#/waste' && await p.inputValue('#w-text') === 'Chips' && await p.inputValue('#w-amt') === '2', 'wastage reason: native Back closes the sheet and preserves the entry');
+  // 3 Nov 2026: the wastage form is in the Log waste sheet (the reasons are chips in it, no second sheet)
+  await go(p, '#/waste'); await L.wLog(p); await p.fill('#w-text', 'Chips'); await p.fill('#w-amt', '2');
+  await p.goBack(); await L.settle(p, 250);
+  const wClosed = !await p.$('.sheet') && await hash(p) === '#/waste';
+  await L.wLog(p);
+  ok(wClosed && await p.inputValue('#w-text') === 'Chips' && await p.inputValue('#w-amt') === '2', 'wastage reason: native Back closes the Log waste sheet and preserves the entry');
+  await p.keyboard.press('Escape'); await L.settle(p, 300);
   await p.goBack(); await L.settle(p, 300);
   ok(await hash(p) === '#/recipes', 'wastage reason: next Back reaches the previous page');
   noErrors(p, 'wastage reason history');

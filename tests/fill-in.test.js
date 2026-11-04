@@ -16,6 +16,7 @@ const sel = (p, k) => p.$eval('[data-k="' + k + '"]', e => document.activeElemen
 (async () => {
   const b = await L.start();
   let p = await L.open(b, '#/waste', { who: 'bo', extra, wait: 1500 });
+  await L.wLog(p);
   await L.waitFor(p, () => !!document.querySelector('[data-p="woften"]'));
 
   // a Logged often chip fills every field it knows, and the amount is selected
