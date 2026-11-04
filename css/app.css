@@ -2312,6 +2312,15 @@ html.has-upd .dw-studio { top: var(--upd-h); }
 .dw-col input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .dw-sw { display: block; width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--ink); }
 .dw-swb { width: 36px; height: 36px; min-height: 36px; border-radius: 50%; border: 1.5px solid var(--ink); cursor: pointer; }
+/* the Plate panel's colours (4 Nov 2026): round swatches, the picked one ringed, Any colour as a dashed + */
+.dw-ware-col { display: grid; gap: 0.45rem; }
+.dw-ware-col .label b { font-weight: 700; text-transform: none; letter-spacing: 0; color: var(--ink); }
+.dw-swatches { display: grid; grid-template-columns: repeat(auto-fill, 44px); gap: 0.45rem; }
+.dw-swatch { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; background: none; cursor: pointer; }
+.dw-swatch span { display: block; width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid rgba(28, 29, 31, 0.28); }
+.dw-swatch[aria-pressed="true"] span { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--ink); }
+.dw-any span { display: inline-flex; align-items: center; justify-content: center; border: 1.5px dashed var(--muted); background: var(--paper); font: 700 1.25rem/1 var(--body); color: var(--muted); }
+.dw-any input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 .dw-parts { margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; }
 @media (min-width: 900px) {
   .dw-main.has-drawer { grid-template-columns: minmax(0, 1fr) minmax(22rem, 26rem); }

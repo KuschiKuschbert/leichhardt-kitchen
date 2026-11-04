@@ -329,7 +329,17 @@
   */
   var WARE = { white: '#FFFFFF', cream: '#F6F1E3', black: '#2E3034', grey: '#9CA1A8', blue: '#5D7FA3', green: '#7E9A74', terracotta: '#C2704E', speckled: '#EFEBE3', enamel: '#F4F4F2' };
   var TONE = { light: '#D9B98A', medium: '#C99A62', dark: '#8A6448' };
+  /* The colours the Plate panel offers as swatches (4 Nov 2026, the head chef asked for more). The first seven keep their
+     names, as saved drawings and presets use them; the rest are saved as #RRGGBB, so an older copy of this file still
+     draws them right (wareCol takes any #RRGGBB). Boards: the three tones keep their names; the rest go in col, which
+     an older copy ignores and draws as medium wood. */
+  L.WARE_COLS = [['White', 'white'], ['Cream', 'cream'], ['Sand', '#E3D3B5'], ['Stone', '#CFC8BC'], ['Grey', 'grey'], ['Slate', '#5E6973'], ['Charcoal', '#4A4D52'], ['Black', 'black'],
+    ['Duck egg', '#A9CFCB'], ['Blue', 'blue'], ['Navy', '#2F4A6D'], ['Teal', '#3E8A8A'], ['Sage', '#A7B89A'], ['Green', 'green'], ['Olive', '#6E7A45'],
+    ['Mustard', '#D4A73A'], ['Terracotta', 'terracotta'], ['Rust', '#A9532E'], ['Red', '#B53A2E'], ['Burgundy', '#6E2A35'], ['Blush', '#E7B8AE']];
+  L.WOOD_COLS = [['Pale', '#E9D4AC'], ['Light', 'light'], ['Honey', '#D7A24F'], ['Medium', 'medium'], ['Jarrah', '#8F3F2B'], ['Dark', 'dark'], ['Walnut', '#5C3F2C'], ['Charred', '#35302B']];
+  L.TONE = TONE;
   function wareCol(c) { return /^#[0-9A-F]{6}$/i.test(c || '') ? c.toUpperCase() : (WARE[c] || WARE.white); }
+  L.wareCol = wareCol;
   var U = 10 / 1.5;   // units per cm
   function surfPlate(p, rnd) {
     var D = (p.size || 30) * U, col = wareCol(p.col), edge = shade(col, col === '#FFFFFF' ? -0.17 : -0.22), rimCol = shade(col, col === '#FFFFFF' ? -0.07 : -0.1);
@@ -376,7 +386,7 @@
     return { body: out, w: rx * 2, h: ry * 2, area: { shape: shape === 'square' ? 'box' : 'ellipse', rx: rx * well * 0.92, ry: ry * well * 0.92 }, profile: { kind: 'bowl', w: rx * 2, h: deep ? D * 0.45 : D * 0.28, col: col, edge: edge } };
   }
   function surfBoard(p, rnd) {
-    var L0 = (p.size || 40) * U, col = TONE[p.tone || 'medium'], dk = shade(col, -0.28), shape = p.shape || 'rect';
+    var L0 = (p.size || 40) * U, col = /^#[0-9A-F]{6}$/i.test(p.col || '') ? p.col.toUpperCase() : TONE[p.tone] || TONE.medium, dk = shade(col, -0.28), shape = p.shape || 'rect';
     var w = shape === 'round' ? L0 : L0, h = shape === 'round' ? L0 : shape === 'paddle' || shape === 'handled' ? L0 * 0.5 : shape === 'oval' ? L0 * 0.55 : L0 * 0.58;
     var rr = p.edge === 'square' ? 3 : p.edge === 'bevel' ? 8 : 14, out = '', body;
     if (shape === 'round') body = circle(0, 0, w / 2, col, dk, 2);

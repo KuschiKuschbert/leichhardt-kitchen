@@ -141,6 +141,32 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   await L.choose(p, '[data-dw="wfam"][data-v="plate"]'); await L.settle(p, 150);
   await L.choose(p, '.dw-ware .dw-tile >> nth=0'); await L.settle(p, 200);
   w = await W(p); ok(w.surf.fam === 'plate' && w.surf.size === 30, 'Servingware: back to the dinner plate');
+  // Plate as pictures, and many more colours (4 Nov 2026, the head chef's choice of the quiet canvas, with more colours)
+  const surfFill = () => p.evaluate(() => [...document.querySelectorAll('.dw-svg [data-surf] [fill]')].map(e => e.getAttribute('fill').toUpperCase()));
+  ok(await p.evaluate(() => { const g = document.querySelector('.dw-ware'); return !!g && g.querySelectorAll('button.dw-tile').length >= 4 && [...g.querySelectorAll('button.dw-tile')].every(b => b.getBoundingClientRect().height > 40) && !document.querySelector('.dw-panel .ux-picker-trigger'); }), 'Plate: the plates show as pictures, not a drop-down');
+  ok(await p.evaluate(() => document.querySelectorAll('.dw-swatches [data-dw="wcol"]').length) >= 20 && await p.$('.dw-swatches input[type="color"]') !== null, 'Plate: 21 colours as swatches, and Any colour');
+  ok(!(await p.$('.dw-opts')), 'Plate: size, shape and finish wait behind one button');
+  await p.click('[data-dw="wcol"][data-v="#2F4A6D"]'); await L.settle(p, 200);
+  w = await W(p); ok(w.surf.col === '#2F4A6D' && (await surfFill()).includes('#2F4A6D') && /Navy/.test(await txt(p, '.dw-ware-col .label') || ''), 'Plate: Navy colours the plate and is named (' + w.surf.col + ')');
+  await p.$eval('.dw-swatches input[type="color"]', e => { e.value = '#123456'; e.dispatchEvent(new Event('input', { bubbles: true })); });
+  await L.settle(p, 150);
+  ok((await W(p)).surf.col === '#2F4A6D', 'Plate: Any colour does not save while the colour is still being picked');
+  await p.$eval('.dw-swatches input[type="color"]', e => { e.value = '#123456'; e.dispatchEvent(new Event('change', { bubbles: true })); });
+  await L.settle(p, 200);
+  w = await W(p); ok(w.surf.col === '#123456' && (await surfFill()).includes('#123456'), 'Plate: Any colour is saved once chosen (' + w.surf.col + ')');
+  await p.click('[data-dw="wcol"][data-v="white"]'); await L.settle(p, 200);
+  ok((await W(p)).surf.col === 'white', 'Plate: white keeps its name');
+  await L.choose(p, '[data-dw="wfam"][data-v="board"]'); await L.settle(p, 200);
+  await L.choose(p, '.dw-ware .dw-tile >> nth=0'); await L.settle(p, 200);
+  ok(await p.evaluate(() => document.querySelectorAll('.dw-swatches [data-dw="wcol"]').length) === 8 && /Wood/.test(await txt(p, '.dw-ware-col .label') || ''), 'Board: eight wood tones');
+  await p.click('[data-dw="wcol"][data-v="#8F3F2B"]'); await L.settle(p, 200);
+  w = await W(p); ok(w.surf.fam === 'board' && w.surf.col === '#8F3F2B' && (await surfFill()).includes('#8F3F2B'), 'Board: jarrah colours the board');
+  await p.click('[data-dw="wcol"][data-v="dark"]'); await L.settle(p, 200);
+  w = await W(p); ok(w.surf.tone === 'dark' && !w.surf.col, 'Board: Dark keeps its tone name and drops the colour');
+  await p.click('[data-dw="wfine"]'); await L.settle(p, 150);
+  ok(await p.$('.dw-opts select[data-dwf="surf.shape"]') !== null && !(await p.$('.dw-opts select[data-dwf="surf.tone"]')) && await p.$('[data-dw="ware-save"]') !== null, 'Plate: Size, shape and finish opens the rest, with Save this servingware');
+  await L.choose(p, '[data-dw="wfam"][data-v="plate"]'); await L.settle(p, 150);
+  await L.choose(p, '.dw-ware .dw-tile >> nth=0'); await L.settle(p, 200);
   // in this recipe, not on the plate yet: one tap adds it, labelled. The chips open with Add (3 Nov 2026, the studio)
   if (await p.getAttribute('[data-dw="panel"][data-v="lib"]', 'aria-expanded') !== 'true') { await p.click('[data-dw="panel"][data-v="lib"]'); await L.settle(p, 200); }
   const chip = await p.$('.dw-miss .chip');

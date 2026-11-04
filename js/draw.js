@@ -579,7 +579,7 @@
     bar.style.top = Math.max(6, top) + 'px';
     bar.style.left = Math.max(6, Math.min(s.width - w - 6, (b.l + b.r) / 2 - s.left - w / 2)) + 'px';
   }
-  function btn(a, label, o) { o = o || {}; return '<button type="button" class="' + (o.cls || 'p-x') + (o.busy != null ? ' ink-busy-button' : '') + '" data-dw="' + a + '"' + (o.v != null ? ' data-v="' + esc(o.v) + '"' : '') + (o.on != null ? ' aria-pressed="' + !!o.on + '"' : '') + (o.dis ? ' disabled' : '') + (o.busy ? ' aria-busy="true"' : '') + (o.aria ? ' aria-label="' + esc(o.aria) + '"' : '') + '>' + (o.busy ? inkLabel('Saving...') : esc(label)) + '</button>'; }
+  function btn(a, label, o) { o = o || {}; return '<button type="button" class="' + (o.cls || 'p-x') + (o.busy != null ? ' ink-busy-button' : '') + '" data-dw="' + a + '"' + (o.v != null ? ' data-v="' + esc(o.v) + '"' : '') + (o.on != null ? ' aria-pressed="' + !!o.on + '"' : '') + (o.exp != null ? ' aria-expanded="' + !!o.exp + '"' : '') + (o.dis ? ' disabled' : '') + (o.busy ? ' aria-busy="true"' : '') + (o.aria ? ' aria-label="' + esc(o.aria) + '"' : '') + '>' + (o.busy ? inkLabel('Saving...') : esc(label)) + '</button>'; }
   /* The studio (3 Nov 2026, head chef's choice: B's full-screen studio). The canvas fills the screen; one dock at the
      thumb (Draw it for me, Add, Plate, Parts, Check, More); a small bar beside the picked part; one drawer for the panels.
      Every button keeps its data-dw name, so the commands, the drafts and the tests' clicks work as before. */
@@ -672,22 +672,35 @@
         return '<button type="button" class="dw-tile" data-dw="add" data-v="' + esc(it.id) + '" aria-label="' + esc(it.name) + '">' + thumb(it) + '<span>' + esc(it.name) + '</span></button>';
       }).join('') + '</div>' + (list.length > shown.length ? '<div class="btn-row">' + btn('more', 'Show more', { cls: 'btn' }) + '</div>' : '') + '</section>';
   }
+  /* The Plate panel (4 Nov 2026, studio B): the kinds as chips, the pieces as pictures, the colour as swatches (many more
+     than before, and any colour), and the rest behind one button. The chips and pictures stay as they are: data-adaptive
+     keeps the shared picker (js/controls.js) from folding them into a drop-down. */
   function wareHTML() {
     var s = W.d.surf || {}, fam = s.fam === 'other' ? (LIB.WARE.filter(function (x) { return x.list.some(function (y) { return y.p.shape === s.shape; }); })[0] || {}).fam || 'other' : s.fam;
     var famSel = W.wareFam || fam || 'plate', group = LIB.WARE.filter(function (x) { return x.fam === famSel; })[0] || LIB.WARE[0], opts = LIB.WARE_OPTS[s.fam] || null;
-    return '<section class="dw-panel" aria-labelledby="dw-h-ware"><h3 class="h3" id="dw-h-ware">Servingware</h3><p class="hint">Swap the plate, bowl or board. The food stays where it is.</p>' +
-      '<div class="chips scroll" role="group" aria-label="Kind of servingware">' + LIB.WARE.map(function (x) { return btn('wfam', x.name, { v: x.fam, on: x.fam === famSel, cls: 'chip' }); }).join('') + '</div>' +
-      '<div class="dw-lib dw-ware">' + group.list.map(function (x, k) {
+    var board = s.fam === 'board', cols = board ? LIB.WOOD_COLS : s.fam === 'plate' || s.fam === 'bowl' ? LIB.WARE_COLS : null;
+    var hexOf = function (v) { return board ? (LIB.TONE[v] || v) : LIB.wareCol(v); };
+    var cur = board ? (/^#[0-9A-F]{6}$/i.test(s.col || '') ? s.col.toUpperCase() : LIB.TONE[s.tone] || LIB.TONE.medium) : LIB.wareCol(s.col);
+    var curName = cols ? (cols.filter(function (c) { return hexOf(c[1]).toUpperCase() === cur; })[0] || ['Your colour'])[0] : '';
+    var fine = opts ? Object.keys(opts).filter(function (k) { return k !== 'col' && k !== 'tone'; }) : [];
+    return '<section class="dw-panel" aria-labelledby="dw-h-ware"><h3 class="h3" id="dw-h-ware">Plate, bowl or board</h3><p class="hint">The food stays where it is.</p>' +
+      (cols ? '<div class="dw-ware-col"><span class="label" id="dw-h-wcol">' + (board ? 'Wood' : 'Colour') + ': <b>' + esc(curName) + '</b></span><div class="dw-swatches" role="group" aria-labelledby="dw-h-wcol">' + cols.map(function (c) {
+        var hex = hexOf(c[1]).toUpperCase(), on = hex === cur;
+        return '<button type="button" class="dw-swatch" data-dw="wcol" data-v="' + esc(c[1]) + '" aria-pressed="' + on + '" aria-label="' + esc(c[0]) + '" title="' + esc(c[0]) + '"><span style="background:' + hex + '"></span></button>';
+      }).join('') + '<label class="dw-swatch dw-any" title="Any colour"><input type="color" data-dwf="surf.col" value="' + cur.toLowerCase() + '" aria-label="Any colour"><span aria-hidden="true">+</span></label></div></div>' : '') +
+      '<div class="chips scroll" role="group" aria-label="Kind of servingware" data-adaptive="keep">' + LIB.WARE.map(function (x) { return btn('wfam', x.name, { v: x.fam, on: x.fam === famSel, cls: 'chip' }); }).join('') + '</div>' +
+      '<div class="dw-lib dw-ware" role="group" aria-label="' + esc(group.name) + '" data-adaptive="keep">' + group.list.map(function (x, k) {
         var su = LIB.surface(x.p), m = 6, on = JSON.stringify(x.p) === JSON.stringify(s);
         return '<button type="button" class="dw-tile' + (on ? ' on' : '') + '" data-dw="ware" data-v="' + k + '" aria-pressed="' + on + '"><svg viewBox="' + f(-su.w / 2 - m) + ' ' + f(-su.h / 2 - m) + ' ' + f(su.w + 2 * m + 4) + ' ' + f(su.h + 2 * m + 6) + '" aria-hidden="true" focusable="false">' + su.body + '</svg><span>' + esc(x.name) + '</span></button>';
       }).join('') + '</div>' +
-      (opts ? '<div class="dw-opts">' + Object.keys(opts).map(function (k) {
-        var nm = { shape: 'Shape', size: 'Size (cm)', rim: 'Rim', finish: k === 'finish' && s.fam === 'board' ? 'Grain' : 'Finish', col: 'Colour', depth: 'Depth', tone: 'Wood', edge: 'Edge' }[k] || k;
+      (opts || W.wsave ? '<div class="btn-row">' + btn('wfine', W.wfine ? 'Hide size, shape and finish' : 'Size, shape and finish', { cls: 'btn', exp: !!W.wfine }) + '</div>' : '') +
+      (W.wfine || W.wsave ? (fine.length ? '<div class="dw-opts">' + fine.map(function (k) {
+        var nm = { shape: 'Shape', size: 'Size (cm)', rim: 'Rim', finish: k === 'finish' && s.fam === 'board' ? 'Grain' : 'Finish', depth: 'Depth', edge: 'Edge' }[k] || k;
         return '<label class="field"><span class="label">' + nm + '</span><select class="search" data-dwf="surf.' + k + '">' + opts[k].map(function (v) { return '<option value="' + esc(v) + '"' + (String(s[k]) === String(v) ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('') + '</select></label>';
       }).join('') + '</div>' : '') +
       '<label class="mg-check"><input type="checkbox" data-dwf="fitfood"' + (W.fitFood !== false ? ' checked' : '') + '> Fit the food to a new size</label>' +
       (W.wsave ? '<div class="dw-wsave"><label class="field"><span class="label">Name for this servingware</span><input class="search" data-dwf="wname" maxlength="60" value="' + esc(W.wname || '') + '" placeholder="For example: Pub oval, wide rim"></label><div class="btn-row">' + btn('ware-save-go', 'Save it', { cls: 'btn dark', dis: !!W.busy, busy: !!W.busy }) + btn('ware-save-no', 'Cancel', { cls: 'btn' }) + '</div></div>'
-        : '<div class="btn-row">' + btn('ware-save', 'Save this servingware', { cls: 'btn' }) + '</div>') + '</section>';
+        : '<div class="btn-row">' + btn('ware-save', 'Save this servingware', { cls: 'btn' }) + '</div>') : '') + '</section>';
   }
   function colourHTML() {
     var el = W.d.els[W.sel[0]]; if (!isPiece(el)) return '';
@@ -840,6 +853,14 @@
       }
       case 'ing': addIng(v); return;
       case 'wfam': W.wareFam = v; draw(); return;
+      case 'wfine': W.wfine = !W.wfine; draw(); var wf = W.root.querySelector('[data-dw="wfine"]'); if (wf) wf.focus(); return;
+      // a colour swatch: a board's three tones keep their name, every other colour goes in col as #RRGGBB or its name
+      case 'wcol': {
+        var ws = clone(d.surf), board = ws.fam === 'board', okv = (board ? LIB.WOOD_COLS : LIB.WARE_COLS).some(function (c) { return c[1] === v; });
+        if (!okv) return;
+        if (board && LIB.TONE[v]) { ws.tone = v; delete ws.col; } else ws.col = v;
+        setSurf(ws); var sw = W.root.querySelector('[data-dw="wcol"][data-v="' + CSS.escape(v) + '"]'); if (sw) sw.focus(); return;
+      }
       case 'ware': setSurf(clone((LIB.WARE.filter(function (x) { return x.fam === (W.wareFam || famOf(d.surf)); })[0] || LIB.WARE[0]).list[+v].p)); return;
       case 'start-open': W.startOpen = !W.startOpen; return;
       case 'from': startFrom(v); return;
@@ -908,7 +929,12 @@
     if (k === 'reuse') { W.reuse = val; return; }
     if (k === 'wname') { W.wname = val; return; }
     if (k.indexOf('pc.') === 0) { if (W.piece) W.piece[k.slice(3)] = val; return; }
-    if (k.indexOf('surf.') === 0) { var p = clone(d.surf), kk = k.slice(5); p[kk] = kk === 'size' ? Number(val) : val; setSurf(p); return; }
+    if (k.indexOf('surf.') === 0) {
+      var p = clone(d.surf), kk = k.slice(5);
+      // Any colour: saved once the colour is chosen, not on every step of the drag; only #RRGGBB
+      if (kk === 'col' && (ev.type !== 'change' || !/^#[0-9A-F]{6}$/i.test(val || ''))) return;
+      p[kk] = kk === 'size' ? Number(val) : kk === 'col' ? String(val).toUpperCase() : val; setSurf(p); return;
+    }
     if (!one || keptFirst()) return;
     if (k.indexOf('col.') === 0) { if (ev.type !== 'change') return; before(); one.cm = one.cm || {}; one.cm[k.slice(4)] = String(val).toUpperCase(); changed(); return; }
     if (k === 'tint') { if (ev.type !== 'change') return; var col = LIB.sauceColour(val); if (!col) { say('No sauce colour for ' + val); return; } var it = itemOf(one.a); before(); one.cm = tintMap(bodyOf(one.a), (it && it.side && it.side.c) || coloursIn(bodyOf(one.a))[0], col); changed(true); say('Coloured like ' + val); return; }

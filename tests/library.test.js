@@ -39,6 +39,12 @@ const BRANDS = /\b(nutella|biscoff|chiko|pluto pup|paddle pop|oreo|kewpie|xxxx|c
   r.L.WARE.forEach(f => f.list.forEach(x => { const s = r.L.surface(x.p); if (!s.body || C.svgProblems(s.body).length || !(s.area.rx > 0 && s.area.rx <= s.w / 2 + 1 && s.area.ry <= s.h / 2 + 1)) badWare.push(x.name); }));
   ok(!badWare.length, 'servingware: every preset draws plain SVG with its food area inside it' + (badWare.length ? ' (' + badWare.join(', ') + ')' : ''));
   ok(r.L.WARE.reduce((n, f) => n + f.list.length, 0) >= 60, 'servingware: ' + r.L.WARE.reduce((n, f) => n + f.list.length, 0) + ' presets in ' + r.L.WARE.length + ' families');
+  // the Plate panel's colours (4 Nov 2026): every plate and bowl colour and every wood draws, in that colour, with a name
+  const badCol = [];
+  r.L.WARE_COLS.forEach(c => ['plate', 'bowl'].forEach(fam => { const hex = r.L.wareCol(c[1]), s = r.L.surface({ fam, col: c[1] }); if (!c[0] || !/^#[0-9A-F]{6}$/.test(hex) || C.svgProblems(s.body).length || s.body.toUpperCase().indexOf('"' + hex + '"') < 0) badCol.push(fam + ' ' + c[0]); }));
+  r.L.WOOD_COLS.forEach(c => { const tone = r.L.TONE[c[1]], s = r.L.surface(tone ? { fam: 'board', tone: c[1] } : { fam: 'board', col: c[1] }), hex = (tone || c[1]).toUpperCase(); if (!c[0] || C.svgProblems(s.body).length || s.body.toUpperCase().indexOf('"' + hex + '"') < 0) badCol.push('board ' + c[0]); });
+  ok(!badCol.length && r.L.WARE_COLS.length >= 20 && r.L.WOOD_COLS.length >= 8 && new Set(r.L.WARE_COLS.map(c => r.L.wareCol(c[1]))).size === r.L.WARE_COLS.length, 'servingware: ' + r.L.WARE_COLS.length + ' plate and bowl colours and ' + r.L.WOOD_COLS.length + ' woods, each drawn in its own colour' + (badCol.length ? ' (' + badCol.join(', ') + ')' : ''));
+  ok(r.L.surface({ fam: 'board', tone: 'nonsense' }).body.indexOf('#C99A62') >= 0 && r.L.surface({ fam: 'board', tone: 'light', col: 'javascript:x' }).body.indexOf('javascript') < 0, 'servingware: an unknown wood is medium, and only #RRGGBB reaches a board');
   ok(r.L.sauceColour('Pepper sauce') && r.L.sauceColour('Mushroom sauce') !== r.L.sauceColour('Hollandaise'), 'a sauce takes its colour from its name');
 
   // in the browser: every category and the servingware draw without an error
