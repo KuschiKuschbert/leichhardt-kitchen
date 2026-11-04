@@ -3,7 +3,7 @@
   'use strict';
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const ownedSelector = '.kb-motion-target,.complete-particle,.kb-hang-item,.kb-motion-addon path,.kb-ambient-motion,.kb-saber-blade,.kb-horse-leg,.kb-horse-tail,.kb-clover-leaf,.kb-ambient-detail,.kb-navbar-particle,.kb-nav-horizon';
-  let current = { theme: null, mode: 'still', density: 'festive', surface: 'work' }, paused = false, resizeTimer = 0, replayRevision = 0, navbarObserver = null;
+  let current = { theme: null, mode: 'still', density: 'festive', surface: 'work' }, paused = false, resizeTimer = 0, replayRevision = 0;
   // Home arrives once, then settles (3 Nov 2026): a short full show, then at most 4 slow pieces (2 on Subtle).
   const ARRIVAL_MS = 4600, ARRIVAL_KEY = 'lk.seasonal.arrival';
   let phase = null, arrivalTimer = 0, restPlan = null;
@@ -243,69 +243,36 @@
     main.prepend(hang);
     return hang.children.length;
   }
-  // Work pages use the same occasion-specific vocabulary inside a shallow, clipped header.
-  // Distances are measured from that header so no decorative paint reaches recipes or inputs.
-  function navbarNode(motif, motion, index, visible, ornament = false) {
-    const node = document.createElement('i');
-    node.className = 'kb-navbar-particle' + (ornament ? ' is-ornament' : '');
-    node.dataset.navMotif = motif; node.dataset.navMotion = motion;
-    const size = motif === 'snow' ? (visible ? 4 : 3) + index % 3
-      : motif === 'horse' ? (visible ? 55 : 43)
-      : ornament ? (visible ? 36 : 29)
-      : motif === 'saber' || motif === 'kite' ? (visible ? 32 : 25)
-      : (visible ? 20 : 16) + index % 5;
-    node.style.setProperty('--kb-nav-size', size + 'px');
-    node.style.setProperty('--kb-nav-x', (5 + (index * 17) % 89) + '%');
-    node.style.setProperty('--kb-nav-y', (12 + (index * 13) % 51) + '%');
-    node.style.setProperty('--kb-nav-duration', (motion === 'race' ? 8 + index % 3 : motion === 'twinkle' || ornament ? 4.2 + index % 3 : 5.5 + index % 4) + 's');
-    node.style.setProperty('--kb-nav-delay', (-1.1 - index * 1.25) + 's');
-    node.style.setProperty('--kb-nav-drift', (index % 2 ? -7 : 7) + 'px');
-    node.style.setProperty('--kb-nav-opacity', visible ? '.76' : '.5');
-    node.innerHTML = branded(ambientArt[motif] || '');
-    node.querySelectorAll('.kb-saber-blade').forEach(blade => blade.style.setProperty('--kb-saber-delay', (-1.8 - index * .6) + 's'));
-    if (motif === 'powder') node.style.color = ['var(--kb-festive-accent)', 'var(--kb-festive-steel)', 'var(--kb-festive-paper)'][index % 3];
-    return node;
-  }
-  function renderNavbar(design, visible) {
+  // Work pages keep a still festive edge along the bottom of the top bar (3 Nov 2026): nothing moves behind the
+  // name, the pills or the buttons. Each main festival repeats one of its own motifs on a string.
+  const EDGE_MOTIF = {
+    'eggs-petals': 'egg', 'new-year-streamers': 'star', 'hearts': 'heart', 'bouquet-petals': 'pink-petal', 'steam-ribbons': 'ribbon', 'ghosts-bats': 'bat',
+    'lightsabers': 'star', 'coffee-beans': 'bean', 'kitchen-herbs': 'sprig', 'four-leaf-clovers': 'clover', 'grain-leaves': 'grain', 'diya-lights': 'flame',
+    'powder': 'powder', 'pongal-harvest': 'cane-leaf', 'pookkalam-petals': 'marigold', 'modak-marigold': 'marigold', 'dandiya-ribbons': 'marigold-petal',
+    'puja-flowers': 'shiuli', 'dussehra-leaves': 'compound-leaf', 'dashain-kites': 'kite', 'tihar-garlands': 'marigold', 'baisakh-leaves': 'leaf',
+    'lotus-ripples': 'lotus-petal', 'penjor-breeze': 'cane-leaf', 'kuningan-ornaments': 'tamiang', 'lanterns': 'lantern', 'eid-fitr-lights': 'small-crescent',
+    'eid-adha-light': 'star', 'sinulog-flow': 'mote', 'kiping': 'marigold-petal', 'panagbenga-flowers': 'flower', 'kadayawan-harvest': 'leaf',
+    'philippine-ribbons': 'sun', 'pasko-parol': 'parol', 'salubong-dawn': 'cream-petal', 'easter-petals': 'cream-petal'
+  };
+  const EDGE_SPECIAL = {
+    // Christmas fairy lights and the Melbourne Cup running rail are drawn as their own repeats.
+    'snow': { w: 18, body: '<path d="M0 2Q4.5 6 9 2T18 2" stroke="var(--kb-festive-stone)" stroke-width="1"/><ellipse cx="4.5" cy="7" rx="2.2" ry="3" fill="var(--kb-festive-accent)" stroke="var(--kb-festive-outline)" stroke-width=".6"/><ellipse cx="13.5" cy="7" rx="2.2" ry="3" fill="var(--kb-festive-paper)" stroke="var(--kb-festive-outline)" stroke-width=".6"/>' },
+    'horses': { w: 30, body: '<path d="M0 3H30M0 7H30" stroke="var(--kb-festive-chalk)" stroke-width="1"/><path d="M4 1V11" stroke="var(--kb-festive-chalk)" stroke-width="1.6"/><path d="M17 3.6Q14.6 10 18.6 10.6Q22.6 10 20.2 3.6L19 4.2Q20.4 8.6 18.6 8.8Q16.8 8.6 18.2 4.2Z" fill="var(--kb-festive-accent)"/>' }
+  };
+  let edgeCount = 0;
+  function renderEdge(design) {
     const header = document.querySelector('#app .wtop');
-    if (!header || !design) return;
-    const layer = document.createElement('div'); layer.className = 'kb-nav-festive-effects';
-    layer.dataset.navPreset = design.preset; layer.setAttribute('aria-hidden', 'true');
-    layer.dataset.motionIntensity = visible ? 'festive' : 'light';
-    const count = design.preset === 'snow' ? (visible ? 12 : 7) : design.motion === 'kite' ? (visible ? 4 : 3) : (visible ? 7 : 4);
-    // Reserve one phone slot for the occasion's attached identifying object.
-    // A positional CSS cut would discard penjor, parol, kiping, lamps and garlands.
-    const phoneFloaters = design.preset === 'snow' ? 8 : design.ornaments?.length ? 3 : 4;
-    if (design.horizon || design.dawn) {
-      const horizon = document.createElement('div'); horizon.className = 'kb-nav-horizon' + (design.dawn ? ' is-dawn' : ''); layer.append(horizon);
-    }
-    for (let i = 0; i < count; i++) {
-      const motif = design.motifs[i % design.motifs.length];
-      let motion = design.motion;
-      if (motion === 'space') motion = motif === 'saber' ? 'saber' : 'twinkle';
-      if (motion === 'race' && motif !== 'horse') motion = 'flutter';
-      if (['quiet', 'step', 'ribbon', 'powder', 'kite'].includes(motion)) motion = 'flutter';
-      const node = navbarNode(motif, motion, i, visible);
-      if (i >= phoneFloaters) node.classList.add('is-phone-extra');
-      if (motion === 'race') node.style.setProperty('--kb-nav-lane', (7 + (i % 3) * 4) + 'px');
-      layer.append(node);
-    }
-    // Anchored cultural objects remain attached and sway; they are never discarded as confetti.
-    (design.ornaments || []).slice(0, visible ? 2 : 1).forEach((motif, i) => {
-      const node = navbarNode(motif, motif === 'ripple' || motif === 'pookkalam' ? 'breathe' : 'sway', i + 1, visible, true);
-      if (i > 0) node.classList.add('is-phone-extra');
-      node.style.setProperty('--kb-nav-x', (i ? 79 : 18) + '%');
-      layer.append(node);
-    });
-    header.prepend(layer);
-    const measure = () => {
-      if (!layer.isConnected || current.surface !== 'work') return;
-      const bounds = header.getBoundingClientRect();
-      layer.style.setProperty('--kb-nav-height', bounds.height + 'px');
-      layer.style.setProperty('--kb-nav-width', bounds.width + 'px');
-    };
-    measure();
-    if (window.ResizeObserver) { navbarObserver = new ResizeObserver(measure); navbarObserver.observe(header); }
+    if (!header || !design || design.motion === 'twinkle' && design.horizon) return;
+    const special = EDGE_SPECIAL[design.preset], motif = EDGE_MOTIF[design.preset] || design.motifs.find(m => !['mote', 'snow', 'steam'].includes(m)) || design.motifs[0];
+    const art = special ? '' : branded(ambientArt[motif] || '');
+    if (!special && !art) return;
+    const id = 'kb-edge-' + (++edgeCount), w = special ? special.w : 16;
+    const tile = special ? special.body : '<path d="M0 1.5H16" stroke="var(--kb-festive-stone)" stroke-width="1"/>' + art.replace('<svg ', '<svg x="3" y="1.5" width="10" height="10.5" ');
+    const edge = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    edge.setAttribute('class', 'kb-nav-edge'); edge.setAttribute('aria-hidden', 'true'); edge.setAttribute('focusable', 'false');
+    edge.dataset.edgePreset = design.preset; edge.dataset.edgeMotif = special ? design.preset : motif;
+    edge.innerHTML = '<defs><pattern id="' + id + '" width="' + w + '" height="12" patternUnits="userSpaceOnUse">' + tile + '</pattern></defs><rect width="100%" height="12" fill="url(#' + id + ')"/>';
+    header.append(edge);
   }
   function effectFor(theme) {
     const requested = theme && (theme.previewEffect || theme.effect);
@@ -318,12 +285,12 @@
   }
   function surfaceFor(options) { return options?.surface === 'work' || !homeSurface() ? 'work' : 'home'; }
   function targets() {
-    const selector = current.surface === 'work' ? '#app .wtop .kb-occasion-title-art>svg' : '#app .kb-season-note-art>svg,#app .kb-season-work svg';
-    return [...document.querySelectorAll(selector)];
+    // Work pages have no looping motion: the stamp tucks in once when you arrive, then holds still.
+    if (current.surface === 'work') return [];
+    return [...document.querySelectorAll('#app .kb-season-note-art>svg,#app .kb-season-work svg')];
   }
   function clean() {
-    navbarObserver?.disconnect(); navbarObserver = null;
-    document.querySelectorAll('.kb-nav-festive-effects,.kb-hang').forEach(node => node.remove());
+    document.querySelectorAll('.kb-nav-festive-effects,.kb-nav-edge,.kb-hang').forEach(node => node.remove());
     document.querySelectorAll('.kb-motion-addon,.complete-steam').forEach(node => node.remove());
     document.querySelectorAll('.kb-motion-target').forEach(node => { node.classList.remove('kb-motion-target'); delete node.dataset.kbMotion; });
   }
@@ -346,7 +313,7 @@
     if (!stopped) {
       targets().forEach(art => { art.classList.add('kb-motion-target'); art.dataset.kbMotion = particleEffects.has(effect) ? (effect === 'stars' ? 'glow' : 'accent') : effect; if (effect === 'steam') addSteam(art); });
       if (current.surface === 'work') {
-        renderNavbar(ambient, current.density === 'festive');
+        renderEdge(ambient);
       } else if (current.surface === 'home' && ambient) {
         renderAmbient(layer, ambient, current.density === 'festive', options?.arrive);
       } else if (current.surface === 'home' && particleEffects.has(effect)) {
@@ -406,15 +373,14 @@
   function ownedAnimations() { return document.getAnimations().filter(a => { const node = a.effect && a.effect.target; return node instanceof Element && node.matches(ownedSelector); }); }
   function status() {
     const effect = effectFor(current.theme), ambient = current.surface === 'home' ? ambientFor(current.theme) : null;
-    const label = !current.theme ? 'Themes are off' : current.surface === 'work' ? (ambientFor(current.theme) ? 'Visible celebration motifs moving inside the top navbar' : 'Animated celebration mark in the top navbar') : ambient ? ambient.label : (current.theme.previewMotionLabel || current.theme.motionLabel || 'Gentle illustration movement');
+    const label = !current.theme ? 'Themes are off' : current.surface === 'work' ? 'Kitchen Book with the celebration stamp beside it and a still festive edge under the top bar' : ambient ? ambient.label : (current.theme.previewMotionLabel || current.theme.motionLabel || 'Gentle illustration movement');
     const animations = ownedAnimations();
     const running = animations.filter(a => a.playState === 'running').length;
-    const state = !current.theme ? 'off' : current.mode === 'still' ? 'still' : reduced.matches ? 'reduced-motion' : paused || document.hidden ? 'paused' : running ? 'running' : 'still';
+    const state = !current.theme ? 'off' : current.mode === 'still' ? 'still' : reduced.matches ? 'reduced-motion' : paused || document.hidden ? 'paused' : running || current.surface === 'work' ? 'running' : 'still';
     const layer = document.querySelector('#kb-festive-effects');
     const ambientAnimations = animations.filter(a => layer && layer.contains(a.effect.target));
-    const navbar = document.querySelector('#app .wtop .kb-nav-festive-effects');
-    const navbarAnimations = animations.filter(a => navbar && navbar.contains(a.effect.target));
-    return { state, effect, label, animationCount: state === 'running' ? running : animations.length, intensity: current.density, replayRevision, surface: current.surface, scope: current.surface === 'home' ? 'page' : 'navbar', ambientPreset: ambient ? ambient.preset : null, ambientLabel: ambient ? ambient.label : null, phase, ambientCount: layer ? layer.querySelectorAll('.kb-ambient-particle,.kb-ambient-horizon').length : 0, hangCount: document.querySelectorAll('#app .kb-hang-item').length, ambientAnimationCount: state === 'running' ? ambientAnimations.filter(a => a.playState === 'running').length : ambientAnimations.length, navbarPreset: navbar?.dataset.navPreset || null, navbarCount: navbar ? navbar.querySelectorAll('.kb-navbar-particle,.kb-nav-horizon').length : 0, navbarAnimationCount: state === 'running' ? navbarAnimations.filter(a => a.playState === 'running').length : navbarAnimations.length };
+    const edge = document.querySelector('#app .wtop .kb-nav-edge');
+    return { state, effect, label, animationCount: state === 'running' ? running : animations.length, intensity: current.density, replayRevision, surface: current.surface, scope: current.surface === 'home' ? 'page' : 'navbar', ambientPreset: ambient ? ambient.preset : null, ambientLabel: ambient ? ambient.label : null, phase, ambientCount: layer ? layer.querySelectorAll('.kb-ambient-particle,.kb-ambient-horizon').length : 0, hangCount: document.querySelectorAll('#app .kb-hang-item').length, ambientAnimationCount: state === 'running' ? ambientAnimations.filter(a => a.playState === 'running').length : ambientAnimations.length, edgePreset: edge?.dataset.edgePreset || null, edgeMotif: edge?.dataset.edgeMotif || null };
   }
   document.addEventListener('visibilitychange', () => pause(document.hidden));
   window.addEventListener('hashchange', () => {
