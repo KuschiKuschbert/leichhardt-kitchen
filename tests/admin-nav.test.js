@@ -7,6 +7,7 @@ const L = require('./lib'); const { R, ok } = L.results();
     const groups = await p.locator('.a-group').evaluateAll(nodes => nodes.map(el => el.getAttribute('data-g')));
     ok(JSON.stringify(groups) === JSON.stringify(['today', 'reports', 'team', 'kitchen']), width + ': four rooms: Today, Reports, Team and Kitchen (' + groups.join(', ') + ')');
     ok(await p.locator('.a-groups').isVisible() && await p.locator('[data-k="ai-section"]').count() === 0, width + ': the rooms are buttons at every width, with no section picker');
+    if (width >= 1000) ok(await p.evaluate(() => getComputedStyle(document.querySelector('.a-groups')).boxShadow) === 'none', width + ': the laptop rail has no outline box (the phone row draws one)');
     await p.click('[data-g="today"]'); await L.settle(p, 200);
     ok(await p.locator('[data-t="dashboard"]').count() === 1 && await p.locator('[data-t="references"]').count() === 1 && await p.locator('[data-t="training"]').count() === 1, width + ': Today offers the Dashboard, item links and training');
     await L.adminTab(p, 'reference-records');
