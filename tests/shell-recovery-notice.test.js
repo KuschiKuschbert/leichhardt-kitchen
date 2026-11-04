@@ -13,7 +13,12 @@ const notice = p => p.evaluate(() => navigator.serviceWorker.dispatchEvent(new M
   ok(await p.locator('.upd-bar button').textContent() === 'Retry update', 'missing saved copy offers an explicit Retry update action');
   await p.clock.fastForward(21000);
   ok(await p.evaluate(() => __shellNoticeMarker === 1 && LK_PREP.unsent()), 'the missing-copy notice does not automatically reload over pending work');
-  await p.click('.upd-bar button');
+  // the write has waited 21 seconds, so the Not sent yet band is up and the update band waits behind it (4 Nov 2026);
+  // the guard behind Retry update is the same for a tap made before that and for the Reload buttons (LK_UPDATE.now())
+  // (it slides away in 0.22 s on the browser's own clock, which the test clock does not move)
+  const behind = await L.waitFor(p, () => getComputedStyle(document.querySelector('.upd-bar')).visibility === 'hidden' && /^Not sent yet/.test(document.querySelector('.p-sync.is-on')?.textContent || ''), null, 3000).then(() => true, () => false);
+  ok(behind, 'the update band waits behind the Not sent yet band while the write waits');
+  await L.tap(p, '.upd-bar button');
   ok(await p.evaluate(() => __shellNoticeMarker === 1 && LK_PREP.unsent()) && /Not sent yet/.test(await L.txt(p, '.upd-bar')), 'Retry update keeps the existing unacknowledged-write guard');
   ok((await L.txt(p, '#prep-root')).includes('Synthetic pending shell recovery'), 'pending work stays visible under the original recorder');
   ok(!await L.overflow(p) && p.errors.length === 0, 'pending-work recovery notice fits the phone without browser errors');
