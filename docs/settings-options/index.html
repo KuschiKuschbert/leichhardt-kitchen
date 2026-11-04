@@ -1,0 +1,716 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--ARTIFACT-START-->
+<title>Kitchen Book Settings Options</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+/* Layout concept: a design study page around one live mockup of the Kitchen Book's Settings, switchable by design,
+   by who is signed in and by screen. The book is a light, warm-paper app, so this page keeps that one look on purpose. */
+:root {
+  color-scheme: light;
+  --bg: #FBFAF7;        /* warm page */
+  --paper: #FFFFFF;
+  --beige: #F2EFE8;     /* quiet panels */
+  --ink: #1C1D1F;
+  --muted: #55585E;
+  --faint: #6B7077;
+  --line: #E0DBCF;
+  --edge: #D9D4C8;
+  --accent: #E2602A;    /* Leichhardt orange */
+  --accent-ink: #C2451A;
+  --small-ink: #B83F15;
+  --hit: #FFF1E6;
+  --bar: #2B2A27;       /* charcoal top bar and tab bar */
+  --bar-text: #FBF8F1;
+  --bar-accent: #F08A4B;
+  --done-ink: #237347; --done-tint: #EAF5EE;
+  --shade: rgba(28, 29, 31, .5);
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --r-act: 8px;         /* rectangles do something */
+  --r-pick: 999px;      /* pills choose something */
+}
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 var(--body); }
+h1, h2, h3 { font-family: var(--display); line-height: 1.05; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+.eyebrow { font: 700 .8rem/1.2 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--small-ink); }
+.hint { color: var(--muted); font-size: .9rem; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- the study page ---------- */
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 32px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 36px; }
+.intro { display: grid; gap: 14px; max-width: 780px; }
+.intro h1 { font-size: clamp(2.3rem, 6vw, 3.6rem); letter-spacing: -.01em; }
+.intro p.lede { font-size: 1.08rem; color: var(--muted); max-width: 64ch; }
+.intro .ex { font-size: .85rem; color: var(--faint); }
+.found { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); border-top: 2px solid var(--ink); }
+.found div { padding: 14px 18px 16px 0; border-bottom: 1px solid var(--line); display: grid; gap: 4px; align-content: start; min-width: 0; }
+.found b { font: 700 2.2rem/1 var(--display); font-variant-numeric: tabular-nums; }
+.found span { color: var(--muted); font-size: .92rem; }
+.controls { display: flex; flex-wrap: wrap; gap: 18px 32px; align-items: flex-start; padding: 18px 0; border-top: 2px solid var(--ink); border-bottom: 1px solid var(--line); }
+.ctl { display: grid; gap: 8px; min-width: 0; }
+.ctl > span { font: 700 .82rem/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { min-height: 44px; padding: 0 16px; border-radius: var(--r-pick); border: 1.5px solid var(--ink); background: var(--paper); font-weight: 600; font-size: .92rem; }
+.pill[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.pill small { font-weight: 500; opacity: .75; margin-left: 4px; }
+.stage { position: relative; overflow: hidden; }
+.frame { position: absolute; top: 0; left: 50%; transform-origin: top center; }
+.design-notes { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 32px; border-top: 2px solid var(--ink); padding-top: 20px; }
+.design-notes h2 { font-size: 2rem; }
+.design-notes .dn-main { display: grid; gap: 12px; align-content: start; }
+.design-notes .rec { display: inline-block; margin-left: 8px; vertical-align: middle; font: 700 .78rem/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--done-ink); background: var(--done-tint); padding: 5px 8px; border-radius: 4px; }
+.design-notes dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 16px; margin: 0; }
+.design-notes dt { font: 700 .82rem/1.5 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.design-notes dd { margin: 0; }
+.design-notes ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 6px; }
+.design-notes h3 { font-size: 1.15rem; letter-spacing: .02em; margin-bottom: 8px; }
+.matrix { display: grid; gap: 12px; }
+.matrix h2, .next h2 { font-size: 2rem; }
+.tbl-wrap { overflow-x: auto; border-top: 2px solid var(--ink); }
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: .92rem; }
+th, td { text-align: left; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+thead th { font: 700 .8rem/1.2 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+td.y { color: var(--done-ink); font-weight: 700; }
+td.n { color: var(--faint); }
+tbody th { font-weight: 600; }
+tbody tr.grp th { font: 700 .8rem/1.2 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--small-ink); padding-top: 18px; }
+.next { display: grid; gap: 12px; max-width: 820px; }
+.next ol { margin: 0; padding-left: 1.3rem; display: grid; gap: 8px; }
+
+/* ---------- device frames (scaled to fit the page) ---------- */
+.phone { width: 406px; padding: 8px; border-radius: 40px; background: #1C1D1F; box-shadow: 0 18px 40px rgba(28, 29, 31, .18); }
+.phone .screen { width: 390px; height: 800px; border-radius: 32px; overflow: hidden; position: relative; background: var(--bg); }
+.desk { width: 1200px; border-radius: 12px; overflow: hidden; border: 1px solid var(--edge); box-shadow: 0 18px 40px rgba(28, 29, 31, .12); background: var(--paper); }
+.desk .chrome { height: 30px; background: var(--beige); display: flex; align-items: center; gap: 7px; padding: 0 12px; border-bottom: 1px solid var(--edge); }
+.desk .chrome i { width: 11px; height: 11px; border-radius: 50%; background: var(--edge); }
+.desk .chrome span { margin-left: 14px; font-size: .78rem; color: var(--faint); }
+.desk .screen { width: 1198px; height: 760px; overflow: hidden; position: relative; background: var(--bg); }
+
+/* ---------- the mock app ---------- */
+.m { position: absolute; inset: 0; display: flex; flex-direction: column; font-size: 16px; background: var(--bg); }
+.m[data-text="Large"] { font-size: 18px; }
+.m[data-text="Extra large"] { font-size: 20px; }
+.m-top { flex: 0 0 auto; display: flex; align-items: center; gap: .6rem; min-height: 64px; padding: .5rem .9rem; background: var(--bar); color: var(--bar-text); box-shadow: 0 3px 0 rgba(0, 0, 0, .25); position: relative; z-index: 3; }
+.m-top .back { width: 36px; height: 36px; border: 0; background: none; color: var(--bar-text); font-size: 1.5rem; line-height: 1; padding: 0; }
+.m-top b { font: 700 1.55rem/1 var(--display); letter-spacing: .01em; white-space: nowrap; }
+.m-top .nav { display: flex; gap: .2rem; margin-left: 1.4rem; }
+.m-top .nav span { font: 700 .95rem/1 var(--display); letter-spacing: .06em; text-transform: uppercase; padding: .55rem .7rem; border-radius: 6px; color: var(--bar-text); opacity: .85; }
+.m-top .icons { margin-left: auto; display: flex; gap: .5rem; }
+.m-top .ib { width: 42px; height: 42px; border-radius: 50%; border: 1.5px solid rgba(251, 248, 241, .55); background: none; color: var(--bar-text); display: grid; place-items: center; padding: 0; }
+.m-top .ib.on { background: var(--bar-text); color: var(--bar); border-color: var(--bar-text); }
+.m-top .ib.open { background: var(--accent); border-color: var(--accent); color: #fff; }
+.m-top .ib svg { width: 20px; height: 20px; }
+.m-scroll { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; position: relative; }
+.m-tabs { flex: 0 0 auto; display: grid; grid-template-columns: repeat(6, 1fr); background: var(--bar); color: var(--bar-text); border-top: 3px solid var(--accent); padding-bottom: 10px; }
+.m-tabs span { display: grid; justify-items: center; gap: 3px; padding: 9px 0 2px; font: 700 .64rem/1 var(--display); letter-spacing: .05em; text-transform: uppercase; opacity: .9; }
+.m-tabs i { width: 18px; height: 18px; border: 1.6px solid currentColor; border-radius: 4px; display: block; }
+.m-toast { position: absolute; left: 50%; bottom: 84px; transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); background: var(--ink); color: #fff; padding: .7rem 1rem; border-radius: 10px; font-size: .9rem; opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 9; }
+.desk .m-toast { bottom: 28px; }
+.m-toast.show { opacity: 1; }
+.page { padding: 1.1rem 1rem 2.2rem; display: grid; gap: 1.4rem; }
+.desk .page { padding: 2rem 3rem 3rem; max-width: 1000px; margin: 0 auto; }
+.page-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.page-head h2 { font-size: 2.3rem; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 48px; padding: 0 1.1rem; border-radius: var(--r-act); border: 1.5px solid var(--ink); background: var(--paper); font-weight: 700; font-size: .95rem; text-align: center; }
+.btn.dark { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
+.btn.small { min-height: 40px; padding: 0 .85rem; font-size: .88rem; }
+.btn-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+.chips { display: flex; flex-wrap: wrap; gap: .45rem; }
+.chip { min-height: 44px; padding: 0 .85rem; border-radius: 22px; border: 1.5px solid var(--ink); background: var(--paper); font-weight: 600; font-size: .875rem; }
+.chip[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.label { font: 700 .875rem/1.2 var(--display); letter-spacing: .06em; text-transform: uppercase; }
+.tag { display: inline-block; font: 700 .7rem/1 var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--small-ink); border: 1px solid currentColor; border-radius: 4px; padding: 3px 5px 2px; vertical-align: 2px; white-space: nowrap; }
+.tag.new { color: var(--done-ink); }
+
+/* You card */
+.you { display: grid; gap: .8rem; padding: 1rem 1.1rem 1.1rem; background: var(--paper); border: 1.5px solid var(--ink); border-radius: 12px; }
+.you-top { display: flex; align-items: center; gap: .8rem; min-width: 0; }
+.ring { flex: 0 0 auto; width: 52px; height: 52px; border-radius: 50%; border: 3px solid var(--accent); display: grid; place-items: center; font: 700 1.5rem/1 var(--display); background: var(--hit); }
+.you-name { font: 700 1.9rem/1 var(--display); }
+.you-role { color: var(--muted); font-size: .95rem; margin-top: .2rem; }
+.you-dev { font-size: .9rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: .7rem; }
+.you-dev b { color: var(--ink); }
+.you.out { background: var(--beige); border-color: var(--edge); }
+
+/* Find a setting */
+.find { display: grid; gap: .35rem; }
+.find input { width: 100%; min-height: 48px; border: 1.5px solid var(--edge); border-radius: var(--r-act); padding: 0 .8rem; background: var(--paper); }
+.find input:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+/* Design A: groups of rows */
+.grp { display: grid; gap: .35rem; min-width: 0; }
+.grp-h { display: grid; gap: .2rem; padding-bottom: .4rem; }
+.grp-h .label { color: var(--ink); }
+.grp-h .hint { font-size: .85rem; }
+.rows { border-top: 1.5px solid var(--ink); }
+.row { border-bottom: 1px solid var(--line); }
+.row-btn { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .25rem .8rem; min-height: 56px; padding: .55rem 0; border: 0; background: none; text-align: left; }
+.row-btn:hover { background: linear-gradient(90deg, transparent, var(--hit) 30%, transparent); }
+.row-l { font-weight: 600; min-width: 0; }
+.row-l .tag { margin-left: .35rem; }
+.row-v { color: var(--muted); font-size: .9rem; text-align: right; max-width: 16ch; min-width: 0; display: flex; align-items: center; gap: .4rem; }
+.row-v > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-v::after { content: '\203A'; font-size: 1.35rem; line-height: 1; color: var(--faint); transition: transform .15s; }
+.row-btn[aria-expanded="true"] .row-v::after { transform: rotate(90deg); }
+.row-btn.go .row-v::after { content: '\2197'; font-size: 1rem; }
+.row-sub { grid-column: 1 / -1; font-size: .82rem; color: var(--faint); margin-top: -.15rem; }
+.row-body { display: grid; gap: .65rem; padding: .1rem 0 1rem; }
+.desk .row-v { max-width: 34ch; }
+.desk .grp { grid-template-columns: 240px minmax(0, 1fr); gap: 0 2.5rem; }
+.desk .grp-h { padding-top: .9rem; align-content: start; }
+.desk .you { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 1.4rem; }
+.desk .you .you-dev { border-top: 0; padding-top: 0; border-left: 1px solid var(--line); padding-left: 1.4rem; }
+.caps { display: flex; flex-wrap: wrap; gap: .4rem; }
+.caps span { font-size: .85rem; font-weight: 600; padding: .3rem .6rem; border-radius: 6px; background: var(--done-tint); color: var(--done-ink); }
+.kv { display: grid; gap: 0; margin: 0; }
+.kv div { display: flex; justify-content: space-between; gap: 1rem; padding: .45rem 0; border-bottom: 1px dashed var(--line); font-size: .92rem; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; font-weight: 600; text-align: right; }
+.sub-l { font: 700 .78rem/1.2 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.qr { display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap; }
+.qr svg { width: 112px; height: 112px; flex: 0 0 auto; background: #fff; border: 1px solid var(--edge); padding: 6px; }
+.qr > div { display: grid; gap: .6rem; flex: 1 1 180px; min-width: 0; }
+.empty { padding: 1rem 0; color: var(--muted); }
+
+/* Design B: chapters */
+.b-list { border-top: 1.5px solid var(--ink); }
+.b-ch { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .15rem .8rem; align-items: center; padding: .9rem 0; min-height: 68px; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; }
+.b-ch b { font: 700 1.35rem/1.1 var(--display); }
+.b-ch small { grid-column: 1; color: var(--muted); font-size: .88rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-ch::after { content: '\203A'; grid-column: 2; grid-row: 1 / span 2; font-size: 1.6rem; color: var(--faint); }
+.b-ch .m-hits { grid-column: 1; font-size: .82rem; color: var(--small-ink); }
+.b-back { justify-self: start; border: 0; background: none; padding: .3rem 0; font-weight: 700; color: var(--small-ink); min-height: 44px; }
+.b-head { display: grid; gap: .3rem; }
+.b-head h2 { font-size: 2.2rem; }
+.blocks { display: grid; }
+.blk { display: grid; gap: .6rem; padding: 1.1rem 0 1.25rem; border-top: 1px solid var(--line); }
+.blk-h { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .3rem .8rem; }
+.blk-h .now { color: var(--muted); font-size: .9rem; }
+.b-desk { display: grid; grid-template-columns: 280px minmax(0, 1fr); min-height: 100%; }
+.b-rail { background: var(--beige); border-right: 1px solid var(--edge); padding: 1.8rem 1.1rem; display: grid; gap: .3rem; align-content: start; }
+.b-rail .r-t { font: 700 2rem/1 var(--display); padding: 0 .6rem .9rem; }
+.b-rail button { display: grid; gap: .15rem; text-align: left; border: 0; border-radius: 8px; background: none; padding: .7rem .7rem; min-height: 56px; }
+.b-rail button b { font: 700 1.15rem/1.1 var(--display); letter-spacing: .02em; }
+.b-rail button small { color: var(--muted); font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-rail button[aria-current="page"] { background: var(--paper); box-shadow: inset 4px 0 0 var(--accent); }
+.b-rail .find { padding: 0 .3rem .8rem; }
+.b-pane { padding: 2rem 3rem 3rem; display: grid; gap: 1.2rem; align-content: start; max-width: 860px; }
+.checks { display: grid; gap: .35rem; }
+.checks label { display: flex; gap: .6rem; align-items: center; min-height: 40px; font-weight: 600; }
+.checks input { width: 22px; height: 22px; accent-color: var(--ink); }
+.snd { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .45rem; }
+.snd div { display: flex; gap: .3rem; }
+.snd .chip { flex: 1 1 auto; }
+.snd .play { min-height: 44px; min-width: 44px; border-radius: 22px; border: 1.5px solid var(--edge); background: var(--paper); font-size: .8rem; }
+
+/* Design C: your card from the chef hat */
+.behind { padding: 1.2rem 1rem; display: grid; gap: .7rem; filter: saturate(.7); }
+.desk .behind { padding: 2rem 3rem; max-width: 1000px; }
+.behind h2 { font-size: 2.2rem; }
+.behind .ln { display: flex; gap: .7rem; align-items: center; padding: .7rem 0; border-bottom: 1px solid var(--line); }
+.behind .ln i { width: 24px; height: 24px; border: 2px solid var(--ink); border-radius: 5px; }
+.behind .ln span { flex: 1; height: 12px; background: var(--line); border-radius: 6px; }
+.dim { position: absolute; inset: 0; background: var(--shade); z-index: 4; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 90%; overflow-y: auto; background: var(--bg); border-radius: 18px 18px 0 0; z-index: 5; padding: .5rem 1rem 1.4rem; display: grid; gap: 1.05rem; box-shadow: 0 -8px 30px rgba(0, 0, 0, .25); }
+.desk .sheet { left: auto; right: 2rem; top: 72px; bottom: auto; width: 440px; max-height: 676px; border-radius: 14px; gap: .8rem; }
+.desk .tile { min-height: 46px; }
+.grip { width: 44px; height: 5px; border-radius: 3px; background: var(--edge); justify-self: center; margin-top: .2rem; }
+.desk .grip { display: none; }
+.c-card { display: flex; align-items: center; gap: .8rem; }
+.c-card > div { flex: 1 1 auto; min-width: 0; }
+.c-card .you-name { font-size: 1.7rem; }
+.c-sec { display: flex; align-items: center; justify-content: space-between; gap: .8rem; padding: .6rem .8rem; background: var(--paper); border: 1px solid var(--edge); border-radius: 10px; }
+.c-sec span { font-size: .9rem; color: var(--muted); }
+.c-sec b { color: var(--ink); }
+.c-quick { display: grid; gap: .55rem; }
+.c-q { display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap; }
+.c-q > span { font-weight: 600; font-size: .95rem; }
+.aa { display: flex; gap: .35rem; }
+.aa .chip { min-width: 46px; padding: 0 .5rem; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: .45rem; }
+.tile { display: grid; gap: .1rem; align-content: center; text-align: left; min-height: 58px; padding: .5rem .7rem; border: 1px solid var(--edge); border-radius: 10px; background: var(--paper); }
+.tile:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.tile b { font-size: .95rem; }
+.tile small { color: var(--small-ink); font-size: .78rem; font-weight: 600; }
+.c-more { display: grid; border-top: 1.5px solid var(--ink); }
+.c-more button { display: flex; justify-content: space-between; align-items: center; min-height: 54px; border: 0; border-bottom: 1px solid var(--line); background: none; font-weight: 700; padding: 0; }
+.c-more button::after { content: '\203A'; font-size: 1.4rem; color: var(--faint); }
+
+.tall .screen { height: auto !important; }
+.tall .m { position: relative; }
+.tall .m-scroll { overflow: visible; }
+@media (max-width: 760px) {
+  .design-notes { grid-template-columns: minmax(0, 1fr); }
+  .found div { padding-right: 0; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="intro">
+    <p class="eyebrow">Kitchen Book proposal &middot; 3 November 2026</p>
+    <h1>Settings, sorted by who it is for</h1>
+    <p class="lede">Settings is one long page today, the same for everyone who opens it. What a person, a phone and the whole kitchen are set to is spread over the chef hat menu, the Order list and five admin pages. Here are three ways to sort it. Pick a design and who is signed in to see what each person gets.</p>
+    <p class="ex">Every name, count and value in the mockup is an example. Taps only change this page.</p>
+  </header>
+
+  <section class="found" aria-label="What we found">
+    <div><b class="num">2 to 2.7</b><span>phone screens of Settings at 390 px wide (1,801 px signed out, 2,264 px for the head chef)</span></div>
+    <div><b class="num">0</b><span>rows about the person signed in. Staff, sous chefs and nobody signed in see the same page</span></div>
+    <div><b class="num">9</b><span>kitchen-wide settings for the head chef, on 5 admin pages in 2 chapters</span></div>
+    <div><b class="num">12</b><span>items under two headings in a sous chef's chef hat menu. Settings and Sign out sit below the fold on a phone</span></div>
+  </section>
+
+  <div class="controls" id="controls">
+    <div class="ctl"><span id="l-design">Design</span><div class="pills" role="group" aria-labelledby="l-design">
+      <button type="button" class="pill" id="d-a" data-design="a">A. One sorted page <small>recommended</small></button>
+      <button type="button" class="pill" id="d-b" data-design="b">B. Settings chapters</button>
+      <button type="button" class="pill" id="d-c" data-design="c">C. Your card first</button>
+    </div></div>
+    <div class="ctl"><span id="l-role">Who is signed in</span><div class="pills" role="group" aria-labelledby="l-role">
+      <button type="button" class="pill" id="r-out" data-role="out">Nobody</button>
+      <button type="button" class="pill" id="r-staff" data-role="staff">Staff</button>
+      <button type="button" class="pill" id="r-sous" data-role="sous">Sous chef</button>
+      <button type="button" class="pill" id="r-head" data-role="head">Head chef</button>
+    </div></div>
+    <div class="ctl"><span id="l-screen">Screen</span><div class="pills" role="group" aria-labelledby="l-screen">
+      <button type="button" class="pill" id="s-phone" data-screen="phone">Phone</button>
+      <button type="button" class="pill" id="s-desk" data-screen="desk">Computer</button>
+    </div></div>
+    <div class="ctl"><span id="l-notes">Show what moved</span><div class="pills" role="group" aria-labelledby="l-notes">
+      <button type="button" class="pill" id="n-on" data-notes="1">On</button>
+      <button type="button" class="pill" id="n-off" data-notes="0">Off</button>
+    </div></div>
+  </div>
+
+  <div class="stage" id="stage" aria-label="Mockup of the Settings page"><div class="frame" id="frame"></div></div>
+
+  <section class="design-notes" id="dnotes" aria-live="polite"></section>
+
+  <section class="matrix" aria-labelledby="mx-h">
+    <h2 id="mx-h">Who sees what</h2>
+    <p class="hint">The same for all three designs. Nothing here changes who may do what: every row follows the access the book already has.</p>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th scope="col">Setting</th><th scope="col">Nobody</th><th scope="col">Staff</th><th scope="col">Lead, View only</th><th scope="col">Functions only</th><th scope="col">Sous chef</th><th scope="col">Head chef</th></tr></thead>
+      <tbody>
+        <tr class="grp"><th colspan="7">You</th></tr>
+        <tr><th scope="row">Your card: name, role, device, Sign out</th><td class="n">Sign in</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+        <tr><th scope="row">My section today</th><td class="n">No</td><td class="y">Yes</td><td class="y">Lead</td><td class="n">No</td><td class="n">By role</td><td class="n">By role</td></tr>
+        <tr><th scope="row">What you can do (read only)</th><td class="n">No</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+        <tr class="grp"><th colspan="7">This phone</th></tr>
+        <tr><th scope="row">Text size, recipes open with, celebrations, install</th><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+        <tr><th scope="row">Change or forget the device type</th><td class="n">No</td><td>Own device</td><td>Own device</td><td>Own device</td><td>Own device</td><td class="y">Any</td></tr>
+        <tr><th scope="row">Practice mode, ticked steps, kitchen PIN here</th><td class="n">No</td><td class="n">No</td><td class="n">No</td><td class="n">No</td><td class="n">No</td><td class="y">Yes</td></tr>
+        <tr class="grp"><th colspan="7">Notifications</th></tr>
+        <tr><th scope="row">Play the kitchen's ping sound</th><td class="n">No</td><td class="y">Yes</td><td class="y">Yes</td><td class="n">No</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+        <tr><th scope="row">Cut-off pushes on this phone</th><td class="n">No</td><td class="n">No</td><td class="n">No</td><td class="n">No</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+        <tr class="grp"><th colspan="7">Team and kitchen</th></tr>
+        <tr><th scope="row">Manage staff, and what the head chef set</th><td class="n">No</td><td class="n">No</td><td class="n">No</td><td class="n">No</td><td class="y">Yes</td><td class="n">People</td></tr>
+        <tr><th scope="row">The kitchen: people, sections, pages, sound, cut-offs, PIN, backup</th><td class="n">No</td><td class="n">No</td><td class="n">No</td><td class="n">No</td><td class="n">No</td><td class="y">Verified admin</td></tr>
+        <tr class="grp"><th colspan="7">About and help</th></tr>
+        <tr><th scope="row">Version, Check for an update, recipe count, QR code (computers)</th><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+      </tbody>
+    </table></div>
+    <p class="hint">Head chef here means the verified admin: the owner's Google sign-in, this device's head chef PIN session and its grant. On a shared screen with staff signed in, the head chef's kitchen rows stay hidden, as the admin panel does now.</p>
+  </section>
+
+  <section class="next" aria-labelledby="nx-h">
+    <h2 id="nx-h">What happens next</h2>
+    <ol>
+      <li>The head chef picks A, B or C, or a mix (for example A, with C's two-column chef hat menu).</li>
+      <li>The build goes in small pull requests, each with click tests at 390, 768 and 1280 px and every role walked through. No rules change and no new reads for A or C.</li>
+      <li>Nothing moves out of the admin panel unless B is picked. Every setting keeps the save it has now.</li>
+    </ol>
+  </section>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  /* ---------- example data (no real staff, values or prices) ---------- */
+  var WHO = {
+    out: null,
+    staff: { name: 'Ann', init: 'A', role: 'Staff', dev: 'shared', sec: 'Larder', drink: 'Flat white, oat milk, 1 sugar',
+      can: ['Write prep lines', 'Tick prep', 'Order list', 'Wastage', 'Transfers', 'Delivery temperatures'],
+      cant: 'Removing lines, shift pings and staff changes are for sous chefs.' },
+    sous: { name: 'Sam', init: 'S', role: 'Sous chef', dev: 'personal', sec: '', drink: 'Long black, large, extra shot',
+      can: ['Write and tick prep', 'Remove lines', 'Shift pings', 'Meeting minutes', 'Chef to-do', 'Supplier order', 'Manage staff'], cant: '' },
+    head: { name: 'Head chef', init: 'H', role: 'Head chef', dev: 'personal', sec: '', drink: 'Flat white',
+      can: ['Everything a sous chef can', 'Admin panel on this device', 'Recipes and drawings', 'Kitchen setup'], cant: '' }
+  };
+  var DEV = {
+    shared: ['Shared kitchen screen', 'Locks after 10 minutes idle. Google and PIN sign out at 04:00.'],
+    personal: ['My own device', 'No idle lock. Unlock with your PIN after 04:00 each day.']
+  };
+  var SIGNED = ['staff', 'sous', 'head'];
+  var GROUPS = {
+    you: { t: 'You', s: 'Follows you to any phone you sign in on.', roles: SIGNED },
+    phone: { t: 'This phone', s: 'Saved on this phone or tablet only.' },
+    alerts: { t: 'Notifications', s: 'What this phone does when something needs you.', roles: SIGNED },
+    team: { t: 'Team', s: 'What a sous chef looks after.', roles: ['sous'] },
+    kitchen: { t: 'The kitchen', s: 'Every phone in the kitchen. Only you change these.', roles: ['head'] },
+    about: { t: 'About and help', s: 'The book itself.' }
+  };
+  var ORDER = ['you', 'phone', 'alerts', 'team', 'kitchen', 'about'];
+  var SOUNDS = ['Pass bell', 'Order up', 'Soft chime', 'Marimba', 'Oven timer', 'Off'];
+  function devOf(role) { return role === 'out' ? 'shared' : WHO[role].dev; }
+  var ROWS = [
+    { g: 'you', id: 'section', label: 'My section today', roles: ['staff'], val: function () { return 'Larder'; }, type: 'chips', opts: ['Larder', 'Grill', 'Sauce', 'Fryer', 'Pastry'],
+      note: 'The section your prep lines, Quick add and wastage go under unless you type another. It clears at midnight.', tag: 'Also in the chef hat menu' },
+    { g: 'you', id: 'drink', label: 'Usual drink', roles: SIGNED, val: function (r) { return WHO[r].drink; }, type: 'link', btn: 'Open Drinks run', toast: 'In the book this opens Drinks run.', tag: 'Shortcut' },
+    { g: 'you', id: 'can', label: 'What you can do', roles: SIGNED, val: function (r) { return WHO[r].role; }, type: 'can', tag: 'New' },
+    { g: 'you', id: 'pin', label: 'Your PIN', roles: SIGNED, val: 'Set', type: 'info', note: function (r) { return r === 'head' ? 'Your own PIN is reset in People, like everyone\'s.' : 'Forgot it? Ask the head chef. They reset it in People, and you choose a new one at your next sign in.'; } },
+
+    { g: 'phone', id: 'text', label: 'Text size', val: 'Normal', type: 'chips', opts: ['Normal', 'Large', 'Extra large'], note: 'Bigger text for this phone. Try it: the mockup changes too.' },
+    { g: 'phone', id: 'opens', label: 'Recipes open with', val: 'The Pass', type: 'chips', opts: ['The Pass', 'Tiles'], note: 'How the recipes look when you arrive.' },
+    { g: 'phone', id: 'season', label: 'Seasonal celebrations', val: 'Automatic', type: 'season', tag: 'Folded' },
+    { g: 'phone', id: 'device', label: 'How this device is used', val: function (r) { return DEV[devOf(r)][0]; }, type: 'device' },
+    { g: 'phone', id: 'install', label: 'Install the app', val: 'Not installed', type: 'action', note: 'Puts Kitchen Book on the home screen. It opens full screen and still updates by itself.', btn: 'Install the app', toast: 'In the book this starts the install.' },
+    { g: 'phone', id: 'practice', label: 'Practice mode', roles: ['head'], val: 'Off', type: 'chips', opts: ['Off', 'On'], note: 'For showing someone the book. Lines written here are marked as practice and not learned.' },
+    { g: 'phone', id: 'ticks', label: 'Ticked recipe steps', roles: ['head'], val: '3 ticked', type: 'action', note: 'Ticks clear when the page closes.', btn: 'Clear all ticks', toast: 'All ticks cleared on this phone.' },
+    { g: 'phone', id: 'kpin', label: 'Kitchen PIN on this device', roles: ['head'], val: 'Saved', type: 'action', note: 'Forgets the kitchen PIN on this device only and asks for it again.', btn: 'Use a different kitchen PIN', toast: 'In the book this asks for a second tap first.', tag: 'Moved from Admin, Tools' },
+
+    { g: 'alerts', id: 'ping', label: 'Ping sound', roles: SIGNED, val: function () { return S.vals.ksound || 'Pass bell'; }, type: 'play',
+      note: function (r) { return r === 'head' ? 'You pick it for every phone under The kitchen. Play it here to check this phone\'s volume.' : 'The head chef picks the sound for every phone. Play it to check this phone\'s volume.'; }, tag: 'New' },
+    { g: 'alerts', id: 'push', label: 'Cut-off pushes on this phone', roles: ['sous', 'head'], val: 'Off', type: 'chips', opts: ['Off', 'On'],
+      note: 'A push when a supplier\'s reminder starts and an hour before its cut-off, even with the book closed. Only for suppliers nobody has ticked off.', tag: 'Also on the Order list' },
+
+    { g: 'team', id: 'staff', label: 'Manage staff', roles: ['sous'], val: '14 people', type: 'link', btn: 'Open Manage staff', toast: 'In the book this opens the Manage staff sheet.', note: 'Add people, take them off the list and set their roles, as now.' },
+    { g: 'team', id: 'setby', label: 'Set by the head chef', roles: ['sous'], val: 'Read only', type: 'kv', tag: 'New',
+      items: [['Ping sound', 'Pass bell'], ['Pages staff see', 'Guides, Shift pings'], ['Kitchen sections', '5'], ['Sous chefs read Kitchen mail', 'Off'], ['Order cut-offs', '4 suppliers']] },
+
+    { g: 'kitchen', id: 'people', label: 'People and roles', val: '14 people, 2 sous chefs', where: 'Admin, Settings, People' },
+    { g: 'kitchen', id: 'secs', label: 'Kitchen sections', val: 'Larder, Grill, Sauce, Fryer, Pastry', where: 'Admin, Settings, People' },
+    { g: 'kitchen', id: 'pages', label: 'Pages staff see', val: function () { return pagesVal(); }, where: 'Admin, Settings, People', b: 'checks', opts: ['Guides', 'Shift pings', 'Meeting minutes'] },
+    { g: 'kitchen', id: 'badges', label: 'Weekly top tickers on the prep book', val: 'Shown', where: 'Admin, Settings, People', b: 'chips', opts: ['Shown', 'Hidden'] },
+    { g: 'kitchen', id: 'ksound', label: 'Ping sound for every phone', val: 'Pass bell', where: 'Admin, Operations, Shift pings', b: 'sound' },
+    { g: 'kitchen', id: 'mail', label: 'Sous chefs read Kitchen mail', val: 'Off', where: 'Admin, Operations, Kitchen mail', b: 'chips', opts: ['Off', 'On'] },
+    { g: 'kitchen', id: 'fn', label: 'Who books functions', val: '2 people', where: 'Admin, Settings, People' },
+    { g: 'kitchen', id: 'cut', label: 'Order cut-offs', val: '4 suppliers', where: 'Admin, Operations, Cut-offs' },
+    { g: 'kitchen', id: 'kitpin', label: 'Change the kitchen PIN', val: '4 digits', where: 'Admin, Settings, Tools' },
+    { g: 'kitchen', id: 'backup', label: 'Backup', val: 'Every night at 03:30', where: 'Admin, Settings, Tools' },
+
+    { g: 'about', id: 'version', label: 'Version', val: 'Up to date', type: 'action', note: 'This copy is from 3 Nov 2026, 14:02. Updates install by themselves when nothing is waiting to send.', btn: 'Check for an update', toast: 'Checked. This is the newest copy.', tag: 'New' },
+    { g: 'about', id: 'qr', label: 'Open on another phone', val: 'QR code', type: 'qr', desk: true },
+    { g: 'about', id: 'book', label: 'The recipe book', val: '128 recipes', type: 'info', note: '128 recipes, updated 31 Oct 2026.' },
+    { g: 'about', id: 'where', label: 'Where settings are saved', val: '', type: 'scopes' }
+  ];
+  function pagesVal() {
+    var on = S.vals.pages || ['Guides', 'Shift pings'];
+    return on.length === 3 ? 'All three' : on.length ? on.join(', ') : 'None';
+  }
+
+  /* ---------- state (this page only) ---------- */
+  var S = { design: 'a', role: 'staff', screen: 'phone', notes: true, open: {}, find: '', bCh: null, cView: 'menu', vals: {} };
+  var stage = document.getElementById('stage'), frame = document.getElementById('frame');
+
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function role() { return S.role; }
+  function signed() { return S.role !== 'out'; }
+  function gVis(g) { var x = GROUPS[g]; return !x.roles || x.roles.indexOf(S.role) >= 0; }
+  function vis(r) { return gVis(r.g) && (!r.roles || r.roles.indexOf(S.role) >= 0) && (!r.desk || S.screen === 'desk'); }
+  function val(r) { if (S.vals[r.id] !== undefined && typeof S.vals[r.id] === 'string') return S.vals[r.id]; return typeof r.val === 'function' ? r.val(S.role) : r.val; }
+  function note(r) { return typeof r.note === 'function' ? r.note(S.role) : r.note; }
+  function tag(t, cls) { return S.notes && t ? ' <span class="tag' + (cls ? ' ' + cls : '') + '">' + esc(t) + '</span>' : ''; }
+  function tagOf(r) { return tag(r.tag, r.tag === 'New' ? 'new' : ''); }
+  function matches(r) {
+    if (!S.find) return true;
+    var q = S.find.toLowerCase();
+    return [r.label, val(r), r.where || '', GROUPS[r.g].t, note(r) || ''].join(' ').toLowerCase().indexOf(q) >= 0;
+  }
+  function findOn() { return S.role === 'head' && S.design !== 'c'; }
+
+  /* ---------- shared pieces ---------- */
+  var ICON = {
+    bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>',
+    hat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 14.5a4 4 0 1 1 2.3-7.3 4 4 0 0 1 5.4 0A4 4 0 1 1 17 14.5V19H7z"/><path d="M7 16.5h10"/></svg>'
+  };
+  function topbar() {
+    var on = signed(), open = S.design === 'c' && S.cView === 'menu';
+    return '<div class="m-top"><button type="button" class="back" data-toast="In the book Back follows the page trail." aria-label="Back">&#8249;</button><b>Kitchen Book</b>' +
+      (S.screen === 'desk' ? '<span class="nav"><span>Recipes</span><span>Prep</span><span>Orders</span><span>Wastage</span><span>Transfers</span><span>Guides</span></span>' : '') +
+      '<span class="icons">' + (on ? '<button type="button" class="ib" data-toast="Opens the pings sheet." aria-label="Pings">' + ICON.bell + '</button>' : '') +
+      '<button type="button" class="ib' + (open ? ' open' : on ? ' on' : '') + '" data-k="hat" data-hat="1" aria-label="Menu and Settings" aria-expanded="' + open + '">' + ICON.hat + '</button></span></div>';
+  }
+  function tabbar() {
+    return S.screen === 'phone' ? '<div class="m-tabs" aria-hidden="true"><span><i></i>Recipes</span><span><i></i>Prep</span><span><i></i>Orders</span><span><i></i>Wastage</span><span><i></i>Transfers</span><span><i></i>Guides</span></div>' : '';
+  }
+  function youCard(compact) {
+    if (!signed()) return '<section class="you out" aria-label="Nobody signed in"><div class="you-top"><span class="ring" aria-hidden="true">?</span><div><p class="you-name">Nobody signed in</p><p class="you-role">Recipes are open to everyone. Sign in for the prep book.</p></div></div>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-k="signin" data-toast="In the book this opens Who are you?">Sign in</button></div></section>';
+    var w = WHO[S.role], d = DEV[w.dev], sec = S.vals.section || w.sec;
+    return '<section class="you" aria-label="You"><div class="you-top"><span class="ring" aria-hidden="true">' + w.init + '</span><div><p class="you-name">' + esc(w.name) + '</p><p class="you-role">' + esc(w.role) + (sec ? ' &middot; ' + esc(sec) + ' today' : S.role === 'head' ? ' &middot; Admin on this device' : '') + '</p></div></div>' +
+      (compact ? '' : '<p class="you-dev"><b>' + d[0] + '.</b> ' + d[1] + '</p>') +
+      '<div class="btn-row"><button type="button" class="btn" data-k="signout" data-toast="Signed out. Anything not sent yet asks first, as now.">Sign out</button></div></section>';
+  }
+  function findBox() {
+    return '<div class="find"><label class="label" for="m-find">Find a setting' + tag('New', 'new') + '</label><input id="m-find" type="search" data-k="find" data-find="1" autocomplete="off" placeholder="Sound, PIN, sections..." value="' + esc(S.find) + '"></div>';
+  }
+  function chips(r, opts, cur) {
+    return '<div class="chips" role="group" aria-label="' + esc(r.label) + '">' + opts.map(function (o) {
+      return '<button type="button" class="chip" data-k="' + r.id + ':' + esc(o) + '" data-set="' + r.id + '" data-v="' + esc(o) + '" aria-pressed="' + (cur === o) + '">' + esc(o) + '</button>';
+    }).join('') + '</div>';
+  }
+  var QR = (function () {
+    var n = 25, seed = 7, out = '', fin = function (x, y) { return '<rect x="' + x + '" y="' + y + '" width="7" height="7" fill="#1C1D1F"/><rect x="' + (x + 1) + '" y="' + (y + 1) + '" width="5" height="5" fill="#fff"/><rect x="' + (x + 2) + '" y="' + (y + 2) + '" width="3" height="3" fill="#1C1D1F"/>'; };
+    for (var y = 0; y < n; y++) for (var x = 0; x < n; x++) {
+      seed = (seed * 1103515245 + 12345) % 2147483648;
+      var inF = (x < 8 && y < 8) || (x > 16 && y < 8) || (x < 8 && y > 16);
+      if (!inF && seed % 100 < 46) out += '<rect x="' + x + '" y="' + y + '" width="1" height="1" fill="#1C1D1F"/>';
+    }
+    return '<svg viewBox="0 0 25 25" role="img" aria-label="Example QR code" shape-rendering="crispEdges">' + out + fin(0, 0) + fin(18, 0) + fin(0, 18) + '</svg>';
+  }());
+  function control(r) {
+    var n = note(r), h = '';
+    if (r.type === 'chips') h = chips(r, r.opts, val(r));
+    else if (r.type === 'link' || r.type === 'action') h = '<div class="btn-row"><button type="button" class="btn" data-k="act:' + r.id + '" data-toast="' + esc(r.toast) + '">' + esc(r.btn) + '</button></div>';
+    else if (r.type === 'can') { var w = WHO[S.role]; h = '<div class="caps">' + w.can.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') + '</div><p class="hint">' + esc(S.role === 'head' ? 'You set what everyone else can do in People.' : (w.cant ? w.cant + ' ' : '') + 'Ask the head chef to change what you can do.') + '</p>'; }
+    else if (r.type === 'play') h = '<div class="btn-row"><button type="button" class="btn" data-k="play" data-play="1">Play the ping sound</button></div>';
+    else if (r.type === 'season') h = '<p class="sub-l">Celebrations</p>' + chips({ id: 'season', label: 'Celebrations' }, ['Automatic', 'Choose a celebration', 'Off'], val(r)) +
+      '<p class="sub-l">Movement</p>' + chips({ id: 'smove', label: 'Movement' }, ['Animated', 'Still'], S.vals.smove || 'Animated') +
+      '<p class="sub-l">Ambience</p>' + chips({ id: 'samb', label: 'Ambience' }, ['Subtle', 'Full'], S.vals.samb || 'Full') +
+      '<p class="hint">Automatic follows the main festival calendar in Queensland time. The same controls as now, folded into one row.</p>';
+    else if (r.type === 'device') {
+      var dv = devOf(S.role), may = S.role === 'head' || (signed() && dv === 'personal');
+      h = '<p class="hint">' + DEV[dv][1] + '</p>' + (may ? '<div class="btn-row"><button type="button" class="btn" data-k="dev1" data-toast="Opens How is this device used?">Change device type</button><button type="button" class="btn" data-k="dev2" data-toast="Asks first, and waits for anything not sent.">Forget this device</button></div>'
+        : '<p class="hint">' + (dv === 'shared' ? 'The head chef can change this after signing in.' : 'Sign in with your PIN to change this.') + '</p>');
+    }
+    else if (r.type === 'kv') h = '<dl class="kv">' + r.items.map(function (i) { return '<div><dt>' + esc(i[0]) + '</dt><dd>' + esc(i[1]) + '</dd></div>'; }).join('') + '</dl><p class="hint">Only the head chef changes these.</p>';
+    else if (r.type === 'qr') h = '<div class="qr">' + QR + '<div><p class="hint">Scan with a phone camera to open the Kitchen Book on that phone.</p><div class="btn-row"><button type="button" class="btn small" data-k="qr1" data-toast="Opens the A4 sign.">Print the A4 sign</button><button type="button" class="btn small" data-k="qr2" data-toast="Saves the QR picture.">Download the QR code</button></div></div></div>';
+    else if (r.type === 'scopes') h = '<dl class="kv"><div><dt>This phone</dt><dd>Only here</dd></div><div><dt>You</dt><dd>Any phone you sign in on</dd></div><div><dt>The kitchen</dt><dd>Every phone</dd></div></dl>';
+    return (n && r.type !== 'can' ? '<p class="hint">' + esc(n) + '</p>' : '') + h;
+  }
+
+  /* ---------- design A: one sorted page ---------- */
+  function rowA(r) {
+    if (r.where) return '<div class="row"><button type="button" class="row-btn go" data-k="go:' + r.id + '" data-toast="In the book this opens ' + esc(r.where) + '."><span class="row-l">' + esc(r.label) + '</span><span class="row-v"><span>' + esc(val(r)) + '</span></span><span class="row-sub">Changed in ' + esc(r.where) + '</span></button></div>';
+    var open = !!S.open[r.id] || (S.find && r.type !== 'scopes');
+    var v = val(r);
+    return '<div class="row"><button type="button" class="row-btn" data-k="row:' + r.id + '" data-row="' + r.id + '" aria-expanded="' + open + '"><span class="row-l">' + esc(r.label) + tagOf(r) + '</span><span class="row-v"><span>' + esc(v) + '</span></span></button>' +
+      (open ? '<div class="row-body">' + control(r) + '</div>' : '') + '</div>';
+  }
+  function groupsA(order, skipYou) {
+    var any = false, out = order.filter(function (g) { return gVis(g) && !(skipYou && g === 'you'); }).map(function (g) {
+      var rows = ROWS.filter(function (r) { return r.g === g && vis(r) && matches(r); });
+      if (!rows.length) return '';
+      any = true;
+      var G = GROUPS[g];
+      return '<section class="grp" aria-label="' + esc(G.t) + '"><div class="grp-h"><h3 class="label">' + esc(G.t) + '</h3><p class="hint">' + esc(g === 'kitchen' ? G.s + ' Each row opens the admin page that saves it.' : G.s) + '</p></div><div class="rows">' + rows.map(rowA).join('') + '</div></section>';
+    }).join('');
+    return any ? out : '<p class="empty" role="status">No setting matches &ldquo;' + esc(S.find) + '&rdquo;. Try sound, PIN or sections.</p>';
+  }
+  function pageA() {
+    return '<div class="page"><div class="page-head"><h2>Settings</h2><button type="button" class="btn dark" data-k="done" data-toast="Done goes back along the page trail.">Done</button></div>' +
+      youCard(false) + (findOn() ? findBox() : '') + groupsA(ORDER, false) + '</div>';
+  }
+
+  /* ---------- design B: chapters ---------- */
+  function chapters() {
+    return ['you', 'phone', 'alerts', S.role === 'sous' ? 'team' : 'kitchen', 'about'].filter(gVis);
+  }
+  var CH_NAME = { you: 'You', phone: 'This phone', alerts: 'Notifications', team: 'Team', kitchen: 'Kitchen setup', about: 'About and help' };
+  function chSum(c) {
+    if (c === 'you') { var w = WHO[S.role], sec = S.vals.section || w.sec; return (w.name === w.role ? w.role + ', admin on this device' : w.name + ', ' + w.role) + (sec ? ', ' + sec + ' today' : ''); }
+    if (c === 'phone') return (S.vals.text || 'Normal') + ' text, ' + (S.vals.opens || 'The Pass') + ', ' + DEV[devOf(S.role)][0];
+    if (c === 'alerts') return 'Ping sound: ' + (S.vals.ksound || 'Pass bell') + (S.role === 'staff' ? '' : '. Pushes ' + (S.vals.push || 'Off').toLowerCase());
+    if (c === 'team') return '14 people. What the head chef set';
+    if (c === 'kitchen') return '14 people, 5 sections, 4 cut-offs';
+    return 'Up to date. 128 recipes';
+  }
+  function blockB(r) {
+    var inner;
+    if (r.where && r.b) {
+      if (r.b === 'chips') inner = chips(r, r.opts, val(r));
+      else if (r.b === 'checks') { var on = S.vals.pages || ['Guides', 'Shift pings']; inner = '<div class="checks">' + r.opts.map(function (o) { return '<label><input type="checkbox" data-k="pg:' + esc(o) + '" data-page="' + esc(o) + '"' + (on.indexOf(o) >= 0 ? ' checked' : '') + '> Staff see ' + esc(o) + '</label>'; }).join('') + '</div><p class="hint">You, sous chefs and leads always see them.</p>'; }
+      else inner = '<div class="snd">' + SOUNDS.map(function (o) { return '<div><button type="button" class="chip" data-k="ks:' + esc(o) + '" data-set="ksound" data-v="' + esc(o) + '" aria-pressed="' + (val(r) === o) + '">' + esc(o) + '</button>' + (o === 'Off' ? '' : '<button type="button" class="play" data-k="pl:' + esc(o) + '" data-play="1" aria-label="Play ' + esc(o) + '">&#9654;</button>') + '</div>'; }).join('') + '</div><p class="hint">Saved at once for every phone.</p>';
+      return '<div class="blk"><div class="blk-h"><span class="label">' + esc(r.label) + tag('Moved from ' + r.where) + '</span></div>' + inner + '</div>';
+    }
+    if (r.where) return '<div class="blk"><div class="blk-h"><span class="label">' + esc(r.label) + '</span><span class="now">' + esc(val(r)) + '</span></div><div class="btn-row"><button type="button" class="btn small" data-k="go:' + r.id + '" data-toast="In the book this opens ' + esc(r.where) + '.">Open ' + esc(r.where.split(', ').pop()) + ' &#8599;</button></div></div>';
+    return '<div class="blk"><div class="blk-h"><span class="label">' + esc(r.label) + tagOf(r) + '</span>' + (r.type === 'chips' || r.type === 'season' || r.type === 'scopes' || r.type === 'qr' ? '' : '<span class="now">' + esc(val(r)) + '</span>') + '</div>' + control(r) + '</div>';
+  }
+  function chapterB(c) {
+    var rows = ROWS.filter(function (r) { return r.g === c && vis(r); });
+    var G = GROUPS[c];
+    return '<div class="b-head"><p class="eyebrow">Settings</p><h2>' + CH_NAME[c] + '</h2><p class="hint">' + esc(c === 'kitchen' ? G.s + ' The simple switches are here now. People, sections, cut-offs, the PIN and backup stay in the admin panel.' : G.s) + '</p></div>' +
+      (c === 'you' ? youCard(false) : '') + '<div class="blocks">' + rows.map(blockB).join('') + '</div>';
+  }
+  function listB() {
+    var chs = chapters();
+    var items = chs.map(function (c) {
+      var hits = S.find ? ROWS.filter(function (r) { return r.g === c && vis(r) && matches(r); }) : null;
+      if (hits && !hits.length) return '';
+      return '<button type="button" class="b-ch" data-k="ch:' + c + '" data-ch="' + c + '"' + (S.screen === 'desk' && S.bCh === c ? ' aria-current="page"' : '') + '><b>' + CH_NAME[c] + '</b><small>' + esc(chSum(c)) + '</small>' + (hits ? '<span class="m-hits">' + esc(hits.map(function (r) { return r.label; }).join(', ')) + '</span>' : '') + '</button>';
+    }).join('');
+    return items || '<p class="empty" role="status">No setting matches &ldquo;' + esc(S.find) + '&rdquo;.</p>';
+  }
+  function pageB() {
+    var chs = chapters();
+    if (S.screen === 'desk') {
+      if (chs.indexOf(S.bCh) < 0) S.bCh = chs[0];
+      return '<div class="b-desk"><nav class="b-rail" aria-label="Settings chapters"><p class="r-t">Settings</p>' + (findOn() ? findBox() : '') + chs.map(function (c) {
+        var hit = !S.find || ROWS.some(function (r) { return r.g === c && vis(r) && matches(r); });
+        return hit ? '<button type="button" data-k="ch:' + c + '" data-ch="' + c + '" aria-current="' + (S.bCh === c ? 'page' : 'false') + '"><b>' + CH_NAME[c] + '</b><small>' + esc(chSum(c)) + '</small></button>' : '';
+      }).join('') + '</nav><div class="b-pane">' + chapterB(S.bCh) + '</div></div>';
+    }
+    if (S.bCh && chs.indexOf(S.bCh) >= 0) return '<div class="page"><button type="button" class="b-back" data-k="bback" data-bback="1">&#8249; Settings</button>' + chapterB(S.bCh) + '</div>';
+    return '<div class="page"><div class="page-head"><h2>Settings</h2><button type="button" class="btn dark" data-k="done" data-toast="Done goes back along the page trail.">Done</button></div>' +
+      (findOn() ? findBox() : '') + (signed() ? '' : youCard(false)) + '<nav class="b-list" aria-label="Settings chapters">' + listB() + '</nav></div>';
+  }
+
+  /* ---------- design C: your card first ---------- */
+  var MENU = {
+    out: { today: [], chef: [] },
+    staff: { today: [['Kitchen mail', ''], ['Drinks run', ''], ['Functions', ''], ['Delivery received', '']], chef: [] },
+    sous: { today: [['Kitchen mail', ''], ['Drinks run', ''], ['Meeting minutes', '1 to sign'], ['Functions', ''], ['Delivery received', '']], chef: [['Recipes and drawings', ''], ['Shift pings', ''], ['Chef to-do', ''], ['Supplier order', ''], ['Manage staff', '']] },
+    head: { today: [['Drinks run', ''], ['Meeting minutes', ''], ['Functions', ''], ['Delivery received', '']], chef: [['Admin panel', '2 mail'], ['Recipes and drawings', ''], ['Shift pings', ''], ['Chef to-do', ''], ['Supplier order', '']] }
+  };
+  function tiles(list) {
+    return '<div class="tiles">' + list.map(function (t) { return '<button type="button" class="tile" data-k="t:' + esc(t[0]) + '" data-toast="In the book this opens ' + esc(t[0]) + '."><b>' + esc(t[0]) + '</b>' + (t[1] ? '<small>' + esc(t[1]) + '</small>' : '') + '</button>'; }).join('') + '</div>';
+  }
+  function sheetC() {
+    var w = WHO[S.role], m = MENU[S.role], t = S.vals.text || 'Normal', sec = S.vals.section || (w && w.sec);
+    var card = signed() ? '<div class="c-card"><span class="ring" aria-hidden="true">' + w.init + '</span><div><p class="you-name">' + esc(w.name) + '</p><p class="you-role">' + esc(w.role) + ' &middot; ' + DEV[w.dev][0] + '</p></div><button type="button" class="btn small" data-k="signout" data-toast="Signed out. Anything not sent yet asks first, as now.">Sign out</button></div>'
+      : '<div class="c-card"><span class="ring" aria-hidden="true">?</span><div><p class="you-name">Nobody signed in</p><p class="you-role">Recipes are open to everyone.</p></div><button type="button" class="btn small dark" data-k="signin" data-toast="In the book this opens Who are you?">Sign in</button></div>';
+    var secRow = S.role === 'staff' ? '<div class="c-sec"><span>My section today: <b>' + esc(sec) + '</b></span><button type="button" class="btn small" data-k="csec" data-toast="Opens the section picker, as now.">Change</button></div>' : '';
+    var quick = '<div class="c-quick"><p class="label">Quick settings' + tag('New', 'new') + '</p>' +
+      '<div class="c-q"><span>Text size</span><div class="aa" role="group" aria-label="Text size">' + [['Normal', '.85rem'], ['Large', '1rem'], ['Extra large', '1.2rem']].map(function (o) { return '<button type="button" class="chip" style="font-size:' + o[1] + '" data-k="aa:' + o[0] + '" data-set="text" data-v="' + o[0] + '" aria-pressed="' + (t === o[0]) + '" aria-label="' + o[0] + ' text">Aa</button>'; }).join('') + '</div></div>' +
+      (S.role === 'sous' || S.role === 'head' ? '<div class="c-q"><span>Cut-off pushes</span>' + chips({ id: 'push', label: 'Cut-off pushes' }, ['Off', 'On'], S.vals.push || 'Off') + '</div>' : '') +
+      (signed() ? '<div class="c-q"><span>Ping sound: ' + esc(S.vals.ksound || 'Pass bell') + '</span><button type="button" class="btn small" data-k="play" data-play="1">Play</button></div>' : '') + '</div>';
+    var go = m.today.length ? '<div class="c-quick"><p class="label">Go to</p>' + tiles(m.today) + '</div>' : '';
+    var chef = m.chef.length ? '<div class="c-quick"><p class="label">Chef</p>' + tiles(m.chef) + '</div>' : '';
+    var more = '<div class="c-more"><button type="button" data-k="call" data-cview="settings">All settings</button>' + (S.role === 'head' ? '<button type="button" data-k="ckit" data-cview="kitchen">Kitchen setup</button>' : '') + '</div>';
+    return '<div class="dim" data-k="dim" data-cclose="1"></div><div class="sheet" role="dialog" aria-modal="true" aria-label="' + (signed() ? esc(w.name) : 'Menu') + '"><div class="grip" aria-hidden="true"></div>' + card + secRow + quick + go + chef + more + '</div>';
+  }
+  function behind() {
+    return '<div class="behind" aria-hidden="true"><h2>Prep list</h2>' + [1, 2, 3, 4, 5, 6, 7].map(function () { return '<div class="ln"><i></i><span></span></div>'; }).join('') + '</div>';
+  }
+  function pageC() {
+    if (S.cView === 'menu' || S.cView === 'closed') return behind();
+    var only = S.cView === 'kitchen' ? ['kitchen'] : ['phone', 'alerts', 'team', 'kitchen', 'about'];
+    return '<div class="page"><button type="button" class="b-back" data-k="cback" data-cview="menu">&#8249; ' + (signed() ? 'Your card' : 'Menu') + '</button><div class="page-head"><h2>' + (S.cView === 'kitchen' ? 'Kitchen setup' : 'Settings') + '</h2></div>' +
+      (S.role === 'head' ? findBox() : '') + groupsA(only, true) + '</div>';
+  }
+
+  /* ---------- drawing ---------- */
+  var toastT = 0;
+  function render(keepKey) {
+    var sc = frame.querySelector('.m-scroll'), top = sc ? sc.scrollTop : 0, ae = document.activeElement, key = keepKey || (ae && frame.contains(ae) ? ae.getAttribute('data-k') : null);
+    var inner = S.design === 'a' ? pageA() : S.design === 'b' ? pageB() : pageC();
+    var overlay = S.design === 'c' && S.cView === 'menu' ? sheetC() : '';
+    var m = '<div class="m" data-text="' + esc(S.vals.text || 'Normal') + '">' + topbar() + '<div class="m-scroll">' + inner + '</div>' + tabbar() + overlay + '<div class="m-toast" role="status" aria-live="polite"></div></div>';
+    frame.innerHTML = S.screen === 'phone' ? '<div class="phone"><div class="screen">' + m + '</div></div>' : '<div class="desk"><div class="chrome"><i></i><i></i><i></i><span>kuschikuschbert.github.io/leichhardt-kitchen/#/' + (S.design === 'c' && S.cView !== 'settings' && S.cView !== 'kitchen' ? 'prep' : 'settings') + '</span></div><div class="screen">' + m + '</div></div>';
+    var nsc = frame.querySelector('.m-scroll'); if (nsc && keepKey !== 'top') nsc.scrollTop = top;
+    if (key) { var el = frame.querySelector('[data-k="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]'); if (el) { el.focus({ preventScroll: true }); if (el.tagName === 'INPUT' && el.type !== 'checkbox') { var l = el.value.length; try { el.setSelectionRange(l, l); } catch (e) {} } } }
+    controls(); notes(); fit();
+  }
+  function fit() {
+    var inner = frame.firstElementChild; if (!inner) return;
+    var w = inner.offsetWidth, h = inner.offsetHeight, k = Math.min(1, stage.clientWidth / w);
+    frame.style.transform = 'translateX(-50%) scale(' + k + ')';
+    frame.style.width = w + 'px';
+    stage.style.height = Math.ceil(h * k) + 'px';
+  }
+  function toast(msg) {
+    var t = frame.querySelector('.m-toast'); if (!t) return;
+    t.textContent = msg; t.classList.add('show'); clearTimeout(toastT);
+    toastT = setTimeout(function () { t.classList.remove('show'); }, 2600);
+  }
+  var ac = null;
+  function bell() {
+    try {
+      ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+      var t0 = ac.currentTime;
+      [[1318.5, 1.2, .22], [2637, .5, .06], [3297, .35, .05], [1975.5, .7, .05]].forEach(function (p) {
+        var o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine'; o.frequency.value = p[0];
+        g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(p[2], t0 + .012); g.gain.exponentialRampToValueAtTime(.0001, t0 + p[1]);
+        o.connect(g); g.connect(ac.destination); o.start(t0); o.stop(t0 + p[1] + .05);
+      });
+    } catch (e) {}
+  }
+  function controls() {
+    [['design', S.design], ['role', S.role], ['screen', S.screen], ['notes', S.notes ? '1' : '0']].forEach(function (p) {
+      document.querySelectorAll('[data-' + p[0] + ']').forEach(function (b) { if (!frame.contains(b)) b.setAttribute('aria-pressed', String(b.getAttribute('data-' + p[0]) === p[1])); });
+    });
+  }
+  var NOTES = {
+    a: { t: 'A. One sorted page', rec: true,
+      what: 'Settings stays one page, sorted by who a setting is for: You, This phone, Notifications, then Team for a sous chef or The kitchen for the head chef, then About and help. Every row says what it is set to now and opens in place. The kitchen rows show the current value and open the admin page that already saves it.',
+      best: 'Everyone. Staff see a short page about themselves and their phone. The head chef sees the whole kitchen on one page and can type to find a setting.',
+      trade: 'The head chef still changes kitchen settings in the admin panel, one tap away. Nothing moves out of it.',
+      build: 'Three small pull requests. No rules change, no new reads: every value shown is already on the phone.',
+      moved: ['New: your card (name, role, device, Sign out) and What you can do.', 'New: Find a setting for the head chef, Play the ping sound, Check for an update.', 'Also here: My section (stays in the chef hat menu) and Cut-off pushes (stays on the Order list).', 'Moved: the kitchen PIN on this device, from Admin, Tools to This phone.', 'Folded: Seasonal celebrations and the QR code become one row each.'] },
+    b: { t: 'B. Settings chapters', rec: false,
+      what: 'Settings gets chapters like the admin panel\'s Chef\'s Desk: You, This phone, Notifications, Team or Kitchen setup, About and help. A rail on a computer. On a phone, a list of chapters, then one chapter at a time with Back.',
+      best: 'The head chef on the office computer or a tablet. Kitchen setup holds the simple kitchen-wide switches themselves.',
+      trade: 'One more tap on a phone for everyone. Moving four switches out of the admin panel means their saves and click tests move too, and the People save is split.',
+      build: 'Four or five pull requests. Expected no rules change (the same verified admin writes), checked on the emulator before building.',
+      moved: ['Everything A moves, plus:', 'Moved from the admin panel to Kitchen setup: Ping sound for every phone, Sous chefs read Kitchen mail, Pages staff see, Weekly top tickers.', 'People, sections, function bookers, cut-offs, the kitchen PIN and backup stay in the admin panel, linked from Kitchen setup.'] },
+    c: { t: 'C. Your card first', rec: false,
+      what: 'The chef hat opens your card: name, role, device, Sign out, your section, quick settings (text size, pushes, the ping sound), then the pages it holds now as a two-column grid. All settings and Kitchen setup are rows at the bottom and open A\'s sorted page.',
+      best: 'Staff on phones, and the sous chef\'s long menu: 12 items in one list become 6 rows of tiles, with Sign out at the top.',
+      trade: 'It changes the chef hat menu that everyone already knows. The biggest change of the three to learn.',
+      build: 'Four pull requests. No rules change, no new reads. The chef hat menu tests are rewritten.',
+      moved: ['The chef hat menu becomes your card with a two-column grid.', 'Sign out moves from the bottom of the menu to the top of the card.', 'Settings is A\'s sorted page without the You part, which the card covers.'] }
+  };
+  function notes() {
+    var n = NOTES[S.design];
+    document.getElementById('dnotes').innerHTML = '<div class="dn-main"><h2>' + n.t + (n.rec ? '<span class="rec">Recommended</span>' : '') + '</h2><p>' + n.what + '</p><dl><dt>Best for</dt><dd>' + n.best + '</dd><dt>Tradeoff</dt><dd>' + n.trade + '</dd><dt>Build</dt><dd>' + n.build + '</dd></dl></div>' +
+      '<div><h3>What moves or is new</h3><ul>' + n.moved.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div>';
+  }
+
+  /* ---------- taps ---------- */
+  document.getElementById('controls').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.design) { S.design = b.dataset.design; S.bCh = null; S.cView = 'menu'; S.find = ''; }
+    else if (b.dataset.role) { S.role = b.dataset.role; S.find = ''; S.cView = 'menu'; if (S.screen === 'phone') S.bCh = null; }
+    else if (b.dataset.screen) S.screen = b.dataset.screen;
+    else if (b.dataset.notes) S.notes = b.dataset.notes === '1';
+    else return;
+    render('top');
+  });
+  frame.addEventListener('click', function (e) {
+    var b = e.target.closest('button, [data-cclose]'); if (!b || !frame.contains(b)) return;
+    var d = b.dataset;
+    if (d.row) { S.open[d.row] = !S.open[d.row]; render(); return; }
+    if (d.set) { S.vals[d.set] = d.v; if (d.set === 'ksound' && d.v !== 'Off') bell(); render(); return; }
+    if (d.play) { bell(); toast('Playing ' + (S.vals.ksound || 'Pass bell') + ' at this phone\'s volume.'); return; }
+    if (d.ch) { S.bCh = d.ch; render('top'); return; }
+    if (d.bback) { S.bCh = null; render('top'); return; }
+    if (d.cview) { S.cView = d.cview; render('top'); return; }
+    if (d.cclose) { S.cView = 'closed'; render('top'); toast('Closed. The chef hat opens it again.'); return; }
+    if (d.hat) { if (S.design === 'c') { S.cView = S.cView === 'menu' ? 'closed' : 'menu'; render('hat'); } else toast('In the book this opens the chef hat menu. Settings is in it.'); return; }
+    if (d.toast) toast(d.toast);
+  });
+  frame.addEventListener('change', function (e) {
+    var p = e.target.getAttribute('data-page'); if (!p) return;
+    var on = (S.vals.pages || ['Guides', 'Shift pings']).slice(), i = on.indexOf(p);
+    if (e.target.checked && i < 0) on.push(p); if (!e.target.checked && i >= 0) on.splice(i, 1);
+    S.vals.pages = ['Guides', 'Shift pings', 'Meeting minutes'].filter(function (x) { return on.indexOf(x) >= 0; });
+    render();
+  });
+  frame.addEventListener('input', function (e) { if (e.target.getAttribute('data-find')) { S.find = e.target.value.trim(); render('find'); } });
+  frame.addEventListener('keydown', function (e) { if (e.key === 'Escape' && S.design === 'c' && S.cView === 'menu') { S.cView = 'closed'; render('hat'); } });
+  window.addEventListener('resize', fit);
+  // for the preview pictures only: the whole page in one tall screen, with the state set from outside
+  window.SETTINGS_MOCK = { set: function (o) { Object.keys(o).forEach(function (k) { S[k] = o[k]; }); render('top'); } };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+  render();
+}());
+</script>
+</body>
+</html>

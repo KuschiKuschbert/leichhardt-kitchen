@@ -50,6 +50,7 @@ const { R, ok } = L.results();
 
   p = await L.open(b, '#/settings', { who: 'ann', wait: 800 });
   ok(await p.locator('[aria-label="This device"] [data-act="device-choice"]').count() === 1, 'the unlocked owner of a personal device can change its type in Settings');
+  await L.setRow(p, 'device');
   await p.click('[data-act="device-choice"]'); await p.click('[data-device="shared"]');
   await L.waitFor(p, () => LK_DEVICE.mode() === 'shared' && !LK_PREP.privateAccess());
   ok(await p.evaluate(() => !LK_DEVICE.ownerId()), 'changing to shared signs the previous person out and removes the personal binding');
@@ -75,6 +76,7 @@ const { R, ok } = L.results();
   p = await L.open(b, '#/prep', { who: 'ann', wait: 700 });
   await p.fill('[data-k="p-text"]', 'Keep this prep draft');
   await p.evaluate(() => { location.hash = '#/settings'; }); await L.settle(p, 300);
+  await L.setRow(p, 'device');
   await p.click('[data-act="device-choice"]'); await p.click('[data-device="shared"]');
   await L.waitFor(p, () => !!document.querySelector('#lk-device-discard[open]'));
   ok(await p.evaluate(() => history.state && history.state.lkOv === 'adaptive'), 'draft device change reuses the picker history entry for its confirmation');

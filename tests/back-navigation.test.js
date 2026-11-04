@@ -58,6 +58,7 @@ async function returned(p, h) {
   await p.goForward(); await returned(p, '#/r/pork-belly');
   ok(await back(p).getAttribute('aria-label') === 'Back to prep list', 'browser Forward restores the same bounded return path');
   await go(p, '#/settings');
+  await L.setRow(p, 'text');
   await L.choose(p, '[data-act="settext"][data-val="large"]');
   await p.click('[data-act="done"]'); await returned(p, '#/r/pork-belly');
   ok(await back(p).getAttribute('aria-label') === 'Back to prep list', 'Settings Done returns to its origin after a settings redraw');
