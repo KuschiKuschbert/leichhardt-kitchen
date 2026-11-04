@@ -3,7 +3,7 @@ const L = require('./lib');
 const F = require('./supplier-fixtures');
 const { R, ok } = L.results();
 const supplierUrls = p => p.urls.filter(url => /\/js\/(suppliers|supplier-core|supplier-store)\.js(?:\?|$)/.test(url));
-const revision = (p, file) => supplierUrls(p).filter(url => new URL(url).pathname.endsWith('/js/' + file)).every(url => new URL(url).searchParams.get('v') === (file === 'suppliers.js' ? '13' : file === 'supplier-core.js' ? '4' : '2'));
+const revision = (p, file) => supplierUrls(p).filter(url => new URL(url).pathname.endsWith('/js/' + file)).every(url => new URL(url).searchParams.get('v') === (file === 'suppliers.js' ? '14' : file === 'supplier-core.js' ? '4' : '2'));
 const staleCore = () => { window.LK_SUP_CORE = { API: 3 }; window.LK_SUP_STORE = { API: 1 }; };
 
 (async () => {
@@ -17,11 +17,12 @@ const staleCore = () => { window.LK_SUP_CORE = { API: 3 }; window.LK_SUP_STORE =
   ok(p.errors.length === 0, 'revised supplier page has no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // The detailed order-list tick keeps its lazy-loader entry point before the supplier page is open.
+  // The order list's link to the supplier's detailed order (its name on the tick list) keeps the lazy-loader entry point
+  // before the supplier page is open. Since 5 Nov 2026 the tick beside it confirms only; the name opens the sheet.
   p = await L.open(b, '#/orders', { who: 'bo', extra: F.fixture(), init: staleCore, wait: 1500 });
-  await L.waitFor(p, () => !!document.querySelector('#cut-band [data-cut="done"][data-id^="northside|"]'), null, 10000);
+  await L.waitFor(p, () => !!document.querySelector('.cut-tl a.cut-n[href*="/northside/"]'), null, 10000);
   ok(!supplierUrls(p).length, 'supplier code stays lazy before the detailed order-list action');
-  await p.click('.cut-tl [data-p="cut-tick"][data-id^="northside|"]');
+  await p.click('.cut-tl a.cut-n[href*="/northside/"]');
   await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"]'), null, 15000);
   ok(revision(p, 'supplier-core.js') && await p.evaluate(() => window.LK_SUP_CORE.API === 4), 'reminder entry replaces an old core with the current revision');
   ok(revision(p, 'supplier-store.js') && await p.evaluate(() => window.LK_SUP_STORE.API === 2), 'detailed reminder entry replaces an older store too');
@@ -29,12 +30,12 @@ const staleCore = () => { window.LK_SUP_CORE = { API: 3 }; window.LK_SUP_STORE =
   ok(p.errors.length === 0, 'revised reminder entry has no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // The bar can confirm a reminder even when an old supplier core is already in memory.
-  p = await L.open(b, '#/', { who: 'bo', extra: F.fixture(), init: staleCore, wait: 1500 });
-  await L.waitFor(p, () => !!document.querySelector('#cut-band [data-cut="done"]:not([disabled])'), null, 10000);
-  await p.click('#cut-band [data-cut="done"][data-id^="northside|"]');
+  // The order-list tick confirms a reminder even when an old supplier core is already in memory.
+  p = await L.open(b, '#/orders', { who: 'bo', extra: F.fixture(), init: staleCore, wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="northside|"]:not([disabled])'), null, 10000);
+  await p.click('.cut-tl [data-p="cut-tick"][data-id^="northside|"]');
   await L.waitFor(p, k => window.__fake.dump()[k]?.on === true, F.key(['cutdone', F.today + '_northside']), 10000);
-  ok(!supplierUrls(p).length && await p.evaluate(() => window.LK_SUP_CORE.API === 3 && location.hash === '#/'), 'reminder-only completion does not depend on or replace an older supplier module');
+  ok(!supplierUrls(p).length && await p.evaluate(() => window.LK_SUP_CORE.API === 3 && location.hash === '#/orders'), 'reminder-only completion does not depend on or replace an older supplier module');
   ok(p.errors.length === 0, 'reminder-only completion with an old module has no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

@@ -10,7 +10,7 @@
   'owner'), through Firebase Cloud Messaging. A run that comes late still sends, as long as the cut-off has not passed;
   only the newest push is sent if both are due. Sent pushes are kept in pushsent/<cut-off day> { sent: { <supplier
   id>|<day>: start|now } }; a push no phone got because Firebase failed is tried again on the next run.
-  A cut-off a chef ticked off as ordered (the Supplier orders tick list or Ordered on the bar: cutdone/<day>_<supplier
+  A cut-off a chef ticked off as ordered (the Supplier orders tick list on the order list: cutdone/<day>_<supplier
   id> with on true) gets no more pushes; one whose tick was taken off again (on false) does.
   A phone address Firebase says is gone is removed.
 

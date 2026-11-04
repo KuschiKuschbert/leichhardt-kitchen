@@ -84,15 +84,15 @@
   function cutCardHTML() {
     var many = routeLinks().length > 1, cut = B().cuts().filter(function (c) { return c.id === M.route.cutoffId; })[0];
     var o = occurrences().filter(function (x) { return x.cutoffId === M.route.cutoffId && x.day === M.route.cutoffDay; })[0];
-    // Order done is the bar's own control (data-cut, handled in js/prep.js): today's and tomorrow's cut-offs only, the
-    // two days the shared ticks cover. It saves the tick and offers Undo exactly as on the bar. No read.
+    // Whether the order is done, for today's and tomorrow's cut-offs (the two days the shared ticks cover). It is ticked
+    // on the order list only (head chef, 5 Nov 2026); this card says so and links there. No read.
     var tick = !!o && (o.day === day() || o.day === day(epoch() + 86400000));
     var head = cut ? esc(cut.name) + (many ? ' is linked to more than one supplier' : ' is not in the supplier catalogue') : 'This order cut-off is not set up';
     return '<section class="empty su-cut-card" aria-labelledby="su-cut-h"><h3 class="h3" id="su-cut-h" tabindex="-1">' + head + '</h3>' +
       (o ? '<p>' + (o.past ? 'Closed: ' : 'Order by ') + esc(occurrenceLabel(o)) + '.</p>' : '') +
-      (tick ? '<p>' + (o.done ? '<b>Order done.</b> The Order list shows who ticked it.' : 'Place the order as usual, then tap Order done. No quantities are saved.') + '</p>' : '') +
+      (tick ? '<p>' + (o.done ? '<b>Order done.</b> The order list shows who ticked it.' : 'Place the order as usual, then tick it on the order list. No quantities are saved.') + '</p>' : '') +
       (cut && canEdit() ? '<p class="hint">' + (many ? 'Keep one supplier per cut-off in Supplier settings.' : 'To order it here, link its supplier to this cut-off in Supplier settings.') + '</p>' : '') +
-      '<div class="btn-row">' + (tick && !o.done ? '<button type="button" class="btn dark" data-cut="done" data-id="' + esc(o.key) + '">Order done</button>' : '') + '<a class="btn" href="#/orders">Order list</a></div></section>';
+      '<div class="btn-row"><a class="btn' + (tick && !o.done ? ' dark' : '') + '" href="#/orders">Order list</a></div></section>';
   }
   function occurrenceKey(o) { return o ? o.day + '_' + o.cutoffId : ''; }
   function occurrenceLabel(o) { return o && (o.label || (typeof o.at === 'number' ? dateText(o.at) : o.day)) || ''; }
@@ -782,7 +782,7 @@
   // the other editors. iPhone Safari never asks, and nothing is kept past the page.
   // Update now's second tap already said the draft may go (LK_UPDATE.letGo() in js/upkeep.js): no second question
   window.addEventListener('beforeunload', function (ev) { if (dirty() && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { ev.preventDefault(); ev.returnValue = ''; } });
-  // The shared ticks changed (js/prep.js, lk-cut): the card follows its Order done, Undo or another chef's tick. No read.
+  // The shared ticks changed (js/prep.js, lk-cut): the card follows a tick on the order list, its Undo or another chef's. No read.
   window.addEventListener('lk-cut', function () {
     if (!M.root || !canRead() || !cutCard()) return;
     var had = !!document.activeElement && M.root.contains(document.activeElement) && document.activeElement.hasAttribute('data-cut');
