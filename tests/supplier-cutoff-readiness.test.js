@@ -80,7 +80,7 @@ async function open(b, linked, name) {
   release = await holdTools(p);
   request = p.waitForRequest(/\/js\/supplier-core\.js(?:\?|$)/);
   await p.click(tick); await request;
-  await p.click('.nb-top [data-p="who-change"]');
+  await L.notYou(p);
   await L.waitFor(p, () => !!document.querySelector('.p-name[data-id="sam"]'), null, 10000);
   await p.click('.p-name[data-id="sam"]');
   await p.type('#pf1', '1111');

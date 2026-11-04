@@ -152,7 +152,7 @@ async function open(b, options = {}) {
 
   await step('genuine sign-ins reorder choices', async () => {
     p = await open(b); const initial = (await current(p)).here;
-    await p.locator('[data-p="who-change"]').first().click(); await L.settle(p, 300);
+    await L.notYou(p); await L.settle(p, 300);
     await p.locator('.p-name[data-id="bo"]').click(); await L.settle(p, 250);
     await p.fill('#pf1', '9999'); await L.settle(p, 500);
     ok(await p.evaluate(old => localStorage.getItem('lk.prep.here') === old, initial), 'a wrong personal PIN never updates device sign-in recency');

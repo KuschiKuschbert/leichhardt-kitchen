@@ -1,5 +1,6 @@
 // The chef mark in the top bar: on every phone, with the name in its title (and next to it on a wide screen) while a
-// person is signed in, back to "Menu and Settings" after "Not you?", on every page (19 Oct 2026). Its menu holds
+// person is signed in, back to "Menu and Settings" after Sign out, on every page (19 Oct 2026). Since 3 Nov 2026 it also
+// shows who is signed in: their initial on a personal phone, their first name on a shared screen. Its menu holds
 // Settings for everyone, signed in or not (20 Oct 2026).
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
@@ -44,34 +45,42 @@ const mark = p => p.evaluate(() => { const e = document.querySelector('.wtop-who
     ok(!(await L.overflow(p)), 'landing at ' + w + ': no sideways scroll with the menu open (' + await L.overflow(p) + ')');
     await p.context().close();
   }
+  // who is signed in shows on the hat itself (3 Nov 2026, the Writing as row went): their initial in a disc on a personal
+  // phone, their first name next to the hat on a shared screen
+  p = await L.open(b, '#/prep', { who: 'sam', wait: 1200 });
+  ok(await txt(p, '.wtop-who .wtop-av') === 'S' && !(await p.$('.nb-top')), 'personal phone: the hat carries Sam\'s initial and the prep list has no Writing as row');
+  await p.context().close();
   // sign out and in again on the prep list: the mark follows without a reload
   p = await L.open(b, '#/prep', { who: 'sam', deviceMode: 'shared', wait: 1200 });
-  ok((await mark(p)) === 'on:Signed in as Sam:', 'prep list: mark on for Sam (' + await mark(p) + ')');
-  await p.click('[data-p="who-change"]');
-  await L.settle(p, 300);
-  ok((await mark(p)) === 'on:Menu and Settings:', 'prep list: "Not you?" takes the name off the mark (' + await mark(p) + ')');
+  ok((await mark(p)) === 'on:Signed in as Sam:Sam', 'shared prep list: mark on for Sam, his first name next to the hat (' + await mark(p) + ')');
+  ok(!(await L.overflow(p)), 'shared prep list: no sideways scroll with the name on the hat');
+  await L.notYou(p);
+  ok((await mark(p)) === 'on:Menu and Settings:', 'prep list: Sign out in the hat menu takes the name off the mark (' + await mark(p) + ')');
   await p.click('.p-name[data-id="ann"]');
   await L.settle(p, 500);
   await p.type('#pf1', '2222');
   await L.settle(p, 900);
-  ok((await mark(p)) === 'on:Signed in as Ann:', 'prep list: signing in as Ann brings the mark back with her name (' + await mark(p) + ')');
+  ok((await mark(p)) === 'on:Signed in as Ann:Ann', 'prep list: signing in as Ann brings the mark back with her name (' + await mark(p) + ')');
   ok((await anim(p)) === 'flip:who-flip', 'prep list: the sign-in flips the mark in like a coin (' + await anim(p) + ')');
   ok(p.errors.length === 0, 'who mark: no page errors ' + p.errors.join(' | '));
   await p.context().close();
-  // "Not you?" sits next to "Writing as" on the order list, wastage and transfers too, and the next person signs in on that page
+  // the order list, wastage and transfers have no Writing as row either; Sign out in the hat menu hands the phone over
+  // and the next person signs in on that page
   for (const pg of ['orders', 'waste', 'transfers']) {
     p = await L.open(b, '#/' + pg, { who: 'sam', deviceMode: 'shared', wait: 1200 });
-    ok(/Writing as\s*Sam/.test(await txt(p, '.nb-top') || '') && !!(await p.$('.nb-top [data-p="who-change"]')), pg + ': "Not you?" next to "Writing as Sam"');
-    // the tab bar or the pill menu always has Prep, so the line has no Prep list link of its own (23 Oct 2026)
-    ok(!(await p.$('.nb-top a[href="#/prep"]')), pg + ': no extra Prep list link next to "Not you?"');
-    await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 300);
-    ok(/Who are you\?/.test(await txt(p, '#prep-root') || '') && (await mark(p)) === 'on:Menu and Settings:', pg + ': "Not you?" asks who is writing and takes the name off the mark');
+    ok(!(await p.$('.nb-top')) && (await mark(p)) === 'on:Signed in as Sam:Sam', pg + ': no Writing as row, Sam on the hat');
+    await L.notYou(p);
+    ok(/Who are you\?/.test(await txt(p, '#prep-root') || '') && (await mark(p)) === 'on:Menu and Settings:', pg + ': Sign out asks who is writing and takes the name off the mark');
     await p.click('.p-name[data-id="ann"]'); await L.settle(p, 500);
     await p.type('#pf1', '2222'); await L.settle(p, 900);
-    ok(await p.evaluate(() => location.hash) === '#/' + pg && /Writing as\s*Ann/.test(await txt(p, '.nb-top') || ''), pg + ': Ann signs in and stays on the page');
-    ok(p.errors.length === 0, pg + ' "Not you?": no page errors ' + p.errors.join(' | '));
+    ok(await p.evaluate(() => location.hash) === '#/' + pg && await L.whoIs(p) === 'Ann', pg + ': Ann signs in and stays on the page');
+    ok(p.errors.length === 0, pg + ' sign out: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
+  // a shared tablet: the name next to the hat, the KB mark standing in for "Kitchen Book", no sideways scroll
+  p = await L.open(b, '#/prep', { who: 'sam', deviceMode: 'shared', width: 768, height: 900, wait: 1200 });
+  ok((await mark(p)) === 'on:Signed in as Sam:Sam' && !(await L.overflow(p)), 'shared tablet 768: Sam next to the hat, no sideways scroll (' + await mark(p) + ')');
+  await p.context().close();
   await b.close();
   R.forEach(r => console.log(r));
   const bad = R.filter(r => r.startsWith('FAIL')).length;
