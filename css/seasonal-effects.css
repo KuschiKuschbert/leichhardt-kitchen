@@ -87,41 +87,14 @@
 @media(max-width:520px){#kb-festive-effects .kb-ambient-particle.is-edge{--opacity:.53}#kb-festive-effects[data-motion-intensity="light"] .kb-ambient-particle.is-edge{--opacity:.34}#kb-festive-effects .kb-ambient-particle.is-ornament{width:calc(var(--size) * .8);height:calc(var(--size) * .8)}#kb-festive-effects .kb-ambient-particle[data-ambient-motion="race"]{--opacity:.48}}
 @media(prefers-reduced-motion:reduce){#app .kb-saber-blade,#app .kb-horse-leg,#app .kb-horse-tail,#app .kb-clover-leaf,#kb-festive-effects *{animation:none!important;filter:none!important}}
 
-/* A short, visible festival scene is clipped to the navbar on working pages. */
+/* Work pages: Kitchen Book, the stamp beside it, and a still festive edge along the bottom of the top bar (3 Nov 2026).
+   The edge sits in the bar's own space below the buttons, so it never covers the Functions or cut-off bands. */
 #app[data-kb-celebration-surface="work"] .wtop{position:relative;isolation:isolate}
 #app[data-kb-celebration-surface="work"] .wtop>.wtop-start,#app[data-kb-celebration-surface="work"] .wtop>.pnav,#app[data-kb-celebration-surface="work"] .wtop>.wtop-icons{position:relative;z-index:1}
-.kb-nav-festive-effects{--kb-festive-outline:var(--bar-text,#FBF8F1);--kb-festive-ink:var(--bar-text,#FBF8F1);position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;contain:layout paint;--kb-nav-height:92px;--kb-nav-width:800px}
-.kb-nav-festive-effects *{pointer-events:none!important}
-.kb-navbar-particle{display:block;position:absolute;left:clamp(16px,var(--kb-nav-x),calc(100% - var(--kb-nav-size) - 16px));top:8px;width:var(--kb-nav-size);height:var(--kb-nav-size);font-style:normal;opacity:0;will-change:transform;animation:kb-navbar-fall var(--kb-nav-duration) linear infinite;animation-delay:var(--kb-nav-delay)}
-.kb-navbar-particle>svg{display:block;width:100%;height:100%;overflow:visible}
-.kb-navbar-particle[data-nav-motif="snow"]{background:var(--bar-text,#FBF8F1);border-radius:50%;box-shadow:0 0 0 1px rgb(251 248 241 / .12)}
-.kb-navbar-particle[data-nav-motion="rise"]{animation-name:kb-navbar-rise}
-.kb-navbar-particle[data-nav-motion="flutter"]{animation-name:kb-navbar-flutter}
-.kb-navbar-particle[data-nav-motion="race"]{top:auto;bottom:var(--kb-nav-lane,8px);left:8px;animation-name:kb-navbar-race}
-.kb-navbar-particle[data-nav-motion="twinkle"],.kb-navbar-particle[data-nav-motion="saber"],.kb-navbar-particle[data-nav-motion="sway"],.kb-navbar-particle[data-nav-motion="breathe"]{top:clamp(8px,var(--kb-nav-y),calc(100% - var(--kb-nav-size) - 8px));animation-timing-function:var(--kb-festive-ease,ease-in-out)}
-.kb-navbar-particle[data-nav-motion="twinkle"]{animation-name:kb-navbar-twinkle}
-.kb-navbar-particle[data-nav-motion="saber"]{animation-name:kb-navbar-saber;transform-origin:50% 80%}
-.kb-navbar-particle[data-nav-motion="sway"]{animation-name:kb-navbar-sway;transform-origin:center top}
-.kb-navbar-particle[data-nav-motion="breathe"]{animation-name:kb-navbar-breathe}
-.kb-nav-horizon{position:absolute;inset:0;background:linear-gradient(0deg,rgb(169 175 182 / .2),transparent 70%);animation:kb-navbar-horizon 6s ease-in-out infinite;pointer-events:none}
-.kb-nav-horizon.is-dawn{background:linear-gradient(0deg,rgb(226 96 42 / .19),transparent 70%)}
-.kb-nav-festive-effects .kb-ambient-detail{animation:kb-ambient-detail 4s var(--kb-festive-ease,ease-in-out) infinite;transform-box:fill-box;transform-origin:center}
-#app[data-kb-celebration-surface="work"].motion-gentle .kb-occasion-title-art>.kb-motion-target{--kb-tilt:8deg;--kb-rock:8deg;--kb-lift:-4px;--kb-slide:5px;--kb-motion-period:3.6s}
-#app[data-kb-celebration-surface="work"][data-motion-intensity="light"].motion-gentle .kb-occasion-title-art>.kb-motion-target{--kb-tilt:5deg;--kb-rock:5deg;--kb-lift:-3px;--kb-slide:3px;--kb-motion-period:4.8s}
-#app.motion-paused .kb-nav-festive-effects *{animation-play-state:paused!important}
-@keyframes kb-navbar-fall{0%{transform:translate3d(0,0,0) rotate(-8deg);opacity:0}10%,85%{opacity:var(--kb-nav-opacity)}100%{transform:translate3d(var(--kb-nav-drift),calc(var(--kb-nav-height) - var(--kb-nav-size) - 16px),0) rotate(12deg);opacity:0}}
-@keyframes kb-navbar-rise{0%{transform:translate3d(0,calc(var(--kb-nav-height) - var(--kb-nav-size) - 16px),0) rotate(-8deg);opacity:0}10%,85%{opacity:var(--kb-nav-opacity)}100%{transform:translate3d(var(--kb-nav-drift),0,0) rotate(12deg);opacity:0}}
-@keyframes kb-navbar-flutter{0%{transform:translate3d(0,0,0) rotate(-12deg);opacity:0}12%,84%{opacity:var(--kb-nav-opacity)}50%{transform:translate3d(var(--kb-nav-drift),calc((var(--kb-nav-height) - var(--kb-nav-size) - 16px) * .5),0) rotate(12deg)}100%{transform:translate3d(0,calc(var(--kb-nav-height) - var(--kb-nav-size) - 16px),0) rotate(-8deg);opacity:0}}
-@keyframes kb-navbar-race{0%{transform:translate3d(0,0,0);opacity:0}7%,90%{opacity:var(--kb-nav-opacity)}50%{transform:translate3d(calc((var(--kb-nav-width) - var(--kb-nav-size) - 16px) * .5),-3px,0)}100%{transform:translate3d(calc(var(--kb-nav-width) - var(--kb-nav-size) - 16px),0,0);opacity:0}}
-@keyframes kb-navbar-twinkle{0%,100%{transform:translateY(3px) scale(.85);opacity:calc(var(--kb-nav-opacity) * .45)}50%{transform:translateY(-3px) scale(1.1);opacity:var(--kb-nav-opacity)}}
-@keyframes kb-navbar-saber{0%,100%{transform:rotate(-11deg);opacity:var(--kb-nav-opacity)}50%{transform:rotate(11deg);opacity:var(--kb-nav-opacity)}}
-@keyframes kb-navbar-sway{0%,100%{transform:rotate(-6deg);opacity:calc(var(--kb-nav-opacity) * .8)}50%{transform:rotate(6deg);opacity:var(--kb-nav-opacity)}}
-@keyframes kb-navbar-breathe{0%,100%{transform:scale(.92);opacity:calc(var(--kb-nav-opacity) * .6)}50%{transform:scale(1.06);opacity:var(--kb-nav-opacity)}}
-@keyframes kb-navbar-horizon{0%,100%{opacity:.35}50%{opacity:.9}}
-@media(prefers-reduced-motion:reduce){.kb-nav-festive-effects{display:none!important}.kb-nav-festive-effects *{animation:none!important}}
-@media print{.kb-nav-festive-effects{display:none!important}}
-/* Phone headers keep the celebration legible around a two-line chalk title. */
-@media(max-width:520px){.kb-nav-festive-effects>.kb-navbar-particle.is-phone-extra{display:none}}
+.kb-nav-edge{position:absolute;left:0;right:0;bottom:0;display:block;width:100%;height:12px;z-index:0;pointer-events:none;--kb-festive-outline:var(--bar-text,#FBF8F1);--kb-festive-ink:var(--bar-text,#FBF8F1);--kb-festive-chalk:var(--bar-text,#FBF8F1)}
+.kb-nav-edge *{animation:none!important}
+@media(min-width:720px){.kb-nav-edge{bottom:6px}}
+@media print{.kb-nav-edge{display:none!important}}
 /* Home motifs live behind the page (3 Nov 2026): the layer sits at z-index 0, under the top bar (20), the tab bar (30) and
    the Home column, which is lifted above it while a celebration is on. Motifs show on the kraft between the board and dockets. */
 #app[data-kb-theme]:not([data-kb-theme="off"]) .wall-main{position:relative;z-index:1}
