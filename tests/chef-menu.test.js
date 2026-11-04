@@ -193,6 +193,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
     await p.evaluate(h => { location.hash = h; }, h); await L.settle(p, 600);
     ok(await p.evaluate(() => !window.LK_PREP.state.recipeOpen && !window.LK_PREP.state.recipeSearch && !window.LK_PREP.unsaved()), 'recipe picker: leaving the prep list for ' + h + ' closes it, and nothing counts as not saved');
     await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 600);
+    await L.pLog(p);   // the picker's button is in the Add a line sheet (3 Nov 2026)
     ok(await p.evaluate(() => { const t = document.querySelector('[data-p="recipe-toggle"]'); return !!t && t.getAttribute('aria-expanded') === 'false' && !document.querySelector('.p-pick.is-open') && !document.querySelector('#p-rs'); }), 'recipe picker: back from ' + h + ', Prep shows it closed');
     await pickOpen();
   }

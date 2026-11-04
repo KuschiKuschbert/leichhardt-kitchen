@@ -38,6 +38,7 @@ const side = (page, where) => page.evaluate(w => {
     const tag = w + ' px: ';
     const p = await L.open(b, '#/prep', { extra, width: w, height: w > 400 ? 900 : 844, wait: 1600 });
     const wide = w >= 900, where = wide ? '.nb-right' : '.nb-qadd';
+    if (!wide) await L.pLog(p);   // on a phone the add box, and its chips, are in the Add a line sheet
     const h = await side(p, where);
     ok(h.sub === (wide ? 'Done today and quick add' : 'Done today'), tag + 'Handy says what is on it (' + h.sub + ')');
     ok(!/Do these first/.test(h.text), tag + 'no Do these first box');

@@ -1,5 +1,5 @@
-// A read lost to a bad signal is never kept as "nothing there": Everything to order says so, nothing goes into the day
-// cache, and the book reads again by itself later (usability U1). The same for the wastage summary (22 Oct 2026), and
+// A read lost to a bad signal is never kept as "nothing there": nothing rolls over from a day that could not be read,
+// nothing goes into the day cache, and the book reads again by itself later (usability U1). The same for the wastage summary (22 Oct 2026), and
 // since 28 Oct 2026 for the admin Insights and Team days, the Insights counts and the nightly summaries of what is usual.
 const L = require('./lib');
 const { R, ok } = L.results(), txt = L.txt;
@@ -43,20 +43,17 @@ async function fits(p, what, back) {
   ok(p.errors.length === 0, 'waste: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // orders, Everything to order: yesterday cannot be read, so it must not say "Nothing waiting"
+  // orders (one list since 3 Nov 2026, Everything to order went): yesterday cannot be read, so nothing rolls over, the
+  // day is not marked as rolled and the order history is not kept with a day missing; after the wait it reads again
   p = await L.open(b, '#/orders', { wait: 1500, extra, failReads: '/orders/' + day(1) + '/lines$' });
-  await p.click('[data-p="oview"][data-v="all"]');
   await L.settle(p, 500);
-  const all = await txt(p, '.nb-body') || await txt(p, '.o-page') || '';
-  ok(/Could not load every day/.test(all), 'orders all: says it could not load every day');
-  ok(!/Nothing waiting to be ordered/.test(all), 'orders all: does not say nothing is waiting');
+  ok(!/Cream/.test(await txt(p, '.o-page') || '') && !(await cached(p, 'lk.ord.rolled')), 'orders: yesterday unreadable, nothing rolls over and the day is not marked rolled');
   ok(!(await cached(p, 'lk.ord.hist')), 'orders: the order history is not cached with a day missing');
   await p.evaluate(() => { window.__fake.failReads = null; });
   await p.clock.fastForward('06:00');
-  await p.click('[data-p="oview"][data-v="day"]'); await p.click('[data-p="oview"][data-v="all"]');
-  await L.settle(p, 500);
-  const all2 = await txt(p, '.o-page') || '';
-  ok(/Cream/.test(all2) && !/Could not load/.test(all2), 'orders all: after the wait it reads again and shows Cream');
+  await go(p, '#/prep'); await go(p, '#/orders');
+  ok(await shows(p, '.o-wait', /Cream/), 'orders: after the wait it reads again and Cream shows under Waiting from earlier days');
+  ok(!!(await cached(p, 'lk.ord.hist')), 'orders: and the order history is kept once every day came in');
   ok(p.errors.length === 0, 'orders: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

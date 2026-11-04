@@ -1,6 +1,6 @@
 // No signal (27 Oct 2026). Since 26 Oct 2026 (#387) Firestore keeps only a copy in memory, so with no signal a listener or a
 // query answers at once from that copy, and the copy is empty for anything no other listener holds (marked fromCache).
-// That answer means "not loaded yet", never "nothing there": the names list, the kitchen lists, Everything to order,
+// That answer means "not loaded yet", never "nothing there": the names list, the kitchen lists,
 // the drinks run, guides, pings, minutes and functions say there is no signal, nothing empty is kept on the phone, and
 // each one loads by itself once the signal is back. The stand-in answers like that with __fake.cold.
 // A list not loaded yet stays that way when the cook writes a line with no signal: the copy then holds only that line,
@@ -100,10 +100,7 @@ const fnDoc = (name, date) => M.derive({ v: 1, status: 'confirmed', name, date, 
   t = await page(p);
   ok(t.indexOf(NO_LIST) >= 0 && t.indexOf('Lemons') > t.indexOf(NO_LIST) && !/Milk/.test(t), 'orders, a line written with no signal: it shows under the note, which stays (' + t.slice(0, 200) + ')');
   ok(!/ordered/.test(await head(p)) && !/Everything on this list has been ordered/.test(t), 'orders, a line written with no signal: no "0 of 1 ordered" from that line alone');
-  await p.click('[data-p="oview"][data-v="all"]'); await L.settle(p, 700);
-  t = await page(p);
-  ok(/Could not load every day/.test(t) && !/Nothing waiting to be ordered/.test(t), 'everything to order: says it could not load, not that nothing is waiting');
-  await p.click('[data-p="oview"][data-v="day"]'); await L.settle(p, 200);
+  await p.keyboard.press('Escape'); await L.settle(p, 200);
   await go(p, '#/waste');
   t = await page(p);
   ok(t.indexOf(NO_LIST) >= 0 && !/Nothing logged for/.test(t), 'wastage: says there is no signal, not that nothing is logged');
