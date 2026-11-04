@@ -53,7 +53,8 @@ async function returned(p, h) {
   await back(p).click(); await returned(p, '#/r/pork-belly');
   ok(await back(p).getAttribute('aria-label') === 'Back to prep list', 'Back from a guide restores the recipe return trail');
   await back(p).click(); await returned(p, '#/prep');
-  ok(await p.inputValue('#p-text') === 'Keep this prep draft' && await p.inputValue('#p-qty') === '2 tubs', 'Back restores typed prep work without saving it');
+  // read from the page's state: opening the Add a line sheet to look would add a history entry and drop Forward
+  ok(await p.evaluate(() => LK_PREP.state.text === 'Keep this prep draft' && LK_PREP.state.qty === '2 tubs'), 'Back restores typed prep work without saving it');
   ok(!(await p.evaluate(() => Object.values(window.__fake.dump()).some(x => x && x.text === 'Keep this prep draft'))), 'return navigation does not write the typed line');
   await p.goForward(); await returned(p, '#/r/pork-belly');
   ok(await back(p).getAttribute('aria-label') === 'Back to prep list', 'browser Forward restores the same bounded return path');

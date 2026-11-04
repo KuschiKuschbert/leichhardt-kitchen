@@ -1,6 +1,7 @@
-// The prep list's first screen on a phone (usability U9b): Start here is one line until tapped, a Done today button
-// jumps to the ticked lines, and Quick add sits in the add box (and only there: Handy's copy is for big screens). The
-// Writing as row is gone (3 Nov 2026, who is signed in is on the chef hat): your own place for ticks is in the Top tickers strip (23 Oct 2026).
+// The prep list's first screen on a phone: Start here is numbered on the lines themselves, the "x of y done" count is the
+// way to Done today once something is ticked, and Quick add sits in the add box, in the Add a line sheet (and only there:
+// Handy's copy is for big screens) (work pages redesign A, 3 Nov 2026). The Writing as row is gone (3 Nov 2026, who is
+// signed in is on the chef hat): your own place for ticks is in the Top tickers strip (23 Oct 2026).
 const L = require('./lib');
 const { R, ok } = L.results();
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -11,15 +12,16 @@ const top = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); r
 (async () => {
   const b = await L.start();
   let p = await L.open(b, '#/prep', { extra, wait: 1600 });
-  ok(await p.$('details.nb-start-l:not([open])') !== null && /Portion rump/.test(await L.txt(p, 'details.nb-start-l summary') || ''), 'phone: Start here is one line naming the jobs');
+  const nums = await p.$$eval('.nb-row .nb-t[data-n]', l => l.length);
+  ok(nums > 0 && !(await p.$('.nb-start')), 'phone: Start here is numbered on the lines, with no box of its own (' + nums + ')');
   const first = await top(p, '.nb-rows li');
   ok(first > 0 && first < 560, 'phone: the first line starts higher up (' + first + ')');
-  await L.tap(p, 'details.nb-start-l summary'); await L.settle(p, 200);
-  ok(await p.$('details.nb-start-l[open] .nb-sb') !== null, 'phone: a tap opens Start here');
-  ok(await p.$('.nb-qadd [data-p="quick"]') !== null, 'phone: Quick add sits in the add box');
+  ok(!(await p.$('button.nb-prog')), 'phone: nothing ticked, the count is not a button');
   ok(await p.evaluate(() => { const q = document.querySelector('.nb-right .nb-quick'); return !q || !q.getClientRects().length; }), 'phone: Handy shows no second copy of the chips');
   await L.tap(p, '[data-p="tick"][data-id="i1"]'); await L.settle(p, 400);
-  ok(/Done today \(1\)/.test(await L.txt(p, '.nb-donejump') || ''), 'phone: a Done today (1) button shows by the count');
+  ok(/^1 of \d+ done$/.test((await L.txt(p, 'button.nb-prog') || '').trim()), 'phone: one ticked, "1 of n done" is the button to Done today');
+  await L.pLog(p);
+  ok(await p.$('.p-sheet .nb-qadd [data-p="quick"]') !== null, 'phone: Quick add sits in the add box, in the Add a line sheet');
   ok(p.errors.length === 0, 'phone: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

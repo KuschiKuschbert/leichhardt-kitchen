@@ -127,6 +127,7 @@ async function ticked(p, id, done) { await L.waitFor(p, ({ k, done }) => !!__fak
 
   p = await L.open(b, '#/prep', { width: 320, who: 'ann', extra, settings: { text: 'xlarge' }, wait: 1200 }); await ready(p);
   await p.fill('#p-text', 'Extra gravy for service'); await p.fill('#p-qty', '1 jug');
+  await p.keyboard.press('Escape'); await L.settle(p, 200);   // the Add a line sheet closed, the words kept (3 Nov 2026)
   await p.evaluate(() => { __fake.mode = 'hold'; }); await p.context().setOffline(true); await L.settle(p, 250);
   const openWidth = await p.locator('#nbr-i4 .nb-t').evaluate(e => e.getBoundingClientRect().width);
   await p.locator('#nbr-i4 .nb-tt').click();
