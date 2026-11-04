@@ -66,7 +66,7 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
   // Needs you: open mail, minutes still to sign and an overdue action, a transfer not back, each opening its page.
   const ago = d => L.ymd(new Date(L.NOW - d * DAY));
   const loan = { dir: 'out', venue: 'Venue B', person: 'Jo', text: 'Butter', amount: 2, unit: 'kg', note: '', addedBy: 'Bo', addedById: 'bo', addedAt: L.NOW - 9 * DAY, deleted: false, by: 'bo' };
-  const waiting = { ...extra, ...L.mail(),
+  const waiting = { ...extra, ...L.mail(), [path('analysis', 'dashboard')]: { ...extra[path('analysis', 'dashboard')], needs: { links: 3, training: 5, inTraining: 2 } },
     [path('minutes', 'mx')]: { no: 3, v: 1, status: 'published', date: ago(5), start: '14:00', loc: 'Kitchen', chair: 'sam', taker: 'sam', att: [{ id: 'ann', st: 'present' }, { id: 'sam', st: 'present' }],
       guests: '', decisions: 'Fryer oil every Monday', menu: '', safety: '', dates: '', other: '', acts: [{ text: 'Fix the cool room seal', who: 'sam', by: ago(2), st: 'open' }], next: '',
       pubAt: L.NOW - 5 * DAY, removed: false, at: L.NOW - 5 * DAY, upd: L.NOW - 5 * DAY },
@@ -80,6 +80,7 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
     ok(/3 kitchen mails open/.test(needs), width + ': Needs you counts the open kitchen mail (' + needs.slice(0, 200) + ')');
     ok(/Late/.test(needs) && /still to sign/.test(needs) && /1 of \d+ signed/.test(needs), width + ': Needs you says who has not signed the late minutes');
     ok(/1 meeting action past the date/.test(needs), width + ': Needs you lists the overdue meeting action');
+    ok(/3 item links to check/.test(needs) && /5 training reviews/.test(needs) && /2 in training/.test(needs), width + ': Needs you shows the Review desk counts from the nightly run');
     ok(/1 transfer not returned/.test(needs) && /Oldest: Butter to Venue B, 9 days/.test(needs), width + ': Needs you lists the transfer not back, with the oldest');
     ok(/The nightly run finished\./.test(needs), width + ': the nightly run counts as clear when it finished');
     ok(!await L.overflow(q), width + ': no sideways scroll with Needs you');
@@ -87,6 +88,10 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
     await q.evaluate(() => { const x = document.querySelector('.mlp-wrap [data-ml="later"]'); if (x) x.click(); }); await L.settle(q, 300);
     await q.click('.dsh-needs [data-dsh="open"][data-t="mail"]'); await L.settle(q, 300);
     ok(await q.evaluate(() => LK_PREP.state.atab) === 'mail', width + ': Open mail opens the Kitchen mail page');
+    await q.click('[data-p="a-group"][data-g="dashboard"]').catch(() => L.adminTab(q, 'dashboard')); await ready(q);
+    await q.evaluate(() => { const x = document.querySelector('.mlp-wrap [data-ml="later"]'); if (x) x.click(); }); await L.settle(q, 200);
+    await q.click('.dsh-needs [data-dsh="open"][data-t="references"]'); await L.settle(q, 300);
+    ok(await q.evaluate(() => LK_PREP.state.atab) === 'references', width + ': the item links row opens the Review desk');
     await q.context().close();
   }
   // The week ahead: functions from the live list, cut-offs from the head chef's settings, the usual busy days. No reads.

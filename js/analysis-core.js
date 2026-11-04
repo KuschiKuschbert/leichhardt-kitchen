@@ -85,7 +85,37 @@
     return { counts: counts, quality: quality, coverage: coverage, sections: sections, people: people, comparison: { recentDays: lastDays.length, previousDays: previousDays.length },
       items: Object.keys(items).map(function (k) { var a = items[k]; a.sample = Object.keys(a.days).length; delete a.days; return a; }).sort(function (a, b) { return b.sample - a.sample || a.text.localeCompare(b.text); }) };
   }
-  var api = { key: key, daily: daily, aggregate: aggregate, resolve: resolve, identity: identity, sources: sources };
+  /* The Review desk's two queues, shared with the nightly job so the admin Dashboard counts them the same way. */
+  // Item links: recorded names in a summary that no saved reference covers yet.
+  function linkQueue(summary, refs) {
+    refs = refs || [];
+    return ((summary && summary.items) || []).filter(function (item) {
+      return !refs.some(function (r) { return key(r.alias) === key(item.text) || (item.ref && identity(r) === item.ref && key(r.label) === key(item.text)); });
+    });
+  }
+  function trainingRecent(a, b) { return String(b.day || '').localeCompare(String(a.day || '')) || (+b.at || 0) - (+a.at || 0) || String(a.id || '').localeCompare(String(b.id || '')); }
+  // The head chef's sections (config/main kitSecs), else the sections in the summary.
+  function trainingSections(configured, summary) {
+    var sections = (configured || []).slice();
+    if (!sections.length && summary) sections = Object.keys(summary.sections || {});
+    return sections.filter(function (section, index) { return section && sections.indexOf(section) === index; }).sort(function (a, b) { return a.localeCompare(b); });
+  }
+  function sectionAssessment(records, person, section) {
+    // A recipe belongs to a section, but assessing that recipe does not assess the whole section.
+    return (records || []).filter(function (r) { return r.personId === person && r.section === section && !r.recipeId; }).sort(trainingRecent)[0];
+  }
+  function trainingTicks(summary, person, section) { return summary && summary.people && summary.people[person] ? (+summary.people[person][section] || 0) : 0; }
+  // Training: every active person and section without a confirmed whole-section assessment, in training first.
+  function trainingQueue(summary, records, people, configured) {
+    var out = [], sections = trainingSections(configured, summary);
+    (people || []).forEach(function (p) { sections.forEach(function (section) {
+      var assessment = sectionAssessment(records, p.id, section);
+      if (!assessment || assessment.status !== 'confirmed') out.push({ person: p, section: section, assessment: assessment, ticks: trainingTicks(summary, p.id, section) });
+    }); });
+    return out.sort(function (a, b) { return (a.assessment && a.assessment.status === 'in-training' ? 0 : 1) - (b.assessment && b.assessment.status === 'in-training' ? 0 : 1) || b.ticks - a.ticks || String(a.person.name || '').localeCompare(String(b.person.name || '')) || a.section.localeCompare(b.section); });
+  }
+  var api = { key: key, daily: daily, aggregate: aggregate, resolve: resolve, identity: identity, sources: sources,
+    linkQueue: linkQueue, trainingRecent: trainingRecent, trainingSections: trainingSections, sectionAssessment: sectionAssessment, trainingTicks: trainingTicks, trainingQueue: trainingQueue };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else window.LK_ANALYSIS = api;
 })();

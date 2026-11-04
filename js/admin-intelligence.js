@@ -243,14 +243,7 @@
     redraw();
   });
 
-  function referenceItems(s, refs) {
-    return (s.items || []).filter(function (item) {
-      return !refs.some(function (r) {
-        return window.LK_ANALYSIS.key(r.alias) === window.LK_ANALYSIS.key(item.text) ||
-          (item.ref && window.LK_ANALYSIS.identity(r) === item.ref && window.LK_ANALYSIS.key(r.label) === window.LK_ANALYSIS.key(item.text));
-      });
-    });
-  }
+  function referenceItems(s, refs) { return window.LK_ANALYSIS.linkQueue(s, refs); }
   function referenceTarget(r) {
     var parts = [], recipe = api.recipes().filter(function (x) { return x.id === r.recipeId; })[0];
     if (r.recipeId) parts.push('Recipe: ' + (recipe ? recipe.name : r.recipeId));
@@ -332,17 +325,10 @@
   }
 
   function trainingStatus(status) { return { 'not-assessed': 'Not assessed', 'in-training': 'In training', confirmed: 'Confirmed' }[status] || 'Not assessed'; }
-  function trainingRecent(a, b) { return String(b.day || '').localeCompare(String(a.day || '')) || (+b.at || 0) - (+a.at || 0) || String(a.id || '').localeCompare(String(b.id || '')); }
-  function trainingSections(s) {
-    var sections = api.sections();
-    if (!sections.length && s) sections = Object.keys(s.sections || {});
-    return sections.filter(function (section, index) { return section && sections.indexOf(section) === index; }).sort(function (a, b) { return a.localeCompare(b); });
-  }
-  function sectionAssessment(records, person, section) {
-    // A recipe belongs to a section, but assessing that recipe does not assess the whole section.
-    return records.filter(function (r) { return r.personId === person && r.section === section && !r.recipeId; }).sort(trainingRecent)[0];
-  }
-  function trainingTicks(s, person, section) { return s && s.people && s.people[person] ? (+s.people[person][section] || 0) : 0; }
+  function trainingRecent(a, b) { return window.LK_ANALYSIS.trainingRecent(a, b); }
+  function trainingSections(s) { return window.LK_ANALYSIS.trainingSections(api.sections(), s); }
+  function sectionAssessment(records, person, section) { return window.LK_ANALYSIS.sectionAssessment(records, person, section); }
+  function trainingTicks(s, person, section) { return window.LK_ANALYSIS.trainingTicks(s, person, section); }
   function trainingActivity(s, person, section) {
     if (s === undefined) return state.errors['analysis/range-' + state.range] ? 'Activity counts could not be loaded. Saved assessments are still shown.' : 'Activity counts are not available while analysis is loading.';
     if (!s) return 'No activity analysis has been published yet.';
@@ -359,14 +345,7 @@
       return '<p>' + esc(recipe ? recipe.name : r.recipeId ? r.recipeId : 'Section guide') + ': ' + trainingStatus(r.status) + '.</p>' + linked(r);
     }).join('') + (related.length > 3 ? '<p class="hint">More references are in the training records below.</p>' : '') + '</details>' : '';
   }
-  function trainingQueue(s, records, people) {
-    var opportunities = [];
-    people.forEach(function (p) { trainingSections(s).forEach(function (section) {
-      var assessment = sectionAssessment(records, p.id, section);
-      if (!assessment || assessment.status !== 'confirmed') opportunities.push({ person: p, section: section, assessment: assessment, ticks: trainingTicks(s, p.id, section) });
-    }); });
-    return opportunities.sort(function (a, b) { return (a.assessment && a.assessment.status === 'in-training' ? 0 : 1) - (b.assessment && b.assessment.status === 'in-training' ? 0 : 1) || b.ticks - a.ticks || a.person.name.localeCompare(b.person.name) || a.section.localeCompare(b.section); });
-  }
+  function trainingQueue(s, records, people) { return window.LK_ANALYSIS.trainingQueue(s, records, people, api.sections()); }
   function trainingOpportunities(s, records, people) {
     var view = recordView('training-queue', trainingQueue(s, records, people), [['person', 'Person', function (r) { return r.person.name; }], ['section', 'Section', function (r) { return r.section; }], ['ticks', 'Completed jobs', function (r) { return r.ticks; }]], [['status', 'Status', function (r) { return trainingStatus(r.assessment ? r.assessment.status : 'not-assessed'); }]]), opportunities = view.rows;
     if (!trainingSections(s).length) return '<div class="ai-training-opportunities"><p class="hint">No sections are available. You can still add a recipe assessment.</p></div>';
