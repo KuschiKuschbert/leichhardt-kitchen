@@ -49,6 +49,39 @@ async function heavyMotion(p) {
   }).map(a => a.animationName || 'animation'));
 }
 
+async function hangClear(p) {
+  // Anchored ornaments must not sit on the Home heading or the date (they used to float over both).
+  return p.evaluate(() => {
+    const items = [...document.querySelectorAll('#app .wall-main > .kb-hang .kb-hang-item')];
+    const text = [...document.querySelectorAll('#app .wall-h,#app .wall-date')].map(n => { const r = document.createRange(); r.selectNodeContents(n); return r.getBoundingClientRect(); });
+    const hit = items.some(i => { const a = i.getBoundingClientRect(); return text.some(b => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top); });
+    return { count: items.length, hit };
+  });
+}
+
+async function movingPieces(p) {
+  // One moving piece is a particle, a hanging ornament, a horizon or the board drawing, with whatever moves inside it.
+  return p.evaluate(() => {
+    const pieces = new Set();
+    document.getAnimations().forEach(a => {
+      if (a.playState !== 'running' || !(a instanceof CSSAnimation)) return;
+      const t = a.effect && a.effect.target;
+      const piece = t instanceof Element && t.closest('.complete-particle,.kb-hang-item,.kb-ambient-horizon,.kb-season-note');
+      if (piece) pieces.add(piece);
+    });
+    return pieces.size;
+  });
+}
+async function cpuPerSecond(p, ms = 2000) {
+  // Main-thread work per second with the CPU slowed 4 times, the way the audit measured it.
+  const cdp = await p.context().newCDPSession(p);
+  await cdp.send('Performance.enable'); await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+  const read = async () => (await cdp.send('Performance.getMetrics')).metrics.find(m => m.name === 'TaskDuration').value;
+  const a = await read(); await L.sleep(ms); const z = await read();
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 }); await cdp.detach();
+  return (z - a) * 1000 / (ms / 1000);
+}
+
 (async () => {
   const b = await L.start();
   let p;
@@ -60,6 +93,35 @@ async function heavyMotion(p) {
     ok(await p.evaluate(() => KB_EFFECTS.status().scope === 'page' && KB_EFFECTS.status().ambientCount > 0), 'Home has the active festival ambience');
     ok(await p.evaluate(() => KB_EFFECTS.status().ambientPreset === 'horses'), 'Melbourne Cup uses horses rather than generic confetti');
     ok(!(await L.overflow(p)), 'festive Home fits on a phone');
+    ok(await p.evaluate(() => Boolean(document.querySelector('.wtop-who svg')) && !document.querySelector('.wtop-who .kb-brand-art')), 'the chef hat stays the chef hat during a celebration');
+    ok(await p.evaluate(() => {
+      const fx = getComputedStyle(document.querySelector('#kb-festive-effects')), main = getComputedStyle(document.querySelector('#app .wall-main'));
+      return fx.zIndex === '0' && main.position === 'relative' && main.zIndex === '1';
+    }), 'Home motifs sit behind the board and the dockets');
+    for (const width of [390, 1280]) {
+      await p.setViewportSize({ width, height: 844 });
+      for (const id of ['in-diwali', 'np-tihar', 'ph-lunar-new-year', 'bali-galungan']) {
+        await theme(p, id);
+        const hang = await hangClear(p);
+        ok(hang.count > 0 && !hang.hit, width + ' ' + id + ': its ornaments hang beside the heading, clear of the words');
+      }
+    }
+    await p.setViewportSize({ width: 390, height: 844 });
+    // Arrive, then settle: Replay plays the full arrival, then Home rests with at most 4 slow pieces.
+    await theme(p, 'au-christmas-day');
+    await p.evaluate(() => KB_EFFECTS.replay());
+    await p.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    ok(await p.evaluate(() => KB_EFFECTS.status().phase === 'arrival') && await movingPieces(p) > 4, 'Replay plays the full Christmas arrival on Home');
+    await p.clock.runFor(5000);
+    await p.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+    ok(await p.evaluate(() => KB_EFFECTS.status().phase === 'rest') && await movingPieces(p) <= 4, 'after about 4 seconds Home settles to at most 4 moving pieces');
+    await go(p, '#/recipes'); await go(p, '#/');
+    ok(await p.evaluate(() => KB_EFFECTS.status().phase === 'rest'), 'coming back to Home the same day opens at rest, with no second arrival');
+    for (const id of ['au-christmas-day', 'in-diwali', 'au-melbourne-cup']) {
+      await theme(p, id); await p.clock.runFor(5000);
+      const ms = await cpuPerSecond(p);
+      ok(ms < 60, id + ': Home at rest takes ' + Math.round(ms) + ' ms of main thread a second on a slowed phone (under 60)');
+    }
 
     await theme(p, 'au-christmas-day');
     ok(await p.locator('.kb-season-note').count() === 1 && await p.locator('.wtop-brand').count() === 1, 'Christmas Home keeps Kitchen Book branding and one explanation board');
@@ -70,6 +132,7 @@ async function heavyMotion(p) {
     ok(facts.clip && facts.viewportParticles === 0 && facts.state.scope === 'navbar', 'work snow is clipped to the header');
     ok(facts.count === 8 && facts.activeAnimations > 0, 'phone header keeps eight moving snow particles');
     ok(await p.locator('.kb-season-note,#kb-occasion-panel').count() === 0, 'work content starts without the explanation in its way');
+    ok(await p.evaluate(() => Boolean(document.querySelector('.wtop-who svg')) && !document.querySelector('.wtop-who .kb-brand-art')), 'the chef hat stays the chef hat on work pages');
     ok(await p.evaluate(() => KB_CELEBRATION_TICKER.status().timerCount === 0), 'closed work explanation has no language timer');
 
     await p.click('.kb-occasion-title');
@@ -134,6 +197,14 @@ async function heavyMotion(p) {
       await theme(p, id);
       const heavy = await heavyMotion(p);
       ok(heavy.length === 0, id + ': Home moves only transform and opacity ' + heavy.join(' '));
+    }
+    await go(p, '#/recipes');
+
+    await go(p, '#/');
+    for (const id of coverage) {
+      await theme(p, id); await p.clock.runFor(5000);
+      const pieces = await movingPieces(p), heavy = await heavyMotion(p);
+      ok(pieces <= 4 && heavy.length === 0, id + ': Home at rest moves ' + pieces + ' pieces, only transform and opacity');
     }
     await go(p, '#/recipes');
 
