@@ -1,0 +1,147 @@
+/* Drawing studio design options (4 Nov 2026): the Kitchen Book's own tokens, for the two example studios only.
+   Nothing here is loaded by the book. Light only, like the book.
+   Layout: the top bar, then the canvas; tools sit beside it on a computer and under it on a phone, never on top of it. */
+:root {
+  --bg: #FBFAF7; --paper: #FFFFFF; --ink: #1C1D1F; --muted: #55585E; --faint: #6B7077;
+  --accent: #E2602A; --accent-ink: #C2451A; --small-ink: #B83F15; --beige: #F2EFE8; --line: #E0DBCF; --edge: #D9D4C8;
+  --hit: #FFF1E6; --done: #2E8B57; --done-ink: #237347; --warn: #B3261E; --warn-tint: #FCEBE4;
+  --bar: #2B2A27; --bar-2: #3A3935; --bar-text: #FBF8F1; --bar-muted: #CFC9BD; --bar-accent: #F08A4B;
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --r: 10px; --r-pick: 999px;
+  color-scheme: light; color: var(--ink); background: var(--bg); font: 16px/1.45 var(--body);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--beige); color: var(--ink); min-width: 320px; overflow: hidden; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+svg { display: block; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.label { font: 700 .78rem/1.2 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.hint { font-size: .9rem; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+.studio { height: 100%; display: flex; flex-direction: column; }
+
+/* ---------- top bar: Close, what is being drawn, Undo, Redo, Save ---------- */
+.top { flex: none; display: flex; align-items: center; gap: 8px; min-height: 56px; padding: 8px max(12px, env(safe-area-inset-right, 0px)) 8px max(12px, env(safe-area-inset-left, 0px)); background: var(--bar); color: var(--bar-text); }
+.top .ttl { flex: 1; min-width: 0; line-height: 1.1; }
+.top .ttl b { display: block; font: 700 1.3rem/1.05 var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top .ttl small { display: block; font: 700 .72rem/1.2 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--bar-accent); }
+.tb { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 44px; min-height: 44px; padding: 0 12px; border-radius: 8px; border: 1.5px solid #5B5852; background: transparent; color: var(--bar-text); font-weight: 700; }
+.tb:disabled { opacity: .4; cursor: default; }
+.tb svg { width: 20px; height: 20px; }
+.tb.icon { padding: 0; width: 44px; }
+.tb.save { background: var(--accent-ink); border-color: var(--accent-ink); min-width: 76px; }
+.tb.save:disabled { background: #4A4843; border-color: #4A4843; opacity: 1; color: var(--bar-muted); }
+.tb .w { display: none; }
+
+/* ---------- A: the three steps under the top bar ---------- */
+.steps { flex: none; display: flex; gap: 6px; padding: 8px max(12px, env(safe-area-inset-right, 0px)) 8px max(12px, env(safe-area-inset-left, 0px)); background: var(--paper); border-bottom: 1px solid var(--line); }
+.step { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border: 1.5px solid var(--edge); border-radius: var(--r-pick); background: var(--paper); font-weight: 700; }
+.step i { font-style: normal; display: inline-flex; width: 24px; height: 24px; border-radius: 50%; align-items: center; justify-content: center; background: var(--beige); font: 700 .85rem/1 var(--body); }
+.step[aria-current="step"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.step[aria-current="step"] i { background: #fff; color: var(--ink); }
+.step.ok i { background: var(--done); color: #fff; }
+.step .n { font: 700 .75rem/1 var(--body); background: var(--warn); color: #fff; border-radius: 999px; padding: 3px 7px; }
+.step.xtra { flex: none; width: 48px; padding: 0; }
+.step.xtra svg { width: 20px; height: 20px; }
+.step.xtra[aria-expanded="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+/* ---------- the work area: canvas and tools side by side, or stacked ---------- */
+.work { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.stage { position: relative; flex: 1; min-height: 120px; display: flex; align-items: center; justify-content: center; padding: 10px; transition: flex-basis .2s; }
+.stage svg.cv { width: 100%; height: 100%; max-width: 640px; touch-action: none; }
+.stage .part { cursor: grab; }
+.stage .part.on { filter: drop-shadow(0 0 0 transparent); }
+.stage .selbox { fill: none; stroke: var(--accent); stroke-width: 1.4; stroke-dasharray: 4 3; pointer-events: none; }
+.fit { position: absolute; top: 10px; right: max(10px, env(safe-area-inset-right, 0px)); min-height: 40px; padding: 0 14px; border-radius: var(--r-pick); border: 1.5px solid var(--edge); background: rgba(255,255,255,.92); font-weight: 700; font-size: .9rem; }
+.hero { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; justify-items: center; gap: 10px; text-align: center; width: min(290px, 80%); }
+.hero .big { display: inline-flex; align-items: center; gap: 10px; min-height: 56px; padding: 0 24px; border-radius: var(--r-pick); border: 0; background: var(--accent-ink); color: #fff; font: 700 1.15rem/1 var(--body); box-shadow: 0 6px 18px rgba(194,69,26,.28); }
+.hero .big svg { width: 22px; height: 22px; }
+.hero .or { font-size: .92rem; color: var(--muted); }
+
+/* the picked part's bar (A): beside the part, icons with short words, always inside the canvas */
+.pbar { position: absolute; z-index: 4; display: flex; gap: 2px; padding: 4px; border-radius: 14px; background: var(--bar); color: var(--bar-text); box-shadow: 0 8px 22px rgba(0,0,0,.22); max-width: calc(100% - 16px); }
+.pb { display: grid; justify-items: center; gap: 2px; min-width: 56px; min-height: 52px; padding: 6px 6px 4px; border: 0; border-radius: 10px; background: transparent; color: inherit; font: 700 .74rem/1.1 var(--body); }
+.pb svg { width: 20px; height: 20px; }
+.pb[aria-pressed="true"], .pb[aria-expanded="true"] { background: var(--bar-2); }
+.pb.del { color: #FF9C8A; }
+
+/* ---------- tools: a sheet under the canvas on a phone, a column beside it on a computer ---------- */
+.panel { flex: none; position: relative; max-height: 46vh; overflow: auto; background: var(--paper); border-top: 1px solid var(--line); border-radius: 16px 16px 0 0; box-shadow: 0 -6px 20px rgba(0,0,0,.06); padding: 6px max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px)); }
+.panel .ph { position: sticky; top: -6px; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 10px 0 8px; background: var(--paper); }
+.panel .ph h2 { flex: 1; margin: 0; font: 700 1.35rem/1.05 var(--display); }
+.x { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--edge); background: var(--paper); }
+.x svg { width: 18px; height: 18px; }
+.grp { display: grid; gap: 8px; margin-top: 12px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
+.scroll-row { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: var(--r-pick); border: 1.5px solid var(--edge); background: var(--paper); font-weight: 600; white-space: nowrap; }
+.chip.add::before { content: '+'; font-weight: 700; color: var(--accent-ink); }
+.chip[aria-pressed="true"] { background: var(--ink); color: #fff; border-color: var(--ink); }
+.tool { display: grid; justify-items: center; align-content: center; gap: 4px; min-height: 72px; padding: 8px 6px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--paper); font: 600 .85rem/1.15 var(--body); text-align: center; }
+.tool svg { width: 22px; height: 22px; }
+.tools { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.tool.del { color: var(--warn); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.tile { display: grid; justify-items: center; gap: 4px; padding: 8px 6px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--paper); font: 600 .82rem/1.15 var(--body); text-align: center; }
+.tile svg { width: 64px; height: 56px; }
+.tile[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.search { width: 100%; min-height: 48px; padding: 0 14px; border: 1.5px solid var(--edge); border-radius: 10px; background: var(--paper); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 18px; border-radius: 8px; border: 1.5px solid var(--ink); background: var(--paper); font-weight: 700; }
+.btn.dark { background: var(--ink); color: #fff; }
+.btn.quiet { border-color: var(--edge); }
+.sw { width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(0,0,0,.18); }
+.sw[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--ink); }
+.fine { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fine label { display: grid; gap: 4px; font-size: .85rem; font-weight: 600; color: var(--muted); }
+.fine select { min-height: 44px; border: 1.5px solid var(--edge); border-radius: 8px; background: var(--paper); padding: 0 10px; color: var(--ink); }
+.issue { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.issue span { flex: 1; min-width: 0; }
+.issue .btn { min-height: 40px; padding: 0 14px; }
+.allok { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 10px; background: #EAF5EE; color: var(--done-ink); font-weight: 700; }
+.allok svg, .btn svg { flex: none; width: 20px; height: 20px; }
+.ing { display: flex; align-items: center; gap: 10px; padding: 0 12px; min-height: 48px; width: 100%; border: 1.5px solid var(--line); border-radius: 10px; background: var(--paper); text-align: left; font-weight: 600; }
+.ing[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+
+/* ---------- B: one bar at the thumb that changes with what you are doing ---------- */
+.ctx { flex: none; display: flex; align-items: stretch; justify-content: center; gap: 4px; padding: 6px max(10px, env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px)); background: var(--bar); color: var(--bar-text); }
+.cb { position: relative; flex: 1; max-width: 96px; display: grid; justify-items: center; align-content: center; gap: 3px; min-height: 56px; border: 0; border-radius: 12px; background: transparent; color: inherit; font: 700 .78rem/1.1 var(--body); }
+.cb svg { width: 22px; height: 22px; }
+.cb[aria-expanded="true"] { background: var(--bar-2); }
+.cb.del { color: #FF9C8A; }
+.cb.done { color: #9BE0B7; }
+.cb .n { position: absolute; top: 4px; right: 14px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--accent); color: #fff; font: 700 .7rem/18px var(--body); }
+.ctx .who { display: none; }
+.picked { flex: none; display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: var(--bar); color: var(--bar-muted); font-size: .85rem; border-bottom: 1px solid #3F3D39; }
+.picked b { color: var(--bar-text); white-space: nowrap; }
+
+/* ---------- A: the step's tray stays small on a phone ---------- */
+.tray .scroll-row .chip { flex: none; }
+.lead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.btn.go { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
+.btn.go svg { width: 20px; height: 20px; }
+
+/* ---------- the note after Draw it for me: once, with its two actions, then it goes ---------- */
+.note { position: absolute; z-index: 6; left: 50%; top: 10px; transform: translateX(-50%); width: max-content; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: calc(100% - 20px); padding: 8px 8px 8px 14px; border-radius: 14px; background: var(--bar); color: var(--bar-text); box-shadow: 0 8px 22px rgba(0,0,0,.2); font-size: .92rem; }
+.note button { min-height: 36px; padding: 0 12px; border-radius: 8px; border: 1.5px solid #5B5852; background: transparent; color: var(--bar-text); font-weight: 700; }
+.toast { position: fixed; z-index: 30; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); max-width: calc(100% - 32px); padding: 10px 16px; border-radius: 10px; background: var(--ink); color: #fff; font-weight: 600; box-shadow: 0 8px 22px rgba(0,0,0,.25); }
+
+/* a computer: tools in a column on the right, the canvas keeps the rest */
+@media (min-width: 900px) {
+  .work { flex-direction: row; }
+  .panel { width: 360px; max-height: none; border-top: 0; border-left: 1px solid var(--line); border-radius: 0; box-shadow: none; }
+  .top .ttl b { font-size: 1.5rem; }
+  .tb .w { display: inline; }
+  .tb.icon { width: auto; padding: 0 12px; }
+  .steps { justify-content: center; }
+  .step { flex: 0 1 220px; }
+  .ctx { position: absolute; left: 50%; transform: translateX(-50%); bottom: 16px; border-radius: 16px; padding: 6px; box-shadow: 0 10px 26px rgba(0,0,0,.24); }
+  .cb { flex: none; width: 84px; }
+  .studio.b .work { position: relative; }
+  .picked { position: absolute; left: 50%; transform: translateX(-50%); bottom: 88px; border-radius: 10px; border: 0; }
+  .toast { bottom: 110px; }
+}
