@@ -92,10 +92,28 @@ Acceptance for the build:
 
 1. Every capability in the table below stays reachable, for the head chef, sous chefs and admin, with today's permissions, reads, writes, drafts, version checks and save batches. No new Firestore reads or fields.
 2. The recipe opens on Ingredients. A chapter shows a dot for an unsaved change and a mark for a fix; an error jumps to its chapter and field. The field ids and `data-f` names stay, so kept drafts open as before.
-3. Amount and name are typed in the row; one recipe link control per row; Scale amounts opens a sheet.
-4. Drawings show as pictures. Labels on a drawing made in the book are changed in the studio; labels on the book's own drawings stay in the Drawings chapter.
+3. Amount and name are typed in the row; one recipe link control per row; Scale amounts opens the multiplier in place.
+4. Drawings show as pictures and are chosen by name. The Pass labels stay editable in the Drawings chapter for every drawing (changed 3 Nov 2026 during the build: moving labels on drawings made in the book into the studio would have lost hand-written label words, notes and links); the studio's Parts and Label say which ingredient each part is.
 5. The studio covers the top bar and tab bar. Close and the book's Back return to the recipe and keep an unsaved drawing as a draft, as today. Escape closes an open drawer first. The picked part's bar has Swap, Colour, Label, More and a red Delete; arranging says "To the back", not "Back".
 6. No sideways scroll and no page errors at 390, 768 and 1280 px; keyboard reachable; the click tests updated in the same pull request as each step.
+
+## Build (3 November 2026)
+
+Shipped in three pull requests, each step its own commit inside:
+
+| Pull request | Steps | What changes |
+| --- | --- | --- |
+| #478 | X1 | The empty gap under search boxes inside a field |
+| Recipe form and list | 2, 3, 4, 6 | Ingredient rows you type in, one link control, Scale amounts in place; six chapters with dots and fix marks; Drawings as picture cards chosen by name; the list's kinds apart from what needs a look |
+| Drawing studio | 5 | Full screen, dock, the picked part's bar, one drawer, red Delete, To the back |
+
+Measured on the Chicken Burger: the recipe form opens 1,376 px tall on a phone (was about 8,200) and 1,236 px on a laptop (was 7,628); an ingredient row is 83 px closed (was 266).
+
+| Recipe form, phone | Recipe form, laptop |
+| --- | --- |
+| ![Chapters on a phone](../images/recipe-editor-chapters-phone.png) | ![Chapters on a laptop](../images/recipe-editor-chapters-desktop.png) |
+
+The [Drawings chapter](../images/recipe-editor-drawings-desktop.png) ([phone](../images/recipe-editor-drawings-phone.png)) and the [recipe list](../images/recipe-editor-list-desktop.png) ([phone](../images/recipe-editor-list-phone.png)) use the same look. Captures use the test stand-in's synthetic data and the real fonts.
 
 ## Every capability stays
 

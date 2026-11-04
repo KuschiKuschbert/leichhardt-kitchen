@@ -470,4 +470,23 @@ async function clear(page, selector) {
     if (await button.isVisible()) await button.click();
   } else await input.fill('');
 }
-module.exports = { whoIs, notYou, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+/* The recipe form's ingredient row k, opened (3 Nov 2026): its note, recipe link, allergens, Move and Remove sit behind
+   the row's arrow. Does nothing when the row is already open. */
+async function openRow(page, k) {
+  const sel = '[data-mg="ing-open"][data-i="' + k + '"]';
+  await reveal(page, sel);
+  if (await page.getAttribute(sel, 'aria-expanded') !== 'true') { await page.click(sel); await settle(page, 150); }
+}
+/* The recipe form's chapters (3 Nov 2026): opens the chapter, and More card details, that holds the box or button sel,
+   so a test can type in it or tap it. Does nothing when it is already on screen or not on the page. */
+async function reveal(page, sel) {
+  const where = () => page.evaluate(s => { const el = document.querySelector(s); if (!el) return null; const ch = el.closest('[data-ch]'); return { ch: ch && ch.hidden ? ch.getAttribute('data-ch') : '', more: !!el.closest('.mg-more-box[hidden]') }; }, sel);
+  let w = await where(); if (!w) return;
+  if (w.ch) { await page.click('[data-mg="ch"][data-v="' + w.ch + '"]'); await settle(page, 150); w = await where() || {}; }
+  if (w.more) { await page.click('[data-mg="more-card"]'); await settle(page, 150); }
+}
+// opens a chapter of the recipe form by its key: ing, method, alg, draw, card, hist
+async function chapter(page, k) {
+  if (await page.getAttribute('[data-mg="ch"][data-v="' + k + '"]', 'aria-current') !== 'true') { await page.click('[data-mg="ch"][data-v="' + k + '"]'); await settle(page, 150); }
+}
+module.exports = { whoIs, notYou, openRow, reveal, chapter, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

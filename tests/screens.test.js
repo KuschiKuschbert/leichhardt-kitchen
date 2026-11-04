@@ -31,6 +31,10 @@ const cfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'so
   // the recipe link: a box that finds recipes as you type, from one list for the whole form
   p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra: cfg(), wait: 1500 });
   await L.waitFor(p, () => !!document.getElementById('mg-name'), null, 10000);
+  // the link box sits behind an ingredient row's arrow (3 Nov 2026): open the first row without a link
+  const k0 = await p.evaluate(() => LK_MG && document.querySelectorAll('.mg-ing').length ? [...document.querySelectorAll('.mg-ing')].findIndex(li => !li.querySelector('.mg-ing-ln')) : -1);
+  await L.openRow(p, k0);
+  await L.waitFor(p, () => !!document.querySelector('input.mg-link + .ux-picker-trigger'), null, 5000).catch(() => {});
   ok(await p.evaluate(() => document.querySelectorAll('input.mg-link:not([list]) + .ux-picker-trigger').length > 0), 'manage: recipe links keep free entry and offer an adaptive picker');
   ok(await p.evaluate(() => document.querySelectorAll('#mg-rx option').length) > 50, 'manage: one list of recipes for the whole form');
   const k = await p.evaluate(() => [...document.querySelectorAll('input.mg-link[data-fl^="ing."]')].findIndex(e => !e.getAttribute('data-id')));
