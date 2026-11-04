@@ -29,7 +29,7 @@
   var D = window.LK_DATA, X = window.LK_RX, A = window.LK_APP, P = window.LK_PREP, LIB = window.LK_LIB;
   var esc = A.esc;
   // Optional in lazy files: an older saved shell keeps its existing text feedback.
-  function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || (navigator.onLine === false ? 'still' : 'busy')) : esc(text); }
+  function inkLabel(text, icon, state) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', state || 'busy') : esc(text); }
   function B() { return P.book(); }
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
   function n1(x) { return Math.round(x * 10) / 10; }
@@ -1552,7 +1552,7 @@
     var t = W.root.querySelector('#rtitle'); if (t) t.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }
-  function note(title, text, waiting) { return '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">' + esc(title) + '</h2>' + (waiting && window.LK_MOTION ? window.LK_MOTION.status(text, { icon: 'recipes', state: navigator.onLine === false ? 'still' : 'busy', rows: 3 }) : '<p>' + esc(text) + '</p>') + '</div>'; }
+  function note(title, text, waiting) { return '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">' + esc(title) + '</h2>' + (waiting && window.LK_MOTION ? window.LK_MOTION.status(text, { icon: 'recipes', state: 'busy', rows: 3 }) : '<p>' + esc(text) + '</p>') + '</div>'; }
   function mount(root, sub) {
     var key = sub.join('/');
     var owner = identity();
