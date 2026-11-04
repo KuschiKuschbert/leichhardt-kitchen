@@ -4056,7 +4056,24 @@
   // Change amount and Move to section are only on open lines
   function lineMenuOk(x, date) { return can('add') && !!x && !x.deleted && !x.fn && date === dayNow(); }
   function lineFixOk(x, date) { return lineMenuOk(x, date) && !x.done && !x.ordered; }
-  function lineOf(kind, date, id) { return (kind === 'o' ? (S.ordLines || []) : (S.items || [])).filter(function (x) { return x.id === id && (kind !== 'o' || !x.date || x.date === date); })[0] || null; }
+  // the admin wastage log and transfers report: an amount changed after it was logged says what it was before and who
+  // changed it ("changed from 2 kg by Sam")
+  function wasHTML(x) {
+    var w = x && x.was;
+    if (!w || typeof w !== 'object' || typeof w.amount !== 'number' || typeof w.unit !== 'string') return '';
+    return ' <span class="o-who-i">changed from ' + esc(num(w.amount) + ' ' + w.unit) + (x.chgBy ? ' by ' + esc(x.chgBy) : '') + '</span>';
+  }
+  /* Change amount on Wastage and Transfers (4 Nov 2026, head chef decision, S4 of the work pages redesign): the person
+     who logged the line, the head chef or a sous chef, ticked for Add, on today's lines not removed, and on Transfers
+     still out. The rules say the same (amountChange() in firestore.rules). Remove stays where it was. */
+  function wxFixOk(kind, x) {
+    if (!x || x.deleted || x.date !== dayNow() || kind === 'x' && x.returned || !canW() || !can('add')) return false;
+    var p = me(); return !!p && (isSous() || p.id === x.addedById);
+  }
+  function lineOf(kind, date, id) {
+    if (kind === 'w') return (S.wLines || []).filter(function (x) { return x.id === id && x.date === date; })[0] || null;
+    if (kind === 'x') return xFind(date, id) || null;
+    return (kind === 'o' ? (S.ordLines || []) : (S.items || [])).filter(function (x) { return x.id === id && (kind !== 'o' || !x.date || x.date === date); })[0] || null; }
   function moreBtn(x, fix) { return '<button type="button" class="nb-more' + (fix ? ' nb-more-fix' : '') + '" data-lm="open" data-id="' + esc(x.id) + '" aria-haspopup="dialog" aria-label="' + esc('More for ' + x.text) + '">⋯</button>'; }
   var lmOpenFrom = null;
   function lmClose(noBack) {
@@ -4068,14 +4085,15 @@
   function lmOpen(btn) {
     lmClose();
     var row = btn.closest('.nb-row'); if (!row) return;
-    var act = row.querySelector('.nb-x, .p-x[data-p="odel"], .p-x[data-p="orestore"]');
+    var act = row.querySelector('.nb-x, .p-x[data-p="odel"], .p-x[data-p="orestore"], .p-x[data-p="wdel"], .p-x[data-p="wrestore"], .p-x[data-p="tr-del"], .p-x[data-p="tr-restore"]');
     // the title is the line's words and amount, without its Not sent slot or an order line's Used in
-    var who = (row.querySelector('.nb-wrote') || {}).textContent || '', t = row.querySelector('.nb-t'), c = t && t.cloneNode(true);
-    if (c) c.querySelectorAll('.nb-mk, .o-used').forEach(function (e) { e.remove(); });
+    var who = (row.querySelector('.nb-wrote') || row.querySelector('.w-row > .nb-by, .tr-row > .nb-by') || {}).textContent || '', t = row.querySelector('.nb-t'), c = t && t.cloneNode(true);
+    if (c) c.querySelectorAll('.nb-mk, .o-used, .w-rs, .w-act, .w-again, .tr-way, .tr-who, .tr-age').forEach(function (e) { e.remove(); });
     var name = c ? c.textContent.replace(/\s+/g, ' ').trim() : '';
     var completed = S.name === 'prep' && ptItem(btn.getAttribute('data-id')), completionWho = completed && completed.done ? 'Reported prepared by ' + preparedWorker(completed).name + '. Recorded by ' + (completed.doneBy || '') + '.' : '';
-    var ln = (row.getAttribute('data-ln') || '').split('/'), kind = S.name === 'orders' ? 'o' : 'p', line = lineOf(kind, ln[0], ln[1]), fix = line && lineFixOk(line, ln[0]);
-    var fixHTML = fix ? '<button type="button" class="sheet-o lm-fix" data-lm="qty"><strong>Change amount</strong><small>' + esc(line.qty || 'No amount yet') + '</small></button>' +
+    var ln = (row.getAttribute('data-ln') || '').split('/'), kind = S.name === 'orders' ? 'o' : S.name === 'waste' ? 'w' : S.name === 'transfers' ? 'x' : 'p', line = lineOf(kind, ln[0], ln[1]);
+    var wx = kind === 'w' || kind === 'x', fix = line && (wx ? wxFixOk(kind, line) : lineFixOk(line, ln[0]));
+    var fixHTML = fix ? '<button type="button" class="sheet-o lm-fix" data-lm="qty"><strong>Change amount</strong><small>' + esc(wx ? num(+line.amount || 0) + ' ' + line.unit : line.qty || 'No amount yet') + '</small></button>' +
       (kind === 'p' ? '<button type="button" class="sheet-o lm-fix" data-lm="sec"><strong>Move to section</strong><small>' + esc(line.station || 'No section yet') + '</small></button>' : '') : '';
     var box = document.createElement('div');
     box.id = 'lm-sheet';
@@ -4092,6 +4110,18 @@
   /* The ⋯ sheet turns into a small form for the amount or the section of the line it was opened for. */
   function lmFixView(box, what) {
     var l = box._line, x = l && lineOf(l.kind, l.date, l.id), sh = box.querySelector('.sheet');
+    if (l && (l.kind === 'w' || l.kind === 'x')) {
+      if (!wxFixOk(l.kind, x)) { lmClose(); toast('That line has changed. Try again.'); return; }
+      box._what = 'qty'; box._unit = x.unit;
+      sh.innerHTML = '<div class="sheet-grip" aria-hidden="true"></div><h3 id="lm-h">Change amount</h3><p class="lm-who">' + esc(l.name) + '</p>' +
+        '<form class="lm-form" data-lm-form="qty"><label class="label" for="lm-v">Amount</label>' +
+        '<input id="lm-v" class="nb-in" inputmode="decimal" maxlength="8" autocomplete="off" enterkeyhint="done" value="' + esc(num(+x.amount || 0)) + '">' +
+        '<div class="w-pick"><span class="nb-ql" id="lm-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="lm-unit-l">' + (l.kind === 'w' ? UNITS : X_UNITS).map(function (u) {
+          return '<button type="button" class="seg-b" role="radio" data-lm="unit" data-v="' + u + '" aria-checked="' + (x.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
+        '<div class="btn-row"><button type="submit" class="btn dark">Save amount</button><button type="button" class="btn sheet-x" data-lm="close">Cancel</button></div></form>';
+      var wi = sh.querySelector('#lm-v'); if (wi) { wi.focus(); wi.select(); }
+      return;
+    }
     if (!x || !lineFixOk(x, l.date)) { lmClose(); toast('That line has changed. Try again.'); return; }
     var cur = what === 'qty' ? (x.qty || '') : (x.station || ''), chips = what === 'qty' ? qtyList(x.text).slice(0, 4).map(function (q) { return q.q; }) : secChoices(cur);
     sh.innerHTML = '<div class="sheet-grip" aria-hidden="true"></div><h3 id="lm-h">' + (what === 'qty' ? 'Change amount' : 'Move to section') + '</h3><p class="lm-who">' + esc(l.name) + '</p>' +
@@ -4105,6 +4135,7 @@
   // saves the change as one update through W(), with Undo; a value that did not change saves nothing
   function lmFixSave(box, v) {
     var l = box._line, x = l && lineOf(l.kind, l.date, l.id), what = box._what;
+    if (l && (l.kind === 'w' || l.kind === 'x')) { wxFixSave(box, l, x, v); return; }
     if (!x || !lineFixOk(x, l.date)) { lmClose(); toast('That line has changed. Try again.'); return; }
     v = String(v || '').replace(/\s+/g, ' ').trim().slice(0, 40);
     if (what === 'sec' && v) v = cleanSection(v).slice(0, 40);
@@ -4120,6 +4151,28 @@
     supd(ref, patch).catch(failed);
     toast(what === 'qty' ? (v ? 'Amount changed to ' + v : 'Amount cleared') : (v ? 'Moved to ' + v : 'Section cleared'), { label: 'Undo', fn: function () { supd(ref, undo).catch(failed); } });
   }
+  // Wastage and Transfers: one update of the amount and unit, the amount before kept as was (the history and the admin
+  // log show it), who changed it and when; a transfer's open copy goes in the same write (xWrite()). Undo changes it back.
+  function wxFixSave(box, l, x, v) {
+    if (!wxFixOk(l.kind, x)) { lmOpenFrom = null; lmClose(); toast('That line has changed. Try again.'); return; }
+    var amt = parseFloat(String(v || '').replace(',', '.')), unit = box._unit, big = (l.kind === 'w' ? W_BIG : X_BIG)[unit];
+    if (!(amt > 0 && amt < 100000) || (l.kind === 'w' ? UNITS : X_UNITS).indexOf(unit) < 0) { toast('Write the amount as a number, like 2 or 1.5.', null, 4000); focusSel('#lm-v'); return; }
+    amt = Math.round(amt * 1000) / 1000;
+    if (amt > (big || Infinity) && !arm('lmbig:' + amt + unit)) { toast(amt + ' ' + unit + '? Check the unit. Tap Save again if it is right.', null, 4000); return; }
+    lmOpenFrom = null; lmClose();
+    if (amt === +x.amount && unit === x.unit) return;
+    var save = function (y, a, u) {
+      var ch = { amount: a, unit: u, was: { amount: +y.amount, unit: y.unit }, chgBy: whoName(), chgAt: now() };
+      return l.kind === 'w' ? supd(wRef(l.date, l.id), ch) : xWrite(l.date, l.id, ch, y);
+    };
+    var from = { amount: +x.amount, unit: x.unit };
+    save(x, amt, unit).catch(failed);
+    toast('Amount changed to ' + num(amt) + ' ' + unit, { label: 'Undo', fn: function () {
+      var y = lineOf(l.kind, l.date, l.id);
+      if (!wxFixOk(l.kind, y)) { toast('That line has changed. Try again.'); return; }
+      if (+y.amount !== from.amount || y.unit !== from.unit) save(y, from.amount, from.unit).catch(failed);
+    } });
+  }
   document.addEventListener('click', function (e) {
     var el = e.target && e.target.closest ? e.target.closest('[data-lm]') : null; if (!el) return;
     var a = el.getAttribute('data-lm');
@@ -4134,6 +4187,7 @@
       return;
     }
     if (a === 'qty' || a === 'sec') { if (box) lmFixView(box, a); return; }
+    if (a === 'unit') { if (!box) return; box._unit = el.getAttribute('data-v'); box.querySelectorAll('[data-lm="unit"]').forEach(function (b) { b.setAttribute('aria-checked', String(b === el)); }); return; }
     if (a === 'pick') { if (!box) return; if (box._what === 'sec') { lmFixSave(box, el.getAttribute('data-v')); return; } var i = box.querySelector('#lm-v'); if (i) { i.value = el.getAttribute('data-v') || ''; i.focus(); } return; }
     if (a === 'close') lmClose();
   });
@@ -5838,7 +5892,9 @@
       '<span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span> <span class="w-rs w-' + esc(x.reason) + '">' + esc(reasonName(x.reason)) + '</span>' + unsentMark(x) +
       (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + wAgainHTML(x) + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' +
       (del ? '<button type="button" class="p-x" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
-      (x.deleted && wAll() ? '<button type="button" class="p-x" data-p="wrestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
+      (x.deleted && wAll() ? '<button type="button" class="p-x" data-p="wrestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') +
+      // the line's ⋯ (4 Nov 2026, S4): Change amount, and on a phone Remove or Put back
+      (wxFixOk('w', x) || wAll() ? moreBtn(x, wxFixOk('w', x)) : '') + '</li>';
   }
   /* Make it again (3 Nov 2026, work pages redesign, a piece of B on Wastage A): a cooking fault or expired stock logged
      today puts the item on today's prep list in one tap, with its usual amount and the entry's section, and Undo. What
@@ -6238,7 +6294,8 @@
     // the return tick on the left, where every other list ticks (3 Nov 2026); Not returned stays on the right
     return '<li class="nb-row tr-row' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '">' + (open ? tick : '') + '<span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + '</span>' +
       '<span class="nb-t"><span class="tr-way tr-way-' + (out ? 'out' : 'in') + '">' + (out ? 'Out' : 'In') + '</span> <strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' + (open ? xAge(x) : '') + unsentMark(x) +
-      '<span class="tr-who">' + esc(xWho(x)) + '</span>' + (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + ret + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' + (open ? '' : tick) + xBtn(x) + '</li>';
+      '<span class="tr-who">' + esc(xWho(x)) + '</span>' + (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + ret + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' + (open ? '' : tick) + xBtn(x) +
+      (wxFixOk('x', x) || wAll() && x.id ? moreBtn(x, wxFixOk('x', x)) : '') + '</li>';
   }
   // the venue and person chips, and the often taken chips that follow the venue (redrawn while the venue is typed)
   function xVenueChips() {
@@ -7796,7 +7853,7 @@
       cols: [
         { h: 'Date / time', value: function (x) { return x.addedAt || Date.parse(x.date + 'T00:00:00+10:00'); }, html: function (x) { return esc(x.date.split('-').reverse().join('/')) + (x.addedAt ? ' ' + clock(x.addedAt) : ''); } },
         { h: 'Item', th: true, html: function (x) { return esc(x.text) + (x.deleted ? ' <span class="o-who-i">Removed' + (x.deletedBy ? ' by ' + esc(x.deletedBy) : '') + '</span>' : '') + (x.action ? '<details class="wh-note"><summary>Action / note</summary><p>' + esc(x.action) + '</p></details>' : ''); } },
-        { h: 'Amount', html: function (x) { return esc(num(+x.amount || 0) + ' ' + x.unit); } },
+        { h: 'Amount', html: function (x) { return esc(num(+x.amount || 0) + ' ' + x.unit) + wasHTML(x); } },
         { h: 'Reason', html: function (x) { return esc(reasonName(x.reason)); } },
         { h: 'Section', html: function (x) { return esc(x.station || 'General'); } },
         { h: 'Logged by', html: function (x) { return esc(x.addedBy || 'Unknown'); } },
@@ -7934,7 +7991,7 @@
       cols: [
         { h: 'Day', value: function (x) { return x.date || ""; }, html: function (x) { return esc(dayShort(x.date)) + (x.addedAt ? ' ' + clock(x.addedAt) : ''); } },
         { h: 'Item', th: true, html: function (x) { return esc(x.text) + (x.deleted ? ' <span class="o-who-i">Removed' + (x.deletedBy ? ' by ' + esc(x.deletedBy) : '') + '</span>' : ''); } },
-        { h: 'Amount', html: function (x) { return esc(num(+x.amount || 0) + ' ' + x.unit); } },
+        { h: 'Amount', html: function (x) { return esc(num(+x.amount || 0) + ' ' + x.unit) + wasHTML(x); } },
         { h: 'Way', html: function (x) { return x.dir === 'in' ? 'We took' : 'They took'; } },
         { h: 'Venue', html: function (x) { return esc(x.venue || ''); } },
         { h: 'Came or gave', html: function (x) { return esc(x.person || ''); } },

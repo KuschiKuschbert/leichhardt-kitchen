@@ -378,6 +378,14 @@ row('js/prep.js removeWaste(): remove someone\'s wastage line (the Google device
 row('js/prep.js addWaste() Undo: take back my own line straight after (2 minutes)', { ok: CHEFS, asks: CHEFS,
   prep: (r, w) => put({ [`waste/${TODAY}/lines/u-${r}`]: Object.assign({}, seed[`waste/${TODAY}/lines/w1`], { addedById: w, addedAt: Date.now(), by: w }) }),
   run: (db, w, r) => W(r, [['upd', `waste/${TODAY}/lines/u-${r}`, { deleted: true, deletedBy: NAME[r] || 'Head chef', deletedAt: Date.now() }]]) });
+// the line's ⋯, Change amount (4 Nov 2026): the person who logged it, or a chef on anyone's, today, the amount before kept
+const AMT = (r, u) => ({ amount: 1.5, unit: u, was: { amount: 2, unit: u }, chgBy: NAME[r] || 'Head chef', chgAt: Date.now() });
+row('js/prep.js wxFixSave(): change the amount on my own wastage line', { ok: ADDS, asks: ADDS,
+  prep: (r, w) => put({ [`waste/${TODAY}/lines/${MINE(r)}`]: Object.assign({}, seed[`waste/${TODAY}/lines/w1`], { addedBy: NAME[r], addedById: w, by: w }) }),
+  run: (db, w, r) => W(r, [['upd', `waste/${TODAY}/lines/${MINE(r)}`, AMT(r, 'kg')]]) });
+row('js/prep.js wxFixSave(): a chef changes the amount on someone else\'s wastage line', { ok: CHEFS, asks: CHEFS,
+  prep: (r, w) => put({ [`waste/${TODAY}/lines/${MINE(r)}`]: Object.assign({}, seed[`waste/${TODAY}/lines/w1`], w === 'ann' ? { addedBy: 'Bo', addedById: 'bo', by: 'bo' } : {}) }),
+  run: (db, w, r) => W(r, [['upd', `waste/${TODAY}/lines/${MINE(r)}`, AMT(r, 'kg')]]) });
 row('js/prep.js saveReview(): today\'s waste review (waste/<today> merge)', { ok: CHEFS, asks: CHEFS,
   run: (db, w, r) => W(r, [['set', `waste/${TODAY}`, { avoidable: 'Over-prepped rice', change: 'Half a batch on Mondays', reviewBy: NAME[r], reviewById: w, reviewAt: Date.now() }, true]]) });
 row('js/prep.js addXfer() through xWrite(): a transfer line with its open copy', { ok: ADDS, asks: ADDS,
@@ -398,6 +406,15 @@ row('js/prep.js addXfer() Undo through xWrite(): take back my own transfer withi
     return put({ [`transfers/${TODAY}/lines/u-${r}`]: rec, [`transferOpen/${TODAY}_u-${r}`]: { date: TODAY, lineId: 'u-' + r, record: rec, open: true, by: w } }); },
   run: async (db, w, r) => { const cur = await serverRec(`transfers/${TODAY}/lines/u-${r}`), ch = { deleted: true, deletedBy: NAME[r] || 'Head chef', deletedAt: Date.now() };
     return W(r, [['upd', `transfers/${TODAY}/lines/u-${r}`, ch], ['set', `transferOpen/${TODAY}_u-${r}`, { date: TODAY, lineId: 'u-' + r, record: Object.assign({}, cur, ch, { by: BY[r] }), open: false }]]); } });
+// the line's ⋯ on Transfers, Change amount (4 Nov 2026): an open loan today, its open copy in the same write (xWrite())
+const xAmt = (r, rec) => { const ch = AMT(r, 'L');
+  return W(r, [['upd', `transfers/${TODAY}/lines/${MINE(r)}`, ch], ['set', `transferOpen/${TODAY}_${MINE(r)}`, { date: TODAY, lineId: MINE(r), record: Object.assign({}, rec, ch, { by: BY[r] }), open: true }]]); };
+const xMine = (r, w) => xrec({ addedBy: NAME[r] || 'Head chef', addedById: w, by: w }), xTheirs = w => w === 'ann' ? xrec({ addedBy: 'Bo', addedById: 'bo', by: 'bo' }) : xrec();
+const xPut = (r, rec) => put({ [`transfers/${TODAY}/lines/${MINE(r)}`]: rec, [`transferOpen/${TODAY}_${MINE(r)}`]: { date: TODAY, lineId: MINE(r), record: rec, open: true, by: rec.by } });
+row('js/prep.js wxFixSave() through xWrite(): change the amount on my own open loan', { ok: ADDS, asks: ADDS,
+  prep: (r, w) => xPut(r, xMine(r, w)), run: (db, w, r) => xAmt(r, xMine(r, w)) });
+row('js/prep.js wxFixSave() through xWrite(): a chef changes the amount on someone else\'s open loan', { ok: CHEFS, asks: CHEFS,
+  prep: (r, w) => xPut(r, xTheirs(w)), run: (db, w, r) => xAmt(r, xTheirs(w)) });
 // returnXfer(..., undo): the person who marked it returned within 2 minutes, or a chef any time (xReturnBtn())
 const RETURNED = (by, at) => ({ returned: true, returnedBy: by === 'ann' ? 'Ann' : by, returnedById: by, returnedAt: at });
 const UNRETURN = { returned: false, returnedBy: '', returnedById: '', returnedAt: 0 };
