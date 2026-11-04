@@ -236,20 +236,22 @@ const reads = (p, re) => p.evaluate(s => window.__fake.reads.filter(k => new Reg
   ok(p.errors.length === 0, 'rollover with a far day lost: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // 10. The same for a read that fails after the sign-out (no signal): who is on today in the admin People tab. The
-  // failure came back as no signal, not as cut short, so it armed its retry and Ann's staff phone read the shifts on the
-  // next online event. Now any answer after the person changed is cut short (sdk()).
+  // 10. The same for a read that fails after the sign-out (no signal): who is on today, read when the Kitchen sections
+  // row opens on the admin Kitchen Overview (Team, People until 5 Nov 2026). The failure came back as no signal, not as
+  // cut short, so it armed its retry and Ann's staff phone read the shifts on the next online event. Now any answer after
+  // the person changed is cut short (sdk()).
   const ksX = { [fsKey(['config', 'main'])]: { people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, kitSecs: [{ id: 'grill', name: 'Grill', off: false }] } };
   p = await L.open(b, '#/admin', { admin: true, who: '', deviceMode: 'shared', extra: ksX, width: 1280, height: 900, failReads: '/shifts$', wait: 2000 });
   const sh0 = await reads(p, /\/shifts$/);
   await p.evaluate(() => {
-    const st = () => window.LK_PREP.state, leaf = () => document.querySelector('[data-p="a-tab"][data-t="people"]');
+    const st = () => window.LK_PREP.state, leaf = () => document.querySelector('[data-p="a-tab"][data-t="kitchen-home"]');
     if (leaf()) leaf().click();
     else for (const g of [...document.querySelectorAll('[data-p="a-group"]')].map(x => x.getAttribute('data-g'))) {
       document.querySelector('[data-p="a-group"][data-g="' + g + '"]').click();
-      if (st().atab === 'people') break;
+      if (st().atab === 'kitchen-home') break;
       if (leaf()) { leaf().click(); break; }
     }
+    document.querySelector('[data-p="k-row"][data-r="secs"]').click();
     window.LK_PREP.signOut(true);
   });
   await L.settle(p, 1000);
