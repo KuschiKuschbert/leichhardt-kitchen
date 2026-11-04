@@ -276,7 +276,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     await p.fill('#p-section', 'Larder'); await p.fill('#p-text', 'Peel garlic');
     await p.press('#p-text', 'Enter'); await L.settle(p, 500);
     ok(await p.inputValue('#p-section') === 'Larder', 'section hand-over: the section typed stays for Sam\'s next line');
-    await p.click('.nb-top [data-p="who-change"]'); await L.settle(p, 500);
+    await L.notYou(p); await L.settle(p, 500);
     await L.waitFor(p, () => !!document.querySelector('.p-name[data-id="bo"]'), null, 8000);
     await p.click('.p-name[data-id="bo"]'); await L.settle(p, 300);
     await p.fill('#pf1', '3333'); await L.settle(p, 1500);

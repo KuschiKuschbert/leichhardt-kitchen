@@ -1308,7 +1308,9 @@
   }
   // the person's section, the pushes on this phone or who they are changed: Settings draws again if what it shows did
   function meChanged() { try { window.dispatchEvent(new Event('lk-me')); } catch (e) {} }
-  function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), head: whoHead(), tab: adminTabs(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK(), todo: todoOK() }; }
+  // the role on the chef hat menu's person card (3 Nov 2026): Head chef for headId, otherwise the role's name (whoRole())
+  function roleName() { if (!me()) return ''; return whoHead() ? 'Head chef' : whoRole(); }
+  function chefMenu() { return { role: roleName(), minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), head: whoHead(), tab: adminTabs(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK(), todo: todoOK() }; }
   /* Functions (21 Oct 2026): who may enter and change function bookings. The person signed in with their own PIN and
      ticked for Functions (config/main fnIds, which only the head chef's Google account saves), or the head chef's Google
      device with nobody signed in. Being Head chef or Functions coordinator is not enough without the tick. The rules
@@ -4159,12 +4161,12 @@
     var h = fnNeedHidden(); h[x.day] = (h[x.day] || []).concat([x.k]).slice(-200);
     lsSet('lk.fnneed', JSON.stringify(h)); draw();
   }
-  /* The line above the prep list, the order list and wastage: who is writing and "Not you?" (22 Oct 2026). One helper, so
-     the three pages say it the same way. tail: what follows the name on that page (HTML, already escaped). The tab bar
-     or the pill menu is always on screen, so the line has no link to the prep list (23 Oct 2026). */
-  function whoTopHTML(tail) {
-    var p = me();
-    return '<div class="nb-top"><span>' + (p ? 'Writing as <strong>' + esc(p.name) + '</strong>' + (tail || '') : '') + '</span><span class="p-links">' + notYouHTML() + '</span></div>';
+  /* Who is writing (3 Nov 2026, work pages redesign S1): the prep list, the order list, wastage and transfers no longer
+     open with a "Writing as" row. Who is signed in shows on the chef hat (their initial, and on a shared screen their
+     first name), its menu opens on a person card with Sign out (the same handover "Not you?" was), and today's section
+     is My section in that menu. Only a page with nobody on a PIN keeps the lone "Not you?" it always had. */
+  function whoTopHTML() {
+    return me() ? '' : '<div class="nb-top"><span></span><span class="p-links">' + notYouHTML() + '</span></div>';
   }
   function listHTML() {
     var today = dayNow();
@@ -4211,7 +4213,7 @@
       (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div></section>';
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today<span class="nb-qsub"> and quick add</span>' : 'Done on ' + esc(dayShort(S.date))) + '</span></div></header>' +
       '<div class="nb-body nb-side">' + sideH + '</div></section>';
-    return whoTopHTML(ksTagHTML() + (can('tick') ? '' : ' (read only)')) +
+    return whoTopHTML() +
       (canBrowse() ? '<div class="nb-nav"><button type="button" class="chip" data-p="day" data-d="-1" aria-label="Back one day">&lsaquo;</button>' +
       '<button type="button" class="chip" data-p="today" aria-pressed="' + (S.date === today) + '">Today</button>' +
       '<label class="visually-hidden" for="p-day">Pick a date</label><input id="p-day" type="date" class="p-dateinput" data-k="p-day" value="' + esc(S.date) + '">' +
@@ -5395,7 +5397,7 @@
     var body = view === 'all' ? ordAllHTML() :
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
         offO + ordOverdueHTML(overdue, today) + (shown.length ? '<ul class="nb-rows">' + shown.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }).map(ordRow).join('') + '</ul>' : (overdue.length || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))));
-    return whoTopHTML('') + tabs +
+    return whoTopHTML() + tabs +
       '<section class="nb-page o-page' + (view === 'all' ? ' o-all' : '') + '"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + (view === 'all' ? 'To order' : 'Order list') + '</h2><span class="nb-date">' + (view === 'all' ? 'Across the last ' + ORD_DAYS + ' days' : esc(longDate(S.ordDate))) + '</span></div>' +
       (view === 'day' && S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') + '</header>' +
       (view === 'day' && S.ordDate === today ? cutOrdHTML() : '') +
@@ -5722,7 +5724,7 @@
       '<p class="w-rule">Write the actual amount and unit, not a dollar value. Unsafe food must never be reused to avoid logging waste.</p>' + add + '<button type="button" class="btn sheet-x" data-p="w-log-close">Close</button></div>' : '';
     var rvSheet = rv && S.wRv ? '<div class="sheet-bg" data-p="w-rv-close"></div><div class="sheet w-sheet" role="dialog" aria-modal="true" aria-labelledby="w-rv-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="w-rv-h">End-of-day review</h3>' +
       pageReviewHTML() + '<button type="button" class="btn sheet-x" data-p="w-rv-close">Close</button></div>' : '';
-    return whoTopHTML(ksTagHTML()) +
+    return whoTopHTML() +
       '<section class="nb-page o-page w-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + '</span></div>' +
       (S.wState === 'offline' || S.wState !== 'ok' && !live.length ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div>') + '</header>' +
       sum + acts + (can('add') ? '' : '<p class="hint w-ro">You can read the wastage log but not write in it.</p>') + '<div class="nb-body">' + body + '</div></section>' +
@@ -6094,7 +6096,7 @@
     var acts = add ? '<div class="w-acts"><button type="button" class="btn dark tr-logbtn" data-p="tr-log" aria-haspopup="dialog">Log a transfer</button></div>' : '<p class="hint w-ro">You can read the transfer list but not write in it.</p>';
     var sheet = add && S.xLog ? '<div class="sheet-bg" data-p="tr-log-close"></div><div class="sheet tr-sheet" role="dialog" aria-modal="true" aria-labelledby="tr-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="tr-log-h">Log a transfer</h3>' +
       '<p class="w-rule">Stock shared with the other venues, both ways. Write the amount and unit, not a price.</p>' + add + '<button type="button" class="btn sheet-x" data-p="tr-log-close">Close</button></div>' : '';
-    return whoTopHTML(ksTagHTML()) +
+    return whoTopHTML() +
       '<section class="nb-page o-page tr-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Transfers</h2><span class="nb-date">' + esc(longDate(S.xDate)) + (sub ? ' &middot; ' + esc(sub) : '') + '</span></div>' +
       (S.xState === 'offline' || S.xState !== 'ok' && !live.length ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' transfer' : ' transfers') + '</div>') + '</header>' +
       acts + '<div class="nb-body">' + stillOut + doneHTML + '</div></section>' +
@@ -9076,12 +9078,6 @@
     var s = kitSecs().filter(function (x) { return x.id === v.sec; })[0];
     return s ? s.name : '';   // renamed today: the new name; taken off the list: none
   }
-  /* "Writing as Ann" on the prep list and wastage: the section next to it, a tap changes it */
-  function ksTagHTML() {
-    var p = me(); if (!ksPicks(p)) return '';
-    var n = mySec();
-    return ' <button type="button" class="p-link ks-tag" data-ks="change" aria-label="' + esc(n ? 'Your section today: ' + n + '. Change it' : 'Pick your section for today') + '">' + esc(n || 'Pick a section') + '</button>';
-  }
   /* after the PIN (and when the book opens on a new day): staff and leads are asked once a day, chefs are given their role */
   function ksCheck() {
     if (!kitchenAccess() || !S.configFull) return;
@@ -9154,7 +9150,6 @@
     if (a === 'pick') { ksPick(el.getAttribute('data-v')); return; }
     if (a === 'skip') { ksSkip(); return; }
     if (a === 'close') { ksClose(); return; }
-    if (a === 'change') { ksOpen(true); return; }
   });
   document.addEventListener('keydown', function (e) {
     if (!ksPop) return;
