@@ -1609,6 +1609,25 @@
     el.value = v;
     toast('Section corrected: ' + info.from + ' to ' + v, { label: 'Undo', fn: function () { keepSection(info.from); if (key === 'p-section') S.section = info.from; else S.wf.sec = info.from; } });
   }
+  /* One section control (3 Nov 2026, work pages redesign S2): the kitchen's sections as chips under the section box on
+     the prep list and wastage, in place of the box's Choose Section picker (the box and a picker were two controls for
+     one field). A tap puts that section in the box, and it stays for the next line like a typed one; a tap on the lit
+     chip clears it, so lines go to their usual section again. The box stays for writing a section that is not on the
+     list. The chips are the head chef's kitchen sections when they are set up, otherwise the sections used most (no
+     reads: both are already loaded), with the one in the box first when it is neither. */
+  function secChoices(v) {
+    var names = kitSecs().length ? kitSecs().map(function (x) { return x.name; }) : suggestions().slice(0, 8), cur = String(v || '').trim();
+    if (cur && !names.some(function (n) { return n.toLowerCase() === cur.toLowerCase(); })) names = [cur].concat(names);
+    return names;
+  }
+  function secChipsHTML(key, v) {
+    var names = secChoices(v), cur = String(v || '').trim().toLowerCase();
+    if (names.length < 2) return '';
+    return '<div class="nb-sugg sec-chips" role="group" aria-label="Section"><span class="nb-ql" aria-hidden="true">Section</span>' + names.map(function (n) {
+      var on = n.toLowerCase() === cur;
+      return '<button type="button" class="chip" data-p="sec-pick" data-sk="' + key + '" data-v="' + esc(n) + '" aria-pressed="' + on + '">' + esc(n) + '</button>';
+    }).join('') + '</div>';
+  }
   function suggestions() {
     var seen = {}, out = [];
     S.sections.filter(function (x) { return !x.hidden; }).sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); }).forEach(function (x) { seen[x.name.toLowerCase()] = 1; out.push(x.name); });
@@ -4104,13 +4123,13 @@
     // (with no signal and the day not loaded, Closing soon gives no count of the lines left open: it would count only
     // the lines this phone wrote since)
     var flags = closeoutHTML(S.itemsState === 'offline' ? null : daily, S.date) + wNoteHTML();
-    var sug = suggestions(), sideH = sideHTML(today, flags);
+    var sideH = sideHTML(today, flags);
     var add = can('add') && S.date === today ?
-      '<form class="nb-add" data-p-form="add"><datalist id="p-sections">' + sug.map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('') + '</datalist>' +
+      '<form class="nb-add" data-p-form="add">' +
       '<div class="nb-add-row"><label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" autocapitalize="sentences" placeholder="Write a new line..." maxlength="160" value="' + esc(S.text) + '">' +
-      '<label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" list="p-sections" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section || (S.secTyped ? '' : mySec())) + '">' +
+      '<label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section || (S.secTyped ? '' : mySec())) + '">' +
       '<label class="visually-hidden" for="p-qty">Amount</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.qty) + '">' +
-      '<button type="submit" class="nb-addbtn">Add</button></div><div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : (S.date !== today ? '<p class="hint">You are looking at ' + esc(dayName(S.date)) + '. Lines are added on Today only.</p>' : '<p class="hint">You can read the book but not write in it. Ask the head chef if that is wrong.</p>');
+      '<button type="submit" class="nb-addbtn">Add</button></div>' + secChipsHTML('p-section', S.section || (S.secTyped ? '' : mySec())) + '<div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : (S.date !== today ? '<p class="hint">You are looking at ' + esc(dayName(S.date)) + '. Lines are added on Today only.</p>' : '<p class="hint">You can read the book but not write in it. Ask the head chef if that is wrong.</p>');
     var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
     if (!S.items.length && S.itemsState === 'loading') todayEmpty = inkWait('Loading the prep list...', 'prep', 4);
     if (live.length && doneN === live.length && !S.tab) todayEmpty = '<p class="nb-empty">Everything on this list is ticked off. See Done today under Handy.</p>';
@@ -5565,11 +5584,10 @@
     var often = wOften();
     var add = can('add') ?
       '<form class="nb-add w-add" data-p-form="wadd">' + (often.length ? '<div class="w-often"><span class="nb-ql">Logged often</span><div class="chiprow">' + often.map(function (e, i) { return '<button type="button" class="chip sq" data-p="woften" data-i="' + i + '">' + esc(e.text) + '</button>'; }).join('') + '</div></div>' : '') +
-      '<datalist id="w-sections">' + suggestions().map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('') + '</datalist>' +
-      '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label><input id="w-sec" class="nb-in nb-in-sec" data-k="w-sec" list="w-sections" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec || mySec()) + '">' +
+      '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label><input id="w-sec" class="nb-in nb-in-sec" data-k="w-sec" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec || mySec()) + '">' +
       '<label class="visually-hidden" for="w-text">Item</label><input id="w-text" class="nb-in nb-in-text" data-k="w-text" enterkeyhint="next" autocomplete="off" placeholder="What was wasted?" maxlength="80" value="' + esc(f.text) + '">' +
       '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty" data-k="w-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit || 'unit') + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' +
-      '<div class="nb-sugg" id="w-sugg">' + wSuggHTML() + '</div>' +
+      secChipsHTML('w-sec', f.sec || mySec()) + '<div class="nb-sugg" id="w-sugg">' + wSuggHTML() + '</div>' +
       '<div class="w-pick"><span class="nb-ql" id="w-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="w-unit-l">' + UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="wunit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
       '<div class="w-pick"><span class="nb-ql" id="w-reason-l">Reason</span><div class="w-rchips" role="radiogroup" aria-labelledby="w-reason-l">' + REASONS.map(function (r) { return '<button type="button" class="chip" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (f.reason === r[0]) + '">' + r[1] + '</button>'; }).join('') + '</div>' +
       '<button type="button" class="w-rbtn' + (f.reason ? '' : ' is-empty') + '" data-p="sheet" data-v="reason" aria-haspopup="dialog">' + (f.reason ? esc(reasonName(f.reason)) : 'Pick a reason') + '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>' +
@@ -9249,6 +9267,11 @@
     if (a === 'sheet') {
       S.sheet = 'reason';
       window.LK_UX.AdaptivePicker({ label: 'Why was it wasted?', trigger: el, value: [S.wf.reason], items: REASONS.map(function (r) { return { value: r[0], label: r[1] }; }), onChange: function (v) { S.sheet = ''; S.wf.reason = v[0]; draw(); }, onDismiss: function () { S.sheet = ''; } }); return;
+    }
+    if (a === 'sec-pick') {
+      var sk = el.getAttribute('data-sk'), sv = el.getAttribute('data-v') || '', lit = el.getAttribute('aria-pressed') === 'true';
+      if (sk === 'p-section') { S.section = lit ? '' : sv; S.secTyped = !lit; } else if (sk === 'w-sec') S.wf.sec = lit ? '' : sv;
+      draw(); focusSel('[data-p="sec-pick"][data-sk="' + sk + '"][data-v="' + CSS.escape(sv) + '"]'); return;
     }
     if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { S.wf.text = wt; var wl = wLast(wt); if (wl) { if (wl.unit) S.wf.unit = wl.unit; if (wl.reason && !S.wf.reason) S.wf.reason = wl.reason; if (wl.station && !S.wf.sec && !mySec()) S.wf.sec = wl.station; if (wl.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wl.amt; S.wf.amtAuto = true; } } draw(); focusFilled('w-amt'); } return; }
     if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; if (wo.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wo.amt; S.wf.amtAuto = true; } draw(); focusFilled('w-amt'); } return; }
