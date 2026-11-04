@@ -13,6 +13,7 @@
   On GitHub (3 Nov 2026, CLAUDE.md, Keeping usage down):
     SHARD=2/4 npm test            only every fourth file, starting with the second, so four runners share the work
     QUIET=1                       a file that passes prints one line; a file that fails prints in full
+    FILE_TIMEOUT=480              a file still running after 480 s is stopped and counted as failed (retried with RETRY)
     RETRY=1                       a file that fails runs once more on its own; passing then is reported as a warning
                                   (named in the run summary and an annotation), never hidden
   With GITHUB_STEP_SUMMARY set, the failures and retries are written to the run's summary and as annotations, so
@@ -35,14 +36,21 @@ if (shard) {
   for (let i = files.length - 1; i >= 0; i--) if (i % n !== k - 1) files.splice(i, 1);
 }
 const quiet = process.env.QUIET === '1', retry = process.env.RETRY === '1';
+// FILE_TIMEOUT=480: a file still running after that many seconds is stopped and counted as failed (then retried with
+// RETRY=1), so one hung file cannot hold a whole runner until the job's own limit with no summary (4 Nov 2026).
+const fileTimeout = Math.max(0, +process.env.FILE_TIMEOUT || 0) * 1000;
 const jobs = Math.max(1, +process.env.JOBS || Math.min(6, os.cpus().length + 2));
 function runFile(f) {
   return new Promise(res => {
     const t0 = Date.now(), out = [];
     const c = spawn(process.execPath, [path.join(__dirname, f)], { env: process.env });
     c.stdout.on('data', d => out.push(d)); c.stderr.on('data', d => out.push(d));
+    let timedOut = false;
+    const timer = fileTimeout ? setTimeout(() => { timedOut = true; c.kill('SIGKILL'); }, fileTimeout) : null;
     c.on('exit', code => {
-      const s = (Date.now() - t0) / 1000, text = Buffer.concat(out).toString(), ok = code === 0;
+      if (timer) clearTimeout(timer);
+      if (timedOut) out.push(Buffer.from('\nFAIL stopped after ' + fileTimeout / 1000 + ' s (FILE_TIMEOUT): the file did not finish\n'));
+      const s = (Date.now() - t0) / 1000, text = Buffer.concat(out).toString(), ok = code === 0 && !timedOut;
       if (quiet && ok) process.stdout.write('ok ' + f + ' (' + s.toFixed(0) + ' s)\n');
       else process.stdout.write('\n=== ' + f + ' (' + s.toFixed(0) + ' s)\n' + text);
       res({ f, ok, s, fails: text.split('\n').filter(l => /^FAIL /.test(l)).slice(0, 5) });

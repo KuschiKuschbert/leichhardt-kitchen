@@ -68,7 +68,7 @@ jobs:
     needs: scope
     if: needs.scope.outputs.docs != 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -91,6 +91,7 @@ jobs:
           SHARD: ${{ matrix.shard }}/4
           QUIET: '1'
           RETRY: '1'
+          FILE_TIMEOUT: '600'
         run: npm test
       - name: Keep the screenshots of a failed run
         if: failure()
