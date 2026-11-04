@@ -4905,6 +4905,15 @@
       // The week ahead: functions from the live list js/functions.js already keeps for the band, and cut-offs worked out
       // from config/main with LK_CUT. No reads.
       week: function () { var w = dashWeek(); dashWeekSig = JSON.stringify(w); return w; },
+      // To do (4 Nov 2026, design B): the open kitchen mail itself, most urgent first, with the Kitchen mail page's own rows,
+      // so a line is ticked off or given a new "how soon" in place. A message shown here counts as seen, as on Kitchen mail
+      // (only the ones shown). No reads: the open mail the book read when it opened.
+      mailRows: function (max) {
+        if (!mlOwner() || !mlOpen || mlErr) return null;
+        var l = mlOpen.slice().sort(function (a, b) { return mlRank(a) - mlRank(b) || (a.at || 0) - (b.at || 0); }), shown = l.slice(0, Math.max(1, max | 0));
+        if (mlHead()) setTimeout(function () { mlSeenAll(shown.map(function (x) { return x.id; })); }, 0);
+        return { html: shown.map(mlRow).join(''), more: l.length - shown.length };
+      },
       // The watch list (dashwatch/main, admin only): one read when the Dashboard opens and on Refresh; a save reads the
       // server copy first (1 read) and refuses when another device changed it, then writes through W().
       watchGet: function () {
@@ -10174,15 +10183,18 @@
       mlDoneErr = true; retrySoon('mailDone', function () { loadMailDone(true); }, e); draw();
     });
   }
-  function mlOnTab() { return S.name === 'admin' && (S.atab || 'insights') === 'mail' && !!S.root && document.body.contains(S.root) && document.visibilityState !== 'hidden'; }
+  // the open mail is on screen: the Kitchen mail page, or Today's Dashboard with its To do (4 Nov 2026)
+  function mlOnTab() { return S.name === 'admin' && ((S.atab || 'insights') === 'mail' || S.atab === 'dashboard') && !!S.root && document.body.contains(S.root) && document.visibilityState !== 'hidden'; }
   /* the Mail tab is open: everything on it counts as seen, and the nudge clock starts again (saved with the head chef's
      account, config/admins, so reading mail on the laptop also stops the nudge on the phone) */
-  function mlSeenAll() {
+  // ids: only these messages (the To do shows the most urgent few); none: everything open (the Kitchen mail page)
+  function mlSeenAll(ids) {
     if (!mlOwner() || !mlHead() || !mlOnTab() || !mlOpen) return;
+    if (!ids && (S.atab || 'insights') !== 'mail') return;   // everything open only on the Kitchen mail page itself
     var t = now();
     mlOpened = t; lsSet('lk.mail.opened', String(t)); mlPopClose();
     if (t - mlOpenedW > 10 * 60000) { mlOpenedW = t; sset(docRef('config', 'admins'), { mailOpened: t }, true).catch(function () { mlOpenedW = 0; }); }
-    var l = mlOpen.filter(function (x) { return !x.seen; });
+    var l = mlOpen.filter(function (x) { return !x.seen && (!ids || ids.indexOf(x.id) >= 0); });
     if (!l.length) return;
     var ops = [];
     l.forEach(function (x) { x.seen = true; x.seenAt = t; ops.push(['upd', mlRef(x.id), { seen: true, seenAt: t }], ['upd', mlStatRef(x.id), { seen: true, done: !!x.done }]); });
