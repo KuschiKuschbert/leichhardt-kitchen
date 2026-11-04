@@ -587,4 +587,12 @@ async function dwShow(page, sel) {
   const opener = part ? '[data-dw="panel"][data-v="pmore"]' : '[data-dw="panel"][data-v="more"]';
   if (await page.$(opener) && await page.getAttribute(opener, 'aria-pressed') !== 'true' && await page.getAttribute(opener, 'aria-expanded') !== 'true') { await page.click(opener); await settle(page, 150); }
 }
-module.exports = { oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+// The page's add button (work pages redesign A, as drawn in the agreed options page): on a phone, full width and docked
+// right above the tab bar; on wider screens, in the page header
+const docked = (page, sel) => page.evaluate(s => {
+  const b = document.querySelector(s); if (!b) return false;
+  const r = b.getBoundingClientRect(), t = document.querySelector('.tabbar');
+  if (t && t.getClientRects().length) { const tab = t.getBoundingClientRect(); return r.bottom <= tab.top + 1 && tab.top - r.bottom <= 16 && r.width >= innerWidth - 40; }
+  return !!b.closest('.nb-ph');
+}, sel);
+module.exports = { docked, oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
