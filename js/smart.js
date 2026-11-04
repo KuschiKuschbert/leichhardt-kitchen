@@ -758,8 +758,14 @@
             return '<div class="dw-un"><b>' + esc(u.ing) + '</b><div class="chips">' + u.guesses.map(function (id) { var it = LIB.get(id); return it ? btn('sm-pick', it.name, { v: u.ing + '|' + id, cls: 'chip' }) : ''; }).join('') + btn('sm-find', 'Find it in the library', { v: u.ing, cls: 'chip' }) + btn('sm-skip', 'Leave it off', { v: u.ing, cls: 'chip' }) + '</div></div>';
           }).join('') + '</section>';
       }
-      if (r && r.made && r.made.length) out = '<p class="hint dw-made">Drawn from ' + (r.made.length === 1 ? (r.made[0].note ? 'its note' : 'its recipe') : 'their recipes') + ': ' + r.made.map(function (m) { return '<b>' + esc(m.ing) + '</b> (' + (m.note && r.made.length > 1 ? 'its note: ' : '') + esc(m.from.join(', ').toLowerCase()) + ')'; }).join('; ') + '.</p>' + out;
-      if (r && r.style && STYLES[r.style]) out = '<p class="hint dw-smart-note" role="status">Drawn by the book: ' + esc(STYLES[r.style].name.toLowerCase()) + (r.style === 'side' || r.style === 'build' ? '' : ' plating') + '. Move anything; Tidy up leaves what you moved where it is.</p>' + out;
+      return out;
+    },
+    // what Draw it for me says about the drawing it made: shown once, at the top of the canvas (4 Nov 2026, the quiet
+    // canvas), not at the top of every panel
+    note: function (W) {
+      var out = '', r = W.smart;
+      if (r && r.style && STYLES[r.style]) out = '<p class="hint dw-smart-note">Drawn by the book: ' + esc(STYLES[r.style].name.toLowerCase()) + (r.style === 'side' || r.style === 'build' ? '' : ' plating') + '.</p>';
+      if (r && r.made && r.made.length) out += '<p class="hint dw-made">Drawn from ' + (r.made.length === 1 ? (r.made[0].note ? 'its note' : 'its recipe') : 'their recipes') + ': ' + r.made.map(function (m) { return '<b>' + esc(m.ing) + '</b> (' + (m.note && r.made.length > 1 ? 'its note: ' : '') + esc(m.from.join(', ').toLowerCase()) + ')'; }).join('; ') + '.</p>';
       return out;
     },
     cmd: function (a, v, W) {

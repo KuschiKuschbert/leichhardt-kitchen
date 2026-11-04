@@ -48,8 +48,8 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   // opens a new drawing for a recipe's slot and asks the book to draw it
   async function drawn(route, o) {
     const pg = await L.open(b, '#/manage/draw/new/' + route, Object.assign({ who: 'ann', extra: cfg(), wait: 1200, width: 1280, height: 900 }, o || {}));
-    await wait(pg, () => !!document.querySelector('[data-dw="sm-draw"]'), null, 20000);
-    await pg.click('[data-dw="sm-draw"]');
+    await wait(pg, () => !!(window.LK_SMART && window.LK_SMART.ui && document.querySelector('.dw-ctx')), null, 20000);
+    await L.dwShow(pg, '[data-dw="sm-draw"]'); await pg.click('[data-dw="sm-draw"]');
     await wait(pg, () => window.LK_DRAW.state().d.els.length > 0 && !!document.querySelector('.dw-smart-note'), null, 10000);
     if (SHOTS) await (await pg.$('.dw-svg')).screenshot({ path: path.join(SHOTS, 'smart-' + route.replace(/\//g, '-') + '.png') });
     return pg;
@@ -176,8 +176,8 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
 
   // the side view, from the saved plate: left to right as on the plate, the toppings standing on the schnitzel, labelled
   p = await L.open(b, '#/manage/draw/new/chicken-parmy/side', { who: 'ann', extra: Object.assign({}, saved, cfg()), wait: 1200, width: 1280, height: 900 });
-  await wait(p, () => !!document.querySelector('[data-dw="sm-draw"]') && window.LK_RX.arts().some(x => x.rid === 'chicken-parmy'), null, 20000);
-  await p.click('[data-dw="sm-draw"]');
+  await wait(p, () => !!(window.LK_SMART && window.LK_SMART.ui && document.querySelector('.dw-ctx')) && window.LK_RX.arts().some(x => x.rid === 'chicken-parmy'), null, 20000);
+  await L.dwShow(p, '[data-dw="sm-draw"]'); await p.click('[data-dw="sm-draw"]');
   await wait(p, () => window.LK_DRAW.state().d.els.some(e => e.t === 'text'), null, 10000);
   if (SHOTS) await (await p.$('.dw-svg')).screenshot({ path: path.join(SHOTS, 'smart-chicken-parmy-side.png') });
   w = await S(p);
@@ -291,6 +291,7 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   await p.context().close();
   // added by hand: the chip for an ingredient with a card adds what its card makes
   p = await L.open(b, '#/manage/draw/new/riblets/plate', { who: 'ann', extra: cfg(), wait: 1200, width: 1280, height: 900 });
+  await L.dwAdd(p);
   await wait(p, () => !!document.querySelector('.dw-miss [data-dw="ing"][data-v="Cowboy candy"]'), null, 20000);
   await p.click('.dw-miss [data-dw="ing"][data-v="Cowboy candy"]');
   await wait(p, () => window.LK_DRAW.state().d.els.some(e => e.made === 'cowboy-candy'));
