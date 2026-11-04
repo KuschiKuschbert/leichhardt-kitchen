@@ -4743,23 +4743,43 @@
      same 60 days of prep lines the Team report reads (loadStats), once per visit and kept in memory. */
   function personPageHTML(d, id, saveBlock) {
     var p = d.people.filter(function (x) { return x.id === id; })[0];
-    var back = '<p><button type="button" class="p-link" data-p="a-person-back">\u2039 All people</button></p>';
+    var back = '<p><button type="button" class="p-link" data-p="a-person-back">‹ All people</button></p>';
     if (!p) return '<section class="set-block">' + back + '<p class="hint">This person is not on the team list any more.</p></section>' + saveBlock;
     var head = isHeadP(p), can = [['add', 'Write'], ['tick', 'Tick'], ['del', 'Remove'], ['fn', 'Create and edit functions']].filter(function (c) { return c[0] !== 'fn' && head || p[c[0]]; }).map(function (c) { return c[1]; });
     var top = '<section class="set-block a-personpage">' + back + '<span class="label">' + esc(p.name || 'No name yet') + '</span>' +
       '<p class="a-pp-role"><b>' + esc((ROLES[p.role] || {}).name || 'No role') + '</b>' + (p.active === false ? ', off the list' : '') + '. Can: ' + esc(can.length ? can.join(', ') : 'read only') + '.</p>' +
       '<p class="hint">Change the role and ticks in the team list, then save.</p>';
-    var st = S.stats, n = S.statsRange;
-    if (!st || st.loading) return top + inkWait('Loading the last ' + n + ' days...', 'chef', 3) + '</section>' + saveBlock;
+    return top + personActivityHTML(id) + personTrainingHTML(p) + '</section>' + saveBlock;
+  }
+  // the person's last N days over the shared report period, counted by the Team report's own code
+  function personActivityHTML(id) {
+    var st = S.stats, n = S.statsRange, h3 = '<h3 class="a-ch-h">Last ' + n + ' days</h3>';
+    if (!st || st.loading) return h3 + inkWait('Loading the last ' + n + ' days...', 'chef', 3);
     var miss = st.miss && st.miss.length ? '<p class="p-err" role="status">' + st.miss.length + ' day' + (st.miss.length === 1 ? '' : 's') + ' could not be read, so these numbers may be low. The book tries again by itself.</p>' : '';
     var td = teamData(n), r = td.per[id], note = '<p class="hint">Ticks record activity. They do not confirm skill. Use them as a prompt for a chat, not a verdict.</p>';
-    if (!r || !r.w && !r.t) return top + miss + '<h3 class="a-ch-h">Last ' + n + ' days</h3><p class="hint">No lines written or ticked off in the last ' + n + ' days.</p>' + note + '</section>' + saveBlock;
+    if (!r || !r.w && !r.t) return h3 + miss + '<p class="hint">No lines written or ticked off in the last ' + n + ' days.</p>' + note;
     var h = habit(r, td), daysW = Object.keys(r.days).length, secs = Object.keys(r.tsecs).sort(function (a, b) { return r.tsecs[b] - r.tsecs[a]; });
     var tiles = [[r.w, 'lines written'], [r.t, 'lines ticked off'], [daysW + ' of ' + n, 'days with lines written']];
     if (h.top) tiles.push([Math.round(h.share * 100) + '%', 'in ' + h.top + ', the main section']);
-    return top + miss + '<h3 class="a-ch-h">Last ' + n + ' days</h3><div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' +
+    return h3 + miss + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' +
       (secs.length ? '<p class="a-pp-secs">Ticked off by section: ' + secs.slice(0, 6).map(function (k) { return esc(k) + ' ' + r.tsecs[k]; }).join(', ') + '.</p>' : '') +
-      (r.last ? '<p class="hint">Last wrote a line on ' + esc(dayShort(r.last)) + '. The period is the one every report shares.</p>' : '') + note + '</section>' + saveBlock;
+      (r.last ? '<p class="hint">Last wrote a line on ' + esc(dayShort(r.last)) + '. The period is the one every report shares.</p>' : '') + note;
+  }
+  /* the person's saved assessments (step 5, part 2), from the list the Assessments page reads, through the workspace
+     module (js/admin-intelligence.js, lazy): one read per record, once per visit, nothing more once Assessments has read
+     them. A book without the module's personTraining() keeps the link to Assessments. */
+  function personTrainingHTML(p) {
+    if (!intelligenceAllowed()) return '';
+    var h3 = '<h3 class="a-ch-h">Assessments</h3>', open = '<div class="btn-row"><button type="button" class="btn" data-p="a-person-assess" data-id="' + esc(p.id) + '">Open ' + esc(p.name || 'their') + (p.name ? '\'s' : '') + ' assessments</button></div>';
+    if (!intelligenceReady()) return h3 + (intelligenceError ? '<p class="p-err" role="status">Could not load the assessments. Check the connection and reload this page.</p>' : inkWait('Loading assessments...', 'chef', 3));
+    if (typeof window.LK_INTELLIGENCE.personTraining !== 'function') return h3 + '<p class="hint">Saved assessments are under Assessments.</p>' + open;
+    var rows = window.LK_INTELLIGENCE.personTraining(p.id, intelligenceAdapter());
+    if (rows === undefined) return h3 + inkWait('Loading assessments...', 'chef', 3);
+    if (rows === null) return h3 + '<p class="p-err" role="status">Could not load the assessments. Check the connection and reload this page.</p>' + open;
+    if (!rows.length) return h3 + '<p class="hint">No saved assessments yet.</p>' + open;
+    return h3 + '<ul class="a-pp-assess">' + rows.slice(0, 8).map(function (r) {
+      return '<li><b>' + esc(r.subject || 'No section') + '</b>: ' + esc(r.status) + '. <small>' + esc(r.scope) + ' assessment, ' + esc(r.day) + ', assessor ' + esc(r.assessor) + '.</small></li>';
+    }).join('') + '</ul>' + (rows.length > 8 ? '<p class="hint">' + (rows.length - 8) + ' more under Assessments.</p>' : '') + open;
   }
   /* The sous chef's Staff page: a short list of names with Remove. Same helper, rows as cards. */
   function staffListHTML(d) {
@@ -4979,15 +4999,24 @@
       S.root.querySelector('.ai-workspace') && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3;
   }
   function intelligenceBusy() { return proofBusy() || !!(intelligenceVisible() && window.LK_INTELLIGENCE.busy && window.LK_INTELLIGENCE.busy()); }
+  // the admin workspace module (js/admin-intelligence.js, lazy, admin only): true once it can run, otherwise its load starts
+  function intelligenceReady() {
+    if (window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_ANALYSIS && window.LK_ANALYSIS.linkQueue) return true;
+    if (!intelligenceLoading && !intelligenceError) {
+      intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=3').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=5'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS || !window.LK_ANALYSIS.linkQueue) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
+    }
+    return false;
+  }
   function intelligenceHTML(page) {
     if (!intelligenceAllowed()) return '';
-    if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS || !window.LK_ANALYSIS.linkQueue) {
-      if (!intelligenceLoading && !intelligenceError) {
-        intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=3').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=4'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS || !window.LK_ANALYSIS.linkQueue) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
-      }
+    if (!intelligenceReady()) {
       return '<section class="set-block"><h3 class="label">Admin workspace</h3><p class="hint" role="status">' + (intelligenceError ? 'Could not load the workspace. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
     }
-    return window.LK_INTELLIGENCE.html(page, {
+    return window.LK_INTELLIGENCE.html(page, intelligenceAdapter());
+  }
+  // what the workspace module may use: the workspace pages and a person's page (admin pages step 5) share it
+  function intelligenceAdapter() {
+    return {
       allowed: intelligenceAllowed, context: intelligenceContext, draw: draw, now: now,
       day: function (at) { return at == null ? dayNow() : T.day(at); }, clock: function (at) { return T.day(at) + ' ' + hhmm(T.mins(at)); },
       page: function (tab) { if (INTELLIGENCE_PAGES.indexOf(tab) < 0 || intelligenceBusy()) return; S.atab = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop(); },
@@ -5019,7 +5048,7 @@
       sections: function () { return ((S.config || {}).kitSecs || []).filter(function (s) { return !s.off; }).map(function (s) { return s.name; }); },
       recipes: function () { return (D.recipes || []).map(function (r) { return { id: r.id, name: r.name }; }); },
       loadGuides: loadGuides, guides: function () { return gLive().map(function (g) { return { id: g.id, title: g.title }; }); }
-    });
+    };
   }
   function adminHTML() {
     if (S.authState !== 'ready' && !S.user) {
@@ -9872,6 +9901,8 @@
     // a person's page (admin pages step 5): open it from their row, and back to the list (also the top bar's Back)
     if (a === 'a-person') { S.personId = id; draw(); adminToTop(); return; }
     if (a === 'a-person-back') { S.personId = ''; draw(); adminToTop(); return; }
+    // Assessments, opened on this person (the workspace module's person filter, when the module has it)
+    if (a === 'a-person-assess') { if (intelligenceBusy()) return; S.personId = ''; if (window.LK_INTELLIGENCE && typeof window.LK_INTELLIGENCE.showPerson === 'function') window.LK_INTELLIGENCE.showPerson(id); S.atab = 'training-records'; S.agLast = S.agLast || {}; S.agLast.team = 'training-records'; lsSet('lk.prep.atab', 'training-records'); draw(); adminToTop(); return; }
     if (a === 'range') { var rv = el.getAttribute('data-v'); if (S.atab === 'waste') { if (!whCanChange()) return; whState().period = rv; if (/^(7|14|30)$/.test(rv)) S.statsRange = +rv; } else setReportDays(+rv); draw(); return; }
     // on Team, the order days too (28 Oct 2026): a day that could not load stayed under "Refresh reads the newest"
     if (a === 'stats-refresh') { loadStats(true); if (el.getAttribute('data-v') === 'team') loadOrdStats(true); draw(); return; }
