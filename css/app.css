@@ -2960,6 +2960,8 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 .ux-picker-trigger:disabled { opacity: .55; cursor: default; }
 .ux-picker-trigger:focus-visible, .ux-picker button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .ux-search { display: inline-grid; position: relative; grid-template-columns: minmax(0, 1fr); min-width: 0; width: 100%; flex: 1 1 10rem; }
+/* In a field the label and box stack in a column, where flex-basis is a height: 10rem left 110 px under the box (3 Nov 2026) */
+.field > .ux-search { flex: 0 0 auto; }
 .ux-search > input { grid-area: 1 / 1; width: 100%; min-width: 0; padding-right: 3rem !important; }
 .ux-search > input::-webkit-search-cancel-button { display: none; }
 .ux-search-clear { position: relative; grid-area: 1 / 1; align-self: center; justify-self: end; min-width: 44px; min-height: 44px; border: 0; background: transparent; color: var(--ink); font: 1.5rem var(--body); }
