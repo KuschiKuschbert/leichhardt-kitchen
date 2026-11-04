@@ -1669,7 +1669,7 @@
       say: liveSay
     };
   }
-  var supplierToolsPromise = null, supplierService = null, supplierPending = Object.create(null);
+  var supplierToolsPromise = null, supplierService = null;
   function supplierTools() {
     if (!supplierToolsPromise) supplierToolsPromise = Promise.resolve().then(function () {
       if (!window.LK_APP || !window.LK_APP.load) throw { code: 'unavailable' };
@@ -1681,28 +1681,6 @@
     return supplierToolsPromise;
   }
   // A linked supplier goes through review; an older or unlinked supplier keeps the established reminder-only tick.
-  function supplierComplete(key, on) {
-    if (supplierPending[key]) { supplierPending[key].on = !!on; return supplierPending[key].promise; }
-    if (!on) return cutOrdered(key, false);
-    if (!supplierRead()) return Promise.reject({ code: 'permission' });
-    var context = supplierContext(), parts = key.split('|');
-    if (parts.length !== 2) return Promise.reject({ code: 'invalid' });
-    var pendingCut = { on: !!on, promise: null };
-    supplierPending[key] = pendingCut;
-    pendingCut.promise = supplierTools().then(function (store) { return store.loadSuppliers(); }).then(function (list) {
-      if (context !== supplierContext() || !supplierRead()) throw { code: 'context' };
-      var linked = list.some(function (x) { return x.cutoffId === parts[0]; });
-      if (linked && pendingCut.on) { location.hash = '#/suppliers/cutoff/' + encodeURIComponent(parts[0]) + '/' + encodeURIComponent(parts[1]); return false; }
-      return cutOrdered(key, pendingCut.on);
-    }).catch(function (e) {
-      // A refused read must not replay the previous person's tap under the next chef's session.
-      if (context !== supplierContext() || !supplierRead()) throw { code: 'context' };
-      // Before the additive rules are published, the old completion action still works. A lost read never implies no catalogue.
-      if (e && (e.code === 'permission-denied' || e.code === 'supplier-rules')) return cutOrdered(key, pendingCut.on);
-      throw e;
-    }).finally(function () { if (supplierPending[key] === pendingCut) delete supplierPending[key]; });
-    return pendingCut.promise;
-  }
   /* A read that must come from the server (the version check before a recipe, drawing or function save). On a slow or
      half-dropped connection getDocFromServer can wait a long time without failing, and the save never even went into the
      queue although the page said it would (22 Oct 2026). After 6 s it gives up like a read with no signal, so the caller
@@ -9230,7 +9208,7 @@
       (cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '') + '<ul class="cut-list">' + xs.map(function (c) {
       var left = c.at - m, soon = left <= CUT_SOON;
       return '<li class="cut-row' + (soon ? ' is-soon' : '') + '"><a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">' + (soon ? '<b class="cut-now">Order now</b> ' : '') + 'by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' <b>' + cutIn(left) + '</b> <span class="cut-for">' + esc(cutDel(c)) + '</span></span>' +
-        '<button type="button" class="cut-done" data-cut="done" data-id="' + esc(c.key) + '" aria-label="' + esc('Order done for ' + c.s.name + ': confirm without quantities') + '"' + (cutCanTick() ? '' : ' disabled') + '>Order done</button></li>';
+        '</li>';
     }).join('') + '</ul>';
   }
   // js/app.js draws the empty slot under the top bar (and the Functions band); this fills it and keeps it right as time passes
@@ -9247,12 +9225,14 @@
     var h = cutBandHTML(); cutLast = h;
     return '<div class="cut-band" id="cut-band" role="region" aria-label="Order cut-offs"' + (h ? '' : ' hidden') + '>' + h + '</div>';
   }
-  document.addEventListener('click', function (e) {
-    var el = e.target.closest && e.target.closest('[data-cut]');
-    if (!el || el.getAttribute('data-cut') !== 'done') return;
-    // Any of today's or tomorrow's cut-offs, the two days the shared ticks cover: the bar shows those whose reminder is
-    // on, and the card for a cut-off with no catalogue supplier (js/suppliers.js) also offers one not started or closed.
-    var key = el.getAttribute('data-id') || '', c = cutOn(0).concat(cutOn(1)).filter(function (x) { return x.key === key; })[0];
+  /* A supplier's order is ticked as done only on the order list (head chef, 5 Nov 2026, round 2 of the work pages
+     redesign): its tick confirms an order placed by phone, email or the supplier's site, for any supplier, linked to
+     the catalogue or not, without quantities. The cut-off bar, Chef to-do and the supplier pages show whether it is
+     done, with no tick. Recording the quantities stays on the supplier's own page (its name on the tick list). Before,
+     the bar's Order done did this, and the tick list opened a linked supplier's sheet instead of ticking. */
+  function cutConfirm(key) {
+    // Any of today's or tomorrow's cut-offs, the two days the shared ticks cover.
+    var c = cutOn(0).concat(cutOn(1)).filter(function (x) { return x.key === key; })[0];
     if (!c || !cutCanTick() || cutSeen[key]) return;
     var context = supplierContext(), by = cutTicker();
     function fail(e) {
@@ -9269,7 +9249,7 @@
         cutOrdered(key, false).then(function () { if (context === supplierContext()) toast('Order confirmation undone. Saved order history is unchanged.'); }, fail);
       } });
     }, fail);
-  });
+  }
   window.addEventListener('lk-who', function () { cutWatch(); cutPaint(); });
   window.addEventListener('lk-cfg', function () { cutWatch(); cutPaint(); });
   window.addEventListener('lk-clock', cutPaint);
@@ -9277,27 +9257,27 @@
   /* Supplier orders: the tick list on the order list and on Chef to-do, for the head chef and sous chefs. Today's
      cut-offs, and tomorrow's whose reminder has already started (an early one, the night before), soonest first. Each
      row is a tick box: ordered (by whom, when), the time left, or Closed and not ticked. */
-  function cutRowsHTML() {
+  function cutRowsHTML(ro) {
     var m = T.mins(), done = cutDone(), xs = cutToday().concat(cutOn(1).filter(function (c) { return cutOnNow(c, m); }));
     if (!xs.length) return '<p class="hint">No cut-offs today.</p>';
     return (cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '') + '<ul class="cut-tl">' + xs.map(function (c) {
       var d = done[c.key], past = c.at <= m, who = d ? cutByName(d) : '';
       var st = d ? 'Ordered' + (who ? ' by ' + who : '') + (d.at ? ', ' + clock(d.at) : '') : past ? 'Closed, not ticked' : cutIn(c.at - m);
       var cls = d ? 'is-done' : past ? 'is-past' : c.at - m <= CUT_SOON ? 'is-soon' : '';
-      return '<li class="cut-o ' + cls + '"><button type="button" class="cut-box" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Ordered from ' : 'Tick when ordered from ') + c.s.name) + '"' + (cutCanTick() ? '' : ' disabled') + '><span aria-hidden="true">' + (d ? '&#10003;' : '') + '</span></button>' +
+      return '<li class="cut-o ' + cls + '">' + (ro ? '<span class="cut-box cut-mark" aria-hidden="true">' + (d ? '&#10003;' : '') + '</span>' : '<button type="button" class="cut-box" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Ordered from ' : 'Tick when ordered from ') + c.s.name) + '"' + (cutCanTick() ? '' : ' disabled') + '><span aria-hidden="true">' + (d ? '&#10003;' : '') + '</span></button>') +
         '<a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
     }).join('') + '</ul>';
   }
   function cutOrdHTML() {
     if (!cutHas()) return '';
     cutWatch(); pushKeep();
-    return '<section class="cut-today" aria-label="Supplier orders"><h3 class="nb-sh">Supplier orders today</h3><p class="hint cut-how">Tick each supplier once the order is in. Every chef sees it, and its reminder and pushes stop.</p>' + cutRowsHTML() + pushHTML() + '</section>';
+    return '<section class="cut-today" aria-label="Supplier orders"><h3 class="nb-sh">Supplier orders today</h3><p class="hint cut-how">Tick each supplier once the order is in, by phone, email or its site. This is the one place to tick it: every chef sees it, and its reminder and pushes stop.</p>' + cutRowsHTML() + pushHTML() + '</section>';
   }
-  // the same tick list at the top of Chef to-do
+  // the same list at the top of Chef to-do, to see, not tick (5 Nov 2026: ticked on the order list only)
   function cutTodoHTML() {
     if (!cutHas()) return '';
     cutWatch();
-    return '<section class="cut-today todo-cut" aria-label="Supplier orders"><h3 class="nb-sh">Supplier orders today</h3>' + cutRowsHTML() + '<p class="hint"><a href="#/orders">Order list</a></p></section>';
+    return '<section class="cut-today todo-cut" aria-label="Supplier orders"><h3 class="nb-sh">Supplier orders today</h3>' + cutRowsHTML(true) + '<p class="hint">Tick them on the <a href="#/orders">order list</a>.</p></section>';
   }
   /* ---------- phone pushes for order cut-offs (24 Oct 2026) ----------
      A chef turns them on for their own phone on the order list. The phone asks for the notification permission, gets a
@@ -9636,7 +9616,7 @@
     if (localReturn(a)) return;
     if (a.indexOf('lv-') === 0) { lvClick(a, el); return; }
     if (a.indexOf('dk-') === 0) { dkClick(a, el); return; }
-    if (a === 'cut-tick') { var ck = el.getAttribute('data-id') || '', con = supplierPending[ck] ? !supplierPending[ck].on : el.getAttribute('aria-pressed') !== 'true'; supplierComplete(ck, con).catch(function (er) { failed(er); }); return; }
+    if (a === 'cut-tick') { var ck = el.getAttribute('data-id') || ''; if (el.getAttribute('aria-pressed') !== 'true') cutConfirm(ck); else cutOrdered(ck, false).catch(function (er) { failed(er); }); return; }
     if (a === 'cut-push-on') { pushOn(); return; }
     if (a === 'cut-push-off') { pushOff(); return; }
     if (a.indexOf('cut-') === 0) { cutClick(a, el); return; }

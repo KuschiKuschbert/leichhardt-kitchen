@@ -42,17 +42,16 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
   ok(!r0.i && !r0.img && !r0.attr && !r0.run, 'a supplier name with markup shows as words (' + JSON.stringify(r0) + ')');
   ok(!(await L.overflow(p)), 'the bar fits a phone');
   ok(p.errors.length === 0, 'landing: no page errors ' + p.errors.join(' | '));
-  // Ordered takes PFD off the bar for today, on this phone
-  await p.click('#cut-band [data-cut="done"][data-id^="pfd|"]');
-  // The first completion loads the supplier tools and checks whether this supplier needs an order sheet.
-  // Wait for the saved completion, not a short pause that can end before those files arrive on the live site.
+  ok(!(await p.$('#cut-band button')), 'the bar reminds and has no tick: a supplier order is ticked on the order list only (5 Nov 2026)');
+  // the order list: every cut-off today as a tick list; ticking PFD there takes it off the bar for today
+  await p.evaluate(() => { location.hash = '#/orders'; });
+  await L.waitFor(p, () => !!document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="pfd|"]'), null, 10000);
+  await p.click('.cut-tl [data-p="cut-tick"][data-id^="pfd|"]');
   await L.waitFor(p, k => { const d = window.__fake.dump()[k]; return d && d.on === true; }, fsKey(['cutdone', L.ymd(new Date(L.NOW)) + '_pfd']), 10000);
-  await L.waitFor(p, () => !document.querySelector('#cut-band [data-cut="done"][data-id^="pfd|"]'), null, 10000);
+  await L.waitFor(p, () => !document.querySelector('#cut-band a.cut-n[href*="/pfd/"]'), null, 10000);
   n = await names(p);
   ok(n.length === 2 && n[0].indexOf('Veg') === 0, 'Ordered: PFD leaves the bar');
-  // the order list: every cut-off today as a tick list, the one at 13:00 Closed, the ordered one ticked by Sam
-  await p.evaluate(() => { location.hash = '#/orders'; });
-  await L.waitFor(p, () => !!document.querySelector('.cut-tl'), null, 10000);
+  // the one at 13:00 Closed, the ordered one ticked by Sam
   const tl = await p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].map(e => e.textContent));
   ok(tl.length === 5 && /^Chickenby 13:00.*Closed, not ticked$/.test(tl[0]) && /^✓PFDby 15:00.*Ordered by Sam, \d\d:\d\d$/.test(tl[1]) && /Late Meatsby 20:00/.test(tl[4]), 'order list: today\'s cut-offs in time order, as a tick list (' + tl.join(' | ') + ')');
   ok(await p.$eval('.cut-tl li:nth-child(2) .cut-box', e => e.getAttribute('aria-pressed') === 'true'), 'order list: PFD\'s box is ticked');
@@ -83,7 +82,9 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
   p = await L.open(b, '#/', { who: 'sam', extra: withCuts(EARLY), wait: 1500, clock: L.NOW + 8.5 * 3600000 });
   await L.waitFor(p, () => { const e = document.getElementById('cut-band'); return e && !e.hidden; }, null, 10000);
   ok(/by tomorrow 06:00 in 7 h 30 min/.test(await txt(p, '#cut-band .cut-row')), 'early cut-off: on the bar at 22:30 the night before, as tomorrow 06:00');
-  await p.click('#cut-band [data-cut="done"]');
+  await p.evaluate(() => { location.hash = '#/orders'; });
+  await L.waitFor(p, () => !!document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="early|"]'), null, 10000);
+  await p.click('.cut-tl [data-p="cut-tick"][data-id^="early|"]');
   await L.waitFor(p, k => { const d = window.__fake.dump()[k]; return d && d.on === true; }, fsKey(['cutdone', L.ymd(new Date(L.NOW + 86400000)) + '_early']), 10000);
   await p.reload(); await L.settle(p, 1500);
   ok(!(await p.$('#cut-band:not([hidden])')), 'early cut-off: Ordered the night before holds after a reload');

@@ -1,6 +1,7 @@
 // Push links accept only the configured cut-off ID and calendar date. Older notifications keep the Order list.
-// A cut-off with no catalogue supplier, or more than one, opens a short card with Order done and the Order list,
-// never another supplier's sheet (27 Oct 2026). The bar, the tick list and a push all open the same route.
+// A cut-off with no catalogue supplier, or more than one, opens a short card that says when the order closes, whether
+// it is done and links to the Order list, never another supplier's sheet (27 Oct 2026). Since 5 Nov 2026 the order is
+// ticked on the Order list only, so the card has no Order done. The bar, the tick list and a push all open the same route.
 const fs = require('fs'), vm = require('vm'), path = require('path');
 const L = require('./lib'), F = require('./supplier-fixtures'), { R, ok } = L.results();
 const events = {}, shown = [], opened = [], scope = 'https://example.test/kitchen/';
@@ -22,7 +23,8 @@ function withVeg(at) {
 }
 const veg = F.key(['cutdone', F.today + '_veg']);
 const card = '#supplier-root .su-cut-card';
-const cardDone = '#supplier-root .su-cut-card [data-cut="done"]';
+const cardDone = '#supplier-root .su-cut-card button[data-cut], #supplier-root .su-cut-card [data-p="cut-tick"]';
+const tickHere = /tick it on the order list/;
 const rootText = p => p.evaluate(() => (document.querySelector('#supplier-root') || {}).textContent || '');
 const historyReads = p => p.evaluate(() => (window.__fake.reads || []).filter(k => /\/suppliers\/[^/]+\/orders/.test(k)));
 const undo = p => p.getByRole('button', { name: 'Undo', exact: true });
@@ -50,7 +52,7 @@ async function noSheet(p, label) {
   const b = await L.start();
   let p, text;
 
-  // Unlinked route from the bar, sous chef on a phone: the card, its Order done (the bar's own action) and Undo.
+  // Unlinked route from the bar, sous chef on a phone: the card says to tick it on the Order list, which shows it done.
   p = await L.open(b, '#/', { who: 'sam', extra: withVeg(), wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('#cut-band a.cut-n[href*="/veg/"]'), null, 10000);
   await p.click('#cut-band a.cut-n[href*="/veg/"]');
@@ -62,19 +64,17 @@ async function noSheet(p, label) {
   ok(/Order by .*15:00/.test(text), 'unlinked route: the card says when the order closes');
   ok(!!(await p.$('#supplier-root .su-cut-card a[href="#/orders"]')), 'unlinked route: the card links to the Order list');
   ok(!(await L.overflow(p)), 'unlinked card: no sideways scroll at 390 px');
-  if (await p.$(cardDone)) {
-    await p.click(cardDone); await saved(p, true);
-    const d = (await p.evaluate(() => window.__fake.dump()))[veg];
-    ok(d.by === 'sam' && d.day === F.today && d.sid === 'veg' && Object.keys(d).sort().join() === 'at,by,day,on,sid', 'unlinked Order done: saves only the existing completion tick for this cut-off and chef');
-    await undo(p).waitFor({ state: 'visible', timeout: 10000 });
-    await L.waitFor(p, () => !document.querySelector('#supplier-root .su-cut-card [data-cut="done"]') && /Order done\./.test(document.querySelector('#supplier-root').textContent), null, 10000);
-    ok(true, 'unlinked Order done: the card shows the order as done');
-    ok(!(await p.$('#cut-band a.cut-n[href*="/veg/"]')), 'unlinked Order done: the bar drops the reminder too');
-    await undo(p).click(); await saved(p, false);
-    await L.waitFor(p, () => !!document.querySelector('#supplier-root .su-cut-card [data-cut="done"]'), null, 10000);
-    ok(true, 'unlinked Undo: the card offers Order done again');
-    ok(Object.keys(await p.evaluate(() => window.__fake.dump())).filter(k => /\/(supplierlinks|suppliers\/[^/]+\/orders)\//.test(k) && !/\/orders\/(previous|older)$/.test(k)).length === 0, 'unlinked Order done and Undo: no supplier order or link is made');
-  } else ok(false, 'unlinked route: the card offers Order done');
+  ok(!(await p.$(cardDone)) && tickHere.test(text), 'unlinked route: the card has no tick and says to tick it on the order list');
+  await p.click('#supplier-root .su-cut-card a[href="#/orders"]');
+  await L.waitFor(p, () => !!document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="veg|"]'), null, 10000);
+  await p.click('.cut-tl [data-p="cut-tick"][data-id^="veg|"]'); await saved(p, true);
+  const d = (await p.evaluate(() => window.__fake.dump()))[veg];
+  ok(d.by === 'sam' && d.day === F.today && d.sid === 'veg' && Object.keys(d).sort().join() === 'at,by,day,on,sid', 'unlinked: the order-list tick saves only the existing completion tick for this cut-off and chef');
+  await L.waitFor(p, () => !document.querySelector('#cut-band a.cut-n[href*="/veg/"]'), null, 10000);
+  await p.goBack(); await opens(p);
+  await L.waitFor(p, () => /Order done\./.test(document.querySelector('#supplier-root').textContent), null, 10000);
+  ok(true, 'unlinked: back on the card, it shows the order as done');
+  ok(Object.keys(await p.evaluate(() => window.__fake.dump())).filter(k => /\/(supplierlinks|suppliers\/[^/]+\/orders)\//.test(k) && !/\/orders\/(previous|older)$/.test(k)).length === 0, 'unlinked: no supplier order or link is made');
   ok(p.errors.length === 0, 'unlinked route: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -93,7 +93,7 @@ async function noSheet(p, label) {
   ok(p.errors.length === 0, 'unlinked push: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // The tick list's name link for a cut-off whose reminder has not started (20:00, reminder from 16:00): Order done still saves.
+  // The tick list's name link for a cut-off whose reminder has not started (20:00, reminder from 16:00): the card, and its tick on the list still saves.
   p = await L.open(b, '#/orders', { who: 'sam', extra: withVeg(20 * 60), wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.cut-tl a.cut-n[href*="/veg/"]'), null, 10000);
   ok(!(await p.$('#cut-band a.cut-n[href*="/veg/"]')), 'later cut-off: no reminder on the bar yet');
@@ -101,8 +101,11 @@ async function noSheet(p, label) {
   await opens(p);
   ok(!!(await p.$(card)), 'tick list link: an unlinked cut-off opens the card');
   await noSheet(p, 'tick list link');
-  if (await p.$(cardDone)) { await p.click(cardDone); await saved(p, true); ok((await p.evaluate(() => window.__fake.dump()))[veg].by === 'sam', 'later cut-off: Order done on the card saves before the reminder starts'); }
-  else ok(false, 'later cut-off: the card offers Order done');
+  ok(!(await p.$(cardDone)) && tickHere.test(await rootText(p)), 'later cut-off: the card has no tick and points to the order list');
+  await p.goBack();
+  await L.waitFor(p, () => !!document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="veg|"]'), null, 10000);
+  await p.click('.cut-tl [data-p="cut-tick"][data-id^="veg|"]'); await saved(p, true);
+  ok((await p.evaluate(() => window.__fake.dump()))[veg].by === 'sam', 'later cut-off: the order-list tick saves before the reminder starts');
   ok(p.errors.length === 0, 'tick list link: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -122,7 +125,7 @@ async function noSheet(p, label) {
   await opens(p);
   ok(!!(await p.$(card)) && (await rootText(p)).includes('Northside Test Foods is linked to more than one supplier'), 'two links: the card says the cut-off is linked to more than one supplier');
   ok(!(await p.$('#supplier-root input[data-sf="qty"]')) && (await historyReads(p)).length === 0, 'two links: no order sheet opens and no history is read');
-  ok(!!(await p.$(cardDone)), 'two links: the card offers Order done');
+  ok(!(await p.$(cardDone)) && tickHere.test(await rootText(p)) && !!(await p.$('#supplier-root .su-cut-card a[href="#/orders"]')), 'two links: the card points to the order list to tick it');
   ok(!(await L.overflow(p)), 'two links card: no sideways scroll at 1280 px');
   ok(p.errors.length === 0, 'two links: no page errors ' + p.errors.join(' | '));
   await p.context().close();

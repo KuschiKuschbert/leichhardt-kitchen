@@ -1,8 +1,11 @@
-// Order done confirms only the reminder. Detailed supplier history still needs an explicit order recording.
+// A supplier's order is ticked as done on the order list only (head chef, 5 Nov 2026). The tick confirms only the
+// reminder, for a linked or unlinked supplier, without quantities; detailed supplier history still needs an explicit
+// order recording on the supplier's page. Before, the cut-off bar's Order done did this; the bar keeps the reminder.
 const L = require('./lib');
 const F = require('./supplier-fixtures');
 const { R, ok } = L.results();
-const button = '#cut-band [data-cut="done"][data-id^="northside|"]';
+const button = '.cut-tl [data-p="cut-tick"][data-id^="northside|"]';
+const reminder = '#cut-band a.cut-n[href*="/northside/"]';
 const completion = F.key(['cutdone', F.today + '_northside']);
 const qty = 'input[data-sf="qty"][data-i="t-stock"]';
 const stock = 'input[data-sf="stock"][data-i="t-stock"]';
@@ -11,12 +14,13 @@ const protectedRecords = s => JSON.stringify(Object.entries(s).filter(([k]) => /
 const writes = (p, key) => p.evaluate(k => window.__fake.writes.flat().filter(o => o.path === k), key || completion);
 const supplierReads = p => p.evaluate(() => window.__fake.reads.filter(k => /\/(suppliers|supplierlinks)(\/|$)/.test(k)));
 const undo = p => p.getByRole('button', { name: 'Undo', exact: true });
-async function ready(p) { await L.waitFor(p, () => !!document.querySelector('#cut-band [data-cut="done"][data-id^="northside|"]'), null, 10000); }
+async function ready(p) { await L.waitFor(p, () => { const t = document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="northside|"]'); return !!t && t.getAttribute('aria-pressed') === 'false'; }, null, 10000); }
+const ticked = p => p.evaluate(s => { const t = document.querySelector(s); return !!t && t.getAttribute('aria-pressed') === 'true'; }, button);
 async function saved(p, key, on) {
   await L.waitFor(p, ([k, v]) => { const d = window.__fake.dump()[k]; return d && d.on === v; }, [key || completion, on !== false], 10000);
 }
 async function undoReady(p) { await undo(p).waitFor({ state: 'visible' }); }
-async function open(b, hash, options) { return L.open(b, hash || '#/', Object.assign({ who: 'sam', extra: F.fixture(), wait: 1500 }, options || {})); }
+async function open(b, hash, options) { return L.open(b, hash || '#/orders', Object.assign({ who: 'sam', extra: F.fixture(), wait: 1500 }, options || {})); }
 async function noErrors(p, label) { ok(p.errors.length === 0, label + ': no page errors ' + p.errors.join(' | ')); }
 
 (async () => {
@@ -27,18 +31,18 @@ async function noErrors(p, label) { ok(p.errors.length === 0, label + ': no page
   for (const linked of [true, false]) {
     const extra = F.fixture();
     if (!linked) Object.keys(extra).filter(k => /\/suppliers\//.test(k)).forEach(k => delete extra[k]);
-    p = await open(b, '#/', { extra, block: 'js/supplier-(core|store)\\.js|js/suppliers\\.js', denyReads: '/suppliers$' });
+    p = await open(b, '#/orders', { extra, block: 'js/supplier-(core|store)\\.js|js/suppliers\\.js', denyReads: '/suppliers$' });
     await ready(p);
     before = protectedRecords(await dump(p));
-    ok(await p.textContent(button) === 'Order done', (linked ? 'linked' : 'unlinked') + ': the bar has an explicit Order done action');
+    ok(!!(await p.$(reminder)) && !(await p.$('#cut-band button')), (linked ? 'linked' : 'unlinked') + ': the bar keeps the reminder, with no tick of its own');
     await p.click(button); await saved(p); await undoReady(p);
     after = await dump(p);
     ok(after[completion].by === 'sam' && after[completion].day === F.today && after[completion].sid === 'northside', (linked ? 'linked' : 'unlinked') + ': saves this chef and the exact occurrence');
     ok(Object.keys(after[completion]).sort().join() === 'at,by,day,on,sid', 'completion uses only the existing reminder data format');
     ok(before === protectedRecords(after), 'completion creates no order history, changes no staff requests and leaves catalogue data untouched');
-    ok(await p.evaluate(() => location.hash === '#/' && !window.LK_SUP_CORE && !window.LK_SUP_STORE && !window.LK_SUP), 'completion stays on the landing page without loading supplier tools');
+    ok(await p.evaluate(() => location.hash === '#/orders' && !window.LK_SUP_CORE && !window.LK_SUP_STORE && !window.LK_SUP), (linked ? 'linked' : 'unlinked') + ': the tick stays on the order list without loading supplier tools or opening the supplier sheet');
     ok((await supplierReads(p)).length === 0, 'completion needs no catalogue or order history reads');
-    ok(!(await p.$(button)), 'completion removes the reminder');
+    ok(await ticked(p) && !(await p.$(reminder)), 'completion ticks the list and removes the reminder from the bar');
     await undo(p).click(); await saved(p, completion, false); await ready(p);
     ok(protectedRecords(await dump(p)) === before, 'Undo restores the reminder without touching orders or history');
     ok((await writes(p)).length === 2 && (await writes(p))[1].data.on === false, 'completion and Undo make one reminder write each');
@@ -46,21 +50,11 @@ async function noErrors(p, label) { ok(p.errors.length === 0, label + ': no page
     await p.context().close();
   }
 
-  // An open quantity/stock draft is not validated, recorded, cleared or replaced by the reminder action.
+  // The supplier page has no tick of its own; its draft stays, and the bar's link still opens the detailed order.
   p = await open(b, '#/suppliers/northside');
   await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"]') && /Last order:/.test(document.body.textContent), null, 10000);
-  await ready(p);
-  await p.fill(qty, '3 cartons to check');
-  await p.click('[data-item="t-stock"] .su-item > summary');
-  await p.fill(stock, '4');
-  before = protectedRecords(await dump(p));
-  const last = await p.textContent('[data-item="t-stock"] .su-last');
-  await p.click(button); await saved(p); await undoReady(p);
-  ok(await p.inputValue(qty) === '3 cartons to check' && await p.inputValue(stock) === '4', 'reminder confirmation preserves a draft even when its quantity is not ready to record');
-  ok(await p.evaluate(() => location.hash === '#/suppliers/northside') && !(await p.$('.su-review')), 'the open supplier page stays on its draft');
-  ok(await p.textContent('[data-item="t-stock"] .su-last') === last && protectedRecords(await dump(p)) === before, 'last-order comparison and immutable history stay unchanged');
-  await undo(p).click(); await saved(p, completion, false); await ready(p);
-  ok(await p.inputValue(qty) === '3 cartons to check' && await p.inputValue(stock) === '4', 'Undo also preserves the in-progress supplier draft');
+  await L.waitFor(p, () => !!document.querySelector('#cut-band a.cut-n[href*="/northside/"]'), null, 10000);
+  ok(!(await p.$('#supplier-root [data-cut], #supplier-root [data-p="cut-tick"], #cut-band button')), 'the supplier page and the bar offer no tick');
   // The supplier-name link still opens the occurrence-specific detailed order flow.
   await p.fill(qty, '3');
   await p.click('#cut-band .cut-n');
@@ -74,8 +68,8 @@ async function noErrors(p, label) { ok(p.errors.length === 0, label + ': no page
   before = protectedRecords(await dump(p));
   await p.evaluate(() => { window.__fake.deny = /\/cutdone\//; });
   await p.click(button);
-  await L.waitFor(p, () => /Not saved|Not ticked|Could not/i.test(document.body.textContent) && !!document.querySelector('#cut-band [data-cut="done"]'), null, 10000);
-  ok(!(await dump(p))[completion] && !!(await p.$(button)), 'a refused save restores the reminder and records no completion');
+  await L.waitFor(p, () => /Not saved|Not ticked|Could not/i.test(document.body.textContent) && !!document.querySelector('#cut-band a.cut-n[href*="/northside/"]'), null, 10000);
+  ok(!(await dump(p))[completion] && !(await ticked(p)) && !!(await p.$(reminder)), 'a refused save restores the reminder and the tick, and records no completion');
   ok(await undo(p).count() === 0 && protectedRecords(await dump(p)) === before, 'a failed save offers no successful Undo and changes no order data');
   await p.evaluate(() => { window.__fake.deny = null; });
   await p.click(button); await saved(p); await undoReady(p);
@@ -95,8 +89,8 @@ async function noErrors(p, label) { ok(p.errors.length === 0, label + ': no page
   // A stale repeated event cannot overwrite this completion or its author/time.
   const original = JSON.stringify((await dump(p))[completion]);
   await p.evaluate(day => {
-    const stale = document.createElement('button'); stale.dataset.cut = 'done'; stale.dataset.id = 'northside|' + day;
-    document.body.appendChild(stale); stale.click(); stale.remove();
+    const stale = document.createElement('button'); stale.dataset.p = 'cut-tick'; stale.dataset.id = 'northside|' + day; stale.setAttribute('aria-pressed', 'false');
+    document.querySelector('.cut-tl').appendChild(stale); stale.click(); stale.remove();
   }, F.today);
   await L.settle(p, 300);
   ok((await writes(p)).length === 1 && JSON.stringify((await dump(p))[completion]) === original, 'a repeated completion preserves the original attribution and makes no duplicate write');
@@ -107,7 +101,7 @@ async function noErrors(p, label) { ok(p.errors.length === 0, label + ': no page
   const early = F.fixture(), next = (new Date(L.NOW).getDay() + 2) % 7;
   early[F.key(['config', 'main'])].cutoffs = [{ id: 'northside', name: 'Northside Test Foods', dd: [next], at: 60, pre: 1, lead: 240 }];
   const tomorrow = L.ymd(new Date(L.NOW + 86400000)), tomorrowKey = F.key(['cutdone', tomorrow + '_northside']);
-  p = await open(b, '#/', { extra: early, clock: L.NOW + 8.5 * 3600000 }); await ready(p);
+  p = await open(b, '#/orders', { extra: early, clock: L.NOW + 8.5 * 3600000 }); await ready(p);
   await p.click(button); await saved(p, tomorrowKey); await undoReady(p);
   after = await dump(p);
   ok(!after[completion] && after[tomorrowKey].day === tomorrow, 'an early reminder saves only its own next-day occurrence');
@@ -116,10 +110,10 @@ async function noErrors(p, label) { ok(p.errors.length === 0, label + ': no page
   await noErrors(p, 'next-day completion');
   await p.context().close();
 
-  // Existing chef permissions and the compact bar layout hold on phone, tablet and desktop.
+  // Existing chef permissions and the tick list's layout hold on phone, tablet and desktop.
   for (const persona of [{ who: 'bo', width: 390, by: 'bo' }, { who: 'sam', width: 768, by: 'sam' }, { who: 'bo', admin: true, width: 1280, by: 'bo' }]) {
-    p = await open(b, '#/', persona); await ready(p);
-    ok(!(await L.overflow(p)), 'Order done fits the existing bar at ' + persona.width + ' px');
+    p = await open(b, '#/orders', persona); await ready(p);
+    ok(!(await L.overflow(p)), 'the tick list fits at ' + persona.width + ' px');
     await p.click(button); await saved(p); await undoReady(p);
     ok((await dump(p))[completion].by === persona.by, 'completion retains the authorised ' + persona.by + ' identity');
     await noErrors(p, 'authorised completion at ' + persona.width + ' px');
@@ -128,8 +122,8 @@ async function noErrors(p, label) { ok(p.errors.length === 0, label + ': no page
   p = await open(b, '#/orders', { who: 'ann' });
   ok(!(await p.$(button)) && !(await p.$('.cut-tl')), 'staff still see no reminder completion controls');
   await p.evaluate(day => {
-    const forged = document.createElement('button'); forged.dataset.cut = 'done'; forged.dataset.id = 'northside|' + day;
-    document.body.appendChild(forged); forged.click(); forged.remove();
+    const forged = document.createElement('button'); forged.dataset.p = 'cut-tick'; forged.dataset.id = 'northside|' + day; forged.setAttribute('aria-pressed', 'false');
+    (document.querySelector('.o-page') || document.body).appendChild(forged); forged.click(); forged.remove();
   }, F.today);
   await L.settle(p, 500);
   ok(!(await dump(p))[completion] && (await writes(p)).length === 0, 'a staff member cannot trigger reminder completion through a forged control');
