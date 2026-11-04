@@ -115,6 +115,10 @@ Measured on the Chicken Burger: the recipe form opens 1,376 px tall on a phone (
 
 The [Drawings chapter](../images/recipe-editor-drawings-desktop.png) ([phone](../images/recipe-editor-drawings-phone.png)) and the [recipe list](../images/recipe-editor-list-desktop.png) ([phone](../images/recipe-editor-list-phone.png)) use the same look. Captures use the test stand-in's synthetic data and the real fonts.
 
+| Studio, phone | Studio, laptop |
+| --- | --- |
+| ![The studio on a phone](../images/recipe-editor-studio-phone.png) | ![The studio on a laptop](../images/recipe-editor-studio-desktop.png) |
+
 ## Every capability stays
 
 | Capability | A | B |
