@@ -26,6 +26,7 @@ All paths are under `kitchens/<pin>`:
 | `training/<id>` | personId, section, recipeId, guideId, status, assessorId, day, v, at, by |
 | `references/<id>/hist/<v>`, `training/<id>/hist/<v>` | Exact previous records; immutable. A version update must preserve its previous value atomically. |
 | `analysisDaily/<generation>_<day>` | v, day, source counts, exclusions, quality and eligible evidence entries. Derived from current sources. |
+| `dashwatch/main` | list (up to 12 keys: `sec:<section>`, `item:<name>|<unit>`, `person:<id>`), v, at, by. The admin Dashboard's watch list; verified admin only. |
 | `analysis/dashboard` | v, generation, at, from, to, `needs` (`links`, `training`, `inTraining`: the Review desk queues counted with `linkQueue` and `trainingQueue` in `js/analysis-core.js`) and one row per finished day (`days`): prep counts and minutes to tick per section, waste lines, reasons, sections and items, transfers out and in. Published with the ranges for the admin Dashboard. See `admin-dashboard-options/brief.md`. |
 | `analysis/current`, `range-7`, `range-30`, `range-90`, `health` | Published generation, range, freshness, inventory, source counts, coverage, quality, item patterns and staff activity. |
 
