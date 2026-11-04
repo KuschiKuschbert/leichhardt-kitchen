@@ -94,13 +94,13 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
 
   // Draw it for me on the side view while the plate drawing cannot be read: it says so and draws nothing from a guess
   p = await L.open(b, '#/manage/draw/rump-on-mash-side', { who: 'ann', extra: Object.assign({}, kept, cfg()), wait: 1400, width: 1280, height: 900 });
-  await wait(p, () => !!document.querySelector('[data-dw="sm-draw"]'), null, 20000);
+  await wait(p, () => !!(window.LK_SMART && window.LK_SMART.ui && document.querySelector('.dw-ctx')), null, 20000);
   await p.evaluate(() => {
     const fs = window.LK_PREP.book().fs(), orig = fs.getDoc;
     fs.getDoc = function (ref) { return /drawings\/rump-on-mash-plate$/.test((ref.path || []).join('/')) ? Promise.reject({ code: 'unavailable' }) : orig.apply(this, arguments); };
   });
   const els0 = await p.evaluate(() => JSON.stringify(window.LK_DRAW.state().d.els));
-  await p.click('[data-dw="sm-draw"]');
+  await L.dwShow(p, '[data-dw="sm-draw"]'); await p.click('[data-dw="sm-draw"]');
   const said = await wait(p, () => /Could not read the plate drawing/.test((document.querySelector('.dw-bar') || {}).textContent || ''), null, 6000);
   ok(said && await p.evaluate(() => JSON.stringify(window.LK_DRAW.state().d.els)) === els0, 'side view, plate unreadable: Draw it for me says it could not read the plate, and the drawing is unchanged');
   ok(!errs(p).length, 'side view, plate unreadable: no page errors ' + errs(p).join(' | '));
@@ -110,14 +110,14 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   // page, the next Draw it for me reads them again
   const picks = Object.assign(cfg(), { [fsKey(['book', 'matches'])]: { m: { 'chicken wings': 'chicken-wings' }, upd: L.NOW } });
   p = await L.open(b, '#/manage/draw/new/wings/plate', { who: 'ann', extra: picks, failReads: '/book/matches$', wait: 1200, width: 1280, height: 900 });
-  await wait(p, () => !!document.querySelector('[data-dw="sm-draw"]'), null, 20000);
+  await wait(p, () => !!(window.LK_SMART && window.LK_SMART.ui && document.querySelector('.dw-ctx')), null, 20000);
   const mr = () => p.evaluate(() => window.__fake.reads.filter(k => /\/book\/matches$/.test(k)).length);
   const m0 = await mr();
   ok(m0 >= 1 && await p.evaluate(() => !Object.keys(window.LK_SMART.learned()).length), 'picks unreadable: read once when the editor opened, none known yet');
   // a pick taught meanwhile, not saved yet
   await p.evaluate(() => window.LK_SMART.teach('Sea salt', 'chips-thick-cut'));
   await p.evaluate(() => { window.__fake.failReads = null; });
-  await p.click('[data-dw="sm-draw"]');
+  await L.dwShow(p, '[data-dw="sm-draw"]'); await p.click('[data-dw="sm-draw"]');
   ok(await wait(p, () => window.LK_SMART.learned()['chicken wings'] === 'chicken-wings', null, 6000) && await mr() === m0 + 1, 'picks, signal back: Draw it for me reads them again, once (' + m0 + ' then ' + await mr() + ' reads)');
   ok(await p.evaluate(() => window.LK_SMART.learned()[window.LK_SMART.key('Sea salt')] === 'chips-thick-cut'), 'picks read again: the pick taught meanwhile (not saved yet) stays');
   ok(!errs(p).length, 'picks unreadable: no page errors ' + errs(p).join(' | '));
@@ -156,8 +156,8 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
 
   // the wings drawn by Draw it for me and saved, with the wings moved by hand
   p = await L.open(b, '#/manage/draw/new/wings/plate', { who: 'ann', extra: cfg(), wait: 1200, width: 1280, height: 900 });
-  await wait(p, () => !!document.querySelector('[data-dw="sm-draw"]'), null, 20000);
-  await p.click('[data-dw="sm-draw"]');
+  await wait(p, () => !!(window.LK_SMART && window.LK_SMART.ui && document.querySelector('.dw-ctx')), null, 20000);
+  await L.dwShow(p, '[data-dw="sm-draw"]'); await p.click('[data-dw="sm-draw"]');
   await wait(p, () => window.LK_DRAW.state().d.els.length > 0 && !!document.querySelector('.dw-smart-note'), null, 10000);
   // moved by hand with the arrow keys, a library piece (the wings) and a part drawn from a card (the Cowboy candy) alike
   const nudge = async ing => {
@@ -178,7 +178,7 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   ok(wg.ok, 'wings: the wings moved by hand are marked to stay');
   // Swap: the BBQ sauce picked, Swap opens the library on it, and the piece tapped there takes its place
   const sw0 = await p.evaluate(() => { const W = window.LK_DRAW.state(), i = W.d.els.findIndex(e => e.ing === 'Double-smoked BBQ sauce'); W.sel = [i]; window.LK_DRAW.redraw(); const e = W.d.els[i]; return { i, a: e.a, t: e.t, x: e.x, y: e.y }; });
-  await p.click('[data-dw="swap"]');
+  await L.dwShow(p, '[data-dw="swap"]'); await p.click('[data-dw="swap"]');
   await wait(p, () => !!document.querySelector('.dw-tile'));
   const swapHint = await txt(p, '.dw-panel .hint');
   const newId = await p.evaluate(was => { const t = Array.from(document.querySelectorAll('.dw-tile')).find(x => (was || '').split('@')[0] !== x.getAttribute('data-v')); return t ? t.getAttribute('data-v') : ''; }, sw0.a);
