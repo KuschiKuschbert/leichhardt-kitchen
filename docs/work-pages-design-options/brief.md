@@ -39,7 +39,7 @@ Proposed build order, one pull request each: chef hat sheet with S1; S2 to S4; S
 
 ## Build record
 
-Recorded in README, Head chef decisions (3 Nov 2026). Each step ships under the normal rules in `CLAUDE.md` and is listed here with its pull request when it is live.
+Recorded in `docs/head-chef-decisions.md` (3 Nov 2026); open item 3 in `docs/open-work.md`. Each step ships under the normal rules in `CLAUDE.md` and is listed here with its pull request when it is live.
 
 | Step | What | Pull request | State |
 | --- | --- | --- | --- |
