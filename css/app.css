@@ -1931,6 +1931,10 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 .mg-wrap h2, .mg-note h2 { margin: 0; font-family: var(--display); font-weight: 700; font-size: 2.2rem; line-height: 1.05; }
 .mg-head { display: flex; flex-direction: column; gap: 0.6rem; }
 .mg-head .p-x { align-self: flex-start; display: inline-flex; align-items: center; text-decoration: none; }
+/* the list's two rows (3 Nov 2026): the kinds of thing, then which recipes and what needs a look */
+.mg-filters { display: flex; flex-direction: column; gap: 0.5rem; }
+.mg-need { align-items: center; }
+.mg-need .label { margin-right: 0.2rem; color: var(--small-ink); }
 .mg-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; border-top: 1.5px solid var(--ink); }
 .mg-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; border-bottom: 1px solid var(--line); min-height: 56px; padding: 0.2rem 0; }
 .mg-rlink { display: flex; align-items: center; gap: 0.75rem; flex: 1 1 auto; min-width: 0; min-height: 56px; color: var(--ink); text-decoration: none; }
@@ -1964,6 +1968,65 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 .mg-ing .search, .mg-pinrow .search { height: 2.75rem; font-size: 1rem; }
 .mg-mini { gap: 0.4rem; }
 .mg-tags .chip { min-height: 40px; padding: 0 0.7rem; }
+/* Ingredient rows (3 Nov 2026, recipe editor): a ruled list. Amount and name in the row, one short line under it, the
+   note, link, allergens and moving behind the arrow. */
+.mg-sec-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; }
+.mg-sec-head .h3 { margin: 0; }
+.mg-ings { gap: 0; border-top: 1.5px solid var(--ink); }
+.mg-ings .mg-ing { gap: 0.25rem; padding: 0.45rem 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }
+.mg-ings .mg-ing.open { padding: 0.5rem 0.5rem 0.6rem; background: var(--paper); box-shadow: inset 4px 0 0 var(--accent); }
+.mg-ing-more { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 1.5px solid var(--edge); border-radius: var(--r-act); background: var(--paper); color: var(--ink); cursor: pointer; }
+.mg-ing-more svg { transition: rotate 0.15s ease-out; }
+.mg-ing-more[aria-expanded="true"] { border-color: var(--ink); }
+.mg-ing-more[aria-expanded="true"] svg { rotate: 180deg; }
+.mg-ing-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.35rem; min-width: 0; padding-left: 2.1rem; font-size: 0.8125rem; color: var(--muted); }
+.mg-ing-sum .tag { font-size: 0.75rem; padding: 0 0.4rem; color: var(--ink); }
+.mg-ing-sum .mg-ing-ln { border-color: var(--accent-ink); }
+.mg-ing-note { overflow-wrap: anywhere; }
+.mg-ing-open { display: flex; flex-direction: column; gap: 0.7rem; padding: 0.4rem 0 0 2.1rem; }
+.mg-ing-open .hint { margin: 0; }
+.mg-del { color: var(--tag); }
+/* the recipe link: its box and the shared picker read as one control */
+.mg-linkbox { display: flex; min-width: 0; }
+.mg-linkbox .mg-link { flex: 1 1 auto; min-width: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.mg-linkbox > .ux-picker-trigger { flex: 0 0 3rem; justify-content: center; padding: 0; border: 1.5px solid var(--ink); border-left: 0; border-radius: 0 var(--radius) var(--radius) 0; font-size: 0; }
+.mg-linkbox > .ux-picker-trigger::after { content: '\25BE'; font-size: 1.15rem; }
+/* Chapters (3 Nov 2026, recipe editor): a row of pills that stays at the top on a phone or tablet, a rail from 1000 px.
+   Every chapter is drawn; the ones not shown are hidden. */
+.mg-body { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.mg-chap { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.mg-ch { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+.mg-ch[hidden] { display: none; }
+.mg-chs { position: sticky; top: var(--fn-stick, 0px); z-index: 10; display: flex; gap: 0.45rem; margin: 0 -1rem; padding: 0.5rem 1rem; overflow-x: auto; scrollbar-width: none; background: var(--bg); border-bottom: 1px solid var(--line); -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 2rem), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 2rem), transparent); }
+.mg-chs::-webkit-scrollbar { display: none; }
+.mg-chs::after { content: ''; flex: 0 0 1.5rem; }
+.mg-chb { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 0.4rem; min-height: 44px; padding: 0 0.9rem; border: 1.5px solid var(--ink); border-radius: var(--r-pick); background: var(--paper); color: var(--ink); font: 600 0.9375rem var(--body); cursor: pointer; }
+.mg-chb small { display: none; }
+.mg-chb[aria-current="true"] { background: var(--ink); color: #fff; }
+.mg-chd { flex: 0 0 auto; width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--accent); }
+.mg-chx { flex: 0 0 auto; font-weight: 800; color: var(--tag); }
+.mg-chb[aria-current="true"] .mg-chx { color: #FFB4A8; }
+html.has-upd .mg-chs { top: calc(var(--fn-stick, 0px) + var(--upd-h)); }
+@media (min-width: 1000px) {
+  .mg-wrap.mg-ed { max-width: 66rem; }
+  .mg-ed .mg-body { display: grid; grid-template-columns: 14rem minmax(0, 46rem); gap: 2rem; align-items: start; }
+  .mg-chs { top: calc(var(--fn-stick, 0px) + 1rem); flex-direction: column; gap: 0; margin: 0; padding: 0; overflow: visible; border: 0; background: none; -webkit-mask-image: none; mask-image: none; }
+  .mg-chs::after { display: none; }
+  .mg-chb { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; width: 100%; min-height: 60px; padding: 0.5rem 0.6rem; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: none; text-align: left; }
+  .mg-chb:last-child { border-bottom: 1px solid var(--line); }
+  .mg-chn { font: 700 1.2rem/1.1 var(--display); }
+  .mg-chb small { display: block; grid-column: 1; margin-top: 0.1rem; font-size: 0.8125rem; font-weight: 400; color: var(--muted); overflow-wrap: anywhere; }
+  .mg-chb .mg-chd, .mg-chb .mg-chx { grid-column: 2; grid-row: 1 / span 2; }
+  .mg-chb[aria-current="true"] { background: var(--paper); color: var(--ink); box-shadow: inset 4px 0 0 var(--accent-ink); }
+  .mg-chb[aria-current="true"] .mg-chx { color: var(--tag); }
+  .mg-ed .mg-bar { grid-column: 2; }
+}
+.mg-more { display: flex; flex-direction: column; gap: 1rem; }
+.mg-more-b { align-self: flex-start; }
+.mg-more-box { display: flex; flex-direction: column; gap: 1rem; }
+.mg-more-box[hidden] { display: none; }
+.mg-scale-box { display: flex; flex-direction: column; gap: 0.5rem; padding: 0.7rem 0.8rem; border-radius: var(--radius); background: var(--beige); }
+.mg-scale-box .hint { margin: 0; }
 .mg-tag.is-has { background: var(--ink); color: #fff; }
 .mg-tag.is-may { border-style: dashed; background: var(--beige); }
 .mg-step-sec { display: flex; flex-direction: column; gap: 0.5rem; padding-bottom: 0.8rem; border-bottom: 1px dashed var(--line); }
@@ -1973,6 +2036,17 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 .mg-hand-a { font-weight: 700; }
 .mg-alg-now { display: flex; flex-direction: column; gap: 0.35rem; }
 .mg-change { margin: 0; padding: 0.6rem 0.8rem; border-left: 4px solid var(--accent); background: var(--hit); }
+/* Drawings (3 Nov 2026): the plate with its labels, then one card per other drawing with its picture */
+.mg-dh { margin: 0; font: 700 1.25rem/1.1 var(--display); }
+.mg-dplate { display: flex; flex-direction: column; gap: 0.6rem; }
+.mg-dcards { display: grid; gap: 0.8rem; }
+@media (min-width: 720px) { .mg-dcards { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.mg-dcard { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.7rem; align-items: start; padding: 0.8rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+.mg-dpic { display: flex; align-items: center; justify-content: center; width: 5.5rem; height: 5.5rem; overflow: hidden; border-radius: 8px; background: #F4F1EA; text-align: center; }
+.mg-dpic .hint { padding: 0.3rem; font-size: 0.75rem; }
+.mg-dpic-svg { width: 100%; height: 100%; }
+.mg-dbody { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.mg-dbody .hint { margin: 0; }
 .mg-art-one .mg-art { display: block; width: 100%; max-width: 22rem; height: auto; margin: 0 auto; }
 .mg-stage { position: relative; width: 100%; max-width: 26rem; margin: 0 auto; }
 .mg-stage .mg-art { display: block; width: 100%; height: auto; }
@@ -1992,7 +2066,8 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 @media (max-width: 599px) {
   .mg-wrap h2, .mg-note h2 { font-size: 1.8rem; }
   .mg-two { grid-template-columns: minmax(0, 1fr); }
-  .mg-ing-top .mg-q { flex-basis: 5.5rem; }
+  .mg-ing-top .mg-q { flex-basis: 4.75rem; }
+  .mg-ing-sum, .mg-ing-open { padding-left: 0; }
   .mg-hand-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .mg-hand-row input { grid-column: 1 / -1; }
 }
@@ -2907,6 +2982,8 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 .ux-picker-trigger:disabled { opacity: .55; cursor: default; }
 .ux-picker-trigger:focus-visible, .ux-picker button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .ux-search { display: inline-grid; position: relative; grid-template-columns: minmax(0, 1fr); min-width: 0; width: 100%; flex: 1 1 10rem; }
+/* In a field the label and box stack in a column, where flex-basis is a height: 10rem left 110 px under the box (3 Nov 2026) */
+.field > .ux-search { flex: 0 0 auto; }
 .ux-search > input { grid-area: 1 / 1; width: 100%; min-width: 0; padding-right: 3rem !important; }
 .ux-search > input::-webkit-search-cancel-button { display: none; }
 .ux-search-clear { position: relative; grid-area: 1 / 1; align-self: center; justify-self: end; min-width: 44px; min-height: 44px; border: 0; background: transparent; color: var(--ink); font: 1.5rem var(--body); }
@@ -3014,6 +3091,13 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
   .ink-docket-arrive > .docket { translate: none; rotate: none; }
   .ink-progress > progress::-webkit-progress-value { transition: none; }
   .ink-skeleton-box { rotate: none; }
+}
+/* One section control (3 Nov 2026, work pages redesign S2): the kitchen's sections as chips under the section box on
+   the prep list and wastage, in one row that scrolls sideways on a phone and fades at its edge */
+.sec-chips { margin-top: 0.5rem; }
+@media (max-width: 719px) {
+  .sec-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); padding-right: 1.5rem; }
+  .sec-chips::-webkit-scrollbar { display: none; }
 }
 
 /* Admin Dashboard (3 Nov 2026, The Pass board with three headlines; js/admin-dashboard.js). dsh- classes only. */

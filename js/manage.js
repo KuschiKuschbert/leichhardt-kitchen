@@ -71,7 +71,13 @@
   function hasDraft(id) { return !!lsGet(draftKey(id)); }
 
   /* ---------- the recipe list (#/manage) ---------- */
-  var CHIPS = [['all', 'All'], ['dish', 'Dishes'], ['prep', 'Batch and components'], ['changed', 'Changed here'], ['new', 'New'], ['hidden', 'Hidden'], ['tocome', 'Cards to come'], ['filechanged', 'Book file changed'], ['drafts', 'Not saved yet'], ['drawings', 'Drawings'], ['templates', 'Templates'], ['mylib', 'Made in the book']];
+  /* What the list shows (3 Nov 2026, recipe editor audit L1): the kinds of thing in one row (Recipes, Drawings, Templates,
+     Made in the book, Cards to come), and under Recipes the kind of recipe and what needs a look, with counts. M.chip
+     keeps its values, so the filters work as before. */
+  var KINDS = [['all', 'Recipes'], ['drawings', 'Drawings'], ['templates', 'Templates'], ['mylib', 'Made in the book'], ['tocome', 'Cards to come']];
+  var SORTS = [['all', 'All recipes'], ['dish', 'Dishes'], ['prep', 'Batch and components']];
+  var STATES = [['drafts', 'Not saved yet'], ['filechanged', 'Book file changed'], ['changed', 'Changed here'], ['new', 'New'], ['hidden', 'Hidden']];
+  function kindOf(c) { return /^(drawings|templates|mylib|tocome)$/.test(c) ? c : 'all'; }
   // what the book says about a recipe: from js/data.js, changed here, new, hidden, and whether the file changed since
   function status(id) {
     var c = X.change(id), base = X.pristine(id);
@@ -88,8 +94,8 @@
     });
     return rows;
   }
-  function chipOk(row, st) {
-    var c = M.chip, k = row.r.kind;
+  function chipOk(row, st, chip) {
+    var c = chip || M.chip, k = row.r.kind;
     if (c === 'all') return true;
     if (c === 'dish') return !!DISH[k];
     if (c === 'prep') return !DISH[k];
@@ -153,11 +159,17 @@
     var q = M.q.trim().toLowerCase(), words = q ? q.split(/\s+/) : [];
     var toCome = A.toCome();
     var head = '<div class="mg-head"><h2 id="rtitle" tabindex="-1">Manage Recipes &amp; Drawings</h2>' +
-      '<p class="hint">Change any recipe in the book or add a new one. Staff see the change on their phones within half an hour, or straight away when they open the book. Write anything not confirmed yet in [square brackets].</p>' +
+      '<p class="hint">Change a recipe or add a new one. Staff see a saved change within half an hour. Put anything not confirmed yet in [square brackets].</p>' +
       '<div class="btn-row"><a class="btn dark" href="#/manage/new">New recipe</a></div></div>';
-    var chips = '<div class="chips scroll" role="group" aria-label="Show">' + CHIPS.map(function (c) {
+    var kind = kindOf(M.chip), n = {};
+    if (kind === 'all') listRows().forEach(function (row) { var st = status(row.id); STATES.forEach(function (s) { if (chipOk({ r: row.r }, st, s[0])) n[s[0]] = (n[s[0]] || 0) + 1; }); });
+    var chips = '<div class="chips scroll mg-kinds" role="group" aria-label="What to show">' + KINDS.map(function (c) {
+      return '<button type="button" class="chip" data-mg="kind" data-v="' + c[0] + '" aria-pressed="' + (kind === c[0]) + '">' + esc(c[1]) + (c[0] === 'tocome' && toCome.length ? ' · ' + toCome.length : '') + '</button>';
+    }).join('') + '</div>' + (kind !== 'all' ? '' : '<div class="mg-filters"><div class="chips" role="group" aria-label="Which recipes">' + SORTS.map(function (c) {
       return '<button type="button" class="chip" data-mg="chip" data-v="' + c[0] + '" aria-pressed="' + (M.chip === c[0]) + '">' + esc(c[1]) + '</button>';
-    }).join('') + '</div>';
+    }).join('') + '</div>' + (STATES.some(function (s) { return n[s[0]] || M.chip === s[0]; }) ? '<div class="chips mg-need" role="group" aria-label="Needs a look"><span class="label">Needs a look</span>' + STATES.filter(function (s) { return n[s[0]] || M.chip === s[0]; }).map(function (s) {
+      return '<button type="button" class="chip" data-mg="chip" data-v="' + s[0] + '" aria-pressed="' + (M.chip === s[0]) + '">' + esc(s[1]) + ' · ' + (n[s[0]] || 0) + '</button>';
+    }).join('') + '</div>' : '') + '</div>');
     var find = '<div class="field"><label class="label" for="mg-q">Find a recipe</label><input id="mg-q" class="search" type="search" data-f="q" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Name, card number or ingredient" value="' + esc(M.q) + '"></div>';
     var body;
     if (M.chip === 'templates' || M.chip === 'mylib') body = mineHTML(M.chip, words);
@@ -263,7 +275,8 @@
   function useKept(e) {
     var k = e.kept.e; e.d = k.d; e.menu = k.menu || e.menu; e.meta = Object.assign(e.meta, { removed: !!k.meta.removed, off: !!k.meta.off }); e.handTags = !!k.handTags;
     if (e.isNew) { e.id = k.id || e.id; e.idTyped = !!k.idTyped; }
-    e.kept = null; e.open = -1; e.pinOpen = -1; unarm();
+    // an open ingredient row stays open (3 Nov 2026), so a tap in its note or link box keeps the focus there
+    e.kept = null; if (!(e.open >= 0 && e.open < e.d.ingredients.length)) e.open = -1; e.pinOpen = -1; unarm();
   }
   function keptBack(e) { useKept(e); keepNow(); draw(); toast('Your kept changes are back in the form.'); }
   function keepDraft() { clearTimeout(keepTimer); keepTimer = setTimeout(keepNow, 400); }
@@ -276,6 +289,9 @@
   function dirtyNote() {
     var el = M.root && M.root.querySelector('.mg-state');
     if (el) el.textContent = stateText();
+    // the chapters' dots and summaries follow typing without a redraw of the form (the focus stays in its box)
+    var nav = M.root && M.root.querySelector('.mg-chs');
+    if (nav && M.ed && M.ed.d) { var tmp = document.createElement('div'); tmp.innerHTML = chNavHTML(M.ed); nav.innerHTML = tmp.firstChild.innerHTML; }
     // typing does not draw the page again: Save follows here
     var sb = M.root && M.root.querySelector('[data-mg="save"]');
     if (sb && M.ed && M.ed.d && !M.ed.saving) sb.disabled = unchanged(M.ed);
@@ -362,7 +378,6 @@
       return '<button type="button" class="chip mg-tag' + (st ? ' is-' + st : '') + '" data-mg="tag" data-w="' + where + '" data-i="' + i + '" data-v="' + esc(a) + '" aria-pressed="' + (!!st) + '">' + esc(a) + (st === 'may' ? '?' : '') + '</button>';
     }).join('') + '</div><p class="hint">Tap once: has it. Twice: may have it (check the label). Three times: not in it.</p>';
   }
-  function tagSummary(list) { return list && list.length ? list.join(', ') : 'No allergens'; }
   function field(id, label, f, val, o) {
     o = o || {};
     var input = o.area
@@ -378,39 +393,64 @@
       '<div class="mg-two">' + field('mg-no', 'Card number', 'no', d.no || '', { max: 8, mode: 'numeric' }) +
       '<div class="field"><label class="label" for="mg-kind">Kind</label><select id="mg-kind" class="search" data-f="kind">' + Object.keys(KIND).map(function (k) { return '<option value="' + k + '"' + (d.kind === k ? ' selected' : '') + '>' + esc(KIND[k]) + '</option>'; }).join('') + '</select></div></div>' +
       field('mg-for', 'Where it belongs', 'forLine', d.forLine || '', { max: 80, ph: 'Plate, or For the barramundi' }) +
-      field('mg-short', 'Short name (prep lines, optional)', 'short', d.short || '', { max: 40 }) +
       field('mg-yield', 'Portion or batch line', 'yield', d.yield || '', { max: 300, ph: 'Per plate, or 5 L batch' }) +
+      '<label class="mg-check"><input type="checkbox" data-f="done"' + (d.done ? ' checked' : '') + '> Finished: the card and its drawings are 100% done (green frame)</label></section>';
+  }
+  /* More card details (3 Nov 2026): the fields that rarely change, folded away. Always drawn, hidden while folded, so a
+     kept draft and a redraw keep what is in them. */
+  function moreCardHTML(e) {
+    var d = e.d, open = !!e.moreOpen;
+    return '<div class="mg-more"><button type="button" class="btn mg-more-b" data-mg="more-card" aria-expanded="' + open + '" aria-controls="mg-more-box">' + (open ? 'Fewer card details' : 'More card details') + '</button>' +
+      '<div class="mg-more-box" id="mg-more-box"' + (open ? '' : ' hidden') + '><section class="set-block mg-sec" aria-labelledby="mg-h-names"><h3 class="h3" id="mg-h-names">Other names</h3>' +
+      field('mg-short', 'Short name (prep lines, optional)', 'short', d.short || '', { max: 40 }) +
       field('mg-menu', 'How the guest menu describes it (optional)', 'menu', d.menu || '', { area: true, rows: 2, max: 400 }) +
       field('mg-avc', 'Name in AVC Live (optional)', 'avc', d.avc || '', { max: 120, hint: 'So a search for the AVC name finds the card. No prices or codes here.' }) +
-      '<label class="mg-check"><input type="checkbox" data-f="done"' + (d.done ? ' checked' : '') + '> Finished: the card and its drawings are 100% done (green frame)</label></section>';
+      field('mg-aka', 'Other names staff search for (optional)', 'aka', d.aka || '', { max: 200 }) + '</section>' +
+      menuHTML(e) + boxesHTML(e) + '</div></div>';
+  }
+  /* Ingredients (recipe editor, 3 Nov 2026, head chef's choice): the amount and the name are typed in the row; the note,
+     the recipe link, the allergens and moving open from the row's arrow (e.open is the open row). The row shows what is
+     behind the arrow in one short line. */
+  var CHEV = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6"/></svg>';
+  function ingSum(i) {
+    var bits = i.link ? ['<span class="tag mg-ing-ln">' + esc(linkLabel(i.link)) + '</span>'] : (i.tags || []).map(function (t) { return '<span class="tag' + (/\?$/.test(t) ? ' maybe' : '') + '">' + esc(t) + '</span>'; });
+    if (!bits.length) bits.push('<span>No allergens</span>');
+    if (trimStr(i.note)) bits.push('<span class="mg-ing-note">' + esc(i.note) + '</span>');
+    return '<span class="mg-ing-sum">' + bits.join('') + '</span>';
   }
   function ingHTML(e) {
     var d = e.d, n = d.ingredients.length;
-    return '<section class="set-block mg-sec" aria-labelledby="mg-h-ing"><h3 class="h3" id="mg-h-ing">Ingredients</h3>' +
+    return '<section class="set-block mg-sec" aria-labelledby="mg-h-ing"><div class="mg-sec-head"><h3 class="h3" id="mg-h-ing">Ingredients</h3>' + scaleBtn(e) + '</div>' +
       multiplierHTML(e) +
-      '<p class="hint">Link an ingredient to its own recipe to make it tappable; its allergens then come from that recipe.</p>' +
+      '<p class="hint">Type the amount and the name in the row. The arrow opens the note, the recipe link, the allergens and moving.</p>' +
       '<ol class="mg-ings">' + d.ingredients.map(function (i, k) {
-        var open = e.open === k;
-        return '<li class="mg-ing"><div class="mg-ing-top"><span class="mg-n" aria-hidden="true">' + (k + 1) + '</span>' +
+        var open = e.open === k, nm = trimStr(i.name) || 'ingredient ' + (k + 1);
+        return '<li class="mg-ing' + (open ? ' open' : '') + '"><div class="mg-ing-top"><span class="mg-n" aria-hidden="true">' + (k + 1) + '</span>' +
           '<input class="search mg-q" data-f="ing.' + k + '.q" aria-label="Amount, ingredient ' + (k + 1) + '" placeholder="Amount" maxlength="40" value="' + esc(i.q || '') + '">' +
-          '<input class="search" data-f="ing.' + k + '.name" aria-label="Ingredient ' + (k + 1) + '" placeholder="Ingredient" maxlength="120" value="' + esc(i.name || '') + '"></div>' +
-          '<input class="search" data-f="ing.' + k + '.note" aria-label="Note, ingredient ' + (k + 1) + '" placeholder="Note (optional)" maxlength="200" value="' + esc(i.note || '') + '">' +
-          '<div class="mg-ing-row"><label class="visually-hidden" for="mg-link-' + k + '">Recipe link, ingredient ' + (k + 1) + '</label>' + linkBox('ing.' + k + '.link', i.link || '', 'mg-link-' + k, 'Recipe link, ingredient ' + (k + 1)) + '</div>' +
-          '<div class="btn-row mg-mini"><button type="button" class="p-x" data-mg="ing-tags" data-i="' + k + '" aria-expanded="' + open + '">' + esc(i.link ? 'Allergens from its recipe' : tagSummary(i.tags)) + '</button>' +
-          (k ? '<button type="button" class="p-x" data-mg="ing-up" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' up">Up</button>' : '') +
-          (k < n - 1 ? '<button type="button" class="p-x" data-mg="ing-down" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' down">Down</button>' : '') +
-          '<button type="button" class="p-x" data-mg="ing-del" data-i="' + k + '" aria-label="' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + ' ingredient ' + (k + 1) + '">' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + '</button></div>' +
-          (open ? tagChips(i.tags, 'ing', k) : '') + '</li>';
+          '<input class="search mg-nm" data-f="ing.' + k + '.name" aria-label="Ingredient ' + (k + 1) + '" placeholder="Ingredient" maxlength="120" value="' + esc(i.name || '') + '">' +
+          '<button type="button" class="mg-ing-more" data-mg="ing-open" data-i="' + k + '" aria-expanded="' + open + '" aria-label="' + esc('Note, link, allergens and moving for ' + nm) + '">' + CHEV + '</button></div>' + ingSum(i) +
+          (open ? '<div class="mg-ing-open">' +
+            '<div class="field"><label class="label" for="mg-note-' + k + '">Note</label><input id="mg-note-' + k + '" class="search" data-f="ing.' + k + '.note" placeholder="For example: bought in, 170 g" maxlength="200" value="' + esc(i.note || '') + '"></div>' +
+            '<div class="field"><label class="label" for="mg-link-' + k + '">Recipe link</label><div class="mg-linkbox">' + linkBox('ing.' + k + '.link', i.link || '', 'mg-link-' + k, 'Recipe link, ingredient ' + (k + 1)) + '</div>' +
+            '<span class="hint">A linked ingredient is tappable on the card and takes its allergens from its own recipe.</span></div>' +
+            (i.link ? '' : '<div class="field"><span class="label">Allergens</span>' + tagChips(i.tags, 'ing', k) + '</div>') +
+            '<div class="btn-row mg-mini">' + (k ? '<button type="button" class="btn" data-mg="ing-up" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' up">Move up</button>' : '') +
+            (k < n - 1 ? '<button type="button" class="btn" data-mg="ing-down" data-i="' + k + '" aria-label="Move ingredient ' + (k + 1) + ' down">Move down</button>' : '') +
+            '<button type="button" class="p-x mg-del" data-mg="ing-del" data-i="' + k + '" aria-label="' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + ' ingredient ' + (k + 1) + '">' + (armed('ing-del:' + k) ? 'Tap again to remove' : 'Remove') + '</button></div></div>' : '') + '</li>';
       }).join('') + '</ol><div class="btn-row"><button type="button" class="btn" data-mg="ing-add">Add an ingredient</button></div></section>';
   }
+  function canScale() { return !!(P.bookEdit() && window.LK_AMT && window.LK_AMT.scale); }
+  // Scale amounts opens the multiplier (3 Nov 2026): it stays open while it has something to say
+  function scaleOpen(e) { return !!(e.scaleOpen || e.scaled || e.scaleMsg); }
+  function scaleBtn(e) { return canScale() ? '<button type="button" class="btn mg-scale" data-mg="scale" aria-expanded="' + scaleOpen(e) + '" aria-controls="mg-scale-box">Scale amounts</button>' : ''; }
   function multiplierHTML(e) {
-    if (!P.bookEdit() || !window.LK_AMT || !window.LK_AMT.scale) return '';
-    return '<div class="mg-two">' + field('mg-multiplier', 'Multiply amounts by', 'multiplier', e.multiplier == null ? '2' : e.multiplier, { mode: 'decimal', max: 16, hint: 'For example: 2 doubles them, 0.5 halves them.' }) +
+    if (!canScale() || !scaleOpen(e)) return '';
+    return '<div class="mg-scale-box" id="mg-scale-box"><div class="mg-two">' + field('mg-multiplier', 'Multiply amounts by', 'multiplier', e.multiplier == null ? '2' : e.multiplier, { mode: 'decimal', max: 16, hint: 'For example: 2 doubles them, 0.5 halves them.' }) +
       '<div class="btn-row"><button type="button" class="btn" data-mg="multiply"' + (e.saving ? ' disabled' : '') + '>Apply multiplier</button>' +
       (e.scaled ? '<button type="button" class="p-x" data-mg="multiply-undo"' + (e.saving ? ' disabled' : '') + '>Undo multiplier</button>' : '') + '</div></div>' +
       '<p class="hint">Applies to the ingredient amounts currently in this form. Check the portion or batch line and method yourself, then Save.</p>' +
       (e.scaleMsg ? '<p class="hint" role="status">' + esc(e.scaleMsg) + '</p>' : '') +
-      (e.scaleSkipped && e.scaleSkipped.length ? '<p class="hint">Check by hand: ' + e.scaleSkipped.map(esc).join('; ') + '.</p>' : '');
+      (e.scaleSkipped && e.scaleSkipped.length ? '<p class="hint">Check by hand: ' + e.scaleSkipped.map(esc).join('; ') + '.</p>' : '') + '</div>';
   }
   function multiply(e) {
     if (e.saving || !P.bookEdit() || !window.LK_AMT || !window.LK_AMT.scale) return;
@@ -468,8 +508,7 @@
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-box"><h3 class="h3" id="mg-h-box">Boxes on the card (optional)</h3>' +
       '<div class="mg-two">' + field('mg-tipt', 'Tip box title', 'tip.title', tip.title, { max: 80, ph: 'iCombi' }) + field('mg-sft', 'Safety box title', 'safety.title', sf.title, { max: 80, ph: 'Hot oil' }) + '</div>' +
       field('mg-tipx', 'Tip box words', 'tip.text', tip.text, { area: true, rows: 2, max: 1000 }) +
-      field('mg-sfx', 'Safety box words (orange)', 'safety.text', sf.text, { area: true, rows: 2, max: 1000 }) +
-      field('mg-aka', 'Other names staff search for (optional)', 'aka', d.aka || '', { max: 200 }) + '</section>';
+      field('mg-sfx', 'Safety box words (orange)', 'safety.text', sf.text, { area: true, rows: 2, max: 1000 }) + '</section>';
   }
   function menuHTML(e) {
     if (!DISH[e.d.kind]) return '';
@@ -485,8 +524,18 @@
   function bookArts(slot) { return X.arts().filter(function (x) { return x.slot === slot && !x.removed; }).sort(function (a, b) { return (a.rid === M.ed.id ? 0 : 1) - (b.rid === M.ed.id ? 0 : 1) || a.name.localeCompare(b.name); }); }
   function drawBtns(e, slot, cur) {
     var mine = cur && cur.charAt(0) === '@';
-    return '<div class="btn-row mg-mini">' + (mine ? '<button type="button" class="p-x" data-mg="draw" data-v="' + esc(cur.slice(1)) + '">Change this drawing</button>' : '') +
-      '<button type="button" class="p-x" data-mg="draw" data-v="new:' + slot + '">Draw ' + (slot === 'plate' ? 'the plate' : slot === 'pan' ? 'the pan' : slot === 'side' ? 'the side view' : 'a build drawing') + ' in the book</button></div>';
+    return '<div class="btn-row mg-mini">' + (mine ? '<button type="button" class="btn" data-mg="draw" data-v="' + esc(cur.slice(1)) + '">Change it in the studio</button>' : '') +
+      '<button type="button" class="' + (mine ? 'p-x' : 'btn') + '" data-mg="draw" data-v="new:' + slot + '" aria-label="' + (mine ? 'Start a new ' : 'Draw the ') + (slot === 'plate' ? 'plate' : slot === 'pan' ? 'pan' : slot === 'side' ? 'side view' : 'build drawing') + ' in the studio">' + (mine ? 'Start a new one' : 'Draw it in the studio') + '</button></div>';
+  }
+  /* Drawings (3 Nov 2026, recipe editor): one card per drawing with its picture, and the choice of drawing by name (the
+     book's file names stay out of sight). The pictures come from LK_ART: the book's own, or drawings made in the book,
+     which js/overlay.js has already cleaned. */
+  function slotPic(k, slot) {
+    var ART = window.LK_ART || {}, v = slot === 'side' ? (ART.sides || {})[k] : (ART.diagrams || {})[k];
+    return v && /^-?[\d.]+ -?[\d.]+ [\d.]+ [\d.]+$/.test(v.viewBox || '') ? '<svg class="mg-dpic-svg" viewBox="' + esc(v.viewBox) + '" aria-hidden="true" focusable="false">' + v.body + '</svg>' : '';
+  }
+  function drawCard(title, pic, what, inner) {
+    return '<div class="mg-dcard"><div class="mg-dpic">' + (pic || '<span class="hint">No drawing yet</span>') + '</div><div class="mg-dbody"><h4 class="mg-dh">' + esc(title) + '</h4><p class="hint">' + esc(what) + '</p>' + inner + '</div></div>';
   }
   function drawingHTML(e) {
     var d = e.d, dish = !!DISH[d.kind], keys = A.artKeys(), list = dish ? keys.plates : keys.pans, preview = cleanRecipe(e), slot = dish ? 'plate' : 'pan';
@@ -495,15 +544,29 @@
     var dopts = '<option value=""' + (!d.diagram ? ' selected' : '') + '>None</option>' + mineOpts('build', d.diagram) + '<optgroup label="The book\'s own">' + keys.diagrams.map(function (k) { return '<option value="' + esc(k) + '"' + (d.diagram === k ? ' selected' : '') + '>' + esc(artName(k)) + '</option>'; }).join('') + '</optgroup>';
     var bookSide = !!(window.LK_ART && window.LK_ART.sides && window.LK_ART.sides[e.id]);
     var sopts = '<option value=""' + (!d.side ? ' selected' : '') + '>' + (bookSide ? 'The book\'s own side view' : 'None') + '</option>' + mineOpts('side', d.side);
-    var first = e.isNew ? '<p class="hint">Save the recipe first, then draw it in the book.</p>' : '';
+    var first = e.isNew ? '<p class="hint">Save the recipe first, then draw it in the studio.</p>' : '';
+    var whatOf = function (cur, none) { if (!cur) return none; var mine = cur.charAt(0) === '@' && X.arts().filter(function (x) { return x.id === cur.slice(1); })[0]; return mine ? 'Drawn in the book: ' + (mine.name || mine.id) : 'The book\'s drawing of ' + artName(cur); };
+    var sideKey = d.side || (bookSide ? e.id : ''), plateBox = dish ? pinsHTML(e, preview) : '<div class="mg-art-one">' + A.art(preview, 'mg-art') + '</div>';
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-draw"><h3 class="h3" id="mg-h-draw">Drawings</h3>' + first +
-      '<div class="field"><label class="label" for="mg-art">' + (dish ? 'On the plate' : 'In the pan') + '</label><select id="mg-art" class="search" data-f="art" data-redraw="1">' + opts + '</select><span class="hint">A drawing from the book, or one drawn here.</span></div>' +
-      (e.isNew ? '' : drawBtns(e, slot, d.art)) +
-      (dish ? pinsHTML(e, preview) : '<div class="mg-art-one">' + A.art(preview, 'mg-art') + '</div>') +
-      '<div class="field"><label class="label" for="mg-side">From the side</label><select id="mg-side" class="search" data-f="side">' + sopts + '</select></div>' + (e.isNew ? '' : drawBtns(e, 'side', d.side)) +
-      '<div class="field"><label class="label" for="mg-diag">Build or technique drawing</label><select id="mg-diag" class="search" data-f="diagram">' + dopts + '</select></div>' + (e.isNew ? '' : drawBtns(e, 'build', d.diagram)) + '</section>';
+      '<div class="mg-dplate"><h4 class="mg-dh">' + (dish ? 'On the plate' : 'In the pan') + '</h4><p class="hint">' + esc(whatOf(d.art, 'No drawing yet: a blank ' + (dish ? 'plate' : 'pan') + '.')) + '</p>' +
+      (e.isNew ? '' : drawBtns(e, slot, d.art)) + plateBox +
+      '<div class="field"><label class="label" for="mg-art">Use another drawing</label><select id="mg-art" class="search" data-f="art" data-redraw="1">' + opts + '</select></div></div>' +
+      '<div class="mg-dcards">' +
+      drawCard('From the side', slotPic(sideKey, 'side'), whatOf(d.side, bookSide ? 'The book\'s own side view.' : 'None yet.'), (e.isNew ? '' : drawBtns(e, 'side', d.side)) +
+        '<div class="field"><label class="label" for="mg-side">Use another drawing</label><select id="mg-side" class="search" data-f="side">' + sopts + '</select></div>') +
+      drawCard('Build or technique', slotPic(d.diagram, 'build'), whatOf(d.diagram, 'None yet.'), (e.isNew ? '' : drawBtns(e, 'build', d.diagram)) +
+        '<div class="field"><label class="label" for="mg-diag">Use another drawing</label><select id="mg-diag" class="search" data-f="diagram">' + dopts + '</select></div>') +
+      '</div></section>';
   }
-  function artName(k) { var r = A.byId(k); return r ? r.name + ' (' + k + ')' : k; }
+  // a recipe's name for its drawing, without the book's file name (the file name only when two recipes share a name)
+  function artName(k) {
+    var r = A.byId(k), part = '';
+    // a build or technique drawing is named after its recipe: burger-build is Chicken Burger, build
+    if (!r) { var m = /^(.+?)-(build|diagram|side|technique)$/.exec(k || ''); r = m && A.byId(m[1]); part = m ? ', ' + m[2] : ''; }
+    if (!r) return String(k || '').replace(/-/g, ' ').replace(/^./, function (c) { return c.toUpperCase(); });
+    var same = D.recipes.filter(function (x) { return x.name === r.name; }).length > 1;
+    return r.name + part + (same ? ' (' + k + ')' : '');
+  }
   /* Plate labels on the Pass: drag a pin on the drawing, or type its place. */
   function pinsHTML(e, preview) {
     var pins = e.d.pins || [];
@@ -555,6 +618,38 @@
     if (!out) return '';
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-more"><h3 class="h3" id="mg-h-more">The book file</h3>' + out + '</section>';
   }
+  /* Chapters (recipe editor, 3 Nov 2026, head chef's choice): the form in six short parts, a rail on a computer and a row
+     of pills on a phone. Every chapter is drawn and the others are hidden, so a kept draft, an error link and the focus
+     after a redraw find their box wherever it is. A chapter shows a dot for a change not saved and ! for a fix. */
+  var CHS = [['ing', 'Ingredients'], ['method', 'Method'], ['alg', 'Allergens'], ['draw', 'Drawings'], ['card', 'Card details'], ['hist', 'Earlier versions']];
+  var CH_KEYS = { ing: ['ingredients'], method: ['sections'], alg: ['contains', 'check', 'labelNote'], draw: ['art', 'side', 'diagram', 'pins'] };
+  var AT_CH = { 'mg-name': 'card', 'mg-id': 'card', 'mg-h-ing': 'ing', 'mg-h-method': 'method' };
+  function chOf(e) { return e.ch || (e.isNew ? 'card' : 'ing'); }
+  function chChanged(e) {
+    var was = JSON.parse(e.snap), d0 = was[0] || {}, d = e.d, out = {}, known = {};
+    Object.keys(CH_KEYS).forEach(function (k) { out[k] = CH_KEYS[k].some(function (f) { known[f] = 1; return JSON.stringify(d[f]) !== JSON.stringify(d0[f]); }); });
+    out.card = Object.keys(Object.assign({}, d0, d)).some(function (f) { return !known[f] && JSON.stringify(d[f]) !== JSON.stringify(d0[f]); }) || JSON.stringify(e.menu) !== JSON.stringify(was[1]) || e.meta.removed !== was[2];
+    out.hist = e.meta.off !== was[3];
+    return out;
+  }
+  function chSum(e, k) {
+    var d = e.d;
+    if (k === 'ing') return d.ingredients.length + (d.ingredients.length === 1 ? ' line' : ' lines');
+    if (k === 'method') { var st = (d.sections || []).reduce(function (m, s) { return m + s.steps.length; }, 0); return (d.sections || []).length + ((d.sections || []).length === 1 ? ' section, ' : ' sections, ') + st + (st === 1 ? ' step' : ' steps'); }
+    if (k === 'alg') { var t = rollTags(A.rollFor(cleanRecipe(e))); return t.length ? t.join(', ') : 'None'; }
+    if (k === 'draw') { var w = [d.art ? (DISH[d.kind] ? 'plate' : 'pan') : '', d.side ? 'side' : '', d.diagram ? 'build' : ''].filter(Boolean); return (w.length ? w.join(', ') : 'None yet') + (DISH[d.kind] ? ', ' + (d.pins || []).length + ((d.pins || []).length === 1 ? ' label' : ' labels') : ''); }
+    if (k === 'card') return 'Card ' + (trimStr(d.no) || '-') + ', ' + (e.meta.removed ? 'hidden' : 'shown') + (e.menu.sec === A.specials ? ', special' : '');
+    return e.meta.v ? 'Version ' + e.meta.v : 'The book file';
+  }
+  function chNavHTML(e) {
+    var cur = chOf(e), chg = chChanged(e), bad = {};
+    (e.errs || []).forEach(function (x) { bad[AT_CH[x.at] || 'card'] = 1; });
+    return '<nav class="mg-chs" aria-label="Parts of this recipe">' + CHS.filter(function (c) { return !(c[0] === 'hist' && e.isNew); }).map(function (c, n) {
+      var k = c[0];
+      return '<button type="button" class="mg-chb" data-mg="ch" data-v="' + k + '" data-i="' + n + '"' + (cur === k ? ' aria-current="true"' : '') + '><span class="mg-chn">' + c[1] + '</span><small>' + esc(chSum(e, k)) + '</small>' +
+        (bad[k] ? '<span class="mg-chx" aria-hidden="true">!</span><span class="visually-hidden">, needs a fix</span>' : chg[k] ? '<span class="mg-chd" aria-hidden="true"></span><span class="visually-hidden">, changed, not saved</span>' : '') + '</button>';
+    }).join('') + '</nav>';
+  }
   function editorHTML() {
     var e = M.ed;
     if (e.missing !== undefined) return '<div class="mg-wrap"><h2 id="rtitle" tabindex="-1">Recipe not found</h2><p>There is no recipe "' + esc(e.missing) + '" in the book.</p></div>';
@@ -568,8 +663,11 @@
       '<div class="btn-row"><button type="button" class="btn" data-mg="theirs">' + (armed('theirs') ? 'Tap again: your changes go' : 'Open theirs') + '</button><button type="button" class="btn dark" data-mg="mine">Save mine over it</button></div></div>' : '';
     var errs = e.errs.length ? '<div class="warn" role="alert"><span class="label">Not saved yet</span><ul class="mg-errs">' + e.errs.map(function (x) { return '<li><a href="#' + esc(x.at) + '" data-mg="goto" data-v="' + esc(x.at) + '">' + esc(x.msg) + '</a></li>'; }).join('') + '</ul></div>' : '';
     var warns = e.warns.length ? '<div class="box beige" role="note">' + e.warns.map(function (w) { return '<div>' + esc(w) + '</div>'; }).join('') + '</div>' : '';
+    var cur = chOf(e), part = function (k, html) { return '<div class="mg-ch" data-ch="' + k + '"' + (cur === k ? '' : ' hidden') + '>' + html + '</div>'; };
     return '<div class="mg-wrap mg-ed">' + linkList() + head + kept + fileNote + conflict + errs + warns +
-      swHTML(e) + basicsHTML(e) + ingHTML(e) + methodHTML(e) + allergenHTML(e) + drawingHTML(e) + menuHTML(e) + boxesHTML(e) + histHTML(e) + moreHTML(e) +
+      '<div class="mg-body">' + chNavHTML(e) + '<div class="mg-chap">' +
+      part('ing', ingHTML(e)) + part('method', methodHTML(e)) + part('alg', allergenHTML(e)) + part('draw', drawingHTML(e)) +
+      part('card', swHTML(e) + basicsHTML(e) + moreCardHTML(e)) + (e.isNew ? '' : part('hist', histHTML(e) + moreHTML(e))) + '</div></div>' +
       '<div class="mg-bar"><span class="mg-state" role="status">' + esc(stateText()) + '</span>' + (e.msg ? '<span class="p-err" role="alert">' + esc(e.msg) + '</span>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-mg="save"' + (e.saving ? ' disabled aria-busy="true"' : unchanged(e) ? ' disabled' : '') + '>' + (e.saving ? inkLabel('Saving...') : 'Save') + '</button>' +
       (dirty() ? '<button type="button" class="btn" data-mg="undo-all">' + (armed('undo-all') ? 'Tap again to undo all' : 'Undo all changes') + '</button>' : '') + '</div></div></div>';
@@ -751,7 +849,9 @@
     }).catch(function () {});
   }
   function focusId(id) {
-    var el = M.root && M.root.querySelector('#' + id);
+    var el = M.root && M.root.querySelector('#' + id), e = M.ed, box = el && el.closest('[data-ch]');
+    if (box && box.hidden && e && e.d) { e.ch = box.getAttribute('data-ch'); if (el.closest('.mg-more-box')) e.moreOpen = true; draw(); el = M.root.querySelector('#' + id); }
+    else if (el && el.closest('.mg-more-box[hidden]') && e && e.d) { e.moreOpen = true; draw(); el = M.root.querySelector('#' + id); }
     if (!el) return;
     el.scrollIntoView({ block: 'center' });
     if (el.focus) el.focus({ preventScroll: true });
@@ -925,7 +1025,7 @@
     var el = ev.target.closest('[data-mg]');
     if (!el) return;
     var a = el.getAttribute('data-mg'), i = +el.getAttribute('data-i'), v = el.getAttribute('data-v'), e = M.ed, d = e && e.d;
-    if (a === 'chip') { M.chip = v; M.more = false; if (MINE.off && (v === 'templates' || v === 'mylib')) loadMine(true); draw(); return; }
+    if (a === 'chip' || a === 'kind') { M.chip = v; M.more = false; if (MINE.off && (v === 'templates' || v === 'mylib')) loadMine(true); draw(); return; }
     if (a === 'mine-hide') { mineHide(v); return; }
     if (a === 'more') { M.more = true; draw(); return; }
     if (!e || !d) return;
@@ -939,7 +1039,9 @@
     if (a === 'mine') { save(true); return; }
     // a change while the kept box shows: the kept changes come back first, and this tap does nothing else (its row may
     // not be the same row in the kept changes)
-    if (e.kept && !/^(kept-use|kept-drop|hist|ing-tags|pin-pick|theirs)$/.test(a)) { keptBack(e); return; }
+    if (e.kept && !/^(kept-use|kept-drop|hist|ing-tags|ing-open|scale|ch|more-card|pin-pick|theirs)$/.test(a)) { keptBack(e); return; }
+    if (a === 'ch') { if (chOf(e) !== v) { e.ch = v; unarm(); draw(); var top = M.root.querySelector('.mg-body'); if (top && top.getBoundingClientRect().top < 0) top.scrollIntoView({ block: 'start' }); } return; }
+    if (a === 'more-card') { e.moreOpen = !e.moreOpen; draw(); return; }
     if (a === 'theirs') {
       // the changes typed here go: ask first, like Throw them away
       if (dirty() && !arm('theirs')) return;
@@ -950,6 +1052,7 @@
     if (a === 'kept-use') { if (e.kept) useKept(e); draw(); return; }
     if (a === 'kept-drop') { if (!arm('kept-drop')) return; e.kept = null; lsSet(draftKey(e.key), ''); draw(); return; }
     if (a === 'undo-all') { if (!arm('undo-all')) return; var fr = JSON.parse(e.snap); e.d = fr[0]; e.menu = fr[1]; e.meta.removed = fr[2]; e.meta.off = fr[3]; e.handTags = !!(e.d.contains || e.d.check); lsSet(draftKey(e.key), ''); draw(); return; }
+    if (a === 'scale') { if (scaleOpen(e) && !e.scaled) { e.scaleOpen = false; e.scaleMsg = ''; e.scaleSkipped = []; draw(); return; } e.scaleOpen = true; draw(); focusId('mg-multiplier'); return; }
     if (a === 'multiply') { multiply(e); return; }
     if (a === 'multiply-undo') {
       if (e.saving || !P.bookEdit() || !e.scaled) return;
@@ -960,9 +1063,14 @@
     if (a === 'ing-add') { d.ingredients.push({ q: '', name: '' }); keepDraft(); draw(); var ins = M.root.querySelectorAll('[data-f$=".q"][data-f^="ing."]'); if (ins.length) ins[ins.length - 1].focus(); return; }
     // an ingredient with anything in it asks first; an empty row added by mistake goes at once
     if (a === 'ing-del') { var ri = d.ingredients[i] || {}; if ((trimStr(ri.q) || trimStr(ri.name) || trimStr(ri.note) || ri.link || (ri.tags || []).length) && !arm('ing-del:' + i)) return; d.ingredients.splice(i, 1); e.open = -1; unarm(); keepDraft(); draw(); return; }
-    if (a === 'ing-up') { move(d.ingredients, i, i - 1); e.open = -1; unarm(); keepDraft(); draw(); return; }
-    if (a === 'ing-down') { move(d.ingredients, i, i + 1); e.open = -1; unarm(); keepDraft(); draw(); return; }
-    if (a === 'ing-tags') { e.open = e.open === i ? -1 : i; draw(); return; }
+    // the open row moves with its ingredient, and the button that moved it keeps the focus where it is still there
+    if (a === 'ing-up' || a === 'ing-down') {
+      var to = a === 'ing-up' ? i - 1 : i + 1; if (to < 0 || to >= d.ingredients.length) return;
+      move(d.ingredients, i, to); e.open = e.open === i ? to : -1; unarm(); keepDraft(); draw();
+      var mb = M.root.querySelector('[data-mg="' + a + '"][data-i="' + to + '"]') || M.root.querySelector('[data-mg="ing-open"][data-i="' + to + '"]'); if (mb) mb.focus({ preventScroll: true });
+      return;
+    }
+    if (a === 'ing-open' || a === 'ing-tags') { e.open = e.open === i ? -1 : i; unarm(); draw(); return; }
     if (a === 'tag') {
       var w = el.getAttribute('data-w'), obj = w === 'pin' ? d.pins[i] : d.ingredients[i];
       obj.tags = cycleTag(obj.tags, v); keepDraft(); draw(); return;
