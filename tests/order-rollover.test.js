@@ -37,30 +37,27 @@ const rid = id => 'r' + today.replace(/-/g, '') + '-' + id;
   ok(p.errors.length === 0, 'rollover: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // Everything to order (sous chef): each item once, as its newest copy, and ticking it marks it ordered
+  // Waiting from earlier days (one list since 3 Nov 2026, Everything to order went): each rolled item once, saying who
+  // first wrote it and since when; ticking it marks today's copy ordered without reading the past days again
   const rolledToday = Object.assign({}, extra);
   rolledToday[fsKey(['orders', today, 'lines', rid('y1')])] = line('Cream', { qty: '4 L', addedBy: 'Rolled over', addedById: '', rolled: 1, root: 'y1', from: 'y1', rolledFrom: yday, since: yday, origBy: 'Ann', addedAt: L.NOW - 1000 });
   rolledToday[fsKey(['orders', today, 'lines', rid('f1')])] = line('Flour', { qty: '2 bags', addedBy: 'Rolled over', addedById: '', rolled: 2, root: 'f1', from: 'r-f1', rolledFrom: yday, since: ago2, origBy: 'Ann', addedAt: L.NOW - 1000 });
   p = await L.open(b, '#/orders', { wait: 1500, extra: rolledToday });
-  await p.click('[data-p="oview"][data-v="all"]');
-  await L.settle(p, 800);
-  const groups = await p.evaluate(() => Array.prototype.map.call(document.querySelectorAll('.o-group .nb-t'), e => e.firstChild.textContent.trim() + (e.querySelector('.o-n') ? ' ' + e.querySelector('.o-n').textContent : '')));
-  ok(groups.indexOf('Flour') >= 0 && groups.indexOf('Cream') >= 0 && !groups.some(g => / x\d/.test(g) && /Flour|Cream/.test(g)), 'everything to order: each rolled item shows once (' + groups.join(', ') + ')');
-  // who first wrote it and since when, as By day shows it, not "Rolled over" and today (23 Oct 2026)
-  const flourWho = await p.evaluate(() => { const g = document.querySelector('.o-group [data-k2="flour"]'); return g ? g.closest('.o-group').querySelector('.o-who').textContent : ''; });
+  await L.settle(p, 500);
+  const waiting = await p.evaluate(() => Array.prototype.map.call(document.querySelectorAll('.o-wait .nb-row .nb-t'), e => e.firstChild.textContent.trim()));
+  ok(waiting.filter(t => t === 'Flour').length === 1 && waiting.filter(t => t === 'Cream').length === 1, 'waiting from earlier days: each rolled item shows once (' + waiting.join(', ') + ')');
+  const flourRow = await p.evaluate(id => { const r = document.querySelector('.o-wait [data-ln$="/' + id + '"]'); return r ? r.textContent : ''; }, rid('f1'));
   const ago2Short = await p.evaluate(d => { const [y, m, dd] = d.split('-').map(Number); return new Date(y, m - 1, dd).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); }, ago2);
-  ok(flourWho.indexOf('(Ann, ' + ago2Short + ')') >= 0 && !/Rolled over/.test(flourWho), 'everything to order: a rolled line says who wrote it and the day it was first written (' + flourWho + ')');
+  ok(/from Ann/.test(flourRow) && flourRow.indexOf('Since ' + ago2Short) >= 0 && !/Rolled over/.test(flourRow), 'waiting from earlier days: a rolled line says who wrote it and the day it was first written (' + flourRow.trim().slice(0, 80) + ')');
   const readsBefore = await p.evaluate(() => window.__fake.reads.length);
-  await p.click('.o-group [data-k2="flour"]');
+  await p.click('.o-wait [data-p="otick"][data-id="' + rid('f1') + '"]');
   await L.settle(p, 500);
   const newReads = await p.evaluate(n => window.__fake.reads.slice(n), readsBefore);
-  ok(!newReads.some(r => /\/orders\//.test(r)), 'everything to order: a tick does not read the 14 days again (' + newReads.join(', ') + ')');
-  ok(!(await p.evaluate(() => document.querySelector('.o-group [data-k2="flour"]'))), 'everything to order: the ticked item leaves the list at once');
+  ok(!newReads.some(r => /\/orders\/\d{4}-\d\d-\d\d/.test(r) && r.indexOf('/orders/' + today) < 0), 'waiting from earlier days: a tick reads no past day (' + newReads.join(', ') + ')');
   s = await store(p);
-  ok(s[fsKey(['orders', today, 'lines', rid('f1')])].ordered === true, 'everything to order: ticking marks the newest copy ordered');
-  ok(p.errors.length === 0, 'everything to order: no page errors ' + p.errors.join(' | '));
+  ok(s[fsKey(['orders', today, 'lines', rid('f1')])].ordered === true, 'waiting from earlier days: ticking marks today\'s copy ordered');
+  ok(p.errors.length === 0, 'waiting from earlier days: no page errors ' + p.errors.join(' | '));
   // past days are kept on the phone for the day: a reload does not read the last 14 days of orders again
-  await p.click('[data-p="oview"][data-v="day"]');
   await p.reload({ waitUntil: 'load' });
   await L.settle(p, 1500);
   const past = await p.evaluate(t => window.__fake.reads.filter(r => /\/orders\/\d{4}-\d\d-\d\d\/lines$/.test(r) && r.indexOf(t) < 0).length, today);

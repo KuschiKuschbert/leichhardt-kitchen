@@ -5,17 +5,18 @@ const { R, ok } = L.results(), { txt } = L;
 (async () => {
   const b = await L.start();
   const p = await L.open(b, '#/prep', { wait: 1500 });
-  ok(await p.$('form[data-p-form="add"]') !== null, 'today: the add box is there');
+  // the add box is in the Add a line sheet since 3 Nov 2026 (work pages redesign A)
+  ok(await p.$('[data-p="write"]') !== null, 'today: Add a line is there');
   ok(/Done today/.test(await txt(p, '.nb-right') || ''), 'today: the Done box says today');
   await p.click('[data-p="day"][data-d="-1"]');
   await L.settle(p, 500);
-  ok(await p.$('form[data-p-form="add"]') === null, 'past day: no add box');
+  ok(await p.$('form[data-p-form="add"]') === null && await p.$('[data-p="write"]') === null, 'past day: no add box and no Add a line');
   ok(/Lines are added on Today only/.test(await txt(p, '.nb-left') || ''), 'past day: the page says lines are added on Today only');
   ok(await p.$('[data-p="quick"]') === null, 'past day: no Quick add chips');
   ok(/Done on /.test(await txt(p, '.nb-right') || '') && !/Done today/.test(await txt(p, '.nb-right') || ''), 'past day: the Done box names the day, not today');
   await p.click('[data-p="today"]');
   await L.settle(p, 500);
-  ok(await p.$('form[data-p-form="add"]') !== null, 'back on today: the add box is back');
+  ok(await p.$('[data-p="write"]') !== null, 'back on today: Add a line is back');
   ok(p.errors.length === 0, 'past day: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   await b.close();

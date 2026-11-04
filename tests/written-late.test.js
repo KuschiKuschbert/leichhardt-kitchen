@@ -51,8 +51,9 @@ const at = (day, h, m) => { const p = day.split('-'); return new Date(+p[0], +p[
   ok(/from Ann, yesterday/.test(tDay), 'rolled once: says who wrote it and that it was yesterday (' + tDay.trim().slice(0, 80) + ')');
   const wd3 = new Date(at(ago3, 10, 0)).toLocaleDateString('en-AU', { weekday: 'short' }), t3 = await row(p, rid('old3'));
   ok(/Rolled x3/.test(t3) && t3.includes('from Ann, ' + wd3), 'rolled x3: says the weekday it was first written (' + t3.trim().slice(0, 80) + ')');
-  const start = await p.evaluate(() => [...document.querySelectorAll('.nb-start')].map(e => e.textContent).join(' '));
-  ok(/Rolled over x3/.test(start) && !/Rolled over x2/.test(start), 'Start here: counts rolls like the line does (written ahead is not a roll)');
+  // Start here is numbered on the lines since 3 Nov 2026: the line rolled three times is one of them, tagged x3 like the line
+  const start = await p.evaluate(id => { const r = document.getElementById('nbr-' + id); return r && r.querySelector('.nb-t[data-n]') ? r.textContent : ''; }, rid('old3'));
+  ok(/Rolled x3/.test(start), 'Start here: the line rolled three times is numbered, and counts rolls like the line does (' + start.trim().slice(0, 60) + ')');
   ok(late.origAt === at(yday, 21, 30), 'new copies carry the time the original was written');
   ok(p.errors.length === 0, 'prep: no page errors ' + p.errors.join(' | '));
   await p.context().close();

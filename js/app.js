@@ -728,10 +728,57 @@
       '<div class="col wide"><div id="r-steps" class="jump-at"></div>' + safetyBox(r) + diagram(r) + steps(r) + '</div></div></article>';
   }
 
+  /* Answer the tap first (4 Nov 2026, docs/loading-feedback-options/brief.md, design A). Opening Recipes draws the top
+     bar, the search, the chips and the groups on the first screen in the tap's own frame; the other shelves or tile
+     groups are read in short turns once that frame is drawn and go in together (restDraw). Once they are in, the page
+     is the same as one full draw. A redraw of the results (a search, a chip, a recipe or drawing change) stops the rest
+     and draws every group itself, and coming back from a recipe draws them all at once, so backHome() finds the plate. */
+  var homeFew = false, homeRest = null, restCancel = null;
+  // the groups drawn now: all of them, or only the first when Recipes is opening (render() asks, restDraw() adds the rest)
+  function groupsNow(list) {
+    if (!homeFew || list.length < 2) return list.join('');
+    homeRest = list.slice(1);
+    return list[0];
+  }
+  function restStop() { if (restCancel) restCancel(); restCancel = null; homeRest = null; }
+  // The first turn waits until the phone is idle after drawing the first screen (requestIdleCallback, at most 100 ms;
+  // a 16 ms timer where the phone has none, like Safari). The next turns follow straight on, one timer each, so a tap
+  // in between is answered. An idle callback alone can wait 100 ms a turn on a busy phone.
+  function restLater(fn, first) {
+    if (first && window.requestIdleCallback) { var id = window.requestIdleCallback(fn, { timeout: 100 }); return function () { window.cancelIdleCallback(id); }; }
+    var t = setTimeout(fn, first ? 16 : 0);
+    return function () { clearTimeout(t); };
+  }
+  function restDraw() {
+    var rest = homeRest, box = document.getElementById('shelves') || app.querySelector('#results .tile-groups');
+    homeRest = null;
+    if (!rest || !box || !box.lastElementChild) return;
+    // the first screen in this frame: each group is laid out as it goes in (cv-all, as in backHome()) until one
+    // reaches the bottom of the screen; a group off screen would otherwise count as 600 px (contain-intrinsic-size)
+    app.classList.add('cv-all');
+    while (rest.length && box.lastElementChild.getBoundingClientRect().bottom + window.pageYOffset < window.innerHeight) box.insertAdjacentHTML('beforeend', rest.shift());
+    app.classList.remove('cv-all');
+    if (!rest.length) return;
+    // The rest is read into a box off the page, at least one group a turn (more while a turn is under 12 ms). Nothing
+    // on screen changes meanwhile, so no frame is drawn for it; then every group goes in at once. No reads, no polling.
+    var held = document.createElement('div');
+    function step() {
+      restCancel = null;
+      if (!box.isConnected) return;
+      var end = Date.now() + 12;
+      do held.insertAdjacentHTML('beforeend', rest.shift()); while (rest.length && Date.now() < end);
+      if (rest.length) { restCancel = restLater(step); return; }
+      var all = document.createDocumentFragment();
+      while (held.firstChild) all.appendChild(held.firstChild);
+      box.appendChild(all);
+    }
+    restCancel = restLater(step, true);
+  }
+
   /* ---------- view A: tiles ---------- */
   function tilesHTML() {
     var any = 0;
-    var html = GROUPS.filter(function (g) { return ui.kind === 'all' || g.key === ui.kind; }).map(function (g) {
+    var html = groupsNow(GROUPS.filter(function (g) { return ui.kind === 'all' || g.key === ui.kind; }).map(function (g) {
       var list = g.list.filter(function (r) { return freeOk(r.id) && matches(r.id); });
       if (!list.length) return '';
       any += list.length;
@@ -741,7 +788,7 @@
           '<span class="chips">' + (r.done ? DONE_TAG : '') + rows[r.id].map(function (a) { return '<span class="tag' + (a.maybe ? ' maybe' : '') + '">' + esc(a.label) + '</span>'; }).join('') +
           (missing[r.id].length ? '<span class="tag maybe">Allergens incomplete</span>' : '') + '</span></a>';
       }).join('') + '</div></section>';
-    }).join('');
+    }).filter(Boolean));
     return searchNote() + (any ? '<div class="tile-groups">' + html + '</div>' : '<div class="empty">No recipes match. <button type="button" class="btn" data-act="clearall">Clear search and filters</button></div>');
   }
   // Specials, then Functions, sit first after All so they are always on view; every other chip follows the menu order.
@@ -790,7 +837,7 @@
   function passOk(r) { return matches(r.id) && freeOk(r.id); }
   function shelvesHTML() {
     var s = q() || ui.free.length, n = 0;
-    var html = passShelves().map(function (sh) {
+    var html = groupsNow(passShelves().map(function (sh) {
       var shown = s ? sh.list.filter(passOk) : sh.list;
       if (!shown.length) return '';
       var items = shown.map(function (r) {
@@ -806,7 +853,7 @@
           (h ? '<span class="tag dark">' + esc((h === 'may' ? 'May have ' : 'Has ') + ui.lens) + '</span>' : '') + '</a>';
       }).join('');
       return '<section class="shelf" aria-label="' + esc(sh.title) + '"><div class="group-head"><span>' + esc(sh.title) + '</span></div><div class="shelf-items">' + items + '</div><div class="rail" aria-hidden="true"></div></section>';
-    }).join('');
+    }).filter(Boolean));
     return searchNote() + html + (s && !n ? '<div class="empty">Nothing on the pass matches. <button type="button" class="btn" data-act="clearall">Clear search and filters</button></div>' : '');
   }
   function passCount() {
@@ -1451,6 +1498,9 @@
     var view = settings.view || 'pass';
     var locked = route.name !== 'landing' && route.name !== 'home' && route.name !== 'recipe' && route.name !== 'settings' && route.name !== 'admin' && window.LK_PREP && !window.LK_PREP.routeAccess(route.name);
     var html;
+    // opening Recipes (not coming back from a recipe, which needs every plate for backHome()): the first screen now
+    restStop();
+    homeFew = changed && route.name === 'home' && lastRoute !== 'recipe';
     if (locked) html = viewPrep();
     else if (route.name === 'landing') html = viewLanding();
     else if (route.name === 'settings') html = viewSettings();
@@ -1467,7 +1517,9 @@
     if (route.name !== 'landing') {
       html = topBar() + fnBand() + html + tabBar();
     }
+    homeFew = false;
     app.innerHTML = html;
+    if (homeRest) restDraw();
     if (route.name === 'landing' && !docketArrived) {
       docketArrived = true;
       var dockets = app.querySelector('.dockets'); if (dockets) dockets.classList.add('ink-docket-arrive');
@@ -1650,6 +1702,7 @@
   // Search redraws only the results, so typing stays fast and the keyboard stays open.
   var timer = null;
   function updateResults() {
+    restStop();   // every group is drawn again here, with the search and chips as they are now
     var route = parseRoute(), view = settings.view || 'pass';
     var box, count = document.getElementById('count');
     if (view === 'tiles' && (box = document.getElementById('results'))) { box.innerHTML = tilesHTML(); if (count) count.textContent = countText(); }

@@ -600,8 +600,6 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .o-page { max-width: 46rem; }
 .o-used { display: block; margin-top: 0.15rem; font-family: var(--body); font-size: 0.8125rem; color: var(--muted); }
 .o-used a { color: var(--accent-ink); text-decoration: underline dotted; }
-.o-n { display: inline-block; margin-left: 0.3rem; padding: 0 0.4rem; border-radius: 999px; background: var(--ink); color: #fff; font: 700 0.75rem var(--body); vertical-align: middle; }
-.o-who { display: block; margin-top: 0.15rem; font-family: var(--body); font-size: 0.8125rem; color: var(--muted); }
 .o-page .nb-row .p-x { margin-left: 0.4rem; }
 .o-nav { flex-wrap: wrap; }
 .o-days { display: inline-flex; flex-wrap: nowrap; gap: 0.5rem; }
@@ -725,17 +723,11 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-dw { opacity: .65; font-size: .82rem; }
 .nb-undo { min-height: 32px; padding: 0 .6rem; align-self: center; }
 
-/* Start here, usual amounts, waste review note on the prep list */
-.nb-start, .nb-flag { margin: 0 0 12px; padding: 8px 10px 10px; border: 2px solid var(--ink); border-radius: 8px; background: #FFFEFA; }
+/* Closing soon, Pace and the waste review note on the prep list */
+.nb-flag { margin: 0 0 12px; padding: 8px 10px 10px; border: 2px solid var(--ink); border-radius: 8px; background: #FFFEFA; }
 .nb-flag { border-color: var(--accent-ink); background: #FFF6EF; }
 .nb-flag p { margin: 2px 0 2px; font-weight: 600; }
 .nb-sl { display: block; font: 700 0.75rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); }
-.nb-start ol { margin: 4px 0 0; padding: 0; list-style: none; counter-reset: sh; }
-.nb-start li { counter-increment: sh; }
-.nb-sb { display: grid; grid-template-columns: 1.6rem 1fr; column-gap: 6px; width: 100%; min-height: 44px; padding: 4px 0; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; cursor: pointer; }
-.nb-start li:first-child .nb-sb { border-top: 0; }
-.nb-sb::before { content: counter(sh); grid-row: 1 / span 2; align-self: center; display: inline-flex; align-items: center; justify-content: center; width: 1.4rem; height: 1.4rem; border-radius: 50%; background: var(--ink); color: #fff; font: 700 0.8rem var(--display); }
-.nb-st { font-weight: 600; }
 .nb-sw { font-size: 0.8125rem; color: var(--muted); }
 .nb-row.is-flash { animation: nbflash 1.6s ease-out; }
 @keyframes nbflash { 0%, 30% { background: #FFE2CC; } 100% { background: transparent; } }
@@ -1158,20 +1150,14 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .o-page .nb-body { overflow: visible; min-height: 0; }
 .w-review { max-width: 46rem; }
 
-/* Prep list on big screens: show more lines. The notebook page uses the screen height (no 780 px cap), Start here, Closing soon and the waste review note move to the Handy page (.nb-start-r, .nb-rc), the add row is one line, and lines are a little tighter for a mouse or a keyboard. Phones and tablets keep the big touch rows, with the Quick add chips in the add box only (Handy's copy, .nb-quick, is for big screens). */
-.nb-start-r, .nb-rc { display: none; }
-details.nb-start-l > summary .nb-sl { white-space: nowrap; flex: 0 0 auto; }
-details.nb-start-l > summary { display: flex; align-items: center; gap: 0.6rem; min-height: 44px; cursor: pointer; list-style: none; }
-details.nb-start-l > summary::-webkit-details-marker { display: none; }
-details.nb-start-l > summary::after { content: '+'; margin-left: auto; font: 700 1.2rem var(--body); }
-details.nb-start-l[open] > summary::after { content: '\2212'; }
-.nb-sline { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-.nb-donejump, .nb-qadd { display: none; }
-@media (max-width: 899px) { .nb-donejump { display: inline-flex; } .nb-qadd { display: block; margin-top: 0.6rem; } .nb-side .nb-quick, .nb-qsub { display: none; } }
+/* Prep list on big screens: show more lines. The notebook page uses the screen height (no 780 px cap), Closing soon and the waste review note move to the Handy page (.nb-rc), the add row is one line, and lines are a little tighter for a mouse or a keyboard. Phones and tablets keep the big touch rows, with the Quick add chips in the add box only (Handy's copy, .nb-quick, is for big screens). */
+.nb-rc { display: none; }
+.nb-qadd { display: none; }
+@media (max-width: 899px) { .nb-qadd { display: block; margin-top: 0.6rem; } .nb-side .nb-quick, .nb-qsub { display: none; } }
 .nb-hint:empty { display: none; }
 @media (min-width: 900px) {
-  .nb-start-l, .nb-lc { display: none; }
-  .nb-start-r, .nb-rc { display: block; }
+  .nb-lc { display: none; }
+  .nb-rc { display: block; }
   .nb-page { height: max(30rem, calc(100vh - 16.5rem)); height: max(30rem, calc(100dvh - 16.5rem)); }
   .nb-left { flex: 3 1 0; }
   .nb-right { flex: 2 1 0; }
@@ -1278,13 +1264,12 @@ details.nb-start-l[open] > summary::after { content: '\2212'; }
 .o-cols { display: block; }
 @media (min-width: 1000px) {
   .o-page { max-width: 72rem; }
-  .o-page:not(.o-all) .o-cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 2.5rem; align-items: start; }
-  .o-page:not(.o-all) .o-ordered { padding-top: 0.2rem; }
-  .o-page:not(.o-all) .o-ordered .nb-sh { margin-top: 0.9rem; }
+  .o-page .o-cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 2.5rem; align-items: start; }
+  .o-page .o-ordered { padding-top: 0.2rem; }
+  .o-page .o-ordered .nb-sh { margin-top: 0.9rem; }
   .o-page .o-add .nb-add-row { flex-wrap: nowrap; }
   .o-page .o-add .nb-in-text { flex: 5 1 0; min-width: 0; }
   .o-page .o-add .nb-in-qty { flex: 1 1 0; min-width: 6rem; }
-  .o-page.o-all { max-width: 52rem; }
 }
 
 /* ---------- big admin lists: search, filter chips, sort, Show more ---------- */
@@ -3501,7 +3486,7 @@ i.dsh-c-load { background: var(--dsh-h3); }
 .w-rvbtn small { font-size: 0.75rem; font-weight: 500; color: var(--muted); }
 .w-ro { padding: 0 12px; }
 .w-sheet .w-review { margin: 0; max-width: none; }
-.w-sheet .sheet-x, .tr-sheet .sheet-x { width: 100%; margin-top: 10px; }
+.w-sheet .sheet-x, .tr-sheet .sheet-x, .p-sheet .sheet-x, .o-sheet .sheet-x { width: 100%; margin-top: 10px; }
 .w-rpick { flex-wrap: nowrap; }
 .w-rbig { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); align-content: start; gap: 6px; }
 .w-rbig .w-rchip { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; min-height: 56px; height: auto; padding: 6px 10px; border-radius: 10px; text-align: left; white-space: normal; }
@@ -3511,10 +3496,10 @@ i.dsh-c-load { background: var(--dsh-h3); }
 .w-rbig .w-rchip[aria-checked="true"] span { color: #fff; }
 .nb-t .w-again { display: flex; align-items: center; width: max-content; min-height: 36px; height: auto; margin-top: 6px; padding: 0 12px; font: 600 0.8125rem var(--body); }
 .nb-t .w-again.is-on { display: block; min-height: 0; padding: 2px 0; border: 0; font-size: 0.8125rem; font-weight: 600; color: var(--muted); }
-@media (min-width: 720px) { .w-sheet, .tr-sheet { width: min(40rem, calc(100vw - 32px)); max-height: 86vh; max-height: 86dvh; } }
+@media (min-width: 720px) { .w-sheet, .tr-sheet, .p-sheet, .o-sheet { width: min(40rem, calc(100vw - 32px)); max-height: 86vh; max-height: 86dvh; } }
 /* A toast while a wastage sheet is open (3 Nov 2026): at the top of the screen, above the sheet, so its Undo can be
    tapped and the form under it stays clear */
-html:has(.w-sheet, .tr-sheet) .p-toasts { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; z-index: 62; flex-direction: column; }
+html:has(.w-sheet, .tr-sheet, .p-sheet, .o-sheet) .p-toasts { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; z-index: 62; flex-direction: column; }
 
 /* Transfers, Clean notebook (3 Nov 2026, work pages redesign A): Still out first, with how long each earlier day's
    transfer has been out (.tr-age, darker from 7 days), the return tick on the left, and a pick-up in the Log a transfer
@@ -3528,6 +3513,35 @@ html:has(.w-sheet, .tr-sheet) .p-toasts { top: calc(12px + env(safe-area-inset-t
 .tr-bk-x { min-height: 44px; padding: 0 6px; border: 0; background: none; color: var(--muted); font: 600 0.8125rem var(--body); text-decoration: underline; cursor: pointer; }
 .tr-addrow { justify-content: space-between; align-items: center; }
 .tr-addrow .tr-bk-add { min-height: 44px; }
+
+/* Prep, Clean notebook (3 Nov 2026, work pages redesign A): the list first. Add a line opens the add form as a sheet
+   (.p-sheet, the same size as the wastage and transfer sheets); on a phone the button floats above the tab bar, in thumb
+   reach. "3 of 13 done" is the way to Done today. Start here is numbered on the lines (.nb-t[data-n]), and the lines written
+   after tonight's list was started sit last under Tonight, for tomorrow. */
+.nb-ph .nb-addline { min-height: 44px; padding: 0 1rem; }
+@media (max-width: 719px) {
+  .nb-ph .nb-addline { position: fixed; right: 16px; bottom: calc(var(--tabbar-h) + 12px + env(safe-area-inset-bottom, 0px)); z-index: 25; min-height: 52px; padding: 0 1.4rem; border-radius: 999px; font-size: 1.0625rem; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); }
+  .nb-wrap { padding-bottom: 76px; }
+}
+button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+.nb-t[data-n]::before { content: attr(data-n); content: attr(data-n) / ''; display: inline-flex; align-items: center; justify-content: center; min-width: 1.45em; height: 1.45em; margin-right: 0.35em; border-radius: 50%; background: var(--accent-ink); color: #fff; font: 700 0.62em var(--body); vertical-align: 0.2em; }
+.nb-why { display: inline-block; padding: 0 6px; border: 1.5px solid var(--muted); border-radius: 999px; font: 600 0.75rem var(--body); color: var(--muted); white-space: nowrap; }
+.nb-hd-tonight { margin-top: 0.8rem; border-top: 2px dashed var(--rule); padding-top: 0.5rem; }
+.nb-tonight-sd { margin: 0 0 0.3rem; }
+
+/* Orders, Clean notebook (3 Nov 2026, work pages redesign A): one list (today, then Waiting from earlier days), Ordered
+   today folded under its count, Add a line as a sheet (.o-sheet, like the prep list), and for chefs a date chip and
+   Delivery arrived in the row above the page. */
+@media (max-width: 719px) { .o-page { padding-bottom: 76px; } }
+.o-nav { align-items: center; flex-wrap: wrap; }
+.o-nav .o-deliv { text-decoration: none; }
+.o-ro { padding: 0 12px; }
+.o-wait { margin-top: 0.6rem; }
+.o-wait-h { margin-top: 0.4rem; }
+.o-done summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; list-style: none; }
+.o-done summary::-webkit-details-marker { display: none; }
+.o-done summary::after { content: ''; width: 8px; height: 8px; margin-left: 10px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }
+.o-done[open] summary::after { transform: rotate(-135deg); }
 /* The watch list (Dashboard, step 5): pinned sections, wasted items and people, each with its trend. */
 .dsh-wl-list { list-style: none; margin: 0; padding: 0; display: grid; }
 .dsh-wl { display: grid; grid-template-columns: minmax(0, 1fr) 9rem auto; gap: .9rem; align-items: center; padding: .6rem 0; border-top: 1px solid var(--line); }

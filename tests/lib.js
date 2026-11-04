@@ -98,7 +98,7 @@ function mail() {
 const QUIET = 120;
 function track() {
   if (window.__lkSettle) return;
-  const st = window.__lkSettle = { muts: 0, timers: new Map() };
+  const st = window.__lkSettle = { muts: 0, timers: new Map(), idle: new Map() };
   const now = () => performance.now();
   new MutationObserver(() => { st.muts++; }).observe(document, { subtree: true, childList: true, attributes: true, characterData: true });
   const sT = window.setTimeout, cT = window.clearTimeout;
@@ -109,12 +109,23 @@ function track() {
     return id;
   };
   window.clearTimeout = function (id) { st.timers.delete(id); return cT.call(window, id); };
+  // an idle callback is a timer too (opening Recipes draws its other groups in them): due by its timeout, at most 50 ms
+  if (window.requestIdleCallback) {
+    const sI = window.requestIdleCallback, cI = window.cancelIdleCallback;
+    window.requestIdleCallback = function (fn, o) {
+      const id = sI.call(window, function () { st.idle.delete(id); if (typeof fn === 'function') return fn.apply(this, arguments); }, o);
+      st.idle.set(id, now() + Math.min(50, (o && o.timeout) || 50));
+      return id;
+    };
+    window.cancelIdleCallback = function (id) { st.idle.delete(id); return cI.call(window, id); };
+  }
   // a scroll (a smooth jump to the method) is a change too, while it moves
   window.addEventListener('scroll', () => { st.muts++; }, { capture: true, passive: true });
   // busy: anything that would still change the page before the time "until" (on the page's own clock)
   st.check = until => {
     let busy = false;
     for (const due of st.timers.values()) if (due <= until) { busy = true; break; }
+    for (const due of st.idle.values()) if (due <= until) { busy = true; break; }
     if (!busy && document.getAnimations) busy = document.getAnimations().some(a => a.playState === 'running' && a.effect && a.effect.getTiming().iterations !== Infinity);
     return { muts: st.muts, busy };
   };
@@ -311,6 +322,28 @@ async function open(browser, hash, o) {
   if (o.block) await ctx.route(new RegExp(o.block), r => r.abort());
   const page = await ctx.newPage();
   page.errors = [];
+  // Prep's add form is in the Add a line sheet since 3 Nov 2026 (work pages redesign A). A test that reaches for one of its
+  // boxes by selector while the sheet is closed taps Add a line first, the way a cook does. page.$ is left alone, so a check
+  // that the form is not there still means it; tests of the sheet itself use L.pLog() (tests/prep-a.test.js). A click on
+  // the page behind an open Add a line sheet closes the sheet first, the way a cook does (prepAway). The same for the
+  // order list's Add a line sheet (L.oLog(), tests/orders-a.test.js).
+  for (const m of ['fill', 'press', 'type', 'focus', 'click', 'tap', 'inputValue', 'getAttribute', '$eval']) {
+    const orig = page[m].bind(page);
+    page[m] = async (sel, ...rest) => {
+      if (typeof sel === 'string' && PREP_FORM.test(sel)) await prepForm(page, sel);
+      else if (typeof sel === 'string' && (m === 'click' || m === 'tap')) await prepAway(page, sel);
+      return orig(sel, ...rest);
+    };
+  }
+  const origLocator = page.locator.bind(page);
+  page.locator = (sel, ...rest) => {
+    const loc = origLocator(sel, ...rest);
+    if (typeof sel !== 'string' || !PREP_FORM.test(sel)) return loc;
+    // count() is left alone, like page.$; the actions open the sheet first
+    const acts = ['fill', 'press', 'type', 'focus', 'click', 'inputValue', 'evaluate', 'elementHandle', 'getAttribute'];
+    const wrap = l => new Proxy(l, { get: (t, k) => acts.includes(k) ? async (...a) => { await prepForm(page, sel); return t[k](...a); } : ['first', 'last', 'nth'].includes(k) ? (...a) => wrap(t[k](...a)) : (typeof t[k] === 'function' ? t[k].bind(t) : t[k]) });
+    return wrap(loc);
+  };
   page.loading = 0;   // requests still out, for settle()
   page.urls = [];     // every address the page asked for, in order (routed answers leave no resource timing)
   page.on('request', q => { page.loading++; page.urls.push(q.url()); });
@@ -470,7 +503,27 @@ async function pick(page, selector, value) {
   await settle(page, 250);
 }
 
+// the prep list's and the order list's add forms are in Add a line sheets (3 Nov 2026, work pages redesign A)
+const PREP_FORM = /#p-(text|qty|section)\b|data-k="p-(text|qty|section)"|data-p="(recipe-toggle|quick)"|\.nb-qadd\b|#o-(text|qty)\b|data-k="o-(text|qty)"|data-p="oreg"/;
+async function prepForm(page, sel) {
+  const order = /o-(text|qty)|oreg/.test(sel || ''), open = order ? '[data-p="o-write"]' : '[data-p="write"]', box = order ? '.o-sheet #o-text' : '.p-sheet #p-text';
+  if (await page.$(box) || !(await page.$(open))) return;
+  // something the selector names already on screen (Handy's Quick add on a laptop): no sheet needed
+  if (sel && await page.evaluate(s => { try { return [...document.querySelectorAll(s)].some(e => e.getClientRects().length); } catch (e) { return false; } }, sel)) return;
+  if (order) await oLog(page); else await pLog(page);
+}
+async function prepAway(page, sel) {
+  const shut = await page.evaluate(s => {
+    const sh = document.querySelector('.p-sheet, .o-sheet'); if (!sh) return false;
+    let el = null; try { el = document.querySelector(s); } catch (e) { return false; }
+    // not when the target is in the sheet, a toast, or a picker or sheet opened over it
+    if (!el || sh.contains(el) || el.closest('.sheet-bg, .p-toast, dialog, .sheet, [role="dialog"]')) return false;
+    const c = sh.querySelector('[data-p="p-log-close"], [data-p="o-log-close"]'); if (c) c.click(); return !!c;
+  }, sel).catch(() => false);
+  if (shut) await settle(page, 100);
+}
 async function clear(page, selector) {
+  if (PREP_FORM.test(selector)) await prepForm(page, selector);
   const input = page.locator(selector).first();
   if (await input.getAttribute('data-smart-search')) {
     const button = input.locator('..').locator('.ux-search-clear');
@@ -515,6 +568,17 @@ async function reveal(page, sel) {
 async function chapter(page, k) {
   if (await page.getAttribute('[data-mg="ch"][data-v="' + k + '"]', 'aria-current') !== 'true') { await page.click('[data-mg="ch"][data-v="' + k + '"]'); await settle(page, 150); }
 }
+// Prep (3 Nov 2026, work pages redesign A): the add form is in the Add a line sheet. Opens it when it is not open.
+async function pLog(page) {
+  if (await page.$('.p-sheet #p-text')) return;
+  await page.evaluate(() => document.querySelector('[data-p="write"]').click());
+  await waitFor(page, () => !!document.querySelector('.p-sheet #p-text'), null, 4000);
+}
+async function oLog(page) {
+  if (await page.$('.o-sheet #o-text')) return;
+  await page.evaluate(() => document.querySelector('[data-p="o-write"]').click());
+  await waitFor(page, () => !!document.querySelector('.o-sheet #o-text'), null, 4000);
+}
 /* The drawing studio (3 Nov 2026): the tools not used on every drawing are under More, and a picked part's arranging,
    copying and changing under its own More. Opens the one that holds sel, so a test can tap it. */
 async function dwShow(page, sel) {
@@ -523,4 +587,4 @@ async function dwShow(page, sel) {
   const opener = part ? '[data-dw="panel"][data-v="pmore"]' : '[data-dw="panel"][data-v="more"]';
   if (await page.$(opener) && await page.getAttribute(opener, 'aria-pressed') !== 'true' && await page.getAttribute(opener, 'aria-expanded') !== 'true') { await page.click(opener); await settle(page, 150); }
 }
-module.exports = { whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+module.exports = { oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
