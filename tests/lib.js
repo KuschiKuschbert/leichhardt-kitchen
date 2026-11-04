@@ -385,6 +385,19 @@ function check(cond, msg, results) { results.push((cond ? 'PASS ' : 'FAIL ') + m
 function results() { const R = []; return { R, ok: (c, m) => check(c, m, R) }; }
 const txt = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); return e ? e.textContent.trim() : null; }, sel);
 const tap = (page, sel) => page.evaluate(s => { const e = document.querySelector(s); if (e) e.click(); return !!e; }, sel);
+/* I'm on it (5 Nov 2026, head chef): on a phone the first tap on an open prep line stamps who is on it and the second
+   ticks it. A check that means "tick this line" uses tickPrep: it taps (sel is the line's box or words, or anything in
+   its row) and, when that only stamped the line, taps its box again. A done line, a past day or a stamp that did not
+   take is left after the one tap, as tap() would. */
+async function tickPrep(page, sel) {
+  const id = await page.evaluate(s => { const e = document.querySelector(s), r = e && e.closest('.nb-row'); return r && !r.classList.contains('is-done') ? r.id : ''; }, sel);
+  const hit = await tap(page, sel);
+  if (!id || !hit) return hit;
+  await waitFor(page, i => { const r = document.getElementById(i); return !r || r.classList.contains('is-done') || r.classList.contains('is-on') || r.classList.contains('is-on-other'); }, id, 3000).catch(() => {});
+  const stamped = await page.evaluate(i => { const r = document.getElementById(i); return !!r && !r.classList.contains('is-done') && r.classList.contains('is-on'); }, id);
+  if (stamped) await tap(page, '#' + id + ' .nb-box');
+  return hit;
+}
 const row = (page, id) => page.evaluate(i => { const e = document.getElementById('nbr-' + i); return e ? e.textContent : null; }, id);
 /* The chef mark's menu in the top bar (20 Oct 2026): chefItems lists what it offers (the links by their page, the
    buttons by name: section, pings, staff, and out for Sign out) and closes it again; chef taps one of the Chef group. */
@@ -610,4 +623,4 @@ async function dwAdd(page) {
   }
   await waitFor(page, () => !!document.getElementById('dw-q'), null, 15000);
 }
-module.exports = { docked, oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, dwAdd, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+module.exports = { tickPrep, docked, oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, dwAdd, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };

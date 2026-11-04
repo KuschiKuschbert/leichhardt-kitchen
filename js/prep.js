@@ -1860,6 +1860,26 @@
     var valid = x && x.done === true && typeof x.preparedBy === 'string' && x.preparedBy.trim() && x.preparedBy.length <= 80 && typeof x.preparedById === 'string' && x.preparedById.trim() && x.preparedById.length <= 80 && Number.isFinite(x.preparedAt) && x.preparedAt > 0 && x.preparedAt === x.doneAt;
     return valid ? { id: x.preparedById, name: x.preparedBy } : { id: x && x.doneById || '', name: x && x.doneBy || '' };
   }
+  /* I'm on it (5 Nov 2026, head chef, round 2 of the work pages redesign): the first tap on an open prep line stamps
+     who is on it, and on a phone greys it for everyone else; the second tap ticks it done. On a phone the stamp is the
+     person signed in; a tap on someone else's stamped line takes it over. On the shared kitchen device the first tap
+     asks Who's on it? (the picker below) and the second tap ticks it for that cook. The tick clears the stamp; a rolled
+     copy starts without one. onBy, onById, onAt on the line; the rules check them (onPerson() in firestore.rules). */
+  function onOf(x) { return x && !x.done && typeof x.onById === 'string' && x.onById && typeof x.onBy === 'string' && x.onBy ? { id: x.onById, name: x.onBy, at: +x.onAt || 0 } : null; }
+  function onMine(x) { var o = onOf(x), p = me(); return !!o && !!p && o.id === p.id; }
+  // a tap that stamps rather than ticks: an open line nobody is on, or on a phone someone else's
+  function onFirst(x) { return !!x && !x.done && !x.deleted && (!onOf(x) || (!shared() && !onMine(x))); }
+  function stampNow(date, id) {
+    var it = ptItem(id), p = me();
+    if (!it || !onFirst(it) || !can('tick')) return;
+    if (!p) { toast('Choose your name before ticking prep.'); return; }
+    var before = onOf(it);
+    supd(itemRef(date, id), { onBy: p.name, onById: p.id, onAt: now() }).then(function () { markPast('p', date); }, failed);
+    toast((before ? 'Taken over from ' + before.name + '. ' : '') + 'You\'re on it. Tap again when it is done.', { label: 'Undo', stampFor: id, fn: function () {
+      var y = ptItem(id); if (!y || y.done || y.onById !== p.id) return;
+      supd(itemRef(date, id), before ? { onBy: before.name, onById: before.id, onAt: before.at || now() } : { onBy: '', onById: '', onAt: 0 }).then(null, failed);
+    } });
+  }
   var pt = null, ptPop = null;
   function ptPeople() {
     var c = S.config || {}, ids = c.staffIds || [], excluded = c.fnOnlyIds || [];
@@ -1867,7 +1887,7 @@
   }
   function ptPerson(id) { return ptPeople().filter(function (p) { return p.id === id; })[0]; }
   function ptItem(id) { return S.items.filter(function (x) { return x.id === id; })[0]; }
-  function ptSignature(x) { return JSON.stringify([x.text || '', x.qty || '', x.station || '', x.recipe || '', x.fn || '', !!x.done, !!x.deleted, x.doneAt || 0, x.doneById || '', x.preparedBy || '', x.preparedById || '', x.preparedAt || 0, x.addedAt || 0, x.rolled || 0]); }
+  function ptSignature(x) { return JSON.stringify([x.text || '', x.qty || '', x.station || '', x.recipe || '', x.fn || '', !!x.done, !!x.deleted, x.doneAt || 0, x.doneById || '', x.preparedBy || '', x.preparedById || '', x.preparedAt || 0, x.addedAt || 0, x.rolled || 0, x.onById || '', x.onAt || 0]); }
   function ptContext(d) { return !!(d && d.epoch === accessEpoch && d.openedDay === dayNow() && d.pin === S.pin && d.uid === S.uid && d.recorder === S.who && d.pinAt === S.sessPinAt && S.authed && canW() && kitchenAccess() && can('tick') && shared() && S.name === 'prep' && S.date === d.date && S.root && document.body.contains(S.root)); }
   function ptSource(d) { var x = ptItem(d.id); return !!(x && !x.done && !x.deleted && ptSignature(x) === d.signature); }
   function ptFocus(d) {
@@ -1897,11 +1917,11 @@
     var filtered = rest.filter(function (p) { return String(p.name).toLowerCase().indexOf(query) >= 0; });
     var others = (active.length > 12 ? '<label class="visually-hidden" for="pt-query">Find a person</label><input class="search pt-query" id="pt-query" data-pt-query value="' + esc(pt.query || '') + '" placeholder="Find a person"' + (disabled ? ' disabled' : '') + '>' : '') + names(filtered, 'pt-others');
     function names(list, cls) { return '<div class="pt-names ' + cls + '">' + list.map(function (p) { var saving = pt.busy && pt.selected === p.id; return '<button type="button" class="chip" data-pt="choose" data-id="' + esc(p.id) + '" aria-busy="' + saving + '"' + (disabled ? ' disabled' : '') + '>' + (saving ? inkLabel(p.name, 'prep') : esc(p.name)) + '</button>'; }).join('') + '</div>'; }
-    var body = '<div class="sheet-grip" aria-hidden="true"></div><h3 id="pt-h">Who did this?</h3><p class="pt-item">' + esc(pt.before.text) + (pt.before.qty ? ' <span>' + esc(pt.before.qty) + '</span>' : '') + '</p>' +
+    var body = '<div class="sheet-grip" aria-hidden="true"></div><h3 id="pt-h">' + (pt.mode === 'on' ? 'Who\'s on it?' : 'Who did this?') + '</h3><p class="pt-item">' + esc(pt.before.text) + (pt.before.qty ? ' <span>' + esc(pt.before.qty) + '</span>' : '') + '</p>' +
       (first.length ? '<p class="hint">Signed in on this device today</p>' + names(first, 'pt-recent') : '') +
       (rest.length ? (first.length ? '<button type="button" class="p-link pt-others-button" data-pt="others" aria-expanded="' + pt.others + '"' + (disabled ? ' disabled' : '') + '>Others...</button>' : '') + (pt.others || !first.length ? others : '') : '') +
       (!active.length ? '<p class="p-err" role="status">No eligible kitchen names are available. Close and check the staff list.</p>' : '') +
-      (pt.busy ? '<p class="pt-status" role="status">' + inkLabel('Recording for ' + ((ptPerson(pt.selected) || {}).name || '') + '... Not saved yet.', 'prep') + '</p>' : '') +
+      (pt.busy ? '<p class="pt-status" role="status">' + inkLabel((pt.mode === 'on' ? 'Putting ' + ((ptPerson(pt.selected) || {}).name || '') + ' on it' : 'Recording for ' + ((ptPerson(pt.selected) || {}).name || '')) + '... Not saved yet.', 'prep') + '</p>' : '') +
       (pt.error ? '<p class="p-err pt-status" role="alert">' + esc(pt.error) + '</p>' + (!pt.stale && pt.selected ? '<button type="button" class="btn dark" data-pt="retry">Try again</button>' : '') : '') +
       '<button type="button" class="btn sheet-x" data-pt="cancel"' + (pt.busy ? ' disabled' : '') + '>Cancel</button>';
     var focus = document.activeElement, queryFocus = focus && ptPop.contains(focus) && focus.hasAttribute('data-pt-query'), cursor = queryFocus ? focus.selectionStart : null, action = focus && ptPop.contains(focus) && focus.getAttribute('data-pt'), id = focus && focus.getAttribute('data-id');
@@ -1914,22 +1934,24 @@
       if (next && !next.disabled) next.focus({ preventScroll: true });
     }
   }
-  function ptOpen(date, id) {
+  function ptOpen(date, id, mode, auto) {
     var x = ptItem(id), actor = me();
     if (!actor) { toast('Choose your name before ticking prep.');return; }
-    if (ovBack) { var epoch = accessEpoch, recorder = actor.id;ovAfterBack(function () { if (epoch === accessEpoch && S.who === recorder) ptOpen(date, id); });return; }
+    if (ovBack) { var epoch = accessEpoch, recorder = actor.id;ovAfterBack(function () { if (epoch === accessEpoch && S.who === recorder) ptOpen(date, id, mode, auto); });return; }
     if (pt || !x || x.done || x.deleted || !can('tick') || !kitchenAccess() || !canW() || date !== S.date || sheetOpen() || ksWait || dkFirstUp()) return;
-    pt = { id: id, date: date, pin: S.pin, uid: S.uid, recorder: actor.id, pinAt: S.sessPinAt, epoch: accessEpoch, openedDay: dayNow(), signature: ptSignature(x), before: Object.assign({}, x), others: false, selected: '', error: '', busy: false, stale: false, latest: null };
+    pt = { mode: mode === 'on' ? 'on' : 'tick', id: id, date: date, pin: S.pin, uid: S.uid, recorder: actor.id, pinAt: S.sessPinAt, epoch: accessEpoch, openedDay: dayNow(), signature: ptSignature(x), before: Object.assign({}, x), others: false, selected: '', error: '', busy: false, stale: false, latest: null };
     var box = document.createElement('div');box.id = 'pt-sheet';box.innerHTML = '<div class="sheet-bg" data-pt="cancel"></div><section class="sheet pt-sheet" role="dialog" aria-modal="true" aria-labelledby="pt-h" tabindex="-1"></section>';
     ptPop = box;document.body.appendChild(box);ovPush('pt', ptBack);document.documentElement.classList.add('sheet-open');ptDraw();whoSync();
+    // the second tap on a stamped line: save at once for that cook, the sheet showing it until the server says so
+    if (auto) { ptSave(auto); return; }
     var first = box.querySelector('.pt-recent .chip') || box.querySelector('.pt-others .chip') || box.querySelector('[data-pt="others"]') || box.querySelector('[data-pt="cancel"]');if (first) first.focus({ preventScroll: true });
   }
   function ptRestore(d, acknowledged) {
     var index = S.items.map(function (x) { return x.id; }).indexOf(d.id);if (index < 0) return;
-    var before = { done: d.before.done || false, doneBy: d.before.doneBy || '', doneById: d.before.doneById || '', doneAt: d.before.doneAt || 0, preparedBy: d.before.preparedBy || '', preparedById: d.before.preparedById || '', preparedAt: d.before.preparedAt || 0 };
+    var before = { done: d.before.done || false, doneBy: d.before.doneBy || '', doneById: d.before.doneById || '', doneAt: d.before.doneAt || 0, preparedBy: d.before.preparedBy || '', preparedById: d.before.preparedById || '', preparedAt: d.before.preparedAt || 0, onBy: d.before.onBy || '', onById: d.before.onById || '', onAt: d.before.onAt || 0 };
     S.items[index] = Object.assign({}, d.latest || S.items[index], acknowledged || before, { _unsent: false });
   }
-  function ptSameSave(d, x) { var v = d.value;return !!(v && x && x.done === true && !x.deleted && x.doneAt === v.doneAt && x.doneById === v.doneById && x.preparedAt === v.preparedAt && x.preparedById === v.preparedById); }
+  function ptSameSave(d, x) { var v = d.value;if (d.mode === 'on') return !!(v && x && x.done !== true && !x.deleted && x.onById === v.onById && x.onAt === v.onAt);return !!(v && x && x.done === true && !x.deleted && x.doneAt === v.doneAt && x.doneById === v.doneById && x.preparedAt === v.preparedAt && x.preparedById === v.preparedById); }
   function ptReconcile(d) {
     if (pt !== d || !d.uncertain || !ptContext(d) || !d.latestServer || !d.latest) return;
     if (ptSameSave(d, d.latest)) { ptComplete(d);return; }
@@ -1941,10 +1963,17 @@
   function ptComplete(d) {
     if (d.finished) return;
     if (pt !== d || !ptContext(d)) {
-      if (ptRetained(d)) { d.finished = true; d.busy = false; d.uncertain = false; markPast('p', d.date); bump({ ticked: 1 }); }
+      if (ptRetained(d)) { d.finished = true; d.busy = false; d.uncertain = false; markPast('p', d.date); if (d.mode !== 'on') bump({ ticked: 1 }); }
       return;
     }
-    d.finished = true;d.busy = false;d.uncertain = false;ptRestore(d, d.value);markPast('p', d.date);bump({ ticked: 1 });
+    d.finished = true;d.busy = false;d.uncertain = false;ptRestore(d, d.value);markPast('p', d.date);
+    if (d.mode === 'on') {
+      var who = d.value.onBy;
+      ptClose();batch(function () { toast(who + ' is on it. Tap again when it is done.', { label: 'Undo', stampFor: d.id, fn: function () { var y = ptItem(d.id); if (y && !y.done && y.onById === d.value.onById) supd(itemRef(d.date, d.id), { onBy: d.before.onBy || '', onById: d.before.onById || '', onAt: d.before.onAt || 0 }).then(null, failed); } });draw(); });
+      return;
+    }
+    bump({ ticked: 1 });
+    if (S.toastAct && S.toastAct.stampFor === d.id) { S.toast = ''; S.toastAct = null; }
     ptClose();batch(function () { toast('Ticked', { label: 'Undo', fn: function () { tick(d.date, d.id, false); } });draw(); });setTimeout(draw, LINGER + 100);
   }
   function ptCheck() {
@@ -1969,7 +1998,7 @@
     var d = pt, actor = me(), worker = ptPerson(id);
     if (!d || d.busy || !ptContext(d)) return;
     if (!ptSource(d) || !worker || !actor) { d.stale = true;d.error = 'The prep line or person changed. Close and try again.';ptDraw();return; }
-    var at = now(), value = { done: true, doneBy: actor.name, doneById: actor.id, doneAt: at, preparedBy: worker.name, preparedById: worker.id, preparedAt: at };
+    var at = now(), value = d.mode === 'on' ? { onBy: worker.name, onById: worker.id, onAt: at } : { done: true, doneBy: actor.name, doneById: actor.id, doneAt: at, preparedBy: worker.name, preparedById: worker.id, preparedAt: at, onBy: '', onById: '', onAt: 0 };
     d.selected = worker.id;d.error = '';d.busy = true;d.latest = null;d.latestServer = false;d.value = value;ptDraw();whoSync();
     supd(itemRef(d.date, d.id), value).then(function () {
       if ((pt !== d || !ptContext(d)) && !ptRetained(d)) return;
@@ -2008,7 +2037,15 @@
   }
   // want: true or false from an Undo, which only ever sets the line back and does nothing if it is already that way
   // (4 Nov 2026, LF-01: a toggle ticked a line again when the tick had failed or was undone on another phone)
-  function tick(date, id, want) { var item = ptItem(id);if (pt && pt.busy) return;if (typeof want === 'boolean' && item && !!item.done === want) return;if (item && !item.done && shared() && S.name === 'prep') { ptOpen(date, id);return; }batch(function () { tickNow(date, id, want); }); }
+  function tick(date, id, want) {
+    var item = ptItem(id);if (pt && pt.busy) return;if (typeof want === 'boolean' && item && !!item.done === want) return;
+    // a tap (no want): the first stamps who is on it, the second ticks it (I'm on it, 5 Nov 2026)
+    if (typeof want !== 'boolean' && onFirst(item) && can('tick') && date === dayNow()) { if (shared() && S.name === 'prep') { ptOpen(date, id, 'on'); return; } batch(function () { stampNow(date, id); }); return; }
+    // the shared device ticks through the picker's careful save, for the cook on it (no second question when they can
+    // still be credited); a line nobody is on (an Undo, a past day) asks Who did this? as before
+    if (item && !item.done && shared() && S.name === 'prep') { var o = onOf(item); ptOpen(date, id, 'tick', o && ptPerson(o.id) ? o.id : ''); return; }
+    batch(function () { tickNow(date, id, want); });
+  }
   function tickNow(date, id, want) {
     var it = S.items.filter(function (x) { return x.id === id; })[0], p = me();
     if (!it || !can('tick')) return;
@@ -2016,8 +2053,10 @@
     if (!p) { toast('Choose your name before ticking prep.');return; }
     var done = !it.done;
     if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return; }
-    var at = done ? now() : 0;
-    supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: at, preparedBy: done ? p.name : '', preparedById: done ? p.id : '', preparedAt: at }).then(function () { markPast('p', date); }, failed);
+    var at = done ? now() : 0, on = onOf(it), w = p;
+    supd(itemRef(date, id), Object.assign({ done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: at, preparedBy: done ? w.name : '', preparedById: done ? w.id : '', preparedAt: at }, done && on ? { onBy: '', onById: '', onAt: 0 } : {})).then(function () { markPast('p', date); }, failed);
+    // the stamp's Undo means nothing once the line is ticked: the Ticked toast takes its place, not a chip above it
+    if (done && S.toastAct && S.toastAct.stampFor === id) { S.toast = ''; S.toastAct = null; }
     if (done) { bump({ ticked: 1 }); toast('Ticked', { label: 'Undo', fn: function () { tick(date, id, false); } }); setTimeout(draw, LINGER + 100); }
     else if (it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
   }
@@ -2240,7 +2279,7 @@
   }
   /* Start here: up to three open lines to do first, across all sections. */
   function startHere(live) {
-    var open = live.filter(function (x) { return !x.done && !x.fn; }), picked = [], seen = {};
+    var open = live.filter(function (x) { return !x.done && !x.fn && !(onOf(x) && !onMine(x) && !shared()); }), picked = [], seen = {};
     function take(list, why) { list.forEach(function (x) { if (picked.length < 3 && !seen[x.id]) { seen[x.id] = 1; picked.push({ x: x, why: why(x) }); } }); }
     take(open.filter(function (x) { return x.urgent; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }), function () { return 'Urgent'; });
     take(open.filter(function (x) { return rolledN(x); }).sort(function (a, b) { return rolledN(b) - rolledN(a); }), function (x) { return 'Rolled over' + (rolledN(x) > 1 ? ' x' + rolledN(x) : ''); });
@@ -4038,6 +4077,7 @@
   function rowHTML(x, date, readonly, also) {
     var tickOk = can('tick') && !x.deleted && (!x.done || canUntick(x)), delOk = can('del');
     var by = x.done && preparedWorker(x).name ? esc(preparedWorker(x).name) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (rolledN(x) ? (x.origBy ? 'from ' + esc(x.origBy) + (firstDay(x) ? ', ' + firstDay(x) : '') : '') : x.rolled ? esc(x.origBy || '') : (x.addedBy ? esc(x.addedBy) + (x.addedAt ? ' ' + clock(x.addedAt) : '') : ''));
+    var on = !readonly && onOf(x), onOther = on && !onMine(x) && !shared();
     var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (rolledN(x) ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (rolledN(x) > 1 ? ' x' + rolledN(x) : '') + '</span>' : '') +
       (x.deleted && x.mergedInto ? '<span class="nb-also">Double up</span>' : (also || ''));
     // Start here, numbered in place (startNums()): the number before the words, and why when the line does not show it
@@ -4051,11 +4091,15 @@
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
     var keep = !readonly && lineMenuOk(x, date);
     var del = delOk ? '<button type="button" class="nb-x" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'Put back' : 'Remove') + '</button>' : '';
-    return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (x.done ? ' is-done' : '') + (rolledN(x) && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(date + '/' + x.id) + '">' +
-      '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc((x.done ? 'Untick ' : 'Tick ') + x.text) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : BOX) + '</button>' +
+    // the box says what the next tap does: put you on it, tick it, or take it over (I'm on it, 5 Nov 2026)
+    var stamps = tickOk && !readonly && !x.done && date === dayNow() && onFirst(x);
+    var boxSay = x.done ? 'Untick ' + x.text : stamps ? (on ? 'Take over ' + x.text + ' from ' + on.name : 'I\'m on it: ' + x.text) : 'Tick ' + x.text + (on ? ', ' + on.name + ' on it' : '');
+    return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (on ? (onOther ? ' is-on-other' : ' is-on') : '') + (x.done ? ' is-done' : '') + (rolledN(x) && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(date + '/' + x.id) + '">' +
+      '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc(boxSay) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : on ? '<span class="nb-on-i" aria-hidden="true">' + esc(on.name.trim().charAt(0).toUpperCase()) + '</span>' : BOX) + '</button>' +
       // a tap on the words ticks too (the box is the button for keyboards and screen readers); Undo and the linger cover a slip
       '<span class="nb-main"><span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + num + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + numSay + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + unsentMark(x) + '</span>' +
-      metaHTML([], by, x.done ? 'Recorded by ' + (x.doneBy || '') : '') + '</span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + ((del || keep) && !readonly ? moreBtn(x, keep) : '') + '</span>' : '') + '</li>';
+      // the stamp leads the second line (it never adds a line, so a stamp or a tick moves no row)
+      metaHTML(on ? ['<b class="nb-on">' + (onMine(x) && !shared() ? 'You\'re on it' : esc(on.name) + ' on it') + '</b>'] : [], by, x.done ? 'Recorded by ' + (x.doneBy || '') : '') + '</span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + ((del || keep) && !readonly ? moreBtn(x, keep) : '') + '</span>' : '') + '</li>';
   }
   /* The line menu (22 Oct 2026, Option B): on a phone, Remove (or Put back) and who wrote the line move behind a ⋯ on
      the line, so the item and the amount lead. On a laptop everything stays in the line and the ⋯ is not shown. The sheet
@@ -4743,23 +4787,43 @@
      same 60 days of prep lines the Team report reads (loadStats), once per visit and kept in memory. */
   function personPageHTML(d, id, saveBlock) {
     var p = d.people.filter(function (x) { return x.id === id; })[0];
-    var back = '<p><button type="button" class="p-link" data-p="a-person-back">\u2039 All people</button></p>';
+    var back = '<p><button type="button" class="p-link" data-p="a-person-back">‹ All people</button></p>';
     if (!p) return '<section class="set-block">' + back + '<p class="hint">This person is not on the team list any more.</p></section>' + saveBlock;
     var head = isHeadP(p), can = [['add', 'Write'], ['tick', 'Tick'], ['del', 'Remove'], ['fn', 'Create and edit functions']].filter(function (c) { return c[0] !== 'fn' && head || p[c[0]]; }).map(function (c) { return c[1]; });
     var top = '<section class="set-block a-personpage">' + back + '<span class="label">' + esc(p.name || 'No name yet') + '</span>' +
       '<p class="a-pp-role"><b>' + esc((ROLES[p.role] || {}).name || 'No role') + '</b>' + (p.active === false ? ', off the list' : '') + '. Can: ' + esc(can.length ? can.join(', ') : 'read only') + '.</p>' +
       '<p class="hint">Change the role and ticks in the team list, then save.</p>';
-    var st = S.stats, n = S.statsRange;
-    if (!st || st.loading) return top + inkWait('Loading the last ' + n + ' days...', 'chef', 3) + '</section>' + saveBlock;
+    return top + personActivityHTML(id) + personTrainingHTML(p) + '</section>' + saveBlock;
+  }
+  // the person's last N days over the shared report period, counted by the Team report's own code
+  function personActivityHTML(id) {
+    var st = S.stats, n = S.statsRange, h3 = '<h3 class="a-ch-h">Last ' + n + ' days</h3>';
+    if (!st || st.loading) return h3 + inkWait('Loading the last ' + n + ' days...', 'chef', 3);
     var miss = st.miss && st.miss.length ? '<p class="p-err" role="status">' + st.miss.length + ' day' + (st.miss.length === 1 ? '' : 's') + ' could not be read, so these numbers may be low. The book tries again by itself.</p>' : '';
     var td = teamData(n), r = td.per[id], note = '<p class="hint">Ticks record activity. They do not confirm skill. Use them as a prompt for a chat, not a verdict.</p>';
-    if (!r || !r.w && !r.t) return top + miss + '<h3 class="a-ch-h">Last ' + n + ' days</h3><p class="hint">No lines written or ticked off in the last ' + n + ' days.</p>' + note + '</section>' + saveBlock;
+    if (!r || !r.w && !r.t) return h3 + miss + '<p class="hint">No lines written or ticked off in the last ' + n + ' days.</p>' + note;
     var h = habit(r, td), daysW = Object.keys(r.days).length, secs = Object.keys(r.tsecs).sort(function (a, b) { return r.tsecs[b] - r.tsecs[a]; });
     var tiles = [[r.w, 'lines written'], [r.t, 'lines ticked off'], [daysW + ' of ' + n, 'days with lines written']];
     if (h.top) tiles.push([Math.round(h.share * 100) + '%', 'in ' + h.top + ', the main section']);
-    return top + miss + '<h3 class="a-ch-h">Last ' + n + ' days</h3><div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' +
+    return h3 + miss + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' +
       (secs.length ? '<p class="a-pp-secs">Ticked off by section: ' + secs.slice(0, 6).map(function (k) { return esc(k) + ' ' + r.tsecs[k]; }).join(', ') + '.</p>' : '') +
-      (r.last ? '<p class="hint">Last wrote a line on ' + esc(dayShort(r.last)) + '. The period is the one every report shares.</p>' : '') + note + '</section>' + saveBlock;
+      (r.last ? '<p class="hint">Last wrote a line on ' + esc(dayShort(r.last)) + '. The period is the one every report shares.</p>' : '') + note;
+  }
+  /* the person's saved assessments (step 5, part 2), from the list the Assessments page reads, through the workspace
+     module (js/admin-intelligence.js, lazy): one read per record, once per visit, nothing more once Assessments has read
+     them. A book without the module's personTraining() keeps the link to Assessments. */
+  function personTrainingHTML(p) {
+    if (!intelligenceAllowed()) return '';
+    var h3 = '<h3 class="a-ch-h">Assessments</h3>', open = '<div class="btn-row"><button type="button" class="btn" data-p="a-person-assess" data-id="' + esc(p.id) + '">Open ' + esc(p.name || 'their') + (p.name ? '\'s' : '') + ' assessments</button></div>';
+    if (!intelligenceReady()) return h3 + (intelligenceError ? '<p class="p-err" role="status">Could not load the assessments. Check the connection and reload this page.</p>' : inkWait('Loading assessments...', 'chef', 3));
+    if (typeof window.LK_INTELLIGENCE.personTraining !== 'function') return h3 + '<p class="hint">Saved assessments are under Assessments.</p>' + open;
+    var rows = window.LK_INTELLIGENCE.personTraining(p.id, intelligenceAdapter());
+    if (rows === undefined) return h3 + inkWait('Loading assessments...', 'chef', 3);
+    if (rows === null) return h3 + '<p class="p-err" role="status">Could not load the assessments. Check the connection and reload this page.</p>' + open;
+    if (!rows.length) return h3 + '<p class="hint">No saved assessments yet.</p>' + open;
+    return h3 + '<ul class="a-pp-assess">' + rows.slice(0, 8).map(function (r) {
+      return '<li><b>' + esc(r.subject || 'No section') + '</b>: ' + esc(r.status) + '. <small>' + esc(r.scope) + ' assessment, ' + esc(r.day) + ', assessor ' + esc(r.assessor) + '.</small></li>';
+    }).join('') + '</ul>' + (rows.length > 8 ? '<p class="hint">' + (rows.length - 8) + ' more under Assessments.</p>' : '') + open;
   }
   /* The sous chef's Staff page: a short list of names with Remove. Same helper, rows as cards. */
   function staffListHTML(d) {
@@ -4979,15 +5043,24 @@
       S.root.querySelector('.ai-workspace') && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3;
   }
   function intelligenceBusy() { return proofBusy() || !!(intelligenceVisible() && window.LK_INTELLIGENCE.busy && window.LK_INTELLIGENCE.busy()); }
+  // the admin workspace module (js/admin-intelligence.js, lazy, admin only): true once it can run, otherwise its load starts
+  function intelligenceReady() {
+    if (window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_ANALYSIS && window.LK_ANALYSIS.linkQueue) return true;
+    if (!intelligenceLoading && !intelligenceError) {
+      intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=3').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=5'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS || !window.LK_ANALYSIS.linkQueue) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
+    }
+    return false;
+  }
   function intelligenceHTML(page) {
     if (!intelligenceAllowed()) return '';
-    if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS || !window.LK_ANALYSIS.linkQueue) {
-      if (!intelligenceLoading && !intelligenceError) {
-        intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=3').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=4'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS || !window.LK_ANALYSIS.linkQueue) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
-      }
+    if (!intelligenceReady()) {
       return '<section class="set-block"><h3 class="label">Admin workspace</h3><p class="hint" role="status">' + (intelligenceError ? 'Could not load the workspace. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
     }
-    return window.LK_INTELLIGENCE.html(page, {
+    return window.LK_INTELLIGENCE.html(page, intelligenceAdapter());
+  }
+  // what the workspace module may use: the workspace pages and a person's page (admin pages step 5) share it
+  function intelligenceAdapter() {
+    return {
       allowed: intelligenceAllowed, context: intelligenceContext, draw: draw, now: now,
       day: function (at) { return at == null ? dayNow() : T.day(at); }, clock: function (at) { return T.day(at) + ' ' + hhmm(T.mins(at)); },
       page: function (tab) { if (INTELLIGENCE_PAGES.indexOf(tab) < 0 || intelligenceBusy()) return; S.atab = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop(); },
@@ -5019,7 +5092,7 @@
       sections: function () { return ((S.config || {}).kitSecs || []).filter(function (s) { return !s.off; }).map(function (s) { return s.name; }); },
       recipes: function () { return (D.recipes || []).map(function (r) { return { id: r.id, name: r.name }; }); },
       loadGuides: loadGuides, guides: function () { return gLive().map(function (g) { return { id: g.id, title: g.title }; }); }
-    });
+    };
   }
   function adminHTML() {
     if (S.authState !== 'ready' && !S.user) {
@@ -9928,6 +10001,8 @@
     // a person's page (admin pages step 5): open it from their row, and back to the list (also the top bar's Back)
     if (a === 'a-person') { S.personId = id; draw(); adminToTop(); return; }
     if (a === 'a-person-back') { S.personId = ''; draw(); adminToTop(); return; }
+    // Assessments, opened on this person (the workspace module's person filter, when the module has it)
+    if (a === 'a-person-assess') { if (intelligenceBusy()) return; S.personId = ''; if (window.LK_INTELLIGENCE && typeof window.LK_INTELLIGENCE.showPerson === 'function') window.LK_INTELLIGENCE.showPerson(id); S.atab = 'training-records'; S.agLast = S.agLast || {}; S.agLast.team = 'training-records'; lsSet('lk.prep.atab', 'training-records'); draw(); adminToTop(); return; }
     if (a === 'range') { var rv = el.getAttribute('data-v'); if (S.atab === 'waste') { if (!whCanChange()) return; whState().period = rv; if (/^(7|14|30)$/.test(rv)) S.statsRange = +rv; } else setReportDays(+rv); draw(); return; }
     // on Team, the order days too (28 Oct 2026): a day that could not load stayed under "Refresh reads the newest"
     if (a === 'stats-refresh') { loadStats(true); if (el.getAttribute('data-v') === 'team') loadOrdStats(true); draw(); return; }

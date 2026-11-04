@@ -1,6 +1,7 @@
 // A page for each person (5 Nov 2026, admin pages step 5, docs/admin-pages-options/brief.md): opened from the team list,
-// it shows what the person may do (read only: changes stay in the list and its Save) and their activity over the shared
-// report period, counted like the Team report, with no reads beyond the Team report's. Example data only.
+// it shows what the person may do (read only: changes stay in the list and its Save), their activity over the shared
+// report period, counted like the Team report, and (part 2) their saved assessments, with a way to Assessments filtered
+// to them. Example data only.
 const L = require('./lib');
 const { R, ok } = L.results();
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -11,6 +12,10 @@ extra[fsKey(['days', ago(1), 'items', 's1'])] = line('Make stock', 'Larder', { d
 extra[fsKey(['days', ago(1), 'items', 's2'])] = line('Pick herbs', 'Larder', { done: true, doneBy: 'Sam', doneById: 'sam', doneAt: L.NOW - 86000000 });
 extra[fsKey(['days', ago(3), 'items', 's3'])] = line('Slice onions', 'Grill');
 extra[fsKey(['days', ago(3), 'items', 'a1'])] = line('Peel carrots', 'Larder', { addedBy: 'Ann', addedById: 'ann' });
+// part 2: two saved assessments for Sam (the newer first) and one for Ann
+extra[fsKey(['training', 'ai-sam-larder'])] = { personId: 'sam', section: 'Larder', recipeId: '', guideId: '', status: 'confirmed', assessorId: 'ann', day: ago(2), v: 1, at: L.NOW - 2 * 86400000, by: 'owner' };
+extra[fsKey(['training', 'ai-sam-grill'])] = { personId: 'sam', section: 'Grill', recipeId: '', guideId: '', status: 'in-training', assessorId: 'ann', day: ago(9), v: 1, at: L.NOW - 9 * 86400000, by: 'owner' };
+extra[fsKey(['training', 'ai-ann-larder'])] = { personId: 'ann', section: 'Larder', recipeId: '', guideId: '', status: 'confirmed', assessorId: 'sam', day: ago(4), v: 1, at: L.NOW - 4 * 86400000, by: 'owner' };
 (async () => {
   const b = await L.start();
   for (const width of [390, 1280]) {
@@ -28,9 +33,21 @@ extra[fsKey(['days', ago(3), 'items', 'a1'])] = line('Peel carrots', 'Larder', {
     const num = re => { const t = tiles.find(x => re.test(x)); return t ? parseInt(t, 10) : -1; };
     ok(num(/lines written/) >= 3 && num(/lines ticked off/) >= 2 && tiles.some(t => /in Larder, the main section/.test(t)), width + ': Sam\'s last 30 days: written, ticked off and the main section (' + tiles.join(' | ') + ')');
     ok(/Ticks record activity\. They do not confirm skill\./.test(page), width + ': the page says ticks are activity, not skill');
-    ok(await p.evaluate(() => window.__fake.reads.length) === before, width + ': the person page reads nothing beyond the Team report');
+    // part 2: Sam's saved assessments, newest first, and none of Ann's
+    await L.waitFor(p, () => document.querySelectorAll('.a-pp-assess li').length > 0, null, 8000).catch(() => {});
+    const assess = await p.$$eval('.a-pp-assess li', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
+    ok(assess.length === 2 && /^Larder: Confirmed/.test(assess[0]) && /^Grill: In training/.test(assess[1]) && /assessor Ann/.test(assess[0]), width + ': Sam\'s page lists his saved assessments, newest first (' + assess.join(' | ') + ')');
+    const extraReads = await p.evaluate(b => window.__fake.reads.slice(b), before);
+    ok(extraReads.every(r => /training/.test(r)), width + ': the person page reads only the assessments list beyond the Team report (' + extraReads.join(', ') + ')');
     ok(await p.locator('.a-personpage input, .a-personpage select, .a-personpage [data-a]').count() === 0, width + ': nothing on the page changes what Sam may do: that stays in the team list');
     ok(!await L.overflow(p), width + ': no sideways scroll on the person page');
+    // Open Sam's assessments: the Assessments page on Sam only
+    await L.tap(p, '[data-p="a-person-assess"][data-id="sam"]'); await L.settle(p, 500);
+    await L.waitFor(p, () => LK_PREP.state.atab === 'training-records' && !!document.querySelector('#ai-person-filter'), null, 8000).catch(() => {});
+    ok(await p.evaluate(() => LK_PREP.state.atab) === 'training-records' && await p.$eval('#ai-person-filter', e => e.value) === 'sam', width + ': Open Sam\'s assessments shows Assessments filtered to Sam');
+    ok(!/Ann: Larder/.test(await L.txt(p, '.ai-saved-library') || ''), width + ': and Ann\'s assessment is not in that view');
+    await L.adminTab(p, 'people'); await L.settle(p, 300);
+    await L.tap(p, '[data-p="a-person"][data-id="sam"]'); await L.settle(p, 400);
     // the top bar's Back goes back to the list, and so does changing page
     await p.click('.wtop [data-act="back"]'); await L.settle(p, 300);
     ok(await p.evaluate(() => !LK_PREP.state.personId) && await p.locator('[data-p="a-person"][data-id="sam"]').count() === 1, width + ': Back returns to all people');
