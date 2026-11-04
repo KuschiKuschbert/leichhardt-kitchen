@@ -68,6 +68,79 @@
   // icon resumes on reconnection. Settled errors and offline results pass 'still' themselves.
   function inkLabel(text, icon) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', 'busy') : esc(text); }
   function inkWait(text, icon, rows) { return window.LK_MOTION ? window.LK_MOTION.status(text, { icon: icon || 'prep', state: 'busy', rows: rows || 0 }) : '<p class="hint" role="status">' + esc(text) + '</p>'; }
+  /* Save states (4 Nov 2026, Saving A in docs/loading-feedback-options/brief.md). A form's Save button tells the whole
+     story: Saving... on the button while the form's own pending flag is on, and nothing under it; Saved with a tick for
+     1.2 s once the write resolved (never for a listener's or the cache's answer), then the form closes or says so as
+     before; one line under it while a save still waits after 4 s; a failed save makes it Try again (the same save) with
+     the reason in red under it, until the next try or an edit. The form keeps its pending flag and its message; svRec
+     holds only when the save started, how it ended and the form as it stood when it failed. Used by the ping editor
+     (n), the minutes (m), the guide editor (g) and the staff list's Save bar (a). Date.now() is only time passing on
+     this phone. No reads, no writes, nothing kept on the phone. */
+  var PIN_AGAIN = 'Your PIN is saved. Type it again to sign in.';
+  var SV_SLOW = 4000, SV_DONE = 1200, SV_WAIT = 'Waiting for the signal. Keep the book open.', svRec = {}, errSeen = {};
+  function svForm(k) { return k === 'n' ? JSON.stringify(S.nf || null) : k === 'm' ? mfSnap(S.mf) : k === 'g' ? gfSnap(S.gf) : JSON.stringify(S.draft || null); }
+  // the form open now (the Save bar has one form, whose draft is taken again after each save)
+  function svObj(k) { return k === 'n' ? S.nf : k === 'm' ? S.mf : k === 'g' ? S.gf : undefined; }
+  function svStop(k) { var r = svRec[k]; if (r) clearTimeout(r.timer); delete svRec[k]; }
+  function svReset() { Object.keys(svRec).forEach(svStop); }
+  // act: which button started it, where a form has two (the minutes' Publish and Save draft). slow: draws the 4 s line
+  function svStart(k, act, slow) {
+    svStop(k);
+    var r = svRec[k] = { st: 'busy', act: act || '', at: Date.now() };
+    r.timer = setTimeout(function () { if (svRec[k] === r) (slow || draw)(); }, SV_SLOW);
+  }
+  /* Called only in a save's success branch, after its write resolved. then: what the form did before (close, say so).
+     here: the form saved is still the one open; when it is not, there is no button to say Saved, so then runs now. */
+  function svDone(k, here, then) {
+    var act = (svRec[k] || {}).act; svStop(k);
+    if (!here) { then(); return; }
+    var r = svRec[k] = { st: 'done', act: act || '', obj: svObj(k), form: svForm(k), then: then };
+    r.timer = setTimeout(function () { if (svRec[k] !== r) return; delete svRec[k]; then(); draw(); }, SV_DONE);
+  }
+  // here, as for svDone; clear: takes the form's failure message away once the form is edited
+  function svFail(k, here, clear) { var act = (svRec[k] || {}).act; svStop(k); if (here) svRec[k] = { st: 'fail', act: act || '', form: svForm(k), clear: clear }; }
+  function svOf(k, act) { var r = svRec[k]; return r && (!r.act || r.act === (act || '')) ? r.st : ''; }
+  // Saved is showing: every Save button of the form stays off, and its save refuses
+  function svHeld(k) { var r = svRec[k]; return !!r && r.st === 'done' && !svGone(k, r); }
+  // Saved no longer belongs to what is on screen: another form is open, or the form changed (something typed or picked)
+  function svGone(k, r) { return r.obj !== svObj(k) || r.form !== svForm(k); }
+  /* draw() and the in-place refreshes ask first: an edit after a failed save puts the button back and takes the red line
+     away; another form opened, or anything typed or picked in the form, while Saved shows ends Saved there and then.
+     What the saved form did after runs at once: it leaves another form open, and keeps a form typed in open with the
+     new words as a change to what was just saved (typed work is never lost), so the next Save is never held */
+  function svTidy() {
+    var any = false;
+    Object.keys(svRec).forEach(function (k) {
+      var r = svRec[k];
+      if (r.st === 'fail' && r.form !== svForm(k)) { svStop(k); if (r.clear) r.clear(); any = true; }
+      else if (r.st === 'done' && svGone(k, r)) { svStop(k); setTimeout(function () { r.then(); draw(); }, 0); any = true; }
+    });
+    return any;
+  }
+  /* A form's Save button. o: k (the form), act, p (its data-p), cls, idle (its words), ask (words while a second tap is
+     armed), busy (the form's pending flag for this button), busyText, doneText, icon, off (nothing to save). Its words
+     sit over hidden copies of the idle and busy words (.sv-btn in css/app.css), so it keeps one width throughout. */
+  function svButton(o) {
+    var st = svOf(o.k, o.act), busyText = o.busyText || 'Saving...', doneText = o.doneText || 'Saved';
+    st = o.busy ? 'busy' : st === 'busy' ? '' : st;
+    var label = st === 'busy' ? inkLabel(busyText, o.icon) : st === 'done' ? (window.LK_MOTION ? window.LK_MOTION.label(doneText, 'save', 'done') : esc(doneText)) : esc(o.ask || (st === 'fail' ? 'Try again' : o.idle));
+    return '<button type="button" class="' + (o.cls || 'btn dark') + ' ink-busy-button sv-btn" data-p="' + esc(o.p) + '" data-idle="' + esc(o.idle) + '" data-wide="' + esc(busyText) + '"' +
+      (st === 'done' || st === 'fail' ? ' data-sv="' + st + '"' : '') + ' aria-busy="' + (st === 'busy') + '"' + (st === 'busy' || st === 'done' || o.off ? ' disabled' : '') + '><span class="sv-now">' + label + '</span></button>';
+  }
+  /* The line under a Save button: the waiting line once a save is still out after 4 s, else the form's message. wait:
+     the form's own words for the waiting line. */
+  function svLine(k, busy, msg, cls, wait) {
+    var r = svRec[k];
+    if (busy && r && r.st === 'busy' && Date.now() - r.at >= SV_SLOW) return '<p class="sv-line sv-slow' + (cls ? ' ' + cls : '') + '" role="status">' + esc(wait || SV_WAIT) + '</p>';
+    return msgHTML(msg, cls, !!r && r.st === 'fail');
+  }
+  /* One message slot (LF-06: "Could not save" showed grey like success). An error, marked with errMsg() where it is set
+     or a failed save (bad), is red and read out at once; anything else is the quiet grey status. */
+  function errMsg(t) { if (t) errSeen[t] = 1; return t; }
+  function msgHTML(t, cls, bad) {
+    cls = cls ? ' ' + cls : '';
+    return t && (bad || errSeen[t]) ? '<p class="sv-line p-err' + cls + '" role="alert">' + esc(t) + '</p>' : '<span class="sv-line saved' + cls + '" role="status">' + esc(t) + '</span>';
+  }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   /* Time is the server's, in kitchen time (LK_TIME in index.html). now() is for anything saved on a line or compared with
      a saved time; dayNow() is the kitchen's date. Date.now() is only for time passing on this phone (timers, the lock). */
@@ -1117,7 +1190,7 @@
             if (!current() || e && e.code === 'cancelled') return;
             // the PIN is saved, but this phone could not sign in yet (no Firebase sign-in, or no signal): type it again
             S.pinStep = 'enter'; S.pinAt = { id: id, at: setAt }; S.pf1 = S.pf2 = '';
-            S.pinMsg = e && e.code === 'no-session' ? NO_SIGNIN : 'Your PIN is saved. Type it again to sign in.';
+            S.pinMsg = e && e.code === 'no-session' ? NO_SIGNIN : PIN_AGAIN;
             if (e && e.code === 'no-session') anonIn();
             draw();
           });
@@ -1256,7 +1329,7 @@
     // review are read again for them, and an answer for this person that comes late is dropped (accessEpoch).
     S.notesErr = S.minsErr = S.gErr = false; S.retryAt = {}; S.adminsOff = null; onlineRetry = {};
     S.pastBusy = S.minsBusy = S.viewBusy = S.missBusy = S.useBusy = false; S.pastPart = null; S.ordStats = null; S.views = S.misses = null; S.viewErr = S.missErr = S.useErr = S.wReviewErr = false; S.wReview = null; S.wReviewFor = S.wNoteFor = '';
-    S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.actState = ''; S.hist = {}; S.stats = null;
+    svReset(); S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.actState = ''; S.hist = {}; S.stats = null;
     ['lk.fn', 'lk.mail.sent', 'lk.drinks', 'lk.guides', 'lk.notes', 'lk.minutes'].forEach(function (k) { lsSet(k, ''); });
  if (window.LK_INTELLIGENCE) window.LK_INTELLIGENCE.reset(); if (window.LK_PROOFREADER) window.LK_PROOFREADER.reset(); proofRepairStamp = {}; if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(true); if (supplierService) supplierService.reset();
     // an editor an older copy of its file has no drop(): it closes as before
@@ -2469,10 +2542,10 @@
     var box = S.root.querySelector('#a-newpin'), np = box ? box.value.trim() : '';
     /* only the head chef (Google account) changes the kitchen PIN; the admin panel is for the head chef only, and this checks again */
     if (S.moving || !fb || S.level !== 'owner' || !S.user) return;
-    if (!/^\d{4}$/.test(np)) { S.moveMsg = 'The new PIN is exactly 4 digits.'; draw(); return; }
-    if (np === S.pin) { S.moveMsg = 'That is the PIN already in use.'; draw(); return; }
+    if (!/^\d{4}$/.test(np)) { S.moveMsg = errMsg('The new PIN is exactly 4 digits.'); draw(); return; }
+    if (np === S.pin) { S.moveMsg = errMsg('That is the PIN already in use.'); draw(); return; }
     var box2 = S.root.querySelector('#a-newpin2');
-    if (!box2 || box2.value.trim() !== np) { S.moveMsg = 'The two PINs do not match. Type the new PIN again.'; draw(); return; }
+    if (!box2 || box2.value.trim() !== np) { S.moveMsg = errMsg('The two PINs do not match. Type the new PIN again.'); draw(); return; }
     if (!arm('move-pin')) return;
     S.moving = true; S.moveMsg = 'Copying...'; draw();
     var f = fb.fs, old = S.pin, n = 0, destinationSession;
@@ -2535,7 +2608,7 @@
         S.pin = np; lsSet('lk.prep.pin', np); sessKeep(destinationSession.by, destinationSession.exp, destinationSession.pinAt, destinationSession.issuedAt, destinationSession.mode); S.grantExp = destinationSession.exp; S.adminsFor = ''; accessEpoch++; S.items = []; S.learned = []; S.lists = null; S.learnFor = ''; S.sections = []; S.activity = []; S.actState = ''; gForget();
         stopLive(); S.rolledFor = ''; lsSet('lk.prep.rolled', ''); S.learnRan = false; S.weekAt = 0; S.stats = null; S.ordStats = null; S.views = S.misses = null; S.xStats = null; S.xLines = [];
         connect();
-      }).catch(function (e) { S.moving = false; S.moveMsg = e && e.code === 'permission-denied' ? 'The rules do not allow the new PIN yet. Nothing was changed on the old PIN.' : 'Stopped part way. Nothing was changed on the old PIN, so it is safe to try again.'; draw(); });
+      }).catch(function (e) { S.moving = false; S.moveMsg = errMsg(e && e.code === 'permission-denied' ? 'The rules do not allow the new PIN yet. Nothing was changed on the old PIN.' : 'Stopped part way. Nothing was changed on the old PIN, so it is safe to try again.'); draw(); });
   }
   function hideLearned(id, hidden) {
     var e = S.learned.filter(function (x) { return x.id === id; })[0], ids = (e && e.ids) || [id];
@@ -2720,12 +2793,13 @@
     } return Wall([['set', cfgDoc(), { people: clean.people, staffIds: clean.staffIds, pinOpen: clean.pinOpen, updated: clean.updated, updatedBy: clean.updatedBy }, true], ['set', docRef('login', 'roster'), { people: clean.people, staffIds: clean.staffIds, sousIds: S.config.sousIds || [], headId: S.config.headId || '', fnIds: S.config.fnIds || [], fnOnlyIds: S.config.fnOnlyIds || [] }]]); }).then(function () { return clean; });
   }
   // Save is off while nothing changed, and this refuses too (28 Oct 2026), so a button left on cannot save the list again
+  // Saving... on the button only (4 Nov 2026: it showed again under it); Saved on it for 1.2 s, then the grey line says so
   function adminSave() {
-    if (S.busy) return;
+    if (S.busy || svHeld('a')) return;
     if (!draftDirty()) { draw(); return; }   // nothing changed: nothing saved, and a button left on goes off
-    S.busy = true; S.saveMsg = 'Saving...'; draw();
-    saveConfig(mergeDraft()).then(function () { S.busy = false; startDraft(); S.saveMsg = 'Saved. Everyone sees the changes now.'; draw(); },
-      function (e) { S.busy = false; S.saveMsg = e && e.code === 'permission-denied' ? 'Not allowed to change these settings.' : 'Could not save. Check the connection.'; draw(); });
+    S.busy = true; S.saveMsg = ''; svStart('a'); draw();
+    saveConfig(mergeDraft()).then(function () { S.busy = false; startDraft(); svDone('a', !!S.draft, function () { S.saveMsg = 'Saved. Everyone sees the changes now.'; }); draw(); },
+      function (e) { S.busy = false; S.saveMsg = errMsg(e && e.code === 'permission-denied' ? 'Not allowed to change these settings.' : 'Could not save. Check the connection.'); svFail('a', !!S.draft, function () { S.saveMsg = ''; }); draw(); });
   }
   function resetPin(id) {
     if (!arm('pin:' + id)) return;
@@ -2751,7 +2825,7 @@
     }).catch(function (e) {
       var c = e && e.code;
       if (c === 'auth/popup-blocked' || c === 'auth/operation-not-supported-in-this-environment') { return fb.au.signInWithRedirect(fb.ownerAuth, new fb.au.GoogleAuthProvider()); }
-      S.saveMsg = (c === 'auth/popup-closed-by-user') ? '' : 'Sign-in did not work (' + (c || 'unknown') + '). Try again.'; draw();
+      S.saveMsg = (c === 'auth/popup-closed-by-user') ? '' : errMsg('Sign-in did not work (' + (c || 'unknown') + '). Try again.'); draw();
     });
   }
   function signOut() { signOutPerson(true, true); }
@@ -2811,7 +2885,7 @@
   function adminsRef() { return docRef('config', 'admins'); }
   function bootstrapHTML() {
     var c = S.bootstrapConfig || {}, names = (c.people || []).filter(function (p) { return p.active !== false; });
-    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Set up the head chef</h2><p class="hint">Your Google account is verified. Choose the head chef name, then set its personal PIN to unlock this device.</p><div class="p-names">' + names.map(function (p) { return '<button type="button" class="chip" data-p="owner-head" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>'; }).join('') + '</div><div class="field"><label class="label" for="owner-name">Or add the head chef name</label><input class="search" id="owner-name" maxlength="40" autocomplete="name"></div><button type="button" class="btn dark" data-p="owner-create">Add head chef</button>' + (S.saveMsg ? '<p class="p-err" role="status">' + esc(S.saveMsg) + '</p>' : '') + '</section>';
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Set up the head chef</h2><p class="hint">Your Google account is verified. Choose the head chef name, then set its personal PIN to unlock this device.</p><div class="p-names">' + names.map(function (p) { return '<button type="button" class="chip" data-p="owner-head" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>'; }).join('') + '</div><div class="field"><label class="label" for="owner-name">Or add the head chef name</label><input class="search" id="owner-name" maxlength="40" autocomplete="name"></div><button type="button" class="btn dark" data-p="owner-create">Add head chef</button>' + (S.saveMsg ? msgHTML(S.saveMsg) : '') + '</section>';
   }
   function bootstrapHead(id, name) {
     if (!S.ownerVerified || !S.user || !deviceReady() || S.bootstrapBusy) return;
@@ -2835,7 +2909,7 @@
       var roster = {}; ['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds'].forEach(function (k) { roster[k] = data[k]; });
       var b = fb.ownerFs.writeBatch(fb.ownerDb); b.set(ownerRef('config', 'main'), data, { merge: true }); b.set(ownerRef('login', 'roster'), roster);
       return track(b.commit()).then(function () { S.bootstrapConfig = null; S.config = roster; S.level = 'pin'; S.saveMsg = ''; S.adminsFor = ''; pickName(id); });
-    }).catch(function (e) { if (!(e && e.code === 'cancelled')) S.saveMsg = e && e.code === 'name' ? 'Enter a name first.' : 'Could not set up the head chef. Check the connection and try again.'; }).then(function () { S.bootstrapBusy = false; draw(); });
+    }).catch(function (e) { if (!(e && e.code === 'cancelled')) S.saveMsg = errMsg(e && e.code === 'name' ? 'Enter a name first.' : 'Could not set up the head chef. Check the connection and try again.'); }).then(function () { S.bootstrapBusy = false; draw(); });
   }
   function recoverHeadPin() {
     if (!S.ownerVerified || !S.user || !(S.config || {}).headId || !arm('owner-reset')) return;
@@ -2847,7 +2921,7 @@
       if (epoch !== accessEpoch || (S.config || {}).headId !== id) throw { code: 'cancelled' };
       var pinOpen = {}; pinOpen[id] = now() + 29 * 60000;
       var b = fb.ownerFs.writeBatch(fb.ownerDb); b.delete(ownerRef('staffpins', id)); b.delete(ownerRef('pinset', id)); b.set(ownerRef('config', 'main'), { pinOpen: pinOpen }, { merge: true }); return track(b.commit());
-    }).then(function () { sessDrop(); S.adminsFor = ''; S.saveMsg = 'Choose a new head chef PIN.'; pickName(id); }, function (e) { if (!(e && e.code === 'cancelled')) S.saveMsg = 'Could not reset the head chef PIN. Confirm the head chef Google account and try again.'; draw(); });
+    }).then(function () { sessDrop(); S.adminsFor = ''; S.saveMsg = 'Choose a new head chef PIN.'; pickName(id); }, function (e) { if (!(e && e.code === 'cancelled')) S.saveMsg = errMsg('Could not reset the head chef PIN. Confirm the head chef Google account and try again.'); draw(); });
   }
   /* One getDoc once the settings are in, for each Google account. Only a refusal means "not the head chef's account"
      (28 Oct 2026, r2-2-4): with no signal or a lost read the device keeps its head chef mark (lk.admin) and the admin
@@ -2928,7 +3002,7 @@
     return '<section class="set-block a-ids"><span class="label">Changed from the prep book</span><span class="hint">A sous chef changed these in the people list. They only take effect once you keep them.</span>' +
       '<ul class="a-ids-list">' + ch.map(function (x) { return '<li><strong>' + esc(x.p.name) + '</strong> ' + x.what + '</li>'; }).join('') + '</ul>' +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="a-ids-keep"' + (S.idBusy ? ' disabled' : '') + '>Keep these changes</button><button type="button" class="btn" data-p="a-ids-undo"' + (S.idBusy ? ' disabled' : '') + '>Undo them</button></div>' +
-      (S.idMsg ? '<span class="saved" role="status">' + esc(S.idMsg) + '</span>' : '') + '</section>';
+      (S.idMsg ? msgHTML(S.idMsg) : '') + '</section>';
   }
   /* keep: the roles as they are become the lists. undo: the people list goes back to what the lists say. */
   function idDecide(keep) {
@@ -2952,7 +3026,7 @@
     // a People draft with changes stays (28 Oct 2026: it was thrown away); its save carries only what it changed onto
     // the list as it is now (mergeDraft), so the kept or undone roles are not saved over
     saveConfig({ people: people, showBadges: c.showBadges, staffSee: c.staffSee }).then(function () { S.idBusy = false; S.idMsg = ''; refreshDraft(); draw(); },
-      function () { S.idBusy = false; S.idMsg = 'Could not save. Check the connection.'; draw(); });
+      function () { S.idBusy = false; S.idMsg = errMsg('Could not save. Check the connection.'); draw(); });
   }
   /* ---------- the last 14 days, read once a day per phone ----------
      Past days hardly change, so they are read once a day and kept on the phone. Today comes from the live list.
@@ -3872,7 +3946,8 @@
       (S.privacyLocked && blockedRecorder() ? '<p class="p-err" role="status">Your work is kept in this tab. Enter the same person\'s PIN to finish. Keep the book open.</p>' : '') +
       '<div class="field"><label class="label" for="pf1">' + (setting ? 'New PIN' : 'PIN') + '</label>' + pinField('pf1', 'pf1', S.pf1, true) + '</div>' +
       (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label>' + pinField('pf2', 'pf2', S.pf2, true) + '</div>' : '') +
-      (S.pinMsg ? S.pinMsg === 'Checking your PIN...' ? inkWait(S.pinMsg, 'chef') : '<p class="p-err" role="alert">' + esc(S.pinMsg) + '</p>' : '') +
+      // a wait or a PIN just saved is a status, not an error (LF-06)
+      (S.pinMsg ? S.pinMsg === 'Checking your PIN...' ? inkWait(S.pinMsg, 'chef') : S.pinMsg === PIN_AGAIN ? msgHTML(S.pinMsg) : '<p class="p-err" role="alert">' + esc(S.pinMsg) + '</p>' : '') +
       '<div class="btn-row"><button type="submit" class="btn dark">' + (setting ? 'Save my PIN' : openLabel()) + '</button><button type="button" class="btn" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Not me') + '</button></div></form>';
   }
 
@@ -4731,13 +4806,13 @@
     if (!S.user) {
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + workNoticeHTML(true) + (whoHead() ? '<p class="hint a-headpin">Chef, your PIN opens the prep book. The admin panel also needs your Google account, so a PIN seen over your shoulder cannot change the book. Sign in once on this phone and it stays signed in. On a shared kitchen device, sign out when you are done.</p>' :
         '<p class="hint">The admin panel is for the head chef. Sign in with the head chef\'s Google account. Staff and sous chefs use their own PIN in the prep book instead.</p>') +
-        (S.saveMsg ? '<p class="p-err">' + esc(S.saveMsg) + '</p>' : '') +
+        (S.saveMsg ? msgHTML(S.saveMsg) : '') +
         '<div class="btn-row"><button type="button" class="btn dark" data-p="signin">' + (armed('signin:sent') ? 'Not sent yet.' : 'Sign in with Google') + '</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     }
     if (S.privacyLocked && who() && S.user && S.ownerVerified) return '<p class="hint">Your Google account stays signed in. Enter your head chef PIN for the new kitchen day.</p>' + ownPinHTML();
     loadAdmins();
     if (S.level === 'setup') return bootstrapHTML();
-    if (S.level === 'pin' && S.ownerVerified) return '<p class="hint">Your Google account is recognised. Enter your head chef PIN to unlock this device until 04:00.</p>' + ownPinHTML() + '<p><button type="button" class="p-link" data-p="owner-reset">' + (armed('owner-reset') ? 'Confirm reset of the head chef PIN' : 'Forgot the head chef PIN?') + '</button></p>' + (S.saveMsg ? '<p class="p-err" role="status">' + esc(S.saveMsg) + '</p>' : '');
+    if (S.level === 'pin' && S.ownerVerified) return '<p class="hint">Your Google account is recognised. Enter your head chef PIN to unlock this device until 04:00.</p>' + ownPinHTML() + '<p><button type="button" class="p-link" data-p="owner-reset">' + (armed('owner-reset') ? 'Confirm reset of the head chef PIN' : 'Forgot the head chef PIN?') + '</button></p>' + (S.saveMsg ? msgHTML(S.saveMsg) : '');
     if (!S.level) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + (S.adminsOff === (S.user.email || '') ? '<p class="p-err" role="status">No signal. The admin panel opens when the phone is back online.</p><div class="btn-row"><button type="button" class="btn dark" data-p="admins-retry">Try again</button><a class="btn" href="#/prep">Back to the prep book</a></div>' : inkWait('Checking your access...', 'chef')) + '</section>';
     if (S.level === 'none') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="p-err">' + esc(S.user.email) + ' is not the head chef\'s Google account, so it cannot open the admin panel. Sign out and sign in with the head chef\'s account.</p><div class="btn-row"><button type="button" class="btn dark" data-p="signout">' + (armed('signout') ? notSaved() + '. Tap again' : 'Sign out') + '</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     if (!ownerHere()) {
@@ -4780,7 +4855,7 @@
       '<p class="hint a-step"><strong>Step 1.</strong> Ask for the new PIN to be added to the security rules. <strong>Step 2.</strong> Type it twice below and copy everything to it. The old PIN keeps working until its rules are removed.</p>' +
       '<div class="field"><label class="label" for="a-newpin">New 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
       '<div class="field"><label class="label" for="a-newpin2">Type it again</label><input id="a-newpin2" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin2" placeholder="4 digits" value="' + esc(S.newPin2 || '') + '"></div>' +
-      '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>' + (armed('move-pin') ? 'Tap again to copy everything' : 'Copy everything to the new PIN') + '</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span>' +
+      '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>' + (armed('move-pin') ? 'Tap again to copy everything' : 'Copy everything to the new PIN') + '</button></div>' + msgHTML(S.moveMsg) +
       '<p class="hint a-forget">To use a different kitchen PIN on this device, open Settings, This phone.</p></section>');
     var resume = INTELLIGENCE_PAGES.indexOf(at) < 0 && intelligenceAllowed() && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_INTELLIGENCE.resumeHTML ? window.LK_INTELLIGENCE.resumeHTML(at) : '';
     if (at !== 'proofreader' && intelligenceAllowed() && proofModule()) resume += proofModule().resumeHTML(proofAdapter());
@@ -4810,6 +4885,7 @@
   /* Ticks and names change the draft without a redraw (so the cursor stays put); the Save bar follows straight after. */
   function saveBarRefresh() {
     var sb = S.root && S.root.querySelector('.a-savebar'); if (!sb || !S.draft) return;
+    svTidy();   // an edit after a failed save: Save changes again, and the red line goes
     // A name field's blur fires change during a Save press. Keep the live buttons in place until the click completes.
     var holder = document.createElement('div'); holder.innerHTML = saveBarHTML();
     var next = holder.firstElementChild;
@@ -4818,22 +4894,25 @@
       if (!old || !fresh) return;
       if (old.disabled !== fresh.disabled) old.disabled = fresh.disabled;
       if (old.innerHTML !== fresh.innerHTML) old.innerHTML = fresh.innerHTML;
-      if (fresh.hasAttribute('aria-busy')) old.setAttribute('aria-busy', fresh.getAttribute('aria-busy'));
+      ['aria-busy', 'data-sv'].forEach(function (at) { if (fresh.hasAttribute(at)) old.setAttribute(at, fresh.getAttribute(at)); else old.removeAttribute(at); });
     });
-    ['.a-unsaved', '.saved', '.a-stale'].forEach(function (selector) {
+    ['.a-unsaved', '.a-stale'].forEach(function (selector) {
       var old = sb.querySelector(selector), fresh = next.querySelector(selector);
       if (!fresh) { if (old) old.remove(); return; }
       if (old) { if (old.textContent !== fresh.textContent) old.textContent = fresh.textContent; }
       else if (selector === '.a-unsaved') sb.querySelector('.btn-row').appendChild(fresh);
       else sb.insertBefore(fresh, sb.firstChild);
     });
+    // the line under the button is grey, red or the waiting line: swapped whole when it changes
+    var line = sb.querySelector('.sv-line'), line2 = next.querySelector('.sv-line');
+    if (line && line2 && line.outerHTML !== line2.outerHTML) line.replaceWith(line2);
   }
   ['change', 'input'].forEach(function (ev) { document.addEventListener(ev, function (e) { if (e.target && e.target.getAttribute && e.target.getAttribute('data-a')) setTimeout(saveBarRefresh, 0); }, true); });
   function saveBarHTML() {
     var n = draftChanges();
-    return '<section class="set-block a-savebar">' + staleHint() + '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-p="a-save" aria-busy="' + !!S.busy + '"' + (S.busy || !n ? ' disabled' : '') + '>' + (S.busy ? inkLabel('Saving...') : 'Save changes') + '</button>' +
+    return '<section class="set-block a-savebar">' + staleHint() + '<div class="btn-row">' + svButton({ k: 'a', p: 'a-save', idle: 'Save changes', busy: S.busy, off: !n }) +
       '<button type="button" class="btn" data-p="a-reset"' + (n ? '' : ' disabled') + '>' + (armed('a-reset') ? 'Tap again to undo ' + (n === 1 ? 'it' : 'all ' + n) : 'Undo unsaved changes') + '</button>' +
-      (n ? '<span class="a-unsaved">' + n + ' unsaved change' + (n === 1 ? '' : 's') + '</span>' : '') + '</div><span class="saved" role="status">' + esc(S.saveMsg) + '</span></section>';
+      (n ? '<span class="a-unsaved">' + n + ' unsaved change' + (n === 1 ? '' : 's') + '</span>' : '') + '</div>' + svLine('a', S.busy, S.saveMsg) + '</section>';
   }
   function supplierAdminHTML() {
     return '<section class="set-block"><h2 class="p-h">Suppliers &amp; pars</h2><p>Current pars, manual items and the original supplier records are kept in the catalogue.</p>' +
@@ -5026,6 +5105,7 @@
   function batch(fn) { holdDraw++; try { fn(); } finally { if (--holdDraw === 0 && heldDraw) { heldDraw = false; draw(); } } }
   function draw() {
     if (holdDraw) { heldDraw = true; return; }
+    svTidy();
     noteRefresh();
     if (S.mins) { loadMine(); minCard(); }
     if (!S.root || !document.body.contains(S.root) || rendering) return;
@@ -6516,7 +6596,7 @@
     }).join('');
     return '<section class="set-block ps-block"><span class="label" id="ps-h">Ping sound</span>' +
       '<span class="hint">Every phone and tablet plays it when a ping pops up, so nobody misses one. Tap Play to listen first. A phone on silent stays silent, and a phone plays sounds only once someone has tapped it since the book opened.</span>' +
-      '<div class="ps-list" role="radiogroup" aria-labelledby="ps-h">' + rows + '</div><span class="saved" role="status">' + esc(S.psMsg || '') + '</span></section>';
+      '<div class="ps-list" role="radiogroup" aria-labelledby="ps-h">' + rows + '</div>' + msgHTML(S.psMsg || '') + '</section>';
   }
   // one small merge into config/main; every phone has it at once through its config listener
   function pingSoundSet(v) {
@@ -6527,7 +6607,7 @@
     sset(cfgDoc(), { pingSound: v }, true).then(function () {
       S.psWant = ''; S.psMsg = v === 'off' ? 'Saved. Pings pop up with no sound now.' : 'Saved. Every phone plays ' + name + ' when a ping pops up.'; draw();
     }, function (e) {
-      S.psWant = ''; S.psMsg = e && e.code === 'permission-denied' ? 'Not saved. Only the head chef\'s Google account can change the ping sound.' : 'Could not save. Check the connection and try again.'; draw();
+      S.psWant = ''; S.psMsg = errMsg(e && e.code === 'permission-denied' ? 'Not saved. Only the head chef\'s Google account can change the ping sound.' : 'Could not save. Check the connection and try again.'); draw();
     });
   }
   /* The start of a shift waits for the day's pings, minutes and this person's sign-offs, so the sheet opens once with
@@ -6735,14 +6815,14 @@
       '<div class="field"><span class="label">Repeat every week on (optional)</span><div class="nt-chips" role="group" aria-label="Weekdays">' + dows + (f.dows.length ? '<button type="button" class="chip" data-p="n-dowclr">Clear weekdays</button>' : '') + '</div><span class="hint">With weekdays picked and no last day, the ping comes back every week until you remove it.</span></div>' +
       '<div class="field"><label class="label" for="n-tm">Pop up at (optional)</label><div class="nt-chips"><input id="n-tm" type="time" class="p-dateinput" data-k="n-tm" value="' + esc(f.tm || '') + '">' + (f.tm ? '<button type="button" class="chip" data-p="n-tmclr">No set time</button>' : '') + '</div><span class="hint">Empty: it pops up at 10:30. With a time, it pops up then on every phone. Either way it is gone 30 minutes later, so for a later shift set its time. Saved for today after its time, it pops up straight away.</span></div>' +
       '<p class="nt-whenline" role="status">' + esc(when) + '</p>' +
-      '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-p="n-save" aria-busy="' + !!S.nSaving + '"' + (S.nSaving || nfSame() ? ' disabled' : '') + '>' + (S.nSaving ? inkLabel('Saving...') : f.id ? 'Save changes' : 'Save ping') + '</button><button type="button" class="btn" data-p="n-preview">Preview the popup</button><button type="button" class="btn" data-p="n-reset">Reset days</button><button type="button" class="btn" data-p="n-cancel">' + (armed('n-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
-      '<span class="saved" role="status">' + esc(S.nMsg) + '</span></section>';
+      '<div class="btn-row">' + svButton({ k: 'n', p: 'n-save', idle: f.id ? 'Save changes' : 'Save ping', busy: S.nSaving, off: nfSame() }) + '<button type="button" class="btn" data-p="n-preview">Preview the popup</button><button type="button" class="btn" data-p="n-reset">Reset days</button><button type="button" class="btn" data-p="n-cancel">' + (armed('n-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
+      svLine('n', S.nSaving, S.nMsg) + '</section>';
   }
   function notesEditorHTML() {
     var open = !!S.nOpen;
     return '<div class="n-ws' + (open ? ' has-ed' : '') + '">' + (open ? '<div class="n-ed">' + noteEditForm() + '</div>' : '') +
       '<section class="set-block n-lst"><div class="n-lh"><div><span class="label">Pings set</span><span class="hint">Today first, then the days ahead.</span></div>' + (open ? '' : '<button type="button" class="btn dark" data-p="n-new">Write a ping</button>') + '</div>' +
-      (open ? '' : '<span class="saved" role="status">' + esc(S.nMsg) + '</span>') + notesListHTML() + '</section></div>';
+      (open ? '' : msgHTML(S.nMsg)) + notesListHTML() + '</section></div>';
   }
   function notesPageHTML() {
     return '<div class="p-admin p-notes-page"><h2 class="p-h" id="rtitle" tabindex="-1">Shift pings</h2>' + notesEditorHTML() + '</div>';
@@ -6750,13 +6830,13 @@
   function saveNote() {
     var f = S.nf, epoch = accessEpoch;
     // nothing changed: nothing saved, and the page drawn again, so a button left on goes off (29 Oct 2026)
-    if (!f || S.nSaving || !fb) return; if (nfSame()) { draw(); return; }
+    if (!f || S.nSaving || svHeld('n') || !fb) return; if (nfSame()) { draw(); return; }
     var text = f.text.replace(/\s+$/g, '').replace(/^\s+/g, ''), start = f.start, until = nfUntil(f), re = /^\d{4}-\d{2}-\d{2}$/;
-    if (!f.id && f.to && !pingPeople().some(function (p) { return p.id === f.to; })) { S.nMsg = 'Choose an active person who can receive Shift pings.'; draw(); focusSel('#n-to'); return; }
-    if (!text) { S.nMsg = 'Write the ping first.'; draw(); return; }
-    if (!re.test(start || '') || !re.test(until)) { S.nMsg = 'Pick the first day.'; draw(); return; }
-    if (until < start) { S.nMsg = 'The last day cannot be before the first day.'; draw(); return; }
-    if (f.tm && nfTm(f) == null) { S.nMsg = 'Pick a time, or tap No set time.'; draw(); return; }
+    if (!f.id && f.to && !pingPeople().some(function (p) { return p.id === f.to; })) { S.nMsg = errMsg('Choose an active person who can receive Shift pings.'); draw(); focusSel('#n-to'); return; }
+    if (!text) { S.nMsg = errMsg('Write the ping first.'); draw(); return; }
+    if (!re.test(start || '') || !re.test(until)) { S.nMsg = errMsg('Pick the first day.'); draw(); return; }
+    if (until < start) { S.nMsg = errMsg('The last day cannot be before the first day.'); draw(); return; }
+    if (f.tm && nfTm(f) == null) { S.nMsg = errMsg('Pick a time, or tap No set time.'); draw(); return; }
     // tm is always written (null for no set time), so an edit that takes the time away clears it
     var data = { text: text.slice(0, 400), tag: f.tag, start: start, until: until, dows: f.dows.slice().sort(), tm: nfTm(f), removed: false, upd: now() };
     // author is who wrote the ping and never changes; by is who saved it last (the rules need by to be the writer)
@@ -6767,14 +6847,26 @@
     // the head chef's Google device with nobody signed in: saved by nobody (W() sends by empty there), not by the
     // ping's writer. An older ping with no author keeps its writer.
     if (!canW() && was && !was.author && was.by) data.author = was.by;
-    S.nSaving = true; S.nMsg = 'Saving...'; draw();
+    // Saving... is on the button only (4 Nov 2026: it showed again under it)
+    S.nSaving = true; S.nMsg = ''; svStart('n'); draw();
     sset(ref, data, !!f.id).then(function () {
       if (epoch !== accessEpoch) return;
       if (noteOn(data, t) || (was && noteOn(was, t))) { markPings(); noteJust((f.to ? 'direct/' : '') + ref.id, nk); }
-      S.nSaving = false; S.nf = nfNew(); S.nOpen = false; S.nMsg = 'Saved. Shows: ' + when + '.'; loadNotes(true); draw();
+      // Saved on the button for 1.2 s (saved as it stands, so leaving asks nothing), then the editor closes as before;
+      // the list is read again straight away, as before. Words typed meanwhile keep it open as a change to this ping
+      var saved = JSON.stringify(f), sid = f.id || (f.to ? 'direct/' : '') + ref.id;
+      S.nSaving = false; if (S.nf === f) S.nfSnap = saved;
+      svDone('n', S.nf === f && S.nOpen, function () {
+        if (epoch !== accessEpoch) return;
+        if (S.nf === f && nfDirty()) { var was = JSON.parse(saved); f.id = was.id = sid; S.nfSnap = JSON.stringify(was); }
+        else if (S.nf === f) { S.nf = nfNew(); S.nOpen = false; }
+        if (!S.nOpen || S.nf === f) S.nMsg = 'Saved. Shows: ' + when + '.';
+      });
+      loadNotes(true); draw();
     }, function (e) {
       if (epoch !== accessEpoch) return;
-      S.nSaving = false; S.nMsg = e && e.code === 'permission-denied' ? 'Not saved. Only the head chef and the sous chefs write pings. If you are one, sign in again with your PIN.' : 'Could not save. Check the connection and try again.'; draw();
+      S.nSaving = false; S.nMsg = errMsg(e && e.code === 'permission-denied' ? 'Not saved. Only the head chef and the sous chefs write pings. If you are one, sign in again with your PIN.' : 'Could not save. Check the connection and try again.');
+      svFail('n', S.nf === f && S.nOpen, function () { S.nMsg = ''; }); draw();
     });
   }
   function removeNote(id) {
@@ -6786,7 +6878,7 @@
       S.nMsg = 'Removed.'; loadNotes(true); draw();
       // Undo puts back the same version (its old upd), so it does not pop up again for those who read it, or start its 30 minutes again
       toast('Ping removed.', { label: 'Undo', fn: function () { var uk = noteSeenKey(); sset(noteRef(id), { removed: false, upd: (was && (was.upd || was.at)) || now() }, true).then(function () { if (today) { markPings(); noteJust(id, uk); } S.nMsg = ''; loadNotes(true); draw(); }, failed); } });
-    }, function () { S.nMsg = 'Could not remove. Check the connection and try again.'; draw(); });
+    }, function () { S.nMsg = errMsg('Could not remove. Check the connection and try again.'); draw(); });
   }
   /* finished pings: one query when asked for (30 at most) */
   function loadPastNotes(more) {
@@ -6825,7 +6917,7 @@
       var seen = {}, names = [];
       snap.docs.forEach(function (d) { var by = d.data().by; if (by && !seen[by]) { seen[by] = 1; names.push(personName(by) || 'Someone'); } });
       S.nSeen[id] = { state: 'ok', names: names.sort() }; draw();
-    }, function () { if (epoch !== accessEpoch) return; delete S.nSeen[id]; S.nMsg = 'Could not check. Try again.'; draw(); });
+    }, function () { if (epoch !== accessEpoch) return; delete S.nSeen[id]; S.nMsg = errMsg('Could not check. Try again.'); draw(); });
   }
   /* "Got it" on a phone where someone is signed in leaves one small record per person, note and day */
   function noteWriteSeen(list) {
@@ -7188,7 +7280,9 @@
       '<div class="field"><span class="label">Actions</span>' + (actRows || '<p class="hint">No actions yet.</p>') + '<div class="btn-row"><button type="button" class="btn" data-p="mn-aadd">Add an action</button></div></div>' +
       mfTextarea('mn-menu', 'Menu changes', 3, 'What changes, and for which dish.') + mfTextarea('mn-dates', 'Dates ahead', 3, 'Deliveries, functions, events.') + mfTextarea('mn-other', 'Other', 3, '') + attBlock +
       '<div class="field"><label class="label" for="mn-next">Next meeting (optional)</label><input id="mn-next" type="date" class="p-dateinput" data-k="mn-next" value="' + esc(f.next) + '"></div>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-pub"' + (S.mSaving || mfSame(true) ? ' disabled' : '') + '>' + (S.mSaving === 'pub' ? 'Publishing...' : armed('mn-pub') ? 'Tap again to publish to ' + people().length + ' staff' : isEdit ? 'Publish as version ' + (f.v + 1) : 'Publish and start sign-off') + '</button>' + (isEdit ? '' : '<button type="button" class="btn" data-p="mn-draft"' + (S.mSaving || mfSame(false) ? ' disabled' : '') + '>' + (S.mSaving === 'draft' ? 'Saving...' : 'Save draft') + '</button>') + '<button type="button" class="btn" data-p="mn-prev">Preview</button><button type="button" class="btn" data-p="mn-cancel">' + (armed('mn-cancel') ? 'Tap again to discard' : 'Cancel') + '</button></div><span class="saved mn-say" role="status">' + esc(S.mMsg) + '</span></section>';
+      '<div class="btn-row">' + svButton({ k: 'm', act: 'pub', p: 'mn-pub', idle: isEdit ? 'Publish as version ' + (f.v + 1) : 'Publish and start sign-off', ask: armed('mn-pub') ? 'Tap again to publish to ' + people().length + ' staff' : '', busy: S.mSaving === 'pub', busyText: 'Publishing...', doneText: 'Published', off: !!S.mSaving || svHeld('m') || mfSame(true) }) +
+      (isEdit ? '' : svButton({ k: 'm', act: 'draft', p: 'mn-draft', cls: 'btn', idle: 'Save draft', busy: S.mSaving === 'draft', off: !!S.mSaving || svHeld('m') || mfSame(false) })) + '<button type="button" class="btn" data-p="mn-prev">Preview</button><button type="button" class="btn" data-p="mn-cancel">' + (armed('mn-cancel') ? 'Tap again to discard' : 'Cancel') + '</button></div>' +
+      svLine('m', !!S.mSaving, S.mMsg, 'mn-say', 'Waiting for the signal. Keep the book open: the minutes ' + (S.mSaving === 'pub' ? 'go to the team' : 'are saved') + ' when the signal is back.') + '</section>';
   }
   /* the minutes' message after a redraw: the form is long, and it closes on a save, so the page jumps. The message is
      brought on screen between the sticky admin bar and the phone's tab bar (which covers the foot of the screen),
@@ -7204,17 +7298,17 @@
     else if (r.top < top + 8) window.scrollBy(0, r.top - top - 16);
   }
   function saveMinutes(publish) {
-    var f = S.mf; if (!f || S.mSaving || !fb) return;
+    var f = S.mf; if (!f || S.mSaving || svHeld('m') || !fb) return;
     if (mfSame(publish)) { draw(); return; }   // nothing changed: nothing saved, and a button left on goes off
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date || '')) { mnSay('Pick the meeting date.'); return; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date || '')) { mnSay(errMsg('Pick the meeting date.')); return; }
     var data = mfData(f, publish), wasPub = f.status === 'published';
     if (publish) {
       var missing = people().filter(function (p) { return !f.att[p.id]; });
-      if (missing.length) { S.mAttOpen = true; mnSay('Set attendance for ' + missing.slice(0, 4).map(function (p) { return p.name; }).join(', ') + (missing.length > 4 ? ' and ' + (missing.length - 4) + ' more' : '') + ' (Present, Apology or Absent).'); return; }
-      if (!data.decisions && !data.menu && !data.safety && !data.dates && !data.other && !data.acts.length) { mnSay('Write something in at least one section first.'); return; }
+      if (missing.length) { S.mAttOpen = true; mnSay(errMsg('Set attendance for ' + missing.slice(0, 4).map(function (p) { return p.name; }).join(', ') + (missing.length > 4 ? ' and ' + (missing.length - 4) + ' more' : '') + ' (Present, Apology or Absent).')); return; }
+      if (!data.decisions && !data.menu && !data.safety && !data.dates && !data.other && !data.acts.length) { mnSay(errMsg('Write something in at least one section first.')); return; }
       data.pubAt = now();
       if (wasPub) data.v = f.v + 1;
-    } else if (!data.decisions && !data.menu && !data.safety && !data.dates && !data.other && !data.acts.length && !data.guests) { mnSay('Nothing to save yet.'); return; }
+    } else if (!data.decisions && !data.menu && !data.safety && !data.dates && !data.other && !data.acts.length && !data.guests) { mnSay(errMsg('Nothing to save yet.')); return; }
     // publishing starts sign-off for everyone (and a change means everyone signs again), so it takes a second tap
     if (publish && !arm('mn-pub')) return;
     if (!f.id) data.at = now();
@@ -7224,24 +7318,34 @@
       ops.push(['set', fb.fs.doc.apply(null, [fb.db].concat(base(), ['minutes', f.id, 'hist', String(f.orig.v)])), snap, false]);
     }
     ops.push(['set', ref, data, !!f.id]);
-    S.mSaving = publish ? 'pub' : 'draft'; mnSay(publish ? 'Publishing...' : 'Saving...');
-    // a half-dropped signal can leave the save with no answer for a long time: say so, rather than a grey button and
-    // no words (23 Oct 2026, the head chef could not tell whether minutes were published). Firestore keeps the write in
-    // this tab's memory (since 26 Oct 2026) and sends it with the signal, so the book has to stay open
-    var slow = setTimeout(function () { if (S.mf === f && S.mSaving) mnSay('Waiting for the signal. Keep the book open: the minutes ' + (publish ? 'go to the team' : 'are saved') + ' when the signal is back.'); }, 4000);
+    // Publishing... or Saving... is on the button only (4 Nov 2026: it showed again under it). A half-dropped signal can
+    // leave the save with no answer for a long time: after 4 s the line under the buttons says so, rather than a grey
+    // button and no words (23 Oct 2026, the head chef could not tell whether minutes were published). Firestore keeps
+    // the write in this tab's memory (since 26 Oct 2026) and sends it with the signal, so the book has to stay open
+    S.mSaving = publish ? 'pub' : 'draft'; S.mMsg = '';
+    svStart('m', S.mSaving, function () { if (S.mf === f && S.mSaving) mnSay(''); }); draw();
     W(ops).then(function () {
-      clearTimeout(slow);
-      S.mSaving = false; S.mf = null; if (publish) { S.mSel = ref.id; delete S.mmine[ref.id + '_' + data.v + '_' + S.who]; }
+      var saved = mfSnap(f);
+      S.mSaving = false; if (S.mf === f) S.mfSnap = saved;
+      if (publish) delete S.mmine[ref.id + '_' + data.v + '_' + S.who];
       // the register and the drafts show what was saved at once, before the list is read again
       var rec = Object.assign({}, mnById(ref.id) || {}, data, { id: ref.id });
       S.mins = (S.mins || []).filter(function (m) { return m.id !== ref.id; }).concat([rec]);
+      // Published (or Saved) on the button for 1.2 s, then the form closes and the register opens on them, as before.
+      // Words typed meanwhile keep it open as a change to these minutes (the next save is their draft or next version)
+      svDone('m', S.mf === f, function () {
+        if (S.mf === f && mfDirty()) {
+          var was = JSON.parse(saved);
+          f.id = was.id = ref.id; f.status = was.status = data.status; f.v = was.v = data.v; f.orig = rec; S.mfSnap = JSON.stringify(was);
+        } else if (S.mf === f) S.mf = null;
+        if (publish) { S.mSel = ref.id; toast('Minutes ' + pad(data.no) + ' published.'); }
+        if (!S.mf || S.mf === f) mnSay(publish ? 'Minutes ' + pad(data.no) + (data.v > 1 ? ' version ' + data.v : '') + ' published at ' + clock(data.pubAt) + '. Staff can read and sign them now.' : 'Draft saved at ' + clock(data.upd) + '. Staff do not see drafts.', true);
+      });
       loadMinutes(true); if (publish) loadSigns(ref.id, true);
-      if (publish) toast('Minutes ' + pad(data.no) + ' published.');
-      mnSay(publish ? 'Minutes ' + pad(data.no) + (data.v > 1 ? ' version ' + data.v : '') + ' published at ' + clock(data.pubAt) + '. Staff can read and sign them now.' : 'Draft saved at ' + clock(data.upd) + '. Staff do not see drafts.', true);
+      draw();
     }, function (e) {
-      clearTimeout(slow);
-      S.mSaving = false;
-      mnSay('Not ' + (publish ? 'published' : 'saved') + '. ' + (e && e.code === 'permission-denied' ? 'Only the head chef can write minutes, and the minutes rules must be published.' : 'Check the connection and try again.'));
+      S.mSaving = false; svFail('m', S.mf === f, function () { S.mMsg = ''; });
+      mnSay(errMsg('Not ' + (publish ? 'published' : 'saved') + '. ' + (e && e.code === 'permission-denied' ? 'Only the head chef can write minutes, and the minutes rules must be published.' : 'Check the connection and try again.')));
     });
   }
   function mnRef(id) { return docRef('minutes', id); }
@@ -7250,7 +7354,7 @@
     sset(mnRef(id), { removed: true, upd: now() }, true).then(function () {
       S.mMsg = 'Removed.'; if (S.mSel === id) S.mSel = ''; loadMinutes(true); draw();
       toast('Minutes removed.', { label: 'Undo', fn: function () { sset(mnRef(id), { removed: false, upd: now() }, true).then(function () { S.mMsg = ''; loadMinutes(true); draw(); }, failed); } });
-    }, function () { S.mMsg = 'Could not remove. Check the connection and try again.'; draw(); });
+    }, function () { S.mMsg = errMsg('Could not remove. Check the connection and try again.'); draw(); });
   }
   /* who has signed the current version, who has not, and who is late */
   function mnRegister(m) {
@@ -7306,7 +7410,7 @@
     if (S.mins == null) return '<p class="hint">Loading...</p>';
     var drafts = mnDrafts(), pub = mnPub();
     var intro = '<section class="set-block mn-noprint"><span class="label">Kitchen meeting minutes</span><span class="hint">Write the minutes after the meeting. Staff read them at Meeting minutes in the app and sign with their own PIN. A change after publishing makes a new version and everyone signs again.</span>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-new">' + (armed('mn-new') ? 'Not saved. Tap again' : 'Write new minutes') + '</button><button type="button" class="btn" data-p="mn-tpl">' + (armed('mn-tpl') ? 'Not saved. Tap again' : 'Start from the team notes') + '</button>' + drafts.map(function (d) { return '<button type="button" class="btn" data-p="mn-draft-open" data-id="' + esc(d.id) + '">' + (armed('mn-draft-open:' + d.id) ? 'Not saved. Tap again' : 'Continue draft ' + pad(d.no || 0) + ' (' + esc(dayShort(d.date)) + ')') + '</button>'; }).join('') + '</div><span class="saved mn-say" role="status">' + (S.mf ? '' : esc(S.mMsg)) + '</span></section>';
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="mn-new">' + (armed('mn-new') ? 'Not saved. Tap again' : 'Write new minutes') + '</button><button type="button" class="btn" data-p="mn-tpl">' + (armed('mn-tpl') ? 'Not saved. Tap again' : 'Start from the team notes') + '</button>' + drafts.map(function (d) { return '<button type="button" class="btn" data-p="mn-draft-open" data-id="' + esc(d.id) + '">' + (armed('mn-draft-open:' + d.id) ? 'Not saved. Tap again' : 'Continue draft ' + pad(d.no || 0) + ' (' + esc(dayShort(d.date)) + ')') + '</button>'; }).join('') + '</div>' + msgHTML(S.mf ? '' : S.mMsg, 'mn-say') + '</section>';
     if (!mnCanWrite()) intro = '<section class="set-block mn-noprint"><span class="label">Kitchen meeting minutes</span><span class="hint">See who has signed the minutes and who still needs to. Only the head chef writes and publishes minutes.</span></section>';
     return intro + (S.mf && mnCanWrite() ? mfHTML() : '') + mnRegisterHTML(pub);
   }
@@ -8353,7 +8457,7 @@
       else if (bad.length) m.push('Could not read ' + bad.map(function (b) { return '"' + b + '"'; }).join(', ') + '. Use a PDF, or photos as JPEG or PNG.');
       if (f.cut) m.push('Only the first ' + G_MAXP + ' pages are kept. Split a longer file into two guides.');
       if (f.pages.some(function (p) { return p.img.length > G_IMG; })) m.push('A page is still too big to save. Remove it, or use a smaller photo.');
-      f.msg = m.join(' ');
+      f.msg = errMsg(m.join(' '));
       if (!f.title.trim() && f.file) f.title = f.file.replace(/\.[a-z0-9]+$/i, '').replace(/[_]+/g, ' ').slice(0, 80);
       draw();
     });
@@ -8370,7 +8474,8 @@
           '<button type="button" class="p-x" data-p="g-prm" data-i="' + i + '" aria-label="' + esc((armed('g-prm:' + i) ? 'Tap again to remove page ' : 'Remove page ') + (i + 1)) + '">' + (armed('g-prm:' + i) ? 'Tap again to remove' : 'Remove') + '</button></span></li>';
       }).join('') + '</ol>';
     }
-    var pagesMsg = pages ? (pages.length ? pages.length + (pages.length === 1 ? ' page' : ' pages') + ' ready to save.' + (old && old.pages ? ' They replace the ' + old.pages + ' saved now.' : '') : 'No pages chosen.' + (old && old.pages ? ' Saving removes the ' + old.pages + ' saved now.' : '')) :
+    // while Saved shows, the pages just written are saved, not "ready to save"
+    var pagesMsg = pages && pages.length && svHeld('g') ? pages.length + (pages.length === 1 ? ' page' : ' pages') + ' saved.' : pages ? (pages.length ? pages.length + (pages.length === 1 ? ' page' : ' pages') + ' ready to save.' + (old && old.pages ? ' They replace the ' + old.pages + ' saved now.' : '') : 'No pages chosen.' + (old && old.pages ? ' Saving removes the ' + old.pages + ' saved now.' : '')) :
       (old && old.pages ? 'Saved now: ' + old.pages + (old.pages === 1 ? ' page' : ' pages') + (old.file ? ' from "' + old.file + '"' : '') + '. Choose a new file to replace them.' : 'No file yet.');
     return '<section class="set-block g-edit"><span class="label">' + (f.id ? 'Change this guide' : 'Add a guide') + '</span>' + prepLeaveHTML('g-cancel') +
       '<span class="hint">A PDF or photos, a clear title and a category. Staff search the title, the words in the PDF and the search words. No prices, PINs or staff names.</span>' +
@@ -8386,9 +8491,9 @@
       '<div class="field"><label class="label" for="g-steps">Steps (optional, one per line)</label><textarea id="g-steps" class="p-bulk" data-k="g-steps" rows="5" maxlength="3000" placeholder="For example: Press the menu button, bottom right.">' + esc(f.steps) + '</textarea></div>' +
       '<div class="field"><label class="label" for="g-kw">Search words (optional)</label><input id="g-kw" class="search" data-k="g-kw" maxlength="200" autocomplete="off" placeholder="For example: iCombi, oven, programme" value="' + esc(f.kw) + '"><span class="hint">Separate them with commas. A recipe card that mentions one of these words shows a link to this guide.</span></div>' +
       '<p class="g-links" id="g-links">' + esc(gLinksText(f)) + '</p>' +
-      (f.msg ? '<p class="p-err" role="alert">' + esc(f.msg) + '</p>' : '') +
-      '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-p="g-save" aria-busy="' + !!f.saving + '"' + (f.busy || f.saving || gfSame() ? ' disabled' : '') + '>' + (f.saving ? inkLabel('Saving...', 'guides') : f.id ? 'Save changes' : 'Save guide') + '</button>' +
-      '<button type="button" class="btn" data-p="g-cancel">' + (armed('g-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div></section>';
+      '<div class="btn-row">' + svButton({ k: 'g', p: 'g-save', idle: f.id ? 'Save changes' : 'Save guide', busy: f.saving, icon: 'guides', off: !!f.busy || svHeld('g') || gfSame() }) +
+      '<button type="button" class="btn" data-p="g-cancel">' + (armed('g-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div>' +
+      svLine('g', f.saving, f.msg) + '</section>';
   }
   function gProgressHTML(f) {
     var motion = window.LK_MOTION, opt = { icon: 'guides', state: 'busy' };
@@ -8420,17 +8525,17 @@
     return '<div class="n-ws' + (open ? ' has-ed' : '') + '">' + (open ? '<div class="n-ed">' + gEditHTML() + '</div>' : '') +
       '<section class="set-block n-lst"><div class="n-lh"><div><span class="label">Guides</span><span class="hint">Staff open them from Guides in the menu, search them, and find them on the recipe cards they mention.</span></div>' +
       (open ? '' : '<button type="button" class="btn dark" data-p="g-new">Add a guide</button>') + '</div>' +
-      (open ? '' : '<span class="saved" role="status">' + esc(S.gMsg) + '</span>') + list + '</section></div>';
+      (open ? '' : msgHTML(S.gMsg)) + list + '</section></div>';
   }
   function gClean(t, n) { return String(t || '').replace(/\r/g, '').replace(/[ \t]+\n/g, '\n').replace(/^\s+|\s+$/g, '').slice(0, n); }
   /* Saving: the pages first (one record each, they are big), then old pages the new file does not need, then the guide itself,
      so a guide never shows before its pages are there. A failed save keeps everything in the editor to try again. */
   function saveGuide() {
     var f = S.gf;
-    if (!f || f.saving || f.busy || !fb) return;
+    if (!f || f.saving || f.busy || svHeld('g') || !fb) return;
     if (gfSame()) { draw(); return; }   // nothing changed: nothing saved, and a button left on goes off
     var old = f.id ? gById(f.id) : null, pages = f.pages, title = gClean(f.title, 80).replace(/\s+/g, ' ');
-    function stop(m) { f.msg = m; draw(); }
+    function stop(m) { f.msg = errMsg(m); draw(); }
     if (S.level !== 'owner') return stop('Only the head chef can save guides.');
     if (!title) { stop('Give the guide a title.'); focusK('g-title'); return; }
     if (!f.cat) return stop('Pick a category.');
@@ -8440,7 +8545,7 @@
     // Count acknowledged pages, an optional old-page cleanup, and the final guide record.
     // No progress is credited when a write merely enters Firestore's local queue.
     f.progress = { completed: 0, total: (pages ? pages.length : 0) + (pages && oldN > pages.length ? 1 : 0) + 1 };
-    f.saving = true; f.busy = 'Saving the guide...'; f.msg = ''; draw();
+    f.saving = true; f.busy = 'Saving the guide...'; f.msg = ''; svStart('g'); draw();
     var chain = Promise.resolve();
     if (pages) pages.forEach(function (p, n) {
       chain = chain.then(function () { f.busy = 'Saving page ' + (n + 1) + ' of ' + pages.length + '...'; draw(); return W([['set', gPageRef(id, n), { img: p.img, w: p.w, h: p.h, v: v, n: n }]]).then(function () { f.progress.completed++; }); });
@@ -8460,11 +8565,24 @@
       var mine = Object.assign({}, old || {}, data, { id: id });
       S.guides = (S.guides || []).filter(function (g) { return g.id !== id; }).concat([mine]); gKeep();
       try { window.dispatchEvent(new Event('lk-guides')); } catch (e) {}
-      S.gf = null; S.gfSnap = ''; S.gMsg = 'Saved "' + title + '". ' + (data.who === 'all' ? 'Staff see' : gWhoName(data.who) + ' see') + ' it under Guides.';
-      lvReveal('guides'); S.gRetry = 0; draw(); loadGuides(true);
+      // Saved on the button for 1.2 s (saved as it stands, so leaving asks nothing), then the editor closes as before.
+      // Words typed meanwhile keep it open as a change to this guide; pages it saved are not sent again
+      var saved = gfSnap(f), said = 'Saved "' + title + '". ' + (data.who === 'all' ? 'Staff see' : gWhoName(data.who) + ' see') + ' it under Guides.';
+      f.saving = false; f.busy = ''; f.progress = null; if (S.gf === f) S.gfSnap = saved;
+      svDone('g', S.gf === f, function () {
+        if (S.gf === f && gfDirty()) {
+          var was = JSON.parse(saved); f.id = id;
+          if (f.pages && JSON.stringify(f.pages.map(function (p) { return p.k; })) === JSON.stringify(was[6])) { f.pages = null; was[6] = null; }
+          S.gfSnap = JSON.stringify(was); f.msg = said;
+        } else if (S.gf === f) { S.gf = null; S.gfSnap = ''; }
+        if (!S.gf) S.gMsg = said;
+        lvReveal('guides');
+      });
+      S.gRetry = 0; draw(); loadGuides(true);
     }, function (e) {
       f.saving = false; f.busy = ''; f.progress = null;
-      f.msg = e && e.code === 'permission-denied' ? 'Not saved: the security rules refused it. Sign in again with the head chef\'s Google account.' : 'Not saved. Check the connection and try again. Nothing typed or chosen is lost.';
+      f.msg = errMsg(e && e.code === 'permission-denied' ? 'Not saved: the security rules refused it. Sign in again with the head chef\'s Google account.' : 'Not saved. Check the connection and try again. Nothing typed or chosen is lost.');
+      svFail('g', S.gf === f, function () { f.msg = ''; });
       draw();
     });
   }
@@ -9041,7 +9159,7 @@
       (rows ? '<ul class="cut-eds">' + rows + '</ul>' : '<p class="hint">No suppliers yet, so nobody is reminded.</p>') +
       '<div class="btn-row"><button type="button" class="btn" data-p="cut-add">Add a supplier</button>' + (d.length ? '' : '<button type="button" class="btn" data-p="cut-usual">Add ' + esc(CUT_USUAL.map(function (x) { return x.name; }).join(', ')) + '</button>') + '</div>' +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="cut-save"' + (owner && cutDirty() && !S.cutBusy ? '' : ' disabled') + '>Save cut-offs</button><button type="button" class="btn" data-p="cut-undo"' + (cutDirty() ? '' : ' disabled') + '>' + (armed('cut-undo') ? 'Tap again to undo' : 'Undo unsaved changes') + '</button></div>' +
-      '<span class="saved" role="status">' + esc(S.cutMsg || '') + '</span>' + (pushWhoId() ? '<h3 class="a-ch-h">Pushes on this device</h3>' + pushHTML() : '') + '</section>';
+      msgHTML(S.cutMsg || '') + (pushWhoId() ? '<h3 class="a-ch-h">Pushes on this device</h3>' + pushHTML() : '') + '</section>';
   }
   function cutSave() {
     if (!CUT_OK || S.level !== 'owner' || !cutDirty() || S.cutBusy) return;
@@ -9050,7 +9168,7 @@
     // merge: only cutoffs changes (the People tab's full save carries it over, saveConfig)
     track(fb.fs.setDoc(cfgDoc(), { cutoffs: clean }, { merge: true })).then(function () {
       S.cutBusy = false; S.cutDraft = clean; S.cutSnap = JSON.stringify(clean); S.cutMsg = 'Saved. The sous chefs see the new cut-offs now.'; draw(); cutPaint();
-    }, function (e) { S.cutBusy = false; S.cutMsg = e && e.code === 'permission-denied' ? 'Only the head chef\'s Google account can change the cut-offs.' : 'Could not save. Check the connection.'; draw(); });
+    }, function (e) { S.cutBusy = false; S.cutMsg = errMsg(e && e.code === 'permission-denied' ? 'Only the head chef\'s Google account can change the cut-offs.' : 'Could not save. Check the connection.'); draw(); });
   }
   function cutClick(a, el) {
     var d = S.cutDraft, i = +el.getAttribute('data-i');
@@ -9537,10 +9655,13 @@
   }
   // typing does not redraw the minutes, ping or guide form, so their Save buttons follow here: off while nothing changed
   function saveSync() {
-    var b = S.root && S.root.querySelector('[data-p="mn-draft"]'); if (b) b.disabled = !!S.mSaving || mfSame(false);
-    b = S.root && S.root.querySelector('[data-p="mn-pub"]'); if (b) b.disabled = !!S.mSaving || mfSame(true);
-    b = S.root && S.root.querySelector('[data-p="n-save"]'); if (b) b.disabled = !!S.nSaving || nfSame();
-    b = S.root && S.root.querySelector('[data-p="g-save"]'); if (b && S.gf) b.disabled = !!(S.gf.busy || S.gf.saving) || gfSame();
+    // the first edit after a failed save puts its button back to Save and takes the red line away: one redraw, which
+    // keeps the cursor where it is
+    if (svTidy()) { draw(); return; }
+    var b = S.root && S.root.querySelector('[data-p="mn-draft"]'); if (b) b.disabled = !!S.mSaving || svHeld('m') || mfSame(false);
+    b = S.root && S.root.querySelector('[data-p="mn-pub"]'); if (b) b.disabled = !!S.mSaving || svHeld('m') || mfSame(true);
+    b = S.root && S.root.querySelector('[data-p="n-save"]'); if (b) b.disabled = !!S.nSaving || svHeld('n') || nfSame();
+    b = S.root && S.root.querySelector('[data-p="g-save"]'); if (b && S.gf) b.disabled = !!(S.gf.busy || S.gf.saving) || svHeld('g') || gfSame();
     // Chef to-do: Save changes on a job opened with Change, on once something in it changed
     b = S.root && S.root.querySelector('[data-p="todo-save"]'); if (b && tdf.id) b.disabled = !tdDirty();
     // the end-of-day review (the wastage page or the admin Daily reviews form) and Change on the drinks run
