@@ -138,6 +138,7 @@ Measured on 2 and 3 November 2026: about 45 pull requests in two days, 100 Click
 - **A timing failure is not your bug until it repeats.** When Click tests fails on a test your change does not touch, read the failing test's name first. Re-run once; if it fails again, or a different timing test fails, say so in the pull request and fix it in its own pull request.
 - **Agents only where they pay.** Use parallel agents for design councils and wide audits. Do a lookup, a single file or a known fix yourself.
 - **Few sessions at once.** Three or four open pull requests merge smoothly; eight make each other run Click tests again and again. Group small changes to one page in one pull request when they share the same files.
+- **Keep "Require branches to be up to date before merging" on** (head chef, 4 Nov 2026). `main` goes straight to the phones, so every pull request is tested against the exact `main` it joins; two that pass alone can still break together. Cut the catch-up cost with fewer sessions and bringing `main` in once, not by turning the setting off. A merge queue would remove the waiting but needs an organisation-owned repository.
 - **The head chef can say "merge when green"** in the first message. In a cloud session that is the ask the session needs to merge by itself; without it, the session stops and asks.
 
 ## Commits and pull requests
@@ -158,7 +159,7 @@ Measured on 2 and 3 November 2026: about 45 pull requests in two days, 100 Click
 ## What GitHub enforces (checked 22 Oct 2026)
 - `main` is protected: the **Click tests** check must pass and the branch must be up to date with `main`; force pushes and deleting `main` are refused.
 - Not enforced by GitHub: reviews (none required, Claude merges by the head chef's decision of 21 Oct 2026), and the protection does not apply to admins. The main-branch guard hook (`scripts/guard-main.mjs`) stops Claude Code sessions from working on `main`; a person with admin rights can still push to it.
-- The **Click tests** job checks `js/*.js`, `js/lib/*.js` and `sw.js` parse, runs the click tests, then the rules checks on the Firestore emulator (`tests/rules`) and the nightly learning check (`scripts/emulator-check.mjs`), since 22 Oct 2026.
+- The **Click tests** job checks `js/*.js`, `js/lib/*.js` and `sw.js` parse, runs the click tests, then the rules checks on the Firestore emulator (`tests/rules`) and the nightly learning check (`scripts/emulator-check.mjs`), since 22 Oct 2026. A pull request that changes only `*.md` files or files under `docs/` passes after the parse check in about a minute (3 Nov 2026); do not put anything the book loads or a test reads under `docs/`. Since 3 Nov 2026 the browser files run in four shares on four runners at once, with the rules beside them, about 7 minutes instead of 25; the job named **Click tests** collects them. A failed file runs once more on its own: a pass then shows as a "passed on retry" warning, and the same file passing on retry twice is a bug for its own pull request. When a run fails, read its annotations or summary first (`gh api repos/<owner>/<repo>/check-runs/<id>/annotations`), not the whole log.
 
 ## Things that are easy to break
 Short warnings. The full contract for each part is its section in `docs/code-contracts.md` (or the feature note in the table above): read it before you change that part.
