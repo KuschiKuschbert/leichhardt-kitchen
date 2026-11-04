@@ -6,10 +6,7 @@ const { R, ok } = L.results();
   const b = await L.start();
   const p = await L.open(b, '#/prep', { width: 1280, height: 900, wait: 1500 });
   ok(await p.$('.nb-prog[role]') === null, 'the done count is not a live region');
-  // Enter twice: the first puts you on the line, the second ticks it (I'm on it, 5 Nov 2026)
   await p.focus('#nbr-i1 .nb-box'); await p.keyboard.press('Enter'); await L.settle(p, 400);
-  ok(/You're on it/.test(await p.evaluate(() => (document.getElementById('lk-live') || {}).textContent || '')) && await p.evaluate(() => document.activeElement && document.activeElement.matches('#nbr-i1 .nb-box')), 'the first Enter says You\'re on it and keeps the focus on the box');
-  await p.keyboard.press('Enter'); await L.settle(p, 400);
   ok(await p.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-p')) === 'tick', 'after a tick the focus stays on a tick box');
   ok(/Ticked/.test(await p.evaluate(() => (document.getElementById('lk-live') || {}).textContent || '')), 'the toast is read out from the live region');
   ok(await p.$('.p-toast[role]') === null, 'the toast itself is not a second live region');

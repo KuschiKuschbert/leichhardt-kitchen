@@ -20,7 +20,7 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
 
   // tick: the line stays in place, struck through, then leaves
   const before = await p.evaluate(() => [...document.querySelectorAll('.nb-row')].map(r => r.id));
-  await L.tickPrep(p, '#nbr-i5 .nb-box');
+  await p.click('#nbr-i5 .nb-box');
   await L.settle(p, 400);
   ok(await p.evaluate(() => { const r = document.querySelector('#nbr-i5'); return r && r.classList.contains('is-done'); }), 'tick: line stays, struck through');
   const mid = await p.evaluate(() => [...document.querySelectorAll('.nb-row')].map(r => r.id));
@@ -53,7 +53,7 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   // section tab with everything ticked says so
   await p.click('.nb-tab[data-v="Grill"]');
   await L.settle(p, 200);
-  await L.tickPrep(p, '#nbr-i3 .nb-box');
+  await p.click('#nbr-i3 .nb-box');
   await L.settle(p, 3800);
   ok(/Nothing left to do in Grill/.test(await p.evaluate(() => document.querySelector('.nb-left').innerText)), 'tabs: an empty section says so');
   await p.click('.nb-tab[data-v=""]');

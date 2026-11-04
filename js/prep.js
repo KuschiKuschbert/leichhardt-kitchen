@@ -1904,24 +1904,45 @@
     var valid = x && x.done === true && typeof x.preparedBy === 'string' && x.preparedBy.trim() && x.preparedBy.length <= 80 && typeof x.preparedById === 'string' && x.preparedById.trim() && x.preparedById.length <= 80 && Number.isFinite(x.preparedAt) && x.preparedAt > 0 && x.preparedAt === x.doneAt;
     return valid ? { id: x.preparedById, name: x.preparedBy } : { id: x && x.doneById || '', name: x && x.doneBy || '' };
   }
-  /* I'm on it (5 Nov 2026, head chef, round 2 of the work pages redesign): the first tap on an open prep line stamps
-     who is on it, and on a phone greys it for everyone else; the second tap ticks it done. On a phone the stamp is the
-     person signed in; a tap on someone else's stamped line takes it over. On the shared kitchen device the first tap
-     asks Who's on it? (the picker below) and the second tap ticks it for that cook. The tick clears the stamp; a rolled
-     copy starts without one. onBy, onById, onAt on the line; the rules check them (onPerson() in firestore.rules). */
+  /* I'm on it (5 Nov 2026, head chef, round 2 of the work pages redesign; its own button since that evening): On it on
+     an open line of today's list stamps who is on it, and on a phone greys the line for everyone else. The tick box
+     keeps one tap = done (20 Oct 2026): cooks used to it tap once when a job is finished, so a first tap that only
+     stamped (as built that morning) left finished lines open. On a phone the stamp is the person signed in: On it on a
+     free line puts you on it, on your own takes you off, on someone else's takes it over. On the shared kitchen device On
+     it asks Who's on it? (the picker below), and on a stamped line takes the cook off. Every phone, the shared tablet and
+     the wall board show the stamp. The tick clears it; a rolled copy starts without one. onBy, onById, onAt on the line;
+     the rules check them (onPerson() in firestore.rules). */
   function onOf(x) { return x && !x.done && typeof x.onById === 'string' && x.onById && typeof x.onBy === 'string' && x.onBy ? { id: x.onById, name: x.onBy, at: +x.onAt || 0 } : null; }
   function onMine(x) { var o = onOf(x), p = me(); return !!o && !!p && o.id === p.id; }
-  // a tap that stamps rather than ticks: an open line nobody is on, or on a phone someone else's
-  function onFirst(x) { return !!x && !x.done && !x.deleted && (!onOf(x) || (!shared() && !onMine(x))); }
+  // the On it button (data-p="onit"): a free line, your own (off) or someone else's (take over); the shared device asks
+  // Who's on it? on a free line and takes the cook off a stamped one
+  function onTap(date, id) {
+    var it = ptItem(id);
+    if (!it || it.done || it.deleted || !can('tick') || date !== dayNow() || pt && pt.busy) return;
+    if (shared() && S.name === 'prep') { if (onOf(it)) batch(function () { stampOff(date, id); }); else ptOpen(date, id, 'on'); return; }
+    batch(function () { if (onMine(it)) stampOff(date, id); else stampNow(date, id); });
+  }
   function stampNow(date, id) {
     var it = ptItem(id), p = me();
-    if (!it || !onFirst(it) || !can('tick')) return;
+    if (!it || it.done || it.deleted || onMine(it) || !can('tick')) return;
     if (!p) { toast('Choose your name before ticking prep.'); return; }
     var before = onOf(it);
     supd(itemRef(date, id), { onBy: p.name, onById: p.id, onAt: now() }).then(function () { markPast('p', date); }, failed);
-    toast((before ? 'Taken over from ' + before.name + '. ' : '') + 'You\'re on it. Tap again when it is done.', { label: 'Undo', stampFor: id, fn: function () {
+    toast((before ? 'Taken over from ' + before.name + '. ' : '') + 'You\'re on it. Tick it when it is done.', { label: 'Undo', stampFor: id, fn: function () {
       var y = ptItem(id); if (!y || y.done || y.onById !== p.id) return;
       supd(itemRef(date, id), before ? { onBy: before.name, onById: before.id, onAt: before.at || now() } : { onBy: '', onById: '', onAt: 0 }).then(null, failed);
+    } });
+  }
+  // takes the stamp off: your own on a phone, the cook's on the shared device; Undo puts it back while nobody else is on it
+  function stampOff(date, id) {
+    var it = ptItem(id), o = it && onOf(it);
+    if (!o || !can('tick')) return;
+    if (!me()) { toast('Choose your name before ticking prep.'); return; }
+    var mine = onMine(it) && !shared();
+    supd(itemRef(date, id), { onBy: '', onById: '', onAt: 0 }).then(function () { markPast('p', date); }, failed);
+    toast((mine ? 'You are' : o.name + ' is') + ' off ' + it.text + '.', { label: 'Undo', stampFor: id, fn: function () {
+      var y = ptItem(id); if (!y || y.done || y.deleted || onOf(y)) return;
+      supd(itemRef(date, id), { onBy: o.name, onById: o.id, onAt: o.at || now() }).then(null, failed);
     } });
   }
   var pt = null, ptPop = null;
@@ -1936,7 +1957,7 @@
   function ptSource(d) { var x = ptItem(d.id); return !!(x && !x.done && !x.deleted && ptSignature(x) === d.signature); }
   function ptFocus(d) {
     if (!d || !S.root || !document.body.contains(S.root)) return;
-    var buttons = S.root.querySelectorAll('.nb-box[data-p="tick"]'), chosen;
+    var buttons = S.root.querySelectorAll(d.mode === 'on' ? '.nb-onbtn[data-p="onit"]' : '.nb-box[data-p="tick"]'), chosen;
     Array.prototype.some.call(buttons, function (el) { if (el.getAttribute('data-id') === d.id && el.getAttribute('data-d') === d.date) { chosen = el; return true; } return false; });
     if (!chosen || chosen.disabled) chosen = S.root.querySelector('.nb-box[data-p="tick"]:not([disabled])') || S.root.querySelector('#rtitle');
     if (chosen) chosen.focus({ preventScroll: true });
@@ -1955,13 +1976,16 @@
     if (!pt.busy && !ptSource(pt)) { pt.stale = true;pt.error = 'This prep line changed. Close this choice and review the list.'; }
     if (!pt.busy && pt.selected && !ptPerson(pt.selected)) { pt.stale = true;pt.error = 'That person is no longer available. Close this choice and try again.'; }
     var active = ptPeople(), first = [], here = hereGet(), rest;
-    here.forEach(function (id) { var p = active.filter(function (x) { return x.id === id; })[0];if (p && first.indexOf(p) < 0) first.push(p); });
-    rest = active.filter(function (p) { return first.indexOf(p) < 0; });
+    // ticking a line someone is on: that cook first, under On it (they may not have finished it, so it still asks)
+    var onP = pt.mode === 'tick' && pt.before.onById ? active.filter(function (x) { return x.id === pt.before.onById; })[0] : null;
+    here.forEach(function (id) { var p = active.filter(function (x) { return x.id === id; })[0];if (p && p !== onP && first.indexOf(p) < 0) first.push(p); });
+    rest = active.filter(function (p) { return p !== onP && first.indexOf(p) < 0; });
     var disabled = pt.busy || pt.stale || pt.uncertain, query = String(pt.query || '').trim().toLowerCase();
     var filtered = rest.filter(function (p) { return String(p.name).toLowerCase().indexOf(query) >= 0; });
     var others = (active.length > 12 ? '<label class="visually-hidden" for="pt-query">Find a person</label><input class="search pt-query" id="pt-query" data-pt-query value="' + esc(pt.query || '') + '" placeholder="Find a person"' + (disabled ? ' disabled' : '') + '>' : '') + names(filtered, 'pt-others');
     function names(list, cls) { return '<div class="pt-names ' + cls + '">' + list.map(function (p) { var saving = pt.busy && pt.selected === p.id; return '<button type="button" class="chip" data-pt="choose" data-id="' + esc(p.id) + '" aria-busy="' + saving + '"' + (disabled ? ' disabled' : '') + '>' + (saving ? inkLabel(p.name, 'prep') : esc(p.name)) + '</button>'; }).join('') + '</div>'; }
     var body = '<div class="sheet-grip" aria-hidden="true"></div><h3 id="pt-h">' + (pt.mode === 'on' ? 'Who\'s on it?' : 'Who did this?') + '</h3><p class="pt-item">' + esc(pt.before.text) + (pt.before.qty ? ' <span>' + esc(pt.before.qty) + '</span>' : '') + '</p>' +
+      (onP ? '<p class="hint">On it</p>' + names([onP], 'pt-on') : '') +
       (first.length ? '<p class="hint">Signed in on this device today</p>' + names(first, 'pt-recent') : '') +
       (rest.length ? (first.length ? '<button type="button" class="p-link pt-others-button" data-pt="others" aria-expanded="' + pt.others + '"' + (disabled ? ' disabled' : '') + '>Others...</button>' : '') + (pt.others || !first.length ? others : '') : '') +
       (!active.length ? '<p class="p-err" role="status">No eligible kitchen names are available. Close and check the staff list.</p>' : '') +
@@ -1978,17 +2002,15 @@
       if (next && !next.disabled) next.focus({ preventScroll: true });
     }
   }
-  function ptOpen(date, id, mode, auto) {
+  function ptOpen(date, id, mode) {
     var x = ptItem(id), actor = me();
     if (!actor) { toast('Choose your name before ticking prep.');return; }
-    if (ovBack) { var epoch = accessEpoch, recorder = actor.id;ovAfterBack(function () { if (epoch === accessEpoch && S.who === recorder) ptOpen(date, id, mode, auto); });return; }
+    if (ovBack) { var epoch = accessEpoch, recorder = actor.id;ovAfterBack(function () { if (epoch === accessEpoch && S.who === recorder) ptOpen(date, id, mode); });return; }
     if (pt || !x || x.done || x.deleted || !can('tick') || !kitchenAccess() || !canW() || date !== S.date || sheetOpen() || ksWait || dkFirstUp()) return;
     pt = { mode: mode === 'on' ? 'on' : 'tick', id: id, date: date, pin: S.pin, uid: S.uid, recorder: actor.id, pinAt: S.sessPinAt, epoch: accessEpoch, openedDay: dayNow(), signature: ptSignature(x), before: Object.assign({}, x), others: false, selected: '', error: '', busy: false, stale: false, latest: null };
     var box = document.createElement('div');box.id = 'pt-sheet';box.innerHTML = '<div class="sheet-bg" data-pt="cancel"></div><section class="sheet pt-sheet" role="dialog" aria-modal="true" aria-labelledby="pt-h" tabindex="-1"></section>';
     ptPop = box;document.body.appendChild(box);ovPush('pt', ptBack);document.documentElement.classList.add('sheet-open');ptDraw();whoSync();
-    // the second tap on a stamped line: save at once for that cook, the sheet showing it until the server says so
-    if (auto) { ptSave(auto); return; }
-    var first = box.querySelector('.pt-recent .chip') || box.querySelector('.pt-others .chip') || box.querySelector('[data-pt="others"]') || box.querySelector('[data-pt="cancel"]');if (first) first.focus({ preventScroll: true });
+    var first = box.querySelector('.pt-on .chip') || box.querySelector('.pt-recent .chip') || box.querySelector('.pt-others .chip') || box.querySelector('[data-pt="others"]') || box.querySelector('[data-pt="cancel"]');if (first) first.focus({ preventScroll: true });
   }
   function ptRestore(d, acknowledged) {
     var index = S.items.map(function (x) { return x.id; }).indexOf(d.id);if (index < 0) return;
@@ -2013,7 +2035,7 @@
     d.finished = true;d.busy = false;d.uncertain = false;ptRestore(d, d.value);markPast('p', d.date);
     if (d.mode === 'on') {
       var who = d.value.onBy;
-      ptClose();batch(function () { toast(who + ' is on it. Tap again when it is done.', { label: 'Undo', stampFor: d.id, fn: function () { var y = ptItem(d.id); if (y && !y.done && y.onById === d.value.onById) supd(itemRef(d.date, d.id), { onBy: d.before.onBy || '', onById: d.before.onById || '', onAt: d.before.onAt || 0 }).then(null, failed); } });draw(); });
+      ptClose();batch(function () { toast(who + ' is on it. Tick it when it is done.', { label: 'Undo', stampFor: d.id, fn: function () { var y = ptItem(d.id); if (y && !y.done && y.onById === d.value.onById) supd(itemRef(d.date, d.id), { onBy: d.before.onBy || '', onById: d.before.onById || '', onAt: d.before.onAt || 0 }).then(null, failed); } });draw(); });
       return;
     }
     bump({ ticked: 1 });
@@ -2083,11 +2105,9 @@
   // (4 Nov 2026, LF-01: a toggle ticked a line again when the tick had failed or was undone on another phone)
   function tick(date, id, want) {
     var item = ptItem(id);if (pt && pt.busy) return;if (typeof want === 'boolean' && item && !!item.done === want) return;
-    // a tap (no want): the first stamps who is on it, the second ticks it (I'm on it, 5 Nov 2026)
-    if (typeof want !== 'boolean' && onFirst(item) && can('tick') && date === dayNow()) { if (shared() && S.name === 'prep') { ptOpen(date, id, 'on'); return; } batch(function () { stampNow(date, id); }); return; }
-    // the shared device ticks through the picker's careful save, for the cook on it (no second question when they can
-    // still be credited); a line nobody is on (an Undo, a past day) asks Who did this? as before
-    if (item && !item.done && shared() && S.name === 'prep') { var o = onOf(item); ptOpen(date, id, 'tick', o && ptPerson(o.id) ? o.id : ''); return; }
+    // one tap = done (I'm on it has its own button, onTap()); the shared device asks Who did this? first, the cook on
+    // the line at the top, and saves through the picker's careful save
+    if (item && !item.done && shared() && S.name === 'prep') { ptOpen(date, id, 'tick'); return; }
     batch(function () { tickNow(date, id, want); });
   }
   function tickNow(date, id, want) {
@@ -4135,15 +4155,17 @@
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
     var keep = !readonly && lineMenuOk(x, date);
     var del = delOk ? '<button type="button" class="nb-x" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'Put back' : 'Remove') + '</button>' : '';
-    // the box says what the next tap does: put you on it, tick it, or take it over (I'm on it, 5 Nov 2026)
-    var stamps = tickOk && !readonly && !x.done && date === dayNow() && onFirst(x);
-    var boxSay = x.done ? 'Untick ' + x.text : stamps ? (on ? 'Take over ' + x.text + ' from ' + on.name : 'I\'m on it: ' + x.text) : 'Tick ' + x.text + (on ? ', ' + on.name + ' on it' : '');
+    var boxSay = x.done ? 'Untick ' + x.text : 'Tick ' + x.text + (on ? ', ' + on.name + ' on it' : '');
+    // I'm on it: its own button on an open line of today's list (onTap()); the box stays one tap = done
+    var onBtn = tickOk && !readonly && !x.done && date === dayNow() ? '<button type="button" class="nb-onbtn" data-p="onit" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!on + '" aria-label="' +
+      esc(!on ? (shared() ? 'Who\'s on it: ' : 'I\'m on it: ') + x.text : shared() ? 'Take ' + on.name + ' off ' + x.text : onMine(x) ? 'Take me off ' + x.text : 'Take over ' + x.text + ' from ' + on.name) + '"><span class="nb-onp">' +
+      (on ? esc(on.name.trim().split(/\s+/)[0]) + ' &#10003;' : 'On it') + '</span></button>' : '';
     return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (on ? (onOther ? ' is-on-other' : ' is-on') : '') + (x.done ? ' is-done' : '') + (rolledN(x) && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(date + '/' + x.id) + '">' +
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc(boxSay) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : on ? '<span class="nb-on-i" aria-hidden="true">' + esc(on.name.trim().charAt(0).toUpperCase()) + '</span>' : BOX) + '</button>' +
       // a tap on the words ticks too (the box is the button for keyboards and screen readers); Undo and the linger cover a slip
       '<span class="nb-main"><span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + num + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + numSay + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + unsentMark(x) + '</span>' +
       // the stamp leads the second line (it never adds a line, so a stamp or a tick moves no row)
-      metaHTML(on ? ['<b class="nb-on">' + (onMine(x) && !shared() ? 'You\'re on it' : esc(on.name) + ' on it') + '</b>'] : [], by, x.done ? 'Recorded by ' + (x.doneBy || '') : '') + '</span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + ((del || keep) && !readonly ? moreBtn(x, keep) : '') + '</span>' : '') + '</li>';
+      metaHTML(on ? ['<b class="nb-on">' + (onMine(x) && !shared() ? 'You\'re on it' : esc(on.name) + ' on it') + '</b>'] : [], by, x.done ? 'Recorded by ' + (x.doneBy || '') : '') + '</span>' + (onBtn || star || link || del ? '<span class="nb-acts">' + onBtn + star + link + del + ((del || keep) && !readonly ? moreBtn(x, keep) : '') + '</span>' : '') + '</li>';
   }
   /* The line menu (22 Oct 2026, Option B): on a phone, Remove (or Put back) and who wrote the line move behind a ⋯ on
      the line, so the item and the amount lead. On a laptop everything stays in the line and the ⋯ is not shown. The sheet
@@ -9983,6 +10005,7 @@
     // the wall board on the shared kitchen tablet (wallOn()), kept for this tablet; focus goes to the way back
     if (a === 'wall') { lsSet('lk.wall', el.getAttribute('data-v') === '1' ? '1' : ''); S.tab = ''; draw(); var wb = S.root && S.root.querySelector('[data-p="wall"]'); if (wb) wb.focus(); return; }
     if (a === 'tick') { tick(dt || S.date, id); return; }
+    if (a === 'onit') { onTap(dt || S.date, id); return; }
     if (a === 'del') { removeItem(dt || S.date, id, false); return; }
     if (a === 'restore') { removeItem(dt || S.date, id, true); return; }
     if (a === 'removed') { S.showRemoved = !S.showRemoved; draw(); return; }

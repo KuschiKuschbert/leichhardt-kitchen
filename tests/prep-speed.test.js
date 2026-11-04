@@ -9,7 +9,7 @@ const item = (p, id) => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['d
 (async () => {
   const b = await L.start();
   let p = await L.open(b, '#/prep', { extra, wait: 1600 });
-  await L.tickPrep(p, '#nbr-i2 .nb-tt'); await L.settle(p, 400);
+  await p.click('#nbr-i2 .nb-tt'); await L.settle(p, 400);
   ok((await item(p, 'i2')).done === true, 'a tap on the words ticks the line');
   ok(/Ticked/.test(await L.txt(p, '.p-toast') || ''), 'and says Ticked, with Undo');
   await p.click('#nbr-i3 .nb-star'); await L.settle(p, 300);
@@ -29,7 +29,7 @@ const item = (p, id) => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['d
   // no signal: the line shows Not sent until the write goes through (on a good signal only after 3 seconds, 27 Oct 2026)
   await p.context().setOffline(true);
   await p.evaluate(() => { window.__fake.mode = 'hold'; });
-  await L.tickPrep(p, '[data-p="tick"][data-id="i6"]'); await L.settle(p, 400);
+  await L.tap(p, '[data-p="tick"][data-id="i6"]'); await L.settle(p, 400);
   await p.evaluate(() => { window.__fake.mode = 'ok'; });
   await p.click('.nb-tab[data-v=""]', { timeout: 2000 }).catch(() => {});
   ok(/Not sent/.test(await p.evaluate(() => document.body.textContent)), 'an unsent tick shows Not sent');
