@@ -1,0 +1,768 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Design study only: example data, not part of the book. Same page as the published comparison. -->
+<title>Supplier and Delivery Redesign</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: a reading column for the case, a wide band for the phone mockups, the Kitchen Book's own paper, charcoal and orange.
+   The phone mockups always show the app's light look; the page around them follows the viewer's theme. */
+:root {
+  --bg: #FBFAF7;
+  --surface: #FFFFFF;
+  --ink: #1C1D1F;
+  --muted: #55585E;
+  --line: #E0DBCF;
+  --accent: #E2602A;
+  --accent-ink: #B83F15;
+  --beige: #F2EFE8;
+  --band: #2B2A27;
+  --band-text: #FBF8F1;
+  --band-accent: #F08A4B;
+  --band-muted: #CFC8BA;
+  --done: #237347;
+  --done-tint: #EAF5EE;
+  --hit: #FFF1E6;
+  --frame: #1C1D1F;
+  --shadow: rgba(43, 42, 39, .16);
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* the app inside each phone: the book's real tokens from css/app.css */
+  --app-bg: #FBFAF7;
+  --app-paper: #FFFFFF;
+  --app-ink: #1C1D1F;
+  --app-muted: #55585E;
+  --app-line: #E0DBCF;
+  --app-edge: #D9D4C8;
+  --app-accent: #E2602A;
+  --app-accent-ink: #C2451A;
+  --app-tag: #B83F15;
+  --app-beige: #F2EFE8;
+  --app-hit: #FFF1E6;
+  --app-bar: #2B2A27;
+  --app-bar-text: #FBF8F1;
+  --app-bar-accent: #F08A4B;
+  --app-done: #237347;
+  --app-done-tint: #EAF5EE;
+  --app-warn: #9B2716;
+  --app-on-fill: #FFFFFF;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1A1917; --surface: #24221F; --ink: #F3EFE6; --muted: #B9B2A5; --line: #3B3833;
+    --accent: #F08A4B; --accent-ink: #F5A06B; --beige: #2C2A26; --band: #0F0E0D; --band-text: #FBF8F1;
+    --band-accent: #F08A4B; --band-muted: #B9B2A5; --done: #74C496; --done-tint: #1D2C23; --hit: #3A2719;
+    --frame: #4A4640; --shadow: rgba(0, 0, 0, .45); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1A1917; --surface: #24221F; --ink: #F3EFE6; --muted: #B9B2A5; --line: #3B3833;
+  --accent: #F08A4B; --accent-ink: #F5A06B; --beige: #2C2A26; --band: #0F0E0D; --band-text: #FBF8F1;
+  --band-accent: #F08A4B; --band-muted: #B9B2A5; --done: #74C496; --done-tint: #1D2C23; --hit: #3A2719;
+  --frame: #4A4640; --shadow: rgba(0, 0, 0, .45); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.55 var(--body); margin: 0; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--band); }
+.band { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1140px; margin: 0 auto; }
+.col { max-width: 760px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; line-height: 1.05; text-wrap: balance; margin: 0; }
+h2 { font-size: clamp(1.9rem, 4vw, 2.5rem); }
+h3 { font-size: 1.45rem; }
+p { margin: 0; }
+.eyebrow { font: 600 .78rem/1.2 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--accent-ink); }
+.lede { font-size: 1.12rem; color: var(--muted); max-width: 62ch; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* hero */
+.hero { background: var(--band); color: var(--band-text); padding-block: 40px 44px; }
+.hero .eyebrow { color: var(--band-accent); }
+.hero h1 { font-size: clamp(2.4rem, 7vw, 4.2rem); margin: 10px 0 14px; max-width: 16ch; }
+.hero p { color: var(--band-muted); font-size: 1.1rem; max-width: 60ch; }
+.hero-flags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.flag { border: 1.5px solid var(--band-muted); border-radius: 999px; padding: 4px 12px; font-size: .85rem; font-weight: 600; color: var(--band-text); }
+
+section.part { padding-block: 44px 8px; }
+section.part > .wrap > header { display: grid; gap: 8px; margin-bottom: 22px; }
+
+/* short answer */
+.answer { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+.answer > div { background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--accent); padding: 18px 20px; display: grid; gap: 6px; min-width: 0; }
+.answer > div.rec { border-left-color: var(--done); }
+.answer b { font-family: var(--display); font-size: 1.35rem; font-weight: 700; }
+
+/* findings and upgrades */
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 28px 48px; }
+.two > div { min-width: 0; }
+.two h3 { padding-bottom: 8px; border-bottom: 2px solid var(--ink); margin-bottom: 4px; }
+.ruled { list-style: none; margin: 0; padding: 0; }
+.ruled li { padding: 12px 0; border-bottom: 1px solid var(--line); display: grid; gap: 4px; }
+.ruled li b { font-weight: 700; }
+.ruled li span { color: var(--muted); }
+.up { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 14px; }
+.up .marks { display: flex; gap: 4px; align-self: start; }
+.mk { width: 26px; height: 26px; display: grid; place-items: center; font: 700 .95rem var(--display); border: 1.5px solid var(--line); color: var(--muted); border-radius: 4px; }
+.mk.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; grid-column: 1 / -1; }
+.tag { font-size: .76rem; font-weight: 600; border-radius: 999px; padding: 2px 10px; border: 1.5px solid var(--line); color: var(--muted); }
+.tag.call { border-color: var(--accent); color: var(--accent-ink); }
+.tag.data { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.key { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; color: var(--muted); font-size: .9rem; margin-top: 4px; }
+.key span { display: inline-flex; gap: 6px; align-items: center; }
+
+/* option switch */
+.opt-tabs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 12px; margin-bottom: 26px; }
+.opt-tab { text-align: left; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 14px; padding: 16px 18px; background: var(--surface); color: var(--ink); border: 2px solid var(--line); border-radius: 8px; cursor: pointer; font: inherit; }
+.opt-tab .letter { grid-row: span 2; font: 700 2.6rem/1 var(--display); color: var(--muted); }
+.opt-tab b { font: 700 1.4rem/1.1 var(--display); }
+.opt-tab small { color: var(--muted); font-size: .95rem; }
+.opt-tab em { font-style: normal; font-size: .75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--done); }
+.opt-tab[aria-selected="true"] { border-color: var(--ink); box-shadow: 0 6px 18px var(--shadow); }
+.opt-tab[aria-selected="true"] .letter { color: var(--accent); }
+.opt-intro { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 16px 40px; margin-bottom: 26px; }
+.opt-intro h3 { font-size: 2rem; margin-bottom: 8px; }
+.opt-intro ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 6px; color: var(--muted); }
+.opt-intro ul b { color: var(--ink); }
+
+.phones { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 28px 24px; align-items: start; }
+.shot { display: grid; gap: 12px; min-width: 0; justify-items: center; }
+.shot figcaption { max-width: 360px; width: 100%; display: grid; gap: 4px; }
+.shot figcaption b { font: 700 1.2rem var(--display); }
+.shot figcaption span { color: var(--muted); font-size: .95rem; }
+figure { margin: 0; }
+
+/* the phone */
+.phone { width: 100%; max-width: 360px; border: 8px solid var(--frame); border-radius: 30px; overflow: hidden; background: var(--app-bg); color: var(--app-ink); box-shadow: 0 14px 34px var(--shadow); font: 400 15px/1.4 var(--body); }
+.screen { height: 660px; overflow-y: auto; display: flex; flex-direction: column; background: var(--app-bg); scrollbar-width: thin; }
+.app-bar { display: flex; align-items: center; gap: 8px; background: var(--app-bar); color: var(--app-bar-text); padding: 10px 10px 10px 8px; flex: none; }
+.app-bar b { font: 700 1.3rem var(--display); flex: 1; }
+.app-bar svg { width: 22px; height: 22px; flex: none; }
+.ring { width: 34px; height: 34px; border: 1.5px solid var(--app-bar-text); border-radius: 50%; display: grid; place-items: center; flex: none; }
+.ring svg { width: 18px; height: 18px; }
+.app-cut { background: var(--app-hit); border-bottom: 1px solid var(--app-line); padding: 7px 12px; font-size: .8rem; display: flex; gap: 8px; justify-content: space-between; align-items: center; flex: none; }
+.app-cut b { color: var(--app-accent-ink); letter-spacing: .04em; }
+.app-page { padding: 14px 14px 18px; display: grid; gap: 12px; align-content: start; flex: 1 0 auto; }
+.app-eyebrow { font: 600 .68rem var(--body); letter-spacing: .13em; text-transform: uppercase; color: var(--app-tag); }
+.app-h1 { font: 700 1.95rem/1 var(--display); margin: 2px 0 0; }
+.app-hint { font-size: .8rem; color: var(--app-muted); }
+.app-label { font: 700 .72rem var(--body); letter-spacing: .1em; text-transform: uppercase; color: var(--app-ink); }
+.app-label small { text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--app-muted); }
+.stack { display: grid; gap: 6px; }
+
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 86%, transparent); mask-image: linear-gradient(90deg, #000 86%, transparent); }
+.chips::-webkit-scrollbar { display: none; }
+.chips.wrap-ok { flex-wrap: wrap; -webkit-mask-image: none; mask-image: none; }
+.chip { flex: none; border: 1.5px solid var(--app-ink); background: var(--app-paper); color: var(--app-ink); border-radius: 999px; padding: 6px 12px; font: 600 .8rem var(--body); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; min-height: 34px; }
+.chip[aria-pressed="true"] { background: var(--app-ink); color: var(--app-paper); }
+.chip .n { font-weight: 500; opacity: .75; }
+.chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--app-accent); }
+
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); border: 1.5px solid var(--app-ink); border-radius: 999px; overflow: hidden; background: var(--app-paper); }
+.seg button { border: 0; background: transparent; color: var(--app-ink); font: 700 1rem var(--display); letter-spacing: .02em; min-height: 44px; cursor: pointer; }
+.seg button + button { border-left: 1.5px solid var(--app-ink); }
+.seg button[aria-pressed="true"] { background: var(--app-ink); color: var(--app-paper); }
+
+.inp { width: 100%; min-height: 44px; border: 1.5px solid var(--app-edge); border-radius: 8px; padding: 0 10px; background: var(--app-paper); color: var(--app-ink); font: 500 1rem var(--body); }
+.temp { display: flex; align-items: stretch; min-height: 58px; border: 1.5px solid var(--app-edge); border-radius: 8px; background: var(--app-paper); overflow: hidden; }
+.temp input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--app-ink); font: 700 1.9rem var(--display); padding: 0 12px; }
+.temp .unit { display: grid; place-items: center; padding: 0 12px; color: var(--app-muted); font-weight: 700; }
+.temp .sign { width: 52px; border: 0; border-right: 1.5px solid var(--app-edge); background: var(--app-beige); color: var(--app-ink); font: 700 1.6rem var(--display); cursor: pointer; }
+.temp .sign[aria-pressed="true"] { background: var(--app-ink); color: var(--app-paper); }
+.temps { display: grid; gap: 10px; }
+.temps.both { grid-template-columns: 1fr 1fr; }
+.temps.both .temp input { font-size: 1.5rem; padding: 0 8px; }
+.temps.both .temp .sign { width: 38px; }
+.temps.both .temp .unit { padding: 0 8px; }
+
+.timeline { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; background: var(--app-beige); border-radius: 8px; font-size: .88rem; }
+.linkish { background: none; border: 0; padding: 0; color: var(--app-ink); font: 600 .85rem var(--body); text-decoration: underline; cursor: pointer; }
+.btn { min-height: 46px; border-radius: 8px; border: 1.5px solid var(--app-ink); background: var(--app-paper); color: var(--app-ink); font: 600 .95rem var(--body); padding: 0 14px; cursor: pointer; }
+.btn.primary { background: var(--app-accent-ink); border-color: var(--app-accent-ink); color: var(--app-on-fill); }
+.btn.dark { background: var(--app-ink); color: var(--app-paper); }
+.btn.full { width: 100%; }
+.fold { border-top: 1px dashed var(--app-edge); padding-top: 8px; font-size: .85rem; color: var(--app-muted); }
+
+.log { list-style: none; margin: 0; padding: 0; }
+.log li { display: grid; grid-template-columns: 46px minmax(0, 1fr); gap: 8px; padding: 9px 0; border-top: 1px solid var(--app-line); font-size: .86rem; }
+.log time { font-weight: 700; font-variant-numeric: tabular-nums; }
+.log .r { color: var(--app-muted); }
+.log .expect { color: var(--app-tag); font-weight: 600; }
+.log-head { display: flex; justify-content: space-between; align-items: baseline; border-top: 2px solid var(--app-ink); padding-top: 10px; }
+.log-head b { font: 700 1.35rem var(--display); }
+
+/* supplier rows, option A */
+.asked { background: var(--app-hit); border-left: 3px solid var(--app-accent); padding: 8px 10px; font-size: .82rem; display: grid; gap: 4px; }
+.asked b { font-weight: 700; }
+.cat { font: 600 .68rem var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--app-tag); padding-top: 4px; }
+.rows { display: grid; }
+.row { border-top: 1px solid var(--app-line); padding: 10px 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; align-items: center; }
+.row[hidden] { display: none; }
+.row .nm b { font-size: .95rem; }
+.row .nm small { display: block; color: var(--app-muted); font-size: .76rem; }
+.pill { display: inline-block; font-size: .66rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--app-tag); border: 1px solid var(--app-tag); border-radius: 999px; padding: 0 6px; margin-left: 4px; vertical-align: 2px; }
+.pill.low { color: var(--app-warn); border-color: var(--app-warn); }
+.stepper { display: inline-flex; align-items: center; border: 1.5px solid var(--app-edge); border-radius: 8px; background: var(--app-paper); height: 42px; }
+.stepper button { width: 34px; height: 100%; border: 0; background: transparent; color: var(--app-ink); font: 700 1.3rem var(--body); cursor: pointer; }
+.stepper input { width: 40px; border: 0; text-align: center; background: transparent; color: var(--app-ink); font: 700 1.05rem var(--body); }
+.stepper + small { display: block; text-align: center; font-size: .7rem; color: var(--app-muted); }
+.row .sub { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .8rem; color: var(--app-muted); }
+.onhand { display: inline-flex; align-items: center; gap: 6px; }
+.onhand input { width: 52px; height: 32px; border: 1.5px solid var(--app-edge); border-radius: 6px; text-align: center; font: 600 .9rem var(--body); background: var(--app-paper); color: var(--app-ink); }
+.use { border: 1.5px dashed var(--app-accent-ink); background: var(--app-hit); color: var(--app-tag); border-radius: 999px; padding: 3px 10px; font: 700 .76rem var(--body); cursor: pointer; }
+.use[aria-pressed="true"] { border-style: solid; background: var(--app-done-tint); border-color: var(--app-done); color: var(--app-done); }
+
+.foot { position: sticky; bottom: 0; margin-top: auto; flex: none; z-index: 2; }
+.foot-bar { background: var(--app-paper); border-top: 2px solid var(--app-ink); padding: 9px 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.foot-bar .ct { font-size: .82rem; color: var(--app-muted); }
+.foot-bar .ct b { display: block; color: var(--app-ink); font-size: .95rem; }
+.tabbar { display: grid; grid-template-columns: repeat(6, 1fr); background: var(--app-bar); color: var(--app-bar-text); font: 700 .58rem var(--display); letter-spacing: .04em; text-transform: uppercase; text-align: center; padding: 8px 0 9px; border-top: 2px solid var(--app-accent); }
+.tabbar span::before { content: ""; display: block; width: 16px; height: 14px; margin: 0 auto 3px; border: 1.5px solid currentColor; border-radius: 3px; opacity: .85; }
+
+/* review */
+.lines { display: grid; }
+.lines div { display: flex; justify-content: space-between; gap: 10px; padding: 9px 0; border-top: 1px solid var(--app-line); font-size: .9rem; }
+.lines div:last-child { border-bottom: 1px solid var(--app-line); }
+.lines small { display: block; color: var(--app-muted); font-size: .74rem; }
+.lines strong { white-space: nowrap; }
+.sendbox { background: var(--app-beige); border-radius: 8px; padding: 10px; display: grid; gap: 8px; font-size: .82rem; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-row .btn { flex: 1; }
+
+/* option B */
+.dockets { display: grid; gap: 10px; }
+.docket { background: var(--app-paper); border: 1px solid var(--app-line); border-top: 5px solid var(--app-edge); border-radius: 3px; padding: 10px 12px 12px; display: grid; gap: 4px; box-shadow: 0 2px 6px rgba(43, 42, 39, .08); }
+.docket.due { border-top-color: var(--app-accent); }
+.docket.arriving { border-top-color: var(--app-ink); }
+.docket.received { border-top-color: var(--app-done); }
+.docket .top { display: flex; justify-content: space-between; align-items: start; gap: 8px; }
+.docket .top b { font: 700 1.2rem/1.1 var(--display); }
+.stamp { font: 700 .72rem var(--display); letter-spacing: .08em; text-transform: uppercase; border: 1.5px solid currentColor; padding: 1px 6px; border-radius: 2px; transform: rotate(-2deg); white-space: nowrap; }
+.due .stamp { color: var(--app-accent-ink); }
+.arriving .stamp { color: var(--app-ink); }
+.received .stamp { color: var(--app-done); }
+.later .stamp { color: var(--app-muted); }
+.docket p { font-size: .82rem; color: var(--app-muted); }
+.docket .go { justify-self: start; margin-top: 4px; min-height: 36px; font-size: .85rem; }
+.docket.picked { outline: 2.5px solid var(--app-ink); outline-offset: 1px; }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.steps span { text-align: center; font: 700 .9rem var(--display); padding: 6px 0; border-bottom: 3px solid var(--app-line); color: var(--app-muted); }
+.steps span.on { border-color: var(--app-accent); color: var(--app-ink); }
+.count-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; align-items: center; border-top: 1px solid var(--app-line); padding: 10px 0; }
+.count-row .nm b { font-size: 1rem; }
+.count-row .nm small { display: block; color: var(--app-muted); font-size: .76rem; }
+.count-row .stepper { height: 46px; }
+.count-row .stepper button { width: 40px; }
+.chk { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; border-top: 1px solid var(--app-line); padding: 9px 0; }
+.chk .nm { display: flex; justify-content: space-between; gap: 8px; font-size: .88rem; }
+.chk .nm strong { white-space: nowrap; }
+.mini-seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.mini-seg button { border: 1.5px solid var(--app-edge); background: var(--app-paper); color: var(--app-ink); border-radius: 999px; font: 600 .76rem var(--body); min-height: 32px; cursor: pointer; }
+.mini-seg button[aria-pressed="true"][data-v="got"] { background: var(--app-done-tint); border-color: var(--app-done); color: var(--app-done); }
+.mini-seg button[aria-pressed="true"][data-v="short"], .mini-seg button[aria-pressed="true"][data-v="missing"] { background: var(--app-hit); border-color: var(--app-accent-ink); color: var(--app-tag); }
+.limit { font-size: .8rem; color: var(--app-muted); background: var(--app-beige); border-radius: 6px; padding: 6px 10px; }
+.chef-only { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--app-muted); }
+
+/* compare */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: .95rem; }
+th, td { text-align: left; vertical-align: top; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+thead th { font: 700 1.15rem var(--display); border-bottom: 2px solid var(--ink); }
+tbody th { font-weight: 600; color: var(--muted); width: 24%; }
+td.win { background: var(--done-tint); }
+
+.why { counter-reset: why; list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+.why li { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); gap: 10px; }
+.why li::before { counter-increment: why; content: counter(why); font: 700 1.6rem/1 var(--display); color: var(--accent); }
+.plan { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; margin-top: 26px; }
+.plan > div { border-top: 3px solid var(--ink); padding-top: 10px; display: grid; gap: 6px; min-width: 0; }
+.plan b { font: 700 1.25rem var(--display); }
+.plan span { color: var(--muted); }
+.decide { display: grid; gap: 0; }
+.decide li { padding: 14px 0; }
+.foot-note { color: var(--muted); font-size: .9rem; padding-block: 36px 48px; }
+@media (prefers-reduced-motion: no-preference) { .opt-tab, .chip, .btn { transition: background-color .15s, border-color .15s, box-shadow .15s; } }
+</style>
+</head><body>
+
+<div class="band hero">
+  <div class="wrap">
+    <p class="eyebrow">Leichhardt Kitchen Book · Design study · 3 Nov 2026</p>
+    <h1>Supplier order and Delivery received</h1>
+    <p>Upgrades for both pages, and two ways to redesign them. Tap through the phones below: the switches and buttons work.</p>
+    <div class="hero-flags"><span class="flag">Example data only</span><span class="flag">No change to the book until you choose</span><span class="flag">Recommended: A</span></div>
+  </div>
+</div>
+
+<section class="part band" id="answer">
+  <div class="wrap">
+    <div class="answer">
+      <div><span class="eyebrow">One temperature</span><b>One reading already saves.</b><p>The book accepts a chiller reading, a freezer reading, or both. The page puts two boxes side by side under one heading, so it reads like both are needed. Both designs ask <b>What came in?</b> first and then show one box.</p></div>
+      <div class="rec"><span class="eyebrow">Recommendation</span><b>A, The Order Sheet.</b><p>It fixes what slows people down today with no change to saved data or the rules, ships in three small steps, and each step can be undone on its own. B's order check can follow later.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="part band" id="found">
+  <div class="wrap">
+    <header><p class="eyebrow">What I found</p><h2>The current pages, on a phone</h2></header>
+    <div class="two">
+      <div>
+        <h3>Supplier order</h3>
+        <ul class="ruled">
+          <li><b>Counting is hidden.</b><span>Stock on hand sits inside each item's Details. You open an item to count it, close it, then type the order.</span></li>
+          <li><b>Suggestions are far from the item.</b><span>They live in a closed panel above the list, not on the row they are for.</span></li>
+          <li><b>20 items a page.</b><span>A supplier with 60 items is three pages, and Review order is only at the bottom.</span></li>
+          <li><b>Staff requests are a small tag.</b><span>The row says "Staff request to check" but not who asked, for what or how much.</span></li>
+          <li><b>Rows are tall.</b><span>Name, pack, Details, Par, To confirm, Last order, a box and a unit hint: about five items per phone screen.</span></li>
+          <li><b>No view of the day.</b><span>Nothing shows which suppliers have a draft, are ordered or are due in.</span></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Delivery received</h3>
+        <ul class="ruled">
+          <li><b>Two boxes look required.</b><span>Chiller and freezer sit side by side. The hint that one is enough is easy to miss.</span></li>
+          <li><b>Two keypads.</b><span>The chiller box opens the number pad. The freezer box opens the full keyboard so the minus sign can be reached.</span></li>
+          <li><b>The supplier is typed every time.</b><span>One supplier typed three ways becomes three suppliers in any report.</span></li>
+          <li><b>The book knows who is due, but does not say.</b><span>The order cut-offs already hold each supplier's delivery days.</span></li>
+          <li><b>Save is out of reach.</b><span>It sits under the notes box, behind the bottom tabs until you scroll.</span></li>
+          <li><b>Admin sees one date at a time.</b><span>No week view, no supplier filter, no CSV.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="part band" id="upgrades">
+  <div class="wrap">
+    <header><p class="eyebrow">Upgrades</p><h2>What each page could gain</h2>
+      <div class="key"><span><i class="mk on">A</i><i class="mk on">B</i> in that design</span><span><i class="tag">Screen only</i> no saved data or rules change</span><span><i class="tag call">Your call</i> head chef decision first</span><span><i class="tag data">Data and rules</i> new saved fields</span></div>
+    </header>
+    <div class="two">
+      <div>
+        <h3>Supplier order</h3>
+        <ul class="ruled">
+          <li class="up"><b>On hand and To order on the same row</b><span class="marks"><i class="mk on">A</i><i class="mk on">B</i></span><span>Count and order without opening Details.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+          <li class="up"><b>Top-up to par on the row</b><span class="marks"><i class="mk on">A</i><i class="mk on">B</i></span><span>Once on hand is counted in a confirmed unit, a Use chip fills the gap to par. It still needs your tap.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+          <li class="up"><b>Filter chips</b><span class="marks"><i class="mk on">A</i><i class="mk on">B</i></span><span>All, Below par, Asked for, In this order.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+          <li class="up"><b>What staff asked for, in full</b><span class="marks"><i class="mk on">A</i><i class="mk on">B</i></span><span>Who, what, how much and when, from the order list read the page already makes.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+          <li class="up"><b>Review order always in reach</b><span class="marks"><i class="mk on">A</i><i class="mk on">B</i></span><span>A bar above the tabs: items in this order and Review.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+          <li class="up"><b>− and + on the order box</b><span class="marks"><i class="mk on">A</i><i class="mk on">B</i></span><span>For cases, bags and boxes. Typing "2 kg" still works.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+          <li class="up"><b>One list with category jumps</b><span class="marks"><i class="mk on">A</i><i class="mk on">B</i></span><span>No pages of 20. Checked for speed on the biggest supplier first.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+          <li class="up"><b>Share order text</b><span class="marks"><i class="mk on">A</i><i class="mk on">B</i></span><span>Opens the phone's own text, email or WhatsApp. The book still sends nothing itself.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+          <li class="up"><b>Today's suppliers at a glance</b><span class="marks"><i class="mk on">A</i><i class="mk on">B</i></span><span>A: a chip strip with each supplier's cut-off. B: a docket board from draft to received.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+          <li class="up"><b>Count walk</b><span class="marks"><i class="mk">A</i><i class="mk on">B</i></span><span>Count one category at a time with big buttons, then order.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Delivery received</h3>
+        <ul class="ruled">
+          <li class="up"><b>What came in? Chilled, Frozen or Both</b><span class="marks"><i class="mk on">A</i><i class="mk on">B</i></span><span>One box for one, two for Both. The saved record is the same as today.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+          <li class="up"><b>Expected today, one tap</b><span class="marks"><i class="mk on">A</i><i class="mk on">B</i></span><span>Supplier chips from the order cut-offs already on the phone, plus Other. Names match, so reports group properly.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+          <li class="up"><b>A − key on the frozen box</b><span class="marks"><i class="mk on">A</i><i class="mk on">B</i></span><span>Both readings use the number pad.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+          <li class="up"><b>Time as one line</b><span class="marks"><i class="mk on">A</i><i class="mk on">B</i></span><span>"14:05 today" with Change, instead of two boxes.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+          <li class="up"><b>Save straight under the reading</b><span class="marks"><i class="mk on">A</i><i class="mk on">B</i></span><span>Items and notes fold away until needed.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+          <li class="up"><b>Still expected</b><span class="marks"><i class="mk on">A</i><i class="mk on">B</i></span><span>Today's list names suppliers due today with nothing received yet.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+          <li class="up"><b>Admin range, supplier filter and CSV</b><span class="marks"><i class="mk on">A</i><i class="mk on">B</i></span><span>Like Wastage history. One read on tap.</span><span class="tags"><i class="tag">Screen only</i></span></li>
+          <li class="up"><b>Temperature limits</b><span class="marks"><i class="mk">A</i><i class="mk on">B</i></span><span>You set them. A reading over the limit asks what was done: sent back, or accepted with a reason.</span><span class="tags"><i class="tag call">Your call</i><i class="tag data">Data and rules</i></span></li>
+          <li class="up"><b>Check the order on arrival</b><span class="marks"><i class="mk">A</i><i class="mk on">B</i></span><span>Chefs mark each ordered line Got it, Short or Missing. Staff still see only temperatures.</span><span class="tags"><i class="tag call">Your call</i><i class="tag data">Data and rules</i></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="part band" id="options">
+  <div class="wrap">
+    <header><p class="eyebrow">Two designs</p><h2>Pick a direction</h2></header>
+    <div class="opt-tabs" role="tablist" aria-label="Design options">
+      <button class="opt-tab" role="tab" id="tab-a" aria-controls="panel-a" aria-selected="true" data-opt-tab="a"><span class="letter">A</span><b>The Order Sheet</b><small>Same pages, faster on the line. <em>Recommended</em></small></button>
+      <button class="opt-tab" role="tab" id="tab-b" aria-controls="panel-b" aria-selected="false" tabindex="-1" data-opt-tab="b"><span class="letter">B</span><b>The Supplier Docket</b><small>One loop from order to arrival.</small></button>
+    </div>
+
+    <!-- OPTION A -->
+    <div id="panel-a" role="tabpanel" aria-labelledby="tab-a" data-opt-panel="a">
+      <div class="opt-intro">
+        <div><h3>A · The Order Sheet</h3><p class="lede">Keep both pages and the way they work now. Tidy each supplier row so counting and ordering happen in one place, and turn Delivery received into a one-reading form that knows who is due.</p></div>
+        <ul>
+          <li><b>Saved data and rules:</b> no change.</li>
+          <li><b>Reads:</b> none new when a page opens. Admin range is one read on tap.</li>
+          <li><b>Ships as:</b> three small pull requests, deliveries first.</li>
+          <li><b>Undo:</b> revert any one of them.</li>
+        </ul>
+      </div>
+      <div class="phones">
+        <figure class="shot">
+          <div class="phone" data-phone>
+            <div class="screen">
+              <div class="app-bar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg><b>Kitchen Book</b><span class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20h4"/></svg></span><span class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 14a4 4 0 1 1 2-7.5 4 4 0 0 1 6 0A4 4 0 1 1 17 14v5H7z"/></svg></span></div>
+              <div class="app-cut"><span><b>ORDER BY 15:00</b> · 55 min · Produce for Thursday</span></div>
+              <div class="app-page">
+                <div><p class="app-eyebrow">Chef tools</p><p class="app-h1">Supplier order</p></div>
+                <div class="chips" data-pick-group>
+                  <button class="chip" aria-pressed="true" data-pick><span class="dot"></span>Produce <span class="n">15:00</span></button>
+                  <button class="chip" aria-pressed="false" data-pick>Meat <span class="n">ordered</span></button>
+                  <button class="chip" aria-pressed="false" data-pick>Dairy <span class="n">Thu</span></button>
+                  <button class="chip" aria-pressed="false" data-pick>Seafood <span class="n">Fri</span></button>
+                  <button class="chip" aria-pressed="false" data-pick>Dry goods <span class="n">Fri</span></button>
+                </div>
+                <input class="inp" id="a-find" type="search" placeholder="Find an item" aria-label="Find an item">
+                <div class="chips wrap-ok" data-filters>
+                  <button class="chip" aria-pressed="true" data-filter="all">All <span class="n">42</span></button>
+                  <button class="chip" aria-pressed="false" data-filter="low">Below par <span class="n">2</span></button>
+                  <button class="chip" aria-pressed="false" data-filter="asked">Asked for <span class="n">1</span></button>
+                  <button class="chip" aria-pressed="false" data-filter="inorder">In this order <span class="n" data-count-num>1</span></button>
+                </div>
+                <div class="asked"><b>Ann asked at 13:40</b><span>Baby spinach, 2 bags. Matched to the item below.</span></div>
+                <div class="rows">
+                  <p class="cat">Fresh veg</p>
+                  <div class="row" data-row data-flags="low asked">
+                    <div class="nm"><b>Baby spinach</b><span class="pill">Asked for</span><small>1.5 kg bag · Par 4 bags · Last 2 bags</small></div>
+                    <div><span class="stepper"><button type="button" data-step="-1" aria-label="Less baby spinach">−</button><input id="a-q1" data-qty value="" inputmode="decimal" aria-label="Order baby spinach"><button type="button" data-step="1" aria-label="More baby spinach">+</button></span><small>bags</small></div>
+                    <div class="sub"><label class="onhand">On hand <input id="a-h1" value="1" inputmode="decimal" aria-label="On hand baby spinach"></label><button type="button" class="use" data-use="3" aria-pressed="false">Top-up 3 · Use</button></div>
+                  </div>
+                  <div class="row" data-row data-flags="low">
+                    <div class="nm"><b>Brown onions</b><span class="pill low">Below par</span><small>10 kg bag · Par 3 bags · Last 2 bags</small></div>
+                    <div><span class="stepper"><button type="button" data-step="-1" aria-label="Less brown onions">−</button><input id="a-q2" data-qty value="2" inputmode="decimal" aria-label="Order brown onions"><button type="button" data-step="1" aria-label="More brown onions">+</button></span><small>bags</small></div>
+                    <div class="sub"><label class="onhand">On hand <input id="a-h2" value="1" inputmode="decimal" aria-label="On hand brown onions"></label><button type="button" class="use" data-use="2" aria-pressed="true">Top-up 2 · Used</button></div>
+                  </div>
+                  <div class="row" data-row data-flags="">
+                    <div class="nm"><b>Lemons</b><small>Box · Par 2 boxes · Last 1 box</small></div>
+                    <div><span class="stepper"><button type="button" data-step="-1" aria-label="Less lemons">−</button><input id="a-q3" data-qty value="" inputmode="decimal" aria-label="Order lemons"><button type="button" data-step="1" aria-label="More lemons">+</button></span><small>boxes</small></div>
+                    <div class="sub"><label class="onhand">On hand <input id="a-h3" value="" placeholder="count" inputmode="decimal" aria-label="On hand lemons"></label><span>Count to see a top-up</span></div>
+                  </div>
+                  <div class="row" data-row data-flags="">
+                    <div class="nm"><b>Coriander</b><small>Bunch · Par not set · Last 6</small></div>
+                    <div><span class="stepper"><button type="button" data-step="-1" aria-label="Less coriander">−</button><input id="a-q4" data-qty value="" inputmode="decimal" aria-label="Order coriander"><button type="button" data-step="1" aria-label="More coriander">+</button></span><small>bunches</small></div>
+                  </div>
+                  <div class="row" data-row data-flags="">
+                    <div class="nm"><b>Cherry tomatoes</b><small>250 g punnet · Par 12 · Last 12</small></div>
+                    <div><span class="stepper"><button type="button" data-step="-1" aria-label="Less cherry tomatoes">−</button><input id="a-q5" data-qty value="" inputmode="decimal" aria-label="Order cherry tomatoes"><button type="button" data-step="1" aria-label="More cherry tomatoes">+</button></span><small>punnets</small></div>
+                  </div>
+                </div>
+              </div>
+              <div class="foot"><div class="foot-bar"><span class="ct"><b data-count>1 item</b>Produce · for Thursday</span><button class="btn dark" type="button">Review order</button></div><div class="tabbar"><span>Recipes</span><span>Prep</span><span>Orders</span><span>Wastage</span><span>Transfers</span><span>Guides</span></div></div>
+            </div>
+          </div>
+          <figcaption><b>Supplier order: count and order on one row</b><span>Type a count in On hand and the top-up appears. Try − and +, Use, and the filter chips: the bar keeps the count.</span></figcaption>
+        </figure>
+
+        <figure class="shot">
+          <div class="phone" data-phone>
+            <div class="screen">
+              <div class="app-bar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg><b>Kitchen Book</b><span class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20h4"/></svg></span><span class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 14a4 4 0 1 1 2-7.5 4 4 0 0 1 6 0A4 4 0 1 1 17 14v5H7z"/></svg></span></div>
+              <div class="app-page" data-tempform>
+                <div><p class="app-eyebrow">Kitchen records</p><p class="app-h1">Delivery received</p></div>
+                <div class="timeline"><span>Ann · <b>14:05 today</b></span><button class="linkish" type="button">Change time</button></div>
+                <div class="stack" data-pick-group>
+                  <span class="app-label">Supplier <small>· expected today</small></span>
+                  <div class="chips wrap-ok">
+                    <button class="chip" aria-pressed="true" data-pick>Meat supplier</button>
+                    <button class="chip" aria-pressed="false" data-pick>Dairy supplier</button>
+                    <button class="chip" aria-pressed="false" data-pick="other">Other</button>
+                  </div>
+                  <input class="inp" id="a-other" data-other hidden placeholder="Type the supplier" aria-label="Other supplier">
+                </div>
+                <div class="stack">
+                  <span class="app-label">What came in?</span>
+                  <div class="seg" role="group" aria-label="What came in"><button type="button" data-mode="chilled" aria-pressed="true">Chilled</button><button type="button" data-mode="frozen" aria-pressed="false">Frozen</button><button type="button" data-mode="both" aria-pressed="false">Both</button></div>
+                </div>
+                <div class="temps" data-temps>
+                  <label class="stack" data-for="chilled"><span class="app-label">Chilled reading</span><span class="temp"><input id="a-chilled" value="3.5" inputmode="decimal" aria-label="Chilled reading"><span class="unit">°C</span></span></label>
+                  <label class="stack" data-for="frozen" hidden><span class="app-label">Frozen reading</span><span class="temp"><button type="button" class="sign" data-sign aria-pressed="true" aria-label="Below zero">−</button><input id="a-frozen" value="18" inputmode="decimal" aria-label="Frozen reading"><span class="unit">°C</span></span></label>
+                </div>
+                <p class="fold">+ Add items or notes <span>(optional)</span></p>
+                <button class="btn primary full" type="button">Save delivery</button>
+                <div class="log-head"><b>Today</b><span class="app-hint">2 received</span></div>
+                <ul class="log">
+                  <li><time>12:10</time><span>Seafood supplier · Frozen −19 °C<br><span class="r">Ann</span></span></li>
+                  <li><time>09:40</time><span>Dairy supplier · Chilled 3.8 °C<br><span class="r">Sam</span></span></li>
+                  <li><time>Due</time><span class="expect">Still expected: Meat supplier</span></li>
+                </ul>
+              </div>
+              <div class="foot"><div class="tabbar"><span>Recipes</span><span>Prep</span><span>Orders</span><span>Wastage</span><span>Transfers</span><span>Guides</span></div></div>
+            </div>
+          </div>
+          <figcaption><b>Delivery received: one reading by default</b><span>Tap Frozen or Both to see the boxes change. The − key keeps the number pad for frozen readings.</span></figcaption>
+        </figure>
+
+        <figure class="shot">
+          <div class="phone">
+            <div class="screen">
+              <div class="app-bar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg><b>Kitchen Book</b><span class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20h4"/></svg></span><span class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 14a4 4 0 1 1 2-7.5 4 4 0 0 1 6 0A4 4 0 1 1 17 14v5H7z"/></svg></span></div>
+              <div class="app-cut"><span><b>ORDER BY 15:00</b> · 55 min · Produce for Thursday</span></div>
+              <div class="app-page">
+                <div><p class="app-eyebrow">Produce supplier · for Thursday</p><p class="app-h1">Review order</p></div>
+                <div class="lines">
+                  <div><span><b>Baby spinach</b><small>1.5 kg bag</small></span><strong>3 bags</strong></div>
+                  <div><span><b>Brown onions</b><small>10 kg bag</small></span><strong>2 bags</strong></div>
+                  <div><span><b>Lemons</b><small>Box</small></span><strong>1 box</strong></div>
+                  <div><span><b>Coriander</b><small>Bunch</small></span><strong>6 bunches</strong></div>
+                </div>
+                <div class="sendbox"><b>1. Send it your usual way</b><div class="btn-row"><button class="btn" type="button">Share order text</button><button class="btn" type="button">Copy</button></div><span>Share opens the phone's text, email or WhatsApp. The book sends nothing itself.</span></div>
+                <div class="stack"><b>2. Then record it here</b><button class="btn primary full" type="button">Record order placed</button><span class="app-hint">Saves these quantities and ticks today's Produce cut-off.</span></div>
+              </div>
+              <div class="foot"><div class="tabbar"><span>Recipes</span><span>Prep</span><span>Orders</span><span>Wastage</span><span>Transfers</span><span>Guides</span></div></div>
+            </div>
+          </div>
+          <figcaption><b>Review: send, then record</b><span>The two steps are spelt out in order, so Record order placed never reads as "send to supplier".</span></figcaption>
+        </figure>
+      </div>
+    </div>
+
+    <!-- OPTION B -->
+    <div id="panel-b" role="tabpanel" aria-labelledby="tab-b" data-opt-panel="b" hidden>
+      <div class="opt-intro">
+        <div><h3>B · The Supplier Docket</h3><p class="lede">Each supplier gets a docket that moves from draft to ordered to arriving to received, like the landing page dockets. Ordering becomes Count, Order, Record. Receiving checks the order line by line.</p></div>
+        <ul>
+          <li><b>Saved data and rules:</b> new fields for the order check and your temperature limits. Backups and PIN moves updated too.</li>
+          <li><b>Reads:</b> one read of the expected order when a chef receives it.</li>
+          <li><b>Ships as:</b> five to six pull requests, rules first.</li>
+          <li><b>Undo:</b> screens revert; saved checks and their rules stay.</li>
+        </ul>
+      </div>
+      <div class="phones">
+        <figure class="shot">
+          <div class="phone">
+            <div class="screen">
+              <div class="app-bar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg><b>Kitchen Book</b><span class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20h4"/></svg></span><span class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 14a4 4 0 1 1 2-7.5 4 4 0 0 1 6 0A4 4 0 1 1 17 14v5H7z"/></svg></span></div>
+              <div class="app-page">
+                <div><p class="app-eyebrow">Chef tools · Wednesday</p><p class="app-h1">Suppliers today</p></div>
+                <div class="dockets">
+                  <div class="docket due"><div class="top"><b>Produce supplier</b><span class="stamp">Order by 15:00</span></div><p>Draft · 3 items · for Thursday</p><button class="btn dark go" type="button">Continue order</button></div>
+                  <div class="docket arriving"><div class="top"><b>Meat supplier</b><span class="stamp">Arriving today</span></div><p>Ordered Mon 14:20 by Sam · 8 items</p><button class="btn go" type="button">Receive</button></div>
+                  <div class="docket received"><div class="top"><b>Dairy supplier</b><span class="stamp">Received 09:40</span></div><p>Chilled 3.8 °C · 1 line short</p></div>
+                  <div class="docket later"><div class="top"><b>Seafood supplier</b><span class="stamp">Ordered</span></div><p>Tue 11:00 · 4 items · arrives Friday</p></div>
+                  <div class="docket later"><div class="top"><b>Dry goods supplier</b><span class="stamp">Next Fri 12:00</span></div><p>Last order Mon · 14 items</p></div>
+                </div>
+              </div>
+              <div class="foot"><div class="tabbar"><span>Recipes</span><span>Prep</span><span>Orders</span><span>Wastage</span><span>Transfers</span><span>Guides</span></div></div>
+            </div>
+          </div>
+          <figcaption><b>Supplier board: the whole day on dockets</b><span>Orange is due, charcoal is arriving, green is in. Each docket opens its next job.</span></figcaption>
+        </figure>
+
+        <figure class="shot">
+          <div class="phone" data-phone>
+            <div class="screen">
+              <div class="app-bar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg><b>Kitchen Book</b><span class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20h4"/></svg></span><span class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 14a4 4 0 1 1 2-7.5 4 4 0 0 1 6 0A4 4 0 1 1 17 14v5H7z"/></svg></span></div>
+              <div class="app-cut"><span><b>ORDER BY 15:00</b> · 55 min · Produce for Thursday</span></div>
+              <div class="app-page">
+                <div><p class="app-eyebrow">Produce supplier · for Thursday</p><p class="app-h1">Count</p></div>
+                <div class="steps"><span class="on">1 Count</span><span>2 Order</span><span>3 Record</span></div>
+                <div class="chips" data-pick-group><button class="chip" aria-pressed="true" data-pick>Fresh veg <span class="n">4 of 12</span></button><button class="chip" aria-pressed="false" data-pick>Fruit <span class="n">0 of 6</span></button><button class="chip" aria-pressed="false" data-pick>Herbs <span class="n">0 of 5</span></button></div>
+                <div>
+                  <div class="count-row"><div class="nm"><b>Baby spinach</b><small>On hand · par 4 bags</small></div><div><span class="stepper"><button type="button" data-step="-1" aria-label="Less baby spinach on hand">−</button><input id="b-c1" value="1" inputmode="decimal" aria-label="On hand baby spinach"><button type="button" data-step="1" aria-label="More baby spinach on hand">+</button></span><small>bags</small></div></div>
+                  <div class="count-row"><div class="nm"><b>Brown onions</b><small>On hand · par 3 bags</small></div><div><span class="stepper"><button type="button" data-step="-1" aria-label="Less brown onions on hand">−</button><input id="b-c2" value="1" inputmode="decimal" aria-label="On hand brown onions"><button type="button" data-step="1" aria-label="More brown onions on hand">+</button></span><small>bags</small></div></div>
+                  <div class="count-row"><div class="nm"><b>Cherry tomatoes</b><small>On hand · par 12 punnets</small></div><div><span class="stepper"><button type="button" data-step="-1" aria-label="Less cherry tomatoes on hand">−</button><input id="b-c3" value="5" inputmode="decimal" aria-label="On hand cherry tomatoes"><button type="button" data-step="1" aria-label="More cherry tomatoes on hand">+</button></span><small>punnets</small></div></div>
+                  <div class="count-row"><div class="nm"><b>Zucchini</b><small>On hand · par 5 kg</small></div><div><span class="stepper"><button type="button" data-step="-1" aria-label="Less zucchini on hand">−</button><input id="b-c4" value="2" inputmode="decimal" aria-label="On hand zucchini"><button type="button" data-step="1" aria-label="More zucchini on hand">+</button></span><small>kg</small></div></div>
+                </div>
+              </div>
+              <div class="foot"><div class="foot-bar"><span class="ct"><b>Counted 4 of 23</b>Skip any you do not count</span><button class="btn dark" type="button">Next: Order</button></div><div class="tabbar"><span>Recipes</span><span>Prep</span><span>Orders</span><span>Wastage</span><span>Transfers</span><span>Guides</span></div></div>
+            </div>
+          </div>
+          <figcaption><b>Count, then Order, then Record</b><span>Counting is its own step with big buttons. Order then shows every top-up for you to apply.</span></figcaption>
+        </figure>
+
+        <figure class="shot">
+          <div class="phone">
+            <div class="screen">
+              <div class="app-bar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg><b>Kitchen Book</b><span class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20h4"/></svg></span><span class="ring"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 14a4 4 0 1 1 2-7.5 4 4 0 0 1 6 0A4 4 0 1 1 17 14v5H7z"/></svg></span></div>
+              <div class="app-page" data-tempform>
+                <div><p class="app-eyebrow">Kitchen records</p><p class="app-h1">Delivery received</p></div>
+                <div class="docket arriving picked"><div class="top"><b>Meat supplier</b><span class="stamp">Arriving today</span></div><p>Ordered Mon by Sam · 8 items</p></div>
+                <div class="timeline"><span>Bo · <b>14:05 today</b></span><button class="linkish" type="button">Change time</button></div>
+                <div class="stack">
+                  <span class="app-label">What came in?</span>
+                  <div class="seg" role="group" aria-label="What came in"><button type="button" data-mode="chilled" aria-pressed="false">Chilled</button><button type="button" data-mode="frozen" aria-pressed="false">Frozen</button><button type="button" data-mode="both" aria-pressed="true">Both</button></div>
+                </div>
+                <div class="temps both" data-temps>
+                  <label class="stack" data-for="chilled"><span class="app-label">Chilled</span><span class="temp"><input id="b-chilled" value="3.5" inputmode="decimal" aria-label="Chilled reading"><span class="unit">°C</span></span></label>
+                  <label class="stack" data-for="frozen"><span class="app-label">Frozen</span><span class="temp"><button type="button" class="sign" data-sign aria-pressed="true" aria-label="Below zero">−</button><input id="b-frozen" value="18" inputmode="decimal" aria-label="Frozen reading"><span class="unit">°C</span></span></label>
+                </div>
+                <p class="limit">Limits: chilled [to come], frozen [to come]. You set them before this part is built.</p>
+                <div class="stack">
+                  <span class="chef-only">Check the order · chefs only</span>
+                  <div class="chk" data-chk><div class="nm"><span>Chicken thigh fillet, 5 kg</span><strong>× 2</strong></div><div class="mini-seg"><button type="button" data-v="got" aria-pressed="true">Got it</button><button type="button" data-v="short" aria-pressed="false">Short</button><button type="button" data-v="missing" aria-pressed="false">Missing</button></div></div>
+                  <div class="chk" data-chk><div class="nm"><span>Beef mince, 5 kg</span><strong>× 2</strong></div><div class="mini-seg"><button type="button" data-v="got" aria-pressed="false">Got it</button><button type="button" data-v="short" aria-pressed="true">Short</button><button type="button" data-v="missing" aria-pressed="false">Missing</button></div></div>
+                  <div class="chk" data-chk><div class="nm"><span>Pork belly, whole</span><strong>× 1</strong></div><div class="mini-seg"><button type="button" data-v="got" aria-pressed="false">Got it</button><button type="button" data-v="short" aria-pressed="false">Short</button><button type="button" data-v="missing" aria-pressed="false">Missing</button></div></div>
+                </div>
+                <button class="btn primary full" type="button">Save delivery and check</button>
+                <p class="app-hint">Staff see the docket and temperatures only. The order lines stay with the chefs.</p>
+              </div>
+              <div class="foot"><div class="tabbar"><span>Recipes</span><span>Prep</span><span>Orders</span><span>Wastage</span><span>Transfers</span><span>Guides</span></div></div>
+            </div>
+          </div>
+          <figcaption><b>Receiving checks the order</b><span>Tap Got it, Short or Missing on each line. Shorts feed a supplier report in the admin panel.</span></figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="part band" id="compare">
+  <div class="wrap">
+    <header><p class="eyebrow">Side by side</p><h2>A and B compared</h2></header>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col"></th><th scope="col">A · The Order Sheet</th><th scope="col">B · The Supplier Docket</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">One temperature</th><td>What came in? first, one box</td><td>The same</td></tr>
+          <tr><th scope="row">Ordering on a phone</th><td>Count and order on one row, top-up chip, Review always in reach</td><td>A separate Count step, then Order with every top-up listed</td></tr>
+          <tr><th scope="row">Order and delivery linked</th><td>By supplier and day: Expected today, Still expected</td><td>Line by line: Got it, Short, Missing</td></tr>
+          <tr><th scope="row">Saved data and rules</th><td class="win">No change</td><td>New order-check fields and limits. Rules, both backups and PIN moves updated</td></tr>
+          <tr><th scope="row">Your calls before building</th><td class="win">Only which option</td><td>Temperature limits, who checks orders, what counts as Short</td></tr>
+          <tr><th scope="row">New reads</th><td class="win">None on open. Admin range is one read on tap</td><td>One read of the expected order per chef receipt</td></tr>
+          <tr><th scope="row">Pull requests</th><td class="win">Three, each on its own</td><td>Five to six, rules published first</td></tr>
+          <tr><th scope="row">If it goes wrong</th><td class="win">Revert one pull request</td><td>Screens revert. Saved checks and their rules stay</td></tr>
+          <tr><th scope="row">What you learn</th><td>Clean delivery records with matching supplier names</td><td class="win">Short and missing lines, warm deliveries, a supplier report</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="part band" id="recommend">
+  <div class="wrap">
+    <div class="col">
+      <header><p class="eyebrow">Recommendation</p><h2>Build A now. Keep B's order check for later.</h2></header>
+      <ol class="why">
+        <li><p><b>It fixes what slows people today.</b> One temperature box, one tap for the supplier, count and order on one row.</p></li>
+        <li><p><b>Nothing saved changes.</b> Receipts, orders and the rules stay exactly as they are, so each part ships on its own and a revert is one pull request.</p></li>
+        <li><p><b>The actions stay distinct.</b> Record order placed, Order done, Apply and Save delivery keep separate buttons and outcomes, as the audit asked.</p></li>
+        <li><p><b>Nothing in A is thrown away.</b> The expected-supplier chips, the On hand column and the Review bar are the parts B would build on.</p></li>
+        <li><p><b>B needs your numbers first.</b> Its value comes from temperature limits and order checks. Those are easier to set after a few weeks of clean records with matching supplier names.</p></li>
+      </ol>
+    </div>
+    <div class="plan">
+      <div><span class="eyebrow">Step 1</span><b>Delivery received</b><span>What came in?, Expected today chips, the − key, time as one line, folded notes, Save under the reading, Still expected.</span></div>
+      <div><span class="eyebrow">Step 2</span><b>Supplier order rows</b><span>On hand next to To order, top-up Use chip, − and +, filter chips, what staff asked for, the Review bar, one list with category jumps.</span></div>
+      <div><span class="eyebrow">Step 3</span><b>Strip, share and history</b><span>The supplier chip strip with cut-offs, Share order text, and the admin delivery range, supplier filter and CSV.</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="part band" id="decide">
+  <div class="wrap">
+    <div class="col">
+      <header><p class="eyebrow">Your calls</p><h2>What I need from you</h2></header>
+      <ul class="ruled decide">
+        <li><b>A or B.</b><span>Or A now and B's order check later.</span></li>
+        <li><b>A starting choice for What came in?</b><span>Start on Chilled every time, or remember each supplier's last choice on that phone. Nothing is guessed when there is no last choice.</span></li>
+        <li><b>For B only: the limits.</b><span>The Food Standards Code (Standard 3.2.2, clause 5) says chilled food that needs temperature control is received at 5 °C or colder, and frozen food arrives frozen. The book sets no number until you confirm yours.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="part band" id="kept">
+  <div class="wrap">
+    <div class="col">
+      <header><p class="eyebrow">Stays the same in both</p><h2>What does not change</h2></header>
+      <ul class="ruled">
+        <li><span>A saved delivery never changes. A correction is a new receipt with a note.</span></li>
+        <li><span>One reading or both, zero and negative readings save exactly as typed.</span></li>
+        <li><span>Record order placed sends nothing to the supplier. Order done, Apply and Save delivery stay separate.</span></li>
+        <li><span>The catalogue, pars and order history stay with the head chef, sous chefs and admin. Staff never see order lines.</span></li>
+        <li><span>Every role keeps the access it has now. No new outside service, font or polling.</span></li>
+      </ul>
+      <p class="foot-note">Example data only. Suppliers, items, times and people on this page are made up. Nothing here reads or writes the kitchen's records.</p>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  'use strict';
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[data-opt-tab]'));
+  function show(id, focus) {
+    tabs.forEach(function (t) { var on = t.getAttribute('data-opt-tab') === id; t.setAttribute('aria-selected', on ? 'true' : 'false'); t.tabIndex = on ? 0 : -1; if (on && focus) t.focus(); });
+    document.querySelectorAll('[data-opt-panel]').forEach(function (p) { p.hidden = p.getAttribute('data-opt-panel') !== id; });
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { var id = t.getAttribute('data-opt-tab'); show(id); try { history.replaceState(null, '', '#option-' + id); } catch (e) {} });
+    t.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      e.preventDefault(); var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; show(next.getAttribute('data-opt-tab'), true);
+    });
+  });
+  function fromHash() { var m = /^#option-(a|b)$/.exec(location.hash); if (m) show(m[1]); }
+  fromHash(); window.addEventListener('hashchange', fromHash);
+
+  function num(v) { var n = parseFloat(String(v).replace(',', '.')); return isFinite(n) ? n : 0; }
+  function update(phone) {
+    if (!phone) return;
+    var n = 0; phone.querySelectorAll('[data-qty]').forEach(function (q) { if (num(q.value) > 0) n++; });
+    phone.querySelectorAll('[data-count]').forEach(function (el) { el.textContent = n + (n === 1 ? ' item' : ' items'); });
+    phone.querySelectorAll('[data-count-num]').forEach(function (el) { el.textContent = n; });
+    var active = phone.querySelector('[data-filter][aria-pressed="true"]'); if (active) filter(phone, active.getAttribute('data-filter'));
+  }
+  function filter(phone, f) {
+    phone.querySelectorAll('[data-row]').forEach(function (r) {
+      var flags = (r.getAttribute('data-flags') || '').split(' '), q = r.querySelector('[data-qty]');
+      r.hidden = !(f === 'all' || flags.indexOf(f) >= 0 || (f === 'inorder' && q && num(q.value) > 0));
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    var mode = t.closest('[data-mode]');
+    if (mode) {
+      var form = mode.closest('[data-tempform]'), m = mode.getAttribute('data-mode');
+      form.querySelectorAll('[data-mode]').forEach(function (b) { b.setAttribute('aria-pressed', b === mode ? 'true' : 'false'); });
+      form.querySelectorAll('[data-for]').forEach(function (box) { box.hidden = !(m === 'both' || box.getAttribute('data-for') === m); });
+      var temps = form.querySelector('[data-temps]'); if (temps) temps.classList.toggle('both', m === 'both');
+      return;
+    }
+    var pick = t.closest('[data-pick]');
+    if (pick) {
+      var group = pick.closest('[data-pick-group]');
+      group.querySelectorAll('[data-pick]').forEach(function (b) { b.setAttribute('aria-pressed', b === pick ? 'true' : 'false'); });
+      var other = group.querySelector('[data-other]'); if (other) { other.hidden = pick.getAttribute('data-pick') !== 'other'; if (!other.hidden) other.focus(); }
+      return;
+    }
+    var step = t.closest('[data-step]');
+    if (step) {
+      var input = step.parentElement.querySelector('input'), v = Math.max(0, num(input.value) + num(step.getAttribute('data-step')));
+      input.value = v ? String(v) : '';
+      var row = step.closest('[data-row]'), use = row && row.querySelector('[data-use]');
+      if (use) { var used = num(input.value) === num(use.getAttribute('data-use')); use.setAttribute('aria-pressed', used ? 'true' : 'false'); use.textContent = 'Top-up ' + use.getAttribute('data-use') + (used ? ' · Used' : ' · Use'); }
+      update(step.closest('[data-phone]'));
+      return;
+    }
+    var useBtn = t.closest('[data-use]');
+    if (useBtn) {
+      var r = useBtn.closest('[data-row]'), q = r.querySelector('[data-qty]'), val = useBtn.getAttribute('data-use');
+      q.value = val; useBtn.setAttribute('aria-pressed', 'true'); useBtn.textContent = 'Top-up ' + val + ' · Used';
+      update(useBtn.closest('[data-phone]'));
+      return;
+    }
+    var sign = t.closest('[data-sign]');
+    if (sign) { sign.setAttribute('aria-pressed', sign.getAttribute('aria-pressed') === 'true' ? 'false' : 'true'); return; }
+    var f = t.closest('[data-filter]');
+    if (f) {
+      var phone = f.closest('[data-phone]');
+      f.parentElement.querySelectorAll('[data-filter]').forEach(function (b) { b.setAttribute('aria-pressed', b === f ? 'true' : 'false'); });
+      filter(phone, f.getAttribute('data-filter'));
+      return;
+    }
+    var chk = t.closest('.mini-seg button');
+    if (chk) { chk.parentElement.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b === chk ? 'true' : 'false'); }); }
+  });
+  document.addEventListener('input', function (e) {
+    if (e.target.matches('[data-qty]')) {
+      var row = e.target.closest('[data-row]'), use = row && row.querySelector('[data-use]');
+      if (use) { var used = num(e.target.value) === num(use.getAttribute('data-use')); use.setAttribute('aria-pressed', used ? 'true' : 'false'); use.textContent = 'Top-up ' + use.getAttribute('data-use') + (used ? ' · Used' : ' · Use'); }
+      update(e.target.closest('[data-phone]'));
+    }
+  });
+  document.querySelectorAll('[data-phone]').forEach(update);
+})();
+</script>
+</body></html>
