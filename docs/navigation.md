@@ -67,10 +67,10 @@ Lazy editors use revised script addresses and API checks (recipe/drawing/functio
 
 ## Admin review desk
 
-The selected workbench flow groups the admin panel into Review desk, Reports, Saved records, Operations and
-Settings. Review desk has Item links and Training queues. Its existing `overview` page id opens the desk with
-Item links selected; existing admin entry links and saved page ids remain valid. Reports retains item evidence,
-Insights, Wastage, Transfers, Learning and Team. Confirmed links, Assessments and Guides live under Saved records.
+The admin panel has four rooms (4 Nov 2026, design B): Today, Reports, Team and Kitchen. Today has the Dashboard
+and the Item links and Training queues. The existing `overview` page id opens Today with Item links selected;
+existing admin entry links and saved page ids remain valid. Reports retains Insights, Wastage, Transfers, Team,
+item evidence and Learning. Assessments live under Team; Confirmed links and Guides under Kitchen.
 
 Item-link review, training assessment, item evidence and revision history use the admin module's contextual
 return action while that workspace is visible. The dark-header arrow names the return destination and returns
@@ -78,7 +78,7 @@ within the task before leaving admin. No Back action saves a record. A visible a
 keeps Back disabled until its outcome is known. Drafts retained on another admin page do not intercept that
 page's Back action.
 
-The unfinished-task banner remains available on Reports, Saved records, Operations and Settings when the
+The unfinished-task banner remains available on the other admin pages when the
 current reference or assessment draft is elsewhere. Resume returns to that task with its typed values. Opening
 a second task cannot silently replace an existing draft. Existing sign-out, shared-device clearing and unload
 checks still apply. Opening a recipe, guide or supplier continues to use the normal page trail.

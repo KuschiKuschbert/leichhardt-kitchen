@@ -20,8 +20,8 @@ const editSavedReference = async (p, label) => {
   const b = await L.start();
   for (const width of [390, 768, 1280]) {
     const p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width, extra, wait: 1800 });
-    await L.adminTab(p, 'overview'); await L.waitFor(p, () => /latest analysis run failed/.test(document.body.textContent));
-    ok(await p.locator('.a-section-picker').isVisible() === (width < 1000), width + ': responsive section picker');
+    await L.adminTab(p, 'references'); await L.waitFor(p, () => /latest analysis run failed/.test(document.body.textContent));
+    ok(await p.evaluate(() => getComputedStyle(document.querySelector('.a-groups')).display) === (width < 1000 ? 'grid' : 'flex'), width + ': the rooms are a row on a phone and a rail on a laptop');
     await L.adminTab(p, 'analysis'); await p.locator('[data-ai="item"]').first().click();
     ok(/Confirmed or explicit source reference/.test(await L.txt(p, '.ai-workspace')), width + ': confirmed item evidence');
     await p.locator('[data-ai="evidence"]').first().click(); await L.settle(p, 500);

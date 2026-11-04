@@ -4081,7 +4081,24 @@
   // Change amount and Move to section are only on open lines
   function lineMenuOk(x, date) { return can('add') && !!x && !x.deleted && !x.fn && date === dayNow(); }
   function lineFixOk(x, date) { return lineMenuOk(x, date) && !x.done && !x.ordered; }
-  function lineOf(kind, date, id) { return (kind === 'o' ? (S.ordLines || []) : (S.items || [])).filter(function (x) { return x.id === id && (kind !== 'o' || !x.date || x.date === date); })[0] || null; }
+  // the admin wastage log and transfers report: an amount changed after it was logged says what it was before and who
+  // changed it ("changed from 2 kg by Sam")
+  function wasHTML(x) {
+    var w = x && x.was;
+    if (!w || typeof w !== 'object' || typeof w.amount !== 'number' || typeof w.unit !== 'string') return '';
+    return ' <span class="o-who-i">changed from ' + esc(num(w.amount) + ' ' + w.unit) + (x.chgBy ? ' by ' + esc(x.chgBy) : '') + '</span>';
+  }
+  /* Change amount on Wastage and Transfers (4 Nov 2026, head chef decision, S4 of the work pages redesign): the person
+     who logged the line, the head chef or a sous chef, ticked for Add, on today's lines not removed, and on Transfers
+     still out. The rules say the same (amountChange() in firestore.rules). Remove stays where it was. */
+  function wxFixOk(kind, x) {
+    if (!x || x.deleted || x.date !== dayNow() || kind === 'x' && x.returned || !canW() || !can('add')) return false;
+    var p = me(); return !!p && (isSous() || p.id === x.addedById);
+  }
+  function lineOf(kind, date, id) {
+    if (kind === 'w') return (S.wLines || []).filter(function (x) { return x.id === id && x.date === date; })[0] || null;
+    if (kind === 'x') return xFind(date, id) || null;
+    return (kind === 'o' ? (S.ordLines || []) : (S.items || [])).filter(function (x) { return x.id === id && (kind !== 'o' || !x.date || x.date === date); })[0] || null; }
   function moreBtn(x, fix) { return '<button type="button" class="nb-more' + (fix ? ' nb-more-fix' : '') + '" data-lm="open" data-id="' + esc(x.id) + '" aria-haspopup="dialog" aria-label="' + esc('More for ' + x.text) + '">⋯</button>'; }
   var lmOpenFrom = null;
   function lmClose(noBack) {
@@ -4093,14 +4110,15 @@
   function lmOpen(btn) {
     lmClose();
     var row = btn.closest('.nb-row'); if (!row) return;
-    var act = row.querySelector('.nb-x, .p-x[data-p="odel"], .p-x[data-p="orestore"]');
+    var act = row.querySelector('.nb-x, .p-x[data-p="odel"], .p-x[data-p="orestore"], .p-x[data-p="wdel"], .p-x[data-p="wrestore"], .p-x[data-p="tr-del"], .p-x[data-p="tr-restore"]');
     // the title is the line's words and amount, without its Not sent slot or an order line's Used in
-    var who = (row.querySelector('.nb-wrote') || {}).textContent || '', t = row.querySelector('.nb-t'), c = t && t.cloneNode(true);
-    if (c) c.querySelectorAll('.nb-mk, .o-used').forEach(function (e) { e.remove(); });
+    var who = (row.querySelector('.nb-wrote') || row.querySelector('.w-row > .nb-by, .tr-row > .nb-by') || {}).textContent || '', t = row.querySelector('.nb-t'), c = t && t.cloneNode(true);
+    if (c) c.querySelectorAll('.nb-mk, .o-used, .w-rs, .w-act, .w-again, .tr-way, .tr-who, .tr-age').forEach(function (e) { e.remove(); });
     var name = c ? c.textContent.replace(/\s+/g, ' ').trim() : '';
     var completed = S.name === 'prep' && ptItem(btn.getAttribute('data-id')), completionWho = completed && completed.done ? 'Reported prepared by ' + preparedWorker(completed).name + '. Recorded by ' + (completed.doneBy || '') + '.' : '';
-    var ln = (row.getAttribute('data-ln') || '').split('/'), kind = S.name === 'orders' ? 'o' : 'p', line = lineOf(kind, ln[0], ln[1]), fix = line && lineFixOk(line, ln[0]);
-    var fixHTML = fix ? '<button type="button" class="sheet-o lm-fix" data-lm="qty"><strong>Change amount</strong><small>' + esc(line.qty || 'No amount yet') + '</small></button>' +
+    var ln = (row.getAttribute('data-ln') || '').split('/'), kind = S.name === 'orders' ? 'o' : S.name === 'waste' ? 'w' : S.name === 'transfers' ? 'x' : 'p', line = lineOf(kind, ln[0], ln[1]);
+    var wx = kind === 'w' || kind === 'x', fix = line && (wx ? wxFixOk(kind, line) : lineFixOk(line, ln[0]));
+    var fixHTML = fix ? '<button type="button" class="sheet-o lm-fix" data-lm="qty"><strong>Change amount</strong><small>' + esc(wx ? num(+line.amount || 0) + ' ' + line.unit : line.qty || 'No amount yet') + '</small></button>' +
       (kind === 'p' ? '<button type="button" class="sheet-o lm-fix" data-lm="sec"><strong>Move to section</strong><small>' + esc(line.station || 'No section yet') + '</small></button>' : '') : '';
     var box = document.createElement('div');
     box.id = 'lm-sheet';
@@ -4117,6 +4135,18 @@
   /* The ⋯ sheet turns into a small form for the amount or the section of the line it was opened for. */
   function lmFixView(box, what) {
     var l = box._line, x = l && lineOf(l.kind, l.date, l.id), sh = box.querySelector('.sheet');
+    if (l && (l.kind === 'w' || l.kind === 'x')) {
+      if (!wxFixOk(l.kind, x)) { lmClose(); toast('That line has changed. Try again.'); return; }
+      box._what = 'qty'; box._unit = x.unit;
+      sh.innerHTML = '<div class="sheet-grip" aria-hidden="true"></div><h3 id="lm-h">Change amount</h3><p class="lm-who">' + esc(l.name) + '</p>' +
+        '<form class="lm-form" data-lm-form="qty"><label class="label" for="lm-v">Amount</label>' +
+        '<input id="lm-v" class="nb-in" inputmode="decimal" maxlength="8" autocomplete="off" enterkeyhint="done" value="' + esc(num(+x.amount || 0)) + '">' +
+        '<div class="w-pick"><span class="nb-ql" id="lm-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="lm-unit-l">' + (l.kind === 'w' ? UNITS : X_UNITS).map(function (u) {
+          return '<button type="button" class="seg-b" role="radio" data-lm="unit" data-v="' + u + '" aria-checked="' + (x.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
+        '<div class="btn-row"><button type="submit" class="btn dark">Save amount</button><button type="button" class="btn sheet-x" data-lm="close">Cancel</button></div></form>';
+      var wi = sh.querySelector('#lm-v'); if (wi) { wi.focus(); wi.select(); }
+      return;
+    }
     if (!x || !lineFixOk(x, l.date)) { lmClose(); toast('That line has changed. Try again.'); return; }
     var cur = what === 'qty' ? (x.qty || '') : (x.station || ''), chips = what === 'qty' ? qtyList(x.text).slice(0, 4).map(function (q) { return q.q; }) : secChoices(cur);
     sh.innerHTML = '<div class="sheet-grip" aria-hidden="true"></div><h3 id="lm-h">' + (what === 'qty' ? 'Change amount' : 'Move to section') + '</h3><p class="lm-who">' + esc(l.name) + '</p>' +
@@ -4130,6 +4160,7 @@
   // saves the change as one update through W(), with Undo; a value that did not change saves nothing
   function lmFixSave(box, v) {
     var l = box._line, x = l && lineOf(l.kind, l.date, l.id), what = box._what;
+    if (l && (l.kind === 'w' || l.kind === 'x')) { wxFixSave(box, l, x, v); return; }
     if (!x || !lineFixOk(x, l.date)) { lmClose(); toast('That line has changed. Try again.'); return; }
     v = String(v || '').replace(/\s+/g, ' ').trim().slice(0, 40);
     if (what === 'sec' && v) v = cleanSection(v).slice(0, 40);
@@ -4145,6 +4176,28 @@
     supd(ref, patch).catch(failed);
     toast(what === 'qty' ? (v ? 'Amount changed to ' + v : 'Amount cleared') : (v ? 'Moved to ' + v : 'Section cleared'), { label: 'Undo', fn: function () { supd(ref, undo).catch(failed); } });
   }
+  // Wastage and Transfers: one update of the amount and unit, the amount before kept as was (the history and the admin
+  // log show it), who changed it and when; a transfer's open copy goes in the same write (xWrite()). Undo changes it back.
+  function wxFixSave(box, l, x, v) {
+    if (!wxFixOk(l.kind, x)) { lmOpenFrom = null; lmClose(); toast('That line has changed. Try again.'); return; }
+    var amt = parseFloat(String(v || '').replace(',', '.')), unit = box._unit, big = (l.kind === 'w' ? W_BIG : X_BIG)[unit];
+    if (!(amt > 0 && amt < 100000) || (l.kind === 'w' ? UNITS : X_UNITS).indexOf(unit) < 0) { toast('Write the amount as a number, like 2 or 1.5.', null, 4000); focusSel('#lm-v'); return; }
+    amt = Math.round(amt * 1000) / 1000;
+    if (amt > (big || Infinity) && !arm('lmbig:' + amt + unit)) { toast(amt + ' ' + unit + '? Check the unit. Tap Save again if it is right.', null, 4000); return; }
+    lmOpenFrom = null; lmClose();
+    if (amt === +x.amount && unit === x.unit) return;
+    var save = function (y, a, u) {
+      var ch = { amount: a, unit: u, was: { amount: +y.amount, unit: y.unit }, chgBy: whoName(), chgAt: now() };
+      return l.kind === 'w' ? supd(wRef(l.date, l.id), ch) : xWrite(l.date, l.id, ch, y);
+    };
+    var from = { amount: +x.amount, unit: x.unit };
+    save(x, amt, unit).catch(failed);
+    toast('Amount changed to ' + num(amt) + ' ' + unit, { label: 'Undo', fn: function () {
+      var y = lineOf(l.kind, l.date, l.id);
+      if (!wxFixOk(l.kind, y)) { toast('That line has changed. Try again.'); return; }
+      if (+y.amount !== from.amount || y.unit !== from.unit) save(y, from.amount, from.unit).catch(failed);
+    } });
+  }
   document.addEventListener('click', function (e) {
     var el = e.target && e.target.closest ? e.target.closest('[data-lm]') : null; if (!el) return;
     var a = el.getAttribute('data-lm');
@@ -4159,6 +4212,7 @@
       return;
     }
     if (a === 'qty' || a === 'sec') { if (box) lmFixView(box, a); return; }
+    if (a === 'unit') { if (!box) return; box._unit = el.getAttribute('data-v'); box.querySelectorAll('[data-lm="unit"]').forEach(function (b) { b.setAttribute('aria-checked', String(b === el)); }); return; }
     if (a === 'pick') { if (!box) return; if (box._what === 'sec') { lmFixSave(box, el.getAttribute('data-v')); return; } var i = box.querySelector('#lm-v'); if (i) { i.value = el.getAttribute('data-v') || ''; i.focus(); } return; }
     if (a === 'close') lmClose();
   });
@@ -4946,12 +5000,6 @@
       loadGuides: loadGuides, guides: function () { return gLive().map(function (g) { return { id: g.id, title: g.title }; }); }
     });
   }
-  document.addEventListener('change', function (e) {
-    if (!e.target.matches('[data-k="ai-section"]') || !intelligenceAllowed()) return;
-    if (intelligenceBusy()) { e.target.value = adminGroupOf(S.atab || 'dashboard')[0]; return; }
-    var group = A_GROUPS.filter(function (g) { return g[0] === e.target.value; })[0];
-    if (group) { S.atab = (S.agLast || {})[group[0]] || group[2][0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); }
-  });
   function adminHTML() {
     if (S.authState !== 'ready' && !S.user) {
       return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + inkWait('Loading...', 'chef') + '</section>';
@@ -4985,9 +5033,10 @@
     if (at === 'mail' && !mlOwner()) at = S.atab = 'notes';
     // Review desk groups the two queues; saved records and reports remain separate. Existing page ids still work.
     var navBusy = intelligenceBusy(), mlN = mlInfo().n, ag = adminGroupOf(at), agTabs = ag[2].filter(function (t) { return t !== 'overview' && (t !== 'mail' || mlOwner()); });
-    // The selected Chef's Desk keeps chapters in one rail, with the current page's choices beside its title.
-    var chapters = '<aside class="a-nav"><p class="ad-nav-label">Admin panel</p><label class="a-section-picker">Admin section<select data-k="ai-section" aria-label="Admin section"' + (navBusy ? ' disabled' : '') + '>' + A_GROUPS.map(function (g) { return '<option value="' + g[0] + '"' + (ag[0] === g[0] ? ' selected' : '') + '>' + g[1] + '</option>'; }).join('') + '</select></label><nav class="a-groups" aria-label="Admin sections">' + A_GROUPS.map(function (g, i) {
-      return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '"' + (navBusy ? ' disabled' : '') + ' aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '"><span class="ad-nav-number" aria-hidden="true">0' + (i + 1) + '</span><span>' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</span></button>';
+    // The four rooms (4 Nov 2026, design B, docs/admin-pages-options/brief.md): a rail on a laptop and one row of four on
+    // a phone, with the room's pages as tabs beside its title. Page ids are the same as before the rooms.
+    var chapters = '<aside class="a-nav"><p class="ad-nav-label">Admin panel</p><nav class="a-groups" aria-label="Admin rooms">' + A_GROUPS.map(function (g) {
+      return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '"' + (navBusy ? ' disabled' : '') + ' aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '"><span>' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</span></button>';
     }).join('') + '</nav></aside>';
     var tabsBar = (agTabs.length > 1 ? '<nav class="a-tabs" aria-label="' + esc(ag[1]) + ' pages">' + agTabs.map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t + '"' + (navBusy ? ' disabled' : '') + ' aria-pressed="' + (at === t || at === 'overview' && t === 'references') + '">' + A_TAB_NAMES[t] + (t === 'mail' && mlN ? ' (' + mlN + ')' : '') + '</button>';
@@ -5003,7 +5052,8 @@
       '<section class="set-block a-feats"><span class="label">New pages</span><span class="hint">You, sous chefs and leads always see these. Untick one to hide it from Staff and View only until the team is ready.</span>' +
       FEATS.map(function (f) { return '<label class="a-check"><input type="checkbox" data-a="staffsee" data-f="' + f[0] + '"' + (d.staffSee[f[0]] ? ' checked' : '') + '> Staff see ' + f[1] + '</label>'; }).join('') + '</section>' + saveBlock
     ) : (
-      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds (people, prep lines, orders, wastage, delivery temperatures and transfers between venues from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, function bookings with their contacts and earlier versions, the chef to-do list, what the prep and order lists have learned, tallies and the guides\' words) as one file on this device. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files). The book is also backed up on the server every night at 03:30; download one here when you want a copy on this computer.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div></section>' +
+      '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds as one file on this device. The server also backs the book up every night at 03:30.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div>' +
+        '<details class="a-how"><summary>What a backup holds</summary><p class="hint">People, prep lines, orders, wastage, delivery temperatures and transfers between venues from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, function bookings with their contacts and earlier versions, the chef to-do list, what the prep and order lists have learned, tallies and the guides\' words. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files).</p></details></section>' +
       '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is the lock on the whole book, so keep it to staff only. Writing needs a person\'s own PIN as well.</span>' +
       '<p class="hint a-step"><strong>Step 1.</strong> Ask for the new PIN to be added to the security rules. <strong>Step 2.</strong> Type it twice below and copy everything to it. The old PIN keeps working until its rules are removed.</p>' +
       '<div class="field"><label class="label" for="a-newpin">New 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
@@ -5012,8 +5062,7 @@
       '<p class="hint a-forget">To use a different kitchen PIN on this device, open Settings, This phone.</p></section>');
     var resume = INTELLIGENCE_PAGES.indexOf(at) < 0 && intelligenceAllowed() && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_INTELLIGENCE.resumeHTML ? window.LK_INTELLIGENCE.resumeHTML(at) : '';
     if (at !== 'proofreader' && intelligenceAllowed() && proofModule()) resume += proofModule().resumeHTML(proofAdapter());
-    var chapterNo = A_GROUPS.indexOf(ag) + 1;
-    return '<div class="p-admin ad-admin">' + bar + '<div class="ad-layout">' + chapters + '<div class="ad-main"><header class="ad-heading"><p class="ad-eyebrow">Kitchen administration <span aria-hidden="true">/ 0' + chapterNo + '</span></p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + ag[1] + '</h2><p class="ad-intro">' + A_GROUP_NOTES[ag[0]] + '</p></header>' + tabsBar + '<div class="a-pane">' + (owner ? idCardHTML() : '') + resume + pane + '</div></div></div></div>';
+    return '<div class="p-admin ad-admin">' + bar + '<div class="ad-layout">' + chapters + '<div class="ad-main"><header class="ad-heading"><p class="ad-eyebrow">Kitchen administration</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + ag[1] + '</h2><p class="ad-intro">' + A_GROUP_NOTES[ag[0]] + '</p></header>' + tabsBar + '<div class="a-pane">' + (owner ? idCardHTML() : '') + resume + pane + '</div></div></div></div>';
   }
   /* the same Remove button on the admin People tab and the sous chef's staff list, with a second tap to be sure */
   /* Head chef decision D6 (20 Oct 2026): someone who leaves is taken off the list, not deleted, so their name stays on
@@ -5072,9 +5121,9 @@
       (supplierEdit() ? '<div class="btn-row"><a class="btn dark" href="#/suppliers/manage">Manage catalogue</a><a class="btn" href="#/suppliers">Supplier order</a></div>' : '<p class="hint">Only the head chef changes suppliers and pars. Sous chefs can use <a href="#/suppliers">Supplier order</a>.</p>') + '</section>';
   }
   var A_TAB_NAMES = { dashboard: 'Dashboard', overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
-  var A_GROUPS = [['dashboard', 'Dashboard', ['dashboard']], ['review', 'Review desk', ['overview', 'references', 'training', 'proofreader']], ['reports', 'Reports', ['analysis', 'insights', 'waste', 'transfers', 'learning', 'team']], ['records', 'Saved records', ['reference-records', 'training-records', 'guides']], ['today', 'Operations', ['mail', 'notes', 'minutes', 'suppliers', 'cutoffs']], ['settings', 'Settings', ['people', 'tools']]];
-  var A_GROUP_NOTES = { dashboard: 'How the kitchen is going, and where to look next.', review: 'One item or assessment at a time. Your unfinished work stays here.', reports: 'Read the recorded activity and follow it back to its source.', records: 'Find confirmed links, assessments and the kitchen guides.', today: 'Keep the kitchen informed and ready for the next shift.', settings: 'Look after the team, kitchen access and the book\'s backup.' };
-  function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[2]; }
+  var A_GROUPS = [['today', 'Today', ['dashboard', 'overview', 'references', 'training', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people', 'training-records']], ['kitchen', 'Kitchen', ['cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']]];
+  var A_GROUP_NOTES = { today: 'What needs you, and how the kitchen is going.', reports: 'Read the recorded activity and follow it back to its source.', team: 'Who is in the kitchen, what each person may do, and their assessments.', kitchen: 'How the kitchen is set up, its records, the backup and the PIN.' };
+  function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
      and the chart headings in it), so a long page is one tap from any part. Built from the page after each draw, so a
      new block on any admin page gets its chip by itself. Hidden when a page has fewer than two parts. */
@@ -5087,6 +5136,13 @@
     return Array.prototype.filter.call(hs, function (h) { return h.offsetParent && h.textContent.trim(); });
   }
   function adminJumps() {
+    // the page tabs (4 Nov 2026): on a phone one row that, when it scrolls sideways, fades at its edge and shows the open tab
+    var tabs = S.root && S.root.querySelector('.a-tabs');
+    if (tabs) {
+      tabs.classList.toggle('is-scroll', tabs.scrollWidth > tabs.clientWidth + 1);
+      var cur = tabs.classList.contains('is-scroll') && tabs.querySelector('[aria-pressed="true"]');
+      if (cur) { var tr = tabs.getBoundingClientRect(), cr = cur.getBoundingClientRect(); if (cr.left < tr.left || cr.right > tr.right - 40) tabs.scrollLeft += cr.left - tr.left - 16; }
+    }
     var row = S.root && S.root.querySelector('.a-onpage');
     if (!row) return;
     var hs = adminHeads();
@@ -5855,7 +5911,9 @@
       '<span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span> <span class="w-rs w-' + esc(x.reason) + '">' + esc(reasonName(x.reason)) + '</span>' + unsentMark(x) +
       (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + wAgainHTML(x) + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' +
       (del ? '<button type="button" class="p-x" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
-      (x.deleted && wAll() ? '<button type="button" class="p-x" data-p="wrestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
+      (x.deleted && wAll() ? '<button type="button" class="p-x" data-p="wrestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') +
+      // the line's ⋯ (4 Nov 2026, S4): Change amount, and on a phone Remove or Put back
+      (wxFixOk('w', x) || wAll() ? moreBtn(x, wxFixOk('w', x)) : '') + '</li>';
   }
   /* Make it again (3 Nov 2026, work pages redesign, a piece of B on Wastage A): a cooking fault or expired stock logged
      today puts the item on today's prep list in one tap, with its usual amount and the entry's section, and Undo. What
@@ -6255,7 +6313,8 @@
     // the return tick on the left, where every other list ticks (3 Nov 2026); Not returned stays on the right
     return '<li class="nb-row tr-row' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '">' + (open ? tick : '') + '<span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + '</span>' +
       '<span class="nb-t"><span class="tr-way tr-way-' + (out ? 'out' : 'in') + '">' + (out ? 'Out' : 'In') + '</span> <strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' + (open ? xAge(x) : '') + unsentMark(x) +
-      '<span class="tr-who">' + esc(xWho(x)) + '</span>' + (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + ret + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' + (open ? '' : tick) + xBtn(x) + '</li>';
+      '<span class="tr-who">' + esc(xWho(x)) + '</span>' + (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + ret + '</span><span class="nb-by">' + esc(x.addedBy || '') + '</span>' + (open ? '' : tick) + xBtn(x) +
+      (wxFixOk('x', x) || wAll() && x.id ? moreBtn(x, wxFixOk('x', x)) : '') + '</li>';
   }
   // the venue and person chips, and the often taken chips that follow the venue (redrawn while the venue is typed)
   function xVenueChips() {
@@ -7813,7 +7872,7 @@
       cols: [
         { h: 'Date / time', value: function (x) { return x.addedAt || Date.parse(x.date + 'T00:00:00+10:00'); }, html: function (x) { return esc(x.date.split('-').reverse().join('/')) + (x.addedAt ? ' ' + clock(x.addedAt) : ''); } },
         { h: 'Item', th: true, html: function (x) { return esc(x.text) + (x.deleted ? ' <span class="o-who-i">Removed' + (x.deletedBy ? ' by ' + esc(x.deletedBy) : '') + '</span>' : '') + (x.action ? '<details class="wh-note"><summary>Action / note</summary><p>' + esc(x.action) + '</p></details>' : ''); } },
-        { h: 'Amount', html: function (x) { return esc(num(+x.amount || 0) + ' ' + x.unit); } },
+        { h: 'Amount', html: function (x) { return esc(num(+x.amount || 0) + ' ' + x.unit) + wasHTML(x); } },
         { h: 'Reason', html: function (x) { return esc(reasonName(x.reason)); } },
         { h: 'Section', html: function (x) { return esc(x.station || 'General'); } },
         { h: 'Logged by', html: function (x) { return esc(x.addedBy || 'Unknown'); } },
@@ -7951,7 +8010,7 @@
       cols: [
         { h: 'Day', value: function (x) { return x.date || ""; }, html: function (x) { return esc(dayShort(x.date)) + (x.addedAt ? ' ' + clock(x.addedAt) : ''); } },
         { h: 'Item', th: true, html: function (x) { return esc(x.text) + (x.deleted ? ' <span class="o-who-i">Removed' + (x.deletedBy ? ' by ' + esc(x.deletedBy) : '') + '</span>' : ''); } },
-        { h: 'Amount', html: function (x) { return esc(num(+x.amount || 0) + ' ' + x.unit); } },
+        { h: 'Amount', html: function (x) { return esc(num(+x.amount || 0) + ' ' + x.unit) + wasHTML(x); } },
         { h: 'Way', html: function (x) { return x.dir === 'in' ? 'We took' : 'They took'; } },
         { h: 'Venue', html: function (x) { return esc(x.venue || ''); } },
         { h: 'Came or gave', html: function (x) { return esc(x.person || ''); } },
@@ -9288,7 +9347,8 @@
         '<p class="hint cut-say">' + esc(cutSay(s)) + '</p>' +
         '<button type="button" class="p-x" data-p="cut-rm" data-i="' + i + '" aria-label="' + esc('Remove ' + (s.name || 'this supplier')) + '">' + (armed('cut-rm:' + i) ? 'Tap again to remove' : 'Remove') + '</button></li>';
     }).join('');
-    return '<section class="set-block a-cut"><span class="label">Order cut-offs</span><span class="hint">You and the sous chefs get a bar at the top of every page from the time you pick under Remind us (4 hours before unless you change it) until the cut-off passes. It turns orange in the last hour. An early cut-off is reminded from the night before. Today\'s cut-offs show on the order list. Tick the days the supplier delivers, then when the order has to be in.</span>' +
+    return '<section class="set-block a-cut"><span class="label">Order cut-offs</span><span class="hint">Tick the days the supplier delivers, then when the order has to be in.</span>' +
+      '<details class="a-how"><summary>How reminders work</summary><p class="hint">You and the sous chefs get a bar at the top of every page from the time you pick under Remind us (4 hours before unless you change it) until the cut-off passes. It turns orange in the last hour. An early cut-off is reminded from the night before. Today\'s cut-offs show on the order list.</p></details>' +
       (rows ? '<ul class="cut-eds">' + rows + '</ul>' : '<p class="hint">No suppliers yet, so nobody is reminded.</p>') +
       '<div class="btn-row"><button type="button" class="btn" data-p="cut-add">Add a supplier</button>' + (d.length ? '' : '<button type="button" class="btn" data-p="cut-usual">Add ' + esc(CUT_USUAL.map(function (x) { return x.name; }).join(', ')) + '</button>') + '</div>' +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="cut-save"' + (owner && cutDirty() && !S.cutBusy ? '' : ' disabled') + '>Save cut-offs</button><button type="button" class="btn" data-p="cut-undo"' + (cutDirty() ? '' : ' disabled') + '>' + (armed('cut-undo') ? 'Tap again to undo' : 'Undo unsaved changes') + '</button></div>' +
@@ -10133,11 +10193,14 @@
   function mlFilters() { return [['all', 'All']].concat(ML_CATS.map(function (c) { return [c[0], c[1], function (x) { return x.cat === c[0]; }]; })); }
   function mailAdminHTML() {
     if (!mlHead()) return mlListHTML('Kitchen mail', 'What the team wrote to Chef, most urgent first. Chef has let the sous chefs read it. Tick a line when it is dealt with. Seen is still for Chef.');
-    return mlListHTML('Kitchen mail', 'What the team wrote to you, most urgent first: food safety, then Today, This week and Whenever, oldest first. Opening this list marks everything on it as seen, so the sender knows you have read it. Tick a line when it is dealt with.',
+    return mlListHTML('Kitchen mail', ['What the team wrote to you, most urgent first. Tick a line when it is dealt with.', 'Food safety comes first, then Today, This week and Whenever, oldest first. Opening this list marks everything on it as seen, so the sender knows you have read it.'],
       '<div class="ml-sous"><label class="a-check"><input type="checkbox" data-k="ml-sous"' + (mlSousOn() ? ' checked' : '') + '> Sous chefs can read kitchen mail and tick it off</label>' +
       '<span class="hint">Off: only you read it. On: a sous chef signed in with their PIN reads it under Kitchen mail in the chef hat menu, ticks lines off and changes how soon they matter. Seen still means you have read it.</span></div>');
   }
+  // hint is one line of help, or [one line, the rest under How this works] (4 Nov 2026, the admin page kit)
   function mlListHTML(title, hint, foot) {
+    var how = Array.isArray(hint) ? '<details class="a-how"><summary>How this works</summary><p class="hint">' + hint[1] + '</p></details>' : '';
+    if (how) hint = hint[0];
     loadMail(); loadMailDone();
     if (!mlOpen || mlErr) return '<section class="set-block"><span class="label">' + title + '</span><p class="hint">' + (mlErr ? 'Could not load the mail. Check the signal. The book tries again in a few minutes.' : 'Loading...') + '</p></section>';
     var done = (mlDone || []).slice().sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
@@ -10145,7 +10208,7 @@
     // "Nothing ticked off" from a read that failed (a list read earlier stays under the note)
     var doneNote = mlDoneErr ? '<p class="hint" role="status">Could not load the done mail. Check the signal. The book tries again in a few minutes.</p>' : mlDoneIn ? '' : '<p class="hint">Loading...</p>';
     var doneBody = mlDoneIn ? lvHTML({ key: 'maildone', items: done, step: 15, noun: ['message', 'messages'], ph: 'Search done mail', find: mlFind, filters: mlFilters(), card: mlRow, empty: 'Nothing ticked off in the last 30 days.' }) : '';
-    return '<section class="set-block ml-admin"><span class="label">' + title + '</span><span class="hint">' + hint + '</span>' +
+    return '<section class="set-block ml-admin"><span class="label">' + title + '</span><span class="hint">' + hint + '</span>' + how +
       lvHTML({ key: 'mail', items: mlOpen, step: 20, noun: ['open message', 'open messages'], ph: 'Search mail', find: mlFind, filters: mlFilters(),
         sorts: [['pri', 'Most urgent first', function (a, b) { return mlRank(a) - mlRank(b) || (a.at || 0) - (b.at || 0); }], ['new', 'Newest first', function (a, b) { return (b.at || 0) - (a.at || 0); }], ['old', 'Oldest first', function (a, b) { return (a.at || 0) - (b.at || 0); }]],
         card: mlRow, empty: 'No open mail. Everything is dealt with.' }) + mlSeenSoon() +
