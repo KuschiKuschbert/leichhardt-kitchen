@@ -3,13 +3,16 @@
 (function () {
   'use strict';
   var KEY = 'lk.device.v2', dialog = null, finishDialog = null, requested = false;
+  // The person closed the first prompt (View recipes for now, Escape or Back). Memory only: a new page load asks again.
+  // Out of date once the saved choice changes (emit()) or the person asks again (sign in, Choose device, Forget).
+  var declined = false;
   function read() {
     try {
       var p = JSON.parse(localStorage.getItem(KEY) || 'null');
       return p && p.v === 2 && (p.mode === 'personal' || p.mode === 'shared') && typeof p.ownerId === 'string' ? p : null;
     } catch (e) { return null; }
   }
-  function emit() { window.dispatchEvent(new Event('lk-device')); }
+  function emit() { declined = false; window.dispatchEvent(new Event('lk-device')); }
   function save(p) {
     try {
       localStorage.setItem(KEY, JSON.stringify(p));
@@ -58,6 +61,7 @@
     function cancel() {
       finish();
       if (!changing) {
+        declined = true;
         var recipes = function () { if (location.hash !== '#/recipes') location.hash = '#/recipes'; };
         if (p && p.afterOverlay) p.afterOverlay(recipes); else recipes();
       }
@@ -108,12 +112,18 @@
   }
   window.LK_DEVICE = {
     mode: mode, ownerId: ownerId, classified: function () { return !!read(); }, choose: choose, verify: verify, reset: reset,
-    request: function () {
-      if (read()) return;
+    // o.auto: an automatic recheck (resume() when the kitchen settings, the sign-in or the clock answer). It never
+    // reopens a prompt the person closed; a deliberate ask (sign in, Choose device, Forget) does.
+    request: function (o) {
+      var auto = !!(o && o.auto);
+      if (read() || auto && declined) return;
+      if (!auto) declined = false;
       // Deferred scripts run while readyState is interactive. Wait for the Prep overlay API before opening the
       // first prompt, so the browser's Back dismisses it instead of leaving a directly opened kitchen route.
-      if (!window.LK_PREP && document.readyState !== 'complete') { document.addEventListener('DOMContentLoaded', function () { window.LK_DEVICE.request(); }, { once: true }); return; }
-      var open = function () { if (!read()) picker(false); };
+      if (!window.LK_PREP && document.readyState !== 'complete') { document.addEventListener('DOMContentLoaded', function () { window.LK_DEVICE.request(o); }, { once: true }); return; }
+      // The open can wait behind an earlier overlay's Back. Another ask may open the prompt meanwhile and the person
+      // close it: that answered this ask too, so it must not open a second prompt over Recipes (4 Nov 2026).
+      var open = function () { if (!read() && !declined) picker(false); };
       if (window.LK_PREP && window.LK_PREP.afterOverlay) window.LK_PREP.afterOverlay(open); else open();
     },
     settings: function () {
