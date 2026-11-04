@@ -9,8 +9,6 @@
   let surface = 'work', route = location.hash || '#/', aboutOpen = false, panel = null, panelTheme = null;
   let handoffCount = 0, handoffTimer = 0, handoffTarget = null, handoffPending = false;
   const esc = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  // Pi Day is the established short name; its official alternative stays in accessible labels.
-  const labelFor = theme => theme.id === 'fun-pi-day' ? 'Pi Day' : theme.label;
   function art(source, theme, className) {
     const markup = window.KB_THEME_BRAND?.style ? KB_THEME_BRAND.style(source, { themeId: theme.id }) : source;
     if (!className) return markup;
@@ -72,7 +70,7 @@
       panel.className = 'kb-occasion-panel kb-season-with-ticker';
       panel.setAttribute('aria-modal', 'true');
       panel.setAttribute('aria-labelledby', 'kb-occasion-title');
-      panel.innerHTML = '<div class="kb-occasion-panel-heading"><div class="kb-occasion-panel-copy"><h2 id="kb-occasion-title" aria-label="' + esc(state.theme.label) + '" title="' + esc(state.theme.label) + '">' + esc(labelFor(state.theme)) + '</h2><span class="kb-season-language-slot" data-kb-language></span></div><a class="kb-occasion-home" href="#/" aria-label="Kitchen Book home" title="Kitchen Book home">Home</a><button class="kb-occasion-close" type="button" aria-label="Close occasion explanation">×</button></div><div data-kb-ticker></div>';
+      panel.innerHTML = '<div class="kb-occasion-panel-heading"><div class="kb-occasion-panel-copy"><h2 id="kb-occasion-title" aria-label="' + esc(state.theme.label) + '" title="' + esc(state.theme.label) + '">' + esc(state.theme.label) + '</h2><span class="kb-season-language-slot" data-kb-language></span></div><a class="kb-occasion-home" href="#/" aria-label="Kitchen Book home" title="Kitchen Book home">Home</a><button class="kb-occasion-close" type="button" aria-label="Close occasion explanation">×</button></div><div data-kb-ticker></div>';
       panel.querySelector('.kb-occasion-close').addEventListener('click', () => closeAbout(true));
       panel.addEventListener('cancel', event => { event.preventDefault(); closeAbout(true); });
       panel.addEventListener('click', event => {
@@ -139,7 +137,7 @@
       note?.remove(); restoreBrand();
     } else if (home) {
       closeAbout(false); restoreBrand(); handoffPending = false;
-      const heading = labelFor(theme) + (state.dayCount ? ' · day ' + state.dayCount.n + ' of ' + state.dayCount.of : '');
+      const heading = theme.label + (state.dayCount ? ' · day ' + state.dayCount.n + ' of ' + state.dayCount.of : '');
       if (!note || note.dataset.kbSeason !== theme.id || note.dataset.kbHeading !== heading) {
         note?.remove(); root.dataset.kbEffects = '';
         note = document.createElement('aside'); note.dataset.kbSeason = theme.id; note.dataset.kbSeasonLayout = 'home'; note.dataset.kbHeading = heading;

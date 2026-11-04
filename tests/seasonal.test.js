@@ -182,20 +182,20 @@ async function cpuPerSecond(p, ms = 2000) {
     await go(p, '#/recipes');
     ok(await p.evaluate(() => KB_CELEBRATION_TICKER.status().activeInstances === 0 && KB_CELEBRATION_TICKER.status().timerCount === 0), 'returning to work leaves no Home or work explanation scheduler behind');
 
-    // These are the 36 main families plus their approved regional and calendar companions.
+    // The 36 main families and their three calendar companions: every design in the catalogue, and nothing else (4 Nov 2026).
     const coverage = await p.evaluate(() => KB_EFFECTS.coverage().map(item => item.id));
-    ok(coverage.length >= 60, 'every main festival and shared regional style has an ambient preset');
+    ok(await p.evaluate(ids => ids.length === KB_COMPLETE_ART.length && KB_COMPLETE_ART.every(t => ids.includes(t.id)), coverage), 'every calendar design has an ambient preset, and no preset is left for a design that is gone');
     ok(await p.evaluate(() => {
       const locales = ['en', 'fil', 'ban', 'ne', 'hi', 'de'];
-      return KB_COMPLETE_ART.length === 204 && KB_COMPLETE_ART.every(item => locales.every(code => typeof KB_CELEBRATION_COPY.events[item.id]?.[code] === 'string' && KB_CELEBRATION_COPY.events[item.id][code].trim()));
-    }), 'all 204 manually available designs have complete sentences in all six languages');
+      return KB_COMPLETE_ART.length === 39 && Object.keys(KB_CELEBRATION_COPY.events).length === 39 && KB_COMPLETE_ART.every(item => locales.every(code => typeof KB_CELEBRATION_COPY.events[item.id]?.[code] === 'string' && KB_CELEBRATION_COPY.events[item.id][code].trim()));
+    }), 'all 39 calendar designs have complete sentences in all six languages, and no copy for designs that are gone');
     // Stamps: every main festival and companion has one, and each is plain static SVG.
-    ok(await p.evaluate(ids => ids.every(id => window.KB_STAMPS?.has(id) || ['ph-salubong', 'ph-easter'].includes(id)), coverage), 'every main festival and companion has a stamp, except Salubong and Philippine Easter, which keep their drawing');
+    ok(await p.evaluate(ids => ids.length === 39 && ids.every(id => window.KB_STAMPS?.has(id)), coverage), 'every celebration has a stamp and its own motion preset (' + coverage.length + ')');
     ok(await p.evaluate(ids => ids.filter(id => window.KB_STAMPS?.has(id)).every(id => {
       const doc = new DOMParser().parseFromString(KB_STAMPS.svg(id), 'image/svg+xml'), root = doc.documentElement;
       return !doc.querySelector('parsererror') && root.getAttribute('viewBox') === '0 0 32 32' && !doc.querySelector('[id],script,foreignObject,image');
     }), coverage), 'stamps are plain 32 px SVG with no ids, scripts or images');
-    ok(await p.evaluate(() => ['in-navaratri', 'au-mothers-day', 'in-holi', 'np-holi'].every(id => {
+    ok(await p.evaluate(() => ['in-navaratri', 'au-mothers-day', 'in-holi'].every(id => {
       const item = KB_COMPLETE_ART.find(t => t.id === id);
       return item.icon.includes('data-kb-redrawn') && !/crossed|pichkari/i.test(item.motif);
     })), 'Navaratri, Mother\u2019s Day and Holi use the redrawn marks with no red cross or syringe');

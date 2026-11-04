@@ -3,7 +3,7 @@
   'use strict';
   const cache = new Map();
   // National flags retain their semantic colours; decorative art uses the primary brand palette.
-  const semanticExceptionIds = Object.freeze(['in-independence-day', 'bali-independence', 'ph-independence-day']);
+  const semanticExceptionIds = Object.freeze(['ph-independence-day']);
   const semanticAccentIds = Object.freeze(['fun-st-patricks-day']);
   const tokens = Object.freeze({
     ink: '#1C1D1F', paper: '#FFFEFA', accent: '#E2602A', 'accent-ink': '#C2451A',
