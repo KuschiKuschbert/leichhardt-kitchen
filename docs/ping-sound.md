@@ -32,7 +32,7 @@ Ids are saved in Firestore: never rename one. A new sound adds a line to `SOUNDS
 
 Head chef, 3 November 2026: only the head chef (the admin) sets the ring tone for pings. Nobody else can pick another sound, and it is the same sound for everyone, on every device.
 
-- There is one setting, `config/main.pingSound`, and every device reads it. There is no per-phone, per-person or per-device sound, nothing kept on the phone, and no sound in Settings. Do not add one.
+- There is one setting, `config/main.pingSound`, and every device reads it. There is no per-phone, per-person or per-device sound, nothing kept on the phone, and no sound in Settings. Do not add one. Settings, The kitchen (the verified admin only) shows this one setting and opens the block below; it is not a second sound and plays nothing.
 - Only the verified admin writes it: the head chef's own Google device with their head chef PIN and its grant. The rules refuse it from sous chefs, staff, leads, view only, functions only, the shared tablet, signed-out phones and the head chef's PIN on any other phone, including inside a sous chef's staff save or ping stamp (`tests/rules/rules.test.mjs`, `tests/rules/client-shapes.test.mjs`).
 - A new pick reaches every phone through its config listener, with no reload. A phone can still be quieter (on silent, volume down, not tapped since the book opened), but it never plays a different sound.
 
@@ -63,7 +63,7 @@ Known limits, by design of the browsers:
 
 ## Tests
 
-`tests/ping-sound.test.js` counts the notes the real browser is asked to play (each oscillator's pitch): the admin block and its Play and pick, the save and the People save keeping it, Off, a staff phone at a ping's own time, no sound after Got it or from the bell, the start of a shift, an unknown value from Firestore, a sous chef seeing no block, and `js/chime.js` failing to load. It also checks the one-sound decision: no block for the head chef's PIN on another phone, no sound in Settings for staff or a sous chef, and a sous chef's phone switching from Marimba to Oven timer when the head chef picks it, with no reload, even when waking the sound is slow. A sound held back until a tap is checked not to ring late. `tests/rules/rules.test.mjs` refuses the sound from every other sign-in and inside the saves they may make. `tests/seasonal-shell.test.js` checks the new startup file is in the saved shell and both update lists.
+`tests/ping-sound.test.js` counts the notes the real browser is asked to play (each oscillator's pitch): the admin block and its Play and pick, the save and the People save keeping it, Off, a staff phone at a ping's own time, no sound after Got it or from the bell, the start of a shift, an unknown value from Firestore, a sous chef seeing no block, and `js/chime.js` failing to load. It also checks the one-sound decision: no block for the head chef's PIN on another phone, no sound in Settings for staff or a sous chef, and a sous chef's phone switching from Marimba to Oven timer when the head chef picks it, with no reload, even when waking the sound is slow. A sound held back until a tap is checked not to ring late. The notes are counted once the browser has answered every wake-up the page asked for (`window.__waking`), however long a busy runner takes, not after a set time. `tests/rules/rules.test.mjs` refuses the sound from every other sign-in and inside the saves they may make. `tests/seasonal-shell.test.js` checks the new startup file is in the saved shell and both update lists.
 
 ## Rollback
 

@@ -1254,6 +1254,59 @@
   // the head chef on their own Google device: the chef hat's chef items open the matching admin tab
   function adminTabs() { return admDev() && whoHead(); }
   // Meeting minutes shows for staff only once there is something published to read (chefs always, for the register)
+  /* Settings, You (3 Nov 2026, docs/settings-options/brief.md): the role's name, and what the person signed in may do in
+     plain words for the read-only What you can do row. The same checks the pages and the rules go by (can(), canPing(),
+     todoOK(), bookEdit(), fnOK(), adminTabs()), so it never says more than the person may do. Nothing read or saved. */
+  function whoRole() { var p = me(); return p && ROLES[p.role] ? ROLES[p.role].name : ''; }
+  function myCan() {
+    var out = [];
+    if (!me() || !privateAccess()) return out;
+    if (can('add')) out.push('Add prep and order lines', 'Log wastage and transfers');
+    if (can('tick')) out.push('Tick prep');
+    if (can('del')) out.push('Remove prep lines');
+    if (canPing()) out.push('Shift pings');
+    if (todoOK()) out.push('Chef to-do');
+    if (bookEdit()) out.push('Recipes and drawings');
+    if (fnOK()) out.push('Function bookings');
+    if (isSous() && !adminTabs()) out.push('Manage staff');
+    if (adminTabs()) out.push('Admin panel on this device');
+    out.push('Delivery temperatures');
+    return out;
+  }
+  /* Settings, The kitchen (the verified admin) and Team (sous chefs), 3 Nov 2026: what the kitchen is set to, from the
+     config/main the phone already has (no read). null until the settings are in, so nothing shows as none or 0. */
+  function kitchenInfo() {
+    if (S.configState !== 'ok' || !S.config) return null;
+    var c = S.config, ps = people(), see = staffSee(c);
+    return {
+      people: ps.length,
+      sous: ps.filter(function (p) { return p.id !== c.headId && (c.sousIds || []).indexOf(p.id) >= 0; }).length,
+      secs: kitSecs().map(function (x) { return String(x.name); }),
+      shown: FEATS.filter(function (f) { return see[f[0]]; }).map(function (f) { return f[1]; }),
+      hidden: FEATS.filter(function (f) { return !see[f[0]]; }).map(function (f) { return f[1]; }),
+      badges: c.showBadges !== false, sound: pingSound(), sousMail: c.sousMail === true,
+      fns: ps.filter(function (p) { return (c.fnIds || []).indexOf(p.id) >= 0; }).length,
+      cuts: cutList().length
+    };
+  }
+  /* The kitchen's rows open the admin page that saves each setting (the verified admin only, like the admin panel), and
+     Use a different kitchen PIN on this device (moved from the admin Tools tab to Settings, This phone, 3 Nov 2026):
+     forgets the kitchen PIN here only and opens the PIN screen. Settings asks for the second tap. */
+  var ADMIN_OPEN = ['people', 'notes', 'mail', 'cutoffs', 'tools'];
+  function adminOpen(tab) {
+    if (!adminTabs() || ADMIN_OPEN.indexOf(tab) < 0) return false;
+    S.atab = tab; lsSet('lk.prep.atab', tab);
+    if (location.hash === '#/admin') draw(); else location.hash = '#/admin';
+    return true;
+  }
+  function forgetPin() {
+    if (!adminTabs()) return false;
+    S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; stopLive(); gForget();
+    if (location.hash === '#/prep') draw(); else location.hash = '#/prep';
+    return true;
+  }
+  // the person's section, the pushes on this phone or who they are changed: Settings draws again if what it shows did
+  function meChanged() { try { window.dispatchEvent(new Event('lk-me')); } catch (e) {} }
   function chefMenu() { return { minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), head: whoHead(), tab: adminTabs(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK(), todo: todoOK() }; }
   /* Functions (21 Oct 2026): who may enter and change function bookings. The person signed in with their own PIN and
      ticked for Functions (config/main fnIds, which only the head chef's Google account saves), or the head chef's Google
@@ -1555,6 +1608,25 @@
     if (key === 'p-section') S.section = v; else S.wf.sec = v;
     el.value = v;
     toast('Section corrected: ' + info.from + ' to ' + v, { label: 'Undo', fn: function () { keepSection(info.from); if (key === 'p-section') S.section = info.from; else S.wf.sec = info.from; } });
+  }
+  /* One section control (3 Nov 2026, work pages redesign S2): the kitchen's sections as chips under the section box on
+     the prep list and wastage, in place of the box's Choose Section picker (the box and a picker were two controls for
+     one field). A tap puts that section in the box, and it stays for the next line like a typed one; a tap on the lit
+     chip clears it, so lines go to their usual section again. The box stays for writing a section that is not on the
+     list. The chips are the head chef's kitchen sections when they are set up, otherwise the sections used most (no
+     reads: both are already loaded), with the one in the box first when it is neither. */
+  function secChoices(v) {
+    var names = kitSecs().length ? kitSecs().map(function (x) { return x.name; }) : suggestions().slice(0, 8), cur = String(v || '').trim();
+    if (cur && !names.some(function (n) { return n.toLowerCase() === cur.toLowerCase(); })) names = [cur].concat(names);
+    return names;
+  }
+  function secChipsHTML(key, v) {
+    var names = secChoices(v), cur = String(v || '').trim().toLowerCase();
+    if (names.length < 2) return '';
+    return '<div class="nb-sugg sec-chips" role="group" aria-label="Section"><span class="nb-ql" aria-hidden="true">Section</span>' + names.map(function (n) {
+      var on = n.toLowerCase() === cur;
+      return '<button type="button" class="chip" data-p="sec-pick" data-sk="' + key + '" data-v="' + esc(n) + '" aria-pressed="' + on + '">' + esc(n) + '</button>';
+    }).join('') + '</div>';
   }
   function suggestions() {
     var seen = {}, out = [];
@@ -4051,13 +4123,13 @@
     // (with no signal and the day not loaded, Closing soon gives no count of the lines left open: it would count only
     // the lines this phone wrote since)
     var flags = closeoutHTML(S.itemsState === 'offline' ? null : daily, S.date) + wNoteHTML();
-    var sug = suggestions(), sideH = sideHTML(today, flags);
+    var sideH = sideHTML(today, flags);
     var add = can('add') && S.date === today ?
-      '<form class="nb-add" data-p-form="add"><datalist id="p-sections">' + sug.map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('') + '</datalist>' +
+      '<form class="nb-add" data-p-form="add">' +
       '<div class="nb-add-row"><label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" autocapitalize="sentences" placeholder="Write a new line..." maxlength="160" value="' + esc(S.text) + '">' +
-      '<label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" list="p-sections" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section || (S.secTyped ? '' : mySec())) + '">' +
+      '<label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section || (S.secTyped ? '' : mySec())) + '">' +
       '<label class="visually-hidden" for="p-qty">Amount</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.qty) + '">' +
-      '<button type="submit" class="nb-addbtn">Add</button></div><div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : (S.date !== today ? '<p class="hint">You are looking at ' + esc(dayName(S.date)) + '. Lines are added on Today only.</p>' : '<p class="hint">You can read the book but not write in it. Ask the head chef if that is wrong.</p>');
+      '<button type="submit" class="nb-addbtn">Add</button></div>' + secChipsHTML('p-section', S.section || (S.secTyped ? '' : mySec())) + '<div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : (S.date !== today ? '<p class="hint">You are looking at ' + esc(dayName(S.date)) + '. Lines are added on Today only.</p>' : '<p class="hint">You can read the book but not write in it. Ask the head chef if that is wrong.</p>');
     var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
     if (!S.items.length && S.itemsState === 'loading') todayEmpty = inkWait('Loading the prep list...', 'prep', 4);
     if (live.length && doneN === live.length && !S.tab) todayEmpty = '<p class="nb-empty">Everything on this list is ticked off. See Done today under Handy.</p>';
@@ -4621,7 +4693,7 @@
       '<div class="field"><label class="label" for="a-newpin">New 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
       '<div class="field"><label class="label" for="a-newpin2">Type it again</label><input id="a-newpin2" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin2" placeholder="4 digits" value="' + esc(S.newPin2 || '') + '"></div>' +
       '<div class="btn-row"><button type="button" class="btn" data-p="move-pin"' + (S.moving ? ' disabled' : '') + '>' + (armed('move-pin') ? 'Tap again to copy everything' : 'Copy everything to the new PIN') + '</button></div><span class="saved" role="status">' + esc(S.moveMsg) + '</span>' +
-      '<div class="btn-row a-forget"><button type="button" class="btn" data-p="pin-forget">' + (armed('pin-forget') ? 'Tap again: this device forgets the kitchen PIN' : 'Use a different kitchen PIN on this device') + '</button></div><span class="hint">Forgets the kitchen PIN on this device only and asks for one again. Staff phones pick up a new PIN by themselves once the old rules are removed.</span></section>');
+      '<p class="hint a-forget">To use a different kitchen PIN on this device, open Settings, This phone.</p></section>');
     var resume = INTELLIGENCE_PAGES.indexOf(at) < 0 && intelligenceAllowed() && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_INTELLIGENCE.resumeHTML ? window.LK_INTELLIGENCE.resumeHTML(at) : '';
     if (at !== 'proofreader' && intelligenceAllowed() && proofModule()) resume += proofModule().resumeHTML(proofAdapter());
     var chapterNo = A_GROUPS.indexOf(ag) + 1;
@@ -5512,11 +5584,10 @@
     var often = wOften();
     var add = can('add') ?
       '<form class="nb-add w-add" data-p-form="wadd">' + (often.length ? '<div class="w-often"><span class="nb-ql">Logged often</span><div class="chiprow">' + often.map(function (e, i) { return '<button type="button" class="chip sq" data-p="woften" data-i="' + i + '">' + esc(e.text) + '</button>'; }).join('') + '</div></div>' : '') +
-      '<datalist id="w-sections">' + suggestions().map(function (n) { return '<option value="' + esc(n) + '"></option>'; }).join('') + '</datalist>' +
-      '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label><input id="w-sec" class="nb-in nb-in-sec" data-k="w-sec" list="w-sections" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec || mySec()) + '">' +
+      '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label><input id="w-sec" class="nb-in nb-in-sec" data-k="w-sec" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec || mySec()) + '">' +
       '<label class="visually-hidden" for="w-text">Item</label><input id="w-text" class="nb-in nb-in-text" data-k="w-text" enterkeyhint="next" autocomplete="off" placeholder="What was wasted?" maxlength="80" value="' + esc(f.text) + '">' +
       '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty" data-k="w-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit || 'unit') + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' +
-      '<div class="nb-sugg" id="w-sugg">' + wSuggHTML() + '</div>' +
+      secChipsHTML('w-sec', f.sec || mySec()) + '<div class="nb-sugg" id="w-sugg">' + wSuggHTML() + '</div>' +
       '<div class="w-pick"><span class="nb-ql" id="w-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="w-unit-l">' + UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="wunit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
       '<div class="w-pick"><span class="nb-ql" id="w-reason-l">Reason</span><div class="w-rchips" role="radiogroup" aria-labelledby="w-reason-l">' + REASONS.map(function (r) { return '<button type="button" class="chip" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (f.reason === r[0]) + '">' + r[1] + '</button>'; }).join('') + '</div>' +
       '<button type="button" class="w-rbtn' + (f.reason ? '' : ' is-empty') + '" data-p="sheet" data-v="reason" aria-haspopup="dialog">' + (f.reason ? esc(reasonName(f.reason)) : 'Pick a reason') + '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>' +
@@ -8724,28 +8795,30 @@
     nosw: 'The book is still setting up on this phone. Close it, open it again and try once more.',
     fail: 'Could not turn it on. Check the connection and try again.'
   };
+  // the order list and Settings both show the pushes on this phone
+  function pushDraw() { draw(); meChanged(); }
   function pushOn() {
     var who = pushWhoId();
     if (!who || S.pushBusy) return;
-    if (pushState() === 'ios' || pushState() === 'no') { S.pushMsg = PUSH_SAY[pushState()]; draw(); return; }
-    S.pushBusy = true; S.pushMsg = 'Turning on...'; draw();
+    if (pushState() === 'ios' || pushState() === 'no') { S.pushMsg = PUSH_SAY[pushState()]; pushDraw(); return; }
+    S.pushBusy = true; S.pushMsg = 'Turning on...'; pushDraw();
     Notification.requestPermission().then(function (p) { if (p !== 'granted') throw { code: 'denied' }; return pushToken(); }).then(function (tok) { return pushSave(tok, who); }).then(function () {
-      S.pushBusy = false; S.pushMsg = 'On. This phone gets a push when a cut-off reminder starts and an hour before.'; draw();
+      S.pushBusy = false; S.pushMsg = 'On. This phone gets a push when a cut-off reminder starts and an hour before.'; pushDraw();
     }, function (e) {
-      S.pushBusy = false; S.pushMsg = PUSH_SAY[e && e.code] || PUSH_SAY.fail; draw();
+      S.pushBusy = false; S.pushMsg = PUSH_SAY[e && e.code] || PUSH_SAY.fail; pushDraw();
       try { console.warn('push', e && (e.code || e.message)); } catch (x) {}
     });
   }
   function pushOff() {
     var k = pushKept();
     if (!k || S.pushBusy) return;
-    S.pushBusy = true; S.pushMsg = 'Turning off...'; draw();
+    S.pushBusy = true; S.pushMsg = 'Turning off...'; pushDraw();
     var ref = docRef('push', k.h);
     (k.by === 'owner' ? track(fb.fs.deleteDoc(ref)) : W([['del', ref]])).then(function () {
       lsSet('lk.push', '');
       import(SDK + 'firebase-messaging.js').then(function (fm) { return fm.deleteToken(fm.getMessaging(fb.app)); }).catch(function () {});
-      S.pushBusy = false; S.pushMsg = 'Off. This phone gets no more pushes.'; draw();
-    }, function () { S.pushBusy = false; S.pushMsg = 'Could not turn it off. Check the connection and try again.'; draw(); });
+      S.pushBusy = false; S.pushMsg = 'Off. This phone gets no more pushes.'; pushDraw();
+    }, function () { S.pushBusy = false; S.pushMsg = 'Could not turn it off. Check the connection and try again.'; pushDraw(); });
   }
   /* once a kitchen day, and straight away when the kitchen PIN changed, a phone that is turned on gets its address again
      and writes it (no read; one try per day, kitchen PIN and PIN session on each page load, so a write refused before the
@@ -8904,7 +8977,7 @@
     sheetNext();
   }
   /* Skip (or Escape, or a tap outside, on the first ask): no section today, and no asking again today on this phone */
-  function ksSkip() { var p = me(); if (p && !ksGet(p.id)) ksPut(p.id, '', ''); ksClose(); draw(); }
+  function ksSkip() { var p = me(); if (p && !ksGet(p.id)) ksPut(p.id, '', ''); ksClose(); draw(); meChanged(); }
   function ksPick(sid) {
     var p = me(), s = kitSecs().filter(function (x) { return x.id === sid; })[0];
     if (!p || !s) return;
@@ -8912,7 +8985,7 @@
     ksPut(p.id, s.id, s.name);
     // kept on the phone first, so a lost signal never loses the default section
     sset(docRef('shifts', day + '_' + p.id), { day: day, sec: s.id, name: s.name, auto: false, at: now() }).catch(function () {});
-    ksClose(); draw();
+    ksClose(); draw(); meChanged();
     toast('You are on ' + s.name + ' today.');
   }
   document.addEventListener('click', function (e) {
@@ -9031,7 +9104,6 @@
     if (a === 'recipe-all') { S.recipeAll = true; draw(); var rse2 = S.root.querySelector('#p-rs'); if (rse2) rse2.focus({ preventScroll: true }); return; }
     if (a === 'pin-go') { submitKitchenPin(); return; }
     // head chef only (admin Tools tab): this device forgets the kitchen PIN and goes to the PIN screen of the prep book
-    if (a === 'pin-forget') { if (!arm('pin-forget')) return; S.pin = ''; lsSet('lk.prep.pin', ''); S.config = null; S.configState = 'idle'; stopLive(); gForget(); if (location.hash === '#/admin') { location.hash = '#/prep'; return; } draw(); return; }
     if (a === 'retry') { cfgKey = ''; connect(); return; }
     if (a === 'notes-open') { if (canPing()) { S.notesOpen = true; if (!nfDirty()) { S.nf = null; S.nOpen = false; } S.nMsg = ''; loadNotes(); draw(); window.scrollTo(0, 0); } return; }
     if (a === 'n-new') { S.nf = nfNew(); S.nfSnap = JSON.stringify(S.nf); S.nOpen = true; S.nMsg = ''; draw(); var ntx = S.root.querySelector('[data-k="n-text"]'); if (ntx) { focusNoteText(ntx); } return; }
@@ -9195,6 +9267,11 @@
     if (a === 'sheet') {
       S.sheet = 'reason';
       window.LK_UX.AdaptivePicker({ label: 'Why was it wasted?', trigger: el, value: [S.wf.reason], items: REASONS.map(function (r) { return { value: r[0], label: r[1] }; }), onChange: function (v) { S.sheet = ''; S.wf.reason = v[0]; draw(); }, onDismiss: function () { S.sheet = ''; } }); return;
+    }
+    if (a === 'sec-pick') {
+      var sk = el.getAttribute('data-sk'), sv = el.getAttribute('data-v') || '', lit = el.getAttribute('aria-pressed') === 'true';
+      if (sk === 'p-section') { S.section = lit ? '' : sv; S.secTyped = !lit; } else if (sk === 'w-sec') S.wf.sec = lit ? '' : sv;
+      draw(); focusSel('[data-p="sec-pick"][data-sk="' + sk + '"][data-v="' + CSS.escape(sv) + '"]'); return;
     }
     if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { S.wf.text = wt; var wl = wLast(wt); if (wl) { if (wl.unit) S.wf.unit = wl.unit; if (wl.reason && !S.wf.reason) S.wf.reason = wl.reason; if (wl.station && !S.wf.sec && !mySec()) S.wf.sec = wl.station; if (wl.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wl.amt; S.wf.amtAuto = true; } } draw(); focusFilled('w-amt'); } return; }
     if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; if (wo.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wo.amt; S.wf.amtAuto = true; } draw(); focusFilled('w-amt'); } return; }
@@ -10100,6 +10177,11 @@
     supplier: supplierApi,
     chefMenu: chefMenu,
     chefOpen: chefOpen,
+    // Settings (3 Nov 2026, docs/settings-options/brief.md): the person's role and permissions, the kitchen's settings
+    // for the verified admin, and the cut-off pushes on this phone (the same pushOn() and pushOff() as the order list)
+    whoRole: whoRole, myCan: myCan, kitchenInfo: kitchenInfo, adminOpen: adminOpen, forgetPin: forgetPin,
+    push: function () { var w = pushWhoId(), st = w ? pushState() : ''; return { show: !!w, on: st === 'on', busy: !!S.pushBusy, msg: S.pushMsg || (st === 'ios' || st === 'denied' ? PUSH_SAY[st] : '') }; },
+    pushSet: function (on) { if (on) pushOn(); else pushOff(); },
     secOpen: function () { ksOpen(true); },
     // Manual Sign out never overrides unsent work. Automatic locks retain it behind the original person's PIN.
     signOut: function (force, quiet) { if (sendFirst()) { toast(SEND_FIRST); return false; } return signOutPerson(force, quiet); },
