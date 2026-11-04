@@ -14,6 +14,8 @@ const toast = p => wait(p, () => { const t = document.querySelector('.mg-toasts 
 const toastText = p => p.evaluate(() => { const t = document.querySelector('.mg-toasts .p-toast'); if (!t) return null; t.dataset.read = '1'; return t.textContent; });
 const editor = p => wait(p, () => !!document.getElementById('mg-name'));
 const mgFetched = p => p.urls.some(u => /js\/manage\.js/.test(u));
+// the chapter pills as "ing* card. method": * is the open chapter, . a change not saved, ! something to fix (3 Nov 2026)
+const chs = p => p.evaluate(() => [...document.querySelectorAll('.mg-chb')].map(c => c.getAttribute('data-v') + (c.getAttribute('aria-current') ? '*' : '') + (c.querySelector('.mg-chx') ? '!' : c.querySelector('.mg-chd') ? '.' : '')).join(' '));
 async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash); await L.settle(p, 300); }
 
 (async () => {
@@ -62,6 +64,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await p.click('#mg-results a[href="#/manage/r/burger"]');
   await editor(p);
   ok(await p.inputValue('#mg-name') === 'Chicken Burger', 'the form opens with the burger as the book has it');
+  ok(await chs(p) === 'ing* method alg draw card hist' && await p.evaluate(() => [...document.querySelectorAll('.mg-ch')].filter(c => !c.hidden).map(c => c.dataset.ch).join() === 'ing'), 'chapters: a recipe opens on Ingredients, the rest hidden (' + await chs(p) + ')');
   // Drawings (3 Nov 2026): a picture for each drawing, and the choices by name, not by the book's file names
   await L.chapter(p, 'draw');
   const dnames = await p.evaluate(() => [...document.querySelectorAll('#mg-art option, #mg-side option, #mg-diag option')].map(o => o.textContent));
@@ -77,6 +80,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await L.settle(p, 500);
   ok(/Not saved yet/.test(await txt(p, '.mg-state') || '') && await p.evaluate(() => window.LK_MG.dirty() && window.LK_PREP.unsaved()), 'typing: the bar says Not saved yet, and sign out waits for it');
   ok(!!(await p.evaluate(() => localStorage.getItem('lk.mg.draft.burger'))), 'typing: a draft is kept on this device');
+  ok(/\bing\*?\./.test(await chs(p)) && /\bcard\./.test(await chs(p)) && /\bmethod( |$)/.test(await chs(p)), 'chapters: a dot on Ingredients and Card details, none on Method (' + await chs(p) + ')');
   await p.click('[data-mg="save"]');
   await toast(p);
   ok(/Saved\. Version 1\./.test(await toastText(p) || ''), 'save: Saved. Version 1.');
@@ -116,6 +120,12 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await p.click('[data-mg="save"]'); await L.settle(p, 300);
   ok(/Give the recipe a name/.test(await txt(p, '.mg-errs') || ''), 'checks: a recipe needs a name');
   ok(await p.evaluate(() => document.activeElement && document.activeElement.id === 'mg-name'), 'checks: the name box gets the focus');
+  // chapters: ! marks the chapter to fix, and its error link opens that chapter again from another one
+  ok(/\bcard\*!/.test(await chs(p)), 'chapters: Card details is open and marked to fix (' + await chs(p) + ')');
+  await p.click('.mg-chb[data-v="ing"]'); await L.settle(p, 150);
+  ok(await p.evaluate(() => document.querySelector('[data-ch="card"]').hidden && !document.querySelector('[data-ch="ing"]').hidden), 'chapters: a pill opens its chapter and hides the one before');
+  await p.click('.mg-errs [data-mg="goto"][data-v="mg-name"]'); await L.settle(p, 150);
+  ok(await p.evaluate(() => !document.querySelector('[data-ch="card"]').hidden && document.activeElement && document.activeElement.id === 'mg-name'), 'chapters: the error link opens Card details at the name box');
   await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Beer Batter');
   await L.reveal(p, '#mg-yield'); await p.fill('#mg-yield', '2 L batch');
   for (const [q, name] of [['500 g', 'Self-raising flour'], ['750 ml', 'Lager']]) {
