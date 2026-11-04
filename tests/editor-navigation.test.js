@@ -115,7 +115,7 @@ const pendingBack = async (p, mod, save, field, name) => {
     p = await L.open(b, c.route, { who: 'ann', extra, wait: 1500 });
     await L.waitFor(p, sel => !!document.querySelector(sel), c.field, 15000);
     if (c.name === 'drawing') await p.evaluate(() => window.LK_DRAW.addItem('rump'));
-    else await p.fill(c.field, 'Private pending editor draft');
+    else { await L.reveal(p, c.field); await p.fill(c.field, 'Private pending editor draft'); }
     await p.evaluate(() => { window.__fake.mode = 'hold'; });
     await p.click(c.save);
     await L.waitFor(p, () => !!document.querySelector('.wtop [data-act="back"]')?.disabled);

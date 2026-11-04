@@ -6,13 +6,13 @@ const person = (id, role) => ({ id, name: id === 'ann' ? 'Ann' : 'Sam', role, ad
 const extra = { [key('config', 'main')]: { people: [person('ann', 'head'), person('sam', 'sous')], headId: 'ann', sousIds: ['ann', 'sam'] } };
 const recipe = async b => {
   const p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra, wait: 1800 });
-  await p.waitForSelector('#mg-name');
+  await p.waitForSelector('#mg-name', { state: 'attached' });
   return p;
 };
 (async () => {
   const b = await L.start();
   let p = await recipe(b);
-  await p.fill('#mg-name', 'Test burger pending');
+  await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Test burger pending');
   await p.evaluate(() => { window.__fake.mode = 'hold'; });
   await p.click('[data-mg="save"]');
   await p.waitForSelector('[data-mg="save"][aria-busy="true"] .ink-icon[data-state="busy"]');
@@ -33,7 +33,7 @@ const recipe = async b => {
   await p.context().close();
 
   p = await recipe(b);
-  await p.fill('#mg-name', 'Test burger retry');
+  await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Test burger retry');
   await p.evaluate(() => { window.__fake.mode = 'fail'; });
   await p.click('[data-mg="save"]');
   await L.waitFor(p, () => /Not saved/.test(document.querySelector('#mg-root').textContent));
