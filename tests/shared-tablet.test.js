@@ -10,7 +10,8 @@ async function pin(p, name, digits) {
   if (await pick.count()) { await pick.click(); await L.settle(p, 250); }
   await p.locator('[data-k="pf1"]').fill(digits); await L.settle(p, 900);
 }
-async function preparedBy(p, id) { await p.click('#pt-sheet [data-pt="choose"][data-id="' + id + '"]'); await L.settle(p, 300); }
+// I'm on it (5 Nov 2026): the first tap asks Who's on it? and stamps that cook; the next tap ticks it for them
+async function preparedBy(p, id, line = 'i1') { await p.click('#pt-sheet [data-pt="choose"][data-id="' + id + '"]'); await L.settle(p, 300); await L.tap(p, '[data-p="tick"][data-id="' + line + '"]'); await L.settle(p, 400); }
 async function idle(p) { await p.clock.runFor(11 * 60000); await L.settle(p, 300); }
 (async () => {
   const b = await L.start();

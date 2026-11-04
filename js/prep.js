@@ -1890,14 +1890,14 @@
   function onOf(x) { return x && !x.done && typeof x.onById === 'string' && x.onById && typeof x.onBy === 'string' && x.onBy ? { id: x.onById, name: x.onBy, at: +x.onAt || 0 } : null; }
   function onMine(x) { var o = onOf(x), p = me(); return !!o && !!p && o.id === p.id; }
   // a tap that stamps rather than ticks: an open line nobody is on, or on a phone someone else's
-  function onFirst(x) { return !!x && !x.done && !x.deleted && !x.fn && (!onOf(x) || (!shared() && !onMine(x))); }
+  function onFirst(x) { return !!x && !x.done && !x.deleted && (!onOf(x) || (!shared() && !onMine(x))); }
   function stampNow(date, id) {
     var it = ptItem(id), p = me();
     if (!it || !onFirst(it) || !can('tick')) return;
     if (!p) { toast('Choose your name before ticking prep.'); return; }
     var before = onOf(it);
     supd(itemRef(date, id), { onBy: p.name, onById: p.id, onAt: now() }).then(function () { markPast('p', date); }, failed);
-    toast((before ? 'Taken over from ' + before.name + '. ' : '') + 'You\'re on it. Tap again when it is done.', { label: 'Undo', fn: function () {
+    toast((before ? 'Taken over from ' + before.name + '. ' : '') + 'You\'re on it. Tap again when it is done.', { label: 'Undo', stampFor: id, fn: function () {
       var y = ptItem(id); if (!y || y.done || y.onById !== p.id) return;
       supd(itemRef(date, id), before ? { onBy: before.name, onById: before.id, onAt: before.at || now() } : { onBy: '', onById: '', onAt: 0 }).then(null, failed);
     } });
@@ -1956,14 +1956,16 @@
       if (next && !next.disabled) next.focus({ preventScroll: true });
     }
   }
-  function ptOpen(date, id, mode) {
+  function ptOpen(date, id, mode, auto) {
     var x = ptItem(id), actor = me();
     if (!actor) { toast('Choose your name before ticking prep.');return; }
-    if (ovBack) { var epoch = accessEpoch, recorder = actor.id;ovAfterBack(function () { if (epoch === accessEpoch && S.who === recorder) ptOpen(date, id, mode); });return; }
+    if (ovBack) { var epoch = accessEpoch, recorder = actor.id;ovAfterBack(function () { if (epoch === accessEpoch && S.who === recorder) ptOpen(date, id, mode, auto); });return; }
     if (pt || !x || x.done || x.deleted || !can('tick') || !kitchenAccess() || !canW() || date !== S.date || sheetOpen() || ksWait || dkFirstUp()) return;
     pt = { mode: mode === 'on' ? 'on' : 'tick', id: id, date: date, pin: S.pin, uid: S.uid, recorder: actor.id, pinAt: S.sessPinAt, epoch: accessEpoch, openedDay: dayNow(), signature: ptSignature(x), before: Object.assign({}, x), others: false, selected: '', error: '', busy: false, stale: false, latest: null };
     var box = document.createElement('div');box.id = 'pt-sheet';box.innerHTML = '<div class="sheet-bg" data-pt="cancel"></div><section class="sheet pt-sheet" role="dialog" aria-modal="true" aria-labelledby="pt-h" tabindex="-1"></section>';
     ptPop = box;document.body.appendChild(box);ovPush('pt', ptBack);document.documentElement.classList.add('sheet-open');ptDraw();whoSync();
+    // the second tap on a stamped line: save at once for that cook, the sheet showing it until the server says so
+    if (auto) { ptSave(auto); return; }
     var first = box.querySelector('.pt-recent .chip') || box.querySelector('.pt-others .chip') || box.querySelector('[data-pt="others"]') || box.querySelector('[data-pt="cancel"]');if (first) first.focus({ preventScroll: true });
   }
   function ptRestore(d, acknowledged) {
@@ -1989,10 +1991,11 @@
     d.finished = true;d.busy = false;d.uncertain = false;ptRestore(d, d.value);markPast('p', d.date);
     if (d.mode === 'on') {
       var who = d.value.onBy;
-      ptClose();batch(function () { toast(who + ' is on it. Tap again when it is done.', { label: 'Undo', fn: function () { var y = ptItem(d.id); if (y && !y.done && y.onById === d.value.onById) supd(itemRef(d.date, d.id), { onBy: d.before.onBy || '', onById: d.before.onById || '', onAt: d.before.onAt || 0 }).then(null, failed); } });draw(); });
+      ptClose();batch(function () { toast(who + ' is on it. Tap again when it is done.', { label: 'Undo', stampFor: d.id, fn: function () { var y = ptItem(d.id); if (y && !y.done && y.onById === d.value.onById) supd(itemRef(d.date, d.id), { onBy: d.before.onBy || '', onById: d.before.onById || '', onAt: d.before.onAt || 0 }).then(null, failed); } });draw(); });
       return;
     }
     bump({ ticked: 1 });
+    if (S.toastAct && S.toastAct.stampFor === d.id) { S.toast = ''; S.toastAct = null; }
     ptClose();batch(function () { toast('Ticked', { label: 'Undo', fn: function () { tick(d.date, d.id, false); } });draw(); });setTimeout(draw, LINGER + 100);
   }
   function ptCheck() {
@@ -2060,7 +2063,9 @@
     var item = ptItem(id);if (pt && pt.busy) return;if (typeof want === 'boolean' && item && !!item.done === want) return;
     // a tap (no want): the first stamps who is on it, the second ticks it (I'm on it, 5 Nov 2026)
     if (typeof want !== 'boolean' && onFirst(item) && can('tick') && date === dayNow()) { if (shared() && S.name === 'prep') { ptOpen(date, id, 'on'); return; } batch(function () { stampNow(date, id); }); return; }
-    if (item && !item.done && shared() && S.name === 'prep' && !onOf(item)) { ptOpen(date, id);return; }
+    // the shared device ticks through the picker's careful save, for the cook on it (no second question when they can
+    // still be credited); a line nobody is on (an Undo, a past day) asks Who did this? as before
+    if (item && !item.done && shared() && S.name === 'prep') { var o = onOf(item); ptOpen(date, id, 'tick', o && ptPerson(o.id) ? o.id : ''); return; }
     batch(function () { tickNow(date, id, want); });
   }
   function tickNow(date, id, want) {
@@ -2070,8 +2075,10 @@
     if (!p) { toast('Choose your name before ticking prep.');return; }
     var done = !it.done;
     if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return; }
-    var at = done ? now() : 0, on = onOf(it), w = done && on && shared() && ptPerson(on.id) ? ptPerson(on.id) : p;
+    var at = done ? now() : 0, on = onOf(it), w = p;
     supd(itemRef(date, id), Object.assign({ done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: at, preparedBy: done ? w.name : '', preparedById: done ? w.id : '', preparedAt: at }, done && on ? { onBy: '', onById: '', onAt: 0 } : {})).then(function () { markPast('p', date); }, failed);
+    // the stamp's Undo means nothing once the line is ticked: the Ticked toast takes its place, not a chip above it
+    if (done && S.toastAct && S.toastAct.stampFor === id) { S.toast = ''; S.toastAct = null; }
     if (done) { bump({ ticked: 1 }); toast('Ticked', { label: 'Undo', fn: function () { tick(date, id, false); } }); setTimeout(draw, LINGER + 100); }
     else if (it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
   }
@@ -4093,7 +4100,7 @@
     var tickOk = can('tick') && !x.deleted && (!x.done || canUntick(x)), delOk = can('del');
     var by = x.done && preparedWorker(x).name ? esc(preparedWorker(x).name) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (rolledN(x) ? (x.origBy ? 'from ' + esc(x.origBy) + (firstDay(x) ? ', ' + firstDay(x) : '') : '') : x.rolled ? esc(x.origBy || '') : (x.addedBy ? esc(x.addedBy) + (x.addedAt ? ' ' + clock(x.addedAt) : '') : ''));
     var on = !readonly && onOf(x), onOther = on && !onMine(x) && !shared();
-    var marks = (on ? '<span class="nb-on">' + (onMine(x) && !shared() ? 'You\'re on it' : esc(on.name) + ' on it') + '</span>' : '') + (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (rolledN(x) ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (rolledN(x) > 1 ? ' x' + rolledN(x) : '') + '</span>' : '') +
+    var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (rolledN(x) ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (rolledN(x) > 1 ? ' x' + rolledN(x) : '') + '</span>' : '') +
       (x.deleted && x.mergedInto ? '<span class="nb-also">Double up</span>' : (also || ''));
     // Start here, numbered in place (startNums()): the number before the words, and why when the line does not show it
     var sn = !readonly && (!x.done || lingers(x)) && !x.deleted && date === dayNow() && S.startN && S.startN[x.id];
@@ -4113,7 +4120,8 @@
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc(boxSay) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : on ? '<span class="nb-on-i" aria-hidden="true">' + esc(on.name.trim().charAt(0).toUpperCase()) + '</span>' : BOX) + '</button>' +
       // a tap on the words ticks too (the box is the button for keyboards and screen readers); Undo and the linger cover a slip
       '<span class="nb-main"><span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + num + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + numSay + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + unsentMark(x) + '</span>' +
-      metaHTML([], by, x.done ? 'Recorded by ' + (x.doneBy || '') : '') + '</span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + ((del || keep) && !readonly ? moreBtn(x, keep) : '') + '</span>' : '') + '</li>';
+      // the stamp leads the second line (it never adds a line, so a stamp or a tick moves no row)
+      metaHTML(on ? ['<b class="nb-on">' + (onMine(x) && !shared() ? 'You\'re on it' : esc(on.name) + ' on it') + '</b>'] : [], by, x.done ? 'Recorded by ' + (x.doneBy || '') : '') + '</span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + ((del || keep) && !readonly ? moreBtn(x, keep) : '') + '</span>' : '') + '</li>';
   }
   /* The line menu (22 Oct 2026, Option B): on a phone, Remove (or Put back) and who wrote the line move behind a ⋯ on
      the line, so the item and the amount lead. On a laptop everything stays in the line and the ⋯ is not shown. The sheet
