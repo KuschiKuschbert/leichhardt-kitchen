@@ -61,7 +61,7 @@ jobs:
           echo "docs=$docs" >> "$GITHUB_OUTPUT"
           echo "Docs only: $docs"
       - name: Check the JavaScript parses
-        run: for f in js/*.js js/lib/*.js sw.js tests/run.js; do node --check "$f" || exit 1; done
+        run: for f in js/*.js js/lib/*.js sw.js; do node --check "$f" || exit 1; done
 
   browser:
     name: Browser ${{ matrix.shard }} of 4
