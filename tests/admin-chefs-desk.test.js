@@ -52,7 +52,7 @@ async function checkLayout(p, width, group) {
 async function checkFocusedTask(p, width, name) {
   const task = await p.evaluate(() => {
     const editor = document.querySelector('.ai-editor'), queue = document.querySelector('.ai-queue');
-    const picker = document.querySelector('.a-section-picker'), heading = editor && editor.querySelector('.ai-task-heading');
+    const picker = document.querySelector('.a-groups'), heading = editor && editor.querySelector('.ai-task-heading');
     const actions = editor && editor.querySelector('.ai-task-actions'), nav = document.querySelector('.tabbar');
     const detail = document.querySelector('.ai-detail'), back = document.querySelector('.wtop [data-act="back"]');
     const controls = actions ? [...actions.querySelectorAll('[data-ai="save"], [data-ai="save-next"]')] : [];
@@ -73,7 +73,7 @@ async function checkFocusedTask(p, width, name) {
   });
   ok(task.editor && task.focused && task.detailInView, width + ': ' + name + ' opens its focused heading without scrolling the start of the detail off screen');
   if (width < 1100) ok(task.queueHidden && task.backInView, width + ': ' + name + ' gives the task the reading space and keeps the header Back visible and reachable');
-  if (width < 720) ok(task.pickerHidden && task.actions, width + ': ' + name + ' hides the chapter picker and keeps 44 px Save actions visible above the kitchen navigation');
+  if (width < 720) ok(task.pickerHidden && task.actions, width + ': ' + name + ' hides the room switch and keeps 44 px Save actions visible above the kitchen navigation');
   ok(!(await L.overflow(p)), width + ': ' + name + ' editor fits without sideways scrolling');
 }
 
@@ -127,7 +127,7 @@ const privateWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(x
     const p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width, height: 900, extra, wait: 1600 });
     await L.adminTab(p, 'references');
     await L.waitFor(p, () => !!document.querySelector('[data-ai="review-reference"][data-value="ref:recipe:slaw"]'));
-    await checkLayout(p, width, 'review');
+    await checkLayout(p, width, 'today');
     await p.click('[data-ai="review-reference"][data-value="ref:recipe:slaw"]');
     await L.waitFor(p, () => !!document.querySelector('[data-ai="save"]') && !document.querySelector('[data-ai="save"]').disabled);
     await checkFocusedTask(p, width, 'item review');
@@ -138,9 +138,9 @@ const privateWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(x
     await p.click('.wtop [data-act="back"]');
     await L.settle(p, 150);
     ok(await p.locator('.ai-resume [data-ai="resume"]').isVisible() && await p.locator('.ai-editor:visible').count() === 0, width + ': contextual Back exposes the retained draft in its review queue');
-    if (width < 720) ok(await p.locator('.a-section-picker').isVisible(), width + ': returning to the queue restores the section picker');
+    if (width < 720) ok(await p.locator('.a-groups').isVisible(), width + ': returning to the queue restores the room switch');
 
-    for (const [group, tab] of [['reports', 'analysis'], ['records', 'reference-records'], ['today', 'minutes'], ['settings', 'tools']]) {
+    for (const [group, tab] of [['reports', 'analysis'], ['kitchen', 'reference-records'], ['team', 'training-records'], ['kitchen', 'tools']]) {
       await chapter(p, group, tab);
       await checkLayout(p, width, group);
       ok(await p.locator('.ai-resume [data-ai="resume"]').isVisible(), width + ': the unfinished review remains reachable in ' + group);
@@ -166,7 +166,7 @@ const privateWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(x
     const assessment = await p.evaluate(() => Object.entries(window.__fake.dump()).find(([key, value]) => /\/training\/[^/]+$/.test(key) && value.personId === 'ann')[1]);
     ok(assessment.section === 'Grill' && !assessment.recipeId && assessment.status === 'in-training' && assessment.assessorId === 'sam' && assessment.by === 'owner', width + ': training saves the explicitly chosen section, outcome and assessor');
     if (width < 720) {
-      await chapter(p, 'settings', 'tools');
+      await chapter(p, 'kitchen', 'tools');
       await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
       await L.waitFor(p, () => !!document.querySelector('.upd-bar'));
       await p.evaluate(() => scrollTo(0, 700));

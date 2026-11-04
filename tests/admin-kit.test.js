@@ -3,7 +3,7 @@
 // Opens all 21 admin pages at 390 and 1280 px and measures what a person taps or types into. Example data only.
 const L = require('./lib');
 const { R, ok } = L.results();
-const TABS = ['dashboard', 'overview', 'references', 'training', 'proofreader', 'analysis', 'insights', 'waste', 'transfers', 'learning', 'team',
+const TABS = ['dashboard', 'references', 'training', 'proofreader', 'analysis', 'insights', 'waste', 'transfers', 'learning', 'team',
   'reference-records', 'training-records', 'guides', 'mail', 'notes', 'minutes', 'suppliers', 'cutoffs', 'people', 'tools'];
 
 // Every visible one-line box in the page: its height and width, and a name to report it by.
