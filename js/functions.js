@@ -1058,12 +1058,27 @@
   // the head chef's recipe changes arrived: the platter names in the picker follow (bookings keep what was agreed)
   window.addEventListener('lk-rx', function () { D = window.LK_DATA || D; });
 
+  /* The chef hat's Functions tile (4 Nov 2026, a piece of B in the agreed work pages design): today's next confirmed
+     function, by when its first food goes out ("Today 18:00"); "Today" while its times are to come, "On now" once its food
+     is going out. From the list the band already holds, no read of its own; '' when there is none today. */
+  function hatLine() {
+    if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
+    var t = now(), day = kday(t), on = false, next = 0, tbc = false;
+    F.list.forEach(function (f) {
+      if (f.status !== 'confirmed' || f.date !== day || f.until && t >= f.until) return;
+      if (!f.first) { tbc = true; return; }
+      if (f.first <= t) { on = true; return; }
+      if (!next || f.first < next) next = f.first;
+    });
+    return next ? 'Today ' + kclock(next) : on ? 'On now' : tbc ? 'Today' : '';
+  }
+
   window.LK_FN = {
     M: M, list: function () { return F.list.slice(); }, state: function () { return F; },
     bandSlot: function () { var h = bandHTML(); lastBand = h; return '<div class="fn-band" id="fn-band" role="region" aria-label="Functions"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     landSlot: function () { var h = landHTML(); return '<div id="fn-land"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     checkSlot: function () { var h = checkHTML(); return '<div id="fn-check"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
-    page: pageHTML, watch: watch, paint: paint, catalogue: catalogue, recipeOf: recipeOf, nameOf: nameOf, sheetHTML: sheetHTML, print: printFunctions, esc: esc,
+    hatLine: hatLine, page: pageHTML, watch: watch, paint: paint, catalogue: catalogue, recipeOf: recipeOf, nameOf: nameOf, sheetHTML: sheetHTML, print: printFunctions, esc: esc,
     statusHTML: statusHTML, setStatus: setStatus, statusBusy: function (id) { return !!F.jobs[id]; }, prepOps: prepOps, orderOps: orderOps
   };
   watch();
