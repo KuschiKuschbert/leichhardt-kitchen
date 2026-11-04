@@ -39,15 +39,15 @@ Proposed build order, one pull request each: chef hat sheet with S1; S2 to S4; S
 
 ## Build record
 
-Recorded in `docs/head-chef-decisions.md` (3 Nov 2026); open item 3 in `docs/open-work.md`. Each step ships under the normal rules in `CLAUDE.md` and is listed here with its pull request when it is live.
+Recorded in `docs/head-chef-decisions.md` (3 Nov 2026); it was open item 3 in `docs/open-work.md` until the last step. Each step ships under the normal rules in `CLAUDE.md` and is listed here with its pull request when it is live.
 
 | Step | What | Pull request | State |
 | --- | --- | --- | --- |
 | 1 | Chef hat bottom sheet, the Writing as row goes (S1) | #464, with this record | Live 4 Nov 2026 |
 | 2 | One section control (S2): section chips on Prep and Wastage | #473 | Live 4 Nov 2026. The Section box stays beside the chips (head chef, 4 Nov 2026) |
 | 2 | One amount control (S3): unit chips under the amount on Prep and Orders | #519 | Live 4 Nov 2026 |
-| 2 | One line layout (S4): the ⋯ on Wastage and Transfers, with Change amount and Remove | this pull request | Change amount for the writer, the head chef or a sous chef, today (head chef, 4 Nov 2026). Needs the rules published first |
-| 2 | One line layout (S4): the shared second line (section, who, time) on all four lists | | Not done yet |
+| 2 | One line layout (S4): the ⋯ on Wastage and Transfers, with Change amount and Remove | #525 | Live 4 Nov 2026. Change amount for the writer, the head chef or a sous chef, today (head chef, 4 Nov 2026) |
+| 2 | One line layout (S4): the shared second line (who and when; the section on Wastage, the venue on Transfers) on all four lists | this pull request | The last step |
 | 3 | Change amount and Move section (S5) | #479 | Live 4 Nov 2026 |
 | 3 | One meaning for usual chips (S6): Add 4 L on Orders | #480 | Live 4 Nov 2026 |
 | 4 | Wastage A, with Make it again | #481, merged inside #482 | Live 4 Nov 2026 |

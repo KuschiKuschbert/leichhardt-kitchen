@@ -12,9 +12,7 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 2. **Two recipes are hidden in the book but still in `js/data.js`** (29 Oct 2026): `chicken-adobo` (also first in Specials) and `pork-knuckle`. This is a dated static-source cleanup note. Recheck current public mirrors and hidden-recipe behaviour before acting. The owner still decides whether to remove the static entries or show the recipes again; no decision is made by this documentation update.
 
-3. **Build the work pages redesign** (chosen 3 Nov 2026, see `docs/head-chef-decisions.md`). Seven steps in [the options brief](docs/work-pages-design-options/brief.md), one pull request each. Remove this item when the last step is live.
-
-4. **Build the admin pages redesign** (chosen 4 Nov 2026: B, Four rooms, on the shared page kit, see `docs/head-chef-decisions.md`). Seven steps in [the options brief](admin-pages-options/brief.md), one pull request each. Remove this item when the last step is live.
+3. **Build the admin pages redesign** (chosen 4 Nov 2026: B, Four rooms, on the shared page kit, see `docs/head-chef-decisions.md`). Seven steps in [the options brief](admin-pages-options/brief.md), one pull request each. Remove this item when the last step is live.
 
 Remove each item here once it is done.
 
