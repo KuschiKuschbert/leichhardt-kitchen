@@ -3423,6 +3423,27 @@ i.dsh-c-w { background: var(--dsh-w); } i.dsh-c-t { background: var(--dsh-t); }
 .dsh-need .btn { min-height: 44px; white-space: nowrap; }
 .dsh-clear { display: flex; gap: .5rem; align-items: center; margin: 0; font-size: .9rem; color: var(--muted); }
 @media (max-width: 560px) { .dsh-need { grid-template-columns: 4px minmax(0, 1fr); } .dsh-need .btn { grid-column: 2; justify-self: start; } }
+/* The week ahead (Dashboard, step 4): beside Needs you on a wide screen, under it on a phone. */
+.dsh-pair { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: .9rem; align-items: start; }
+.dsh-wk-links { display: flex; gap: 1rem; align-items: center; }
+.dsh-wk-links a.dsh-more { display: inline-flex; align-items: center; }
+.dsh-wk { list-style: none; margin: 0; padding: 0; display: grid; }
+.dsh-wk-day { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr) 4rem; gap: .7rem; align-items: start; padding: .55rem 0; border-top: 1px solid var(--line); }
+.dsh-wk-day:first-child { border-top: 0; }
+.dsh-wk-d { margin: 0; font: 700 1.05rem/1.1 var(--display); }
+.dsh-wk-d small { display: block; font: 500 .76rem var(--body); color: var(--muted); }
+.dsh-wk-day ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .2rem; font-size: .9rem; min-width: 0; }
+.dsh-wk-day li { overflow-wrap: anywhere; }
+.dsh-wk-kind { font: 700 .66rem var(--display); letter-spacing: .12em; text-transform: uppercase; margin-right: .4rem; color: var(--muted); }
+.dsh-wk-fn .dsh-wk-kind { color: var(--ink); }
+.dsh-wk-cut .dsh-wk-kind { color: var(--small-ink); }
+.dsh-wk-fn a { color: var(--ink); font-weight: 600; }
+.dsh-wk-none { margin: 0; color: var(--muted); font-size: .9rem; }
+.dsh-wk-load { align-self: center; height: 8px; border-radius: 4px; background: var(--beige); position: relative; overflow: hidden; }
+.dsh-wk-load i { position: absolute; inset: 0 auto 0 0; background: var(--dsh-h3); border-radius: 4px; }
+i.dsh-c-load { background: var(--dsh-h3); }
+@media (max-width: 1100px) { .dsh-pair { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) { .dsh-wk-day { grid-template-columns: 4.6rem minmax(0, 1fr); } .dsh-wk-load { grid-column: 2; } }
 /* Fix a line (3 Nov 2026, work pages redesign S5): the ⋯ also shows on a laptop when it holds Change amount (and Move to
    section on the prep list); its sheet shows the current value under each action and turns into a small form */
 .nb-more.nb-more-fix { display: inline-flex; align-items: center; justify-content: center; }

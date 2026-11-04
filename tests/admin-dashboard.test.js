@@ -66,7 +66,7 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
   // Needs you: open mail, minutes still to sign and an overdue action, a transfer not back, each opening its page.
   const ago = d => L.ymd(new Date(L.NOW - d * DAY));
   const loan = { dir: 'out', venue: 'Venue B', person: 'Jo', text: 'Butter', amount: 2, unit: 'kg', note: '', addedBy: 'Bo', addedById: 'bo', addedAt: L.NOW - 9 * DAY, deleted: false, by: 'bo' };
-  const waiting = { ...extra, ...L.mail(),
+  const waiting = { ...extra, ...L.mail(), [path('analysis', 'dashboard')]: { ...extra[path('analysis', 'dashboard')], needs: { links: 3, training: 5, inTraining: 2 } },
     [path('minutes', 'mx')]: { no: 3, v: 1, status: 'published', date: ago(5), start: '14:00', loc: 'Kitchen', chair: 'sam', taker: 'sam', att: [{ id: 'ann', st: 'present' }, { id: 'sam', st: 'present' }],
       guests: '', decisions: 'Fryer oil every Monday', menu: '', safety: '', dates: '', other: '', acts: [{ text: 'Fix the cool room seal', who: 'sam', by: ago(2), st: 'open' }], next: '',
       pubAt: L.NOW - 5 * DAY, removed: false, at: L.NOW - 5 * DAY, upd: L.NOW - 5 * DAY },
@@ -80,6 +80,7 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
     ok(/3 kitchen mails open/.test(needs), width + ': Needs you counts the open kitchen mail (' + needs.slice(0, 200) + ')');
     ok(/Late/.test(needs) && /still to sign/.test(needs) && /1 of \d+ signed/.test(needs), width + ': Needs you says who has not signed the late minutes');
     ok(/1 meeting action past the date/.test(needs), width + ': Needs you lists the overdue meeting action');
+    ok(/3 item links to check/.test(needs) && /5 training reviews/.test(needs) && /2 in training/.test(needs), width + ': Needs you shows the Review desk counts from the nightly run');
     ok(/1 transfer not returned/.test(needs) && /Oldest: Butter to Venue B, 9 days/.test(needs), width + ': Needs you lists the transfer not back, with the oldest');
     ok(/The nightly run finished\./.test(needs), width + ': the nightly run counts as clear when it finished');
     ok(!await L.overflow(q), width + ': no sideways scroll with Needs you');
@@ -87,8 +88,40 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
     await q.evaluate(() => { const x = document.querySelector('.mlp-wrap [data-ml="later"]'); if (x) x.click(); }); await L.settle(q, 300);
     await q.click('.dsh-needs [data-dsh="open"][data-t="mail"]'); await L.settle(q, 300);
     ok(await q.evaluate(() => LK_PREP.state.atab) === 'mail', width + ': Open mail opens the Kitchen mail page');
+    await q.click('[data-p="a-group"][data-g="dashboard"]').catch(() => L.adminTab(q, 'dashboard')); await ready(q);
+    await q.evaluate(() => { const x = document.querySelector('.mlp-wrap [data-ml="later"]'); if (x) x.click(); }); await L.settle(q, 200);
+    await q.click('.dsh-needs [data-dsh="open"][data-t="references"]'); await L.settle(q, 300);
+    ok(await q.evaluate(() => LK_PREP.state.atab) === 'references', width + ': the item links row opens the Review desk');
     await q.context().close();
   }
+  // The week ahead: functions from the live list, cut-offs from the head chef's settings, the usual busy days. No reads.
+  const M = require('../js/functions.js'), today = L.ymd(new Date(L.NOW)), d2 = M.addDays(today, 2), d1 = M.addDays(today, 1);
+  const fnAt = (ymd, hm) => M.kat(ymd, M.hmMin(hm));
+  const booking = (id, o) => M.derive({ id, v: 1, status: o.status || 'confirmed', name: o.name, date: o.date, start: fnAt(o.date, '18:00'), loc: 'Beer garden', guests: 60, gu: false, mode: 'all', notes: '', kc: '', kcBy: '', kcAt: 0,
+    rounds: [{ at: fnAt(o.date, '18:30'), note: '' }], lines: [{ rid: 'antipasto-platter', name: 'Antipasto Platter', unit: 'platter', spec: '', fp: '', qty: 3, u: M.toU([3]) }], was: {}, chg: [], cBy: 'fay', cAt: L.NOW - DAY, confBy: 'fay', confAt: L.NOW - DAY, by: 'fay', upd: L.NOW - 3600000,
+    ...(o.status === 'cancelled' ? { canBy: 'fay', canAt: L.NOW - 1800000 } : {}) });
+  const cfgKey = path('config', 'main'), dow2 = new Date(d2 + 'T12:00:00Z').getUTCDay();
+  const weekly = { ...extra, [cfgKey]: { ...L.seed()[cfgKey], cutoffs: [{ id: 'pfd', name: 'PFD', dd: [dow2], at: 15 * 60, pre: 1 }] },
+    [path('functions', 'f1')]: booking('f1', { name: 'Smith 50th', date: d2 }), [path('functions', 'f2')]: booking('f2', { name: 'Called off', date: d2, status: 'cancelled' }),
+    [path('functions', 'f3')]: booking('f3', { name: '<img src=x onerror="window.__dshInjected=3">', date: today }) };
+  for (const width of [390, 1280]) {
+    const q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width, height: 900, extra: weekly, wait: 1600 });
+    await ready(q);
+    await L.waitFor(q, () => /Smith 50th/.test((document.querySelector('.dsh-week') || {}).textContent || ''), null, 10000).catch(() => {});
+    const days = await q.$$eval('.dsh-wk-day', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
+    ok(days.length === 7 && /^Today/.test(days[0]) && /^Tomorrow/.test(days[1]), width + ': the week ahead shows today and the next 6 days (' + days.length + ')');
+    ok(/Smith 50th, 18:00, 60 guests/.test(days[2]), width + ': a booking shows on its day with its time and guests (' + days[2] + ')');
+    ok(!/Called off/.test(days.join(' ')), width + ': a cancelled booking is left out');
+    ok(/Cut-off ?PFD 15:00/.test(days[1]), width + ': the supplier cut-off shows on the day the order closes (' + days[1] + ')');
+    ok(days.some(d => /Usually busy ?About \d+ prep lines/.test(d)), width + ': the usually busy weekdays are marked');
+    ok(await q.locator('.dsh-wk-fn a[href="#/fn/f1"]').count() === 1, width + ': a booking links to its function sheet');
+    ok(await q.evaluate(() => window.__dshInjected) === undefined && days[0].includes('<img'), width + ': a function name shows as words, never markup');
+    ok(!await L.overflow(q), width + ': no sideways scroll with the week ahead');
+    await q.click('.dsh-week [data-dsh="open"][data-t="cutoffs"]'); await L.settle(q, 300);
+    ok(await q.evaluate(() => LK_PREP.state.atab) === 'cutoffs', width + ': Cut-offs opens the order cut-offs page');
+    await q.context().close();
+  }
+
   let q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: 1280, extra, failReads: 'transferOpen', wait: 1600 });
   await ready(q);
   await L.waitFor(q, () => /Could not load the open transfers/.test(document.body.textContent), null, 8000).catch(() => {});
