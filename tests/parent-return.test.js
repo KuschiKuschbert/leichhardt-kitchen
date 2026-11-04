@@ -114,12 +114,13 @@ async function walk(p, paths, name) {
 
   // Existing parents use their original history entry, so Forward still reaches the same draft.
   p = await L.open(b, '#/orders', { who: 'ann', extra, wait: 1500 });
-  await wait(p, '#o-text'); await p.fill('#o-text', 'Exact underlying order draft'); await p.fill('#o-qty', '3 tubs');
+  await wait(p, '[data-p="o-write"]'); await p.fill('#o-text', 'Exact underlying order draft'); await p.fill('#o-qty', '3 tubs');
   await go(p, '#/manage', '#mg-q');
   await p.click('#mg-results a[href="#/manage/r/burger"]'); await wait(p, '#mg-name');
   await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Exact draft reopened by Forward');
-  if (await step(p, '#/manage', '#mg-q', 'Existing recipe parent') && await step(p, '#/orders', '#o-text', 'Existing recipe origin')) {
-    ok(await p.inputValue('#o-text') === 'Exact underlying order draft' && await p.inputValue('#o-qty') === '3 tubs', 'Existing recipe origin: underlying unsaved order values stay intact');
+  if (await step(p, '#/manage', '#mg-q', 'Existing recipe parent') && await step(p, '#/orders', '[data-p="o-write"]', 'Existing recipe origin')) {
+    // the draft from the page's state: reading the boxes would open the Add a line sheet and drop Forward (3 Nov 2026)
+    ok(await p.evaluate(() => LK_PREP.state.otext === 'Exact underlying order draft' && LK_PREP.state.oqty === '3 tubs'), 'Existing recipe origin: underlying unsaved order values stay intact');
     await p.goForward(); await wait(p, '#mg-q');
     ok(await hash(p) === '#/manage', 'Forward first restores the existing recipe list');
     await p.goForward(); await wait(p, '#mg-name');
@@ -133,7 +134,7 @@ async function walk(p, paths, name) {
   await go(p, '#/functions', '#fe-q');
   await p.click('.fe-rows a[href="#/functions/draft"]'); await wait(p, '#fe-name');
   await p.fill('#fe-name', 'Exact function draft reopened by Forward');
-  if (await step(p, '#/functions', '#fe-q', 'Existing function parent') && await step(p, '#/orders', '#o-text', 'Existing function origin')) {
+  if (await step(p, '#/functions', '#fe-q', 'Existing function parent') && await step(p, '#/orders', '[data-p="o-write"]', 'Existing function origin')) {
     await p.goForward(); await wait(p, '#fe-q'); await p.goForward(); await wait(p, '#fe-name');
     ok(await hash(p) === '#/functions/draft' && await p.inputValue('#fe-name') === 'Exact function draft reopened by Forward', 'Function Forward restores the same form and exact draft after two returns');
     ok(await writes(p) === 0 && p.errors.length === 0, 'Existing function parent: Back and Forward save nothing and raise no page errors');
@@ -142,15 +143,15 @@ async function walk(p, paths, name) {
 
   // Duplicate adds another task below the same list. Returning must skip both forms, while Forward keeps them.
   p = await L.open(b, '#/orders', { who: 'ann', extra, wait: 1500 });
-  await wait(p, '#o-text'); await p.fill('#o-text', 'Order draft beneath a duplicate'); await p.fill('#o-qty', '8 trays');
+  await wait(p, '[data-p="o-write"]'); await p.fill('#o-text', 'Order draft beneath a duplicate'); await p.fill('#o-qty', '8 trays');
   await go(p, '#/functions', '#fe-q');
   await p.click('.fe-rows a[href="#/functions/draft"]'); await wait(p, '#fe-name');
   await p.fill('#fe-name', 'Exact original before duplicate');
   await p.click('[data-fe="dup"]');
   await L.waitFor(p, () => location.hash === '#/functions/new' && !!document.querySelector('#fe-name'), null, 6000);
   await p.fill('#fe-name', 'Exact duplicate after ancestor return');
-  if (await step(p, '#/functions', '#fe-q', 'Duplicate function parent') && await step(p, '#/orders', '#o-text', 'Duplicate function origin')) {
-    ok(await p.inputValue('#o-text') === 'Order draft beneath a duplicate' && await p.inputValue('#o-qty') === '8 trays', 'Duplicate function origin: the underlying order draft is unchanged');
+  if (await step(p, '#/functions', '#fe-q', 'Duplicate function parent') && await step(p, '#/orders', '[data-p="o-write"]', 'Duplicate function origin')) {
+    ok(await p.evaluate(() => LK_PREP.state.otext === 'Order draft beneath a duplicate' && LK_PREP.state.oqty === '8 trays'), 'Duplicate function origin: the underlying order draft is unchanged');
     await p.goForward(); await wait(p, '#fe-q');
     ok(await hash(p) === '#/functions', 'Duplicate Forward first restores the original function list');
     await p.goForward(); await wait(p, '#fe-name');
@@ -180,7 +181,7 @@ async function walk(p, paths, name) {
     await p.locator('[data-fe="drop"]').first().click();
     await L.waitFor(p, () => location.hash === '#/functions' && !!document.querySelector('#fe-q'), null, 6000);
     ok(await p.evaluate(() => !localStorage.getItem('lk.fe.draft.new')), 'Dropping the restored new function clears only its device draft');
-    if (await step(p, '#/orders', '#o-text', 'Discarded new function origin')) {
+    if (await step(p, '#/orders', '[data-p="o-write"]', 'Discarded new function origin')) {
       ok(!(await p.$('#fe-name')) && await writes(p) === 0 && p.errors.length === 0, 'Back after dropping a new draft reaches the origin without reopening a blank form or saving');
     }
   }
