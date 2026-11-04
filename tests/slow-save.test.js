@@ -10,7 +10,7 @@ const cfg = { [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'sous'), P
   const b = await L.start();
   const p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra: cfg, wait: 1800 });
   await L.waitFor(p, () => !!document.getElementById('mg-name'), null, 8000).catch(() => {});
-  await p.fill('#mg-name', 'Chicken Burger Deluxe'); await L.settle(p, 300);
+  await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Chicken Burger Deluxe'); await L.settle(p, 300);
   await p.evaluate(() => { window.__fake.stall = /recipes\/burger$/; });
   await p.click('[data-mg="save"]');
   await L.settle(p, 4500);

@@ -13,12 +13,24 @@ function noUnload() {
 const preserved = p => p.evaluate(key => window.__mark === 1 && !__fake.terminated && localStorage.getItem(key) === 'keep' && !localStorage.getItem('lk.fsheal'), TARGET_CACHE);
 const markCache = p => p.evaluate(key => { localStorage.setItem(key, 'keep'); }, TARGET_CACHE);
 const blur = p => p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
-const waitReload = p => L.waitFor(p, () => window.__mark !== 1, null, 8000).catch(() => {}).then(() => p.evaluate(() => window.__mark !== 1).catch(() => true));
+// A repair's reload comes after its server check (one HEAD, up to 8 s by itself), so a busy runner gets 20 s for it.
+const RELOAD_MS = 20000;
+const waitReload = p => L.waitFor(p, () => window.__mark !== 1, null, RELOAD_MS).catch(() => {}).then(() => p.evaluate(() => window.__mark !== 1).catch(() => true));
+// Every toast message the book sets from now on (LK_PREP.state.toast), kept after the toast goes: it goes after 9 s or
+// at the next toast, and the repair says each message once. Call before boom().
+const noteToasts = p => p.evaluate(() => {
+  const st = LK_PREP.state; let shown = st.toast; window.__toasts = [];
+  Object.defineProperty(st, 'toast', { configurable: true, enumerable: true, get: () => shown, set: v => { shown = v; if (v) window.__toasts.push(v); } });
+});
+// The repair's answer: every repair message says "Keep this tab open". The server check (one HEAD) comes first, so a
+// fixed pause could end before it (CI, 3 Nov 2026); wait for the answer itself, then read what happened.
+const repairAnswer = p => L.waitFor(p, () => window.__toasts.some(t => /Keep this tab open/.test(t)), null, 20000).catch(() => {});
+const toldNotRepaired = p => p.evaluate(() => window.__toasts.some(t => /could not be repaired/.test(t)));
 (async () => {
   const b = await L.start();
   let p = await L.open(b, '#/prep', { wait: 1200 });
   await p.evaluate(key => localStorage.setItem(key, '1'), TARGET_CACHE);
-  const loaded = p.waitForEvent('load', { timeout: 5000 }).then(() => true, () => false);
+  const loaded = p.waitForEvent('load', { timeout: RELOAD_MS }).then(() => true, () => false);
   await boom(p);
   ok(await loaded, 'a broken offline copy reloads the page');
   await L.settle(p, 1200);
@@ -154,8 +166,8 @@ const waitReload = p => L.waitFor(p, () => window.__mark !== 1, null, 8000).catc
   await step('termination failure', async () => {
     p = await L.open(b, '#/prep', { init: noUnload, wait: 1200 }); await markCache(p);
     await p.evaluate(async () => { const fb = await LK_PREP.book().ready(); fb.fs.terminate = () => Promise.reject(new Error('Synthetic terminate failure')); });
-    await boom(p); await L.settle(p, 500);
-    ok(await preserved(p) && /could not be repaired/.test(await p.locator('.p-toast').innerText()), 'failed termination preserves the read copy and daily attempt, with truthful failure feedback');
+    await noteToasts(p); await boom(p); await repairAnswer(p);
+    ok(await preserved(p) && await toldNotRepaired(p), 'failed termination preserves the read copy and daily attempt, with truthful failure feedback');
   });
 
   await step('signal lost during termination', async () => {
@@ -177,8 +189,8 @@ const waitReload = p => L.waitFor(p, () => window.__mark !== 1, null, 8000).catc
       indexedDB.databases = () => Promise.resolve([{ name: 'firestore/synthetic-old-copy' }]);
       indexedDB.deleteDatabase = () => { const request = {}; queueMicrotask(() => request.onerror()); return request; };
     });
-    await boom(p); await L.settle(p, 500);
-    ok(await p.evaluate(() => window.__mark === 1 && !localStorage.getItem('lk.fsheal')) && /could not be repaired/.test(await p.locator('.p-toast').innerText()), 'failed database cleanup cannot spend the daily attempt or claim a completed repair');
+    await noteToasts(p); await boom(p); await repairAnswer(p);
+    ok(await p.evaluate(() => window.__mark === 1 && !localStorage.getItem('lk.fsheal')) && await toldNotRepaired(p), 'failed database cleanup cannot spend the daily attempt or claim a completed repair');
   });
 
   await step('shared-state cleanup failure', async () => {
@@ -191,11 +203,10 @@ const waitReload = p => L.waitFor(p, () => window.__mark !== 1, null, 8000).catc
       Storage.prototype.removeItem = function (name) { if (name === key) throw new DOMException('Synthetic shared-state denial', 'SecurityError'); return remove.call(this, name); };
       indexedDB.deleteDatabase = function (name) { window.__healDeletes++; return drop(name); };
     }, TARGET_CACHE);
-    await boom(p);
-    // The repair checks the server (one HEAD) before it reaches the shared state, so wait for its answer:
-    // a fixed settle could end while the HEAD was still out on a slow runner (CI, 3 Nov 2026).
-    await L.waitFor(p, () => /could not be repaired/.test(LK_PREP.state.toast), null, 8000).catch(() => {});
-    ok(await p.evaluate(key => window.__mark === 1 && localStorage.getItem(key) === 'keep' && !localStorage.getItem('lk.fsheal') && window.__healDeletes === 0 && /could not be repaired/.test(LK_PREP.state.toast), TARGET_CACHE), 'a real shared-state removal error stops before database deletion, daily marker and reload, with truthful feedback');
+    // the server check comes before the shared state; the message is read from the record, so a toast that already
+    // went (9 s) still counts (a check on the toast itself failed once on GitHub, 3 to 4 Nov 2026)
+    await noteToasts(p); await boom(p); await repairAnswer(p);
+    ok(await p.evaluate(key => window.__mark === 1 && localStorage.getItem(key) === 'keep' && !localStorage.getItem('lk.fsheal') && window.__healDeletes === 0, TARGET_CACHE) && await toldNotRepaired(p), 'a real shared-state removal error stops before database deletion, daily marker and reload, with truthful feedback');
   });
   await b.close();
   L.report(R);
