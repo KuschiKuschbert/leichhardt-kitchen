@@ -62,8 +62,15 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   const b = await L.start();
 
   let p = null;
+  // Three parts at once (4 Nov 2026): this file took about 6 minutes on GitHub, longer than any whole runner share, so
+  // it runs every third step and offline-writes-2.test.js and offline-writes-3.test.js run the others beside it. Every
+  // step opens and closes its own page, so a step does not depend on the one before. npm test -- offline-writes runs
+  // all three; LK_PART=all runs every step in this one file.
+  const PARTS = 3, PART = process.env.LK_PART === 'all' ? 0 : (+process.env.LK_PART || 1);
+  let stepNo = 0;
   // each step on its own: one that fails (say the page reloaded) is a FAIL, and the next steps still run
   async function step(n, fn) {
+    if (PART && (stepNo++ % PARTS) !== PART - 1) return;
     try { await fn(); } catch (e) { ok(false, 'step ' + n + ' stopped: ' + String(e && e.message || e).split('\n')[0]); }
     if (p) await p.context().close().catch(() => {});
     p = null;

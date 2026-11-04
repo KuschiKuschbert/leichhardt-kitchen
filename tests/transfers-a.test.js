@@ -25,8 +25,8 @@ const lines = async (p, text) => Object.entries(await store(p)).filter(([k, v]) 
   const out = await p.$$eval('.tr-outstanding .tr-row', l => l.map(e => e.querySelector('strong').textContent + (e.querySelector('.tr-age') ? ' ' + e.querySelector('.tr-age').firstChild.textContent + (e.querySelector('.tr-age.is-old') ? '!' : '') : '')));
   ok(out.join(' | ') === 'Cream 9 days! | Butter 3 days | Brioche buns', 'Still out: earlier days with their age (darker from 7 days), then today\'s (' + out.join(' | ') + ')');
   ok(/Lemons/.test(await txt(p, '.tr-done') || '') && !/Lemons/.test(await txt(p, '.tr-outstanding') || ''), 'Done today: the returned line, and only there');
-  const order = await p.evaluate(() => ['.tr-logbtn', '.tr-outstanding', '.tr-done'].map(s => Math.round(document.querySelector(s).getBoundingClientRect().top)));
-  ok(order[0] < order[1] && order[1] < order[2], 'page: Log a transfer, Still out, then Done today (' + order.join(', ') + ')');
+  const order = await p.evaluate(() => ['.tr-outstanding', '.tr-done'].map(s => Math.round(document.querySelector(s).getBoundingClientRect().top)));
+  ok(order[0] < order[1] && await L.docked(p, '.tr-logbtn'), 'page: Still out, then Done today, with Log a transfer docked above the tab bar (' + order.join(', ') + ')');
   ok(await p.evaluate(() => [...document.querySelectorAll('.tr-outstanding .tr-row')].every(r => { const t = r.querySelector('.tr-return-box'), w = r.querySelector('.nb-t'); return t && t.getBoundingClientRect().right <= w.getBoundingClientRect().left; })), 'Still out: the return tick is on the left of every line');
   ok(!(await p.$('#tr-text')), 'page: no form until Log a transfer');
 
