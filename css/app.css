@@ -1735,6 +1735,43 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .wm-adm[aria-current="page"] { background: var(--hit); }
 .wm-adm .adm-n { position: static; margin-left: auto; flex: 0 0 auto; border-color: var(--paper); line-height: 16px; }   /* the count centred like on the hat, not the row's 1.25 */
 .wtop-btn.wtop-who { position: relative; }
+/* The chef hat's menu (3 Nov 2026, work pages redesign, the head chef's 24 Oct pick): a sheet from the bottom on a phone,
+   a panel under the hat from 720 px. A person card with Sign out, then Kitchen and Chef tiles three across (rectangles:
+   each one opens something), then Settings. It fits a sous chef's whole menu on a 390 by 844 phone with no scroll. */
+.wm { width: min(23rem, calc(100vw - 16px)); padding: 6px 8px 8px; max-height: calc(100dvh - 90px); }
+.wm-grip { display: none; }
+@media (max-width: 719px) {
+  .wm { top: auto !important; right: 0 !important; left: 0; bottom: 0; width: 100%; max-height: calc(100dvh - 40px); border-width: 2px 0 0; border-radius: 16px 16px 0 0; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+    padding: 2px max(12px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); }
+  .wm-grip { display: block; width: 40px; height: 4px; margin: 6px auto 4px; border-radius: 2px; background: var(--edge); }
+}
+.wm-me { display: flex; align-items: center; gap: 10px; padding: 4px 4px 6px; }
+.wm-av { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--accent-ink); color: #fff; font: 700 1.35rem/1 var(--display); }
+.wm-me-n { display: flex; flex-direction: column; min-width: 0; }
+.wm-me-n b { font: 700 1.3rem/1.1 var(--display); overflow-wrap: anywhere; }
+.wm-me-n small { color: var(--muted); font-size: 0.8125rem; }
+.wm .wm-out { margin: 0 0 2px; border: 1.5px solid var(--ink); border-radius: var(--r-act); }
+.wm .wm-sh { margin: 10px 2px 6px; padding-top: 8px; border-top: 1.5px solid var(--line); }
+.wm-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.wm-grid + .wm-set, .wm-out + .wm-set, .wm-in + .wm-set { margin-top: 8px; }
+.wm .wm-tile { position: relative; flex-direction: column; justify-content: center; gap: 4px; min-height: 70px; padding: 8px 4px; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); text-align: center; }
+button.wm-a.wm-tile { text-align: center; }
+.wm-tile span { align-items: center; }
+.wm-tile b { font-size: 0.8125rem; font-weight: 600; line-height: 1.15; overflow-wrap: anywhere; }
+.wm-tile small { font-size: 0.75rem; line-height: 1.2; }
+.wm-tile[aria-current="page"] { background: var(--hit); }
+.wm-tile.wm-adm .adm-n { position: absolute; top: -7px; right: -5px; margin: 0; }
+.wm .wm-set { border-top: 1.5px solid var(--line); border-radius: 0 0 8px 8px; }
+/* who is signed in, on the hat itself: their initial in a small disc; on a shared screen their first name next to it too
+   (phones and tablets; from 1100 to 1399 px the top bar has no room, from 1400 px every name shows as before) */
+.wtop-av { position: absolute; right: -5px; bottom: -5px; min-width: 19px; height: 19px; padding: 0 3px; border: 2px solid var(--bar); border-radius: 10px; background: var(--bar-text); color: var(--bar); font: 700 0.6875rem/15px var(--display); text-align: center; }
+.wtop-who[aria-expanded="true"] .wtop-av { background: #fff; color: var(--accent-ink); }
+@media (max-width: 1099px) {
+  .wtop-btn.wtop-who.is-shared { width: auto; max-width: 9.5rem; padding: 0 0.75rem 0 0.5rem; gap: 0.35rem; border-radius: 999px; }
+  .wtop-who.is-shared .wtop-lbl { display: inline; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
+  .wtop-who.is-shared .wtop-av { display: none; }
+}
+@media (min-width: 720px) and (max-width: 1099px) { .wtop:has(.wtop-who.is-shared.on) .rb-text { display: none; } }
 .adm-n { position: absolute; top: -5px; right: -5px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--accent); color: var(--ink); border: 2px solid var(--bar); font-size: 0.6875rem; font-weight: 700; line-height: 16px; text-align: center; box-sizing: border-box; }
 .ml-urgent { margin: 0 0 12px; padding: 10px 12px; border-left: 4px solid var(--accent); background: var(--hit); border-radius: 6px; }
 .ml-roster { margin: -4px 0 12px; padding: 10px 12px; border: 1.5px dashed var(--ink); border-radius: 8px; background: var(--beige); }
@@ -1998,6 +2035,9 @@ html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd 
 @media (prefers-reduced-motion: no-preference) {
   @keyframes menu-in { from { opacity: 0; translate: 0 -4px; } to { opacity: 1; translate: 0 0; } }
   .wm { animation: menu-in 0.14s ease-out; }
+  /* on a phone the menu is a sheet: it comes up from the bottom */
+  @keyframes sheet-in { from { opacity: 0.6; translate: 0 32px; } to { opacity: 1; translate: 0 0; } }
+  @media (max-width: 719px) { .wm { animation: sheet-in 0.14s ease-out; } }
 }
 @media (prefers-reduced-motion: reduce) {
   :where(button:not(:disabled), a[href], summary):not([aria-disabled="true"]) { scale: none !important; translate: none !important; }
@@ -2762,13 +2802,9 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-audit-row > b, .su-audit-row > span { display: block; }
 .su-audit-row p { margin: 0.4rem 0; }
 .su-copy { min-height: 9rem; height: auto; font-size: 0.9375rem; padding: 0.75rem; }
-/* Keep the extra supplier tool within the phone's short menu while every action keeps its 48 px target. */
-@media (max-width: 719px) {
-  .wm { padding: 2px 4px; }
-  .wm-h:not(.wm-sh) { margin: 2px 10px; }
-  .wm-sh { margin: 2px 10px; padding-top: 2px; }
-  .wm-out { margin-top: 0; }
-}
+/* The phone's chef hat menu is a sheet of tiles since 3 Nov 2026 (its own block next to .wm-me): every item fits without
+   the older squeeze that kept the list menu short. */
+@media (max-width: 719px) { .wm-h:not(.wm-sh) { margin: 2px 10px; } }
 @media (max-width: 1099px) {
   .su-layout { grid-template-columns: 10rem minmax(0, 1fr); gap: 1.25rem; }
   .su-table-head, .su-row { grid-template-columns: minmax(0, 1fr) 3.3rem 5rem 9.5rem; gap: 0.55rem; }
@@ -3298,3 +3334,54 @@ i.dsh-c-w { background: var(--dsh-w); } i.dsh-c-t { background: var(--dsh-t); }
 .lm-form { display: grid; gap: 0.6rem; }
 .lm-form .nb-in { width: 100%; min-height: 44px; font-size: 1.0625rem; }
 .lm-form .btn-row { margin-top: 0.25rem; }
+
+/* Wastage, Clean notebook (3 Nov 2026, work pages redesign A, docs/work-pages-design-options/brief.md): today's total
+   and a bar of the reasons first, then Log waste (and the review for chefs), then the entries. The form and the review
+   open as sheets drawn with the page (.w-sheet), on a phone from the bottom and in the middle column on a laptop. */
+.w-today { margin: 0 0 12px; padding: 0 12px; }
+.w-tot { margin: 0 0 6px; font-size: 0.9375rem; color: var(--muted); }
+.w-tot strong { margin-right: 4px; font: 700 1.5rem var(--display); color: var(--ink); }
+.w-bar { display: flex; gap: 2px; height: 10px; overflow: hidden; border-radius: 5px; background: var(--beige); }
+.w-seg { flex: 1 1 0; min-width: 8px; }
+.w-c-prep { background: #7A7F86; }
+.w-c-expired { background: #B83F15; }
+.w-c-fault { background: #E2602A; }
+.w-c-returned { background: #2F6F8F; }
+.w-c-excess { background: #5E7F35; }
+.w-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 6px 0 0; padding: 0; list-style: none; font-size: 0.8125rem; color: var(--muted); }
+.w-legend li { display: inline-flex; align-items: center; gap: 5px; }
+.w-legend b { color: var(--ink); }
+.w-dot { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; }
+.w-acts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; padding: 0 12px; }
+.w-acts .btn { flex: 1 1 10rem; }
+.w-rvbtn { flex-direction: column; gap: 0; line-height: 1.2; }
+.w-rvbtn small { font-size: 0.75rem; font-weight: 500; color: var(--muted); }
+.w-ro { padding: 0 12px; }
+.w-sheet .w-review { margin: 0; max-width: none; }
+.w-sheet .sheet-x, .tr-sheet .sheet-x { width: 100%; margin-top: 10px; }
+.w-rpick { flex-wrap: nowrap; }
+.w-rbig { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); align-content: start; gap: 6px; }
+.w-rbig .w-rchip { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; min-height: 56px; height: auto; padding: 6px 10px; border-radius: 10px; text-align: left; white-space: normal; }
+.w-rbig .w-rchip strong { font-size: 0.9375rem; }
+.w-rbig .w-rchip span { font-size: 0.75rem; font-weight: 400; color: var(--muted); }
+.w-rbig .w-rchip[aria-checked="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.w-rbig .w-rchip[aria-checked="true"] span { color: #fff; }
+.nb-t .w-again { display: flex; align-items: center; width: max-content; min-height: 36px; height: auto; margin-top: 6px; padding: 0 12px; font: 600 0.8125rem var(--body); }
+.nb-t .w-again.is-on { display: block; min-height: 0; padding: 2px 0; border: 0; font-size: 0.8125rem; font-weight: 600; color: var(--muted); }
+@media (min-width: 720px) { .w-sheet, .tr-sheet { width: min(40rem, calc(100vw - 32px)); max-height: 86vh; max-height: 86dvh; } }
+/* A toast while a wastage sheet is open (3 Nov 2026): at the top of the screen, above the sheet, so its Undo can be
+   tapped and the form under it stays clear */
+html:has(.w-sheet, .tr-sheet) .p-toasts { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; z-index: 62; flex-direction: column; }
+
+/* Transfers, Clean notebook (3 Nov 2026, work pages redesign A): Still out first, with how long each earlier day's
+   transfer has been out (.tr-age, darker from 7 days), the return tick on the left, and a pick-up in the Log a transfer
+   sheet (.tr-basket) that saves each item as its own line. */
+.tr-age { display: inline-block; padding: 0 6px; border: 1.5px solid var(--muted); border-radius: 999px; font: 600 0.75rem var(--body); color: var(--muted); white-space: nowrap; vertical-align: 0.15em; }
+.tr-age.is-old { border-color: var(--tag); background: var(--tag); color: #fff; }
+.tr-outstanding .tr-row > .tr-return-box { order: -1; }
+.tr-basket { margin: 6px 0; }
+.tr-basket ul { margin: 4px 0 0; padding: 0; list-style: none; }
+.tr-basket li { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; border-bottom: 1px solid var(--rule); font-size: 0.9375rem; }
+.tr-bk-x { min-height: 44px; padding: 0 6px; border: 0; background: none; color: var(--muted); font: 600 0.8125rem var(--body); text-decoration: underline; cursor: pointer; }
+.tr-addrow { justify-content: space-between; align-items: center; }
+.tr-addrow .tr-bk-add { min-height: 44px; }

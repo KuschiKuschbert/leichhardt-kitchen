@@ -281,7 +281,7 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
   function busy(msg) {
     if (!barText) return;
     clearTimeout(calm);
-    if (window.LK_MOTION) barText.innerHTML = window.LK_MOTION.label(msg, 'chef', navigator.onLine === false ? 'still' : 'busy'); else barText.textContent = msg;
+    if (window.LK_MOTION) barText.innerHTML = window.LK_MOTION.label(msg, 'chef', 'busy'); else barText.textContent = msg;
     barBtn.textContent = 'Update now';
     calm = setTimeout(reset, 12000);
   }
