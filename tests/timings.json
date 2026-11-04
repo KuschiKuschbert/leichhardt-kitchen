@@ -52,6 +52,7 @@
   "draw.test.js": 46,
   "drinks.test.js": 27,
   "editor-navigation.test.js": 33,
+  "exit-on-error.test.js": 0,
   "failed-reads.test.js": 35,
   "feels-fast.test.js": 18,
   "fill-in.test.js": 8,

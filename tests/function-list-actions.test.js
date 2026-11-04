@@ -118,4 +118,4 @@ async function list(b, width = 390) {
     await p.context().close(); p = null;
   } finally { if (p && !p.isClosed()) await p.context().close(); await b.close(); }
   L.report(R);
-})().catch(e => { console.error(e); process.exitCode = 1; });
+})().catch(e => { console.error(e); process.exit(1); });

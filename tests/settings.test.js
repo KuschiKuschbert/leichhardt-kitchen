@@ -122,4 +122,4 @@ const caps = p => p.evaluate(() => [...document.querySelectorAll('.st-caps li')]
 
   await b.close();
   L.report(R);
-})().catch(e => { console.error(e); process.exitCode = 1; });
+})().catch(e => { console.error(e); process.exit(1); });
