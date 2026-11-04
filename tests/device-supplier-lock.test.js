@@ -65,9 +65,9 @@ async function more(p) {
     await unlock(p, 'sam', '#/suppliers/northside');
     await L.waitFor(p, selector => !!document.querySelector(selector), qty, 8000);
     ok(await p.inputValue(qty) === '2' && await p.inputValue(stock) === '3', mode + ': the same PIN restores both entered numbers');
-    if (!(await p.locator('[data-item="t-stock"] .su-item').evaluate(el => el.open))) await p.locator('[data-item="t-stock"] summary').click();
-    const labels = { quantity: await p.locator('[data-item="t-stock"] .su-qty').innerText(), stock: await p.locator('[data-item="t-stock"] .su-item-more').innerText() };
-    const captured = /Order unit: kg/i.test(labels.quantity) && /Stock counted for this order \(kg\)/i.test(labels.stock);
+    // On hand sits on the row since design A, step 2 (3 Nov 2026)
+    const labels = { quantity: await p.locator('[data-item="t-stock"] .su-qty').innerText(), stock: await p.locator('[data-item="t-stock"] .su-onhand').innerText() };
+    const captured = /Order unit: kg/i.test(labels.quantity) && /On hand \(kg\)/i.test(labels.stock);
     ok(captured, mode + ': captured quantity and stock units survive a catalogue unit change' + (captured ? '' : ' ' + JSON.stringify(labels)));
     ok(await writes(p) === before && orders(await dump(p)).length === 2, mode + ': unlocking never automatically records or saves supplier work');
     await action(p, 'review'); await L.waitFor(p, () => !!document.querySelector('[data-su="record"]'));

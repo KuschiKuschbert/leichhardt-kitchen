@@ -97,7 +97,13 @@
     const all = mounted.querySelector('[data-seasonal-scope]').value === 'all';
     const matches = catalogue.filter(item => (all || mainIds.has(item.id)) && [item.label, item.region, item.country, item.id, ...(item.aliases || [])].join(' ').toLocaleLowerCase().includes(query));
     const list = mounted.querySelector('[data-seasonal-results]'); list.replaceChildren();
-    matches.slice(0, 8).forEach(item => { const node = button(item.label, 'data-seasonal-theme', item.id); node.setAttribute('aria-pressed', String(prefs.selection === item.id)); list.append(node); });
+    matches.slice(0, 8).forEach(item => {
+      const node = button(item.label, 'data-seasonal-theme', item.id); node.setAttribute('aria-pressed', String(prefs.selection === item.id));
+      // Bundled public artwork only: the stamp where there is one, otherwise the drawing.
+      const mark = document.createElement('span'); mark.className = 'kb-seasonal-mark'; mark.setAttribute('aria-hidden', 'true');
+      mark.innerHTML = window.KB_STAMPS?.svg(item.id) || (window.KB_THEME_BRAND ? KB_THEME_BRAND.style(item.icon, { themeId: item.id }) : '');
+      node.prepend(mark); list.append(node);
+    });
     mounted.querySelector('[data-seasonal-count]').textContent = !matches.length ? 'No celebrations match.' : matches.length > 8 ? 'Showing 8 of ' + matches.length + '. Type a name to narrow the list.' : matches.length + (matches.length === 1 ? ' celebration' : ' celebrations');
   }
   new MutationObserver(() => { if (settingsFrame || root.querySelector('#kb-seasonal-settings') === mounted) return; settingsFrame = requestAnimationFrame(mountSettings); }).observe(root, { childList: true, subtree: true });

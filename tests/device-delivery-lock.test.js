@@ -8,16 +8,22 @@ const receiptList = p => p.evaluate(prefix => Object.entries(__fake.dump()).filt
 const values = p => p.evaluate(fields => Object.fromEntries(fields.map(name => [name, document.getElementById('dl-' + name).value])), fields);
 async function fill(p, supplier) {
   await p.fill('#dl-supplier', supplier);
-  await p.fill('#dl-time', '03:45');
+  // design A (3 Nov 2026): the time, the Both choice and the notes each open with one tap
+  await p.click('[data-dl="time"]'); await p.fill('#dl-time', '03:45');
+  await p.click('[data-dl="mode"][data-mode="both"]');
   await p.fill('#dl-chilled', '0');
   await p.fill('#dl-frozen', '-18.5');
-  await p.fill('#dl-note', 'Original receiving details');
+  await p.click('[data-dl="note"]'); await p.fill('#dl-note', 'Original receiving details');
 }
 async function unlock(p, id, pin) {
   const choice = p.locator('.p-name[data-id="' + id + '"]');
   if (await choice.count() && await choice.isVisible()) { await choice.click(); await L.settle(p, 200); }
   await p.locator('#pf1').fill(pin);
-  await L.waitFor(p, id => LK_PREP.state.authed && LK_PREP.state.who === id && LK_PREP.privateAccess(), id, 8000);
+  // A PIN typed within 20 s of the last try is held by the page and goes in by itself (TRY_MS in js/prep.js), on the
+  // virtual clock: when the page says so, move the clock on instead of waiting it out in real time.
+  await L.waitFor(p, id => (LK_PREP.state.authed && LK_PREP.state.who === id && LK_PREP.privateAccess()) || /goes in by itself/.test(LK_PREP.state.pinMsg || ''), id, 8000).catch(() => {});
+  if (await p.evaluate(() => /goes in by itself/.test(LK_PREP.state.pinMsg || ''))) await p.clock.runFor(21000);
+  await L.waitFor(p, id => LK_PREP.state.authed && LK_PREP.state.who === id && LK_PREP.privateAccess(), id, 15000);
   await L.waitFor(p, () => !!document.querySelector('#dl-supplier'));
 }
 async function open(b, mode) {
@@ -109,7 +115,10 @@ async function dailyLock(p) {
     __fake.write(root + 'staffpins/ann', { hash, name: 'Ann', setAt: LK_TIME.now() });
     __fake.write(root + 'pinset/ann', { at: LK_TIME.now(), name: 'Ann' });
   });
-  await reset.locator('#pf1').fill('2222'); await L.settle(reset, 300);
+  await reset.locator('#pf1').fill('2222');
+  // The wrong PIN's try is stamped after the real-time WebCrypto hash and a read. Wait for its answer before moving the
+  // virtual clock on, or on a busy runner the stamp lands after the move and the next PIN waits out the page's 20 s.
+  await L.waitFor(reset, () => !LK_PREP.state.authed && LK_PREP.state.pf1 === '' && !/^Checking/.test(LK_PREP.state.pinMsg || '') && !LK_PREP.unsent(), null, 15000);
   ok(!await reset.$('#dl-form') && !await reset.evaluate(() => LK_PREP.privateAccess()) && !(await receiptList(reset)).length, 'a retained delivery cannot bypass a changed PIN version using the previous PIN');
   await reset.clock.runFor(21000); await unlock(reset, 'ann', '5555');
   ok(JSON.stringify(await values(reset)) === JSON.stringify(resetFields), 'a new valid PIN for the same person restores their receiving draft after the PIN version changes');
@@ -135,7 +144,7 @@ async function dailyLock(p) {
   await p.evaluate(() => LK_PREP.signOut(true)); await L.settle(p, 300);
   ok(!await p.evaluate(() => LK_DELIVERY.dirty()) && !await p.$('#dl-form'), 'manual sign-out clears the delivery draft and private screen');
   await unlock(p, 'bo', '3333');
-  ok(await p.inputValue('#dl-supplier') === '' && await p.inputValue('#dl-note') === '' && !(await receiptList(p)).length, 'the next signed-in person receives a fresh form and no previous receiver\'s payload');
+  ok(await p.inputValue('#dl-supplier') === '' && !(await p.$('#dl-note')) && await p.evaluate(() => LK_DELIVERY.dirty()) === false && !(await receiptList(p)).length, 'the next signed-in person receives a fresh form and no previous receiver\'s payload');
   ok(!p.errors.length, 'manual receiving handover has no browser errors ' + p.errors.join(' | '));
   await p.context().close(); await b.close(); L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
