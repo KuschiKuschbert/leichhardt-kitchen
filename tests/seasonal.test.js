@@ -225,8 +225,10 @@ async function cpuPerSecond(p, ms = 2000) {
     await go(p, '#/');
     for (const id of coverage) {
       await theme(p, id); await p.clock.runFor(5000);
-      const pieces = await movingPieces(p), heavy = await heavyMotion(p);
-      ok(pieces <= 4 && heavy.length === 0, id + ': Home at rest moves ' + pieces + ' pieces, only transform and opacity');
+      // A busy runner can start the arrival late: give it the rest of its time, then count (4 Nov 2026).
+      for (let i = 0; i < 5 && await p.evaluate(() => KB_EFFECTS.status().phase === 'arrival'); i++) await p.clock.runFor(1000);
+      const pieces = await movingPieces(p), heavy = await heavyMotion(p), phase = await p.evaluate(() => KB_EFFECTS.status().phase);
+      ok(pieces <= 4 && heavy.length === 0, id + ': Home at rest moves ' + pieces + ' pieces, only transform and opacity' + (pieces <= 4 ? '' : ' (phase ' + phase + ')'));
     }
     await go(p, '#/recipes');
 
@@ -252,10 +254,14 @@ async function cpuPerSecond(p, ms = 2000) {
     ok(await originalInput.evaluate(node => node.isConnected && document.activeElement === node && node.value === 'Keep this seasonal draft' && node.selectionStart === 5 && node.selectionEnd === 9), 'changing themes retains the exact prep input, draft, focus and selection');
     for (const route of ['#/orders', '#/waste', '#/transfers', '#/guides', '#/r/pork-belly', '#/settings']) {
       await go(p, route);
+      // Each page draws a new top bar and the stamp joins it on the bridge's next frame, which a busy runner can delay:
+      // go() alone does not wait for it, as the surface was already work (4 Nov 2026).
+      await L.waitFor(p, () => document.querySelectorAll('#app .wtop .kb-occasion-stamp').length === 1, null, 3000).catch(() => {});
       facts = await navFacts(p);
       const still = facts.inside && facts.viewportParticles === 0 && facts.edges === 1 && facts.stamps === 1 && facts.brand === 1 && facts.moving === 0;
       // A failure says which part, so a run on another browser can be read without a rerun.
-      ok(still, route + ': Kitchen Book, the stamp and a still edge' + (still ? '' : ' ' + JSON.stringify({ inside: facts.inside, particles: facts.viewportParticles, edges: facts.edges, stamps: facts.stamps, brand: facts.brand, moving: facts.moving })));
+      const why = still ? null : await p.evaluate(() => ({ bridge: KB_THEME_BRIDGE.status(), bars: document.querySelectorAll('.wtop').length, starts: document.querySelectorAll('.wtop-start').length, hash: location.hash }));
+      ok(still, route + ': Kitchen Book, the stamp and a still edge' + (still ? '' : ' ' + JSON.stringify({ inside: facts.inside, particles: facts.viewportParticles, edges: facts.edges, stamps: facts.stamps, brand: facts.brand, moving: facts.moving, why })));
     }
 
     for (const width of [390, 768, 1280]) {
