@@ -6,6 +6,8 @@ The [2 November council audit](ux-council-audit.md) records the follow-up intera
 
 A host that deliberately clears a search calls `LK_UX.resetSearch(input)` before clearing its model or redrawing. This also cancels a pending debounce. Ordinary redraws preserve raw text and the original pending deadline. The shared focus-restoration helper and the old field's scoped `_uxRedrawing` marker keep programmatic restoration separate from a real blur and refocus.
 
+The search wrapper grows to fill a row (`flex: 1 1 10rem`). Inside a standard `.field`, which stacks its label and box in a column, that basis became a height and left about 110 px of empty space under Find a recipe and Find a drawing; `.field > .ux-search` now keeps its own height (3 November 2026, `tests/search-box-gap.test.js`).
+
 The app stays dependency-free. Existing form controls remain the value and validation source. Shared DOM components enhance new and redrawn controls. Existing save handlers, permissions and reads remain authoritative.
 
 ## Direct unit chips and two-way choices (3 November 2026)
