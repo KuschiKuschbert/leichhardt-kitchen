@@ -18,6 +18,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | --- | --- |
 | Whole-app audit, consistency, redundancy, security and performance review | `docs/whole-app-audit.md` (brief), `docs/ux-council-audit.md` (evidence), `docs/whole-app-inventory.md` (route coverage) |
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over anything older in this file) |
+| Head chef decisions; open items and older code to bring in line; how each prep and admin part works | `docs/head-chef-decisions.md`, `docs/open-work.md`, `docs/prep-book.md` (search, then read the part) |
 | Code contracts per feature: pings, minutes, mail, to-do, drinks, sections, guides, recipes and drawings, functions, wastage, transfers, cut-offs, the clock | `docs/code-contracts.md` |
 | Staff Add/Tick/Delete, canonical capability lists and staged publication | `docs/staff-capabilities.md` |
 | Saved public shell generations, update migration and compatible rollback | `docs/saved-shell-generations.md` |
@@ -92,7 +93,7 @@ After approval, implement small reversible units under the existing shipping rul
 | `firestore.rules` | Rules template (see Never in this repo) |
 | `manifest.webmanifest`, `sw.js`, `icons/`, `icon.svg` | Installable app: manifest, service worker (saved shell generations), rope KB logo |
 | `qr.svg`, `qr.png`, `qr-sign.pdf` | QR code to open the book, and the A4 sign |
-| `README.md` | Everything the app does, for people and for the next session |
+| `README.md` | What the app does, for people and for the next session: the overview, with the long parts in `docs/head-chef-decisions.md`, `docs/prep-book.md` and `docs/open-work.md` |
 | `tests/` | Click tests (Playwright with a stand-in for Firebase in `tests/fake/`). `tests/rules/`: the rules on the emulator |
 | `.claude/settings.json`, `scripts/guard-main.mjs` | The main-branch guard: a Claude Code hook that refuses edits and commits on `main` |
 | `scripts/pre-merge.sh`, `.github/pull_request_template.md` | Run before merging (open pull requests, worktrees, whether `main` moved); the pull request sections |
@@ -124,13 +125,13 @@ These hold for every session, every message and every change, however small. A h
 2. Test before pushing: `node --check` on changed JS, then the test files for what you changed: `cd tests && npm install && npm test -- <part of a file name>` (for example `npm test -- prep waste`). CI runs the whole suite on every pull request, so run it all locally only for a change that touches many pages (`js/prep.js` startup, `sw.js`, the security header). `npm test` with no names serves the repo locally and runs every file in `tests/` in Chrome: each page at 390, 768 and 1280 px (no sideways scroll, no JS errors) and the click paths for the prep pages, orders, wastage, minutes, admin and recipe search. Firebase is replaced by the stand-in in `tests/fake/`, so no real PIN or data is needed and nothing is written to the real book. In a cloud session, where Google Chrome is not installed, run them with `CHROME=/opt/pw-browsers/chromium_headless_shell-1243/chrome-headless-shell-linux64/chrome-headless-shell npm test` (the folder name changes with the Playwright version: `ls /opt/pw-browsers`) (the full Chromium there no longer runs headless the way the tests start it). Add checks for the click paths you change to the matching `*.test.js` file (or a new one). The same tests run on GitHub on every pull request to `main` (the **Click tests** check, `.github/workflows/pr-tests.yml`); a pull request does not merge until it is green. After merging, `BASE=https://kuschikuschbert.github.io/leichhardt-kitchen/ npm test` runs the same tests on the live site.
 3. If `firestore.rules` changes: test it on the Firestore emulator first (`cd tests/rules && npm install && npm test`, and add a check for every new rule), publish it with the **Publish rules** workflow in the Actions tab (Run workflow; it fills the `KITCHEN_PIN` and `OWNER_EMAIL` secrets into a copy and deploys it with the service account), or from your own computer with `scripts/publish-rules.sh`, then merge the code that needs it. Publish rules before code that writes new fields or collections; publish after code when the rules get stricter about something old code does not send. Follow the authoritative feature contract when preparation and a compatible staged release require a more specific order.
 4. After merging, wait for GitHub Pages (about a minute), then check the live site. The **Live click tests** workflow runs the click tests against the live site by itself after each Pages deploy (and from the Actions tab); read its result.
-5. Keep `README.md` in step with every change.
+5. Keep `README.md` in step with every change: the overview there, the detail in `docs/prep-book.md` or the feature's note, a decision in `docs/head-chef-decisions.md`.
 6. Before merging, run `scripts/pre-merge.sh` and follow the ground rules above.
 7. **Claude merges, without asking** (head chef, 21 Oct 2026). Once the **Click tests** check is green, `scripts/pre-merge.sh` shows nothing else merging and `README.md` is in step, squash merge the pull request, then do step 4 and report the live result. This covers every change, rules and data included; the publish order in step 3 still applies. Ask only when something is genuinely the head chef's call (a recipe amount not confirmed, a choice between two behaviours), not to get permission to merge.
 
 ## Keeping usage down (3 Nov 2026)
 Measured on 2 and 3 November 2026: about 45 pull requests in two days, 100 Click tests runs at 20 minutes each (33 hours of runner time; 21 cancelled by a newer push, 16 failed on timing), and 52 "merge `main` into the branch" commits across 40 pull requests. Most of the cost was repeated test runs and reading big files, not the work itself.
-- **Read big files in parts.** `README.md` is over 350 KB and `docs/ux-council-audit.md`, `docs/whole-app-audit.md` and `docs/whole-app-inventory.md` are 30 to 72 KB each. Never read one whole: search for the heading or word you need (Grep), then read that part only. The audit notes are for audit work only.
+- **Read big files in parts.** `docs/prep-book.md` is about 250 KB, `README.md` about 90 KB, and `docs/ux-council-audit.md`, `docs/whole-app-audit.md` and `docs/whole-app-inventory.md` are 30 to 72 KB each. Never read one whole: search for the heading or word you need (Grep), then read that part only. The audit notes are for audit work only.
 - **Bring `main` in once.** Merge `main` into your branch only when your Click tests are green and you are next to merge. Every merge of `main` starts another 20 minute run; with several sessions open that multiplies.
 - **Push when the work is finished.** Each push cancels the running Click tests and starts again. Make the fixes, run the files you changed (How changes ship, step 2), then push once.
 - **Wait without spending.** One check-in per pull request (about 50 minutes, then 4 hours). Do not poll, do not re-read a pull request that has not changed, and do not reply to a notice that needs nothing.
@@ -199,7 +200,7 @@ Each rule here is a bug the book shipped and then fixed. Check your change again
 **Decisions move, so does this file.** When a head chef decision or a `docs/` note supersedes a line here, change the line in the same pull request. Do not leave both. A line marked as older wording is a stopgap, not a fix.
 
 ## Coding rules (22 Oct 2026)
-These hold for every file, old and new. When you touch code that breaks one, bring that code in line in the same branch if it is small, otherwise add it to "Bringing the code in line" in `README.md`. Older code that breaks a rule is listed there, so do not copy it as a pattern. One helper per job: use the one that exists (`esc()`, `W()`, `dayCache()`, `lvHTML()`, `now()`, `dayNow()`, `LK_RX.clean()`), never write a second.
+These hold for every file, old and new. When you touch code that breaks one, bring that code in line in the same branch if it is small, otherwise add it to "Bringing the code in line" in `docs/open-work.md`. Older code that breaks a rule is listed there, so do not copy it as a pattern. One helper per job: use the one that exists (`esc()`, `W()`, `dayCache()`, `lvHTML()`, `now()`, `dayNow()`, `LK_RX.clean()`), never write a second.
 
 **Reads (the free plan stops the book for the day at 50,000 reads)**
 - Every new read says in a comment when it runs and what it costs: on open, once a day, after 30 minutes, or on a tap, and how many reads.
@@ -240,13 +241,13 @@ These hold for every file, old and new. When you touch code that breaks one, bri
 
 **Loading**
 - The book's start loads only what the landing page and the prep pages need. Anything big that only one page uses is loaded by that page (the loader `mountManage()` uses), and stays in `SHELL` if the book needs it with no signal.
-- `js/art.js` is the exception, measured on 22 Oct 2026: loading it later saved 9 ms at the start and cost 90 ms on Recipes (README, Bringing the code in line). Measure before moving anything else out of the start.
+- `js/art.js` is the exception, measured on 22 Oct 2026: loading it later saved 9 ms at the start and cost 90 ms on Recipes (`docs/open-work.md`, Bringing the code in line). Measure before moving anything else out of the start.
 
 ## Head chef decisions
-Dated decisions about how the book should work (who may do what, what moved where) are listed under "Head chef decisions" in `README.md`. Check there before changing who sees or writes something, and add a new decision there with its date.
+Dated decisions about how the book should work (who may do what, what moved where) are in `docs/head-chef-decisions.md`, newest first. Check there before changing who sees or writes something, and add a new decision there with its date.
 
 ## Skills
 The `leichhardt-recipe-book` and `leichhardt-kitchen-book-backend` skills summarise this repo. When they and this file or `README.md` disagree, this file and `README.md` win; mention the difference so the skill can be updated.
 
 ## Open items
-README, "Open items" under Prep book and admin panel, lists what is still to do with the head chef (folding the head chef's recipe changes into `js/data.js` from a Backup; App Check is enforced and the Browser key restricted since 22 Oct 2026). Read it when the head chef asks what is left, keep it in step, and remove items as they are done. "Bringing the code in line" in the same part of the README lists the older code that does not meet the coding rules yet, in the order to fix it; each item is its own branch and pull request.
+`docs/open-work.md`, "Open items", lists what is still to do with the head chef (folding the head chef's recipe changes into `js/data.js` from a Backup; App Check is enforced and the Browser key restricted since 22 Oct 2026). Read it when the head chef asks what is left, keep it in step, and remove items as they are done. "Bringing the code in line" in the same file lists the older code that does not meet the coding rules yet, in the order to fix it; each item is its own branch and pull request.

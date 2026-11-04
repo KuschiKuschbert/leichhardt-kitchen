@@ -25,7 +25,7 @@ Read these existing contracts in particular:
 - `docs/private-kitchen-access.md` and `docs/device-sessions.md` for current access, device ownership, Google identity, daily PIN unlock, handover and unfinished work. They supersede historical access wording.
 - `docs/adaptive-controls.md`, `docs/navigation.md`, `docs/admin-flow-spec.md` and `docs/admin-design-options/brief.md` for existing controls, Back/Resume behaviour and selected admin designs.
 - The notes for supplier orders, wastage history, transfers and returns, function cancellation/printing, delivery records, shared prep attribution, admin intelligence and proofreader repairs before changing those features.
-- `README.md` sections for owner decisions, open items and older code awaiting consolidation. Reproduce listed issues before assuming they remain unfixed.
+- `docs/head-chef-decisions.md`, `docs/open-work.md` (open items and older code awaiting consolidation) and `docs/prep-book.md` (moved out of `README.md` on 3 Nov 2026). Reproduce listed issues before assuming they remain unfixed.
 
 Inspect open PRs and active branches first. PR #440 (`ux/council-usability`) merged during preparation and added `docs/ux-council-audit.md`, a bounded council audit of 25 route/flow families. Reconcile that work and any later changes, reuse its evidence where still valid, and explicitly close its untested areas. Do not duplicate or overwrite that work. Historical preview drafts are not shipping branches.
 
