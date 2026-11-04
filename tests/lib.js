@@ -222,6 +222,8 @@ async function start() {
                       for what the test browser lacks (the notification permission, a running service worker)
    o.fakeSDK          replacement source by Firebase stand-in basename, for controlled SDK response ordering
    o.block            a regex source: the book's own files whose address matches fail to load (say js/cutoffs.js)
+   o.hold             a regex source: the book's own files whose address matches never answer, like a slow live site
+                      (say the supplier tools the order list loads for a chef)
    o.board            let the start of shift sheet come up (23 Oct 2026). Without it the phone has had today's start
                       already (lk.board.<who>), the way everyone has a usual drink, so the sheet stays off the other tests */
 async function open(browser, hash, o) {
@@ -320,6 +322,7 @@ async function open(browser, hash, o) {
   }, { ls, ss, offset: serverClock - clock });
   if (o.init) await ctx.addInitScript(o.init);
   if (o.block) await ctx.route(new RegExp(o.block), r => r.abort());
+  if (o.hold) await ctx.route(new RegExp(o.hold), () => new Promise(() => {}));
   const page = await ctx.newPage();
   page.errors = [];
   // Prep's add form is in the Add a line sheet since 3 Nov 2026 (work pages redesign A). A test that reaches for one of its

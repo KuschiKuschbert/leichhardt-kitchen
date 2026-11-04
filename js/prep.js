@@ -4305,9 +4305,11 @@
   /* A line ticked on this phone stays where it is, struck through, for 3.5 seconds before it leaves the list. */
   var LINGER = 3500;
   function lingers(x) { return x.done && !x.deleted && x.doneById === S.who && now() - (x.doneAt || 0) < LINGER; }
-  function pageBody(items, date) {
-    /* ticked lines leave the list and show under Done today in Handy. Sections with nothing left to do are hidden. */
-    var shown = items.filter(function (x) { return (S.showRemoved || !x.deleted) && inTab(x); });
+  function pageBody(items, date, board) {
+    /* ticked lines leave the list and show under Done today in Handy. Sections with nothing left to do are hidden.
+       board: the wall board (wallOn()): every section, each in its own column, function platters in theirs, no removed
+       lines */
+    var shown = items.filter(function (x) { return board ? !x.deleted : (S.showRemoved || !x.deleted) && inTab(x); });
     shown.sort(sortItems);
     var order = [], seen = {}, twins = {};
     dupGroups(items).forEach(function (g) { twins[dupKey(g[0].text)] = g; });
@@ -4315,19 +4317,21 @@
     /* Tonight, for tomorrow (3 Nov 2026, work pages redesign A): on today's list, on All, the open lines written after
        tonight's list was started (cutFor(), the same cut the rollover uses) sit last under their own heading, because
        they go on tomorrow's list. No read: the cut comes from the day's own lines and summary/learned. */
-    var TONIGHT = '\u0001tonight', cut = !S.tab && date === dayNow() ? cutFor(date, items) : -1;
-    function secOf(x) { if (cut >= 0 && !x.done && !x.deleted && writtenLate(x, date, cut)) return TONIGHT; return S.tab === FN_TAB ? 'Function platters' : S.tab || x.station || ''; }
+    var TONIGHT = '\u0001tonight', FNS = 'Function platters', FNCOL = '\u0002fn', cut = !S.tab && date === dayNow() ? cutFor(date, items) : -1;
+    function secOf(x) { if (board && x.fn) return FNCOL; if (cut >= 0 && !x.done && !x.deleted && writtenLate(x, date, cut)) return TONIGHT; return S.tab === FN_TAB ? FNS : S.tab || x.station || ''; }
     shown.forEach(function (x) { var k = secOf(x); if (!seen[k]) { seen[k] = 1; order.push(k); } });
-    if (seen[TONIGHT]) order = order.filter(function (k) { return k !== TONIGHT; }).concat([TONIGHT]);
+    [FNCOL, TONIGHT].forEach(function (last) { if (seen[last]) order = order.filter(function (k) { return k !== last; }).concat([last]); });
     return order.map(function (sec) {
       var all = shown.filter(function (x) { return secOf(x) === sec; });
       var live = all.filter(function (x) { return !x.deleted; });
       var rows = all.filter(function (x) { return !(x.done && !x.deleted) || lingers(x); });
       if (!rows.length) return '';
-      if (sec === TONIGHT) return '<div class="nb-hd nb-hd-tonight"><span>Tonight, for tomorrow</span><span>' + live.length + '</span></div><p class="nb-sd nb-tonight-sd">On tomorrow\'s list. Tick here if it gets done tonight.</p>' +
+      var name = sec === FNCOL ? FNS : sec || (board ? 'No section' : ''), out;
+      if (sec === TONIGHT) out = '<div class="nb-hd nb-hd-tonight"><span>Tonight, for tomorrow</span><span>' + live.length + '</span></div><p class="nb-sd nb-tonight-sd">On tomorrow\'s list. Tick here if it gets done tonight.</p>' +
         '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, (x.station ? '<span class="nb-also">' + esc(x.station) + '</span>' : '') + alsoHTML(x, x.station || '', twins)); }).join('') + '</ul>';
-      return (sec ? '<div class="nb-hd"><span>' + esc(sec) + '</span><span>' + live.filter(function (x) { return x.done; }).length + '/' + live.length + '</span></div>' : '') +
-        '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, alsoHTML(x, sec, twins)); }).join('') + '</ul>';
+      else out = (name ? '<div class="nb-hd"><span>' + esc(name) + '</span><span>' + live.filter(function (x) { return x.done; }).length + '/' + live.length + '</span></div>' : '') +
+        '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, alsoHTML(x, sec === FNCOL ? FNS : sec, twins)); }).join('') + '</ul>';
+      return board ? '<section class="wb-col" aria-label="' + esc(sec === TONIGHT ? 'Tonight, for tomorrow' : name) + '">' + out + '</section>' : out;
     }).join('');
   }
   /* "Add from the recipes" opens a panel that floats over the list (it does not push the list or the add form around).
@@ -4502,6 +4506,12 @@
   function whoTopHTML() {
     return me() ? '' : '<div class="nb-top"><span></span><span class="p-links">' + notYouHTML() + '</span></div>';
   }
+  /* Wall board (5 Nov 2026, head chef, round 2 of the work pages redesign, as drawn in B): on the shared kitchen tablet,
+     today's prep list as one column per section, like dockets on the rail. View and tick: the rows and their ticks are
+     the list's own (rowHTML), so I'm on it and Who's on it? work the same. Wall board at the end of the section tabs
+     turns it on, List on the board turns it off. A choice for this tablet, kept in lk.wall ('1'): never out of date,
+     like the text size, and only a shared device reads it, so a personal phone always gets the list. */
+  function wallOn() { return shared() && S.name === 'prep' && S.date === dayNow() && lsGet('lk.wall') === '1'; }
   function listHTML() {
     var today = dayNow();
     if (S.date !== today && !canBrowse() && !S.user) { S.date = today; S.tab = ''; watchItems(); }
@@ -4512,13 +4522,16 @@
     var fnLive = S.items.filter(function (x) { return !x.deleted && x.fn; }), fnOpen = fnLive.filter(function (x) { return !x.done; }).length;
     var daily = S.items.filter(function (x) { return !x.deleted && !x.fn; });
     if (S.tab === FN_TAB && !fnLive.length) S.tab = '';
+    var wall = wallOn();
+    if (wall) S.tab = '';
     var live = S.tab === FN_TAB ? fnLive : daily, doneN = live.filter(function (x) { return x.done; }).length;
     var removed = S.items.filter(function (x) { return x.deleted; });
     var secs = {}, tabs = [];
     daily.forEach(function (x) { [x.station].concat(x.also || []).forEach(function (n) { if (n && !secs[n]) { secs[n] = 1; tabs.push(n); } }); });
     var fnTab = fnLive.length ? '<button type="button" class="nb-tab nb-tab-fn" data-p="tab" data-v="' + FN_TAB + '" aria-pressed="' + (S.tab === FN_TAB) + '">Functions' + (fnOpen ? ' <span class="nb-tab-n">' + fnOpen + '</span>' : '') + '</button>' : '';
     var tabHTML = tabs.length || fnTab ? '<nav class="nb-tabs" aria-label="Sections"><button type="button" class="nb-tab" data-p="tab" data-v="" aria-pressed="' + !S.tab + '">All</button>' +
-      tabs.map(function (t) { return '<button type="button" class="nb-tab" data-p="tab" data-v="' + esc(t) + '" aria-pressed="' + (S.tab === t) + '">' + esc(t) + '</button>'; }).join('') + fnTab + '</nav>' : '';
+      tabs.map(function (t) { return '<button type="button" class="nb-tab" data-p="tab" data-v="' + esc(t) + '" aria-pressed="' + (S.tab === t) + '">' + esc(t) + '</button>'; }).join('') + fnTab +
+      (shared() && S.date === today && tabs.length > 1 ? '<button type="button" class="nb-tab nb-tab-wall" data-p="wall" data-v="1">Wall board</button>' : '') + '</nav>' : '';
     // Closing soon and the waste review note: above the lines on phones and tablets (.nb-lc), at the top of Handy on big
     // screens (.nb-rc), so they do not push the lines down; CSS shows one of the two
     // (with no signal and the day not loaded, Closing soon gives no count of the lines left open: it would count only
@@ -4551,6 +4564,15 @@
     // the add form as a sheet (3 Nov 2026), drawn with the page from S.pLog like Log waste, so a redraw keeps what is typed
     var pSheet = add && S.pLog ? '<div class="sheet-bg" data-p="p-log-close"></div><div class="sheet p-sheet" role="dialog" aria-modal="true" aria-labelledby="p-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="p-log-h">Add to prep</h3>' + add +
       (!can('del') ? '<p class="hint nb-who">Wrote the wrong thing? Undo it straight away, or ask the head chef or a sous chef to remove it.</p>' : '') + '<button type="button" class="btn sheet-x" data-p="p-log-close">Close</button></div>' : '';
+    if (wall) {
+      // the board has no Handy page: everything ticked off says so on the board itself
+      if (live.length && doneN === live.length && !fnOpen) todayEmpty = '<p class="nb-empty">Everything on today\'s list is ticked off.</p>';
+      return whoTopHTML() + badgeStrip() + '<section class="wb" aria-labelledby="rtitle"><header class="nb-ph wb-h"><div class="wb-t"><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
+        (S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>') +
+        '<button type="button" class="chip wb-list" data-p="wall" data-v="0">List</button>' + (add ? dockBtn('nb-addline', 'write', 'Add a line') : '') + '</header>' +
+        (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') + (flags ? '<div class="wb-flags">' + flags + '</div>' : '') + offNote +
+        '<div class="wb-cols">' + pageBody(S.items, S.date, true) + '</div>' + todayEmpty + '</section>' + pSheet;
+    }
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today<span class="nb-qsub"> and quick add</span>' : 'Done on ' + esc(dayShort(S.date))) + '</span></div></header>' +
       '<div class="nb-body nb-side">' + sideH + '</div></section>';
     return whoTopHTML() +
@@ -5807,6 +5829,8 @@
     var br = canBrowse(), today = dayNow(), onToday = S.ordDate === today;
     if (!br && S.ordDate !== today) { S.ordDate = today; watchOrders(); }
     if (S.ordDate === today && S.ordState === 'ok') ordRoll();
+    if (br && onToday) supCatLoad();
+    var grouped = br && onToday && supGrouped();
     var live = (S.ordLines || []).filter(function (x) { return !x.deleted; });
     var nOrd = live.filter(function (x) { return x.ordered; }).length;
     /* on today's list, a line that was ticked as ordered stays for 10 minutes (so a mis-tap can be undone), then leaves the list. Other days show everything. */
@@ -5842,12 +5866,12 @@
     var offO = S.ordState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var body =
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
-        offO + (own.length ? '<ul class="nb-rows">' + own.slice().sort(br && onToday ? function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') || byAdded(a, b); } : byAdded).map(ordRow).join('') + '</ul>' : (waitHTML || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))) + waitHTML);
+        offO + (grouped ? supGroupsHTML(own, function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') || byAdded(a, b); }) : own.length ? '<ul class="nb-rows">' + own.slice().sort(br && onToday ? function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') || byAdded(a, b); } : byAdded).map(ordRow).join('') + '</ul>' : (waitHTML || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))) + waitHTML);
     return whoTopHTML() + tabs +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Order list</h2><span class="nb-date">' + esc(longDate(S.ordDate)) + '</span></div>' +
       (S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') +
       (add ? dockBtn('nb-addline', 'o-write', 'Add to the order') : '') + '</header>' +
-      (onToday ? cutOrdHTML() : '') +
+      (onToday && !grouped ? cutOrdHTML() : '') +
       (can('add') || S.ordDate !== today ? '' : '<p class="hint o-ro">You can read the order list but not write in it.</p>') +
       closeoutHTML(null, S.ordDate) +
       '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>' +
@@ -9393,21 +9417,75 @@
   /* Supplier orders: the tick list on the order list and on Chef to-do, for the head chef and sous chefs. Today's
      cut-offs, and tomorrow's whose reminder has already started (an early one, the night before), soonest first. Each
      row is a tick box: ordered (by whom, when), the time left, or Closed and not ticked. */
+  // today's cut-offs, and tomorrow's whose reminder has started, soonest first: the tick list's rows and the supplier groups
+  function cutRowsNow() { var m = T.mins(); return cutToday().concat(cutOn(1).filter(function (c) { return cutOnNow(c, m); })); }
   function cutRowsHTML(ro) {
-    var m = T.mins(), done = cutDone(), xs = cutToday().concat(cutOn(1).filter(function (c) { return cutOnNow(c, m); }));
+    var xs = cutRowsNow();
     if (!xs.length) return '<p class="hint">No cut-offs today.</p>';
-    return (cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '') + '<ul class="cut-tl">' + xs.map(function (c) {
-      var d = done[c.key], past = c.at <= m, who = d ? cutByName(d) : '';
-      var st = d ? 'Ordered' + (who ? ' by ' + who : '') + (d.at ? ', ' + clock(d.at) : '') : past ? 'Closed, not ticked' : cutIn(c.at - m);
-      var cls = d ? 'is-done' : past ? 'is-past' : c.at - m <= CUT_SOON ? 'is-soon' : '';
-      return '<li class="cut-o ' + cls + '">' + (ro ? '<span class="cut-box cut-mark" aria-hidden="true">' + (d ? '&#10003;' : '') + '</span>' : '<button type="button" class="cut-box" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Ordered from ' : 'Tick when ordered from ') + c.s.name) + '"' + (cutCanTick() ? '' : ' disabled') + '><span aria-hidden="true">' + (d ? '&#10003;' : '') + '</span></button>') +
-        '<a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
-    }).join('') + '</ul>';
+    return (cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '') + '<ul class="cut-tl">' + xs.map(function (c) { return cutRowHTML(c, ro); }).join('') + '</ul>';
+  }
+  function cutRowHTML(c, ro) {
+    var m = T.mins(), done = cutDone();
+    var d = done[c.key], past = c.at <= m, who = d ? cutByName(d) : '';
+    var st = d ? 'Ordered' + (who ? ' by ' + who : '') + (d.at ? ', ' + clock(d.at) : '') : past ? 'Closed, not ticked' : cutIn(c.at - m);
+    var cls = d ? 'is-done' : past ? 'is-past' : c.at - m <= CUT_SOON ? 'is-soon' : '';
+    return '<li class="cut-o ' + cls + '">' + (ro ? '<span class="cut-box cut-mark" aria-hidden="true">' + (d ? '&#10003;' : '') + '</span>' : '<button type="button" class="cut-box" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Ordered from ' : 'Tick when ordered from ') + c.s.name) + '"' + (cutCanTick() ? '' : ' disabled') + '><span aria-hidden="true">' + (d ? '&#10003;' : '') + '</span></button>') +
+      '<a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
   }
   function cutOrdHTML() {
     if (!cutHas()) return '';
     cutWatch(); pushKeep();
     return '<section class="cut-today" aria-label="Supplier orders"><h3 class="nb-sh">Supplier orders today</h3><p class="hint cut-how">Tick each supplier once the order is in, by phone, email or its site. This is the one place to tick it: every chef sees it, and its reminder and pushes stop.</p>' + cutRowsHTML() + pushHTML() + '</section>';
+  }
+  /* Supplier groups (5 Nov 2026, head chef, round 2 of the work pages redesign, as drawn in B): on today's order list the
+     head chef and sous chefs see the requests under each supplier's cut-off, its tick, time left and state as the
+     heading, then Open the supplier's order and Delivery arrived; what the catalogue cannot match goes under No supplier
+     yet. A request matches a catalogue item by its exact name or a confirmed alias only (LK_SUP_CORE.matchRequests), and
+     goes under the first cut-off it matches. Staff never see suppliers: their list is as before, and so is a chef's on
+     another day, while the catalogue is not read, or when no catalogue supplier is linked to today's cut-offs. The
+     tick never waits for the catalogue: the plain list and the groups both tick through cutConfirm().
+     Read: the supplier catalogue, one read per supplier (at least one), when a chef opens today's order list, then kept
+     in memory only for that person and kitchen day (never on the phone: goods are private). A failed read keeps the plain
+     list; Refresh on the supplier page reads it again there. */
+  var supCat = { key: '', list: null, state: 'idle' };
+  function supCatLoad() {
+    if (!supplierRead() || !cutHas()) return;
+    var k = supplierContext() + '|' + dayNow();
+    if (supCat.key === k) return;
+    supCat = { key: k, list: null, state: 'loading' };
+    supplierTools().then(function (st) { return st.loadSuppliers(); }).then(function (list) {
+      if (supCat.key !== k) return;
+      supCat.list = list || []; supCat.state = 'ok'; if (S.name === 'orders') draw();
+    }, function () { if (supCat.key === k) { supCat.state = 'error'; if (S.name === 'orders') draw(); } });
+  }
+  // grouped only when a catalogue supplier is linked to one of the cut-offs shown: with none, every request would sit
+  // under No supplier yet, so the plain list stays
+  function supGrouped() {
+    if (supCat.state !== 'ok' || !supCat.list || supCat.key !== supplierContext() + '|' + dayNow() || !window.LK_SUP_CORE || !cutHas()) return false;
+    var ids = cutRowsNow().map(function (c) { return c.s.id; });
+    return supCat.list.some(function (x) { return ids.indexOf(x.cutoffId) >= 0; });
+  }
+  function supGroupsHTML(lines, order) {
+    cutWatch(); pushKeep();
+    var C = window.LK_SUP_CORE, left = lines.slice();
+    var groups = cutRowsNow().map(function (c) {
+      var sups = supCat.list.filter(function (x) { return x.cutoffId === c.s.id; }), items = [];
+      sups.forEach(function (x) { items = items.concat(x.items || []); });
+      var hit = {};
+      C.matchRequests(items, left.map(function (x) { return { id: x.id, text: x.text }; })).matches.forEach(function (m) { m.requestIds.forEach(function (id) { hit[id] = 1; }); });
+      var mine = left.filter(function (x) { return hit[x.id]; });
+      left = left.filter(function (x) { return !hit[x.id]; });
+      return { c: c, lines: mine, linked: sups.length };
+    });
+    var rows = function (l) { return '<ul class="nb-rows">' + l.slice().sort(order).map(ordRow).join('') + '</ul>'; };
+    return '<section class="cut-today o-sups" aria-label="Supplier orders"><h3 class="nb-sh">By supplier</h3><p class="hint cut-how">Tick each supplier once the order is in, by phone, email or its site. This is the one place to tick it: every chef sees it, and its reminder and pushes stop.</p>' +
+      (cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '') +
+      groups.map(function (g) {
+        var c = g.c, to = '#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day);
+        return '<div class="o-sup"><ul class="cut-tl">' + cutRowHTML(c) + '</ul>' + (g.lines.length ? rows(g.lines) : '<p class="hint o-sup-empty">Nothing asked for from ' + esc(c.s.name) + ' yet.</p>') +
+          '<p class="o-sup-acts">' + (g.linked === 1 ? '<a class="chip" href="' + to + '">Open ' + esc(c.s.name) + ' order</a>' : '') + '<a class="chip" href="#/deliveries">Delivery arrived</a></p></div>';
+      }).join('') +
+      (left.length ? '<div class="o-sup o-sup-none"><h3 class="nb-sh">No supplier yet</h3>' + rows(left) + '</div>' : '') + pushHTML() + '</section>';
   }
   // the same list at the top of Chef to-do, to see, not tick (5 Nov 2026: ticked on the order list only)
   function cutTodoHTML() {
@@ -9902,6 +9980,8 @@
     if (a === 'day') { S.date = shift(S.date, +el.getAttribute('data-d')); S.tab = ''; watchItems(); draw(); return; }
     if (a === 'today') { S.date = dayNow(); S.tab = ''; watchItems(); draw(); return; }
     if (a === 'tab') { S.tab = el.getAttribute('data-v') || ''; draw(); return; }
+    // the wall board on the shared kitchen tablet (wallOn()), kept for this tablet; focus goes to the way back
+    if (a === 'wall') { lsSet('lk.wall', el.getAttribute('data-v') === '1' ? '1' : ''); S.tab = ''; draw(); var wb = S.root && S.root.querySelector('[data-p="wall"]'); if (wb) wb.focus(); return; }
     if (a === 'tick') { tick(dt || S.date, id); return; }
     if (a === 'del') { removeItem(dt || S.date, id, false); return; }
     if (a === 'restore') { removeItem(dt || S.date, id, true); return; }
