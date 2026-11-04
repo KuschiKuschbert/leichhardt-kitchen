@@ -253,7 +253,9 @@ async function cpuPerSecond(p, ms = 2000) {
     for (const route of ['#/orders', '#/waste', '#/transfers', '#/guides', '#/r/pork-belly', '#/settings']) {
       await go(p, route);
       facts = await navFacts(p);
-      ok(facts.inside && facts.viewportParticles === 0 && facts.edges === 1 && facts.stamps === 1 && facts.brand === 1 && facts.moving === 0, route + ': Kitchen Book, the stamp and a still edge');
+      const still = facts.inside && facts.viewportParticles === 0 && facts.edges === 1 && facts.stamps === 1 && facts.brand === 1 && facts.moving === 0;
+      // A failure says which part, so a run on another browser can be read without a rerun.
+      ok(still, route + ': Kitchen Book, the stamp and a still edge' + (still ? '' : ' ' + JSON.stringify({ inside: facts.inside, particles: facts.viewportParticles, edges: facts.edges, stamps: facts.stamps, brand: facts.brand, moving: facts.moving })));
     }
 
     for (const width of [390, 768, 1280]) {
@@ -270,14 +272,15 @@ async function cpuPerSecond(p, ms = 2000) {
 
     await go(p, '#/settings');
     await L.waitFor(p, () => Boolean(document.querySelector('#kb-seasonal-settings [data-seasonal-selection="auto"]')));
+    await L.setRow(p, 'season');
     await p.click('[data-seasonal-selection="auto"]');
     await L.waitFor(p, () => document.querySelector('#app').dataset.kbTheme === 'au-melbourne-cup');
     ok(await p.locator('[data-seasonal-selection="auto"]').getAttribute('aria-pressed') === 'true', 'Settings switches back to the automatic kitchen calendar');
     // Nobody picks a celebration: the kitchen calendar gives everyone the same one (head chef, 4 Nov 2026).
     ok(await p.evaluate(() => {
       const box = document.querySelector('#kb-seasonal-settings'), chips = [...box.querySelectorAll('[data-seasonal-selection]')].map(node => node.textContent);
-      return chips.join('|') === 'On|Off' && !box.querySelector('input,select,[data-seasonal-theme],[data-seasonal-keep]') && !/Choose a celebration|204 designs/.test(box.textContent);
-    }), 'Settings has On and Off only, with no way to pick a celebration');
+      return chips.join('|') === 'On|Off' && document.querySelector('#st-h-season .st-v span')?.textContent === 'On' && !box.querySelector('input,select,[data-seasonal-theme],[data-seasonal-keep]') && !/Choose a celebration|204 designs/.test(box.textContent);
+    }), 'Settings has On and Off only, with no way to pick a celebration, and its row says On');
     ok(await p.evaluate(() => {
       const rows = [...document.querySelectorAll('[data-seasonal-coming] li')].map(li => li.textContent);
       return rows.length === 5 && /Sat 7 Nov\s*Tihar/.test(rows[0]) && /Sun 8 Nov\s*Diwali/.test(rows[1]) && document.querySelectorAll('[data-seasonal-coming] .kb-seasonal-mark svg').length === 5;

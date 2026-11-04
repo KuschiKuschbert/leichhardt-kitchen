@@ -32,7 +32,7 @@ Ids are saved in Firestore: never rename one. A new sound adds a line to `SOUNDS
 
 Head chef, 3 November 2026: only the head chef (the admin) sets the ring tone for pings. Nobody else can pick another sound, and it is the same sound for everyone, on every device.
 
-- There is one setting, `config/main.pingSound`, and every device reads it. There is no per-phone, per-person or per-device sound, nothing kept on the phone, and no sound in Settings. Do not add one.
+- There is one setting, `config/main.pingSound`, and every device reads it. There is no per-phone, per-person or per-device sound, nothing kept on the phone, and no sound in Settings. Do not add one. Settings, The kitchen (the verified admin only) shows this one setting and opens the block below; it is not a second sound and plays nothing.
 - Only the verified admin writes it: the head chef's own Google device with their head chef PIN and its grant. The rules refuse it from sous chefs, staff, leads, view only, functions only, the shared tablet, signed-out phones and the head chef's PIN on any other phone, including inside a sous chef's staff save or ping stamp (`tests/rules/rules.test.mjs`, `tests/rules/client-shapes.test.mjs`).
 - A new pick reaches every phone through its config listener, with no reload. A phone can still be quieter (on silent, volume down, not tapped since the book opened), but it never plays a different sound.
 
