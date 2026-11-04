@@ -741,7 +741,7 @@
     }
     var text = state === 'loading' ? 'Checking for recipe updates...' : state === 'offline' ? 'No signal. Showing the loaded book.' : state === 'error' ? 'Could not check for recipe updates. Showing the loaded book.' : '';
     slot.hidden = !text;
-    slot.innerHTML = text && window.LK_MOTION ? window.LK_MOTION.label(text, 'recipes', state === 'loading' && navigator.onLine !== false ? 'busy' : 'still') : esc(text);
+    slot.innerHTML = text && window.LK_MOTION ? window.LK_MOTION.label(text, 'recipes', state === 'loading' ? 'busy' : 'still') : esc(text);
   }
   window.addEventListener('lk-rx-status', paintRecipeStatus);
   function viewTiles(route) {
@@ -930,7 +930,7 @@
     }
     if (window.LK_FE) { if (window.LK_FE.api === FE_API && window.LK_FN && typeof window.LK_FN.M.effects === 'function') window.LK_FE.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The functions page on this device is a different version from the book. Reload the page to update it. Changes not saved yet are kept on this device.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
     root.innerHTML = mgNote('Functions', 'Opening functions...', ' ', 'chef');
-    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=7').catch(function (e) { feLoad = null; throw e; });
+    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=8').catch(function (e) { feLoad = null; throw e; });
     feLoad.then(function () { if (parseRoute().name === 'functions') mountFunctions(parseRoute()); }, function () {
       var el = document.getElementById('fe-root');
       if (el) el.innerHTML = mgNote('Could not open functions', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="feretry">Try again</button></div>');
@@ -944,11 +944,11 @@
     });
   }
   function loadManage() {
-    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=8').catch(function (e) { mgLoad = null; throw e; });
+    if (!mgLoad) mgLoad = mgScript('js/manage.js?v=9').catch(function (e) { mgLoad = null; throw e; });
     return mgLoad;
   }
   function mgNote(title, text, link, waitingIcon) {
-    var message = waitingIcon && window.LK_MOTION ? window.LK_MOTION.status(text, { icon: waitingIcon, state: navigator.onLine === false ? 'still' : 'busy', rows: 3 }) : '<p>' + esc(text) + '</p>';
+    var message = waitingIcon && window.LK_MOTION ? window.LK_MOTION.status(text, { icon: waitingIcon, state: 'busy', rows: 3 }) : '<p>' + esc(text) + '</p>';
     return '<section class="set-block mg-note"><h2 id="rtitle" tabindex="-1">' + esc(title) + '</h2>' + message + (link || '<div class="btn-row"><a class="btn" href="#/recipes">Back to the recipes</a></div>') + '</section>';
   }
   function mountManage(route) {
@@ -986,7 +986,7 @@
       return;
     }
     root.innerHTML = mgNote('Delivery received', 'Opening delivery records...', ' ', 'orders');
-    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=6').catch(function (e) { deliveryLoad = null; throw e; });
+    if (!deliveryLoad) deliveryLoad = mgScript('js/deliveries.js?v=7').catch(function (e) { deliveryLoad = null; throw e; });
     deliveryLoad.then(function () { if (parseRoute().name === 'deliveries') mountDeliveries(); }, function () {
       if (parseRoute().name === 'deliveries' && root.isConnected) root.innerHTML = mgNote('Could not open delivery records', 'Check the connection and try again.', '<button type="button" class="btn dark" data-delivery-retry>Try again</button>');
     });
@@ -1011,7 +1011,7 @@
       return;
     }
     root.innerHTML = mgNote('Supplier order', 'Opening supplier tools...', ' ', 'orders');
-    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=12').catch(function (e) { supLoad = null; throw e; });
+    if (!supLoad) supLoad = mgScript('js/suppliers.js?v=13').catch(function (e) { supLoad = null; throw e; });
     supLoad.then(function () { if (parseRoute().name === 'suppliers') mountSuppliers(parseRoute()); }, function () {
       if (parseRoute().name === 'suppliers') root.innerHTML = mgNote('Could not open supplier tools', 'Check the connection and try again. The other kitchen pages still work.', '<div class="btn-row"><button type="button" class="btn dark" data-sup-retry>Try again</button><a class="btn" href="#/orders">Order list</a></div>');
     });

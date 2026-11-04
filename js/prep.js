@@ -64,9 +64,10 @@
   function clearPrivateCache() { try { Object.keys(LS || {}).forEach(function (k) { if (privateKey(k) || k === 'lk.fn') LS.removeItem(k); }); } catch (e) {} }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   // Motion follows the existing work state. It adds no reads, timers or save acknowledgements.
-  function inkState() { return navigator.onLine === false ? 'still' : 'busy'; }
-  function inkLabel(text, icon) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', inkState()) : esc(text); }
-  function inkWait(text, icon, rows) { return window.LK_MOTION ? window.LK_MOTION.status(text, { icon: icon || 'prep', state: inkState(), rows: rows || 0 }) : '<p class="hint" role="status">' + esc(text) + '</p>'; }
+  // A pending operation keeps its busy markup even when drawn offline: the ink-offline class pauses it, so the same
+  // icon resumes on reconnection. Settled errors and offline results pass 'still' themselves.
+  function inkLabel(text, icon) { return window.LK_MOTION ? window.LK_MOTION.label(text, icon || 'save', 'busy') : esc(text); }
+  function inkWait(text, icon, rows) { return window.LK_MOTION ? window.LK_MOTION.status(text, { icon: icon || 'prep', state: 'busy', rows: rows || 0 }) : '<p class="hint" role="status">' + esc(text) + '</p>'; }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   /* Time is the server's, in kitchen time (LK_TIME in index.html). now() is for anything saved on a line or compared with
      a saved time; dayNow() is the kitchen's date. Date.now() is only for time passing on this phone (timers, the lock). */
@@ -8138,7 +8139,7 @@
       '<button type="button" class="btn" data-p="g-cancel">' + (armed('g-cancel') ? 'Tap again to discard' : f.id ? 'Cancel' : 'Close') + '</button></div></section>';
   }
   function gProgressHTML(f) {
-    var motion = window.LK_MOTION, opt = { icon: 'guides', state: f.saving ? inkState() : 'busy' };
+    var motion = window.LK_MOTION, opt = { icon: 'guides', state: 'busy' };
     if (!motion) return '<p class="g-busy" role="status">' + esc(f.busy) + '</p>';
     return f.progress && f.progress.total > 0 ? motion.progress(f.progress.completed, f.progress.total, f.busy, opt) : motion.status(f.busy, opt);
   }
