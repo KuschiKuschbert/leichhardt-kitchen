@@ -1365,7 +1365,12 @@
       listSnap: listSnap,
       // the book's one two-tap helper (28 Oct 2026, js/draw.js and js/deliveries.js): arm(key, redraw) and armed(key).
       // js/fnedit.js keeps its own for now and does not use these, so FE_API stays as it is (README, Bringing the code in line)
-      arm: arm, armed: armed
+      arm: arm, armed: armed,
+      // the order cut-offs already on the phone (config/main, no read of its own): js/deliveries.js names the suppliers
+      // due today from their delivery days (3 Nov 2026). Empty where config/main is not readable (Functions-only)
+      cuts: cutList,
+      // the shared CSV boundary (docs/report-exports.md) for the admin's delivery history (3 Nov 2026)
+      csv: downloadCSV
     };
   }
   /* Supplier workspace (24 Oct 2026). This bridge shares the kitchen's sign-in, writer, clock and pending-write
@@ -4489,10 +4494,32 @@
         if (!intelligenceAllowed() || ['analysis/dashboard', 'analysis/health'].indexOf(path) < 0) return Promise.reject({ code: 'permission' });
         return fb.fs.getDocFromServer(docRef.apply(null, path.split('/'))).then(function (sn) { return sn.exists() ? sn.data() : null; });
       },
+      today: dayNow, now: now,
+      // Needs you, from what the book already loaded when it opened (mail, minutes): no new reads, except the latest
+      // minutes' sign-offs (loadSigns(): one query once, then kept for the session, like the register).
+      needs: function () {
+        var out = {};
+        if (mlOwner()) out.mail = mlErr ? 'error' : !mlOpen ? 'loading' : mlInfo();
+        var m = featOn('minutes') ? mnOpenList()[0] : null;
+        if (minsFailed()) out.minutes = 'error';
+        else if (m) {
+          loadSigns(m.id, false);
+          var sg = S.msigns[m.id], reg = mnRegister(m);
+          out.minutes = sg && sg.err ? 'error' : !reg ? 'loading' : { label: dayShort(m.date), chase: reg.chase.length, signed: reg.signed, late: now() > mnLateAt(m), overdue: mnOverdue().length };
+        }
+        return out;
+      },
+      // Transfers not returned: one query of the open loans when the Dashboard opens and on Refresh (one read each, at least 1).
+      loans: function () {
+        if (!intelligenceAllowed()) return Promise.reject({ code: 'permission' });
+        return fb.fs.getDocsFromServer(fb.fs.query(fb.fs.collection.apply(null, [fb.db].concat(base(), ['transferOpen'])), fb.fs.where('open', '==', true))).then(function (sn) {
+          return sn.docs.map(function (d) { var v = d.data(); return Object.assign({}, v.record, { date: v.date, id: v.lineId }); });
+        });
+      },
       open: function (tab, days) {
-        if (['insights', 'waste', 'transfers'].indexOf(tab) < 0) return;
-        if (tab !== 'transfers') S.statsRange = days === 7 ? 7 : 30;
-        S.atab = tab; S.agLast = S.agLast || {}; S.agLast.reports = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop();
+        if (['insights', 'waste', 'transfers', 'mail', 'minutes'].indexOf(tab) < 0 || (tab === 'mail' && !mlOwner())) return;
+        if (tab === 'insights' || tab === 'waste') S.statsRange = days === 7 ? 7 : 30;
+        S.atab = tab; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(tab)[0]] = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop();
       }
     });
     if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=1').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
