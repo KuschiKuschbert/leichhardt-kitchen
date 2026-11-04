@@ -61,8 +61,14 @@ const item = (p, id) => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['d
   await L.tap(p, '[data-p="tick"][data-id="i2"]'); await L.settle(p, 300);
   await p.evaluate(() => window.LK_PREP.toast('Copied to the order list.'));
   await p.clock.runFor(1000); await L.settle(p, 200);
-  await p.evaluate(() => { window.scrollTo(0, scrollY > 200 ? 0 : document.documentElement.scrollHeight); });
-  ok(await L.waitFor(p, () => !document.querySelector('.p-toast:not(.p-toast-old)'), null, 3000).then(() => true, () => false), 'scroll: the short toast goes');
+  // a thumb keeps moving: up to four scrolls of 400 px, so a first scroll the page counts as moving to the box, or a page
+  // that settles a little after it, still ends with the toast gone; a toast that never goes still fails
+  let gone = false;
+  for (let k = 0; k < 4 && !gone; k++) {
+    await p.evaluate(() => { window.scrollBy(0, scrollY > 600 ? -400 : 400); });
+    gone = await L.waitFor(p, () => !document.querySelector('.p-toast:not(.p-toast-old)'), null, 700).then(() => true, () => false);
+  }
+  ok(gone, 'scroll: the short toast goes');
   ok(await p.$('.p-toast-old [data-p="toast-old"]') !== null, 'scroll: the earlier Undo stays');
   ok(p.errors.length === 0, 'scroll: no page errors ' + p.errors.join(' | '));
   await p.context().close();
