@@ -313,10 +313,15 @@ async function open(browser, hash, o) {
   page.errors = [];
   // Prep's add form is in the Add a line sheet since 3 Nov 2026 (work pages redesign A). A test that reaches for one of its
   // boxes by selector while the sheet is closed taps Add a line first, the way a cook does. page.$ is left alone, so a check
-  // that the form is not there still means it; tests of the sheet itself use L.pLog() (tests/prep-a.test.js).
-  for (const m of ['fill', 'press', 'type', 'focus', 'click', 'inputValue', 'getAttribute', '$eval']) {
+  // that the form is not there still means it; tests of the sheet itself use L.pLog() (tests/prep-a.test.js). A click on
+  // the page behind an open Add a line sheet closes the sheet first, the way a cook does (prepAway).
+  for (const m of ['fill', 'press', 'type', 'focus', 'click', 'tap', 'inputValue', 'getAttribute', '$eval']) {
     const orig = page[m].bind(page);
-    page[m] = async (sel, ...rest) => { if (typeof sel === 'string' && PREP_FORM.test(sel)) await prepForm(page); return orig(sel, ...rest); };
+    page[m] = async (sel, ...rest) => {
+      if (typeof sel === 'string' && PREP_FORM.test(sel)) await prepForm(page, sel);
+      else if (typeof sel === 'string' && (m === 'click' || m === 'tap')) await prepAway(page, sel);
+      return orig(sel, ...rest);
+    };
   }
   const origLocator = page.locator.bind(page);
   page.locator = (sel, ...rest) => {
@@ -324,7 +329,8 @@ async function open(browser, hash, o) {
     if (typeof sel !== 'string' || !PREP_FORM.test(sel)) return loc;
     // count() is left alone, like page.$; the actions open the sheet first
     const acts = ['fill', 'press', 'type', 'focus', 'click', 'inputValue', 'evaluate', 'elementHandle', 'getAttribute'];
-    return new Proxy(loc, { get: (t, k) => acts.includes(k) ? async (...a) => { await prepForm(page); return t[k](...a); } : (typeof t[k] === 'function' ? t[k].bind(t) : t[k]) });
+    const wrap = l => new Proxy(l, { get: (t, k) => acts.includes(k) ? async (...a) => { await prepForm(page, sel); return t[k](...a); } : ['first', 'last', 'nth'].includes(k) ? (...a) => wrap(t[k](...a)) : (typeof t[k] === 'function' ? t[k].bind(t) : t[k]) });
+    return wrap(loc);
   };
   page.loading = 0;   // requests still out, for settle()
   page.urls = [];     // every address the page asked for, in order (routed answers leave no resource timing)
@@ -485,13 +491,25 @@ async function pick(page, selector, value) {
   await settle(page, 250);
 }
 
-const PREP_FORM = /#p-(text|qty|section)\b|data-k="p-(text|qty|section)"/;
-async function prepForm(page) {
+const PREP_FORM = /#p-(text|qty|section)\b|data-k="p-(text|qty|section)"|data-p="(recipe-toggle|quick)"|\.nb-qadd\b/;
+async function prepForm(page, sel) {
   if (await page.$('.p-sheet #p-text') || !(await page.$('[data-p="write"]'))) return;
+  // something the selector names already on screen (Handy's Quick add on a laptop): no sheet needed
+  if (sel && await page.evaluate(s => { try { return [...document.querySelectorAll(s)].some(e => e.getClientRects().length); } catch (e) { return false; } }, sel)) return;
   await pLog(page);
 }
+async function prepAway(page, sel) {
+  const shut = await page.evaluate(s => {
+    const sh = document.querySelector('.p-sheet'); if (!sh) return false;
+    let el = null; try { el = document.querySelector(s); } catch (e) { return false; }
+    // not when the target is in the sheet, a toast, or a picker or sheet opened over it
+    if (!el || sh.contains(el) || el.closest('.sheet-bg, .p-toast, dialog, .sheet, [role="dialog"]')) return false;
+    const c = sh.querySelector('[data-p="p-log-close"]'); if (c) c.click(); return !!c;
+  }, sel).catch(() => false);
+  if (shut) await settle(page, 100);
+}
 async function clear(page, selector) {
-  if (PREP_FORM.test(selector)) await prepForm(page);
+  if (PREP_FORM.test(selector)) await prepForm(page, selector);
   const input = page.locator(selector).first();
   if (await input.getAttribute('data-smart-search')) {
     const button = input.locator('..').locator('.ux-search-clear');

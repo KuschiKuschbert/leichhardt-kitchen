@@ -12,7 +12,7 @@ const yday = L.ymd(new Date(L.NOW - 86400000));
   const daily = () => p.evaluate(() => JSON.parse(localStorage.getItem('lk.daily') || 'null'));
   let d = await daily();
   ok(d && d.sg && d.sg.quick && d.sg.quick.s === 1 && d.sg.quick.t === 0, 'Quick add showed something today: counted once as shown (' + JSON.stringify(d && d.sg) + ')');
-  await p.locator('[data-p="quick"]').first().click(); await L.settle(p, 400);
+  await p.locator('.nb-qadd [data-p="quick"]').first().click(); await L.settle(p, 400);
   d = await daily();
   ok(d.sg.quick.t === 1 && !/Mise|onion/i.test(JSON.stringify(d)), 'a Quick add tap counts as taken, and the counts hold no text');
   // the next day: yesterday's counts go out once, as the person signed in

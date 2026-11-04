@@ -21,7 +21,7 @@ extra[fsKey(['days', today, 'items', 'stuck1'])] = { text: 'Cure salmon', statio
   ok(await p.evaluate(() => document.querySelector('.nb-row').getBoundingClientRect().top < 420), 'phone: the first line starts in the top half of the screen');
 
   // Start here, numbered on the lines
-  const nums = await p.$$eval('.nb-row .nb-num', l => l.map(e => e.firstChild.textContent).join(','));
+  const nums = await p.$$eval('.nb-row .nb-t[data-n]', l => l.map(e => e.getAttribute('data-n')).join(','));
   ok(nums.split(',').sort().join(',') === '1,2,3' && !(await p.$('.nb-start')), 'Start here: 1, 2 and 3 on three lines, no separate Start here box (' + nums + ')');
 
   // one urgent control: Stuck lines (rolled 3 times) offers no Urgent button of its own

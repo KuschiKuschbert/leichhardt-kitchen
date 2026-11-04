@@ -22,6 +22,7 @@ const reloaded = p => p.evaluate(() => window.__mark !== 1).catch(() => true);
   // Personal devices keep the draft behind the daily PIN, with no idle logout.
   p = await L.open(b, '#/prep', { touch: true, wait: 1500 });
   const type = v => p.evaluate(v => { const e = document.getElementById('p-text'); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); }, v);
+  await L.pLog(p);
   await type('Half a line');
   await p.evaluate(() => { window.__mark = 1; });
   await p.clock.fastForward('14:01:00');

@@ -184,7 +184,8 @@ const cutReady = (p, selector) => L.waitFor(p, s => {
       await S(p, () => { localStorage.setItem('lk.fe.draft.new', JSON.stringify({ id: 'x', isNew: true, d: { name: 'Smith 50th', cname: 'Jo Smith', phone: '0400 000 000' } })); localStorage.setItem('lk.mg.draft.burger', '{"at":1,"e":{"id":"burger"}}'); localStorage.setItem('lk.dw.draft.burger-plate', '{"at":1,"els":[]}'); });
       await p.fill('[data-k="' + k + '"]', 'Peel garlic'); await L.settle(p, 150);
       const asked = await L.notYou(p);
-      const s = await S(p, k => ({ user: !!window.LK_PREP.state.user, text: (document.querySelector('[data-k="' + k + '"]') || {}).value, admin: localStorage.getItem('lk.admin') }), k);
+      // the line from the page's state: the chef hat closes the Add a line sheet, and the words stay in it (3 Nov 2026)
+      const s = await S(p, k => ({ user: !!window.LK_PREP.state.user, text: k === 'p-text' ? window.LK_PREP.state.text : window.LK_PREP.state.otext, admin: localStorage.getItem('lk.admin') }), k);
       ok(s.user && s.text === 'Peel garlic' && s.admin === '1' && asked === 'Not saved yet. Tap again to sign out', w + ' ' + route + ': one tap on Not you? Sign out keeps the Google account and the line, and asks again ' + JSON.stringify(s) + ' ' + asked);
       await fits(p, w + ' ' + route + ' Not you? asking');
       await L.notYou(p); await L.settle(p, 600);
