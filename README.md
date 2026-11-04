@@ -197,6 +197,8 @@ Functions-only sign-ins skip kitchen activity writes (2 November 2026). The exis
 
 The private-ping handover check uses `L.waitFor()` so it runs under the live site's Content Security Policy.
 
+Three checks that failed once each on busy GitHub runners (3 to 4 Nov 2026) now wait for what they check, not a set time: `tests/pin-sessions.test.js` for the session on the server and the page signed in after a PIN, `tests/ping-sound.test.js` for the browser's answer to every wake-up of the sound before it counts the notes, and `tests/cache-heal.test.js` for the saved-copy repair's answer, read from a record of the book's messages that outlasts the 9 s toast. In the same file, the repair's reload gets 20 s, and the two other repair-failure steps read their message the same way, after the repair has answered.
+
 The delayed sheet-history regression controls its artificial delay, then resumes normal browser frames after `popstate`. Its scroll and hidden-strip assertions stay the same. Removing the app's scroll correction still fails all three restoration checks; the corrected app passes them.
 
 The `tests/` folder holds click tests that open the book in Chrome and use it like the team does, on a phone, a tablet and a computer. Only the tests need installing (Node.js and Google Chrome on the computer):
