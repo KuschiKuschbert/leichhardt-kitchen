@@ -25,6 +25,10 @@ export async function analyse(K, options = {}) {
   const suppliers = await read(K.collection('suppliers'));
   const recipes = await read(K.collection('recipes'));
   const guides = await read(K.collection('guides'));
+  // For the Dashboard's Needs you: the people, sections and assessments the Review desk counts with (1 read + 1 per record).
+  const cfgSnap = await K.collection('config').doc('main').get(); reads += 1;
+  const cfg = cfgSnap.exists ? cfgSnap.data() : {};
+  const training = await read(K.collection('training'));
   const bundled = { window: {} };
   runInNewContext(readFileSync(new URL('../js/data.js', import.meta.url), 'utf8'), bundled, { timeout: 1000 });
   const recipeIds = new Set(bundled.window.LK_DATA.recipes.map(r => r.id));
@@ -65,6 +69,12 @@ export async function analyse(K, options = {}) {
   }
   // The admin Dashboard reads this one record (one read) instead of 60 days of lines. Admin only, like every analysis record.
   const board = { v: 1, generation, at, from, to, days: dash };
+  // Needs you: the Review desk's two queues, counted with the same shared code (js/analysis-core.js). Counts only, no names.
+  const pub = Object.fromEntries(publications);
+  const people = (Array.isArray(cfg.people) ? cfg.people : []).filter(p => p && typeof p.id === 'string' && p.active !== false).map(p => ({ id: p.id, name: String(p.name || '') }));
+  const secs = (Array.isArray(cfg.kitSecs) ? cfg.kitSecs : []).filter(x => x && !x.off && typeof x.name === 'string' && x.name.trim()).map(x => x.name);
+  const queue = core.trainingQueue(pub['30'], training, people, secs);
+  board.needs = { links: core.linkQueue(pub['90'], refs).length, training: queue.length, inTraining: queue.filter(o => o.assessment && o.assessment.status === 'in-training').length };
   if (bytes(board) > 700000) throw new Error('analysis-dashboard-too-large');
   for (let i = 0; i < days.length; i += 8) {
     const batch = K.firestore.batch();

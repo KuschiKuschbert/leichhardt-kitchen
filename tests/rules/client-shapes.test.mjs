@@ -238,6 +238,10 @@ row('js/prep.js pastRead() (admin Reports): a past day\'s wastage lines', { ok: 
 row('js/prep.js watchXOpen(): open loans listener (transferOpen, open == true)', { ok: KITCHEN, asks: KITCHEN, run: db => listen(query(C(db, 'transferOpen'), where('open', '==', true))) });
 row('js/prep.js dashHTML() loans(): the admin Dashboard\'s open loans, one query (transferOpen, open == true)', { ok: KITCHEN, asks: GOOGLE, run: db => getDocs(query(C(db, 'transferOpen'), where('open', '==', true))) });
 row('js/prep.js dashHTML() get(): the admin Dashboard\'s nightly numbers and run health (analysis/dashboard, analysis/health)', { ok: GOOGLE, asks: GOOGLE, run: db => Promise.all([getDocFromServer(D(db, 'analysis/dashboard')), getDocFromServer(D(db, 'analysis/health'))]) });
+row('js/prep.js dashHTML() watch(): the admin Dashboard\'s watch list get (dashwatch/main)', { ok: GOOGLE, asks: GOOGLE, run: db => getDocFromServer(D(db, 'dashwatch/main')) });
+row('js/prep.js dashHTML() saveWatch(): the admin Dashboard\'s watch list set (dashwatch/main)', { ok: GOOGLE, asks: GOOGLE, run: (db, w, r) => W(r, [['set', 'dashwatch/main', { list: ['sec:Larder', 'person:ann'], v: 2, at: Date.now() }]]) });
+row('js/prep.js dashHTML() saveWatch(): a watch list longer than 12 is refused (never sent: the Dashboard caps at 12)', { ok: [], asks: [], run: (db, w, r) => W(r, [['set', 'dashwatch/main', { list: Array.from({ length: 13 }, (x, i) => 'sec:S' + i), v: 3, at: Date.now() }]]) });
+row('js/prep.js dashHTML() saveWatch(): a watch list record under another id is refused (never sent)', { ok: [], asks: [], run: (db, w, r) => W(r, [['set', 'dashwatch/other', { list: [], v: 1, at: Date.now() }]]) });
 row('js/prep.js watchXfer(): today\'s transfer lines listener', { ok: KITCHEN, asks: KITCHEN, run: db => listen(C(db, `transfers/${TODAY}/lines`)) });
 row('js/prep.js loadXSum(): summary/transfers get', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, 'summary/transfers')) });
 row('js/prep.js xferStatsHTML() (admin Reports): a past day\'s transfer lines', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, `transfers/${PAST}/lines`)) });

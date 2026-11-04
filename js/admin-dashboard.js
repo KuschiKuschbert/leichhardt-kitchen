@@ -9,7 +9,7 @@
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var HEAT = 5;
-  function reset() { context = ''; charts = {}; state = { period: 30, data: undefined, health: null, error: false, loading: false, req: 0, loans: undefined }; }
+  function reset() { context = ''; charts = {}; state = { period: 30, data: undefined, health: null, error: false, loading: false, req: 0, loans: undefined, watch: undefined, add: null, saving: false, msg: '' }; }
   reset();
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function valid() { return !!(api && api.allowed() && api.context() === context); }
@@ -34,17 +34,20 @@
     if (!d || !Array.isArray(d.days)) return null;
     var days = d.days.filter(function (r) { return r && /^\d{4}-\d{2}-\d{2}$/.test(r.day); }).map(function (r) {
       var p = r.p || {}, w = r.w || {}, x = r.x || {};
-      return { day: r.day, p: { n: n(p.n), w: n(p.w), t: n(p.t), r: n(p.r), sec: counts(p.sec), mins: mins(p.mins) },
+      return { day: r.day, p: { n: n(p.n), w: n(p.w), t: n(p.t), r: n(p.r), sec: counts(p.sec), mins: mins(p.mins), who: counts(p.who) },
         w: { n: n(w.n), reason: counts(w.reason), sec: counts(w.sec), items: (Array.isArray(w.items) ? w.items : []).slice(0, 400).filter(function (i) { return i && str(i.t); }).map(function (i) { return { t: str(i.t), u: str(i.u, 40), a: n(i.a), n: n(i.n) }; }) },
         x: { out: n(x.out), in: n(x.in) } };
     }).sort(function (a, b) { return a.day < b.day ? -1 : a.day > b.day ? 1 : 0; });
-    return { at: n(d.at), from: str(d.from, 10), to: str(d.to, 10), days: days };
+    var nd = d.needs && typeof d.needs === 'object' ? { links: n(d.needs.links), training: n(d.needs.training), inTraining: n(d.needs.inTraining) } : null;
+    return { at: n(d.at), from: str(d.from, 10), to: str(d.to, 10), days: days, needs: nd };
   }
   function load(force) {
     // A failed read waits for Refresh: never an automatic retry loop.
     if (!valid() || state.loading || (!force && (state.data !== undefined || state.error))) return;
     var req = ++state.req;
-    state.loading = true; state.error = false; state.loans = undefined;
+    state.loading = true; state.error = false; state.loans = undefined; state.watch = undefined;
+    // The watch list: one read of dashwatch/main, with the records above. A failed read says so; nothing is kept.
+    if (api.watchGet) api.watchGet().then(function (d) { if (valid() && req === state.req) { state.watch = cleanWatch(d); redraw(); } }, function () { if (valid() && req === state.req) { state.watch = 'error'; redraw(); } });
     // Needs you: transfers not returned, one query of the open loans (one read each, at least 1) with the records above.
     if (api.loans) api.loans().then(function (list) { if (valid() && req === state.req) { state.loans = Array.isArray(list) ? list : 'error'; redraw(); } }, function () { if (valid() && req === state.req) { state.loans = 'error'; redraw(); } });
     // On open, then only on Refresh: one read of each record, never a timer.
@@ -77,9 +80,9 @@
   function addTo(o, from) { Object.keys(from).forEach(function (k) { o[k] = (o[k] || 0) + from[k]; }); return o; }
 
   /* ---------- small marks ---------- */
-  function delta(now, before, goodUp, unit, fmt, label) {
-    if (now == null || before == null) return '<span class="dsh-delta dsh-flat">' + esc(label || 'Nothing to compare yet') + '</span>';
-    var diff = now - before, show = fmt ? fmt(Math.abs(diff)) : String(Math.abs(Math.round(diff)));
+  function delta(val, before, goodUp, unit, fmt, label) {
+    if (val == null || before == null) return '<span class="dsh-delta dsh-flat">' + esc(label || 'Nothing to compare yet') + '</span>';
+    var diff = val - before, show = fmt ? fmt(Math.abs(diff)) : String(Math.abs(Math.round(diff)));
     if (Math.abs(diff) < 0.5) return '<span class="dsh-delta dsh-flat">Same as before</span>';
     var better = goodUp ? diff > 0 : diff < 0;
     return '<span class="dsh-delta ' + (better ? 'dsh-good' : 'dsh-bad') + '"><span aria-hidden="true">' + (diff > 0 ? '&#9650;' : '&#9660;') + '</span> ' +
@@ -256,6 +259,14 @@
       else clear.push('minutes');
       if (nd.minutes.overdue) rows.push(needRow('due', 'Overdue', nd.minutes.overdue + ' meeting action' + (nd.minutes.overdue === 1 ? '' : 's') + ' past the date', 'From the minutes of ' + nd.minutes.label + '.', 'minutes', 'Open minutes'));
     }
+    // The Review desk queues, counted by the nightly run with the Review desk's own code (counts only).
+    var q = state.data.needs;
+    if (q) {
+      if (q.links) rows.push(needRow('wait', 'To review', q.links + ' item link' + (q.links === 1 ? '' : 's') + ' to check', 'Recorded names with no confirmed recipe or supplier link. Counted at ' + api.clock(state.data.at) + '.', 'references', 'Review desk'));
+      else clear.push('item links');
+      if (q.training) rows.push(needRow('wait', 'Training', q.training + ' training review' + (q.training === 1 ? '' : 's'), (q.inTraining ? q.inTraining + ' in training. ' : '') + 'People and sections without a confirmed assessment. Counted at ' + api.clock(state.data.at) + '.', 'training', 'Training'));
+      else clear.push('training');
+    }
     // Transfers not returned: lent or borrowed before today and still open.
     if (state.loans === undefined) rows.push(needRow('wait', 'Checking', 'Transfers', 'Still loading.', '', ''));
     else if (state.loans === 'error') rows.push(needRow('wait', 'Not checked', 'Transfers', 'Could not load the open transfers.', 'transfers', 'Open Transfers'));
@@ -272,6 +283,125 @@
     var ok = clear.length || !(failed || stale) ? '<p class="dsh-clear"><span class="dsh-dot" aria-hidden="true"></span>' + (clear.length ? 'Nothing waiting for ' + esc(clear.join(', ').replace(/, ([^,]*)$/, ' or $1')) + '. ' : '') + (failed || stale ? '' : 'The nightly run finished.') + '</p>' : '';
     return '<section class="dsh-panel dsh-needs" aria-label="Needs you"><div class="dsh-panel-head"><h3 class="a-ch-h">Needs you</h3><span class="hint">' + (rows.length ? rows.length + ' to look at' : 'All clear') + '</span></div>' +
       (rows.length ? '<ul class="dsh-need-list">' + rows.join('') + '</ul>' : '') + ok + '</section>';
+  }
+
+  /* ---------- The week ahead: functions, order cut-offs and how busy each weekday usually is ---------- */
+  function usual() {
+    // written prep lines per weekday, the last 28 finished days of the nightly numbers
+    var rows = state.data.days.slice(-28), sumW = [0, 0, 0, 0, 0, 0, 0], cnt = [0, 0, 0, 0, 0, 0, 0];
+    rows.forEach(function (r) { var d = dow(r.day); sumW[d] += r.p.w; cnt[d]++; });
+    var avg = sumW.map(function (v, i) { return cnt[i] ? v / cnt[i] : null; }), have = avg.filter(function (v) { return v != null; });
+    var mean = have.length ? have.reduce(function (a, b) { return a + b; }, 0) / have.length : 0;
+    return { avg: avg, max: Math.max.apply(null, have.concat([1])), mean: mean };
+  }
+  function weekHTML() {
+    var w = api.week ? api.week() : null;
+    if (!w) return '';
+    var u = usual(), body = w.days.map(function (d, i) {
+      var name = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : DAYS[d.dow];
+      var items = d.fns.map(function (f) {
+        return '<li class="dsh-wk-fn"><span class="dsh-wk-kind">' + (f.draft ? 'Draft' : 'Function') + '</span><a href="#/fn/' + encodeURIComponent(f.id) + '">' + esc(f.name) + '</a>' +
+          (f.start ? ', ' + esc(f.start) : '') + ', ' + (f.guests == null ? 'guests not known yet' : f.guests + ' guests') + '</li>';
+      }).concat((d.cuts || []).map(function (c) { return '<li class="dsh-wk-cut"><span class="dsh-wk-kind">Cut-off</span>' + esc(c.name) + ' ' + esc(c.at) + ', ' + esc(c.what) + '</li>'; }));
+      var a = u.avg[d.dow], busy = a != null && u.mean && a >= u.mean * 1.2;
+      if (busy) items.push('<li class="dsh-wk-busy"><span class="dsh-wk-kind">Usually busy</span>About ' + Math.round(a) + ' prep lines</li>');
+      return '<li class="dsh-wk-day"><p class="dsh-wk-d">' + esc(name) + '<small>' + esc(dayLabel(d.day)) + '</small></p>' +
+        (items.length ? '<ul>' + items.join('') + '</ul>' : '<p class="dsh-wk-none">Nothing booked</p>') +
+        (a != null ? '<span class="dsh-wk-load" role="img" aria-label="' + esc('Usual prep load on ' + DAYS[d.dow] + ': about ' + Math.round(a) + ' lines') + '"><i style="width:' + Math.round(100 * a / u.max) + '%"></i></span>' : '<span></span>') + '</li>';
+    }).join('');
+    var note = w.fns === 'error' ? '<p class="p-err" role="status">Could not load the functions. The days below show cut-offs only.</p>' :
+      w.fns === 'offline' ? '<p class="hint" role="status">No signal. Functions show when the phone is back online.</p>' :
+      w.fns === 'loading' ? '<p class="hint" role="status">Loading the functions...</p>' : w.fns === 'none' ? '<p class="hint">Functions are not loaded on this device.</p>' : '';
+    var cutNote = w.days[0].cuts === null ? '<p class="hint">Cut-offs could not be worked out on this device.</p>' : '';
+    return '<section class="dsh-panel dsh-week" aria-label="The week ahead"><div class="dsh-panel-head"><h3 class="a-ch-h">The week ahead</h3><span class="dsh-wk-links"><a class="dsh-more" href="#/fn">Functions</a><button type="button" class="dsh-more" data-dsh="open" data-t="cutoffs">Cut-offs</button></span></div>' +
+      note + cutNote + '<p class="dsh-legend"><span><i class="dsh-c-load"></i>Usual prep load for the weekday, last 4 weeks</span></p><ul class="dsh-wk">' + body + '</ul></section>';
+  }
+
+  /* ---------- The watch list: pinned sections, wasted items and people, with their trend (4 Nov 2026) ---------- */
+  var WATCH_MAX = 12, WATCH_KINDS = [['sec', 'Section'], ['item', 'Wasted item'], ['person', 'Person']];
+  // Every key from Firestore is checked: a known kind, a short string, no repeats, at most 12.
+  function cleanWatch(d) {
+    var list = d && Array.isArray(d.list) ? d.list : [], out = [];
+    list.forEach(function (k) { if (typeof k === 'string' && k.length <= 200 && /^(sec|item|person):./.test(k) && out.indexOf(k) < 0 && out.length < WATCH_MAX) out.push(k); });
+    return { list: out, v: d && typeof d.v === 'number' && d.v >= 0 ? Math.floor(d.v) : 0 };
+  }
+  function watchParts(k) { var i = k.indexOf(':'); return { t: k.slice(0, i), v: k.slice(i + 1) }; }
+  function personName(id) { var p = (api.people ? api.people() : []).filter(function (x) { return x.id === id; })[0]; return p ? p.name : ''; }
+  function itemKey(i) { return (i.t.toLowerCase() + '|' + i.u.toLowerCase()).slice(0, 190); }
+  function itemOptions() {
+    var m = {};
+    state.data.days.forEach(function (r) { r.w.items.forEach(function (i) { var k = itemKey(i), a = m[k] = m[k] || { k: k, label: i.t + (i.u ? ' (' + i.u + ')' : ''), n: 0 }; a.n += i.n; }); });
+    return Object.keys(m).map(function (k) { return m[k]; }).sort(function (a, b) { return b.n - a.n || (a.label < b.label ? -1 : 1); });
+  }
+  function watchOptions(t) {
+    if (t === 'sec') {
+      var secs = (api.sections ? api.sections() : []).slice();
+      state.data.days.forEach(function (r) { Object.keys(r.p.sec).forEach(function (k) { if (secs.indexOf(k) < 0) secs.push(k); }); });
+      return secs.map(function (x) { return { k: 'sec:' + x, label: x }; });
+    }
+    if (t === 'item') return itemOptions().map(function (o) { return { k: 'item:' + o.k, label: o.label }; });
+    return (api.people ? api.people() : []).filter(function (p) { return p.id; }).map(function (p) { return { k: 'person:' + p.id, label: p.name || 'Unnamed' }; });
+  }
+  function watchLabel(k) {
+    var w = watchParts(k);
+    if (w.t === 'sec') return w.v;
+    if (w.t === 'person') return personName(w.v) || 'Former team member';
+    var o = itemOptions().filter(function (x) { return x.k === w.v; })[0];
+    return o ? o.label : w.v.split('|')[0];
+  }
+  function watchSeries(k, rows) {
+    var w = watchParts(k);
+    if (w.t === 'sec') return rows.map(function (r) { return r.p.sec[w.v] || 0; });
+    if (w.t === 'person') return rows.map(function (r) { return r.p.who[w.v] || 0; });
+    return rows.map(function (r) { return sum(r.w.items.filter(function (i) { return itemKey(i) === w.v; }), function (i) { return i.n; }); });
+  }
+  function watchLine(k, cur, prev, len) {
+    var w = watchParts(k), tot = sum(watchSeries(k, cur), function (x) { return x; }), was = prev ? sum(watchSeries(k, prev), function (x) { return x; }) : null;
+    var before = was == null ? '' : ' The ' + len + ' days before: ' + was + '.';
+    if (w.t === 'sec') {
+      var t = median(allMins(cur, w.v)), wl = sum(cur, function (r) { return r.w.sec[w.v] || 0; });
+      return num(tot / cur.length) + ' prep lines a day' + (t != null ? ', typical ' + dur(t) + ' to tick' : '') + ', ' + wl + ' waste line' + (wl === 1 ? '' : 's') + '.' + (was == null ? '' : ' The ' + len + ' days before: ' + num(was / prev.length) + ' lines a day.');
+    }
+    if (w.t === 'person') return tot + ' line' + (tot === 1 ? '' : 's') + ' ticked off.' + before;
+    var amt = {}; cur.forEach(function (r) { r.w.items.forEach(function (i) { if (itemKey(i) === w.v && i.a) amt[i.u] = (amt[i.u] || 0) + i.a; }); });
+    var a = Object.keys(amt).map(function (u) { return num(amt[u]) + (u ? ' ' + u : ''); }).join(', ');
+    return tot + ' waste line' + (tot === 1 ? '' : 's') + (a ? ', ' + a : '') + '.' + before;
+  }
+  function watchHTML(cur, prev, len) {
+    var w = state.watch, head = '<div class="dsh-panel-head"><h3 class="a-ch-h">Watch list</h3><span class="hint">' + (w && w.list ? w.list.length + ' of ' + WATCH_MAX : '') + '</span></div>';
+    var msg = state.msg ? '<p class="' + (/^Could not|^Not saved/.test(state.msg) ? 'p-err' : 'hint') + '" role="status">' + esc(state.msg) + '</p>' : '';
+    if (w === undefined) return '<section class="dsh-panel dsh-watch" aria-label="Watch list">' + head + '<p class="hint" role="status">Loading the watch list...</p></section>';
+    if (w === 'error') return '<section class="dsh-panel dsh-watch" aria-label="Watch list">' + head + '<p class="p-err" role="status">Could not load the watch list. Tap Refresh to try again.</p></section>';
+    var rows = w.list.map(function (k, i) {
+      var kind = (WATCH_KINDS.filter(function (x) { return x[0] === watchParts(k).t; })[0] || ['', ''])[1];
+      return '<li class="dsh-wl"><div><p class="dsh-tag dsh-tag-flat">' + esc(kind) + '</p><p class="dsh-need-title">' + esc(watchLabel(k)) + '</p><p class="dsh-need-detail">' + esc(watchLine(k, cur, prev, len)) + '</p></div>' +
+        spark(len === 90 ? weeks(cur).map(function (g) { return sum(watchSeries(k, g), function (x) { return x; }); }) : watchSeries(k, cur)) +
+        '<button type="button" class="btn" data-dsh="unwatch" data-v="' + i + '"' + (state.saving ? ' disabled' : '') + ' aria-label="' + esc('Stop watching ' + watchLabel(k)) + '">Remove</button></li>';
+    }).join('');
+    var add = '';
+    if (state.add) {
+      var q = state.add.q.toLowerCase(), opts = watchOptions(state.add.t).filter(function (o) { return w.list.indexOf(o.k) < 0 && (!q || o.label.toLowerCase().indexOf(q) >= 0); });
+      add = '<div class="dsh-wl-add" role="group" aria-label="Add to the watch list"><div class="dsh-periods">' + WATCH_KINDS.map(function (x) { return '<button type="button" class="chip" data-dsh="watch-type" data-v="' + x[0] + '" aria-pressed="' + (state.add.t === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+        '<label class="label" for="dsh-watch-q">Find</label><input class="search" id="dsh-watch-q" data-k="dsh-watch-q" autocomplete="off" value="' + esc(state.add.q) + '">' +
+        (opts.length ? '<ul class="dsh-wl-opts">' + opts.slice(0, 8).map(function (o) { return '<li><button type="button" class="chip" data-dsh="watch-pick" data-v="' + esc(o.k) + '"' + (state.saving ? ' disabled' : '') + '>' + esc(o.label) + '</button></li>'; }).join('') + '</ul>' + (opts.length > 8 ? '<p class="hint">' + (opts.length - 8) + ' more. Type to narrow the list.</p>' : '') : '<p class="hint">Nothing to add here.</p>') +
+        '<div class="btn-row"><button type="button" class="btn" data-dsh="watch-cancel">Done</button></div></div>';
+    }
+    var addBtn = !state.add && w.list.length < WATCH_MAX ? '<button type="button" class="btn" data-dsh="watch-add"' + (state.saving ? ' disabled' : '') + '>Add to the watch list</button>' : '';
+    return '<section class="dsh-panel dsh-watch" aria-label="Watch list">' + head + msg +
+      (rows ? '<ul class="dsh-wl-list">' + rows + '</ul>' : '<p class="hint">Pin a section, a wasted item or a person to follow its trend here.</p>') + add + addBtn + '</section>';
+  }
+  function watchSet(list, done) {
+    if (state.saving || !state.watch || state.watch === 'error') return;
+    state.saving = true; state.msg = 'Saving...'; redraw();
+    api.watchSave(list, state.watch.v).then(function (v) {
+      if (!valid()) return;
+      state.saving = false; state.watch = { list: list, v: v }; state.msg = done; redraw();
+    }, function (e) {
+      if (!valid()) return;
+      state.saving = false;
+      state.msg = e && e.code === 'stale' ? 'Not saved: the watch list changed on another device. Tap Refresh, then try again.' : 'Could not save the watch list. Check the signal and try again.';
+      redraw();
+    });
   }
 
   /* ---------- the page ---------- */
@@ -299,7 +429,7 @@
     charts = {};
     return head + freshHTML() + '<p class="hint dsh-range">' + esc(dayLabel(cur[0].day) + ' to ' + dayLabel(cur[cur.length - 1].day)) +
       (have < len ? '. Only ' + have + ' finished days so far.' : prev ? ', compared with the ' + len + ' days before.' : '. The nightly run keeps 90 days, so there is no earlier period to compare.') + ' Today is counted tonight.</p>' +
-      headlinesHTML() + tilesHTML(cur, have >= len ? prev : null, len) + needsHTML() +
+      headlinesHTML() + tilesHTML(cur, have >= len ? prev : null, len) + '<div class="dsh-pair">' + needsHTML() + weekHTML() + '</div>' + watchHTML(cur, have >= len ? prev : null, len) +
       '<div class="dsh-grid">' + lineHTML(cur, len) + reasonsHTML(cur, have >= len ? prev : null) + heatHTML(cur) + itemsHTML(cur, have >= len ? prev : null) + '</div></section>';
   }
 
@@ -350,8 +480,24 @@
     if (!valid()) return;
     var a = el.getAttribute('data-dsh');
     if (a === 'period') { var v = +el.getAttribute('data-v'); if ([7, 30, 90].indexOf(v) >= 0) { state.period = v; redraw(); } return; }
-    if (a === 'refresh') { if (!state.loading) { state.data = undefined; load(true); redraw(); } return; }
-    if (a === 'open') { var t = el.getAttribute('data-t'); if (['insights', 'waste', 'transfers', 'mail', 'minutes'].indexOf(t) >= 0) api.open(t, state.period); }
+    if (a === 'refresh') { if (!state.loading) { state.data = undefined; state.msg = ''; load(true); redraw(); } return; }
+    if (a === 'watch-add') { state.add = { t: 'sec', q: '' }; state.msg = ''; redraw(); return; }
+    if (a === 'watch-cancel') { state.add = null; redraw(); return; }
+    if (a === 'watch-type') { var t = el.getAttribute('data-v'); if (state.add && WATCH_KINDS.some(function (x) { return x[0] === t; })) { state.add.t = t; state.add.q = ''; redraw(); } return; }
+    if (a === 'watch-pick') {
+      var k = el.getAttribute('data-v') || '', w = state.watch;
+      if (!w || w === 'error' || w.list.indexOf(k) >= 0 || w.list.length >= WATCH_MAX || !/^(sec|item|person):./.test(k) || k.length > 200) return;
+      watchSet(w.list.concat([k]), 'Added ' + watchLabel(k) + ' to the watch list.'); return;
+    }
+    if (a === 'unwatch') {
+      var i = +el.getAttribute('data-v'), w2 = state.watch;
+      if (!w2 || w2 === 'error' || !(i >= 0 && i < w2.list.length)) return;
+      var gone = watchLabel(w2.list[i]);
+      watchSet(w2.list.filter(function (x, j) { return j !== i; }), 'Stopped watching ' + gone + '.'); return;
+    }
+    if (a === 'open') { var t = el.getAttribute('data-t'); if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references', 'training'].indexOf(t) >= 0) api.open(t, state.period); }
   }
+  // Typing in the watch list's Find box narrows the choices (the admin panel keeps focus and cursor through redraws).
+  document.addEventListener('input', function (e) { if (valid() && state.add && e.target && e.target.id === 'dsh-watch-q') { state.add.q = String(e.target.value || '').slice(0, 80); redraw(); } });
   window.LK_DASH = { API: API, render: render, click: click, reset: reset };
 })();
