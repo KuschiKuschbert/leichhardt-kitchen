@@ -345,6 +345,19 @@ row('js/prep.js shared tick: reported worker differs from the authenticated reco
 // an untick (canUntick()): a chef any time (canBrowse()), or the person who ticked it within 2 minutes. tickNow() then
 // takes the tick off that person's tally, a write of its own (activity/<doneById>, ticked - 1)
 const UNTICK = { done: false, doneBy: '', doneById: '', doneAt: 0, preparedBy: '', preparedById: '', preparedAt: 0 };
+// I'm on it (5 Nov 2026): the first tap stamps who is on a prep line, the second ticks it and clears the stamp
+row('js/prep.js stampNow(): I\'m on it, my name on an open prep line', { ok: TICKS, asks: TICKS,
+  prep: r => put({ [`days/${TODAY}/items/${MINE(r)}`]: line() }),
+  run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { onBy: NAME[r], onById: w, onAt: Date.now() }]]) });
+row('js/prep.js ptSave() Who\'s on it?: the shared device stamps the cook picked', { ok: TICKS, asks: ['tab'],
+  prep: r => put({ [`days/${TODAY}/items/${MINE(r)}`]: line() }),
+  run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { onBy: 'Ann', onById: 'ann', onAt: Date.now() }]]) });
+row('js/prep.js stampNow(): I\'m on it, on a function\'s platter line', { ok: TICKS, asks: TICKS,
+  prep: r => put({ [`days/${TODAY}/items/fn-st${r}-pizza`]: Object.assign(pline('st' + r), { deleted: false, addedBy: 'Fay', addedById: 'fay', addedAt: NOW - 3 * DAY, by: 'fay' }) }),
+  run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/fn-st${r}-pizza`, { onBy: NAME[r] || 'Kit', onById: w, onAt: Date.now() }]]) });
+row('js/prep.js tickNow(): the second tap ticks a stamped line and clears the stamp', { ok: TICKS, asks: TICKS,
+  prep: (r, w) => put({ [`days/${TODAY}/items/${MINE(r)}`]: line({ onBy: NAME[r] || 'Kit', onById: w, onAt: NOW - 60000 }) }),
+  run: (db, w, r) => { const stamp = Date.now(); return W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { done: true, doneBy: NAME[r], doneById: w, doneAt: stamp, preparedBy: NAME[r], preparedById: w, preparedAt: stamp, onBy: '', onById: '', onAt: 0 }]]); } });
 row('js/prep.js tickNow(): a chef unticks a line Ann ticked 10 minutes ago', { ok: CHEFS, asks: CHEFS,
   prep: r => put({ [`days/${TODAY}/items/u-${r}`]: line({ done: true, doneBy: 'Ann', doneById: 'ann', doneAt: Date.now() - 10 * MIN }) }),
   run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/u-${r}`, UNTICK]]) });

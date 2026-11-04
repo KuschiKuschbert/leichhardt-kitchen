@@ -28,7 +28,7 @@ const meta = (p, id) => p.evaluate(sel => {
     ok(!!m && /^Ann \d\d:\d\d$/.test(m.text) && m.under && m.shown, w + ' px prep: "Ann 08:10" on a small line under the words (' + JSON.stringify(m) + ')');
     if (w === 390) {
       const before = m.height;
-      await L.tap(p, '[data-p="tick"][data-id="s4p"]'); await L.settle(p, 500);
+      await L.tickPrep(p, '[data-p="tick"][data-id="s4p"]'); await L.settle(p, 500);
       m = await meta(p, 's4p');
       ok(!!m && /^Sam \d\d:\d\d$/.test(m.text) && Math.abs(m.height - before) < 1, 'prep: ticked, the second line says who prepared it and the row keeps its height (' + before + ' to ' + (m && m.height) + ')');
     }

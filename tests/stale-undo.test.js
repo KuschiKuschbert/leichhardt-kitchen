@@ -13,7 +13,7 @@ const item = (p, id) => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['d
   // 1. a tick that fails: the line stays unticked and no Undo for it is offered
   let p = await L.open(b, '#/prep', { wait: 1500 });
   await p.evaluate(() => { window.__fake.mode = 'fail'; });
-  await L.tap(p, '[data-p="tick"][data-id="i3"]'); await L.settle(p, 800);
+  await L.tickPrep(p, '[data-p="tick"][data-id="i3"]'); await L.settle(p, 800);
   ok((await item(p, 'i3')).done !== true, 'failed tick: the line is not ticked');
   ok(/Not saved/.test(await txt(p, '.p-toast:not(.p-toast-old)') || ''), 'failed tick: the toast says Not saved');
   const stale = await p.$('.p-toast-old [data-p="toast-old"]');
@@ -26,7 +26,7 @@ const item = (p, id) => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['d
 
   // 2. Undo after the line was unticked elsewhere does nothing (it used to tick it again)
   p = await L.open(b, '#/prep', { wait: 1500 });
-  await L.tap(p, '[data-p="tick"][data-id="i1"]'); await L.settle(p, 400);
+  await L.tickPrep(p, '[data-p="tick"][data-id="i1"]'); await L.settle(p, 400);
   ok((await item(p, 'i1')).done === true, 'tick: the line is ticked');
   const k = fsKey(['days', today, 'items', 'i1']);
   await p.evaluate(key => { const d = Object.assign({}, window.__fake.dump()[key], { done: false, doneBy: '', doneById: '', doneAt: 0, preparedBy: '', preparedById: '', preparedAt: 0 }); window.__fake.write(key, d); }, k);
@@ -40,7 +40,7 @@ const item = (p, id) => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['d
 
   // 3. the older Undo outlives a short toast after it
   p = await L.open(b, '#/prep', { wait: 1500 });
-  await L.tap(p, '[data-p="tick"][data-id="i6"]'); await L.settle(p, 300);
+  await L.tickPrep(p, '[data-p="tick"][data-id="i6"]'); await L.settle(p, 300);
   await p.evaluate(() => window.LK_PREP.toast('Copied to the order list.'));
   await L.settle(p, 200);
   ok(await p.$('.p-toast-old [data-p="toast-old"]') !== null, 'short toast: the earlier Undo shows as a chip above it');
@@ -58,7 +58,7 @@ const item = (p, id) => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['d
   const busy = {};
   for (let i = 0; i < 14; i++) busy[fsKey(['days', today, 'items', 'm' + i])] = { text: 'Mise ' + i, station: 'Larder', qty: '', recipe: '', addedBy: 'Sam', addedById: 'sam', addedAt: L.NOW - (90 - i) * 60000, done: false, deleted: false };
   p = await L.open(b, '#/prep', { wait: 1500, extra: busy });
-  await L.tap(p, '[data-p="tick"][data-id="i2"]'); await L.settle(p, 300);
+  await L.tickPrep(p, '[data-p="tick"][data-id="i2"]'); await L.settle(p, 300);
   await p.evaluate(() => window.LK_PREP.toast('Copied to the order list.'));
   await p.clock.runFor(1000); await L.settle(p, 200);
   // a thumb keeps moving: up to four scrolls of 400 px, so a first scroll the page counts as moving to the box, or a page
