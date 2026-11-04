@@ -65,7 +65,8 @@ async function gate(p, kind) {
       ok(await p.locator(confirm + ' [data-update="keep"]').evaluate(el => el === document.activeElement), 'phone confirmation wraps keyboard focus back to Keep working');
     }
     await p.click(confirm + ' [data-update="keep"]');
-    ok(!(await reloaded(p)) && await p.inputValue('#p-text') === 'Keep this unfinished prep line', label + ': Keep working preserves the actual draft');
+    // the draft from the page's state: reading the box would open the Add a line sheet and move the focus
+    ok(!(await reloaded(p)) && await p.evaluate(() => LK_PREP.state.text) === 'Keep this unfinished prep line', label + ': Keep working preserves the actual draft');
     ok(await p.evaluate(() => document.activeElement === document.querySelector('.upd-bar button')), label + ': dismissing the dialog restores focus to Update now');
     await p.click('.upd-bar button');
     await p.keyboard.press('Escape');

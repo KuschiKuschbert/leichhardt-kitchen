@@ -725,17 +725,11 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .nb-dw { opacity: .65; font-size: .82rem; }
 .nb-undo { min-height: 32px; padding: 0 .6rem; align-self: center; }
 
-/* Start here, usual amounts, waste review note on the prep list */
-.nb-start, .nb-flag { margin: 0 0 12px; padding: 8px 10px 10px; border: 2px solid var(--ink); border-radius: 8px; background: #FFFEFA; }
+/* Closing soon, Pace and the waste review note on the prep list */
+.nb-flag { margin: 0 0 12px; padding: 8px 10px 10px; border: 2px solid var(--ink); border-radius: 8px; background: #FFFEFA; }
 .nb-flag { border-color: var(--accent-ink); background: #FFF6EF; }
 .nb-flag p { margin: 2px 0 2px; font-weight: 600; }
 .nb-sl { display: block; font: 700 0.75rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-ink); }
-.nb-start ol { margin: 4px 0 0; padding: 0; list-style: none; counter-reset: sh; }
-.nb-start li { counter-increment: sh; }
-.nb-sb { display: grid; grid-template-columns: 1.6rem 1fr; column-gap: 6px; width: 100%; min-height: 44px; padding: 4px 0; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; cursor: pointer; }
-.nb-start li:first-child .nb-sb { border-top: 0; }
-.nb-sb::before { content: counter(sh); grid-row: 1 / span 2; align-self: center; display: inline-flex; align-items: center; justify-content: center; width: 1.4rem; height: 1.4rem; border-radius: 50%; background: var(--ink); color: #fff; font: 700 0.8rem var(--display); }
-.nb-st { font-weight: 600; }
 .nb-sw { font-size: 0.8125rem; color: var(--muted); }
 .nb-row.is-flash { animation: nbflash 1.6s ease-out; }
 @keyframes nbflash { 0%, 30% { background: #FFE2CC; } 100% { background: transparent; } }
@@ -1158,20 +1152,14 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .o-page .nb-body { overflow: visible; min-height: 0; }
 .w-review { max-width: 46rem; }
 
-/* Prep list on big screens: show more lines. The notebook page uses the screen height (no 780 px cap), Start here, Closing soon and the waste review note move to the Handy page (.nb-start-r, .nb-rc), the add row is one line, and lines are a little tighter for a mouse or a keyboard. Phones and tablets keep the big touch rows, with the Quick add chips in the add box only (Handy's copy, .nb-quick, is for big screens). */
-.nb-start-r, .nb-rc { display: none; }
-details.nb-start-l > summary .nb-sl { white-space: nowrap; flex: 0 0 auto; }
-details.nb-start-l > summary { display: flex; align-items: center; gap: 0.6rem; min-height: 44px; cursor: pointer; list-style: none; }
-details.nb-start-l > summary::-webkit-details-marker { display: none; }
-details.nb-start-l > summary::after { content: '+'; margin-left: auto; font: 700 1.2rem var(--body); }
-details.nb-start-l[open] > summary::after { content: '\2212'; }
-.nb-sline { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-.nb-donejump, .nb-qadd { display: none; }
-@media (max-width: 899px) { .nb-donejump { display: inline-flex; } .nb-qadd { display: block; margin-top: 0.6rem; } .nb-side .nb-quick, .nb-qsub { display: none; } }
+/* Prep list on big screens: show more lines. The notebook page uses the screen height (no 780 px cap), Closing soon and the waste review note move to the Handy page (.nb-rc), the add row is one line, and lines are a little tighter for a mouse or a keyboard. Phones and tablets keep the big touch rows, with the Quick add chips in the add box only (Handy's copy, .nb-quick, is for big screens). */
+.nb-rc { display: none; }
+.nb-qadd { display: none; }
+@media (max-width: 899px) { .nb-qadd { display: block; margin-top: 0.6rem; } .nb-side .nb-quick, .nb-qsub { display: none; } }
 .nb-hint:empty { display: none; }
 @media (min-width: 900px) {
-  .nb-start-l, .nb-lc { display: none; }
-  .nb-start-r, .nb-rc { display: block; }
+  .nb-lc { display: none; }
+  .nb-rc { display: block; }
   .nb-page { height: max(30rem, calc(100vh - 16.5rem)); height: max(30rem, calc(100dvh - 16.5rem)); }
   .nb-left { flex: 3 1 0; }
   .nb-right { flex: 2 1 0; }
@@ -3439,7 +3427,7 @@ html:has(.w-sheet, .tr-sheet, .p-sheet, .o-sheet) .p-toasts { top: calc(12px + e
 
 /* Prep, Clean notebook (3 Nov 2026, work pages redesign A): the list first. Add a line opens the add form as a sheet
    (.p-sheet, the same size as the wastage and transfer sheets); on a phone the button floats above the tab bar, in thumb
-   reach. "3 of 13 done" is the way to Done today. Start here is numbered on the lines (.nb-num), and the lines written
+   reach. "3 of 13 done" is the way to Done today. Start here is numbered on the lines (.nb-t[data-n]), and the lines written
    after tonight's list was started sit last under Tonight, for tomorrow. */
 .nb-ph .nb-addline { min-height: 44px; padding: 0 1rem; }
 @media (max-width: 719px) {
@@ -3447,7 +3435,7 @@ html:has(.w-sheet, .tr-sheet, .p-sheet, .o-sheet) .p-toasts { top: calc(12px + e
   .nb-wrap { padding-bottom: 76px; }
 }
 button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
-.nb-num { display: inline-flex; align-items: center; justify-content: center; min-width: 1.45em; height: 1.45em; margin-right: 0.35em; border-radius: 50%; background: var(--accent-ink); color: #fff; font: 700 0.62em var(--body); vertical-align: 0.2em; }
+.nb-t[data-n]::before { content: attr(data-n); content: attr(data-n) / ''; display: inline-flex; align-items: center; justify-content: center; min-width: 1.45em; height: 1.45em; margin-right: 0.35em; border-radius: 50%; background: var(--accent-ink); color: #fff; font: 700 0.62em var(--body); vertical-align: 0.2em; }
 .nb-why { display: inline-block; padding: 0 6px; border: 1.5px solid var(--muted); border-radius: 999px; font: 600 0.75rem var(--body); color: var(--muted); white-space: nowrap; }
 .nb-hd-tonight { margin-top: 0.8rem; border-top: 2px dashed var(--rule); padding-top: 0.5rem; }
 .nb-tonight-sd { margin: 0 0 0.3rem; }

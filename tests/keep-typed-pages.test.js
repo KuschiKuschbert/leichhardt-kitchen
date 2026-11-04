@@ -272,7 +272,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
   });
   await safe('section hand-over', async () => {
     p = await L.open(b, '#/prep', { who: 'sam', settings: { shared: true }, wait: 1500 });
-    await L.waitFor(p, () => !!document.querySelector('#p-section'), null, 8000);
+    await L.waitFor(p, () => !!document.querySelector('[data-p="write"]'), null, 8000); await L.pLog(p);
     await p.fill('#p-section', 'Larder'); await p.fill('#p-text', 'Peel garlic');
     await p.press('#p-text', 'Enter'); await L.settle(p, 500);
     ok(await p.inputValue('#p-section') === 'Larder', 'section hand-over: the section typed stays for Sam\'s next line');
@@ -280,7 +280,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     await L.waitFor(p, () => !!document.querySelector('.p-name[data-id="bo"]'), null, 8000);
     await p.click('.p-name[data-id="bo"]'); await L.settle(p, 300);
     await p.fill('#pf1', '3333'); await L.settle(p, 1500);
-    await L.waitFor(p, () => !!document.querySelector('#p-section'), null, 8000);
+    await L.waitFor(p, () => !!document.querySelector('[data-p="write"]'), null, 8000); await L.pLog(p);
     ok(await S(p, () => window.LK_PREP.state.who) === 'bo' && await p.inputValue('#p-section') === '' && !(await S(p, () => window.LK_PREP.state.secTyped)), 'section hand-over: Bo\'s Section box does not hold Sam\'s Larder (' + await p.inputValue('#p-section') + ')');
     ok(p.errors.length === 0, 'section hand-over: no page errors ' + p.errors.join(' | '));
     await p.context().close();
@@ -301,6 +301,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     await safe(label, async () => {
       p = await L.open(b, hash, { who, wait: 1500 });
       if (sel === '#w-text') await L.wLog(p); else if (sel === '#w-ra') await L.wReview(p); else if (sel === '#tr-text') await L.xLog(p);
+      else if (hash === '#/prep') { await L.waitFor(p, () => !!document.querySelector('[data-p="write"]'), null, 8000); await L.pLog(p); }
       await L.waitFor(p, s => !!document.querySelector(s), sel, 8000);
       ok(!(await asks(p)), label + ': nothing typed, a reload does not ask');
       await p.fill(sel, words); await L.settle(p, 150);

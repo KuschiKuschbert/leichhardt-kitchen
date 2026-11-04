@@ -75,7 +75,7 @@ async function open(b, options = {}) {
     // 3 Nov 2026 (work pages redesign A): Add a line opens the form as a sheet, and Start here is numbered on the lines
     ok(await visible(p, '.nb-tabs') && await visible(p, '[data-p="write"]') && !!(await p.$('.nb-right #nb-donebox')), width + ': native sections, Add a line and Handy remain');
     if (width === 390) {
-      ok((await p.$$('.nb-row .nb-num')).length > 0 && !(await p.$('.nb-start')), 'phone: Start here numbered on the lines');
+      ok((await p.$$('.nb-row .nb-t[data-n]')).length > 0 && !(await p.$('.nb-start')), 'phone: Start here numbered on the lines');
       await L.pLog(p); ok(await visible(p, '.nb-qadd [data-p="quick"]'), 'phone: normal Quick add remains, in the Add a line sheet');
       await p.keyboard.press('Escape'); await L.settle(p, 200);
     }
