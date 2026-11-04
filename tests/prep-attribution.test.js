@@ -72,8 +72,13 @@ async function open(b, options = {}) {
     const before = await p.evaluate(() => ({ rows: [...document.querySelectorAll('.nb-left .nb-row')].map(e => e.id),
       second: document.querySelector('#nbr-i2').getBoundingClientRect().top + scrollY,
       folded: localStorage.getItem('lk.fn.fold'), band: document.querySelector('#fn-band').textContent }));
-    ok(await visible(p, '.nb-tabs') && await visible(p, '#p-text') && !!(await p.$('.nb-right #nb-donebox')), width + ': native sections, Add and Handy remain');
-    if (width === 390) ok(!!(await p.$('details.nb-start-l:not([open])')) && await visible(p, '.nb-qadd [data-p="quick"]'), 'phone: collapsed Start here and normal Quick add remain');
+    // 3 Nov 2026 (work pages redesign A): Add a line opens the form as a sheet, and Start here is numbered on the lines
+    ok(await visible(p, '.nb-tabs') && await visible(p, '[data-p="write"]') && !!(await p.$('.nb-right #nb-donebox')), width + ': native sections, Add a line and Handy remain');
+    if (width === 390) {
+      ok((await p.$$('.nb-row .nb-num')).length > 0 && !(await p.$('.nb-start')), 'phone: Start here numbered on the lines');
+      await L.pLog(p); ok(await visible(p, '.nb-qadd [data-p="quick"]'), 'phone: normal Quick add remains, in the Add a line sheet');
+      await p.keyboard.press('Escape'); await L.settle(p, 200);
+    }
     await tick(p);
     ok(await p.evaluate(() => LK_PREP.unsavedHere()), width + ': open picker keeps the existing update/draft guard active');
     const shape = await p.evaluate(() => {

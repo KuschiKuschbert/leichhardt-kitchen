@@ -176,7 +176,7 @@
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinOff: false, pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: (lsGet('lk.dash.intro') && lsGet('lk.prep.atab')) || 'dashboard', ordDate: dayNow(), ordLines: [], ordState: 'idle', ordView: 'day', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
-    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, xLog: false, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
+    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
     adminsFor: '', adminsOff: null, level: '', stats: null, statsRange: 14, week: null, weekAt: 0, weekBusy: false,
@@ -1336,7 +1336,7 @@
     if (window.LK_MG && window.LK_MG.drop) window.LK_MG.drop(); if (window.LK_FE && window.LK_FE.drop) window.LK_FE.drop();
     if (window.LK_UX) window.LK_UX.close();
     if (S.sheet) { S.sheet = ''; ovDone('reason'); } S.section = ''; S.secTyped = false;
-    if (S.wLog || S.wRv || S.xLog) { S.wLog = S.wRv = S.xLog = false; ovDone('wsheet'); }
+    if (S.wLog || S.wRv || S.xLog || S.pLog) { S.wLog = S.wRv = S.xLog = S.pLog = false; ovDone('wsheet'); }
     sessDrop(); ksClose(); noteClose('shut'); lmClose(); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; S.gf = null; S.gfSnap = ''; S.cutDraft = null; S.cutSnap = ''; S.bulk = ''; S.wrA = S.wrC = S.wpA = S.wpC = null; S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; tdReset(); dkf = null; dkSnap = ''; dkEditing = false; dkMsg = ''; dkOpen = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings and Manage staff (22 Oct 2026: the Minutes register is "See who has signed" at
@@ -1439,7 +1439,7 @@
     if (S.notesOpen && !nfDirty()) S.notesOpen = false;
     if (S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; }
   }
-  window.addEventListener('hashchange', function () { if (location.hash !== '#/prep') leftPrep(); if (S.sheet) wasteSheetClose(true); if ((S.wLog || S.wRv) && location.hash !== '#/waste' || S.xLog && location.hash !== '#/transfers') wSheetClose(true); });
+  window.addEventListener('hashchange', function () { if (location.hash !== '#/prep') leftPrep(); if (S.sheet) wasteSheetClose(true); if ((S.wLog || S.wRv) && location.hash !== '#/waste' || S.xLog && location.hash !== '#/transfers' || S.pLog && location.hash !== '#/prep') wSheetClose(true); });
   function chefOpen(k) {
     if (!isSous()) return;
     if (adminTabs()) { S.atab = k === 'pings' ? 'notes' : k === 'register' ? 'minutes' : 'people'; lsSet('lk.prep.atab', S.atab); if (location.hash === '#/admin') draw(); else location.hash = '#/admin'; return; }
@@ -2185,17 +2185,15 @@
     take(open.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }), function (x) { return x.addedAt ? 'Waiting since ' + clock(x.addedAt) : 'Waiting longest'; });
     return picked;
   }
-  /* Start here is drawn twice: above the lines on phones and tablets (nb-start-l), and at the top of the Handy page on big screens (nb-start-r), so it does not push the lines down. CSS shows one of the two. */
-  function startHTML(live, side) {
-    if (!can('tick') || S.date !== dayNow()) return '';
-    if (live.filter(function (x) { return !x.done; }).length < 4) return '';
-    var l = startHere(live);
-    var ol = '<ol>' + l.map(function (o) {
-      return '<li><button type="button" class="nb-sb" data-p="goto" data-id="' + esc(o.x.id) + '"><span class="nb-st">' + esc(o.x.text) + (o.x.qty ? ' <span class="nb-q">' + esc(o.x.qty) + '</span>' : '') + '</span><span class="nb-sw">' + esc(o.why) + (o.x.station ? ' &middot; ' + esc(o.x.station) : '') + '</span></button></li>';
-    }).join('') + '</ol>';
-    if (side) return '<div class="nb-start nb-start-r"><span class="nb-sl">Start here</span>' + ol + '</div>';
-    // phones and tablets: one line naming the jobs, tap to open, so the list itself starts higher up
-    return '<details class="nb-start nb-start-l"' + (S.startOpen ? ' open' : '') + '><summary data-p="start-toggle"><span class="nb-sl">Start here</span><span class="nb-sline">' + esc(l.map(function (o) { return o.x.text; }).join(', ')) + '</span></summary>' + ol + '</details>';
+  /* Start here, numbered in place (3 Nov 2026, work pages redesign A): the three lines to do first carry 1, 2 and 3 on
+     the list itself, with why when the line does not say it already (Usually takes, Waiting since). Same picks as
+     before (startHere()), the same rule for when they show: today, for someone who may tick, 4 or more open lines. */
+  function startNums(live) {
+    var out = {};
+    if (!can('tick') || S.date !== dayNow() || S.tab === FN_TAB) return out;
+    if (live.filter(function (x) { return !x.done; }).length < 4) return out;
+    startHere(live).forEach(function (o, i) { out[o.x.id] = { n: i + 1, why: o.why }; });
+    return out;
   }
   function gotoRow(id) {
     var it = S.items.filter(function (x) { return x.id === id; })[0];
@@ -3957,6 +3955,10 @@
     var by = x.done && preparedWorker(x).name ? esc(preparedWorker(x).name) + (x.doneAt ? ' ' + clock(x.doneAt) : '') : (rolledN(x) ? (x.origBy ? 'from ' + esc(x.origBy) + (firstDay(x) ? ', ' + firstDay(x) : '') : '') : x.rolled ? esc(x.origBy || '') : (x.addedBy ? esc(x.addedBy) : ''));
     var marks = (x.urgent ? '<span class="nb-urg">Urgent</span>' : '') + (rolledN(x) ? '<span class="nb-roll" title="Not finished earlier, so it rolled over">Rolled' + (rolledN(x) > 1 ? ' x' + rolledN(x) : '') + '</span>' : '') +
       (x.deleted && x.mergedInto ? '<span class="nb-also">Double up</span>' : (also || ''));
+    // Start here, numbered in place (startNums()): the number before the words, and why when the line does not show it
+    var sn = !readonly && !x.done && !x.deleted && date === dayNow() && S.startN && S.startN[x.id];
+    if (sn && /^(Usually|Waiting)/.test(sn.why)) marks += '<span class="nb-why">' + esc(sn.why) + '</span>';
+    var num = sn ? '<span class="nb-num" title="Start here">' + sn.n + '<span class="visually-hidden">. Start here: </span></span>' : '';
     var star = can('add') && !x.deleted && !readonly ? '<button type="button" class="nb-star" data-p="urgent" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.urgent + '" aria-label="' + esc((x.urgent ? 'Not urgent: ' : 'Mark urgent: ') + x.text) + '">!</button>' : '';
     var rid = x.recipe || ((matchRecipe(x.text) || {}).id || ''), rr = rid ? recipeById(rid) : null;
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
@@ -3965,7 +3967,7 @@
     return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (x.done ? ' is-done' : '') + (rolledN(x) && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(date + '/' + x.id) + '">' +
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc((x.done ? 'Untick ' : 'Tick ') + x.text) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : BOX) + '</button>' +
       // a tap on the words ticks too (the box is the button for keyboards and screen readers); Undo and the linger cover a slip
-      '<span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + unsentMark(x) + '</span>' +
+      '<span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + num + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + unsentMark(x) + '</span>' +
       '<span class="nb-by"><span class="nb-wrote"' + (x.done ? ' title="' + esc('Recorded by ' + (x.doneBy || '')) + '"' : '') + '>' + by + '</span></span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + ((del || keep) && !readonly ? moreBtn(x, keep) : '') + '</span>' : '') + '</li>';
   }
   /* The line menu (22 Oct 2026, Option B): on a phone, Remove (or Put back) and who wrote the line move behind a ⋯ on
@@ -4081,13 +4083,20 @@
     var order = [], seen = {}, twins = {};
     dupGroups(items).forEach(function (g) { twins[dupKey(g[0].text)] = g; });
     // on a section's tab every line sits under that section, also a line merged into another section
-    function secOf(x) { return S.tab === FN_TAB ? 'Function platters' : S.tab || x.station || ''; }
+    /* Tonight, for tomorrow (3 Nov 2026, work pages redesign A): on today's list, on All, the open lines written after
+       tonight's list was started (cutFor(), the same cut the rollover uses) sit last under their own heading, because
+       they go on tomorrow's list. No read: the cut comes from the day's own lines and summary/learned. */
+    var TONIGHT = '\u0001tonight', cut = !S.tab && date === dayNow() ? cutFor(date, items) : -1;
+    function secOf(x) { if (cut >= 0 && !x.done && !x.deleted && writtenLate(x, date, cut)) return TONIGHT; return S.tab === FN_TAB ? 'Function platters' : S.tab || x.station || ''; }
     shown.forEach(function (x) { var k = secOf(x); if (!seen[k]) { seen[k] = 1; order.push(k); } });
+    if (seen[TONIGHT]) order = order.filter(function (k) { return k !== TONIGHT; }).concat([TONIGHT]);
     return order.map(function (sec) {
       var all = shown.filter(function (x) { return secOf(x) === sec; });
       var live = all.filter(function (x) { return !x.deleted; });
       var rows = all.filter(function (x) { return !(x.done && !x.deleted) || lingers(x); });
       if (!rows.length) return '';
+      if (sec === TONIGHT) return '<div class="nb-hd nb-hd-tonight"><span>Tonight, for tomorrow</span><span>' + live.length + '</span></div><p class="nb-sd nb-tonight-sd">On tomorrow\'s list. Tick here if it gets done tonight.</p>' +
+        '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, (x.station ? '<span class="nb-also">' + esc(x.station) + '</span>' : '') + alsoHTML(x, x.station || '', twins)); }).join('') + '</ul>';
       return (sec ? '<div class="nb-hd"><span>' + esc(sec) + '</span><span>' + live.filter(function (x) { return x.done; }).length + '/' + live.length + '</span></div>' : '') +
         '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, alsoHTML(x, sec, twins)); }).join('') + '</ul>';
     }).join('');
@@ -4167,15 +4176,15 @@
     var pc = canBrowse() && S.date === dayNow() && S.past ? pace() : null;
     var paceHTML = pc ? '<div class="nb-pace' + (pc.today + 0.1 < pc.usual ? ' is-behind' : '') + '"><span class="nb-sl">Pace</span><p><strong>' + Math.round(pc.today * 100) + '%</strong> ticked now (' + pc.done + ' of ' + pc.n + '). By ' + clock(now()) + ' it is usually <strong>' + Math.round(pc.usual * 100) + '%</strong>' + (pc.sameDay ? ' on a ' + esc(dname) : '') + '.</p><span class="nb-sw">' + (pc.today + 0.1 < pc.usual ? 'Behind the usual pace. Check who needs a hand.' : 'On pace.') + ' Only the head chef and sous chefs see this.</span></div>' : '';
     var stuck = canBrowse() && S.date === dayNow() ? live.filter(function (x) { return !x.done && rolledN(x) >= 3; }) : [];
-    var stuckHTML = stuck.length ? '<h3 class="nb-sh">Stuck lines</h3><p class="nb-sd">Rolled over 3 or more times. Make it urgent, split it into smaller jobs, or remove it if it is not needed.</p><ul class="nb-stuck">' + stuck.map(function (x) {
-      return '<li><span>' + esc(x.text) + ' <span class="nb-us">x' + rolledN(x) + '</span></span>' + (x.urgent ? '' : '<button type="button" class="p-x" data-p="urgent" data-id="' + esc(x.id) + '">Urgent</button>') + (can('del') ? '<button type="button" class="p-x" data-p="del" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '">Remove</button>' : '') + '</li>';
+    var stuckHTML = stuck.length ? '<h3 class="nb-sh">Stuck lines</h3><p class="nb-sd">Rolled over 3 or more times. Mark it urgent with ! on its line, split it into smaller jobs, or remove it if it is not needed.</p><ul class="nb-stuck">' + stuck.map(function (x) {
+      return '<li><span>' + esc(x.text) + ' <span class="nb-us">x' + rolledN(x) + '</span></span>' + (can('del') ? '<button type="button" class="p-x" data-p="del" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '">Remove</button>' : '') + '</li>';
     }).join('') + '</ul>' : '';
     var dl = live.filter(function (x) { return x.done; }).sort(function (a, b) { return (b.doneAt || 0) - (a.doneAt || 0); });
     var donebox = '<h3 class="nb-sh" id="nb-donebox">' + (onToday ? 'Done today' : 'Done on ' + esc(dayShort(S.date))) + (off ? '' : ' (' + dl.length + ')') + '</h3>' +
       (off ? '<p class="nb-sd" role="status">' + (onToday ? 'No signal. Lines ticked today show when the phone is back online.' : 'No signal. Ticked lines show when the phone is back online.') + '</p>' : '') + (dl.length ? '<ul class="nb-done">' + dl.map(function (x) {
       return '<li data-ln="' + esc(S.date + '/' + x.id) + '"><span class="nb-dt">' + (x.doneAt ? clock(x.doneAt) : '') + '</span><span class="nb-dx">' + esc(x.text) + (x.qty ? ' <em>' + esc(x.qty) + '</em>' : '') + unsentMark(x) + '</span><span class="nb-dw" title="' + esc('Recorded by ' + (x.doneBy || '')) + '">' + esc(preparedWorker(x).name) + '</span>' + (can('tick') && canUntick(x) ? '<button type="button" class="p-x nb-undo" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(S.date) + '" aria-label="' + esc('Undo the tick on ' + x.text) + '">Undo</button>' : '') + '</li>';
     }).join('') + '</ul>' : off ? '' : '<p class="nb-sd">' + (onToday ? 'Nothing ticked yet.' : 'Nothing was ticked.') + '</p>');
-    return (flags ? '<div class="nb-rc">' + flags + '</div>' : '') + startHTML(live, true) + paceHTML + stuckHTML + (off ? '' : fnNeedsHTML()) + donebox + quick;
+    return (flags ? '<div class="nb-rc">' + flags + '</div>' : '') + paceHTML + stuckHTML + (off ? '' : fnNeedsHTML()) + donebox + quick;
   }
   /* For the functions (22 Oct 2026, review F1): what today's and tomorrow's confirmed function platters need, every item
      on the platter cards added up across the platters (5 Aussie platters at 10 party pies each: Party pies 50 pieces).
@@ -4286,6 +4295,7 @@
     // (with no signal and the day not loaded, Closing soon gives no count of the lines left open: it would count only
     // the lines this phone wrote since)
     var flags = closeoutHTML(S.itemsState === 'offline' ? null : daily, S.date) + wNoteHTML();
+    S.startN = startNums(daily);
     var sideH = sideHTML(today, flags);
     var add = can('add') && S.date === today ?
       '<form class="nb-add" data-p-form="add">' +
@@ -4302,11 +4312,14 @@
     var offNote = S.itemsState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     if (offNote) todayEmpty = '';
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
-      (S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>') + (can('add') ? '<button type="button" class="nb-jump" data-p="write">Write a line</button>' : '') + (doneN ? '<button type="button" class="nb-jump nb-donejump" data-p="donejump">Done today' + (S.itemsState === 'offline' ? '' : ' (' + doneN + ')') + '</button>' : '') + '</header>' +
+      // Done today sits behind the count (3 Nov 2026, work pages redesign A): a tap on "3 of 13 done" goes to it
+      (S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : doneN ? '<button type="button" class="nb-prog nb-progbtn" data-p="donejump" aria-label="' + doneN + ' of ' + live.length + ' done. Show Done today">' + doneN + ' of ' + live.length + ' done</button>' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>') + (add ? '<button type="button" class="btn dark nb-addline" data-p="write" aria-haspopup="dialog">Add a line</button>' : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
-      '<div class="nb-body">' + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + offNote + (S.tab === FN_TAB ? '' : startHTML(daily)) + pageBody(S.items, S.date) + todayEmpty + '</div>' +
-      '<div class="nb-foot">' + add + (add && !can('del') ? '<p class="hint nb-who">Wrote the wrong thing? Undo it straight away, or ask the head chef or a sous chef to remove it.</p>' : '') +
-      (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div></section>';
+      '<div class="nb-body">' + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + offNote + pageBody(S.items, S.date) + todayEmpty + '</div>' +
+      (removed.length && can('del') ? '<div class="nb-foot"><button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button></div>' : '') + '</section>';
+    // the add form as a sheet (3 Nov 2026), drawn with the page from S.pLog like Log waste, so a redraw keeps what is typed
+    var pSheet = add && S.pLog ? '<div class="sheet-bg" data-p="p-log-close"></div><div class="sheet p-sheet" role="dialog" aria-modal="true" aria-labelledby="p-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="p-log-h">Add to prep</h3>' + add +
+      (!can('del') ? '<p class="hint nb-who">Wrote the wrong thing? Undo it straight away, or ask the head chef or a sous chef to remove it.</p>' : '') + '<button type="button" class="btn sheet-x" data-p="p-log-close">Close</button></div>' : '';
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today<span class="nb-qsub"> and quick add</span>' : 'Done on ' + esc(dayShort(S.date))) + '</span></div></header>' +
       '<div class="nb-body nb-side">' + sideH + '</div></section>';
     return whoTopHTML() +
@@ -4314,7 +4327,7 @@
       '<button type="button" class="chip" data-p="today" aria-pressed="' + (S.date === today) + '">Today</button>' +
       '<label class="visually-hidden" for="p-day">Pick a date</label><input id="p-day" type="date" class="p-dateinput" data-k="p-day" value="' + esc(S.date) + '">' +
       '<button type="button" class="chip" data-p="day" data-d="1" aria-label="Forward one day">&rsaquo;</button></div>' : '') +
-      badgeStrip() + '<div class="nb-wrap"><div class="nb">' + left + '<div class="nb-spine" aria-hidden="true"></div>' + right + '</div>' + tabHTML + '</div>';
+      badgeStrip() + '<div class="nb-wrap"><div class="nb">' + left + '<div class="nb-spine" aria-hidden="true"></div>' + right + '</div>' + tabHTML + '</div>' + pSheet;
   }
   function ago(ms) {
     if (!ms) return 'never';
@@ -5647,7 +5660,8 @@
     else toast(wmsg + '. Wrong? Ask the head chef.', null, 6000);
   }
   function focusK(k) { var el = S.root && S.root.querySelector('[data-k="' + k + '"]'); if (el) el.focus(); }
-  function focusSel(sel) { var el = S.root && S.root.querySelector(sel); if (el && el.offsetParent !== null) el.focus(); }
+  // shown on screen (a box to draw), also when it is fixed in place like Add a line on a phone (offsetParent is null then)
+  function focusSel(sel) { var el = S.root && S.root.querySelector(sel); if (el && el.getClientRects().length) el.focus(); }
   /* Remove or put back a wastage entry: today's on the wastage page (head chef and sous chefs), any day in the admin log.
      Today's lines come from the live list; the admin log's 60 days are patched here (no read), so the change shows at once. */
   function removeWaste(date, id, restore) {
@@ -5763,13 +5777,13 @@
      They are drawn from S.wLog, S.wRv and S.xLog with the page, like the forms were, so a redraw during service keeps what
      is typed; Close keeps it too. Back, Escape and the dimmed page close them. which: 'log', 'rv' or 'xlog'. */
   function wSheetOpen(which) {
-    S.wLog = which === 'log'; S.wRv = which === 'rv'; S.xLog = which === 'xlog';
+    S.wLog = which === 'log'; S.wRv = which === 'rv'; S.xLog = which === 'xlog'; S.pLog = which === 'plog';
     ovPush('wsheet', function () { wSheetClose(true); });
-    draw(); focusK(which === 'log' ? 'w-text' : which === 'rv' ? 'w-ra' : S.xf.venue ? 'tr-text' : 'tr-venue');
+    draw(); focusK(which === 'log' ? 'w-text' : which === 'rv' ? 'w-ra' : which === 'plog' ? 'p-text' : S.xf.venue ? 'tr-text' : 'tr-venue');
   }
   function wSheetClose(noBack) {
-    if (!S.wLog && !S.wRv && !S.xLog) return;
-    var back = S.wLog ? '.w-logbtn' : S.wRv ? '.w-rvbtn' : '.tr-logbtn'; S.wLog = S.wRv = S.xLog = false;
+    if (!S.wLog && !S.wRv && !S.xLog && !S.pLog) return;
+    var back = S.wLog ? '.w-logbtn' : S.wRv ? '.w-rvbtn' : S.pLog ? '.nb-addline' : '.tr-logbtn'; S.wLog = S.wRv = S.xLog = S.pLog = false;
     ovDone('wsheet', noBack); draw(); focusSel(back);
   }
   /* Bottom sheet for picking one thing on a phone (the waste reason). Big rows, a hint under each, Cancel or tap outside to close. */
@@ -9598,9 +9612,9 @@
     if (a === 'qset' || a === 'oqset') sg('usual', 't');
     if (a === 'qset') { S.qty = el.getAttribute('data-v') || ''; if (S.text.trim()) addTyped(); else { draw(); var tq = S.root.querySelector('[data-k="p-text"]'); if (tq) tq.focus(); } return; }
     if (a === 'goto') { gotoRow(id); return; }
-    if (a === 'start-toggle') { e.preventDefault(); S.startOpen = !S.startOpen; draw(); return; }
     if (a === 'donejump') { var dj = S.root.querySelector('#nb-donebox'); if (dj) dj.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
-    if (a === 'write') { var wt = S.root.querySelector('[data-k="p-text"]'); if (wt) { wt.scrollIntoView({ block: 'center', behavior: 'smooth' }); wt.focus({ preventScroll: true }); } return; }
+    // Add a line (3 Nov 2026, work pages redesign A): the add form opens as a sheet, like Log waste
+    if (a === 'write') { wSheetOpen('plog'); return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'a-group') { if (intelligenceBusy()) return; var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2].filter(function (t) { return t !== 'mail' || mlOwner(); })[0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); } return; }
     if (a === 'a-tab') { if (intelligenceBusy()) return; S.atab = el.getAttribute('data-t'); S.agLast = S.agLast || {}; S.agLast[adminGroupOf(S.atab)[0]] = S.atab; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); return; }
@@ -9794,9 +9808,9 @@
       var sh = S.root.querySelector('.sheet'); if (sh) trapTab(e, sh, 'button');
       return;
     }
-    if ((S.wLog || S.wRv) && S.name === 'waste' || S.xLog && S.name === 'transfers') {
+    if ((S.wLog || S.wRv) && S.name === 'waste' || S.xLog && S.name === 'transfers' || S.pLog && S.name === 'prep') {
       if (e.key === 'Escape') { e.preventDefault(); wSheetClose(); return; }
-      var ws = S.root.querySelector('.w-sheet, .tr-sheet'); if (e.key === 'Tab' && ws) { trapTab(e, ws, 'button:not([disabled]), input, textarea'); return; }
+      var ws = S.root.querySelector('.w-sheet, .tr-sheet, .p-sheet'); if (e.key === 'Tab' && ws) { trapTab(e, ws, 'button:not([disabled]), input, textarea'); return; }
     }
     if (e.key === 'Escape' && S.recipeOpen) { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return; }
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.getAttribute && e.target.getAttribute('data-k') === 'n-text') { e.preventDefault(); saveNote(); return; }
@@ -10344,7 +10358,7 @@
     if (a === 'mn-prev') { if (S.mf) { S.mf.prev = !S.mf.prev; draw(); } return true; }
     if (a === 'g-cancel') { if (gfDirty() && !arm('g-cancel')) return true; S.gf = null; S.gfSnap = ''; draw(); return true; }
     if (a === 'sheet-close') { wasteSheetClose(); return true; }
-    if (a === 'w-log-close' || a === 'w-rv-close' || a === 'tr-log-close') { wSheetClose(); return true; }
+    if (a === 'w-log-close' || a === 'w-rv-close' || a === 'tr-log-close' || a === 'p-log-close') { wSheetClose(); return true; }
     if (a === 'staff-close') { if (draftDirty() && !arm('staff-close')) return true; S.staffOpen = false; S.draft = null; draw(); return true; }
     return false;
   }
@@ -10369,6 +10383,7 @@
       if (S.root.querySelector('.p-notes-page')) return pick('notes-close', 'Back to prep list');
       if (S.root.querySelector('.p-staff-page')) return pick('staff-close', 'Back to prep list');
       if (S.recipeOpen) return pick('recipe-close', 'Back to prep list');
+      if (S.pLog) return pick('p-log-close', 'Back to prep list');
     }
     return null;
   }
@@ -10380,7 +10395,7 @@
      the recipe picker open on the prep pages, or a page loaded on its own with changes (Delivery received, Manage
      Recipes, Manage functions, Supplier order). */
   function unsavedHere() {
-    return !!(workLock() && S.lockHasDraft) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere() || !!S.sheet || !!S.wLog || !!S.xLog || !!S.recipeOpen || !!ptPop;
+    return !!(workLock() && S.lockHasDraft) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere() || !!S.sheet || !!S.wLog || !!S.xLog || !!S.pLog || !!S.recipeOpen || !!ptPop;
   }
   /* Words typed on the pages this file draws and not saved yet: half a prep, order, wastage or transfer line (the venue
      and person stay after Log it on purpose, so they do not count), kitchen mail, a to-do job, a review, the drinks run,

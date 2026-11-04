@@ -311,6 +311,21 @@ async function open(browser, hash, o) {
   if (o.block) await ctx.route(new RegExp(o.block), r => r.abort());
   const page = await ctx.newPage();
   page.errors = [];
+  // Prep's add form is in the Add a line sheet since 3 Nov 2026 (work pages redesign A). A test that reaches for one of its
+  // boxes by selector while the sheet is closed taps Add a line first, the way a cook does. page.$ is left alone, so a check
+  // that the form is not there still means it; tests of the sheet itself use L.pLog() (tests/prep-a.test.js).
+  for (const m of ['fill', 'press', 'type', 'focus', 'click', 'inputValue', 'getAttribute', '$eval']) {
+    const orig = page[m].bind(page);
+    page[m] = async (sel, ...rest) => { if (typeof sel === 'string' && PREP_FORM.test(sel)) await prepForm(page); return orig(sel, ...rest); };
+  }
+  const origLocator = page.locator.bind(page);
+  page.locator = (sel, ...rest) => {
+    const loc = origLocator(sel, ...rest);
+    if (typeof sel !== 'string' || !PREP_FORM.test(sel)) return loc;
+    // count() is left alone, like page.$; the actions open the sheet first
+    const acts = ['fill', 'press', 'type', 'focus', 'click', 'inputValue', 'evaluate', 'elementHandle', 'getAttribute'];
+    return new Proxy(loc, { get: (t, k) => acts.includes(k) ? async (...a) => { await prepForm(page); return t[k](...a); } : (typeof t[k] === 'function' ? t[k].bind(t) : t[k]) });
+  };
   page.loading = 0;   // requests still out, for settle()
   page.urls = [];     // every address the page asked for, in order (routed answers leave no resource timing)
   page.on('request', q => { page.loading++; page.urls.push(q.url()); });
@@ -470,7 +485,13 @@ async function pick(page, selector, value) {
   await settle(page, 250);
 }
 
+const PREP_FORM = /#p-(text|qty|section)\b|data-k="p-(text|qty|section)"/;
+async function prepForm(page) {
+  if (await page.$('.p-sheet #p-text') || !(await page.$('[data-p="write"]'))) return;
+  await pLog(page);
+}
 async function clear(page, selector) {
+  if (PREP_FORM.test(selector)) await prepForm(page);
   const input = page.locator(selector).first();
   if (await input.getAttribute('data-smart-search')) {
     const button = input.locator('..').locator('.ux-search-clear');
@@ -515,4 +536,10 @@ async function reveal(page, sel) {
 async function chapter(page, k) {
   if (await page.getAttribute('[data-mg="ch"][data-v="' + k + '"]', 'aria-current') !== 'true') { await page.click('[data-mg="ch"][data-v="' + k + '"]'); await settle(page, 150); }
 }
-module.exports = { whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+// Prep (3 Nov 2026, work pages redesign A): the add form is in the Add a line sheet. Opens it when it is not open.
+async function pLog(page) {
+  if (await page.$('.p-sheet #p-text')) return;
+  await page.evaluate(() => document.querySelector('[data-p="write"]').click());
+  await waitFor(page, () => !!document.querySelector('.p-sheet #p-text'), null, 4000);
+}
+module.exports = { pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
