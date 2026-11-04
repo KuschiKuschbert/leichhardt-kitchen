@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Loading and Feedback Options</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@600;700&family=Caveat:wght@700&display=swap">
+<style>
+/* Layout concept: a design study for the Kitchen Book. Each area is a strip of three working phones (now, A, B) that
+   play the same moment side by side, under one shared clock. One deliberate look: the book is a light, warm-paper app,
+   so this page keeps that single look in every viewer theme and sets every colour itself. */
+:root {
+  color-scheme: light;
+  --bg: #FBFAF7;          /* warm page */
+  --paper: #FFFFFF;
+  --beige: #F2EFE8;       /* study panels */
+  --ink: #1C1D1F;
+  --muted: #55585E;
+  --faint: #6B7077;
+  --line: #E0DBCF;
+  --accent: #E2602A;      /* Leichhardt orange */
+  --accent-ink: #C2451A;
+  --small-ink: #B83F15;
+  --bar: #2B2A27;         /* charcoal top bar and tabs */
+  --bar-text: #FBF8F1;
+  --bar-accent: #F08A4B;
+  --wall: #C9B48F;        /* landing kraft */
+  --docket: #FFFEFA;
+  --rule: #DDD5C5;
+  --pencil: #C7BDA9;
+  --done: #2E8B57; --done-ink: #237347; --done-tint: #EAF5EE;
+  --bad: #9B2716; --bad-tint: #FBE9E5;
+  --hit: #FFF1E6;
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --hand: 'Caveat', 'Segoe Print', cursive;
+  --r-act: 8px; --r-pick: 999px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); }
+h1, h2, h3 { font-family: var(--display); line-height: 1.05; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: var(--accent-ink); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.num { font-variant-numeric: tabular-nums; }
+.eyebrow { font: 700 .8rem/1.2 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--small-ink); }
+
+/* ---------- study page ---------- */
+.study-note { background: var(--beige); color: var(--muted); text-align: center; font-size: .82rem; padding-block: 6px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 32px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 56px; }
+.wrap > *, #areas > *, .area > * { min-width: 0; }
+.intro { display: grid; gap: 14px; max-width: 46rem; }
+.intro h1 { font-size: clamp(2.3rem, 6vw, 3.6rem); }
+.intro p { color: var(--muted); font-size: 1.05rem; }
+.intro p strong { color: var(--ink); }
+.prose { max-width: 46rem; display: grid; gap: 10px; }
+.prose p, .prose li { color: var(--muted); }
+.prose b { color: var(--ink); }
+
+.glance-wrap { overflow-x: auto; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--paper); }
+table.glance { border-collapse: collapse; width: 100%; min-width: 760px; font-size: .93rem; }
+.glance th, .glance td { text-align: left; vertical-align: top; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.glance thead th { font: 700 .8rem/1.2 var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); background: var(--beige); }
+.glance tbody tr:last-child td { border-bottom: 0; }
+.glance td:first-child { font: 700 1.1rem/1.15 var(--display); white-space: nowrap; }
+.glance td:first-child a { color: var(--ink); text-decoration: none; }
+.glance td:first-child a:hover { text-decoration: underline; }
+@media (max-width: 700px) {
+  .glance-wrap { overflow: visible; }
+  table.glance { min-width: 0; }
+  .glance thead { display: none; }
+  .glance tr { display: grid; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .glance tbody tr:last-child { border-bottom: 0; }
+  .glance td { display: block; padding: 0; border: 0; }
+  .glance td:nth-child(2) { color: var(--muted); }
+  .glance td:nth-child(3)::before { content: "A. "; font-weight: 700; }
+  .glance td:nth-child(4)::before { content: "B. "; font-weight: 700; }
+}
+.pick { display: inline-block; font: 700 .78rem/1 var(--display); letter-spacing: .08em; text-transform: uppercase; padding: 5px 8px; border-radius: 4px; background: var(--accent-ink); color: #fff; white-space: nowrap; }
+
+.findings { display: grid; gap: 0; border-top: 2px solid var(--ink); }
+.finding { display: grid; grid-template-columns: 4.2rem 6.2rem minmax(0, 1fr); gap: 4px 14px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+.finding .id { font: 700 .95rem var(--display); letter-spacing: .04em; }
+.finding p { color: var(--muted); font-size: .95rem; }
+.finding p b { color: var(--ink); }
+.tag { display: inline-block; font: 700 .72rem/1 var(--display); letter-spacing: .1em; text-transform: uppercase; padding: 5px 7px; border-radius: 4px; border: 1.5px solid currentColor; white-space: nowrap; }
+.tag.fix { color: var(--bad); background: var(--bad-tint); }
+.tag.design { color: var(--small-ink); }
+.tag.speed { color: var(--ink); }
+.tag.tidy { color: var(--faint); }
+@media (max-width: 600px) { .finding { grid-template-columns: auto minmax(0, 1fr); } .finding p { grid-column: 1 / -1; } }
+
+/* ---------- one area ---------- */
+.area { display: grid; gap: 18px; scroll-margin-top: 16px; }
+.area-head { display: grid; gap: 8px; max-width: 50rem; }
+.area-head h2 { font-size: clamp(1.9rem, 4.5vw, 2.6rem); }
+.area-head p { color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.controls .lbl { font: 700 .8rem var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.play { min-height: 44px; padding: 0 16px; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+.play svg { width: 14px; height: 14px; }
+.play[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.clock { margin-left: auto; font: 700 1.5rem/1 var(--display); min-width: 4.6ch; text-align: right; color: var(--ink); }
+.clock small { font: 600 .78rem var(--body); color: var(--muted); margin-left: 4px; }
+
+.stage-wrap { position: relative; }
+.stage { display: grid; grid-auto-flow: column; grid-auto-columns: max-content; gap: 20px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 12px; overscroll-behavior-x: contain; }
+.stage-wrap::after { content: ""; position: absolute; top: 0; right: 0; bottom: 12px; width: 36px; pointer-events: none; background: linear-gradient(to right, rgba(251, 250, 247, 0), var(--bg)); opacity: var(--fade, 0); transition: opacity .2s; }
+.col { scroll-snap-align: start; display: grid; gap: 10px; align-content: start; width: calc(404px * var(--s, .8)); }
+.col-head { display: flex; align-items: baseline; gap: 8px; min-height: 28px; }
+.col-head .key { font: 700 1.5rem/1 var(--display); }
+.col-head .name { font: 700 1.15rem/1.1 var(--display); }
+.col.is-now .col-head .key { color: var(--faint); }
+.col.is-rec .col-head::after { content: "Chosen"; margin-left: auto; font: 700 .7rem/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: #fff; background: var(--accent-ink); padding: 5px 7px; border-radius: 4px; }
+.phone { position: relative; width: calc(390px * var(--s, .8)); height: calc(780px * var(--s, .8)); border-radius: calc(26px * var(--s, .8)); overflow: hidden; background: var(--bar); box-shadow: 0 0 0 calc(7px * var(--s, .8)) var(--ink), 0 14px 30px rgba(28, 29, 31, .18); margin: calc(7px * var(--s, .8)); }
+.readout { min-height: 1.4em; font: 600 .84rem/1.35 var(--body); color: var(--ink); }
+.readout b { font-weight: 700; color: var(--small-ink); }
+.notes { display: grid; gap: 6px; font-size: .92rem; color: var(--muted); }
+.notes p strong { color: var(--ink); }
+.rec { border-left: 4px solid var(--accent-ink); background: var(--paper); padding: 12px 16px; max-width: 50rem; border-radius: 0 8px 8px 0; }
+.rec p { color: var(--muted); }
+.rec p b { color: var(--ink); }
+details.evidence { max-width: 100%; }
+details.evidence summary { cursor: pointer; font-weight: 700; color: var(--ink); min-height: 44px; display: flex; align-items: center; }
+.shots { display: flex; gap: 14px; overflow-x: auto; padding: 6px 2px 10px; }
+.shots figure { margin: 0; flex: 0 0 auto; width: 190px; display: grid; gap: 6px; }
+.shots img { width: 190px; height: auto; border: 1.5px solid var(--ink); border-radius: 10px; display: block; }
+.shots figcaption { font-size: .82rem; color: var(--muted); }
+
+.foundations { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; }
+.found { background: var(--paper); border: 1.5px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 8px; align-content: start; }
+.found h3 { font-size: 1.3rem; }
+.found p, .found li { color: var(--muted); font-size: .93rem; }
+.found ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 4px; }
+.words { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.words td { padding: 5px 0; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--muted); }
+.words td:first-child { font-weight: 700; color: var(--ink); padding-right: 10px; white-space: nowrap; }
+.steps { margin: 0; padding-left: 1.3rem; display: grid; gap: 8px; max-width: 50rem; }
+.steps li { color: var(--muted); }
+.steps li b { color: var(--ink); }
+footer.method { border-top: 1.5px solid var(--line); padding-top: 16px; color: var(--muted); font-size: .88rem; display: grid; gap: 6px; max-width: 50rem; }
+
+/* ================= the mock book inside each phone (390 x 780 logical px) ================= */
+.screen { position: absolute; left: 0; top: 0; width: 390px; height: 780px; transform: scale(var(--s, .8)); transform-origin: 0 0; background: var(--bg); overflow: hidden; color: var(--ink); font: 16px/1.4 var(--body); }
+.screen * { pointer-events: none; }
+.k-push { position: absolute; inset: 0; }
+.k-top { position: absolute; top: 0; left: 0; right: 0; height: 64px; background: var(--bar); display: flex; align-items: center; gap: 12px; padding: 0 14px 0 16px; box-shadow: 0 4px 0 rgba(0, 0, 0, .25); z-index: 6; }
+.k-brand { flex: 1; display: flex; align-items: center; gap: 10px; color: var(--bar-text); font: 700 27px/1 var(--display); white-space: nowrap; }
+.k-kb { font: 700 31px/1 var(--hand); color: var(--bar-text); position: relative; padding: 0 2px; }
+.k-kb::after { content: ""; position: absolute; left: 0; right: 4px; bottom: -2px; height: 4px; border-radius: 3px; background: var(--accent); rotate: -3deg; }
+.k-back { width: 26px; height: 26px; color: var(--bar-text); }
+.k-ring { position: relative; width: 44px; height: 44px; flex: none; border: 2px solid var(--bar-text); border-radius: 50%; display: grid; place-items: center; color: var(--bar-text); }
+.k-ring.dash { border-style: dashed; }
+.k-ring svg { width: 22px; height: 22px; }
+.k-ring.ghost { opacity: .35; }
+.k-badge { position: absolute; top: -5px; right: -6px; min-width: 22px; height: 22px; padding: 0 5px; border-radius: 11px; background: var(--accent); color: #fff; font: 700 13px/18px var(--body); text-align: center; border: 2px solid var(--bar); display: grid; place-items: center; }
+.k-badge.off { background: var(--bar-text); color: var(--bar); }
+.k-badge.ok { background: var(--done); }
+.k-badge svg { width: 12px; height: 12px; }
+.k-body { position: absolute; top: 68px; left: 0; right: 0; bottom: 68px; overflow: hidden; }
+.k-scroll { padding: 14px 16px 26px; transform: translateY(calc(var(--off, 0) * -1px)); transition: transform .25s ease; }
+.k-tabs { position: absolute; bottom: 0; left: 0; right: 0; height: 68px; background: var(--bar); border-top: 3px solid var(--accent); display: flex; z-index: 6; }
+.k-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--bar-text); font: 700 11.5px/1 var(--display); letter-spacing: .05em; text-transform: uppercase; transition: opacity .2s; }
+.k-tab svg { width: 23px; height: 23px; }
+.k-tab.on { color: var(--bar-accent); }
+.k-tabs.faint .k-tab { opacity: .32; }
+.k-tabs.empty .k-tab { opacity: 0; }
+
+/* the white "opening" page before any app code */
+.k-blank { position: absolute; inset: 0; background: var(--bg); padding: 34px 20px; }
+.k-blank h1 { font: 700 38px/1.05 var(--display); margin: 0 0 8px; }
+.k-status { display: flex; align-items: center; gap: 11px; font: 600 15px/1.35 var(--body); color: var(--ink); padding: 8px 0; }
+.k-status small { display: block; color: var(--muted); font: 400 13px/1.35 var(--body); }
+
+/* ink icon (the book's own traced outlines) */
+.ink { display: inline-grid; place-items: center; width: var(--is, 30px); height: var(--is, 30px); flex: none; }
+.ink svg { width: 100%; height: 100%; overflow: visible; }
+.ink .tr > * { stroke: var(--accent); stroke-dasharray: 100; stroke-dashoffset: 100; opacity: 0; animation: ink-trace 1.8s ease-in-out .18s infinite; }
+.ink.still .tr { display: none; }
+@keyframes ink-trace { 0%, 8% { stroke-dashoffset: 100; opacity: 0; } 12% { opacity: 1; } 42%, 63% { stroke-dashoffset: 0; opacity: 1; } 78%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+
+/* landing */
+.k-wall { position: absolute; top: 68px; left: 0; right: 0; bottom: 68px; overflow: hidden; background: var(--wall); background-image: repeating-linear-gradient(115deg, rgba(255, 255, 255, .06) 0 2px, transparent 2px 6px); padding: 18px 16px; }
+.k-wall h1 { font: 700 44px/1 var(--hand); margin: 4px 0 2px; }
+.k-date { font: 600 16px var(--body); color: #4A4234; margin-bottom: 16px; min-height: 22px; }
+.k-dockets { display: grid; gap: 12px; }
+.k-docket { position: relative; display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 14px; height: 76px; padding: 4px 16px 12px; background: var(--docket); filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .18)); clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), 96% 100%, 92% calc(100% - 8px), 88% 100%, 84% calc(100% - 8px), 80% 100%, 76% calc(100% - 8px), 72% 100%, 68% calc(100% - 8px), 64% 100%, 60% calc(100% - 8px), 56% 100%, 52% calc(100% - 8px), 48% 100%, 44% calc(100% - 8px), 40% 100%, 36% calc(100% - 8px), 32% 100%, 28% calc(100% - 8px), 24% 100%, 20% calc(100% - 8px), 16% 100%, 12% calc(100% - 8px), 8% 100%, 4% calc(100% - 8px), 0 100%); }
+.k-docket::before { content: ""; position: absolute; top: 6px; left: 50%; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--accent-ink); box-shadow: 0 2px 0 rgba(0, 0, 0, .2); }
+.k-dk-ic { width: 50px; height: 50px; border: 2px solid var(--ink); border-radius: 50%; display: grid; place-items: center; }
+.k-dk-ic svg { width: 26px; height: 26px; }
+.k-dk-t { font: 700 25px/1 var(--display); letter-spacing: .04em; text-transform: uppercase; border-bottom: 3px solid var(--ink); padding-bottom: 6px; }
+.k-dk-n { font: 700 15px/1 var(--display); letter-spacing: .1em; color: var(--accent-ink); align-self: center; padding-bottom: 8px; }
+.k-docket.shell .k-dk-ic { border-color: #D2CBBB; }
+.k-docket.shell .k-dk-ic svg, .k-docket.shell .k-dk-t span, .k-docket.shell .k-dk-n span { opacity: 0; }
+.k-docket.shell .k-dk-t { border-bottom-color: #E2DCCD; }
+.k-docket .k-dk-ic svg, .k-docket .k-dk-t span, .k-docket .k-dk-n span { transition: opacity .16s ease-out; }
+.k-docket.shell::before { background: #DCC9B7; box-shadow: none; }
+.arrive .k-docket { animation: dk-in .34s cubic-bezier(.2, .8, .2, 1) both; }
+.arrive .k-docket:nth-child(2) { animation-delay: .035s; } .arrive .k-docket:nth-child(3) { animation-delay: .07s; } .arrive .k-docket:nth-child(4) { animation-delay: .105s; } .arrive .k-docket:nth-child(5) { animation-delay: .14s; }
+@keyframes dk-in { from { opacity: .5; translate: 0 5px; rotate: -.6deg; } to { opacity: 1; translate: 0 0; rotate: 0deg; } }
+.k-wait-line { display: flex; align-items: center; gap: 10px; margin: -6px 0 12px; font: 600 14px var(--body); color: #3B3428; min-height: 30px; }
+.k-wait-line .btn-mini { margin-left: auto; }
+.btn-mini { height: 36px; padding: 0 14px; border: 2px solid var(--ink); border-radius: var(--r-act); background: var(--paper); font: 700 14px var(--body); display: inline-grid; place-items: center; }
+
+/* cover (B of opening) */
+.k-cover { position: absolute; inset: 0; z-index: 20; background: var(--bar); color: var(--bar-text); display: grid; place-items: center; transition: transform .26s cubic-bezier(.3, .7, .2, 1); }
+.k-cover.lift { transform: translateY(-100%); }
+.k-cover-in { display: grid; justify-items: center; gap: 18px; width: 270px; }
+.k-cover .k-kb { font-size: 74px; }
+.k-cover .k-kb::after { height: 7px; bottom: 0; }
+.k-cover h2 { font: 700 30px/1 var(--display); color: var(--bar-text); }
+.k-ticket { width: 100%; background: var(--docket); color: var(--ink); padding: 12px 14px 18px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 7px), 95% 100%, 90% calc(100% - 7px), 85% 100%, 80% calc(100% - 7px), 75% 100%, 70% calc(100% - 7px), 65% 100%, 60% calc(100% - 7px), 55% 100%, 50% calc(100% - 7px), 45% 100%, 40% calc(100% - 7px), 35% 100%, 30% calc(100% - 7px), 25% 100%, 20% calc(100% - 7px), 15% 100%, 10% calc(100% - 7px), 5% 100%, 0 calc(100% - 7px)); opacity: 0; transition: opacity .2s; display: grid; gap: 6px; }
+.k-ticket.show { opacity: 1; }
+.k-step { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 8px; font: 600 14px/1.3 var(--body); }
+.k-step .n { color: var(--muted); font-weight: 600; font-size: 13px; font-variant-numeric: tabular-nums; }
+.k-step.wait { color: var(--muted); }
+.k-step.bad { color: var(--bad); }
+.k-step .ink { --is: 20px; }
+.k-tick { width: 18px; height: 18px; color: var(--done); }
+.k-bar { height: 5px; background: var(--line); }
+.k-bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .25s ease-out; }
+
+/* prep page */
+.k-write { display: flex; align-items: baseline; justify-content: space-between; font-size: 16px; min-height: 30px; margin-bottom: 8px; }
+.k-write u { font-weight: 700; text-underline-offset: 3px; }
+.k-ghostline { display: inline-block; height: 12px; width: 90px; border-radius: 6px; background: #E9E3D6; vertical-align: middle; }
+.k-datebar { display: flex; gap: 8px; margin-bottom: 10px; }
+.k-datebar span { height: 42px; border: 1.5px solid var(--ink); border-radius: 21px; display: grid; place-items: center; font: 600 16px var(--body); }
+.k-datebar .d1, .k-datebar .d4 { width: 46px; }
+.k-datebar .d2 { width: 68px; background: var(--ink); color: #fff; }
+.k-datebar .d3 { flex: 1; border-radius: 8px; justify-content: start; padding-left: 12px; }
+.k-chips { display: flex; gap: 8px; margin-bottom: 14px; }
+.k-chip { height: 40px; padding: 0 15px; border: 1.5px solid var(--ink); border-radius: 20px; display: grid; place-items: center; font: 700 15px var(--display); letter-spacing: .06em; text-transform: uppercase; transition: color .16s, border-color .16s, background .16s; }
+.k-chip.on { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
+.k-chips.ghost .k-chip { border-color: #DED7C8; color: transparent; background: transparent; }
+.k-nb { background: var(--bar-text); border: 1.5px solid var(--ink); border-radius: 10px; padding: 12px 14px 4px; box-shadow: 0 6px 0 rgba(28, 29, 31, .12); }
+.k-nb-head { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 4px 10px; padding-bottom: 10px; border-bottom: 2.5px solid var(--ink); }
+.k-nb-title { font: 700 46px/.9 var(--hand); }
+.k-nb-date { font-size: 14px; color: var(--muted); grid-column: 1; }
+.k-nb-count { grid-row: 1 / span 2; grid-column: 2; align-self: center; font: 700 32px/1 var(--hand); color: var(--accent-ink); min-height: 34px; display: flex; align-items: center; justify-content: flex-end; }
+.k-nb-count .k-status { font: 600 13px var(--body); color: var(--muted); padding: 0; gap: 6px; }
+.k-nb-count .ink { --is: 22px; }
+.k-add { grid-column: 1 / -1; display: flex; gap: 8px; margin-top: 8px; }
+.k-add .k-btn-line { height: 40px; padding: 0 16px; border: 1.5px solid var(--ink); border-radius: 20px; display: grid; place-items: center; font: 600 15px var(--body); }
+.k-addbox { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 8px; }
+.k-input { height: 44px; border: 1.5px solid var(--ink); border-radius: 8px; background: #fff; padding: 0 10px; display: flex; align-items: center; font: 600 16px var(--body); overflow: hidden; white-space: nowrap; }
+.k-input .car { width: 2px; height: 22px; background: var(--ink); margin-left: 1px; animation: caret 1s steps(1) infinite; }
+.k-input .ph { color: var(--faint); font-weight: 400; }
+@keyframes caret { 50% { opacity: 0; } }
+.k-btn { height: 44px; padding: 0 16px; border: 0; border-radius: var(--r-act); background: var(--accent-ink); color: #fff; font: 700 16px var(--body); display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 118px; }
+.k-btn.quiet { background: var(--paper); color: var(--ink); border: 1.5px solid var(--ink); min-width: 0; }
+.k-btn.outline { background: var(--paper); color: var(--bad); border: 2px solid var(--bad); }
+.k-btn.ok { background: var(--done-ink); }
+.k-btn .ink { --is: 22px; }
+.k-btn .k-tick { color: #fff; }
+.k-sec { display: flex; justify-content: space-between; font: 700 15px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--small-ink); padding: 16px 0 6px; }
+.k-sec.ghost span { display: inline-block; width: 64px; height: 10px; border-radius: 5px; background: #EADFD3; }
+.k-row { position: relative; display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 3px 0; border-bottom: 1px solid var(--rule); font: 700 25px/1.05 var(--hand); transition: background .3s; }
+.k-row .box { flex: 0 0 30px; width: 30px; height: 30px; border: 2.4px solid var(--ink); border-radius: 5px; display: grid; place-items: center; color: var(--done); }
+.k-row .box svg { width: 28px; height: 28px; }
+.k-row.done .box { border-color: transparent; }
+.k-row .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.k-row .q { font: 700 16px var(--body); }
+.k-row .more { font: 700 20px var(--body); color: var(--ink); width: 26px; text-align: center; letter-spacing: 1px; }
+.k-row.urgent { box-shadow: inset 3px 0 0 var(--ink); padding-left: 8px; }
+.k-row.done .t { color: #6B665C; text-decoration: line-through 2px; }
+.k-row .tagx { font: 700 11px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; padding: 4px 6px; border-radius: 3px; background: var(--accent-ink); color: #fff; }
+.k-row.pencil { color: #6E6658; }
+.k-row.pencil .box { border-style: dashed; border-color: #A8A090; }
+.k-row.pencil .note { font: 600 12px var(--body); color: var(--muted); }
+.k-row.flash { animation: rowflash 1.6s ease-out; }
+@keyframes rowflash { 0%, 30% { background: #FFE2CC; } 100% { background: transparent; } }
+.k-row.gh .box { border-color: #D6CEBF; }
+.k-row.gh .t { height: 18px; }
+.k-row.gh svg.sq { height: 18px; color: var(--pencil); }
+.k-row.gh svg.sq path { fill: none; stroke: currentColor; stroke-width: 5; stroke-linecap: round; }
+.k-row.reveal .t, .k-row.reveal .q { animation: inkin .32s ease-out both; }
+@keyframes inkin { from { opacity: 0; filter: blur(1px); } to { opacity: 1; filter: none; } }
+.k-row.unsent .tagx.ns { background: transparent; color: var(--accent-ink); border: 1.5px solid var(--accent-ink); }
+/* B toasts: Undo in the row */
+.k-inl { display: inline-flex; align-items: center; gap: 8px; font: 700 14px var(--body); color: var(--ink); white-space: nowrap; }
+.k-inl .u { height: 34px; padding: 0 12px; border: 1.5px solid var(--ink); border-radius: var(--r-act); display: grid; place-items: center; background: var(--paper); }
+.k-row .timer { position: absolute; left: 0; bottom: -1px; height: 3px; background: var(--accent); width: 100%; transform-origin: 0 50%; animation: drain var(--dur, 9s) linear forwards; }
+@keyframes drain { to { transform: scaleX(0); } }
+.k-row.gone { border: 1.5px dashed #B9B1A2; border-radius: 6px; background: rgba(255, 255, 255, .5); min-height: 48px; padding: 0 8px; margin: 4px 0; font: 600 15px var(--body); color: var(--muted); justify-content: space-between; }
+.k-row.fail { box-shadow: inset 4px 0 0 var(--bad); background: var(--bad-tint); padding-left: 8px; }
+.k-row.fail .k-inl { color: var(--bad); }
+.k-row.fail .k-inl .u { border-color: var(--bad); color: var(--bad); }
+
+/* "Now" sync strip and update strip */
+.k-sync { margin: 0 0 12px; padding: 9px 12px; border: 2px solid var(--accent); border-radius: 10px; background: #FFF3EA; font-size: 15px; line-height: 1.35; }
+.k-sync strong { color: var(--accent-ink); }
+.k-upd { position: absolute; left: 0; right: 0; top: 0; height: 48px; background: var(--ink); color: #fff; display: flex; align-items: center; justify-content: center; gap: 10px; font: 600 15px var(--body); z-index: 7; }
+.k-upd span.b { height: 38px; padding: 0 14px; border-radius: 19px; background: var(--accent-ink); display: grid; place-items: center; font-weight: 700; }
+
+/* toasts: Now */
+.k-toasts { position: absolute; left: 16px; right: 16px; bottom: 84px; display: flex; flex-direction: column-reverse; align-items: center; gap: 6px; z-index: 8; }
+.k-toast { display: flex; align-items: center; gap: 10px; min-height: 48px; max-width: 100%; padding: 2px 2px 2px 16px; border-radius: 24px; background: rgba(28, 29, 31, .66); -webkit-backdrop-filter: blur(6px) saturate(1.4); backdrop-filter: blur(6px) saturate(1.4); border: 1px solid rgba(255, 255, 255, .22); color: #fff; font: 600 16px/1.25 var(--body); text-shadow: 0 1px 2px rgba(0, 0, 0, .3); }
+.k-toast.plain { padding-right: 16px; }
+.k-toast .b { flex: none; height: 44px; min-width: 64px; padding: 0 16px; border-radius: 22px; border: 1.5px solid #fff; display: grid; place-items: center; font-weight: 700; }
+.k-toast.chip { padding: 2px; min-height: 0; }
+.k-toast.chip .b { border-color: rgba(255, 255, 255, .6); font-weight: 600; }
+.k-bug { position: absolute; z-index: 9; right: 10px; font: 700 12px/1.25 var(--body); color: #fff; background: var(--bad); padding: 6px 8px; border-radius: 6px; max-width: 170px; box-shadow: 0 3px 8px rgba(0, 0, 0, .25); }
+.k-bug::after { content: ""; position: absolute; left: 18px; bottom: -6px; border: 6px solid transparent; border-bottom: 0; border-top-color: var(--bad); }
+
+/* toasts: A, the docket slip */
+.k-slip { position: absolute; left: 0; right: 0; bottom: 68px; z-index: 8; background: var(--docket); border-top: 2.5px solid var(--ink); box-shadow: 0 -6px 16px rgba(28, 29, 31, .14); display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; min-height: 64px; padding: 8px 12px 8px 14px; animation: slipin .2s cubic-bezier(.2, .8, .2, 1); }
+@keyframes slipin { from { translate: 0 12px; opacity: .4; } to { translate: 0 0; opacity: 1; } }
+.k-slip .msg { font: 600 16px/1.25 var(--body); }
+.k-slip .msg small { display: block; font: 400 13px/1.3 var(--body); color: var(--muted); }
+.k-slip .ic { width: 28px; height: 28px; color: var(--done-ink); }
+.k-slip .act { height: 44px; padding: 0 16px; border-radius: var(--r-act); background: var(--ink); color: #fff; font: 700 15px var(--body); display: grid; place-items: center; }
+.k-slip .timer { position: absolute; left: 0; top: -2.5px; height: 3px; width: 100%; background: var(--accent); transform-origin: 0 50%; animation: drain var(--dur, 9s) linear forwards; }
+.k-slip .stack { position: absolute; left: 12px; top: -30px; height: 28px; padding: 0 10px; border-radius: 6px 6px 0 0; background: var(--ink); color: #fff; font: 700 13px/28px var(--body); }
+.k-slip.bad { border-top-color: var(--bad); background: #FFF8F6; }
+.k-slip.bad .ic { color: var(--bad); }
+.k-slip.bad .act { background: var(--bad); }
+.k-note { position: absolute; left: 16px; right: 16px; top: 76px; z-index: 8; background: var(--ink); color: #fff; border-radius: 8px; padding: 10px 14px; font: 600 15px var(--body); }
+
+/* signal: A, the hat menu; B, the floating band */
+.k-menu { position: absolute; top: 70px; right: 10px; width: 300px; z-index: 9; background: var(--paper); border: 1.5px solid var(--ink); border-radius: 10px; box-shadow: 0 10px 26px rgba(0, 0, 0, .2); overflow: hidden; animation: menuin .14s ease-out; }
+@keyframes menuin { from { opacity: 0; translate: 0 -4px; } to { opacity: 1; translate: 0 0; } }
+.k-menu .row { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-bottom: 1px solid var(--line); font: 600 15px/1.3 var(--body); }
+.k-menu .row small { display: block; font: 400 13px/1.35 var(--body); color: var(--muted); margin-top: 2px; }
+.k-menu .row.st { background: #FFF3EA; }
+.k-menu .row.st.ok { background: var(--done-tint); }
+.k-menu .row .ic { width: 22px; height: 22px; flex: none; margin-top: 1px; }
+.k-menu .row.dim { color: var(--muted); }
+.k-band { position: absolute; left: 0; right: 0; top: 68px; z-index: 5; min-height: 46px; display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 14px; background: var(--ink); color: #fff; font: 600 14.5px/1.3 var(--body); box-shadow: 0 6px 14px rgba(0, 0, 0, .18); border-left: 5px solid var(--accent); transform: translateY(-110%); transition: transform .22s cubic-bezier(.3, .7, .2, 1); }
+.k-band.show { transform: translateY(0); }
+.k-band.ok { border-left-color: var(--done); }
+.k-band .ic { width: 22px; height: 22px; flex: none; }
+.k-band .b { margin-left: auto; height: 34px; padding: 0 12px; border-radius: var(--r-act); background: var(--accent-ink); display: grid; place-items: center; font-weight: 700; white-space: nowrap; }
+
+/* recipes page (speed area) */
+.k-rh { font: 700 40px/1 var(--display); margin: 2px 0 10px; }
+.k-search { height: 46px; border: 1.5px solid var(--ink); border-radius: 23px; background: #fff; display: flex; align-items: center; gap: 8px; padding: 0 14px; color: var(--faint); font-size: 16px; margin-bottom: 10px; }
+.k-shelf { margin-bottom: 14px; }
+.k-shelf h4 { margin: 0 0 8px; font: 700 15px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--small-ink); }
+.k-plates { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.k-plate { display: grid; gap: 6px; justify-items: center; font: 600 13px/1.2 var(--body); text-align: center; }
+.k-plate i { width: 92px; height: 92px; border-radius: 50%; border: 2px solid var(--ink); background: radial-gradient(circle at 42% 44%, var(--c1) 0 22%, var(--c2) 23% 38%, #F6F1E6 39% 60%, #fff 61%); }
+.k-shelf.ghost .k-plate i { border: 2px dashed #D6CEBF; background: none; }
+.k-shelf.ghost .k-plate span { width: 70px; height: 10px; border-radius: 5px; background: #ECE6DA; }
+.k-shelf.reveal .k-plate { animation: inkin .25s ease-out both; }
+.pressed { scale: .97; transition: scale .12s; }
+.k-fade { animation: pagefade .12s ease-out both; }
+@keyframes pagefade { from { opacity: .4; } to { opacity: 1; } }
+
+/* pings form (saving area) */
+.k-ph { font: 700 34px/1 var(--display); margin: 2px 0 12px; }
+.k-card { position: relative; background: var(--paper); border: 1.5px solid var(--ink); border-radius: 10px; padding: 14px; display: grid; gap: 10px; }
+.k-card label { font: 700 13px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.k-area { min-height: 76px; border: 1.5px solid var(--ink); border-radius: 8px; padding: 9px 10px; font: 600 16px/1.35 var(--body); background: #fff; }
+.k-shows { font: 600 15px var(--body); }
+.k-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+.k-saved { font-size: 14px; color: var(--muted); min-height: 20px; }
+.k-under { display: flex; align-items: flex-start; gap: 8px; font: 600 14px/1.35 var(--body); color: var(--ink); }
+.k-under.bad { color: var(--bad); }
+.k-under .ic { width: 20px; height: 20px; flex: none; }
+.k-list h3 { font: 700 15px var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--small-ink); margin: 18px 0 6px; }
+.k-ping { position: relative; padding: 11px 12px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--paper); margin-bottom: 8px; font-size: 15px; }
+.k-ping b { display: block; font-size: 16px; }
+.k-ping small { color: var(--muted); }
+.k-ping.flash { animation: rowflash 1.6s ease-out; }
+.k-stamp { position: absolute; top: 8px; right: 10px; font: 700 21px/1 var(--hand); color: var(--done-ink); border: 2px solid currentColor; border-radius: 6px; padding: 3px 7px 1px; rotate: -4deg; background: rgba(255, 255, 255, .8); text-align: center; animation: stamp .22s cubic-bezier(.2, .8, .2, 1.3) both; }
+.k-stamp small { display: block; font: 600 10px/1.2 var(--body); letter-spacing: .04em; text-transform: uppercase; }
+.k-stamp.wait { color: var(--accent-ink); }
+.k-stamp.bad { color: var(--bad); }
+@keyframes stamp { from { scale: 1.25; opacity: 0; } to { scale: 1; opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .ink .tr { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="study-note">Design study for the Kitchen Book. Example lines and names only. Nothing on this page reads or writes the kitchen's data.</div>
+
+<main class="wrap">
+  <header class="intro">
+    <p class="eyebrow">Kitchen Book · 4 November 2026 · Recommended set chosen</p>
+    <h1>Loading and Feedback Options</h1>
+    <p>An audit of every wait, save message and toast in the book, and <strong>two redesigns for each of six moments</strong>: opening the book, opening a kitchen page, a tap, a save, a toast with Undo, and lost signal. Each one starts from <strong>Ink in motion</strong>, chosen on 3 November: the traced icons, the pencil placeholder lines and the rule that a tick only shows once the server has it all stay.</p>
+    <p>Press a button above a strip and all three phones play the same moment, under one clock. The first phone is how the book behaves today.</p>
+  </header>
+
+  <section class="prose" aria-labelledby="glance-h">
+    <h2 id="glance-h" style="font-size:2rem">At a glance</h2>
+    <p>Recommended picks are marked. Every option keeps the book's look, its reads budget and its rules: no new Firestore reads, no private data kept on the phone.</p>
+  </section>
+  <div class="glance-wrap">
+    <table class="glance">
+      <thead><tr><th scope="col">Moment</th><th scope="col">What goes wrong now</th><th scope="col">A</th><th scope="col">B</th></tr></thead>
+      <tbody>
+        <tr><td><a href="#opening">Opening the book</a></td><td>White page, then the whole book drops in at once. No way out if a file never arrives.</td><td><span class="pick">Chosen</span> Steady shell: the bar, paper and tabs are there from the first frame</td><td>Cover page with a counted progress, like the installed app's splash</td></tr>
+        <tr><td><a href="#page">Opening a page</a></td><td>A loading card is swapped for the real page: lines jump 176 px, tabs go from 1 to 6.</td><td><span class="pick">Chosen</span> Same page, filling in: drawn at its real size, words ink in place</td><td>Ready to write: the add box works before the list arrives</td></tr>
+        <tr><td><a href="#speed">Taps and page changes</a></td><td>First Recipes of the day: about 1.2 s with nothing new on screen.</td><td><span class="pick">Chosen</span> Answer the tap first: heading at once, shelves in pieces</td><td>Start before the tap: Recipes drawn while the landing sits idle</td></tr>
+        <tr><td><a href="#saving">Saving a form</a></td><td>"Saving..." twice. Success and failure both in the same grey text.</td><td><span class="pick">Chosen</span> The button tells the whole story: Saving, Saved, Try again</td><td>Saved stamp: a handwritten stamp stays on the record</td></tr>
+        <tr><td><a href="#toasts">Toasts and Undo</a></td><td>See-through pill over the line it is about. Errors vanish. A stale Undo ticks the line.</td><td><span class="pick">Chosen</span> One docket slip on the tab bar, with a timer line</td><td>Undo where it happened: in the line itself</td></tr>
+        <tr><td><a href="#signal">Signal and updates</a></td><td>The No signal box pushes the list 77 px down, then vanishes with no "all sent".</td><td>Status on the chef hat ring and its menu</td><td><span class="pick">Chosen</span> One floating band over the page, with "All sent"</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ===================== areas (filled by the script) ===================== -->
+  <div id="areas" style="display:grid;gap:64px"></div>
+
+  <section class="prose" aria-labelledby="found-h">
+    <h2 id="found-h" style="font-size:2rem">Found in the audit</h2>
+    <p>Source read across <code>js/</code>, the page's own markup and CSS, plus browser checks with the click tests' stand-in for Firebase. <b>Fix</b> needs no design choice. <b>Design</b> is what the options above answer. <b>Speed</b> and <b>Tidy</b> are measured or source findings for later small pull requests.</p>
+  </section>
+  <div class="findings" id="findings"></div>
+
+  <section class="prose" aria-labelledby="share-h">
+    <h2 id="share-h" style="font-size:2rem">Shared groundwork, whichever you pick</h2>
+    <p>These hold for every option and are worth doing first, because each design above needs them.</p>
+  </section>
+  <div class="foundations">
+    <div class="found">
+      <h3>One toast, one save state</h3>
+      <p>Today there are four toast copies (the prep pages, the landing, and three identical ones in the recipe, drawing and function editors) and about a dozen message slots. One shared helper for each, used by every page, keeps the cached-module rules for older saved copies.</p>
+    </div>
+    <div class="found">
+      <h3>Same words for the same wait</h3>
+      <table class="words">
+        <tr><td>Opening</td><td>files and editors: "Opening the recipe editor..."</td></tr>
+        <tr><td>Reading</td><td>kitchen data: "Reading today's list..." (replaces most "Loading...")</td></tr>
+        <tr><td>Checking</td><td>sign-in and access: "Checking your PIN..."</td></tr>
+        <tr><td>Saving / Sending</td><td>writes, Sending for mail only</td></tr>
+        <tr><td>No signal</td><td>three sentences, not seven: page waits, change waits, read failed</td></tr>
+      </table>
+    </div>
+    <div class="found">
+      <h3>How long things stay</h3>
+      <ul>
+        <li>A confirmation: 4 s.</li>
+        <li>Undo: 9 s, as now.</li>
+        <li>An error: until OK, Try again, or the problem is gone. Never a timer.</li>
+        <li>Slow save note: after 4 s everywhere (now 3, 4, 5 or 10 s).</li>
+      </ul>
+    </div>
+  </div>
+
+  <section class="prose" aria-labelledby="build-h">
+    <h2 id="build-h" style="font-size:2rem">Build steps</h2>
+    <p>The head chef chose the recommended set on 4 November 2026. Small pull requests in this order, each with click tests at 390, 768 and 1280 px, the reads budget check and reduced motion:</p>
+  </section>
+  <ol class="steps">
+    <li><b>Fix the stale Undo</b> (LF-01, LF-02). A failed save removes its own Undo, and the older Undo lasts its full time. Test fails first on today's code.</li>
+    <li><b>Toasts: the docket slip</b> on every page, including the editors and the landing. Errors get a red edge and stay.</li>
+    <li><b>Saving: the button tells the story</b>, form by form, starting with pings, minutes and deliveries, with the shared save words.</li>
+    <li><b>Signal: the floating band</b>, also carrying the update offer.</li>
+    <li><b>Opening and pages: steady shell and same page, filling in.</b> Touches <code>index.html</code> and the saved-shell file lists, so it goes last and alone.</li>
+    <li><b>Speed: answer the tap first</b>, Recipes drawn in pieces. Measured before and after on the same slowed phone.</li>
+  </ol>
+
+  <footer class="method">
+    <p><b>How the numbers were taken.</b> The book from <code>main</code> at 01227ea, served locally, opened in headless Chromium with the CPU slowed 4 times, with the click tests' stand-in for Firebase (answers in about 5 ms). Real Firestore, App Check and sign-in add network time that these numbers do not include. Five reloads per figure, median shown. Not yet checked on a real phone, an iPhone or with a screen reader.</p>
+    <p><b>Demo timings</b> on this page follow those measurements, slowed or shortened where marked so the difference is easy to see.</p>
+  </footer>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------------- icons: the book's own outlines (js/motion.js) ---------------- */
+  function p(d) { return '<path d="' + d + '"/>'; }
+  var IC = {
+    prep: [64, 3, '<rect x="12" y="10" width="40" height="48" rx="5"/>' + p('M24 10V7h16v3') + p('M20 24l3 3 5-6M20 38l3 3 5-6'), p('M34 25h12M34 39h12')],
+    orders: [64, 3, p('M8 20l24-12 24 12v26L32 58 8 46z'), p('M8 20l24 12 24-12M32 32v26') + p('M20 14l24 12')],
+    recipes: [64, 3, '<circle cx="32" cy="32" r="22"/>' + p('M6 14v14M10 14v14M14 14v14M6 28h8M10 28v22') + p('M58 14c-3 2-5 6-5 11v3h5v22'), '<circle cx="32" cy="32" r="13" stroke-dasharray="4 5"/>'],
+    waste: [64, 3, p('M10 18h44') + p('M25 18v-6h14v6') + p('M15 18l3 38h28l3-38'), p('M27 28v18M37 28v18')],
+    transfers: [64, 3, '', p('M10 22h40') + p('M42 14l8 8-8 8') + p('M54 42H14') + p('M22 34l-8 8 8 8')],
+    guides: [64, 3, p('M32 16c-6-4-14-6-24-6v38c10 0 18 2 24 6 6-4 14-6 24-6V10c-10 0-18 2-24 6z') + p('M32 16v38'), p('M14 21c4 0 8 1 12 3M14 31c4 0 8 1 12 3M38 24c4-2 8-3 12-3M38 34c4-2 8-3 12-3')],
+    chef: [24, 1.9, p('M7 14.2A3.6 3.6 0 1 1 8.6 7.4a4.6 4.6 0 0 1 6.8 0A3.6 3.6 0 1 1 17 14.2V20H7Z'), p('M7 16.8h10')],
+    save: [24, 1.9, p('M7 3.5h7l4 4V20a.5.5 0 0 1-.5.5h-10.5a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5z'), p('M9.5 11h5M9.5 14.5h5M9.5 18h3')]
+  };
+  function ink(name, busy, size) {
+    var i = IC[name];
+    return '<span class="ink' + (busy ? '' : ' still') + '"' + (size ? ' style="--is:' + size + 'px"' : '') + '><svg viewBox="0 0 ' + i[0] + ' ' + i[0] + '" fill="none" stroke="currentColor" stroke-width="' + i[1] + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g>' + i[2] + i[3] + '</g>' +
+      (busy ? '<g class="tr">' + i[3].replace(/<(path|circle) /g, '<$1 pathLength="100" ') + '</g>' : '') + '</svg></span>';
+  }
+  function svg(vb, inner, cls, sw) { return '<svg class="' + (cls || '') + '" viewBox="' + vb + '" fill="none" stroke="currentColor" stroke-width="' + (sw || 2) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>'; }
+  function navIcon(n) { var i = IC[n]; return svg('0 0 64 64', i[2] + i[3], '', 3.4); }
+  var TICK = svg('0 0 16 16', p('M3 8.5 L6.5 12 L13 4.5'), 'k-tick', 2.4);
+  var BELL = svg('0 0 24 24', p('M6 16v-5a6 6 0 0 1 12 0v5l1.6 2H4.4z') + p('M10 20.5a2 2 0 0 0 4 0'));
+  var BACK = svg('0 0 24 24', p('M15 5l-7 7 7 7'), 'k-back', 2.6);
+  var HAT = svg('0 0 24 24', IC.chef[2] + IC.chef[3]);
+  var NOSIG = svg('0 0 24 24', p('M4 19h1M8.5 19v-3M13 19v-6M17.5 19v-9') + p('M3 4l18 16'), 'ic', 2.2);
+  var WARN = svg('0 0 24 24', '<circle cx="12" cy="12" r="9.5"/>' + p('M12 7v6.5M12 16.8v.2'), 'ic', 2.2);
+  var BIN = svg('0 0 64 64', IC.waste[2] + IC.waste[3], 'ic', 4);
+  var CHECKC = svg('0 0 24 24', '<circle cx="12" cy="12" r="9.5"/>' + p('M7.5 12.3l3 3 6-6.6'), 'ic', 2.2);
+  var BOXTICK = svg('0 0 32 32', p('M6 17l7 7 14-16'), '', 3.6);
+  var SQUIG = '<svg class="sq" viewBox="0 0 220 24" preserveAspectRatio="none" aria-hidden="true"><path d="M4 12 Q30 7 60 12 T115 11 T170 12 T216 10"/></svg>';
+
+  /* ---------------- shared pieces of the mock book ---------------- */
+  var TABS = [['recipes', 'Recipes'], ['prep', 'Prep'], ['orders', 'Orders'], ['waste', 'Wastage'], ['transfers', 'Transfers'], ['guides', 'Guides']];
+  function top(o) {
+    o = o || {};
+    var left = o.back ? BACK + '<span>Kitchen Book</span>' : '<span class="k-kb">KB</span><span>Kitchen Book</span>';
+    var rings = o.rings === 'none' ? '' :
+      '<span class="k-ring' + (o.rings === 'ghost' ? ' ghost' : '') + '">' + BELL + '</span>' +
+      '<span class="k-ring' + (o.rings === 'ghost' ? ' ghost dash' : o.who === false ? ' dash' : '') + '">' + HAT + (o.badge || '') + '</span>';
+    return '<div class="k-top" style="' + (o.y ? 'top:' + o.y + 'px' : '') + '"><span class="k-brand">' + left + '</span>' + rings + '</div>';
+  }
+  function tabs(mode, current, y) {
+    var list = mode === 'one' ? TABS.slice(0, 1) : TABS;
+    return '<nav class="k-tabs ' + (mode === 'faint' || mode === 'empty' ? mode : '') + '">' + list.map(function (t) {
+      return '<span class="k-tab' + (t[0] === current ? ' on' : '') + '">' + navIcon(t[0]) + t[1] + '</span>';
+    }).join('') + '</nav>';
+  }
+  var DOCKETS = [['recipes', 'Recipes'], ['prep', 'Prep list'], ['orders', 'Orders'], ['waste', 'Wastage'], ['transfers', 'Transfers']];
+  function landing(o) {
+    o = o || {};
+    return '<div class="k-wall"><h1>Pick a docket</h1><div class="k-date">Tuesday 3 November</div>' + (o.wait || '') +
+      '<div class="k-dockets' + (o.arrive ? ' arrive' : '') + '">' + DOCKETS.map(function (d, n) {
+        return '<div class="k-docket' + (o.shell ? ' shell' : '') + (o.press === n ? ' pressed' : '') + '"><span class="k-dk-ic">' + navIcon(d[0]) + '</span><span class="k-dk-t"><span>' + d[1] + '</span></span><span class="k-dk-n"><span>No. 0' + (n + 1) + '</span></span></div>';
+      }).join('') + '</div></div>';
+  }
+  var ROWS = [
+    { id: 'r1', sec: 'Grill', t: 'Portion rump', q: '20', urgent: true },
+    { id: 'r2', sec: 'Sauce', t: 'Make gravy', q: '5 L' },
+    { id: 'r3', sec: 'Sauce', t: 'Laksa paste', q: '1 batch' },
+    { id: 'r4', sec: 'Larder', t: 'Slice onions', q: '2 tubs' },
+    { id: 'r5', sec: 'Larder', t: 'Pick coriander', q: '' },
+    { id: 'r6', sec: 'Larder', t: 'Wash bok choy', q: '' }
+  ];
+  function rowHTML(r, st) {
+    var x = (st.rs && st.rs[r.id]) || {};
+    if (x.gone) return '<div class="k-row gone"><span>Removed ' + r.t + '</span><span class="k-inl"><span class="u">Undo</span></span>' + '<span class="timer" style="--dur:9s"></span></div>';
+    if (x.removed) return '';
+    var done = !!x.done, cls = 'k-row' + (r.urgent ? ' urgent' : '') + (done ? ' done' : '') + (x.unsent ? ' unsent' : '') + (x.fail ? ' fail' : '') + (x.flash ? ' flash' : '') + (st.reveal ? ' reveal' : '') + (x.pencil ? ' pencil' : '');
+    var right;
+    if (x.inline) right = '<span class="k-inl">Ticked <span class="u">Undo</span></span>';
+    else if (x.fail) right = '<span class="k-inl">Not saved <span class="u">Try again</span></span>';
+    else if (x.pencil) right = '<span class="note">' + x.pencil + '</span>';
+    else right = (r.q ? '<span class="q">' + r.q + '</span>' : '') + (x.unsent ? '<span class="tagx ns">Not sent</span>' : '') + '<span class="more">···</span>';
+    return '<div class="' + cls + '"><span class="box">' + (done ? BOXTICK : '') + '</span><span class="t">' + r.t + (r.urgent && !done && !x.inline && !x.fail ? ' <span class="tagx">Urgent</span>' : '') + '</span>' + right + (x.inline ? '<span class="timer" style="--dur:9s"></span>' : '') + '</div>';
+  }
+  function ghostRows(n) { var s = ''; for (var i = 0; i < n; i++) s += '<div class="k-row gh"><span class="box"></span><span class="t" style="max-width:' + [66, 48, 76, 57, 69][i % 5] + '%">' + SQUIG + '</span></div>'; return s; }
+  function prepPage(st) {
+    var rows = ROWS.concat(st.extraRows || []);
+    var done = rows.filter(function (r) { return st.rs && st.rs[r.id] && st.rs[r.id].done; }).length;
+    var total = rows.filter(function (r) { return !(st.rs && st.rs[r.id] && (st.rs[r.id].removed || st.rs[r.id].gone)) && !(st.rs && st.rs[r.id] && st.rs[r.id].pencil); }).length;
+    var head = st.head === 'reading' ? '<span class="k-status">' + ink('prep', true, 22) + 'Reading today\'s list...</span>' : st.head === 'count' ? done + ' of ' + total + ' done' : '';
+    var add = st.add ? '<div class="k-addbox"><span class="k-input">' + (st.add.text ? st.add.text : '<span class="ph">Write a line</span>') + (st.add.caret ? '<span class="car"></span>' : '') + '</span><span class="k-btn" style="min-width:70px">Add</span></div>' : '<div class="k-add"><span class="k-btn-line">Write a line</span></div>';
+    var pen = rows.filter(function (r) { return st.rs && st.rs[r.id] && st.rs[r.id].pencil; });
+    var secs = pen.map(function (r) { return rowHTML(r, st); }).join('');
+    if (st.rows === 'ghost') secs += '<div class="k-sec ghost"><span></span></div>' + ghostRows(2) + '<div class="k-sec ghost"><span></span></div>' + ghostRows(3);
+    else {
+      ['Grill', 'Sauce', 'Larder'].forEach(function (s) {
+        var rs = rows.filter(function (r) { return r.sec === s && !(st.rs && st.rs[r.id] && st.rs[r.id].pencil); });
+        var d = rs.filter(function (r) { return st.rs && st.rs[r.id] && st.rs[r.id].done; }).length;
+        var live = rs.filter(function (r) { return !(st.rs && st.rs[r.id] && (st.rs[r.id].removed)); });
+        secs += '<div class="k-sec"><span>' + s + '</span><span>' + d + '/' + live.length + '</span></div>' + rs.map(function (r) { return rowHTML(r, st); }).join('');
+      });
+    }
+    var write = st.who ? '<span>Writing as <b>' + st.who + '</b></span><u>Not you?</u>' : '<span>Writing as <span class="k-ghostline"></span></span>';
+    var chips = '<div class="k-chips' + (st.chips === 'ghost' ? ' ghost' : '') + '"><span class="k-chip on">All</span><span class="k-chip">Larder</span><span class="k-chip">Grill</span><span class="k-chip">Sauce</span></div>';
+    return '<div class="k-body"><div class="k-scroll" style="--off:' + (st.off || 0) + '">' + (st.strip || '') +
+      '<div class="k-write">' + write + '</div>' +
+      '<div class="k-datebar"><span class="d1">‹</span><span class="d2">Today</span><span class="d3">03/11/2026</span><span class="d4">›</span></div>' + chips +
+      '<div class="k-nb"><div class="k-nb-head"><span class="k-nb-title">Today</span><span class="k-nb-count">' + head + '</span><span class="k-nb-date">3 November 2026</span>' + add + '</div>' + secs + '</div></div></div>';
+  }
+  function loadingCard() {
+    return '<div class="k-body"><div class="k-scroll"><div class="k-nb"><div class="k-nb-head" style="grid-template-columns:1fr"><span class="k-nb-title" style="font:700 44px/1 var(--hand)">Prep list</span><span class="k-nb-date">3 November 2026</span></div>' +
+      '<div class="k-status" style="padding:12px 0 2px">' + ink('prep', true, 30) + 'Loading the prep list...</div>' + ghostRows(4) + '</div></div></div>';
+  }
+
+  /* ---------------- a strip of three phones playing one moment ---------------- */
+  var areas = [];
+  function Area(cfg) {
+    var el = document.createElement('section'); el.className = 'area'; el.id = cfg.id; el.setAttribute('aria-labelledby', cfg.id + '-h');
+    var head = '<div class="area-head"><p class="eyebrow">' + cfg.eyebrow + '</p><h2 id="' + cfg.id + '-h">' + cfg.title + '</h2><p>' + cfg.now + '</p></div>';
+    var ctr = '<div class="controls" role="group" aria-label="Play a moment on all three phones"><span class="lbl">Play</span>' + cfg.scenarios.map(function (s, i) {
+      return '<button type="button" class="play" data-sc="' + s[0] + '" aria-pressed="false">' + svg('0 0 14 14', '<path d="M3 2l9 5-9 5z" fill="currentColor" stroke="none"/>') + s[1] + '</button>';
+    }).join('') + '<span class="clock num" aria-live="off"><span data-clock>0.0</span><small>s</small></span></div>';
+    var cols = cfg.designs.map(function (d) {
+      return '<div class="col' + (d.key === 'Now' ? ' is-now' : '') + (d.rec ? ' is-rec' : '') + '"><div class="col-head"><span class="key">' + d.key + '</span><span class="name">' + d.name + '</span></div>' +
+        '<div class="phone" role="img" aria-label="' + d.alt + '"><div class="screen" inert></div></div><p class="readout" data-readout aria-live="polite"></p>' +
+        '<div class="notes">' + d.notes.map(function (n) { return '<p>' + n + '</p>'; }).join('') + '</div></div>';
+    }).join('');
+    var ev = cfg.shots ? '<details class="evidence"><summary>Screenshots of the book today</summary><div class="shots">' + cfg.shots.map(function (s) {
+      return '<figure><img src="previews/' + s[0] + '.png" alt="' + s[1] + '" loading="lazy" width="390" height="844"><figcaption>' + s[1] + '</figcaption></figure>';
+    }).join('') + '</div></details>' : '';
+    el.innerHTML = head + ctr + '<div class="stage-wrap"><div class="stage">' + cols + '</div></div>' + '<div class="rec"><p>' + cfg.rec + '</p></div>' + ev;
+    document.getElementById('areas').appendChild(el);
+    var screens = el.querySelectorAll('.screen'), reads = el.querySelectorAll('[data-readout]'), clockEl = el.querySelector('[data-clock]');
+    var timers = [], raf = 0, t0 = 0, endAt = 0;
+    var phones = cfg.designs.map(function (d, i) {
+      var ph = { st: {}, set: function (patch) { for (var k in patch) ph.st[k] = patch[k]; screens[i].innerHTML = d.render(ph.st); }, read: function (h) { reads[i].innerHTML = h; } };
+      return ph;
+    });
+    function rest() { cfg.designs.forEach(function (d, i) { phones[i].st = {}; phones[i].set(d.rest ? d.rest() : d.start(cfg.scenarios[0][0])); phones[i].read(d.restRead || ''); }); }
+    function stop() { timers.forEach(clearTimeout); timers = []; cancelAnimationFrame(raf); }
+    function tick() { var s = Math.min(endAt, performance.now() - t0) / 1000; clockEl.textContent = s.toFixed(1); if (performance.now() - t0 < endAt) raf = requestAnimationFrame(tick); }
+    function play(sc, btn) {
+      stop();
+      el.querySelectorAll('.play').forEach(function (b) { b.setAttribute('aria-pressed', String(b === btn)); });
+      endAt = 0; t0 = performance.now();
+      cfg.designs.forEach(function (d, i) {
+        var ph = phones[i]; ph.st = {}; ph.set(d.start(sc)); ph.read('');
+        var end = d.run(sc, ph.set, function (ms, fn) { timers.push(setTimeout(fn, ms)); }, ph.read, function () { return ph.st; });
+        endAt = Math.max(endAt, end || 0);
+      });
+      endAt += 300; tick();
+    }
+    el.querySelectorAll('.play').forEach(function (b) { b.addEventListener('click', function () { play(b.getAttribute('data-sc'), b); }); });
+    rest();
+    areas.push({ el: el, rest: rest });
+  }
+
+  /* ===================== 1. Opening the book ===================== */
+  var OPEN = { normal: 900, slow: 3200, fail: 0 };
+  Area({
+    id: 'opening', eyebrow: 'Loading screens', title: 'Opening the book',
+    now: 'From tapping the app to the landing page. Today a plain white page names the wait with a tracing chef hat, then the charcoal bar, the kraft paper and the tab bar arrive all at once. If one of the book\'s files never arrives, the hat traces for ever and nothing offers a way out.',
+    scenarios: [['normal', 'Normal start'], ['slow', 'Slow signal'], ['fail', 'A file never arrives']],
+    designs: [
+      { key: 'Now', name: 'White page, then everything', alt: 'Today: a white page with Kitchen Book and Opening the kitchen book, then the whole book appears at once.',
+        notes: ['The first frame looks nothing like the book. The installed app shows a charcoal splash, then white, then charcoal again.', 'No timeout and no Try again.'],
+        start: function () { return { s: 'blank' }; },
+        rest: function () { return { s: 'blank' }; },
+        render: function (st) {
+          if (st.s === 'blank') return '<div class="k-blank"><h1>Kitchen Book</h1><div class="k-status">' + ink('chef', true, 30) + 'Opening the kitchen book...</div></div>';
+          return top() + landing({ arrive: true }) + tabs('full');
+        },
+        run: function (sc, set, at, read) {
+          if (sc === 'fail') { at(5000, function () { read('5 s: still tracing. <b>Only closing the app gets out.</b>'); }); return 5000; }
+          at(OPEN[sc], function () { set({ s: 'page' }); read('Page at <b>' + (OPEN[sc] / 1000).toFixed(1) + ' s</b>, all at once.'); }); return OPEN[sc];
+        } },
+      { key: 'A', name: 'Steady shell', rec: true, alt: 'Option A: the charcoal bar, kraft paper and docket outlines show from the first frame, then the words ink in.',
+        notes: ['<strong>How:</strong> <code>index.html</code> already holds the charcoal bar, the paper, the tab bar and five docket outlines. The book fills them in. After 1 s it says what it is waiting for; after 8 s, Still opening with Try again.', '<strong>Good:</strong> nothing moves, and the first frame is the book.', '<strong>Cost:</strong> about 2 kB more in <code>index.html</code> that must match the real top bar and dockets.'],
+        start: function () { return { s: 'shell' }; },
+        rest: function () { return { s: 'shell' }; },
+        render: function (st) {
+          var wait = st.s === 'shell-wait' ? '<div class="k-wait-line">' + ink('chef', true, 26) + 'Opening the book...</div>' : st.s === 'shell-fail' ? '<div class="k-wait-line">' + ink('chef', false, 26) + '<span>Still opening. Check the signal.</span><span class="btn-mini">Try again</span></div>' : '';
+          var shell = st.s !== 'page';
+          return top({ rings: shell ? 'ghost' : '' }) + landing({ shell: shell, wait: wait }) + tabs(shell ? 'empty' : 'full');
+        },
+        run: function (sc, set, at, read) {
+          if (sc !== 'normal') at(1000, function () { set({ s: 'shell-wait' }); });
+          if (sc === 'fail') { at(5000, function () { set({ s: 'shell-fail' }); read('5 s here, 8 s in the book: <b>Still opening, Try again.</b>'); }); return 5000; }
+          at(OPEN[sc], function () { set({ s: 'page' }); read('Book shape at <b>0.0 s</b>, words at ' + (OPEN[sc] / 1000).toFixed(1) + ' s. Nothing moved.'); }); return OPEN[sc];
+        } },
+      { key: 'B', name: 'Cover page, counted', alt: 'Option B: a charcoal cover with the KB logo and a docket that counts the book files and steps, then it lifts away.',
+        notes: ['<strong>How:</strong> the charcoal cover matches the installed app\'s own splash. After half a second a small docket counts the book\'s files as they arrive, then names the next real step. The cover lifts away like a docket off the rail.', '<strong>Good:</strong> on slow signal you can see it is moving, and which step is slow.', '<strong>Cost:</strong> one more screen between the app icon and the book; a start just over half a second flashes the cover.'],
+        start: function () { return { s: 'cover', n: 0, show: false }; },
+        rest: function () { return { s: 'cover', n: 17, show: true, step: 1 }; },
+        render: function (st) {
+          var files = '<div class="k-step' + (st.n >= 28 ? '' : st.bad ? ' bad' : '') + '">' + (st.n >= 28 ? TICK : st.bad ? WARN.replace('class="ic"', 'class="k-tick" style="color:var(--bad)"') : ink('chef', true, 20)) + '<span>' + (st.bad ? 'No signal. Files stopped' : 'Book files') + '</span><span class="n">' + st.n + ' of 28</span></div>';
+          var home = '<div class="k-step' + (st.n >= 28 ? '' : ' wait') + '">' + (st.home ? TICK : st.n >= 28 ? ink('chef', true, 20) : '<span></span>') + '<span>Opening Home</span><span></span></div>';
+          var bar = '<div class="k-bar"><i style="width:' + Math.round(st.n / 28 * 100) + '%"></i></div>';
+          var fail = st.bad ? '<span class="btn-mini" style="justify-self:start;margin-top:4px">Try again</span>' : '';
+          var cover = '<div class="k-cover' + (st.s === 'lift' ? ' lift' : '') + '"><div class="k-cover-in"><span class="k-kb">KB</span><h2>Kitchen Book</h2><div class="k-ticket' + (st.show ? ' show' : '') + '">' + files + bar + home + fail + '</div></div></div>';
+          return top() + landing({}) + tabs('full') + (st.s === 'gone' ? '' : cover);
+        },
+        run: function (sc, set, at, read) {
+          var total = sc === 'fail' ? 5000 : OPEN[sc], stopAt = sc === 'fail' ? 11 : 28;
+          at(500, function () { set({ show: true }); });
+          var steps = 8;
+          for (var i = 1; i <= steps; i++) (function (i) { at(Math.round(total * 0.85 * i / steps), function () { set({ n: Math.min(stopAt, Math.round(28 * i / steps)) }); }); })(i);
+          if (sc === 'fail') { at(5000, function () { set({ bad: true, n: 11 }); read('Stops at <b>11 of 28</b> and says so, with Try again.'); }); return 5000; }
+          at(total, function () { set({ n: 28, home: true, s: 'lift' }); read(total < 600 ? 'Fast start: the cover never shows.' : 'Cover until <b>' + (total / 1000).toFixed(1) + ' s</b>, counting.'); });
+          at(total + 300, function () { set({ s: 'gone' }); });
+          return total + 300;
+        } }
+    ],
+    rec: '<b>Recommended: A, steady shell.</b> It makes every start look instant without adding a screen, and it adds the missing way out when a file never arrives. B\'s counted files could still be the detail line under "Still opening" if starts on the kitchen wifi turn out to be slow.',
+    shots: [['now-opening', 'Today: the first frame, before the book\'s scripts run.'], ['now-landing', 'Today: the landing page that replaces it.']]
+  });
+
+  /* ===================== 2. Opening a kitchen page ===================== */
+  var PG = { normal: { who: 450, list: 1300 }, slow: { who: 1200, list: 4200 } };
+  Area({
+    id: 'page', eyebrow: 'Loading screens', title: 'Opening a kitchen page',
+    now: 'Opening the prep list after the book has started: the sign-in is checked, then today\'s list is read. Today a card says Loading the prep list with four pencil lines. When the list arrives the card is replaced by the real page, so the notebook lands 176 px lower, its title changes from Prep list to Today, and the tab bar grows from one tab to six. Minutes, mail, drinks, to-do and guides still say a plain "Loading...".',
+    scenarios: [['normal', 'Normal signal'], ['slow', 'Slow signal']],
+    designs: [
+      { key: 'Now', name: 'Loading card, then the page', alt: 'Today: a card with Loading the prep list and pencil lines, then the full page appears lower down.',
+        notes: ['Everything you are about to tap moves when the list arrives.', 'The kitchen pages also wait for a clock check that only starts once the whole page has loaded (LF-07).'],
+        start: function () { return { s: 'card' }; },
+        render: function (st) {
+          if (st.s === 'card') return top({ back: true, who: false }) + loadingCard() + tabs('one');
+          return top({ back: true }) + prepPage({ who: 'Sam', head: 'count', rows: 'real', reveal: false }) + tabs('full', 'prep');
+        },
+        run: function (sc, set, at, read) { var t = PG[sc]; at(t.list, function () { set({ s: 'page' }); read('List at <b>' + (t.list / 1000).toFixed(1) + ' s</b>: the page jumps 176 px.'); }); return t.list; } },
+      { key: 'A', name: 'Same page, filling in', rec: true, alt: 'Option A: the full prep page is drawn at its real size with pencil lines, then the words ink in without moving.',
+        notes: ['<strong>How:</strong> the page draws its real frame at once: Writing as, the date bar, empty section chips, the notebook titled Today, and pencil lines the height of real lines. The count slot says Reading today\'s list. Words ink in where they will stay.', '<strong>Good:</strong> nothing moves; the same helper gives minutes, mail, drinks and to-do their first ink wait.', '<strong>Cost:</strong> each page needs a frame drawn without data; the section chips wait for the kitchen settings.'],
+        start: function () { return { who: null, chips: 'ghost', head: 'reading', rows: 'ghost', tabs: 'faint' }; },
+        render: function (st) { return top({ back: true, who: !!st.who }) + prepPage(st) + tabs(st.tabs, 'prep'); },
+        run: function (sc, set, at, read) {
+          var t = PG[sc];
+          at(t.who, function () { set({ who: 'Sam', chips: 'real', tabs: 'full' }); });
+          at(t.list, function () { set({ rows: 'real', head: 'count', reveal: true }); read('Frame at <b>0.0 s</b>, words at ' + (t.list / 1000).toFixed(1) + ' s. Nothing moved.'); });
+          return t.list;
+        } },
+      { key: 'B', name: 'Ready to write', alt: 'Option B: the same steady page with the add box already open; a line written before the list arrives waits in pencil, then joins Larder.',
+        notes: ['<strong>How:</strong> the same steady page, with Write a line open and working from the first frame. A line added before the list arrives waits in pencil at the top. Once the list is in, it gets the usual double-up check and joins its section.', '<strong>Good:</strong> the job you came for starts at once, even on slow signal.', '<strong>Cost:</strong> the double-up warning and usual amounts can only run once the list is in, so a pencilled line can then be flagged. Best for wastage and orders, where the form matters more than the list.'],
+        start: function () { return { who: null, chips: 'ghost', head: 'reading', rows: 'ghost', tabs: 'faint', add: { text: '', caret: true } }; },
+        render: function (st) { return top({ back: true, who: !!st.who }) + prepPage(st) + tabs(st.tabs, 'prep'); },
+        run: function (sc, set, at, read) {
+          var t = PG[sc], word = 'Slice shallots', st0 = 250;
+          for (var i = 1; i <= word.length; i++) (function (i) { at(st0 + i * 38, function () { set({ add: { text: word.slice(0, i), caret: true } }); }); })(i);
+          var addAt = st0 + word.length * 38 + 200;
+          at(t.who, function () { set({ who: 'Sam', chips: 'real', tabs: 'full' }); });
+          at(addAt, function () { set({ add: { text: '', caret: true }, extraRows: [{ id: 'x1', sec: 'Larder', t: 'Slice shallots', q: '' }], rs: { x1: { pencil: 'Waits for the list' } } }); read('Line written at <b>' + (addAt / 1000).toFixed(1) + ' s</b>, before the list.'); });
+          at(Math.max(t.list, addAt + 100), function () { set({ rows: 'real', head: 'count', reveal: true, rs: { x1: { flash: true } } }); read('Line written at <b>' + (addAt / 1000).toFixed(1) + ' s</b>; list in at ' + (t.list / 1000).toFixed(1) + ' s, line joins Larder.'); });
+          return Math.max(t.list, addAt + 100);
+        } }
+    ],
+    rec: '<b>Recommended: A, same page, filling in</b>, for every kitchen page, with one shared frame helper. B is worth a trial later on the wastage log only, where people come to write, not to read.',
+    shots: [['now-prep-loading', 'Today: the loading card on the prep list.'], ['now-toast-failed', 'Today: the same page once loaded (the notebook starts 176 px lower).']]
+  });
+
+  /* ===================== 3. Taps and page changes ===================== */
+  var SP = { first: 1200, later: 400 };
+  function recipesPage(st) {
+    var shelves = [['Specials', ['#C2451A', '#F2C14E', '#7FA35B'], ['Pork belly', 'Barra', 'Laksa']], ['Mains', ['#8A4B2A', '#E8B04A', '#6E8B3D'], ['Rump 300g', 'Parmy', 'Burger']], ['Sides', ['#E9C46A', '#8AB17D', '#D9A066'], ['Chips', 'Greens', 'Wedges']]];
+    var n = st.shelves == null ? 3 : st.shelves;
+    return '<div class="k-body' + (st.fade ? ' k-fade' : '') + '"><div class="k-scroll"><div class="k-rh">Recipes</div><div class="k-search">' + svg('0 0 24 24', '<circle cx="11" cy="11" r="7"/>' + p('M20 20l-4-4')).replace('<svg ', '<svg style="width:20px;height:20px" ') + 'Search 120 dishes</div>' +
+      '<div class="k-chips"><span class="k-chip on">All</span><span class="k-chip">Specials</span><span class="k-chip">Mains</span></div>' +
+      shelves.map(function (s, i) {
+        var drawn = i < n;
+        return '<div class="k-shelf' + (drawn ? (st.reveal ? ' reveal' : '') : ' ghost') + '"><h4>' + s[0] + '</h4><div class="k-plates">' + s[2].map(function (nm, j) {
+          return '<span class="k-plate"><i style="--c1:' + s[1][j] + ';--c2:' + s[1][(j + 1) % 3] + '"></i><span>' + (drawn ? nm : '') + '</span></span>';
+        }).join('') + '</div></div>';
+      }).join('') + '</div></div>';
+  }
+  Area({
+    id: 'speed', eyebrow: 'Perceived speed', title: 'Taps and page changes',
+    now: 'Tapping the Recipes docket. A press already dips the docket to 97 %, which is right. Then nothing changes until the whole page is drawn: measured with the CPU slowed 4 times, the first Recipes of a visit took 0.5 to 1.2 s and later ones 0.35 to 0.5 s. Prep, orders and wastage switch in 40 to 100 ms once loaded, and a recipe card in 0.1 to 0.25 s.',
+    scenarios: [['first', 'First tap of the day'], ['later', 'Later tap']],
+    designs: [
+      { key: 'Now', name: 'Dip, wait, all at once', alt: 'Today: the docket dips, the landing stays still, then the Recipes page appears all at once.',
+        notes: ['The press feedback is good; the wait after it is silent.', 'Measured: about 1.2 s first, 0.4 s later, on a slowed phone with the stand-in data.'],
+        start: function () { return { s: 'land', press: 0 }; },
+        rest: function () { return { s: 'land' }; },
+        render: function (st) { return st.s === 'land' ? top() + landing({ press: st.press }) + tabs('full') : top({ back: true }) + recipesPage({}) + tabs('full', 'recipes'); },
+        run: function (sc, set, at, read) { at(140, function () { set({ press: null }); }); at(SP[sc], function () { set({ s: 'page' }); read('First change after the dip: <b>' + (SP[sc] / 1000).toFixed(1) + ' s</b>.'); }); return SP[sc]; } },
+      { key: 'A', name: 'Answer the tap first', rec: true, alt: 'Option A: the tab lights and the Recipes heading and search show at once, then the shelves draw in pieces.',
+        notes: ['<strong>How:</strong> in the same frame as the tap the tab lights up and the heading, search and chips show. The shelves draw first-screen first, the rest in the next idle moments. A 120 ms fade joins the pages, none with Reduce motion.', '<strong>Good:</strong> the search box is there to type into at once; no new reads.', '<strong>Cost:</strong> Recipes is split into pieces, which touches the shelf code and its return-to-plate rule (<code>backHome()</code>).'],
+        start: function () { return { s: 'land', press: 0 }; },
+        rest: function () { return { s: 'page', shelves: 1 }; },
+        render: function (st) { return st.s === 'land' ? top() + landing({ press: st.press }) + tabs('full') : top({ back: true }) + recipesPage({ shelves: st.shelves, reveal: true, fade: st.fade }) + tabs('full', 'recipes'); },
+        run: function (sc, set, at, read) {
+          var t = SP[sc];
+          at(40, function () { set({ s: 'page', shelves: 0, fade: true }); read('First change: <b>under 0.05 s</b>.'); });
+          at(Math.round(t * 0.35), function () { set({ shelves: 1, fade: false }); });
+          at(Math.round(t * 0.7), function () { set({ shelves: 2 }); });
+          at(t, function () { set({ shelves: 3 }); read('First change <b>under 0.05 s</b>; first shelf ' + (t * 0.35 / 1000).toFixed(1) + ' s; all ' + (t / 1000).toFixed(1) + ' s (target, to be measured).'); });
+          return t;
+        } },
+      { key: 'B', name: 'Start before the tap', alt: 'Option B: Recipes was drawn in the background while the landing sat idle, so the tap shows the whole page at once.',
+        notes: ['<strong>How:</strong> while the landing sits idle the book draws Recipes off screen. The tap only swaps it in. Back and forth between the landing and Recipes keeps both, with their scroll place.', '<strong>Good:</strong> the whole page at once, every time after the first idle moment.', '<strong>Cost:</strong> work and memory for a page nobody may open, on every phone and the shared tablet. It must never read Firestore early.'],
+        start: function () { return { s: 'land', press: 0 }; },
+        rest: function () { return { s: 'page' }; },
+        render: function (st) { return st.s === 'land' ? top() + landing({ press: st.press }) + tabs('full') : top({ back: true }) + recipesPage({}) + tabs('full', 'recipes'); },
+        run: function (sc, set, at, read) { at(50, function () { set({ s: 'page' }); read('Whole page at <b>under 0.1 s</b> (drawn earlier, while idle).'); }); return 50; } }
+    ],
+    rec: '<b>Recommended: A, answer the tap first.</b> It helps every tap, costs nothing on phones that never open Recipes, and is easy to measure before and after. Keeping Recipes for Back (part of B) can follow as its own measured step.'
+  });
+
+  /* ===================== 4. Saving a form ===================== */
+  var SV = { ok: 700, slow: 6000, fail: 1600 };
+  function pingForm(st) {
+    var btn;
+    if (st.btn === 'busy') btn = '<span class="k-btn">' + ink('save', true, 22) + 'Saving...</span>';
+    else if (st.btn === 'done') btn = '<span class="k-btn ok">' + TICK + 'Saved</span>';
+    else if (st.btn === 'retry') btn = '<span class="k-btn outline">Try again</span>';
+    else btn = '<span class="k-btn">Save</span>';
+    var under = st.under ? '<div class="k-under' + (st.underBad ? ' bad' : '') + '">' + (st.underBad ? WARN : NOSIG) + '<span>' + st.under + '</span></div>' : '';
+    var saved = st.saved != null ? '<div class="k-saved">' + st.saved + '</div>' : '';
+    var stamp = st.stamp ? '<span class="k-stamp ' + (st.stamp.cls || '') + '">' + st.stamp.t + '<small>' + st.stamp.s + '</small></span>' : '';
+    var form = st.closed ? '' : '<div class="k-card">' + (st.cardStamp ? stamp : '') + '<label>Ping for the team</label><div class="k-area">Special: pork belly tonight. 12 portions, sauce in the walk-in.</div><div class="k-shows">Shows: Today</div><div class="k-btns">' + btn + '<span class="k-btn quiet">Cancel</span></div>' + under + (st.formMsg ? '<div class="k-saved">' + st.formMsg + '</div>' : '') + '</div>';
+    var newPing = st.closed ? '<div class="k-ping' + (st.flash ? ' flash' : '') + '">' + (st.listStamp ? stamp : '') + '<b>Special: pork belly tonight.</b><small>Today · Sam</small></div>' : '';
+    return '<div class="k-body"><div class="k-scroll"><div class="k-ph">Shift pings</div>' + saved + form +
+      '<div class="k-list"><h3>Pings set</h3>' + newPing + '<div class="k-ping"><b>Fryer 2 off until the tech comes.</b><small>Today · Head chef</small></div><div class="k-ping"><b>Function 40 pax at 18:30.</b><small>Thursday · Sam</small></div></div></div></div>';
+  }
+  Area({
+    id: 'saving', eyebrow: 'Save feedback', title: 'Saving a form',
+    now: 'Saving a shift ping, standing in for every form: pings, minutes, deliveries, the recipe and function editors. Today Save turns orange with the traced icon and says Saving..., and a second grey "Saving..." shows under the buttons. Success is grey text above the list; so is a failure. Each form waits a different time before it mentions the signal: 3, 4, 5 or 10 s.',
+    scenarios: [['ok', 'Save'], ['slow', 'Slow signal'], ['fail', 'Save fails']],
+    designs: [
+      { key: 'Now', name: 'Saving twice, grey either way', alt: 'Today: Save shows Saving twice, then grey text says Saved or Could not save in the same style.',
+        notes: ['The button never says Saved, so success is easy to miss.', 'Errors in grey look like success (LF-06).'],
+        start: function () { return { btn: 'save' }; },
+        rest: function () { return { btn: 'busy', formMsg: 'Saving...' }; },
+        render: function (st) { return top({ back: true }) + pingForm(st) + tabs('full'); },
+        run: function (sc, set, at, read) {
+          at(150, function () { set({ btn: 'busy', formMsg: 'Saving...' }); });
+          if (sc === 'fail') { at(SV.fail, function () { set({ btn: 'save', formMsg: null, saved: 'Could not save. Check the signal and try again.' }); read('Failure in <b>grey</b>, like success.'); }); return SV.fail; }
+          at(SV[sc], function () { set({ closed: true, saved: 'Saved. Shows: Today.' }); read('Saved at ' + (SV[sc] / 1000).toFixed(1) + ' s: grey line above the list.'); });
+          return SV[sc];
+        } },
+      { key: 'A', name: 'The button tells the story', rec: true, alt: 'Option A: the Save button says Saving, then Saved with a tick, or Try again with a red line that stays.',
+        notes: ['<strong>How:</strong> one pattern for every Save. Saving at the same width, then Saved with a tick for 1.2 s, only after the server confirms, then the form closes and the new ping flashes once. After 4 s, one line under it: Waiting for the signal. A failure turns it into Try again, with a red line that stays.', '<strong>Good:</strong> the answer is where your eyes already are.', '<strong>Cost:</strong> each form moves its message slot into the shared helper, form by form.'],
+        start: function () { return { btn: 'save' }; },
+        rest: function () { return { btn: 'done' }; },
+        render: function (st) { return top({ back: true }) + pingForm(st) + tabs('full'); },
+        run: function (sc, set, at, read) {
+          at(150, function () { set({ btn: 'busy' }); });
+          if (sc === 'fail') { at(SV.fail, function () { set({ btn: 'retry', under: 'Not saved: no signal. Your words are kept.', underBad: true }); read('Error <b>stays</b> until Try again works.'); }); return SV.fail; }
+          if (sc === 'slow') at(4150, function () { set({ under: 'Waiting for the signal. Keep the book open.' }); read('After <b>4 s</b>: one line under the button.'); });
+          at(SV[sc], function () { set({ btn: 'done', under: null }); read('Saved <b>with a tick</b> at ' + (SV[sc] / 1000).toFixed(1) + ' s, after the server said yes.'); });
+          at(SV[sc] + 1200, function () { set({ closed: true, flash: true }); });
+          return SV[sc] + 1200;
+        } },
+      { key: 'B', name: 'Saved stamp', alt: 'Option B: a handwritten stamp lands on the ping: Saved 14:02, On this phone only, or Not saved.',
+        notes: ['<strong>How:</strong> the button only says Saving. The result is a handwritten stamp on the record: Saved 14:02 on every phone, On this phone only while it waits, or Not saved, words kept. The stamp stays on the record in the list for the shift.', '<strong>Good:</strong> a glance later still answers "did it go?".', '<strong>Cost:</strong> a stamp per record type; on busy lists the stamps add clutter.'],
+        start: function () { return { btn: 'save' }; },
+        rest: function () { return { closed: true, listStamp: true, stamp: { t: 'Saved 14:02', s: 'on every phone' } }; },
+        render: function (st) { return top({ back: true }) + pingForm(st) + tabs('full'); },
+        run: function (sc, set, at, read) {
+          at(150, function () { set({ btn: 'busy' }); });
+          if (sc === 'fail') { at(SV.fail, function () { set({ btn: 'retry', cardStamp: true, stamp: { t: 'Not saved', s: 'words kept', cls: 'bad' } }); read('Red stamp on the form, Try again.'); }); return SV.fail; }
+          if (sc === 'slow') at(4150, function () { set({ cardStamp: true, stamp: { t: 'Not sent yet', s: 'on this phone only', cls: 'wait' } }); read('After 4 s: <b>orange stamp</b>, still saving.'); });
+          at(SV[sc], function () { set({ closed: true, cardStamp: false, listStamp: true, stamp: { t: 'Saved 14:02', s: 'on every phone' } }); read('Stamped <b>Saved 14:02</b>; it stays on the ping.'); });
+          return SV[sc];
+        } }
+    ],
+    rec: '<b>Recommended: A, the button tells the whole story.</b> One helper fixes the double Saving, the grey errors and the four different slow-save times at once. B\'s stamp suits records people come back to (minutes, deliveries) and could be added there later.',
+    shots: [['now-ping-saving', 'Today: Saving... on the button and again under it.']]
+  });
+
+  /* ===================== 5. Toasts and Undo ===================== */
+  function toastScreen(kind) {
+    return function (st) {
+      var over = '';
+      if (kind === 'now') {
+        if (st.toast) over = '<div class="k-toasts"><div class="k-toast' + (st.toast.b ? '' : ' plain') + '"><span>' + st.toast.m + '</span>' + (st.toast.b ? '<span class="b">' + st.toast.b + '</span>' : '') + '</div>' +
+          (st.chip ? '<div class="k-toast chip"><span class="b">' + st.chip + '</span></div>' : '') + '</div>';
+        if (st.bug) over += '<div class="k-bug" style="bottom:206px">Tapping this ticks the line again (LF-01)</div>';
+      } else if (kind === 'a') {
+        if (st.slip) over = '<div class="k-slip' + (st.slip.bad ? ' bad' : '') + '">' + (st.slip.stack ? '<span class="stack">' + st.slip.stack + '</span>' : '') + (st.slip.bad ? WARN : st.slip.bin ? BIN : CHECKC) +
+          '<span class="msg">' + st.slip.m + (st.slip.s ? '<small>' + st.slip.s + '</small>' : '') + '</span><span class="act">' + st.slip.b + '</span>' + (st.slip.bad ? '' : '<span class="timer" style="--dur:9s" data-k="' + st.slip.k + '"></span>') + '</div>';
+      }
+      return top({ back: true }) + prepPage({ who: 'Sam', head: 'count', rows: 'real', rs: st.rs, off: 168 }) + over + tabs('full', 'prep');
+    };
+  }
+  Area({
+    id: 'toasts', eyebrow: 'Toasts', title: 'Toasts and Undo',
+    now: 'Ticking and removing prep lines. Today a see-through dark pill floats 84 px above the tab bar, often over the very line it talks about, and over the editors\' Save bars. A second Undo shrinks the first into a chip. Errors vanish after 12 s (many after 3.5 s). After a failed tick, the chip still offers "Undo ticked", and tapping it ticks the line: checked in the browser.',
+    scenarios: [['tick', 'Tick a line'], ['two', 'Tick, then remove'], ['fail', 'Tick fails']],
+    designs: [
+      { key: 'Now', name: 'See-through pill', alt: 'Today: a see-through pill with Undo floats over the list; after a failed tick an Undo ticked chip stays above the error.',
+        notes: ['Four separate toast copies; the editors\' copies have no Undo and last 4 s.', 'The older Undo chip can go early: with a short toast, or a swipe of the new one (LF-02).'],
+        start: function () { return { rs: {} }; },
+        rest: function () { return { rs: { r1: {} }, toast: { m: 'Not saved. Check the connection and try again.', b: 'OK' }, chip: 'Undo ticked', bug: true }; },
+        render: toastScreen('now'),
+        run: function (sc, set, at, read) {
+          at(300, function () { set({ rs: { r2: { done: true } }, toast: { m: 'Ticked', b: 'Undo' } }); read('Pill over the list, <b>9 s</b>.'); });
+          if (sc === 'two') { at(1600, function () { set({ rs: { r2: { done: true }, r5: { removed: true } }, toast: { m: 'Removed Pick coriander', b: 'Undo' }, chip: 'Undo ticked' }); read('Second Undo: the first becomes a chip.'); }); return 1600; }
+          if (sc === 'fail') { at(1300, function () { set({ rs: { r2: {} }, toast: { m: 'Not saved. Check the connection and try again.', b: 'OK' }, chip: 'Undo ticked', bug: true }); read('Line unticked, but <b>Undo ticked</b> is still offered.'); }); return 1300; }
+          return 300;
+        } },
+      { key: 'A', name: 'One docket slip', rec: true, alt: 'Option A: a solid paper slip sits on the tab bar with Undo and an orange timer line; errors get a red edge and Try again.',
+        notes: ['<strong>How:</strong> one solid slip sits right on the tab bar; the page gets room below its last line, so nothing is hidden. An orange line shrinks to show how long Undo lasts. A second Undo stacks behind a "2 to undo" tab. Errors get a red edge, Try again and no timer, and any Undo for the failed change goes.', '<strong>Good:</strong> readable in a bright kitchen; one helper for every page and editor.', '<strong>Cost:</strong> a taller footprint (64 px) than the pill while it shows.'],
+        start: function () { return { rs: {} }; },
+        rest: function () { return { rs: { r2: { done: true }, r5: { removed: true } }, slip: { m: 'Removed Pick coriander', b: 'Undo', bin: true, stack: '2 to undo', k: 'r' } }; },
+        render: toastScreen('a'),
+        run: function (sc, set, at, read) {
+          at(300, function () { set({ rs: { r2: { done: true } }, slip: { m: 'Ticked Make gravy', b: 'Undo', k: 't' } }); read('Solid slip, timer line <b>9 s</b>.'); });
+          if (sc === 'two') { at(1600, function () { set({ rs: { r2: { done: true }, r5: { removed: true } }, slip: { m: 'Removed Pick coriander', b: 'Undo', bin: true, stack: '2 to undo', k: 'r' } }); read('Both Undos kept: <b>2 to undo</b>.'); }); return 1600; }
+          if (sc === 'fail') { at(1300, function () { set({ rs: { r2: {} }, slip: { bad: true, m: 'Not saved: Make gravy', s: 'No signal. The line is not ticked.', b: 'Try again' } }); read('Error <b>stays</b>; the old Undo is gone.'); }); return 1300; }
+          return 300;
+        } },
+      { key: 'B', name: 'Undo where it happened', alt: 'Option B: the ticked line itself shows Ticked and Undo; a removed line leaves a dashed ghost with Undo; a failed line turns red with Try again.',
+        notes: ['<strong>How:</strong> no floating toast for line actions. The ticked line shows Ticked · Undo for 9 s, a removed line leaves a dashed ghost with Undo, and a failed save marks the line red with Try again. Only messages with no line (Signed out, Backup saved) use a small note.', '<strong>Good:</strong> nothing covers the list, and each Undo sits next to what it undoes.', '<strong>Cost:</strong> every list (prep, orders, wastage, transfers, to-do, pings) needs its own line states: 24 Undo call sites change, and lines change shape for a moment.'],
+        start: function () { return { rs: {} }; },
+        rest: function () { return { rs: { r2: { done: true, inline: true }, r5: { gone: true } } }; },
+        render: toastScreen('b'),
+        run: function (sc, set, at, read) {
+          at(300, function () { set({ rs: { r2: { done: true, inline: true } } }); read('Undo <b>in the line</b>, 9 s.'); });
+          if (sc === 'two') { at(1600, function () { set({ rs: { r2: { done: true, inline: true }, r5: { gone: true } } }); read('Each line keeps <b>its own Undo</b>.'); }); return 1600; }
+          if (sc === 'fail') { at(1300, function () { set({ rs: { r2: { fail: true } } }); read('The line itself says <b>Not saved</b>.'); }); return 1300; }
+          return 300;
+        } }
+    ],
+    rec: '<b>Recommended: A, one docket slip.</b> It fixes legibility, covering and vanishing errors for every page with one shared helper, and keeps the 9 s Undo people know. B is clearer on the prep list but has no answer for messages without a line, and touches every list.',
+    shots: [['now-toast-stack', 'Today: a second Undo shrinks the first into a chip.'], ['now-toast-failed', 'Today: after a failed tick, "Undo ticked" is still offered.']]
+  });
+
+  /* ===================== 6. Signal, unsent changes and updates ===================== */
+  function sigScreen(kind) {
+    return function (st) {
+      var off = st.net === 'off', rs = st.ticked ? { r1: { done: true, unsent: off } } : {};
+      if (kind === 'now') {
+        var strip = off ? '<div class="k-sync"><strong>No signal.</strong> Keep the book open: your changes send when the signal is back.</div>' : '';
+        var y = st.upd ? 48 : 0;
+        return (st.upd ? '<div class="k-upd">New version available. <span class="b">Update now</span></div>' : '') + '<div class="k-push" style="transform:translateY(' + y + 'px)">' + top({ back: true }) + prepPage({ who: 'Sam', head: 'count', rows: 'real', rs: rs, strip: strip }) + '</div>' + tabs('full', 'prep');
+      }
+      if (kind === 'a') {
+        var badge = off ? '<span class="k-badge off">' + svg('0 0 24 24', p('M3 4l18 16M5 19h1M10 19v-4M15 19v-7'), '', 3) + '</span>' : st.allSent ? '<span class="k-badge ok">' + svg('0 0 16 16', p('M3 8.5 L6.5 12 L13 4.5'), '', 3) + '</span>' : st.upd ? '<span class="k-badge" style="min-width:14px;height:14px;padding:0;top:-2px;right:-2px"></span>' : '';
+        var menu = st.menu ? '<div class="k-menu">' + (off ? '<div class="row st">' + NOSIG + '<span>No signal<small>1 change waits on this phone. Keep the book open.</small></span></div>' : st.allSent ? '<div class="row st ok">' + CHECKC + '<span>All sent 14:03</span></div>' : st.upd ? '<div class="row st">' + svg('0 0 24 24', p('M12 4v11M7 10l5 5 5-5M5 20h14'), 'ic', 2.2) + '<span>New version ready<small>Tap to update. Nothing is waiting to send.</small></span></div>' : '') +
+          '<div class="row">Kitchen mail</div><div class="row">Meeting minutes</div><div class="row dim">Settings</div></div>' : '';
+        return top({ back: true, badge: badge }) + prepPage({ who: 'Sam', head: 'count', rows: 'real', rs: rs }) + menu + tabs('full', 'prep');
+      }
+      var band = '<div class="k-band' + (st.band ? ' show' : '') + (st.band === 'ok' ? ' ok' : '') + '">' + (st.band === 'ok' ? CHECKC + '<span>All sent 14:03. Everyone can see your changes.</span>' : st.band === 'upd' ? svg('0 0 24 24', p('M12 4v11M7 10l5 5 5-5M5 20h14'), 'ic', 2.2) + '<span>New version ready.</span><span class="b">Update now</span>' : NOSIG + '<span>No signal. 1 change waits on this phone. Keep the book open.</span>') + '</div>';
+      return top({ back: true }) + prepPage({ who: 'Sam', head: 'count', rows: 'real', rs: rs }) + band + tabs('full', 'prep');
+    };
+  }
+  Area({
+    id: 'signal', eyebrow: 'Connection notices', title: 'Signal, unsent changes and updates',
+    now: 'Losing signal in the walk-in and ticking a line. Today an orange box drops into the top of the page after 3 s and pushes the list 77 px down; when the signal returns it vanishes, the list jumps back, and nothing says everything was sent. The New version strip pushes the whole page 48 px down. Seven different "No signal" sentences are used across the book.',
+    scenarios: [['off', 'Lose signal, tick'], ['back', 'Signal back'], ['upd', 'New version']],
+    designs: [
+      { key: 'Now', name: 'Box in the page', alt: 'Today: an orange No signal box pushes the list down; the update strip pushes the whole page down.',
+        notes: ['The box is clear, but it moves the lines you are about to tap.', 'No "All sent" moment when the signal comes back.'],
+        start: function (sc) { return sc === 'back' ? { net: 'off', ticked: true } : { net: 'on' }; },
+        rest: function () { return { net: 'off', ticked: true }; },
+        render: sigScreen('now'),
+        run: function (sc, set, at, read) {
+          if (sc === 'off') { at(400, function () { set({ ticked: true, sending: true }); }); at(1400, function () { set({ net: 'off' }); read('Box drops in: list moves <b>77 px</b> down.'); }); return 1400; }
+          if (sc === 'back') { at(900, function () { set({ net: 'on', sending: false }); read('Box vanishes, list jumps back. <b>No "all sent".</b>'); }); return 900; }
+          at(600, function () { set({ upd: true }); read('Strip pushes the page <b>48 px</b>.'); }); return 600;
+        } },
+      { key: 'A', name: 'Status on the chef hat', alt: 'Option A: a small badge on the chef hat ring; its menu explains that one change waits on this phone.',
+        notes: ['<strong>How:</strong> the chef hat ring carries a badge: no signal, or a tick for 2 s once all is sent. The hat menu\'s first line says what waits and to keep the book open. New version sits in the same menu.', '<strong>Good:</strong> nothing on the page moves or is covered.', '<strong>Cost:</strong> easy to miss during service, and the top bar has no room for words (one more item wraps Kitchen Book on a laptop).'],
+        start: function (sc) { return sc === 'back' ? { net: 'off', ticked: true } : { net: 'on' }; },
+        rest: function () { return { net: 'off', ticked: true, menu: true }; },
+        render: sigScreen('a'),
+        run: function (sc, set, at, read) {
+          if (sc === 'off') { at(400, function () { set({ ticked: true, sending: true }); }); at(1400, function () { set({ net: 'off' }); read('Badge on the hat; the page stays still.'); }); at(2400, function () { set({ menu: true }); read('Hat menu (tapped): <b>1 change waits</b>.'); }); return 2400; }
+          if (sc === 'back') { at(900, function () { set({ net: 'on', sending: false, allSent: true }); read('Badge turns to a tick for 2 s.'); }); at(2900, function () { set({ allSent: false }); }); return 2900; }
+          at(600, function () { set({ upd: true }); read('A dot on the hat; Update is in its menu.'); }); at(1600, function () { set({ menu: true }); }); return 1600;
+        } },
+      { key: 'B', name: 'One floating band', rec: true, alt: 'Option B: a slim dark band slides down over the top of the page saying No signal, then All sent when it returns.',
+        notes: ['<strong>How:</strong> a slim band slides down under the top bar, over the page rather than pushing it: No signal, 1 change waits on this phone. When the signal returns it says All sent 14:03 and slides away after 3 s. New version uses the same band when nothing more urgent shows.', '<strong>Good:</strong> as visible as today, without moving the lines; a clear end.', '<strong>Cost:</strong> covers the top 46 px of the page while up; it must sit with the sticky admin nav and the Functions band.'],
+        start: function (sc) { return sc === 'back' ? { net: 'off', ticked: true, band: 'off' } : { net: 'on' }; },
+        rest: function () { return { net: 'off', ticked: true, band: 'off' }; },
+        render: sigScreen('b'),
+        run: function (sc, set, at, read) {
+          if (sc === 'off') { at(400, function () { set({ ticked: true, sending: true }); }); at(1400, function () { set({ net: 'off', band: 'off' }); read('Band slides over; <b>nothing moves</b>.'); }); return 1400; }
+          if (sc === 'back') { at(900, function () { set({ net: 'on', sending: false, band: 'ok' }); read('<b>All sent 14:03</b>, then it slides away.'); }); at(3900, function () { set({ band: null }); }); return 3900; }
+          at(600, function () { set({ band: 'upd' }); read('Same band offers the update.'); }); return 600;
+        } }
+    ],
+    rec: '<b>Recommended: B, one floating band.</b> No signal matters during service, so it should stay as visible as today\'s box, but stop moving the list, and finally say when everything is sent. A is tidier but too easy to miss.',
+    shots: [['now-no-signal', 'Today: the No signal box at the top of the page.'], ['now-update', 'Today: the update strip above the top bar.']]
+  });
+
+  /* ---------------- findings ---------------- */
+  var F = [
+    ['LF-01', 'fix', 'Fix', '<b>A stale Undo reverses itself.</b> After a tick fails to save, the older toast\'s chip still says "Undo ticked". The line is not ticked, and tapping the chip ticks it. Reproduced in the browser with the stand-in (stored <code>done</code> went from false to true). <code>toast()</code> and <code>failed()</code> in <code>js/prep.js</code>.'],
+    ['LF-02', 'fix', 'Fix', '<b>The older Undo can go early.</b> README promises it stays 6 more seconds. It goes with a short 3.5 s toast (the stack draws nothing without a new toast) and with any swipe or scroll of the new one (<code>toastAway()</code> always clears it). Source.'],
+    ['LF-03', 'design', 'Design', '<b>Pages jump.</b> Opening splash to page; loading card to the prep page (176 px, title changes, tabs 1 to 6); the No signal box (77 px); the update strip (48 px); the recipe status line; drawings arriving on a recipe card.'],
+    ['LF-04', 'design', 'Design', '<b>Toasts cover what they talk about.</b> The see-through pill sits 84 px up on a phone, over list lines and over the editors\' Save bars (68 px), and behind any open sheet.'],
+    ['LF-05', 'design', 'Design', '<b>Errors vanish.</b> About 30 refusals and failures are short toasts: "Sign-out could not finish. Close this tab before handing over the device." lasts 3.5 s; the editors\' "Not changed" 4 s; function cancel failures 5 s. One failed "Sent" tick in functions shows nothing at all.'],
+    ['LF-06', 'tidy', 'Tidy', '<b>Errors look like success, status looks like an error.</b> Seven message slots show "Could not save" in the grey success style; "Checking your PIN..." shows in red alert style.'],
+    ['LF-07', 'speed', 'Speed', '<b>Kitchen pages wait for a clock check that starts late.</b> The server time check starts only after the whole page loads, and a kitchen page shows "Loading..." until it answers (up to 8 s on a hanging connection, 10 s fallback), even when everything else is ready. Source; measure on a real phone before changing.'],
+    ['LF-08', 'design', 'Design', '<b>The opening page has no way out.</b> If a file never arrives the chef hat traces for ever.'],
+    ['LF-09', 'tidy', 'Tidy', '<b>Four toast copies.</b> The prep toast, the landing toast and three identical copies in the recipe, drawing and function editors (4 s, no Undo). Two can show at once. Already noted as WA-10.'],
+    ['LF-10', 'tidy', 'Tidy', '<b>One wait, many names.</b> The sign-in check is "Loading...", "One moment...", "Checking who is signed in on this device...", "Checking your kitchen sign-in..." or "Checking your access...". Seven "No signal" sentences; six endings after "Not sent yet."; Team says 30 days and Insights 60 for the same read.'],
+    ['LF-11', 'tidy', 'Tidy', '<b>Plain "Loading..." where Ink in motion did not reach.</b> Minutes, guides list, mail, drinks, to-do, past pings, the waste review, the functions list, the proofreader and admin subsections. Pencil line counts vary from 0 to 5.'],
+    ['LF-12', 'tidy', 'Tidy', '<b>Saving says too much and too little.</b> "Saving..." twice on pings and deliveries; no button ever says Saved; slow-save notes start after 3, 4, 5 or 10 s depending on the page.'],
+    ['LF-13', 'tidy', 'Tidy', '<b>Dead ends.</b> The admin workspace and proofreader load errors need a full reload (no Try again); the missing-days and export failures have no Retry; "Reload the book..." in the function editor has no button.'],
+    ['LF-14', 'speed', 'Speed', '<b>A heavy first visit.</b> 4.0 MB of script and style (807 kB compressed) before the first page: <code>js/art.js</code> 1.6 MB, <code>js/prep.js</code> 0.9 MB, the seasonal scripts about 0.9 MB. Later visits come from the saved book. Measured; any move needs measuring first (CLAUDE.md, Loading).'],
+    ['LF-15', 'tidy', 'Tidy', '<b>Undo shorter than the rules allow.</b> Ticked has Undo for 9 s but the rules let the same person untick for 110 s; a cancelled function has Undo for 9 s against 2 minutes in the rules.'],
+    ['LF-16', 'tidy', 'Tidy', '<b>One success before it is true.</b> "Signed out. Hand the phone over." shows before the Google sign-out finishes, and its failure toast can follow it.']
+  ];
+  document.getElementById('findings').innerHTML = F.map(function (f) { return '<div class="finding"><span class="id">' + f[0] + '</span><span><span class="tag ' + f[1] + '">' + f[2] + '</span></span><p>' + f[3] + '</p></div>'; }).join('');
+
+  /* ---------------- phone size: three across where they fit ---------------- */
+  function size() {
+    areas.forEach(function (a) {
+      var stage = a.el.querySelector('.stage'), w = stage.clientWidth;
+      var s = w >= 1080 ? Math.min(.92, (w - 40 - 6 * 9) / 3 / 390) : w >= 720 ? Math.min(.86, (w - 40) / 2.4 / 390) : Math.min(.86, (w - 30) / 1.12 / 390);
+      a.el.style.setProperty('--s', s.toFixed(3));
+      var wrap = a.el.querySelector('.stage-wrap');
+      wrap.style.setProperty('--fade', stage.scrollWidth - stage.clientWidth - stage.scrollLeft > 8 ? 1 : 0);
+    });
+  }
+  areas.forEach(function (a) { a.el.querySelector('.stage').addEventListener('scroll', size, { passive: true }); });
+  window.addEventListener('resize', size);
+  size();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(size);
+})();
+</script>
+</body>
+</html>
