@@ -184,7 +184,7 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 | `js/firebase-config.js` | Public Firebase web config |
 | `firestore.rules` | Security rules template (`KITCHEN_PIN` and `OWNER_EMAIL` are placeholders) |
 | `.claude/settings.json`, `scripts/guard-main.mjs` | The main-branch guard: a Claude Code hook that refuses edits and commits on `main`, so every change starts in a worktree on its own branch |
-| `scripts/pre-merge.sh` | Run from a worktree before merging: shows the open pull requests, every worktree, and whether `main` moved, so only one merge happens at a time |
+| `scripts/pre-merge.sh` | Run from a worktree before marking a pull request ready: shows the open pull requests, every worktree, and whether `main` moved, so only one merge happens at a time |
 | `.github/pull_request_template.md` | The sections every pull request fills in: why, what changes for the team, files, tests, reads and rules, rollback, left to do |
 | `scripts/publish-rules.sh` | Publishes the rules from your own computer with the Firebase CLI (asks for the PIN and email, never writes them into the repo) |
 | `.github/workflows/publish-rules.yml` | Publishes the rules from GitHub (Actions tab, Run workflow) with the `FIREBASE_SA`, `KITCHEN_PIN` and `OWNER_EMAIL` secrets, then proves the lock on the live book |
