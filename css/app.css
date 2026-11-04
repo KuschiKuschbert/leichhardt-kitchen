@@ -3471,3 +3471,13 @@ html:has(.w-sheet, .tr-sheet) .p-toasts { top: calc(12px + env(safe-area-inset-t
 .tr-bk-x { min-height: 44px; padding: 0 6px; border: 0; background: none; color: var(--muted); font: 600 0.8125rem var(--body); text-decoration: underline; cursor: pointer; }
 .tr-addrow { justify-content: space-between; align-items: center; }
 .tr-addrow .tr-bk-add { min-height: 44px; }
+/* The watch list (Dashboard, step 5): pinned sections, wasted items and people, each with its trend. */
+.dsh-wl-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.dsh-wl { display: grid; grid-template-columns: minmax(0, 1fr) 9rem auto; gap: .9rem; align-items: center; padding: .6rem 0; border-top: 1px solid var(--line); }
+.dsh-wl:first-child { border-top: 0; }
+.dsh-wl p { margin: 0; }
+.dsh-wl .btn { min-height: 44px; }
+.dsh-wl-add { display: grid; gap: .5rem; padding: .7rem 0; border-top: 1px solid var(--line); }
+.dsh-wl-opts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
+.dsh-watch > .btn { justify-self: start; }
+@media (max-width: 560px) { .dsh-wl { grid-template-columns: minmax(0, 1fr) auto; } .dsh-wl .dsh-spark { grid-column: 1 / -1; grid-row: 2; } }

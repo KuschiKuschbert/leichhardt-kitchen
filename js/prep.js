@@ -2503,6 +2503,7 @@
       .then(function () { return all('analysis'); }).then(function (r) { out.analysis = r; })
       .then(function () { return all('analysisDaily'); }).then(function (r) { out.analysisDaily = r; })
       .then(function () { return all('proofHistory'); }).then(function (r) { out.proofHistory = r; })
+      .then(function () { return all('dashwatch'); }).then(function (r) { out.dashwatch = r; })
       .then(function () { return all('references'); }).then(function (r) { out.references = r; out.referencesHist = {}; return subs(r, 'references', 'hist', out.referencesHist); })
       .then(function () { return all('training'); }).then(function (r) { out.training = r; out.trainingHist = {}; return subs(r, 'training', 'hist', out.trainingHist); })
       .then(function () { return all('misses'); }).then(function (r) { out.misses = r; })
@@ -2618,7 +2619,7 @@
       return moveBootstrap(np, config).then(function (session) { destinationSession = session; n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'config', 'main'), config); });
     })
       .then(copyRoster).then(function () { return copyCol('pinset'); }).then(function () { return copyCol('staffpins'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
-      .then(function () { return copyCol('learned'); }).then(function () { return copyCol('ordlearned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('summary'); }).then(function () { return copyCol('analysis'); }).then(function () { return copyCol('analysisDaily'); }).then(function () { return copyCol('proofHistory'); }).then(function () { return copyCol('references'); }).then(function () { return copySub('references', 'hist'); }).then(function () { return copyCol('training'); }).then(function () { return copySub('training', 'hist'); }).then(function () { return copyCol('daily'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
+      .then(function () { return copyCol('learned'); }).then(function () { return copyCol('ordlearned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('summary'); }).then(function () { return copyCol('analysis'); }).then(function () { return copyCol('analysisDaily'); }).then(function () { return copyCol('proofHistory'); }).then(function () { return copyCol('dashwatch'); }).then(function () { return copyCol('references'); }).then(function () { return copySub('references', 'hist'); }).then(function () { return copyCol('training'); }).then(function () { return copySub('training', 'hist'); }).then(function () { return copyCol('daily'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
       .then(function () { return copyCol('notes'); }).then(function () { return copyCol('directnotes'); }).then(function () { return copySub('directnotes', 'seen', true); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
       .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
       .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
@@ -4773,6 +4774,24 @@
       // The week ahead: functions from the live list js/functions.js already keeps for the band, and cut-offs worked out
       // from config/main with LK_CUT. No reads.
       week: function () { var w = dashWeek(); dashWeekSig = JSON.stringify(w); return w; },
+      // The watch list (dashwatch/main, admin only): one read when the Dashboard opens and on Refresh; a save reads the
+      // server copy first (1 read) and refuses when another device changed it, then writes through W().
+      watchGet: function () {
+        if (!intelligenceAllowed()) return Promise.reject({ code: 'permission' });
+        return fb.fs.getDocFromServer(docRef('dashwatch', 'main')).then(function (sn) { return sn.exists() ? sn.data() : null; });
+      },
+      watchSave: function (list, v) {
+        if (!intelligenceAllowed()) return Promise.reject({ code: 'permission' });
+        var ref = docRef('dashwatch', 'main'), epoch = intelligenceContext();
+        return fb.fs.getDocFromServer(ref).then(function (sn) {
+          if (!intelligenceAllowed() || epoch !== intelligenceContext()) throw { code: 'context' };
+          var cur = sn.exists() ? sn.data() : null;
+          if (((cur && typeof cur.v === 'number') ? cur.v : 0) !== v) throw { code: 'stale' };
+          return W([['set', ref, { list: list, v: v + 1, at: now() }]]).then(function () { return v + 1; });
+        });
+      },
+      people: function () { return people().filter(function (p) { return p && p.active !== false; }).map(function (p) { return { id: String(p.id || ''), name: String(p.name || '') }; }); },
+      sections: function () { return kitSecs().map(function (x) { return String(x.name); }); },
       // Transfers not returned: one query of the open loans when the Dashboard opens and on Refresh (one read each, at least 1).
       loans: function () {
         if (!intelligenceAllowed()) return Promise.reject({ code: 'permission' });
@@ -4781,7 +4800,7 @@
         });
       },
       open: function (tab, days) {
-        if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs'].indexOf(tab) < 0 || (tab === 'mail' && !mlOwner())) return;
+        if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references', 'training'].indexOf(tab) < 0 || (tab === 'mail' && !mlOwner())) return;
         if (tab === 'insights' || tab === 'waste') S.statsRange = days === 7 ? 7 : 30;
         S.atab = tab; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(tab)[0]] = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop();
       }
@@ -4820,9 +4839,9 @@
   function intelligenceBusy() { return proofBusy() || !!(intelligenceVisible() && window.LK_INTELLIGENCE.busy && window.LK_INTELLIGENCE.busy()); }
   function intelligenceHTML(page) {
     if (!intelligenceAllowed()) return '';
-    if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS) {
+    if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS || !window.LK_ANALYSIS.linkQueue) {
       if (!intelligenceLoading && !intelligenceError) {
-        intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=2').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=3'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
+        intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=3').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=4'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS || !window.LK_ANALYSIS.linkQueue) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
       }
       return '<section class="set-block"><h3 class="label">Admin workspace</h3><p class="hint" role="status">' + (intelligenceError ? 'Could not load the workspace. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
     }

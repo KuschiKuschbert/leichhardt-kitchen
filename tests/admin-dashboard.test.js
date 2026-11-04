@@ -11,7 +11,7 @@ function rows() {
   for (let i = 89; i >= 0; i--) {
     const t = L.NOW - (i + 1) * DAY, day = L.ymd(new Date(t)), dw = new Date(t).getDay(), busy = dw === 5 || dw === 6 ? 2 : 1;
     const n = 20 * busy + (i % 3), tk = n - 2 - (i % 4), w = i < 7 ? 3 : 1;
-    out.push({ day, p: { n, w: n - 2, t: tk, r: 2, sec: { Larder: 8 * busy, Grill: 6 * busy, Garnish: 4 * busy + (i % 3) }, mins: { Larder: [60, 70, 80], Grill: [40, 45, 50], Garnish: [200, 210, 220] } },
+    out.push({ day, p: { n, w: n - 2, t: tk, r: 2, sec: { Larder: 8 * busy, Grill: 6 * busy, Garnish: 4 * busy + (i % 3) }, mins: { Larder: [60, 70, 80], Grill: [40, 45, 50], Garnish: [200, 210, 220] }, who: { sam: 5 + (i % 3) } },
       w: { n: w, reason: { excess: w - (i < 7 ? 1 : 0), ...(i < 7 ? { expired: 1 } : {}) }, sec: { Larder: w }, items: [{ t: i === 0 ? hostile : 'Brisket', u: 'kg', a: 0.5 * w, n: w }] },
       x: { out: 1, in: i % 2 } });
   }
@@ -66,7 +66,7 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
   // Needs you: open mail, minutes still to sign and an overdue action, a transfer not back, each opening its page.
   const ago = d => L.ymd(new Date(L.NOW - d * DAY));
   const loan = { dir: 'out', venue: 'Venue B', person: 'Jo', text: 'Butter', amount: 2, unit: 'kg', note: '', addedBy: 'Bo', addedById: 'bo', addedAt: L.NOW - 9 * DAY, deleted: false, by: 'bo' };
-  const waiting = { ...extra, ...L.mail(),
+  const waiting = { ...extra, ...L.mail(), [path('analysis', 'dashboard')]: { ...extra[path('analysis', 'dashboard')], needs: { links: 3, training: 5, inTraining: 2 } },
     [path('minutes', 'mx')]: { no: 3, v: 1, status: 'published', date: ago(5), start: '14:00', loc: 'Kitchen', chair: 'sam', taker: 'sam', att: [{ id: 'ann', st: 'present' }, { id: 'sam', st: 'present' }],
       guests: '', decisions: 'Fryer oil every Monday', menu: '', safety: '', dates: '', other: '', acts: [{ text: 'Fix the cool room seal', who: 'sam', by: ago(2), st: 'open' }], next: '',
       pubAt: L.NOW - 5 * DAY, removed: false, at: L.NOW - 5 * DAY, upd: L.NOW - 5 * DAY },
@@ -80,6 +80,7 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
     ok(/3 kitchen mails open/.test(needs), width + ': Needs you counts the open kitchen mail (' + needs.slice(0, 200) + ')');
     ok(/Late/.test(needs) && /still to sign/.test(needs) && /1 of \d+ signed/.test(needs), width + ': Needs you says who has not signed the late minutes');
     ok(/1 meeting action past the date/.test(needs), width + ': Needs you lists the overdue meeting action');
+    ok(/3 item links to check/.test(needs) && /5 training reviews/.test(needs) && /2 in training/.test(needs), width + ': Needs you shows the Review desk counts from the nightly run');
     ok(/1 transfer not returned/.test(needs) && /Oldest: Butter to Venue B, 9 days/.test(needs), width + ': Needs you lists the transfer not back, with the oldest');
     ok(/The nightly run finished\./.test(needs), width + ': the nightly run counts as clear when it finished');
     ok(!await L.overflow(q), width + ': no sideways scroll with Needs you');
@@ -87,6 +88,10 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
     await q.evaluate(() => { const x = document.querySelector('.mlp-wrap [data-ml="later"]'); if (x) x.click(); }); await L.settle(q, 300);
     await q.click('.dsh-needs [data-dsh="open"][data-t="mail"]'); await L.settle(q, 300);
     ok(await q.evaluate(() => LK_PREP.state.atab) === 'mail', width + ': Open mail opens the Kitchen mail page');
+    await q.click('[data-p="a-group"][data-g="dashboard"]').catch(() => L.adminTab(q, 'dashboard')); await ready(q);
+    await q.evaluate(() => { const x = document.querySelector('.mlp-wrap [data-ml="later"]'); if (x) x.click(); }); await L.settle(q, 200);
+    await q.click('.dsh-needs [data-dsh="open"][data-t="references"]'); await L.settle(q, 300);
+    ok(await q.evaluate(() => LK_PREP.state.atab) === 'references', width + ': the item links row opens the Review desk');
     await q.context().close();
   }
   // The week ahead: functions from the live list, cut-offs from the head chef's settings, the usual busy days. No reads.
@@ -128,6 +133,48 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
   await L.waitFor(q, () => /Nothing waiting/.test(document.body.textContent), null, 8000).catch(() => {});
   ok(/Nothing waiting for [^.]*transfers\. The nightly run finished\./.test(await L.txt(q, '.dsh-needs')), 'with nothing waiting, Needs you says so in words');
   await q.context().close();
+
+  // The watch list: pinned keys from dashwatch/main, checked by type, each with its trend; add, remove, stale and failed saves.
+  const wkey = path('dashwatch', 'main'), store = p => p.evaluate(k => window.__fake.dump()[k], wkey);
+  const watched = { ...extra, [wkey]: { list: ['sec:Larder', 'person:sam', 'item:brisket|kg', 'bogus', 42, 'item:<img src=x onerror="window.__dshInjected=4">|kg'], v: 1, at: L.NOW, by: 'sam' } };
+  for (const width of [390, 1280]) {
+    const q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width, height: 900, extra: watched, wait: 1600 });
+    await ready(q);
+    await L.waitFor(q, () => document.querySelectorAll('.dsh-wl').length > 0, null, 8000).catch(() => {});
+    const rows = await q.$$eval('.dsh-wl', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
+    ok(rows.length === 4, width + ': the watch list shows the 4 good keys and drops the broken ones (' + rows.length + ')');
+    ok(/Section ?Larder/.test(rows[0]) && /prep lines a day/.test(rows[0]) && /typical 1 h 10 min to tick/.test(rows[0]), width + ': a watched section shows its lines a day and time to tick (' + rows[0] + ')');
+    ok(/Person ?Sam/.test(rows[1]) && /lines ticked off\. The 30 days before: \d+\./.test(rows[1]), width + ': a watched person shows lines ticked, against the period before (' + rows[1] + ')');
+    ok(/Wasted item ?Brisket \(kg\)/.test(rows[2]) && /waste lines?, [\d.]+ kg/.test(rows[2]), width + ': a watched wasted item shows its lines and amount (' + rows[2] + ')');
+    ok(await q.evaluate(() => window.__dshInjected) === undefined && rows[3].includes('<img'), width + ': a key with markup shows as words, never markup');
+    ok(!await L.overflow(q), width + ': no sideways scroll with the watch list');
+    await q.click('[data-dsh="watch-add"]'); await L.settle(q, 200);
+    await q.fill('#dsh-watch-q', 'gri'); await L.settle(q, 300);
+    const opts = await q.$$eval('[data-dsh="watch-pick"]', els => els.map(e => e.textContent));
+    ok(JSON.stringify(opts) === '["Grill"]', width + ': Find narrows the sections to type (' + JSON.stringify(opts) + ')');
+    ok(await q.evaluate(() => document.activeElement && document.activeElement.id) === 'dsh-watch-q', width + ': the Find box keeps focus while typing');
+    await q.click('[data-dsh="watch-pick"]');
+    await L.waitFor(q, k => { const d = window.__fake.dump()[k]; return d && d.v === 2; }, wkey, 8000).catch(() => {});
+    let d = await store(q);
+    ok(d && d.v === 2 && d.list.includes('sec:Grill') && d.list.length === 5 && !d.list.includes('bogus'), width + ': adding saves the cleaned list with the new key (' + JSON.stringify(d && d.list) + ')');
+    ok(/Added Grill to the watch list/.test(await L.txt(q, '.dsh-watch')), width + ': the save is confirmed in words');
+    await q.click('.dsh-wl [data-dsh="unwatch"][data-v="0"]');
+    await L.waitFor(q, k => { const d = window.__fake.dump()[k]; return d && d.v === 3; }, wkey, 8000).catch(() => {});
+    d = await store(q);
+    ok(d && d.v === 3 && !d.list.includes('sec:Larder'), width + ': Remove saves the list without it');
+    await q.evaluate(k => { window.__fake.write(k, { ...window.__fake.dump()[k], v: 9 }); }, wkey);
+    await q.click('.dsh-wl [data-dsh="unwatch"][data-v="0"]'); await L.settle(q, 600);
+    ok(/changed on another device/.test(await L.txt(q, '.dsh-watch')) && (await store(q)).v === 9, width + ': a list changed on another device is not overwritten');
+    await q.evaluate(() => { window.__fake.deny = /dashwatch/; });
+    await q.click('[data-dsh="refresh"]'); await ready(q); await L.waitFor(q, () => document.querySelectorAll('.dsh-wl').length > 0, null, 8000).catch(() => {});
+    await q.click('.dsh-wl [data-dsh="unwatch"][data-v="0"]'); await L.settle(q, 600);
+    ok(/Could not save the watch list/.test(await L.txt(q, '.dsh-watch')) && (await store(q)).v === 9, width + ': a refused save says so and changes nothing');
+    await q.context().close();
+  }
+  { const q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: 1280, extra, failReads: 'dashwatch', wait: 1600 });
+    await ready(q); await L.waitFor(q, () => /Could not load the watch list/.test(document.body.textContent), null, 8000).catch(() => {});
+    ok(/Could not load the watch list/.test(await L.txt(q, '.dsh-watch')) && await q.locator('[data-dsh="watch-add"]').count() === 0, 'a failed watch list read says so and offers no Add');
+    await q.context().close(); }
 
   let p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: 390, extra, failReads: 'analysis/dashboard', wait: 1600 });
   await L.waitFor(p, () => /Could not load the dashboard numbers/.test(document.body.textContent), null, 8000);
