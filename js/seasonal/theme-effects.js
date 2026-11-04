@@ -2,8 +2,11 @@
 (function () {
   'use strict';
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  const ownedSelector = '.kb-motion-target,.complete-particle,.kb-motion-addon path,.kb-ambient-motion,.kb-saber-blade,.kb-horse-leg,.kb-horse-tail,.kb-clover-leaf,.kb-ambient-detail,.kb-navbar-particle,.kb-nav-horizon';
+  const ownedSelector = '.kb-motion-target,.complete-particle,.kb-hang-item,.kb-motion-addon path,.kb-ambient-motion,.kb-saber-blade,.kb-horse-leg,.kb-horse-tail,.kb-clover-leaf,.kb-ambient-detail,.kb-navbar-particle,.kb-nav-horizon';
   let current = { theme: null, mode: 'still', density: 'festive', surface: 'work' }, paused = false, resizeTimer = 0, replayRevision = 0, navbarObserver = null;
+  // Home arrives once, then settles (3 Nov 2026): a short full show, then at most 4 slow pieces (2 on Subtle).
+  const ARRIVAL_MS = 4600, ARRIVAL_KEY = 'lk.seasonal.arrival';
+  let phase = null, arrivalTimer = 0, restPlan = null;
   const normalize = {
     kites: 'kite', 'diya-glow': 'glow', garland: 'sway', penjor: 'sway', lanterns: 'sway', eggs: 'rock', rosette: 'sway', racing: 'march',
     'memorial-glow': 'glow', 'vigil-halo': 'glow', 'candle-glow': 'glow', 'care-light': 'glow', 'civic-light': 'glow', 'horizon-breathe': 'glow',
@@ -39,7 +42,7 @@
     'kitchen-herbs': { label: 'Herb sprigs drift between cooking steam curls', motifs: ['herb', 'steam'], motion: 'rise', count: 14 },
     'four-leaf-clovers': { label: 'Four separate heart-shaped leaves on drifting lucky clovers', motifs: ['clover'], motion: 'flutter', count: 16 },
     'grain-leaves': { label: 'Grain sprigs and produce leaves moving at the book margins', motifs: ['grain', 'leaf'], motion: 'flutter', count: 14 },
-    'diya-lights': { label: 'Stationary diyas breathe warmly while chalk light motes rise', motifs: ['mote', 'mote', 'star'], motion: 'rise', count: 18, ornaments: ['diya', 'diya'] },
+    'diya-lights': { label: 'Stationary diyas breathe warmly while diya flames and light motes rise', motifs: ['flame', 'mote', 'flame'], motion: 'rise', count: 18, ornaments: ['diya', 'diya'] },
     'powder': { label: 'Holi powder drifting and dispersing in Kitchenbook chalk tones', motifs: ['powder'], motion: 'powder', count: 16 },
     'pongal-harvest': { label: 'Sugarcane leaves, rice grains and steam above an edge rice pot', motifs: ['rice', 'cane-leaf', 'steam'], motion: 'rise', count: 14, ornaments: ['rice-pot', 'cane'] },
     'pookkalam-petals': { label: 'Marigold petals drift beside circular pookkalam flower patterns', motifs: ['marigold-petal', 'cream-petal', 'marigold-petal'], motion: 'flutter', count: 20, ornaments: ['pookkalam', 'pookkalam'] },
@@ -48,14 +51,14 @@
     'puja-flowers': { label: 'White shiuli-like flowers with saffron centres drift beside a gently pulsing dhak', motifs: ['shiuli', 'cream-petal'], motion: 'flutter', count: 17, ornaments: ['dhak'] },
     'dussehra-leaves': { label: 'Shami-like compound leaves and warm chalk glints', motifs: ['compound-leaf', 'mote'], motion: 'flutter', count: 14 },
     'dashain-kites': { label: 'Diamond kites glide upward with trailing tails', motifs: ['kite'], motion: 'kite', count: 5 },
-    'tihar-garlands': { label: 'Anchored marigold garlands sway above diyas and rising warm lights', motifs: ['mote', 'star'], motion: 'rise', count: 14, ornaments: ['marigold-string', 'diya', 'marigold-string'] },
+    'tihar-garlands': { label: 'Anchored marigold garlands sway above diyas while marigold heads and flames rise', motifs: ['marigold', 'flame'], motion: 'rise', count: 14, ornaments: ['marigold-string', 'diya', 'marigold-string'] },
     'baisakh-leaves': { label: 'Fresh Baisakh leaves and warm paper ribbons', motifs: ['leaf', 'streamer'], motion: 'flutter', count: 16 },
     'lotus-ripples': { label: 'Pale lotus petals drifting over quiet widening water ripples', motifs: ['lotus-petal', 'lotus-petal', 'mote'], motion: 'quiet', count: 10, ornaments: ['ripple', 'lotus'] },
     'quiet-night': { label: 'A slow moonlit horizon and gently brightening stars for Nyepi', motifs: ['night-star'], motion: 'twinkle', count: 9, horizon: true },
     'penjor-breeze': { label: 'Anchored penjor and coconut-leaf fringes sway in a quiet breeze', motifs: ['mote'], motion: 'rise', count: 9, ornaments: ['penjor', 'penjor'] },
     'kuningan-ornaments': { label: 'Outlined tamiang and woven palm-leaf ornaments sway with warm motes', motifs: ['mote'], motion: 'rise', count: 11, ornaments: ['tamiang', 'endongan', 'tamiang'] },
-    'lanterns': { label: 'Hanging lanterns sway above floating warm glints', motifs: ['mote', 'star'], motion: 'rise', count: 13, ornaments: ['lantern', 'lantern'] },
-    'eid-fitr-lights': { label: 'Warm star drift around a gentle crescent light', motifs: ['star', 'mote'], motion: 'rise', count: 14, ornaments: ['crescent'] },
+    'lanterns': { label: 'Hanging lanterns sway above drifting plum blossom and warm glints', motifs: ['blossom', 'mote'], motion: 'rise', count: 13, ornaments: ['lantern', 'lantern'] },
+    'eid-fitr-lights': { label: 'Warm stars and small crescents drift around a gentle crescent light', motifs: ['star', 'small-crescent'], motion: 'rise', count: 14, ornaments: ['crescent'] },
     'eid-adha-light': { label: 'Prayer-arch light and slow warm motes', motifs: ['mote', 'star'], motion: 'quiet', count: 12, ornaments: ['arch', 'arch'] },
     'sinulog-flow': { label: 'Flowing water-step ribbons with quiet candle glints', motifs: ['water-ribbon', 'mote'], motion: 'step', count: 12 },
     'kiping': { label: 'Colourful leaf-shaped kiping strings sway at the book edges', motifs: ['mote'], motion: 'rise', count: 9, ornaments: ['kiping', 'kiping', 'kiping'] },
@@ -118,6 +121,10 @@
     'egg': motifSvg('<path d="M20 4C-2 24-1 44 20 44S42 24 20 4Z" fill="' + C.cream + '"/><path d="M6 24l7 4 7-5 7 5 7-4M6 34h28" stroke="' + C.orange + '"/><circle cx="18" cy="16" r="2" fill="' + C.gold + '"/>'),
     'star': particles.stars, 'confetti': particles.confetti, 'kite': particles.kite, 'powder': particles.powder,
     'mote': motifSvg('<circle cx="20" cy="24" r="3.5" fill="' + C.gold + '" stroke="none"/><path d="M20 12v4M20 32v4M8 24h4M28 24h4" stroke="' + C.gold + '"/>'),
+    'flame': motifSvg('<path d="M20 6C11 18 13 30 20 34C27 30 29 18 20 6Z" fill="' + C.gold + '"/><path d="M20 18C17 24 18 29 20 30C22 29 23 24 20 18Z" fill="' + C.orange + '" stroke="none"/>'),
+    'marigold': motifSvg([0, 45, 90, 135, 180, 225, 270, 315].map(a => '<circle cx="20" cy="15" r="5" transform="rotate(' + a + ' 20 24)" fill="' + C.orange + '"/>').join('') + '<circle cx="20" cy="24" r="6" fill="' + C.gold + '"/>'),
+    'blossom': motifSvg([0, 72, 144, 216, 288].map(a => '<circle cx="20" cy="15.5" r="7" transform="rotate(' + a + ' 20 24)" fill="#f1dedc"/>').join('') + '<circle cx="20" cy="24" r="3.5" fill="' + C.gold + '"/>'),
+    'small-crescent': motifSvg('<path d="M25 10A14 14 0 1 0 25 38A11 11 0 1 1 25 10Z" fill="' + C.gold + '"/>'),
     'night-star': motifSvg('<path d="M20 12v24M8 24h24" stroke="' + C.blue + '"/><circle cx="20" cy="24" r="2" fill="' + C.cream + '" stroke="none"/>'),
     'streamer': motifSvg('<path d="M10 3q25 9 8 19T28 45" stroke="' + C.gold + '" stroke-width="4"/><path d="M31 3q-15 10 0 17" stroke="' + C.orange + '" stroke-width="2"/>'),
     'ribbon': motifSvg('<circle cx="20" cy="17" r="10" fill="' + C.gold + '"/><path d="M13 25L9 43l11-6 10 6-3-18" fill="' + C.cream + '"/><path d="M20 10v14M14 17h12" stroke="' + C.orange + '"/>'),
@@ -143,7 +150,7 @@
     'shiuli': motifSvg('<g fill="' + C.cream + '"><ellipse cx="20" cy="16" rx="5" ry="10"/><ellipse cx="20" cy="16" rx="5" ry="10" transform="rotate(72 20 24)"/><ellipse cx="20" cy="16" rx="5" ry="10" transform="rotate(144 20 24)"/><ellipse cx="20" cy="16" rx="5" ry="10" transform="rotate(216 20 24)"/><ellipse cx="20" cy="16" rx="5" ry="10" transform="rotate(288 20 24)"/></g><circle cx="20" cy="24" r="4" fill="' + C.orange + '"/>'),
     'dhak': motifSvg('<path d="M10 9Q20 4 30 9L34 38Q20 46 6 38Z" fill="#bb7853"/><ellipse cx="20" cy="10" rx="11" ry="5" fill="' + C.cream + '"/><path d="M10 15l20 24M29 14L10 39M4 5L13 1M31 3l7 5" stroke="' + C.gold + '"/>'),
     'compound-leaf': motifSvg('<path d="M20 44V6" stroke="' + C.green + '"/>' + [13, 23, 33].map(y => '<ellipse cx="13" cy="' + y + '" rx="8" ry="4" fill="' + C.green + '" transform="rotate(24 13 ' + y + ')"/><ellipse cx="27" cy="' + y + '" rx="8" ry="4" fill="' + C.green + '" transform="rotate(-24 27 ' + y + ')"/>').join('')),
-    'marigold-string': motifSvg('<path d="M20 1v46" stroke="' + C.gold + '"/>' + [9, 21, 33, 44].map(y => '<circle cx="20" cy="' + y + '" r="7" fill="' + C.gold + '"/><path d="M15 ' + (y - 2) + 'l4-3 5 4-4 5-5-3" stroke="' + C.orange + '"/>').join('')),
+    'marigold-string': motifSvg('<path d="M20 1v46" stroke="' + C.gold + '"/>' + [9, 21, 33, 44].map(y => [0, 60, 120, 180, 240, 300].map(a => '<circle cx="20" cy="' + (y - 3.6) + '" r="3" transform="rotate(' + a + ' 20 ' + y + ')" fill="' + C.orange + '"/>').join('') + '<circle cx="20" cy="' + y + '" r="3.2" fill="' + C.gold + '"/>').join('')),
     'ripple': motifSvg('<g fill="none" stroke="' + C.blue + '"><ellipse class="kb-ambient-detail" cx="20" cy="29" rx="17" ry="8"/><ellipse cx="20" cy="29" rx="10" ry="4"/><path d="M2 41q18-6 36 0"/></g>'),
     'lotus': motifSvg('<path d="M20 35Q-2 31 3 18Q14 18 20 35ZM20 35Q42 31 37 18Q26 18 20 35ZM20 35Q3 17 20 5Q37 17 20 35Z" fill="#eddbd8"/><path d="M3 41q17-6 34 0" stroke="' + C.blue + '"/>'),
     'penjor': motifSvg('<path d="M6 48V10Q8-3 25 5Q36 12 34 24" stroke="' + C.gold + '" stroke-width="2"/><path d="M33 18v24M20 6l-3 12M27 9l-2 13M32 14l-2 14" stroke="' + C.green + '"/><path d="M28 37h10l-5 8Z" fill="' + C.gold + '"/>'),
@@ -182,12 +189,8 @@
     if (motif === 'powder') node.style.color = ['var(--kb-festive-accent)', 'var(--kb-festive-stone)', 'var(--kb-festive-steel-dark)', 'var(--kb-festive-beige)'][index % 4];
     return node;
   }
-  function renderAmbient(layer, design, visible) {
-    layer.dataset.ambientPreset = design.preset;
-    if (design.horizon || design.dawn) {
-      const horizon = document.createElement('div'); horizon.className = 'kb-ambient-horizon kb-ambient-motion' + (design.dawn ? ' is-dawn' : ''); horizon.setAttribute('aria-hidden', 'true'); layer.append(horizon);
-    }
-    const count = visible ? design.count : Math.max(4, Math.round(design.count * .55));
+  function ambientParticles(design, visible, count, rest) {
+    const nodes = [];
     for (let i = 0; i < count; i++) {
       const motif = design.motifs[i % design.motifs.length];
       let motion = design.motion;
@@ -195,13 +198,50 @@
       if (motion === 'race' && motif !== 'horse') motion = 'flutter';
       const node = ambientNode(motif, motion, i, visible);
       if (motif === 'horse') node.style.setProperty('--lane', (6 + (i % 3) * 5) + '%');
-      layer.append(node);
+      timing(node, i, rest);
+      nodes.push(node);
     }
-    (design.ornaments || []).forEach((motif, i) => {
-      const node = ambientNode(motif, motif === 'ripple' || motif === 'pookkalam' ? 'breathe' : 'sway', i + 1, visible, true);
-      node.style.setProperty('--y', (14 + i * 27) + '%');
-      layer.append(node);
+    return nodes;
+  }
+  // Arrival pieces play once, quickly and staggered; resting pieces loop slowly (14 s or longer).
+  function timing(node, i, rest) {
+    node.classList.add(rest ? 'is-rest' : 'is-arrival');
+    node.style.setProperty('--duration', (rest ? 14 + i * 3 : 3.2 + (i % 5) * .25) + 's');
+    node.style.setProperty('--delay', (rest ? -2 - i * 4.1 : (i % 8) * .12) + 's');
+  }
+  function restLimit(visible) { return visible ? 4 : 2; }
+  function renderAmbient(layer, design, visible, arrive) {
+    layer.dataset.ambientPreset = design.preset;
+    if (design.horizon || design.dawn) {
+      const horizon = document.createElement('div'); horizon.className = 'kb-ambient-horizon kb-ambient-motion' + (design.dawn ? ' is-dawn' : ''); horizon.setAttribute('aria-hidden', 'true'); layer.append(horizon);
+    }
+    const hung = renderHang(design, visible);
+    // Anchored ornaments and the horizon keep moving at rest, so they count towards the resting pieces.
+    const restCount = Math.max(0, restLimit(visible) - hung - (design.horizon || design.dawn ? 1 : 0));
+    const fill = rest => ambientParticles(design, visible, rest ? restCount : (visible ? design.count : Math.max(4, Math.round(design.count * .55))), rest);
+    begin(layer, fill, arrive);
+  }
+  // Anchored cultural objects belong to the page, not the viewport. They hang from under the top bar
+  // (garlands, lanterns, parol) or stand on the date line (diyas, pots) on the right of the heading,
+  // behind the board and dockets, so they scroll with Home and never sit on a word or a button.
+  const hanging = new Set(['marigold-string', 'tamiang', 'endongan', 'lantern', 'kiping', 'parol', 'crescent']);
+  function renderHang(design, visible) {
+    const main = document.querySelector('#app .wall-main');
+    if (!main || !design.ornaments?.length) return 0;
+    const hang = document.createElement('div'); hang.className = 'kb-hang'; hang.setAttribute('aria-hidden', 'true'); hang.dataset.hangPreset = design.preset;
+    const date = main.querySelector('.wall-date');
+    hang.style.setProperty('--kb-stand-base', (date ? date.offsetTop + date.offsetHeight : 80) + 'px');
+    design.ornaments.slice(0, visible ? 3 : 2).forEach((motif, i) => {
+      const node = document.createElement('i');
+      node.className = 'kb-hang-item ' + (hanging.has(motif) ? 'is-hanging' : 'is-standing');
+      node.dataset.hangMotif = motif; node.style.setProperty('--kb-hang-i', i);
+      node.style.setProperty('--kb-hang-delay', (-1.3 - i * 1.9) + 's');
+      node.innerHTML = branded(ambientArt[motif] || '');
+      if (motif === 'ripple' || motif === 'pookkalam') node.classList.add('is-breathing');
+      hang.append(node);
     });
+    main.prepend(hang);
+    return hang.children.length;
   }
   // Work pages use the same occasion-specific vocabulary inside a shallow, clipped header.
   // Distances are measured from that header so no decorative paint reaches recipes or inputs.
@@ -278,12 +318,12 @@
   }
   function surfaceFor(options) { return options?.surface === 'work' || !homeSurface() ? 'work' : 'home'; }
   function targets() {
-    const selector = current.surface === 'work' ? '#app .wtop .kb-festive-hat,#app .wtop .kb-occasion-title-art>svg' : '#app .kb-season-note-art>svg,#app .kb-season-work svg,#app .kb-festive-hat';
+    const selector = current.surface === 'work' ? '#app .wtop .kb-occasion-title-art>svg' : '#app .kb-season-note-art>svg,#app .kb-season-work svg';
     return [...document.querySelectorAll(selector)];
   }
   function clean() {
     navbarObserver?.disconnect(); navbarObserver = null;
-    document.querySelectorAll('.kb-nav-festive-effects').forEach(node => node.remove());
+    document.querySelectorAll('.kb-nav-festive-effects,.kb-hang').forEach(node => node.remove());
     document.querySelectorAll('.kb-motion-addon,.complete-steam').forEach(node => node.remove());
     document.querySelectorAll('.kb-motion-target').forEach(node => { node.classList.remove('kb-motion-target'); delete node.dataset.kbMotion; });
   }
@@ -300,6 +340,7 @@
     current = { theme: theme && theme.id !== 'off' ? theme : null, mode: mode === 'gentle' ? 'gentle' : 'still', density: density === 'light' ? 'light' : 'festive', surface: surfaceFor(options) };
     const effect = effectFor(current.theme), stopped = !current.theme || current.mode === 'still' || reduced.matches;
     const ambient = ambientFor(current.theme);
+    clearTimeout(arrivalTimer); arrivalTimer = 0; phase = null; restPlan = null; app.classList.remove('kb-at-rest'); delete layer.dataset.phase;
     clean(); layer.replaceChildren(); delete layer.dataset.ambientPreset; app.dataset.motion = effect; app.dataset.motionIntensity = current.density; app.dataset.kbCelebrationSurface = current.surface; layer.dataset.motionIntensity = current.density; layer.dataset.surface = current.surface;
     app.classList.toggle('motion-still', stopped); app.classList.toggle('motion-gentle', !stopped); layer.className = 'effect-' + effect;
     if (!stopped) {
@@ -307,25 +348,56 @@
       if (current.surface === 'work') {
         renderNavbar(ambient, current.density === 'festive');
       } else if (current.surface === 'home' && ambient) {
-        renderAmbient(layer, ambient, current.density === 'festive');
+        renderAmbient(layer, ambient, current.density === 'festive', options?.arrive);
       } else if (current.surface === 'home' && particleEffects.has(effect)) {
         const visible = current.density === 'festive', amount = effect === 'snow' ? (visible ? 40 : 24) : effect === 'kite' ? (visible ? 3 : 2) : (visible ? 12 : 6);
-        for (let i = 0; i < amount; i++) {
-          const el = document.createElement('i'), centre = effect === 'snow' && i % 6 === 0;
-          el.className = 'complete-particle ' + (centre ? 'is-centre' : 'is-edge');
-          el.style.setProperty('--x', (centre ? 28 + (i * 13) % 43 : i % 2 ? 3 + (i * 3.3) % 13 : 85 + (i * 3.3) % 12) + '%');
-          el.style.setProperty('--size', (effect === 'snow' ? 2 + i % 4 : effect === 'kite' ? 27 : (visible ? 16 : 12) + i % 10) + 'px');
-          el.style.setProperty('--duration', (effect === 'confetti' ? 9 + i % 3 : effect === 'snow' ? 15 + i % 12 : 20 + i % 13) + 's');
-          el.style.setProperty('--delay', (-i * 2.1) + 's'); el.style.setProperty('--distance', 'calc(100dvh + 130px)'); el.style.setProperty('--drift', ((i % 2 ? -1 : 1) * (18 + i % 37)) + 'px'); el.style.setProperty('--turn', (i % 2 ? 60 : -55) + 'deg');
-          if (effect !== 'snow') el.innerHTML = branded(particles[effect]);
-          if (effect === 'powder') el.style.color = ['var(--kb-festive-accent)', 'var(--kb-festive-stone)', 'var(--kb-festive-steel-dark)', 'var(--kb-festive-beige)'][i % 4];
-          layer.append(el);
-        }
+        const fill = rest => {
+          const nodes = [];
+          for (let i = 0; i < (rest ? Math.min(amount, restLimit(visible)) : amount); i++) {
+            const el = document.createElement('i'), centre = effect === 'snow' && i % 6 === 0;
+            el.className = 'complete-particle ' + (centre ? 'is-centre' : 'is-edge');
+            el.style.setProperty('--x', (centre ? 28 + (i * 13) % 43 : i % 2 ? 3 + (i * 3.3) % 13 : 85 + (i * 3.3) % 12) + '%');
+            el.style.setProperty('--size', (effect === 'snow' ? 2 + i % 4 : effect === 'kite' ? 27 : (visible ? 16 : 12) + i % 10) + 'px');
+            el.style.setProperty('--distance', 'calc(100dvh + 130px)'); el.style.setProperty('--drift', ((i % 2 ? -1 : 1) * (18 + i % 37)) + 'px'); el.style.setProperty('--turn', (i % 2 ? 60 : -55) + 'deg');
+            timing(el, i, rest);
+            if (effect !== 'snow') el.innerHTML = branded(particles[effect]);
+            if (effect === 'powder') el.style.color = ['var(--kb-festive-accent)', 'var(--kb-festive-stone)', 'var(--kb-festive-steel-dark)', 'var(--kb-festive-beige)'][i % 4];
+            nodes.push(el);
+          }
+          return nodes;
+        };
+        begin(layer, fill, options?.arrive);
       }
     }
     pause(document.hidden); announce();
   }
+  // The first Home view of the kitchen day for this celebration arrives; later views open at rest.
+  function firstView(id) {
+    const stamp = (window.LK_TIME?.day?.() || '') + '|' + id;
+    // Saved on this device only. Out of date on the next kitchen day or for another celebration.
+    try { if (localStorage.getItem(ARRIVAL_KEY) === stamp) return false; localStorage.setItem(ARRIVAL_KEY, stamp); } catch (_) {}
+    return true;
+  }
+  function begin(layer, fill, force) {
+    const first = firstView(current.theme.id), arrive = !document.hidden && (force || first);
+    restPlan = { layer, fill };
+    if (!arrive) { settle(); return; }
+    phase = 'arrival'; layer.dataset.phase = 'arrival';
+    fill(false).forEach(node => layer.append(node));
+    arrivalTimer = setTimeout(settle, ARRIVAL_MS);
+  }
+  function settle() {
+    clearTimeout(arrivalTimer); arrivalTimer = 0;
+    if (!restPlan || !restPlan.layer.isConnected) return;
+    restPlan.layer.querySelectorAll('.is-arrival').forEach(node => node.remove());
+    if (phase !== 'rest') restPlan.fill(true).forEach(node => restPlan.layer.append(node));
+    phase = 'rest'; restPlan.layer.dataset.phase = 'rest';
+    document.querySelector('#app')?.classList.add('kb-at-rest');
+    announce();
+  }
   function pause(on) {
+    // A hidden tab skips the rest of the arrival rather than replaying it later.
+    if (on && phase === 'arrival') settle();
     paused = !!on;
     document.querySelector('#app')?.classList.toggle('motion-paused', paused);
     document.querySelector('#kb-festive-effects')?.classList.toggle('motion-paused', paused);
@@ -342,7 +414,7 @@
     const ambientAnimations = animations.filter(a => layer && layer.contains(a.effect.target));
     const navbar = document.querySelector('#app .wtop .kb-nav-festive-effects');
     const navbarAnimations = animations.filter(a => navbar && navbar.contains(a.effect.target));
-    return { state, effect, label, animationCount: state === 'running' ? running : animations.length, intensity: current.density, replayRevision, surface: current.surface, scope: current.surface === 'home' ? 'page' : 'navbar', ambientPreset: ambient ? ambient.preset : null, ambientLabel: ambient ? ambient.label : null, ambientCount: layer ? layer.querySelectorAll('.kb-ambient-particle,.kb-ambient-horizon').length : 0, ambientAnimationCount: state === 'running' ? ambientAnimations.filter(a => a.playState === 'running').length : ambientAnimations.length, navbarPreset: navbar?.dataset.navPreset || null, navbarCount: navbar ? navbar.querySelectorAll('.kb-navbar-particle,.kb-nav-horizon').length : 0, navbarAnimationCount: state === 'running' ? navbarAnimations.filter(a => a.playState === 'running').length : navbarAnimations.length };
+    return { state, effect, label, animationCount: state === 'running' ? running : animations.length, intensity: current.density, replayRevision, surface: current.surface, scope: current.surface === 'home' ? 'page' : 'navbar', ambientPreset: ambient ? ambient.preset : null, ambientLabel: ambient ? ambient.label : null, phase, ambientCount: layer ? layer.querySelectorAll('.kb-ambient-particle,.kb-ambient-horizon').length : 0, hangCount: document.querySelectorAll('#app .kb-hang-item').length, ambientAnimationCount: state === 'running' ? ambientAnimations.filter(a => a.playState === 'running').length : ambientAnimations.length, navbarPreset: navbar?.dataset.navPreset || null, navbarCount: navbar ? navbar.querySelectorAll('.kb-navbar-particle,.kb-nav-horizon').length : 0, navbarAnimationCount: state === 'running' ? navbarAnimations.filter(a => a.playState === 'running').length : navbarAnimations.length };
   }
   document.addEventListener('visibilitychange', () => pause(document.hidden));
   window.addEventListener('hashchange', () => {
@@ -350,5 +422,5 @@
   });
   reduced.addEventListener('change', () => render(current.theme, current.mode, current.density, { surface: current.surface }));
   window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => announce(), 100); });
-  window.KB_EFFECTS = { render, pause, reduced, status, coverage() { return Object.entries(ambientById).map(([id, preset]) => ({ id, preset, label: ambientDesigns[preset].label })); }, replay() { render(current.theme, current.mode, current.density, { surface: current.surface }); requestAnimationFrame(() => { if (current.theme && current.mode === 'gentle' && !reduced.matches && !paused && !document.hidden) { ownedAnimations().forEach(animation => { animation.currentTime = 0; animation.play(); }); replayRevision += 1; } announce(); }); } };
+  window.KB_EFFECTS = { render, pause, reduced, status, coverage() { return Object.entries(ambientById).map(([id, preset]) => ({ id, preset, label: ambientDesigns[preset].label })); }, settle, replay() { try { localStorage.removeItem(ARRIVAL_KEY); } catch (_) {} render(current.theme, current.mode, current.density, { surface: current.surface, arrive: true }); requestAnimationFrame(() => { if (current.theme && current.mode === 'gentle' && !reduced.matches && !paused && !document.hidden) { ownedAnimations().forEach(animation => { animation.currentTime = 0; animation.play(); }); replayRevision += 1; } announce(); }); } };
 })();
