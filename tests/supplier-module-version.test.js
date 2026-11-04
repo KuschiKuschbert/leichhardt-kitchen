@@ -17,11 +17,12 @@ const staleCore = () => { window.LK_SUP_CORE = { API: 3 }; window.LK_SUP_STORE =
   ok(p.errors.length === 0, 'revised supplier page has no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // The order list's link to the supplier's detailed order (its name on the tick list) keeps the lazy-loader entry point
-  // before the supplier page is open. Since 5 Nov 2026 the tick beside it confirms only; the name opens the sheet.
+  // The order list groups a chef's requests by supplier (5 Nov 2026, round 2 of the work pages redesign): it loads the
+  // current supplier core and store, replacing an old one in memory, but not the supplier workspace page, which waits for
+  // the supplier's name on the tick list. Since 5 Nov 2026 the tick beside it confirms only; the name opens the sheet.
   p = await L.open(b, '#/orders', { who: 'bo', extra: F.fixture(), init: staleCore, wait: 1500 });
-  await L.waitFor(p, () => !!document.querySelector('.cut-tl a.cut-n[href*="/northside/"]'), null, 10000);
-  ok(!supplierUrls(p).length, 'supplier code stays lazy before the detailed order-list action');
+  await L.waitFor(p, () => !!document.querySelector('.o-sups .cut-tl a.cut-n[href*="/northside/"]'), null, 10000);
+  ok(!supplierUrls(p).some(url => new URL(url).pathname.endsWith('/js/suppliers.js')) && revision(p, 'supplier-core.js') && revision(p, 'supplier-store.js') && await p.evaluate(() => window.LK_SUP_CORE.API === 4 && window.LK_SUP_STORE.API === 2), 'the order list loads only the current supplier core and store to group requests, not the workspace page');
   await p.click('.cut-tl a.cut-n[href*="/northside/"]');
   await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"]'), null, 15000);
   ok(revision(p, 'supplier-core.js') && await p.evaluate(() => window.LK_SUP_CORE.API === 4), 'reminder entry replaces an old core with the current revision');
@@ -30,12 +31,14 @@ const staleCore = () => { window.LK_SUP_CORE = { API: 3 }; window.LK_SUP_STORE =
   ok(p.errors.length === 0, 'revised reminder entry has no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // The order-list tick confirms a reminder even when an old supplier core is already in memory.
-  p = await L.open(b, '#/orders', { who: 'bo', extra: F.fixture(), init: staleCore, wait: 1500 });
+  // The order-list tick confirms a reminder even when an old supplier core is already in memory and the current one has
+  // not arrived (held back, as on a slow live site): the list stays plain and the tick waits for neither.
+  p = await L.open(b, '#/orders', { who: 'bo', extra: F.fixture(), init: staleCore, hold: 'js/supplier-(core|store)\\.js|js/suppliers\\.js', wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="northside|"]:not([disabled])'), null, 10000);
+  const asked = supplierUrls(p).length;
   await p.click('.cut-tl [data-p="cut-tick"][data-id^="northside|"]');
   await L.waitFor(p, k => window.__fake.dump()[k]?.on === true, F.key(['cutdone', F.today + '_northside']), 10000);
-  ok(!supplierUrls(p).length && await p.evaluate(() => window.LK_SUP_CORE.API === 3 && location.hash === '#/orders'), 'reminder-only completion does not depend on or replace an older supplier module');
+  ok(supplierUrls(p).length === asked && await p.evaluate(() => window.LK_SUP_CORE.API === 3 && location.hash === '#/orders' && !document.querySelector('.o-sups')), 'reminder-only completion does not depend on or replace an older supplier module');
   ok(p.errors.length === 0, 'reminder-only completion with an old module has no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

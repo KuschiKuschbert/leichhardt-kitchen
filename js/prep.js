@@ -1456,6 +1456,29 @@
   /* The kitchen's rows open the admin page that saves each setting (the verified admin only, like the admin panel), and
      Use a different kitchen PIN on this device (moved from the admin Tools tab to Settings, This phone, 3 Nov 2026):
      forgets the kitchen PIN here only and opens the PIN screen. Settings asks for the second tap. */
+  /* Kitchen, Overview (5 Nov 2026, admin pages step 6, design B): every kitchen setting as a row that says what it is set
+     to, in the Settings page's own rows, opening the admin page that changes it. Values from kitchenInfo(): no reads,
+     and nothing shows as none or 0 before the settings are in. */
+  function kitchenHomeHTML() {
+    var k = kitchenInfo(), plural = function (n, one, many) { return n + ' ' + (n === 1 ? one : many); };
+    var list = function (a) { return a.length ? a.join(', ') : 'None'; };
+    var sound = function (id) { return id === 'off' ? 'Off' : ((window.LK_CHIME && window.LK_CHIME.list.filter(function (x) { return x.id === id; })[0]) || {}).name || 'Pass bell'; };
+    var row = function (label, value, tab, where) {
+      return '<div class="st-row"><button type="button" class="st-btn st-go" data-p="k-open" data-t="' + tab + '"><span class="st-l">' + esc(label) + '</span><span class="st-v"><span>' + esc(k ? value : '') + '</span></span>' +
+        (where ? '<span class="st-sub">' + esc(where) + '</span>' : '') + '</button></div>';
+    };
+    var group = function (title, rows) { return '<section class="set-block k-home"><h3 class="a-ch-h">' + title + '</h3><div class="st-rows">' + rows + '</div></section>'; };
+    return '<p class="hint k-home-lead">Each row says what it is set to. Tap it to change it.</p>' +
+      group('The kitchen', row('Order cut-offs', k ? plural(k.cuts, 'supplier', 'suppliers') : '', 'cutoffs') + row('Suppliers & pars', 'Catalogue and pars', 'suppliers') +
+        row('Kitchen sections', k ? list(k.secs) : '', 'people', 'Team, People') + row('Shift pings', k ? 'Sound: ' + sound(k.sound) : '', 'notes') +
+        row('Meeting minutes', 'Write and publish', 'minutes') + row('Guides', 'How-to guides', 'guides')) +
+      group('The team\'s access', row('Pages staff see', k ? (k.hidden.length ? list(k.shown) + '. Held back: ' + k.hidden.join(', ') : 'All three') : '', 'people', 'Team, People') +
+        row('Weekly top tickers on the prep book', k ? (k.badges ? 'Shown' : 'Hidden') : '', 'people', 'Team, People') +
+        (mlOwner() ? row('Sous chefs read Kitchen mail', k ? (k.sousMail ? 'On' : 'Off') : '', 'mail', 'Today, Kitchen mail') : '') +
+        row('Who books functions', k ? plural(k.fns, 'person', 'people') : '', 'people', 'Team, People')) +
+      group('Records and safety', row('Confirmed item links', 'Names linked to recipes and supplier items', 'reference-records') +
+        row('Backup', 'Every night at 03:30', 'tools') + row('Kitchen PIN', 'Change the PIN', 'tools'));
+  }
   var ADMIN_OPEN = ['people', 'notes', 'mail', 'cutoffs', 'tools'];
   function adminOpen(tab) {
     if (!adminTabs() || ADMIN_OPEN.indexOf(tab) < 0) return false;
@@ -5160,7 +5183,7 @@
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = at === 'dashboard' ? dashHTML() : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
+    var pane = at === 'dashboard' ? dashHTML() : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'kitchen-home' ? kitchenHomeHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Create/edit functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it. Function editing still has its own tick.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       '<p class="hint">Tick Create/edit functions beside a person, then save. Their kitchen role stays the same.</p>' + peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
@@ -5236,8 +5259,8 @@
     return '<section class="set-block"><h2 class="p-h">Suppliers &amp; pars</h2><p>Current pars, manual items and the original supplier records are kept in the catalogue.</p>' +
       (supplierEdit() ? '<div class="btn-row"><a class="btn dark" href="#/suppliers/manage">Manage catalogue</a><a class="btn" href="#/suppliers">Supplier order</a></div>' : '<p class="hint">Only the head chef changes suppliers and pars. Sous chefs can use <a href="#/suppliers">Supplier order</a>.</p>') + '</section>';
   }
-  var A_TAB_NAMES = { dashboard: 'Dashboard', overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
-  var A_GROUPS = [['today', 'Today', ['dashboard', 'overview', 'references', 'training', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people', 'training-records']], ['kitchen', 'Kitchen', ['cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']]];
+  var A_TAB_NAMES = { 'kitchen-home': 'Overview', dashboard: 'Dashboard', overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
+  var A_GROUPS = [['today', 'Today', ['dashboard', 'overview', 'references', 'training', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people', 'training-records']], ['kitchen', 'Kitchen', ['kitchen-home', 'cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']]];
   var A_GROUP_NOTES = { today: 'What needs you, and how the kitchen is going.', reports: 'Read the recorded activity and follow it back to its source.', team: 'Who is in the kitchen, what each person may do, and their assessments.', kitchen: 'How the kitchen is set up, its records, the backup and the PIN.' };
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
@@ -5766,6 +5789,8 @@
     var br = canBrowse(), today = dayNow(), onToday = S.ordDate === today;
     if (!br && S.ordDate !== today) { S.ordDate = today; watchOrders(); }
     if (S.ordDate === today && S.ordState === 'ok') ordRoll();
+    if (br && onToday) supCatLoad();
+    var grouped = br && onToday && supGrouped();
     var live = (S.ordLines || []).filter(function (x) { return !x.deleted; });
     var nOrd = live.filter(function (x) { return x.ordered; }).length;
     /* on today's list, a line that was ticked as ordered stays for 10 minutes (so a mis-tap can be undone), then leaves the list. Other days show everything. */
@@ -5801,12 +5826,12 @@
     var offO = S.ordState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var body =
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
-        offO + (own.length ? '<ul class="nb-rows">' + own.slice().sort(br && onToday ? function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') || byAdded(a, b); } : byAdded).map(ordRow).join('') + '</ul>' : (waitHTML || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))) + waitHTML);
+        offO + (grouped ? supGroupsHTML(own, function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') || byAdded(a, b); }) : own.length ? '<ul class="nb-rows">' + own.slice().sort(br && onToday ? function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') || byAdded(a, b); } : byAdded).map(ordRow).join('') + '</ul>' : (waitHTML || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))) + waitHTML);
     return whoTopHTML() + tabs +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Order list</h2><span class="nb-date">' + esc(longDate(S.ordDate)) + '</span></div>' +
       (S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') +
       (add ? dockBtn('nb-addline', 'o-write', 'Add to the order') : '') + '</header>' +
-      (onToday ? cutOrdHTML() : '') +
+      (onToday && !grouped ? cutOrdHTML() : '') +
       (can('add') || S.ordDate !== today ? '' : '<p class="hint o-ro">You can read the order list but not write in it.</p>') +
       closeoutHTML(null, S.ordDate) +
       '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>' +
@@ -9352,21 +9377,75 @@
   /* Supplier orders: the tick list on the order list and on Chef to-do, for the head chef and sous chefs. Today's
      cut-offs, and tomorrow's whose reminder has already started (an early one, the night before), soonest first. Each
      row is a tick box: ordered (by whom, when), the time left, or Closed and not ticked. */
+  // today's cut-offs, and tomorrow's whose reminder has started, soonest first: the tick list's rows and the supplier groups
+  function cutRowsNow() { var m = T.mins(); return cutToday().concat(cutOn(1).filter(function (c) { return cutOnNow(c, m); })); }
   function cutRowsHTML(ro) {
-    var m = T.mins(), done = cutDone(), xs = cutToday().concat(cutOn(1).filter(function (c) { return cutOnNow(c, m); }));
+    var xs = cutRowsNow();
     if (!xs.length) return '<p class="hint">No cut-offs today.</p>';
-    return (cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '') + '<ul class="cut-tl">' + xs.map(function (c) {
-      var d = done[c.key], past = c.at <= m, who = d ? cutByName(d) : '';
-      var st = d ? 'Ordered' + (who ? ' by ' + who : '') + (d.at ? ', ' + clock(d.at) : '') : past ? 'Closed, not ticked' : cutIn(c.at - m);
-      var cls = d ? 'is-done' : past ? 'is-past' : c.at - m <= CUT_SOON ? 'is-soon' : '';
-      return '<li class="cut-o ' + cls + '">' + (ro ? '<span class="cut-box cut-mark" aria-hidden="true">' + (d ? '&#10003;' : '') + '</span>' : '<button type="button" class="cut-box" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Ordered from ' : 'Tick when ordered from ') + c.s.name) + '"' + (cutCanTick() ? '' : ' disabled') + '><span aria-hidden="true">' + (d ? '&#10003;' : '') + '</span></button>') +
-        '<a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
-    }).join('') + '</ul>';
+    return (cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '') + '<ul class="cut-tl">' + xs.map(function (c) { return cutRowHTML(c, ro); }).join('') + '</ul>';
+  }
+  function cutRowHTML(c, ro) {
+    var m = T.mins(), done = cutDone();
+    var d = done[c.key], past = c.at <= m, who = d ? cutByName(d) : '';
+    var st = d ? 'Ordered' + (who ? ' by ' + who : '') + (d.at ? ', ' + clock(d.at) : '') : past ? 'Closed, not ticked' : cutIn(c.at - m);
+    var cls = d ? 'is-done' : past ? 'is-past' : c.at - m <= CUT_SOON ? 'is-soon' : '';
+    return '<li class="cut-o ' + cls + '">' + (ro ? '<span class="cut-box cut-mark" aria-hidden="true">' + (d ? '&#10003;' : '') + '</span>' : '<button type="button" class="cut-box" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Ordered from ' : 'Tick when ordered from ') + c.s.name) + '"' + (cutCanTick() ? '' : ' disabled') + '><span aria-hidden="true">' + (d ? '&#10003;' : '') + '</span></button>') +
+      '<a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
   }
   function cutOrdHTML() {
     if (!cutHas()) return '';
     cutWatch(); pushKeep();
     return '<section class="cut-today" aria-label="Supplier orders"><h3 class="nb-sh">Supplier orders today</h3><p class="hint cut-how">Tick each supplier once the order is in, by phone, email or its site. This is the one place to tick it: every chef sees it, and its reminder and pushes stop.</p>' + cutRowsHTML() + pushHTML() + '</section>';
+  }
+  /* Supplier groups (5 Nov 2026, head chef, round 2 of the work pages redesign, as drawn in B): on today's order list the
+     head chef and sous chefs see the requests under each supplier's cut-off, its tick, time left and state as the
+     heading, then Open the supplier's order and Delivery arrived; what the catalogue cannot match goes under No supplier
+     yet. A request matches a catalogue item by its exact name or a confirmed alias only (LK_SUP_CORE.matchRequests), and
+     goes under the first cut-off it matches. Staff never see suppliers: their list is as before, and so is a chef's on
+     another day, while the catalogue is not read, or when no catalogue supplier is linked to today's cut-offs. The
+     tick never waits for the catalogue: the plain list and the groups both tick through cutConfirm().
+     Read: the supplier catalogue, one read per supplier (at least one), when a chef opens today's order list, then kept
+     in memory only for that person and kitchen day (never on the phone: goods are private). A failed read keeps the plain
+     list; Refresh on the supplier page reads it again there. */
+  var supCat = { key: '', list: null, state: 'idle' };
+  function supCatLoad() {
+    if (!supplierRead() || !cutHas()) return;
+    var k = supplierContext() + '|' + dayNow();
+    if (supCat.key === k) return;
+    supCat = { key: k, list: null, state: 'loading' };
+    supplierTools().then(function (st) { return st.loadSuppliers(); }).then(function (list) {
+      if (supCat.key !== k) return;
+      supCat.list = list || []; supCat.state = 'ok'; if (S.name === 'orders') draw();
+    }, function () { if (supCat.key === k) { supCat.state = 'error'; if (S.name === 'orders') draw(); } });
+  }
+  // grouped only when a catalogue supplier is linked to one of the cut-offs shown: with none, every request would sit
+  // under No supplier yet, so the plain list stays
+  function supGrouped() {
+    if (supCat.state !== 'ok' || !supCat.list || supCat.key !== supplierContext() + '|' + dayNow() || !window.LK_SUP_CORE || !cutHas()) return false;
+    var ids = cutRowsNow().map(function (c) { return c.s.id; });
+    return supCat.list.some(function (x) { return ids.indexOf(x.cutoffId) >= 0; });
+  }
+  function supGroupsHTML(lines, order) {
+    cutWatch(); pushKeep();
+    var C = window.LK_SUP_CORE, left = lines.slice();
+    var groups = cutRowsNow().map(function (c) {
+      var sups = supCat.list.filter(function (x) { return x.cutoffId === c.s.id; }), items = [];
+      sups.forEach(function (x) { items = items.concat(x.items || []); });
+      var hit = {};
+      C.matchRequests(items, left.map(function (x) { return { id: x.id, text: x.text }; })).matches.forEach(function (m) { m.requestIds.forEach(function (id) { hit[id] = 1; }); });
+      var mine = left.filter(function (x) { return hit[x.id]; });
+      left = left.filter(function (x) { return !hit[x.id]; });
+      return { c: c, lines: mine, linked: sups.length };
+    });
+    var rows = function (l) { return '<ul class="nb-rows">' + l.slice().sort(order).map(ordRow).join('') + '</ul>'; };
+    return '<section class="cut-today o-sups" aria-label="Supplier orders"><h3 class="nb-sh">By supplier</h3><p class="hint cut-how">Tick each supplier once the order is in, by phone, email or its site. This is the one place to tick it: every chef sees it, and its reminder and pushes stop.</p>' +
+      (cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '') +
+      groups.map(function (g) {
+        var c = g.c, to = '#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day);
+        return '<div class="o-sup"><ul class="cut-tl">' + cutRowHTML(c) + '</ul>' + (g.lines.length ? rows(g.lines) : '<p class="hint o-sup-empty">Nothing asked for from ' + esc(c.s.name) + ' yet.</p>') +
+          '<p class="o-sup-acts">' + (g.linked === 1 ? '<a class="chip" href="' + to + '">Open ' + esc(c.s.name) + ' order</a>' : '') + '<a class="chip" href="#/deliveries">Delivery arrived</a></p></div>';
+      }).join('') +
+      (left.length ? '<div class="o-sup o-sup-none"><h3 class="nb-sh">No supplier yet</h3>' + rows(left) + '</div>' : '') + pushHTML() + '</section>';
   }
   // the same list at the top of Chef to-do, to see, not tick (5 Nov 2026: ticked on the order list only)
   function cutTodoHTML() {
@@ -9966,6 +10045,8 @@
     }
     if (a === 'sec-hide') { hideSection(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'a-reset-pin') { resetPin(id); return; }
+    // a Kitchen Overview row opens the page that changes its setting, in whichever room it lives
+    if (a === 'k-open') { var kt = el.getAttribute('data-t'); if (intelligenceBusy() || !A_TAB_NAMES[kt] || kt === 'mail' && !mlOwner()) return; S.personId = ''; S.atab = kt; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(kt)[0]] = kt; lsSet('lk.prep.atab', kt); draw(); adminToTop(); return; }
     // a person's page (admin pages step 5): open it from their row, and back to the list (also the top bar's Back)
     if (a === 'a-person') { S.personId = id; draw(); adminToTop(); return; }
     if (a === 'a-person-back') { S.personId = ''; draw(); adminToTop(); return; }

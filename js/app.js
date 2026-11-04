@@ -1236,7 +1236,7 @@
   function stList(a) { return a.length ? a.join(', ') : 'None'; }
   /* The kitchen (the verified admin): each kitchen-wide setting with its value, opening the admin page that saves it
      (LK_PREP.adminOpen()). Nothing moved out of the admin panel (head chef, 3 Nov 2026). */
-  var ST_WHERE = { people: 'Admin, Settings, People', notes: 'Admin, Operations, Shift pings', mail: 'Admin, Operations, Kitchen mail', cutoffs: 'Admin, Operations, Cut-offs', tools: 'Admin, Settings, Tools' };
+  var ST_WHERE = { people: 'Admin, Team, People', notes: 'Admin, Kitchen, Shift pings', mail: 'Admin, Today, Kitchen mail', cutoffs: 'Admin, Kitchen, Order cut-offs', tools: 'Admin, Kitchen, Backup and PIN' };
   function stKitchen(k) {
     var row = function (id, label, value, tab) { return stRow(id, label, value, '', { act: 'stadmin', val: tab, sub: 'Changed in ' + ST_WHERE[tab] }); };
     return row('k-people', 'People and roles', k ? plural(k.people, 'person', 'people') + ', ' + plural(k.sous, 'sous chef', 'sous chefs') : '', 'people') +

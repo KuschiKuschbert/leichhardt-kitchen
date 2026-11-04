@@ -43,6 +43,8 @@ Measured on 3 Nov 2026 with the click test stand-in at 390 x 844 px:
 | Order cut-offs | The kitchen | Admin, Operations, Cut-offs |
 | Change the kitchen PIN, Backup | The kitchen | Admin, Settings, Tools |
 
+Since 4 November 2026 the admin chapters are four rooms ([admin pages redesign](../admin-pages-options/brief.md)): People is under Team; Shift pings, Order cut-offs and Backup and PIN are under Kitchen, which opens on an Overview of these settings; Kitchen mail is under Today. The Settings page's rows name the rooms (5 Nov 2026). The table above is the record of 3 November.
+
 Nine kitchen-wide settings sit on five admin pages in two chapters. None of them is wrong where it is: each sits beside the work it belongs to. What is missing is one place that says how the kitchen is set up and where to change it.
 
 ## Ideas all three designs share
