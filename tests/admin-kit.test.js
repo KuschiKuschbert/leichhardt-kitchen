@@ -1,5 +1,6 @@
 // The admin page kit (4 Nov 2026, docs/admin-pages-options/brief.md). Part 1: every admin page's controls are one size.
 // Part 2: the page tabs are one underlined row with the open tab in view, and long help folds under How this works.
+// Step 4, part 1: a report's numbers come first, as the Dashboard's tiles.
 // Opens all 21 admin pages at 390 and 1280 px and measures what a person taps or types into. Example data only.
 const L = require('./lib');
 const { R, ok } = L.results();
@@ -57,6 +58,14 @@ const oneLine = (p, sel) => p.evaluate(s => [...document.querySelectorAll(s)].fi
         return { open: d.open, lead: lead ? Math.round(lead.getBoundingClientRect().height) : 0, line: lead ? parseFloat(getComputedStyle(lead).lineHeight) || 20 : 20 }; }, words);
       ok(h && !h.open && h.lead > 0 && h.lead <= 3 * h.line + 2, width + ' ' + t + ': one short line of help, the rest under How this works (' + JSON.stringify(h) + ')');
     }
+    // step 4 (5 Nov 2026): a report's numbers come first, as the Dashboard's tiles
+    await L.adminTab(p, 'waste'); await L.settle(p, 400);
+    await L.waitFor(p, () => !!document.querySelector('.wh-totals .a-tile'), null, 8000).catch(() => {});
+    const order = await p.evaluate(() => { const t = document.querySelector('.wh-totals'), v = document.querySelector('.wh-tabs'), q = document.querySelector('#wh-search');
+      const before = (a, b) => !!a && !!b && !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+      const tile = t && t.querySelector('.a-tile'), cs = tile && getComputedStyle(tile);
+      return { first: before(t, v) && before(t, q), card: !!cs && parseFloat(cs.borderTopWidth) > 0 && cs.backgroundColor !== 'rgba(0, 0, 0, 0)' }; });
+    ok(order.first && order.card, width + ' waste: the totals come first, before the views and the search, as tile cards (' + JSON.stringify(order) + ')');
     // the Wastage filters hide a box under More filters: open it and measure that too
     await L.adminTab(p, 'waste'); await L.settle(p, 400);
     await p.evaluate(() => { const d = document.querySelector('.wh-filters'); if (d) d.open = true; }); await L.settle(p, 200);

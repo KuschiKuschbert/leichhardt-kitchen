@@ -64,14 +64,16 @@ const cfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'so
   ok(p.errors.length === 0, 'manage: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // fewer boxes on the admin panel (22 Oct 2026, head chef decision): blocks, totals, filters and report cards are not
-  // cards; only the save bar, which sticks over the page, keeps its box
+  // fewer boxes on the admin panel (22 Oct 2026, head chef decision): blocks and filters are not cards; only the save
+  // bar, which sticks over the page, keeps its box. Since the admin pages redesign (B, 4 Nov 2026) a report's numbers are
+  // the Dashboard's tiles, a card each (step 4, 5 Nov 2026)
   const boxed = sel => p.evaluate(q => [...document.querySelectorAll(q)].filter(e => { const s = getComputedStyle(e); return parseFloat(s.borderLeftWidth) > 0 || (s.backgroundColor !== 'rgba(0, 0, 0, 0)' && s.backgroundColor !== 'transparent'); }).length, sel);
   p = await L.open(b, '#/admin', { admin: true, who: '', wait: 2000, width: 1280, height: 900 });
   await L.adminTab(p, 'waste'); await L.settle(p, 800);
   await L.waitFor(p, () => !!document.querySelector('.a-tile'), null, 8000).catch(() => {});
   ok(await p.$$eval('.a-pane .set-block', l => l.length) > 0 && await boxed('.a-pane .set-block') === 0, 'admin: the blocks are not boxed');
-  ok(await p.$$eval('.a-tile', l => l.length) > 0 && await boxed('.a-tile') === 0 && await boxed('.a-filters') === 0, 'admin: the totals and the filters are not boxed');
+  ok(await boxed('.a-filters') === 0, 'admin: the filters are not boxed');
+  ok(await p.$$eval('.a-tile', l => l.length) > 0 && await boxed('.a-tile') === (await p.$$eval('.a-tile', l => l.length)), 'admin: every total is a tile card, like the Dashboard');
   await L.adminTab(p, 'people'); await L.settle(p, 800);
   await p.click('[data-p="a-add-person"]');
   await L.waitFor(p, () => !!document.querySelector('.a-pane .set-block:has([data-p="a-save"])'), null, 5000).catch(() => {});

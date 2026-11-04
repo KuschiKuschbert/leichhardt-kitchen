@@ -7796,7 +7796,8 @@
     if (value && !options.some(function (o) { return o[0] === value; })) options = [[value, value]].concat(options);
     return '<label class="a-f"><span>' + esc(label) + '</span><select data-k="' + esc(key) + '">' + options.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === value ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>';
   }
-  function whControls(r, ready) {
+  // totals: the Wastage numbers, shown first under the dates (5 Nov 2026, admin pages step 4)
+  function whControls(r, ready, totals) {
     var h = whState(), a = AF(), period = whSelect('wh-period', 'Period', h.period, [['7', '1 week'], ['14', '2 weeks'], ['30', '30 days'], ['this', 'This month'], ['last', 'Last month'], ['months3', '3 months'], ['custom', 'Custom dates']]);
     var out = '<div class="a-filters wh-period">' + period + '<button type="button" class="chip" data-p="w-refresh">Refresh</button>' +
       '<button type="button" class="chip" data-p="csv" data-v="waste" aria-label="Download filtered wastage CSV"' + (!ready ? ' disabled' : '') + '>Export CSV</button></div>';
@@ -7804,7 +7805,7 @@
       '<label class="a-f"><span>To</span><input type="date" data-k="wh-to" max="' + dayNow() + '" value="' + esc(h.draftTo || h.to) + '"></label><button type="button" class="chip" data-p="wh-apply">Apply dates</button><span class="hint">Up to 366 days at a time.</span></div>';
     if (h.msg) out += '<p class="p-err" role="alert">' + esc(h.msg) + '</p>';
     if (r.error) return out;
-    out += '<p class="hint wh-range">' + esc(whSpan(r)) + ' (inclusive)</p><div class="wh-tabs" role="group" aria-label="Wastage view">' + [['history', 'History'], ['summary', 'Summary'], ['reviews', 'Daily reviews']].map(function (v) { return '<button type="button" class="chip" data-p="wh-view" data-v="' + v[0] + '" aria-pressed="' + (h.view === v[0]) + '">' + v[1] + '</button>'; }).join('') + '</div>';
+    out += '<p class="hint wh-range">' + esc(whSpan(r)) + ' (inclusive)</p>' + (totals || '') + '<div class="wh-tabs" role="group" aria-label="Wastage view">' + [['history', 'History'], ['summary', 'Summary'], ['reviews', 'Daily reviews']].map(function (v) { return '<button type="button" class="chip" data-p="wh-view" data-v="' + v[0] + '" aria-pressed="' + (h.view === v[0]) + '">' + v[1] + '</button>'; }).join('') + '</div>';
     if (h.view === 'reviews') return out;
     var names = Object.create(null), opts = [];
     ((S.wStats && S.wStats.lines) || []).forEach(function (x) { if (x.addedBy) names[x.addedBy] = 1; });
@@ -7848,14 +7849,14 @@
     var r = whRange(), h = whState();
     if (!r.error) loadWStats(false);
     var ws = S.wStats, ready = !r.error && ws && !ws.loading && !ws.error && ws.tag === whTag() && ws.from <= r.from && ws.to >= r.to;
-    var head = '<section class="set-block wh-report wh-' + h.view + '"><h3 class="a-title">Wastage</h3>' + whControls(r, ready);
+    var lines = null, prev = null;
+    if (ready && h.view !== 'reviews') { lines = whLines(r, false); prev = h.view === 'summary' ? whLines(r.prev, false) : null; }
+    var head = '<section class="set-block wh-report wh-' + h.view + '"><h3 class="a-title">Wastage</h3>' + whControls(r, ready, lines ? whTotals(lines, r, prev) : '');
     if (r.error) return head + '<p class="p-err" role="alert">' + esc(r.error) + '</p></section>';
     if (ws && ws.error) return head + '<p class="p-err wh-error" role="alert">' + esc(ws.error) + '</p></section>';
     if (!ready) return head + inkWait('Loading wastage for ' + whSpan(r) + '...', 'waste', 4) + '</section>';
     var foot = '<p class="hint a-upd">Updated ' + esc(clock(ws.at)) + '. Refresh reads the newest.</p></section>';
     if (h.view === 'reviews') return head + whReviewsHTML(r) + foot;
-    var lines = whLines(r, false), prev = h.view === 'summary' ? whLines(r.prev, false) : null;
-    head += whTotals(lines, r, prev);
     if (h.view === 'history') return head + wLogHTML(r) + foot;
     return head + whSummaryHTML(r, lines, prev) + foot;
   }
