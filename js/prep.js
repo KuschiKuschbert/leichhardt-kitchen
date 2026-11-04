@@ -1591,7 +1591,7 @@
     if (!baseCache) {
       baseCache = Object.create(null);
       function add(t) { String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z']+/).forEach(function (x) { if (x.length >= 3) baseCache[x] = 1; }); }
-      KITCHEN.forEach(add); SEC_WORDS.forEach(add);
+      KITCHEN.forEach(add); SEC_WORDS.forEach(add); PLAIN.forEach(add);
       // Existing ingredient notes and drawing labels protect exact words; they do not become spelling targets.
       // rxReset() clears this derived cache whenever the loaded recipes change. No additional reads.
       D.recipes.forEach(function (r) {
@@ -1966,7 +1966,21 @@
   function urgOf(x) { var h = S.urgHold; return h && h.id === x.id && Date.now() < h.until ? h.was : !!x.urgent; }
 
   /* ---------- proofreading: every new line is tidied and spell-checked before it is saved ---------- */
-  var KITCHEN = ('star anise blanch julienne dice diced slice sliced marinate marinated portion portioned batch wash pick chop chopped shred shredded trim tray crumb crumbed batter gravy sauce stock reduce season seasoned mix mixed roast roasted smoke smoked pulled pull cook cooked cool chill chilled defrost thaw label date rotate fill refill restock set setup stack fold grate grated peel peeled core cut cure brine rub glaze whip whipped steam steamed fry fried grill grilled bake baked char charred toast toasted dress dressing garnish drizzle lemon lime orange tomato tomatoes onion onions garlic potato potatoes lettuce cucumber carrot carrots cabbage capsicum mushroom mushrooms bacon cheese chicken beef pork lamb barramundi calamari prawn prawns salmon rice pasta mash chips fries slaw coleslaw aioli mayo mayonnaise pickle pickles parmesan parmigiana parmy schnitzel schnitty beetroot spinach broccoli zucchini pumpkin sweet corn peas beans dough pastry pie pies brownie cookie caramel butterscotch cream ice vanilla chocolate guinness snickers laksa coconut asian greens oak leaf salad salads burger burgers patties patty bun buns brioche ribs rib wings wing steak sandwich skillet spring rolls roll roll bourbon bbq chilli chili ginger shallot shallots herbs parsley coriander basil thyme rosemary sage mint dill chives pepper salt sugar flour butter milk eggs egg oil vinegar mustard ketchup tomato relish jus beer batter fish chip sauce sides side dessert desserts entree entrees mains main kids ketchup bacon jam onion rings nachos tacos taco quesadilla wrap wraps hummus dip dips bread garlic focaccia fetta feta halloumi mozzarella cheddar swiss brie tasty gravy peppercorn mushroom diane creamy white red green yellow large small half full double single extra spare backup morning afternoon night lunch dinner breakfast service base bases bowl bowls sheet sheets lid lids tub tubs bag bags pack packs bit bits bin bins tin tins can cans foil film wipe wipes glove gloves towel towels cloth cloths bleach soap spray sanitiser sanitizer paper napkin napkins straw straws tong tongs whisk knife knives board boards peeler ladle ladles spoon spoons fork forks plate plates dish dishes pickled jalapeno jalapenos tortilla tortillas wonton wontons tomatoes cup cups jar jars pot pots pan pans oven rack racks jug jugs make made need needs more less last next each every both some thing things stuff work done ready first top bottom front back cold hot warm mild spicy fresh frozen dried raw plain with without from into over under before after until only also then than that this these those mince stir drain rest wrap cover covered uncover break bone bones skin skinned skinless fillet fillets cube cubes strip strips wedge wedges round rounds ring rings whole sliced thick thin fine rough coarse smooth').split(/\s+/);
+  var KITCHEN = ('star anise blanch julienne dice diced slice sliced marinate marinated portion portioned batch wash pick chop chopped shred shredded trim tray crumb crumbed batter gravy sauce stock reduce season seasoned mix mixed roast roasted smoke smoked pulled pull cook cooked cool chill chilled defrost thaw label date rotate fill refill restock set setup stack fold grate grated peel peeled core cut cure brine rub glaze whip whipped steam steamed fry fried grill grilled bake baked char charred toast toasted dress dressing garnish drizzle lemon lime orange tomato tomatoes onion onions garlic potato potatoes lettuce cucumber carrot carrots cabbage capsicum mushroom mushrooms bacon cheese chicken beef pork lamb barramundi calamari prawn prawns salmon rice pasta mash chips fries slaw coleslaw aioli mayo mayonnaise pickle pickles parmesan parmigiana parmy schnitzel schnitty beetroot spinach broccoli zucchini pumpkin sweet corn peas beans dough pastry pie pies brownie cookie caramel butterscotch cream ice vanilla chocolate guinness snickers laksa coconut asian greens oak leaf salad salads burger burgers patties patty bun buns brioche ribs rib wings wing steak sandwich skillet spring rolls roll roll bourbon bbq chilli chili ginger shallot shallots herbs parsley coriander basil thyme rosemary sage mint dill chives pepper salt sugar flour butter milk eggs egg oil vinegar mustard ketchup tomato relish jus beer batter fish chip sauce sides side dessert desserts entree entrees mains main kids ketchup bacon jam onion rings nachos tacos taco quesadilla wrap wraps hummus dip dips bread garlic focaccia fetta feta halloumi mozzarella cheddar swiss brie tasty gravy peppercorn mushroom diane creamy white red green yellow large small half full double single extra spare backup morning afternoon night lunch dinner breakfast service base bases bowl bowls sheet sheets lid lids tub tubs bag bags pack packs bit bits bin bins tin tins can cans foil film wipe wipes glove gloves towel towels cloth cloths bleach soap spray sanitiser sanitizer paper napkin napkins straw straws tong tongs whisk knife knives board boards peeler ladle ladles spoon spoons fork forks plate plates dish dishes pickled jalapeno jalapenos tortilla tortillas wonton wontons tomatoes cup cups jar jars pot pots pan pans oven rack racks jug jugs make made need needs more less last next each every both some thing things stuff work done ready first top bottom front back cold hot warm mild spicy fresh frozen dried raw plain with without from into over under before after until only also then than that this these those mince stir drain rest wrap cover covered uncover break bone bones skin skinned skinless fillet fillets cube cubes strip strips wedge wedges round rounds ring rings whole sliced thick thin fine rough coarse smooth ' +
+    // Cooking methods and kitchen words the list lacked (3 Nov 2026, the head chef): "Sear steaks" was saved as
+    // "Sea steaks", because sear was not known and sea (from sea salt) was one letter away. Each word here is never
+    // corrected, and its plural and past tense are not either (fixWord() strips s, es, ed and ing).
+    'sear seal poach braise simmer boil parboil saute deglaze flambe confit emulsify temper proof prove knead score ' +
+    'butterfly debone truss baste caramelise caramelize toss plate pipe sieve strain blend puree zest juice segment ' +
+    'crush smash pound tenderise tenderize brown render refresh shock dehydrate rehydrate ferment infuse dust coat dredge ' +
+    'skewer weigh measure vacuum sift scrape scale shuck devein chiffonade brunoise mirepoix reheat soak rinse squeeze ' +
+    'spread mould shape press quarter halve grind torch stuff sprinkle brush wash prep mise place sous vide soup stew ' +
+    'broth reduction marinade vinaigrette compote coulis custard ganache mousse sorbet crumble crust tart').split(/\s+/);
+  /* Everyday words one letter from a kitchen word (3 Nov 2026): they are never corrected, and never offered as a
+     correction either (realWords() only, not vocab()), so "have" never becomes "halve" and "soft" never "sift". */
+  var PLAIN = ('soft hard firm crisp crispy crunchy tender golden probe probes scone scones stem stems step steps shake shave ' +
+    'mold touch bland sore seat coal cost have mile mine miss pace pure rise sale sell wish shade share shore store sort stop ' +
+    'band farm fire form hand harm mood save seem').split(/\s+/);
   var vocabCache = null, vocabKey = '';
   function vocab() {
     var key = S.learned.length + ':' + D.recipes.length + ':' + S.sections.length + ':' + (S.ordLearned || []).length;
@@ -3848,18 +3862,28 @@
     var star = can('add') && !x.deleted && !readonly ? '<button type="button" class="nb-star" data-p="urgent" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.urgent + '" aria-label="' + esc((x.urgent ? 'Not urgent: ' : 'Mark urgent: ') + x.text) + '">!</button>' : '';
     var rid = x.recipe || ((matchRecipe(x.text) || {}).id || ''), rr = rid ? recipeById(rid) : null;
     var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
+    var keep = !readonly && lineMenuOk(x, date);
     var del = delOk ? '<button type="button" class="nb-x" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'Put back' : 'Remove') + '</button>' : '';
     return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (x.done ? ' is-done' : '') + (rolledN(x) && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(date + '/' + x.id) + '">' +
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc((x.done ? 'Untick ' : 'Tick ') + x.text) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : BOX) + '</button>' +
       // a tap on the words ticks too (the box is the button for keyboards and screen readers); Undo and the linger cover a slip
       '<span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + unsentMark(x) + '</span>' +
-      '<span class="nb-by"><span class="nb-wrote"' + (x.done ? ' title="' + esc('Recorded by ' + (x.doneBy || '')) + '"' : '') + '>' + by + '</span></span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + (del && !readonly ? moreBtn(x) : '') + '</span>' : '') + '</li>';
+      '<span class="nb-by"><span class="nb-wrote"' + (x.done ? ' title="' + esc('Recorded by ' + (x.doneBy || '')) + '"' : '') + '>' + by + '</span></span>' + (star || link || del ? '<span class="nb-acts">' + star + link + del + ((del || keep) && !readonly ? moreBtn(x, keep) : '') + '</span>' : '') + '</li>';
   }
   /* The line menu (22 Oct 2026, Option B): on a phone, Remove (or Put back) and who wrote the line move behind a ⋯ on
      the line, so the item and the amount lead. On a laptop everything stays in the line and the ⋯ is not shown. The sheet
      is appended to document.body (redraws of #prep-root leave it alone), dims the page, and closes on the backdrop,
      Cancel and Escape; its clicks use data-lm. Remove in the sheet taps the line's own Remove, so Undo works as before. */
-  function moreBtn(x) { return '<button type="button" class="nb-more" data-lm="open" data-id="' + esc(x.id) + '" aria-haspopup="dialog" aria-label="' + esc('More for ' + x.text) + '">⋯</button>'; }
+  /* Fix a line (3 Nov 2026, work pages redesign S5): Change amount, and on the prep list Move to section, in the line's
+     ⋯ menu, for anyone ticked for Add, on today's open lines that are not a function's. The rules already allow it:
+     a line's amount and section are fields Add may change (prepCapabilities() and orderCapabilities()). Before, a wrong
+     amount meant Remove and writing the line again. */
+  // the ⋯ stays on today's lines for anyone ticked for Add, ticked or not, so a tick never moves the rows below (20 Oct 2026);
+  // Change amount and Move to section are only on open lines
+  function lineMenuOk(x, date) { return can('add') && !!x && !x.deleted && !x.fn && date === dayNow(); }
+  function lineFixOk(x, date) { return lineMenuOk(x, date) && !x.done && !x.ordered; }
+  function lineOf(kind, date, id) { return (kind === 'o' ? (S.ordLines || []) : (S.items || [])).filter(function (x) { return x.id === id && (kind !== 'o' || !x.date || x.date === date); })[0] || null; }
+  function moreBtn(x, fix) { return '<button type="button" class="nb-more' + (fix ? ' nb-more-fix' : '') + '" data-lm="open" data-id="' + esc(x.id) + '" aria-haspopup="dialog" aria-label="' + esc('More for ' + x.text) + '">⋯</button>'; }
   var lmOpenFrom = null;
   function lmClose(noBack) {
     var s0 = document.getElementById('lm-sheet'); if (!s0) return;
@@ -3876,17 +3900,51 @@
     if (c) c.querySelectorAll('.nb-mk, .o-used').forEach(function (e) { e.remove(); });
     var name = c ? c.textContent.replace(/\s+/g, ' ').trim() : '';
     var completed = S.name === 'prep' && ptItem(btn.getAttribute('data-id')), completionWho = completed && completed.done ? 'Reported prepared by ' + preparedWorker(completed).name + '. Recorded by ' + (completed.doneBy || '') + '.' : '';
+    var ln = (row.getAttribute('data-ln') || '').split('/'), kind = S.name === 'orders' ? 'o' : 'p', line = lineOf(kind, ln[0], ln[1]), fix = line && lineFixOk(line, ln[0]);
+    var fixHTML = fix ? '<button type="button" class="sheet-o lm-fix" data-lm="qty"><strong>Change amount</strong><small>' + esc(line.qty || 'No amount yet') + '</small></button>' +
+      (kind === 'p' ? '<button type="button" class="sheet-o lm-fix" data-lm="sec"><strong>Move to section</strong><small>' + esc(line.station || 'No section yet') + '</small></button>' : '') : '';
     var box = document.createElement('div');
     box.id = 'lm-sheet';
     box.innerHTML = '<div class="sheet-bg" data-lm="close"></div><div class="sheet lm-sheet" role="dialog" aria-modal="true" aria-labelledby="lm-h"><div class="sheet-grip" aria-hidden="true"></div>' +
       '<h3 id="lm-h">' + esc(name) + '</h3>' + (completionWho ? '<p class="lm-who">' + esc(completionWho) + '</p>' : who.trim() ? '<p class="lm-who">' + esc(/^(from|Ordered by) /.test(who.trim()) ? who.trim() : 'Written by ' + who.trim()) + '</p>' : '') +
-      (act ? '<button type="button" class="sheet-o lm-act" data-lm="act"><strong>' + esc(act.textContent.trim() === 'Remove' ? 'Remove line' : act.textContent.trim()) + '</strong></button>' : '') +
+      fixHTML + (act ? '<button type="button" class="sheet-o lm-act" data-lm="act"><strong>' + esc(act.textContent.trim() === 'Remove' ? 'Remove line' : act.textContent.trim()) + '</strong></button>' : '') +
       '<button type="button" class="btn sheet-x" data-lm="close">Cancel</button></div>';
     // what the button does, as well as the button: the list is often drawn again while the sheet is open
-    lmOpenFrom = btn; box._act = act; box._sel = act ? guestSel(act) : '';
+    lmOpenFrom = btn; box._act = act; box._sel = act ? guestSel(act) : ''; box._line = fix ? { kind: kind, date: ln[0], id: ln[1], name: name } : null;
     document.body.appendChild(box); document.documentElement.classList.add('sheet-open');
     ovPush('lm', function () { lmClose(true); });
-    var f = box.querySelector('.lm-act') || box.querySelector('.sheet-x'); if (f) f.focus();
+    var f = box.querySelector('.lm-fix') || box.querySelector('.lm-act') || box.querySelector('.sheet-x'); if (f) f.focus();
+  }
+  /* The ⋯ sheet turns into a small form for the amount or the section of the line it was opened for. */
+  function lmFixView(box, what) {
+    var l = box._line, x = l && lineOf(l.kind, l.date, l.id), sh = box.querySelector('.sheet');
+    if (!x || !lineFixOk(x, l.date)) { lmClose(); toast('That line has changed. Try again.'); return; }
+    var cur = what === 'qty' ? (x.qty || '') : (x.station || ''), chips = what === 'qty' ? qtyList(x.text).slice(0, 4).map(function (q) { return q.q; }) : secChoices(cur);
+    sh.innerHTML = '<div class="sheet-grip" aria-hidden="true"></div><h3 id="lm-h">' + (what === 'qty' ? 'Change amount' : 'Move to section') + '</h3><p class="lm-who">' + esc(l.name) + '</p>' +
+      '<form class="lm-form" data-lm-form="' + what + '"><label class="label" for="lm-v">' + (what === 'qty' ? 'Amount' : 'Section') + '</label>' +
+      '<input id="lm-v" class="nb-in" maxlength="40" autocomplete="off" enterkeyhint="done"' + (what === 'qty' ? '' : ' autocapitalize="words"') + ' value="' + esc(cur) + '">' +
+      (chips.length ? '<div class="nb-sugg lm-chips">' + chips.map(function (c) { return '<button type="button" class="' + (what === 'qty' ? 'chip sq' : 'chip') + '" data-lm="pick" data-v="' + esc(c) + '"' + (what === 'sec' ? ' aria-pressed="' + (c.toLowerCase() === cur.toLowerCase()) + '"' : '') + '>' + esc(c) + '</button>'; }).join('') + '</div>' : '') +
+      '<div class="btn-row"><button type="submit" class="btn dark">' + (what === 'qty' ? 'Save amount' : 'Move it') + '</button><button type="button" class="btn sheet-x" data-lm="close">Cancel</button></div></form>';
+    box._what = what;
+    var inp = sh.querySelector('#lm-v'); if (inp) { inp.focus(); inp.select(); }
+  }
+  // saves the change as one update through W(), with Undo; a value that did not change saves nothing
+  function lmFixSave(box, v) {
+    var l = box._line, x = l && lineOf(l.kind, l.date, l.id), what = box._what;
+    if (!x || !lineFixOk(x, l.date)) { lmClose(); toast('That line has changed. Try again.'); return; }
+    v = String(v || '').replace(/\s+/g, ' ').trim().slice(0, 40);
+    if (what === 'sec' && v) v = cleanSection(v).slice(0, 40);
+    var old = what === 'qty' ? (x.qty || '') : (x.station || '');
+    lmOpenFrom = null; lmClose();
+    if (v === old) return;
+    var ref = l.kind === 'o' ? ordRef(l.date, l.id) : itemRef(l.date, l.id), patch, undo;
+    if (what === 'qty') {
+      var a = window.LK_AMT && v ? window.LK_AMT.parse(v) : null;
+      patch = { qty: v, qn: a ? a.n : null, qu: a ? a.u : null };
+      undo = { qty: old, qn: typeof x.qn === 'number' ? x.qn : null, qu: x.qu || null };
+    } else { patch = { station: v }; undo = { station: old }; }
+    supd(ref, patch).catch(failed);
+    toast(what === 'qty' ? (v ? 'Amount changed to ' + v : 'Amount cleared') : (v ? 'Moved to ' + v : 'Section cleared'), { label: 'Undo', fn: function () { supd(ref, undo).catch(failed); } });
   }
   document.addEventListener('click', function (e) {
     var el = e.target && e.target.closest ? e.target.closest('[data-lm]') : null; if (!el) return;
@@ -3901,12 +3959,18 @@
       if (act) act.click(); else toast('That line has changed. Try again.');
       return;
     }
+    if (a === 'qty' || a === 'sec') { if (box) lmFixView(box, a); return; }
+    if (a === 'pick') { if (!box) return; if (box._what === 'sec') { lmFixSave(box, el.getAttribute('data-v')); return; } var i = box.querySelector('#lm-v'); if (i) { i.value = el.getAttribute('data-v') || ''; i.focus(); } return; }
     if (a === 'close') lmClose();
+  });
+  document.addEventListener('submit', function (e) {
+    var f = e.target && e.target.closest ? e.target.closest('[data-lm-form]') : null; if (!f) return;
+    e.preventDefault(); var box = document.getElementById('lm-sheet'); if (box) lmFixSave(box, (f.querySelector('#lm-v') || {}).value);
   });
   document.addEventListener('keydown', function (e) {
     var box = document.getElementById('lm-sheet'); if (!box) return;
     if (e.key === 'Escape') { e.preventDefault(); lmClose(); return; }
-    if (e.key === 'Tab') trapTab(e, box.querySelector('.sheet'), 'button');
+    if (e.key === 'Tab') trapTab(e, box.querySelector('.sheet'), 'button, input');
   });
   window.addEventListener('hashchange', function () { lmClose(true); });
   /* A line ticked on this phone stays where it is, struck through, for 3.5 seconds before it leaves the list. */
@@ -5196,7 +5260,9 @@
     return '<span class="o-used">Used in ' + ids.slice(0, 3).map(function (id) { var r = recipeById(id); return r ? '<a href="#/r/' + encodeURIComponent(id) + '">' + esc(r.name) + '</a>' : ''; }).join(', ') + (ids.length > 3 ? ' +' + (ids.length - 3) : '') + '</span>';
   }
   function ordRow(x) {
-    var canTick = canBrowse() && !x.deleted;
+    var canTick = canBrowse() && !x.deleted, keep = lineMenuOk(x, x.date);
+    // an ordered line keeps the ⋯'s room with nothing in it, so ticking Ordered moves no row
+    var held = '<span class="nb-more nb-more-held' + (keep ? ' nb-more-fix' : '') + '" aria-hidden="true"></span>';
     var by = x.ordered && x.orderedBy ? 'Ordered by ' + esc(x.orderedBy) : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : esc(x.addedBy || ''));
     return '<li class="nb-row' + (x.ordered ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '">' +
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc('Ordered: ' + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
@@ -5204,7 +5270,7 @@
       // Not sent on the words' line, before Used in (a line of its own, .o-used), so its room never adds a line
       (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + recipeChips(x) + '</span>' +
       '<span class="nb-by"><span class="nb-wrote">' + by + '</span></span>' +
-      (canBrowse() && can('del') ? (x.deleted || !x.ordered ? moreBtn(x) : '<span class="nb-more nb-more-held" aria-hidden="true"></span>') : '') +
+      (canBrowse() && can('del') ? (x.deleted || !x.ordered ? moreBtn(x, keep) : held) : keep ? (x.ordered ? held : moreBtn(x, true)) : '') +
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (canBrowse() && can('del') && x.deleted ? '<button type="button" class="p-x" data-p="orestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') + '</li>';
   }

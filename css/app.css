@@ -3261,6 +3261,14 @@ i.dsh-c-w { background: var(--dsh-w); } i.dsh-c-t { background: var(--dsh-t); }
 .dsh-need .btn { min-height: 44px; white-space: nowrap; }
 .dsh-clear { display: flex; gap: .5rem; align-items: center; margin: 0; font-size: .9rem; color: var(--muted); }
 @media (max-width: 560px) { .dsh-need { grid-template-columns: 4px minmax(0, 1fr); } .dsh-need .btn { grid-column: 2; justify-self: start; } }
+/* Fix a line (3 Nov 2026, work pages redesign S5): the ⋯ also shows on a laptop when it holds Change amount (and Move to
+   section on the prep list); its sheet shows the current value under each action and turns into a small form */
+.nb-more.nb-more-fix { display: inline-flex; align-items: center; justify-content: center; }
+.lm-sheet .lm-fix { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.lm-sheet .lm-fix small { font-weight: 400; color: var(--muted); }
+.lm-form { display: grid; gap: 0.6rem; }
+.lm-form .nb-in { width: 100%; min-height: 44px; font-size: 1.0625rem; }
+.lm-form .btn-row { margin-top: 0.25rem; }
 
 /* Wastage, Clean notebook (3 Nov 2026, work pages redesign A, docs/work-pages-design-options/brief.md): today's total
    and a bar of the reasons first, then Log waste (and the review for chefs), then the entries. The form and the review
