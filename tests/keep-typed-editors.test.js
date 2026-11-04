@@ -515,7 +515,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     const els = () => S(p, () => window.LK_DRAW.state().d.els.map(e => e.t === 'text' ? 'text:' + e.s : e.t));
     const ti = (await els()).findIndex(x => /^text:/.test(x));
     const pickPart = async i => {
-      if (!(await p.$('[data-dw="pick"][data-v="' + i + '"]'))) { await p.click('[data-dw="panel"][data-v="parts"]'); await L.settle(p, 150); }
+      if (!(await p.$('[data-dw="pick"][data-v="' + i + '"]'))) { await L.dwShow(p, '[data-dw="panel"][data-v="parts"]'); await p.click('[data-dw="panel"][data-v="parts"]'); await L.settle(p, 150); }
       await p.click('[data-dw="pick"][data-v="' + i + '"]'); await L.settle(p, 150);
     };
     const changeIt = async () => { await L.dwShow(p, '[data-dw="panel"][data-v="edit"]'); await p.click('[data-dw="panel"][data-v="edit"]'); await L.settle(p, 150); };

@@ -15,11 +15,12 @@ const seeThrough = bg => { const m = /rgba\([^)]*,\s*([\d.]+)\)/.exec(bg || '');
 
   // one toast: a solid slip sitting on the tab bar, no taller than 64 px, Undo a full target, its time left as a line
   await L.tap(p, '[data-p="tick"][data-id="i1"]'); await L.settle(p, 300);
-  let t = await box(p, '.p-toast'), u = await box(p, '.p-toast-btn'), tb = await box(p, '.tabbar');
+  // on the work pages the add button is docked above the tab bar (4 Nov 2026), so the slip sits on that bar instead
+  let t = await box(p, '.p-toast'), u = await box(p, '.p-toast-btn'), tb = await box(p, '.wk-dock') || await box(p, '.tabbar');
   ok(t && t.h <= 64, 'phone: "Ticked" is one slim slip (' + (t && t.h) + ' px tall)');
   ok(u && u.h >= 44, 'phone: Undo is still 44 px tall (' + (u && u.h) + ')');
   ok(t && !seeThrough(t.bg), 'phone: the slip is solid, so the words read over any line (' + (t && t.bg) + ')');
-  ok(t && tb && Math.abs(t.bottom - tb.top) <= 1 && t.w >= 389, 'phone: the slip spans the width and sits on the tab bar (' + (t && t.bottom) + ' / ' + (tb && tb.top) + ')');
+  ok(t && tb && Math.abs(t.bottom - tb.top) <= 1 && t.w >= 389, 'phone: the slip spans the width and sits on the docked Add a line bar, above the tab bar (' + (t && t.bottom) + ' / ' + (tb && tb.top) + ')');
   ok(await p.evaluate(() => { const e = document.querySelector('.p-toast'), a = getComputedStyle(e, '::before'); return a.content !== 'none' && a.animationName === 'slip-time' && /9000ms/.test(e.getAttribute('style') || ''); }), 'phone: Undo shows its 9 seconds as a line along the top');
   ok(await p.evaluate(() => { const r = document.querySelector('#app').getBoundingClientRect(); return parseFloat(getComputedStyle(document.querySelector('#app')).paddingBottom) >= 130; }), 'phone: the page makes room below its last line while the slip is up');
 
