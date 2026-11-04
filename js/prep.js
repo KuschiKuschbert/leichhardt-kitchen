@@ -1283,7 +1283,8 @@
     // once per page load, also when nobody was signed in: run later (the config listener fires again on any change) it
     // would sign out a person who is halfway through typing their PIN
     if (resumed) return;
-    if (!deviceReady()) { if (window.LK_DEVICE) window.LK_DEVICE.request(); return; }
+    // automatic: a first prompt the person closed stays closed until they sign in or tap Choose device
+    if (!deviceReady()) { if (window.LK_DEVICE) window.LK_DEVICE.request({ auto: true }); return; }
     if (!T.ready()) return;   // A restored daily session is compared with kitchen time, never the uncorrected phone clock.
     if (fb && S.authState !== 'ready') return;   // the phone's sign-in first (anonymous or Google): it calls resume() again
     resumed = true;
