@@ -1456,6 +1456,29 @@
   /* The kitchen's rows open the admin page that saves each setting (the verified admin only, like the admin panel), and
      Use a different kitchen PIN on this device (moved from the admin Tools tab to Settings, This phone, 3 Nov 2026):
      forgets the kitchen PIN here only and opens the PIN screen. Settings asks for the second tap. */
+  /* Kitchen, Overview (5 Nov 2026, admin pages step 6, design B): every kitchen setting as a row that says what it is set
+     to, in the Settings page's own rows, opening the admin page that changes it. Values from kitchenInfo(): no reads,
+     and nothing shows as none or 0 before the settings are in. */
+  function kitchenHomeHTML() {
+    var k = kitchenInfo(), plural = function (n, one, many) { return n + ' ' + (n === 1 ? one : many); };
+    var list = function (a) { return a.length ? a.join(', ') : 'None'; };
+    var sound = function (id) { return id === 'off' ? 'Off' : ((window.LK_CHIME && window.LK_CHIME.list.filter(function (x) { return x.id === id; })[0]) || {}).name || 'Pass bell'; };
+    var row = function (label, value, tab, where) {
+      return '<div class="st-row"><button type="button" class="st-btn st-go" data-p="k-open" data-t="' + tab + '"><span class="st-l">' + esc(label) + '</span><span class="st-v"><span>' + esc(k ? value : '') + '</span></span>' +
+        (where ? '<span class="st-sub">' + esc(where) + '</span>' : '') + '</button></div>';
+    };
+    var group = function (title, rows) { return '<section class="set-block k-home"><h3 class="a-ch-h">' + title + '</h3><div class="st-rows">' + rows + '</div></section>'; };
+    return '<p class="hint k-home-lead">Each row says what it is set to. Tap it to change it.</p>' +
+      group('The kitchen', row('Order cut-offs', k ? plural(k.cuts, 'supplier', 'suppliers') : '', 'cutoffs') + row('Suppliers & pars', 'Catalogue and pars', 'suppliers') +
+        row('Kitchen sections', k ? list(k.secs) : '', 'people', 'Team, People') + row('Shift pings', k ? 'Sound: ' + sound(k.sound) : '', 'notes') +
+        row('Meeting minutes', 'Write and publish', 'minutes') + row('Guides', 'How-to guides', 'guides')) +
+      group('The team\'s access', row('Pages staff see', k ? (k.hidden.length ? list(k.shown) + '. Held back: ' + k.hidden.join(', ') : 'All three') : '', 'people', 'Team, People') +
+        row('Weekly top tickers on the prep book', k ? (k.badges ? 'Shown' : 'Hidden') : '', 'people', 'Team, People') +
+        (mlOwner() ? row('Sous chefs read Kitchen mail', k ? (k.sousMail ? 'On' : 'Off') : '', 'mail', 'Today, Kitchen mail') : '') +
+        row('Who books functions', k ? plural(k.fns, 'person', 'people') : '', 'people', 'Team, People')) +
+      group('Records and safety', row('Confirmed item links', 'Names linked to recipes and supplier items', 'reference-records') +
+        row('Backup', 'Every night at 03:30', 'tools') + row('Kitchen PIN', 'Change the PIN', 'tools'));
+  }
   var ADMIN_OPEN = ['people', 'notes', 'mail', 'cutoffs', 'tools'];
   function adminOpen(tab) {
     if (!adminTabs() || ADMIN_OPEN.indexOf(tab) < 0) return false;
@@ -5094,7 +5117,7 @@
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = at === 'dashboard' ? dashHTML() : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
+    var pane = at === 'dashboard' ? dashHTML() : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'kitchen-home' ? kitchenHomeHTML() : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Create/edit functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it. Function editing still has its own tick.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       '<p class="hint">Tick Create/edit functions beside a person, then save. Their kitchen role stays the same.</p>' + peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + ksAdminHTML(d) +
@@ -5170,8 +5193,8 @@
     return '<section class="set-block"><h2 class="p-h">Suppliers &amp; pars</h2><p>Current pars, manual items and the original supplier records are kept in the catalogue.</p>' +
       (supplierEdit() ? '<div class="btn-row"><a class="btn dark" href="#/suppliers/manage">Manage catalogue</a><a class="btn" href="#/suppliers">Supplier order</a></div>' : '<p class="hint">Only the head chef changes suppliers and pars. Sous chefs can use <a href="#/suppliers">Supplier order</a>.</p>') + '</section>';
   }
-  var A_TAB_NAMES = { dashboard: 'Dashboard', overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
-  var A_GROUPS = [['today', 'Today', ['dashboard', 'overview', 'references', 'training', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people', 'training-records']], ['kitchen', 'Kitchen', ['cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']]];
+  var A_TAB_NAMES = { 'kitchen-home': 'Overview', dashboard: 'Dashboard', overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
+  var A_GROUPS = [['today', 'Today', ['dashboard', 'overview', 'references', 'training', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people', 'training-records']], ['kitchen', 'Kitchen', ['kitchen-home', 'cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']]];
   var A_GROUP_NOTES = { today: 'What needs you, and how the kitchen is going.', reports: 'Read the recorded activity and follow it back to its source.', team: 'Who is in the kitchen, what each person may do, and their assessments.', kitchen: 'How the kitchen is set up, its records, the backup and the PIN.' };
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
@@ -9898,6 +9921,8 @@
     }
     if (a === 'sec-hide') { hideSection(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'a-reset-pin') { resetPin(id); return; }
+    // a Kitchen Overview row opens the page that changes its setting, in whichever room it lives
+    if (a === 'k-open') { var kt = el.getAttribute('data-t'); if (intelligenceBusy() || !A_TAB_NAMES[kt] || kt === 'mail' && !mlOwner()) return; S.personId = ''; S.atab = kt; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(kt)[0]] = kt; lsSet('lk.prep.atab', kt); draw(); adminToTop(); return; }
     // a person's page (admin pages step 5): open it from their row, and back to the list (also the top bar's Back)
     if (a === 'a-person') { S.personId = id; draw(); adminToTop(); return; }
     if (a === 'a-person-back') { S.personId = ''; draw(); adminToTop(); return; }

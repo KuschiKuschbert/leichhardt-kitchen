@@ -5,7 +5,7 @@
 const L = require('./lib');
 const { R, ok } = L.results();
 const TABS = ['dashboard', 'references', 'training', 'proofreader', 'analysis', 'insights', 'waste', 'transfers', 'learning', 'team',
-  'reference-records', 'training-records', 'guides', 'mail', 'notes', 'minutes', 'suppliers', 'cutoffs', 'people', 'tools'];
+  'reference-records', 'training-records', 'guides', 'mail', 'notes', 'minutes', 'suppliers', 'cutoffs', 'people', 'tools', 'kitchen-home'];
 
 // Every visible one-line box in the page: its height and width, and a name to report it by.
 const boxes = p => p.evaluate(() => [...document.querySelectorAll('.a-pane input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=color]), .a-pane select')]
