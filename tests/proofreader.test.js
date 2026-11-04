@@ -34,6 +34,16 @@ const add = async (p, text) => {
     ok(undone.text === typed && undone.orig === '' && earlier.text === brie.text && (earlier.orig || '') === (brie.orig || ''), width + ': Undo restores the typed entry without changing the earlier line');
     const [, fromNotes] = await add(p, 'Keep rind crumbled');
     ok(fromNotes.text === 'Keep rind crumbled' && !fromNotes.orig, width + ': valid words from existing ingredient notes survive the prep save path (' + fromNotes.text + ')');
+    // cooking methods are kitchen words (3 Nov 2026): "Sear steaks" was saved as "Sea steaks"
+    for (const line of ['Sear steaks', 'Seared tuna', 'Poach eggs', 'Braise beef cheeks', 'Simmer and deglaze the pan', 'Vacuum seal the brisket']) {
+      const [, kept] = await add(p, line);
+      ok(kept.text === line && !kept.orig, width + ': ' + line + ' is saved as written (' + kept.text + ')');
+    }
+    // and the everyday words one letter from them are never turned into one
+    const [, plain] = await add(p, 'Have soft butter in store');
+    ok(plain.text === 'Have soft butter in store' && !plain.orig, width + ': everyday words near a kitchen word stay as written (' + plain.text + ')');
+    const [, slip] = await add(p, 'Braiss lamb shanks');
+    ok(slip.text === 'Braise lamb shanks' && slip.orig === 'Braiss lamb shanks', width + ': a slip in a cooking word is still put right (' + slip.text + ')');
     ok(p.errors.length === 0, width + ': no browser errors ' + p.errors.join(' | '));
     await p.context().close();
   }
