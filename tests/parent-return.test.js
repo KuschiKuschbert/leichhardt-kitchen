@@ -31,7 +31,8 @@ const go = async (p, h, selector) => {
 const writes = p => p.evaluate(() => window.__fake.writes.flat().filter(w => /\/(recipes|drawings|functions|fncontact|suppliers|cutdone|book)(\/|$)/.test(w.path)).length);
 async function step(p, destination, selector, name) {
   const before = await hash(p);
-  await p.click(back);
+  // the drawing studio covers the book's top bar: its own Close is the same Back (3 Nov 2026)
+  await p.click(await p.$('.dw-studio .dw-close') ? '.dw-studio .dw-close' : back);
   await L.waitFor(p, v => location.hash === v.to || location.hash !== v.before, { to: destination, before }, 6000).catch(() => false);
   await L.settle(p, 200);
   const actual = await hash(p), reached = actual === destination;

@@ -65,6 +65,8 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   ok(!!bun && bun.t === 'raw' && bun.dr === 'chicken-burger' && await p.evaluate(k => { const b = window.LK_DRAW.state().d.defs[k] || ''; return /#7EA453/.test(b) && /#F2C14E/.test(b) && /#D9473B/.test(b) && /#C98A45/.test(b); }, bun.a), 'burger: drawn from its layers (bun, oak leaf, cheese and tomato showing)');
   ok(!!bun && ['Crumbed chicken thigh', 'Sliced cheese', 'Ranch', 'Oak leaf', 'Tomato'].every(k => String(bun.also).split('|').indexOf(k) >= 0), 'burger: the chicken, cheese, ranch, leaf and tomato are named with the burger');
   ok(w.onWare && !w.unsure.length, 'burger: every part on the plate, nothing left to pick');
+  // the note on how it was drawn sits at the top of the studio's drawer (3 Nov 2026): More opens it
+  await L.dwShow(p, '[data-dw="sm-again"]');
   ok(/side by side/i.test(await L.txt(p, '.dw-smart-note') || ''), 'burger: the note says how it was laid out');
   ok(await p.evaluate(() => !window.LK_DRAW.check().some(c => / is in the recipe but not on the /.test(c.msg))), 'burger: Check the drawing finds every ingredient on the plate');
   // the Pass labels come from the parts: every ingredient, with its allergens
@@ -121,7 +123,7 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   const toast = w.els.find(e => e.ing === 'Toasted sourdough');
   ok(!!toast && toast.t === 'raw' && toast.dr === 'sourdough-slice' && toast.ck === 'toasted' && cos.k < toast.k, 'Caesar: the toasted sourdough is drawn toasted');
   // Try another layout lays it out again (it is the book's part, not one added by hand)
-  await p.click('[data-dw="sm-again"]'); await L.settle(p, 300);
+  await L.dwShow(p, '[data-dw="sm-again"]'); await p.click('[data-dw="sm-again"]'); await L.settle(p, 300);
   w = await S(p);
   const toast2 = w.els.find(e => e.ing === 'Toasted sourdough');
   ok(w.els.filter(e => e.ing === 'Toasted sourdough').length === 1 && !!toast2 && toast2.dr === 'sourdough-slice' && (toast2.x !== toast.x || toast2.y !== toast.y), 'Caesar: Try another layout moves the toasted sourdough with the rest (' + [toast.x, toast.y, toast2 && toast2.x, toast2 && toast2.y].join(' ') + ')');
@@ -145,24 +147,24 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   ok(tops.every(Boolean) && tops.every(e => inside(e, sch) && e.k > sch.k) && tops[0].k < tops[1].k && tops[1].k < tops[2].k, 'parmy: napoli, ham and mozzarella on the schnitzel, in that order');
   // Try another layout changes it; Tidy up leaves a part moved by hand where it is
   const before = JSON.stringify(w.els.map(e => [e.x, e.y]));
-  await p.click('[data-dw="sm-again"]'); await L.settle(p, 300);
+  await L.dwShow(p, '[data-dw="sm-again"]'); await p.click('[data-dw="sm-again"]'); await L.settle(p, 300);
   w = await S(p);
   ok(JSON.stringify(w.els.map(e => [e.x, e.y])) !== before && w.onWare, 'Try another layout: a different layout, still all on the plate');
   const ck = w.els.find(e => e.ing === 'Chips').k;
   const c0 = await centreOf(p, '.dw-el[data-i="' + ck + '"]');
   await p.mouse.move(c0[0], c0[1]); await p.mouse.down(); await p.mouse.move(c0[0] + 25, c0[1] + 20, { steps: 5 }); await p.mouse.up(); await L.settle(p, 200);
   const moved = (await S(p)).els.find(e => e.ing === 'Chips');
-  await p.click('[data-dw="sm-tidy"]'); await L.settle(p, 300);
+  await L.dwShow(p, '[data-dw="sm-tidy"]'); await p.click('[data-dw="sm-tidy"]'); await L.settle(p, 300);
   w = await S(p);
   const after = w.els.find(e => e.ing === 'Chips'), sch2 = w.els.find(e => e.ing === 'Chicken schnitzel');
   ok(moved.fixed === true && Math.abs(after.x - moved.x) < 0.2 && Math.abs(after.y - moved.y) < 0.2, 'Tidy up: the chips moved by hand stay where they were put');
   ok(['Napoli sauce', 'Shaved leg ham', 'Mozzarella'].every(k => inside(w.els.find(e => e.ing === k), sch2)), 'Tidy up: the toppings stay on the schnitzel');
   // a plating style picked by hand
-  await p.click('[data-dw="panel"][data-v="style"]'); await L.settle(p, 200);
-  await L.choose(p, '[data-dw="sm-st"][data-v="clock"]'); await L.settle(p, 300);
+  await L.dwShow(p, '[data-dw="panel"][data-v="style"]'); await p.click('[data-dw="panel"][data-v="style"]'); await L.settle(p, 200);
+  await L.dwShow(p, '[data-dw="sm-st"][data-v="clock"]'); await L.choose(p, '[data-dw="sm-st"][data-v="clock"]'); await L.settle(p, 300);
   ok((await S(p)).style === 'clock', 'Plating style: Classic lays it out the classic way');
-  await p.click('[data-dw="panel"][data-v="style"]'); await L.settle(p, 200);
-  await L.choose(p, '[data-dw="sm-st"][data-v=""]'); await L.settle(p, 300);
+  await L.dwShow(p, '[data-dw="panel"][data-v="style"]'); await p.click('[data-dw="panel"][data-v="style"]'); await L.settle(p, 200);
+  await L.dwShow(p, '[data-dw="sm-st"][data-v=""]'); await L.choose(p, '[data-dw="sm-st"][data-v=""]'); await L.settle(p, 300);
   w = await S(p);
   ok(w.style === 'pub', 'Plating style: Pick for me goes back to the pub split');
   // saved, then the side view is made from it
@@ -230,6 +232,7 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   w = await S(p);
   const ft = w.els.find(e => e.ing === 'French parmi topper'), sch0 = w.els.find(e => e !== ft && /schnitzel/i.test(e.ing || ''));
   ok(!!ft && ft.t === 'raw' && ft.made === 'french-topper' && !!sch0 && inside(ft, sch0) && ft.k > sch0.k && !w.unsure.length, 'topper: the French topper, its card still to come, is drawn from its note on the schnitzel, nothing to pick');
+  await L.dwShow(p, '[data-dw="sm-again"]');   // the note sits at the top of the studio's drawer (3 Nov 2026)
   const ftNote = await L.txt(p, '.dw-made') || '';
   ok(/from its note/i.test(ftNote) && /brie/i.test(ftNote) && /avocado/i.test(ftNote) && /bacon/i.test(ftNote) && /b[ée]arnaise/i.test(ftNote), 'topper: the note says it is drawn from the topper\'s note, and what (' + ftNote + ')');
   await p.context().close();
@@ -255,6 +258,7 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   w = await S(p);
   const cc = w.els.find(e => e.ing === 'Cowboy candy');
   ok(!!cc && cc.t === 'raw' && cc.made === 'cowboy-candy' && w.unsure.indexOf('Cowboy candy') < 0, 'from its card: the wings\' Cowboy candy is drawn from the Cowboy candy card, nothing to pick');
+  await L.dwShow(p, '[data-dw="sm-again"]');
   const madeNote = (await L.txt(p, '.dw-made')) || '';
   ok(/Cowboy candy/.test(madeNote) && /jalape/i.test(madeNote) && /turmeric/i.test(madeNote) && /mustard seed/i.test(madeNote), 'from its card: the note says what it is drawn from (' + madeNote + ')');
   // the colours by hue: rings drawn as green strokes, the syrup a gold fill
