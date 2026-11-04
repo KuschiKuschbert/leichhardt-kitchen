@@ -52,6 +52,12 @@ Who can see each page, private drafts, Back and Resume, acknowledged saves, reco
 
 Each its own pull request, with click tests at 390, 768 and 1280 px and the read budget check: 1. page kit; 2. four rooms in the rail and the phone room switch, page ids unchanged; 3. Today: To do with in-place tasks, the Dashboard under it; 4. Reports: one filter bar and the same report layout; 5. Team: person pages, with the role walk-through on the emulator; 6. Kitchen: settings rows, records and access; 7. remove the old chapter styles and update the notes. Keep a baseline tag on `main` first (CLAUDE.md, Big look changes).
 
+The page kit ships in parts, each useful on its own:
+
+- **Step 1, part 1: one size for controls (4 Nov 2026).** Measured on all 21 pages at 390 and 1280 px. Fixed: the Wastage search box and its Logged by filter were 156 and 160 px tall (the shared search's 10rem width basis was taken as its height in a column; `.set-block > .ux-search` and `.a-f > .ux-search` no longer grow), the Export menu's Download CSV broke into three lines on a phone and Export into two (a Chef's Desk rule let every admin button break mid-word), the staff table's role broke onto two lines, searches ran up to 1,016 px wide (now at most 36rem), the period and Review desk filters up to 569 px (at most 20rem) and the 4 digit PIN boxes 1,016 px (14rem). CSS only, in `css/app.css`; no markup, reads or rules change. `tests/admin-kit.test.js` opens every admin page at both widths: 23 of 302 checks failed on the old styles, none with the fix.
+- Step 1, part 2: one page header (title, underline page tabs, one toolbar row) and help after the work.
+- Step 1, part 3: the Dashboard's tiles and cards on the reports, settings rows on the settings pages.
+
 ## Files
 
 - `index.html`: the comparison. Each design shows the same four pages (Wastage report, People, Kitchen mail, Order cut-offs) at laptop and phone width, with pros, cons, costs and the page map. Example data only.
