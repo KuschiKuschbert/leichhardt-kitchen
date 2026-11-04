@@ -10,9 +10,11 @@ const extra = {};
 extra[fsKey(['deliveries', 'bad-delivery'])] = { day: today, receivedAt: L.NOW - 60000, recordedAt: L.NOW, supplier: 'Delivery ' + P, chilled: 0, frozen: -18.5, note: 'Goods ' + P, receivedBy: 'Receiver ' + P, receivedById: 'ann', by: 'ann' };
 extra[fsKey(['days', today, 'items', 'x1'])] = { text: 'Line ' + P, station: 'Larder' + P, qty: '2' + P, recipe: '', addedBy: 'Ann' + P, addedById: 'ann', addedAt: L.NOW - 600000, done: false, deleted: false };
 extra[fsKey(['orders', today, 'lines', 'x1'])] = { text: 'Order ' + P, qty: '1' + P, recipes: [], addedBy: 'Ann' + P, addedById: 'ann', addedAt: L.NOW - 600000, ordered: false, deleted: false };
-extra[fsKey(['waste', today, 'lines', 'x1'])] = { text: 'Waste ' + P, amount: 1, unit: 'kg', reason: 'prep', action: 'Act ' + P, station: 'Sec' + P, addedBy: 'Bo' + P, addedById: 'bo', addedAt: L.NOW - 600000, deleted: false };
+extra[fsKey(['waste', today, 'lines', 'x1'])] = { text: 'Waste ' + P, amount: 1, unit: 'kg', reason: 'prep', action: 'Act ' + P, station: 'Sec' + P, addedBy: 'Bo' + P, addedById: 'bo', addedAt: L.NOW - 600000, deleted: false,
+  // Change amount (4 Nov 2026): the amount before and who changed it, shown in the admin log; a damaged unit too
+  was: { amount: 2, unit: 'kg' + P }, chgBy: 'Chg' + P, chgAt: L.NOW - 300000 };
 // transfers between venues (23 Oct 2026): every word, and a way and a unit as a damaged record could hold them; the nightly summary too
-extra[fsKey(['transfers', today, 'lines', 'x1'])] = { dir: 'out" data-pwn="1', venue: 'Venue ' + P, person: 'Who ' + P, text: 'Transfer ' + P, amount: 1, unit: 'kg' + P, note: 'Note ' + P, addedBy: 'Bo' + P, addedById: 'bo', addedAt: L.NOW - 600000, deleted: false };
+extra[fsKey(['transfers', today, 'lines', 'x1'])] = { dir: 'out" data-pwn="1', venue: 'Venue ' + P, person: 'Who ' + P, text: 'Transfer ' + P, amount: 1, unit: 'kg' + P, note: 'Note ' + P, addedBy: 'Bo' + P, addedById: 'bo', addedAt: L.NOW - 600000, deleted: false , was: { amount: 2, unit: 'kg' + P }, chgBy: 'Chg' + P, chgAt: L.NOW - 300000 };
 extra[fsKey(['summary', 'transfers'])] = { day: today, from: today, to: today, venues: [{ v: 'Venue ' + P, n: 3, out: 3, in: 0, people: ['Who ' + P, 'Pal ' + P] }],
   items: [{ t: 'Taken ' + P, n: 3, unit: 'kg" data-pwn="1', amt: '2" data-pwn="1', dir: 'out', venue: 'Venue ' + P }] };
 extra[fsKey(['waste', today])] = { avoidable: 'Avoid ' + P, change: 'Change ' + P, reviewBy: 'Sam' + P, reviewAt: L.NOW - 300000 };

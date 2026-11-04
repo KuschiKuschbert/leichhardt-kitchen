@@ -543,8 +543,24 @@ service cloud.firestore {
       allow update: if (isAdmin() && request.resource.data.text is string && request.resource.data.text.size() <= 80)
         || (staff() && sousBy() && resource.data.get('addedById', '') == request.resource.data.by
           && request.time.toMillis() - resource.data.get('addedAt', 0) < 120000
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deleted', 'deletedBy', 'deletedAt', 'by']));
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deleted', 'deletedBy', 'deletedAt', 'by']))
+        || (staff() && isToday(day) && amountChange(['g', 'kg', 'L', 'portions', 'pieces']));
       allow delete: if false;
+    }
+    // Change amount (4 Nov 2026, head chef decision, the line's ⋯ on Wastage and Transfers): the person who logged the
+    // line, the head chef or a sous chef, as themselves and ticked for Add, on a line not removed. Only the amount, its
+    // unit and the record of the change; was is the amount before, so the history keeps every amount the line had.
+    function amountChange(units) {
+      let d = request.resource.data;
+      return resource.data.get('deleted', false) == false
+        && capability(d.by, 'add') && (sousBy() || resource.data.get('addedById', '') == d.by)
+        && d.diff(resource.data).affectedKeys().hasOnly(['amount', 'unit', 'was', 'chgBy', 'chgAt', 'by'])
+        && d.amount is number && d.amount > 0 && d.amount < 100000 && d.unit in units
+        && (d.amount != resource.data.amount || d.unit != resource.data.unit)
+        && d.was is map && d.was.keys().hasOnly(['amount', 'unit'])
+        && d.was.amount == resource.data.amount && d.was.unit == resource.data.unit
+        && d.chgBy is string && d.chgBy.size() <= 80
+        && d.chgAt is number && d.chgAt <= request.time.toMillis() + 60000 && d.chgAt >= request.time.toMillis() - 300000;
     }
     // End-of-day waste review, one per day. Everyone reads it (the change for the next shift shows on the prep list);
     // only the head chef or a sous chef writes it: today's on the wastage page, past days in the admin panel's wastage log.
@@ -628,9 +644,16 @@ service cloud.firestore {
     match /kitchens/KITCHEN_PIN/transfers/{day}/lines/{line} {
       allow read: if isAdmin() || (kitchenRead() && isToday(day));
       allow create: if isAdmin() || (staff() && capability(request.resource.data.by, 'add') && nearDay(day) && xferOk());
-      allow update: if (writer() && (isAdmin() || capability(request.resource.data.by, 'tick')) && xferReturn(day, line)) || (isAdmin() && xferDel())
-        || (staff() && sousBy() && resource.data.get('addedById', '') == request.resource.data.by
-          && request.time.toMillis() - resource.data.get('addedAt', 0) < 120000 && xferDel());
+      // Change amount (4 Nov 2026): an open loan, today's line, as the person on this phone's PIN (the head chef's
+      // Google device too), with its open copy in the same write. Asked first: Return and Remove never change the amount,
+      // and running their checks before this one takes the rules past their 1000 step limit.
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasAny(['amount', 'unit', 'was'])
+        ? (staff() && isToday(day) && resource.data.get('returned', false) == false
+          && amountChange(['g', 'kg', 'L', 'pieces', 'packs', 'boxes'])
+          && getAfter(/databases/$(database)/documents/kitchens/KITCHEN_PIN/transferOpen/$(day + '_' + line)).data.record == request.resource.data)
+        : ((writer() && (isAdmin() || capability(request.resource.data.by, 'tick')) && xferReturn(day, line)) || (isAdmin() && xferDel())
+          || (staff() && sousBy() && resource.data.get('addedById', '') == request.resource.data.by
+            && request.time.toMillis() - resource.data.get('addedAt', 0) < 120000 && xferDel()));
       allow delete: if false;
     }
     // What was wasted in the last 14 days, written each night by the server (scripts/nightly-learn.mjs, service account).
