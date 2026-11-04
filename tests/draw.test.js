@@ -58,6 +58,7 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   p = await L.open(b, '#/manage/draw/new/burger/plate', { who: 'ann', extra: cfg(), wait: 1400, width: 1280, height: 900 });
   await wait(p, () => !!document.querySelector('.dw-svg'), null, 15000);
   ok(await p.$('.dw-svg') !== null && await p.$('.dw-panel #dw-q') !== null, 'new drawing: the canvas opens with the library');
+  ok(await p.evaluate(() => { const d = document.querySelector('.dw-drawer'), s = document.querySelector('.dw-svg'); if (!d || !s) return false; const a = d.getBoundingClientRect(), c = s.getBoundingClientRect(); return a.left >= c.right - 1 && a.right <= innerWidth + 1; }), 'computer: the library opens in a drawer on the right, beside the canvas');
   ok(await p.evaluate(() => !!document.querySelector('.dw-surf circle, .dw-surf path')), 'new drawing: a dinner plate is under it');
   await p.fill('#dw-q', 'rump'); await L.settle(p, 300);
   ok(await p.$('.dw-tile[data-v="rump"]') !== null, 'library search: rump finds the rump steak');
@@ -239,6 +240,24 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
   ok(!(await L.overflow(p)), 'phone: no sideways scroll');
   await p.click('.dw-tile[data-dw="add"] >> nth=0'); await L.settle(p, 200);
   ok((await W(p)).n === 1, 'phone: a tap on a library drawing puts it on the plate');
+  // the studio (3 Nov 2026): full screen, one dock, the picked part's bar on screen above it, one drawer
+  const box = sel => p.evaluate(s => { const e = document.querySelector(s); if (!e) return null; const r = e.getBoundingClientRect(); return { t: r.top, b: r.bottom, l: r.left, r: r.right, w: innerWidth, h: innerHeight }; }, sel);
+  let bx = await box('.dw-studio');
+  ok(bx && bx.t <= 0 && bx.b >= bx.h - 1 && bx.l <= 0 && bx.r >= bx.w - 1 && await p.evaluate(() => getComputedStyle(document.querySelector('.dw-studio')).position === 'fixed'), 'studio: the drawing fills the screen over the book\'s bars');
+  ok(await p.evaluate(() => { const d = [...document.querySelectorAll('.dw-dock button')]; return d.length >= 5 && d.every(x => { const r = x.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; }); }), 'studio: every dock button is on screen');
+  if (await p.$('.dw-drawer')) { await p.click('.dw-drawer [data-dw="shut"]'); await L.settle(p, 200); }
+  ok(!(await p.$('.dw-drawer')), 'studio: Done closes the drawer');
+  await p.click('.dw-el[data-i="0"]'); await L.settle(p, 200);
+  const sb = await box('.dw-selbar'), dock = await box('.dw-dock');
+  ok(sb && dock && sb.t >= 0 && sb.b <= dock.t && sb.l >= 0 && sb.r <= sb.w, 'phone: the picked part\'s bar is on screen, above the dock (' + JSON.stringify(sb) + ')');
+  ok(await p.$('.dw-selbar .dw-del') !== null && await p.$('.dw-selbar [data-dw="none"]') !== null && await p.$('.dw-selbar [data-v="pmore"]') !== null, 'phone: the part\'s bar has More, a red Delete and Done');
+  await p.click('.dw-dock [data-v="lib"]'); await L.settle(p, 200);
+  ok(await p.$('.dw-drawer') !== null && await p.getAttribute('.dw-dock [data-v="lib"]', 'aria-expanded') === 'true', 'studio: Add opens the library in the drawer');
+  await p.keyboard.press('Escape'); await L.settle(p, 200);
+  ok(!(await p.$('.dw-drawer')) && await p.$('.dw-selbar') !== null, 'studio: Escape closes the drawer first and keeps the part picked');
+  await p.keyboard.press('Escape'); await L.settle(p, 200);
+  ok(!(await p.$('.dw-selbar')), 'studio: Escape again lets go of the part');
+  ok(!(await L.overflow(p)) && errs(p).length === 0, 'studio: no sideways scroll and no page errors ' + errs(p).join(' | '));
   await p.context().close();
 
   await b.close();
