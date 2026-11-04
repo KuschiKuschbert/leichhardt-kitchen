@@ -18,7 +18,7 @@ async function prepare(b, c, boundary) {
     width: c.name === 'drawing' ? 1280 : 390, clock: boundary === 'daily' ? cutoff - 60000 : L.NOW, wait: 900 });
   await L.waitFor(p, s => !!document.querySelector(s), c.field, 15000);
   if (c.name === 'drawing') {
-    await p.fill('#dw-q', 'rump');
+    await L.dwAdd(p); await p.fill('#dw-q', 'rump');
     await p.click('.dw-tile[data-v="rump"]');
     await L.dwShow(p, '[data-dw="dup"]'); await p.click('[data-dw="dup"]');
   } else {

@@ -33,6 +33,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
 
   // a new plate drawing for the burger: Start from offers the book's drawing; its plate becomes real servingware
   p = await open('#/manage/draw/new/burger/plate');
+  await L.dwAdd(p);
   await wait(p, () => !!document.querySelector('.dw-start [data-dw="from"][data-v="book:burger"]'));
   ok(/Start from a copy of the book's drawing/.test(await txt(p, '.dw-start summary') || '') && !(await p.$eval('.dw-start', e => e.open)) && await p.$('.dw-panel #dw-q') !== null, 'start from: one closed line offers the book\'s drawing of the burger, with the library open below');
   await p.click('.dw-start summary'); await L.settle(p, 150);
@@ -44,6 +45,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   ok(!(await p.$('.dw-start')), 'start from: the choice goes once something is on the drawing');
   await shot(p, 'book-burger');
   // swap the servingware: the picture stays
+  if (await p.$('.dw-ctx [data-dw="none"]')) { await p.click('.dw-ctx [data-dw="none"]'); await L.settle(p, 150); }   // a picked part's bar has no Plate
   await L.choose(p, '[data-dw="panel"][data-v="ware"]'); await L.settle(p, 200);
   await L.choose(p, '[data-dw="wfam"][data-v="board"]'); await L.settle(p, 200);
   await L.choose(p, '.dw-ware [data-dw="ware"][data-v="0"]'); await L.settle(p, 300);
@@ -63,7 +65,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   await shot(p, 'split');
   // a piece as a library piece: picked, named, saved; the search finds it
   await L.dwShow(p, '[data-dw="many"]'); await p.click('[data-dw="many"]'); await L.settle(p, 100);
-  await p.click('[data-dw="panel"][data-v="parts"]'); await L.settle(p, 200);
+  await L.dwShow(p, '[data-dw="panel"][data-v="parts"]'); await p.click('[data-dw="panel"][data-v="parts"]'); await L.settle(p, 200);
   const n = w.els.length;
   await p.click('.dw-parts [data-dw="pick"][data-v="' + (n - 1) + '"]'); await L.settle(p, 100);
   await p.click('.dw-parts [data-dw="pick"][data-v="' + (n - 2) + '"]'); await L.settle(p, 100);
@@ -93,6 +95,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
 
   // another recipe starts from the template: a copy; changing it leaves the template as it was
   p = await open('#/manage/draw/new/rump-250/plate', store1);
+  await L.dwAdd(p);
   await wait(p, () => !!document.querySelector('.dw-start [data-dw="from"][data-v^="tpl:"]'), null, 10000);
   ok(await p.$('.dw-start [data-dw="from"][data-v^="tpl:"]') !== null && /a template/.test(await txt(p, '.dw-start summary') || ''), 'template: offered to a new drawing for another recipe');
   await p.click('.dw-start summary'); await L.settle(p, 150);
@@ -129,6 +132,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
 
   // an SVG file: cleaned (no script, style, picture, event or url()), then a library piece on the drawing
   p = await open('#/manage/draw/new/pie/plate', store2b);
+  await L.dwAdd(p);
   await p.setInputFiles('[data-dwf="svgfile"]', { name: 'house-pie-lid.svg', mimeType: 'image/svg+xml', buffer: Buffer.from(BAD_SVG) });
   await wait(p, () => !!document.querySelector('#dw-h-pc'));
   ok(await p.$eval('[data-dwf="pc.name"]', e => e.value) === 'house pie lid', 'SVG import: the form opens, named from the file');
@@ -145,6 +149,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   await wait(p, () => /100 kB/.test((document.querySelector('.dw-bar .p-err') || {}).textContent || ''));
   ok(/100 kB at most/.test(await txt(p, '.dw-bar .p-err') || ''), 'SVG import: a file over 100 kB is refused');
   // servingware saved as a preset
+  if (await p.$('.dw-ctx [data-dw="none"]')) { await p.click('.dw-ctx [data-dw="none"]'); await L.settle(p, 150); }   // a picked part's bar has no Plate
   await L.choose(p, '[data-dw="panel"][data-v="ware"]'); await L.settle(p, 200);
   // Save this servingware sits under Size, shape and finish (4 Nov 2026, the Plate panel)
   if (!(await p.$('[data-dw="ware-save"]'))) { await p.click('[data-dw="wfine"]'); await L.settle(p, 150); }
@@ -187,8 +192,8 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   await p.context().close();
   p = await open('#/manage/draw/new/burger/plate', store4);
   await wait(p, () => !!window.LK_DRAW.mine().loaded, null, 10000);
-  await L.settle(p, 300);
-  ok(!(await p.$('.dw-start [data-dw="from"][data-v^="tpl:"]')), 'manage: a hidden template is not offered any more');
+  await L.dwAdd(p); await L.settle(p, 300);
+  ok(await p.$('.dw-start') !== null && !(await p.$('.dw-start [data-dw="from"][data-v^="tpl:"]')), 'manage: a hidden template is not offered any more');
   await p.context().close();
 
   // staff never reach any of it: the rules refuse a template or a piece from a sous chef
