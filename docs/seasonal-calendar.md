@@ -1,6 +1,6 @@
 # Seasonal calendar
 
-Automatic mode selects one of the 36 approved main festival families, plus Christmas Eve, Boxing Day and New Year’s Eve. Optional designs remain manual choices. These are celebration dates, not a roster or substitute public-holiday calendar.
+The calendar selects one of the 36 approved main festival families, plus Christmas Eve, Boxing Day and New Year’s Eve, the same on every device. Nobody picks a celebration (head chef, 4 November 2026), so the optional designs are not shown. These are celebration dates, not a roster or substitute public-holiday calendar.
 
 `js/seasonal/calendar.js` is a public, offline date registry. It reads no kitchen records and makes no network requests. Its caller supplies `LK_TIME.day()` after the corrected Queensland clock is ready. The resolver never reads the phone’s current date or timezone. A changed clock or new kitchen day must ask the resolver again.
 
@@ -18,7 +18,7 @@ Galungan repeats every 210 days in the Pawukon calendar; Kuningan is ten days la
 
 ## Coverage reviewed on 3 November 2026
 
-All 36 main families have a sourced date or window for 2026. Twenty-eight have automatic coverage for 2027. Eight are deliberately manual until a matching annual publication is verified:
+All 36 main families have a sourced date or window for 2026. Twenty-eight have automatic coverage for 2027. Eight have no 2027 date until a matching annual publication is verified, so they do not show in 2027 until one is added (`forYear(year).manualOnlyIds` lists them):
 
 - Nepal: Dashain, Tihar, Nepali New Year and Buddha Jayanti. The verified 2083 calendar ends in April 2027; a 2084 publication was not available in this review.
 - Philippines: Eid al-Fitr and Eid al-Adha. Their 2027 proclamations depend on local confirmation.

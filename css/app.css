@@ -1473,10 +1473,8 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .p-toast-btn { min-height: 44px; min-width: 64px; padding: 0 1rem; border-radius: 22px; flex: none; }
 .a-forget { margin-top: 1.6rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 
-/* Not sent yet: no signal, or changes still waiting for the server (prep pages) */
-.p-sync { position: sticky; top: var(--fn-stick, 0px); z-index: 25; margin: 0 0 0.75rem; padding: 0.6rem 0.9rem; border: 2px solid var(--accent); border-radius: 10px; background: #FFF3EA; color: var(--ink); font-size: 0.95rem; line-height: 1.35; }
-.p-sync strong { color: var(--accent-ink); }
-@media print { .p-sync { display: none; } }
+/* Not sent yet: no signal, or changes still waiting for the server (prep pages): since 4 Nov 2026 the floating band,
+   with the update notice below (.p-sync with .upd-bar) */
 
 /* Lists and buttons (October 2026): every tap target on a prep, order or wastage line is at least 44 px, with the
    same look as before. The row buttons sit together on the right; Urgent and Rolled flow with the text. */
@@ -1931,39 +1929,57 @@ button.wm-a.wm-tile { text-align: center; }
 }
 @media print { .p-toasts { display: none !important; } }
 
-/* The update notice (21 Oct 2026) is a slim strip at the top of the screen, never with the toasts at the bottom. While
-   it shows, the bars that stick to the top of a page stick just under it. */
-.upd-bar { position: sticky; top: var(--fn-stick, 0px); z-index: 45; box-sizing: border-box; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 2px 0.5rem 2px 1rem; background: var(--ink); color: #fff; font: 600 0.95rem var(--body); }
+/* The floating band (4 Nov 2026, docs/loading-feedback-options, design B, LF-03): the update notice (.upd-bar,
+   js/upkeep.js) and No signal, Not sent yet and All sent (.p-sync, js/prep.js). Fixed just under the top bar, or at the
+   top of the screen once the top bar has scrolled away (under the Functions strip), so it slides down over the page
+   and the page never moves for it. It used to push the page down: 48 px for the update strip, 77 px for the no-signal
+   box in the list. js/upkeep.js keeps --band-top. Under the top bar (z-index 20), so it slides out from beneath it,
+   and over the page's sticky bars. Solid ink with an orange edge (green for All sent): white words at 17:1, the orange
+   lead words at 6.8:1. While the signal band is up the update band waits behind it (html.has-sync). */
+.upd-bar, .p-sync { position: fixed; left: 0; right: 0; top: max(var(--fn-stick, 0px), var(--band-top, 0px)); z-index: 19; box-sizing: border-box; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin: 0; padding: 2px 0.5rem 2px 1rem; border-left: 5px solid var(--accent); background: var(--ink); color: #fff; font: 600 0.95rem/1.35 var(--body); box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18); transform: translateY(-110%); visibility: hidden; transition: transform 0.22s cubic-bezier(0.3, 0.7, 0.2, 1), visibility 0s linear 0.22s; }
+.upd-bar.is-on, .p-sync.is-on { transform: none; visibility: visible; transition: transform 0.22s cubic-bezier(0.3, 0.7, 0.2, 1), visibility 0s; }
+/* the full-screen drawing studio (.dw-studio, layer 35) covers the top bar: there the bands sit over it at the very top
+   of the screen, as the update strip did before 4 Nov 2026 (layer 45, under the sheets at 60 and up) */
+body:has(.dw-studio) .upd-bar, body:has(.dw-studio) .p-sync { top: 0; z-index: 45; }
+html.has-sync .upd-bar.is-on { transform: translateY(-110%); visibility: hidden; transition: transform 0.22s cubic-bezier(0.3, 0.7, 0.2, 1), visibility 0s linear 0.22s; }
+.p-sync[hidden] { display: none; }
+.p-sync { justify-content: flex-start; padding: 0.55rem 0.9rem 0.55rem 1rem; font-weight: 400; }
+.p-sync > span { min-width: 0; overflow-wrap: anywhere; }
+.p-sync strong { color: var(--bar-accent); font-weight: 700; }
+.p-sync[data-st="ok"] { border-left-color: var(--done); }
+.p-sync[data-st="ok"] strong { color: var(--done-tint); }
+@media (min-width: 720px) { .p-sync { justify-content: center; } }
 .upd-bar button { flex: none; min-height: 44px; padding: 0 1rem; border: 0; border-radius: 22px; background: var(--accent-ink); color: #fff; font: 700 0.95rem var(--body); cursor: pointer; }
 .upd-bar button:focus-visible { outline-color: var(--paper); }
-/* a narrow phone with Extra large text (28 Oct 2026): "It updates once sent." stays whole, so the strip is a little
+/* a narrow phone with Extra large text (28 Oct 2026): "It updates once sent." stays whole, so the band is a little
    tighter there, or the page scrolled sideways at 360 px */
 @media (max-width: 380px) { .upd-bar { gap: 0.5rem; padding: 2px 0.5rem; } .upd-bar button { padding: 0 0.75rem; } }
-/* and in a wider font than the book's (28 Oct 2026) the words wrap inside the strip, never pushing Update now off the
-   screen; the strip grows for them, and js/upkeep.js keeps --upd-h at its height so the bars below sit under it */
+/* and in a wider font than the book's (28 Oct 2026) the words wrap inside the band, never pushing Update now off the
+   screen; the band grows for them, and js/upkeep.js keeps --upd-h at its height */
 .upd-bar span { min-width: 0; overflow-wrap: anywhere; }
-/* With the update strip and the function strip both up, the bars that stick to the top sit under both of them, and a
-   jump lands below both (24 Oct 2026: they slid 46 px under the update strip). --fn-pad is the strip's height while
-   today has a function it could show (js/functions.js strip()). */
+/* The update band can stay up for a while, so the bars that stick to the top of a page (search, admin nav, drawing
+   stage) sit under it once they stick, and a jump lands below it, as with the update strip before (24 Oct 2026: they
+   slid 46 px under it). They slide down with it rather than jump. The signal band is short-lived: it sits over them
+   for a moment and moves nothing. --fn-pad is the Functions strip's height while today has a function it could show
+   (js/functions.js strip()). */
 html.has-upd { --upd-h: 48px; }
 html { scroll-padding-top: calc(var(--fn-pad, 0px) + var(--upd-h, 0px)); }
-html.has-upd .p-sync, html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(var(--fn-stick, 0px) + var(--upd-h)); }
-/* on the admin panel the sticky nav is the bar at the top: the no-signal note scrolls with the page, not over the nav */
-#prep-root:has(.a-nav) > .p-sync { position: static; }
-@media print { .upd-bar { display: none; } }
+html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(var(--fn-stick, 0px) + var(--upd-h)); }
+@media (prefers-reduced-motion: no-preference) {
+  html.has-upd .find-bar, html.has-upd .dw-stage, html.has-upd .p-admin.ad-admin .a-nav { transition: top 0.22s cubic-bezier(0.3, 0.7, 0.2, 1); }
+  html.has-upd .a-nav { transition: transform 0.2s ease, top 0.22s cubic-bezier(0.3, 0.7, 0.2, 1); }
+}
+@media (prefers-reduced-motion: reduce) { .upd-bar, .p-sync, .upd-bar.is-on, .p-sync.is-on, html.has-sync .upd-bar.is-on { transition: none; } }
+@media print { .upd-bar, .p-sync { display: none !important; } }
 
-/* Frosted update strip and chef hat menu (20 Oct 2026; the toasts were see-through from 21 Oct 2026 until the solid
-   docket slip of 4 Nov 2026): the update strip is 66 % dark with a light blur, so the lines behind it still show, and
-   the words stay at 5:1 or better even over a white card. The chef hat menu is 70 % with a strong blur. Only where the
-   browser can blur (a see-through box without the blur makes the words harder to read), and solid for anyone who asks
-   for less transparency. */
+/* The frosted chef hat menu (20 Oct 2026): 70 % white with a strong blur. Only where the browser can blur (a
+   see-through box without the blur makes the words harder to read), and solid for anyone who asks for less
+   transparency. The update strip was frosted too until the solid floating band of 4 Nov 2026, and the toasts until
+   the solid docket slip of the same day. */
 @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .upd-bar { background: rgba(28, 29, 31, 0.66); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); -webkit-backdrop-filter: blur(6px) saturate(1.4); backdrop-filter: blur(6px) saturate(1.4); }
-  .upd-bar { border-bottom: 1px solid rgba(255, 255, 255, 0.22); }
   .wm { background: rgba(255, 255, 255, 0.7); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.8); -webkit-backdrop-filter: blur(22px) saturate(1.8); backdrop-filter: blur(22px) saturate(1.8); }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .upd-bar { background: var(--ink); border: 0; text-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
   .wm { background: var(--paper); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 

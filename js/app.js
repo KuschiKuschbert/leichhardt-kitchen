@@ -1176,12 +1176,10 @@
     var m = P.chefMenu ? P.chefMenu() : {}, pu = P.push ? P.push() : {};
     return JSON.stringify([P.whoName(), P.whoRole && P.whoRole(), P.myCan && P.myCan(), m.sec, m.chef, m.tab, pu.show, pu.on, pu.busy, pu.msg, P.offline && P.offline(), isAdminDevice(), P.kitchenInfo && P.kitchenInfo()]);
   }
+  // Nobody picks a celebration (head chef, 4 Nov 2026): the row says On or Off, as js/seasonal/seasonal.js reads it.
   function stSeason() {
-    var s = readJSON(LS, 'lk.seasonal.v1') || {}, sel = s.selection;
-    if (!sel || sel === 'auto') return 'Automatic';
-    if (sel === 'off') return 'Off';
-    var hit = (window.KB_COMPLETE_ART || []).filter(function (x) { return x && x.id === sel; })[0];
-    return hit && typeof hit.label === 'string' ? hit.label : 'Automatic';
+    var s = readJSON(LS, 'lk.seasonal.v1') || {};
+    return s.selection === 'off' ? 'Off' : 'On';
   }
   function stSound(id) { return id === 'off' ? 'Off' : ((window.LK_CHIME && window.LK_CHIME.list.filter(function (x) { return x.id === id; })[0]) || {}).name || 'Pass bell'; }
   function stList(a) { return a.length ? a.join(', ') : 'None'; }
@@ -1769,7 +1767,7 @@
   /* Settings: the version row follows the update check (js/upkeep.js lk-upd), with no redraw. What else the page shows
      that this phone or the kitchen settings can change (a sign in or out, a section picked, pushes turned on, a role or
      the ping sound changed) draws it again, only when it did change (stSig()), so a busy config listener never redraws
-     it for nothing. A celebration picked in Settings shows in its row straight away (js/seasonal/seasonal.js keeps it). */
+     it for nothing. Celebrations On or Off shows in its row straight away (js/seasonal/seasonal.js keeps it). */
   function stSay(t) { var m = app.querySelector('.st-umsg'); if (m) m.textContent = t; }
   function stVersionPaint() {
     var v = document.querySelector('#st-h-version .st-v span'), n = app.querySelector('.st-vnote');

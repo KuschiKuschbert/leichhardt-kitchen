@@ -5,7 +5,7 @@
   const originalBrands = new WeakMap(), root = document.getElementById('app'), layer = document.createElement('div');
   layer.id = 'kb-festive-effects'; layer.setAttribute('aria-hidden', 'true'); document.body.append(layer);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
-  let state = { theme: null, mode: 'still', density: 'festive' }, frame = 0, publishFrame = 0;
+  let state = { theme: null, mode: 'still', density: 'festive', upcoming: [], dayCount: null }, frame = 0, publishFrame = 0;
   let surface = 'work', route = location.hash || '#/', aboutOpen = false, panel = null, panelTheme = null;
   let handoffCount = 0, handoffTimer = 0, handoffTarget = null, handoffPending = false;
   const esc = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -139,11 +139,12 @@
       note?.remove(); restoreBrand();
     } else if (home) {
       closeAbout(false); restoreBrand(); handoffPending = false;
-      if (!note || note.dataset.kbSeason !== theme.id) {
+      const heading = labelFor(theme) + (state.dayCount ? ' · day ' + state.dayCount.n + ' of ' + state.dayCount.of : '');
+      if (!note || note.dataset.kbSeason !== theme.id || note.dataset.kbHeading !== heading) {
         note?.remove(); root.dataset.kbEffects = '';
-        note = document.createElement('aside'); note.dataset.kbSeason = theme.id; note.dataset.kbSeasonLayout = 'home';
+        note = document.createElement('aside'); note.dataset.kbSeason = theme.id; note.dataset.kbSeasonLayout = 'home'; note.dataset.kbHeading = heading;
         note.className = 'kb-season-note kb-season-with-ticker'; note.setAttribute('aria-label', theme.label + ' seasonal detail');
-        note.innerHTML = '<div class="kb-season-heading"><div class="kb-season-note-art" aria-hidden="true">' + art(theme.icon, theme) + '</div><h3 aria-label="' + esc(theme.label) + '" title="' + esc(theme.label) + '">' + esc(labelFor(theme)) + '</h3><span class="kb-season-language-slot" data-kb-language></span></div><div data-kb-ticker></div>';
+        note.innerHTML = '<div class="kb-season-heading"><div class="kb-season-note-art" aria-hidden="true">' + art(theme.icon, theme) + '</div><h3 aria-label="' + esc(theme.label + (state.dayCount ? ', day ' + state.dayCount.n + ' of ' + state.dayCount.of : '')) + '" title="' + esc(theme.label) + '">' + esc(heading) + '</h3><span class="kb-season-language-slot" data-kb-language></span></div><div data-kb-ticker></div>';
         home.before(note);
       }
       KB_CELEBRATION_TICKER.mount(note.querySelector('[data-kb-ticker]'), theme, { mode: state.mode, surface: 'home', languageHost: note.querySelector('[data-kb-language]') });
@@ -159,11 +160,23 @@
         }
       }
     }
+    comingUp(surface === 'home' && !gated() ? root.querySelector('.wall-main .dockets') : null);
     if (force || root.dataset.kbEffects !== signature) {
       KB_EFFECTS.render(theme || { id: 'off', effect: 'still' }, theme ? state.mode : 'still', state.density, { surface });
       root.dataset.kbEffects = signature;
     }
     publishSoon();
+  }
+  // Coming up (3 Nov 2026): the next celebrations in the coming 7 days, from the offline calendar, above the dockets.
+  function comingUp(dockets) {
+    let line = root.querySelector('[data-kb-coming]');
+    const key = state.upcoming.map(item => item.id + '|' + item.when).join(',');
+    if (!dockets || !key) { line?.remove(); return; }
+    if (line && line.dataset.kbComing === key && line.nextElementSibling === dockets) return;
+    line?.remove();
+    line = document.createElement('p'); line.className = 'kb-coming'; line.dataset.kbComing = key;
+    line.innerHTML = '<span class="kb-coming-label">Coming up</span>' + state.upcoming.map(item => '<span class="kb-coming-item"><span class="kb-coming-mark" aria-hidden="true">' + (window.KB_STAMPS?.svg(item.id) || '') + '</span>' + esc(item.label) + ', ' + esc(item.when) + '</span>').join('');
+    dockets.before(line);
   }
   function schedule() { if (frame) return; frame = requestAnimationFrame(() => { frame = 0; update(false); }); }
   function status() { return { themeId: state.theme?.id || null, gated: gated(), surface, aboutOpen: Boolean(aboutOpen && panel?.isConnected), handoffCount, handoffActive: Boolean(handoffTimer && handoffTarget?.isConnected), route }; }
@@ -178,7 +191,11 @@
     const previousId = state.theme?.id;
     // The controller passes a vetted record from the bundled catalogue, never saved SVG or HTML.
     const requested = value.theme && window.KB_COMPLETE_ART?.find(theme => theme.id === value.theme.id);
-    state = { theme: requested || null, mode: value.mode === 'gentle' ? 'gentle' : 'still', density: value.density === 'light' ? 'light' : 'festive' };
+    // Coming up and day counts come from the bundled calendar; ids are checked against the catalogue again here.
+    const upcoming = (Array.isArray(value.upcoming) ? value.upcoming : []).filter(item => window.KB_COMPLETE_ART?.some(theme => theme.id === item?.id)).slice(0, 2)
+      .map(item => ({ id: item.id, label: String(item.label || ''), when: String(item.when || '') }));
+    const count = value.dayCount && Number.isInteger(value.dayCount.n) && Number.isInteger(value.dayCount.of) && value.dayCount.n >= 1 && value.dayCount.n <= value.dayCount.of && value.dayCount.of <= 60 ? { n: value.dayCount.n, of: value.dayCount.of } : null;
+    state = { theme: requested || null, mode: value.mode === 'gentle' ? 'gentle' : 'still', density: value.density === 'light' ? 'light' : 'festive', upcoming, dayCount: requested ? count : null };
     if (state.mode !== 'gentle') stopHandoff();
     if (previousId !== state.theme?.id) closeAbout(false);
     update(false);
