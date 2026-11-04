@@ -10,6 +10,8 @@ The [first-phase findings](docs/ux-council-audit.md#whole-app-audit-first-delive
 
 The [recipe and drawing editor audit](docs/recipe-editor-options/brief.md) (3 November 2026) measures why Manage Recipes & Drawings feels complicated and offers two example designs: A, chapters and a studio, and B, edit on the card. The [comparison](docs/recipe-editor-options/index.html) has working examples. On 3 November 2026 the head chef chose A's chapters with B's full-screen studio; each build step ships as its own pull request.
 
+The [drawing studio audit](docs/studio-options/brief.md) (4 November 2026) measures what still makes the studio feel overwhelming (Done off a phone's screen, the dock and drawers over the food, five ways to start at once) and offers nine fixes for either design and two layouts: A, three steps, and B, a quiet canvas with one bar at the thumb (recommended). The [comparison](docs/studio-options/index.html) has both to try. Waiting for the head chef's choice.
+
 ## Smoker batch cards (30 October 2026)
 
 Carolina Gold BBQ Sauce, House BBQ Sauce, Alabama White Sauce and Cornbread have batch cards and matching pan drawings. Cornbread and Alabama White link from the ingredients and drawing pins on both smoked boards. The supplied cards have no methods. The head chef instructed us to omit the pecan and unnamed ingredient entries. The drawings reuse existing sauce pans and the library's exact cornbread piece. House BBQ is not substituted for double-smoked BBQ without confirmation. See [smoker batch cards](docs/smoker-batches.md) for the source questions, saved-book overlay limitation and controlled-clock release verification.

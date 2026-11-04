@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Drawing Studio Options</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+/* Layout: one reading column of the Kitchen Book's paper, with rows of phone screens and a try-out bench for the two studios. */
+:root {
+  --bg: #FBFAF7; --paper: #FFFFFF; --ink: #1C1D1F; --muted: #55585E; --line: #E0DBCF; --accent: #C2451A; --accent-soft: #FFF1E6;
+  --bar: #2B2A27; --bar-text: #FBF8F1; --bar-line: #4A4741; --bar-soft: #DDD7CB; --bar-accent: #F08A4B; --good: #237347; --bad: #A3261B; --frame: #1C1C1C;
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif; --body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1D1C1A; --paper: #262522; --ink: #F2EEE6; --muted: #B8B2A7; --line: #3A3833; --accent: #F08A4B; --accent-soft: #3A2A20; --bar: #121110; --bar-line: #3A3833; --good: #6FCF97; --bad: #FF8A7A; --frame: #050505; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #1D1C1A; --paper: #262522; --ink: #F2EEE6; --muted: #B8B2A7; --line: #3A3833; --accent: #F08A4B; --accent-soft: #3A2A20; --bar: #121110; --bar-line: #3A3833; --good: #6FCF97; --bad: #FF8A7A; --frame: #050505; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.55 var(--body); }
+.page { max-width: 1120px; margin: 0 auto; padding-block: 0 4rem; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); line-height: 1.05; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(2.4rem, 7vw, 4rem); letter-spacing: -.01em; }
+h2 { font-size: clamp(1.8rem, 4.5vw, 2.5rem); }
+h3 { font-size: 1.35rem; }
+p { margin: 0; }
+a { color: inherit; text-underline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.eyebrow { font: 700 .82rem/1.2 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+.muted { color: var(--muted); }
+.read { max-width: 68ch; }
+.band { background: var(--bar); color: var(--bar-text); }
+.band-in { max-width: 1120px; margin: 0 auto; padding-block: 2.2rem 2rem; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: .9rem; }
+.band .eyebrow { color: var(--bar-accent); }
+.band q { font-family: var(--display); font-size: 1.35rem; quotes: '\201C' '\201D'; color: var(--bar-soft); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1px; background: var(--bar-line); border: 1px solid var(--bar-line); margin-top: .6rem; }
+.facts div { background: var(--bar); padding: .8rem 1rem; display: grid; gap: .2rem; }
+.facts b { font: 700 2.1rem/1 var(--display); color: var(--bar-accent); font-variant-numeric: tabular-nums; }
+.facts span { font-size: .92rem; color: var(--bar-soft); }
+section { display: grid; gap: 1.1rem; padding-top: 2.6rem; }
+.rule { border-top: 2px solid var(--ink); padding-top: .6rem; display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .4rem 1rem; }
+figure { margin: 0; display: grid; gap: .45rem; min-width: 0; }
+figure img { width: 100%; height: auto; display: block; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+figcaption { font-size: .88rem; color: var(--muted); }
+.shots { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); align-items: start; }
+.shots.wide { grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+.find { display: grid; gap: .1rem; border-top: 1px solid var(--ink); }
+.find details { border-bottom: 1px solid var(--line); }
+.find summary { cursor: pointer; list-style: none; display: grid; grid-template-columns: 3.2rem minmax(0, 1fr); gap: .8rem; padding: .7rem 0; align-items: baseline; }
+.find summary::-webkit-details-marker { display: none; }
+.find summary b { font: 700 1rem var(--display); color: var(--accent); letter-spacing: .04em; }
+.find summary span { font-weight: 600; }
+.find details p { padding: 0 0 .9rem 4rem; color: var(--muted); font-size: .95rem; }
+.find details[open] summary span { text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 4px; }
+.opt { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: clamp(1rem, 3vw, 1.6rem); display: grid; gap: 1rem; }
+.opt.pick { border: 2px solid var(--accent); }
+.tagline { display: inline-flex; align-items: center; gap: .4rem; font: 700 .78rem/1 var(--display); letter-spacing: .1em; text-transform: uppercase; padding: .35rem .6rem; border-radius: 999px; background: var(--accent); color: #fff; }
+ul.points, ol.points { margin: 0; padding-left: 1.2rem; display: grid; gap: .45rem; }
+ul.points b, ol.points b { font-weight: 700; }
+.count { font-size: .92rem; color: var(--muted); }
+.count b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: .94rem; }
+th, td { text-align: left; vertical-align: top; padding: .65rem .8rem; border-bottom: 1px solid var(--line); }
+thead th { font: 700 .95rem var(--display); letter-spacing: .04em; text-transform: uppercase; background: var(--accent-soft); }
+tbody th { font-weight: 600; width: 26%; }
+td.win { font-weight: 700; color: var(--good); }
+td.bad { color: var(--bad); }
+.bench { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 1rem; display: grid; gap: .8rem; }
+.bench-ctl { display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: center; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1.5px solid var(--ink); border-radius: 22px; overflow: hidden; }
+.seg button { border: 0; background: transparent; color: var(--ink); font: 600 .9rem var(--body); min-height: 40px; padding: 0 .9rem; cursor: pointer; }
+.seg button + button { border-left: 1.5px solid var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.stage { display: flex; justify-content: center; overflow: hidden; border-radius: 10px; background: repeating-linear-gradient(45deg, transparent 0 10px, rgba(128, 120, 105, .08) 10px 20px); padding: 1rem 0; }
+.stage .phone { width: 390px; max-width: 100%; height: 780px; border: 10px solid var(--frame); border-radius: 34px; overflow: hidden; background: #F2EFE8; }
+.stage .phone iframe { width: 100%; height: 100%; border: 0; display: block; }
+.stage .desk { width: 100%; max-width: 1080px; aspect-ratio: 1280 / 800; position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: #F2EFE8; }
+.stage .desk iframe { position: absolute; top: 0; left: 0; width: 1280px; height: 800px; border: 0; transform-origin: 0 0; }
+.next { background: var(--accent-soft); border-radius: 12px; padding: 1.2rem 1.4rem; display: grid; gap: .6rem; }
+code { font-size: .88em; background: var(--accent-soft); padding: .05rem .3rem; border-radius: 4px; }
+footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--line); font-size: .85rem; color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<header class="band">
+  <div class="band-in">
+    <span class="eyebrow">Kitchen Book · Drawing studio · 4 November 2026</span>
+    <h1>The drawing studio, quieter</h1>
+    <q>It is still slightly overwhelming.</q>
+    <p class="read" style="color:var(--bar-soft)">I walked the studio that went live today through every state on a phone and a laptop, counted what is on screen and measured what gets covered. Below: what gets in the way, nine fixes for either design, two ways to lay it out, and both to try.</p>
+    <div class="facts">
+      <div><b>25</b><span>controls on a phone's first screen of a new drawing</span></div>
+      <div><b>414 px</b><span>of part buttons in a 376 px bar: Done is off screen</span></div>
+      <div><b>60%</b><span>of the picked part hidden under an open drawer</span></div>
+      <div><b>5</b><span>ways to start a drawing, all shown at once</span></div>
+      <div><b>7</b><span>drop-downs to change the plate, and no picture of one</span></div>
+    </div>
+  </div>
+</header>
+<main class="page">
+
+  <section aria-labelledby="h-now">
+    <div class="rule"><h2 id="h-now">What gets in the way now</h2><span class="muted">Chicken Burger, head chef by PIN, test data</span></div>
+    <div class="find">
+      <details><summary><b>S1</b><span>On a phone the part's bar is wider than the screen.</span></summary><p>414 px of buttons in a 376 px bar. With Chips picked, Done is off the screen and Delete is cut in half.</p></details>
+      <details><summary><b>S2</b><span>The dock sits on top of the drawer.</span></summary><p>It covers the last 67 px of every drawer on a phone. In the part's More, Duplicate, Flip and Stretch are under it.</p></details>
+      <details><summary><b>S3</b><span>The drawer covers what you are changing.</span></summary><p>With More, Colour or Label open on a phone, 60% of the picked part is under the drawer.</p></details>
+      <details><summary><b>S4</b><span>The same note heads every drawer.</span></summary><p>After Draw it for me, "Drawn by the book: side by side..." (55 px) tops Add, Plate, Parts, More, Colour and Label.</p></details>
+      <details><summary><b>S5</b><span>A new drawing offers five ways to start at once.</span></summary><p>Draw it for me, Start from a copy, 7 ingredient chips, an 842 drawing library and Import a drawing (SVG). The drawer is 2,157 px tall on a phone.</p></details>
+      <details><summary><b>S6</b><span>The plate is seven drop-downs.</span></summary><p>Kind, piece, shape, size, rim, finish and colour, a tick box and Save this servingware. No picture of a plate.</p></details>
+      <details><summary><b>S7</b><span>Some buttons look like links.</span></summary><p>The part's More (10 actions) and More tools (12) are underlined words, unlike the dock and the part bar.</p></details>
+      <details><summary><b>S8</b><span>Two Done buttons.</span></summary><p>The drawer's Done takes a 64 px row of its own; the part bar has another.</p></details>
+      <details><summary><b>S9</b><span>One name, three times.</span></summary><p>"Burger bun ... Label: Burger bun" in the part bar, and BURGER BUN heading its More.</p></details>
+      <details><summary><b>S10</b><span>Three zoom words for what fingers already do.</span></summary><p>"- Fit +" in the corner; pinch and the mouse wheel already zoom.</p></details>
+      <details><summary><b>S11</b><span>The phone's top bar is busy and says little.</span></summary><p>"On the..." and "Chicken B...", with "Not saved yet. Kept on this device." on a second line.</p></details>
+    </div>
+    <div class="shots">
+      <figure><img src="previews/now-new-phone.png" alt="Today on a phone: a new drawing with a drawer of start options, ingredient chips and the library over the lower half, the dock floating on top of it" loading="lazy" width="390" height="844"><figcaption>Today: a new drawing. 25 controls.</figcaption></figure>
+      <figure><img src="previews/now-part-picked-phone.png" alt="Today on a phone: the part bar runs past the right edge; Delete is cut off and Done is not visible" loading="lazy" width="390" height="844"><figcaption>Today: Done is off screen (S1).</figcaption></figure>
+      <figure><img src="previews/now-part-more-phone.png" alt="Today on a phone: the part's More drawer covers most of the burger; the dock covers the drawer's last row" loading="lazy" width="390" height="844"><figcaption>Today: the drawer covers the part, the dock covers the drawer (S2, S3).</figcaption></figure>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-fix">
+    <div class="rule"><h2 id="h-fix">Nine fixes for either design</h2><span class="muted">These can ship first</span></div>
+    <ol class="points read">
+      <li><b>The part's buttons fit a phone:</b> Colour, Label, More, Delete, Done, each an icon and a word. Swap moves into Label.</li>
+      <li><b>Nothing sits on the food.</b> A panel sits under the canvas; the plate shrinks to stay whole above it.</li>
+      <li><b>Draw it for me speaks once,</b> at the top of the canvas, with Undo and Try another.</li>
+      <li><b>One way to close a panel:</b> its round close button, Escape, or a tap on the plate.</li>
+      <li><b>Plate is pictures.</b> Size, rim, finish and colour sit behind one button.</li>
+      <li><b>Add starts with the recipe:</b> what is not on the plate yet, then Find a drawing. Copy and Import go to the bottom.</li>
+      <li><b>Buttons look like buttons:</b> tiles with an icon, grouped, for More tools and the part's More.</li>
+      <li><b>Fit only.</b> Zoom stays on pinch, the wheel and the + and - keys.</li>
+      <li><b>A one-line top bar:</b> Close, the recipe's name, Undo, Redo, Save.</li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="h-a">
+    <div class="rule"><h2 id="h-a">A. Three steps</h2><span class="muted">A path to follow</span></div>
+    <div class="opt">
+      <p class="read">Under the top bar: <b>1 Plate, 2 Food, 3 Check</b>, then More. Each step has a small tray with only its own tools. A picked part gets a dark bar just above it.</p>
+      <ul class="points read">
+        <li><b>Plate:</b> a row of plate, bowl and board pictures.</li>
+        <li><b>Food:</b> Draw it for me leads; then what is not on the plate yet, and the library.</li>
+        <li><b>Check:</b> what is missing or has no label, each with its fix, and Save.</li>
+      </ul>
+      <p class="count">Controls on a phone: new drawing <b>14</b>, a part picked <b>15</b>, the part's More <b>24</b>.</p>
+      <div class="shots">
+        <figure><img src="previews/a-new-phone.png" alt="Design A on a phone: steps Plate, Food and Check under the top bar; the Food tray with Draw it for me and ingredient chips under an empty plate" loading="lazy" width="780" height="1688"><figcaption>A new drawing: the Food step.</figcaption></figure>
+        <figure><img src="previews/a-picked-phone.png" alt="Design A on a phone: the burger picked, a dark bar above it with Colour, Label, More, Delete and Done" loading="lazy" width="780" height="1688"><figcaption>A part picked: its bar just above it.</figcaption></figure>
+        <figure><img src="previews/a-plate-phone.png" alt="Design A on a phone: the Plate step with pictures of a dinner plate, side plate and pasta bowl" loading="lazy" width="780" height="1688"><figcaption>The Plate step: pictures.</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-b">
+    <div class="rule"><h2 id="h-b">B. Quiet canvas</h2><span class="tagline">Recommended</span></div>
+    <div class="opt pick">
+      <p class="read">No tabs. The plate fills the screen. <b>One dark bar at the thumb shows only what you can do now.</b></p>
+      <ul class="points read">
+        <li><b>An empty plate:</b> a big Draw it for me in the middle of it. The bar: Add food, Plate, Check, More.</li>
+        <li><b>A part picked:</b> the bar becomes that part's: Colour, Label, More, Delete, Done, always in the same place, never over the food.</li>
+        <li><b>Panels</b> open from the bar, under the canvas on a phone and on the right on a computer. Check shows a count when something needs a look.</li>
+      </ul>
+      <p class="count">Controls on a phone: new drawing <b>10</b>, a part picked <b>10</b>, the part's More <b>21</b>.</p>
+      <div class="shots">
+        <figure><img src="previews/b-new-phone.png" alt="Design B on a phone: an empty plate with a big Draw it for me button in its middle; a dark bar at the bottom with Add food, Plate, Check and More" loading="lazy" width="780" height="1688"><figcaption>A new drawing: one big button.</figcaption></figure>
+        <figure><img src="previews/b-picked-phone.png" alt="Design B on a phone: the burger picked; the bottom bar shows Colour, Label, More, Delete and Done, with Burger bun and Drag to move above it" loading="lazy" width="780" height="1688"><figcaption>A part picked: the bar becomes the part's.</figcaption></figure>
+        <figure><img src="previews/b-pmore-phone.png" alt="Design B on a phone: the part's More as tiles under a smaller whole plate: To the front, Forward, Backward, To the back, Duplicate, Flip, Stretch" loading="lazy" width="780" height="1688"><figcaption>The part's More: tiles, the plate still in view.</figcaption></figure>
+      </div>
+      <div class="shots wide">
+        <figure><img src="previews/b-drawn-laptop.png" alt="Design B on a laptop: the drawn burger and chips on a large plate, the note with Undo and Try another at the top, the bar at the bottom centre" loading="lazy" width="1280" height="800"><figcaption>On a laptop, after Draw it for me.</figcaption></figure>
+        <figure><img src="previews/b-plate-laptop.png" alt="Design B on a laptop: the Plate panel on the right with pictures of a dinner plate, side plate, pasta bowl, wooden board and slate" loading="lazy" width="1280" height="800"><figcaption>Plate, on a laptop: pictures beside the drawing.</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-try">
+    <div class="rule"><h2 id="h-try">Try them</h2><span class="muted">Example only. Nothing is saved or sent.</span></div>
+    <div class="bench">
+      <div class="bench-ctl">
+        <span class="seg" role="group" aria-label="Design"><button type="button" data-try="b" aria-pressed="true">B. Quiet canvas</button><button type="button" data-try="a" aria-pressed="false">A. Three steps</button></span>
+        <span class="seg" role="group" aria-label="Screen"><button type="button" data-dev="phone" aria-pressed="true">Phone</button><button type="button" data-dev="desk" aria-pressed="false">Computer</button></span>
+        <span class="seg" role="group" aria-label="Start from"><button type="button" data-st="new" aria-pressed="true">New</button><button type="button" data-st="drawn" aria-pressed="false">Drawn</button><button type="button" data-st="picked" aria-pressed="false">Part picked</button><button type="button" data-st="check" aria-pressed="false">Check</button></span>
+      </div>
+      <div class="stage" id="stage"></div>
+      <p class="muted" style="font-size:.9rem">Things to try: Draw it for me, then Try another. Tap the burger, drag it, open More and Colour, Delete and Undo. Change the plate to a board. Open <a href="b.html" target="_blank" rel="noopener">B</a> or <a href="a.html" target="_blank" rel="noopener">A</a> on their own.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-cmp">
+    <div class="rule"><h2 id="h-cmp">Side by side</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col"></th><th scope="col">Today</th><th scope="col">A. Three steps</th><th scope="col">B. Quiet canvas</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Controls on a phone, new drawing</th><td class="bad">25</td><td>14</td><td class="win">10</td></tr>
+          <tr><th scope="row">... a part picked</th><td class="bad">18, Done off screen</td><td>15</td><td class="win">10</td></tr>
+          <tr><th scope="row">... the part's More open</th><td class="bad">28, three under the dock</td><td>24</td><td class="win">21</td></tr>
+          <tr><th scope="row">The part's buttons</th><td>Floating over the plate, too wide</td><td>Floating just above the part</td><td class="win">In the bar at the thumb, never over the food</td></tr>
+          <tr><th scope="row">Plate</th><td>7 drop-downs</td><td>Pictures</td><td>Pictures</td></tr>
+          <tr><th scope="row">A panel open on a phone</th><td class="bad">Covers 60% of the part</td><td>Under the canvas</td><td>Under the canvas</td></tr>
+          <tr><th scope="row">Extra row on screen</th><td></td><td>The steps (60 px)</td><td class="win">None</td></tr>
+          <tr><th scope="row">New to learn</th><td></td><td>Three steps</td><td>The bar changes with what you pick</td></tr>
+          <tr><th scope="row">Main risk</th><td></td><td>Food and Add both list ingredients</td><td>The bar's buttons change when a part is picked</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-rec">
+    <div class="rule"><h2 id="h-rec">Recommendation: B</h2></div>
+    <p class="read"><b>B, Quiet canvas.</b> It has the fewest controls in every state, nothing ever covers the food, and the part's buttons are always in the same place at the thumb, like the book's own tab bar. It keeps the full-screen studio you chose on 3 November and needs no new row. A suits someone drawing for the first time who wants a path; you already know the order.</p>
+    <p class="read muted">Every tool stays. The rare ones move to More: Draw again, Try another layout, Tidy up, Plating style, Text, Line, Arrow, Box, Oval, the Parts list, Pick several, Snap to centre, Save as a template and Use for another recipe. The full list is in the brief.</p>
+    <div class="next">
+      <h3>What happens next</h3>
+      <ol class="points">
+        <li>You pick A, B or a mix.</li>
+        <li>The nine shared fixes ship first, in four small steps, each its own pull request with click tests on a phone and a laptop.</li>
+        <li>Then the chosen layout.</li>
+      </ol>
+    </div>
+  </section>
+
+  <footer>Example pages use the public Chicken Burger card and the book's own drawings. Full findings, measurements and the capability list: <code>docs/studio-options/brief.md</code>.</footer>
+</main>
+<script>
+(function () {
+  var stage = document.getElementById('stage'), cur = { d: 'b', dev: 'phone', st: 'new' };
+  function fit() { var w = stage.querySelector('.desk'); if (!w) return; var f = w.querySelector('iframe'); f.style.transform = 'scale(' + (w.clientWidth / 1280) + ')'; }
+  function show() {
+    var src = cur.d + '.html#' + cur.st, name = cur.d === 'a' ? 'A. Three steps' : 'B. Quiet canvas';
+    stage.innerHTML = cur.dev === 'phone' ? '<div class="phone"><iframe title="' + name + ' on a phone" src="' + src + '"></iframe></div>' : '<div class="desk"><iframe title="' + name + ' on a computer" src="' + src + '"></iframe></div>';
+    [['data-try', 'd'], ['data-dev', 'dev'], ['data-st', 'st']].forEach(function (k) { Array.prototype.forEach.call(document.querySelectorAll('[' + k[0] + ']'), function (b) { b.setAttribute('aria-pressed', b.getAttribute(k[0]) === cur[k[1]]); }); });
+    fit();
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-try], [data-dev], [data-st]'); if (!t) return;
+    if (t.hasAttribute('data-try')) cur.d = t.getAttribute('data-try'); else if (t.hasAttribute('data-dev')) cur.dev = t.getAttribute('data-dev'); else cur.st = t.getAttribute('data-st');
+    show();
+  });
+  window.addEventListener('resize', fit);
+  show();
+})();
+</script>
+</body>
+</html>

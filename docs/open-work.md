@@ -14,6 +14,8 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 3. **Build the work pages redesign** (chosen 3 Nov 2026, see `docs/head-chef-decisions.md`). Seven steps in [the options brief](docs/work-pages-design-options/brief.md), one pull request each. Remove this item when the last step is live.
 
+4. **Choose the drawing studio layout** (proposed 4 Nov 2026): A, three steps, or B, quiet canvas (recommended), in [the studio options brief](studio-options/brief.md). Nine fixes for either design can ship first. Record the choice in `docs/head-chef-decisions.md`, then build in five steps, one pull request each.
+
 Remove each item here once it is done.
 
 ### Bringing the code in line (22 Oct 2026)
