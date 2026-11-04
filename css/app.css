@@ -3508,8 +3508,6 @@ i.dsh-c-load { background: var(--dsh-h3); }
 .w-legend li { display: inline-flex; align-items: center; gap: 5px; }
 .w-legend b { color: var(--ink); }
 .w-dot { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; }
-.w-acts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; padding: 0 12px; }
-.w-acts .btn { flex: 1 1 10rem; }
 .w-rvbtn { flex-direction: column; gap: 0; line-height: 1.2; }
 .w-rvbtn small { font-size: 0.75rem; font-weight: 500; color: var(--muted); }
 .w-ro { padding: 0 12px; }
@@ -3546,11 +3544,21 @@ html:has(.w-sheet, .tr-sheet, .p-sheet, .o-sheet) .p-toasts { top: calc(12px + e
    (.p-sheet, the same size as the wastage and transfer sheets); on a phone the button floats above the tab bar, in thumb
    reach. "3 of 13 done" is the way to Done today. Start here is numbered on the lines (.nb-t[data-n]), and the lines written
    after tonight's list was started sit last under Tonight, for tomorrow. */
-.nb-ph .nb-addline { min-height: 44px; padding: 0 1rem; }
+/* The add button on Prep, Orders, Wastage and Transfers (.wk-dock, dockBtn() in js/prep.js), as drawn in the agreed
+   options page: on a phone one full-width bar with a plus, docked above the tab bar, the list scrolling above it; on
+   wider screens in the page header, the count beside it. */
+.wk-dock .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 1rem; }
+.wk-plus { flex: 0 0 auto; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
+.nb-ph:has(.wk-dock) .nb-prog { margin-left: auto; }
 @media (max-width: 719px) {
-  .nb-ph .nb-addline { position: fixed; right: 16px; bottom: calc(var(--tabbar-h) + 12px + env(safe-area-inset-bottom, 0px)); z-index: 25; min-height: 52px; padding: 0 1.4rem; border-radius: 999px; font-size: 1.0625rem; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25); }
-  .nb-wrap { padding-bottom: 76px; }
+  .wk-dock { position: fixed; left: 0; right: 0; bottom: var(--tabbar-h); z-index: 25; padding: 8px 16px; background: var(--bg); border-top: 1px solid var(--rule); }
+  .wk-dock .btn { width: 100%; min-height: 52px; font-size: 1.0625rem; }
+  .nb-wrap, .o-page { padding-bottom: 84px; }
+  body:has(.wk-dock) { --toast-lift: calc(var(--tabbar-h) + 69px); }
 }
+.w-rvfoot { margin: 14px 0 4px; }
+.w-rvfoot .w-rvbtn { width: 100%; align-items: flex-start; text-align: left; }
+.w-rvfoot .hint { margin: 6px 0 0; }
 button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; cursor: pointer; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .nb-t[data-n]::before { content: attr(data-n); content: attr(data-n) / ''; display: inline-flex; align-items: center; justify-content: center; min-width: 1.45em; height: 1.45em; margin-right: 0.35em; border-radius: 50%; background: var(--accent-ink); color: #fff; font: 700 0.62em var(--body); vertical-align: 0.2em; }
 .nb-why { display: inline-block; padding: 0 6px; border: 1.5px solid var(--muted); border-radius: 999px; font: 600 0.75rem var(--body); color: var(--muted); white-space: nowrap; }
@@ -3560,9 +3568,10 @@ button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; curs
 /* Orders, Clean notebook (3 Nov 2026, work pages redesign A): one list (today, then Waiting from earlier days), Ordered
    today folded under its count, Add a line as a sheet (.o-sheet, like the prep list), and for chefs a date chip and
    Delivery arrived in the row above the page. */
-@media (max-width: 719px) { .o-page { padding-bottom: 76px; } }
 .o-nav { align-items: center; flex-wrap: wrap; }
-.o-nav .o-deliv { text-decoration: none; }
+/* the day arrows' big type (.nb-nav .chip:first-child/:last-child) is not for these chips */
+.nb-nav.o-nav .chip { min-width: 0; padding: 0 0.85rem; font-size: 0.875rem; }
+.o-nav .o-deliv { display: inline-flex; align-items: center; color: var(--ink); text-decoration: none; }
 .o-ro { padding: 0 12px; }
 .o-wait { margin-top: 0.6rem; }
 .o-wait-h { margin-top: 0.4rem; }
