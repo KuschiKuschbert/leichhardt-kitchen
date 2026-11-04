@@ -44,6 +44,18 @@ Celebration motion moves only `transform` and `opacity` (3 November 2026). The g
 
 Revert this feature through a new PR to remove celebrations. Keep the current saved-shell generation protocol and access/session contract. The unused device preference is harmless and no kitchen records need reverting.
 
+## Stamp review (4 November 2026)
+
+An independent cultural-symbol review of six stamps, rendered at 24, 32, 44 and 200 px. Ganesh Chaturthi keeps its three modak. Five are redrawn in `js/seasonal/marks.js`:
+
+- Nyepi: a lower split gate with three small stars. The crescent in the gap read as an Eid sign, and Nyepi fell the day before Eid al-Fitr in 2026.
+- Galungan: a wider penjor sweep with a bell-shaped hanging ornament, no foot; it read as a back arrow.
+- Kuningan: the tamiang keeps eight spokes, with a solid orange hub and four short strands; it read as a bullseye or a dreamcatcher.
+- Sinulog: three candles at different heights over the river; two candles read as a pause button.
+- Durga Puja: a dhak drum lying across, with its fan plume and a beater; the upright drum read as a takeaway cup.
+
+Galungan and Kuningan are the least certain: ask the Balinese staff to look at them.
+
 ## Working rules (moved from CLAUDE.md, 3 Nov 2026)
 
 Preserve Home ambience behind the page, work pages that keep Kitchen Book and the chef hat (a stamp beside the name, a still edge in the top bar), arrive-then-settle motion that moves only transform and opacity, automatic six-language cycling, manual/Still/Off controls and the immutable offline shell. The redesign record is `docs/celebration-options/brief.md`.
