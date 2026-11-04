@@ -9,7 +9,7 @@ const P = 'Zz<i id="pwn"></i><img src=x onerror="window.__pwn=1">" data-pwn="1 \
 const extra = {};
 extra[fsKey(['deliveries', 'bad-delivery'])] = { day: today, receivedAt: L.NOW - 60000, recordedAt: L.NOW, supplier: 'Delivery ' + P, chilled: 0, frozen: -18.5, note: 'Goods ' + P, receivedBy: 'Receiver ' + P, receivedById: 'ann', by: 'ann' };
 extra[fsKey(['days', today, 'items', 'x1'])] = { text: 'Line ' + P, station: 'Larder' + P, qty: '2' + P, recipe: '', addedBy: 'Ann' + P, addedById: 'ann', addedAt: L.NOW - 600000, done: false, deleted: false, onBy: 'Bo' + P, onById: 'bo', onAt: L.NOW - 60000 };
-extra[fsKey(['orders', today, 'lines', 'x1'])] = { text: 'Order ' + P, qty: '1' + P, recipes: [], addedBy: 'Ann' + P, addedById: 'ann', addedAt: L.NOW - 600000, ordered: false, deleted: false };
+extra[fsKey(['orders', today, 'lines', 'x1'])] = { text: 'Order ' + P, qty: '1' + P, need: 'out' + P, recipes: [], addedBy: 'Ann' + P, addedById: 'ann', addedAt: L.NOW - 600000, ordered: false, deleted: false };
 extra[fsKey(['waste', today, 'lines', 'x1'])] = { text: 'Waste ' + P, amount: 1, unit: 'kg', reason: 'prep', action: 'Act ' + P, station: 'Sec' + P, addedBy: 'Bo' + P, addedById: 'bo', addedAt: L.NOW - 600000, deleted: false,
   // Change amount (4 Nov 2026): the amount before and who changed it, shown in the admin log; a damaged unit too
   was: { amount: 2, unit: 'kg' + P }, chgBy: 'Chg' + P, chgAt: L.NOW - 300000 };

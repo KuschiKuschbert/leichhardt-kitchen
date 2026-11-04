@@ -175,7 +175,7 @@
     items: [], itemsState: 'idle', showRemoved: false,
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinOff: false, pinData: null, pf1: '', pf2: '', pinMsg: '',
-    sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: (lsGet('lk.dash.intro') && lsGet('lk.prep.atab')) || 'dashboard', ordDate: dayNow(), ordLines: [], ordState: 'idle', otext: '', oqty: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
+    sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: (lsGet('lk.dash.intro') && lsGet('lk.prep.atab')) || 'dashboard', ordDate: dayNow(), ordLines: [], ordState: 'idle', otext: '', oqty: '', oneed: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
     retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, oLog: false, oDoneOpen: false, startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
@@ -5480,7 +5480,7 @@
         if (have[id]) return;
         have[id] = true;
         jobs.push(['set', ordRef(today, id), {
-          text: x.text, qty: x.qty || '', recipes: x.recipes || [], addedBy: 'Rolled over', addedById: '', addedAt: now(), ordered: false, deleted: false,
+          text: x.text, qty: x.qty || '', need: needOf(x), recipes: x.recipes || [], addedBy: 'Rolled over', addedById: '', addedAt: now(), ordered: false, deleted: false,
           rolled: (x.rolled || 0) + 1, root: root, from: x.id, rolledFrom: src.date, origBy: x.origBy || x.addedBy || '', origAt: x.origAt || (x.rolled ? 0 : x.addedAt || 0),
           ahead: !!(x.ahead || writtenLate(x, src.date, cut)), since: x.since || (writtenLate(x, src.date, cut) ? today : src.date)
         }]);
@@ -5564,19 +5564,19 @@
     var typed = t, pr = proofread(t); t = (pr.text || t).slice(0, 120);
     var hit = ingredientFor(t), p = me(), ref = fb.fs.doc(ordCol(S.ordDate));
     var oFix = pr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ');
-    var q = (reg ? String(reg.q || '') : S.oqty).trim().slice(0, 40);
+    var q = (reg ? String(reg.q || '') : S.oqty).trim().slice(0, 40), need = reg ? '' : needOf({ need: S.oneed });
     // a regular tapped over its own name typed, or the start of it ("Cre" for Cream): the boxes empty too, or Add put it
     // on the list twice (29 Oct 2026). Anything else half typed stays for its own Add.
     var own = !!reg && !!okey(S.otext) && okey(reg.text).indexOf(okey(S.otext)) === 0;
     if (!reg || own) {
       if (!reg && S.oqtyAuto && S.oqty === S.oqtyAuto) sg('ordfill', 't');   // added with the filled-in amount as it was
-      S.otext = ''; S.oqty = ''; S.oqtyAuto = '';
+      S.otext = ''; S.oqty = ''; S.oqtyAuto = ''; S.oneed = '';
     }
     draw();
     ordLearn(t, q);
     // a typed line that was not saved goes back in its box; a regular is still in its row to tap again
-    sset(ref, practiceOn(amtOn({ text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' })))
-      .then(ordReload, function (e) { failed(e, reg ? undefined : function () { if (!S.otext.trim()) { S.otext = typed; S.oqty = q; } }); });
+    sset(ref, practiceOn(amtOn(Object.assign({ text: t, qty: q, recipes: hit ? hit.ids : [], addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), ordered: false, deleted: false, orig: t !== typed ? typed.slice(0, 120) : '' }, need ? { need: need } : {}))))
+      .then(ordReload, function (e) { failed(e, reg ? undefined : function () { if (!S.otext.trim()) { S.otext = typed; S.oqty = q; S.oneed = need; } }); });
     /* like the prep list: Undo takes the line back, or after a spelling fix puts back what was typed */
     if (oFix) toast('Added, corrected ' + oFix, { label: 'Undo', fn: function () { keepWords(pr.changes); supd(ref, { text: typed.slice(0, 120), orig: '' }).then(ordReload, failed); } });
     else toast('Added to the order list', { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).then(ordReload, failed); } });
@@ -5618,6 +5618,17 @@
     if (!ids.length) return '';
     return '<span class="o-used">Used in ' + ids.slice(0, 3).map(function (id) { var r = recipeById(id); return r ? '<a href="#/r/' + encodeURIComponent(id) + '">' + esc(r.name) + '</a>' : ''; }).join(', ') + (ids.length > 3 ? ' +' + (ids.length - 3) : '') + '</span>';
   }
+  /* Low and Out (5 Nov 2026, round 2 of the work pages redesign, as drawn in B): whoever asks for an item says how
+     urgent it is, Low or Out, the amount optional. Saved as need on the order line; the page only knows these two, so
+     anything else stored there shows nothing. Out goes to the top of today's list for chefs. */
+  var O_NEED = { low: 'Low', out: 'Out' };
+  function needOf(x) { var n = x && x.need; return typeof n === 'string' && O_NEED.hasOwnProperty(n) ? n : ''; }
+  function needTag(x) { var n = needOf(x); return n ? ' <span class="o-need o-need-' + n + '">' + O_NEED[n] + '</span>' : ''; }
+  function needChipsHTML() {
+    return '<div class="w-pick o-needs" id="o-need"><span class="nb-ql" id="o-need-l">How urgent?</span><div class="seg" role="group" aria-labelledby="o-need-l">' + ['low', 'out'].map(function (n) {
+      return '<button type="button" class="seg-b" data-p="oneed" data-v="' + n + '" aria-pressed="' + (S.oneed === n) + '">' + (n === 'out' ? 'Out now' : 'Running low') + '</button>';
+    }).join('') + '</div></div>';
+  }
   function ordRow(x) {
     var canTick = canBrowse() && !x.deleted, keep = lineMenuOk(x, x.date);
     // an ordered line keeps the ⋯'s room with nothing in it, so ticking Ordered moves no row
@@ -5625,7 +5636,7 @@
     var by = x.ordered && x.orderedBy ? 'Ordered by ' + esc(x.orderedBy) + (x.orderedAt ? ' ' + clock(x.orderedAt) : '') : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : x.addedBy ? esc(x.addedBy) + (x.addedAt ? ' ' + clock(x.addedAt) : '') : '');
     return '<li class="nb-row' + (x.ordered ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '">' +
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc('Ordered: ' + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
-      '<span class="nb-main"><span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') +
+      '<span class="nb-main"><span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + needTag(x) +
       // Not sent on the words' line, before Used in (a line of its own, .o-used), so its room never adds a line
       (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + recipeChips(x) + '</span>' +
       metaHTML([], by) + '</span>' +
@@ -5715,7 +5726,7 @@
     var add = can('add') && S.ordDate === today ?
       '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" enterkeyhint="done" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
       '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' +
-      '<div class="w-pick nb-units" id="o-units">' + unitChipsHTML('o', S.oqty) + '</div><div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintFull()) + '</p>' + oRegsHTML() + '</form>' : '';
+      '<div class="w-pick nb-units" id="o-units">' + unitChipsHTML('o', S.oqty) + '</div>' + needChipsHTML() + '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintFull()) + '</p>' + oRegsHTML() + '</form>' : '';
     var overdue = onToday ? shown.filter(function (x) { return !x.ordered && ordWait(x, today) > ORD_LATE; }) : [];
     if (overdue.length) shown = shown.filter(function (x) { return overdue.indexOf(x) < 0; });
     // waiting from earlier days: today's lines that rolled over (the ones more than 3 days old in their own block, as
@@ -5737,7 +5748,7 @@
     var offO = S.ordState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var body =
       (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
-        offO + (own.length ? '<ul class="nb-rows">' + own.slice().sort(byAdded).map(ordRow).join('') + '</ul>' : (waitHTML || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))) + waitHTML);
+        offO + (own.length ? '<ul class="nb-rows">' + own.slice().sort(br && onToday ? function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') || byAdded(a, b); } : byAdded).map(ordRow).join('') + '</ul>' : (waitHTML || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))) + waitHTML);
     return whoTopHTML() + tabs +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Order list</h2><span class="nb-date">' + esc(longDate(S.ordDate)) + '</span></div>' +
       (S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') +
@@ -7829,7 +7840,8 @@
     if (value && !options.some(function (o) { return o[0] === value; })) options = [[value, value]].concat(options);
     return '<label class="a-f"><span>' + esc(label) + '</span><select data-k="' + esc(key) + '">' + options.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === value ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>';
   }
-  function whControls(r, ready) {
+  // totals: the Wastage numbers, shown first under the dates (5 Nov 2026, admin pages step 4)
+  function whControls(r, ready, totals) {
     var h = whState(), a = AF(), period = whSelect('wh-period', 'Period', h.period, [['7', '1 week'], ['14', '2 weeks'], ['30', '30 days'], ['this', 'This month'], ['last', 'Last month'], ['months3', '3 months'], ['custom', 'Custom dates']]);
     var out = '<div class="a-filters wh-period">' + period + '<button type="button" class="chip" data-p="w-refresh">Refresh</button>' +
       '<button type="button" class="chip" data-p="csv" data-v="waste" aria-label="Download filtered wastage CSV"' + (!ready ? ' disabled' : '') + '>Export CSV</button></div>';
@@ -7837,7 +7849,7 @@
       '<label class="a-f"><span>To</span><input type="date" data-k="wh-to" max="' + dayNow() + '" value="' + esc(h.draftTo || h.to) + '"></label><button type="button" class="chip" data-p="wh-apply">Apply dates</button><span class="hint">Up to 366 days at a time.</span></div>';
     if (h.msg) out += '<p class="p-err" role="alert">' + esc(h.msg) + '</p>';
     if (r.error) return out;
-    out += '<p class="hint wh-range">' + esc(whSpan(r)) + ' (inclusive)</p><div class="wh-tabs" role="group" aria-label="Wastage view">' + [['history', 'History'], ['summary', 'Summary'], ['reviews', 'Daily reviews']].map(function (v) { return '<button type="button" class="chip" data-p="wh-view" data-v="' + v[0] + '" aria-pressed="' + (h.view === v[0]) + '">' + v[1] + '</button>'; }).join('') + '</div>';
+    out += '<p class="hint wh-range">' + esc(whSpan(r)) + ' (inclusive)</p>' + (totals || '') + '<div class="wh-tabs" role="group" aria-label="Wastage view">' + [['history', 'History'], ['summary', 'Summary'], ['reviews', 'Daily reviews']].map(function (v) { return '<button type="button" class="chip" data-p="wh-view" data-v="' + v[0] + '" aria-pressed="' + (h.view === v[0]) + '">' + v[1] + '</button>'; }).join('') + '</div>';
     if (h.view === 'reviews') return out;
     var names = Object.create(null), opts = [];
     ((S.wStats && S.wStats.lines) || []).forEach(function (x) { if (x.addedBy) names[x.addedBy] = 1; });
@@ -7881,14 +7893,14 @@
     var r = whRange(), h = whState();
     if (!r.error) loadWStats(false);
     var ws = S.wStats, ready = !r.error && ws && !ws.loading && !ws.error && ws.tag === whTag() && ws.from <= r.from && ws.to >= r.to;
-    var head = '<section class="set-block wh-report wh-' + h.view + '"><h3 class="a-title">Wastage</h3>' + whControls(r, ready);
+    var lines = null, prev = null;
+    if (ready && h.view !== 'reviews') { lines = whLines(r, false); prev = h.view === 'summary' ? whLines(r.prev, false) : null; }
+    var head = '<section class="set-block wh-report wh-' + h.view + '"><h3 class="a-title">Wastage</h3>' + whControls(r, ready, lines ? whTotals(lines, r, prev) : '');
     if (r.error) return head + '<p class="p-err" role="alert">' + esc(r.error) + '</p></section>';
     if (ws && ws.error) return head + '<p class="p-err wh-error" role="alert">' + esc(ws.error) + '</p></section>';
     if (!ready) return head + inkWait('Loading wastage for ' + whSpan(r) + '...', 'waste', 4) + '</section>';
     var foot = '<p class="hint a-upd">Updated ' + esc(clock(ws.at)) + '. Refresh reads the newest.</p></section>';
     if (h.view === 'reviews') return head + whReviewsHTML(r) + foot;
-    var lines = whLines(r, false), prev = h.view === 'summary' ? whLines(r.prev, false) : null;
-    head += whTotals(lines, r, prev);
     if (h.view === 'history') return head + wLogHTML(r) + foot;
     return head + whSummaryHTML(r, lines, prev) + foot;
   }
@@ -9850,6 +9862,7 @@
     if (a === 'miss-hide') { sset(docRef('misses', id), { hidden: true, q: ((S.misses || []).filter(function (x) { return x.id === id; })[0] || {}).q || id }, true).then(function () { loadMisses(true); }, failed); return; }
     // "Add 5 L": the usual amount goes in and the line is added in the same tap, on the prep list and the order list
     if (a === 'qset' || a === 'oqset') sg('usual', 't');
+    if (a === 'oneed') { var nv = el.getAttribute('data-v'); S.oneed = O_NEED.hasOwnProperty(nv) && S.oneed !== nv ? nv : ''; var nb = S.root.querySelector('#o-need'); if (nb) nb.outerHTML = needChipsHTML(); return; }
     if (a === 'punit' || a === 'ounit') {
       var ou = a === 'ounit', uv = el.getAttribute('data-v');
       if ((ou ? O_UNITS : P_UNITS).indexOf(uv) < 0) return;
