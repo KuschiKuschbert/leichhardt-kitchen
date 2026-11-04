@@ -10,22 +10,25 @@ const { R, ok } = L.results(), { txt } = L;
   await p.fill('#p-text', 'Slice tomatoes');
   await p.press('#p-text', 'Enter');
   await L.settle(p, 500);
-  ok(await p.$('.p-sync') === null, 'sync: no strip in the first 3 seconds');
+  // the strip is the floating band since 4 Nov 2026 (tests/signal-band.test.js): up while it has the class is-on
+  ok(await p.$('.p-sync.is-on') === null, 'sync: no strip in the first 3 seconds');
   await L.settle(p, 3200);
-  ok(/Not sent yet/.test(await txt(p, '.p-sync') || ''), 'sync: "Not sent yet" strip after 3 seconds');
+  ok(/Not sent yet/.test(await txt(p, '.p-sync.is-on') || ''), 'sync: "Not sent yet" strip after 3 seconds');
   ok(await p.evaluate(() => window.LK_PREP.unsaved()), 'sync: unsaved() is true while writes wait');
   await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
-  await L.settle(p, 2500);
-  ok(await p.$('.p-sync') === null, 'sync: strip goes when the writes are sent');
+  await L.settle(p, 500);
+  ok(/^All sent \d\d:\d\d\./.test(await txt(p, '.p-sync.is-on') || ''), 'sync: once the writes are sent the band says All sent');
+  await L.settle(p, 3500);
+  ok(await p.$('.p-sync:not([hidden])') === null, 'sync: strip goes 3 seconds after the writes are sent');
   ok(!(await p.evaluate(() => window.LK_PREP.unsaved())), 'sync: unsaved() is false again');
 
   // offline flag
   await p.context().setOffline(true);
   await L.settle(p, 300);
-  ok(/No signal/.test(await txt(p, '.p-sync') || ''), 'sync: "No signal" strip when the phone goes offline');
+  ok(/No signal/.test(await txt(p, '.p-sync.is-on') || ''), 'sync: "No signal" strip when the phone goes offline');
   await p.context().setOffline(false);
-  await L.settle(p, 300);
-  ok(await p.$('.p-sync') === null, 'sync: strip goes when the signal is back');
+  await L.settle(p, 500);
+  ok(await p.$('.p-sync:not([hidden])') === null, 'sync: strip goes when the signal is back (nothing waited, so no All sent)');
 
   // half-written line blocks the self-update even after leaving the box
   await p.fill('#p-text', 'Half written');

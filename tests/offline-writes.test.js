@@ -9,6 +9,8 @@
 // inside the words, so a tick on a good signal never moves the rows below (review of the first fix, 27 Oct 2026). While
 // the strip is up every row keeps the mark's room, so a tick with no signal moves no row either (second review).
 // The stand-in keeps its data in localStorage, so a lost write cannot be shown here: 'hold' stands in for a waiting write.
+// Since 4 Nov 2026 the strip is the floating band (tests/signal-band.test.js): one element kept in the page, up while it
+// has the class is-on, and the update band waits behind it.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const today = L.ymd(new Date(L.NOW));
@@ -72,7 +74,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     p = await L.open(b, '#/prep', { who: 'ann', wait: 1500 });
     await p.context().setOffline(true);
     await L.settle(p, 300);
-    const strip = await txt(p, '.p-sync') || '';
+    const strip = await txt(p, '.p-sync.is-on') || '';
     ok(strip === 'No signal. Keep the book open: your changes send when the signal is back.', 'strip: no signal says to keep the book open (' + strip + ')');
     ok(!/kept on this device|Lines marked/.test(strip), 'strip: it no longer promises the changes are kept on the device');
     await p.context().setOffline(false);
@@ -85,8 +87,8 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     // every write is pending until the server answers, even on a good signal: no mark in the first 3 seconds
     ok(await unsent(p, 'Wipe the pass shelves') === 'none', 'prep, good signal: no Not sent while the server answers (first 3 seconds) (' + await unsent(p, 'Wipe the pass shelves') + ')');
     ok(await asks(p), 'leaving: a write waiting for the server, the browser asks first');
-    await L.waitFor(p, () => !!document.querySelector('.p-sync'), null, 5000).catch(() => {});
-    ok(/^Not sent yet\./.test(await txt(p, '.p-sync') || ''), 'prep: after 3 seconds the strip says Not sent yet');
+    await L.waitFor(p, () => /^Not sent yet\./.test((document.querySelector('.p-sync.is-on') || {}).textContent || ''), null, 5000).catch(() => {});
+    ok(/^Not sent yet\./.test(await txt(p, '.p-sync.is-on') || ''), 'prep: after 3 seconds the strip says Not sent yet');
     ok(await unsent(p, 'Wipe the pass shelves') === 'shown', 'prep at 390: with the strip up, the waiting line shows Not sent (' + await unsent(p, 'Wipe the pass shelves') + ')');
     ok(await p.evaluate(() => !!document.querySelector('.nb-row .nb-t .nb-unsent')), 'prep: Not sent sits inside the words, like Urgent');
     await release(p);
@@ -288,7 +290,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     const t = await txt(p, '#prep-root') || '';
     ok(t.indexOf(NO_LIST) >= 0 && t.indexOf('Lemons') > t.indexOf(NO_LIST) && !/Milk/.test(t), 'orders not loaded, a line written: the note stays and the line shows under it (' + t.slice(0, 160) + ')');
     ok(await unsent(p, 'Lemons') === 'shown' && await p.evaluate(() => !!document.querySelector('.nb-row .nb-t .nb-unsent')), 'orders not loaded, a line written: it says Not sent, inside the words (' + await unsent(p, 'Lemons') + ')');
-    ok(await txt(p, '.p-sync') === 'No signal. Keep the book open: your changes send when the signal is back.', 'orders not loaded: the strip says to keep the book open');
+    ok(await txt(p, '.p-sync.is-on') === 'No signal. Keep the book open: your changes send when the signal is back.', 'orders not loaded: the strip says to keep the book open');
     ok(await asks(p), 'orders not loaded, a line waiting: leaving asks first');
     await p.context().setOffline(false);
     await p.evaluate(() => { window.__fake.warm(); });
@@ -329,7 +331,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       ok(await unsent(p, text) === 'shown', hash + ', strip up: the waiting line shows Not sent (' + await unsent(p, text) + ')');
       await release(p);
       await L.settle(p, 500);
-      ok(!!(await p.$('.p-sync')) && await unsent(p, text) === 'none', hash + ', strip still up: Not sent goes from the line the server has (' + await unsent(p, text) + ')');
+      ok(!!(await p.$('.p-sync.is-on')) && await unsent(p, text) === 'none', hash + ', strip still up: Not sent goes from the line the server has (' + await unsent(p, text) + ')');
       ok(errs(p).length === 0, hash + ', strip still up: no page errors ' + errs(p).join(' | '));
     });
   }
@@ -442,20 +444,24 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     ok(await reloaded(p), 'update, half a line typed after the tap: confirmed discard updates');
   });
 
-  // 6. Update now with no signal: the book stays as it is, and updates once the signal is back
+  // 6. Update now with no signal: the book stays as it is, and updates once the signal is back. On the kitchen pages the
+  // update band waits behind the No signal band (4 Nov 2026), so Update now is tapped on Recipes.
   await step('6', async () => {
     p = await L.open(b, '#/prep', { wait: 1500 });
     await updBar(p);
     await wide(p);
     await p.context().setOffline(true);
-    await L.settle(p, 300);
+    await L.settle(p, 600);
+    ok(await p.evaluate(() => getComputedStyle(document.querySelector('.upd-bar')).visibility === 'hidden' && !!document.querySelector('.p-sync.is-on')), 'update, no signal, on the prep list: the update band waits behind the No signal band');
+    await p.evaluate(() => { location.hash = '#/recipes'; });
+    await L.settle(p, 800);
     await mark(p);
     await p.click('.upd-bar button');
     await L.settle(p, 1500);
     ok(!(await reloaded(p)), 'update, no signal: the tap does not reload into an empty book');
     const u = await bar(p);
     ok(u && /^No signal\./.test(u.t) && u.fits, 'update, no signal: the strip says so, and it fits at 390 in a wide font (' + JSON.stringify(u) + ')');
-    ok(!!(await p.$('#prep-root .nb-left .nb-rows, #prep-root .nb-left .nb-title')), 'update, no signal: the prep list is still there');
+    ok(await p.evaluate(() => !!document.querySelector('#find') && document.querySelectorAll('#app .shelf, #app .tile-group').length > 0), 'update, no signal: the recipes are still there');
     await p.context().setOffline(false);
     await L.settle(p, 300);
     await p.click('.upd-bar button');
@@ -724,15 +730,15 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   for (const hash of ['#/prep', '#/orders']) {
     await step('12 ' + hash, async () => {
       p = await L.open(b, hash, { admin: true, who: '', wait: 1500 });
-      ok(await p.evaluate(() => document.querySelectorAll('.nb-row').length > 0 && !document.querySelector('.p-sync, .nb-held, .nb-unsent')), hash + ', Google device, good signal: the list, no strip and no marks');
+      ok(await p.evaluate(() => document.querySelectorAll('.nb-row').length > 0 && !document.querySelector('.p-sync:not([hidden]), .nb-held, .nb-unsent')), hash + ', Google device, good signal: the list, no strip and no marks');
       await p.context().setOffline(true);
       await L.settle(p, 300);
-      const s = await p.evaluate(() => ({ strip: ((document.querySelector('.p-sync') || {}).textContent || '').trim(), rows: document.querySelectorAll('.nb-rows .nb-row').length, held: document.querySelectorAll('.nb-rows .nb-row .nb-held').length }));
+      const s = await p.evaluate(() => ({ strip: ((document.querySelector('.p-sync.is-on') || {}).textContent || '').trim(), rows: document.querySelectorAll('.nb-rows .nb-row').length, held: document.querySelectorAll('.nb-rows .nb-row .nb-held').length }));
       ok(s.strip === 'No signal. Keep the book open: your changes send when the signal is back.' && s.rows > 0 && s.held === s.rows, hash + ', Google device, no signal: the strip with the room for Not sent (' + JSON.stringify(s) + ')');
       ok(!(await L.overflow(p)), hash + ', Google device, no signal: no sideways scroll at 390');
       await p.context().setOffline(false);
       await L.settle(p, 500);
-      ok(await p.evaluate(() => !document.querySelector('.p-sync, .nb-held, .nb-unsent')), hash + ', Google device: signal back, the strip and the room go');
+      ok(await p.evaluate(() => !document.querySelector('.p-sync:not([hidden]), .nb-held, .nb-unsent')), hash + ', Google device: signal back, the strip and the room go');
       ok(errs(p).length === 0, hash + ', Google device: no page errors ' + errs(p).join(' | '));
     });
   }
@@ -1242,7 +1248,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       ok(tag === 'shown', what + ': with no signal the line shows Not sent (' + tag + ')');
       await p.evaluate(() => window.__fake.ack());
       await L.settle(p, 400);
-      const s = await p.evaluate(t => { const r = [...document.querySelectorAll('[data-ln]')].find(x => x.__k === 1); return r ? { same: true, inPage: document.body.contains(r) && r.textContent.indexOf(t) >= 0, unsent: !!r.querySelector('.nb-unsent'), held: !!r.querySelector('.nb-held'), strip: !!document.querySelector('.p-sync') } : { same: false }; }, text);
+      const s = await p.evaluate(t => { const r = [...document.querySelectorAll('[data-ln]')].find(x => x.__k === 1); return r ? { same: true, inPage: document.body.contains(r) && r.textContent.indexOf(t) >= 0, unsent: !!r.querySelector('.nb-unsent'), held: !!r.querySelector('.nb-held'), strip: !!document.querySelector('.p-sync.is-on') } : { same: false }; }, text);
       ok(s.same && s.inPage && !s.unsent && s.held && s.strip, what + ': the server has it, so the mark goes from the same row, which keeps its room under the strip (' + JSON.stringify(s) + ')');
       ok(!(await L.overflow(p)), what + ': no sideways scroll at 390');
       await release(p);

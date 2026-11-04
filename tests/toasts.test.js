@@ -1,6 +1,7 @@
 // The docket slip (4 Nov 2026, was a see-through pill from 21 Oct 2026): one solid slip on the tab bar, Undo with its time
 // left as a line, the older Undo a tab above it, errors with a red edge that stay, a tap on the words or a swipe down puts a
-// toast away, a toast without a button goes when the page scrolls, and the update notice is a strip at the top.
+// toast away, a toast without a button goes when the page scrolls, and the update notice is a band at the top (since 4 Nov
+// 2026 it floats over the page just under the top bar: tests/signal-band.test.js).
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -83,21 +84,21 @@ const seeThrough = bg => { const m = /rgba\([^)]*,\s*([\d.]+)\)/.exec(bg || '');
   ok(p.errors.length === 0, '1280: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // the update notice is a slim strip at the top, under nothing and over nothing that matters
+  // the update notice is a slim solid band just under the top bar, over the page without moving it, away from the slip
   for (const w of [390, 1280]) {
     p = await L.open(b, '#/prep', { wait: 1500, width: w, height: w === 390 ? 844 : 800 });
     await p.click('#nbr-i1 .nb-box'); await L.settle(p, 200); // a real tap: the book only reloads by itself before anyone touches it
     await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
     await L.waitFor(p, () => !!document.querySelector('.upd-bar'), null, 3000).catch(() => {});
-    await p.evaluate(() => window.scrollTo(0, 0)); await L.settle(p, 200);
+    await p.evaluate(() => window.scrollTo(0, 0)); await L.settle(p, 400);
     const bar = await box(p, '.upd-bar'), top = await box(p, '.wtop'), tt = await box(p, '.p-toast');
-    ok(bar && bar.top === 0 && bar.h <= 52, w + ': the update strip is at the top and slim (' + (bar && bar.h) + ' px)');
-    ok(bar && top && top.top >= bar.bottom - 1, w + ': the strip does not cover the top bar');
-    ok(bar && seeThrough(bar.bg), w + ': the strip is see-through (' + (bar && bar.bg) + ')');
-    ok(tt && bar && tt.top > bar.bottom + 200, w + ': the slip stays at the bottom, away from the strip');
-    await p.evaluate(() => window.scrollTo(0, 600)); await L.settle(p, 200);
-    const bar2 = await box(p, '.upd-bar');
-    ok(bar2 && Math.abs(bar2.top) < 1, w + ': the strip stays at the top while the page scrolls');
+    ok(bar && top && Math.abs(bar.top - top.bottom) <= 1 && bar.h <= 52, w + ': the update band sits just under the top bar and is slim (' + (bar && bar.top) + ' against ' + (top && top.bottom) + ', ' + (bar && bar.h) + ' px)');
+    ok(bar && top && bar.top >= top.bottom - 1, w + ': the band does not cover the top bar');
+    ok(bar && !seeThrough(bar.bg), w + ': the band is solid, like the slip (' + (bar && bar.bg) + ')');
+    ok(tt && bar && tt.top > bar.bottom + 200, w + ': the slip stays at the bottom, away from the band');
+    await p.evaluate(() => window.scrollTo(0, 600)); await L.settle(p, 300);
+    const bar2 = await box(p, '.upd-bar'), top2 = await box(p, '.wtop');
+    ok(bar2 && top2 && Math.abs(bar2.top - Math.max(0, top2.bottom)) <= 1, w + ': while the page scrolls the band stays under the top bar, then at the top of the screen (' + (bar2 && bar2.top) + ')');
     ok(!(await L.overflow(p)), w + ': no sideways scroll with the strip');
     ok(p.errors.length === 0, w + ': no page errors ' + p.errors.join(' | '));
     await p.context().close();
