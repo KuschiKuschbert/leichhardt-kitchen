@@ -56,7 +56,7 @@ An independent cultural-symbol review of six stamps, rendered at 24, 32, 44 and 
 - Sinulog: three candles at different heights over the river; two candles read as a pause button.
 - Durga Puja: a dhak drum lying across, with its fan plume and a beater; the upright drum read as a takeaway cup.
 
-Galungan and Kuningan are the least certain: ask the Balinese staff to look at them.
+The head chef confirmed all five on 4 November 2026.
 
 ## Working rules (moved from CLAUDE.md, 3 Nov 2026)
 
