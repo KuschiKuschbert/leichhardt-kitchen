@@ -147,6 +147,7 @@ const mailReads = p => p.evaluate(() => (window.__fake.reads || []).filter(k => 
   ok(s[fsKey(['mail', 'm2'])].done === true && s[fsKey(['mail', 'm2'])].doneAt >= L.NOW && s[fsKey(['mailstat', 'm2'])].done === true, 'tick: the mail and its status are done');
   ok(s[fsKey(['mail', 'm2'])].from === 'bo', 'tick: the sender is kept');
   ok((await p.$$('.ml-admin [data-lv="mail"] .ml-row')).length === 2, 'tick: the line leaves the open list');
+  ok(/^Ticked off: \S/.test(await p.evaluate(() => { const e = document.querySelector('.p-toast[data-toast="new"] .p-toast-msg') || document.querySelector('.p-toast .p-toast-msg'); return e ? e.textContent.trim() : ''; })) && !!(await p.$('.p-toast [data-p="toast-act"]')), 'tick: the slip says Ticked off and the message, with Undo (5 Nov 2026)');
   ok(/Done in the last 30 days \(1\)/.test(await txt(p, '.ml-donebox summary') || ''), 'tick: it shows under Done');
   ok(await badge(p) === '2', 'tick: the count on the key goes down to 2');
   // change how soon it matters
@@ -158,6 +159,7 @@ const mailReads = p => p.evaluate(() => (window.__fake.reads || []).filter(k => 
   await tap(p, '[data-lv="maildone"] [data-p="ml-tick"][data-id="m2"]'); await L.settle(p, 700);
   s = await store(p);
   ok(s[fsKey(['mail', 'm2'])].done === false && s[fsKey(['mailstat', 'm2'])].done === false, 'untick: back to open');
+  ok(/^Back in the inbox: \S/.test(await p.evaluate(() => { const e = document.querySelector('.p-toast[data-toast="new"] .p-toast-msg') || document.querySelector('.p-toast .p-toast-msg'); return e ? e.textContent.trim() : ''; })), 'untick: the slip says it is back in the inbox');
   ok(await badge(p) === '3', 'untick: the count is 3 again');
   // the switch for sous chefs, off by default (23 Oct 2026): the head chef turns it on in the Mail tab
   ok(!!(await p.$('[data-k="ml-sous"]')) && !(await p.$eval('[data-k="ml-sous"]', e => e.checked)), 'sous chef switch: on the Mail tab, off by default');
