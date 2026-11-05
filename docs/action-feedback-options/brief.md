@@ -2,7 +2,7 @@
 
 Requested 5 November 2026. The head chef's words: "I just saved something, the button got greyed out, nothing was scrolled or confirmed. There was no feedback that the action I was just doing came through. I was used to some scrolling, or back to top, or something that confirms my action. Can we audit the whole page for this kind of behaviour, see what we already got, make this a CLAUDE.md rule or skill, and then improve?"
 
-**Status: round 2 scored, waiting for the head chef's choice.** Recommended: A with B's mark on admin cards. `index.html` in this folder is the working comparison (open it in a browser): today's book, the shared part and the three designs, drawn with the book's colours and fonts. Every line, name and time in it is made up. Nothing in it saves. The baseline is `main` at `6f21a3a`.
+**Status: chosen 5 November 2026, the mix of A and C with a small stamp (see Chosen). Step 1 built.** `index.html` in this folder is the working comparison (open it in a browser): today's book, the shared part and the three designs, drawn with the book's colours and fonts. Every line, name and time in it is made up. Nothing in it saves. The baseline is `main` at `6f21a3a`.
 
 ## Today
 
@@ -138,13 +138,23 @@ What they asked to carry into the winner:
 
 Not recommended now: the scroll after Close (B). The head chef asked for "scrolling, or back to top, or something that confirms my action"; four of six reviewers judged that moving the list on the line during service costs more than it gives. If A is not enough after a fortnight of use, B's landing on Prep only is the next step. That is the head chef's call: see below.
 
-## Build steps (if A is chosen)
+## Chosen
 
-1. **Saves say Saved, and off looks off.** Outlined buttons that are switched off look off everywhere (`css/app.css`). Order cut-offs, the recipe editor and the function editor Save say Saving..., Saved with a tick, Try again; the confirmation is a full-size green line with the time, above the tab bar; Undo unsaved changes and "Save to make the change" go once saved. The rule note (`docs/action-feedback.md`) and its pointer in `CLAUDE.md` come with it.
-2. **The slip says what and where.** Add on Prep, Orders, Wastage and Transfers names the line and its section; Undo, untick, un-order and Put back say Undone with the name.
-3. **Admin cards and pages that report at the top.** The supplier that changed on Order cut-offs, the supplier catalogue, Record order placed, the Review desk and the proofreader say Saved where the person is looking, with the "Saved 14:02" mark on the card, no scroll.
+**5 November 2026: the mix of A and C, with a small stamp** (section Mix above). The head chef asked "what would a great mix look like between A and C with a small stamp?", saw the drawing and said build it. Not chosen: B's scroll after Close, A's full-size line alone, C's Undo in the ⋯ after Close.
 
-The other easy-to-miss actions in the audit are brought in line when someone next works on that page (`docs/open-work.md`).
+## Build steps (the mix)
+
+1. **Saves say Saved, with a stamp, and off looks off.** Built 5 November 2026 with this record. Outlined buttons that are switched off look off on every page (`css/app.css`): Undo unsaved changes no longer looks live beside Saved. Order cut-offs uses the book's Save button (`svButton()`): Saving... on the button only, Saved with a tick for 1.2 s once the server answers, then off; Try again with a red line on failure. The supplier that changed wears "Saved 14:02" until the page is left or it changes again, and the line under the buttons keeps "Saved 14:02 · The sous chefs see the new cut-offs now." until anything changes, in ink at full size instead of the small grey line. The recipe editor's Save says Saving..., Saved with a tick, Try again the same way, its bar wears "Saved 14:02 · Version 1.", and "Save to make the change" only shows while there is something to save. Buttons that change while a box is being typed in are changed in place, never replaced, so a tap that leaves a box onto Save is not lost (`btnPatch()`). `tests/after-the-tap.test.js`: 14 failed of 30 on the old code, 0 of 30 with the change. `tests/order-cutoffs.test.js` and `tests/cutoff-lead-days.test.js` read the stamp where they read the grey line.
+2. **The add sheets and the slip.** "Added just now" under the Add row on Prep, Orders, Wastage and Transfers: the last two lines with their section, each with a 44 px Undo for the 2 minutes the rules allow (`ownAddUndo()`); no slip at the top while the sheet is open; after Close the slip names the last line with Undo, above the Add a line bar; lines this phone just added wear "New 14:02" for 2 minutes (memory only, by line id with an end time). Ticks, removes, Undo, untick, un-order and Put back name the line on the slip ("Undone: Slice tomatoes").
+3. **The other Saves and the pages that report at the top.** The function editor, the supplier catalogue, Record order placed, the Review desk, the proofreader, drinks, to-do and mail: Saved on the button, the stamp on what changed, the confirmation where the person is looking.
+
+The other easy-to-miss actions in the audit are brought in line when someone next works on that page (`docs/open-work.md`, Bringing the code in line).
+
+Built (step 1), 390 px with synthetic data:
+
+| Cut-offs, just saved | Cut-offs, 3 s later | Recipe editor, just saved |
+| --- | --- | --- |
+| ![Save cut-offs says Saved with a tick, Undo unsaved changes looks off](previews/built-cutoffs-saved.png) | ![The line under the buttons keeps Saved 12:30 and what it means](previews/built-cutoffs-after.png) | ![The bar wears Saved 14:00 and Version 1, the button says Saved](previews/built-recipe-saved.png) |
 
 ## Files
 

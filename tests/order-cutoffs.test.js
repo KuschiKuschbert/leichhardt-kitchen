@@ -125,7 +125,8 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
   ok(saved.length === 4 && saved[1].name === 'PFD' && saved[1].at === 930 && saved[1].pre === 0 && saved[1].dd.join() === '1,2,3,4,5,6' && saved[1].lead === 0 && saved[0].lead === 480 && saved[2].lead === 240 && saved[3].at === -1, 'admin: Save writes the cut-offs to config/main');
   ok(saved[1].days.length === 6 && saved[1].days.every(l => l.pre === 0 && l.at === 930) && saved[0].days.every(l => l.at === 360 && l.pre === 1) && JSON.stringify(saved[3].days) === '[]', 'admin: Save keeps a line per delivery day beside the older fields (5 Nov 2026)');
   ok((s[CFG].people || []).length === 4 && s[CFG].headId === 'head', 'admin: the staff list keeps the daily head-PIN owner');
-  ok(/Saved/.test(await txt(p, '.a-cut .saved')), 'admin: Saved shows');
+  // since 5 Nov 2026 (docs/action-feedback.md) the supplier that changed wears "Saved 14:02", not a grey line
+  ok(/^Saved \d\d:\d\d$/.test(await txt(p, '.a-cut .lk-stamp') || ''), 'admin: Saved shows');
   // the People tab's full save keeps the cut-offs
   await L.adminTab(p, 'people');
   await p.fill('[data-a="name"][data-i="2"]', 'Bo B'); await L.settle(p, 200);
