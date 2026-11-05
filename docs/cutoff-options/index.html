@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Order Cut-off Designs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+/* Order cut-off designs (5 Nov 2026): a preview only, never loaded by the book. Three designs for the head chef's
+   supplier patterns ("Wednesday's order by Friday 16:00"), drawn with the book's own colours and fonts.
+   All suppliers and times are made up, except the supplier names the book already offers (PFD, Simon George). */
+:root {
+  --bg: #FBFAF7; --paper: #FFFFFF; --ink: #1C1D1F; --muted: #55585E; --faint: #6B7077;
+  --accent: #E2602A; --tag: #B83F15; --beige: #F2EFE8; --line: #E0DBCF; --edge: #D9D4C8; --hit: #FFF1E6;
+  --bar: #2B2A27; --bar-text: #FBF8F1; --bar-accent: #F08A4B; --done-ink: #237347; --done-tint: #EAF5EE;
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --radius: 10px; --r-act: 8px; --r-pick: 999px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--body); }
+a { color: inherit; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 16px; }
+.band { background: var(--bar); color: var(--bar-text); }
+.band .wrap { padding-block: 36px 32px; }
+.kick { margin: 0 0 8px; font: 600 12px/1.3 var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--bar-accent); }
+.band h1 { margin: 0; font: 700 clamp(2.4rem, 6vw, 4rem)/0.95 var(--display); letter-spacing: -.02em; }
+.lede { max-width: 66ch; margin: 14px 0 0; color: #E9E4D8; }
+section.sec { padding-block: 36px 8px; }
+h2.h2 { margin: 0 0 6px; font: 700 clamp(1.8rem, 3.4vw, 2.4rem)/1.05 var(--display); }
+.sub { margin: 0 0 18px; max-width: 72ch; color: var(--muted); }
+.note { padding: 16px 18px; border-left: 4px solid var(--accent); background: var(--paper); border-radius: 0 var(--radius) var(--radius) 0; max-width: 80ch; }
+.note p { margin: 0 0 8px; } .note p:last-child { margin: 0; }
+.pc { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 16px 0; }
+.pc div { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.pc h3 { margin: 0 0 6px; font: 700 1.2rem var(--display); letter-spacing: .02em; }
+.pc ul { margin: 0; padding-left: 1.1rem; }
+.shots { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; margin: 18px 0; }
+.cap { margin: 0 0 6px; font: 700 .8125rem var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--tag); }
+table.cmp { width: 100%; border-collapse: collapse; background: var(--paper); font-size: .95rem; }
+.tbl { overflow-x: auto; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent); }
+@media (min-width: 900px) { .tbl { -webkit-mask-image: none; mask-image: none; } }
+table.cmp th, table.cmp td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+table.cmp th { font: 700 .875rem var(--display); letter-spacing: .06em; text-transform: uppercase; background: var(--beige); }
+
+/* ---------- the mock screens ---------- */
+.frame { container-type: inline-size; background: var(--bg); border: 1.5px solid var(--edge); border-radius: 12px; overflow: hidden; }
+.frame.lap { width: 100%; }
+.shots > div { min-width: 0; max-width: 100%; }
+.shots > div.wide { flex: 1 1 1000px; max-width: 1000px; }
+img { max-width: 100%; height: auto; }
+.frame.ph { width: 390px; max-width: 100%; }
+.adm { padding: 20px 22px 24px; }
+.ph .adm { padding: 16px; }
+.adm h3.t { margin: 0 0 2px; font: 700 1.6rem var(--body); }
+.hint { font-size: .875rem; color: var(--muted); margin: 0; }
+.label { font: 700 .875rem var(--display); letter-spacing: .06em; text-transform: uppercase; }
+.box { display: flex; align-items: center; height: 3.1rem; padding: 0 1rem; font-size: 1.0625rem; background: var(--paper); border: 1.5px solid var(--ink); border-radius: var(--radius); white-space: nowrap; overflow: hidden; }
+.sel { display: inline-flex; align-items: center; gap: .3rem; height: 2.75rem; padding: 0 .85rem; border: 1.5px solid var(--ink); border-radius: var(--r-pick); background: var(--paper); font-weight: 600; white-space: nowrap; }
+.sel::after { content: '\25BE'; font-size: .8em; }
+.sel.t { border-radius: var(--radius); font-variant-numeric: tabular-nums; }
+.btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 1rem; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); font-weight: 600; font-size: 1rem; }
+.btn.dark { background: var(--ink); color: #fff; }
+.btn.or { background: var(--accent); border-color: var(--accent); color: #fff; }
+.lnk { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+.f { display: flex; flex-direction: column; gap: .35rem; min-width: 0; }
+.say { font-size: .9rem; color: var(--muted); margin: 0; }
+.say b { color: var(--ink); }
+.eds { list-style: none; margin: 14px 0 0; padding: 0; }
+.ed { padding: 16px 0; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.row > .f { flex: 1 1 200px; }
+.ph .row > .f { flex: 1 1 100%; }
+.tag { display: inline-block; padding: 1px 8px; border-radius: var(--r-pick); background: var(--hit); color: var(--tag); font-weight: 700; font-size: .78rem; letter-spacing: .03em; text-transform: uppercase; }
+.tag.grey { background: var(--beige); color: var(--muted); }
+.foot { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+
+/* A: the usual rule, then each delivery day */
+.each { border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+.each-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.each-h.shut { border-bottom: 0; }
+.er { display: grid; grid-template-columns: 4.5rem 1fr auto; gap: 6px 10px; align-items: center; padding: 6px 12px; min-height: 52px; }
+.er + .er { border-top: 1px solid var(--line); }
+.er > b { font-weight: 700; }
+.er .when { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.er.is-ch { background: var(--hit); }
+.er > .tag, .er > .lnk { justify-self: start; }
+@container (max-width: 520px) { .er { grid-template-columns: 3.5rem 1fr; } .er > :last-child { grid-column: 2; } }
+
+/* B: the order week */
+.remc { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+.remc .rr { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.sw { display: inline-flex; align-items: center; width: 52px; height: 30px; border-radius: 15px; background: var(--ink); padding: 3px; justify-content: flex-end; }
+.sw::after { content: ''; width: 24px; height: 24px; border-radius: 50%; background: #fff; }
+.split { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+@container (max-width: 700px) { .split { grid-template-columns: 1fr; } }
+table.wk { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); table-layout: fixed; }
+table.wk th, table.wk td { padding: 6px 4px; border-bottom: 1px solid var(--line); text-align: center; font-size: .82rem; vertical-align: top; }
+table.wk tr:last-child td { border-bottom: 0; }
+table.wk th { font: 700 .8rem var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+table.wk th.sn, table.wk td.sn { text-align: left; width: 26%; padding-left: 10px; font: 600 .9rem var(--body); color: var(--ink); letter-spacing: 0; text-transform: none; }
+table.wk tr.on td { background: var(--hit); }
+.oc { display: block; border: 1.5px solid var(--accent); border-radius: 6px; padding: 2px 2px; font-weight: 700; color: var(--tag); line-height: 1.2; }
+.oc small { display: block; font-weight: 600; color: var(--muted); }
+.dl { display: block; margin-top: 3px; background: var(--beige); border-radius: 6px; padding: 2px; color: var(--muted); font-weight: 600; }
+@container (max-width: 520px) {
+  table.wk th.sn, table.wk td.sn { width: 30%; font-size: .8rem; padding-left: 6px; }
+  table.wk th, table.wk td { padding: 5px 1px; font-size: .72rem; }
+  .oc small, .dl .w { display: none; }
+}
+.edp { background: var(--paper); border: 1.5px solid var(--ink); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.ph .edp { border-radius: 16px 16px 0 0; box-shadow: 0 -6px 20px rgba(0,0,0,.12); }
+.ol { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.ol .arr { color: var(--muted); font-weight: 600; }
+
+/* C: one line per delivery day */
+.cnote { background: var(--beige); border-radius: var(--radius); padding: 10px 14px; margin: 14px 0 4px; font-size: .92rem; }
+.card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); margin-top: 14px; }
+.card-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.card-h .nm { font: 700 1.15rem var(--body); }
+.cl { display: grid; grid-template-columns: 7.5rem auto 1fr; gap: 6px 12px; align-items: center; padding: 6px 14px; min-height: 56px; }
+.cl + .cl { border-top: 1px solid var(--line); }
+.cl .nx { color: var(--muted); font-size: .88rem; }
+@container (max-width: 520px) { .cl { grid-template-columns: 1fr auto; } .cl .nx { grid-column: 1 / -1; margin-top: -4px; } }
+.cl.is-d { background: var(--hit); }
+.card-f { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--line); background: var(--bg); border-radius: 0 0 var(--radius) var(--radius); }
+
+/* the phone: Order list */
+.tb { display: flex; align-items: center; gap: 10px; background: var(--bar); color: var(--bar-text); height: 64px; padding: 0 14px; }
+.tb b { font: 700 1.5rem var(--body); flex: 1; }
+.tb i { width: 40px; height: 40px; border: 1.5px solid var(--bar-text); border-radius: 50%; }
+.cb { background: var(--hit); border-bottom: 1.5px solid var(--ink); padding: 6px 12px 8px; }
+.cb-top { display: flex; justify-content: space-between; }
+.cb-h { font: 700 .8125rem var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--tag); }
+.cb-row { padding-top: 2px; color: var(--muted); }
+.cb-row a { font-weight: 700; color: var(--ink); margin-right: 6px; }
+.cb-row b { color: var(--ink); }
+.pg { padding: 12px 16px 0; }
+.nb { background: #FCFAF4; border: 1.5px solid var(--ink); border-radius: 12px; padding: 14px 16px; }
+.nb h4 { margin: 0; font: 700 2.3rem/1 Georgia, serif; }
+.nbsh { margin: 14px 0 4px; font: 700 .95rem var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--tag); border-top: 2px solid var(--ink); padding-top: 10px; }
+.nbsh.sm { border: 0; margin-top: 10px; padding: 0; font-size: .82rem; color: var(--muted); }
+.tl { list-style: none; margin: 0; padding: 0; }
+.tl li { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; column-gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.tl .bx { width: 44px; height: 44px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); grid-row: span 2; }
+.tl .n { font-weight: 700; text-decoration: underline; }
+.tl .t { color: var(--muted); grid-column: 2; }
+.tl .st { grid-row: 1 / span 2; grid-column: 3; font-weight: 600; text-align: right; }
+.tl .st.soon { color: var(--tag); }
+.tl li.ahead { grid-template-columns: minmax(0, 1fr) auto; }
+.tl li.ahead .n, .tl li.ahead .t { grid-column: 1; }
+.oa { grid-row: 1 / span 2; grid-column: 2; display: inline-flex; align-items: center; min-height: 44px; padding: 0 .8rem; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); font-weight: 600; font-size: .9rem; white-space: nowrap; }
+.ctl { display: flex; gap: 8px; margin-bottom: 10px; }
+.cnt { margin: 6px 0 0; text-align: right; font: 700 1.6rem Georgia, serif; color: var(--tag); }
+.dock { margin: 12px -16px 0; padding: 10px 16px; border-top: 1px solid var(--line); background: var(--bg); }
+.dock span { display: flex; justify-content: center; align-items: center; height: 52px; border-radius: var(--r-act); background: var(--accent); color: #fff; font-weight: 700; font-size: 1.1rem; }
+.tabs { display: flex; justify-content: space-around; background: var(--bar); color: var(--bar-text); height: 68px; align-items: center; font: 700 .7rem var(--body); letter-spacing: .03em; }
+.tabs .on { color: var(--bar-accent); }
+.push { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; max-width: 390px; box-shadow: 0 2px 8px rgba(0,0,0,.06); margin-bottom: 8px; }
+.push b { display: block; }
+.push small { color: var(--faint); }
+</style>
+</head>
+<body>
+<header class="band"><div class="wrap">
+  <p class="kick">Service council, round 2 &middot; 5 November 2026 &middot; Chosen: the recommended mix, built the same day</p>
+  <h1>Order cut-offs that follow each supplier</h1>
+  <p class="lede">The head chef's ask: "if I need an order for Wednesday I have to order it before Friday 4 pm; another supplier, if I need something for Friday it has to be in by Tuesday 4 pm". Three ways to set those patterns on top of the usual cut-offs, and reminders that warn a day early. A preview only: nothing here saves, and every supplier and time is made up.</p>
+</div></header>
+
+<section class="sec"><div class="wrap">
+  <h2 class="h2">What every design shares</h2>
+  <p class="sub">Round 1 said Build smaller (3 of 5). These are the smaller core. The three designs differ only in the head chef's setup page and in how much reminder choice is left.</p>
+  <div class="note">
+    <p><b>1. Each delivery day knows its own order-by day and time.</b> "Wednesday delivery: order by Friday 16:00." "The day before at 14:00" is a quick fill, not a second rule, so nothing hides which rule wins.</p>
+    <p><b>2. Reminders name the date.</b> "for Wed 11 Nov", not "for Tuesday". Two deliveries ordered at the same time on the same day are one order and one tick: "for Mon 9 and Wed 11 Nov".</p>
+    <p><b>3. A heads-up the day before</b>, only when an order closes 2 or more days before its delivery: one line under "Tomorrow, heads-up" on the Order list's supplier list, with an Ordered already button rather than a tick box (only for an order placed early; it stops the next day's bar and pushes, with Undo), and one push at [15:00, between services, to confirm]. Never on the bar over every page.</p>
+    <p><b>4. Clashes are refused.</b> One supplier cannot close at two different times on the same day (one tick covers the day). Order-by days reach back up to 6 days; 1 or 2 weeks before stays a fill choice.</p>
+    <p><b>5. Times in 24 hours</b> on the setup page ("16:00", never "04:00 PM").</p>
+  </div>
+  <h3 class="cap" style="margin-top:24px">Every design: a sous chef's Order list, Thursday 12:30</h3>
+  <p class="sub">PFD closes today. Coast Seafood's Wednesday order closes tomorrow at 16:00, five days ahead of its delivery, so it shows under Tomorrow with its own tick. Today the book says nothing about it until Friday 12:00.</p>
+  <div class="shots">
+    <div><p class="cap">Today's book (measured)</p><img src="previews/today-orders-390.png" width="390" alt="Today's Order list on a phone: the cut-off bar shows PFD only"></div>
+    <div><p class="cap">Every design</p>
+    <div class="frame ph" id="core-phone">
+      <div class="tb"><span>&#8249;</span><b>Kitchen Book</b><i></i><i></i></div>
+      <div class="cb"><div class="cb-top"><span class="cb-h">Order cut-off</span><a class="lnk" style="font-size:.95rem">Order list</a></div>
+        <div class="cb-row"><a>PFD</a>by 14:00 <b>in 1 h 30 min</b> for Fri 6 Nov</div></div>
+      <div class="pg"><div class="ctl"><span class="box" style="flex:1;height:2.75rem">05/11/2026</span><span class="btn" style="border-radius:var(--r-pick)">Delivery arrived</span></div>
+      <div class="nb"><h4>Order list</h4><p class="hint">5 November 2026</p><p class="cnt">0 of 1 ordered</p>
+        <p class="nbsh">Supplier orders</p>
+        <ul class="tl">
+          <li><span class="bx"></span><span class="n">PFD</span><span class="t">by 14:00 for Fri 6 Nov</span><span class="st">in 1 h 30 min</span></li>
+        </ul>
+        <p class="nbsh sm">Tomorrow, heads-up</p>
+        <ul class="tl">
+          <li class="ahead"><span class="n">Coast Seafood</span><span class="t">closes tomorrow, Fri 16:00, for Wed 11 Nov</span><span class="oa">Ordered already</span></li>
+        </ul>
+        <p class="hint" style="margin-top:8px">Tick each supplier once the order is in. Ordered already is only for an order placed early: it stops tomorrow's reminder, with Undo.</p>
+      </div>
+      <div class="dock"><span>+ Add to the order</span></div></div>
+      <div class="tabs"><span>RECIPES</span><span>PREP</span><span class="on">ORDERS</span><span>WASTAGE</span><span>TRANSFERS</span><span>GUIDES</span></div>
+    </div></div>
+    <div><p class="cap">The pushes for Coast Seafood</p>
+      <div class="push"><b>Coast Seafood: order by Fri 16:00</b>For Wed 11 Nov. Heads-up: it closes tomorrow.<br><small>Thu 15:00, new</small></div>
+      <div class="push"><b>Coast Seafood: order by 16:00</b>For Wed 11 Nov. 4 h to go.<br><small>Fri 12:00, as today</small></div>
+      <div class="push"><b>Order now: Coast Seafood</b>Closes at 16:00 for Wed 11 Nov. 1 h to go.<br><small>Fri 15:00, as today</small></div>
+      <p class="hint" style="max-width:360px">None of these go once a chef has ticked Coast Seafood for Friday, or tapped Ordered already on Thursday. Nothing is ticked by reading the heads-up.</p>
+    </div>
+  </div>
+</div></section>
+
+<section class="sec" id="a"><div class="wrap">
+  <h2 class="h2">A. The usual rule, then each day</h2>
+  <p class="sub">Changes the least. Today's supplier form stays: delivery days, the usual "Order closes" and time, and Remind us. Under it, every delivery day is listed with its order-by day. Change one day in place; it turns orange and offers Back to usual.</p>
+  <div class="shots"><div class="wide"><p class="cap">Laptop, Admin &gt; Order cut-offs</p><div class="frame lap" id="a-lap"></div></div>
+  <div><p class="cap">Phone</p><div class="frame ph" id="a-ph"></div></div></div>
+  <div class="pc">
+    <div><h3>Good</h3><ul><li>Nothing to relearn: the same form, one new list under it.</li><li>The normal supplier (PFD) looks as it does today, with its days folded.</li><li>Keeps Remind us per supplier.</li><li>Smallest change to the page and its tests.</li></ul></div>
+    <div><h3>Not so good</h3><ul><li>Still two places that set a time (the usual box and a changed day), even though only one is saved per day.</li><li>The page stays long: about 380 px a supplier on a laptop.</li><li>Remind us is one more choice the head chef rarely changes.</li></ul></div>
+  </div>
+</div></section>
+
+<section class="sec" id="b"><div class="wrap">
+  <h2 class="h2">B. The order week</h2>
+  <p class="sub">Rethinks the flow. One week grid for every supplier: an orange box on each order day ("16:00 for Wed"), a grey Delivery mark on each delivery day. Tap a supplier to edit its order days on the side (a sheet on a phone), written order first: "Order by Fri 16:00, arrives Wed". Reminders are set once for every supplier.</p>
+  <div class="shots"><div class="wide"><p class="cap">Laptop, Admin &gt; Order cut-offs</p><div class="frame lap" id="b-lap"></div></div>
+  <div><p class="cap">Phone</p><div class="frame ph" id="b-ph"></div></div></div>
+  <div class="pc">
+    <div><h3>Good</h3><ul><li>The whole week in one look: gaps and clashes stand out (two orders on a Friday).</li><li>Order first, the way the head chef said it.</li><li>One reminder setting for everyone, not one per supplier.</li></ul></div>
+    <div><h3>Not so good</h3><ul><li>Biggest build: a new grid, a side panel and a phone sheet.</li><li>Seven columns are cramped at 390 px; the delivery day hides behind a tap there.</li><li>Two levels: tap a row, then edit. Per-supplier reminder choice goes.</li><li>Most to relearn.</li></ul></div>
+  </div>
+</div></section>
+
+<section class="sec" id="c"><div class="wrap">
+  <h2 class="h2">C. One line per delivery day</h2>
+  <p class="sub">Removes the most. Each supplier is a card with one line per delivery day: "Wed delivery, order by [Fri] [16:00]", and the next real dates beside it. Same for all fills every line at once. Order closes, Remind us and How reminders work go: every supplier gets the same reminders, written once at the top.</p>
+  <div class="shots"><div class="wide"><p class="cap">Laptop, Admin &gt; Order cut-offs</p><div class="frame lap" id="c-lap"></div></div>
+  <div><p class="cap">Phone</p><div class="frame ph" id="c-ph"></div></div></div>
+  <div class="pc">
+    <div><h3>Good</h3><ul><li>What you see is what is saved: one line per delivery, no hidden rule.</li><li>The next real dates show the result ("Fri 6 Nov for Wed 11 Nov"), so a wrong day is caught before Save.</li><li>Fewest controls: 2 per delivery day, no Remind us.</li><li>Fewest taps for a special pattern.</li></ul></div>
+    <div><h3>Not so good</h3><ul><li>A supplier that delivers six days has six lines (Same for all keeps them in step).</li><li>The Remind us choice (4, 6, 8 hours or all day) goes; one plan for every supplier.</li><li>A new look for the page, so some relearning.</li></ul></div>
+  </div>
+</div></section>
+
+<section class="sec" id="rec"><div class="wrap">
+  <h2 class="h2">Recommended: C, with A's fold and orange mark</h2>
+  <p class="sub">Five of six reviewers ranked C first. A supplier whose days all follow one rule shows as one line until a day is changed (from A). A day that differs from the others is tinted orange, so the special pattern stands out (from A). One Set every day per supplier, which asks before it overwrites a different day. Rename or remove is a full-size button. The reminder plan is written once, plainly.</p>
+  <div class="shots"><div class="wide"><p class="cap">Laptop, Admin &gt; Order cut-offs</p><div class="frame lap" id="r-lap"></div></div>
+  <div><p class="cap">Phone</p><div class="frame ph" id="r-ph"></div></div></div>
+</div></section>
+
+<section class="sec" id="cmp"><div class="wrap">
+  <h2 class="h2">Side by side</h2>
+  <p class="sub">Measured on these previews and today's book in the click-test stand-in (four suppliers, two with a special day). Taps count the head chef adding "Coast Seafood also delivers Wednesday, ordered by Friday 16:00" to a supplier that already delivers Monday (the day before, 14:00), up to and including Save. A dropdown counts as 2 taps; typing the time is not counted.</p>
+  <div class="tbl"><table class="cmp" id="cmp-t">
+    <thead><tr><th></th><th>Today</th><th>A. Usual, then each day</th><th>B. Order week</th><th>C. Line per day</th><th>Recommended mix</th></tr></thead>
+    <tbody>
+      <tr><th>Set the special pattern</th><td>7 taps, and only as a second supplier row with a made-up name and its own tick (the catalogue links one of them)</td><td>7 taps</td><td>8 taps</td><td>6 taps</td><td>6 taps</td></tr>
+      <tr><th>Tick a supplier's order (sous chef)</th><td>1 tap</td><td>1 tap</td><td>1 tap</td><td>1 tap</td><td>1 tap</td></tr>
+      <tr><th>Rows on the phone's Order list, Thursday 12:30</th><td>1 (Coast Seafood not shown)</td><td colspan="4">2 (the heads-up adds one row, only the day before)</td></tr>
+      <tr><th>Setup page height, laptop</th><td data-h="today-1280">2,407 px (6 rows)</td><td data-h="a-lap"></td><td data-h="b-lap"></td><td data-h="c-lap"></td><td data-h="r-lap"></td></tr>
+      <tr><th>Setup page height, phone</th><td data-h="today-390">3,015 px</td><td data-h="a-ph"></td><td data-h="b-ph"></td><td data-h="c-ph"></td><td data-h="r-ph"></td></tr>
+      <tr><th>Navigation levels</th><td>1</td><td>1</td><td>2 (row, then editor)</td><td>1</td><td>1</td></tr>
+      <tr><th>Build size</th><td></td><td>2 pull requests</td><td>3 pull requests</td><td>2 pull requests</td><td>2 pull requests</td></tr>
+      <tr><th>Relearning</th><td></td><td>Little</td><td>Most</td><td>Some</td><td>Some</td></tr>
+      <tr><th>Reminder choices</th><td>Per supplier</td><td>Per supplier</td><td>Once for all</td><td>None: one plan</td><td>None: one plan (the head chef may keep Remind us)</td></tr>
+      <tr><th>New reads, rules</th><td></td><td colspan="4">No rules change. Phones: no new reads. Push job: about 12 reads a day more (a 1 hour heads-up window)</td></tr>
+      <tr><th>Risk</th><td></td><td colspan="4">Old copies of the book ignore the new field and an old People save drops it: the old fields keep each supplier's earliest cut-off, so an old copy reminds early, never late</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<script>
+/* Draws the three setup pages from one made-up supplier list. Lines: [delivery weekday, order weekday, minutes]. */
+(function () {
+  var DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var SUP = [
+    { name: 'PFD', lines: [[1, 0, 840], [2, 1, 840], [3, 2, 840], [4, 3, 840], [5, 4, 840], [6, 5, 840]] },
+    { name: 'Simon George Fruit and Veg', lines: [[1, 0, 840], [4, 3, 840]] },
+    { name: 'Coast Seafood', lines: [[1, 0, 840], [3, 5, 960]] },
+    { name: 'Dry Goods Co', lines: [[2, 1, 840], [5, 2, 960]] }
+  ];
+  var BASE = Date.UTC(2026, 10, 5), NOWM = 12 * 60 + 30, TODAY = 4;   // Thursday 5 Nov 2026, 12:30
+  function hm(m) { return (m < 600 ? '0' : '') + Math.floor(m / 60) + ':' + (m % 60 < 10 ? '0' : '') + (m % 60); }
+  function pre(l) { return ((l[0] - l[1]) % 7 + 7) % 7; }
+  function date(k) { var d = new Date(BASE + k * 86400000); return DOW[d.getUTCDay()] + ' ' + d.getUTCDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()]; }
+  // the next cut-off for a line, from Thursday 12:30: its day offset
+  function next(l) { for (var k = 0; k < 8; k++) if ((TODAY + k) % 7 === l[1] && (k > 0 || l[2] > NOWM)) return k; return 0; }
+  function nextText(l) { var k = next(l); return date(k) + ' ' + hm(l[2]) + ' for ' + date(k + pre(l)); }
+  function usual(s) { var c = {}; s.lines.forEach(function (l) { var k = pre(l) + '|' + l[2]; c[k] = (c[k] || 0) + 1; }); var best = Object.keys(c).sort(function (a, b) { return c[b] - c[a]; })[0].split('|'); return { pre: +best[0], at: +best[1] }; }
+  function isUsual(s, l) { var u = usual(s); return pre(l) === u.pre && l[2] === u.at; }
+  var PRE = ['The same day', 'The day before', '2 days before', '3 days before', '4 days before', '5 days before', '6 days before'];
+  function days(s) { var d = s.lines.map(function (l) { return l[0]; }); return d.length === 6 && d.indexOf(0) < 0 ? 'Mon to Sat' : d.map(function (x) { return DOW[x]; }).join(', '); }
+  function heads(l) { return pre(l) >= 2 ? 'heads-up ' + DOW[(l[1] + 6) % 7] + ' 15:00' : ''; }
+  function sayLine(s) { return s.lines.map(function (l) { return '<b>' + DOW[l[0]] + '</b>: order by ' + DOW[l[1]] + ' ' + hm(l[2]) + (heads(l) ? ', ' + heads(l) : ''); }).join('. ') + '.'; }
+  function head(sub) { return '<h3 class="t">Order cut-offs</h3><p class="hint">' + sub + '</p>'; }
+  function foot() { return '<div class="foot"><span class="btn">Add a supplier</span></div><div class="foot"><span class="btn dark">Save cut-offs</span><span class="btn">Undo unsaved changes</span></div>'; }
+
+  // A: today's form, the usual rule, then each delivery day
+  function drawA() {
+    return head('Tick the days the supplier delivers and the usual cut-off. Change any one day below it.') + '<ul class="eds">' + SUP.map(function (s, i) {
+      var u = usual(s), ch = s.lines.filter(function (l) { return !isUsual(s, l); }).length, open = ch > 0;
+      return '<li class="ed"><div class="row"><div class="f"><span class="label">Supplier</span><span class="box">' + s.name + '</span></div><div class="f"><span class="label">Delivery days</span><span><span class="sel">' + days(s) + '</span></span></div></div>' +
+        '<div class="row"><div class="f"><span class="label">Usual: order closes</span><span><span class="sel">' + PRE[u.pre] + '</span></span></div><div class="f"><span class="label">At</span><span><span class="sel t">' + hm(u.at) + '</span></span></div><div class="f"><span class="label">Remind us</span><span><span class="sel">4 hours before</span></span></div></div>' +
+        '<div class="each"><div class="each-h' + (open ? '' : ' shut') + '"><span class="label">Each delivery day</span>' + (open ? '<span class="tag">' + ch + ' changed</span>' : '<span class="hint">All ' + s.lines.length + ' usual &middot; <span class="lnk">Change one day</span></span>') + '</div>' +
+        (open ? s.lines.map(function (l) {
+          var c = !isUsual(s, l);
+          return '<div class="er' + (c ? ' is-ch' : '') + '"><b>' + DOW[l[0]] + '</b><span class="when">order by ' + (c ? '<span class="sel">' + DOW[l[1]] + '</span><span class="sel t">' + hm(l[2]) + '</span>' : DOW[l[1]] + ' ' + hm(l[2])) + '</span>' + (c ? '<span class="lnk">Back to usual</span>' : '<span class="tag grey">Usual</span>') + '</div>';
+        }).join('') : '') + '</div>' +
+        '<p class="say">' + sayLine(s) + ' Reminder from 4 hours before.</p><span><span class="lnk" style="color:var(--muted)">Remove</span></span></li>';
+    }).join('') + '</ul>' + foot();
+  }
+
+  // B: the order week, then one supplier's order days
+  function drawB(phone) {
+    var sel = 2, s = SUP[sel];
+    var grid = '<table class="wk"><thead><tr><th class="sn">Supplier</th>' + [1, 2, 3, 4, 5, 6, 0].map(function (d) { return '<th>' + DOW[d] + '</th>'; }).join('') + '</tr></thead><tbody>' + SUP.map(function (x, i) {
+      return '<tr' + (i === sel ? ' class="on"' : '') + '><td class="sn">' + x.name + '</td>' + [1, 2, 3, 4, 5, 6, 0].map(function (d) {
+        var o = x.lines.filter(function (l) { return l[1] === d; }), dl = x.lines.some(function (l) { return l[0] === d; });
+        return '<td>' + o.map(function (l) { return '<span class="oc">' + hm(l[2]) + '<small>for ' + DOW[l[0]] + '</small></span>'; }).join('') + (dl ? '<span class="dl">&#9632;<span class="w"> Delivery</span></span>' : '') + '</td>';
+      }).join('') + '</tr>';
+    }).join('') + '</tbody></table>';
+    var ed = '<div class="edp"><div class="row" style="justify-content:space-between;align-items:center"><b style="font-size:1.15rem">' + s.name + '</b><span class="lnk">Done</span></div>' +
+      s.lines.slice().sort(function (a, b) { return next(a) - next(b); }).map(function (l) { return '<div class="ol">Order by <span class="sel">' + DOW[l[1]] + '</span><span class="sel t">' + hm(l[2]) + '</span><span class="arr">arrives</span><span class="sel">' + DOW[l[0]] + '</span></div>'; }).join('') +
+      '<div class="row" style="align-items:center"><span class="btn">Add an order day</span><span class="lnk">Fill: the day before at 14:00</span></div><p class="say">' + sayLine(s) + '</p></div>';
+    var rem = '<div class="remc"><span class="label">Reminders, every supplier</span><div class="rr">On the cut-off day, from <span class="sel">4 hours before</span></div><div class="rr"><span class="sw" aria-hidden="true"></span> A heads-up the day before at 15:00, when the order closes 2 or more days before delivery</div></div>';
+    return head('Each orange box is an order day. Tap a supplier to change its order days.') + rem + '<div class="split"><div>' + grid + '<p class="hint" style="margin-top:6px">&#9632; Delivery day</p></div>' + (phone ? '' : ed) + '</div>' + (phone ? '<div style="margin:14px -16px -16px">' + ed + '</div>' : '') + (phone ? '' : foot());
+  }
+
+  // C: one card per supplier, one line per delivery day
+  function drawC() {
+    return head('One line for each day the supplier delivers: when that order has to be in.') +
+      '<p class="cnote"><b>Reminders, the same for every supplier:</b> the bar and a push from 4 hours before the cut-off (an early one from the night before), a push 1 hour before, and a heads-up the day before at 15:00 when the order closes 2 or more days before delivery.</p>' +
+      SUP.map(function (s) {
+        var u = usual(s);
+        return '<div class="card"><div class="card-h"><span class="nm">' + s.name + '</span><span class="lnk" style="color:var(--muted)">Rename or remove</span></div>' +
+          s.lines.map(function (l) { return '<div class="cl"><b>' + DOW[l[0]] + ' delivery</b><span class="when" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">order by <span class="sel">' + DOW[l[1]] + '</span><span class="sel t">' + hm(l[2]) + '</span></span><span class="nx">Next: ' + nextText(l) + (heads(l) ? ' &middot; ' + heads(l) : '') + '</span></div>'; }).join('') +
+          '<div class="card-f"><span class="btn">Add a delivery day</span><span class="when" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">Same for all: <span class="sel">' + PRE[u.pre].toLowerCase() + '</span> at <span class="sel t">' + hm(u.at) + '</span> <span class="btn">Fill</span></span></div></div>';
+      }).join('') + foot();
+  }
+  // The recommended mix: C's lines and real dates, A's fold and orange mark
+  function drawR() {
+    return head('One line for each day the supplier delivers: when that order has to be in.') +
+      '<p class="cnote"><b>Reminders, the same for every supplier.</b> On the cut-off day: the bar and a push 4 hours before, and a push 1 hour before. A cut-off before 12:00: from [20:00] the night before. An order that closes 2 or more days before its delivery: a heads-up the day before at [15:00].</p>' +
+      SUP.map(function (s) {
+        var u = usual(s), same = s.lines.every(function (l) { return isUsual(s, l); }), nx = s.lines.slice().sort(function (a, b) { return next(a) - next(b); })[0];
+        var body = same
+          ? '<div class="cl"><b>' + days(s) + '</b><span>order ' + PRE[u.pre].toLowerCase() + ' by ' + hm(u.at) + '</span><span class="nx">Next: ' + nextText(nx) + '</span></div>'
+          : s.lines.map(function (l) { var d = !isUsual(s, l); return '<div class="cl' + (d ? ' is-d' : '') + '"><b>' + DOW[l[0]] + ' delivery</b><span class="when" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">order by <span class="sel">' + DOW[l[1]] + '</span><span class="sel t">' + hm(l[2]) + '</span>' + (d ? '<span class="tag">Different</span>' : '') + '</span><span class="nx">Next: ' + nextText(l) + (heads(l) ? ' &middot; heads-up ' + heads(l).slice(9) : '') + '</span></div>'; }).join('');
+        return '<div class="card"><div class="card-h"><span class="nm">' + s.name + '</span><span class="btn">Rename or remove</span></div>' + body +
+          '<div class="card-f">' + (same ? '<span class="btn">Change one day</span>' : '<span class="btn">Add a delivery day</span><span class="btn">Set every day</span>') + '</div></div>';
+      }).join('') + foot();
+  }
+  function put(id, h) { var e = document.getElementById(id); if (e) e.innerHTML = '<div class="adm">' + h + '</div>'; }
+  put('a-lap', drawA()); put('a-ph', drawA());
+  put('b-lap', drawB(false)); put('b-ph', drawB(true));
+  put('c-lap', drawC()); put('c-ph', drawC());
+  put('r-lap', drawR()); put('r-ph', drawR());
+  // the page heights in the comparison table, measured from the frames as drawn
+  [].forEach.call(document.querySelectorAll('[data-h]'), function (td) {
+    var e = document.getElementById(td.getAttribute('data-h'));
+    if (e) td.textContent = Math.round(e.getBoundingClientRect().height).toLocaleString('en-AU') + ' px';
+  });
+})();
+</script>
+</body>
+</html>

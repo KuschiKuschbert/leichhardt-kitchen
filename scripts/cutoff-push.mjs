@@ -6,10 +6,13 @@
     start  when the supplier's reminder starts (Remind us: 4, 6 or 8 hours before; all day: 08:00, or 4 hours before
            a cut-off earlier than 12:00), so an early cut-off is pushed the night before
     now    1 hour before the cut-off ("Order now")
+    heads  (5 Nov 2026) at 15:00 the day before a cut-off for a delivery 2 or more days after it ("Wednesday's order by
+           Friday 16:00"), so a weekly order is not missed; only within the hour from 15:00 (js/cutoffs.js headsAt,
+           HEADS_FOR), so it costs a few reads. A chef who orders early ticks it with Ordered already: no more pushes.
   Each goes once, to every phone a chef turned pushes on for (push/<id> { tok, by }, by a sous chef, the head chef or
   'owner'), through Firebase Cloud Messaging. A run that comes late still sends, as long as the cut-off has not passed;
-  only the newest push is sent if both are due. Sent pushes are kept in pushsent/<cut-off day> { sent: { <supplier
-  id>|<day>: start|now } }; a push no phone got because Firebase failed is tried again on the next run.
+  only the newest push is sent if more are due. Sent pushes are kept in pushsent/<cut-off day> { sent: { <supplier
+  id>|<day>: heads|start|now } }; a push no phone got because Firebase failed is tried again on the next run.
   A cut-off a chef ticked off as ordered (the Supplier orders tick list on the order list: cutdone/<day>_<supplier
   id> with on true) gets no more pushes; one whose tick was taken off again (on false) does.
   A phone address Firebase says is gone is removed.
@@ -55,9 +58,12 @@ const list = CUT.clean(cfg.cutoffs);
 // today's and tomorrow's cut-offs, at in minutes from today's midnight
 const occ = [];
 [0, 1].forEach(plus => CUT.on(list, (dow + plus) % 7).forEach(c => { c.off = plus * 1440; c.at += c.off; c.day = shift(today, plus); c.key = c.s.id + '|' + c.day; occ.push(c); }));
+// c.t is the cut-off's own time of day (a line's, 5 Nov 2026); c.at is from today's midnight
+const RANK = { heads: 1, start: 2, now: 3 };
 const due = occ.map(c => {
   if (c.at <= m) return null;
-  const stage = m >= c.at - CUT.NOW ? 'now' : m >= CUT.pushAt(c.s) + c.off ? 'start' : '';
+  const h = CUT.headsAt(c), hm = h === null ? null : h + c.off;
+  const stage = m >= c.at - CUT.NOW ? 'now' : m >= CUT.pushAt(c.s, c.t) + c.off ? 'start' : hm !== null && m >= hm && m < hm + CUT.HEADS_FOR ? 'heads' : '';
   return stage ? { c, stage } : null;
 }).filter(Boolean);
 if (!due.length) { console.log('Nothing due.'); process.exit(0); }
@@ -69,7 +75,7 @@ const sent = {};
 days.forEach((d, i) => { sent[d] = (snaps[i].exists && snaps[i].data().sent) || {}; });
 const go = due.filter(({ c, stage }, i) => {
   const was = sent[c.day][c.key], tick = snaps[days.length + i];
-  if (was === stage || (stage === 'start' && was === 'now')) return false;
+  if (was && RANK[was] >= RANK[stage]) return false;   // this one, or a later one, already went
   return !(tick.exists && tick.data().on === true);
 });
 if (!go.length) { console.log('Nothing new to send.'); process.exit(0); }
@@ -79,12 +85,14 @@ const chefs = new Set([].concat(Array.isArray(cfg.sousIds) ? cfg.sousIds : [], c
 const phones = (await K.collection('push').get()).docs.map(d => ({ id: d.id, x: d.data() })).filter(p => typeof p.x.tok === 'string' && p.x.tok && chefs.has(p.x.by));
 
 const pushes = go.map(({ c, stage }) => {
-  const when = (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440), to = left(c.at - m);
+  const when = (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440), to = left(c.at - m), what = CUT.forText(c, c.day);   // "for Wed 11 Nov"
   return {
     c,
     data: stage === 'now'
-      ? { title: 'Order now: ' + c.s.name, body: 'Closes at ' + when + ' ' + CUT.forText(c) + '. ' + to + ' to go.', tag: 'cut-' + c.s.id, sid: c.s.id, day: c.day }
-      : { title: c.s.name + ': order by ' + when, body: CUT.forText(c).replace(/^f/, 'F') + '. ' + to + ' to go.', tag: 'cut-' + c.s.id, sid: c.s.id, day: c.day },
+      ? { title: 'Order now: ' + c.s.name, body: 'Closes at ' + when + ' ' + what + '. ' + to + ' to go.', tag: 'cut-' + c.s.id, sid: c.s.id, day: c.day }
+      : stage === 'heads'
+      ? { title: c.s.name + ': order by ' + CUT.dateText(c.day).slice(0, 3) + ' ' + hhmm(c.t), body: what.replace(/^f/, 'F') + '. Heads-up: it closes tomorrow.', tag: 'cut-' + c.s.id, sid: c.s.id, day: c.day }
+      : { title: c.s.name + ': order by ' + when, body: what.replace(/^f/, 'F') + '. ' + to + ' to go.', tag: 'cut-' + c.s.id, sid: c.s.id, day: c.day },
     ttl: Math.max(60, (c.at - m) * 60)
   };
 });

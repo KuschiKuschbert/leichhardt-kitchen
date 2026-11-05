@@ -61,9 +61,9 @@ async function save(p, pre) {
   ok((await domainWrites(p)).length === 0, 'opening and inspecting cutoff settings writes no supplier or configuration data');
   const readsBefore = await p.evaluate(() => window.__fake.reads.length);
   await L.pick(p, '[data-k="cut-p0"]', '8');
-  ok(/^Order by 15:00 Sat for 8 days later\./.test(await txt(p, '.cut-say')), 'Sunday delivery with 8-day lead shows Saturday cutoff, never an empty weekday');
+  ok(/^Next: Sat 2 Jan 15:00 for Sun 10 Jan\./.test(await txt(p, '.cut-say')), 'Sunday delivery with 8-day lead shows Saturday cutoff and the real dates, never an empty weekday');
   await L.pick(p, '[data-k="cut-p0"]', '14');
-  ok(/^Order by 15:00 Sun for 2 weeks later\./.test(await txt(p, '.cut-say')), 'two-week setting shows Sunday cutoff and the correct lead time');
+  ok(/^Next: Sun 27 Dec 15:00 for Sun 10 Jan\./.test(await txt(p, '.cut-say')), 'two-week setting shows Sunday cutoff and the delivery two weeks later');
   ok(await selectedTextFits(p), 'phone dropdown leaves room for the complete 2 weeks before label and picker chevron');
   await L.pick(p, '[data-k="cut-p0"]', '13');
   ok(await selectedTextFits(p), 'phone dropdown leaves room for the complete 13 days before label and picker chevron');
@@ -79,11 +79,11 @@ async function save(p, pre) {
   ok((await domainWrites(p)).every(x => x.path === CFG && Object.keys(x.data).join() === 'cutoffs'), 'cutoff Save changes only config/main.cutoffs');
   await p.reload(); await L.adminTab(p, 'cutoffs');
   await L.waitFor(p, () => document.querySelector('[data-k="cut-p0"]')?.value === '14', null, 10000);
-  ok(await p.$eval('[data-k="cut-p0"]', e => e.value) === '14' && /2 weeks later/.test(await txt(p, '.cut-say')), '14-day choice survives reopening the app');
+  ok(await p.$eval('[data-k="cut-p0"]', e => e.value) === '14' && /for Sun 10 Jan\./.test(await txt(p, '.cut-say')), '14-day choice survives reopening the app');
   await save(p, 7);
   await p.reload(); await L.adminTab(p, 'cutoffs');
   await L.waitFor(p, () => document.querySelector('[data-k="cut-p0"]')?.value === '7', null, 10000);
-  ok(/Sun for 1 week later/.test(await txt(p, '.cut-say')), 'one-week choice saves and reopens with correct summary');
+  ok(/^Next: Sun 27 Dec 15:00 for Sun 3 Jan\./.test(await txt(p, '.cut-say')), 'one-week choice saves and reopens with correct summary');
   await L.adminTab(p, 'people');
   await p.fill('[data-a="name"][data-i="2"]', 'Bo Test'); await p.keyboard.press('Tab');
   await p.click('[data-p="a-save"]');
@@ -95,7 +95,7 @@ async function save(p, pre) {
   // The delivery is two weeks later, but the reminder, completion and snapshot belong to this cutoff day.
   p = await L.open(b, '#/orders', { who: 'bo', extra: fixture([makeCut(14)]), clock: testClock, wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('#cut-band:not([hidden]) .cut-row') && !!document.querySelector('.cut-tl'), null, 10000);
-  ok(/for Sunday in 2 weeks/.test(await txt(p, '#cut-band')) && /for Sunday in 2 weeks/.test(await txt(p, '.cut-tl')), 'bar and order-list reminders distinguish the delivery two weeks away');
+  ok(/for Sun 10 Jan/.test(await txt(p, '#cut-band')) && /for Sun 10 Jan/.test(await txt(p, '.cut-tl')), 'bar and order-list reminders name the delivery date two weeks away');
   ok((await domainWrites(p)).length === 0, 'showing two-week reminders creates no order or completion');
   const occurrences = await p.evaluate(() => window.LK_PREP.supplier().occurrences());
   const occurrence = occurrences.find(x => x.day === testDay && x.cutoffId === 'northside');

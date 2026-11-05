@@ -8,7 +8,7 @@ Chef-hat > Supplier order opens a collapsible supplier workspace for the head ch
 
 Reuse the current app shell, Barlow and Barlow Condensed fonts, action buttons, choice chips, text-size settings and focus rules. No new font or service. Keep the current staff free-text order list, recipe book, prep and wastage flows.
 
-Cut-off settings remain under Admin > Settings > Order cut-offs. Order closes supports the same day and every day up to 14 days before delivery, with 1 week and 2 weeks labelled in the existing dropdown. Reminders still start at the selected time before the cut-off. The linked occurrence and saved order retain the actual delivery date, including across a month or year. A missing or older cut-off helper disables these controls and preserves stored settings on a People save.
+Cut-off settings remain under Admin > Kitchen > Order cut-offs. Order closes supports the same day and every day up to 14 days before delivery, with 1 week and 2 weeks labelled in the existing dropdown. Since 5 Nov 2026 each delivery day can close on its own weekday and time (`docs/cutoff-options/brief.md`); an occurrence's delivery date comes from its own line, the soonest when two deliveries close together. Reminders still start at the selected time before the cut-off. The linked occurrence and saved order retain the actual delivery date, including across a month or year. A missing or older cut-off helper disables these controls and preserves stored settings on a People save.
 
 ## Private data contract (version 1)
 
