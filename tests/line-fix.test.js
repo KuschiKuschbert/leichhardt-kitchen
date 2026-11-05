@@ -57,7 +57,7 @@ async function openMenu(p, sel) { await p.click(sel + ' .nb-more'); await L.sett
   // a ticked line keeps its ⋯, so the row keeps its shape (a tick moves no row, 20 Oct 2026); the sheet then says who
   // prepared it, with nothing to change
   const h0 = await p.$eval('#nbr-i1', e => Math.round(e.getBoundingClientRect().height));
-  await L.tickPrep(p, '#nbr-i1 .nb-box'); await L.settle(p, 400);
+  await p.click('#nbr-i1 .nb-box'); await L.settle(p, 400);
   ok(await p.$eval('#nbr-i1', e => e.classList.contains('is-done')) && await p.$eval('#nbr-i1 .nb-more', e => getComputedStyle(e).display !== 'none'), 'ticked: the line keeps its ⋯');
   ok(await p.$eval('#nbr-i1', e => Math.round(e.getBoundingClientRect().height)) === h0, 'ticked: the row keeps its height (' + h0 + ' px)');
   await openMenu(p, '#nbr-i1');

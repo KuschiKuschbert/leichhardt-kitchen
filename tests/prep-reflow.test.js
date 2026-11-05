@@ -9,7 +9,8 @@ const longName = 'Prepare roasted vegetable and chickpea salad for the function 
 const longQuantity = '12.5 kg across 4 labelled containers';
 const extra = { [itemKey('reflow-long')]: { text: longName, qty: longQuantity, station: 'Sauce', recipe: 'gravy', urgent: true,
   done: false, deleted: false, addedBy: 'Sam', addedById: 'sam', addedAt: L.NOW - 300000 } };
-const expectedReflow = (width, text) => width < 360 || width < 480 && text === 'xlarge';
+// below 480 px at any text size since 5 Nov 2026 (I'm on it's own button made the row too full for the words)
+const expectedReflow = width => width < 480;
 const item = (p, id) => p.evaluate(k => __fake.dump()[k], itemKey(id));
 async function resize(p, width, text, height = width === 568 ? 320 : 900) {
   await p.setViewportSize({ width, height });
@@ -62,12 +63,8 @@ async function ticked(p, id, done) { await L.waitFor(p, ({ k, done }) => !!__fak
 
   // Keyboard and named controls use the original handlers and acknowledgement, not prototype event plumbing.
   p = await L.open(b, '#/prep', { width: 320, who: 'ann', settings: { text: 'xlarge' }, wait: 1200 }); await ready(p);
-  // I'm on it (5 Nov 2026): the first Space stamps Ann on the line, the second ticks it
-  await p.locator('#nbr-i4 .nb-box').focus(); await p.keyboard.press('Space');
-  await L.waitFor(p, k => __fake.dump()[k].onById === 'ann', itemKey('i4'));
-  ok(await p.evaluate(() => document.activeElement?.matches('#nbr-i4 .nb-box')), 'the first Space stamps the line and keeps focus on its box');
-  await p.keyboard.press('Space'); await ticked(p, 'i4', true);
-  ok((await item(p, 'i4')).doneById === 'ann' && !(await p.$('#pt-sheet')), 'personal keyboard Tick: the second Space ticks it, with the same recorder');
+  await p.locator('#nbr-i4 .nb-box').focus(); await p.keyboard.press('Space'); await ticked(p, 'i4', true);
+  ok((await item(p, 'i4')).doneById === 'ann' && !(await p.$('#pt-sheet')), 'personal keyboard Tick is one action with the same recorder');
   ok(await p.evaluate(() => document.activeElement?.matches('#nbr-i4 .nb-box')), 'keyboard tick keeps focus on its current box through redraw');
   await p.locator('.p-toast:not(.p-toast-old) .p-toast-btn').click(); await ticked(p, 'i4', false);
   ok(!(await item(p, 'i4')).done, 'native Undo restores the original open row');
@@ -82,9 +79,8 @@ async function ticked(p, id, done) { await L.waitFor(p, ({ k, done }) => !!__fak
   ok(!(await p.locator('#r-edit').count()) || !(await p.locator('#r-edit').isVisible()), 'staff recipe entry keeps recipe-management rights unchanged');
   await p.goBack(); await ready(p);
   ok((await item(p, 'i4')).urgent && (await item(p, 'i4')).qty === '5 L', 'recipe Back returns to the same task without changing its data');
-  await p.locator('#nbr-i4 .nb-tt').click(); await L.waitFor(p, k => __fake.dump()[k].onById === 'ann', itemKey('i4'));
   await p.locator('#nbr-i4 .nb-tt').click(); await ticked(p, 'i4', true);
-  ok(!(await p.$('#pt-sheet')) && (await item(p, 'i4')).preparedById === 'ann', 'personal tapping the task words: the first tap stamps, the second ticks');
+  ok(!(await p.$('#pt-sheet')) && (await item(p, 'i4')).preparedById === 'ann', 'personal tapping the task words remains one action');
   ok(p.errors.length === 0, 'personal actions have no browser errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -103,14 +99,13 @@ async function ticked(p, id, done) { await L.waitFor(p, ({ k, done }) => !!__fak
 
   p = await L.open(b, '#/prep', { width: 320, settings: { text: 'xlarge', shared: true }, wait: 1200 }); await ready(p);
   await p.locator('#nbr-i4 .nb-box').click(); await L.waitFor(p, () => !!document.querySelector('#pt-sheet'));
-  ok(!(await item(p, 'i4')).done && /Who's on it\?/.test(await L.txt(p, '#pt-sheet h3') || ''), 'shared first tap asks Who\'s on it? and ticks nothing');
+  ok(!(await item(p, 'i4')).done, 'shared Tick still waits for the reported worker');
   await p.keyboard.press('Escape'); await L.settle(p, 200);
   ok(!(await item(p, 'i4')).done && await p.evaluate(() => document.activeElement?.matches('#nbr-i4 .nb-box')), 'shared cancellation leaves the task open and returns Tick focus');
   await p.locator('#nbr-i4 .nb-tt').click();
   const worker = p.locator('#pt-sheet [data-pt="choose"][data-id="bo"]');
   if (!(await worker.count()) || !(await worker.isVisible())) await p.locator('#pt-sheet [data-pt="others"]').click();
-  await worker.click(); await L.waitFor(p, k => __fake.dump()[k].onById === 'bo' && !document.querySelector('#pt-sheet'), itemKey('i4'));
-  await p.locator('#nbr-i4 .nb-tt').click(); await ticked(p, 'i4', true);
+  await worker.click(); await ticked(p, 'i4', true);
   const shared = await item(p, 'i4');
   ok(shared.preparedById === 'bo' && shared.doneById === 'sam' && shared.by === 'sam', 'shared selection keeps reported worker separate from the authenticated recorder');
   ok(p.errors.length === 0, 'shared actions have no browser errors ' + p.errors.join(' | '));
@@ -136,8 +131,6 @@ async function ticked(p, id, done) { await L.waitFor(p, ({ k, done }) => !!__fak
   await p.keyboard.press('Escape'); await L.settle(p, 200);   // the Add a line sheet closed, the words kept (3 Nov 2026)
   await p.evaluate(() => { __fake.mode = 'hold'; }); await p.context().setOffline(true); await L.settle(p, 250);
   const openWidth = await p.locator('#nbr-i4 .nb-t').evaluate(e => e.getBoundingClientRect().width);
-  // two taps with no signal: the stamp, then the tick (I'm on it, 5 Nov 2026), both waiting to send
-  await p.locator('#nbr-i4 .nb-tt').click(); await L.waitFor(p, () => !!document.querySelector('#nbr-i4.is-on'));
   await p.locator('#nbr-i4 .nb-tt').click();
   await L.waitFor(p, () => LK_PREP.unsent() && !!document.querySelector('#nbr-i4 .nb-unsent'));
   const pending = await p.locator('#nbr-i4').evaluate(row => {

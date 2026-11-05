@@ -67,5 +67,5 @@ The four pieces of B left for later, one pull request each, smallest first. The 
 | --- | --- | --- | --- |
 | R1 | Low and Out on order requests, Out first for chefs | #536 | No rules change: the order line rules already take the field (a client shapes row proves it) |
 | R2 | Supplier groups on Orders for chefs; a supplier's order ticked only there | #538 (ticks), #543 (groups) | Pick supplier, remembered, still to come (R2c, a new record and rules) |
-| R3 | I'm on it: first tap stamps, second tap ticks | #541 | The rules check only the new stamp fields, which no older page writes, so they publish with the merge |
+| R3 | I'm on it: its own On it button; the box ticks in one tap | #541, then this pull request | #541 stamped on the first tap and ticked on the second; the head chef moved it to its own button the same evening (one tap = done stays). No rules change |
 | R4 | Wall board on the shared kitchen tablet, view and tick | this pull request | Client only: no reads, rules or saved data change. Built on R3's ticks |

@@ -16,9 +16,8 @@ const batchFor = (p, re) => p.evaluate(s => { const w = window.__fake.writes.fil
 const secrets = p => p.evaluate(() => Object.keys(localStorage).filter(k => /^lk\./.test(k) && /[0-9a-f]{64}/.test(localStorage.getItem(k) || '')));
 const hasSess = p => L.waitFor(p, r => { const u = window.__fakeUid(); return !!u && !!window.__fake.dump()[r + '/sessions/' + u]; }, root).catch(() => {});
 const tickSelf = async (p, id) => {
-  await L.tickPrep(p, '[data-p="tick"][data-id="' + id + '"]');
-  // a shared device asks Who's on it? first (5 Nov 2026): answer with the person signed in, then the next tap ticks it
-  if (await p.$('#pt-sheet')) { await p.click('#pt-sheet [data-pt="choose"][data-id="' + await p.evaluate(() => LK_PREP.state.who) + '"]'); await L.settle(p, 400); await L.tap(p, '[data-p="tick"][data-id="' + id + '"]'); }
+  await p.click('[data-p="tick"][data-id="' + id + '"]');
+  if (await p.$('#pt-sheet')) await p.click('#pt-sheet [data-pt="choose"][data-id="' + await p.evaluate(() => LK_PREP.state.who) + '"]');
   await L.settle(p, 400);
 };
 async function signOut(p) {

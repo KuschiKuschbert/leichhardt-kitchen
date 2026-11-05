@@ -9,15 +9,12 @@ const day = L.ymd(new Date(L.NOW)), cutoff = Date.parse(day + 'T04:00:00+10:00')
   await L.waitFor(p, () => LK_PREP.privateAccess() && !LK_PREP.unsent());
   const count = () => p.evaluate(k => (__fake.dump()[k] || {}).ticked || 0, key('activity', 'ann'));
   const before = await count();
-  // I'm on it (5 Nov 2026): the first tap asks Who's on it? (Bo), the second ticks it for Bo through the same careful save
   await p.click('#nbr-i1 .nb-box');
   await L.waitFor(p, () => !!document.querySelector('#pt-sheet'));
   let bo = p.locator('#pt-sheet [data-pt="choose"][data-id="bo"]');
   if (!await bo.isVisible()) await p.click('#pt-sheet [data-pt="others"]');
-  await bo.click();
-  await L.waitFor(p, k => (__fake.dump()[k] || {}).onById === 'bo' && !document.querySelector('#pt-sheet'), key('days', day, 'items', 'i1'));
   await p.evaluate(() => { __fake.mode = 'hold'; });
-  await p.click('#nbr-i1 .nb-box');
+  await bo.click();
   await L.waitFor(p, () => LK_PREP.unsent());
   await p.clock.runFor(90000); await L.settle(p, 300);
   ok(await p.evaluate(() => !LK_PREP.privateAccess() && !document.querySelector('#pt-sheet')), 'daily lock hides the in-flight attribution sheet and private prep');

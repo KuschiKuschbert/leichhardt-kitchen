@@ -43,7 +43,7 @@ extra[fsKey(['days', today, 'items', 'stuck1'])] = { text: 'Cure salmon', statio
 
   // Done today behind the count
   ok(!(await p.$('[data-p="donejump"]')), 'nothing ticked: the count is not a button');
-  await L.tickPrep(p, '.nb-row .nb-box'); await L.settle(p, 400);
+  await p.click('.nb-row .nb-box'); await L.settle(p, 400);
   await p.evaluate(() => window.scrollTo(0, 0));
   ok(/^1 of \d+ done$/.test((await txt(p, 'button.nb-prog') || '').trim()), 'one ticked: "1 of n done" is a button');
   await p.click('button.nb-prog'); await L.settle(p, 900);

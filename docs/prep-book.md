@@ -496,7 +496,7 @@ The public saved book now publishes one complete generation at a time. A failed 
 
 ### Readable Prep rows on narrow screens
 
-On screens below 360 px, or below 480 px with Extra large text, the tick stays beside the prep words and the same priority, recipe and More actions sit below them. Long amounts wrap within the row. The notebook, personal one-tap ticking, shared-screen worker choice and Undo stay the same. Normal phone, tablet, desktop and landscape rows keep their existing arrangement where the exception does not apply. [Selected option and checks](adaptive-controls.md#narrow-prep-rows-selected-option-a).
+On screens below 480 px (since 5 Nov 2026; before, below 360 px, or below 480 px with Extra large text), the tick stays beside the prep words and the same On it, priority, recipe and More actions sit below them: with I'm on it's own button beside them the words had 58 px of a 390 px row and broke mid-word (head chef's pick A, 5 Nov 2026). An amount stays beside the words while it fits whole and a long one drops below them and wraps within the row; below 360 px, or with Extra large text, the amount and the marks always sit under the words. The notebook, personal one-tap ticking, shared-screen worker choice and Undo stay the same. Normal phone, tablet, desktop and landscape rows keep their existing arrangement where the exception does not apply. [Selected option and checks](adaptive-controls.md#narrow-prep-rows-selected-option-a).
 
 ### Staff save presses
 

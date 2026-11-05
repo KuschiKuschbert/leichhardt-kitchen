@@ -1,6 +1,5 @@
 // Shared Prep reports who prepared a job without changing the authenticated recorder, the normal sheet or Undo.
-// Since 5 Nov 2026 (I'm on it, head chef) the first tap asks Who's on it? and stamps that cook; the second tap ticks it
-// for them through the same careful save (no second question). Personal phones: the first tap stamps, the second ticks. All records and PINs below belong to the Firebase stand-in.
+// Personal phones keep one-tap ticks. All records and PINs below belong to the Firebase stand-in.
 const L = require('./lib'), M = require('../js/functions.js');
 const { R, ok } = L.results();
 const key = (...parts) => ['kitchens', L.PIN, ...parts].join('/');
@@ -40,23 +39,17 @@ const item = (p, id, day = today) => p.evaluate(k => window.__fake.dump()[k] || 
 const writes = (p, id) => p.evaluate(k => window.__fake.writes.flat().filter(op => op.path === k), itemKey(id));
 const completionWrites = async (p, id) => (await writes(p, id)).filter(op => op.data.done === true);
 const names = (p, group) => p.locator('#pt-sheet .pt-' + group + ' [data-pt="choose"]').evaluateAll(es => es.map(e => e.getAttribute('data-id')));
-let lastTick = 'i1';
 async function tick(p, id = 'i1', words = false) {
-  lastTick = id;
   await p.locator('#nbr-' + id + (words ? ' .nb-tt' : ' .nb-box')).click();
   await L.settle(p, 250);
 }
-// answers Who's on it? (the stamp)
-async function stampFor(p, id) {
+async function choose(p, id) {
   let choice = p.locator('#pt-sheet [data-pt="choose"][data-id="' + id + '"]');
   if (!(await choice.count()) || !(await choice.isVisible())) {
     await p.locator('#pt-sheet [data-pt="others"]').click(); await L.settle(p, 150);
   }
   await choice.click(); await L.settle(p, 400);
 }
-// the second tap: ticks it for the cook on it, through the picker's save
-async function finish(p, line) { await p.locator('#nbr-' + (line || lastTick) + ' .nb-box').click(); await L.settle(p, 400); }
-async function choose(p, id) { const line = lastTick; await stampFor(p, id); await finish(p, line); }
 const current = p => p.evaluate(() => ({ who: LK_PREP.state.who, uid: LK_PREP.state.uid, authed: LK_PREP.state.authed,
   session: localStorage.getItem('lk.prep.sess'), here: localStorage.getItem('lk.prep.here') }));
 const visible = async (p, selector) => !!(await p.locator(selector).count()) && await p.locator(selector).first().isVisible();
@@ -99,7 +92,7 @@ async function open(b, options = {}) {
     });
     ok(!!shape && shape.modal === 'true' && shape.outside && shape.focus, width + ': native modal is outside the prep root and receives focus');
     if (!shape) return;
-    ok(/Who's on it\?/.test(shape.text) && /Slice onions/.test(shape.text) && /2 tubs/.test(shape.text), width + ': dialog identifies the exact task and amount');
+    ok(/Who did this\?/.test(shape.text) && /Slice onions/.test(shape.text) && /2 tubs/.test(shape.text), width + ': dialog identifies the exact task and amount');
     ok(shape.left >= -1 && shape.right <= width + 1 && shape.targets.every(h => h >= 44), width + ': dialog fits and choices retain 44 px targets');
     ok(width < 720 ? Math.abs(shape.bottom - shape.vh) <= 1 : shape.width <= 422 && shape.top > 0 && shape.bottom < shape.vh && Math.abs((shape.left + shape.right) / 2 - width / 2) <= 1,
       width + ': phone bottom sheet or centred tablet/desktop dialog');
@@ -151,8 +144,8 @@ async function open(b, options = {}) {
 
   await step('personal phone and unrelated work', async () => {
     p = await open(b, { settings: {} });
-    await tick(p, 'i1'); await tick(p, 'i1'); await tick(p, 'i2', true); await tick(p, 'i2', true);
-    ok(!(await p.$('#pt-sheet')) && prepared(await item(p, 'i1'), 'ann', 'ann') && prepared(await item(p, 'i2'), 'ann', 'ann'), 'personal phone: on the box and the words, the first tap stamps and the second ticks, with self attribution');
+    await tick(p, 'i1'); await tick(p, 'i2', true);
+    ok(!(await p.$('#pt-sheet')) && prepared(await item(p, 'i1'), 'ann', 'ann') && prepared(await item(p, 'i2'), 'ann', 'ann'), 'personal-phone boxes and words stay one tap and record self attribution');
     await p.fill('#p-text', 'Wash parsley'); await p.fill('#p-section', 'Larder'); await p.fill('#p-qty', '2 bunches'); await p.press('#p-text', 'Enter'); await L.settle(p, 350);
     ok(await p.evaluate(() => Object.values(__fake.dump()).some(x => x && x.text === 'Wash parsley' && x.qty === '2 bunches' && x.addedById === 'ann' && !x.preparedById)), 'normal Add retains item, section, quantity and creator without a doer picker');
     await p.goto(L.BASE + '#/waste'); await L.settle(p, 500); await L.wLog(p);
@@ -202,8 +195,8 @@ async function open(b, options = {}) {
   });
 
   await step('connection failure and retry', async () => {
-    p = await open(b); await tick(p); await stampFor(p, 'bo');
-    await p.evaluate(() => { __fake.mode = 'fail'; }); await finish(p);
+    p = await open(b); await tick(p);
+    await p.evaluate(() => { __fake.mode = 'fail'; }); await choose(p, 'bo');
     ok(!(await item(p, 'i1')).done && !!(await p.$('#pt-sheet [data-pt="retry"]')), 'a failed save leaves the item open and offers retry in its task context');
     ok(!/Ticked/.test(await L.txt(p, '.p-toast') || ''), 'a refused connection is never announced as a successful tick');
     await p.evaluate(() => { __fake.mode = 'ok'; }); await p.locator('#pt-sheet [data-pt="retry"]').click(); await L.settle(p, 500);
@@ -211,8 +204,8 @@ async function open(b, options = {}) {
   });
 
   await step('pending and acknowledgement deduplication', async () => {
-    p = await open(b); await tick(p); await stampFor(p, 'bo'); await p.evaluate(() => { __fake.mode = 'hold'; });
-    await p.locator('#nbr-i1 .nb-box').click(); await L.settle(p, 250);
+    p = await open(b); await tick(p); await p.evaluate(() => { __fake.mode = 'hold'; });
+    await p.locator('#pt-sheet [data-pt="choose"][data-id="bo"]').click(); await L.settle(p, 250);
     await p.evaluate(() => { document.querySelector('#pt-sheet [data-pt="choose"][data-id="bo"]')?.click(); document.querySelector('#nbr-i1 .nb-box')?.click(); });
     ok((await completionWrites(p, 'i1')).length === 1 && await p.evaluate(() => LK_PREP.unsent()), 'repeated taps during a pending write create one completion and keep unsent state');
     ok(!/Ticked/.test(await L.txt(p, '.p-toast') || ''), 'a locally pending snapshot is not announced as success');
@@ -249,9 +242,9 @@ async function open(b, options = {}) {
   });
 
   await step('late authoritative acknowledgement', async () => {
-    p = await open(b); await tick(p); await stampFor(p, 'bo');
+    p = await open(b); await tick(p);
     const before = await p.evaluate(k => (__fake.dump()[k] || {}).ticked || 0, key('activity', 'ann'));
-    await p.evaluate(() => { __fake.mode = 'fail'; }); await finish(p);
+    await p.evaluate(() => { __fake.mode = 'fail'; }); await choose(p, 'bo');
     const attempts = await completionWrites(p, 'i1'), value = attempts[0] && attempts[0].data;
     ok(attempts.length === 1 && !!(await p.$('#pt-sheet [data-pt="retry"]')) && !(await item(p, 'i1')).done,
       'the rejected callback leaves one uncertain completion attempt and its choice open');
@@ -296,7 +289,7 @@ async function open(b, options = {}) {
     ok((await done.locator('.nb-dw').innerText()).includes('Ann') && !(await done.locator('.nb-dw').innerText()).includes('Bo'), 'an old-client re-tick ignores inherited attribution from another completion cycle');
     ok(!(await done.locator('[data-p="tick"]').count()), 'being the reported worker does not grant the authenticated recorder\'s native Undo');
     await p.context().close(); p = await open(b, { settings: {}, extra: fixture({ [itemKey('i1')]: { ...legacy, done: false, doneAt: 0, doneBy: '', doneById: '' } }) });
-    await tick(p); await tick(p);
+    await tick(p);
     ok(prepared(await item(p, 'i1'), 'ann', 'ann'), 'a new personal-phone completion replaces stale legacy metadata with its own cycle');
   });
 

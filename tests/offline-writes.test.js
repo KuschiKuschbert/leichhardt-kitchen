@@ -12,9 +12,6 @@
 // Since 4 Nov 2026 the strip is the floating band (tests/signal-band.test.js): one element kept in the page, up while it
 // has the class is-on, and the update band waits behind it.
 const L = require('./lib');
-// I'm on it (5 Nov 2026): on the prep list the first tap on an open line stamps who is on it and the second ticks it;
-// order lines still tick in one. tapTick taps the way that ends in a tick on the page the check is on.
-const tapTick = async (p, hash, fn, arg) => { await p.evaluate(fn, arg); if (hash === '#/prep') { await L.settle(p, 300); await p.evaluate(fn, arg); } };
 const { R, ok } = L.results(), { txt } = L;
 const today = L.ymd(new Date(L.NOW));
 const mark = p => p.evaluate(() => { window.__mark = 1; });
@@ -127,7 +124,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       p = await L.open(b, hash, { who, wait: 1500 });
       const i = await rowAt(p, target), r0 = await rows(p);
       await hold(p);
-      await tapTick(p, hash, i => document.querySelectorAll('.nb-row')[i].querySelector('.nb-box').click(), i);
+      await p.evaluate(i => document.querySelectorAll('.nb-row')[i].querySelector('.nb-box').click(), i);
       await L.settle(p, 300);
       const r1 = await rows(p), moved = Math.max(0, ...r0.slice(i).map((r, k) => Math.abs(((r1[i + k] || {}).top || 0) - r.top) + Math.abs(((r1[i + k] || {}).h || 0) - r.h)));
       ok(i >= 0 && r1.length === r0.length && moved === 0, hash + ' ' + who + ' at 390, good signal: a tick moves no row (' + target + ', moved ' + moved + ' px)');
@@ -158,7 +155,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       }));
       ok(held.rows > 0 && held.n === held.rows && !held.words && !held.seen, hash + ' ' + who + ', no signal: every row keeps the room for Not sent, unseen and with no words in the row (' + JSON.stringify(held) + ')');
       const i = await rowAt(p, offTarget), r0 = await rows(p);
-      await tapTick(p, hash, i => document.querySelectorAll('.nb-row')[i].querySelector('.nb-box').click(), i);
+      await p.evaluate(i => document.querySelectorAll('.nb-row')[i].querySelector('.nb-box').click(), i);
       await L.settle(p, 300);
       const r1 = await rows(p), moved = Math.max(0, ...r0.slice(i).map((r, k) => Math.abs(((r1[i + k] || {}).top || 0) - r.top) + Math.abs(((r1[i + k] || {}).h || 0) - r.h)));
       ok(await unsent(p, offTarget) === 'shown', hash + ' ' + who + ', no signal: the ticked line shows Not sent (' + await unsent(p, offTarget) + ')');
@@ -187,10 +184,9 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await p.evaluate(() => [...document.querySelectorAll('.nb-rows .nb-row')].find(r => /^Make gravy/.test((r.querySelector('.nb-t') || {}).textContent || '')).scrollIntoView({ block: 'center' }));
     await L.settle(p, 300);
     const g = await at('Make gravy'), l = await at('Laksa');
-    // two taps each since 5 Nov 2026 (the first stamps who is on it, the second ticks), and still no row moves under them
-    await p.mouse.click(g.x, g.wy); await L.settle(p, 250); await p.mouse.click(g.x, g.wy);
+    await p.mouse.click(g.x, g.wy);
     await L.settle(p, 250);
-    await p.mouse.click(l.x, l.top + l.h / 3); await L.settle(p, 250); await p.mouse.click(l.x, l.top + l.h / 3);
+    await p.mouse.click(l.x, l.top + l.h / 3);
     await L.settle(p, 300);
     const done = await p.evaluate(() => ['Make gravy', 'Laksa'].map(t => { const r = [...document.querySelectorAll('.nb-rows .nb-row')].find(r => ((r.querySelector('.nb-t') || {}).textContent || '').indexOf(t) === 0); return !!(r && r.classList.contains('is-done')); }));
     ok(done[0] && done[1], 'prep, no signal, two fast taps down the list: Make gravy and Laksa both end ticked (' + JSON.stringify(done) + ')');
@@ -207,7 +203,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       p = await L.open(b, hash, { wait: 1500 });
       await p.context().setOffline(true);
       await hold(p);
-      await tapTick(p, hash, t => [...document.querySelectorAll('.nb-row')].find(r => ((r.querySelector('.nb-t') || {}).textContent || '').indexOf(t) === 0).querySelector('.nb-box').click(), target);
+      await p.evaluate(t => [...document.querySelectorAll('.nb-row')].find(r => ((r.querySelector('.nb-t') || {}).textContent || '').indexOf(t) === 0).querySelector('.nb-box').click(), target);
       // a ticked prep line goes to Done today after 3.5 seconds, an ordered line to Ordered today after 10 minutes
       // (the mouse moves halfway, or the desktop idle lock signs the test browser out after 7.5 minutes)
       if (hash === '#/orders') { await p.clock.fastForward('05:00'); await p.mouse.move(5, 300); await p.mouse.move(9, 320); await p.clock.fastForward('05:30'); }
@@ -418,7 +414,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     let u = await bar(p);
     ok(u && u.t === 'Checking the signal...', 'update, slow server: the tap says it is checking (' + JSON.stringify(u) + ')');
     await hold(p);
-    await tapTick(p, '#/prep', () => [...document.querySelectorAll('.nb-row')].find(r => /^Slice onions/.test((r.querySelector('.nb-t') || {}).textContent || '')).querySelector('.nb-box').click());
+    await p.evaluate(() => [...document.querySelectorAll('.nb-row')].find(r => /^Slice onions/.test((r.querySelector('.nb-t') || {}).textContent || '')).querySelector('.nb-box').click());
     await L.settle(p, 200);
     await p.click('.upd-bar button');
     await L.settle(p, 200);
@@ -617,7 +613,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     typing: async p => { await p.fill('#p-text', 'Brunoise shallots'); return () => p.evaluate(() => document.querySelector('#p-text').value === 'Brunoise shallots'); },
     ticking: async p => {
       await hold(p);
-      await L.tickPrep(p, '[data-p="tick"][data-id="i1"]');
+      await p.click('[data-p="tick"][data-id="i1"]');
       return () => p.evaluate(() => !!(window.LK_PREP.state.items.find(x => x.id === 'i1') || {}).done);
     },
     scrolling: async p => { await p.mouse.move(200, 500); await p.mouse.wheel(0, 300); return () => true; }
@@ -994,7 +990,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await back(p);
     await L.sleep(400);
     await hold(p);
-    await L.tickPrep(p, '[data-p="tick"][data-id="i1"]');
+    await p.tap('[data-p="tick"][data-id="i1"]');
     await L.settle(p, 4000);
     ok(!(await reloaded(p)), 'back after 6 minutes, a line ticked while it checked: no reload');
     ok(await ticked(p), 'back after 6 minutes, a line ticked while it checked: the tick is still there');
@@ -1017,7 +1013,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await hold(p);
     open();
     await L.sleep(300);
-    await tapTick(p, '#/prep', () => document.querySelector('[data-p="tick"][data-id="i1"]').click());
+    await p.evaluate(() => document.querySelector('[data-p="tick"][data-id="i1"]').click());
     await L.settle(p, 3000);
     ok(!(await reloaded(p)), 'back after 6 minutes, a tap just as the files came in: it waits a moment, sees the tick and does not reload');
     ok(await ticked(p), 'back after 6 minutes, a tap just as the files came in: the tick is still there');
