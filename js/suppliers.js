@@ -11,7 +11,7 @@
   function loading(text, icon, rows) { return window.LK_MOTION ? window.LK_MOTION.status(text, { icon: icon, state: 'busy', rows: rows || 0 }) : '<p class="hint" role="status">' + esc(text) + '</p>'; }
   function blank() {
     var collapsed = false; try { collapsed = localStorage.getItem('lk.sup.sidebar') === 'hide'; } catch (e) {}
-    return { root: null, route: {}, routeKey: '', openItems: Object.create(null), suppliers: null, sid: '', mode: 'order', busy: false, err: '', msg: '', validation: null,
+    return { root: null, route: {}, routeKey: '', openItems: Object.create(null), suppliers: null, unread: [], sid: '', mode: 'order', busy: false, err: '', msg: '', validation: null,
       sidebar: !collapsed, q: '', group: '', filter: '', infoOpen: null, requestsWant: false, page: 0, drafts: Object.create(null), history: Object.create(null),
       audit: Object.create(null), historyOpen: false, historyId: '', historyQ: '', smart: false, requests: null,
       requestsBusy: false, requestsError: '', requestsDay: '', cutQ: '', ed: null, supplierEd: null, review: null, additional: '',
@@ -110,7 +110,11 @@
     if (code === 'unavailable' || code === 'offline' || navigator.onLine === false) return 'No signal. Supplier data needs a connection. Your current draft is kept while this page stays open.';
     if (code === 'version') return 'The supplier tools on this device need an update. Connect, reload the book and open Supplier order again.';
     if (code === 'invalid') return e.message || 'Check the item names, quantities and units before saving.';
-    return 'Could not finish. Check the connection and try again. Your draft is kept.';
+    // the catalogue check (js/supplier-core.js) refused a saved record: a connection is not the problem, so say what is
+    if (e && typeof e.field === 'string') return 'A saved supplier record has a value the book cannot read (' + (e.field || code) + '). Nothing was changed.';
+    // anything else: the reason it gave, so a screenshot says what went wrong (5 Nov 2026)
+    var why = code ? String(code) : e && (e.name || e.message) ? String((e.name || 'Error') + (e.message ? ': ' + e.message : '')) : '';
+    return 'Could not finish. Check the connection and try again. Your draft is kept.' + (why ? ' (' + why.slice(0, 120) + ')' : '');
   }
   function fieldUnit(field, i, d) {
     return Object.prototype.hasOwnProperty.call(d.units[field], i.id) ? d.units[field][i.id] : field === 'qty' ? i.orderUnit : i.parUnit;
@@ -129,7 +133,7 @@
     if (window.LK_SUP_CORE && window.LK_SUP_CORE.API === 4 && window.LK_SUP_STORE && window.LK_SUP_STORE.API === 2) return Promise.resolve();
     if (!loadingCode) loadingCode = Promise.all([
       window.LK_SUP_CORE && window.LK_SUP_CORE.API === 4 ? null : A.load('js/supplier-core.js?v=4'),
-      window.LK_SUP_STORE && window.LK_SUP_STORE.API === 2 ? null : A.load('js/supplier-store.js?v=2')
+      window.LK_SUP_STORE && window.LK_SUP_STORE.API === 2 ? null : A.load('js/supplier-store.js?v=3')
     ]).then(function () {
       if (!window.LK_SUP_CORE || window.LK_SUP_CORE.API !== 4 || !window.LK_SUP_STORE || window.LK_SUP_STORE.API !== 2) throw { code: 'version' };
     }).catch(function (e) { loadingCode = null; throw e; });
@@ -142,10 +146,10 @@
     return deps().then(function () { return B().ready(); }).then(function () {
       if (g !== generation || key !== ctx() || !canRead()) throw { code: 'context' };
       C = window.LK_SUP_CORE; if (!store) store = window.LK_SUP_STORE.create(B());
-      return store.loadSuppliers().then(function (list) { return list.map(function (s) { return C.cleanSupplier(s); }); });
+      return store.loadSuppliers().then(function (list) { var out = list.map(function (s) { return C.cleanSupplier(s); }); out.bad = Array.isArray(list.bad) ? list.bad : []; return out; });
     }).then(function (list) {
       if (g !== generation || key !== ctx()) return;
-      M.suppliers = list.sort(function (a, b) { return a.name.localeCompare(b.name); }); M.busy = false; if (force) { M.history = Object.create(null); M.audit = Object.create(null); M.requests = null; if (M.review && !M.review.uncertain && !M.review.recorded) M.review = null; }
+      M.unread = list.bad; M.suppliers = list.sort(function (a, b) { return a.name.localeCompare(b.name); }); M.busy = false; if (force) { M.history = Object.create(null); M.audit = Object.create(null); M.requests = null; if (M.review && !M.review.uncertain && !M.review.recorded) M.review = null; }
       if (M.route.cutoffId) { var linked = list.filter(function (s) { return s.cutoffId === M.route.cutoffId; }); if (linked.length === 1) M.sid = linked[0].id; }
       if (!supplier()) M.sid = M.suppliers.length ? M.suppliers[0].id : '';
       // the card reads no supplier's history: none of them is this cut-off's
@@ -456,12 +460,21 @@
     // Until a recording is confirmed, another route offers recovery only. Workspace edits must not replace its ID.
     if (M.review && (M.saving || M.review.uncertain) && task !== 'review') return '<section class="su-wrap"><h2 id="rtitle" tabindex="-1">Confirm order recording</h2>' + statusHTML() + '</section>';
     if (M.suppliers && (task === 'editor' || task === 'supplier' || task === 'import' || task === 'review')) return '<section class="su-wrap">' + (task === 'editor' ? editorHTML() : task === 'supplier' ? supplierEditorHTML() : task === 'import' ? importHTML() : reviewHTML()) + '</section>';
-    var html = headerHTML() + statusHTML();
+    var html = headerHTML() + statusHTML() + unreadHTML();
     if (M.busy && !M.suppliers) return '<section class="su-wrap">' + html + loading('Reading the supplier catalogue...', 'orders', 3) + '</section>';
     if (!M.suppliers) return '<section class="su-wrap">' + html + '</section>';
     if (cutCard()) return '<section class="su-wrap">' + html + cutCardHTML() + '</section>';
-    if (!M.suppliers.length) return '<section class="su-wrap">' + html + emptyHTML() + importInputHTML() + '</section>';
+    if (!M.suppliers.length) return '<section class="su-wrap">' + html + ((M.unread || []).length ? '' : emptyHTML() + importInputHTML()) + '</section>';
     return '<section class="su-wrap">' + html + '<div class="su-workspace-tools">' + button('collapse', M.sidebar ? 'Hide suppliers' : 'Show suppliers', ' aria-expanded="' + M.sidebar + '"') + '</div><div class="su-layout' + (M.sidebar ? '' : ' is-collapsed') + '">' + sidebarHTML() + '<div class="su-content">' + (M.mode === 'manage' ? manageHTML() : orderHTML()) + '</div></div>' + importInputHTML() + '</section>';
+  }
+  /* Saved suppliers the catalogue check refused (supplier-store.js loadSuppliers, 5 Nov 2026): named, so the head chef
+     knows which one, while the others work. Read with the list, no extra reads. */
+  function unreadHTML() {
+    var u = M.unread || [];
+    if (!u.length) return '';
+    return '<section class="su-error su-unread" role="status"><b>' + (u.length === 1 ? 'One supplier could not be read' : u.length + ' suppliers could not be read') + '</b><ul>' + u.map(function (x) {
+      return '<li>' + esc(x.name) + (x.item ? ': ' + esc(x.item) : '') + (x.field ? ' <small class="hint">(' + esc(x.field) + ')</small>' : '') + '</li>';
+    }).join('') + '</ul><p>' + (M.suppliers && M.suppliers.length ? 'The other suppliers work as usual. ' : '') + 'Nothing was changed. Send a screenshot of this to whoever looks after the book.</p></section>';
   }
   function importInputHTML() { return canEdit() ? '<input class="visually-hidden" type="file" accept="application/json,.json" data-sf="import" aria-label="Import private supplier catalogue">' : ''; }
   function draw() {
