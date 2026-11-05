@@ -30,7 +30,7 @@ async function admin(b, extra, options) {
 async function save(p, pre) {
   await L.pick(p, '[data-k="cut-p0"]', String(pre));
   await p.click('[data-p="cut-save"]');
-  await L.waitFor(p, ({ key, value }) => window.__fake.dump()[key]?.cutoffs?.[0]?.pre === value && /Saved/.test(document.querySelector('.a-cut .saved')?.textContent || ''), { key: CFG, value: pre }, 10000);
+  await L.waitFor(p, ({ key, value }) => window.__fake.dump()[key]?.cutoffs?.[0]?.pre === value && /^Saved \d\d:\d\d$/.test(document.querySelector('.a-cut .lk-stamp')?.textContent || ''), { key: CFG, value: pre }, 10000);
 }
 
 (async () => {
