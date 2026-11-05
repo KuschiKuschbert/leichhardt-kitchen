@@ -255,7 +255,7 @@ These hold for every file, old and new. When you touch code that breaks one, bri
 - Every popup or sheet dims the page behind it, closes on the backdrop, Cancel and Escape, and is appended to `document.body`.
 - A choice of more than about 12 things gets a type-to-find box with the likely few first, not a long dropdown.
 - A row that scrolls sideways fades at its edge so people can see there is more.
-- Group with space and headings first. A box or a fill is for something that needs attention, not for every group.
+- Group with space and headings first. A box or a fill is for something that needs attention, not for every group. A long list of rows may alternate a light tint to keep the eye on its row (Settings, head chef 5 Nov 2026), counted from the rows on screen.
 - Pages work at 390, 768 and 1280 px with no sideways scroll (the click tests check it).
 
 **Loading**

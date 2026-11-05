@@ -120,6 +120,33 @@ const caps = p => p.evaluate(() => [...document.querySelectorAll('.st-caps li')]
   ok(await p.$eval('[data-row="qr"]', e => e.offsetHeight === 0), 'phone: no QR code row (it is for scanning from a bigger screen)');
   await p.context().close();
 
+  // Settings rows alternate (head chef, 5 Nov 2026): every second row on screen in a group has a light tint, counted again
+  // when a search hides rows and without the QR row on a phone (it shows from 900 px), so two tinted rows never touch. The
+  // words sit in from the tint's edge. Kitchen, Overview in the admin panel uses the same rows and stays plain.
+  const stripes = q => q.evaluate(() => [...document.querySelectorAll('.st-grp:not([hidden])')].map(g => [...g.querySelectorAll('.st-row')]
+    .filter(r => r.getClientRects().length).map(r => getComputedStyle(r).backgroundColor === 'rgba(0, 0, 0, 0)' ? '0' : '1').join('')));
+  const alternate = list => list.length > 0 && list.every(x => /^(01)*0?$/.test(x)) && list.some(x => x.indexOf('1') >= 0);
+  for (const [who, width, extra] of [['ann', 390, {}], ['admin', 390, { admin: true }], ['admin', 1280, { admin: true }]]) {
+    p = await L.open(b, '#/settings', Object.assign({ who: who === 'admin' ? '' : who, width, height: 900, wait: 1500 }, extra));
+    await L.settle(p, 500);
+    const s0 = await stripes(p);
+    ok(alternate(s0), who + ' ' + width + ': rows alternate plain and tinted in every group (' + s0.join(' ') + ')');
+    ok(await p.evaluate(() => { const r = document.querySelector('.st-grp .st-row'), l = r && r.querySelector('.st-l'); return !!l && l.getBoundingClientRect().left - r.getBoundingClientRect().left >= 8; }), who + ' ' + width + ': the words sit in from the tint\'s edge');
+    if (who === 'admin') {
+      await p.fill('#st-find', 'the'); await L.settle(p, 400);
+      const s1 = await stripes(p), hid = await p.evaluate(() => document.querySelectorAll('.st-grp:not([hidden]) .st-row[hidden]').length);
+      ok(hid > 0 && alternate(s1), who + ' ' + width + ': after a search hides ' + hid + ' rows, the rows left still alternate (' + s1.join(' ') + ')');
+      await p.fill('#st-find', ''); await L.settle(p, 300);
+    }
+    ok(!(await L.overflow(p)), who + ' ' + width + ': no sideways scroll with the tint');
+    ok(p.errors.length === 0, who + ' ' + width + ': stripes, no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+  p = await L.open(b, '#/admin', { admin: true, adminPage: 'kitchen-home', who: '', width: 1280, height: 900, wait: 1600 });
+  await L.settle(p, 500);
+  ok(await p.evaluate(() => { const r = [...document.querySelectorAll('.k-home .st-row')]; return r.length > 2 && r.every(x => getComputedStyle(x).backgroundColor === 'rgba(0, 0, 0, 0)'); }), 'admin Kitchen, Overview: its rows stay plain');
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
