@@ -231,7 +231,7 @@ These hold for every file, old and new. When you touch code that breaks one, bri
 - No reads in a loop. Read many records in one query (`in` with up to 30 ids, a date range, or `collectionGroup`), never one `getDoc` per item or one `getDocs` per day. An empty collection still costs a read.
 - A listener (`onSnapshot`) is only for today's live data that other phones change during service (today's prep, orders and wastage lines, `config/main`, the function list). Anything that changes overnight or rarely is read once a day and kept with `dayCache()`.
 - A once-a-day job keeps its "done today" flag on the phone (`lk.*`), not only in memory, so the 04:00 refresh and updates do not run it again.
-- Admin past-day reports use the current memory-only Firestore cache and existing correction stamps (`pastRead()` in `js/prep.js`). Reuse loaded data within the page; after a full reload, re-read non-empty past days as needed. Do not introduce persistent private report storage. Refresh is a tap, never a timer.
+- Admin past-day reports read past days from the day digests where they are current (`digestRead()`, 5 Nov 2026), the rest through the current memory-only Firestore cache and existing correction stamps (`pastRead()` in `js/prep.js`). Reuse loaded data within the page; after a full reload, re-read non-empty past days as needed. Do not introduce persistent private report storage. Refresh is a tap, never a timer.
 - Totals that every phone needs from many past days (what is usual, what is wasted often) are worked out by the nightly job into one small record that phones read once a day.
 - `tests/read-budget.test.js` sets a read budget for a staff phone's first open of the day, a reload, the admin panel and the admin panel again the same day (the stand-in in `tests/fake/` bills reads like Firestore: `__fake.bill`). A change that goes over it either reads less or raises the budget in the same pull request with the reason.
 
@@ -243,7 +243,7 @@ These hold for every file, old and new. When you touch code that breaks one, bri
 **Who sees what**
 - Anything staff must not see is locked in `firestore.rules`, not only hidden on screen. Hidden-only is a bug.
 - Staff pages show today. Past days, totals and corrections live in the admin panel for the head chef and sous chefs.
-- Staff phones do not read past lines just to build hints: the hints come from the nightly summaries.
+- Staff phones do not read past lines just to build hints: the hints come from the nightly summaries and the day digests (`digest/<day>`, `docs/prep-book.md`). A fix to a past day names its day (`markPast()`, `pastNames()`), so other phones read just that day.
 
 **Text on screen**
 - Everything typed by a person or read from Firestore goes through `esc()` before it goes into HTML, attributes included.

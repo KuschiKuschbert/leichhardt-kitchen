@@ -52,7 +52,9 @@ async function reportData(p) {
   // in this page remains cheap. A full reload must fetch the fixture's 140 past prep and 35 order records again:
   // 219 reads including current data/session/listeners, rather than the former fake-persistent result of 44. The 240
   // reload ceiling records that existing runtime cost; no production reads or private persistent cache were added.
-  const BUDGET = { first: 680, firstSum: 300, reload: 40, admin: 760, adminSamePage: 60, admin2: 240 };
+  // 5 Nov 2026 (Plan B 2.2): with the day digests the first open reads 14 past days for 15 reads (the index and one
+  // query) and each rollover reads only the last day written: firstDig is measured below.
+  const BUDGET = { first: 680, firstSum: 300, firstDig: 300, reload: 40, admin: 760, adminDig: 760, adminSamePage: 60, admin2: 240 };
   const show = !!process.env.RB_SHOW;
 
   // a staff phone opens the prep list for the first time today, then goes to orders, wastage and transfers
@@ -91,6 +93,28 @@ async function reportData(p) {
   ok(p.errors.length === 0, 'with the summaries: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // and once the 03:00 job has written the day digests too (Plan B 2.2, 5 Nov 2026): one record per past day with its
+  // prep and order lines, so the hints read 14 past days for 15 reads instead of a query per day
+  const withDig = Object.assign({}, withSum), digIndex = {};
+  for (let d = 1; d <= 60; d++) {
+    const lines = kind => Object.keys(extra).filter(k => k.indexOf('/' + kind + '/' + day(d) + '/') > 0).map(k => Object.assign({ id: k.split('/').pop() }, extra[k]));
+    withDig[fsKey(['digest', day(d)])] = { v: 1, day: day(d), at: L.NOW - 11 * 3600000, prep: lines('days'), orders: lines('orders') };
+    digIndex[day(d)] = 'fp' + d;
+  }
+  withDig[fsKey(['digest', '_index'])] = { v: 1, at: L.NOW - 11 * 3600000, days: digIndex };
+  p = await measure(b, '#/prep', { who: 'ann', extra: withDig });
+  await p.evaluate(() => { location.hash = '#/orders'; }); await L.settle(p, 1200);
+  await p.evaluate(() => { location.hash = '#/waste'; }); await L.settle(p, 1200);
+  await p.evaluate(() => { location.hash = '#/transfers'; }); await L.settle(p, 1200);
+  bl = await billed(p);
+  const firstDig = sum(bl), pastLines = bl.filter(x => /\/(days|orders)\/\d{4}-\d{2}-\d{2}\//.test(x.path) && x.path.indexOf('/' + day(0) + '/') < 0);
+  if (show) console.log('first open with the summaries and digests: ' + firstDig + ' (' + top(bl) + ')');
+  ok(pastLines.length === 2, 'with the digests: the past lines read are the last written day\'s, once for each rollover (' + pastLines.map(x => x.path.split('/').slice(2, 4).join('/')).join(' ') + ')');
+  const hints = await p.evaluate(() => ({ past: Object.keys(window.LK_PREP.state.past || {}).length, ord: (window.LK_PREP.state.ordHist || []).length }));
+  ok(hints.past === 14 && hints.ord === 35, 'with the digests: the hints have 14 past days and 35 order lines (' + JSON.stringify(hints) + ')');
+  ok(p.errors.length === 0, 'with the digests: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // the head chef opens the admin panel (Insights, then Wastage, Transfers and Team)
   p = await measure(b, '#/admin', { admin: true, who: '' }, 2500);
   await L.adminTab(p, 'waste'); await L.settle(p, 1500);
@@ -124,12 +148,28 @@ async function reportData(p) {
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // the same admin panel once the day digests exist (Plan B 2.3, 5 Nov 2026): the reports' past days come from them
+  p = await measure(b, '#/admin', { admin: true, who: '', extra: withDig }, 2500);
+  await L.adminTab(p, 'waste'); await L.settle(p, 1500);
+  await L.adminTab(p, 'transfers'); await L.settle(p, 1500);
+  await L.adminTab(p, 'team'); await L.settle(p, 1500);
+  const withDigests = await reportData(p);
+  bl = await billed(p);
+  const adminDig = sum(bl);
+  if (show) console.log('admin with the digests: ' + adminDig + ' (' + top(bl) + ')');
+  ok(withDigests.prep === 140 && withDigests.orders === 35 && !withDigests.missing, 'with the digests: the admin reports have all 140 past prep lines and 35 order lines');
+  ok(!bl.some(x => /\/(days|orders)\/\d{4}-\d{2}-\d{2}\//.test(x.path) && x.path.indexOf('/' + day(0) + '/') < 0), 'with the digests: the admin reports read no past prep or order lines');
+  ok(p.errors.length === 0, 'admin with the digests: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   {
     ok(first <= BUDGET.first, 'staff first open today: ' + first + ' reads (budget ' + BUDGET.first + ')');
     ok(firstSum <= BUDGET.firstSum, 'staff first open today with the nightly summaries: ' + firstSum + ' reads (budget ' + BUDGET.firstSum + ')');
+    ok(firstDig <= BUDGET.firstDig, 'staff first open today with the summaries and day digests: ' + firstDig + ' reads (budget ' + BUDGET.firstDig + ')');
     ok(reload <= BUDGET.reload, 'staff reload the same day: ' + reload + ' reads (budget ' + BUDGET.reload + ')');
     ok(admin <= BUDGET.admin, 'admin panel open: ' + admin + ' reads (budget ' + BUDGET.admin + ')');
     ok(adminSamePage <= BUDGET.adminSamePage, 'admin reports revisited without reload: ' + adminSamePage + ' reads (budget ' + BUDGET.adminSamePage + ')');
+    ok(adminDig <= BUDGET.adminDig, 'admin panel open with the day digests: ' + adminDig + ' reads (budget ' + BUDGET.adminDig + ')');
     ok(admin2 <= BUDGET.admin2, 'admin panel reloaded the same day with a fresh memory cache: ' + admin2 + ' reads (budget ' + BUDGET.admin2 + ')');
   }
   await b.close();

@@ -635,6 +635,10 @@ await ok(getDoc(doc(await asPerson('ann'), K + 'digest/' + WY)), true, 'digest: 
 await ok(getDoc(doc(await asPerson('sam'), K + 'digest/' + WY)), true, 'digest: a sous chef reads it');
 await ok(getDoc(doc(anon, K + 'digest/' + WY)), false, 'digest: no PIN session, refused');
 await ok(getDoc(doc(owner, K + 'digest/' + WY)), true, 'digest: the head chef\'s Google account reads it');
+// the phones read the index and then the past days in one query by day (digestRead() in js/prep.js)
+await ok(getDoc(doc(await asPerson('ann'), K + 'digest/_index')), true, 'digest: staff read the index');
+await ok(getDocs(query(collection(await asPerson('ann'), K + 'digest'), where('day', '>=', WY), where('day', '<=', WT))), true, 'digest: staff list the past days by day');
+await ok(getDocs(query(collection(anon, K + 'digest'), where('day', '>=', WY), where('day', '<=', WT))), false, 'digest: no PIN session, the list is refused');
 await ok(W([['digest/' + WY, { v: 1, day: WY, at: 2, prep: [], orders: [] }]], { id: 'sam' }), false, 'digest: no phone writes one, not even a sous chef');
 await ok(W([['digest/' + WT, { v: 1, day: WT, at: 2, prep: [], orders: [] }]], { id: 'ann' }), false, 'digest: staff cannot write one');
 await ok(setDoc(doc(owner, K + 'digest/' + WY), { v: 1, day: WY, at: 3, prep: [], orders: [] }), false, 'digest: nor the head chef\'s Google account: only the nightly job');

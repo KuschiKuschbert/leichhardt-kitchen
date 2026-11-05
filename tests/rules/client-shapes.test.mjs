@@ -212,7 +212,8 @@ row('js/prep.js loadAdmins(): config/admins get (the owner check)', { ok: GOOGLE
 row('js/prep.js watchItems(): today\'s prep lines listener', { ok: KITCHEN, asks: KITCHEN, run: db => listen(C(db, `days/${TODAY}/items`)) });
 row('js/prep.js sumList(): summary/learned get', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, 'summary/learned')) });
 // Day digests (Plan B 2.1, 5 Nov 2026): read like the past lines, written only by the nightly job
-row('js/prep.js past days: digest/<day> get', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, `digest/${PAST}`)) });
+row('js/prep.js digestRead(): digest/_index get (when the job last read the lines)', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, 'digest/_index')) });
+row('js/prep.js digestRead(): the past days\' digests, one query by day', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(query(C(db, 'digest'), where('day', '>=', PAST), where('day', '<=', TODAY))) });
 row('js/prep.js loadLearned(): learned, the 500 most used (summary missing or old)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(query(C(db, 'learned'), orderBy('uses', 'desc'), limit(500))) });
 row('js/prep.js watchSections(): sections listener', { ok: KITCHEN, asks: KITCHEN, run: db => listen(C(db, 'sections')) });
 row('js/prep.js watchActivity(): activity listener (the Google device)', { ok: KITCHEN, asks: GOOGLE, run: db => listen(C(db, 'activity')) });
