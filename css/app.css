@@ -311,6 +311,18 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .st-find { display: grid; gap: 0.35rem; }
 .st-find .hint { margin: 0; }
 .st-body .hint, .st-body .saved { margin: 0; }
+/* Settings rows alternate (head chef, 5 Nov 2026): every second row on screen has a light tint, so the eye keeps to
+   its row. Counted from the rows on screen, so a search (stFilter() in js/app.js hides rows) and the QR row (laptops only)
+   never put two tinted rows together. The words sit in from the tint's edge. The small grey lines are --muted, since
+   --faint is 4.3:1 on the tint. Kitchen, Overview uses the same rows outside .st-grp and stays as it is. */
+.st-grp .st-btn { padding-inline: 0.75rem; }
+.st-grp .st-body.set-block { padding-inline: 0.75rem; }
+.st-grp .st-sub { color: var(--muted); }
+.st-grp .st-row:nth-child(even of :not([hidden], .st-qr)) { background: var(--beige); }
+@media (min-width: 900px) {
+  .st-grp .st-row:nth-child(even of :not([hidden], .st-qr)) { background: none; }
+  .st-grp .st-row:nth-child(even of :not([hidden])) { background: var(--beige); }
+}
 /* Kitchen, Overview: a row's editor opens under it (admin pages step 6, part 2) with the team list's Save bar */
 .k-body { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; padding: 0.1rem 0 1.1rem; }
 .st-body .kb-seasonal-settings { padding: 0; border: 0; }
