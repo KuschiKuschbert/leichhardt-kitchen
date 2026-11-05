@@ -66,6 +66,9 @@ async function clearForm(p, par) { await p.fill('[data-sf="par"]', par); await a
   ok((await dump(p))[F.key(['suppliers', 'northside'])].items.find(x => x.id === 't-stock').par === '', 'invalid negative par is not saved');
   // Back to the catalogue through its route discards the invalid editor only after the page can explicitly do so.
   await p.fill('[data-sf="par"]', '10'); await action(p, 'save-item'); await L.settle(p, 400);
+  // after the tap (5 Nov 2026, docs/action-feedback.md): back on the item's row, in view, and it wears "Saved HH:MM"
+  ok(await p.evaluate(() => { const b = document.querySelector('[data-su="edit"][data-i="t-stock"]'), row = b && b.closest('.su-catalogue-row'), st = row && row.querySelector('.lk-stamp'), r = b && b.getBoundingClientRect(); return !!st && /^Saved \d\d:\d\d$/.test(st.textContent.trim()) && r.top >= 0 && r.bottom <= innerHeight; }), 'catalogue save: the item\'s row is in view and wears Saved HH:MM');
+  ok((await p.$$('.su-catalogue-row .lk-stamp')).length === 1, 'catalogue save: only the saved item wears the stamp');
 
   // Manual additions get their own stable identity and explicit units, not a fabricated PDF source.
   await action(p, 'add'); await L.waitFor(p, () => !!document.querySelector('[data-sf="name"]'), null, 5000);
@@ -87,6 +90,8 @@ async function clearForm(p, par) { await p.fill('[data-sf="par"]', par); await a
   await action(p, 'review'); await L.waitFor(p, () => !!document.querySelector('[data-su="record"]'), null, 5000);
   await action(p, 'record');
   await L.waitFor(p, k => Object.keys(window.__fake.dump()).some(x => x.startsWith(k) && !/\/(previous|older)$/.test(x)), F.key(['suppliers', 'northside', 'orders']) + '/', 10000);
+  await L.waitFor(p, () => /Order recorded/.test((document.querySelector('.su-status') || {}).textContent || ''), null, 5000).catch(() => {});
+  ok(await p.evaluate(() => { const m = document.querySelector('.su-status'), r = m && m.getBoundingClientRect(); return !!m && /Order recorded/.test(m.textContent) && r.top >= 0 && r.bottom <= innerHeight; }), 'record: the order sheet starts at its top, where "Order recorded" is in view');
   s = await dump(p);
   const saved = ordersOf(s, 'northside').find(([k]) => !/\/(previous|older)$/.test(k));
   ok(!!saved && saved[1].lines.length === 2 && saved[1].lines.some(x => x.name === 'TEST MANUALLY ADDED BUNCH' && x.qty === '3 bunch'), 'record: individual exact product names and quantities are saved');
