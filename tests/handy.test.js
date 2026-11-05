@@ -63,8 +63,9 @@ const side = (page, where) => page.evaluate(w => {
       // tap the due chip: it goes on with its section, says so, and leaves Quick add
       await p.evaluate(() => { const c = [...document.querySelectorAll('.nb-qadd [data-p="quick"]')].find(x => /Make aioli/.test(x.textContent)); c.scrollIntoView(); c.click(); });
       await L.settle(p, 400);
-      const t = await p.evaluate(() => { const e = document.querySelector('.p-toast'); return e ? e.textContent : ''; });
-      ok(/^Added Make aioli to Sauce/i.test(t.trim()), 'tap: the due chip says Added Make aioli to Sauce (' + t + ')');
+      // the chip is in the open add sheet: its receipt says it (step 2b, 5 Nov 2026)
+      const t = await p.evaluate(() => { const e = document.querySelector('.p-sheet .just-l:last-child .just-n'); return e ? e.textContent : ''; });
+      ok(/^Make aioli to Sauce$/i.test(t.trim()), 'tap: the sheet says Make aioli to Sauce (' + t + ')');
       const s = await store(p);
       ok(Object.keys(s).filter(k => k.indexOf('/days/' + today + '/items/') > 0 && s[k].text === 'Make aioli' && s[k].station === 'Sauce' && !s[k].deleted).length === 1, 'tap: one Make aioli line written for today');
       const after = await side(p, where);

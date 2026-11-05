@@ -512,6 +512,53 @@
     setTimeout(function () { if (justAt[id] === e) { delete justAt[id]; draw(); } }, JUST_LIFE + 50);
   }
   function justStamp(id) { var e = justAt[id]; return e && e.until > Date.now() ? ' <span class="lk-stamp is-new">New ' + esc(e.at) + '</span>' : ''; }
+  /* Step 2b (5 Nov 2026, the mix the head chef chose): an open add sheet keeps a receipt of what it added, "Added just
+     now", the last two, newest last, right under the box the cook is looking at. Each has Undo while the rules let its
+     writer take it back (ownAddUndo, 120 s; 110 s here for the clocks), and only where the slip offered Undo before. While
+     that sheet is open its plain adds are said there (and read out), not on a slip over the page; a slip that stops a
+     mistake (a spelling or section corrected, already on the list) still shows. Close puts the last add on the slip, with
+     its Undo, where people know it. Memory only: nothing is saved. */
+  var JUST_UNDO = 110000, justList = [], justOpenAt = 0;
+  function sheetPg() { return S.pLog ? 'p' : S.oLog ? 'o' : S.wLog ? 'w' : S.xLog ? 'x' : ''; }
+  // pg: p, o, w or x; text: the line; more: what follows its name ("to Sauce", "1.5 kg"); msg: the slip's words;
+  // undo: takes the add back, or null where staff are told to ask the head chef; plain: the slip's words then
+  function justAdd(pg, id, text, more, msg, undo, plain) {
+    var e = { pg: pg, id: id, text: text, more: more || '', msg: msg, plain: plain || '', undo: undo || null, t: Date.now(), undone: false };
+    justList = justList.filter(function (x) { return Date.now() - x.t < JUST_LIFE; }); justList.push(e);
+    // the receipt's Undo goes when the rules would refuse it
+    if (undo) setTimeout(function () { if (justList.indexOf(e) >= 0 && sheetPg() === pg) draw(); }, JUST_UNDO + 50);
+    return e;
+  }
+  function justUndoOk(e) { return !!e.undo && !e.undone && Date.now() - e.t < JUST_UNDO; }
+  function justAct(e) { return { label: 'Undo', fn: function () { if (justUndoOk(e)) { e.undone = true; e.undo(); } } }; }
+  // one place a plain add is confirmed: the open add sheet's receipt (read out), else the slip
+  function addSay(pg, id, text, more, msg, undo, plain) {
+    var e = justAdd(pg, id, text, more, msg, undo, plain);
+    if (sheetPg() === pg) { liveSay(msg); draw(); return e; }
+    if (undo) toast(msg, justAct(e)); else toast(plain || msg, null, 6000);
+    return e;
+  }
+  function justHTML(pg) {
+    if (sheetPg() !== pg) return '';
+    var l = justList.filter(function (x) { return x.pg === pg && x.t >= justOpenAt; }).slice(-2);
+    if (!l.length) return '';
+    return '<div class="just-r"><p class="just-t">Added just now</p>' + l.map(function (x) {
+      return '<div class="just-l' + (x.undone ? ' is-undone' : '') + '"><span class="just-n"><b>' + esc(slipName(x.text)) + '</b>' + (x.more ? ' ' + esc(x.more) : '') + '</span>' +
+        (x.undone ? '<span class="just-gone">Undone</span>' : justUndoOk(x) ? '<button type="button" class="btn just-u" data-p="just-undo" data-id="' + esc(x.id) + '" aria-label="' + esc('Undo ' + x.text) + '">Undo</button>' : '') + '</div>';
+    }).join('') + '</div>';
+  }
+  function justUndo(id) {
+    var e = justList.filter(function (x) { return x.id === id; }).pop();
+    if (!e || !justUndoOk(e)) { draw(); return; }
+    e.undone = true; e.undo(); liveSay('Undone: ' + e.text); draw();
+  }
+  // the sheet closed: its last add goes on the slip, with Undo while it may still be taken back
+  function justClosed(pg) {
+    var e = justList.filter(function (x) { return x.pg === pg && x.t >= justOpenAt && !x.undone; }).pop();
+    if (!e) return;
+    if (justUndoOk(e)) toast(e.msg, justAct(e), Math.min(9000, JUST_UNDO - (Date.now() - e.t)));
+    else toast(e.plain || e.msg, null, e.plain ? 6000 : 3500);
+  }
   function markRow(row, on) {
     var s = row && row.querySelector('.nb-mk'), h = markHTML(on);
     if (s && s.innerHTML !== h) s.innerHTML = h;
@@ -1928,7 +1975,7 @@
       } });
     }
     else addedToast(sec, S.date, made.id, t.slice(0, 160));
-    if (pr.changes.length || secInfo.from) justMark(made.id);
+    if (pr.changes.length || secInfo.from) { justMark(made.id); justAdd('p', made.id, t.slice(0, 160), sec ? 'to ' + sec : '', 'Added ' + slipName(t) + (sec ? ' to ' + sec : ''), prepUndo(S.date, made.id)); if (sheetPg() === 'p') draw(); }
     S.text = ''; S.qty = ''; S.section = keptSection(sec); S.pickedText = ''; draw();
     var el = S.root && S.root.querySelector('[data-k="p-text"]'); if (el) el.focus();
   }
@@ -1946,7 +1993,7 @@
     made.catch(function (e) { failed(e, function () { if (!S.qty.trim()) S.qty = q0; }); });
     noteSection(sec); bump({ added: 1, lastAdded: now() });
     S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; S.recipeAll = false;
-    if (secInfo.from) { S.section = sec; var sf = secInfo.from, mid = made.id, dte = S.date; justMark(mid); toast('Added ' + slipName(r.short || r.name) + ', section ' + sf + ' corrected to ' + sec, { label: 'Undo', fn: function () { keepSection(sf); noteSection(sf); S.section = sf; supd(itemRef(dte, mid), { station: sf }).catch(failed); } }); }
+    if (secInfo.from) { S.section = sec; var sf = secInfo.from, mid = made.id, dte = S.date; justMark(mid); justAdd('p', mid, r.short || r.name, 'to ' + sec, 'Added ' + slipName(r.short || r.name) + ' to ' + sec, prepUndo(dte, mid)); toast('Added ' + slipName(r.short || r.name) + ', section ' + sf + ' corrected to ' + sec, { label: 'Undo', fn: function () { keepSection(sf); noteSection(sf); S.section = sf; supd(itemRef(dte, mid), { station: sf }).catch(failed); } }); }
     else addedToast(sec, S.date, made.id, r.short || r.name);
   }
   /* Completion activity belongs to the recorder. Reported preparation is a separate, cycle-stamped identity. */
@@ -2642,8 +2689,9 @@
      Since 5 Nov 2026 the slip names the line (docs/action-feedback.md), cut by slipName() so a long name never covers the list. */
   function addedToast(sec, dte, mid, text) {
     justMark(mid);
-    toast('Added ' + slipName(text) + (sec ? ' to ' + sec : ''), { label: 'Undo', fn: function () { supd(itemRef(dte, mid), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
+    addSay('p', mid, text, sec ? 'to ' + sec : '', 'Added ' + slipName(text) + (sec ? ' to ' + sec : ''), prepUndo(dte, mid));
   }
+  function prepUndo(dte, mid) { return function () { supd(itemRef(dte, mid), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); }; }
   /* The book's own records: book/index and book/matches. The rules allow them by name only, so a query on the whole
      book collection is refused; read the two by name instead (2 reads, on a tap). Missing ones are left out. */
   var BOOK_DOCS = ['index', 'matches'];
@@ -4622,7 +4670,7 @@
       '<div class="nb-add-row"><label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" autocapitalize="sentences" placeholder="Write a new line..." maxlength="160" value="' + esc(S.text) + '">' +
       '<label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section || (S.secTyped ? '' : mySec())) + '">' +
       '<label class="visually-hidden" for="p-qty">Amount</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.qty) + '">' +
-      '<button type="submit" class="nb-addbtn">Add</button></div>' + secChipsHTML('p-section', S.section || (S.secTyped ? '' : mySec())) + '<div class="w-pick nb-units" id="p-units">' + unitChipsHTML('p', S.qty) + '</div><div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : '';
+      '<button type="submit" class="nb-addbtn">Add</button></div>' + justHTML('p') + secChipsHTML('p-section', S.section || (S.secTyped ? '' : mySec())) + '<div class="w-pick nb-units" id="p-units">' + unitChipsHTML('p', S.qty) + '</div><div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : '';
     // no form (another day, or read only): the reason sits at the foot of the list, and there is no Add a line
     var addNote = add ? '' : S.date !== today ? '<p class="hint">You are looking at ' + esc(dayName(S.date)) + '. Lines are added on Today only.</p>' : '<p class="hint">You can read the book but not write in it. Ask the head chef if that is wrong.</p>';
     var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
@@ -5774,7 +5822,9 @@
       .then(ordReload, function (e) { failed(e, reg ? undefined : function () { if (!S.otext.trim()) { S.otext = typed; S.oqty = q; S.oneed = need; } }); });
     /* like the prep list: Undo takes the line back, or after a spelling fix puts back what was typed */
     if (oFix) toast('Added, corrected ' + oFix, { label: 'Undo', fn: function () { keepWords(pr.changes); supd(ref, { text: typed.slice(0, 120), orig: '' }).then(ordReload, failed); } });
-    else toast('Added ' + slipName(t) + ' to the order list', { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).then(ordReload, failed); } });
+    var oUndo = function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).then(ordReload, failed); };
+    if (oFix) justAdd('o', ref.id, t, q, 'Added ' + slipName(t) + ' to the order list', oUndo);
+    else addSay('o', ref.id, t, q, 'Added ' + slipName(t) + ' to the order list', oUndo);
     justMark(ref.id);
     if (oneTapAdd) return;
     var el = S.root && S.root.querySelector('[data-k="o-text"]'); if (el) el.focus();
@@ -5926,7 +5976,7 @@
       (onToday ? '<a class="chip o-deliv" href="#/deliveries">Delivery arrived</a>' : '<button type="button" class="chip" data-p="otoday">Back to today</button>') + '</div>' : '';
     var add = can('add') && S.ordDate === today ?
       '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" enterkeyhint="done" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
-      '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' +
+      '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' + justHTML('o') +
       '<div class="w-pick nb-units" id="o-units">' + unitChipsHTML('o', S.oqty) + '</div>' + needChipsHTML() + '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintFull()) + '</p>' + oRegsHTML() + '</form>' : '';
     var overdue = onToday ? shown.filter(function (x) { return !x.ordered && ordWait(x, today) > ORD_LATE; }) : [];
     if (overdue.length) shown = shown.filter(function (x) { return overdue.indexOf(x) < 0; });
@@ -6099,8 +6149,7 @@
     /* Undo like the other lists. The rules let only the head chef or a sous chef change a wastage entry, so staff are told who can fix it. */
     justMark(ref.id);
     var wmsg = 'Logged ' + slipName(t) + ', ' + num(amt) + ' ' + f.unit + (wpr.changes.length ? ', corrected ' + wpr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') : '') + (secInfo.from ? ' under ' + sec + ' (typed ' + secInfo.from + ')' : '');
-    if (canBrowse()) toast(wmsg, { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
-    else toast(wmsg + '. Wrong? Ask the head chef.', null, 6000);
+    addSay('w', ref.id, t, num(amt) + ' ' + f.unit + (sec ? ', ' + sec : ''), wmsg, canBrowse() ? function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } : null, wmsg + '. Wrong? Ask the head chef.');
   }
   function focusK(k) { var el = S.root && S.root.querySelector('[data-k="' + k + '"]'); if (el) el.focus(); }
   // shown on screen (a box to draw), also when it is fixed in place like Add a line on a phone (offsetParent is null then)
@@ -6223,13 +6272,14 @@
      is typed; Close keeps it too. Back, Escape and the dimmed page close them. which: 'log', 'rv' or 'xlog'. */
   function wSheetOpen(which) {
     S.wLog = which === 'log'; S.wRv = which === 'rv'; S.xLog = which === 'xlog'; S.pLog = which === 'plog'; S.oLog = which === 'olog';
+    justOpenAt = Date.now();
     ovPush('wsheet', function () { wSheetClose(true); });
     draw(); focusK(which === 'log' ? 'w-text' : which === 'rv' ? 'w-ra' : which === 'plog' ? 'p-text' : which === 'olog' ? 'o-text' : S.xf.venue ? 'tr-text' : 'tr-venue');
   }
   function wSheetClose(noBack) {
     if (!S.wLog && !S.wRv && !S.xLog && !S.pLog && !S.oLog) return;
-    var back = S.wLog ? '.w-logbtn' : S.wRv ? '.w-rvbtn' : S.pLog || S.oLog ? '.nb-addline' : '.tr-logbtn'; S.wLog = S.wRv = S.xLog = S.pLog = S.oLog = false;
-    ovDone('wsheet', noBack); draw(); focusSel(back);
+    var back = S.wLog ? '.w-logbtn' : S.wRv ? '.w-rvbtn' : S.pLog || S.oLog ? '.nb-addline' : '.tr-logbtn', pg = sheetPg(); S.wLog = S.wRv = S.xLog = S.pLog = S.oLog = false;
+    ovDone('wsheet', noBack); if (pg) justClosed(pg); draw(); focusSel(back);
   }
   /* Bottom sheet for picking one thing on a phone (the waste reason). Big rows, a hint under each, Cancel or tap outside to close. */
   var REASON_HINT = { prep: 'Trim, peel and offcuts', expired: 'Past its date or gone off', fault: 'Burnt, dropped or done wrong', returned: 'Sent back by a guest', excess: 'Made more than was needed' };
@@ -6255,7 +6305,7 @@
       '<form class="nb-add w-add" data-p-form="wadd">' + (often.length ? '<div class="w-often"><span class="nb-ql">Logged often</span><div class="chiprow">' + often.map(function (e, i) { return '<button type="button" class="chip sq" data-p="woften" data-i="' + i + '">' + esc(e.text) + '</button>'; }).join('') + '</div></div>' : '') +
       '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label><input id="w-sec" class="nb-in nb-in-sec" data-k="w-sec" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec || mySec()) + '">' +
       '<label class="visually-hidden" for="w-text">Item</label><input id="w-text" class="nb-in nb-in-text" data-k="w-text" enterkeyhint="next" autocomplete="off" placeholder="What was wasted?" maxlength="80" value="' + esc(f.text) + '">' +
-      '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty" data-k="w-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit || 'unit') + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' +
+      '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty" data-k="w-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit || 'unit') + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' + justHTML('w') +
       secChipsHTML('w-sec', f.sec || mySec()) + '<div class="nb-sugg" id="w-sugg">' + wSuggHTML() + '</div>' +
       '<div class="w-pick"><span class="nb-ql" id="w-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="w-unit-l">' + UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="wunit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
       // the five reasons as big chips with what each means, on every screen (3 Nov 2026): no second sheet over this one,
@@ -6549,8 +6599,9 @@
     var msg = 'Logged: ' + (dir === 'out' ? venue + ' took ' + what : 'we took ' + what + ' from ' + venue) +
       (changes.length ? '. Corrected ' + changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') : '');
     // Undo like the wastage log: the rules let only the head chef or a sous chef take a line back, so staff are told who can
-    if (canBrowse()) toast(msg, { label: 'Undo', fn: function () { saved.forEach(function (x) { xWrite(date, x.id, { deleted: true, deletedBy: (me() || {}).name || 'Head chef', deletedAt: now() }, x.record).catch(failed); }); } });
-    else toast(msg + '. Wrong? Ask the head chef.', null, 6000);
+    // one receipt line for the pick-up, whatever it held
+    if (saved.length) addSay('x', saved[0].id, items.length === 1 ? items[0].t : what, (items.length === 1 ? num(items[0].amt) + ' ' + items[0].unit + ', ' : '') + (dir === 'out' ? 'to ' : 'from ') + venue, msg,
+      canBrowse() ? function () { saved.forEach(function (x) { xWrite(date, x.id, { deleted: true, deletedBy: (me() || {}).name || 'Head chef', deletedAt: now() }, x.record).catch(failed); }); } : null, msg + '. Wrong? Ask the head chef.');
   }
   /* Remove or put back a transfer: the head chef's Google account only (the admin log, or this page on that device).
      The admin log's 30 days are patched here (no read), so the change shows at once; today's lines come back through the listener. */
@@ -6621,7 +6672,7 @@
       '<div class="tr-field"><label class="visually-hidden" for="tr-person">' + (out ? 'Who came for it' : 'Who gave it') + '</label><input id="tr-person" class="nb-in tr-box" data-k="tr-person" enterkeyhint="next" autocomplete="off" autocapitalize="words" placeholder="' + (out ? 'Who came for it?' : 'Who gave it? (optional)') + '" maxlength="40" value="' + esc(f.person) + '"><div id="tr-pchips">' + xPeopleChips() + '</div></div></div>' +
       '<div id="tr-often">' + xOftenHTML() + '</div>' +
       '<div class="nb-add-row"><label class="visually-hidden" for="tr-text">Item</label><input id="tr-text" class="nb-in nb-in-text" data-k="tr-text" enterkeyhint="next" autocomplete="off" placeholder="' + (out ? 'What did they take?' : 'What did we take?') + '" maxlength="80" value="' + esc(f.text) + '">' +
-      '<label class="visually-hidden" for="tr-amt">Amount</label><input id="tr-amt" class="nb-in nb-in-qty" data-k="tr-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit) + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' +
+      '<label class="visually-hidden" for="tr-amt">Amount</label><input id="tr-amt" class="nb-in nb-in-qty" data-k="tr-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit) + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' + justHTML('x') +
       '<div class="nb-sugg" id="tr-sugg">' + xSuggHTML() + '</div>' +
       '<div class="w-pick tr-units"><span class="nb-ql" id="tr-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="tr-unit-l">' + X_UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="tr-unit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
       // the note is optional, so it folds until wanted, like the wastage action
@@ -10259,6 +10310,7 @@
     if (a === 'toast-hide') { toastAway('all'); return; }
     // an Undo says what it undid (5 Nov 2026, docs/action-feedback.md), unless what it ran said so itself (Put back...)
     if (a === 'toast-old') { var to = S.toastOld; S.toastOld = null; clearTimeout(toastOldTimer); if (to && to.act && to.act.fn) { to.act.fn(); undoneSay(to.act, to.msg); } draw(); return; }
+    if (a === 'just-undo') { justUndo(el.getAttribute('data-id')); return; }
     if (a === 'toast-act') { var ta = S.toastAct, tm = S.toast; S.toast = ''; S.toastAct = null; if (ta && ta.fn) { ta.fn(); undoneSay(ta, tm); } draw(); return; }
     if (a === 'export') { exportAll(); return; }
     if (a === 'move-pin') { movePin(); return; }

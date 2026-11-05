@@ -267,6 +267,15 @@ function hasPrivateContact(value) {
   ok(new RegExp(M.dayName(today) + ' · Beer garden · event 18:00').test(await txt(p, '.fn-sub') || ''), 'sheet: one line for the day, the place and the event start');
   const nx = (await txt(p, '.fn-next') || '').replace(/\s+/g, ' ');
   ok(/Next out 18:30 · round 1 of 3/.test(nx) && /Due 18:30, not sent yet/.test(nx) && /3 ?× ?Antipasto Platter ?2 ?× ?Aussie Platter/.test(nx), 'sheet: next out is round 1 at 18:30 with 3 Antipasto and 2 Aussie, late (' + nx.slice(0, 160) + ')');
+  // a Sent tick the server refuses goes back and says so in red, above the sheet where its OK can be tapped (5 Nov 2026,
+  // docs/action-feedback.md: before, only a screen reader heard it)
+  await p.evaluate(() => { window.__fake.mode = 'fail'; });
+  await tap(p, '.fn-next [data-fn="sent"]'); await L.settle(p, 400);
+  ok(await p.evaluate(() => { const t = document.querySelector('.p-toast.p-toast-bad'), b = t && t.querySelector('.p-toast-btn'); if (!b || !/Not saved: round 1 not ticked as sent/.test(t.textContent)) return false; const r = b.getBoundingClientRect(); return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === b; }), 'sent failed: a red slip says round 1 is not ticked, above the sheet where OK can be tapped (' + (await txt(p, '.p-toast') || '') + ')');
+  ok(/Next out 18:30 · round 1 of 3/.test((await txt(p, '.fn-next') || '').replace(/\s+/g, ' ')), 'sent failed: round 1 is still next out');
+  await p.evaluate(() => { window.__fake.mode = 'ok'; });
+  await tap(p, '.p-toast-bad .p-toast-btn'); await L.settle(p, 150);
+  ok(!(await p.$('.p-toast-bad')), 'sent failed: OK puts the red slip away');
   await tap(p, '.fn-next [data-fn="sent"]'); await L.settle(p, 400);
   ok(/19:00 · round 2 of 3/.test(await txt(p, '.fn-next') || ''), 'sheet: Sent in the next box moves it on to round 2');
   s = await store(p);
@@ -417,8 +426,15 @@ function hasPrivateContact(value) {
   await L.waitFor(p, () => !!document.querySelector('[data-ff="kc"]'));
   ok(/Saved comment by Fay/.test(await txt(p, '.fe-kcb') || ''), 'comment: the saved comment shows its author');
   await p.fill('[data-ff="kc"]', 'Cake at 20:30 now.');
+  // a failed save: the button says Try again and the reason is right above it, where the tap was (5 Nov 2026)
+  await p.evaluate(() => { window.__fake.mode = 'fail'; });
+  await tap(p, '[data-fe="save"]');
+  await L.waitFor(p, () => { const b = document.querySelector('[data-fe="save"]'); return !!b && /Try again/.test(b.textContent); }).catch(() => {});
+  ok(await p.evaluate(() => { const b = document.querySelector('[data-fe="save"]'), row = b && b.closest('.fe-btns'), e = row && row.previousElementSibling; return !!b && b.textContent.trim() === 'Try again' && !b.disabled && !!e && e.classList.contains('p-err') && /Not saved/.test(e.textContent); }), 'save failed: Try again on the button, the red reason right above it');
+  await p.evaluate(() => { window.__fake.mode = 'ok'; });
   await tap(p, '[data-fe="save"]');
   await L.waitFor(p, () => /Version 2/.test((document.getElementById('fe-root') || {}).textContent || ''));
+  ok(/^Saved \d\d:\d\d$/.test(await txt(p, '.fe-head .lk-stamp') || '') && !(await p.$('#fe-root .p-err')), 'saved: back at the top, a "Saved HH:MM" stamp beside the status, and the red line gone (' + await txt(p, '.fe-head .lk-stamp') + ')');
   s = await store(p);
   let f2 = s[fsKey(['functions', 'smith'])];
   ok(f2.v === 2 && f2.kcBy === 'finn' && f2.by === 'finn' && f2.cBy === 'fay' && f2.confBy === 'fay' && /Kitchen comment changed/.test(f2.chg[0].what) && f2.chg[0].by === 'finn', 'comment: Finn\'s change is his, Fay stays the one who made and confirmed it');
@@ -432,6 +448,7 @@ function hasPrivateContact(value) {
   await p.fill('[data-ff="guests"]', '65');
   await tap(p, '[data-fe="save"]');
   await L.waitFor(p, () => !!document.querySelector('.fe-conflict'));
+  ok(await p.evaluate(() => { const c = document.querySelector('.fe-conflict'), n = c && c.nextElementSibling; return !!n && n.classList.contains('fe-btns'); }), 'conflict: the box sits right above the Save button that was tapped');
   ok(/Someone else saved this function/.test(await txt(p, '.fe-conflict') || '') && /Finn/.test(await txt(p, '.fe-conflict') || ''), 'conflict: Fay is told Finn saved first, nothing is overwritten');
   ok((await store(p))[fsKey(['functions', 'smith'])].guests === 70, 'conflict: Finn\'s version stays until Fay chooses');
   // the head chef takes Fay's tick away (on the admin device): her open form closes at once and nothing more is saved

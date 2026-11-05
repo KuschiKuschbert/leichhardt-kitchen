@@ -45,7 +45,7 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     await p.click('[data-p="oreg"]'); await L.settle(p, 400);
     const box = await S(p, () => ({ t: document.querySelector('#o-text').value, q: document.querySelector('#o-qty').value, st: window.LK_PREP.state.otext }));
     const lines = Object.entries(await store(p)).filter(([k, v]) => k.indexOf(fsKey(['orders', today, 'lines'])) === 0 && v && !v.deleted).map(([, v]) => v.text + ' ' + v.qty);
-    ok(/^Added Cream to the order list\s*Undo/.test((await txt(p, '.p-toast') || '').trim()) && lines.indexOf('Cream 2 L') >= 0 && lines.indexOf('Lemons 2 kg') < 0, 'regular: Cream goes on with its usual amount, Lemons is not saved yet (' + JSON.stringify(lines) + ')');
+    ok(/^Cream\b/.test(await txt(p, '.o-sheet .just-l:last-child .just-n') || '') && lines.indexOf('Cream 2 L') >= 0 && lines.indexOf('Lemons 2 kg') < 0, 'regular: Cream goes on with its usual amount, Lemons is not saved yet (' + JSON.stringify(lines) + ')');
     ok(box.t === 'Lemons' && box.q === '2 kg' && box.st === 'Lemons', 'regular: the half-typed Lemons and 2 kg stay in the boxes (' + JSON.stringify(box) + ')');
     ok(await asks(p), 'regular: Lemons still typed, a reload asks first');
     await p.press('#o-text', 'Enter'); await L.settle(p, 500);
