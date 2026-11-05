@@ -84,7 +84,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   // save as a template
   await L.dwShow(p, '[data-dw="panel"][data-v="tpl"]'); await p.click('[data-dw="panel"][data-v="tpl"]'); await L.settle(p, 200);
   await p.fill('[data-dwf="tplname"]', 'Burger and chips, pieces');
-  // a failed save says so in a red slip that stays until OK (5 Nov 2026, docs/action-feedback.md)
+  // a failed save says so in a red slip that stays until OK (6 Nov 2026, docs/action-feedback.md)
   await p.evaluate(() => { window.__fake.mode = 'fail'; });
   await p.click('[data-dw="tpl-save"]');
   await wait(p, () => !!document.querySelector('.mg-toasts .p-toast-bad'));
@@ -187,7 +187,7 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   await L.choose(p, '[data-mg="kind"][data-v="templates"]');
   await wait(p, () => !!document.querySelector('[data-mg="mine-hide"]'));
   ok(/Burger and chips, pieces/.test(await txt(p, '.mg-list') || ''), 'manage: Templates lists the template');
-  // a failed Hide names the template in a red slip that stays until OK (5 Nov 2026, docs/action-feedback.md)
+  // a failed Hide names the template in a red slip that stays until OK (6 Nov 2026, docs/action-feedback.md)
   await p.evaluate(() => { window.__fake.mode = 'fail'; });
   await p.click('[data-mg="mine-hide"]'); await L.settle(p, 100);
   await p.click('[data-mg="mine-hide"]');

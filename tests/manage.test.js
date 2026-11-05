@@ -83,7 +83,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   ok(/\bing\*?\./.test(await chs(p)) && /\bcard\./.test(await chs(p)) && /\bmethod( |$)/.test(await chs(p)), 'chapters: a dot on Ingredients and Card details, none on Method (' + await chs(p) + ')');
   await p.click('[data-mg="save"]');
   await toast(p);
-  ok(/Saved Chicken Burger\. Version 1\./.test(await toastText(p) || ''), 'save: the slip names the recipe, Saved Chicken Burger. Version 1. (' + await toastText(p) + ')');
+  ok(/Saved Chicken Burger Deluxe\. Version 1\./.test(await toastText(p) || ''), 'save: the slip names the recipe, Saved Chicken Burger Deluxe. Version 1. (' + await toastText(p) + ')');
   s = await store(p);
   const rb = s[fsKey(['recipes', 'burger'])] || {};
   ok(rb.v === 1 && rb.r && rb.r.name === 'Chicken Burger Deluxe' && rb.by === 'ann' && rb.src === 'book' && /^[0-9a-f]{8}$/.test(rb.base || ''), 'save: recipes/burger is version 1 by Ann, from the book file');

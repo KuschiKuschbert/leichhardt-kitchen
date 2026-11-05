@@ -34,7 +34,7 @@ const pendingBack = async (p, mod, save, field, name) => {
   const b = await L.start();
   let p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra, wait: 1500 });
   await editor(p);
-  ok(p.urls.some(url => /\/js\/manage\.js\?v=10$/.test(url)), 'recipe form requests the revised editor address');
+  ok(p.urls.some(url => /\/js\/manage\.js\?v=11$/.test(url)), 'recipe form requests the revised editor address');
   ok(await p.getAttribute(back, 'aria-label') === 'Back to all recipes', 'recipe form: one header arrow names the parent list');
   ok(await p.locator('#mg-root a[href="#/manage"], [data-mg-back]').count() === 0, 'recipe form: no repeated return rows or breadcrumbs');
   // Input and Back in the same turn deliberately beat the 400 ms draft timer.
@@ -57,7 +57,7 @@ const pendingBack = async (p, mod, save, field, name) => {
 
   p = await L.open(b, '#/manage/draw/new/burger/plate', { who: 'ann', extra, wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.dw-svg'), null, 15000);
-  ok(p.urls.some(url => /\/js\/draw\.js\?v=8$/.test(url)), 'drawing requests the revised editor address');
+  ok(p.urls.some(url => /\/js\/draw\.js\?v=9$/.test(url)), 'drawing requests the revised editor address');
   ok(await p.getAttribute(back, 'aria-label') === 'Back to the recipe', 'drawing: header arrow names the parent recipe');
   ok(await p.locator('#mg-root a[href="#/manage/r/burger"], [data-dw-back]').count() === 0, 'drawing: no repeated return rows or breadcrumbs');
   await p.evaluate(() => { window.LK_DRAW.addItem('rump'); document.querySelector('.wtop [data-act="back"]').click(); });
@@ -135,9 +135,9 @@ const pendingBack = async (p, mod, save, field, name) => {
 
   // A revised address can still receive an older offline response. Reject its API before mounting a partial form.
   for (const c of [
-    { name: 'recipe', file: 'manage', global: 'LK_MG', route: '#/manage/r/burger', root: '#mg-root', field: '#mg-name', v: '10' },
+    { name: 'recipe', file: 'manage', global: 'LK_MG', route: '#/manage/r/burger', root: '#mg-root', field: '#mg-name', v: '11' },
     { name: 'function', file: 'fnedit', global: 'LK_FE', route: '#/functions/test', root: '#fe-root', field: '#fe-name', v: '9' },
-    { name: 'drawing', file: 'draw', global: 'LK_DRAW', route: '#/manage/draw/new/burger/plate', root: '#mg-root', field: '.dw-svg', v: '8' }
+    { name: 'drawing', file: 'draw', global: 'LK_DRAW', route: '#/manage/draw/new/burger/plate', root: '#mg-root', field: '.dw-svg', v: '9' }
   ]) {
     p = await L.open(b, '#/', { who: 'ann', extra, wait: 1500 });
     const stale = 'window.' + c.global + ' = { api: 3, render: {}, mount: function () { window.__oldEditorMounted = true; }, unmount: function () {}, open: function () { return false; }, dirty: function () { return false; }, hasDraft: function () { return false; } };';

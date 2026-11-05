@@ -140,7 +140,7 @@ const errs = p => p.errors.filter(e => !/Failed to load resource/.test(e));
   await wait(p, () => /picks could not be read/.test(Array.from(document.querySelectorAll('.mg-toasts .p-toast')).map(t => t.textContent).join(' ')), null, 30000);
   s = await store(p);
   ok(!s[fsKey(['drawings', 'wing-bucket-plate'])] && /Drawings not drawn again: your picks could not be read\./.test(await toasts(p)), 'picks unreadable on save: no plate drawn from a guess, and the save says so (' + await toasts(p) + ')');
-  // what was not drawn is a failure: red, with OK, and it stays (5 Nov 2026, docs/action-feedback.md)
+  // what was not drawn is a failure: red, with OK, and it stays (6 Nov 2026, docs/action-feedback.md)
   ok(await p.evaluate(() => { const t = document.querySelector('.mg-toasts .p-toast-bad'); return !!t && /picks could not be read/.test(t.textContent) && !!t.querySelector('[data-mg-ok]'); }), 'picks unreadable on save: the slip is red with OK');
   await p.evaluate(() => { window.__fake.failReads = null; });
   await L.reveal(p, '[data-mg="ing-add"]'); await p.click('[data-mg="ing-add"]'); await L.settle(p, 150);
