@@ -71,9 +71,26 @@
       check(c.ctx, edit, owner); if (B.changed) B.changed(); return result;
     }
     // One query when Supplier order opens or Refresh is tapped. One read per supplier, at least one if empty.
+    /* A saved supplier that fails the catalogue check is left out, not the whole list (5 Nov 2026: one such record hid
+       every supplier behind "Could not finish. Check the connection", and Try again could never fix it). The list carries
+       bad: [{ id, name, code, field, item }] (item: "item 12, ITEM NAME", the first item that fails), so the page can
+       name it. Nothing is written. The owner backup (exportAll) still reads every record as it is. */
     async function loadSuppliers() {
       var c = await access(), sn = await onlineRead(c.fs.getDocs(col(c, ['suppliers']))); check(c.ctx);
-      return sn.docs.map(catalogueData).sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
+      var list = [], bad = [];
+      sn.docs.forEach(function (d) {
+        try { var s = catalogueData(d); if (s) list.push(s); }
+        catch (e) {
+          var raw = data(d) || {}, item = '';
+          (Array.isArray(raw.items) ? raw.items : []).some(function (x, i) {
+            try { core().cleanItem(x); return false; } catch (ie) { item = 'item ' + (i + 1) + (x && typeof x.name === 'string' && x.name ? ', ' + x.name.slice(0, 80) : ''); return true; }
+          });
+          bad.push({ id: d.id, name: typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim().slice(0, 80) : d.id, code: e && typeof e.code === 'string' ? e.code : '', field: e && typeof e.field === 'string' ? e.field : '', item: item });
+        }
+      });
+      list.sort(function (a, b) { return String(a.name).localeCompare(String(b.name)); });
+      list.bad = bad;
+      return list;
     }
     // One document when a selected supplier must be refreshed, never once per item.
     async function load(sid) {

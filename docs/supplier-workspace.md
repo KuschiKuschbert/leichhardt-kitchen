@@ -159,3 +159,15 @@ The head chef got stuck recording a supplier order. Since the order list became 
 - Recording takes over the tick with the recorder and the time of the recording, in the same transaction as before (the rules need the tick, the order and the link to match).
 
 No schema, rules or saved data change, and no new reads. Supplier UI file revision 15 (`js/suppliers.js?v=15`); `SUP_API` stays 9. Tests: `tests/supplier-reminder-done.test.js` (tick, open from the tick list, Review, Record; then a second order needs Additional order): 6 of 56 failed on the old file, 0 of 56 with the fix. `tests/rules/suppliers.test.mjs`: a tick, then the first recorded order on the emulator, and a second order without the next link revision still refused (149 of 149). `tests/supplier-module-version.test.js` checks the new lazy URL.
+
+### One unreadable supplier no longer hides the rest, 5 Nov 2026
+
+The head chef's laptop showed only "Could not finish. Check the connection and try again. Your draft is kept." on Supplier order, with no suppliers, and Try again did the same. Every saved supplier goes through the catalogue check (`cleanSupplier()` in js/supplier-core.js) when the page opens. One record that failed it rejected the whole list, and `errorText()` had no words for the check's codes, so it fell through to the connection message. The same failure left the order list ungrouped.
+
+- `loadSuppliers()` in js/supplier-store.js keeps every record that passes and lists the others in `bad` (supplier, the check's code and field, and the first item that fails, "item 12, ITEM NAME"). Nothing is written. The owner backup still reads every record as it is.
+- Supplier order opens with the readable suppliers and a card: "One supplier could not be read", the supplier and item, "The other suppliers work as usual. Nothing was changed." With none readable, the card replaces "No supplier catalogue yet" and the import offer.
+- `errorText()`: a failed record check says "A saved supplier record has a value the book cannot read (field)". Any other unknown failure keeps the connection words and adds its code in brackets, so a screenshot says what went wrong.
+- The order list's supplier groups use the readable suppliers too.
+
+No rules, schema, saved data or reads change. Supplier UI file revision 16 (`js/suppliers.js?v=16`), store file revision 3 (`js/supplier-store.js?v=3`, in js/prep.js too); `SUP_API` stays 9 and the store's API stays 2, as the list is still a list. Tests: `tests/supplier-unreadable.test.js` (new): a supplier with an item whose source page is 0, at 390 and 1280 px, the order list groups, and only that supplier. 10 of 13 failed on the old code (the page showed "Could not finish" and nothing else), 0 of 13 with the fix. `tests/supplier-module-version.test.js` checks the new addresses.
+
