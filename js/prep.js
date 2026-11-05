@@ -74,13 +74,14 @@
      before; one line under it while a save still waits after 4 s; a failed save makes it Try again (the same save) with
      the reason in red under it, until the next try or an edit. The form keeps its pending flag and its message; svRec
      holds only when the save started, how it ended and the form as it stood when it failed. Used by the ping editor
-     (n), the minutes (m), the guide editor (g) and the staff list's Save bar (a). Date.now() is only time passing on
+     (n), the minutes (m), the guide editor (g), the staff list's Save bar (a) and the order cut-offs (c, 5 Nov 2026,
+     docs/action-feedback.md). Date.now() is only time passing on
      this phone. No reads, no writes, nothing kept on the phone. */
   var PIN_AGAIN = 'Your PIN is saved. Type it again to sign in.';
   var SV_SLOW = 4000, SV_DONE = 1200, SV_WAIT = 'Waiting for the signal. Keep the book open.', svRec = {}, errSeen = {};
-  function svForm(k) { return k === 'n' ? JSON.stringify(S.nf || null) : k === 'm' ? mfSnap(S.mf) : k === 'g' ? gfSnap(S.gf) : JSON.stringify(S.draft || null); }
-  // the form open now (the Save bar has one form, whose draft is taken again after each save)
-  function svObj(k) { return k === 'n' ? S.nf : k === 'm' ? S.mf : k === 'g' ? S.gf : undefined; }
+  function svForm(k) { return k === 'n' ? JSON.stringify(S.nf || null) : k === 'm' ? mfSnap(S.mf) : k === 'g' ? gfSnap(S.gf) : k === 'c' ? JSON.stringify(S.cutDraft || null) : JSON.stringify(S.draft || null); }
+  // the form open now (the Save bar has one form, whose draft is taken again after each save; c: the order cut-offs)
+  function svObj(k) { return k === 'n' ? S.nf : k === 'm' ? S.mf : k === 'g' ? S.gf : k === 'c' ? S.cutDraft : undefined; }
   function svStop(k) { var r = svRec[k]; if (r) clearTimeout(r.timer); delete svRec[k]; }
   function svReset() { Object.keys(svRec).forEach(svStop); }
   // act: which button started it, where a form has two (the minutes' Publish and Save draft). slow: draws the 4 s line
@@ -5518,6 +5519,7 @@
   function draw() {
     if (holdDraw) { heldDraw = true; return; }
     svTidy();
+    if (S.cutStamp && !(S.name === 'admin' && S.atab === 'cutoffs')) S.cutStamp = null;   // the stamp goes with the page
     noteRefresh();
     if (S.mins) { loadMine(); minCard(); }
     if (!S.root || !document.body.contains(S.root) || rendering) return;
@@ -9705,7 +9707,7 @@
           '<div class="cut-two">' + cutRemField(s, i) + '</div>' + '<p class="hint cut-say">' + (s.lead ? 'Reminder ' + s.lead / 60 + ' hours before each cut-off.' : 'Reminder all day on each cut-off day.') + '</p>' +
           '<div class="btn-row"><button type="button" class="btn" data-p="cut-same" data-i="' + i + '">' + (armed('cut-same:' + i) ? 'Tap again: every day changes' : 'Set every day the same') + '</button></div>';
       return '<li class="cut-ed">' +
-        '<div class="field"><label class="label" for="cut-n' + i + '">Supplier</label><input id="cut-n' + i + '" class="search" data-k="cut-n' + i + '" maxlength="40" autocomplete="off" placeholder="Supplier name" value="' + esc(s.name) + '"></div>' +
+        '<div class="field"><label class="label" for="cut-n' + i + '">Supplier' + cutStampHTML(s) + '</label><input id="cut-n' + i + '" class="search" data-k="cut-n' + i + '" maxlength="40" autocomplete="off" placeholder="Supplier name" value="' + esc(s.name) + '"></div>' +
         '<fieldset class="cut-dd"><legend class="label">Delivery days</legend><div class="chips">' + CUT_DOW.map(function (w) {
           return '<button type="button" class="chip" data-p="cut-day" data-i="' + i + '" data-v="' + w[0] + '" aria-pressed="' + (s.dd.indexOf(w[0]) >= 0) + '">' + w[1] + '</button>';
         }).join('') + '</div></fieldset>' + body +
@@ -9716,20 +9718,68 @@
       '<details class="a-how"><summary>How reminders work</summary><p class="hint">You and the sous chefs get a bar at the top of every page from the time you pick under Remind us (4 hours before unless you change it) until the cut-off passes, and a push then if pushes are on. It turns orange in the last hour, with a push. An early cut-off is reminded from the night before. Today\'s cut-offs show on the order list. An order that closes 2 or more days before its delivery also shows the day before, under Tomorrow, heads-up on the order list, with a push at ' + hhmm(CUT.HEADS) + '. Two deliveries that close on the same day are one order and one tick.</p></details>' +
       (rows ? '<ul class="cut-eds">' + rows + '</ul>' : '<p class="hint">No suppliers yet, so nobody is reminded.</p>') +
       '<div class="btn-row"><button type="button" class="btn" data-p="cut-add">Add a supplier</button>' + (d.length ? '' : '<button type="button" class="btn" data-p="cut-usual">Add ' + esc(CUT_USUAL.map(function (x) { return x.name; }).join(', ')) + '</button>') + '</div>' +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="cut-save"' + (owner && cutDirty() && !S.cutBusy ? '' : ' disabled') + '>Save cut-offs</button><button type="button" class="btn" data-p="cut-undo"' + (cutDirty() ? '' : ' disabled') + '>' + (armed('cut-undo') ? 'Tap again to undo' : 'Undo unsaved changes') + '</button></div>' +
-      msgHTML(S.cutMsg || '') + (pushWhoId() ? '<h3 class="a-ch-h">Pushes on this device</h3>' + pushHTML() : '') + '</section>';
+      '<div class="btn-row">' + cutSaveBtn() + '<button type="button" class="btn" data-p="cut-undo"' + (cutDirty() ? '' : ' disabled') + '>' + (armed('cut-undo') ? 'Tap again to undo' : 'Undo unsaved changes') + '</button></div>' +
+      '<div class="cut-msg">' + cutMsgHTML() + '</div>' + (pushWhoId() ? '<h3 class="a-ch-h">Pushes on this device</h3>' + pushHTML() : '') + '</section>';
   }
   function cutSave() {
     if (!CUT_OK || S.level !== 'owner' || !cutDirty() || S.cutBusy) return;
     // one supplier closes once a day: two times on one day would share one tick, so Save refuses and says which
     var bad = S.cutDraft.filter(function (s) { return CUT.clash(s); })[0];
     if (bad) { S.cutMsg = errMsg('Not saved. ' + (bad.name || 'A supplier') + ': ' + cutClashSay(bad)); draw(); return; }
-    var clean = cutClean(S.cutDraft);
-    S.cutBusy = true; S.cutMsg = 'Saving...'; draw();
+    var clean = cutClean(S.cutDraft), before = {};
+    cutClean(JSON.parse(S.cutSnap || '[]')).forEach(function (s) { before[s.id] = JSON.stringify(s); });
+    // Saving... on the button only (5 Nov 2026, docs/action-feedback.md: a grey line under it said it before)
+    S.cutBusy = true; S.cutMsg = ''; svStart('c', '', cutLiveSlow); draw();
     // merge: only cutoffs changes (the People tab's full save carries it over, saveConfig)
     track(fb.fs.setDoc(cfgDoc(), { cutoffs: clean }, { merge: true })).then(function () {
-      S.cutBusy = false; S.cutDraft = clean; S.cutSnap = JSON.stringify(clean); S.cutMsg = 'Saved. The sous chefs see the new cut-offs now.'; draw(); cutPaint();
-    }, function (e) { S.cutBusy = false; S.cutMsg = errMsg(e && e.code === 'permission-denied' ? 'Only the head chef\'s Google account can change the cut-offs.' : 'Could not save. Check the connection.'); draw(); });
+      // the button says Saved with a tick for 1.2 s, then is off; the line under it and the suppliers that changed wear
+      // "Saved 14:02" until the page is left or they change again
+      var ids = {};
+      clean.forEach(function (s) { var j = JSON.stringify(s); if (before[s.id] !== j) ids[s.id] = j; });
+      S.cutBusy = false; S.cutDraft = clean; S.cutSnap = JSON.stringify(clean);
+      S.cutStamp = { at: clock(now()), ids: ids };
+      liveSay('Saved. The sous chefs see the new cut-offs now.');
+      svDone('c', cutHere(), function () {}); draw(); cutPaint();
+    }, function (e) {
+      S.cutBusy = false; S.cutMsg = errMsg(e && e.code === 'permission-denied' ? 'Only the head chef\'s Google account can change the cut-offs.' : 'Could not save. Check the connection.');
+      svFail('c', cutHere(), function () { S.cutMsg = ''; }); draw();
+    });
+  }
+  /* A button changed in place, never replaced: a box left by tapping the button sends change (and this) between the
+     finger going down and coming up, and a new element there loses the tap. Only what differs is touched. */
+  function btnPatch(el, html) {
+    var t = document.createElement('div'); t.innerHTML = html;
+    var n = t.firstElementChild; if (!n || el.outerHTML === n.outerHTML) return;
+    Array.prototype.slice.call(el.attributes).forEach(function (a) { if (!n.hasAttribute(a.name)) el.removeAttribute(a.name); });
+    Array.prototype.slice.call(n.attributes).forEach(function (a) { if (el.getAttribute(a.name) !== a.value) el.setAttribute(a.name, a.value); });
+    if (el.innerHTML !== n.innerHTML) el.innerHTML = n.innerHTML;
+  }
+  function cutHere() { return S.name === 'admin' && S.atab === 'cutoffs'; }
+  function cutSaveBtn() { return svButton({ k: 'c', p: 'cut-save', idle: 'Save cut-offs', busy: S.cutBusy, off: !(S.level === 'owner' && cutDirty()) }); }
+  // a supplier saved just now, and not changed since
+  function cutStamped(s) { return !!(S.cutStamp && s && S.cutStamp.ids[s.id] === JSON.stringify(s)); }
+  // under the buttons: the waiting line or a failure, else what the last save did, until anything changes
+  function cutMsgHTML() {
+    if (S.cutBusy || S.cutMsg || !S.cutStamp || cutDirty()) return svLine('c', S.cutBusy, S.cutMsg || '');
+    return '<p class="sv-line cut-done" role="status"><span class="lk-stamp">Saved ' + esc(S.cutStamp.at) + '</span> The sous chefs see the new cut-offs now.</p>';
+  }
+  function cutStampHTML(s) { return cutStamped(s) ? '<span class="lk-stamp">Saved ' + esc(S.cutStamp.at) + '</span>' : ''; }
+  /* Typing changes the card in place (no redraw: the cursor stays). An edit ends Saved or Try again on the button, takes
+     the stamp off the supplier that changed again, and puts Save and Undo unsaved changes on. */
+  function cutLive(s, el) {
+    var r = svRec.c;
+    if (r && r.st !== 'busy' && r.form !== svForm('c')) { svStop('c'); if (r.st === 'fail') S.cutMsg = ''; }
+    var card = el && el.closest('.cut-ed'), st = card && card.querySelector('.lk-stamp');
+    if (st && !cutStamped(s)) st.remove();
+    cutLiveSlow();
+  }
+  // the button, Undo and the line under them, in place (also the 4 s waiting line while a save is out)
+  function cutLiveSlow() {
+    var a = S.root && S.root.querySelector('.a-cut'); if (!a) return;
+    var sv = a.querySelector('[data-p="cut-save"]'), un = a.querySelector('[data-p="cut-undo"]'), ln = a.querySelector('.cut-msg');
+    if (sv) btnPatch(sv, cutSaveBtn());
+    if (un) un.disabled = !cutDirty();
+    if (ln) ln.innerHTML = cutMsgHTML();
   }
   function cutClick(a, el) {
     var d = S.cutDraft, i = +el.getAttribute('data-i'), s = d && d[i];
@@ -9768,7 +9818,7 @@
     if (!s) return;
     var l = m[3] ? s.days.filter(function (x) { return x.d === +m[5]; })[0] : null;
     if (m[3] && !l) return;
-    if (f === 'n') { s.name = el.value.slice(0, 40); return; }
+    if (f === 'n') { s.name = el.value.slice(0, 40); cutLive(s, el); return; }
     if (f === 't' || f === 'a') {
       var t = cutTime(el.value);
       if (t === null) { if (done) el.value = (l ? l.at : s.at) >= 0 ? hhmm(l ? l.at : s.at) : ''; }
@@ -9785,8 +9835,7 @@
       if (f === 'o') { S.cutOpen = S.cutOpen || {}; S.cutOpen[s.id] = true; draw(); return; }
       cutInfo(s, i, el);
     }
-    var sv = S.root.querySelector('[data-p="cut-save"]'), un = S.root.querySelector('[data-p="cut-undo"]');
-    if (sv) sv.disabled = !(S.level === 'owner' && cutDirty() && !S.cutBusy); if (un) un.disabled = !cutDirty();
+    cutLive(s, el);
   }
   // the words in one supplier's card, in place: the summary, each line's next dates and mark, and a clash
   function cutInfo(s, i, el) {
@@ -9802,8 +9851,7 @@
       }
     });
     var cl = card.querySelector('.cut-clash'), w = cutClashSay(s); if (cl) { cl.textContent = w; cl.hidden = !w; }
-    var sv = S.root.querySelector('[data-p="cut-save"]'), un = S.root.querySelector('[data-p="cut-undo"]');
-    if (sv) sv.disabled = !(S.level === 'owner' && cutDirty() && !S.cutBusy); if (un) un.disabled = !cutDirty();
+    cutLive(s, el);
   }
 
   /* ---------- kitchen sections: where each person works today (21 Oct 2026) ----------
@@ -11123,7 +11171,7 @@
     headPin: whoHead,
     bookEdit: bookEdit,
     bookState: bookState,
-    fnOK: fnOK, fnCancelOK: fnCancelOK, toast: toast,
+    fnOK: fnOK, fnCancelOK: fnCancelOK, toast: toast, btnPatch: btnPatch,
     fnState: fnState,
     todoOK: todoOK,
     book: bookApi,

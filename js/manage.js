@@ -288,20 +288,42 @@
   function unchanged(e) { return !!(e && !e.isNew && !dirty() && !status(e.id).fileChanged); }
   function dirtyNote() {
     var el = M.root && M.root.querySelector('.mg-state');
-    if (el) el.textContent = stateText();
     // the chapters' dots and summaries follow typing without a redraw of the form (the focus stays in its box)
     var nav = M.root && M.root.querySelector('.mg-chs');
     if (nav && M.ed && M.ed.d) { var tmp = document.createElement('div'); tmp.innerHTML = chNavHTML(M.ed); nav.innerHTML = tmp.firstChild.innerHTML; }
-    // typing does not draw the page again: Save follows here
+    // typing does not draw the page again: Save follows here, and an edit ends Saved or Try again on it
     var sb = M.root && M.root.querySelector('[data-mg="save"]');
-    if (sb && M.ed && M.ed.d && !M.ed.saving) sb.disabled = unchanged(M.ed);
+    if (sb && M.ed && M.ed.d && !M.ed.saving) { if (dirty()) M.ed.doneUntil = 0; btnPatch(sb, saveBtnHTML(M.ed)); }
+    if (el) el.innerHTML = stateHTML();
+  }
+  /* the Save button changed in place, never replaced, so a tap that leaves a box onto it is not lost (btnPatch in
+     js/prep.js); an older saved prep.js without it only turns the button on and off, as before */
+  function btnPatch(el, html) {
+    if (P.btnPatch) { P.btnPatch(el, html); return; }
+    el.disabled = / disabled[ >]/.test(html.slice(0, html.indexOf('>') + 1));
   }
   function stateText() {
     var e = M.ed;
     if (e.saving) return e.saving;
     if (dirty()) return 'Not saved yet. Kept on this device.';
     if (e.isNew) return 'New recipe.';
+    if (e.savedAt) return 'Version ' + e.meta.v + '.';
     return e.meta.v ? 'Saved. Version ' + e.meta.v + '.' : 'As in the book file. Nothing changed yet.';
+  }
+  /* After the tap (5 Nov 2026, docs/action-feedback.md): a save from this form leaves a small green stamp, "Saved 14:02",
+     in the bar until the form changes again or another recipe opens. Its time is the kitchen clock of the save. */
+  function stateHTML() {
+    var e = M.ed, on = e && e.savedAt && !e.saving && !dirty();
+    return (on ? '<span class="lk-stamp">Saved ' + esc(e.savedAt) + '</span> ' : '') + esc(stateText());
+  }
+  /* The Save button tells the story, like the book's other Save buttons (svButton in js/prep.js): Saving... at the same
+     width, Saved with a tick for 1.2 s once the server answered, then off until something changes; Try again after a
+     failed save, beside the red reason in the bar. */
+  function saveBtnHTML(e) {
+    var just = !e.saving && e.doneUntil > Date.now() && unchanged(e), fail = !e.saving && !!e.failed && !just;
+    return '<button type="button" class="btn dark ink-busy-button sv-btn" data-mg="save" data-idle="Try again" data-wide="Saving..."' +
+      (e.saving ? ' disabled aria-busy="true"' : just ? ' disabled data-sv="done" aria-busy="false"' : fail ? ' data-sv="fail"' : unchanged(e) ? ' disabled' : '') + '><span class="sv-now">' +
+      (e.saving ? inkLabel('Saving...') : just ? inkLabel('Saved', 'save', 'done') : fail ? 'Try again' : 'Save') + '</span></button>';
   }
 
   /* ---------- reading the form ---------- */
@@ -609,7 +631,7 @@
     return '<section class="set-block mg-sec" aria-labelledby="mg-h-sw"><h3 class="h3" id="mg-h-sw">In the book</h3><div class="mg-sws">' +
       swRow('sw-show', shown, 'Show in the book', shown ? 'Staff see this recipe.' : 'Hidden: staff do not see it. It is kept and can be shown again. Links to it show "Card to come".') +
       (DISH[e.d.kind] ? swRow('sw-special', sp, 'Special', sp ? 'In Specials, first on the Pass and Tiles.' : 'Not a special.') : '') +
-      '</div><p class="hint">Save to make the change.</p></section>';
+      '</div>' + (dirty() ? '<p class="hint">Save to make the change.</p>' : '') + '</section>';
   }
   function moreHTML(e) {
     if (e.isNew) return '';
@@ -668,8 +690,8 @@
       '<div class="mg-body">' + chNavHTML(e) + '<div class="mg-chap">' +
       part('ing', ingHTML(e)) + part('method', methodHTML(e)) + part('alg', allergenHTML(e)) + part('draw', drawingHTML(e)) +
       part('card', swHTML(e) + basicsHTML(e) + moreCardHTML(e)) + (e.isNew ? '' : part('hist', histHTML(e) + moreHTML(e))) + '</div></div>' +
-      '<div class="mg-bar"><span class="mg-state" role="status">' + esc(stateText()) + '</span>' + (e.msg ? '<span class="p-err" role="alert">' + esc(e.msg) + '</span>' : '') +
-      '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-mg="save"' + (e.saving ? ' disabled aria-busy="true"' : unchanged(e) ? ' disabled' : '') + '>' + (e.saving ? inkLabel('Saving...') : 'Save') + '</button>' +
+      '<div class="mg-bar"><span class="mg-state" role="status">' + stateHTML() + '</span>' + (e.msg ? '<span class="p-err" role="alert">' + esc(e.msg) + '</span>' : '') +
+      '<div class="btn-row">' + saveBtnHTML(e) +
       (dirty() ? '<button type="button" class="btn" data-mg="undo-all">' + (armed('undo-all') ? 'Tap again to undo all' : 'Undo all changes') + '</button>' : '') + '</div></div></div>';
   }
 
@@ -754,7 +776,7 @@
     // nothing changed: Save is off, and a button left on by an older page saves nothing either (Go back to the book
     // file's copy, Hide and Earlier versions change the form first, so they still save; Save mine over it is force)
     if (!force && unchanged(e)) { draw(); return; }
-    e.msg = ''; e.conflict = force ? null : e.conflict;
+    e.msg = ''; e.failed = false; e.conflict = force ? null : e.conflict;
     keepNow();   // kept on this device until the save is confirmed
     if (!e.meta.off && !e.meta.removed && !check(e)) { draw(); focusId(e.errs[0].at); return; }
     if (!P.bookEdit()) { e.msg = 'Not saved: only the head chef can change recipes. Sign in with your PIN as Head chef.'; draw(); return; }
@@ -795,6 +817,8 @@
       X.put(api.pin(), id, done.rec, done.idx);
       api.changed();
       e.saving = ''; e.meta.v = done.v; e.meta.by = recorder; e.meta.upd = done.rec.upd; e.conflict = null; e.hist = null;
+      e.savedAt = B().clock(done.rec.upd); e.doneUntil = Date.now() + 1200;
+      setTimeout(function () { if (M.ed === e && !e.saving) draw(); }, 1250);
       lsSet(draftKey(e.key), '');
       var wasNew = e.isNew;
       if (wasNew) { e.isNew = false; e.key = e.id = e.d.id = id; e.meta.src = 'new'; }
@@ -813,7 +837,7 @@
     }).catch(function (err) {
       clearTimeout(slow);
       if (!owns(e, owner)) return;
-      e.saving = '';
+      e.saving = ''; e.failed = true;
       var code = err && err.code;
       e.msg = code === 'permission-denied' ? 'Not saved: the book refused it. Only the head chef can change recipes, and the recipe may have changed on another device. Try again.' : 'Not saved. Check the signal and try again. Your changes are kept on this device.';
       if (M.ed === e) draw();

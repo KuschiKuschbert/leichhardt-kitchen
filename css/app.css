@@ -3391,6 +3391,14 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 .sv-btn::before { content: attr(data-idle); content: attr(data-idle) / ""; }
 .sv-btn::after { content: attr(data-wide); content: attr(data-wide) / ""; padding-inline-start: calc(22px + .5rem); }
 .sv-btn[data-sv="done"]:disabled { background: var(--done-ink); border-color: var(--done-ink); color: #fff; opacity: 1; cursor: default; }
+/* After the tap (5 Nov 2026, docs/action-feedback.md): an outlined button that is off looks off, so Undo unsaved changes
+   no longer looks live beside a Saved button. Busy, Saved and Try again keep their own look. */
+.btn:not(.dark):disabled:not([aria-busy="true"]):not([data-sv]) { color: var(--faint); border-color: var(--line); cursor: default; }
+/* The small stamp on what was just saved ("Saved 14:02"), green, a word in a box, never a fill, so glare does not wash it
+   out. Shown until the page is left or that thing changes again. */
+.lk-stamp { display: inline-flex; align-items: center; min-height: 22px; margin-left: .5rem; padding: 0 .45rem; border: 1.5px solid var(--done-ink); border-radius: 4px; background: var(--paper); color: var(--done-ink); font: 700 .8125rem/1 var(--display); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; vertical-align: .1em; }
+.lk-stamp:first-child { margin-left: 0; }
+.cut-done { margin: .5rem 0 0; font-weight: 600; color: var(--ink); }
 .sv-line.p-err, .sv-slow { display: block; margin: 0; }
 .sv-slow { font-size: .875rem; font-weight: 600; color: var(--ink); }
 .ink-startup { max-width: 38rem; margin: 2rem auto; padding: 0 1.25rem; }
