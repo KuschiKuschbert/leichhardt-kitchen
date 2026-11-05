@@ -84,6 +84,15 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   // save as a template
   await L.dwShow(p, '[data-dw="panel"][data-v="tpl"]'); await p.click('[data-dw="panel"][data-v="tpl"]'); await L.settle(p, 200);
   await p.fill('[data-dwf="tplname"]', 'Burger and chips, pieces');
+  // a failed save says so in a red slip that stays until OK (6 Nov 2026, docs/action-feedback.md)
+  await p.evaluate(() => { window.__fake.mode = 'fail'; });
+  await p.click('[data-dw="tpl-save"]');
+  await wait(p, () => !!document.querySelector('.mg-toasts .p-toast-bad'));
+  await L.settle(p, 4300);
+  ok(/^Not saved/.test(await txt(p, '.mg-toasts .p-toast-bad .p-toast-msg') || '') && !!(await p.$('.mg-toasts .p-toast-bad [data-dw-ok]')), 'template: a failed save says Not saved in a red slip with OK, still there after 4 s');
+  if (await p.$('.mg-toasts .p-toast-bad [data-dw-ok]')) await p.click('.mg-toasts .p-toast-bad [data-dw-ok]');
+  ok(!(await p.$('.mg-toasts .p-toast-bad')), 'template: OK puts the red slip away');
+  await p.evaluate(() => { window.__fake.mode = 'ok'; });
   await p.click('[data-dw="tpl-save"]');
   await saved(p);
   s = await store(p);
@@ -178,9 +187,18 @@ const BAD_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50"><s
   await L.choose(p, '[data-mg="kind"][data-v="templates"]');
   await wait(p, () => !!document.querySelector('[data-mg="mine-hide"]'));
   ok(/Burger and chips, pieces/.test(await txt(p, '.mg-list') || ''), 'manage: Templates lists the template');
+  // a failed Hide names the template in a red slip that stays until OK (6 Nov 2026, docs/action-feedback.md)
+  await p.evaluate(() => { window.__fake.mode = 'fail'; });
+  await p.click('[data-mg="mine-hide"]'); await L.settle(p, 100);
+  await p.click('[data-mg="mine-hide"]');
+  await wait(p, () => !!document.querySelector('.mg-toasts .p-toast-bad'));
+  await L.settle(p, 4300);
+  ok(/^Not changed: Burger and chips, pieces\./.test(await txt(p, '.mg-toasts .p-toast-bad .p-toast-msg') || '') && !!(await p.$('.mg-toasts .p-toast-bad [data-mg-ok]')), 'manage: a failed Hide names the template in a red slip with OK, still there after 4 s');
+  await p.evaluate(() => { window.__fake.mode = 'ok'; });
   await p.click('[data-mg="mine-hide"]'); await L.settle(p, 100);
   await p.click('[data-mg="mine-hide"]');
   await wait(p, () => /hidden/.test((document.querySelector('.mg-list') || {}).textContent || ''));
+  ok(/^Hidden: Burger and chips, pieces\./.test(await txt(p, '.mg-toasts .p-toast-msg') || '') && !(await p.$('.mg-toasts .p-toast-bad')), 'manage: Hide names the template on the slip, and the red one is gone');
   s = await store(p);
   const tpl2 = s[tplKey] || {};
   ok(tpl2.removed === true && tpl2.v === 2 && tpl2.els.length === n, 'manage: Hide (tapped twice) saves version 2, hidden, the rest kept');

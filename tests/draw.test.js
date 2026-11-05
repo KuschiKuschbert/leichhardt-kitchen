@@ -191,8 +191,8 @@ async function centreOf(p, sel) { const b = await p.locator(sel).first().boundin
 
   // save: the drawing, its link on the recipe and the Pass labels made from its parts
   await p.click('[data-dw="save"]');
-  await wait(p, () => /Saved\. Version 1/.test((document.querySelector('.mg-toasts .p-toast') || {}).textContent || ''));
-  ok(/Saved\. Version 1/.test(await toastText(p) || ''), 'save: Saved. Version 1.');
+  await wait(p, () => /Saved the plate drawing of .+\. Version 1/.test((document.querySelector('.mg-toasts .p-toast') || {}).textContent || ''));
+  ok(/Saved the plate drawing of Chicken Burger\. Version 1\./.test(await toastText(p) || ''), 'save: the slip names the drawing, Saved the plate drawing of Chicken Burger. Version 1. (' + await toastText(p) + ')');
   ok(/#\/manage\/draw\/burger-plate$/.test(p.url()), 'save: the page is now the drawing\'s own');
   s = await store(p);
   const dw = s[fsKey(['drawings', 'burger-plate'])] || {};

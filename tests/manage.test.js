@@ -83,7 +83,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   ok(/\bing\*?\./.test(await chs(p)) && /\bcard\./.test(await chs(p)) && /\bmethod( |$)/.test(await chs(p)), 'chapters: a dot on Ingredients and Card details, none on Method (' + await chs(p) + ')');
   await p.click('[data-mg="save"]');
   await toast(p);
-  ok(/Saved\. Version 1\./.test(await toastText(p) || ''), 'save: Saved. Version 1.');
+  ok(/Saved Chicken Burger Deluxe\. Version 1\./.test(await toastText(p) || ''), 'save: the slip names the recipe, Saved Chicken Burger Deluxe. Version 1. (' + await toastText(p) + ')');
   s = await store(p);
   const rb = s[fsKey(['recipes', 'burger'])] || {};
   ok(rb.v === 1 && rb.r && rb.r.name === 'Chicken Burger Deluxe' && rb.by === 'ann' && rb.src === 'book' && /^[0-9a-f]{8}$/.test(rb.base || ''), 'save: recipes/burger is version 1 by Ann, from the book file');
@@ -140,7 +140,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   ok(/Gluten/.test(await txt(p, '.mg-alg-now') || ''), 'new card: the allergens follow the tagged ingredients');
   await p.click('[data-mg="save"]');
   await toast(p);
-  ok(/Saved\. Version 1\./.test(await toastText(p) || ''), 'new card: saved as version 1');
+  ok(/Saved .+\. Version 1\./.test(await toastText(p) || ''), 'new card: saved as version 1');
   ok(/#\/manage\/r\/beer-batter$/.test(p.url()), 'new card: the page is now the recipe\'s own form');
   s = await store(p);
   const nb = s[fsKey(['recipes', 'beer-batter'])] || {};
@@ -266,7 +266,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   if (aioliOk) {
     await L.reveal(p, '#mg-yield'); await p.fill('#mg-yield', '1 L batch');
     await p.click('[data-mg="save"]'); await toast(p);
-    ok(/Saved\. Version 1\./.test(await toastText(p) || ''), 'head chef\'s Google device: saved');
+    ok(/Saved .+\. Version 1\./.test(await toastText(p) || ''), 'head chef\'s Google device: saved');
   } else ok(false, 'head chef\'s Google device: the form opens');
   ok(p.errors.length === 0, 'Google device: no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -277,7 +277,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await editor(p);
   await L.reveal(p, '#mg-yield'); await p.fill('#mg-yield', '800 ml batch');
   await p.click('[data-mg="save"]'); await toast(p);
-  ok(/Saved\. Version 1\./.test(await toastText(p) || ''), 'after a sous chef: Sam saves version 1');
+  ok(/Saved .+\. Version 1\./.test(await toastText(p) || ''), 'after a sous chef: Sam saves version 1');
   s = await store(p);
   ok((s[fsKey(['book', 'index'])] || {}).by === 'sam', 'after a sous chef: the index names Sam');
   await p.context().close();
@@ -286,7 +286,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await L.reveal(p, '#mg-yield'); await p.fill('#mg-yield', '1 L batch');
   await p.click('[data-mg="save"]'); await toast(p);
   const ownSaid = await toastText(p) || await txt(p, '.mg-bar') || '';
-  ok(/Saved\. Version 2\./.test(ownSaid), 'after a sous chef: the head chef\'s Google device saves version 2 (' + ownSaid.slice(0, 120) + ')');
+  ok(/Saved .+\. Version 2\./.test(ownSaid), 'after a sous chef: the head chef\'s Google device saves version 2 (' + ownSaid.slice(0, 120) + ')');
   s = await store(p);
   const dailyHead = s[fsKey(['config', 'main'])].headId;
   ok((s[fsKey(['book', 'index'])] || {}).by === dailyHead && (s[fsKey(['recipes', 'aioli'])] || {}).by === dailyHead && ((s[fsKey(['book', 'index'])] || {}).r || {}).aioli === 2, 'after a sous chef: the index and recipe name the daily head-PIN writer, version 2');

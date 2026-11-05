@@ -29,7 +29,7 @@ const recipe = async b => {
   await p.context().setOffline(false);
   await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
   await p.waitForSelector('.mg-toasts .ink-icon[data-state="done"]');
-  ok(/Saved\. Version/.test(await L.txt(p, '.mg-toasts')) && !await p.$('[data-mg="save"][aria-busy="true"]'), 'recipe success appears only after acknowledgement and ends the busy button');
+  ok(/Saved .+\. Version/.test(await L.txt(p, '.mg-toasts')) && !await p.$('[data-mg="save"][aria-busy="true"]'), 'recipe success appears only after acknowledgement and ends the busy button');
   await p.context().close();
 
   p = await recipe(b);
@@ -44,7 +44,7 @@ const recipe = async b => {
   await L.waitFor(p, () => document.querySelector('[data-mg="save"]').disabled && /Saving/.test(document.querySelector('[data-mg="save"]').textContent));
   ok(!await p.$('[data-mg="save"] .ink-icon') && await p.inputValue('#mg-name') === 'Test burger retry', 'an older shell still shows plain pending feedback and keeps the same draft');
   await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
-  await L.waitFor(p, () => /Saved\. Version/.test(document.querySelector('.mg-toasts').textContent));
+  await L.waitFor(p, () => /Saved .+\. Version/.test(document.querySelector('.mg-toasts').textContent));
   ok(await p.evaluate(k => window.__fake.dump()[k].r.name === 'Test burger retry', key('recipes', 'burger')), 'plain-text fallback still completes the actual recipe save');
   await p.context().close();
 
