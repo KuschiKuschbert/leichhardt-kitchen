@@ -1006,7 +1006,7 @@
     }
     if (window.LK_FE) { if (window.LK_FE.api === FE_API && window.LK_FN && typeof window.LK_FN.M.effects === 'function') window.LK_FE.mount(root, route); else root.innerHTML = mgNote('Reload the book', 'The functions page on this device is a different version from the book. Reload the page to update it. Changes not saved yet are kept on this device.', '<div class="btn-row"><button type="button" class="btn dark" data-act="reload">Reload</button></div>'); return; }
     root.innerHTML = mgNote('Functions', 'Opening functions...', ' ', 'chef');
-    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=8').catch(function (e) { feLoad = null; throw e; });
+    if (!feLoad) feLoad = mgScript('js/fnedit.js?v=9').catch(function (e) { feLoad = null; throw e; });
     feLoad.then(function () { if (parseRoute().name === 'functions') mountFunctions(parseRoute()); }, function () {
       var el = document.getElementById('fe-root');
       if (el) el.innerHTML = mgNote('Could not open functions', 'It needs the signal the first time it opens on a device. Check the signal and try again.', '<div class="btn-row"><button type="button" class="btn dark" data-act="feretry">Try again</button></div>');

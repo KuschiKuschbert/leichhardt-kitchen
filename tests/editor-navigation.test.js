@@ -77,7 +77,7 @@ const pendingBack = async (p, mod, save, field, name) => {
   await L.waitFor(p, () => !!document.querySelector('.fe-rows a[href="#/functions/test"]'), null, 10000);
   await p.click('.fe-rows a[href="#/functions/test"]');
   await L.waitFor(p, () => !!document.querySelector('#fe-name'), null, 10000);
-  ok(p.urls.some(url => /\/js\/fnedit\.js\?v=8$/.test(url)), 'function form requests the revised editor address');
+  ok(p.urls.some(url => /\/js\/fnedit\.js\?v=9$/.test(url)), 'function form requests the revised editor address');
   ok(await p.getAttribute(back, 'aria-label') === 'Back to all functions', 'function form: header arrow names the parent list');
   ok(await p.locator('#fe-root a[href="#/functions"], [data-fe-back]').count() === 0, 'function form: no repeated return rows');
   await p.fill('#fe-name', 'Test booking draft');
@@ -136,7 +136,7 @@ const pendingBack = async (p, mod, save, field, name) => {
   // A revised address can still receive an older offline response. Reject its API before mounting a partial form.
   for (const c of [
     { name: 'recipe', file: 'manage', global: 'LK_MG', route: '#/manage/r/burger', root: '#mg-root', field: '#mg-name', v: '10' },
-    { name: 'function', file: 'fnedit', global: 'LK_FE', route: '#/functions/test', root: '#fe-root', field: '#fe-name', v: '8' },
+    { name: 'function', file: 'fnedit', global: 'LK_FE', route: '#/functions/test', root: '#fe-root', field: '#fe-name', v: '9' },
     { name: 'drawing', file: 'draw', global: 'LK_DRAW', route: '#/manage/draw/new/burger/plate', root: '#mg-root', field: '.dw-svg', v: '8' }
   ]) {
     p = await L.open(b, '#/', { who: 'ann', extra, wait: 1500 });

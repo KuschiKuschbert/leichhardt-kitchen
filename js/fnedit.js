@@ -40,12 +40,16 @@
   }
   function armed(k) { return E.armed === k; }
   var toastEl = null, toastTimer = null;
-  function toast(msg, confirmed) {
+  /* bad: a failure (5 Nov 2026, docs/action-feedback.md): red, with OK, and it stays until OK or the next slip, never on a
+     timer (before, "Not changed" looked like news and went after 4 s) */
+  function toast(msg, confirmed, bad) {
     if (!active()) return;
     B().say(msg);
     if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'p-toasts fe-toasts'; document.body.appendChild(toastEl); }
-    toastEl.innerHTML = '<div class="p-toast p-toast-plain" role="presentation">' + (confirmed ? inkLabel(msg, 'save', 'done') : esc(msg)) + '</div>';
-    clearTimeout(toastTimer); toastTimer = setTimeout(function () { if (toastEl) toastEl.innerHTML = ''; }, 4000);
+    toastEl.innerHTML = '<div class="p-toast' + (bad ? ' p-toast-bad' : ' p-toast-plain') + '" role="presentation"><span class="p-toast-msg">' + (confirmed ? inkLabel(msg, 'save', 'done') : esc(msg)) + '</span>' +
+      (bad ? '<button type="button" class="p-toast-btn" data-fe-ok="1">OK</button>' : '') + '</div>';
+    var ok = toastEl.querySelector('[data-fe-ok]'); if (ok) ok.addEventListener('click', function () { toastEl.innerHTML = ''; });
+    clearTimeout(toastTimer); if (!bad) toastTimer = setTimeout(function () { if (toastEl) toastEl.innerHTML = ''; }, 4000);
   }
   function newId(name) {
     var s = String(name || 'function').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24) || 'function';
@@ -245,7 +249,7 @@
     }).catch(function (err) {
       if (!owned(owner)) return;
       delete E.removing[id];
-      toast(err.code ? 'Not changed. Check your access and signal, then read the list again.' : err.message || 'Not changed. Read the list and try again.'); draw();
+      toast(err.code ? 'Not changed. Check your access and signal, then read the list again.' : err.message || 'Not changed. Read the list and try again.', false, true); draw();
     });
   }
 
@@ -377,7 +381,7 @@
     var f = toDoc(e);
     f.id = e.id; f.kcBy = B().who(); f.kcAt = now(); f.by = B().who(); f.upd = now(); f.chg = [];
     return '<section class="set-block fe-review" aria-labelledby="fe-rv-h"><h3 id="fe-rv-h" tabindex="-1">Check before confirming</h3><p class="hint">This is what the kitchen will see. Confirming puts it in the band under the top bar from 00:00 on ' + esc(M.dayName(f.date)) + '.</p>' +
-      FN.sheetHTML(f, false).replace(/<div class="btn-row">[\s\S]*?<\/div>$/, '') +
+      FN.sheetHTML(f, false).replace(/<div class="btn-row">[\s\S]*?<\/div>$/, '') + msgHTML(e) +
       '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-fe="confirm"' + (e.saving ? ' disabled aria-busy="true"' : '') + '>' + (e.saving ? inkLabel('Saving...') : e.status === 'cancelled' ? 'Put it back on' : 'Confirm function') + '</button><button type="button" class="btn" data-fe="print">Print function</button></div></section>';
   }
   function editHTML() {
@@ -387,11 +391,11 @@
     if (e.failed) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Could not open the function</h2><p>Check the signal and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-fe="reopen">Try again</button></div></section>';
     var d = e.d, s = e.saved, st = e.status;
     if (s && s.removed) return '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(s.name || 'Function') + '</h2><span class="fn-tag fn-t-off">Deleted</span></div><p>This function is removed from the list. Its booking and history are kept. Restoring it leaves it cancelled.</p><div class="btn-row">' + removeHTML(s) + '</div>' + histHTML(e);
-    if (e.review) return '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(d.name || 'New function') + '</h2></div>' + msgHTML(e) + reviewHTML(e);
+    if (e.review) return '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(d.name || 'New function') + '</h2></div>' + reviewHTML(e);
     var stTag = st === 'draft' ? '<span class="fn-tag">Draft: the kitchen does not see it</span>' : st === 'cancelled' ? '<span class="fn-tag fn-t-off">Cancelled</span>' : '<span class="fn-tag fn-t-ok">Confirmed: in the kitchen\'s band on the day</span>';
-    var out = '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(e.isNew ? 'New function' : (s.name || 'Function')) + '</h2><div class="btn-row">' + stTag + '<button type="button" class="btn" data-fe="print"' + (e.saving ? ' disabled' : '') + '>Print function</button></div></div>' +
+    var out = '<div class="fe-head"><h2 id="rtitle" tabindex="-1">' + esc(e.isNew ? 'New function' : (s.name || 'Function')) + '</h2><div class="btn-row">' + stTag + (e.savedAt && !dirty() ? '<span class="lk-stamp">Saved ' + esc(e.savedAt) + '</span>' : '') + '<button type="button" class="btn" data-fe="print"' + (e.saving ? ' disabled' : '') + '>Print function</button></div></div>' +
       (e.restored ? '<p class="fe-note">Changes not saved yet were kept on this device and are back in the form. <button type="button" class="linkish" data-fe="drop">' + (armed('drop') ? 'Tap again to drop them' : 'Drop them') + '</button></p>' : '') +
-      (!e.isNew ? '<p class="hint">Last changed by ' + esc(FN.nameOf(s.by)) + ', ' + esc(stamp(s.upd)) + '. Version ' + s.v + '.</p>' : '') + msgHTML(e) +
+      (!e.isNew ? '<p class="hint">Last changed by ' + esc(FN.nameOf(s.by)) + ', ' + esc(stamp(s.upd)) + '. Version ' + s.v + '.</p>' : '') +
       '<section class="set-block"><span class="label">The function</span>' + inp('name', 'Name or reference', d.name, ' maxlength="80" autocomplete="off" placeholder="Smith birthday"') +
       '<div class="fe-row2">' + inp('date', 'Date', d.date, ' type="date"') + startHTML(d) + '</div>' +
       '<div class="fe-row2">' + guestsHTML(d) + inp('loc', 'Room, area or table (optional)', d.loc, ' maxlength="60" list="fe-locs" autocomplete="off"') + '</div>' +
@@ -406,7 +410,7 @@
       '<section class="set-block fe-kcb"><span class="label">Kitchen comment</span><span class="hint">The kitchen reads this with your name and the time. No phone numbers or emails.</span>' +
       '<label class="visually-hidden" for="fe-kc">Kitchen comment</label><textarea id="fe-kc" class="search fe-ta" data-ff="kc" maxlength="2000" rows="4">' + esc(d.kc) + '</textarea>' +
       (s && s.kc ? '<span class="hint">Saved comment by ' + esc(FN.nameOf(s.kcBy)) + ', ' + esc(stamp(s.kcAt)) + '.</span>' : '') + '</section>' +
-      '<div class="fe-bar" id="fe-live">' + liveHTML(e) + '</div>' + problemsHTML(e) + buttonsHTML(e) + (e.isNew ? '' : histHTML(e));
+      '<div class="fe-bar" id="fe-live">' + liveHTML(e) + '</div>' + problemsHTML(e) + msgHTML(e) + buttonsHTML(e) + (e.isNew ? '' : histHTML(e));
     return out;
   }
   function msgHTML(e) {
@@ -428,8 +432,9 @@
     var st = e.status, dis = e.saving || E.removing[e.id] || FN.statusBusy(e.id) ? ' disabled' : '', b = [];
     // Save draft and Save changes are off with nothing to save (saveSync() keeps them in step while typing)
     var sdis = e.saving ? ' disabled aria-busy="true"' : dis || (!canSave() ? ' disabled' : '');
-    if (st === 'draft') { b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Check and confirm</button>'); b.push('<button type="button" class="btn ink-busy-button" data-fe="save"' + sdis + '>' + (e.saving ? inkLabel('Saving...') : 'Save draft') + '</button>'); }
-    else if (st === 'confirmed') b.push('<button type="button" class="btn dark ink-busy-button" data-fe="save"' + sdis + '>' + (e.saving ? inkLabel('Saving...') : 'Save changes') + '</button>');
+    var again = e.saveFailed && !e.saving ? 'Try again' : '';
+    if (st === 'draft') { b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Check and confirm</button>'); b.push('<button type="button" class="btn ink-busy-button" data-fe="save"' + sdis + '>' + (e.saving ? inkLabel('Saving...') : again || 'Save draft') + '</button>'); }
+    else if (st === 'confirmed') b.push('<button type="button" class="btn dark ink-busy-button" data-fe="save"' + sdis + '>' + (e.saving ? inkLabel('Saving...') : again || 'Save changes') + '</button>');
     else b.push('<button type="button" class="btn dark" data-fe="review"' + dis + '>Put it back on</button>');
     var more = [];
     if (!e.isNew) more.push('<button type="button" class="btn" data-fe="dup">Duplicate</button>');
@@ -464,7 +469,7 @@
     // nothing, or an empty draft). Confirm and Put it back on change the status, so they still save.
     flushPending();
     if (kind === 'save' && !dirty()) { draw(); return; }
-    e.msg = ''; keep();
+    e.msg = ''; e.saveFailed = false; keep();
     if (!P.fnOK()) { e.msg = 'Not saved: you are not ticked for Functions any more. Your changes are kept on this device.'; draw(); return; }
     var next = kind === 'confirm' ? 'confirmed' : kind === 'cancel' ? 'cancelled' : e.status;
     var probs = check({ d: e.d, status: next });
@@ -528,13 +533,15 @@
       forget(e);
       e.isNew = false; e.v = f.v; e.status = f.status; e.saved = f; e.savedC = { cname: submitted.cname.trim(), phone: submitted.phone.trim(), email: submitted.email.trim() }; if (!changed) e.d = fromDoc(f, e.savedC);
       e.saving = ''; e.conflict = null; e.review = false; e.restored = false; e.hist = null;
+      // the page goes back to its top, as before: the stamp beside the status says the save went through (5 Nov 2026)
+      e.savedAt = M.kclock(f.upd);
       if (Array.isArray(E.list)) { E.list = E.list.filter(function (x) { return x.id !== id; }).concat([f]); }
       toast(kind === 'confirm' ? 'Confirmed. The kitchen sees it on the day.' : kind === 'cancel' ? 'Cancelled. The kitchen is told.' : f.status === 'confirmed' ? 'Saved. The kitchen sees the change now.' : 'Draft saved. The kitchen does not see it yet.', true);
       if (wasNew) e.canonical = true;
       if (changed) keep();
       if (active()) { canonical(); draw(); var h = E.root.querySelector('#rtitle'); if (h) h.focus({ preventScroll: true }); window.scrollTo(0, 0); }
     }).catch(function (err) {
-      clearTimeout(slow); if (E.ed !== e || !owned(owner)) return; e.saving = '';
+      clearTimeout(slow); if (E.ed !== e || !owned(owner)) return; e.saving = ''; e.saveFailed = true;
       var code = err && err.code;
       e.msg = code === 'permission-denied' ? 'Not saved: the book refused it. You may not be ticked for Functions any more, or someone saved it just now. Your changes are kept on this device.' : 'Not saved. Check the signal and try again. Your changes are kept on this device.';
       if (E.ed === e) draw();
@@ -599,6 +606,7 @@
   function saveSync() {
     var e = E.ed, b = E.root && E.root.querySelector('[data-fe="save"]');
     if (b && e && e.d) b.disabled = !!(e.saving || E.removing[e.id] || FN.statusBusy(e.id)) || !canSave();
+    var st = E.root && E.root.querySelector('.fe-head .lk-stamp'); if (st && e && dirty()) st.remove();
   }
   function onInput(ev) {
     if (!E.root || !E.root.contains(ev.target)) return;
