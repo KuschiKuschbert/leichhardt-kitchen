@@ -3087,7 +3087,8 @@
     track(rb.commit()).then(function () { toast(who2 + (who2 === 'Their' ? ' PIN is reset.' : '\'s PIN is reset.') + ' They set a new one next time they sign in.'); }, function (e) { toast(e && e.code === 'permission-denied' ? 'Could not reset. Sign in as the admin.' : 'Could not reset. Check the connection and try again.', { label: 'OK', fn: function () {} }, 0, 'bad'); });
   }
   function hideSection(id, hidden) {
-    sset(docRef('sections', id), { hidden: hidden }, true).catch(failed);
+    var sc = (S.sections || []).filter(function (x) { return x.id === id; })[0], nm = sc && sc.name ? slipName(sc.name) : 'The section';
+    sset(docRef('sections', id), { hidden: hidden }, true).then(function () { toast(hidden ? 'Hidden from suggestions: ' + nm : 'Back in suggestions: ' + nm); }, failed);
   }
   function canRecoverGoogle() {
     var head = (S.config || {}).headId;
@@ -3303,7 +3304,7 @@
     S.idBusy = true; S.idMsg = 'Saving...'; draw();
     // a People draft with changes stays (28 Oct 2026: it was thrown away); its save carries only what it changed onto
     // the list as it is now (mergeDraft), so the kept or undone roles are not saved over
-    saveConfig({ people: people, showBadges: c.showBadges, staffSee: c.staffSee }).then(function () { S.idBusy = false; S.idMsg = ''; refreshDraft(); draw(); },
+    saveConfig({ people: people, showBadges: c.showBadges, staffSee: c.staffSee }).then(function () { S.idBusy = false; S.idMsg = ''; refreshDraft(); draw(); toast(keep ? 'Kept the changes from the prep book.' : 'Undone: the changes from the prep book.'); },
       function () { S.idBusy = false; S.idMsg = errMsg('Could not save. Check the connection.'); draw(); });
   }
   /* ---------- the last 14 days, read once a day per phone ----------
@@ -4079,6 +4080,7 @@
     var text = '﻿' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n');
     var blob = new Blob([text], { type: 'text/csv;charset=utf-8' }), a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    toast('Downloaded ' + name + '.');   // the browser's own note can be easy to miss
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
   }
   function hm(ms) { return ms ? clock(ms) : ''; }
@@ -5803,6 +5805,8 @@
      boxes stays there (28 Oct 2026: the regular went through the boxes, so a half-typed line went with no Undo). */
   function addOrder(oneTapAdd, reg) {
     var t = (reg ? String(reg.text || '') : S.otext).trim();
+    // an empty Add puts the cursor in the box, as on the prep list (it did nothing at all before, 5 Nov 2026)
+    if (!t && !reg && can('add')) { focusK('o-text'); return; }
     if (!t || !can('add')) return;
     var typed = t, pr = proofread(t); t = (pr.text || t).slice(0, 120);
     var hit = ingredientFor(t), p = me(), ref = fb.fs.doc(ordCol(S.ordDate));
@@ -7551,6 +7555,7 @@
     S.msigns[id] = { loading: true, list: (cur && cur.list) || null };
     fb.fs.getDocs(fb.fs.collection.apply(null, [fb.db].concat(base(), ['minutes', id, 'signs']))).then(function (sn) {
       S.msigns[id] = { loading: false, list: sn.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }) }; draw();
+      if (S.mnSay === id) { S.mnSay = ''; toast('Sign-offs read again at ' + clock(now()) + '.'); }
     }, function () { S.msigns[id] = { loading: false, list: null, err: true }; draw(); });
   }
 
@@ -10225,7 +10230,7 @@
     if (a === 'mn-pickdoc') { S.mSel = id; S.mErr = ''; draw(); window.scrollTo(0, 0); return; }
     if (a === 'mn-sign') { signMinutes(id); return; }
     if (a === 'mn-csv') { csvMinutes(id); return; }
-    if (a === 'mn-refresh') { loadMinutes(true); loadSigns(S.mSel || (mnPub()[0] || {}).id, true); draw(); return; }
+    if (a === 'mn-refresh') { var mr = S.mSel || (mnPub()[0] || {}).id; S.mnSay = mr || ''; loadMinutes(true); loadSigns(mr, true); draw(); return; }
     if (a === 'mn-sel') { S.mSel = id; loadSigns(id, true); draw(); return; }
     if (/^mn-(new|tpl|draft-open|edit|draft|pub|remove)$/.test(a) && !mnCanWrite()) return;
     if (a === 'mn-new' || a === 'mn-tpl') { if (mfDirty() && !arm(a)) return; S.mf = a === 'mn-tpl' ? mfTpl() : mfNew(); S.mfSnap = mfSnap(S.mf); S.mMsg = ''; draw(); var mfe = S.root.querySelector('.mn-form'); if (mfe) mfe.scrollIntoView({ block: 'start' }); return; }
@@ -10368,7 +10373,7 @@
       draw(); return;
     }
     if (a === 'w-refresh') { loadWStats(true); if (whState().view === 'summary') loadStats(true); draw(); return; }
-    if (a === 'miss-hide') { sset(docRef('misses', id), { hidden: true, q: ((S.misses || []).filter(function (x) { return x.id === id; })[0] || {}).q || id }, true).then(function () { loadMisses(true); }, failed); return; }
+    if (a === 'miss-hide') { var mq = ((S.misses || []).filter(function (x) { return x.id === id; })[0] || {}).q || id, mWas = S.misses; if (S.misses) { S.misses = S.misses.filter(function (x) { return x.id !== id; }); draw(); } toast('Hidden: "' + slipName(mq) + '". It no longer shows here.'); sset(docRef('misses', id), { hidden: true, q: mq }, true).then(function () { loadMisses(true); }, function (e) { S.misses = mWas; failed(e); draw(); }); return; }
     // "Add 5 L": the usual amount goes in and the line is added in the same tap, on the prep list and the order list
     if (a === 'qset' || a === 'oqset') sg('usual', 't');
     if (a === 'oneed') { var nv = el.getAttribute('data-v'); S.oneed = O_NEED.hasOwnProperty(nv) && S.oneed !== nv ? nv : ''; var nb = S.root.querySelector('#o-need'); if (nb) nb.outerHTML = needChipsHTML(); return; }
@@ -10821,6 +10826,7 @@
     (on ? mlDone : mlOpen).push(x);
     if (!on) lvReveal('mail');
     mlTell(); draw();
+    toast(on ? 'Ticked off: ' + slipName(x.text) : 'Back in the inbox: ' + slipName(x.text), on ? { label: 'Undo', fn: function () { mlTick(id); } } : null);
     // a sous chef's tick leaves seen alone: it stays for the head chef
     var own = mlOwner() && mlHead(), mp = own ? { done: on, doneAt: x.doneAt, seen: true, seenAt: x.seenAt || t } : { done: on, doneAt: x.doneAt }, sp = own ? { seen: true, done: on } : { done: on };
     W([['upd', mlRef(id), mp], ['upd', mlStatRef(id), sp]]).catch(function (e) {
@@ -10941,6 +10947,8 @@
   /* the open jobs. maxAge: how old the last read may be (30 minutes by default, 1 minute when the page opens, 0 for
      Refresh). A failed read tries the server again after 5 minutes. No signal is a failed read too: an answer from
      the copy in memory never gets here (the getDocs wrapper in sdk()), so an empty copy is never "nothing to do". */
+  // tdSay: Refresh was tapped, so the read says when it is done (a Refresh with nothing new showed nothing at all)
+  var tdSay = false;
   function todoLoad(maxAge) {
     // the PIN session is still opening: draw once more when it is in, which reads the list
     if (todoOK() && !tdCanRead() && sessP) { if (tdWait !== sessP) { tdWait = sessP; sessP.then(function () { draw(); }, function () { draw(); }); } return; }
@@ -10951,8 +10959,9 @@
       var l = mlGrab(sn);
       tdBusy = false; tdAt = Date.now();
       tdOpen = l; tdErr = false; tdDone = tdDrop(l, tdDone); draw();
+      if (tdSay) { tdSay = false; toast('To-do list read again at ' + clock(now()) + '.'); }
     }, function () {
-      tdBusy = false; tdErr = true; tdAt = Date.now() - TD_STALE + TD_RETRY; draw();
+      tdBusy = false; tdSay = false; tdErr = true; tdAt = Date.now() - TD_STALE + TD_RETRY; draw();
     });
   }
   /* the jobs ticked in the last 30 days (doneAt is 0 while open, so open jobs are not read; a removed job that was done
@@ -10999,6 +11008,7 @@
     var p = on ? { st: 'done', doneAt: t, doneBy: tdMe(), upd: t } : { st: 'open', doneAt: 0, doneBy: '', upd: t };
     if (tdf.id === id) tdEditX = x;   // a job open in the box follows its tick
     Object.assign(x, p); tdPlace(x); if (!on) lvReveal('todo'); draw();
+    toast(on ? 'Done: ' + slipName(x.text) : 'Back on the to-do list: ' + slipName(x.text), on ? { label: 'Undo', fn: function () { todoTick(id); } } : null);
     W([['upd', docRef('todos', id), p]]).catch(function (e) { Object.assign(x, was); tdPlace(x); failed(e); draw(); });
   }
   function todoEdit(id) {
@@ -11083,7 +11093,7 @@
       : tdDoneErr ? '<p class="p-err">Could not load. Check the signal.' + again + '</p>' : '<p class="hint">Loading...</p>';
     return '<section class="p-card todo-page"><h2 class="p-h" id="rtitle" tabindex="-1">Chef to-do</h2>' +
       '<p class="hint">Shared by the head chef and the sous chefs. Staff cannot see it. Tick a job when it is done.' +
-      (tdAt && !tdErr ? ' <button type="button" class="p-link" data-p="todo-refresh">Refresh</button>' : '') + '</p>' +
+      (tdAt && !tdErr ? ' <button type="button" class="p-link" data-p="todo-refresh"' + (tdBusy ? ' disabled aria-busy="true">Reading...' : '>Refresh') + '</button>' : '') + '</p>' +
       cutTodoHTML() + todoFormHTML() + '<div class="todo-list">' + open + '</div>' +
       '<details class="todo-donebox"' + (tdDoneOpen ? ' open' : '') + '><summary data-p="todo-donebox">Done in the last 30 days' + (tdDone ? ' (' + done.length + ')' : '') + '</summary>' + doneIn + '</details></section>';
   }
@@ -11113,7 +11123,7 @@
     if (a === 'todo-edit') { todoEdit(id); return; }
     // Remove has Undo, but Undo puts back the saved job, not words changed in the box: those ask first
     if (a === 'todo-del') { if (tdf.id === id && tdDirty() && !arm('todo-del:' + id)) return; todoRemove(id); return; }
-    if (a === 'todo-refresh') { todoLoad(0); if (tdDoneOpen) todoLoadDone(true); else tdDoneAt = 0; draw(); return; }
+    if (a === 'todo-refresh') { tdSay = true; todoLoad(0); if (tdDoneOpen) todoLoadDone(true); else tdDoneAt = 0; draw(); return; }
     if (a === 'todo-donebox') { tdDoneOpen = !el.parentNode.open; if (tdDoneOpen) todoLoadDone(); }
   }
   // back on the page after 30 minutes away: read the open jobs again

@@ -53,6 +53,8 @@ const T = (id, x) => ({ [fsKey(['todos', id])]: Object.assign({ text: 'Job ' + i
   s = await store(p);
   ok(s[fsKey(['todos', 't2'])].st === 'done' && s[fsKey(['todos', 't2'])].doneBy === 'sam' && s[fsKey(['todos', 't2'])].doneAt >= L.NOW, 'tick: saved as done by Sam');
   ok((await rows(p)).indexOf('Order new tongs') < 0, 'tick: it leaves the open list');
+  // after the tap (5 Nov 2026, docs/action-feedback.md): the slip names the job, with Undo, as it drops into Done
+  ok(/^Done: Order new tongs$/.test(await p.evaluate(() => { const e = document.querySelector('.p-toast[data-toast="new"] .p-toast-msg') || document.querySelector('.p-toast .p-toast-msg'); return e ? e.textContent.trim() : ''; })) && !!(await p.$('.p-toast [data-p="toast-act"]')), 'tick: the slip says Done: Order new tongs, with Undo');
   await p.click('.todo-donebox summary');
   await L.waitFor(p, () => document.querySelectorAll('[data-lv="tododone"] .todo-row').length >= 2, null, 6000).catch(() => {});
   l = await rows(p, 'tododone');
@@ -61,6 +63,10 @@ const T = (id, x) => ({ [fsKey(['todos', id])]: Object.assign({ text: 'Job ' + i
   await tap(p, '[data-lv="tododone"] [data-p="todo-tick"][data-id="t2"]'); await L.settle(p, 600);
   s = await store(p);
   ok(s[fsKey(['todos', 't2'])].st === 'open' && s[fsKey(['todos', 't2'])].doneAt === 0 && s[fsKey(['todos', 't2'])].doneBy === '', 'untick: back to open, no one named');
+  ok(/^Back on the to-do list: Order new tongs$/.test(await p.evaluate(() => { const e = document.querySelector('.p-toast[data-toast="new"] .p-toast-msg') || document.querySelector('.p-toast .p-toast-msg'); return e ? e.textContent.trim() : ''; })), 'untick: the slip says it is back on the to-do list');
+  // Refresh says when it read the list, even when nothing changed (it showed nothing before)
+  await tap(p, '[data-p="todo-refresh"]'); await L.settle(p, 600);
+  ok(/^To-do list read again at \d\d:\d\d\.$/.test(await p.evaluate(() => { const e = document.querySelector('.p-toast[data-toast="new"] .p-toast-msg') || document.querySelector('.p-toast .p-toast-msg'); return e ? e.textContent.trim() : ''; })), 'refresh: the slip says when the list was read');
   ok((await rows(p)).indexOf('Order new tongs') >= 0, 'untick: back on the open list');
 
   // change the words

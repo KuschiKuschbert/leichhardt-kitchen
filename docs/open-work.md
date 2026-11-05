@@ -22,7 +22,7 @@ Remove each item here once it is done.
 
 The coding rules in `CLAUDE.md` came from a check of the whole book on 21 Oct 2026. This is the older code that does not meet them yet, in the order to fix it. Each item is its own branch and pull request, with its tests. Remove an item once it is merged.
 
-After the tap (5 Nov 2026, `docs/action-feedback.md`): steps 2 and 3 of the chosen mix are in `docs/action-feedback-options/brief.md`. Beyond them, the audit's other easy-to-miss actions, to bring in line when that page is next worked on: mail and to-do ticks drop into a closed Done box with no words; Refresh on the to-do list and the minutes register shows nothing; an empty Add on Orders does nothing; Keep these changes / Undo them on the role-change card vanishes with no words; Hide on a missed search waits for a read; the recipe and drawing editors' own toasts look the same for success and failure (WA-10; the function editor's since 5 Nov 2026).
+After the tap (5 Nov 2026, `docs/action-feedback.md`): the chosen mix is built (`docs/action-feedback-options/brief.md`). Left from the audit, to bring in line when that page is next worked on: the Review desk's Save and return and the proofreader's Restore and Save say so in a box at the top of the workspace, often off screen (`js/admin-intelligence.js`, `js/proofreader-admin.js`); the recipe and drawing editors' own toasts look the same for success and failure and go by themselves (WA-10; the function editor's since 5 Nov 2026); a mail's priority change re-sorts the list with no words.
 
 Done, all on 22 Oct 2026:
 - the wastage log

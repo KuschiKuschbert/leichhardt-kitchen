@@ -189,6 +189,9 @@ const stamps = (p, scope) => p.evaluate(s => [...document.querySelectorAll(s + '
 
     p = await L.open(b, '#/orders', { wait: 1500 });
     await L.oLog(p);
+    // an empty Add puts the cursor in the box (it did nothing at all before, 5 Nov 2026)
+    await p.evaluate(() => { document.activeElement.blur(); document.querySelector('.o-sheet .nb-addbtn').click(); }); await L.settle(p, 150);
+    ok(await p.evaluate(() => document.activeElement && document.activeElement.id === 'o-text'), 'orders: an empty Add puts the cursor in the box');
     await p.fill('#o-text', 'Butter'); await p.press('#o-text', 'Enter'); await L.settle(p, 400);
     rc = await receipt(p, '.o-sheet');
     ok(rc.length === 1 && /^Butter/.test(rc[0].t) && rc[0].undo && !(await p.$('.p-toast')), 'orders sheet: "Added just now" names the line, with Undo, and no slip (' + JSON.stringify(rc) + ')');
