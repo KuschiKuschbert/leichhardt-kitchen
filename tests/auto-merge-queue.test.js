@@ -60,6 +60,11 @@ fs.writeFileSync(switchScript, stepScript(yml, 'Switch auto-merge on or off for 
 const windowBody = stepScript(yml, 'Open or close the release window'), windowScript = path.join(tmp, 'window.sh');
 fs.writeFileSync(windowScript, windowBody);
 const WINDOWS = (yml.match(/^\s*RELEASE_WINDOWS: '([^']+)'/m) || [])[1] || '';
+// The waiting run (6 Nov 2026): the step that sleeps until the next window opens.
+// An older copy of the workflow (QUEUE_YML) has no such step: it then never sleeps, and those checks fail.
+let waitBody = 'true\n'; try { waitBody = stepScript(yml, 'Sleep until the next release window'); } catch (e) {}
+const waitScript = path.join(tmp, 'wait.sh');
+fs.writeFileSync(waitScript, waitBody);
 
 // The stand-in for gh. The scenario file holds the list, each pull request's REST answers in turn (the last repeats;
 // FAIL makes that call fail) and each pull request's checks on its newest commit (runs: a list of sets, one per
@@ -115,6 +120,12 @@ if (a[0] === 'pr' && a[1] === 'list') {
   out({ number: +num, mergeable_state: v });
 } else if (a[0] === 'pr' && a[1] === 'merge') {
   if (next('merge', a[2], 'ok') === 'FAIL') fail();
+} else if (a[0] === 'api' && a[1].indexOf('repos/kitchen/book/actions/workflows/auto-merge.yml/runs?event=workflow_dispatch&') === 0) {
+  // this workflow's runs by hand, newest first (6 Nov 2026): Release now and the waiting run, found by name
+  if (st.runsFail) fail();
+  out({ total_count: (st.wfRuns || []).length, workflow_runs: st.wfRuns || [] });
+} else if (a[0] === 'workflow' && a[1] === 'run') {
+  if (st.dispatchFail) fail();
 } else { process.stderr.write('stand-in gh has no answer for: ' + a.join(' ') + '\\n'); process.exit(9); }
 `, { mode: 0o755 });
 // The stand-in for sleep: writes it down and returns at once, so ten minutes of waiting takes no time.
@@ -163,6 +174,7 @@ function pass(name, scenario, opts) {
     on: log.filter(l => /^gh pr merge .* --auto /.test(l + ' ')).map(l => +l.split(' ')[3]),
     off: log.filter(l => /^gh pr merge .* --disable-auto/.test(l)).map(l => +l.split(' ')[3]),
     listed: log.filter(l => /^gh pr list /.test(l)).length,
+    dispatched: log.filter(l => /^gh workflow run auto-merge\.yml .*-f wait=true/.test(l)).length,
     slept: log.filter(l => /^sleep /.test(l)).reduce((t, l) => t + (+l.split(' ')[1] || 0), 0)
   };
   console.log('-- ' + name + '\n' + res.out.trim().split('\n').map(l => '   | ' + l).join('\n'));
@@ -352,6 +364,57 @@ r = pass('switch: marked ready at 22:45', {}, swAt('2245', false, 714));
 eq(r.on, [714], 'in a window it gets auto-merge at once');
 const crons = (yml.match(/cron: '([^']+)'/g) || []).map(c => c.slice(7, -1));
 ok(crons.indexOf('3 5 * * *') >= 0 && crons.indexOf('33 12 * * *') >= 0, 'the queue also runs as each window opens: 05:03 and 12:33 UTC are 15:03 and 22:33 Queensland time');
+
+// 10. The windows open even when GitHub skips the timed runs, and Release now lasts (6 Nov 2026). On 5 Nov GitHub ran
+// 3 of the queue's timed runs in 14 hours, none in a window, so nothing merged that night; and a Release now at 07:53
+// was undone a minute later by the run its own update of #565 started, which found the window shut.
+const run = (id, title, minsAgo, status) => ({ id, display_title: title, status: status || 'completed', created_at: ago(minsAgo * 60) });
+const RN = 'Release now', WT = 'Waiting for the release window';
+r = pass('window shut at 08:00, one ready, no run waiting', { list: [pr(720, 'BEHIND')], wfRuns: [] }, win('0800', { RUN_ID: '9' }));
+eq([r.off, r.dispatched], [[720], 1], 'auto-merge goes off and a run is started that waits for the window');
+ok(/Started a run that waits for the next window/.test(r.out), 'the log says so');
+r = pass('window shut, a run already waits', { list: [pr(721, 'BEHIND')], wfRuns: [run(5, WT, 90, 'in_progress')] }, win('0800', { RUN_ID: '9' }));
+eq(r.dispatched, 0, 'no second waiting run');
+ok(/A run already waits/.test(r.out), 'the log says one already waits');
+r = pass('window shut, the waiting run is this one (woke after 5 h 45 min)', { list: [pr(722, 'BEHIND')], wfRuns: [run(9, WT, 345, 'in_progress')] }, win('0945', { RUN_ID: '9' }));
+eq(r.dispatched, 1, 'it starts the next wait');
+r = pass('window shut, an old waiting run has finished', { list: [pr(723, 'BEHIND')], wfRuns: [run(4, WT, 600)] }, win('0800', { RUN_ID: '9' }));
+eq(r.dispatched, 1, 'a finished waiting run does not count');
+r = pass('window shut, only urgent and held ones', { list: [pr(724, 'BEHIND', null, { labels: lbl('urgent') }), pr(725, 'BEHIND', null, { labels: lbl('hold') })], wfRuns: [] }, win('0800', { RUN_ID: '9' }));
+eq(r.dispatched, 0, 'nothing waits for a window, so no waiting run');
+r = pass('window open at 15:01', { list: [pr(726, 'BEHIND', null, off)], wfRuns: [] }, win('1501', { RUN_ID: '9' }));
+eq([r.on, r.dispatched], [[726], 0], 'in a window nothing waits');
+r = pass('window shut, the runs cannot be read', { list: [pr(727, 'BEHIND')], runsFail: true }, win('0800', { RUN_ID: '9' }));
+eq(r.dispatched, 0, 'it does not start a run it cannot see is needed');
+ok(/::warning::Could not look for the run that waits/.test(r.out), 'a warning says so, and the next pass looks again');
+r = pass('window shut, starting the waiting run fails', { list: [pr(728, 'BEHIND')], wfRuns: [], dispatchFail: true }, win('0800', { RUN_ID: '9' }));
+ok(r.dispatched === 3 && /::warning::Could not start the run that waits/.test(r.out), 'three tries, then a warning; the step does not fail');
+// Release now lasts 30 minutes
+r = pass('08:05, Release now at 07:53', { list: [pr(730, 'BEHIND', null, off), pr(731, 'BEHIND')], wfRuns: [run(8, RN, 12)] }, win('0805', { RUN_ID: '9' }));
+eq([r.on, r.off, r.dispatched], [[730], [], 0], 'the next run keeps the window open: auto-merge on, none switched off, no waiting run');
+ok(/Released by hand in the last 30 minutes/.test(r.out), 'the log says why the window is open');
+r = pass('08:30, Release now at 07:53', { list: [pr(732, 'BEHIND')], wfRuns: [run(8, RN, 37)] }, win('0830', { RUN_ID: '9' }));
+eq(r.off, [732], 'after 30 minutes the window is shut again');
+r = pass('switch at 07:54, Release now a minute before', { wfRuns: [run(8, RN, 1)] }, swAt('0754', false, 733));
+eq([r.on, r.off], [[733], []], 'the switch keeps auto-merge on (it switched #565 off on 6 Nov)');
+r = pass('switch at 07:54, the runs cannot be read', { runsFail: true }, swAt('0754', false, 734));
+eq([r.on, r.off], [[], [734]], 'unread runs mean no Release now: it waits for the window');
+r = pass('switch at 07:54, an older Release now', { wfRuns: [run(7, RN, 45), run(6, WT, 3, 'in_progress')] }, swAt('0754', false, 735));
+eq(r.off, [735], 'a Release now 45 minutes ago, or a waiting run, does not open the window');
+// the waiting run's sleep: until a minute after the next window opens, at most 5 hours 45 minutes
+ok(spawnSync('bash', ['-n', waitScript]).status === 0 && waitBody.indexOf('${{') < 0, 'the wait step is valid bash with no GitHub expressions');
+const sleepAt = hhmm => pass('wait from ' + hhmm, {}, { script: waitScript, env: { RELEASE_WINDOWS: WINDOWS, NOW_HHMM: hhmm } }).slept;
+eq(sleepAt('1230'), 151 * 60, 'from 12:30 it sleeps until 15:01');
+eq(sleepAt('2200'), 31 * 60, 'from 22:00 it sleeps until 22:31');
+eq(sleepAt('0800'), 20700, 'from 08:00 (7 hours to go) it sleeps 5 hours 45 minutes, then the queue starts the next wait');
+eq(sleepAt('1630'), 20700, 'from 16:30 (the night window is 6 hours away) the same');
+eq(sleepAt('1510'), 0, 'in a window it does not sleep');
+eq(sleepAt('0001'), 20700, 'just after midnight it waits too');
+const job = name => { const m = yml.match(new RegExp('\\n  ' + name + ':\\n([\\s\\S]*?)(?=\\n  [a-z]+:\\n|$)')); return m ? m[1] : ''; };
+ok(/if: github\.event_name == 'workflow_dispatch' && inputs\.wait/.test(job('wait')) && /timeout-minutes: 350/.test(job('wait')), 'the wait job runs only for the waiting run, under GitHub\'s 6 hour limit');
+ok(/needs: \[switch, backfill, wait\]/.test(job('queue')) && /actions: write/.test(job('queue')), 'the queue runs after the wait, and may start the waiting run');
+ok(/inputs\.now/.test(job('backfill')), 'the backfill (auto-merge on for every ready one) runs only on Release now, never on the waiting run');
+ok(/run-name: .*'Release now'.*'Waiting for the release window'/.test(yml), 'Release now and the waiting run carry the names the queue looks for');
 
 // 8. The triggers: the end of Click tests moves the queue, and the schedule is off the hour.
 const clickName = (fs.readFileSync(path.join(root, '.github', 'workflows', 'pr-tests.yml'), 'utf8').match(/^name: (.+)$/m) || [])[1];

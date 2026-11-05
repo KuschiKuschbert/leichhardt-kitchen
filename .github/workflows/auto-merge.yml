@@ -30,9 +30,18 @@ on:
   workflow_dispatch:
     inputs:
       now:
-        description: 'Release now: merge ready pull requests outside the release windows, this run only'
+        description: 'Release now: merge ready pull requests outside the release windows, for the next 30 minutes'
         type: boolean
         default: false
+      wait:
+        description: 'Wait for the next release window, then move the queue (the queue starts this run itself)'
+        type: boolean
+        default: false
+
+# Release now and the waiting run (6 Nov 2026) carry their own names, so a later run can find them by name
+# (released() and the look for a waiting run below). Every other run keeps GitHub's own name (the pull request or
+# the commit).
+run-name: "${{ github.event_name == 'workflow_dispatch' && (inputs.now && 'Release now' || inputs.wait && 'Waiting for the release window' || '') || '' }}"
 
 permissions:
   contents: read
@@ -57,9 +66,13 @@ jobs:
     concurrency:
       group: auto-merge-pr-${{ github.event.pull_request.number }}
       cancel-in-progress: false
+    permissions:
+      contents: read
+      actions: read
     env:
       GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
       REPO: ${{ github.repository }}
+      RUNS_TOKEN: ${{ github.token }}
     steps:
       - name: Token set?
         id: token
@@ -71,9 +84,9 @@ jobs:
             echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
 
-      # The pull request that changed: ready and not held gets auto-merge in a release window, or at once when labelled
-      # urgent; outside a window it waits (auto-merge off) for the queue to switch it on when the next window opens. A
-      # draft or a held one loses it.
+      # The pull request that changed: ready and not held gets auto-merge in a release window, within 30 minutes of a
+      # Release now, or at once when labelled urgent; outside a window it waits (auto-merge off) for the queue to switch
+      # it on when the next window opens. A draft or a held one loses it.
       - name: Switch auto-merge on or off for this pull request
         if: steps.token.outputs.ok == 'true'
         env:
@@ -89,6 +102,11 @@ jobs:
           # in a release window now? NOW_HHMM stands in for the clock in tests/auto-merge-queue.test.js
           now=${NOW_HHMM:-$(TZ=Australia/Brisbane date +%H%M)}; open=false
           for w in $RELEASE_WINDOWS; do [ $((10#$now)) -ge $((10#${w%-*})) ] && [ $((10#$now)) -lt $((10#${w#*-})) ] && open=true; done
+          # A Release now holds the window open for 30 minutes (6 Nov 2026): it lasted only its own run, so the run its
+          # own update of a pull request started switched auto-merge off again. Its runs are found by name (run-name).
+          released() { GH_TOKEN="$RUNS_TOKEN" gh api "repos/$REPO/actions/workflows/auto-merge.yml/runs?event=workflow_dispatch&per_page=20" \
+            --jq '[.workflow_runs[] | select(.display_title == "Release now") | select(now - (.created_at | fromdateiso8601) < 1800)] | length' 2>/dev/null | grep -qv '^0$'; }
+          if [ "$open" != "true" ] && released; then open=true; echo "Released by hand in the last 30 minutes: the window is open."; fi
           if [ "$SAME" != "true" ]; then echo "From a fork: never merged automatically."; exit 0; fi
           if [ "$DRAFT" = "true" ] || [ "$HOLD" = "true" ]; then
             gh pr merge "$PR" -R "$REPO" --disable-auto 2>/dev/null || true
@@ -102,7 +120,8 @@ jobs:
           fi
 
   backfill:
-    if: github.event_name == 'workflow_dispatch'
+    # Release now only (6 Nov 2026): the waiting run must not switch auto-merge on before its window opens
+    if: github.event_name == 'workflow_dispatch' && inputs.now
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
@@ -129,8 +148,38 @@ jobs:
             retry gh pr merge "$n" -R "$REPO" --auto --squash && echo "#$n: auto-merge on." || echo "#$n: GitHub refused three times; run this again later."
           done
 
+  # The waiting run (6 Nov 2026). On 5 Nov GitHub ran 3 of the queue's timed runs in 14 hours, none in a window, so
+  # nothing merged that night. When the queue finds ready pull requests outside a window, it starts this run (Run
+  # workflow with wait), which sleeps until a minute after the next window opens; the queue below then switches
+  # auto-merge on and moves the queue. Runners cost nothing on a public repository. GitHub stops a job after 6 hours,
+  # so a longer wait sleeps 5 hours 45 minutes and the queue after it starts the next wait.
+  # tests/auto-merge-queue.test.js runs this step too: no GitHub expressions in it.
+  wait:
+    if: github.event_name == 'workflow_dispatch' && inputs.wait
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - name: Sleep until the next release window
+        run: |
+          now=${NOW_HHMM:-$(TZ=Australia/Brisbane date +%H%M)}
+          mins=$((10#${now:0:2} * 60 + 10#${now:2:2})); best=-1; open=false
+          for w in $RELEASE_WINDOWS; do
+            s=${w%-*}; e=${w#*-}
+            [ $((10#$now)) -ge $((10#$s)) ] && [ $((10#$now)) -lt $((10#$e)) ] && open=true
+            d=$(( (10#${s:0:2} * 60 + 10#${s:2:2} - mins + 1440) % 1440 ))
+            if [ "$best" -lt 0 ] || [ "$d" -lt "$best" ]; then best=$d; fi
+          done
+          if [ "$open" = "true" ]; then echo "A release window is open now."; exit 0; fi
+          secs=$((best * 60 + 60)); cap=20700
+          if [ "$secs" -gt "$cap" ]; then
+            echo "The next window opens in $best minutes: waiting 5 hours 45 minutes, then the queue starts the next wait."; secs=$cap
+          else
+            echo "The next window opens in $best minutes: waiting until a minute after it opens."
+          fi
+          sleep "$secs"
+
   queue:
-    needs: [switch, backfill]
+    needs: [switch, backfill, wait]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     # Up to 10 minutes of asking GitHub about an UNKNOWN pull request, plus the rest of the pass.
@@ -138,10 +187,16 @@ jobs:
     concurrency:
       group: auto-merge-queue
       cancel-in-progress: false
+    # actions: write starts the waiting run; actions: read finds Release now and the waiting run by name
+    permissions:
+      contents: read
+      actions: write
     env:
       GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
       REPO: ${{ github.repository }}
       RELEASE_NOW: ${{ github.event_name == 'workflow_dispatch' && inputs.now }}
+      RUNS_TOKEN: ${{ github.token }}
+      RUN_ID: ${{ github.run_id }}
     steps:
       - name: Token set?
         id: token
@@ -153,31 +208,52 @@ jobs:
             echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
 
-      # Release windows (5 Nov 2026): in a window, or on a run by hand with Release now, every ready pull request that
+      # Release windows (5 Nov 2026): in a window, or within 30 minutes of a Release now, every ready pull request that
       # is not held gets auto-merge, and the queue below moves them on one at a time. Outside, auto-merge goes off again
-      # on all but the urgent ones, so nothing merges and no phone reloads until the next window. One already merging
-      # when a window closes may still finish. tests/auto-merge-queue.test.js runs this step too: no GitHub expressions.
+      # on all but the urgent ones, so nothing merges and no phone reloads until the next window, and the queue makes
+      # sure one run waits to open it (the wait job above). One already merging when a window closes may still finish.
+      # tests/auto-merge-queue.test.js runs this step too: no GitHub expressions.
       - name: Open or close the release window
         if: steps.token.outputs.ok == 'true'
         run: |
           retry() { for i in 1 2 3; do "$@" && return 0; [ "$i" = 3 ] || sleep $((i * 10)); done; return 1; }   # as in switch
           now=${NOW_HHMM:-$(TZ=Australia/Brisbane date +%H%M)}; open=false
           for w in $RELEASE_WINDOWS; do [ $((10#$now)) -ge $((10#${w%-*})) ] && [ $((10#$now)) -lt $((10#${w#*-})) ] && open=true; done
-          if [ "$RELEASE_NOW" = "true" ]; then open=true; echo "Release now, by hand."; fi
+          # A Release now holds the window open for 30 minutes (6 Nov 2026), as in switch: it used to last only its own
+          # run, so the next run (started by its own update of a pull request) closed the window again.
+          released() { GH_TOKEN="$RUNS_TOKEN" gh api "repos/$REPO/actions/workflows/auto-merge.yml/runs?event=workflow_dispatch&per_page=20" \
+            --jq '[.workflow_runs[] | select(.display_title == "Release now") | select(now - (.created_at | fromdateiso8601) < 1800)] | length' 2>/dev/null | grep -qv '^0$'; }
+          if [ "$RELEASE_NOW" = "true" ]; then open=true; echo "Release now, by hand: the window is open for 30 minutes."
+          elif [ "$open" != "true" ] && released; then open=true; echo "Released by hand in the last 30 minutes: the window is open."; fi
           echo "Release windows $RELEASE_WINDOWS (Queensland time). Now $now: open $open."
           retry gh pr list -R "$REPO" --base main --state open --limit 50 --json number,isDraft,labels,autoMergeRequest,isCrossRepository \
             --jq '.[] | select(.isDraft|not) | select(.isCrossRepository|not) | select([.labels[].name] | index("hold") | not)
                   | "\(.number) \(.autoMergeRequest != null) \([.labels[].name] | index("urgent") != null)"' > ready.txt
+          waiting=0
           while read -r n on urgent <&3; do
             if [ "$open" = "true" ] || [ "$urgent" = "true" ]; then
               if [ "$on" = "true" ]; then continue; fi
               if retry gh pr merge "$n" -R "$REPO" --auto --squash; then echo "#$n: auto-merge on."
               else echo "::warning::#$n: GitHub refused auto-merge three times. The next pass tries again."; fi
-            elif [ "$on" = "true" ]; then
-              gh pr merge "$n" -R "$REPO" --disable-auto 2>/dev/null || true
-              echo "#$n: waits for the next release window."
+            else
+              waiting=$((waiting + 1))
+              if [ "$on" = "true" ]; then
+                gh pr merge "$n" -R "$REPO" --disable-auto 2>/dev/null || true
+                echo "#$n: waits for the next release window."
+              fi
             fi
           done 3< ready.txt
+          # Something waits for a window: make sure one run waits to open it (the wait job). Not this run itself, which
+          # may be a waiting run that woke after 5 hours 45 minutes with the window still shut.
+          if [ "$waiting" -gt 0 ]; then
+            busy=$(GH_TOKEN="$RUNS_TOKEN" gh api "repos/$REPO/actions/workflows/auto-merge.yml/runs?event=workflow_dispatch&per_page=20" \
+              --jq '[.workflow_runs[] | select(.display_title == "Waiting for the release window") | select(.status != "completed") | select(.id != ($ENV.RUN_ID | tonumber))] | length' 2>/dev/null) || busy=''
+            if [ "$busy" = "0" ]; then
+              if retry env GH_TOKEN="$RUNS_TOKEN" gh workflow run auto-merge.yml -R "$REPO" -f wait=true; then echo "Started a run that waits for the next window."
+              else echo "::warning::Could not start the run that waits for the next window. The timed runs and Release now still work."; fi
+            elif [ -n "$busy" ]; then echo "A run already waits for the next window."
+            else echo "::warning::Could not look for the run that waits for the next window. The next pass looks again."; fi
+          fi
           echo "Done."
 
       # The queue: oldest ready pull request first. Clean merges by itself; up to date and still testing means wait;
