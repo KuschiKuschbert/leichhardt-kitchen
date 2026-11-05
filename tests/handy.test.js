@@ -64,7 +64,7 @@ const side = (page, where) => page.evaluate(w => {
       await p.evaluate(() => { const c = [...document.querySelectorAll('.nb-qadd [data-p="quick"]')].find(x => /Make aioli/.test(x.textContent)); c.scrollIntoView(); c.click(); });
       await L.settle(p, 400);
       const t = await p.evaluate(() => { const e = document.querySelector('.p-toast'); return e ? e.textContent : ''; });
-      ok(/^Added to Sauce/.test(t.trim()) && !/aioli/.test(t), 'tap: the due chip says Added to Sauce, without the line (' + t + ')');
+      ok(/^Added Make aioli to Sauce/i.test(t.trim()), 'tap: the due chip says Added Make aioli to Sauce (' + t + ')');
       const s = await store(p);
       ok(Object.keys(s).filter(k => k.indexOf('/days/' + today + '/items/') > 0 && s[k].text === 'Make aioli' && s[k].station === 'Sauce' && !s[k].deleted).length === 1, 'tap: one Make aioli line written for today');
       const after = await side(p, where);

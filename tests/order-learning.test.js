@@ -60,7 +60,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.click('#o-sugg [data-p="oqset"][data-v="4 L"]'); await L.settle(p, 400);
   const cream = Object.entries(await store(p)).filter(([k, v]) => k.indexOf(fsKey(['orders', today, 'lines'])) === 0 && v.text === 'Cream');
   ok(cream.length === 1 && cream[0][1].qty === '4 L' && !cream[0][1].deleted, 'usual chips: one tap adds Cream, 4 L (' + cream.map(c => c[1].qty).join(', ') + ')');
-  ok(await p.inputValue('#o-text') === '' && await p.inputValue('#o-qty') === '' && /Added to the order list/.test(await txt(p, '.p-toast') || ''), 'usual chips: the boxes empty and the toast offers Undo');
+  ok(await p.inputValue('#o-text') === '' && await p.inputValue('#o-qty') === '' && /Added \S.* to the order list/.test(await txt(p, '.p-toast') || ''), 'usual chips: the boxes empty and the toast offers Undo');
   await p.click('.p-toast-btn'); await L.settle(p, 400);
   ok(!!cream[0] && ((await store(p))[cream[0][0]] || {}).deleted === true, 'usual chips: Undo takes Cream off again');
   ok(p.errors.length === 0, 'learning: no page errors ' + p.errors.join(' | '));

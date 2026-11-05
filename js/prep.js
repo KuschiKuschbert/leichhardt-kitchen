@@ -468,6 +468,18 @@
   function unsentOn(x) { return !!(x._unsent && stripOn()); }
   function markHTML(on) { return on ? UNSENT : stripOn() ? HELD : ''; }
   function unsentMark(x) { return '<span class="nb-mk">' + markHTML(unsentOn(x)) + '</span>'; }
+  /* After the tap, step 2 (5 Nov 2026, docs/action-feedback.md, the mix the head chef chose): a slip names the line, cut
+     after 40 letters so what happened and where always show; a line this phone just added wears "New 14:02" on its list
+     for 2 minutes, so it is easy to find when scrolling. Kept in this tab's memory only, by line id, with its end time
+     (Date.now() is only time passing here), so a redraw keeps it and nothing is saved. */
+  var JUST_LIFE = 120000, justAt = {};
+  function slipName(t) { t = String(t || '').trim(); return t.length > 40 ? t.slice(0, 38).trim() + '\u2026' : t; }
+  function justMark(id) {
+    if (!id) return;
+    var e = justAt[id] = { at: clock(now()), until: Date.now() + JUST_LIFE };
+    setTimeout(function () { if (justAt[id] === e) { delete justAt[id]; draw(); } }, JUST_LIFE + 50);
+  }
+  function justStamp(id) { var e = justAt[id]; return e && e.until > Date.now() ? ' <span class="lk-stamp is-new">New ' + esc(e.at) + '</span>' : ''; }
   function markRow(row, on) {
     var s = row && row.querySelector('.nb-mk'), h = markHTML(on);
     if (s && s.innerHTML !== h) s.innerHTML = h;
@@ -770,6 +782,10 @@
   }
   /* A save that failed takes its own Undo with it (4 Nov 2026, LF-01): the change it would undo did not happen, so the
      failure message never pushes it up into the older-Undo chip. */
+  function undoneSay(act, msg) {
+    if (!act || act.label !== 'Undo' || S.toast || !msg) return;
+    toast('Undone: ' + (/^[A-Z][a-z]/.test(msg) ? msg.charAt(0).toLowerCase() + msg.slice(1) : msg));
+  }
   function dropUndo() { if (S.toastAct && S.toastAct.label === 'Undo') S.toastAct = null; }
   function toastDown(e) {
     var t = e.target.closest && e.target.closest('[data-toast]');
@@ -1879,7 +1895,8 @@
         supd(itemRef(dte, mid), undo).catch(failed);
       } });
     }
-    else addedToast(sec, S.date, made.id);
+    else addedToast(sec, S.date, made.id, t.slice(0, 160));
+    if (pr.changes.length || secInfo.from) justMark(made.id);
     S.text = ''; S.qty = ''; S.section = keptSection(sec); S.pickedText = ''; draw();
     var el = S.root && S.root.querySelector('[data-k="p-text"]'); if (el) el.focus();
   }
@@ -1897,8 +1914,8 @@
     made.catch(function (e) { failed(e, function () { if (!S.qty.trim()) S.qty = q0; }); });
     noteSection(sec); bump({ added: 1, lastAdded: now() });
     S.qty = ''; S.recipeSearch = ''; S.recipeOpen = false; S.recipeAll = false;
-    if (secInfo.from) { S.section = sec; var sf = secInfo.from, mid = made.id, dte = S.date; toast('Added, section ' + sf + ' corrected to ' + sec, { label: 'Undo', fn: function () { keepSection(sf); noteSection(sf); S.section = sf; supd(itemRef(dte, mid), { station: sf }).catch(failed); } }); }
-    else addedToast(sec, S.date, made.id);
+    if (secInfo.from) { S.section = sec; var sf = secInfo.from, mid = made.id, dte = S.date; justMark(mid); toast('Added ' + slipName(r.short || r.name) + ', section ' + sf + ' corrected to ' + sec, { label: 'Undo', fn: function () { keepSection(sf); noteSection(sf); S.section = sf; supd(itemRef(dte, mid), { station: sf }).catch(failed); } }); }
+    else addedToast(sec, S.date, made.id, r.short || r.name);
   }
   /* Completion activity belongs to the recorder. Reported preparation is a separate, cycle-stamped identity. */
   function preparedWorker(x) {
@@ -2041,7 +2058,8 @@
     }
     bump({ ticked: 1 });
     if (S.toastAct && S.toastAct.stampFor === d.id) { S.toast = ''; S.toastAct = null; }
-    ptClose();batch(function () { toast('Ticked', { label: 'Undo', fn: function () { tick(d.date, d.id, false); } });draw(); });setTimeout(draw, LINGER + 100);
+    var dn = ptItem(d.id);
+    ptClose();batch(function () { toast('Ticked' + (dn ? ' ' + slipName(dn.text) : ''), { label: 'Undo', fn: function () { tick(d.date, d.id, false); } });draw(); });setTimeout(draw, LINGER + 100);
   }
   function ptCheck() {
     var d = pt;if (!d || d.busy || !ptContext(d)) return;
@@ -2122,15 +2140,17 @@
     supd(itemRef(date, id), Object.assign({ done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: at, preparedBy: done ? w.name : '', preparedById: done ? w.id : '', preparedAt: at }, done && on ? { onBy: '', onById: '', onAt: 0 } : {})).then(function () { markPast('p', date); }, failed);
     // the stamp's Undo means nothing once the line is ticked: the Ticked toast takes its place, not a chip above it
     if (done && S.toastAct && S.toastAct.stampFor === id) { S.toast = ''; S.toastAct = null; }
-    if (done) { bump({ ticked: 1 }); toast('Ticked', { label: 'Undo', fn: function () { tick(date, id, false); } }); setTimeout(draw, LINGER + 100); }
-    else if (it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
+    if (done) { bump({ ticked: 1 }); toast('Ticked ' + slipName(it.text), { label: 'Undo', fn: function () { tick(date, id, false); } }); setTimeout(draw, LINGER + 100); }
+    else toast('Unticked ' + slipName(it.text) + '. It is open again.');
+    if (!done && it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
   }
   function removeItem(date, id, restore) {
     var p = me(), it = S.items.filter(function (x) { return x.id === id; })[0];
     if (!can('del')) return;
     // a merged double up that is put back is kept apart, so it is not merged again
     supd(itemRef(date, id), Object.assign({ deleted: !restore, deletedBy: restore ? '' : p.name, deletedAt: restore ? 0 : now() }, restore && it && it.mergedInto ? { mergedInto: '', dupOk: true } : {})).then(function () { markPast('p', date); }, failed);
-    if (!restore) toast('Removed ' + (it ? it.text : 'the line'), { label: 'Undo', fn: function () { removeItem(date, id, true); } });
+    if (!restore) toast('Removed ' + (it ? slipName(it.text) : 'the line'), { label: 'Undo', fn: function () { removeItem(date, id, true); } });
+    else toast('Put back ' + (it ? slipName(it.text) : 'the line'));
   }
   /* Anything not ticked on the last written day rolls onto today by itself, once the clock has been checked (see LK_TIME).
      origAt keeps the time the line was first written (0 for lines that rolled before it was kept). */
@@ -2480,7 +2500,7 @@
       var made = newItem(Object.assign({}, data, { dupOk: true }));
       made.catch(failed);
       if (after) after();
-      addedToast(data.station, dte, made.id);
+      addedToast(data.station, dte, made.id, data.text);
     } });
   }
   /* Functions (22 Oct 2026): a function's platter lines (fn, written by js/fnedit.js) sit on their own highlighted tab,
@@ -2584,12 +2604,13 @@
     var made = newItem({ text: text.slice(0, 160), station: sec, recipe: rm ? rm.id : '', qty: uq });
     made.catch(failed);
     noteSection(sec); bump({ added: 1, lastAdded: now() });
-    addedToast(sec, dte, made.id);
+    addedToast(sec, dte, made.id, text);
   }
   /* Undo on an add flags the new line as removed. Anyone may take back a line they just wrote (the rules let the writer update it).
-     The toast does not repeat the line: it is on the list already, and on a phone a long name plus Undo covered the list. */
-  function addedToast(sec, dte, mid) {
-    toast('Added' + (sec ? ' to ' + sec : ''), { label: 'Undo', fn: function () { supd(itemRef(dte, mid), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
+     Since 5 Nov 2026 the slip names the line (docs/action-feedback.md), cut by slipName() so a long name never covers the list. */
+  function addedToast(sec, dte, mid, text) {
+    justMark(mid);
+    toast('Added ' + slipName(text) + (sec ? ' to ' + sec : ''), { label: 'Undo', fn: function () { supd(itemRef(dte, mid), { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
   }
   /* The book's own records: book/index and book/matches. The rules allow them by name only, so a query on the whole
      book collection is refused; read the two by name instead (2 reads, on a tap). Missing ones are left out. */
@@ -4166,7 +4187,7 @@
       // a tap on the words ticks too (the box is the button for keyboards and screen readers); Undo and the linger cover a slip.
       // Since 5 Nov 2026 the whole text block does (words, amount and the second line): on a phone the buttons sit under
       // it, so a tap a little below the words landed on the second line and did nothing
-      '<span class="nb-main' + (tickOk && !readonly ? '" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '"') + '><span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + num + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + numSay + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + unsentMark(x) + '</span>' +
+      '<span class="nb-main' + (tickOk && !readonly ? '" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '"') + '><span class="nb-t' + (tickOk && !readonly ? ' nb-tt' : '') + '"' + (tickOk && !readonly ? ' data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '"' : '') + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + num + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + numSay + (marks ? ' <span class="nb-marks">' + marks + '</span>' : '') + unsentMark(x) + justStamp(x.id) + '</span>' +
       // the stamp leads the second line (it never adds a line, so a stamp or a tick moves no row)
       metaHTML(on ? ['<b class="nb-on">' + (onMine(x) && !shared() ? 'You\'re on it' : esc(on.name) + ' on it') + '</b>'] : [], by, x.done ? 'Recorded by ' + (x.doneBy || '') : '') + '</span>' + (onBtn || star || link || del ? '<span class="nb-acts">' + onBtn + star + link + del + ((del || keep) && !readonly ? moreBtn(x, keep) : '') + '</span>' : '') + '</li>';
   }
@@ -4516,7 +4537,7 @@
     var made = newItem({ text: x.text.slice(0, 160), station: sec, recipe: x.recipe || (matchRecipe(x.text) || {}).id || '', qty: x.qty });
     made.catch(failed);
     noteSection(sec); bump({ added: 1, lastAdded: now() });
-    addedToast(sec, dte, made.id);
+    addedToast(sec, dte, made.id, x.text);
   }
   function fnNeedHide(i) {
     var x = (S.fnNeed || [])[i]; if (!x) return;
@@ -5721,7 +5742,8 @@
       .then(ordReload, function (e) { failed(e, reg ? undefined : function () { if (!S.otext.trim()) { S.otext = typed; S.oqty = q; S.oneed = need; } }); });
     /* like the prep list: Undo takes the line back, or after a spelling fix puts back what was typed */
     if (oFix) toast('Added, corrected ' + oFix, { label: 'Undo', fn: function () { keepWords(pr.changes); supd(ref, { text: typed.slice(0, 120), orig: '' }).then(ordReload, failed); } });
-    else toast('Added to the order list', { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).then(ordReload, failed); } });
+    else toast('Added ' + slipName(t) + ' to the order list', { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).then(ordReload, failed); } });
+    justMark(ref.id);
     if (oneTapAdd) return;
     var el = S.root && S.root.querySelector('[data-k="o-text"]'); if (el) el.focus();
   }
@@ -5732,15 +5754,18 @@
     return W([orderedOp(date, id, on)]);
   }
   function tickOrderLine(date, id, on) {
+    var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0], nm = it ? ' ' + slipName(it.text) : '';
     setOrdered(date, id, on).then(function () { ordPatch(date, id, { ordered: on }); }, failed);
-    if (on) toast('Ordered', { label: 'Undo', fn: function () { tickOrderLine(date, id, false); } });
+    if (on) toast('Ordered' + nm, { label: 'Undo', fn: function () { tickOrderLine(date, id, false); } });
+    else toast((it ? slipName(it.text) + ' is' : 'It is') + ' back on the order list.');
   }
 
   function removeOrderLine(date, id, restore) {
     if (!canBrowse() || !can('del')) return;
     var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0];
     supd(ordRef(date, id), { deleted: !restore, deletedBy: restore ? '' : (me() || {}).name || '', deletedAt: restore ? 0 : now() }).then(function () { ordPatch(date, id, { deleted: !restore }); markPast('o', date); }, failed);
-    if (!restore) toast('Removed ' + (it ? it.text : 'the line') + ' from the order list', { label: 'Undo', fn: function () { removeOrderLine(date, id, true); } });
+    if (!restore) toast('Removed ' + (it ? slipName(it.text) : 'the line') + ' from the order list', { label: 'Undo', fn: function () { removeOrderLine(date, id, true); } });
+    else toast('Put back ' + (it ? slipName(it.text) : 'the line') + ' on the order list');
   }
   function ordSuggest() {
     var q = okey(S.otext); if (q.length < 2) return [];
@@ -5780,7 +5805,7 @@
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc('Ordered: ' + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
       '<span class="nb-main"><span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + needTag(x) +
       // Not sent on the words' line, before Used in (a line of its own, .o-used), so its room never adds a line
-      (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + recipeChips(x) + '</span>' +
+      (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + justStamp(x.id) + recipeChips(x) + '</span>' +
       metaHTML([], by) + '</span>' +
       (canBrowse() && can('del') ? (x.deleted || !x.ordered ? moreBtn(x, keep) : held) : keep ? (x.ordered ? held : moreBtn(x, true)) : '') +
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
@@ -6040,7 +6065,8 @@
     S.wf = { text: '', amt: '', unit: f.unit, reason: '', sec: sec, act: '' };
     draw(); focusK('w-text');
     /* Undo like the other lists. The rules let only the head chef or a sous chef change a wastage entry, so staff are told who can fix it. */
-    var wmsg = 'Logged' + (wpr.changes.length ? ', corrected ' + wpr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') : '') + (secInfo.from ? ' under ' + sec + ' (typed ' + secInfo.from + ')' : '');
+    justMark(ref.id);
+    var wmsg = 'Logged ' + slipName(t) + ', ' + num(amt) + ' ' + f.unit + (wpr.changes.length ? ', corrected ' + wpr.changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') : '') + (secInfo.from ? ' under ' + sec + ' (typed ' + secInfo.from + ')' : '');
     if (canBrowse()) toast(wmsg, { label: 'Undo', fn: function () { supd(ref, { deleted: true, deletedBy: (me() || {}).name || '', deletedAt: now() }).catch(failed); } });
     else toast(wmsg + '. Wrong? Ask the head chef.', null, 6000);
   }
@@ -6126,7 +6152,7 @@
     // 22 Oct 2026: entries are removed and put back by the head chef only (the admin log, or this page on the Google device)
     var del = wAll() && !x.deleted;
     return '<li class="nb-row w-row' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + '</span>' +
-      '<span class="nb-main"><span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span> <span class="w-rs w-' + esc(x.reason) + '">' + esc(reasonName(x.reason)) + '</span>' + unsentMark(x) +
+      '<span class="nb-main"><span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span> <span class="w-rs w-' + esc(x.reason) + '">' + esc(reasonName(x.reason)) + '</span>' + unsentMark(x) + justStamp(x.id) +
       (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + wAgainHTML(x) + '</span>' + metaHTML([x.station ? esc(x.station) : ''], esc(x.addedBy || '')) + '</span>' +
       (del ? '<button type="button" class="p-x" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (x.deleted && wAll() ? '<button type="button" class="p-x" data-p="wrestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') +
@@ -6487,6 +6513,7 @@
     draw(); focusK('tr-text');
     var changes = [].concat.apply([], items.map(function (it) { return it.changes; }));
     var what = items.length === 1 ? num(items[0].amt) + ' ' + items[0].unit + ' ' + items[0].t : items.length + ' items';
+    saved.forEach(function (x) { justMark(x.id); });
     var msg = 'Logged: ' + (dir === 'out' ? venue + ' took ' + what : 'we took ' + what + ' from ' + venue) +
       (changes.length ? '. Corrected ' + changes.map(function (c) { return c[0] + ' to ' + c[1]; }).join(', ') : '');
     // Undo like the wastage log: the rules let only the head chef or a sous chef take a line back, so staff are told who can
@@ -6504,7 +6531,8 @@
     mine.forEach(function (x) { if (x.id === id && x.date === date) { x.deleted = !restore; x.deletedBy = by; x.deletedAt = at; } });
     // a past day's change reaches the head chef's other devices: their saved copy of that day is read again (pastRead)
     xWrite(date, id, { deleted: !restore, deletedBy: by, deletedAt: at }, original).then(function () { markPast('x', date); }, failed);
-    if (!restore) toast('Removed ' + (it ? it.text : 'the transfer') + ' from the transfer list', { label: 'Undo', fn: function () { removeXfer(date, id, true); } });
+    if (!restore) toast('Removed ' + (it ? slipName(it.text) : 'the transfer') + ' from the transfer list', { label: 'Undo', fn: function () { removeXfer(date, id, true); } });
+    else toast('Put back ' + (it ? slipName(it.text) : 'the transfer'));
     draw();
   }
   function xBtn(x) {
@@ -6530,7 +6558,7 @@
     var tick = xReturnBtn(x);
     // the return tick on the left, where every other list ticks (3 Nov 2026); Not returned stays on the right
     return '<li class="nb-row tr-row' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '">' + (open ? tick : '') + '<span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + '</span>' +
-      '<span class="nb-main"><span class="nb-t"><span class="tr-way tr-way-' + (out ? 'out' : 'in') + '">' + (out ? 'Out' : 'In') + '</span> <strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' + (open ? xAge(x) : '') + unsentMark(x) +
+      '<span class="nb-main"><span class="nb-t"><span class="tr-way tr-way-' + (out ? 'out' : 'in') + '">' + (out ? 'Out' : 'In') + '</span> <strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' + (open ? xAge(x) : '') + unsentMark(x) + justStamp(x.id) +
       (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + ret + '</span>' + metaHTML([esc(xWho(x))], esc(x.addedBy || ''), '', 'logged by ') + '</span>' + (open ? '' : tick) + xBtn(x) +
       (wxFixOk('x', x) || wAll() && x.id ? moreBtn(x, wxFixOk('x', x)) : '') + '</li>';
   }
@@ -10197,8 +10225,9 @@
     if (a === 'urgent') { toggleUrgent(id); return; }
     if ((a === 'toast-old' || a === 'toast-act' || a === 'toast-hide') && Date.now() - toastSwiped < 500) return;
     if (a === 'toast-hide') { toastAway('all'); return; }
-    if (a === 'toast-old') { var to = S.toastOld; S.toastOld = null; clearTimeout(toastOldTimer); if (to && to.act && to.act.fn) to.act.fn(); draw(); return; }
-    if (a === 'toast-act') { var ta = S.toastAct; S.toast = ''; S.toastAct = null; if (ta && ta.fn) ta.fn(); draw(); return; }
+    // an Undo says what it undid (5 Nov 2026, docs/action-feedback.md), unless what it ran said so itself (Put back...)
+    if (a === 'toast-old') { var to = S.toastOld; S.toastOld = null; clearTimeout(toastOldTimer); if (to && to.act && to.act.fn) { to.act.fn(); undoneSay(to.act, to.msg); } draw(); return; }
+    if (a === 'toast-act') { var ta = S.toastAct, tm = S.toast; S.toast = ''; S.toastAct = null; if (ta && ta.fn) { ta.fn(); undoneSay(ta, tm); } draw(); return; }
     if (a === 'export') { exportAll(); return; }
     if (a === 'move-pin') { movePin(); return; }
     if (a === 'sugg') { pickSugg(i); return; }

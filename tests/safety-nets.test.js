@@ -170,7 +170,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.evaluate(() => { const b = document.querySelector('.w-rchips [data-v="excess"]') || document.querySelector('[data-p="wreason"][data-v="excess"]'); b.click(); });
   await p.click('.w-add .nb-addbtn');
   await L.settle(p, 300);
-  ok(/^Logged\s*Undo/.test((await txt(p, '.p-toast') || '').trim()) && /Undo/.test(await txt(p, '.p-toast-btn')), 'waste: a sous chef gets a short Logged with Undo (' + await txt(p, '.p-toast') + ')');
+  ok(/^Logged \S.*\s*Undo$/.test((await txt(p, '.p-toast') || '').trim()) && /Undo/.test(await txt(p, '.p-toast-btn')), 'waste: a sous chef gets Logged with the line and its amount, and Undo (' + await txt(p, '.p-toast') + ')');
   await p.click('.p-toast-btn');
   await L.settle(p, 300);
   s = await store(p);
