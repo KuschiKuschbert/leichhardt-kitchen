@@ -107,6 +107,8 @@
     if (code === 'stale') return 'The catalogue changed on another device. Refresh it, check your changes and try again. Your draft is kept.';
     if (code === 'concurrent') return 'Another chef recorded an order for this cut-off. Refresh, check its history, then choose Additional order if one is still needed.';
     if (code === 'permission' || code === 'permission-denied' || code === 'context') return 'This save was refused. Sign in as an authorised chef and check that the supplier rules have been published. Your draft is kept.';
+    // today's free reads used up (5 Nov 2026): no connection fixes it, so say what does, and when (LK_TIME.quotaBack())
+    if (code === 'resource-exhausted') { var back = T.quotaBack ? T.quotaBack() : 0; return 'The book has used up today\'s free reads, so supplier orders cannot load. They come back ' + (back ? 'at ' + T.clock(back) : 'later today') + '. Nothing saved is lost. Until then, place orders the usual way and record them after.'; }
     if (code === 'unavailable' || code === 'offline' || navigator.onLine === false) return 'No signal. Supplier data needs a connection. Your current draft is kept while this page stays open.';
     if (code === 'version') return 'The supplier tools on this device need an update. Connect, reload the book and open Supplier order again.';
     if (code === 'invalid') return e.message || 'Check the item names, quantities and units before saving.';

@@ -39,6 +39,16 @@ window.LK_TIME = (function () {
     clock: function (ms) { var d = k(ms); return p(d.getUTCHours()) + ':' + p(d.getUTCMinutes()); },
     // a kitchen date (YYYY-MM-DD) and minutes after midnight, as a time
     at: function (ymd, min) { var a = ymd.split('-'); return Date.UTC(+a[0], a[1] - 1, +a[2]) - ZONE + (min || 0) * 60000; },
+    /* When the database's free reads come back after ms (5 Nov 2026): the free plan's 50,000 reads a day reset at
+       midnight in California, 18:00 kitchen time, or 17:00 while California is on daylight saving. 0 if this phone
+       cannot tell. On the two nights a year California changes its clocks it can be an hour out. */
+    quotaBack: function (ms) {
+      var t = ms == null ? now() : ms, x = {};
+      try { new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hourCycle: 'h23', hour: 'numeric', minute: 'numeric', second: 'numeric' }).formatToParts(new Date(t)).forEach(function (q) { x[q.type] = +q.value; }); }
+      catch (e) { return 0; }
+      if (!isFinite(x.hour) || !isFinite(x.minute) || !isFinite(x.second)) return 0;
+      return t - (t % 1000) - ((x.hour % 24) * 3600 + x.minute * 60 + x.second) * 1000 + 86400000;
+    },
     // learn the gap from a server answer, sent at t0 and back at t1 (phone time). Date is whole seconds, so add half a second.
     // With no answer (no signal) the saved gap stays. lk-clock tells the pages to draw again.
     learn: function (r, t0, t1) {

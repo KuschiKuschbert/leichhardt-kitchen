@@ -215,6 +215,8 @@ async function start() {
                       getDoc, getDocs and listeners still answer, so it is not no signal: that is o.cold), 'hold' or 'deny'
    o.failReads        a regex source: getDoc and getDocs fail for the paths that match (say one past day of wastage)
    o.denyReads        a regex source: getDocs is refused (permission-denied) for the collections that match
+   o.exhausted        a regex source: every read and listener on the paths that match is refused with resource-exhausted,
+                      like the free plan's 50,000 reads a day used up (5 Nov 2026)
    o.cold             a regex source: no signal for the paths that match, the way the book's memory cache answers it
                       (__fake.cold in tests/fake/firebase-firestore.js); with fakeMode 'hold' writes wait too.
                       __fake.warm() in the page brings the signal back
@@ -310,7 +312,7 @@ async function open(browser, hash, o) {
   if (google && !o.legacyPrimaryGoogle) (mode === 'shared' ? ss : ls)['fake.auth.kitchen-owner.user'] = JSON.stringify(googleUser);
   if (o.legacyPrimaryGoogle) ls['fake.user'] = '1';
   if (o.noAnon) await ctx.addInitScript(() => { window.__fakeNoAnon = true; });
-  if (o.fakeServer || o.fakeMode || o.failReads || o.denyReads || o.cold) await ctx.addInitScript(f => { window.__fake = { mode: f.mode || 'ok', writes: [], reads: [], server: f.server, failReads: f.fail ? new RegExp(f.fail) : null, denyReads: f.deny ? new RegExp(f.deny) : null, cold: f.cold ? new RegExp(f.cold) : null }; }, { mode: o.fakeMode, server: o.fakeServer, fail: o.failReads, deny: o.denyReads, cold: o.cold });
+  if (o.fakeServer || o.fakeMode || o.failReads || o.denyReads || o.cold || o.exhausted) await ctx.addInitScript(f => { window.__fake = { mode: f.mode || 'ok', writes: [], reads: [], server: f.server, failReads: f.fail ? new RegExp(f.fail) : null, denyReads: f.deny ? new RegExp(f.deny) : null, cold: f.cold ? new RegExp(f.cold) : null, exhausted: f.spent ? new RegExp(f.spent) : null }; }, { mode: o.fakeMode, server: o.fakeServer, fail: o.failReads, deny: o.denyReads, cold: o.cold, spent: o.exhausted });
   // Seed once per profile. A second tab must retain the real device identity and remembered personal Google login.
   await ctx.addInitScript(({ ls, ss, offset }) => {
     window.__fakeServerOffset = offset;

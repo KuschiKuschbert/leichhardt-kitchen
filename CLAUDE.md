@@ -40,6 +40,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Shared controls, deferred search, table interactions and council audit | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
 | Loading, saving, measured progress and reduced motion | `docs/loading-motion.md` (current), `docs/loading-feedback-options/brief.md` (recommended set chosen 4 Nov 2026, findings and build steps) |
 | What a tap shows after it: a save, add, tick, Undo or Refresh, its words, where the person is left (5 Nov 2026) | `docs/action-feedback.md` (the rule), `docs/action-feedback-options/brief.md` (audit of 307 actions, designs, scores) |
+| What reads and writes Firestore, what each page costs, and the plan to stay inside the free plan (audit, 5 Nov 2026) | `docs/firestore-usage.md` |
 | Nightly backup format, protected decryption and isolated recovery checks | `docs/backup-recovery.md` |
 | Suppliers, order history, cut-off sheets | `docs/supplier-workspace.md` |
 | Order cut-off patterns (a day and time per delivery day) and the heads-up the day before, selected the recommended mix (5 Nov 2026) | `docs/cutoff-options/brief.md` |
@@ -155,6 +156,7 @@ Measured on 2 and 3 November 2026: about 45 pull requests in two days, 100 Click
 - **Read big files in parts.** `docs/prep-book.md` is about 250 KB, `README.md` about 90 KB, and `docs/ux-council-audit.md`, `docs/whole-app-audit.md` and `docs/whole-app-inventory.md` are 30 to 72 KB each. Never read one whole: search for the heading or word you need (Grep), then read that part only. The audit notes are for audit work only.
 - **Let the queue bring `main` in.** It updates one ready pull request at a time (How changes ship, step 7). Merge `main` in yourself only to fix a conflict, once. Every merge of `main` starts another Click tests run (about 6 minutes on five runners); with several sessions open that multiplies.
 - **Push when the work is finished.** Each push cancels the running Click tests and starts again. Make the fixes, run the files you changed (How changes ship, step 2), then push once.
+- **Every merge costs the kitchen's reads** (5 Nov 2026). A new version reloads the screens left open (at most once an hour) and every phone that comes back, and each reload reads its lists again. 48 merges in a day helped use up the free 50,000 reads by 13:00. Group small changes to one page in one pull request.
 - **Wait without spending.** One check-in per pull request (about 50 minutes, then 4 hours). Do not poll, do not re-read a pull request that has not changed, and do not reply to a notice that needs nothing.
 - **A timing failure is not your bug until it repeats.** When Click tests fails on a test your change does not touch, read the failing test's name first. Re-run once; if it fails again, or a different timing test fails, say so in the pull request and fix it in its own pull request.
 - **Agents only where they pay.** Use parallel agents for the service council (once per major decision, not per push) and wide audits. Do a lookup, a single file or a known fix yourself.
