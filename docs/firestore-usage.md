@@ -60,10 +60,10 @@ Saves: reads a day on a normal day. Head chef: changes how the book works for th
 | 1.2 | A screen left open takes an update nobody asked for at most once an hour | thousands on release days | low | done 5 Nov |
 | 1.3 | Screens left open update only between services and overnight | 1,000 to 5,000 | low, head chef | not chosen |
 | 1.4 | Personal phones keep a copy of the data (persistent cache) | 12,000 to 15,000 | high: reverses #387 and the private-data rule, head chef | not chosen |
-| 2.1 | Day digests: the 03:00 job writes one record per past day with its prep, order and wastage lines; a past-day fix updates it | makes 2.2 and 2.3 possible | medium | Plan B |
+| 2.1 | Day digests: the 03:00 job writes one record per past day with its prep and order lines (`digest/<day>`, `scripts/analysis.mjs`, `docs/admin-intelligence.md`); a past-day fix is caught by the day-named stamp (2.4) | makes 2.2 and 2.3 possible | medium | step 1 (rules and nightly job) 5 Nov; the phones use them in 2.2 |
 | 2.2 | Prep and order list hints from the nightly summary instead of 14 days of lines (`loadPast()`, `loadOrdHist()`) | 20,000 to 35,000 | medium | Plan B |
 | 2.3 | Admin reports and Proofreader from digests and the nightly analysis plus today's live lines (`loadStats()`, `loadOrdStats()`) | 10,000 to 30,000 on admin days | medium | Plan B |
-| 2.4 | A past-day fix names its day (`markPast()`, `pastCheck()`); needs a rules change (`pastEdit` holds only five time stamps today), so it goes with 2.1 | about 7,000, removes a 50,000 worst case | low | Plan B, with 2.1 |
+| 2.4 | A past-day fix names its day (`markPast()`, `pastCheck()`): `pastEdit.pDays`, `pPrev`, `pFor` (and `oDays`, `oPrev`, `oFor`); a reader trusts the days only when `pFor` is the current `p` and `pPrev` is no newer than its copy, otherwise it reads every day as before | about 7,000, removes a 50,000 worst case | low | rules 5 Nov; the phones write and read them in 2.2 |
 | 2.5 | One date-range query instead of one per day | 1,000 to 3,000 | low | not needed once past days come from digests (2.1) |
 | 2.6 | After an update nobody asked for, a report page reopens on the Dashboard (`startTab()` in `js/prep.js`, flag `lk.upd.auto` from `js/upkeep.js`) | 2,000 to 4,000 per laptop reload | low, head chef | done 5 Nov |
 | 2.7 | Live lists restart only when access changed (`accessChanged()`); functions list 15 days; sections once a day | 3,000 to 7,000 | low to medium | Plan B |

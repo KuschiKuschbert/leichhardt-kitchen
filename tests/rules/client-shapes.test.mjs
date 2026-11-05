@@ -150,6 +150,7 @@ const seed = {
   'learned/slice-onion': { text: 'Slice onion', uses: 3 }, 'ordlearned/cream': { text: 'Cream', uses: 3 },
   'summary/learned': { day: TODAY, items: [] }, 'summary/ordlearned': { day: TODAY, items: [] }, 'summary/waste': { day: TODAY, items: [] },
   'summary/transfers': { day: TODAY, venues: [], items: [] }, 'summary/usage': { day: TODAY, days: {} },
+  [`digest/${PAST}`]: { v: 1, day: PAST, at: 1, prep: [], orders: [] },
   'views/burger': { name: 'Burger', n: 1, by: 'ann' }, 'misses/tofu': { q: 'tofu', n: 1, by: 'ann' },
   'deliveries/del1': { day: TODAY, receivedAt: NOW - 60000, recordedAt: NOW, supplier: 'Valley Veg', chilled: 3, frozen: null, note: '', receivedBy: 'Ann', receivedById: 'ann', by: 'ann' },
   'deliveries/del0': { day: PAST, receivedAt: NOW - 5 * DAY, recordedAt: NOW - 5 * DAY, supplier: 'Valley Veg', chilled: 4, frozen: null, note: '', receivedBy: 'Ann', receivedById: 'ann', by: 'ann' },
@@ -210,6 +211,8 @@ row('js/prep.js loadAdmins(): config/admins get (the owner check)', { ok: GOOGLE
 // prep list
 row('js/prep.js watchItems(): today\'s prep lines listener', { ok: KITCHEN, asks: KITCHEN, run: db => listen(C(db, `days/${TODAY}/items`)) });
 row('js/prep.js sumList(): summary/learned get', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, 'summary/learned')) });
+// Day digests (Plan B 2.1, 5 Nov 2026): read like the past lines, written only by the nightly job
+row('js/prep.js past days: digest/<day> get', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, `digest/${PAST}`)) });
 row('js/prep.js loadLearned(): learned, the 500 most used (summary missing or old)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(query(C(db, 'learned'), orderBy('uses', 'desc'), limit(500))) });
 row('js/prep.js watchSections(): sections listener', { ok: KITCHEN, asks: KITCHEN, run: db => listen(C(db, 'sections')) });
 row('js/prep.js watchActivity(): activity listener (the Google device)', { ok: KITCHEN, asks: GOOGLE, run: db => listen(C(db, 'activity')) });
@@ -456,6 +459,8 @@ row('js/prep.js saveNote(): change a personal ping to Ann that Sam wrote (direct
   prep: r => put({ ['directnotes/e-' + r]: ping({ text: 'Ann, see me at 15:00', tag: 'none', to: 'ann' }) }), run: (db, w, r) => W(r, [['set', 'directnotes/e-' + r, pingEdit('ann'), true]]) });
 row('js/prep.js markPings() and markPast(): config/main pastEdit merge', { ok: CHEFS, asks: CHEFS,
   run: (db, w, r) => W(r, [['set', 'config/main', { pastEdit: { n: Date.now() } }, true]]) });
+row('js/prep.js markPast(): config/main pastEdit with the days that changed (Plan B 2.4)', { ok: CHEFS, asks: CHEFS,
+  run: (db, w, r) => W(r, [['set', 'config/main', { pastEdit: { p: Date.now(), pPrev: 0, pFor: Date.now(), pDays: [PAST] } }, true]]) });
 row('js/prep.js noteWriteSeen(): Got it on an Everyone ping (notes/<id>/seen/<today>_<me>)', { ok: KITCHEN, asks: KPINS,
   prep: (r, w) => put({ [`notes/n1/seen/${TODAY}_${w}`]: null }),
   run: (db, w, r) => W(r, [['set', `notes/n1/seen/${TODAY}_${w}`, { day: TODAY, at: Date.now() }]]) });

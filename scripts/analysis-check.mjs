@@ -62,5 +62,22 @@ assert.deepEqual(row.x, { out: 1, in: 1 }, 'Transfers count out and in, not dele
 assert.equal(JSON.stringify(board).includes('price'), false);
 // Needs you: Slaw is linked, so 6 of 7 recorded names wait; Cy (recipe only) and Dee (in training) need a Larder review.
 assert.deepEqual(board.needs, { links: 6, training: 2, inTraining: 1 }, 'Needs you counts the Review desk queues: ' + JSON.stringify(board.needs));
+// Day digests (Plan B 2.1, 5 Nov 2026): one record per past day with its prep and order lines, written only when they change
+const dig = async day => (await K2.collection('digest').doc(day).get()).data();
+const dg = await dig(d2);
+assert.deepEqual(dg.prep.map(x => x.id), ['a', 'b', 'c', 'd', 'e', 'f', 'g'], 'The digest holds every prep line of the day, removed ones too, by id.');
+assert.equal(dg.prep[0].text, 'Slaw'); assert.equal(dg.prep[4].deleted, true); assert.deepEqual(dg.orders, []);
+assert.equal(dg.v, 1); assert.equal(dg.day, d2); assert.equal(dg.at, at);
+assert.deepEqual(Object.keys((await K2.collection('digest').doc('_index').get()).data().days).sort(), ['2026-10-28', '2026-10-29', '2026-10-30'], 'The index has every day in the window, empty days too.');
+const same = await analyse(K2, { days: 3, at: at + 60000 });
+assert.equal(same.digests.written, 0, 'A night with nothing changed writes no digest.');
+assert.equal((await dig(d2)).at, at, 'An unchanged day keeps its digest.');
+await K2.collection('days').doc(d2).collection('items').doc('b').update({ done: true, doneAt: t0 + 3600000 });
+const fixed = await analyse(K2, { days: 3, at: at + 120000 });
+assert.equal(fixed.digests.written, 1, 'A past day fixed: only its digest is written again.');
+assert.equal((await dig(d2)).prep.find(x => x.id === 'b').done, true); assert.equal((await dig(d2)).at, at + 120000);
+const narrow = await analyse(K2, { days: 1, at: at + 180000 });
+assert.equal(narrow.digests.deleted, 2, 'The days that left the window lose their digests.');
+assert.equal(await dig('2026-10-28'), undefined); assert.equal((await dig('2026-10-30')).day, '2026-10-30');
 await db.recursiveDelete(K2);
-console.log('PASS analysis worker attribution, dashboard counts, old-client re-ticks, reruns, corrections, atomic publication, read budget and generation retention');
+console.log('PASS analysis worker attribution, dashboard counts, day digests, old-client re-ticks, reruns, corrections, atomic publication, read budget and generation retention');
