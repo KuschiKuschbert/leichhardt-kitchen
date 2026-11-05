@@ -3,6 +3,7 @@
 // time picked under Remind us, 24 Oct 2026) until it passes, orange in the last hour, and today's cut-offs on the order
 // list. An early cut-off is reminded from the night before. Staff see neither. The pages open at 14:00.
 const L = require('./lib');
+const CUT = require('../js/cutoffs');
 const { R, ok, } = L.results(), { txt } = L;
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
 const CFG = fsKey(['config', 'main']);
@@ -103,13 +104,17 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
   ok(await p.$eval('[data-p="cut-save"]', e => e.disabled), 'admin: Save waits for a change');
   await p.click('[data-p="cut-usual"]'); await L.settle(p, 300);
   const says = await p.evaluate(() => [...document.querySelectorAll('.cut-say')].map(e => e.textContent));
-  ok(says[0] === 'Order by 14:00 Mon, Wed, Thu, Sun for the next day. Reminder from 10:00.' && says[1] === 'Order by 14:00 every day for the next day. Reminder from 10:00.' && says[2] === 'Order by 14:00 Wed, Sun for the next day. Reminder from 10:00.' && says[3] === 'Cut-off to come', 'admin: each supplier says when its order closes (' + says.join(' | ') + ')');
+  // 5 Nov 2026: each says the next real dates. At 14:00 today's 14:00 has gone, so PFD (every day) next closes tomorrow.
+  const today = L.ymd(new Date(L.NOW)), DATE = '\\w{3} \\d{1,2} \\w{3}';
+  const pfdNext = 'Next: ' + CUT.dateText(CUT.shift(today, 1)) + ' 14:00 for ' + CUT.dateText(CUT.shift(today, 2)) + '. Reminder from 10:00.';
+  ok(new RegExp('^Next: ' + DATE + ' 14:00 for ' + DATE + '\\. Reminder from 10:00\\.$').test(says[0]) && says[1] === pfdNext && new RegExp('^Next: ' + DATE + ' 14:00 for ' + DATE + '\\. Reminder from 10:00\\.$').test(says[2]) && says[3] === 'No delivery days yet. Tick the days it delivers.', 'admin: each supplier says when its order next closes, with dates (' + says.join(' | ') + ')');
   ok(!(await L.overflow(p)), 'admin: the page fits a phone');
   // change PFD to 15:30, the same day, not Sunday
   await p.fill('[data-k="cut-t1"]', '15:30'); await L.settle(p, 200);
   await L.pick(p, '[data-k="cut-p1"]', '0'); await L.settle(p, 200);
   await L.choose(p, '[data-p="cut-day"][data-i="1"][data-v="0"]'); await L.settle(p, 200);
-  ok(/^Order by 15:30 Mon, Tue, Wed, Thu, Fri, Sat for the same day\. Reminder from 11:30\.$/.test(await txt(p, '.cut-ed:nth-child(2) .cut-say')), 'admin: the line follows the time, the days and Order closes');
+  const pfdSay = await txt(p, '.cut-ed:nth-child(2) .cut-say'), pfdM = /^Next: (\w{3} \d{1,2} \w{3}) 15:30 for (\w{3} \d{1,2} \w{3})\. Reminder from 11:30\.$/.exec(pfdSay);
+  ok(!!pfdM && pfdM[1] === pfdM[2] && !/^Sun/.test(pfdM[1]), 'admin: the line follows the time, the days and Order closes: the same day, never a Sunday (' + pfdSay + ')');
   await L.pick(p, '[data-k="cut-r1"]', '0'); await L.settle(p, 200);
   ok(/Reminder all day\.$/.test(await txt(p, '.cut-ed:nth-child(2) .cut-say')), 'admin: Remind us all day');
   await p.fill('[data-k="cut-t0"]', '06:00'); await L.pick(p, '[data-k="cut-r0"]', '480'); await L.settle(p, 200);
@@ -118,6 +123,7 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
   s = await store(p);
   const saved = s[CFG].cutoffs || [];
   ok(saved.length === 4 && saved[1].name === 'PFD' && saved[1].at === 930 && saved[1].pre === 0 && saved[1].dd.join() === '1,2,3,4,5,6' && saved[1].lead === 0 && saved[0].lead === 480 && saved[2].lead === 240 && saved[3].at === -1, 'admin: Save writes the cut-offs to config/main');
+  ok(saved[1].days.length === 6 && saved[1].days.every(l => l.pre === 0 && l.at === 930) && saved[0].days.every(l => l.at === 360 && l.pre === 1) && JSON.stringify(saved[3].days) === '[]', 'admin: Save keeps a line per delivery day beside the older fields (5 Nov 2026)');
   ok((s[CFG].people || []).length === 4 && s[CFG].headId === 'head', 'admin: the staff list keeps the daily head-PIN owner');
   ok(/Saved/.test(await txt(p, '.a-cut .saved')), 'admin: Saved shows');
   // the People tab's full save keeps the cut-offs

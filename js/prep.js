@@ -1662,8 +1662,8 @@
       var date = shift(dayNow(), k);
       CUT.on(cutList(), (T.dow() + k) % 7).forEach(function (c) {
         var at = T.at(date) + c.at * 60000;
-        out.push({ day: date, cutoffId: c.s.id, at: at, deliveryDay: shift(date, c.s.pre), name: c.s.name,
-          label: dayShort(date) + ', ' + hhmm(c.at) + ' ' + CUT.forText(c), key: c.s.id + '|' + date,
+        out.push({ day: date, cutoffId: c.s.id, at: at, deliveryDay: shift(date, c.pre), name: c.s.name,
+          label: dayShort(date) + ', ' + hhmm(c.at) + ' ' + CUT.forText(c, date), key: c.s.id + '|' + date,
           done: !!done[c.s.id + '|' + date], past: at <= ms });
       });
     }
@@ -5112,7 +5112,7 @@
         fns: list.filter(function (f) { return f.date === d && (f.status === 'confirmed' || f.status === 'draft'); }).map(function (f) {
           return { id: String(f.id || ''), name: String(f.name || 'Function'), guests: f.gu ? null : (+f.guests || 0), start: typeof f.start === 'number' && f.start > 0 ? hhmm(T.mins(f.start)) : '', draft: f.status === 'draft' };
         }).sort(function (a, b) { return a.start < b.start ? -1 : a.start > b.start ? 1 : 0; }),
-        cuts: cuts ? window.LK_CUT.on(cuts, dow).map(function (c) { return { name: c.s.name, at: hhmm(c.at), what: window.LK_CUT.forText(c) }; }) : null });
+        cuts: cuts ? window.LK_CUT.on(cuts, dow).map(function (c) { return { name: c.s.name, at: hhmm(c.at), what: window.LK_CUT.forText(c, d) }; }) : null });
     }
     return { fns: !fn ? 'none' : F && F.state === 'error' ? 'error' : F && F.state === 'ok' ? 'ok' : F && F.state === 'offline' ? 'offline' : 'loading', days: out };
   }
@@ -9235,7 +9235,9 @@
      The head chef sets each supplier's order cut-off in the admin panel (Settings, Order cut-offs). They live in
      config/main cutoffs: [{ id, name, dd: delivery weekdays (0 Sunday to 6 Saturday), at: cut-off time in minutes after
      midnight (-1 to come), pre: how many days before the delivery the order closes (0 to 14), lead: how long before the
-     cut-off the reminder starts, in minutes (240, 360 or 480; 0 all day on the cut-off day) }]. Only the head chef's
+     cut-off the reminder starts, in minutes (240, 360 or 480; 0 all day on the cut-off day), days (5 Nov 2026): a line
+     per delivery day { d, pre, at }, which is what the book uses; dd, at and pre keep the earliest line for older copies
+     (js/cutoffs.js) }]. Only the head chef's
      Google account writes them (the rules: isAdmin). The head chef and sous chefs get a bar under the top bar on every
      page from that time until the cut-off passes, and today's cut-offs on the order list (24 Oct 2026: at least 4 hours,
      was 3). A reminder that starts before midnight (an early cut-off) starts the night before. In the last hour the line
@@ -9256,26 +9258,41 @@
     { id: 'a-la-carte-meats', name: 'A La Carte Meats', dd: [], at: -1, pre: 1, lead: 240 }
   ];
   var cutTick = null, cutLast = null;
-  /* js/cutoffs.js: shared with the server's pushes. If missing, or an older copy lacks the 14-day range, no cut-offs
+  /* js/cutoffs.js: shared with the server's pushes. If missing, or an older copy lacks the 14-day range or the lines for each delivery day, no cut-offs
      show. The rest of the book works, and the cut-offs saved in config/main are kept as they are (saveConfig writes them back untouched, so the head
      chef's People save cannot wipe them; the Order cut-offs page says it cannot load and saves nothing). */
-  var CUT_OK = !!window.LK_CUT && window.LK_CUT.MAX_PRE === 14;
-  var CUT = CUT_OK ? window.LK_CUT : { clean: function () { return []; }, cutDays: function () { return []; }, on: function () { return []; }, forText: function () { return ''; }, startAt: function () { return 0; }, LEADS: [] }, cutClean = CUT.clean;
+  var CUT_OK = !!window.LK_CUT && window.LK_CUT.MAX_PRE === 14 && window.LK_CUT.v >= 2;   // v 2: a line per delivery day (5 Nov 2026)
+  var CUT = CUT_OK ? window.LK_CUT : { clean: function () { return []; }, lines: function () { return []; }, cutDays: function () { return []; }, on: function () { return []; }, forText: function () { return ''; }, startAt: function () { return 0; }, headsAt: function () { return null; }, next: function () { return null; }, clash: function () { return null; }, LEADS: [] }, cutClean = CUT.clean;
   function cutList() { return cutClean(S.config && S.config.cutoffs); }
-  // the weekdays an order closes: each delivery day less the days before
-  var cutDays = CUT.cutDays;
+  /* The admin page's words (5 Nov 2026): the next real dates a line closes and delivers, so a wrong day shows before
+     Save. "Next: Fri 6 Nov 16:00 for Wed 11 Nov. Heads-up Thu 15:00." From the clock, no reads. */
+  function cutNext(s, l) {
+    var n = CUT.next(l, dayNow(), T.dow(), T.mins());
+    if (!n) return 'Cut-off to come.';
+    var h = CUT.headsAt({ s: s, t: l.at, dels: [{ d: l.d, pre: l.pre }] });
+    return 'Next: ' + CUT.dateText(n.cut) + ' ' + hhmm(l.at) + ' for ' + CUT.dateText(n.del) + '.' + (h === null ? '' : ' Heads-up ' + CUT.DY[(CUT.cutDow(l) + 6) % 7] + ' ' + hhmm(CUT.HEADS) + '.');
+  }
+  // a supplier whose days all follow one rule: the soonest of its lines, and when its reminder starts
   function cutSay(s) {
-    if (s.at < 0 || !s.dd.length) return 'Cut-off to come';
-    var cd = cutDays(s);
-    var days = s.dd.length === 7 ? 'every day' : CUT_DOW.filter(function (d) { return cd.indexOf(d[0]) >= 0; }).map(function (d) { return d[1]; }).join(', ');
-    return 'Order by ' + hhmm(s.at) + ' ' + days + (s.pre === 0 ? ' for the same day' : s.pre === 1 ? ' for the next day' : ' for ' + (s.pre === 7 ? '1 week' : s.pre === 14 ? '2 weeks' : s.pre + ' days') + ' later') + '. ' + cutFrom(s);
+    var ls = CUT.lines(s).filter(function (l) { return l.at >= 0; });
+    if (!CUT.lines(s).length) return 'No delivery days yet. Tick the days it delivers.';
+    if (!ls.length) return 'Cut-off to come.';
+    var nx = ls.map(function (l) { return { l: l, n: CUT.next(l, dayNow(), T.dow(), T.mins()) }; }).sort(function (a, b) { return a.n.cut < b.n.cut ? -1 : a.n.cut > b.n.cut ? 1 : a.l.at - b.l.at; })[0];
+    return cutNext(s, nx.l) + ' ' + cutFrom(s, nx.l.at);
   }
   // when the reminder starts, from the cut-off time and how long before
-  function cutFrom(s) {
-    var st = CUT.startAt(s);
+  function cutFrom(s, at) {
+    var st = CUT.startAt(s, at);
     if (!s.lead && st >= 0) return 'Reminder all day.';
     return 'Reminder from ' + hhmm((st + 1440) % 1440) + (st < 0 ? ' the night before.' : '.');
   }
+  // the rule most of a supplier's days follow, { pre, at } (the first day's on a tie), or null with no days
+  function cutUsual(s) {
+    var c = {}, best = null;
+    CUT.lines(s).forEach(function (l) { var k = l.pre + '|' + l.at; c[k] = (c[k] || 0) + 1; if (!best || c[k] > c[best.pre + '|' + best.at]) best = l; });
+    return best ? { pre: best.pre, at: best.at } : null;
+  }
+  function cutSame(s) { var u = cutUsual(s); return !!u && CUT.lines(s).every(function (l) { return l.pre === u.pre && l.at === u.at; }); }
   // the cut-offs that fall today, soonest first, with the delivery each one is for
   // plus: days from today (1 is tomorrow), so at is minutes from today's midnight and day the cut-off's own date
   function cutOn(plus) {
@@ -9284,8 +9301,9 @@
   }
   function cutToday() { return cutOn(0); }
   // the reminder is on from its start until the cut-off (js/cutoffs.js startAt, the same as the first push)
-  function cutOnNow(c, m) { var left = c.at - m; return left > 0 && left <= c.s.at - CUT.startAt(c.s); }
-  var cutDel = CUT.forText;
+  function cutOnNow(c, m) { var left = c.at - m; return left > 0 && left <= c.t - CUT.startAt(c.s, c.t); }
+  // the delivery, with its date: "for Wed 11 Nov" (5 Nov 2026; c.day is the cut-off's own date)
+  function cutDel(c) { return CUT.forText(c, c.day); }
   function cutIn(m) { return m < 60 ? 'in ' + m + ' min' : 'in ' + Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
   // who gets the bar: the head chef and sous chefs with their PIN, and the head chef's Google device
   function cutWho() { return !!S.config && (isSous() || admDev()); }
@@ -9443,10 +9461,26 @@
      row is a tick box: ordered (by whom, when), the time left, or Closed and not ticked. */
   // today's cut-offs, and tomorrow's whose reminder has started, soonest first: the tick list's rows and the supplier groups
   function cutRowsNow() { var m = T.mins(); return cutToday().concat(cutOn(1).filter(function (c) { return cutOnNow(c, m); })); }
+  /* Tomorrow, heads-up (5 Nov 2026, the head chef's supplier patterns): tomorrow's cut-offs for a delivery 2 or more days
+     after them ("Wednesday's order by Friday 16:00"), all the day before, until their own reminder starts. A row has
+     Ordered already instead of a tick box, so nobody ticks it to mean "seen": it is only for an order placed early, and
+     writes tomorrow's tick (cutdone/<tomorrow>_<id>), which the listener already reads, with the same Undo. No reads. */
+  function cutAhead() { var m = T.mins(); return cutOn(1).filter(function (c) { return !cutOnNow(c, m) && CUT.headsAt(c) !== null; }); }
   function cutRowsHTML(ro) {
-    var xs = cutRowsNow();
-    if (!xs.length) return '<p class="hint">No cut-offs today.</p>';
-    return (cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '') + '<ul class="cut-tl">' + xs.map(function (c) { return cutRowHTML(c, ro); }).join('') + '</ul>';
+    var xs = cutRowsNow(), ah = cutAheadHTML(ro);
+    if (!xs.length && !ah) return '<p class="hint">No cut-offs today.</p>';
+    return (cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '') + (xs.length ? '<ul class="cut-tl">' + xs.map(function (c) { return cutRowHTML(c, ro); }).join('') + '</ul>' : '<p class="hint">No cut-offs today.</p>') + ah;
+  }
+  // the heads-up block, under today's tick list and under the supplier groups: '' when there is none
+  function cutAheadHTML(ro) {
+    var ah = cutAhead();
+    if (!ah.length) return '';
+    return '<h4 class="cut-ah">Tomorrow, heads-up</h4>' + (ro ? '' : '<p class="hint cut-how">Ordered already is only for an order placed early. It stops tomorrow\'s reminder.</p>') + '<ul class="cut-hl">' + ah.map(function (c) { return cutAheadRow(c, ro); }).join('') + '</ul>';
+  }
+  function cutAheadRow(c, ro) {
+    if (cutDone()[c.key]) return cutRowHTML(c, ro);   // ordered early: an ordinary ticked row, which can be taken off again
+    return '<li class="cut-o is-ahead"><a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">by tomorrow ' + hhmm(c.t) + ' ' + esc(cutDel(c)) + '</span>' +
+      (ro ? '<span class="cut-st">Tomorrow</span>' : '<button type="button" class="btn cut-early" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="false" aria-label="' + esc('Ordered already from ' + c.s.name + ', for tomorrow\'s cut-off') + '"' + (cutCanTick() ? '' : ' disabled') + '>Ordered already</button>') + '</li>';
   }
   function cutRowHTML(c, ro) {
     var m = T.mins(), done = cutDone();
@@ -9509,7 +9543,7 @@
         return '<div class="o-sup"><ul class="cut-tl">' + cutRowHTML(c) + '</ul>' + (g.lines.length ? rows(g.lines) : '<p class="hint o-sup-empty">Nothing asked for from ' + esc(c.s.name) + ' yet.</p>') +
           '<p class="o-sup-acts">' + (g.linked === 1 ? '<a class="chip" href="' + to + '">Open ' + esc(c.s.name) + ' order</a>' : '') + '<a class="chip" href="#/deliveries">Delivery arrived</a></p></div>';
       }).join('') +
-      (left.length ? '<div class="o-sup o-sup-none"><h3 class="nb-sh">No supplier yet</h3>' + rows(left) + '</div>' : '') + pushHTML() + '</section>';
+      (left.length ? '<div class="o-sup o-sup-none"><h3 class="nb-sh">No supplier yet</h3>' + rows(left) + '</div>' : '') + cutAheadHTML() + pushHTML() + '</section>';
   }
   // the same list at the top of Chef to-do, to see, not tick (5 Nov 2026: ticked on the order list only)
   function cutTodoHTML() {
@@ -9611,27 +9645,75 @@
       '<button type="button" class="btn' + (on ? '' : ' dark') + '" data-p="' + (on ? 'cut-push-off' : 'cut-push-on') + '"' + (S.pushBusy ? ' disabled' : '') + '>' + (on ? 'Turn pushes off' : 'Turn pushes on') + '</button>' +
       (S.pushMsg ? '<p class="hint cut-push-msg" role="status">' + esc(S.pushMsg) + '</p>' : (st === 'ios' || st === 'denied' ? '<p class="hint cut-push-msg">' + esc(PUSH_SAY[st]) + '</p>' : '')) + '</div>';
   }
-  /* the admin page: a draft kept on this phone until Save (the head chef's Google account only) */
+  /* the admin page: a draft kept on this phone until Save (the head chef's Google account only).
+     Redesigned 5 Nov 2026 (docs/cutoff-options/brief.md, the recommended mix): one line per delivery day, each with the
+     weekday its order closes and the time ("Wed delivery, order by Fri 16:00"), and the next real dates beside it. A
+     supplier whose days all follow one rule shows that rule once (Order closes and Cut-off time set every day, as before)
+     until Change one day opens its lines; a day that differs from the others is marked. Remind us stays per supplier.
+     The draft keeps days (the lines) and dd, at and pre worked out from them (js/cutoffs.js clean()). */
   function cutStart() { S.cutDraft = cutList(); S.cutSnap = JSON.stringify(S.cutDraft); S.cutMsg = S.cutMsg || ''; }
   function cutDirty() { return !!S.cutDraft && JSON.stringify(S.cutDraft) !== S.cutSnap; }
+  // after a change to a supplier's lines: dd, at and pre again, as Save will store them. With no lines yet, at and pre
+  // stay as typed: they are the rule a newly ticked day starts with.
+  function cutSync(s) {
+    if (!s.days.length) { s.dd = []; return; }
+    var r = cutClean([{ name: 'x', days: s.days, lead: s.lead }])[0];
+    s.days = r.days; s.dd = r.dd; s.at = r.at; s.pre = r.pre;
+  }
+  // a typed time: "16:00", "1600" or "16"; '' is to come (-1); anything else null (the line keeps its time)
+  function cutTime(v) {
+    v = String(v || '').trim();
+    if (!v) return -1;
+    var t = /^(\d{1,2})(?::?(\d{2}))?$/.exec(v);
+    return t && +t[1] < 24 && +(t[2] || 0) < 60 ? +t[1] * 60 + +(t[2] || 0) : null;
+  }
+  // the weekday choices for a line's Order by, with the days before; 8 to 13 only when saved so
+  function cutPreOpts(l) {
+    var ns = [0, 1, 2, 3, 4, 5, 6, 7].concat(l.pre > 7 && l.pre < 14 ? [l.pre] : [], [14]);
+    return ns.map(function (n) {
+      var w = CUT.DY[((l.d - n) % 7 + 7) % 7], t = n === 0 ? 'the same day' : n === 1 ? 'the day before' : n === 7 ? '1 week before' : n === 14 ? '2 weeks before' : n + ' days before';
+      return '<option value="' + n + '"' + (l.pre === n ? ' selected' : '') + '>' + w + ', ' + t + '</option>';
+    }).join('');
+  }
+  function cutClashSay(s) {
+    var c = CUT.clash(s);
+    return c ? CUT.DY[c[0].d] + ' and ' + CUT.DY[c[1].d] + ' deliveries both close on ' + CUT.DY[CUT.cutDow(c[0])] + ', at ' + hhmm(c[0].at) + ' and ' + hhmm(c[1].at) + '. That is one order: give them the same time.' : '';
+  }
+  function cutRemField(s, i) {
+    return '<div class="field"><label class="label" for="cut-r' + i + '">Remind us</label><select id="cut-r' + i + '" class="search" data-k="cut-r' + i + '">' + CUT.LEADS.map(function (l) { return '<option value="' + l[0] + '"' + (s.lead === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') + '</select></div>';
+  }
+  function cutLineHTML(s, i, l, u) {
+    var k = i + '-' + l.d, diff = !!u && (l.pre !== u.pre || l.at !== u.at);
+    return '<li class="cut-l' + (diff ? ' is-diff' : '') + '"><span class="cut-ld">' + CUT.DAY[l.d] + ' delivery' + (diff ? ' <span class="cut-diff">Different</span>' : '') + '</span>' +
+      '<div class="cut-lf"><div class="field"><label class="label" for="cut-o' + k + '">Order by</label><select id="cut-o' + k + '" class="search" data-k="cut-o' + k + '">' + cutPreOpts(l) + '</select></div>' +
+      '<div class="field cut-tf"><label class="label" for="cut-a' + k + '">Time</label><input id="cut-a' + k + '" class="search" type="text" inputmode="numeric" maxlength="5" autocomplete="off" placeholder="16:00" data-k="cut-a' + k + '" value="' + (l.at >= 0 ? hhmm(l.at) : '') + '"></div></div>' +
+      '<p class="hint cut-nx" data-d="' + l.d + '">' + esc(cutNext(s, l)) + '</p></li>';
+  }
   function cutAdminHTML() {
     if (!CUT_OK) return '<section class="set-block a-cut"><span class="label">Order cut-offs</span><p class="p-err">The cut-offs could not load on this device. Reload the book and try again. Nothing here is changed.</p></section>';
     if (!S.cutDraft || (!cutDirty() && S.cutSnap !== JSON.stringify(cutList()))) cutStart();
+    S.cutOpen = S.cutOpen || {};
     var d = S.cutDraft, owner = S.level === 'owner';
     var rows = d.map(function (s, i) {
+      var ls = CUT.lines(s), u = cutUsual(s), folded = !ls.length || (cutSame(s) && !S.cutOpen[s.id]), clash = cutClashSay(s);
+      var body = folded
+        ? '<div class="cut-two"><div class="field"><label class="label" for="cut-t' + i + '">Cut-off time</label><input id="cut-t' + i + '" class="search" type="text" inputmode="numeric" maxlength="5" autocomplete="off" placeholder="14:00" data-k="cut-t' + i + '" value="' + (s.at >= 0 ? hhmm(s.at) : '') + '"></div>' +
+          '<div class="field"><label class="label" for="cut-p' + i + '">Order closes</label><select id="cut-p' + i + '" class="search" data-k="cut-p' + i + '">' + CUT_PRE.map(function (t, n) { return '<option value="' + n + '"' + (s.pre === n ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select></div>' +
+          cutRemField(s, i) + '</div><p class="hint cut-say">' + esc(cutSay(s)) + '</p>' +
+          (ls.length > 1 ? '<div class="btn-row"><button type="button" class="btn" data-p="cut-open" data-i="' + i + '">Change one day</button></div>' : '')
+        : '<ul class="cut-ls">' + ls.slice().sort(function (a, b) { return (a.d + 6) % 7 - (b.d + 6) % 7; }).map(function (l) { return cutLineHTML(s, i, l, u); }).join('') + '</ul>' +
+          '<div class="cut-two">' + cutRemField(s, i) + '</div>' + '<p class="hint cut-say">' + (s.lead ? 'Reminder ' + s.lead / 60 + ' hours before each cut-off.' : 'Reminder all day on each cut-off day.') + '</p>' +
+          '<div class="btn-row"><button type="button" class="btn" data-p="cut-same" data-i="' + i + '">' + (armed('cut-same:' + i) ? 'Tap again: every day changes' : 'Set every day the same') + '</button></div>';
       return '<li class="cut-ed">' +
         '<div class="field"><label class="label" for="cut-n' + i + '">Supplier</label><input id="cut-n' + i + '" class="search" data-k="cut-n' + i + '" maxlength="40" autocomplete="off" placeholder="Supplier name" value="' + esc(s.name) + '"></div>' +
         '<fieldset class="cut-dd"><legend class="label">Delivery days</legend><div class="chips">' + CUT_DOW.map(function (w) {
           return '<button type="button" class="chip" data-p="cut-day" data-i="' + i + '" data-v="' + w[0] + '" aria-pressed="' + (s.dd.indexOf(w[0]) >= 0) + '">' + w[1] + '</button>';
-        }).join('') + '</div></fieldset>' +
-        '<div class="cut-two"><div class="field"><label class="label" for="cut-t' + i + '">Cut-off time</label><input id="cut-t' + i + '" class="search" type="time" step="300" data-k="cut-t' + i + '" value="' + (s.at >= 0 ? hhmm(s.at) : '') + '"></div>' +
-        '<div class="field"><label class="label" for="cut-p' + i + '">Order closes</label><select id="cut-p' + i + '" class="search" data-k="cut-p' + i + '">' + CUT_PRE.map(function (t, n) { return '<option value="' + n + '"' + (s.pre === n ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select></div>' +
-        '<div class="field"><label class="label" for="cut-r' + i + '">Remind us</label><select id="cut-r' + i + '" class="search" data-k="cut-r' + i + '">' + CUT.LEADS.map(function (l) { return '<option value="' + l[0] + '"' + (s.lead === l[0] ? ' selected' : '') + '>' + l[1] + '</option>'; }).join('') + '</select></div></div>' +
-        '<p class="hint cut-say">' + esc(cutSay(s)) + '</p>' +
+        }).join('') + '</div></fieldset>' + body +
+        '<p class="p-err cut-clash" role="alert"' + (clash ? '' : ' hidden') + '>' + esc(clash) + '</p>' +
         '<button type="button" class="p-x" data-p="cut-rm" data-i="' + i + '" aria-label="' + esc('Remove ' + (s.name || 'this supplier')) + '">' + (armed('cut-rm:' + i) ? 'Tap again to remove' : 'Remove') + '</button></li>';
     }).join('');
-    return '<section class="set-block a-cut"><span class="label">Order cut-offs</span><span class="hint">Tick the days the supplier delivers, then when the order has to be in.</span>' +
-      '<details class="a-how"><summary>How reminders work</summary><p class="hint">You and the sous chefs get a bar at the top of every page from the time you pick under Remind us (4 hours before unless you change it) until the cut-off passes. It turns orange in the last hour. An early cut-off is reminded from the night before. Today\'s cut-offs show on the order list.</p></details>' +
+    return '<section class="set-block a-cut"><span class="label">Order cut-offs</span><span class="hint">Tick the days the supplier delivers, then when each order has to be in. One day different, like Wednesday\'s order by Friday 16:00: Change one day.</span>' +
+      '<details class="a-how"><summary>How reminders work</summary><p class="hint">You and the sous chefs get a bar at the top of every page from the time you pick under Remind us (4 hours before unless you change it) until the cut-off passes, and a push then if pushes are on. It turns orange in the last hour, with a push. An early cut-off is reminded from the night before. Today\'s cut-offs show on the order list. An order that closes 2 or more days before its delivery also shows the day before, under Tomorrow, heads-up on the order list, with a push at ' + hhmm(CUT.HEADS) + '. Two deliveries that close on the same day are one order and one tick.</p></details>' +
       (rows ? '<ul class="cut-eds">' + rows + '</ul>' : '<p class="hint">No suppliers yet, so nobody is reminded.</p>') +
       '<div class="btn-row"><button type="button" class="btn" data-p="cut-add">Add a supplier</button>' + (d.length ? '' : '<button type="button" class="btn" data-p="cut-usual">Add ' + esc(CUT_USUAL.map(function (x) { return x.name; }).join(', ')) + '</button>') + '</div>' +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="cut-save"' + (owner && cutDirty() && !S.cutBusy ? '' : ' disabled') + '>Save cut-offs</button><button type="button" class="btn" data-p="cut-undo"' + (cutDirty() ? '' : ' disabled') + '>' + (armed('cut-undo') ? 'Tap again to undo' : 'Undo unsaved changes') + '</button></div>' +
@@ -9639,6 +9721,9 @@
   }
   function cutSave() {
     if (!CUT_OK || S.level !== 'owner' || !cutDirty() || S.cutBusy) return;
+    // one supplier closes once a day: two times on one day would share one tick, so Save refuses and says which
+    var bad = S.cutDraft.filter(function (s) { return CUT.clash(s); })[0];
+    if (bad) { S.cutMsg = errMsg('Not saved. ' + (bad.name || 'A supplier') + ': ' + cutClashSay(bad)); draw(); return; }
     var clean = cutClean(S.cutDraft);
     S.cutBusy = true; S.cutMsg = 'Saving...'; draw();
     // merge: only cutoffs changes (the People tab's full save carries it over, saveConfig)
@@ -9647,26 +9732,76 @@
     }, function (e) { S.cutBusy = false; S.cutMsg = errMsg(e && e.code === 'permission-denied' ? 'Only the head chef\'s Google account can change the cut-offs.' : 'Could not save. Check the connection.'); draw(); });
   }
   function cutClick(a, el) {
-    var d = S.cutDraft, i = +el.getAttribute('data-i');
+    var d = S.cutDraft, i = +el.getAttribute('data-i'), s = d && d[i];
     if (!d) return;
     S.cutMsg = '';
-    if (a === 'cut-add') { d.push({ id: 'cut-' + Date.now().toString(36), name: '', dd: [], at: -1, pre: 1, lead: 240 }); draw(); var n = S.root.querySelector('[data-k="cut-n' + (d.length - 1) + '"]'); if (n) n.focus(); return; }
-    if (a === 'cut-usual') { S.cutDraft = JSON.parse(JSON.stringify(CUT_USUAL)); draw(); return; }
-    if (a === 'cut-rm') { if (!d[i] || !arm('cut-rm:' + i)) return; d.splice(i, 1); draw(); return; }
-    if (a === 'cut-day') { var v = +el.getAttribute('data-v'), s = d[i]; if (!s) return; var k = s.dd.indexOf(v); if (k >= 0) s.dd.splice(k, 1); else { s.dd.push(v); s.dd.sort(); } draw(); return; }
+    if (a === 'cut-add') { d.push({ id: 'cut-' + Date.now().toString(36), name: '', days: [], dd: [], at: -1, pre: 1, lead: 240 }); draw(); var n = S.root.querySelector('[data-k="cut-n' + (d.length - 1) + '"]'); if (n) n.focus(); return; }
+    if (a === 'cut-usual') { S.cutDraft = cutClean(CUT_USUAL); draw(); return; }
+    if (a === 'cut-rm') { if (!s || !arm('cut-rm:' + i)) return; d.splice(i, 1); draw(); return; }
+    // a delivery day on starts with the rule most of the others follow (or the time typed before any day was ticked)
+    if (a === 'cut-day') {
+      var v = +el.getAttribute('data-v'); if (!s) return;
+      var k = s.days.findIndex(function (l) { return l.d === v; }), u = cutUsual(s) || { pre: s.pre, at: s.at };
+      if (k >= 0) s.days.splice(k, 1); else s.days.push({ d: v, pre: u.pre, at: u.at });
+      cutSync(s); draw(); return;
+    }
+    if (a === 'cut-open') { if (!s) return; S.cutOpen = S.cutOpen || {}; S.cutOpen[s.id] = true; draw(); var o = S.root.querySelector('[data-k^="cut-o' + i + '-"]'); if (o && o.nextElementSibling) o.nextElementSibling.focus(); return; }
+    // every day back to the rule most days follow: a second tap first when that changes a day
+    if (a === 'cut-same') {
+      if (!s) return;
+      if (!cutSame(s) && !arm('cut-same:' + i)) return;
+      var w = cutUsual(s); if (w) s.days.forEach(function (l) { l.pre = w.pre; l.at = w.at; });
+      if (S.cutOpen) delete S.cutOpen[s.id];
+      cutSync(s); draw(); return;
+    }
     // every change goes at once, so it asks a second tap first, like Undo on the People tab (28 Oct 2026)
     if (a === 'cut-undo') { if (cutDirty() && !arm('cut-undo')) return; cutStart(); S.cutMsg = ''; draw(); return; }
     if (a === 'cut-save') { cutSave(); return; }
   }
-  // typing a name keeps the cursor (no redraw); a time or the days before redraw the line that says when orders close
-  function cutField(k, el) {
-    var d = S.cutDraft, i = +k.slice(5), s = d && d[i];
+  /* typing a name or a time keeps the cursor (no redraw: the words that say when orders close change in place); a choice
+     from a list draws the page again, since a day can now differ or match. done: the box was left (change), so a time
+     that is not a time goes back to the one kept. */
+  function cutField(k, el, done) {
+    var m = /^cut-([ntpr])(\d+)$|^cut-([oa])(\d+)-(\d)$/.exec(k), d = S.cutDraft;
+    if (!m || !d) return;
+    var i = +(m[2] || m[4]), s = d[i], f = m[1] || m[3];
     if (!s) return;
-    if (k.indexOf('cut-n') === 0) { s.name = el.value.slice(0, 40); return; }
-    if (k.indexOf('cut-t') === 0) { var t = /^(\d{1,2}):(\d{2})/.exec(el.value || ''); s.at = t ? Math.min(1439, +t[1] * 60 + +t[2]) : -1; }
-    if (k.indexOf('cut-p') === 0) s.pre = Math.max(0, Math.min(CUT.MAX_PRE, Math.floor(+el.value) || 0));
-    if (k.indexOf('cut-r') === 0) s.lead = CUT.LEADS.some(function (l) { return l[0] === +el.value; }) ? +el.value : 240;
-    var say = el.closest('.cut-ed') && el.closest('.cut-ed').querySelector('.cut-say'); if (say) say.textContent = cutSay(s);
+    var l = m[3] ? s.days.filter(function (x) { return x.d === +m[5]; })[0] : null;
+    if (m[3] && !l) return;
+    if (f === 'n') { s.name = el.value.slice(0, 40); return; }
+    if (f === 't' || f === 'a') {
+      var t = cutTime(el.value);
+      if (t === null) { if (done) el.value = (l ? l.at : s.at) >= 0 ? hhmm(l ? l.at : s.at) : ''; }
+      else if (l) l.at = t;
+      else { s.at = t; s.days.forEach(function (x) { x.at = t; }); }
+      if (t !== null && done && el.value !== (t >= 0 ? hhmm(t) : '')) el.value = t >= 0 ? hhmm(t) : '';
+      cutSync(s); cutInfo(s, i, el);
+    } else {
+      if (f === 'p') { s.pre = Math.max(0, Math.min(CUT.MAX_PRE, Math.floor(+el.value) || 0)); s.days.forEach(function (x) { x.pre = s.pre; }); }
+      if (f === 'o') l.pre = Math.max(0, Math.min(CUT.MAX_PRE, Math.floor(+el.value) || 0));
+      if (f === 'r') s.lead = CUT.LEADS.some(function (x) { return x[0] === +el.value; }) ? +el.value : 240;
+      cutSync(s);
+      // Order closes and Remind us on a folded supplier change no line's look: the words only, as before (no redraw)
+      if (f === 'o') { S.cutOpen = S.cutOpen || {}; S.cutOpen[s.id] = true; draw(); return; }
+      cutInfo(s, i, el);
+    }
+    var sv = S.root.querySelector('[data-p="cut-save"]'), un = S.root.querySelector('[data-p="cut-undo"]');
+    if (sv) sv.disabled = !(S.level === 'owner' && cutDirty() && !S.cutBusy); if (un) un.disabled = !cutDirty();
+  }
+  // the words in one supplier's card, in place: the summary, each line's next dates and mark, and a clash
+  function cutInfo(s, i, el) {
+    var card = el.closest('.cut-ed'); if (!card) return;
+    var say = card.querySelector('.cut-say'), u = cutUsual(s);
+    if (say) say.textContent = card.querySelector('.cut-ls') ? (s.lead ? 'Reminder ' + s.lead / 60 + ' hours before each cut-off.' : 'Reminder all day on each cut-off day.') : cutSay(s);
+    CUT.lines(s).forEach(function (l) {
+      var nx = card.querySelector('.cut-nx[data-d="' + l.d + '"]'); if (nx) nx.textContent = cutNext(s, l);
+      var li = nx && nx.closest('.cut-l'), diff = !!u && (l.pre !== u.pre || l.at !== u.at);
+      if (li && li.classList.contains('is-diff') !== diff) {
+        li.classList.toggle('is-diff', diff);
+        var ld = li.querySelector('.cut-ld'); if (ld) ld.innerHTML = CUT.DAY[l.d] + ' delivery' + (diff ? ' <span class="cut-diff">Different</span>' : '');
+      }
+    });
+    var cl = card.querySelector('.cut-clash'), w = cutClashSay(s); if (cl) { cl.textContent = w; cl.hidden = !w; }
     var sv = S.root.querySelector('[data-p="cut-save"]'), un = S.root.querySelector('[data-p="cut-undo"]');
     if (sv) sv.disabled = !(S.level === 'owner' && cutDirty() && !S.cutBusy); if (un) un.disabled = !cutDirty();
   }
@@ -10197,7 +10332,7 @@
     // a PIN goes in by itself the moment the fourth digit is typed (only when it reaches four, so it cannot send twice)
     if (k === 'p-pin') { var pp = S.pinInput.length; S.pinInput = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pinInput; pinCells(el); if (pp < 4 && S.pinInput.length === 4) submitKitchenPin(); return; }
     if (k === 'a-bulk') { S.bulk = el.value; return; }
-    if (k && /^cut-[ntpr]\d/.test(k)) { cutField(k, el); return; }
+    if (k && /^cut-([ntpr]\d|[oa]\d+-\d$)/.test(k)) { cutField(k, el); return; }
     if (k === 'dk-note' || k === 'dk-other') { if (dkf) dkf[k.slice(3)] = el.value.slice(0, k === 'dk-note' ? DK_NOTE : DK_OTHER); saveSync(); return; }
     if (k === 'todo-text') { tdf.text = el.value.slice(0, TD_MAX); tdMsg = ''; saveSync(); return; }
     if (k === 'ml-text') { mlf.text = el.value.slice(0, ML_MAX); mlMsg = ''; var mll = S.root.querySelector('#ml-left'), mln = ML_MAX - mlf.text.length; if (mll) mll.textContent = mln < 100 ? mln + ' characters left' : ''; return; }
@@ -10248,7 +10383,7 @@
     if (k && k.indexOf('lv-s:') === 0) { var sk = k.slice(5), sc = LVR[sk]; if (sc) { var ss = lvState(sc); ss.sort = el.value; ss.col = null; ss.desc = false; ss.shown = sc.step || 15; lvRefresh(sk); } return; }
     if (k && k.indexOf('ml-pri:') === 0) { mlSetPri(k.slice(7), el.value); return; }
     if (k === 'ml-sous') { mlSousSet(el.checked); return; }
-    if (k && /^cut-[tpr]\d/.test(k)) { cutField(k, el); return; }
+    if (k && /^cut-([tpr]\d|[oa]\d+-\d$)/.test(k)) { cutField(k, el, true); return; }
     // no redraw: typing a date on a keyboard changes it digit by digit, and a redraw would put the box back each time
     if (k === 'todo-due') { tdf.due = tdDue(el.value); var nd = S.root.querySelector('[data-p="todo-nodue"]'); if (nd) nd.hidden = !tdf.due; saveSync(); return; }
     if (k === 'g-file') { var gfl = el.files; gReadFiles(gfl); try { el.value = ''; } catch (x) {} return; }

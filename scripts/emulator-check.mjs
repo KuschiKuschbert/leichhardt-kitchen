@@ -144,12 +144,12 @@ let p1 = push(at(7, 0));
 ok(/Nothing due/.test(p1), 'pushes: nothing due at 07:00');
 p1 = push(at(8, 5));
 let wd = would(p1);
-ok(wd.length === 2 && wd.every(x => x.data.title === 'Veg: order by 14:00' && x.data.body === "For Saturday's delivery. 5 h 55 min to go.") && wd.map(x => x.by).sort().join() === 'owner,sam', 'pushes: 08:05, Veg (6 hours) goes to the sous chef and the Google account, not staff (' + JSON.stringify(wd) + ')');
+ok(wd.length === 2 && wd.every(x => x.data.title === 'Veg: order by 14:00' && x.data.body === 'For Sat 24 Oct. 5 h 55 min to go.') && wd.map(x => x.by).sort().join() === 'owner,sam', 'pushes: 08:05, Veg (6 hours) goes to the sous chef and the Google account, not staff (' + JSON.stringify(wd) + ')');
 wd = would(push(at(10, 3)));
 ok(wd.length === 2 && wd.every(x => x.data.title === 'PFD: order by 14:00'), 'pushes: 10:03, PFD (4 hours); Veg is not sent again, Chicken was ordered');
 ok(/Nothing new to send/.test(push(at(10, 13))), 'pushes: the next run sends nothing');
 wd = would(push(at(13, 2)));
-ok(wd.length === 4 && wd.filter(x => x.data.title === 'Order now: PFD' && /^Closes at 14:00 for Saturday's delivery\. 58 min to go\.$/.test(x.data.body)).length === 2 && wd.filter(x => x.data.tag === 'cut-veg').length === 2, 'pushes: 13:02, Order now for PFD and Veg');
+ok(wd.length === 4 && wd.filter(x => x.data.title === 'Order now: PFD' && /^Closes at 14:00 for Sat 24 Oct\. 58 min to go\.$/.test(x.data.body)).length === 2 && wd.filter(x => x.data.tag === 'cut-veg').length === 2, 'pushes: 13:02, Order now for PFD and Veg');
 ok(/Nothing due/.test(push(at(14, 5))), 'pushes: nothing once the cut-off has passed');
 wd = would(push(at(22, 4)));
 ok(wd.length === 2 && wd.every(x => x.data.title === 'Bread: order by tomorrow 06:00'), 'pushes: 22:04, an early cut-off is pushed the night before');
@@ -167,10 +167,10 @@ await K.collection('config').doc('main').set({ cutoffs: [
 await K.collection('cutdone').doc('2026-10-23_done-test').set({ day: '2026-10-23', sid: 'done-test', on: true, at: 1, by: 'sam' });
 wd = would(push(at(10, 5)));
 const longBodies = {
-  'week-test': 'For Friday in 1 week. 3 h 55 min to go.',
-  'eight-test': 'For Saturday in 8 days. 3 h 55 min to go.',
-  'nine-test': 'For Sunday in 9 days. 3 h 55 min to go.',
-  'fortnight-test': 'For Friday in 2 weeks. 3 h 55 min to go.'
+  'week-test': 'For Fri 30 Oct. 3 h 55 min to go.',
+  'eight-test': 'For Sat 31 Oct. 3 h 55 min to go.',
+  'nine-test': 'For Sun 1 Nov. 3 h 55 min to go.',
+  'fortnight-test': 'For Fri 6 Nov. 3 h 55 min to go.'
 };
 ok(wd.length === 8 && Object.keys(longBodies).every(sid => wd.filter(x => x.data.sid === sid && x.data.body === longBodies[sid]).length === 2), 'pushes: 7, 8, 9 and 14 days retain the correct weekday and delivery lead time');
 ok(wd.every(x => ['owner', 'sam'].includes(x.by) && x.data.day === '2026-10-23' && x.data.sid !== 'done-test'), 'pushes: long lead times still target only chefs, use the cut-off date and skip completed orders');
@@ -180,4 +180,26 @@ wd = would(push(at(13, 5)));
 ok(wd.length === 6 && ['week-test', 'eight-test', 'nine-test'].every(sid => wd.filter(x => x.data.sid === sid && /^Order now: /.test(x.data.title) && /55 min to go\.$/.test(x.data.body)).length === 2), 'pushes: the final-hour stage still runs, and a completed two-week order gets no further push');
 const longSent = ((await K.collection('pushsent').doc('2026-10-23').get()).data() || {}).sent || {};
 ok(longSent['week-test|2026-10-23'] === 'now' && longSent['eight-test|2026-10-23'] === 'now' && longSent['nine-test|2026-10-23'] === 'now' && longSent['fortnight-test|2026-10-23'] === 'start' && !longSent['done-test|2026-10-23'], 'pushes: long lead stages are kept per cut-off, with completed orders left untouched');
+// The heads-up (5 Nov 2026): a line per delivery day. Wednesday's order by Friday 16:00 (5 days before) is pushed at
+// 15:00 on Thursday, once, within the hour; Monday's and Wednesday's both by Friday 16:00 are one push for both dates;
+// one a chef ordered early (Ordered already writes Friday's tick on Thursday) gets none. Friday's own reminder follows.
+await K.collection('config').doc('main').set({ cutoffs: [
+  { id: 'coast-test', name: 'Coast Test', days: [{ d: 1, pre: 1, at: 840 }, { d: 3, pre: 5, at: 960 }], dd: [1, 3], at: 960, pre: 5, lead: 240 },
+  { id: 'pair-test', name: 'Pair Test', days: [{ d: 1, pre: 3, at: 960 }, { d: 3, pre: 5, at: 960 }], dd: [1, 3], at: 960, pre: 5, lead: 240 },
+  { id: 'early-test', name: 'Early Test', days: [{ d: 3, pre: 5, at: 960 }], dd: [3], at: 960, pre: 5, lead: 240 },
+  { id: 'short-test', name: 'Short Test', days: [{ d: 6, pre: 1, at: 960 }], dd: [6], at: 960, pre: 1, lead: 240 }
+] }, { merge: true });
+await K.collection('cutdone').doc('2026-10-23_early-test').set({ day: '2026-10-23', sid: 'early-test', on: true, at: 3, by: 'sam' });
+const thu = (h, mi) => String(Date.UTC(2026, 9, 22, h - 10, mi));   // Thursday 22 Oct 2026, kitchen time
+ok(/Nothing due/.test(push(thu(14, 55))), 'heads-up: nothing before 15:00 the day before');
+wd = would(push(thu(15, 4)));
+ok(wd.length === 4 && wd.filter(x => x.data.sid === 'coast-test' && x.data.title === 'Coast Test: order by Fri 16:00' && x.data.body === 'For Wed 28 Oct. Heads-up: it closes tomorrow.' && x.data.day === '2026-10-23').length === 2 &&
+  wd.filter(x => x.data.sid === 'pair-test' && x.data.body === 'For Mon 26 and Wed 28 Oct. Heads-up: it closes tomorrow.').length === 2, 'heads-up: 15:04 Thursday, one push per phone for each long-lead order, both dates in one (' + JSON.stringify(wd.map(x => x.data)) + ')');
+ok(!wd.some(x => x.data.sid === 'early-test' || x.data.sid === 'short-test'), 'heads-up: none for an order ticked early, or for one that closes the day before its delivery');
+ok(/Nothing new to send/.test(push(thu(15, 14))), 'heads-up: the next run sends nothing');
+ok(/Nothing due/.test(push(thu(16, 5))), 'heads-up: nothing after the hour, so the job reads little');
+wd = would(push(at(12, 4)));
+ok(wd.filter(x => x.data.sid === 'coast-test' && x.data.title === 'Coast Test: order by 16:00' && x.data.body === 'For Wed 28 Oct. 3 h 56 min to go.').length === 2 && !wd.some(x => x.data.sid === 'early-test'), 'heads-up: Friday 12:04, the reminder on the day still goes, and still none for the early order');
+const hs = ((await K.collection('pushsent').doc('2026-10-23').get()).data() || {}).sent || {};
+ok(hs['coast-test|2026-10-23'] === 'start' && hs['pair-test|2026-10-23'] === 'start' && !hs['early-test|2026-10-23'], 'heads-up: kept against the cut-off day, then moved on to the reminder');
 process.exit(fails ? 1 : 0);

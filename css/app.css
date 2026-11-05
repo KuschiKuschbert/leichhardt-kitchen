@@ -2412,6 +2412,17 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .cut-tl li.is-done .cut-n, .cut-tl li.is-done .cut-t { color: var(--muted); }
 .cut-tl li.is-done .cut-st { color: var(--done-ink); }
 .cut-how { margin: 0 0 0.4rem; }
+/* Tomorrow, heads-up (5 Nov 2026): tomorrow's cut-offs for a delivery 2 or more days later, with Ordered already instead
+   of a tick box (a ticked one is an ordinary done row). Its own list, so the tick list's rows keep their places. */
+.cut-ah { margin: 0.8rem 0 0.15rem; font: 700 0.8125rem var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.cut-hl { list-style: none; margin: 0; padding: 0; }
+.cut-hl li.cut-o { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-areas: "box n st" "box t st"; align-items: center; column-gap: 0.7rem; row-gap: 0; padding: 0.3rem 0; border-bottom: 1px solid var(--line); }
+.cut-hl li.is-ahead { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n st" "t st"; }
+.cut-hl .cut-t { color: var(--muted); }
+.cut-hl .cut-st { color: var(--muted); }
+.cut-early { grid-area: st; min-height: 44px; padding: 0 0.75rem; font-size: 0.9375rem; white-space: nowrap; }
+.cut-hl li.is-done .cut-n, .cut-hl li.is-done .cut-t { color: var(--muted); }
+.cut-hl li.is-done .cut-st { color: var(--done-ink); }
 .todo-cut { margin: 0.5rem 0 1rem; }
 .cut-eds { list-style: none; margin: 0.5rem 0; padding: 0; }
 .cut-ed { padding: 0.75rem 0; border-top: 1px solid var(--line); }
@@ -2421,6 +2432,23 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .cut-two .field { flex: 1 1 9rem; min-width: 0; }
 .cut-two .field:nth-child(2) { flex-basis: 11rem; }
 .cut-say { margin: 0.2rem 0 0.4rem; }
+/* Order cut-offs, one line per delivery day (5 Nov 2026): the order-by weekday and time, the next real dates, and an
+   orange tint on a day that differs from the others (docs/cutoff-options/brief.md) */
+.cut-ls { list-style: none; margin: 0.4rem 0 0.6rem; padding: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+.cut-l { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr); gap: 0.15rem 0.75rem; align-items: center; padding: 0.45rem 0.75rem; }
+.cut-l + .cut-l { border-top: 1px solid var(--line); }
+.cut-l.is-diff { background: var(--hit); }
+.cut-l:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+.cut-l:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+.cut-ld { font-weight: 700; }
+.cut-diff { display: inline-block; margin-left: 0.25rem; padding: 0 0.45rem; border-radius: var(--r-pick); border: 1.5px solid var(--small-ink); color: var(--small-ink); background: var(--paper); font-size: 0.75rem; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: 0.1em; }
+.cut-lf { display: flex; flex-wrap: wrap; gap: 0 0.75rem; min-width: 0; }
+.cut-lf .field { flex: 1 1 12rem; max-width: 20rem; min-width: 0; }
+.cut-lf .cut-tf { flex: 0 1 7.5rem; }
+.cut-nx { grid-column: 2; margin: 0; }
+@media (max-width: 600px) { .cut-l { grid-template-columns: minmax(0, 1fr); } .cut-nx { grid-column: 1; } }
+.cut-clash { margin: 0.2rem 0 0.4rem; }
+.cut-clash[hidden] { display: none; }
 .cut-push { margin-top: 0.6rem; }
 .cut-push-l { margin: 0 0 0.4rem; }
 .cut-push-msg { margin: 0.4rem 0 0; }
