@@ -1,6 +1,18 @@
-# Auto-merge: ready means merge when green
+# Auto-merge: ready means merge in the next release window
 
 Head chef decision, 4 November 2026. A pull request that is ready (not a draft) and has no `hold` label merges by itself once Click tests pass and it is up to date with `main`. Nobody has to say "merge when green" and no session has to stay awake for it.
+
+## Release windows (5 November 2026)
+
+The head chef chose Plan B of `docs/firestore-usage.md`. Every merge is a new version, and every new version reloads the screens left open and every phone that comes back; each reload reads its lists again. On 4 and 5 November 48 merges in a day helped use up the free 50,000 reads by 13:00. So ready pull requests merge only in two release windows between services, Queensland time: **15:00 to 16:30** and **22:30 to midnight** (`RELEASE_WINDOWS` in the workflow).
+
+- Outside a window a ready pull request waits with auto-merge off. Its Click tests still run, so it is green when the window opens.
+- When a window opens (the queue runs at 15:03 and 22:33, and on every pull request change, push to `main` and finished Click tests), every ready pull request that is not held gets auto-merge, and the queue merges them one at a time as below. One that is still merging when the window closes may finish; the rest wait for the next window.
+- **`urgent`**: a pull request with this label gets auto-merge at any time and merges when green. Use it for a fix the kitchen needs now (a page that does not load, a wrong amount), not to skip the wait.
+- **Release now**: Actions, Auto-merge, Run workflow, tick Release now. That run opens the window.
+- Several merges in one window reach a screen left open as at most one or two reloads (it takes an update nobody asked for at most once an hour, `js/upkeep.js`).
+
+`tests/auto-merge-queue.test.js` runs the window step and the switch with a stand-in clock: closed at 12:30, open at 15:00 and 23:59, closed at 16:30, urgent, Release now, and GitHub refusing.
 
 ## How it works
 
