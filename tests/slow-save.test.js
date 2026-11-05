@@ -18,8 +18,8 @@ const cfg = { [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'sous'), P
   await L.waitFor(p, k => !!window.__fake.dump()[k], fsKey(['recipes', 'burger']), 8000).catch(() => {});
   const rb = await p.evaluate(k => window.__fake.dump()[k], fsKey(['recipes', 'burger']));
   ok(rb && rb.v === 1 && rb.r && rb.r.name === 'Chicken Burger Deluxe', 'after 6 s the save goes into the queue anyway (version 1 saved)');
-  await L.waitFor(p, () => /Saved\. Version 1/.test(document.body.textContent), null, 6000).catch(() => {});
-  ok(/Saved\. Version 1/.test(await L.txt(p, 'body') || ''), 'and the page says Saved once it is sent');
+  await L.waitFor(p, () => /Saved .+\. Version 1/.test(document.body.textContent), null, 6000).catch(() => {});
+  ok(/Saved .+\. Version 1/.test(await L.txt(p, 'body') || ''), 'and the page says Saved once it is sent');
   ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));
   await p.context().close();
   await b.close();
