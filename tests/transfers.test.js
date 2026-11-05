@@ -57,12 +57,17 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
     ok(bt.length === 1 && bt[0].dir === 'out' && bt[0].venue === 'Riviera' && bt[0].person === 'Tom' && bt[0].amount === 2 && bt[0].unit === 'kg' && bt[0].addedById === who && bt[0].by === who && bt[0].deleted === false, who + ': saved through W() as ' + who + ' (' + JSON.stringify(bt[0]) + ')');
     ok(Object.keys(bt[0] || {}).sort().join(',') === 'addedAt,addedBy,addedById,amount,by,deleted,dir,note,person,text,unit,venue', who + ': only the fields the rules allow (' + Object.keys(bt[0] || {}).sort().join(',') + ')');
     ok(await p.inputValue('#tr-venue') === 'Riviera' && await p.inputValue('#tr-person') === 'Tom' && await p.inputValue('#tr-text') === '' && await p.evaluate(() => document.activeElement && document.activeElement.id) === 'tr-text', who + ': the next item of the pick-up keeps the venue and Tom, the item box is ready');
-    const toastT = await txt(p, '.p-toast') || '';
-    ok(/Logged: Riviera took 2 kg Butter/.test(toastT), who + ': the toast says what was logged (' + toastT + ')');
-    if (who === 'ann') ok(/Wrong\? Ask the head chef/.test(toastT) && !(await p.$('.p-toast [data-p="toast-act"]')), 'ann: staff are told to ask the head chef, no Undo');
-    else {
-      ok(!!(await p.$('.p-toast [data-p="toast-act"]')), 'sam: a sous chef gets Undo');
-      await p.click('.p-toast [data-p="toast-act"]'); await L.settle(p, 400);
+    // the Log a transfer sheet is open: its receipt says what was logged, and it is read out (step 2b, 5 Nov 2026)
+    const toastT = await p.evaluate(() => (document.getElementById('lk-live') || {}).textContent || ''), rcT = await txt(p, '.tr-sheet .just-l:last-child .just-n') || '';
+    ok(/Logged: Riviera took 2 kg Butter/.test(toastT) && /^Butter 2 kg, to Riviera$/.test(rcT), who + ': the sheet says what was logged (' + rcT + ' / ' + toastT + ')');
+    if (who === 'ann') {
+      ok(!(await p.$('.tr-sheet [data-p="just-undo"]')), 'ann: no Undo for staff');
+      await L.tap(p, '.tr-sheet .sheet-x[data-p="tr-log-close"]'); await L.settle(p, 300);
+      ok(/Wrong\? Ask the head chef/.test(await txt(p, '.p-toast') || '') && !(await p.$('.p-toast [data-p="toast-act"]')), 'ann: on Close, staff are told to ask the head chef, no Undo');
+      await L.xLog(p);
+    } else {
+      ok(!!(await p.$('.tr-sheet [data-p="just-undo"]')), 'sam: a sous chef gets Undo');
+      await p.click('.tr-sheet [data-p="just-undo"]'); await L.settle(p, 400);
       ok((await saved(p, 'Butter'))[0].deleted === true, 'sam: Undo takes the line back');
     }
 

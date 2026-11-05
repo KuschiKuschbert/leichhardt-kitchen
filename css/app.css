@@ -3400,6 +3400,17 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 .lk-stamp:first-child { margin-left: 0; }
 /* a line this phone just added (2 minutes): ink, not green, so it never reads as done */
 .lk-stamp.is-new { margin-left: .35rem; border-color: var(--ink); color: var(--ink); }
+/* "Added just now" in an open add sheet (step 2b): the last two lines it added, under the box being typed in. Rows are
+   44 px or more, Undo is a full button, the words are ink at full size and a name runs to one line */
+.just-r { margin: .5rem 0 .25rem; padding: .15rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.just-t { margin: .3rem 0 0; font: 700 .75rem var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--done-ink); }
+.just-l { display: flex; align-items: center; gap: .5rem; min-height: 48px; }
+.just-l + .just-l { border-top: 1px dashed var(--line); }
+.just-n { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
+.just-n b { font-weight: 700; }
+.just-u { flex: none; min-height: 44px; padding: 0 1rem; }
+.just-l.is-undone .just-n { color: var(--faint); text-decoration: line-through; }
+.just-gone { flex: none; font-weight: 600; color: var(--faint); }
 .cut-done { margin: .5rem 0 0; font-weight: 600; color: var(--ink); }
 .sv-line.p-err, .sv-slow { display: block; margin: 0; }
 .sv-slow { font-size: .875rem; font-weight: 600; color: var(--ink); }

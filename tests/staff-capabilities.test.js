@@ -23,7 +23,8 @@ async function direct(p, path, value) {
   await L.waitFor(p, () => Object.values(__fake.dump()).some(x => x && x.text === 'Synthetic capability item'));
   const made = await p.evaluate(() => Object.entries(__fake.dump()).find(([, x]) => x && x.text === 'Synthetic capability item')[0]);
   ok(!!made, 'Add-only staff still add prep');
-  await p.locator('.p-toast-btn').click();
+  // Undo in the open sheet's receipt (step 2b, 5 Nov 2026), the same own-add Undo the slip gave
+  await p.locator('.p-sheet [data-p="just-undo"]').last().click();
   await L.waitFor(p, path => __fake.dump()[path].deleted === true, made);
   ok(await p.evaluate(path => __fake.dump()[path].addedById === 'ann', made), 'own Add Undo retains its original recorder');
   await p.evaluate(path => {
