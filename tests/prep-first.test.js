@@ -18,7 +18,7 @@ const top = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); r
   ok(first > 0 && first < 560, 'phone: the first line starts higher up (' + first + ')');
   ok(!(await p.$('button.nb-prog')), 'phone: nothing ticked, the count is not a button');
   ok(await p.evaluate(() => { const q = document.querySelector('.nb-right .nb-quick'); return !q || !q.getClientRects().length; }), 'phone: Handy shows no second copy of the chips');
-  await L.tickPrep(p, '[data-p="tick"][data-id="i1"]'); await L.settle(p, 400);
+  await L.tap(p, '[data-p="tick"][data-id="i1"]'); await L.settle(p, 400);
   ok(/^1 of \d+ done$/.test((await L.txt(p, 'button.nb-prog') || '').trim()), 'phone: one ticked, "1 of n done" is the button to Done today');
   await L.pLog(p);
   ok(await p.$('.p-sheet .nb-qadd [data-p="quick"]') !== null, 'phone: Quick add sits in the add box, in the Add a line sheet');

@@ -14,7 +14,7 @@ const larder = p => p.evaluate(() => [...document.querySelectorAll('.nb-rows li[
   await L.tap(p, '[data-p="del"][data-id="i2"]'); await L.settle(p, 200);
   if (!(await item(p, 'i2')).deleted) { await L.tap(p, '[data-p="del"][data-id="i2"]'); await L.settle(p, 300); }
   ok((await item(p, 'i2')).deleted === true, 'remove: Pick coriander is removed');
-  await L.tickPrep(p, '[data-p="tick"][data-id="i1"]'); await L.settle(p, 300);
+  await L.tap(p, '[data-p="tick"][data-id="i1"]'); await L.settle(p, 300);
   ok((await item(p, 'i1')).done === true, 'tick: Slice onions is ticked');
   ok(await p.$('.p-toast-old [data-p="toast-old"]') !== null, 'the earlier Undo still shows above the new toast');
   await p.click('.p-toast-old [data-p="toast-old"]'); await L.settle(p, 400);
