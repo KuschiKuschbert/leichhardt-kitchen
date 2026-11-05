@@ -245,12 +245,21 @@ service cloud.firestore {
         // the other phones read the pings again. x is the head chef's Google account removing or putting back a past
         // transfer (23 Oct 2026, written under isAdmin()); it is allowed here too because the stamp is merged into the
         // same map, so a sous chef's next stamp carries it along. Nothing else changes in that write.
+        // Day-named stamps (Plan B 2.4, 5 Nov 2026, docs/firestore-usage.md): with p (o) a newer book also writes the days
+        // that changed (pDays, oDays: at most 10), the stamp before it (pPrev, oPrev) and the stamp those days belong to
+        // (pFor, oFor), so other phones read just those days again. An older book writes p alone, leaving pFor behind, and
+        // a reader then reads every past day as before.
         || (staff() && request.resource.data.by in resource.data.get('sousIds', [])
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pastEdit', 'by'])
-          && request.resource.data.pastEdit is map && request.resource.data.pastEdit.keys().hasOnly(['p', 'o', 'n', 'x', 'w'])
+          && request.resource.data.pastEdit is map
+          && request.resource.data.pastEdit.keys().hasOnly(['p', 'o', 'n', 'x', 'w', 'pDays', 'pPrev', 'pFor', 'oDays', 'oPrev', 'oFor'])
           && request.resource.data.pastEdit.get('p', 0) is number && request.resource.data.pastEdit.get('o', 0) is number
           && request.resource.data.pastEdit.get('n', 0) is number && request.resource.data.pastEdit.get('x', 0) is number
-          && request.resource.data.pastEdit.get('w', 0) is number)
+          && request.resource.data.pastEdit.get('w', 0) is number
+          && request.resource.data.pastEdit.get('pPrev', 0) is number && request.resource.data.pastEdit.get('pFor', 0) is number
+          && request.resource.data.pastEdit.get('oPrev', 0) is number && request.resource.data.pastEdit.get('oFor', 0) is number
+          && request.resource.data.pastEdit.get('pDays', []) is list && request.resource.data.pastEdit.get('pDays', []).size() <= 10
+          && request.resource.data.pastEdit.get('oDays', []) is list && request.resource.data.pastEdit.get('oDays', []).size() <= 10)
         // A returned past loan invalidates the head chef's saved transfer history.
         || (staff() && onlyKeys(['pastEdit', 'by'])
           && request.resource.data.pastEdit is map
@@ -691,6 +700,13 @@ service cloud.firestore {
     match /kitchens/KITCHEN_PIN/summary/{id} {
       allow read: if kitchenRead();
       allow write: if isAdmin();
+    }
+    // Day digests (Plan B 2.1, 5 Nov 2026, docs/firestore-usage.md): one record per past kitchen day holding that day's
+    // prep and order lines, written only by the nightly job (scripts/analysis.mjs, which already reads those days), so a
+    // phone reads a past day for 1 read instead of one per line. Read like the lines themselves. No phone writes one.
+    match /kitchens/KITCHEN_PIN/digest/{day} {
+      allow read: if kitchenRead();
+      allow write: if false;
     }
     // Private evidence and derived data never share the staff-readable summary collection.
     match /kitchens/KITCHEN_PIN/analysis/{id} {

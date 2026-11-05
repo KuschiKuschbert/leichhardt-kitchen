@@ -555,6 +555,15 @@ await ok(W([['config/main', { pastEdit: { n: Date.now() } }, true]], { id: 'sam'
 await ok(W([['config/main', { pastEdit: { n: 'now' } }, true]], { id: 'sam' }), false, 'pastEdit: the pings stamp is a number');
 await ok(W([['config/main', { pastEdit: { n: Date.now() } }, true]], { id: 'ann' }), false, 'pastEdit: staff cannot stamp the pings');
 await ok(W([['config/main', { pastEdit: { p: 'soon' } }, true]], { id: 'sam' }), false, 'pastEdit: times are numbers');
+// Day-named stamps (Plan B 2.4, 5 Nov 2026): the days that changed, the stamp before and the stamp they belong to
+const st = Date.now();
+await ok(W([['config/main', { pastEdit: { p: st, pPrev: st - 60000, pFor: st, pDays: ['2026-11-04', '2026-11-03'] } }, true]], { id: 'sam' }), true, 'pastEdit: a sous chef names the past prep days that changed');
+await ok(W([['config/main', { pastEdit: { o: st, oPrev: 0, oFor: st, oDays: ['2026-11-04'] } }, true]], { id: 'hd' }), true, 'pastEdit: the head chef names the past order days that changed');
+await ok(W([['config/main', { pastEdit: { p: st, pFor: st, pDays: Array.from({ length: 11 }, (_, i) => '2026-10-' + String(10 + i)) } }, true]], { id: 'sam' }), false, 'pastEdit: at most 10 named days');
+await ok(W([['config/main', { pastEdit: { p: st, pDays: '2026-11-04' } }, true]], { id: 'sam' }), false, 'pastEdit: the named days are a list');
+await ok(W([['config/main', { pastEdit: { p: st, pPrev: 'before' } }, true]], { id: 'sam' }), false, 'pastEdit: the stamp before is a number');
+await ok(W([['config/main', { pastEdit: { p: st, pFor: st, pDays: ['2026-11-04'] } }, true]], { id: 'ann' }), false, 'pastEdit: staff cannot name past days either');
+await ok(W([['config/main', { pastEdit: { p: st + 1 } }, true]], { id: 'sam' }), true, 'pastEdit: an older book still stamps p alone, leaving pFor behind');
 // I'm on it (5 Nov 2026): a stamp names an active kitchen person, on an open line, never on a new line, with Tick
 await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'days/' + TODAY + '/items/on1'), line({ addedAt: Date.now() - 600000 })); });
 const ON = 'days/' + TODAY + '/items/on1', stamp = (id, name, x) => Object.assign({ onBy: name, onById: id, onAt: Date.now() }, x || {});
@@ -615,6 +624,20 @@ await ok(getDoc(doc(anon, K + 'daily/2026-10-21_abc123')), false, 'daily: a PIN 
 await ok(getDoc(doc(owner, K + 'daily/2026-10-21_abc123')), true, 'daily: the head chef\'s Google account reads them');
 await ok(W([['summary/waste', { day: WT, items: [] }]], { id: 'sam' }), false, 'summary: no phone writes it, not even a sous chef');
 await ok(setDoc(doc(owner, K + 'summary/waste'), { day: WT, items: [] }), true, 'summary: the head chef may copy it (moving the kitchen PIN)');
+// Day digests (Plan B 2.1, 5 Nov 2026): one record per past day, written by the nightly job only, read like the lines
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'digest/' + WY), { v: 1, day: WY, at: 1, prep: [], orders: [] }); });
+async function asPerson(id) {
+  const uid = 'w-' + id, db = wPhone(uid);
+  await env.withSecurityRulesDisabled(async ctx => { const c = ctx.firestore(), ps = await getDoc(doc(c, K + 'pinset/' + id)); if (ps.exists()) await setDoc(doc(c, K + 'sessions/' + uid), dailySession(id, { pinAt: ps.data().at })); });
+  return db;
+}
+await ok(getDoc(doc(await asPerson('ann'), K + 'digest/' + WY)), true, 'digest: staff read a past day digest, like its lines');
+await ok(getDoc(doc(await asPerson('sam'), K + 'digest/' + WY)), true, 'digest: a sous chef reads it');
+await ok(getDoc(doc(anon, K + 'digest/' + WY)), false, 'digest: no PIN session, refused');
+await ok(getDoc(doc(owner, K + 'digest/' + WY)), true, 'digest: the head chef\'s Google account reads it');
+await ok(W([['digest/' + WY, { v: 1, day: WY, at: 2, prep: [], orders: [] }]], { id: 'sam' }), false, 'digest: no phone writes one, not even a sous chef');
+await ok(W([['digest/' + WT, { v: 1, day: WT, at: 2, prep: [], orders: [] }]], { id: 'ann' }), false, 'digest: staff cannot write one');
+await ok(setDoc(doc(owner, K + 'digest/' + WY), { v: 1, day: WY, at: 3, prep: [], orders: [] }), false, 'digest: nor the head chef\'s Google account: only the nightly job');
 // Change amount (4 Nov 2026, the line's ⋯): the person who logged it, the head chef or a sous chef, today, on a line not
 // removed; only the amount, its unit, was (the amount before), chgBy and chgAt
 const amt = (a, u, was, x) => Object.assign({ amount: a, unit: u, was, chgBy: 'Ann', chgAt: Date.now() }, x || {});

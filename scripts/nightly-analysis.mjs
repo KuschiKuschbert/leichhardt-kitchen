@@ -8,7 +8,7 @@ else { const sa = JSON.parse(process.env.FIREBASE_SA || '{}'); initializeApp({ c
 const K = getFirestore().collection('kitchens').doc(pin);
 try {
   const result = await analyse(K);
-  console.log('Analysis complete: ' + result.days + ' days; ' + result.reads + ' reads.');
+  console.log('Analysis complete: ' + result.days + ' days; ' + result.reads + ' reads; day digests: ' + result.digests.written + ' written, ' + result.digests.deleted + ' removed.');
 } catch (e) {
   // Error messages can contain document paths or typed text. Neither belongs in public Actions logs.
   await K.collection('analysis').doc('health').set({ at: Date.now(), status: 'failed' }).catch(() => {});
