@@ -132,6 +132,8 @@ const initialListGuard = async () => {
     await p.evaluate(() => { window.__fake.deny = /\/references\//; });
     await p.click('[data-ai="save-next"]');
     await L.waitFor(p, () => /Could not save/.test((document.querySelector('.ai-message') || {}).textContent || ''));
+    ok(await p.evaluate(() => { const t = document.querySelector('.p-toast.p-toast-bad'); return !!t && /Could not save/.test(t.textContent); }), width + ': a failed save also says so in a red slip that stays (5 Nov 2026)');
+    await p.evaluate(() => { const b = document.querySelector('.p-toast-bad .p-toast-btn'); if (b) b.click(); });
     await openOptions(p);
     ok(await p.inputValue('#ai-alias') === nextAlias && await p.inputValue('#ai-label') === 'Keep the failed next link' && await p.evaluate(() => LK_PREP.unsaved()), width + ': failed Save and next retains this draft instead of advancing');
     await p.evaluate(() => { window.__fake.deny = null; }); await p.click('[data-ai="cancel"]');

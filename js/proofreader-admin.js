@@ -161,16 +161,22 @@
     if (code === 'permission-denied') return 'The change was not saved. Check that the verified admin is still signed in. Your entries are kept.';
     return 'The change was not saved. Your entries are kept. Check the connection and try again.';
   }
+  /* After the tap (5 Nov 2026, docs/action-feedback.md): the detail closes back to the list, so the outcome also goes on
+     the book's slip (LK_PREP.toast), which shows wherever the page is; a failure is red and stays until OK. */
+  function slip(message, bad) {
+    var P = window.LK_PREP; if (!P || !P.toast || !message) return;
+    if (bad) P.toast(message, { label: 'OK', fn: function () {} }, 0, 'bad'); else P.toast(message);
+  }
   function perform(message, action, success) {
     if (!valid() || state.busy) return;
     var s = state, c = context;
     s.busy = true; s.saving = message; s.message = ''; s.error = false; redraw();
     Promise.resolve().then(function () { if (state !== s || context !== c || !valid()) return; return action(); }).then(function () {
       if (state !== s || context !== c || !valid()) return;
-      s.busy = false; s.saving = ''; s.historyRequest++; s.history = null; s.historyLoading = false; s.historyError = false; success(); redraw();
+      s.busy = false; s.saving = ''; s.historyRequest++; s.history = null; s.historyLoading = false; s.historyError = false; success(); redraw(); slip(s.message);
     }, function (error) {
       if (state !== s || context !== c || !valid()) return;
-      s.busy = false; s.saving = ''; notify(errorText(error), true); redraw();
+      s.busy = false; s.saving = ''; notify(errorText(error), true); redraw(); slip(s.message, true);
     });
   }
   function save(action) {

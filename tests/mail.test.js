@@ -152,6 +152,8 @@ const mailReads = p => p.evaluate(() => (window.__fake.reads || []).filter(k => 
   ok(await badge(p) === '2', 'tick: the count on the key goes down to 2');
   // change how soon it matters
   await L.pick(p, '[data-k="ml-pri:m3"]', 'today'); await L.settle(p, 500);
+  // the list re-sorts: the slip says where it went, with Undo (5 Nov 2026, docs/action-feedback.md)
+  ok(/^Moved to Today: \S/.test(await p.evaluate(() => { const e = document.querySelector('.p-toast[data-toast="new"] .p-toast-msg') || document.querySelector('.p-toast .p-toast-msg'); return e ? e.textContent.trim() : ''; })) && !!(await p.$('.p-toast [data-p="toast-act"]')), 'priority: the slip says Moved to Today and the message, with Undo');
   s = await store(p);
   ok(s[fsKey(['mail', 'm3'])].pri === 'today', 'priority: the head chef changes This week to Today');
   // untick
