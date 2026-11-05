@@ -4233,9 +4233,9 @@
     lmClose();
     var row = btn.closest('.nb-row'); if (!row) return;
     var act = row.querySelector('.nb-x, .p-x[data-p="odel"], .p-x[data-p="orestore"], .p-x[data-p="wdel"], .p-x[data-p="wrestore"], .p-x[data-p="tr-del"], .p-x[data-p="tr-restore"]');
-    // the title is the line's words and amount, without its Not sent slot or an order line's Used in
+    // the title is the line's words and amount, without its Not sent slot, its New stamp or an order line's Used in
     var who = (row.querySelector('.nb-meta .nb-wrote') || {}).textContent || '', t = row.querySelector('.nb-t'), c = t && t.cloneNode(true);
-    if (c) c.querySelectorAll('.nb-mk, .o-used, .w-rs, .w-act, .w-again, .tr-way, .tr-age').forEach(function (e) { e.remove(); });
+    if (c) c.querySelectorAll('.nb-mk, .lk-stamp, .o-used, .w-rs, .w-act, .w-again, .tr-way, .tr-age').forEach(function (e) { e.remove(); });
     var name = c ? c.textContent.replace(/\s+/g, ' ').trim() : '';
     var completed = S.name === 'prep' && ptItem(btn.getAttribute('data-id')), completionWho = completed && completed.done ? 'Reported prepared by ' + preparedWorker(completed).name + '. Recorded by ' + (completed.doneBy || '') + '.' : '';
     var ln = (row.getAttribute('data-ln') || '').split('/'), kind = S.name === 'orders' ? 'o' : S.name === 'waste' ? 'w' : S.name === 'transfers' ? 'x' : 'p', line = lineOf(kind, ln[0], ln[1]);
