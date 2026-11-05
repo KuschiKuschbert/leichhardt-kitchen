@@ -274,6 +274,8 @@
   /* ---------- the kitchen's side: the band, the sheet, #/fn, the landing card ---------- */
   var T = window.LK_TIME, D = window.LK_DATA || { recipes: [], menuOrder: [] };
   function P() { return window.LK_PREP; }
+  // today's free reads used up: the kitchen pages say so at the top (js/prep.js quotaOn(), 5 Nov 2026)
+  function quota() { try { return !!(P() && P().quota && P().quota()); } catch (e) { return false; } }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
   function lsSet(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
@@ -413,7 +415,7 @@
     if (location.hash === '#/fn/now') return '';   // the service view shows the same rounds in full: no band above it
     var t = now(), R = bandRows(t), xs = R.xs, stale = '';
     if (F.state === 'error' && F.at) stale = 'Could not load functions. Showing the copy from ' + when(F.at, kday(t)) + '.';
-    else if (F.state === 'error') stale = !xs.length && /^\d{4,6}$/.test((P() && P().state && P().state.pin) || '') ? 'Could not load functions. Check the signal.' : '';
+    else if (F.state === 'error') stale = !xs.length && /^\d{4,6}$/.test((P() && P().state && P().state.pin) || '') ? 'Could not load functions.' + (quota() ? '' : ' Check the signal.') : '';
     else if ((F.offline || navigator.onLine === false) && F.at && xs.length) stale = 'No signal. Functions last updated ' + when(F.at, kday(t)) + '.';
     var ys = R.ys;
     if (!xs.length && !ys.length && !stale) return '';
@@ -885,7 +887,7 @@
   }
   function stateNote() {
     var t = now();
-    if (F.state === 'error') return '<p class="p-err" role="alert">Could not load functions.' + (F.at ? ' Showing the copy from ' + esc(dayName(kday(F.at)) + ' ' + kclock(F.at)) + '.' : ' Check the signal and open this page again.') + '</p>';
+    if (F.state === 'error') return '<p class="p-err" role="alert">Could not load functions.' + (F.at ? ' Showing the copy from ' + esc(dayName(kday(F.at)) + ' ' + kclock(F.at)) + '.' : (quota() ? '' : ' Check the signal and open this page again.')) + '</p>';
     if (F.state === 'loading' || F.state === 'idle') return F.at ? '<p class="hint" role="status">Checking for changes. Showing the copy from ' + esc(when(F.at, kday(t))) + '.</p>' : '';
     if (F.offline || navigator.onLine === false) return F.at ? '<p class="hint" role="status">No signal. Last updated ' + esc(dayName(kday(F.at)) + ' ' + kclock(F.at)) + '.</p>' : '';
     return '<p class="hint fn-fresh">Up to date, ' + esc(kclock(F.at)) + '. Changes show here by themselves.</p>';

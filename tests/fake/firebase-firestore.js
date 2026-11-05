@@ -268,6 +268,7 @@ function readRefused(ref) {
 export function getDoc(ref) {
   if (readRefused(ref)) return refuse('get', ref);
   window.__fake.reads.push(key(ref.path));
+  if (spent(ref)) return SPENT();
   if (cold(ref)) return pendingKeys.has(key(ref.path)) ? delay(cacheSnap(ref)) : Promise.reject({ code: 'unavailable' });
   if (readFails(ref)) return Promise.reject({ code: 'unavailable' });
   bill('get', key(ref.path), 1);
@@ -299,7 +300,11 @@ function rulesDenied(ref) {
   return /^kitchens\/[^/]+\/book$/.test(k);
 }
 function denied(ref) { const d = window.__fake.denyReads; return !!(d && d.test(key(ref.path))); }
-export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); if (cold(ref)) return delay(cacheSnap(ref)); if (readFails(ref)) return Promise.reject({ code: 'unavailable' }); if (rulesDenied(ref)) return refuse('query', ref); if (denied(ref)) return Promise.reject({ code: 'permission-denied' }); const r = result(ref); bill('query', key(ref.path), r.docs.length); return delay(r); }
+// __fake.exhausted = /regex/: reads of the paths that match are refused with resource-exhausted, like the free plan's
+// 50,000 reads a day used up (5 Nov 2026). Refused reads are not billed.
+function spent(ref) { const x = window.__fake.exhausted; return !!(x && x.test(key(ref.path))); }
+const SPENT = () => Promise.reject({ code: 'resource-exhausted' });
+export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); if (cold(ref)) return delay(cacheSnap(ref)); if (spent(ref)) return SPENT(); if (readFails(ref)) return Promise.reject({ code: 'unavailable' }); if (rulesDenied(ref)) return refuse('query', ref); if (denied(ref)) return Promise.reject({ code: 'permission-denied' }); const r = result(ref); bill('query', key(ref.path), r.docs.length); return delay(r); }
 function readFails(ref) { const f = window.__fake.failReads; return !!(f && f.test(key(ref.path))); }
 // a read that must come from the server: refused when there is no signal ('hold', 'fail'). __fake.server can hold a
 // newer copy of a document than this phone has (say a line ticked on another phone), keyed by path.
@@ -309,6 +314,7 @@ export function getDocFromServer(ref) {
   // __fake.stall = /regex/: a read from the server that never answers, like a half-dropped connection
   if (window.__fake.stall && window.__fake.stall.test(k)) return new Promise(() => {});
   if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || cold(ref) || readFails(ref)) return Promise.reject({ code: 'unavailable' });
+  if (spent(ref)) return SPENT();
   if (readRefused(ref)) return refuse('server', ref);
   bill('server', k, 1);
   if (sv && k in sv) { const v = sv[k]; return delay({ id: ref.path[ref.path.length - 1], ref, exists: () => v != null, data: () => (v == null ? undefined : clone(v)) }); }
@@ -322,6 +328,7 @@ export function getDocsFromServer(ref) {
   // a query by id asks for those documents by name, so each one is listed in reads, like getDocFromServer
   if (byId) (byId.op === 'in' ? byId.v : [byId.v]).forEach(id => window.__fake.reads.push(k + '/' + id)); else window.__fake.reads.push(k);
   if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || cold(ref) || readFails(ref)) return Promise.reject({ code: 'unavailable' });
+  if (spent(ref)) return SPENT();
   if (rulesDenied(ref)) return refuse('server-query', ref);
   if (denied(ref)) return Promise.reject({ code: 'permission-denied' });
   let docs;
@@ -344,6 +351,7 @@ export function getDocsFromCache(ref) {
 }
 export function onSnapshot(ref, next, err) {
   if (next && typeof next === 'object') { next = err; err = arguments[3]; }   // onSnapshot(ref, options, next, error)
+  if (spent(ref)) { let live = true; setTimeout(() => { if (live && err) err({ code: 'resource-exhausted' }); }, 5); return () => { live = false; }; }
   // a listener the rules refuse gets the refusal instead of its first answer, and nothing after (like the SDK). One
   // started with no signal (cold) answers from the copy in memory, as the SDK does, and is not refused here later
   if (!cold(ref) && (ref.type === 'doc' ? readRefused(ref) : rulesDenied(ref))) {
@@ -725,6 +733,7 @@ export function liteGetDoc(ref) {
   window.__fake.reads.push(k);
   if (window.__fake.stall && window.__fake.stall.test(k)) return new Promise(() => {});
   if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || readFails(ref)) return Promise.reject({ code: 'unavailable' });
+  if (spent(ref)) return SPENT();
   if (readRefused(ref)) return refuse('lite-get', ref);
   if (window.__fake.denyReads && window.__fake.denyReads.test(k)) return Promise.reject({ code: 'permission-denied' });
   bill('lite-get', k, 1);
@@ -735,6 +744,7 @@ export function liteGetDocs(ref) {
   window.__fake.reads.push(k);
   if (window.__fake.stall && window.__fake.stall.test(k)) return new Promise(() => {});
   if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || readFails(ref)) return Promise.reject({ code: 'unavailable' });
+  if (spent(ref)) return SPENT();
   if (rulesDenied(ref)) return refuse('lite-query', ref);
   if (denied(ref)) return Promise.reject({ code: 'permission-denied' });
   const r = result(ref, false); bill('lite-query', k, r.docs.length); return delay(r);
