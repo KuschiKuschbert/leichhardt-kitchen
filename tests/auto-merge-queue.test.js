@@ -56,6 +56,10 @@ fs.writeFileSync(script, body);
 // The switch step too, for the retry on switching auto-merge on.
 const switchScript = path.join(tmp, 'switch.sh');
 fs.writeFileSync(switchScript, stepScript(yml, 'Switch auto-merge on or off for this pull request'));
+// The release windows (5 Nov 2026): the step that opens and closes them, and the windows themselves.
+const windowBody = stepScript(yml, 'Open or close the release window'), windowScript = path.join(tmp, 'window.sh');
+fs.writeFileSync(windowScript, windowBody);
+const WINDOWS = (yml.match(/^\s*RELEASE_WINDOWS: '([^']+)'/m) || [])[1] || '';
 
 // The stand-in for gh. The scenario file holds the list, each pull request's REST answers in turn (the last repeats;
 // FAIL makes that call fail) and each pull request's checks on its newest commit (runs: a list of sets, one per
@@ -156,6 +160,8 @@ function pass(name, scenario, opts) {
     asked: log.filter(l => /^gh api repos\/[^ ]+\/pulls\/\d+ /.test(l)).map(l => +l.match(/pulls\/(\d+) /)[1]),
     checked: log.filter(l => /^gh pr checks /.test(l)).map(l => +l.split(' ')[3]),
     merged: log.filter(l => /^gh pr merge /.test(l)).map(l => +l.split(' ')[3]),
+    on: log.filter(l => /^gh pr merge .* --auto /.test(l + ' ')).map(l => +l.split(' ')[3]),
+    off: log.filter(l => /^gh pr merge .* --disable-auto/.test(l)).map(l => +l.split(' ')[3]),
     listed: log.filter(l => /^gh pr list /.test(l)).length,
     slept: log.filter(l => /^sleep /.test(l)).reduce((t, l) => t + (+l.split(' ')[1] || 0), 0)
   };
@@ -305,13 +311,47 @@ r = pass('the list fails once', { list: [pr(604, 'BEHIND')], listFail: 1 });
 eq([r.listed, r.updated], [2, [604]], 'the list is read again and the queue moves');
 r = pass('the list fails three times', { list: [pr(605, 'BEHIND')], listFail: 3 }, { fails: true });
 eq([r.listed, r.updated], [3, []], 'three tries, nothing brought up to date on an empty read');
-const sw = { script: switchScript, env: { SAME: 'true', DRAFT: 'false', HOLD: 'false', PR: '610' } };
+// in a release window (15:05), so the switch switches auto-merge on as before
+const sw = { script: switchScript, env: { SAME: 'true', DRAFT: 'false', HOLD: 'false', URGENT: 'false', PR: '610', RELEASE_WINDOWS: WINDOWS, NOW_HHMM: '1505' } };
 r = pass('switch: auto-merge fails once, then works', { merge: { 610: ['FAIL', 'ok'] } }, sw);
 eq([r.merged, r.slept], [[610, 610], 10], 'switching auto-merge on is tried again after 10 seconds');
 r = pass('switch: auto-merge fails three times', { merge: { 610: ['FAIL'] } }, Object.assign({ fails: true }, sw));
 eq(r.merged, [610, 610, 610], 'three tries, then the switch job shows red so someone looks');
 r = pass('switch: a draft', { merge: { 611: ['FAIL'] } }, { script: switchScript, env: { SAME: 'true', DRAFT: 'true', HOLD: 'false', PR: '611' } });
 eq(r.merged, [611], 'switching auto-merge off is tried once and never fails the job');
+
+// 9. Release windows (head chef, Plan B, 5 Nov 2026): every merge reloads the screens left open, which read their lists
+// again, so ready pull requests merge only between services. Outside a window auto-merge goes off, except "urgent".
+ok(WINDOWS === '1500-1630 2230-2400', 'the windows are 15:00 to 16:30 and 22:30 to midnight, Queensland time (' + WINDOWS + ')');
+ok(spawnSync('bash', ['-n', windowScript]).status === 0 && windowBody.indexOf('${{') < 0, 'the window step is valid bash with no GitHub expressions');
+const lbl = (...names) => names.map(name => ({ name }));
+const off = { autoMergeRequest: null };
+const win = (hhmm, more) => ({ script: windowScript, env: Object.assign({ RELEASE_WINDOWS: WINDOWS, NOW_HHMM: hhmm, RELEASE_NOW: 'false' }, more || {}) });
+const mixed = [pr(700, 'BEHIND'), pr(701, 'CLEAN', null, off), pr(702, 'BEHIND', null, { labels: lbl('urgent') }), pr(703, 'BEHIND', null, Object.assign({ labels: lbl('urgent') }, off)),
+  pr(704, 'BEHIND', null, { labels: lbl('hold') }), pr(705, 'BEHIND', null, Object.assign({ isDraft: true }, off))];
+r = pass('window closed at 12:30 (lunch service)', { list: mixed }, win('1230'));
+eq([r.off, r.on], [[700], [703]], 'auto-merge goes off on the ready one, an urgent one keeps it or gets it, held and draft are left alone');
+ok(/#700: waits for the next release window/.test(r.out) && /open false/.test(r.out), 'it says #700 waits for the next window');
+r = pass('window open at 15:00', { list: mixed }, win('1500'));
+eq([r.off, r.on], [[], [701, 703]], 'every ready one without auto-merge gets it; those that have it are left as they are');
+r = pass('window open at 23:59', { list: [pr(706, 'BEHIND', null, off)] }, win('2359'));
+eq(r.on, [706], 'the night window runs to midnight');
+r = pass('window closed at 16:30', { list: [pr(707, 'BEHIND')] }, win('1630'));
+eq(r.off, [707], 'the afternoon window ends at 16:30');
+r = pass('Release now by hand at 10:00', { list: [pr(708, 'BEHIND', null, off)] }, win('1000', { RELEASE_NOW: 'true' }));
+eq(r.on, [708], 'a run by hand with Release now opens the window for that run');
+r = pass('window open, auto-merge refused three times', { list: [pr(709, 'BEHIND', null, off)], merge: { 709: ['FAIL'] } }, win('2300'));
+ok(r.on.length === 3 && /::warning::#709/.test(r.out), 'three tries, a warning, and the pass carries on');
+const swAt = (hhmm, urgent, num) => ({ script: switchScript, env: { SAME: 'true', DRAFT: 'false', HOLD: 'false', URGENT: urgent ? 'true' : 'false', PR: String(num), RELEASE_WINDOWS: WINDOWS, NOW_HHMM: hhmm } });
+r = pass('switch: marked ready at 12:30', {}, swAt('1230', false, 712));
+eq([r.on, r.off], [[], [712]], 'outside a window a pull request marked ready waits, auto-merge off');
+ok(/merges in the next release window/.test(r.out), 'and the log says when it merges');
+r = pass('switch: labelled urgent at 12:30', {}, swAt('1230', true, 713));
+eq(r.on, [713], 'an urgent one merges when green at any time');
+r = pass('switch: marked ready at 22:45', {}, swAt('2245', false, 714));
+eq(r.on, [714], 'in a window it gets auto-merge at once');
+const crons = (yml.match(/cron: '([^']+)'/g) || []).map(c => c.slice(7, -1));
+ok(crons.indexOf('3 5 * * *') >= 0 && crons.indexOf('33 12 * * *') >= 0, 'the queue also runs as each window opens: 05:03 and 12:33 UTC are 15:03 and 22:33 Queensland time');
 
 // 8. The triggers: the end of Click tests moves the queue, and the schedule is off the hour.
 const clickName = (fs.readFileSync(path.join(root, '.github', 'workflows', 'pr-tests.yml'), 'utf8').match(/^name: (.+)$/m) || [])[1];

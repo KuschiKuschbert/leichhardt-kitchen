@@ -39,23 +39,55 @@ About 800 writes a day (4% of the free 20,000) and 30 to 50 deletes (under 1%). 
 
 One real risk: **Move PIN** copies every record with one read and one write each. Once about 160 days of data exist it needs more than 20,000 writes, and a year of data is about 50,000 reads and 50,000 writes in one tap, which would stop the book for the day.
 
-## How to get the most out of the free plan, biggest first
+## The decision: Plan B now, Plan C later (head chef, 5 November 2026)
 
-| # | Change | Saves a day | Risk | Needs |
+The head chef chose **Plan B, free with headroom**: stay on the free plan and read less, aiming at 12,000 to 20,000 reads on a normal day. **Plan C** (Plan B plus the pay as you go plan as a safety net) comes later, on the head chef's word. The four plans and every option, with what each saves, are on the head chef's page "Kitchen Book Read Budget"; this note keeps the same numbers so any session can carry on.
+
+| Plan | What it is | Reads a normal day | Cost |
+| --- | --- | --- | --- |
+| A, free, tidied up | 1.1, 2.4 to 2.7, 4.1, 5.4, 6.2 | 35,000 to 50,000 | free, still near the limit on busy days |
+| **B, free with headroom (chosen)** | A, plus 2.1 to 2.3 and 4.2 | 12,000 to 20,000 | free |
+| C, free with a safety net (later) | B, plus pay as you go with a budget alert, 4.3 and 7.3 | 12,000 to 20,000 | normally US$0; a day like 5 Nov a cent or two |
+| D, just pay | pay as you go and 1.1 only | 60,000 to 100,000 | under US$0.50 a month now, growing, no cap |
+
+## Every option
+
+Saves: reads a day on a normal day. Head chef: changes how the book works for the team.
+
+| # | Option | Saves | Risk | Status |
 | --- | --- | --- | --- | --- |
-| 1 | Done (5 Nov): the pages say when the reads are used up; a screen left open takes an update nobody asked for at most once an hour. | thousands on busy release days | low | |
-| 2 | Fewer releases: group small changes, a handful a day instead of 48. | thousands | none | how the sessions work, not code |
-| 3 | The past-day hints on the prep and order lists come from the nightly summary instead of 14 days of lines on every device (the coding rules already ask for this). | 20,000 to 35,000 | medium: the hints must stay the same | a nightly job change and the client |
-| 4 | The admin reports and Proofreader use the nightly analysis plus today's live lines; raw days only for a CSV or a tap. Until then, read the days the chosen period needs, and do not reopen a report page after an update nobody asked for. | 10,000 to 30,000 on admin days | medium: the numbers must match | |
-| 5 | A change to a past day names the day, so other devices read that one day again, not 14 or 60. | about 7,000, and removes a 50,000 worst case | low | |
-| 6 | Do not restart every live list when nothing about the person changed; keep the functions list to the 15 days the views show. | 3,000 to 5,000 | low to medium | the device-session checks |
-| 7 | Server jobs: delete the old analysis without reading it, skip days before the book started, read only recent learning claims, analysis and backup of changed days only with a weekly full run. | 1,200 now, about 8,000 later | low to medium | backup recovery check |
-| 8 | Keep the shared tablet's past-day hints across a lock while the kitchen and day are the same. | about 13,000 | changes the privacy contract | head chef's call |
-| 9 | A saved copy on personal phones (IndexedDB) so a reload pays only for changes. | 12,000 to 15,000 | high: reverses #387 and the private-data rule | head chef's call |
-| 10 | Move PIN refuses above a safe size, or copies recent days only. | prevents a whole-day outage | low | |
+| 1.1 | Release windows: ready pull requests merge only 15:00 to 16:30 and 22:30 to midnight; `urgent` merges when green (`docs/auto-merge.md`) | 5,000 to 15,000 on busy days | low | done 5 Nov |
+| 1.2 | A screen left open takes an update nobody asked for at most once an hour | thousands on release days | low | done 5 Nov |
+| 1.3 | Screens left open update only between services and overnight | 1,000 to 5,000 | low, head chef | not chosen |
+| 1.4 | Personal phones keep a copy of the data (persistent cache) | 12,000 to 15,000 | high: reverses #387 and the private-data rule, head chef | not chosen |
+| 2.1 | Day digests: the 03:00 job writes one record per past day with its prep, order and wastage lines; a past-day fix updates it | makes 2.2 and 2.3 possible | medium | Plan B |
+| 2.2 | Prep and order list hints from the nightly summary instead of 14 days of lines (`loadPast()`, `loadOrdHist()`) | 20,000 to 35,000 | medium | Plan B |
+| 2.3 | Admin reports and Proofreader from digests and the nightly analysis plus today's live lines (`loadStats()`, `loadOrdStats()`) | 10,000 to 30,000 on admin days | medium | Plan B |
+| 2.4 | A past-day fix names its day (`markPast()`, `pastCheck()`) | about 7,000, removes a 50,000 worst case | low | Plan B |
+| 2.5 | One date-range query instead of one per day | 1,000 to 3,000 | low | Plan B |
+| 2.6 | After an update nobody asked for, the admin panel opens on Today | 2,000 to 4,000 per laptop reload | low, head chef | Plan B |
+| 2.7 | Live lists restart only when access changed (`accessChanged()`); functions list 15 days; sections once a day | 3,000 to 7,000 | low to medium | Plan B |
+| 2.8 | A shared tablet keeps the past-day hints through a lock | about 13,000 today, less after 2.2 | privacy, head chef | not chosen |
+| 3.1 | Order the rule checks so most requests look up fewer records | 2,000 to 5,000 | medium | later |
+| 3.2 | PIN sign-in as a claim on the account (a server function), so rules read no session records | 5,000 to 10,000 | medium to high, needs pay as you go | Plan C or later |
+| 4.1 | Trim the nightly jobs: delete old analysis without reading it, skip days before the book started, recent learning claims only, one range query for the summaries | about 1,200 now | low | Plan B |
+| 4.2 | Analysis and backup read only changed days, full run on Sundays | 1,700 now, 8,000 by January | medium | Plan B |
+| 4.3 | Firestore's own scheduled backups (storage, no reads) replace the read-heavy nightly backup; keep a weekly encrypted copy | 2,500 to 4,000 | medium, head chef, needs pay as you go | Plan C |
+| 5.1 | Visits counted once a day; adds and ticks counted nightly | about 300 writes | low | not chosen |
+| 5.2 | Stop indexing free-text fields | stored size down 50 to 70% | medium | later |
+| 5.3 | Keep 13 months of lines, older ones as monthly digests | keeps storage flat | medium, head chef | later |
+| 5.4 | Move PIN refuses a copy past a day's free limit, or copies recent days only | prevents a whole-day outage | low | Plan B |
+| 6.1 | A twice-daily check of the real read count warns before the limit (needs Monitoring Viewer on the service account) | warning | low | later |
+| 6.2 | The read-budget test bills the rules' reads, the Proofreader and Manage functions | stops it creeping back | low | Plan B |
+| 6.3 | The pages say when the reads are used up and when they come back | | | done 5 Nov |
+| 7.1 | Cut-off push schedule off the busy minutes | some missed pushes | low | until Plan C |
+| 7.2 | A free outside timer starts the push job every 10 minutes | most missed pushes | medium (a token outside GitHub) | not chosen |
+| 7.3 | Google's own scheduler runs the push job | all missed pushes | low, needs pay as you go | Plan C |
 
-With 1 to 7 the kitchen should sit well under 50,000 even on a busy day. The safety net is the pay as you go plan (Blaze): the free 50,000 reads, 20,000 writes and 1 GiB stay free, and reads past that cost a few cents per 100,000, so even a day like 5 November costs cents. A budget alert of a few dollars guards it. That is the head chef's call.
+Build order for Plan B: 1.1 (done), then 2.4, 2.5, 2.6, 2.7, 5.4 and 6.2 together, then 2.1, 2.2 and 2.3, then 4.1 and 4.2. Check the real read count in the Firebase console (Firestore, Usage) after each step and note it here.
 
-Also found: the cut-off push schedule mostly does not run on GitHub (64 runs in 13 days instead of about 1,900), so reminder pushes are often late or missing. It needs a different trigger; it is not a read problem.
+Prices (US dollars, checked 5 Nov 2026): reads past the free 50,000 a day cost $0.03 per 100,000; scheduled backups are billed for storage (about $0.000041 per GiB a day), not reads; each record the security rules look up is a billed read, once per request. Budget alerts warn; they do not stop spending. Sources: cloud.google.com/firestore/pricing, firebase.google.com/docs/firestore/pricing, firebase.google.com/docs/firestore/backups.
+
+Also found: the cut-off push schedule mostly does not run on GitHub (64 runs in 13 days instead of about 1,900), so reminder pushes are often late or missing (7.1 to 7.3).
 
 To measure again: `tests/read-budget.test.js` and the stand-in's `__fake.bill` (each billed read with its path). The biggest call sites: `loadPast()`, `loadOrdHist()`, `loadStats()`, `loadOrdStats()`, `markPast()` and `pastCheck()`, `accessChanged()` and `clearPrivateCache()` in `js/prep.js`; the functions listener in `js/functions.js`; `scripts/nightly-backup.mjs`, `scripts/analysis.mjs` and `scripts/nightly-learn.mjs`.

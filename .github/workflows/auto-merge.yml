@@ -24,10 +24,26 @@ on:
     types: [completed]
   schedule:
     - cron: '7,27,47 * * * *'
+    # the release windows open (5 Nov 2026): 15:03 and 22:33 Queensland time, off the busy top of the hour
+    - cron: '3 5 * * *'
+    - cron: '33 12 * * *'
   workflow_dispatch:
+    inputs:
+      now:
+        description: 'Release now: merge ready pull requests outside the release windows, this run only'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+
+# Release windows (head chef, Plan B of docs/firestore-usage.md, 5 Nov 2026). Every merge is a new version, and every
+# new version reloads the screens left open and every phone that comes back, each reload reading its lists again: on
+# 4 and 5 Nov 2026, 48 merges in a day helped use up the free 50,000 reads by 13:00. So ready pull requests merge only
+# in these windows, Queensland time, between services: HHMM-HHMM, end not included. A pull request labelled "urgent"
+# merges when green at any time, and a run by hand with "Release now" opens the window for that run.
+env:
+  RELEASE_WINDOWS: '1500-1630 2230-2400'
 
 # Three jobs (4 Nov 2026): a waiting run in a shared concurrency group is replaced by the next one, so one shared group
 # dropped the ready events of pull requests marked ready at the same moment. Each pull request now has its own group for
@@ -55,7 +71,9 @@ jobs:
             echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
 
-      # The pull request that changed: ready and not held gets auto-merge, a draft or a held one loses it.
+      # The pull request that changed: ready and not held gets auto-merge in a release window, or at once when labelled
+      # urgent; outside a window it waits (auto-merge off) for the queue to switch it on when the next window opens. A
+      # draft or a held one loses it.
       - name: Switch auto-merge on or off for this pull request
         if: steps.token.outputs.ok == 'true'
         env:
@@ -63,17 +81,24 @@ jobs:
           DRAFT: ${{ github.event.pull_request.draft }}
           SAME: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
           HOLD: ${{ contains(github.event.pull_request.labels.*.name, 'hold') }}
+          URGENT: ${{ contains(github.event.pull_request.labels.*.name, 'urgent') }}
         run: |
           # GitHub calls that change something are tried three times, 10 and 20 seconds apart: one GitHub error must not
           # cost a pull request its auto-merge or stall the queue (4 Nov 2026: a GraphQL outage left #518 without it).
           retry() { for i in 1 2 3; do "$@" && return 0; [ "$i" = 3 ] || sleep $((i * 10)); done; return 1; }
+          # in a release window now? NOW_HHMM stands in for the clock in tests/auto-merge-queue.test.js
+          now=${NOW_HHMM:-$(TZ=Australia/Brisbane date +%H%M)}; open=false
+          for w in $RELEASE_WINDOWS; do [ $((10#$now)) -ge $((10#${w%-*})) ] && [ $((10#$now)) -lt $((10#${w#*-})) ] && open=true; done
           if [ "$SAME" != "true" ]; then echo "From a fork: never merged automatically."; exit 0; fi
           if [ "$DRAFT" = "true" ] || [ "$HOLD" = "true" ]; then
             gh pr merge "$PR" -R "$REPO" --disable-auto 2>/dev/null || true
             echo "#$PR is a draft or held: auto-merge off."
-          else
+          elif [ "$open" = "true" ] || [ "$URGENT" = "true" ]; then
             retry gh pr merge "$PR" -R "$REPO" --auto --squash
             echo "#$PR is ready: it merges when Click tests pass and it is up to date."
+          else
+            gh pr merge "$PR" -R "$REPO" --disable-auto 2>/dev/null || true
+            echo "#$PR is ready: it merges in the next release window ($RELEASE_WINDOWS, Queensland time), or label it urgent."
           fi
 
   backfill:
@@ -116,6 +141,7 @@ jobs:
     env:
       GH_TOKEN: ${{ secrets.AUTOMERGE_TOKEN }}
       REPO: ${{ github.repository }}
+      RELEASE_NOW: ${{ github.event_name == 'workflow_dispatch' && inputs.now }}
     steps:
       - name: Token set?
         id: token
@@ -126,6 +152,33 @@ jobs:
           else
             echo "ok=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # Release windows (5 Nov 2026): in a window, or on a run by hand with Release now, every ready pull request that
+      # is not held gets auto-merge, and the queue below moves them on one at a time. Outside, auto-merge goes off again
+      # on all but the urgent ones, so nothing merges and no phone reloads until the next window. One already merging
+      # when a window closes may still finish. tests/auto-merge-queue.test.js runs this step too: no GitHub expressions.
+      - name: Open or close the release window
+        if: steps.token.outputs.ok == 'true'
+        run: |
+          retry() { for i in 1 2 3; do "$@" && return 0; [ "$i" = 3 ] || sleep $((i * 10)); done; return 1; }   # as in switch
+          now=${NOW_HHMM:-$(TZ=Australia/Brisbane date +%H%M)}; open=false
+          for w in $RELEASE_WINDOWS; do [ $((10#$now)) -ge $((10#${w%-*})) ] && [ $((10#$now)) -lt $((10#${w#*-})) ] && open=true; done
+          if [ "$RELEASE_NOW" = "true" ]; then open=true; echo "Release now, by hand."; fi
+          echo "Release windows $RELEASE_WINDOWS (Queensland time). Now $now: open $open."
+          retry gh pr list -R "$REPO" --base main --state open --limit 50 --json number,isDraft,labels,autoMergeRequest,isCrossRepository \
+            --jq '.[] | select(.isDraft|not) | select(.isCrossRepository|not) | select([.labels[].name] | index("hold") | not)
+                  | "\(.number) \(.autoMergeRequest != null) \([.labels[].name] | index("urgent") != null)"' > ready.txt
+          while read -r n on urgent <&3; do
+            if [ "$open" = "true" ] || [ "$urgent" = "true" ]; then
+              if [ "$on" = "true" ]; then continue; fi
+              if retry gh pr merge "$n" -R "$REPO" --auto --squash; then echo "#$n: auto-merge on."
+              else echo "::warning::#$n: GitHub refused auto-merge three times. The next pass tries again."; fi
+            elif [ "$on" = "true" ]; then
+              gh pr merge "$n" -R "$REPO" --disable-auto 2>/dev/null || true
+              echo "#$n: waits for the next release window."
+            fi
+          done 3< ready.txt
+          echo "Done."
 
       # The queue: oldest ready pull request first. Clean merges by itself; up to date and still testing means wait;
       # failed or in conflict is skipped until its session fixes it; behind is brought up to date (one, then stop).

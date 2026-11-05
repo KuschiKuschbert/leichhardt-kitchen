@@ -14,7 +14,7 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 3. **Build round 2 of the work pages redesign** (chosen 5 Nov 2026: Low and Out, supplier groups, I'm on it, the wall board, see `docs/head-chef-decisions.md`). Four steps in [the options brief](work-pages-design-options/brief.md), Round 2, one pull request each. Remove this item when the last step is live.
 
-4. **Stay inside the free plan's 50,000 reads a day** (5 Nov 2026, the reads ran out at 13:00). Steps 2 to 10 in [the Firestore usage audit](firestore-usage.md), biggest first: the past-day hints from the nightly summary, the admin reports from the nightly analysis, one-day re-reads after a past-day change, fewer live-list restarts, cheaper server jobs. Steps 8 and 9 and the pay as you go plan are the head chef's call. Also there: Move PIN needs a size guard, and the cut-off push schedule mostly does not run on GitHub.
+4. **Plan B for the free reads** (head chef, 5 Nov 2026; [the Firestore usage note](firestore-usage.md)). Done: the reads-used-up message, open screens update at most hourly (1.2, 6.3), release windows (1.1). To do, in order: the quick read fixes 2.4, 2.5, 2.6, 2.7, 5.4 and 6.2; day digests (2.1), the hints from them (2.2), the admin reports and Proofreader from them (2.3); the server jobs (4.1, 4.2). Later, on the head chef's word: Plan C (pay as you go with a budget alert, 4.3, 7.3). Also open: the cut-off push schedule mostly does not run on GitHub (7.1 or 7.2 until Plan C).
 
 Remove each item here once it is done.
 
