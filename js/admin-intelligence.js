@@ -39,6 +39,13 @@
     if (found) found.focus({ preventScroll: true });
     if (window.scrollTo) window.scrollTo(0, from.y || 0);
   }
+  /* After the tap (5 Nov 2026, docs/action-feedback.md): a save returns to the list where it started, so its outcome
+     also goes on the book's slip (LK_PREP.toast), which shows wherever the page is; the box at the top of the
+     workspace stays. A failure is red and stays until OK. An older js/prep.js without the slip keeps the box only. */
+  function slip(message, bad) {
+    var P = window.LK_PREP; if (!P || !P.toast || !message) return;
+    if (bad) P.toast(message, { label: 'OK', fn: function () {} }, 0, 'bad'); else P.toast(message);
+  }
   function backLabel() {
     if (!validContext()) return '';
     if (state.history && state.historyPage === state.page) return 'Back to saved records';
@@ -407,12 +414,12 @@
       delete state.cache[d.kind + '/' + d.id + '/hist']; state.history = ''; state.busy = false; state.draft = null; state.draftOpen = false;
       state.message = (d.kind === 'references' ? 'Link confirmed: ' + record.alias : 'Assessment saved') + '.';
       if (advance && d.kind === 'training') state.reviewedTraining.push(d.personId + ':' + d.section);
-      if (advance && nextReview(d, from)) { state.message = 'Record saved. The next review is ready.'; redraw(); return; }
+      if (advance && nextReview(d, from)) { state.message = 'Record saved. The next review is ready.'; redraw(); slip(state.message); return; }
       if (advance) state.message += ' No further matching reviews in this pass.';
-      returnTo(from);
+      returnTo(from); slip(state.message);
     }, function () {
       if (state !== savedState || c !== api.context() || !api.allowed()) return;
-      state.busy = false; state.message = 'Could not save. Your entries are kept. If someone changed this record, cancel and refresh before editing again.'; redraw();
+      state.busy = false; state.message = 'Could not save. Your entries are kept. If someone changed this record, cancel and refresh before editing again.'; redraw(); slip(state.message, true);
     });
     redraw();
   }
