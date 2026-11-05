@@ -303,12 +303,22 @@
          a no-signal failure for the person before used to arm its retry for the next one (retrySoon()). */
       ['getDoc', 'getDocs', 'getDocFromServer', 'getDocsFromServer'].forEach(function (method) {
         if (!rawFs[method]) return;
-        fs[method] = function () { var epoch = accessEpoch; return rawFs[method].apply(rawFs, arguments).then(function (value) {
+        fs[method] = function () { var epoch = accessEpoch, asked = now(); return rawFs[method].apply(rawFs, arguments).then(function (value) {
           if (epoch !== accessEpoch) throw { code: 'cancelled' };
           if (method === 'getDocs' && cacheOnly(value)) throw { code: 'unavailable', cache: true };
+          quotaBackNow(value, asked);
           return value;
-        }, function (e) { if (epoch !== accessEpoch) throw { code: 'cancelled' }; throw e; }); };
+        }, function (e) { if (epoch !== accessEpoch) throw { code: 'cancelled' }; quotaSeen(e); throw e; }); };
       });
+      // every live list too: a listener refused because today's free reads are used up says so (quotaSeen())
+      if (rawFs.onSnapshot) fs.onSnapshot = function () {
+        var a = Array.prototype.slice.call(arguments), n = a.length - 1;
+        if (n >= 2 && typeof a[n] === 'function' && typeof a[n - 1] === 'function') {
+          var fail = a[n];
+          a[n] = function (e) { quotaSeen(e); return fail.apply(this, arguments); };
+        }
+        return rawFs.onSnapshot.apply(rawFs, a);
+      };
       if (ack && m[3]) { try { m[3].initializeAppCheck(app, { provider: FB.appCheckEnterpriseKey ? new m[3].ReCaptchaEnterpriseProvider(FB.appCheckEnterpriseKey) : new m[3].ReCaptchaV3Provider(FB.appCheckKey), isTokenAutoRefreshEnabled: true }); } catch (e) {} }
       try { db = fs.initializeFirestore(app, { localCache: fs.memoryLocalCache() }); }
       catch (e) { db = fs.getFirestore(app); }
@@ -445,6 +455,28 @@
      sign in, which would forget them. */
   var OFF_KITCHEN = 'No signal. The kitchen pages open when the phone is back online. Recipes work now.';
   function offSay() { try { window.dispatchEvent(new Event('lk-access')); } catch (e) {} }
+  /* Today's free reads used up (5 Nov 2026). The free plan allows 50,000 reads a day; past that the server refuses every
+     read with resource-exhausted until midnight in California (LK_TIME.quotaBack(), 18:00 kitchen time). The pages said
+     "Could not connect" or "No signal", so people checked the wifi. Any read or live list refused that way (the wrappers
+     in sdk()) sets S.quota, in memory only, until that time or the next answer from the server, and the kitchen pages
+     say so in one line at the top (quotaHTML()). No reads. */
+  function quotaOn() { return !!S.quota && now() < S.quota.until; }
+  function quotaSeen(e) {
+    if (!e || e.code !== 'resource-exhausted' || quotaOn()) return;
+    var t = now(), back = window.LK_TIME && window.LK_TIME.quotaBack ? window.LK_TIME.quotaBack(t) : 0;
+    S.quota = { at: t, until: back > t ? back : t + 3600000, known: back > t };
+    setTimeout(draw, 0);
+  }
+  // a read asked for after the refusal and answered by the server (not the copy in memory): the reads are back. A live
+  // list started earlier does not count: it can still pass on changes this phone made.
+  function quotaBackNow(v, asked) { if (S.quota && asked > S.quota.at && v && v.metadata && v.metadata.fromCache === false) { S.quota = null; setTimeout(draw, 0); } }
+  function quotaText() {
+    var q = S.quota;
+    return 'The book has used up today\'s free reads, so lists cannot load. They come back ' + (q && q.known ? 'at ' + T.clock(q.until) : 'later today') + '. Nothing saved is lost.';
+  }
+  // a list that could not load: with the reads used up the line at the top says why, so no "check the connection"
+  function pageErr() { return quotaOn() ? 'Could not load this page.' : 'Could not load this page. Check the connection.'; }
+  function quotaHTML() { return quotaOn() && S.configState !== 'error' ? '<p class="p-err quota-note" role="status">' + esc(quotaText()) + '</p>' : ''; }
   var cfgLast = '';   // what the settings listener now running last had: '' nothing yet, 'offline' only the empty copy, 'ok'
   var unsubOrd = null, ordKey = '', ordSnap = {};
   var unsubW = null, wKey = '', unsubX = null, xKey = '', unsubXO = null, wSnap = {}, xSnap = {}, xoSnap = {};
@@ -4604,7 +4636,7 @@
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
       // Done today sits behind the count (3 Nov 2026, work pages redesign A): a tap on "3 of 13 done" goes to it
       (S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : doneN ? '<button type="button" class="nb-prog nb-progbtn" data-p="donejump" aria-label="' + doneN + ' of ' + live.length + ' done. Show Done today">' + doneN + ' of ' + live.length + ' done</button>' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>') + (add ? dockBtn('nb-addline', 'write', 'Add a line') : '') + '</header>' +
-      (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') +
+      (S.itemsState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' : '') +
       '<div class="nb-body">' + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + offNote + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       (addNote || removed.length && can('del') ? '<div class="nb-foot">' + addNote + (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div>' : '') + '</section>';
     // the add form as a sheet (3 Nov 2026), drawn with the page from S.pLog like Log waste, so a redraw keeps what is typed
@@ -4616,7 +4648,7 @@
       return whoTopHTML() + badgeStrip() + '<section class="wb" aria-labelledby="rtitle"><header class="nb-ph wb-h"><div class="wb-t"><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
         (S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>') +
         '<button type="button" class="chip wb-list" data-p="wall" data-v="0">List</button>' + (add ? dockBtn('nb-addline', 'write', 'Add a line') : '') + '</header>' +
-        (S.itemsState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : '') + (flags ? '<div class="wb-flags">' + flags + '</div>' : '') + offNote +
+        (S.itemsState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' : '') + (flags ? '<div class="wb-flags">' + flags + '</div>' : '') + offNote +
         '<div class="wb-cols">' + pageBody(S.items, S.date, true) + '</div>' + todayEmpty + '</section>' + pSheet;
     }
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today<span class="nb-qsub"> and quick add</span>' : 'Done on ' + esc(dayShort(S.date))) + '</span></div></header>' +
@@ -5500,7 +5532,7 @@
     if (fk && !featOn(fk)) { if (S.configState === 'ok' || featHave[fk] === false) return notYetHTML(fk); if (S.configState !== 'error') return loadingHTML(); }
     // guides need only the kitchen PIN (reading, like the recipes); a list kept on the phone shows straight away, even with no signal
     if (S.name === 'guides' && (S.guides || S.configState === 'ok')) return guidesPageHTML();
-    if (S.configState === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Prep book</h2><p class="p-err">Could not connect. Check the connection and try again.</p><div class="btn-row"><button type="button" class="btn dark" data-p="retry">Try again</button></div></section>';
+    if (S.configState === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Prep book</h2><p class="p-err">' + (quotaOn() ? esc(quotaText()) : 'Could not connect. Check the connection and try again.') + '</p><div class="btn-row"><button type="button" class="btn dark" data-p="retry">Try again</button></div></section>';
     if (S.configState !== 'ok') return loadingHTML();
     if (S.name === 'admin') return adminHTML();
     // the chef to-do list: a chef with their PIN, or the head chef's Google device with nobody signed in
@@ -5552,7 +5584,7 @@
     var bodyEl = S.root.querySelector('.nb-body'), keepScroll = bodyEl ? S.root.querySelectorAll('.nb-body') : null, scrolls = [];
     if (keepScroll) Array.prototype.forEach.call(keepScroll, function (b) { scrolls.push(b.scrollTop); });
     if (key) ae._uxRedrawing = true;
-    try { S.root.innerHTML = practiceHTML() + bodyHTML() + toastHTML(); }
+    try { S.root.innerHTML = practiceHTML() + quotaHTML() + bodyHTML() + toastHTML(); }
     finally { if (key) delete ae._uxRedrawing; }
     if (S.toast) plainAway();
     S.root.classList.toggle('is-book', S.name === 'prep' && !!S.root.querySelector('.nb'));
@@ -5916,7 +5948,7 @@
     // no signal and the list not loaded yet: the note first, then only the lines this phone wrote since (listSnap)
     var offO = S.ordState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var body =
-      (S.ordState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
+      (S.ordState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' :
         offO + (grouped ? supGroupsHTML(own, function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') || byAdded(a, b); }) : own.length ? '<ul class="nb-rows">' + own.slice().sort(br && onToday ? function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') || byAdded(a, b); } : byAdded).map(ordRow).join('') + '</ul>' : (waitHTML || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))) + waitHTML);
     return whoTopHTML() + tabs +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Order list</h2><span class="nb-date">' + esc(longDate(S.ordDate)) + '</span></div>' +
@@ -6236,7 +6268,7 @@
     // no signal and not loaded yet: the note, then only the lines this phone wrote since (listSnap), and no totals
     var offW = S.wState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var tot = offW ? '' : totalsText(wTotals(live));
-    var body = S.wState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' :
+    var body = S.wState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' :
       offW + (shown.length ? '<ul class="nb-rows">' + shown.map(wRow).join('') + '</ul>' : (offW ? '' : S.wState !== 'ok' ? inkWait('Loading wastage...', 'waste', 4) : '<p class="nb-empty">Nothing logged for ' + esc(dayName(S.wDate).toLowerCase()) + ' yet. Log waste when it happens: prep waste, expired stock, cooking faults, returns and excess production.</p>'));
     // today first (3 Nov 2026, work pages redesign A): the total and a bar of the reasons, then Log waste and, for chefs,
     // the review, then the entries. The form and the review open as sheets.
@@ -6619,7 +6651,7 @@
     var earlierNote = S.xOpenState === 'error' ? '<p class="p-err">Could not load what is still out from earlier days. This list may be incomplete. Reload to try again.</p>' :
       S.xOpenState === 'offline' ? '<p class="nb-empty" role="status">No signal. What is still out from earlier days shows when the phone is back online.</p>' :
       S.xOpenState !== 'ok' ? inkWait('Loading what is still out...', 'transfers', 2) : '';
-    var todayNote = S.xState === 'error' ? '<p class="p-err">Could not load this page. Check the connection.</p>' : offX || (S.xState !== 'ok' ? inkWait('Loading transfers...', 'transfers', 4) : '');
+    var todayNote = S.xState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' : offX || (S.xState !== 'ok' ? inkWait('Loading transfers...', 'transfers', 4) : '');
     var openRows = earlier.concat(todayOpen);
     var stillOut = '<h3 class="a-ch-h">Still out</h3>' + (openRows.length ? '<p class="hint">Tick the box only when the full amount is back. Earlier days say how long they have been out.</p>' : '') +
       earlierNote + (openRows.length ? '<ul class="nb-rows tr-outstanding">' + openRows.map(xRow).join('') + '</ul>' : '') + todayNote +
@@ -11143,6 +11175,8 @@
   window.addEventListener('storage', function (e) { if (((e.key === 'lk.prep.who' || e.key === 'lk.prep.sess') && !e.newValue || e.key === 'lk.auth.lock') && (S.authed || S.user)) signOutPerson(true, true); });
   window.LK_PREP = {
     afterOverlay: ovAfterBack,
+    // today's free reads used up (5 Nov 2026): js/functions.js leaves "check the signal" out while it is
+    quota: quotaOn,
     pickerOverlay: function (close) {
       var previous = { on: ovOn, close: ovClose };
       ovPush('adaptive', function () { ovOn = previous.on; ovClose = previous.close; close(); });

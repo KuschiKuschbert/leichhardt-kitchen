@@ -225,8 +225,12 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
      tapped: no note in the strip, and a touch does not call it off. */
   function reloadNow(tapped, back, asked) {
     if (run || confirmation) return;
-    // Once per 10 minutes at most, so a flapping header can never cause a reload loop. The strip still offers Update now.
-    try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < 600000) { showBar(); return; } } catch (e) {}
+    /* Once per 10 minutes at most, so a flapping header can never cause a reload loop. The strip still offers Update now.
+       An update nobody asked for on a screen that stays open (a tablet on the pass, a laptop tab): once an hour at most
+       (5 Nov 2026). Each reload reads the open page's lists again from the server, and on 4 and 5 November 48 new
+       versions in a day made such a screen reload up to about 40 times; with the other phones that used up the free
+       plan's 50,000 reads a day by 13:00. Update now, and coming back after 5 minutes away, still update at once. */
+    try { var last = +localStorage.getItem('lk.upd.last') || 0; if (Date.now() - last < (tapped || back || asked ? 600000 : 3600000)) { showBar(); return; } } catch (e) {}
     var me = run = { tapped: !!tapped, half: !!(tapped || asked) && lkDirty() && consentRevision === lkEdits,
       edits: lkEdits, files: false, asked: asked || 0 }, touched = lkTouch;
     /* The check and the files take up to 8 seconds each on a weak signal, so the book looks again before it reloads

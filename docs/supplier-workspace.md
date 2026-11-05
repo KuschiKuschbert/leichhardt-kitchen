@@ -171,3 +171,7 @@ The head chef's laptop showed only "Could not finish. Check the connection and t
 
 No rules, schema, saved data or reads change. Supplier UI file revision 16 (`js/suppliers.js?v=16`), store file revision 3 (`js/supplier-store.js?v=3`, in js/prep.js too); `SUP_API` stays 9 and the store's API stays 2, as the list is still a list. Tests: `tests/supplier-unreadable.test.js` (new): a supplier with an item whose source page is 0, at 390 and 1280 px, the order list groups, and only that supplier. 10 of 13 failed on the old code (the page showed "Could not finish" and nothing else), 0 of 13 with the fix. `tests/supplier-module-version.test.js` checks the new addresses.
 
+
+### Today's free reads used up, 5 Nov 2026
+
+On the head chef's laptop the card from the change above said "Could not finish ... (resource-exhausted)": the free plan's 50,000 reads for the day were used up, so every read was refused until midnight in California (18:00 kitchen time). It was not a supplier record after all. `errorText()` now says "The book has used up today's free reads, so supplier orders cannot load. They come back at 18:00. Nothing saved is lost. Until then, place orders the usual way and record them after." The time comes from `LK_TIME.quotaBack()` (`js/boot.js`). The kitchen pages say the same in one line at the top (README, Good to know). Supplier UI file revision 17 (`js/suppliers.js?v=17`); `SUP_API` stays 9. Tests: `tests/quota-used.test.js`.
