@@ -111,6 +111,16 @@ img.shot { width: 300px; max-width: 100%; height: auto; border: 1.5px solid var(
 .rcpt .r b { font-family: var(--serif); }
 .rcpt .r .u { margin-left: auto; font-weight: 700; text-decoration: underline; }
 .rcpt .t { font: 700 .75rem var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.stamp2 { display: inline-flex; align-items: center; height: 22px; margin-left: 8px; padding: 0 7px; border: 1.5px solid var(--ink); border-radius: 4px; background: var(--paper); color: var(--ink); font: 700 .8125rem/1 var(--display); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; vertical-align: .15em; }
+.stamp2.ok { border-color: var(--done-ink); color: var(--done-ink); }
+.ln .stamp2 { margin-left: auto; }
+.rcpt2 { margin: 8px 0 0; padding: 4px 0 2px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.rcpt2 .t { margin: 2px 0; font: 700 .75rem var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--done-ink); }
+.rcpt2 .r { display: flex; align-items: center; gap: 8px; min-height: 48px; }
+.rcpt2 .r + .r { border-top: 1px dashed var(--line); }
+.rcpt2 .n { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rcpt2 .n b { font-family: var(--serif); }
+.rcpt2 .ub { flex: none; height: 44px; padding: 0 14px; display: grid; place-items: center; border: 1.5px solid var(--ink); border-radius: var(--r-act); font-weight: 700; }
 .close { margin-top: 10px; height: 44px; display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--ink); border-radius: var(--r-act); font-weight: 700; }
 
 /* the docket slip */
@@ -124,6 +134,10 @@ img.shot { width: 300px; max-width: 100%; height: auto; border: 1.5px solid var(
 .note { position: absolute; right: 8px; top: 64px; padding: 2px 8px; border-radius: 4px; background: var(--ink); color: #fff; font: 700 .75rem/1.6 var(--display); letter-spacing: .08em; text-transform: uppercase; }
 .lbl { margin: 0 0 4px; font: 700 .875rem var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 @media (max-width: 420px) { .ph { height: 560px; } }
+#mix .ph { height: 844px; }
+#mix .slip:not(.top) { bottom: 128px; }
+@media (max-width: 420px) { #mix .ph { height: 844px; }
+#mix .slip:not(.top) { bottom: 128px; } }
 </style>
 </head>
 <body>
@@ -282,6 +296,65 @@ img.shot { width: 300px; max-width: 100%; height: auto; border: 1.5px solid var(
   <div class="pc">
     <div><h3>Pros</h3><ul><li>The confirmation sits under the cook's eyes in the sheet, with every line added, not only the last.</li><li>No slip covering the list after adding; nothing moves.</li><li>A save's stamp stays, so a second look later still shows it went through.</li></ul></div>
     <div><h3>Cons</h3><ul><li>The receipt takes room in the sheet: on a small phone the chips may need a scroll.</li><li>Undo moves for adds: from the slip (9 s) to the sheet and then the ⋯. People know the slip.</li><li>Four add sheets change; the slip stays for ticks and removes, so two ways to undo.</li></ul></div>
+  </div>
+</section>
+
+<section class="sec" id="mix">
+  <h2 class="h2">Mix · A and C, with a small stamp</h2>
+  <p class="sub">Asked for by the head chef after round 2. A's Save button and slip words, C's receipt inside the add sheet, and one small stamp that says what just happened, in the place it happened. Nothing scrolls by itself.</p>
+  <div class="row">
+    <div>
+      <p class="cap">Cut-offs, after Save</p>
+      <div class="ph"><div class="tb">Kitchen Book</div><div class="body">
+        <div class="seg"><span>Today</span><span>Reports</span><span>Team</span><span class="on">Kitchen</span></div>
+        <p class="lab">Order cut-offs</p>
+        <div class="sup"><b>Coast Seafood</b><span class="stamp2 ok">Saved 14:02</span><div class="fields"><div class="fld">16:00</div><div class="pill">Fri, 5 days before</div></div><p class="sm">Next: Fri 6 Nov 16:00 for Wed 11 Nov.</p></div>
+        <div class="sup"><b>PFD</b><p class="say">Mon to Sat · the day before · 14:00</p></div>
+        <div class="btns"><span class="btn done">Saved</span><span class="btn ghost">Undo unsaved changes</span></div>
+      </div><div class="tabs"><span>Recipes</span><span>Prep</span><span>Orders</span><span>Wastage</span><span>Transfers</span><span>Guides</span></div></div>
+      <ol class="steps"><li>Tap: Saving... on the button, same width.</li><li>Server answers: Saved with a tick for 1.2 s, then Save cut-offs, off. Undo unsaved changes looks off.</li><li>The supplier that changed wears a small green stamp, "Saved 14:02", until the page is left or it changes again. No grey line under the button.</li></ol>
+    </div>
+    <div>
+      <p class="cap">Add sheet, after two adds</p>
+      <div class="ph"><div class="tb">Kitchen Book</div><div class="dim"></div>
+        <div class="sheet"><h4>Add to prep</h4><div class="write">Write a new line...</div><div class="fields"><div class="fld">Section</div><div class="fld">Amount</div><div class="btn add">Add</div></div>
+          <div class="rcpt2"><p class="t">Added just now</p>
+            <div class="r"><span class="n"><b>Pick coriander</b> to Larder</span><span class="ub">Undo</span></div>
+            <div class="r"><span class="n"><b>Slice tomatoes</b> to Sauce</span><span class="ub">Undo</span></div></div>
+          <p class="lbl" style="margin:8px 0 4px">Section</p><div class="chips"><span class="pill">Larder</span><span class="pill">Grill</span><span class="pill">Sauce</span></div>
+          <div class="chips"><span class="pill">tubs</span><span class="pill">L</span><span class="pill">kg</span><span class="pill">batch</span></div>
+          <div class="close" style="margin-top:8px">Add from the recipes</div><div class="close">Close</div></div>
+      </div>
+      <ol class="steps"><li>Add: the box empties and stays ready, as today.</li><li>The line lands in "Added just now", right under the box: name and section, newest at the bottom, the last two only.</li><li>Each has a 44 px Undo button for as long as the rules allow its writer to undo it (2 minutes). No slip at the top while the sheet is open.</li></ol>
+    </div>
+    <div>
+      <p class="cap">Sheet closed</p>
+      <div class="ph"><div class="tb">Kitchen Book</div><div class="body">
+        <div class="dates"><span class="pill">&lsaquo;</span><span class="pill dk">Today</span><span class="pill" style="flex:1">05/11/2026</span><span class="pill">&rsaquo;</span></div>
+        <div class="chips"><span class="pill on">All</span><span class="pill">Larder</span><span class="pill">Grill</span><span class="pill">Sauce</span></div>
+        <div class="nb"><h3>Today</h3><span class="cnt">0 of 8 done</span><div class="dt">5 November 2026</div>
+          <div class="sec-h"><span>Grill</span><span>0/1</span></div><div class="ln"><i></i><b>Portion rump</b><small>20</small></div>
+          <div class="sec-h"><span>Sauce</span><span>0/3</span></div><div class="ln rolled"><i></i><b>Make gravy</b><small>5 L</small></div><div class="ln"><i></i><b>Laksa</b><small>1 batch</small></div>
+        </div></div>
+        <div class="addbar">+ Add a line</div>
+        <div class="slip"><span class="m">Added <b>Slice tomatoes</b> to Sauce</span><span class="u">Undo</span></div>
+        <div class="tabs"><span>Recipes</span><span class="on">Prep</span><span>Orders</span><span>Wastage</span><span>Transfers</span><span>Guides</span></div></div>
+      <ol class="steps"><li>Close: nothing moves. The slip names the last line, with Undo where people know it, for the rest of its time.</li><li>Ticks, removes and Undo say the line's name on the slip: "Ticked Make gravy", "Undone: Slice tomatoes".</li></ol>
+    </div>
+    <div>
+      <p class="cap">Scrolled down by the cook</p>
+      <div class="ph"><div class="tb">Kitchen Book</div><div class="body">
+        <div class="nb"><div class="sec-h"><span>Sauce</span><span>0/3</span></div><div class="ln"><i></i><b>Laksa</b><small>1 batch</small></div><div class="ln"><i></i><b>Slice tomatoes</b><span class="stamp2">New 14:02</span></div>
+          <div class="sec-h"><span>Larder</span><span>0/3</span></div><div class="ln"><i></i><b>Pick coriander</b><span class="stamp2">New 14:02</span></div><div class="ln"><i></i><b>Dice onion</b><small>2 kg</small></div><div class="ln"><i></i><b>Wash cos</b></div><div class="ln"><i></i><b>Slice lemons</b></div>
+        </div></div>
+        <div class="addbar">+ Add a line</div>
+        <div class="tabs"><span>Recipes</span><span class="on">Prep</span><span>Orders</span><span>Wastage</span><span>Transfers</span><span>Guides</span></div></div>
+      <ol class="steps"><li>The lines this phone just added wear a small ink stamp, "New 14:02", for 2 minutes, so they are easy to find when scrolling.</li><li>Only on the phone that added them; other phones see the line as usual.</li></ol>
+    </div>
+  </div>
+  <div class="pc">
+    <div><h3>What it takes from each</h3><ul><li>A: the Save button that says Saved, the slip that names the line, nothing moving, Undo on the slip after Close.</li><li>C: the receipt under the cook's eyes while adding, with every line it added (the last two).</li><li>The stamp: B's "which one changed" without the yellow fill or the scroll.</li></ul></div>
+    <div><h3>Watch out for</h3><ul><li>The sheet is about 100 px taller with the receipt: drawn here with every row of today's sheet, it still fits at 390 by 844.</li><li>Two places to undo an add: the receipt while the sheet is open, the slip once it closes. Same word, same button.</li><li>The stamp is a word, not a colour, so glare does not wash it out.</li></ul></div>
   </div>
 </section>
 

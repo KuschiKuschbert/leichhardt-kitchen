@@ -94,6 +94,22 @@ Counted from the click tests' stand-in and the drawings at 390 px. Main task: ad
 | New reads, listeners or rules | | None | None | None |
 | Risk | | Still not seeing the line | Moving the page under someone's finger | A crowded sheet on a small phone |
 
+## Mix: A and C, with a small stamp
+
+Asked for by the head chef after round 2 ("what would a great mix look like between A and C with a small stamp?"). Drawn in `index.html`, section Mix, at 390 by 844 with every row of today's add sheet.
+
+- **Saves (A).** Every Save button says Saving..., then Saved with a tick for 1.2 s once the server answers, then goes off; Try again in red on failure. Switched-off outlined buttons look off, so Undo unsaved changes no longer looks live. The grey "Saved." line under the button goes.
+- **The small stamp on what was saved.** The supplier card that changed (or the editor's heading) wears "Saved 14:02" in green, 13 px condensed capitals in a box, until the page is left or it changes again. A word, not a fill, so glare does not wash it out.
+- **The add sheet (C).** Under the Add row, "Added just now" lists the last two lines added from this sheet with their section ("Pick coriander to Larder"), newest at the bottom, each with a 44 px Undo button for as long as the rules let its writer undo it (2 minutes, `ownAddUndo()` in `firestore.rules`). No slip at the top of the screen while the sheet is open.
+- **After Close (A).** Nothing moves. The slip names the last line ("Added Slice tomatoes to Sauce") with Undo, above the Add a line bar as today, for the rest of its time. Ticks, removes and Undo say the line's name on the slip ("Undone: Slice tomatoes").
+- **The small stamp on new lines.** Lines this phone just added wear "New 14:02" in ink for 2 minutes, so the cook finds them when scrolling. Only on that phone, kept in memory by line id with an end time, so a redraw keeps it and nothing is saved.
+
+Taps to add a line: 2 plus typing, as today. Lines visible at 390 px after Close: 4, as today while the slip shows. The add sheet is about 100 px taller with two receipt lines and still fits a 390 by 844 phone. No new reads, listeners, rules or saved fields.
+
+Two places to undo an add (the receipt while the sheet is open, the slip once it closes) was the main worry about C; here both say Undo on a 44 px button, and the slip stays where people know it.
+
+![Mix](previews/option-mix.png)
+
 ## Scores
 
 The same five reviewers plus the kitchen screen designer, fresh agents, 5 November 2026. Each saw all three designs, the brief and today's screenshots. Role-based analysis, not research with real staff. Points: 3 for first, 2 for second, 1 for third.
@@ -134,4 +150,4 @@ The other easy-to-miss actions in the audit are brought in line when someone nex
 
 - `index.html`: today, the shared part, the three designs at three moments each, and the comparison. Works at 390 px and 1280 px with no sideways scroll.
 - `previews/today-*.png`: the book today at 390 px, click-test stand-in, synthetic data.
-- `previews/option-*.png`: each design's three moments, from `index.html` at 1280 px.
+- `previews/option-*.png`: each design's three moments (the mix: four), from `index.html`.
