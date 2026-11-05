@@ -523,7 +523,12 @@
     F.sent[f.id + '_' + r.at] = rec; changed();   // shows at once; the listener brings the saved copy
     api.ready().then(function () { return api.W([['set', api.docRef('fnsent', f.id + '_' + r.at), rec, true]]); }).then(function () {
       api.say((f.rounds.length > 1 ? 'Round ' + (i + 1) : 'The platters') + (on ? ' ticked as sent.' : ' not sent after all.'));
-    }, function () { if (x) F.sent[f.id + '_' + r.at] = x; else delete F.sent[f.id + '_' + r.at]; changed(); api.say('Not saved. Only the person who ticked it, within 2 minutes, or a chef can take a tick back.'); });
+    }, function () {
+      if (x) F.sent[f.id + '_' + r.at] = x; else delete F.sent[f.id + '_' + r.at]; changed();
+      // the tick went back: say why on screen too, not only to a screen reader (5 Nov 2026, the audit found nothing showed)
+      var why = on ? 'Not saved: ' + (f.rounds.length > 1 ? 'round ' + (i + 1) : 'the platters') + ' not ticked as sent. Check the signal and try again.' : 'Not saved. Only the person who ticked it, within 2 minutes, or a chef can take a tick back.';
+      if (prep.toast) prep.toast(why, { label: 'OK', fn: function () {} }, 0, 'bad'); else api.say(why);
+    });
   }
   /* The sheet leads with what goes out next (22 Oct 2026): the first round not ticked as sent, its time, each platter with
      a big number, and its Sent button. The kitchen does not need the guests here, only the platters and when. */
@@ -659,9 +664,10 @@
     if (/^#\/functions(?:\/|$)/.test(location.hash) && window.LK_FE && window.LK_FE.statusChanged) { paint(); window.LK_FE.statusChanged(id, saved); }
     else changed();
   }
-  function statusNotice(message, action) {
+  // bad: a failure (5 Nov 2026, docs/action-feedback.md): red, and it stays until OK, never on a timer
+  function statusNotice(message, action, bad) {
     var prep = P(); if (!prep) return;
-    if (prep.toast) prep.toast(message, action || null, action ? 9000 : 5000);
+    if (prep.toast) { if (bad) prep.toast(message, { label: 'OK', fn: function () {} }, 0, 'bad'); else prep.toast(message, action || null, action ? 9000 : 5000); }
     else if (prep.book) prep.book().say(message);
   }
   function statusFail(message) { var err = new Error(message); err.fnMessage = message; throw err; }
@@ -707,7 +713,7 @@
       if (!undo) setTimeout(function () { statusPaint(id); }, 2 * MIN + 100);
     }).catch(function (err) {
       delete F.jobs[id]; clearTimeout(slow); statusPaint(id);
-      statusNotice(err.fnMessage || (err.code === 'permission-denied' ? 'Not changed. Your access or the function changed. Read the list again.' : 'Not changed. Check the signal and try again.'));
+      statusNotice(err.fnMessage || (err.code === 'permission-denied' ? 'Not changed. Your access or the function changed. Read the list again.' : 'Not changed. Check the signal and try again.'), null, true);
     });
   }
 

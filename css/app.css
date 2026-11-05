@@ -3620,6 +3620,9 @@ i.dsh-c-load { background: var(--dsh-h3); }
 @media (min-width: 720px) { .w-sheet, .tr-sheet, .p-sheet, .o-sheet { width: min(40rem, calc(100vw - 32px)); max-height: 86vh; max-height: 86dvh; } }
 /* A toast while a wastage sheet is open (3 Nov 2026): at the top of the screen, above the sheet, so its Undo can be
    tapped and the form under it stays clear */
+/* the function popup (the band's sheet) is above the work sheets: a slip about it (Cancelled, Undo, Not changed) sits
+   above it too, at the top (5 Nov 2026: it was drawn under the popup and its dimmed page) */
+html:has(.fn-pop) .p-toasts { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; z-index: 90; flex-direction: column; }
 html:has(.w-sheet, .tr-sheet, .p-sheet, .o-sheet) .p-toasts { top: calc(12px + env(safe-area-inset-top, 0px)); bottom: auto; z-index: 62; flex-direction: column; }
 
 /* Transfers, Clean notebook (3 Nov 2026, work pages redesign A): Still out first, with how long each earlier day's
