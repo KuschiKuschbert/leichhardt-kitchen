@@ -39,6 +39,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Drawing studio, selected B: quiet canvas, with more servingware colours (4 Nov 2026) | `docs/studio-options/brief.md` |
 | Shared controls, deferred search, table interactions and council audit | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
 | Loading, saving, measured progress and reduced motion | `docs/loading-motion.md` (current), `docs/loading-feedback-options/brief.md` (recommended set chosen 4 Nov 2026, findings and build steps) |
+| What a tap shows after it: a save, add, tick, Undo or Refresh, its words, where the person is left (5 Nov 2026) | `docs/action-feedback.md` (the rule), `docs/action-feedback-options/brief.md` (audit of 307 actions, designs, scores) |
 | Nightly backup format, protected decryption and isolated recovery checks | `docs/backup-recovery.md` |
 | Suppliers, order history, cut-off sheets | `docs/supplier-workspace.md` |
 | Order cut-off patterns (a day and time per delivery day) and the heads-up the day before, selected the recommended mix (5 Nov 2026) | `docs/cutoff-options/brief.md` |
@@ -188,6 +189,7 @@ Short warnings. The full contract for each part is its section in `docs/code-con
 - **Security header.** `index.html` lists every outside service the book may load; a new one goes there and is a head chef decision. Inline `<script>` and `onclick=` do not run. pdf.js: change `PDFJS` in `js/prep.js` and the header together.
 - **Test helpers.** `L.waitFor`, not `page.waitForFunction`; `L.settle(p, ms)`, not `p.waitForTimeout(ms)`. A check on something read from Firestore waits for that thing itself. A file's top-level catch calls `process.exit(1)`, never only `process.exitCode = 1` (`tests/exit-on-error.test.js`).
 - **Names stay apart per feature.** Classes and click attributes are per feature (`.rail` on the Pass, `.wtop` for the landing and top bar; `data-note`, `data-p`, `data-act`; `dk-` landing dockets, `dr-` drinks; `td` is a table cell, to-do is `todo-`). Check `css/app.css` and the feature's section first.
+- **After the tap.** Every action answers in its own frame, says Saved (or what it did, by name) only after the server answers, where the person is looking, and turns off the words that belonged to the unsaved form. Save buttons use `svButton()`. Answer the six questions in `docs/action-feedback.md` for every new button.
 - **Sheets and popups** go on `document.body`, one at a time through `sheetBusy()` and `sheetNext()`. Nothing opens by itself over Who are you? (`namesUp()`) or a live Undo.
 - **No new listeners or polling.** Listeners are only for today's live data. Pings, minutes, mail, to-do, drinks, guides and recipe changes are read on open, once a day or after 30 minutes away; each section says exactly when.
 - **Recipes lists.** Shelves and tile groups use `content-visibility: auto`: anything that measures or scrolls to a plate goes through `backHome()`. Tap feedback uses `scale` inside `:where()`, never `transform`.
