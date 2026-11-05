@@ -3398,6 +3398,7 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
    out. Shown until the page is left or that thing changes again. */
 .lk-stamp { display: inline-flex; align-items: center; min-height: 22px; margin-left: .5rem; padding: 0 .45rem; border: 1.5px solid var(--done-ink); border-radius: 4px; background: var(--paper); color: var(--done-ink); font: 700 .8125rem/1 var(--display); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; vertical-align: .1em; }
 .lk-stamp:first-child { margin-left: 0; }
+.su-status-here { margin: 0 0 .5rem; font-weight: 600; color: var(--ink); }
 /* a line this phone just added (2 minutes): ink, not green, so it never reads as done */
 .lk-stamp.is-new { margin-left: .35rem; border-color: var(--ink); color: var(--ink); }
 /* "Added just now" in an open add sheet (step 2b): the last two lines it added, under the box being typed in. Rows are

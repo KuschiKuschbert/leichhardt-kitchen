@@ -199,7 +199,7 @@
   }
   function supplierSelect() { return '<label class="field su-mobile-pick"><span class="label">Supplier</span><select class="search" data-sf="supplier">' + (M.suppliers || []).map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === M.sid ? ' selected' : '') + '>' + esc(s.name + (todayCut(s) ? ' · ' + todayCut(s) : '')) + '</option>'; }).join('') + '</select></label>'; }
   function statusHTML() {
-    var task = activeTask(), note = M.armedLeave && (task === 'editor' || task === 'supplier' || task === 'import'), msg = M.armedLeave && !note ? '' : M.msg;
+    var task = activeTask(), note = M.armedLeave && (task === 'editor' || task === 'supplier' || task === 'import'), msg = M.armedLeave && !note ? '' : M.msgAt === 'history' && M.historyOpen ? '' : M.msg;
     var pending = M.review && task !== 'review' && (M.saving || M.review.uncertain) ? '<p id="su-recording-status" class="su-status" role="status">Recording for ' + esc(M.review.supplierName) + (M.saving ? ' is still in progress. ' : ' needs confirmation. ') + '<a href="#/suppliers/' + encodeURIComponent(M.review.sid) + '" data-su-recovery>Return to review</a>' + (M.saving ? ' to check its outcome.' : ' to retry safely.') + '</p>' : '';
     return (M.err ? '<div id="su-order-error" class="su-error" role="alert">' + esc(M.err) + (M.validation || pending ? '' : '<div class="btn-row">' + (M.err === LINKED_ERR ? button('additional', 'Additional order') : button('retry', 'Try again')) + '</div>') + '</div>' : '') + pending + (msg ? '<p class="su-status' + (note ? ' su-leave-note' : '') + '"' + (note ? ' id="su-leave-note"' : '') + ' role="status">' + esc(msg) + '</p>' : '') + (navigator.onLine === false ? '<p class="su-error" role="status">No signal. Supplier reads and saves need a connection. Do not close a draft you still need.</p>' : '');
   }
@@ -338,6 +338,8 @@
     if (selected) {
       body += field('historyQ', 'Find an order', M.historyQ, { type: 'search', placeholder: 'Date or item name' }) + '<div class="su-history-dates">' + rows.filter(function (o) { return (dateText(o.at) + ' ' + o.lines.map(function (l) { return l.name; }).join(' ')).toLowerCase().indexOf(M.historyQ.toLowerCase()) >= 0; }).map(function (o) { return '<button type="button" class="chip" data-su="history-order" data-id="' + esc(o.id) + '" aria-pressed="' + (o.id === selected.id) + '">' + esc(dateText(o.at)) + '</button>'; }).join('') + '</div><h4>' + esc(dateText(selected.at)) + '</h4><p class="hint">' + selected.lines.length + ' items · Recorded by ' + esc(B().name(selected.by) || 'Chef') + '</p>' + linesHTML(selected.lines) + '<div class="btn-row">' + button('reuse', 'Use quantities again', ' data-id="' + esc(selected.id) + '"') + button('copy-history', 'Copy this order', ' data-id="' + esc(selected.id) + '"') + '</div>';
     } else if (!h.busy && !h.err) body += '<p class="hint">No orders recorded for this supplier.</p>';
+    // what Copy order text or Use quantities again did, said here beside them, not at the top of a long page
+    if (M.msg && M.msgAt === 'history') body = '<p class="su-status su-status-here" role="status">' + esc(M.msg) + '</p>' + body;
     if (M.reuse) body += '<div class="su-confirm"><p>Replace the quantities in this supplier draft with the selected order? Other supplier drafts stay as they are.</p><div class="btn-row">' + button('reuse-confirm', 'Replace draft quantities', ' data-id="' + esc(M.reuse) + '"', true) + button('reuse-cancel', 'Cancel') + '</div></div>';
     if (h.more) body += '<div class="btn-row">' + button('history-more', 'Older orders', h.busy ? ' disabled' : '') + '</div>';
     return '<section class="su-disclosure"><button type="button" class="su-disclosure-button" data-su="history" aria-expanded="' + M.historyOpen + '">Order history <span class="hint">' + (M.historyOpen ? 'Hide' : 'Show') + '</span></button>' + (M.historyOpen ? '<div class="su-disclosure-body">' + body + '</div>' : '') + '</section>';
@@ -445,7 +447,7 @@
     if (task === 'supplier') return supplierEditorHTML();
     if (task === 'import') return importHTML();
     var list = filterItems(true); M.page = Math.max(0, Math.min(M.page, Math.ceil(list.length / 20) - 1));
-    return '<p class="hint su-breadcrumb">Content / Suppliers &amp; pars</p><div class="su-manage-links"><div class="btn-row">' + button('import', 'Import catalogue') + smallButton('supplier-settings', 'Supplier settings') + '</div><button type="button" class="p-x" data-su="cutoff-settings">Order cut-offs in Admin settings</button></div>' + toolbarHTML() + '<div class="su-catalogue-options"><span class="hint">' + esc(supplier().name) + ' · revision ' + supplier().v + '</span><label><input type="checkbox" data-sf="includeArchived"' + (M.includeArchived ? ' checked' : '') + '> Include archived</label></div>' + (M.archive ? archiveHTML() : '') + '<div class="su-catalogue-head">' + catalogueHeading('name', 'Item / source') + catalogueHeading('par', 'Current par') + catalogueHeading('source', 'PDF par') + '<span></span></div>' + list.slice(M.page * 20, M.page * 20 + 20).map(function (i) { return '<div class="su-catalogue-row' + (i.archived ? ' is-archived' : '') + '"><div><b>' + esc(i.name) + '</b><span class="hint">Pack: ' + esc(i.pack || 'Not set') + ' · ' + (i.manual ? 'Manual item' : esc(i.source.file) + ' · page ' + esc(i.source.page)) + (i.archived ? ' · Archived' : '') + '</span></div><div><span class="su-mobile-label">Current par</span><b>' + esc(currentPar(i)) + '</b></div><div><span class="su-mobile-label">PDF par</span>' + esc(i.manual ? 'Manual' : i.source.par === '' ? 'Not set' : i.source.par) + '</div><div class="btn-row">' + button('edit', i.manual ? 'Edit item' : 'Edit par', ' data-i="' + esc(i.id) + '"') + (i.archived ? smallButton('restore', 'Restore', ' data-i="' + esc(i.id) + '"') : '') + '</div></div>'; }).join('') + (!list.length ? '<p class="empty">No items match.</p>' : '') + pager(list) + auditHTML();
+    return '<p class="hint su-breadcrumb">Content / Suppliers &amp; pars</p><div class="su-manage-links"><div class="btn-row">' + button('import', 'Import catalogue') + smallButton('supplier-settings', 'Supplier settings') + '</div><button type="button" class="p-x" data-su="cutoff-settings">Order cut-offs in Admin settings</button></div>' + toolbarHTML() + '<div class="su-catalogue-options"><span class="hint">' + esc(supplier().name) + ' · revision ' + supplier().v + '</span><label><input type="checkbox" data-sf="includeArchived"' + (M.includeArchived ? ' checked' : '') + '> Include archived</label></div>' + (M.archive ? archiveHTML() : '') + '<div class="su-catalogue-head">' + catalogueHeading('name', 'Item / source') + catalogueHeading('par', 'Current par') + catalogueHeading('source', 'PDF par') + '<span></span></div>' + list.slice(M.page * 20, M.page * 20 + 20).map(function (i) { return '<div class="su-catalogue-row' + (i.archived ? ' is-archived' : '') + '"><div><b>' + esc(i.name) + '</b>' + (M.stamp && M.stamp.id === i.id ? '<span class="lk-stamp">' + esc(M.stamp.word) + ' ' + esc(M.stamp.at) + '</span>' : '') + '<span class="hint">Pack: ' + esc(i.pack || 'Not set') + ' · ' + (i.manual ? 'Manual item' : esc(i.source.file) + ' · page ' + esc(i.source.page)) + (i.archived ? ' · Archived' : '') + '</span></div><div><span class="su-mobile-label">Current par</span><b>' + esc(currentPar(i)) + '</b></div><div><span class="su-mobile-label">PDF par</span>' + esc(i.manual ? 'Manual' : i.source.par === '' ? 'Not set' : i.source.par) + '</div><div class="btn-row">' + button('edit', i.manual ? 'Edit item' : 'Edit par', ' data-i="' + esc(i.id) + '"') + (i.archived ? smallButton('restore', 'Restore', ' data-i="' + esc(i.id) + '"') : '') + '</div></div>'; }).join('') + (!list.length ? '<p class="empty">No items match.</p>' : '') + pager(list) + auditHTML();
   }
   function supplierEditorHTML() {
     var e = M.supplierEd, cuts = B().cuts();
@@ -481,6 +483,9 @@
   function importInputHTML() { return canEdit() ? '<input class="visually-hidden" type="file" accept="application/json,.json" data-sf="import" aria-label="Import private supplier catalogue">' : ''; }
   function draw() {
     if (!M.root || !document.body.contains(M.root)) return;
+    if (M.stampNext) { landOnItem(M.stampNext.id, M.stampNext.word); return; }
+    if (M.stamp && activeTask() !== 'catalogue') M.stamp = null;   // the stamp goes with the catalogue view
+    if (!M.msg) M.msgAt = '';
     var active = document.activeElement, keep = active && M.root.contains(active) ? { field: active.getAttribute('data-sf'), id: active.getAttribute('data-i'), start: active.selectionStart, end: active.selectionEnd } : null;
     var y = window.scrollY; M.root.innerHTML = mainHTML(); if (M.saving) Array.prototype.forEach.call(M.root.querySelectorAll('input,select,textarea,button'), function (n) { n.disabled = true; }); window.scrollTo(0, y);
     if (keep && keep.field) {
@@ -503,6 +508,18 @@
   function focusBack(selector) {
     var el = M.root && M.root.querySelector(selector);
     if (el) { el.scrollIntoView({ block: 'center' }); el.focus({ preventScroll: true }); }
+  }
+  /* After a catalogue save, archive or restore: the list on the page holding the item, its row in view (where Back lands
+     too) and wearing "Saved 14:02" (or Archived, Restored) until the person leaves the catalogue view (5 Nov 2026,
+     docs/action-feedback.md: the editor closed onto page 1 with the message at the top, often off screen). */
+  function landOnItem(id, word) {
+    M.stampNext = null;
+    var list = filterItems(true), k = list.findIndex(function (i) { return i.id === id; });
+    if (k < 0) { M.q = ''; M.group = ''; M.filter = ''; list = filterItems(true); k = list.findIndex(function (i) { return i.id === id; }); }
+    M.page = k >= 0 ? Math.floor(k / 20) : 0;
+    M.stamp = k >= 0 ? { id: id, word: word, at: T.clock(T.now()) } : null;
+    draw();
+    focusBack('[data-su="edit"][data-i="' + id + '"]');
   }
   function closeEditor(cmd) {
     var id = M.ed && M.ed.original && M.ed.original.id;
@@ -577,6 +594,8 @@
       if (g !== generation) return;
       var h = hist(r.sid); h.rows = [result.order].concat((h.rows || []).filter(function (o) { return o.id !== result.order.id; }));
       delete M.drafts[r.sid]; M.review = null; M.saving = false; M.additional = ''; M.historyId = result.order.id; M.msg = result.replayed ? 'This order was already recorded. No duplicate was made.' : 'Order recorded. Nothing was sent to the supplier.'; draw();
+      // a new view: start at its top, where the message says it was recorded (5 Nov 2026, docs/action-feedback.md)
+      focusTask();
     }, function (e) { if (g === generation) { M.saving = false; if (e.code === 'uncertain') r.uncertain = true; if (e.code === 'stale' || e.code === 'concurrent') r.uncertain = false; if (e.code === 'recorded') { r.recorded = true; r.uncertain = false; if (e.prior) { var h = hist(r.sid); h.rows = [e.prior].concat((h.rows || []).filter(function (o) { return o.id !== e.prior.id; })); } } M.err = errorText(e); draw(); } });
   }
   function openEditor(id) {
@@ -598,7 +617,8 @@
     var list = s.items.filter(function (i) { return i.id !== value.id; }); if (ed.original) list = s.items.map(function (i) { return i.id === value.id ? value : i; }); else list.push(value);
     M.saving = true; M.err = ''; M.msg = ''; M.armedLeave = ''; draw(); var g = generation;
     store.saveCatalogue(s.id, ed.baseV, { items: list }, { itemId: value.id, action: ed.original ? 'edit' : 'add' }).then(function (saved) {
-      if (g !== generation) return; rememberSupplier(saved); M.ed = null; M.saving = false; M.msg = 'Catalogue saved. Current pars are updated; past order sheets are unchanged.'; M.page = 0; draw();
+      if (g !== generation) return; rememberSupplier(saved); M.ed = null; M.saving = false; M.msg = 'Catalogue saved. Current pars are updated; past order sheets are unchanged.';
+      landOnItem(value.id, 'Saved');
     }, function (e) { if (g === generation) { M.saving = false; if (e.code === 'stale') ed.stale = true; M.err = errorText(e); draw(); } });
   }
   function archiveItem(id, restore) {
@@ -607,14 +627,14 @@
     var next = s.items.map(function (x) { return x.id === id ? Object.assign({}, x, { archived: !restore }) : x; });
     M.saving = true; M.err = ''; M.msg = ''; M.armedLeave = ''; draw(); var g = generation;
     store.saveCatalogue(s.id, s.v, { items: next }, { itemId: id, action: restore ? 'restore' : 'archive' }).then(function (saved) {
-      if (g !== generation) return; rememberSupplier(saved); if (!restore) { var d = draft(); delete d.qty[id]; delete d.stock[id]; delete d.units.qty[id]; delete d.units.stock[id]; delete d.suggestions[id]; } M.ed = null; M.archive = ''; M.saving = false; M.msg = restore ? 'Item restored.' : 'Item archived. Past orders are unchanged.'; draw();
+      if (g !== generation) return; rememberSupplier(saved); if (!restore) { var d = draft(); delete d.qty[id]; delete d.stock[id]; delete d.units.qty[id]; delete d.units.stock[id]; delete d.suggestions[id]; } M.ed = null; M.archive = ''; M.saving = false; M.msg = restore ? 'Item restored.' : 'Item archived. Past orders are unchanged.'; M.stampNext = { id: id, word: restore ? 'Restored' : 'Archived' }; draw();
     }, function (e) { if (g === generation) { M.saving = false; M.err = errorText(e); draw(); } });
   }
   function reuseOrder(id, confirmed) {
     var order = (hist().rows || []).filter(function (o) { return o.id === id; })[0]; if (!order) return;
     if (hasDraft(M.sid) && !confirmed) { M.reuse = id; draw(); return; }
     var d = draft(); d.qty = Object.create(null); d.stock = Object.create(null); d.units = { qty: Object.create(null), stock: Object.create(null) }; d.suggestions = Object.create(null);
-    order.lines.forEach(function (l) { var i = item(l.itemId); if (i && !i.archived) { d.qty[i.id] = l.qty; d.units.qty[i.id] = l.unit; } }); M.reuse = ''; M.msg = 'Previous quantities copied into this draft. Review them before ordering.'; draw();
+    order.lines.forEach(function (l) { var i = item(l.itemId); if (i && !i.archived) { d.qty[i.id] = l.qty; d.units.qty[i.id] = l.unit; } }); M.reuse = ''; M.msg = 'Previous quantities copied into this draft. Review them before ordering.'; M.msgAt = 'history'; draw();
   }
   function orderText(lines, name) { return name + '\n' + lines.map(function (l) { return quantityText(l) + ' | ' + l.name; }).join('\n'); }
   // The phone's own share sheet; the person picks the app and sends. A cancelled share says nothing; a failed one copies.
@@ -625,7 +645,8 @@
   }
   function copyOrder(lines, name) {
     var text = orderText(lines, name);
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { message('Order text copied. Nothing was sent.'); }, function () { copyFallback(text); }); else copyFallback(text);
+    var at = M.historyOpen ? 'history' : '';
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { M.msgAt = at; message('Order text copied. Nothing was sent.'); }, function () { copyFallback(text); }); else copyFallback(text);
   }
   function copyFallback(text) { M.msg = 'Copy is unavailable here. Select the order text below.'; draw(); var area = document.createElement('textarea'); area.className = 'search su-copy'; area.readOnly = true; area.value = text; area.setAttribute('aria-label', 'Order text to copy'); if (M.root) { M.root.appendChild(area); area.focus(); area.select(); } }
   function openSupplierEditor(existing) {
