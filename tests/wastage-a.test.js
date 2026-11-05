@@ -45,9 +45,10 @@ const prepLines = async (p, text) => Object.entries(await store(p)).filter(([k, 
   await p.click('.w-sheet .nb-addbtn'); await L.settle(p, 500);
   const br = Object.entries(await store(p)).filter(([k, v]) => k.indexOf(fsKey(['waste', today, 'lines'])) === 0 && v.text === 'Bread rolls');
   ok(br.length === 1 && br[0][1].amount === 8 && br[0][1].unit === 'pieces' && br[0][1].reason === 'fault', 'Log it saves the entry (' + JSON.stringify(br.map(x => [x[1].amount, x[1].unit, x[1].reason])) + ')');
-  ok(!!(await p.$('.w-sheet')) && await p.inputValue('#w-text') === '' && await p.evaluate(() => document.activeElement && document.activeElement.id === 'w-text') && /Logged/.test(await txt(p, '.p-toast') || ''), 'Log it: the sheet stays for the next entry, the cursor back in What was wasted?, a toast with Undo');
+  ok(!!(await p.$('.w-sheet')) && await p.inputValue('#w-text') === '' && await p.evaluate(() => document.activeElement && document.activeElement.id === 'w-text') && /^Bread rolls 8 /.test(await txt(p, '.w-sheet .just-l:last-child .just-n') || ''), 'Log it: the sheet stays for the next entry, the cursor back in What was wasted?, a toast with Undo');
   // the toast sits at the top, above the sheet, so its Undo can be tapped (it was under the sheet)
-  ok(await p.evaluate(() => { const t = document.querySelector('.p-toast-btn'), r = t.getBoundingClientRect(), s = document.querySelector('.w-sheet').getBoundingClientRect(); return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === t && r.bottom <= s.top; }), 'Log it: the toast is above the sheet, where Undo can be tapped');
+  // since 5 Nov 2026 (step 2b) the receipt in the sheet carries the Undo, under the box: it can be tapped there
+  ok(await p.evaluate(() => { const t = document.querySelector('.w-sheet [data-p="just-undo"]'); if (!t) return false; t.scrollIntoView({ block: 'center' }); const r = t.getBoundingClientRect(); return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2) === t && !document.querySelector('.p-toast'); }), 'Log it: the toast is above the sheet, where Undo can be tapped');
   await p.click('.w-sheet [data-p="w-log-close"]'); await L.settle(p, 200);
   ok(!(await p.$('.w-sheet')), 'Close closes it');
   ok(/Cooking fault 2/.test(await txt(p, '.w-legend') || ''), 'the key counts the new entry (' + await txt(p, '.w-legend') + ')');

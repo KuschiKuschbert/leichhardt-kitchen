@@ -170,8 +170,9 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.evaluate(() => { const b = document.querySelector('.w-rchips [data-v="excess"]') || document.querySelector('[data-p="wreason"][data-v="excess"]'); b.click(); });
   await p.click('.w-add .nb-addbtn');
   await L.settle(p, 300);
-  ok(/^Logged \S.*\s*Undo$/.test((await txt(p, '.p-toast') || '').trim()) && /Undo/.test(await txt(p, '.p-toast-btn')), 'waste: a sous chef gets Logged with the line and its amount, and Undo (' + await txt(p, '.p-toast') + ')');
-  await p.click('.p-toast-btn');
+  // the Log waste sheet is open, so its receipt says it, with Undo for a sous chef (step 2b, 5 Nov 2026)
+  ok(/^Rice 1\.5 \S/.test(await txt(p, '.w-sheet .just-l:last-child .just-n') || '') && !!(await p.$('.w-sheet .just-l:last-child [data-p="just-undo"]')), 'waste: a sous chef sees Rice, 1.5 in the sheet, with Undo (' + await txt(p, '.w-sheet .just-r') + ')');
+  await p.click('.w-sheet .just-l:last-child [data-p="just-undo"]');
   await L.settle(p, 300);
   s = await store(p);
   const rice = Object.keys(s).filter(k => /\/waste\/[^/]+\/lines\//.test(k) && s[k].text === 'Rice');
@@ -186,6 +187,9 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.evaluate(() => { const b = document.querySelector('.w-rchips [data-v="excess"]') || document.querySelector('[data-p="wreason"][data-v="excess"]'); b.click(); });
   await p.click('.w-add .nb-addbtn');
   await L.settle(p, 300);
+  // in the open sheet the receipt has no Undo for staff; on Close the slip says who can fix it (step 2b, 5 Nov 2026)
+  ok(!(await p.$('.w-sheet [data-p="just-undo"]')) && /^Rice 2 /.test(await txt(p, '.w-sheet .just-l:last-child .just-n') || ''), 'waste: staff see Rice in the sheet with no Undo');
+  await L.tap(p, '.w-sheet .sheet-x[data-p="w-log-close"]'); await L.settle(p, 300);
   ok(/Wrong\? Ask the head chef\./.test(await txt(p, '.p-toast')), 'waste: staff are told who can remove an entry (' + await txt(p, '.p-toast') + ')');
   await p.context().close();
 
@@ -200,7 +204,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
     await L.settle(p, 300);
     s = await store(p);
     ok(Object.keys(s).some(k => /\/orders\/.*\/lines\//.test(k) && s[k].text === 'Tomatoe paste'), 'orders: Undo puts back what was typed');
-  } else ok(/Added/.test(otoast), 'orders: add shows a toast (' + otoast + ')');
+  } else ok(/^Tomato/.test(await txt(p, '.o-sheet .just-l:last-child .just-n') || ''), 'orders: the add sheet names the line (' + await txt(p, '.o-sheet .just-r') + ')');
   await p.context().close();
 
   // a typed amount counts as unsaved, so the daily refresh waits

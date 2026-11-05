@@ -37,7 +37,8 @@ extra[fsKey(['days', today, 'items', 'stuck1'])] = { text: 'Cure salmon', statio
   ok(await p.evaluate(() => document.getElementById('p-text').value) === 'Zest limes', 'the words typed are still there');
   await p.evaluate(() => document.getElementById('p-text').focus()); await p.keyboard.press('Enter'); await L.settle(p, 500);
   ok((await lines(p, 'Zest limes')).length === 1 && !!(await p.$('.p-sheet')) && await p.evaluate(() => document.activeElement && document.activeElement.id === 'p-text' && !document.activeElement.value), 'Add saves the line; the sheet stays for the next one, the box empty');
-  ok(await p.evaluate(() => { const t = document.querySelector('.p-toast'), s = document.querySelector('.p-sheet'); return !!t && t.getBoundingClientRect().bottom <= s.getBoundingClientRect().top; }), 'the toast shows above the sheet');
+  // since 5 Nov 2026 (docs/action-feedback.md, step 2b) the open sheet says it under the box, and no slip covers the page
+  ok(await p.evaluate(() => { const r = document.querySelector('.p-sheet .just-r'); return !!r && /Added just now/i.test(r.textContent) && /Zest limes/.test(r.textContent) && !document.querySelector('.p-toast'); }), 'the sheet says Added just now under the box, with no slip over the page');
   await p.click('.p-sheet [data-p="p-log-close"]'); await L.settle(p, 200);
   ok(!(await p.$('.p-sheet')), 'Close closes it');
 

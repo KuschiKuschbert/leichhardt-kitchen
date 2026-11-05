@@ -47,14 +47,16 @@ const lines = async (p, text) => Object.entries(await store(p)).filter(([k, v]) 
   await p.click('.tr-add .nb-addbtn'); await L.settle(p, 500);
   const limes = await lines(p, 'Limes'), flour = await lines(p, 'Flour');
   ok(limes.length === 1 && flour.length === 1 && [limes[0][1], flour[0][1]].every(x => x.venue === 'Riviera' && x.person === 'Tom' && x.note === 'Back Friday' && x.dir === 'out' && x.unit === 'kg' && !x.deleted) && !(await lines(p, 'Mint')).length, 'Log the pick-up: Limes and Flour saved as their own lines, with the venue, the person and the note');
-  ok(/Riviera took 2 items/.test(await txt(p, '.p-toast') || '') && !(await p.$('.tr-basket')) && await p.inputValue('#tr-venue') === 'Riviera', 'one toast for the pick-up; the list is empty, the venue stays for the next one');
-  await p.click('.p-toast-btn'); await L.settle(p, 500);
+  // one receipt line in the open sheet for the pick-up (step 2b, 5 Nov 2026), read out as it was said on the slip
+  ok((await p.$$('.tr-sheet .just-l')).length === 1 && /^2 items to Riviera$/.test(await txt(p, '.tr-sheet .just-l .just-n') || '') && /Riviera took 2 items/.test(await p.evaluate(() => (document.getElementById('lk-live') || {}).textContent || '')) && !(await p.$('.tr-basket')) && await p.inputValue('#tr-venue') === 'Riviera', 'one receipt line for the pick-up; the list is empty, the venue stays for the next one (' + await txt(p, '.tr-sheet .just-r') + ')');
+  await p.click('.tr-sheet [data-p="just-undo"]'); await L.settle(p, 500);
   ok((await lines(p, 'Limes'))[0][1].deleted === true && (await lines(p, 'Flour'))[0][1].deleted === true, 'Undo takes both lines back');
 
   // a single item still logs as before
   await p.fill('#tr-text', 'Eggs'); await p.fill('#tr-amt', '30'); await p.click('[data-p="tr-unit"][data-v="pieces"]');
   await p.click('.tr-add .nb-addbtn'); await L.settle(p, 500);
-  ok((await lines(p, 'Eggs')).length === 1 && /Riviera took 30 pieces Eggs/.test(await txt(p, '.p-toast') || ''), 'one item: Log it saves it, the toast says what');
+  // the sheet's receipt names it and the words are read out (step 2b, 5 Nov 2026)
+  ok((await lines(p, 'Eggs')).length === 1 && /^Eggs 30 pieces, to Riviera$/.test(await txt(p, '.tr-sheet .just-l:last-child .just-n') || '') && /Riviera took 30 pieces Eggs/.test(await p.evaluate(() => (document.getElementById('lk-live') || {}).textContent || '')), 'one item: Log it saves it, the sheet says what');
   await p.keyboard.press('Escape'); await L.settle(p, 200);
   ok(!(await p.$('.tr-sheet')) && await p.evaluate(() => document.activeElement && document.activeElement.classList.contains('tr-logbtn')), 'Escape closes the sheet, back on Log a transfer');
   ok(/Eggs/.test(await txt(p, '.tr-outstanding') || ''), 'the new line is under Still out');

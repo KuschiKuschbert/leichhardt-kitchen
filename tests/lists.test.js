@@ -48,7 +48,8 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   await p.fill('#p-text', 'Pick mint');
   await p.press('#p-text', 'Enter');
   await L.settle(p, 300);
-  ok(/^Added Pick mint to Larder\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'add box: typed line says Added Pick mint to Larder (' + await txt(p, '.p-toast') + ')');
+  // in the open sheet the receipt says it, under the box (step 2b, 5 Nov 2026)
+  ok((await txt(p, '.p-sheet .just-l:last-child .just-n')) === 'Pick mint to Larder' && !!(await p.$('.p-sheet .just-l:last-child [data-p="just-undo"]')), 'add box: the sheet says Pick mint to Larder, with Undo (' + await txt(p, '.p-sheet .just-r') + ')');
   ok(await p.getAttribute('#p-section', 'enterkeyhint') === 'next' && await p.getAttribute('#p-text', 'enterkeyhint') === 'done', 'add box: keyboard hints set');
 
   // section tab with everything ticked says so
@@ -95,7 +96,7 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   ok(/Tap to add/.test(await p.evaluate(() => (document.querySelector('.w-often .nb-ql') || {}).textContent || '')), 'orders: regulars say Tap to add');
   await p.click('[data-p="oreg"]');
   await L.settle(p, 300);
-  ok(/^Added \S.* to the order list\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'orders: one tap regular says Added (the line) to the order list (' + await txt(p, '.p-toast') + ')');
+  ok(/\S/.test(await txt(p, '.o-sheet .just-l:last-child .just-n') || '') && !!(await p.$('.o-sheet .just-l:last-child [data-p="just-undo"]')), 'orders: one tap regular is named in the sheet, with Undo (' + await txt(p, '.o-sheet .just-r') + ')');
   await p.keyboard.press('Escape'); await L.settle(p, 300);
   // Waiting from earlier days (one list, 3 Nov 2026): yesterday's Cream rolled over; its tick says Ordered, with Undo
   const cid = 'r' + today.replace(/-/g, '') + '-old1';

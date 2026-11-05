@@ -130,25 +130,46 @@ const stamps = (p, scope) => p.evaluate(s => [...document.querySelectorAll(s + '
     ok(p.errors.length === 0, 'recipe: no page errors ' + p.errors.join(' | '));
     await p.context().close();
 
-    /* ---------- step 2a: the slip names the line, Undo says Undone, new lines wear "New 14:02" ---------- */
+    /* ---------- steps 2a and 2b: the slip names the line, Undo says Undone, new lines wear "New 14:02", and an open add
+       sheet keeps "Added just now" (the last two, each with Undo) instead of a slip over the page ---------- */
     const slip = p => p.evaluate(() => { const e = document.querySelector('.p-toast[data-toast="new"] .p-toast-msg') || document.querySelector('.p-toast .p-toast-msg'); return e ? e.textContent.trim() : ''; });
     const newStamp = (p, sel) => p.evaluate(s => { const r = document.querySelector(s); const e = r && r.querySelector('.lk-stamp.is-new'); return e ? e.textContent.trim() : ''; }, sel);
     const rowOf = (p, text) => p.evaluate(t => { const r = [...document.querySelectorAll('.nb-row')].find(x => (x.querySelector('.nb-t') || {}).textContent && x.querySelector('.nb-t').textContent.indexOf(t) === 0); return r ? (r.id ? '#' + r.id : '[data-ln="' + r.getAttribute('data-ln') + '"]') : ''; }, text);
+    // the receipt in the open sheet: each line's words, whether it has Undo, and whether it says Undone
+    const receipt = (p, sheet) => p.evaluate(s => [...document.querySelectorAll(s + ' .just-r .just-l')].map(l => ({ t: l.querySelector('.just-n').textContent.trim(), undo: !!l.querySelector('[data-p="just-undo"]'), h: l.querySelector('[data-p="just-undo"]') ? l.querySelector('[data-p="just-undo"]').getBoundingClientRect().height : 0, gone: /Undone/.test(l.textContent) })), sheet);
+    const said = p => p.evaluate(() => (document.getElementById('lk-live') || {}).textContent || '');
     p = await L.open(b, '#/prep', { wait: 1500 });
     await L.pLog(p);
     await p.fill('#p-section', 'Sauce'); await p.fill('#p-text', 'Slice tomatoes'); await p.press('#p-text', 'Enter'); await L.settle(p, 300);
-    ok(/^Added Slice tomatoes to Sauce$/.test(await slip(p)), 'prep: the slip names the line and its section (' + await slip(p) + ')');
+    let rc = await receipt(p, '.p-sheet');
+    ok(rc.length === 1 && rc[0].t === 'Slice tomatoes to Sauce' && rc[0].undo && rc[0].h >= 44, 'prep sheet: "Added just now" names the line and its section, with a 44 px Undo (' + JSON.stringify(rc) + ')');
+    ok(!(await p.$('.p-toast')), 'prep sheet: no slip over the page while the sheet is open');
+    ok(/Added Slice tomatoes to Sauce/.test(await said(p)), 'prep sheet: the add is read out (' + await said(p) + ')');
+    ok(await p.evaluate(() => document.activeElement && document.activeElement.id === 'p-text'), 'prep sheet: the box is ready for the next line');
     const long = 'Brunoise of shallots, chives and tarragon for the bearnaise tonight';
     await p.fill('#p-section', 'Sauce'); await p.fill('#p-text', long); await p.press('#p-text', 'Enter'); await L.settle(p, 300);
-    let sl = await slip(p);
-    ok(/\u2026 to Sauce$/.test(sl) && sl.length < 60, 'prep: a long name is cut, and "to Sauce" still shows (' + sl + ')');
+    await p.fill('#p-section', 'Larder'); await p.fill('#p-text', 'Pick mint'); await p.press('#p-text', 'Enter'); await L.settle(p, 300);
+    rc = await receipt(p, '.p-sheet');
+    ok(rc.length === 2 && /\u2026 to Sauce$/.test(rc[0].t) && rc[1].t === 'Pick mint to Larder', 'prep sheet: the last two only, newest last, a long name cut and "to Sauce" kept (' + JSON.stringify(rc) + ')');
+    // Undo in the receipt takes the line back and says so in place
+    await L.tap(p, '.p-sheet [data-p="just-undo"][aria-label^="Undo Pick mint"]'); await L.settle(p, 300);
+    rc = await receipt(p, '.p-sheet');
+    ok(rc[1] && rc[1].gone && !rc[1].undo, 'prep sheet: Undo marks the line Undone in the receipt (' + JSON.stringify(rc) + ')');
+    ok(await p.evaluate(() => Object.values(window.__fake.dump()).some(v => v && v.text === 'Pick mint' && v.deleted === true)), 'prep sheet: the undone line is removed');
+    // Close: the last add that stands goes on the slip, with Undo
     await L.tap(p, '.p-sheet .sheet-x[data-p="p-log-close"]'); await L.settle(p, 300);
+    let sl = await slip(p);
+    ok(/^Added Brunoise .*\u2026 to Sauce$/.test(sl) && sl.length < 60 && !!(await p.$('.p-toast [data-p="toast-act"]')), 'prep: after Close the slip names the last line added, cut, with "to Sauce" and Undo (' + sl + ')');
     let sel = await rowOf(p, 'Slice tomatoes');
     ok(sel && STAMP.test((await newStamp(p, sel)).replace(/^New/, 'Saved')), 'prep: the new line wears "New HH:MM" on the list (' + await newStamp(p, sel) + ')');
     ok(!(await newStamp(p, '#nbr-i1')), 'prep: a line added earlier wears no stamp');
-    // Undo says what it undid
+    // Undo on the slip says what it undid
     await p.click('.p-toast[data-toast="new"] [data-p="toast-act"]'); await L.settle(p, 300);
     ok(/^Undone: added Brunoise/.test(await slip(p)), 'prep: Undo says Undone and names what it undid (' + await slip(p) + ')');
+    // a one-tap add outside the sheet still says so on the slip
+    await p.evaluate(() => { const b = document.querySelector('[data-p="quick"]'); if (b) { b.scrollIntoView(); b.click(); } });
+    await L.settle(p, 300);
+    if (await p.$('[data-p="quick"]')) ok(/^Added \S/.test(await slip(p)), 'prep: a Quick add outside the sheet says Added on the slip (' + await slip(p) + ')');
     // tick, then untick by tapping again: both name the line
     const tk = await p.evaluate(() => { const b = [...document.querySelectorAll('.nb-row:not(.is-done) .nb-box[data-p="tick"]:not([disabled])')][0]; const t = b.closest('.nb-row').querySelector('.nb-t').firstChild.textContent.trim(); b.click(); return { id: b.getAttribute('data-id'), t }; });
     await L.settle(p, 300);
@@ -159,17 +180,37 @@ const stamps = (p, scope) => p.evaluate(s => [...document.querySelectorAll(s + '
     await p.clock.runFor(121000); await L.settle(p, 200);
     sel = await rowOf(p, 'Slice tomatoes');
     ok(sel && !(await newStamp(p, sel)), 'prep: after 2 minutes the New stamp has gone');
+    // a sheet opened again starts its own receipt, and an add older than 110 s has no Undo
+    await L.pLog(p);
+    ok(!(await receipt(p, '.p-sheet')).length, 'prep sheet: opened again, its receipt starts empty');
+    ok(!(await L.overflow(p)), 'prep: fits a phone');
     ok(p.errors.length === 0, 'prep: no page errors ' + p.errors.join(' | '));
     await p.context().close();
 
     p = await L.open(b, '#/orders', { wait: 1500 });
     await L.oLog(p);
     await p.fill('#o-text', 'Butter'); await p.press('#o-text', 'Enter'); await L.settle(p, 400);
-    ok(/^Added Butter to the order list$/.test(await slip(p)), 'orders: the slip names the line (' + await slip(p) + ')');
+    rc = await receipt(p, '.o-sheet');
+    ok(rc.length === 1 && /^Butter/.test(rc[0].t) && rc[0].undo && !(await p.$('.p-toast')), 'orders sheet: "Added just now" names the line, with Undo, and no slip (' + JSON.stringify(rc) + ')');
     await L.tap(p, '.o-sheet .sheet-x[data-p="o-log-close"]'); await L.settle(p, 300);
+    ok(/^Added Butter to the order list$/.test(await slip(p)), 'orders: after Close the slip names the line (' + await slip(p) + ')');
     sel = await rowOf(p, 'Butter');
     ok(sel && /^New \d\d:\d\d$/.test(await newStamp(p, sel)), 'orders: the new line wears "New HH:MM" (' + (sel && await newStamp(p, sel)) + ')');
     ok(p.errors.length === 0, 'orders: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+
+    // wastage: a staff phone gets the receipt with no Undo (only the head chef or a sous chef take a line back)
+    p = await L.open(b, '#/waste', { who: 'ann', wait: 1500 });
+    await L.wLog(p);
+    await p.fill('#w-text', 'Bread'); await p.fill('#w-amt', '2');
+    await p.evaluate(() => { const r = document.querySelector('[data-p="wreason"]'); if (r) r.click(); });
+    await L.settle(p, 150);
+    await p.evaluate(() => document.querySelector('.w-sheet form [type="submit"]').click()); await L.settle(p, 400);
+    rc = await receipt(p, '.w-sheet');
+    ok(rc.length === 1 && /^Bread 2 /.test(rc[0].t) && !rc[0].undo && !(await p.$('.p-toast')), 'wastage sheet, staff: "Added just now" names it, with no Undo, and no slip (' + JSON.stringify(rc) + ')');
+    await L.tap(p, '.w-sheet .sheet-x[data-p="w-log-close"]'); await L.settle(p, 300);
+    ok(/^Logged Bread, 2 .*Wrong\? Ask the head chef\.$/.test(await slip(p)), 'wastage, staff: after Close the slip says who can fix it (' + await slip(p) + ')');
+    ok(p.errors.length === 0, 'wastage: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   } finally {
     await b.close();
