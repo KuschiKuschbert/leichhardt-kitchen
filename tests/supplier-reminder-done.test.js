@@ -146,6 +146,46 @@ async function noErrors(p, label, blocked) { const e = p.errors.filter(x => !(bl
   await noErrors(p, 'Undo after handover');
   await p.context().close();
 
+  // Ticked first, then the quantities (head chef, 5 Nov 2026: "we're stuck"). The tick says the order is in, with no
+  // quantities. Opening the supplier from the tick list to record them used to stop at Review with "An order is already
+  // marked for this cut-off", and Try again only read the catalogue again, so Review stopped again. A tick alone is not a
+  // recorded order: Review records its quantities. An order already recorded for the cut-off still needs Additional order.
+  const orderKeys = s => Object.keys(s).filter(k => /\/suppliers\/northside\/orders\/o-/.test(k));
+  const linkKey = F.key(['supplierlinks', F.today + '_northside']);
+  const recordReady = q => L.waitFor(q, () => { const r = document.querySelector('[data-su="record"]'); return !!r && !r.disabled && /Record order placed/.test(r.textContent); }, null, 6000).then(() => true, () => false);
+  p = await open(b); await ready(p);
+  await p.click(button); await saved(p);
+  await p.click('.cut-tl a.cut-n[href*="/northside/"]');
+  await L.waitFor(p, s => !!document.querySelector(s), qty, 15000);
+  await p.fill(qty, '3');
+  await p.click('[data-su="review"]');
+  const reviewOk = await recordReady(p);
+  const shown = (await L.txt(p, 'main') || '').replace(/\s+/g, ' ');
+  ok(reviewOk && !/already marked/.test(shown), 'ticked on the order list, then opened from it: Review goes on to Record order placed (' + (reviewOk ? 'review' : shown.slice(0, 160)) + ')');
+  ok(/Records the quantities of the order ticked/.test(await L.txt(p, '.su-review') || ''), 'the review says it records the quantities of the order already ticked');
+  if (reviewOk) {
+    await p.click('[data-su="record"]');
+    await L.waitFor(p, k => !!window.__fake.dump()[k], linkKey, 10000).catch(() => {});
+  }
+  after = await dump(p);
+  const first = orderKeys(after).map(k => after[k])[0];
+  ok(orderKeys(after).length === 1 && first.cutoffDay === F.today && first.cutoffId === 'northside' && first.lines.length === 1 && first.lines[0].qty === '3 kg', 'the quantities are saved for that cut-off (' + orderKeys(after).length + ' orders)');
+  ok(after[linkKey] && after[linkKey].v === 1 && after[linkKey].orderId === (orderKeys(after)[0] || '').split('/').pop() && after[completion].on === true && after[completion].at === first.at, 'the cut-off links to that order and stays ticked, with the recording\'s time');
+  // the guard against two orders for one cut-off stays: a second order needs Additional order
+  await L.waitFor(p, s => { const i = document.querySelector(s); return !!i && !i.value; }, qty, 10000).catch(() => {});
+  await p.fill(qty, '2');
+  await p.click('[data-su="review"]');
+  await L.waitFor(p, () => /Another order is recorded for this cut-off/.test((document.querySelector('.su-error') || {}).textContent || ''), null, 6000).catch(() => {});
+  ok(/Another order is recorded for this cut-off/.test(await L.txt(p, '.su-error') || '') && !(await p.$('[data-su="record"]')) && orderKeys(await dump(p)).length === 1, 'an order already recorded for the cut-off: Review stops and asks for Additional order');
+  if (!(await p.isVisible('[data-su="additional"]'))) await p.click('[data-su="info"]');
+  await p.click('[data-su="additional"]');
+  await p.click('[data-su="review"]');
+  if (await recordReady(p)) { await p.click('[data-su="record"]'); await L.waitFor(p, k => (window.__fake.dump()[k] || {}).v === 2, linkKey, 10000).catch(() => {}); }
+  after = await dump(p);
+  ok(orderKeys(after).length === 2 && after[linkKey].v === 2, 'Additional order records a second order on the same cut-off');
+  await noErrors(p, 'tick, then record');
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })();

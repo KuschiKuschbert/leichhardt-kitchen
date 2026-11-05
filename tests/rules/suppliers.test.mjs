@@ -136,6 +136,16 @@ await ok(setDoc(doc(owner, K + 'suppliers/' + SID + '/orders/ordered-first'), (a
 await ok(setDoc(doc(head, K + 'cutdone/' + DAY + '_' + CUT), { day: DAY, sid: CUT, on: false, at: 80, by: 'head' }), true, 'existing untick reopens reminder independently');
 await ok(Promise.resolve().then(async () => { if (!(await snap(head, 'suppliers/' + SID + '/orders/ordered-first')).exists()) throw Error('History removed'); }), true, 'unticking leaves order history intact');
 await ok(setDoc(doc(sous, K + 'cutdone/' + DAY + '_' + CUT), { day: DAY, sid: CUT, on: true, at: 81, by: 'sous' }), true, 'older reminder-only completion remains compatible');
+// Ticked on the order list first, then the quantities (5 Nov 2026): the tick has no order and no occurrence record,
+// so the first recorded order creates the link at v 1 and takes over the tick with its own writer and time.
+const TICKED = '2026-10-23';
+await ok(setDoc(doc(sous, K + 'cutdone/' + TICKED + '_' + CUT), { day: TICKED, sid: CUT, on: true, at: 82, by: 'sous' }), true, 'order-list tick with no quantities');
+await ok(linked(head, 'after-tick', { v: 2, at: 83, by: 'head', cutoffDay: TICKED }), true, 'the first recorded order after a tick saves with its occurrence and completion');
+await ok(Promise.resolve().then(async () => {
+  const l = (await snap(head, 'supplierlinks/' + TICKED + '_' + CUT)).data(), c = (await snap(head, 'cutdone/' + TICKED + '_' + CUT)).data();
+  if (l.v !== 1 || l.orderId !== 'after-tick' || c.on !== true || c.by !== 'head' || c.at !== 83) throw Error('Tick and order out of step');
+}), true, 'the occurrence links that order and the tick stays on');
+await ok(linked(sous, 'after-tick-again', { v: 2, at: 84, cutoffDay: TICKED }), false, 'a second order on that cut-off without the next occurrence revision is still refused');
 
 for (const [patch, label] of [
   [{ sid: 'wrong-supplier' }, 'wrong supplier path'], [{ supplierName: '' }, 'blank supplier name'],

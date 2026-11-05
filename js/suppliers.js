@@ -97,6 +97,9 @@
   function occurrenceKey(o) { return o ? o.day + '_' + o.cutoffId : ''; }
   function occurrenceLabel(o) { return o && (o.label || (typeof o.at === 'number' ? dateText(o.at) : o.day)) || ''; }
   function message(msg) { M.msg = msg; draw(); }
+  /* An order already recorded for this cut-off (its supplierlinks record). Try again only reads the catalogue again, so
+     this refusal offers Additional order instead (5 Nov 2026). */
+  var LINKED_ERR = 'Another order is recorded for this cut-off. Check history and choose Additional order if needed.';
   function errorText(e) {
     var code = e && e.code || '';
     if (code === 'recorded') return 'This draft ID already has a recorded order. Its saved quantities are unchanged. Your current quantities are kept. Check history, or start a new draft for an additional order.';
@@ -192,7 +195,7 @@
   function statusHTML() {
     var task = activeTask(), note = M.armedLeave && (task === 'editor' || task === 'supplier' || task === 'import'), msg = M.armedLeave && !note ? '' : M.msg;
     var pending = M.review && task !== 'review' && (M.saving || M.review.uncertain) ? '<p id="su-recording-status" class="su-status" role="status">Recording for ' + esc(M.review.supplierName) + (M.saving ? ' is still in progress. ' : ' needs confirmation. ') + '<a href="#/suppliers/' + encodeURIComponent(M.review.sid) + '" data-su-recovery>Return to review</a>' + (M.saving ? ' to check its outcome.' : ' to retry safely.') + '</p>' : '';
-    return (M.err ? '<div id="su-order-error" class="su-error" role="alert">' + esc(M.err) + (M.validation || pending ? '' : '<div class="btn-row">' + button('retry', 'Try again') + '</div>') + '</div>' : '') + pending + (msg ? '<p class="su-status' + (note ? ' su-leave-note' : '') + '"' + (note ? ' id="su-leave-note"' : '') + ' role="status">' + esc(msg) + '</p>' : '') + (navigator.onLine === false ? '<p class="su-error" role="status">No signal. Supplier reads and saves need a connection. Do not close a draft you still need.</p>' : '');
+    return (M.err ? '<div id="su-order-error" class="su-error" role="alert">' + esc(M.err) + (M.validation || pending ? '' : '<div class="btn-row">' + (M.err === LINKED_ERR ? button('additional', 'Additional order') : button('retry', 'Try again')) + '</div>') + '</div>' : '') + pending + (msg ? '<p class="su-status' + (note ? ' su-leave-note' : '') + '"' + (note ? ' id="su-leave-note"' : '') + ' role="status">' + esc(msg) + '</p>' : '') + (navigator.onLine === false ? '<p class="su-error" role="status">No signal. Supplier reads and saves need a connection. Do not close a draft you still need.</p>' : '');
   }
   function headerHTML() {
     return '<div class="su-head"><div><span class="eyebrow">Chef tools</span><h2 id="rtitle" tabindex="-1">' + (M.mode === 'manage' ? 'Suppliers &amp; pars' : 'Supplier order') + '</h2><p class="hint">' + (M.mode === 'manage' ? 'Current pars and manual items. Original PDF records and past orders stay unchanged.' : 'Choose a supplier, check its last order and build the next one.') + '</p></div><div class="btn-row">' + button('refresh', M.busy ? inkLabel('Refreshing...', 'orders') : 'Refresh', M.busy ? ' disabled' : '') + '</div></div>' +
@@ -203,10 +206,12 @@
   }
   function emptyHTML() { return '<div class="empty"><h3 class="h3">No supplier catalogue yet</h3><p>Supplier goods and pars are private. The head chef can import the checked catalogue or add a supplier here.</p>' + (canEdit() ? '<div class="btn-row">' + button('import', 'Import catalogue', '', true) + button('add-supplier', 'Add supplier') + '</div>' : '<p class="hint">Ask the head chef to import the supplier sheets.</p>') + '</div>'; }
   function currentPar(i) { return i.par === '' ? 'Not set' : i.par; }
+  // the last order (already read) was recorded for this cut-off; a tick on the order list alone has no quantities
+  function recordedFor(o) { var l = latest(); return !!(o && l && l.cutoffId === o.cutoffId && l.cutoffDay === o.day); }
   function cutoffHTML() {
     var o = occurrence(); if (!o) return '<p class="hint">No order cut-off linked to this draft.</p>';
-    var already = !!o.done, key = occurrenceKey(o);
-    return '<section class="su-cutoff"><div><b>' + (already ? 'An order is marked as placed' : 'Order cut-off') + '</b><span>' + esc(occurrenceLabel(o)) + '</span>' + (o.deliveryDay ? '<small>Delivery: ' + esc(o.deliveryDay) + '</small>' : '') + '</div>' + (already ? smallButton('additional', M.additional === key ? 'Additional order selected' : 'Additional order') : '') + '</section>';
+    var already = !!o.done, key = occurrenceKey(o), ticked = already && !recordedFor(o);
+    return '<section class="su-cutoff"><div><b>' + (ticked ? 'Ticked as ordered' : already ? 'An order is marked as placed' : 'Order cut-off') + '</b><span>' + esc(occurrenceLabel(o)) + '</span>' + (o.deliveryDay ? '<small>Delivery: ' + esc(o.deliveryDay) + '</small>' : '') + (ticked ? '<small>Ticked on the order list. Review records its quantities.</small>' : '') + '</div>' + (already ? smallButton('additional', M.additional === key ? 'Additional order selected' : 'Additional order') : '') + '</section>';
   }
   function latestHTML() {
     var h = hist(), o = latest();
@@ -317,7 +322,7 @@
   function linesHTML(lines) { return '<div class="su-lines">' + lines.map(function (l) { return '<div><span><b>' + esc(l.name) + '</b><small class="hint">Pack: ' + esc(l.pack || 'Not set') + '</small></span><strong>' + esc(quantityText(l)) + '</strong></div>'; }).join('') + '</div>'; }
   function reviewHTML() {
     var r = M.review;
-    return '<section class="su-review"><h2 id="rtitle" tabindex="-1">Review order</h2>' + statusHTML() + '<p>' + esc(r.supplierName) + ' · ' + r.lines.length + ' items</p>' + linesHTML(r.lines) + '<p>Record this only after you have placed the supplier order. This page sends nothing to the supplier.</p>' + (r.occurrence ? '<p class="hint">' + (r.additional ? 'Additional order for ' : 'Completes only ') + esc(r.occurrence.label || r.occurrence.day) + '.</p>' : '<p class="hint">No reminder linked. This records the supplier history only.</p>') + '<div class="su-send"><b>1. Send it your usual way</b><div class="btn-row">' + (navigator.share ? button('share-review', 'Share order text', M.saving ? ' disabled' : '') : '') + button('copy-review', 'Copy order text', M.saving ? ' disabled' : '') + '</div><span class="hint">' + (navigator.share ? 'Share opens your phone\'s text, email or chat apps. ' : '') + 'The book sends nothing itself.</span></div>' +
+    return '<section class="su-review"><h2 id="rtitle" tabindex="-1">Review order</h2>' + statusHTML() + '<p>' + esc(r.supplierName) + ' · ' + r.lines.length + ' items</p>' + linesHTML(r.lines) + '<p>Record this only after you have placed the supplier order. This page sends nothing to the supplier.</p>' + (r.occurrence ? '<p class="hint">' + (r.additional ? 'Additional order for ' : r.occurrence.done ? 'Records the quantities of the order ticked for ' : 'Completes only ') + esc(r.occurrence.label || r.occurrence.day) + '.</p>' : '<p class="hint">No reminder linked. This records the supplier history only.</p>') + '<div class="su-send"><b>1. Send it your usual way</b><div class="btn-row">' + (navigator.share ? button('share-review', 'Share order text', M.saving ? ' disabled' : '') : '') + button('copy-review', 'Copy order text', M.saving ? ' disabled' : '') + '</div><span class="hint">' + (navigator.share ? 'Share opens your phone\'s text, email or chat apps. ' : '') + 'The book sends nothing itself.</span></div>' +
       '<b class="su-then">2. Then record it here</b><div class="btn-row">' + button('record', M.saving ? inkLabel('Recording...') : r.checking ? inkLabel('Checking cut-off...', 'orders') : r.uncertain ? 'Confirm recording again' : 'Record order placed', M.saving || r.checking ? ' disabled aria-busy="true"' : r.recorded ? ' disabled' : '', true) + (r.recorded ? button('new-draft', 'Start new draft', M.saving ? ' disabled' : '') : '') + '</div></section>';
   }
   function historyHTML() {
@@ -539,12 +544,15 @@
     var s = supplier(), d = draft(), lines;
     M.validation = null;
     try { lines = C.snapshotLines(s.items, d.qty, d.stock, d.suggestions, d.units); } catch (e) { reviewError(e); return; }
+    /* A tick on the order list says the order is in, with no quantities (5 Nov 2026), so it does not stop Review: this
+       records its quantities. Before, a ticked cut-off stopped here and Try again only read the catalogue again, so a chef
+       who ticked first could never record the order. An order already recorded for the cut-off (its supplierlinks record,
+       read below) still needs Additional order. */
     var o = occurrence(), key = occurrenceKey(o);
-    if (o && o.done && M.additional !== key) { M.err = 'An order is already marked for this cut-off. Check history, or choose Additional order before recording another.'; draw(); return; }
     M.err = ''; M.review = { id: d.id, sid: s.id, supplierName: s.name, catalogueV: s.v, lines: lines, occurrence: o, linkV: 0, checking: !!o, additional: !!(o && M.additional === key) }; draw(); focusTask();
     if (o) {
       var r = M.review, g = generation;
-      store.link({ day: o.day, cutoffId: o.cutoffId }).then(function (link) { if (g !== generation || M.review !== r) return; r.checking = false; r.linkV = link ? link.v : 0; if (link && !r.additional) { M.review = null; M.err = 'Another order is recorded for this cut-off. Check history and choose Additional order if needed.'; } draw(); }, function (e) { if (g === generation && M.review === r) { M.review = null; M.err = errorText(e); draw(); } });
+      store.link({ day: o.day, cutoffId: o.cutoffId }).then(function (link) { if (g !== generation || M.review !== r) return; r.checking = false; r.linkV = link ? link.v : 0; if (link && !r.additional) { M.review = null; M.err = LINKED_ERR; } draw(); }, function (e) { if (g === generation && M.review === r) { M.review = null; M.err = errorText(e); draw(); } });
     }
   }
   function record() {
@@ -726,7 +734,7 @@
     }
     if (cmd === 'apply') { var d = draft(), i = item(id), suggestion = i && C.suggestQuantity(i, latest(), d.stock[id] || '', fieldUnit('stock', i, d)); if (suggestion && !String(d.qty[id] || '').trim()) { d.qty[id] = suggestion.qty; d.units.qty[id] = suggestion.unit; d.suggestions[id] = suggestion; M.review = null; if (M.smart) message('Suggestion added. Check its quantity and unit before ordering.'); else { M.msg = ''; redrawRow(id); try { P.book().say('Suggestion added. Check its quantity and unit before ordering.'); } catch (e) {} } } }
     if (cmd === 'dismiss') { draft().dismissed[id] = true; if (M.smart) draw(); else redrawRow(id); }
-    if (cmd === 'additional') { M.additional = occurrenceKey(occurrence()); M.review = null; message('An additional order will keep the same cut-off link. Previous orders stay in history.'); }
+    if (cmd === 'additional') { M.additional = occurrenceKey(occurrence()); M.review = null; M.err = ''; message('An additional order will keep the same cut-off link. Previous orders stay in history.'); }
     if (cmd === 'new-draft' && M.review && M.review.recorded) { draft().id = uuid('o'); M.additional = occurrenceKey(M.review.occurrence); M.review = null; M.err = ''; message('New draft started. The earlier order stays in history. Review this as an additional order.'); }
     if (cmd === 'cutoff-settings') { if (B().openCutoffs) B().openCutoffs(); else location.hash = '#/admin'; }
     if (cmd === 'review') beginReview(); if (cmd === 'record') record(); if (cmd === 'review-close') closeReview();
