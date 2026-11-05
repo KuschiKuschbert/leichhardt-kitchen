@@ -40,6 +40,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Shared controls, deferred search, table interactions and council audit | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
 | Loading, saving, measured progress and reduced motion | `docs/loading-motion.md` (current), `docs/loading-feedback-options/brief.md` (recommended set chosen 4 Nov 2026, findings and build steps) |
 | What a tap shows after it: a save, add, tick, Undo or Refresh, its words, where the person is left (5 Nov 2026) | `docs/action-feedback.md` (the rule), `docs/action-feedback-options/brief.md` (audit of 307 actions, designs, scores) |
+| What reads and writes Firestore, what each page costs, and the plan to stay inside the free plan (audit, 5 Nov 2026) | `docs/firestore-usage.md` |
 | Nightly backup format, protected decryption and isolated recovery checks | `docs/backup-recovery.md` |
 | Suppliers, order history, cut-off sheets | `docs/supplier-workspace.md` |
 | Order cut-off patterns (a day and time per delivery day) and the heads-up the day before, selected the recommended mix (5 Nov 2026) | `docs/cutoff-options/brief.md` |
