@@ -3398,6 +3398,8 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
    out. Shown until the page is left or that thing changes again. */
 .lk-stamp { display: inline-flex; align-items: center; min-height: 22px; margin-left: .5rem; padding: 0 .45rem; border: 1.5px solid var(--done-ink); border-radius: 4px; background: var(--paper); color: var(--done-ink); font: 700 .8125rem/1 var(--display); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; vertical-align: .1em; }
 .lk-stamp:first-child { margin-left: 0; }
+/* a line this phone just added (2 minutes): ink, not green, so it never reads as done */
+.lk-stamp.is-new { margin-left: .35rem; border-color: var(--ink); color: var(--ink); }
 .cut-done { margin: .5rem 0 0; font-weight: 600; color: var(--ink); }
 .sv-line.p-err, .sv-slow { display: block; margin: 0; }
 .sv-slow { font-size: .875rem; font-weight: 600; color: var(--ink); }

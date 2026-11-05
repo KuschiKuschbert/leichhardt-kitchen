@@ -28,7 +28,7 @@ const seeThrough = bg => { const m = /rgba\([^)]*,\s*([\d.]+)\)/.exec(bg || '');
   await L.tap(p, '[data-p="del"][data-id="i2"]'); await L.settle(p, 200);
   if (!(await item(p, 'i2')).deleted) { await L.tap(p, '[data-p="del"][data-id="i2"]'); await L.settle(p, 300); }
   const chip = await txt(p, '.p-toast-old .p-toast-chip') || '';
-  ok(/^Undo ticked$/.test(chip.trim()), 'two Undos: the older one is a chip that says what it undoes (' + chip + ')');
+  ok(/^Undo ticked \S/.test(chip.trim()), 'two Undos: the older one is a chip that says what it undoes, with the line (' + chip + ')');
   const c = await box(p, '.p-toast-old'), m = await box(p, '.p-toast:not(.p-toast-old)');
   ok(c && m && c.bottom <= m.top + 1 && c.h <= 52, 'two Undos: the chip sits as a tab on top of the new slip (' + (c && c.h) + ' px)');
   ok(/Removed/.test(await txt(p, '.p-toast') || ''), 'two Undos: the new toast comes first on the page');

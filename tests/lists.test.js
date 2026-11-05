@@ -25,14 +25,15 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   ok(await p.evaluate(() => { const r = document.querySelector('#nbr-i5'); return r && r.classList.contains('is-done'); }), 'tick: line stays, struck through');
   const mid = await p.evaluate(() => [...document.querySelectorAll('.nb-row')].map(r => r.id));
   ok(JSON.stringify(before) === JSON.stringify(mid), 'tick: no line moved');
-  ok(/^Ticked\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'tick: toast says just Ticked, with Undo (' + await txt(p, '.p-toast') + ')');
+  ok(/^Ticked \S.*\s*Undo$/.test((await txt(p, '.p-toast') || '').trim()), 'tick: toast says Ticked and the line, with Undo (' + await txt(p, '.p-toast') + ')');
   await L.settle(p, 3600);
   ok(await p.$('#nbr-i5') === null, 'tick: line leaves after 3.5 seconds');
 
   // quick add from Handy: toast with Undo
   await p.evaluate(() => { const b = [...document.querySelectorAll('[data-p="quick"]')].find(x => /Mise onions/.test(x.textContent)); b.scrollIntoView(); b.click(); });
   await L.settle(p, 300);
-  ok(/^Added to Larder\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'one tap add: says where it went, not the line (' + await txt(p, '.p-toast') + ')');
+  // since 5 Nov 2026 the slip names the line and where it went (docs/action-feedback.md)
+  ok(/^Added Mise onions to Larder\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'one tap add: names the line and where it went (' + await txt(p, '.p-toast') + ')');
   await p.click('.p-toast-btn');
   await L.settle(p, 300);
   let s = await store(p);
@@ -47,7 +48,7 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   await p.fill('#p-text', 'Pick mint');
   await p.press('#p-text', 'Enter');
   await L.settle(p, 300);
-  ok(/^Added to Larder\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'add box: typed line says Added to Larder without the line (' + await txt(p, '.p-toast') + ')');
+  ok(/^Added Pick mint to Larder\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'add box: typed line says Added Pick mint to Larder (' + await txt(p, '.p-toast') + ')');
   ok(await p.getAttribute('#p-section', 'enterkeyhint') === 'next' && await p.getAttribute('#p-text', 'enterkeyhint') === 'done', 'add box: keyboard hints set');
 
   // section tab with everything ticked says so
@@ -84,7 +85,7 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   await L.settle(p, 400);
   const oa = await p.evaluate(() => [...document.querySelectorAll('.o-main .nb-row .nb-t')].map(t => t.firstChild.textContent));
   ok(JSON.stringify(ob) === JSON.stringify(oa), 'orders: ordered line keeps its place ' + JSON.stringify(oa));
-  ok(/^Ordered\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'orders: tick says just Ordered with Undo (' + await txt(p, '.p-toast') + ')');
+  ok(/^Ordered \S.*\s*Undo$/.test((await txt(p, '.p-toast') || '').trim()), 'orders: tick says Ordered and the line, with Undo (' + await txt(p, '.p-toast') + ')');
   await p.click('.p-toast-btn');
   await L.settle(p, 300);
   s = await store(p);
@@ -94,14 +95,14 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   ok(/Tap to add/.test(await p.evaluate(() => (document.querySelector('.w-often .nb-ql') || {}).textContent || '')), 'orders: regulars say Tap to add');
   await p.click('[data-p="oreg"]');
   await L.settle(p, 300);
-  ok(/^Added to the order list\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'orders: one tap regular says Added to the order list (' + await txt(p, '.p-toast') + ')');
+  ok(/^Added \S.* to the order list\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'orders: one tap regular says Added (the line) to the order list (' + await txt(p, '.p-toast') + ')');
   await p.keyboard.press('Escape'); await L.settle(p, 300);
   // Waiting from earlier days (one list, 3 Nov 2026): yesterday's Cream rolled over; its tick says Ordered, with Undo
   const cid = 'r' + today.replace(/-/g, '') + '-old1';
   await L.waitFor(p, id => !!document.querySelector('.o-wait [data-p="otick"][data-id="' + id + '"]'), cid, 6000);
   await p.click('.o-wait [data-p="otick"][data-id="' + cid + '"]');
   await L.settle(p, 400);
-  ok(/^Ordered\s*Undo/.test((await txt(p, '.p-toast') || '').trim()), 'orders: a line waiting from earlier days ticks with Ordered and Undo (' + await txt(p, '.p-toast') + ')');
+  ok(/^Ordered \S.*\s*Undo$/.test((await txt(p, '.p-toast') || '').trim()), 'orders: a line waiting from earlier days ticks with Ordered and Undo (' + await txt(p, '.p-toast') + ')');
   await p.click('.p-toast-btn');
   await L.settle(p, 400);
   s = await store(p);

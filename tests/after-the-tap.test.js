@@ -129,6 +129,48 @@ const stamps = (p, scope) => p.evaluate(s => [...document.querySelectorAll(s + '
     ok(s && s.text === 'Try again' && !s.disabled, 'recipe failed: Save says Try again (' + JSON.stringify(s) + ')');
     ok(p.errors.length === 0, 'recipe: no page errors ' + p.errors.join(' | '));
     await p.context().close();
+
+    /* ---------- step 2a: the slip names the line, Undo says Undone, new lines wear "New 14:02" ---------- */
+    const slip = p => p.evaluate(() => { const e = document.querySelector('.p-toast[data-toast="new"] .p-toast-msg') || document.querySelector('.p-toast .p-toast-msg'); return e ? e.textContent.trim() : ''; });
+    const newStamp = (p, sel) => p.evaluate(s => { const r = document.querySelector(s); const e = r && r.querySelector('.lk-stamp.is-new'); return e ? e.textContent.trim() : ''; }, sel);
+    const rowOf = (p, text) => p.evaluate(t => { const r = [...document.querySelectorAll('.nb-row')].find(x => (x.querySelector('.nb-t') || {}).textContent && x.querySelector('.nb-t').textContent.indexOf(t) === 0); return r ? (r.id ? '#' + r.id : '[data-ln="' + r.getAttribute('data-ln') + '"]') : ''; }, text);
+    p = await L.open(b, '#/prep', { wait: 1500 });
+    await L.pLog(p);
+    await p.fill('#p-section', 'Sauce'); await p.fill('#p-text', 'Slice tomatoes'); await p.press('#p-text', 'Enter'); await L.settle(p, 300);
+    ok(/^Added Slice tomatoes to Sauce$/.test(await slip(p)), 'prep: the slip names the line and its section (' + await slip(p) + ')');
+    const long = 'Brunoise of shallots, chives and tarragon for the bearnaise tonight';
+    await p.fill('#p-section', 'Sauce'); await p.fill('#p-text', long); await p.press('#p-text', 'Enter'); await L.settle(p, 300);
+    let sl = await slip(p);
+    ok(/\u2026 to Sauce$/.test(sl) && sl.length < 60, 'prep: a long name is cut, and "to Sauce" still shows (' + sl + ')');
+    await L.tap(p, '.p-sheet .sheet-x[data-p="p-log-close"]'); await L.settle(p, 300);
+    let sel = await rowOf(p, 'Slice tomatoes');
+    ok(sel && STAMP.test((await newStamp(p, sel)).replace(/^New/, 'Saved')), 'prep: the new line wears "New HH:MM" on the list (' + await newStamp(p, sel) + ')');
+    ok(!(await newStamp(p, '#nbr-i1')), 'prep: a line added earlier wears no stamp');
+    // Undo says what it undid
+    await p.click('.p-toast[data-toast="new"] [data-p="toast-act"]'); await L.settle(p, 300);
+    ok(/^Undone: added Brunoise/.test(await slip(p)), 'prep: Undo says Undone and names what it undid (' + await slip(p) + ')');
+    // tick, then untick by tapping again: both name the line
+    const tk = await p.evaluate(() => { const b = [...document.querySelectorAll('.nb-row:not(.is-done) .nb-box[data-p="tick"]:not([disabled])')][0]; const t = b.closest('.nb-row').querySelector('.nb-t').firstChild.textContent.trim(); b.click(); return { id: b.getAttribute('data-id'), t }; });
+    await L.settle(p, 300);
+    ok((await slip(p)) === 'Ticked ' + tk.t, 'prep: Ticked names the line (' + await slip(p) + ')');
+    await p.click('.nb-box[data-p="tick"][data-id="' + tk.id + '"]'); await L.settle(p, 300);
+    ok((await slip(p)) === 'Unticked ' + tk.t + '. It is open again.', 'prep: a second tap says Unticked and the line (' + await slip(p) + ')');
+    // the stamp goes after 2 minutes
+    await p.clock.runFor(121000); await L.settle(p, 200);
+    sel = await rowOf(p, 'Slice tomatoes');
+    ok(sel && !(await newStamp(p, sel)), 'prep: after 2 minutes the New stamp has gone');
+    ok(p.errors.length === 0, 'prep: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+
+    p = await L.open(b, '#/orders', { wait: 1500 });
+    await L.oLog(p);
+    await p.fill('#o-text', 'Butter'); await p.press('#o-text', 'Enter'); await L.settle(p, 400);
+    ok(/^Added Butter to the order list$/.test(await slip(p)), 'orders: the slip names the line (' + await slip(p) + ')');
+    await L.tap(p, '.o-sheet .sheet-x[data-p="o-log-close"]'); await L.settle(p, 300);
+    sel = await rowOf(p, 'Butter');
+    ok(sel && /^New \d\d:\d\d$/.test(await newStamp(p, sel)), 'orders: the new line wears "New HH:MM" (' + (sel && await newStamp(p, sel)) + ')');
+    ok(p.errors.length === 0, 'orders: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
   } finally {
     await b.close();
   }
