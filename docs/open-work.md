@@ -22,7 +22,7 @@ Remove each item here once it is done.
 
 The coding rules in `CLAUDE.md` came from a check of the whole book on 21 Oct 2026. This is the older code that does not meet them yet, in the order to fix it. Each item is its own branch and pull request, with its tests. Remove an item once it is merged.
 
-After the tap (5 Nov 2026, `docs/action-feedback.md`): the chosen mix is built (`docs/action-feedback-options/brief.md`). Left from the audit, to bring in line when that page is next worked on: the recipe and drawing editors' own toasts look the same for success and failure and go by themselves (WA-10; the function editor's since 5 Nov 2026).
+After the tap (5 Nov 2026, `docs/action-feedback.md`): the chosen mix is built (`docs/action-feedback-options/brief.md`). Everything the audit found is built, the recipe and drawing editors' slips last (6 Nov 2026). Still to do: the slip helper is three copies, in `js/manage.js`, `js/draw.js` and `js/fnedit.js`, to be made one (WA-10, `docs/ux-council-audit.md`).
 
 Done, all on 22 Oct 2026:
 - the wastage log

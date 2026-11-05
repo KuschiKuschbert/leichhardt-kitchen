@@ -39,6 +39,8 @@
   function lsSet(k, v) { try { if (LS) { if (v == null || v === '') LS.removeItem(k); else LS.setItem(k, v); } } catch (e) {} }
 
   var SLOT_NAME = { plate: 'On the plate', pan: 'In the pan', side: 'From the side', build: 'Build' };
+  // what a saved drawing is called on the slip: "Saved the plate drawing of Chicken Burger" (6 Nov 2026)
+  var SLOT_SAVED = { plate: 'plate drawing', pan: 'pan drawing', side: 'side view', build: 'build drawing' };
   // side and build drawings have no servingware surface of their own: a fixed frame like the book's own (js/art.js)
   var FRAME = { side: '-120 -140 240 170', build: '-172 -123 344 246' };
   var LABEL = { font: 'Barlow, Arial, sans-serif', ink: '#1C1D1F', sub: '#55585E', head: '#C2451A' };
@@ -533,13 +535,19 @@
   /* ---------- the page ---------- */
   function say(m) { try { B().say(m); } catch (e) {} }
   var toastEl = null, toastT = null;
-  function toast(m, confirmed) {
+  // bad: a failure (6 Nov 2026, docs/action-feedback.md): red, with OK, and it stays until OK, the next slip or the
+  // studio closes. A save from a panel (library piece, servingware, template) fails here too, by the panel, as well as
+  // in the top bar.
+  function toast(m, confirmed, bad) {
     if (W.suspended || workLock()) return;
     say(m);
     if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'p-toasts mg-toasts'; document.body.appendChild(toastEl); }
-    toastEl.innerHTML = '<div class="p-toast p-toast-plain" role="presentation">' + (confirmed ? inkLabel(m, 'save', 'done') : esc(m)) + '</div>';
-    clearTimeout(toastT); toastT = setTimeout(function () { if (toastEl) toastEl.innerHTML = ''; }, 4000);
+    toastEl.innerHTML = '<div class="p-toast' + (bad ? ' p-toast-bad' : ' p-toast-plain') + '" role="presentation"><span class="p-toast-msg">' + (confirmed ? inkLabel(m, 'save', 'done') : esc(m)) + '</span>' +
+      (bad ? '<button type="button" class="p-toast-btn" data-dw-ok="1">OK</button>' : '') + '</div>';
+    var ok = toastEl.querySelector('[data-dw-ok]'); if (ok) ok.addEventListener('click', function () { toastEl.innerHTML = ''; });
+    clearTimeout(toastT); if (!bad) toastT = setTimeout(function () { if (toastEl) toastEl.innerHTML = ''; }, 4000);
   }
+  function panelFail(m) { W.msg = m; toast(m, false, true); }
   function viewBox() {
     var v = viewBoxOf(W.d).split(' ').map(Number), z = W.view.z, w = v[2] / z, h = v[3] / z;
     var cx = v[0] + v[2] / 2 + W.view.x, cy = v[1] + v[3] / 2 + W.view.y;
@@ -1445,7 +1453,7 @@
       if (pc.from === 'svg' && W.d) { before(); addItem('my-' + id, {}); changed(); }
       W.piece = null; W.panel = 'lib'; W.q = name; W.cat = ''; W.sub = '';
       toast('Saved to the library: ' + name + '.', true); draw();
-    }, function (err) { if (!owns(d, owner)) return; W.busy = false; W.msg = refused(err, 'library pieces'); draw(); });
+    }, function (err) { if (!owns(d, owner)) return; W.busy = false; panelFail(refused(err, 'library pieces')); draw(); });
   }
 
   // the servingware on this drawing, kept as a preset (the family Saved)
@@ -1459,7 +1467,7 @@
       if (!owns(d, owner)) return;
       W.busy = false; out.id = id; MINE.lib.push(out); mineToLib(); W.wsave = false; W.wname = ''; W.wareFam = 'saved';
       toast('Servingware saved: ' + name + '.', true); draw();
-    }, function (err) { if (!owns(d, owner)) return; W.busy = false; W.msg = refused(err, 'servingware'); draw(); });
+    }, function (err) { if (!owns(d, owner)) return; W.busy = false; panelFail(refused(err, 'servingware')); draw(); });
   }
 
   // Save as a template: the plating without its labels, for any recipe to start from
@@ -1483,7 +1491,7 @@
       if (!owns(d, owner)) return;
       W.busy = false; MINE.tpl.push(tplRec(id, out)); W.panel = ''; W.tplName = null;
       toast('Saved as a template: ' + name + '. New drawings can start from it.', true); draw();
-    }, function (err) { if (!owns(d, owner)) return; W.busy = false; W.msg = refused(err, 'templates'); draw(); });
+    }, function (err) { if (!owns(d, owner)) return; W.busy = false; panelFail(refused(err, 'templates')); draw(); });
   }
 
   // Use for another recipe: a copy of this drawing opens for the recipe picked
@@ -1558,6 +1566,7 @@
   function save(force) {
     var d = W.d, owner = W.identity;
     if (!d || W.saving) return;
+    var rname = (rec() || {}).name || d.rid;
     W.msg = '';
     if (!P.bookEdit()) { W.msg = 'Not saved: only the head chef can change drawings. Sign in with your PIN as Head chef.'; draw(); return; }
     // the button is off then, but a button left on from an older page (or anything else that asks Save) lands here too:
@@ -1575,7 +1584,7 @@
       if (done.conflict) { W.saving = ''; W.conflict = done.conflict; draw(); return; }
       W.saving = ''; W.conflict = null; var wasNew = d.isNew, oldKey = draftKey(); d.isNew = false; d.saved = submitted; d.followed = false;
       lsSet(oldKey, ''); lsSet(draftKey(), '');
-      toast('Saved. Version ' + done.v + '.' + (done.rp ? ' The recipe shows it.' : ''), true);
+      toast('Saved the ' + (SLOT_SAVED[d.slot] || 'drawing') + ' of ' + rname + '. Version ' + done.v + '.' + (done.rp ? ' The recipe shows it.' : ''), true);
       if (wasNew) {
         if (W.root && !W.suspended && !workLock()) { W.key = 'draw/' + d.id; history.replaceState(history.state, '', '#/manage/draw/' + encodeURIComponent(d.id)); if (A.noteRoute) A.noteRoute(true); }
         else d.savedRoute = ['draw', d.id];
@@ -1690,6 +1699,8 @@
       if (hadRoot) window.dispatchEvent(new Event('lk-nav'));
       return;
     }
+    // a red slip belongs to the studio: it does not stay over the page it closes onto
+    if (toastEl && toastEl.querySelector('.p-toast-bad')) toastEl.innerHTML = '';
     // only when it was kept: while the kept box shows, what is on screen is the saved copy and nothing is kept
     if (W.d && dirty() && keepNow()) toast('Your drawing is kept as a draft on this device.');
     W.root = null; W.key = ''; W.d = null; W.identity = ''; W.suspended = false; W.load = null; drag = null; ptrs = {};

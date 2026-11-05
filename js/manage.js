@@ -48,13 +48,18 @@
   // (29 Oct 2026), so it goes
   function unarm() { M.armed = ''; clearTimeout(M.armTimer); }
   var toastEl = null, toastTimer = null;
-  function toast(msg, confirmed) {
+  // bad: a failure (6 Nov 2026, docs/action-feedback.md): red, with OK, and it stays until OK, the next slip or the page
+  // is left. Before, a failure looked like news and went after 4 s.
+  function toast(msg, confirmed, bad) {
     if (M.suspended || workLock()) return;
     B().say(msg);
     if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'p-toasts mg-toasts'; document.body.appendChild(toastEl); }
-    toastEl.innerHTML = '<div class="p-toast p-toast-plain" role="presentation">' + (confirmed ? inkLabel(msg, 'save', 'done') : esc(msg)) + '</div>';
-    clearTimeout(toastTimer); toastTimer = setTimeout(function () { if (toastEl) toastEl.innerHTML = ''; }, 4000);
+    toastEl.innerHTML = '<div class="p-toast' + (bad ? ' p-toast-bad' : ' p-toast-plain') + '" role="presentation"><span class="p-toast-msg">' + (confirmed ? inkLabel(msg, 'save', 'done') : esc(msg)) + '</span>' +
+      (bad ? '<button type="button" class="p-toast-btn" data-mg-ok="1">OK</button>' : '') + '</div>';
+    var ok = toastEl.querySelector('[data-mg-ok]'); if (ok) ok.addEventListener('click', function () { toastEl.innerHTML = ''; });
+    clearTimeout(toastTimer); if (!bad) toastTimer = setTimeout(function () { if (toastEl) toastEl.innerHTML = ''; }, 4000);
   }
+  function toastBadOff() { if (toastEl && toastEl.querySelector('.p-toast-bad')) toastEl.innerHTML = ''; }
   // every recipe the book knows: those on the cards now, the hidden ones and the ones js/data.js has
   function allIds() {
     var ids = {};
@@ -151,9 +156,10 @@
     if (!x || !arm('mine-hide:' + k)) return;
     var out = {}; Object.keys(x).forEach(function (f) { if (f !== 'id' && f !== 'by') out[f] = x[f]; });
     out.removed = !x.removed; out.v = (x.v || 1) + 1; out.upd = api.now();
+    var nm = x.name || x.id;
     api.ready().then(function () { return api.W([['set', api.docRef(m[1] === 'tpl' ? 'drawtpl' : 'drawlib', x.id), out]]); }).then(function () {
-      x.removed = out.removed; x.v = out.v; toast(out.removed ? 'Hidden: the drawing editor no longer offers it.' : 'Shown again in the drawing editor.'); draw();
-    }, function (e) { toast(e && e.code === 'permission-denied' ? 'Not changed: only the head chef can change these.' : 'Not changed. Check the signal and try again.'); });
+      x.removed = out.removed; x.v = out.v; toast(out.removed ? 'Hidden: ' + nm + '. The drawing editor no longer offers it.' : 'Shown again in the drawing editor: ' + nm + '.'); draw();
+    }, function (e) { toast('Not changed: ' + nm + '. ' + (e && e.code === 'permission-denied' ? 'Only the head chef can change these.' : 'Check the signal and try again.'), false, true); });
   }
   function listHTML() {
     var q = M.q.trim().toLowerCase(), words = q ? q.split(/\s+/) : [];
@@ -824,7 +830,9 @@
       if (wasNew) { e.isNew = false; e.key = e.id = e.d.id = id; e.meta.src = 'new'; }
       if (!newer) { e.menu = menuOf(id); e.d.pins = clean.pins; e.ing0 = ingMap(e.d); e.snap = snapOf(e); }
       else { e.snap = submitted; keepNow(); }
-      toast(savedMeta.removed ? 'Hidden from the book. Version ' + done.v + '.' : savedMeta.off ? 'Back to the book file\'s copy. Version ' + done.v + '.' : 'Saved. Version ' + done.v + '.', true);
+      // the slip names the recipe (6 Nov 2026, docs/action-feedback.md): never "Saved" alone when the thing has a name
+      var nm = clean.name || id;
+      toast(savedMeta.removed ? 'Hidden from the book: ' + nm + '. Version ' + done.v + '.' : savedMeta.off ? 'Back to the book file\'s copy: ' + nm + '. Version ' + done.v + '.' : 'Saved ' + nm + '. Version ' + done.v + '.', true);
       if (wasNew) {
         if (M.root && !M.suspended && !workLock()) { history.replaceState(history.state, '', '#/manage/r/' + encodeURIComponent(id)); if (A.noteRoute) A.noteRoute(true); M.sub = ['r', id]; }
         else e.savedRoute = ['r', id];
@@ -869,7 +877,8 @@
       // nothing drawn for want of signal (28 Oct 2026, js/smart.js autoDraw): said, so a drawing is not taken as done
       if (res.nopicks) say.push('Drawings not drawn again: your picks could not be read. Check the signal and save again.');
       if (res.sideLeft && res.sideLeft.length) say.push('Side view not drawn again, no signal: ' + res.sideLeft.join(', ') + '.');
-      if (say.length) toast(say.join(' '));
+      // a drawing not drawn is a failure: red until OK (6 Nov 2026)
+      if (say.length) toast(say.join(' '), false, !!(res.nopicks || res.sideLeft && res.sideLeft.length));
     }).catch(function () {});
   }
   function focusId(id) {
@@ -948,7 +957,7 @@
     if (!drawLoad) {
       drawLoad = A.load('js/library.js').then(function () {
         // a category file that fails to load leaves its drawings out; the editor still opens
-        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=8')]));
+        return Promise.all(window.LK_LIB.files.map(function (f) { return A.load(f).catch(function () {}); }).concat([A.load('js/draw.js?v=9')]));
       }).then(function () {
         // without the smart creator the editor still works by hand; the recipe reader (js/compose.js) needs it first
         return A.load('js/smart.js').then(function () { return A.load('js/compose.js'); }).catch(function () {});
@@ -1019,6 +1028,8 @@
       if (hadRoot) window.dispatchEvent(new Event('lk-nav'));
       return;
     }
+    // a red slip belongs to the editor: it does not stay over the next page (nothing over a list in service)
+    toastBadOff();
     // only when they were kept: while the kept box shows, the form holds the saved copy and nothing is kept
     if (M.ed && dirty() && M.root && keepNow()) toast('Your changes are kept as a draft on this device.');
     M.root = null; M.sub = []; drawn = ''; M.ed = null; M.identity = ''; M.suspended = false;
