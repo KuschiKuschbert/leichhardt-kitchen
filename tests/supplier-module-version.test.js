@@ -3,7 +3,7 @@ const L = require('./lib');
 const F = require('./supplier-fixtures');
 const { R, ok } = L.results();
 const supplierUrls = p => p.urls.filter(url => /\/js\/(suppliers|supplier-core|supplier-store)\.js(?:\?|$)/.test(url));
-const revision = (p, file) => supplierUrls(p).filter(url => new URL(url).pathname.endsWith('/js/' + file)).every(url => new URL(url).searchParams.get('v') === (file === 'suppliers.js' ? '14' : file === 'supplier-core.js' ? '4' : '2'));
+const revision = (p, file) => supplierUrls(p).filter(url => new URL(url).pathname.endsWith('/js/' + file)).every(url => new URL(url).searchParams.get('v') === (file === 'suppliers.js' ? '15' : file === 'supplier-core.js' ? '4' : '2'));
 const staleCore = () => { window.LK_SUP_CORE = { API: 3 }; window.LK_SUP_STORE = { API: 1 }; };
 
 (async () => {
