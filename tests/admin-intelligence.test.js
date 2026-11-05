@@ -30,6 +30,9 @@ const editSavedReference = async (p, label) => {
     await editSavedReference(p, 'Milk reference');
     await p.click('[data-ai="save"]');
     await L.waitFor(p, k => (window.__fake.dump()[k] || {}).v === 2, path('references', 'ai-milk'));
+    // the outcome is on the book's slip too, wherever the list is scrolled (5 Nov 2026, docs/action-feedback.md)
+    await L.waitFor(p, () => /^Link confirmed: Milk\.$/.test(((document.querySelector('.p-toast .p-toast-msg') || {}).textContent || '').trim()), null, 3000).catch(() => {});
+    ok(/^Link confirmed: Milk\.$/.test(await p.evaluate(() => { const e = document.querySelector('.p-toast[data-toast="new"] .p-toast-msg') || document.querySelector('.p-toast .p-toast-msg'); return e ? e.textContent.trim() : ''; })), width + ': Save says Link confirmed on the slip (' + await p.evaluate(() => { const e = document.querySelector('.p-toast[data-toast="new"] .p-toast-msg') || document.querySelector('.p-toast .p-toast-msg'); return e ? e.textContent.trim() : ''; }) + ')');
     const dump = await p.evaluate(() => window.__fake.dump());
     ok(dump[path('references', 'ai-milk')].v === 2 && dump[path('references', 'ai-milk')].alias === 'Milk' && dump[path('references', 'ai-milk')].label === 'Milk reference' && dump[path('references', 'ai-milk', 'hist', '1')].label === 'Milk', width + ': prior revision retained ' + JSON.stringify({ current: dump[path('references', 'ai-milk')], previous: dump[path('references', 'ai-milk', 'hist', '1')] }));
     await L.adminTab(p, 'training'); await p.click('[data-ai="new-training"]');

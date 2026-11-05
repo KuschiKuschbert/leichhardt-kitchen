@@ -22,7 +22,7 @@ Remove each item here once it is done.
 
 The coding rules in `CLAUDE.md` came from a check of the whole book on 21 Oct 2026. This is the older code that does not meet them yet, in the order to fix it. Each item is its own branch and pull request, with its tests. Remove an item once it is merged.
 
-After the tap (5 Nov 2026, `docs/action-feedback.md`): the chosen mix is built (`docs/action-feedback-options/brief.md`). Left from the audit, to bring in line when that page is next worked on: the Review desk's Save and return and the proofreader's Restore and Save say so in a box at the top of the workspace, often off screen (`js/admin-intelligence.js`, `js/proofreader-admin.js`); the recipe and drawing editors' own toasts look the same for success and failure and go by themselves (WA-10; the function editor's since 5 Nov 2026); a mail's priority change re-sorts the list with no words.
+After the tap (5 Nov 2026, `docs/action-feedback.md`): the chosen mix is built (`docs/action-feedback-options/brief.md`). Left from the audit, to bring in line when that page is next worked on: the recipe and drawing editors' own toasts look the same for success and failure and go by themselves (WA-10; the function editor's since 5 Nov 2026).
 
 Done, all on 22 Oct 2026:
 - the wastage log

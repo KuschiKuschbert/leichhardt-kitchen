@@ -5241,7 +5241,7 @@
     if (!intelligenceAllowed()) return '';
     var p = proofModule();
     if (p) return p.render(proofAdapter());
-    if (!proofLoading && !proofError) proofLoading = window.LK_APP.load('js/proofreader-admin.js?v=1').then(function () { if (!proofModule()) throw { code: 'workspace-version' }; proofLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { proofLoading = null; proofError = true; if (intelligenceAllowed()) draw(); });
+    if (!proofLoading && !proofError) proofLoading = window.LK_APP.load('js/proofreader-admin.js?v=2').then(function () { if (!proofModule()) throw { code: 'workspace-version' }; proofLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { proofLoading = null; proofError = true; if (intelligenceAllowed()) draw(); });
     return '<section class="set-block"><h3 class="label">Proofreader</h3><p class="hint" role="status">' + (proofError ? 'Could not load the proofreader. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
   }
   document.addEventListener('click', function (e) { var el = e.target.closest('[data-pr]'), p = proofModule(); if (el && S.root && S.root.contains(el) && intelligenceAllowed() && p) { e.preventDefault(); p.click(el); } });
@@ -5358,7 +5358,7 @@
   function intelligenceReady() {
     if (window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_ANALYSIS && window.LK_ANALYSIS.linkQueue) return true;
     if (!intelligenceLoading && !intelligenceError) {
-      intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=3').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=5'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS || !window.LK_ANALYSIS.linkQueue) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
+      intelligenceLoading = window.LK_APP.load('js/analysis-core.js?v=3').then(function () { return window.LK_APP.load('js/admin-intelligence.js?v=6'); }).then(function () { if (!window.LK_INTELLIGENCE || window.LK_INTELLIGENCE.API !== 3 || !window.LK_ANALYSIS || !window.LK_ANALYSIS.linkQueue) throw { code: 'workspace-version' }; }).then(function () { intelligenceLoading = null; if (intelligenceAllowed()) draw(); }, function () { intelligenceLoading = null; intelligenceError = true; if (intelligenceAllowed()) draw(); });
     }
     return false;
   }
@@ -10984,6 +10984,11 @@
     var x = (mlOpen || []).filter(function (m) { return m.id === id; })[0];
     if (!x || x.pri === v || !ML_PRI.some(function (c) { return c[0] === v; })) return;
     var was = x.pri; x.pri = v; draw();
+    // the list re-sorts by how soon it matters: say where the message went, with Undo, and keep its row in view
+    // (5 Nov 2026, docs/action-feedback.md: the row jumped away with no words)
+    var sel = S.root && S.root.querySelector('[data-k="ml-pri:' + CSS.escape(id) + '"]'), row = sel && sel.closest('.ml-row');
+    if (row) row.scrollIntoView({ block: 'nearest' });
+    toast('Moved to ' + mlPri(v) + ': ' + slipName(x.text), { label: 'Undo', fn: function () { mlSetPri(id, was); } });
     supd(mlRef(id), { pri: v }).catch(function (e) { x.pri = was; failed(e); draw(); });
   }
 
