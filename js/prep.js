@@ -1454,7 +1454,7 @@
     if (S.privacyLocked || !S.who && !S.user) return;
     S.lockHasDraft = dirtyForUpdate(); S.lockIdentity = stableIdentity();
     if (pt && pt.busy) pt.lockRetained = S.lockIdentity;
-    S.lockRecorder = S.who || ''; S.privacyLocked = true; S.lockReason = reason; S.authed = false; S.level = ''; S.grantExp = 0; accessEpoch++;
+    S.lockRecorder = S.who || ''; S.privacyLocked = true; S.lockReason = reason; S.authed = false; S.level = ''; S.grantExp = 0; accessEpoch++; digestMem = null;
     stopLive(); clearPrivateCache(); ptClose(true, true); ksClose(); noteClose('shut'); lmClose();
     if (window.LK_UX) window.LK_UX.close();
     if (shared()) { if (fb && S.uid) fb.fs.deleteDoc(sessRef()).catch(function () {}); dropGoogle().catch(function () {}); }
@@ -1487,7 +1487,7 @@
   function leave() {
     ptClose(true, true);
     S.privacyLocked = false; S.unlocking = false; S.lockRecorder = ''; S.lockHasDraft = false; S.lockIdentity = ''; S.workNotice = ''; S.grantExp = 0;
-    accessEpoch++;
+    accessEpoch++; digestMem = null;   // the day digests read for the person before
     stopLive(); clearPrivateCache();
     S.text = S.qty = S.otext = S.oqty = ''; S.wf = { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }; S.xf = xBlank();
     if (mlf) mlf.text = '';
@@ -3316,15 +3316,53 @@
      day (lk.past, lk.ord.hist, the admin's lk.st.got). When the head chef or a sous chef ticks, unticks, removes or puts
      back a line on a past day, the book stamps config/main.pastEdit (p for prep, o for orders) with the time. Every phone
      already listens to config/main, so this costs no new reads; a phone whose copy is older than the stamp reads the past
-     days again when it next needs them (prep: up to 14 days of lines). */
-  var pastMarkAt = {};
+     days again when it next needs them (prep: up to 14 days of lines).
+     Day-named stamps (Plan B 2.4, 5 Nov 2026, docs/firestore-usage.md): with p (o) the stamp names the past days changed
+     since the nightly job last read the lines (pDays, oDays, at most 10), the stamp before the first of them (pPrev,
+     oPrev) and the stamp those days belong to (pFor, oFor). A phone whose copy is no older than pPrev reads just those
+     days again (pastChanged()); otherwise, or after an older book's stamp (p alone, so pFor is behind), every day as
+     before. The run starts again after 03:00 (nightAt()), so it holds today's fixes only. Changes within 5 seconds go as
+     one stamp at their end naming all their days (the stamp used to drop them). Two chefs fixing past days in the same
+     second can lose one day's name: other phones then miss that fix until the next kitchen day. */
+  var pastMarkAt = {}, pastMarkDays = { p: {}, o: {} }, pastMarkT = {};
+  function nightAt() { var t = T.at(dayNow(), 180); return now() >= t ? t : t - 86400000; }
   function markPast(kind, date) {
-    if (!fb || date >= dayNow() || !canBrowse() || Date.now() - (pastMarkAt[kind] || 0) < 5000) return;
+    if (!fb || date >= dayNow() || !canBrowse()) return;
+    if (pastMarkDays[kind]) pastMarkDays[kind][date] = 1;
+    var wait = 5000 - (Date.now() - (pastMarkAt[kind] || 0));
+    if (wait > 0) { if (!pastMarkT[kind]) pastMarkT[kind] = setTimeout(function () { pastMarkT[kind] = null; markPastNow(kind); }, wait); return; }
+    markPastNow(kind);
+  }
+  function markPastNow(kind) {
+    var named = pastMarkDays[kind], days = named ? Object.keys(named).sort() : [];
+    if (named) pastMarkDays[kind] = {};
+    if (!fb || !canBrowse()) return;
     pastMarkAt[kind] = Date.now();
-    var v = {}; v[kind] = now();
+    var t = now(), v = named ? pastNames(kind, days, t) : {};
+    v[kind] = t;
     sset(cfgDoc(), { pastEdit: v }, true).catch(function () {});   // before the rules allow it (or no signal) it is only a hint lost
   }
+  // the day-naming part of a prep ('p') or orders ('o') stamp made at t for these days: { pDays, pPrev, pFor }, carrying
+  // on the run on screen when it is this book's and came after 03:00; {} for more than 10 days (every phone reads all)
+  function pastNames(kind, days, t) {
+    var v = {}, pe = (S.config && S.config.pastEdit) || {}, cur = +pe[kind] || 0;
+    if (!days.length || days.length > 10) return v;
+    var run = cur && pe[kind + 'For'] === cur && Array.isArray(pe[kind + 'Days']) && cur >= nightAt() ? pe[kind + 'Days'] : null;
+    var all = run ? run.concat(days.filter(function (d) { return run.indexOf(d) < 0; })) : null;
+    if (all && all.length <= 10) { v[kind + 'Days'] = all; v[kind + 'Prev'] = +pe[kind + 'Prev'] || 0; }
+    else { v[kind + 'Days'] = days; v[kind + 'Prev'] = cur; }
+    v[kind + 'For'] = t;
+    return v;
+  }
   function pastStamp(kind) { var pe = (S.config && S.config.pastEdit) || {}; return +pe[kind] || 0; }
+  /* The past days a stamp names as changed since a copy made at `since`: [] when nothing changed, the days when the stamp
+     names every change since then, null when it cannot tell (an older book's stamp, or changes before the days named). */
+  function pastChanged(kind, since) {
+    var pe = (S.config && S.config.pastEdit) || {}, p = +pe[kind] || 0, days = pe[kind + 'Days'];
+    if (p <= since) return [];
+    if (pe[kind + 'For'] !== p || !Array.isArray(days) || (+pe[kind + 'Prev'] || 0) > since) return null;
+    return days.filter(function (d) { return typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d); });
+  }
   /* A ping for today was saved, changed or removed (22 Oct 2026): the book stamps config/main.pastEdit.n, so the other
      phones read the pings again now (one pings query each, on the config listener every phone already has) instead of
      after 30 minutes away. A ping set at 13:00 for 15:00 then pops up on time on a tablet that read its pings at 06:00.
@@ -3351,33 +3389,96 @@
     // once per stamp, so a phone whose clock is a little behind never reads again on every config change
     var ns = pastStamp('n');
     if (S.notesFor && ns > (S.notesRead || 0) && ns !== S.nMine && ns !== S.nStampDone) { S.nStampDone = ns; loadNotes(true); }
-    if (S.pastFor && pastStamp('p') > (S.pastAt || 0)) { S.pastFor = ''; lsSet('lk.past', ''); draw(); }
-    if (S.ordHistFor && pastStamp('o') > (S.ordHistAt || 0)) { S.ordHistFor = ''; lsSet('lk.ord.hist', ''); draw(); }
+    // the copies stay as they are: loadPast() and loadOrdHist() read again only the days the stamp names (pastChanged())
+    if (S.pastFor && pastStamp('p') > (S.pastAt || 0)) {
+      if (S.past) S.pastPart = { tag: S.pastFor, days: S.past, miss: [], at: S.pastAt || 0 };
+      S.pastFor = ''; draw();
+    }
+    if (S.ordHistFor && pastStamp('o') > (S.ordHistAt || 0)) { S.ordHistFor = ''; draw(); }
   }
-  /* The last 14 days of prep lines, for the hints (Pace, Due today, the usual amounts, closing time, the badges): one
-     query per day (one read per line, one for an empty day) once a day per phone, kept in lk.past (out of date at the
-     next kitchen day, or when a past day changed on another phone: pastStamp('p')). A day that could not be read (no
-     signal: the copy in memory answers, which counts as a failed read) is never taken as read (28 Oct 2026): the hints use
-     the days that came in, nothing is kept, and the days still missing are read again after the 5-minute wait or once
-     the phone is back online (S.pastPart: the days that came in, in memory only, while no past day changed since).
-     Before, that day stayed missing until the book was reloaded, and a first fix read all 14 days again each time. */
+  /* The day digests (Plan B 2.1, 5 Nov 2026, docs/firestore-usage.md, docs/admin-intelligence.md): the 03:00 job keeps
+     one record per past day, digest/<day>, with that day's prep and order lines, and digest/_index, whose at is when that
+     run started reading the lines. A past day is read from its digest (1 read) instead of its lines (40 to 60), unless a
+     stamp names the day as changed since then or cannot tell (pastChanged()): those days, and days with no digest, are
+     read from their lines as before. Read on the first open of the day, after a lock or handover, and for days a stamp
+     names: the index (1 read) and one query for the days asked (1 read each). Kept in memory only, for this person and
+     kitchen day (digestMem), so the order list and the admin reports use what the prep list read. fresh (the admin's
+     Refresh) reads the index and the digests again, unless they were read in the last 5 seconds. Refused before the
+     rules are published: the book then reads the lines, and asks again after a reload. */
+  var digestMem = null;
+  function digestCol() { return colRef('digest'); }
+  function digestRead(days, fresh) {
+    var tag = S.pin + '|' + dayNow() + '|' + accessEpoch;
+    if (!digestMem || digestMem.tag !== tag) digestMem = { tag: tag, at: null, recs: {}, asked: {}, off: !!(digestMem && digestMem.off), busy: null, readAt: 0 };
+    var m = digestMem;
+    if (m.busy) return m.busy.then(function () { return digestRead(days, fresh); });
+    if (fresh && Date.now() - m.readAt > 5000) { m.at = null; m.recs = {}; m.asked = {}; }
+    var ask = days.filter(function (d) { return !m.asked[d]; }).sort(), fs = fb.fs;
+    if (m.off || !ask.length || m.at === 0) return Promise.resolve(m);
+    m.busy = (m.at !== null ? Promise.resolve() : fs.getDoc(fs.doc(digestCol(), '_index')).then(function (sn) {
+      var v = sn.exists() ? sn.data() : null; m.at = v && typeof v.at === 'number' ? v.at : 0;
+    })).then(function () {
+      if (!m.at) return;   // the nightly job has not written any yet: no query
+      return fs.getDocs(fs.query(digestCol(), fs.where('day', '>=', ask[0]), fs.where('day', '<=', ask[ask.length - 1]))).then(function (sn) {
+        sn.docs.forEach(function (x) { var v = x.data(); if (v && v.v === 1 && v.day === x.id && Array.isArray(v.prep) && Array.isArray(v.orders)) m.recs[x.id] = v; });
+        ask.forEach(function (d) { m.asked[d] = 1; }); m.readAt = Date.now();
+      });
+    }).then(null, function (e) { if (e && e.code === 'permission-denied') m.off = true; }).then(function () { m.busy = null; return m; });
+    return m.busy;
+  }
+  // a day's lines from its digest, or null when the digest is missing or older than a change to that day
+  function digestLines(m, kind, d) {
+    var r = m.recs[d], ch = r && m.at ? pastChanged(kind, m.at) : null;
+    if (!r || !ch || ch.indexOf(d) >= 0) return null;
+    return (kind === 'p' ? r.prep : r.orders).map(function (x) { return Object.assign({}, x); });
+  }
+  /* Past days of prep (kind 'p') or order lines ('o') for the hints: [[day, lines]], lines null for a day that could
+     not be read. From the digests where they are current, else one query per day as before. */
+  function pastFetch(kind, dates) {
+    var col = kind === 'p' ? itemsCol : ordCol;
+    return digestRead(dates).then(function (m) {
+      return Promise.all(dates.map(function (d) {
+        var dg = digestLines(m, kind, d);
+        if (dg) return [d, dg];
+        return fb.fs.getDocs(col(d)).then(function (sn) { return [d, sn.docs.map(function (x) { var v = x.data(); v.id = x.id; return v; })]; }, function () { return [d, null]; });
+      }));
+    });
+  }
+  /* The last 14 days of prep lines, for the hints (Pace, Due today, the usual amounts, closing time, the badges), once a
+     day per phone: from the day digests (pastFetch(): about 15 reads), or one query per day for a day without a current
+     digest (one read per line, one for an empty day). Kept in lk.past, out of date at the next kitchen day, or when a past
+     day changed (pastStamp('p')): then only the days the stamp names are read again, or all 14 when it cannot tell
+     (pastChanged()). A day that could not be read (no signal: the copy in memory answers, which counts as a failed read)
+     is never taken as read (28 Oct 2026): the hints use the days that came in, nothing is kept, and the days still missing
+     are read again after the 5-minute wait or once the phone is back online (S.pastPart: the days already here, in memory
+     only, with the days still to read). */
+  function pastLine(v) { var o = { id: v.id }; PAST_KEYS.forEach(function (k) { if (v[k] != null && v[k] !== '' && v[k] !== false && v[k] !== 0) o[k] = v[k]; }); return o; }
   function loadPast() {
     if (!kitchenAccess() || !S.configFull) return;
-    var today = dayNow(), tag = pastTag();
+    var today = dayNow(), tag = pastTag(), stamp = pastStamp('p'), win = [], i, c = null;
     if (!fb || S.pastBusy || S.pastFor === tag || waiting('past')) return;
-    try { var c = JSON.parse(lsGet('lk.past') || 'null'); if (c && c.tag === tag && c.days && (c.at || 0) >= pastStamp('p')) { S.past = c.days; S.pastFor = tag; S.pastAt = c.at || 0; pastDerive(); return; } } catch (e) {}
-    var part = S.pastPart && S.pastPart.tag === tag && S.pastPart.at >= pastStamp('p') ? S.pastPart : null;
+    try { c = JSON.parse(lsGet('lk.past') || 'null'); } catch (e) {}
+    if (c && c.tag === tag && c.days && (c.at || 0) >= stamp) { S.past = c.days; S.pastFor = tag; S.pastAt = c.at || 0; pastDerive(); return; }
+    for (i = 1; i <= PAST_DAYS; i++) win.push(shift(today, -i));
+    // what is here already: the days that came in while some were missing, or the copy kept today
+    var part = S.pastPart && S.pastPart.tag === tag ? S.pastPart : c && c.tag === tag && c.days ? { tag: tag, days: c.days, miss: [], at: c.at || 0 } : null;
+    if (part && part.at < stamp) {
+      // a past day changed since: the days the stamp names are read again, or all 14 when it cannot tell
+      var ch = pastChanged('p', part.at);
+      part = ch ? { tag: tag, days: part.days, miss: part.miss.concat(ch.filter(function (d) { return win.indexOf(d) >= 0 && part.miss.indexOf(d) < 0; })), at: stamp } : null;
+    }
+    // read after the stamp was seen, so current as of it even on a phone whose clock is a little behind
+    var at = part ? part.at : Math.max(now(), stamp), epoch = accessEpoch, dates = part ? part.miss.slice() : win;
     S.pastBusy = true;
-    var at = part ? part.at : now(), epoch = accessEpoch;
-    var dates = [], i;
-    if (part) dates = part.miss.slice(); else for (i = 1; i <= PAST_DAYS; i++) dates.push(shift(today, -i));
-    Promise.all(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)).then(function (sn) { return [d, sn.docs.map(function (x) { var v = x.data(), o = { id: x.id }; PAST_KEYS.forEach(function (k) { if (v[k] != null && v[k] !== '' && v[k] !== false && v[k] !== 0) o[k] = v[k]; }); return o; })]; }, function () { return [d, null]; }); })).then(function (res) {
+    pastFetch('p', dates).then(function (res) {
       if (epoch !== accessEpoch) return;   // the person changed meanwhile: leave() let the next person's read start
       var days = part ? Object.assign({}, part.days) : {}, miss = [];
-      res.forEach(function (r) { if (r[1] === null) miss.push(r[0]); else days[r[0]] = r[1]; });
+      res.forEach(function (r) { if (r[1] === null) miss.push(r[0]); else days[r[0]] = r[1].map(pastLine); });
       S.past = days; S.pastBusy = false;
       if (!miss.length) { S.pastPart = null; S.pastFor = tag; S.pastAt = at; lsSet('lk.past', JSON.stringify({ tag: tag, days: days, at: at })); retryDone('past'); }
       else { S.pastPart = { tag: tag, days: days, miss: miss, at: at }; retrySoon('past', loadPast); }
+      // a past day changed while these were read: read that day again (the config listener came before this answer)
+      if (S.pastFor === tag && pastStamp('p') > at) { S.pastPart = { tag: tag, days: days, miss: [], at: at }; S.pastFor = ''; }
       pastDerive(); draw();
     });
   }
@@ -3490,9 +3591,10 @@
   }
 
   /* ---------- insights for the owner: numbers and charts from the last 30 days of lines ---------- */
-  /* The last 60 days of prep lines for Insights and Team (pastRead(): today and Refresh from the server, the past days
-     from this device's copy when it has them; since #387 that copy is in memory only, so after a reload they come from
-     the server again: README, Bringing the code in line). A day that could not be read (no signal, a lost read) is never
+  /* The last 60 days of prep lines for Insights and Team. Past days come from the day digests where current (5 Nov
+     2026, Plan B 2.3, digestRead(): about 60 reads, kept in memory for the page; Refresh reads them again), the others
+     through pastRead(): today and Refresh from the server, the past days from this device's copy when it has them;
+     since #387 that copy is in memory only, so after a reload they come from the server again. A day that could not be read (no signal, a lost read) is never
      counted as a day with no lines (28 Oct 2026): it is listed in miss, the pages say they could not load every day and
      offer no CSV, and only those days are read again after the 5-minute wait or once the phone is back online (one
      query each). */
@@ -3504,7 +3606,15 @@
     var today = dayNow(), dates = [], i, miss = [], stamp = pastStamp('p');
     if (part) { dates = st.miss.slice(); st.busy = true; }
     else { for (i = 0; i < 60; i++) dates.push(shift(today, -i)); st = S.stats = { loading: true, days: {}, stamp: stamp }; }
-    Promise.all(dates.map(function (d) { return pastRead(itemsCol(d), 'd/' + d, d, false, force).then(function (s) { return [d, s.docs.map(function (x) { return Object.assign({}, x.data(), { id: x.id }); })]; }, function () { miss.push(d); return [d, []]; }); })).then(function (res) {
+    // past days from their digests where current (digestRead(): the index and one query, about 60 reads instead of
+    // 2,000 or more), the rest and today from their lines
+    digestRead(dates.filter(function (d) { return d < today; }), force).then(function (m) {
+      return Promise.all(dates.map(function (d) {
+        var dg = d < today ? digestLines(m, 'p', d) : null;
+        if (dg) return [d, dg];
+        return pastRead(itemsCol(d), 'd/' + d, d, false, force).then(function (s) { return [d, s.docs.map(function (x) { return Object.assign({}, x.data(), { id: x.id }); })]; }, function () { miss.push(d); return [d, []]; });
+      }));
+    }).then(function (res) {
       if (S.stats !== st) return;   // a Refresh, or the person changed, while these were read
       var days = part ? st.days : {}; res.forEach(function (r) { days[r[0]] = r[1]; });
       S.stats = { loading: false, days: days, at: part ? st.at : Date.now(), miss: miss, stamp: stamp };
@@ -4767,7 +4877,14 @@
     var today = dayNow(), dates = [], i, miss = [], stamp = pastStamp('o');
     if (part) { dates = st.miss.slice(); st.busy = true; }
     else { for (i = 0; i < 30; i++) dates.push(shift(today, -i)); st = S.ordStats = { loading: true, lines: [], stamp: stamp }; }
-    Promise.all(dates.map(function (d) { return pastRead(ordCol(d), 'o/' + d, d, false, force).then(function (s) { return s.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { miss.push(d); return []; }); })).then(function (l) {
+    // past days from their digests where current, like loadStats()
+    digestRead(dates.filter(function (d) { return d < today; }), force).then(function (m) {
+      return Promise.all(dates.map(function (d) {
+        var dg = d < today ? digestLines(m, 'o', d) : null;
+        if (dg) return dg.map(function (v) { v.date = d; return v; });
+        return pastRead(ordCol(d), 'o/' + d, d, false, force).then(function (s) { return s.docs.map(function (x) { var v = x.data(); v.id = x.id; v.date = d; return v; }); }, function () { miss.push(d); return []; });
+      }));
+    }).then(function (l) {
       if (S.ordStats !== st) return;   // a newer read, or the person changed, while these were read
       var raw = [].concat.apply(part ? st.raw || [] : [], l);
       S.ordStats = { loading: false, lines: ordNewest(raw), raw: raw, miss: miss, stamp: stamp };
@@ -5083,7 +5200,7 @@
       var audit = fb.fs.doc(colRef('proofHistory')), at = now(), v = (previous.proofV || 0) + 1, kind = row.source === 'prep' ? 'p' : 'o';
       var patch = { text: text, proofV: v, proofEvent: audit.id }, event = { kind: 'line', action: action, source: row.source, day: row.day, recordId: row.id, before: previous.text, after: text, original: previous.orig, v: v, at: at };
       patch[row.source === 'prep' ? 'recipe' : 'recipes'] = row.source === 'prep' ? '' : [];
-      var mark = {}; mark[kind] = at; proofRepairStamp[kind] = at;
+      var mark = pastNames(kind, [row.day], at); mark[kind] = at; proofRepairStamp[kind] = at;   // names the day (pastNames())
       return W([['upd', ref, patch], ['set', audit, event], ['set', cfgDoc(), { pastEdit: mark }, true]]).then(function () {
         if (context === intelligenceContext() && intelligenceAllowed()) proofPatch(row, patch, at);
         if (proofRepairStamp[kind] === at) delete proofRepairStamp[kind];
@@ -5720,7 +5837,14 @@
     S.ordRolling = true;
     var dates = [], k;
     for (k = 1; k <= 7; k++) dates.push(shift(today, -k));
-    Promise.all([fb.fs.getDocs(ordCol(today))].concat(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)); }))).then(function (res) {
+    // the day digests say which day was written last (5 Nov 2026), so only that day is read from the server (for its
+    // ticks as they are now), with today: one day of lines instead of seven. A day without a current digest means all
+    // seven are read, as before.
+    digestRead(dates).then(function (m) {
+      var known = dates.map(function (d) { return digestLines(m, 'o', d); });
+      if (known.every(Boolean)) dates = dates.filter(function (d, i) { return known[i].some(function (x) { return !x.deleted; }); }).slice(0, 1);
+      return Promise.all([fb.fs.getDocs(ordCol(today))].concat(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)); })));
+    }).then(function (res) {
       var have = {};
       res[0].docs.forEach(function (d) { have[d.id] = true; });
       var src = null, j;
@@ -5913,21 +6037,30 @@
   var MISS_TEXT = 'Could not load every day. Check the signal. The book tries again by itself in a few minutes.';
 
   function dayShort(s) { return parseYmd(s).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' }); }
+  /* The last 14 days of order lines, for the regulars (oRegsHTML()), once a day per phone: from the day digests
+     (pastFetch(), the ones the prep list read already cost nothing), or one query per day without a current digest.
+     Kept in lk.ord.hist (lk.ord.hist.at: when), out of date at the next kitchen day or when a past day changed
+     (pastStamp('o')): then only the days the stamp names are read again, or all 14 when it cannot tell. */
   function loadOrdHist() {
     if (!kitchenAccess() || !S.configFull) return;
     var today = dayNow();
     if (!fb || S.ordHistBusy || waiting('ordHist') || S.ordHistFor === today) return;
-    var tag = S.pin + '|' + today, c = dayCache('lk.ord.hist', tag);
-    if (c && (+lsGet('lk.ord.hist.at') || 0) >= pastStamp('o')) { S.ordHist = c; S.ordHistFor = today; S.ordHistAt = +lsGet('lk.ord.hist.at') || 0; return; }
+    var tag = S.pin + '|' + today, c = dayCache('lk.ord.hist', tag), cAt = +lsGet('lk.ord.hist.at') || 0, stamp = pastStamp('o');
+    if (c && cAt >= stamp) { S.ordHist = c; S.ordHistFor = today; S.ordHistAt = cAt; return; }
+    var win = [], i; for (i = 1; i <= 14; i++) win.push(shift(today, -i));
+    // a copy kept today, older than a change to a past day: the days the stamp names are read again, or all 14
+    var ch = c ? pastChanged('o', cAt) : null, redo = ch ? ch.filter(function (d) { return win.indexOf(d) >= 0; }) : win;
+    var keep = ch ? c.filter(function (x) { return redo.indexOf(x.date) < 0; }) : [];
     S.ordHistBusy = true;
-    var at = now();
-    var dates = [], i; for (i = 1; i <= 14; i++) dates.push(shift(today, -i));
-    var miss = 0;
-    Promise.all(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)).then(function (sn) { return sn.docs.map(function (x) { var v = x.data(); v.date = d; return v; }); }, function () { miss++; return []; }); })).then(function (l) {
-      S.ordHist = [].concat.apply([], l).filter(function (x) { return !x.deleted && !x.rolled; }).map(function (x) { return { text: x.text, qty: x.qty || '', date: x.date }; });
+    var at = Math.max(now(), stamp), miss = 0;   // read after the stamp was seen, so current as of it
+    pastFetch('o', redo).then(function (res) {
+      var got = [];
+      res.forEach(function (r) { if (r[1] === null) miss++; else r[1].forEach(function (x) { if (!x.deleted && !x.rolled) got.push({ text: x.text, qty: x.qty || '', date: r[0] }); }); });
+      S.ordHist = keep.concat(got);
       S.ordHistBusy = false;
       // a day that could not be read is not cached as empty: the hints use what came in, and the book tries again later
       if (miss) retryLater('ordHist'); else { S.ordHistFor = today; S.ordHistAt = at; dayCacheSet('lk.ord.hist', tag, S.ordHist); lsSet('lk.ord.hist.at', String(at)); }
+      if (!miss && pastStamp('o') > at) S.ordHistFor = '';   // a past day changed while these were read: read it again
       draw();
     });
   }

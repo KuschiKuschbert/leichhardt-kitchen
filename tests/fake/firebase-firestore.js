@@ -200,7 +200,7 @@ function isToday(day) {
 }
 // the operational records (kitchenRead() in the rules): a live PIN session for someone who is not functions only
 const KITCHEN_COLS = ['config', 'days', 'orders', 'waste', 'summary', 'misses', 'views', 'notes', 'guides', 'drinks', 'shifts', 'activity', 'sections',
-  'learned', 'ordlearned', 'learnlog', 'minutes', 'mailstat', 'transfers', 'transferOpen'];
+  'learned', 'ordlearned', 'learnlog', 'minutes', 'mailstat', 'transfers', 'transferOpen', 'digest'];
 /* The read rules by collection, before the record-by-record ones in readRefused() and rulesDenied(): true when the real
    rules refuse this phone the record (list false) or the query (list true). Everything here is open to the head chef's
    Google account, apart from the records nobody reads (pushes, PIN tries, the old proofs). */
