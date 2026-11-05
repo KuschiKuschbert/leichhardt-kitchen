@@ -139,7 +139,7 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
         // asked before later(), which counts as a wait
         var ok = got && navigator.onLine !== false && !held();
         later();
-        if (ok) location.reload();
+        if (ok) { try { sessionStorage.setItem('lk.upd.auto', '1'); } catch (e) {} location.reload(); }   // nobody asked: see startTab() in js/prep.js
       });
     });
   }
@@ -279,6 +279,9 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
         try { localStorage.setItem('lk.upd.last', String(Date.now())); } catch (e) {}
         // The explicit discard decision already covered this draft, so beforeunload must not ask a second time.
         if (me.half) letGoAt = Date.now();
+        // an update nobody asked for: the admin panel opens on the Dashboard, not a report that reads 60 days (startTab()
+        // in js/prep.js, 5 Nov 2026). This tab only, read once.
+        if (!me.tapped && !me.asked) { try { sessionStorage.setItem('lk.upd.auto', '1'); } catch (e) {} }
         location.reload();
       };
       /* Once, when every file is in (lkFresh(), all or nothing): a reload turned down (a page asks first) is not tried

@@ -176,7 +176,7 @@
     items: [], itemsState: 'idle', showRemoved: false,
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinOff: false, pinData: null, pf1: '', pf2: '', pinMsg: '',
-    sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: (lsGet('lk.dash.intro') && lsGet('lk.prep.atab')) || 'dashboard', ordDate: dayNow(), ordLines: [], ordState: 'idle', otext: '', oqty: '', oneed: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
+    sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: startTab(), ordDate: dayNow(), ordLines: [], ordState: 'idle', otext: '', oqty: '', oneed: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
     retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, oLog: false, oDoneOpen: false, startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
@@ -5414,6 +5414,18 @@
       (supplierEdit() ? '<div class="btn-row"><a class="btn dark" href="#/suppliers/manage">Manage catalogue</a><a class="btn" href="#/suppliers">Supplier order</a></div>' : '<p class="hint">Only the head chef changes suppliers and pars. Sous chefs can use <a href="#/suppliers">Supplier order</a>.</p>') + '</section>';
   }
   var A_TAB_NAMES = { 'kitchen-home': 'Overview', dashboard: 'Dashboard', overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
+  /* The admin page the panel opens on: the last one, after the Dashboard's first visit. After an update nobody asked
+     for (the idle update or the 04:00 refresh, flagged by js/upkeep.js in lk.upd.auto for this tab only) a report page
+     opens on the Dashboard instead (Plan B, option 2.6 of docs/firestore-usage.md, 5 Nov 2026): Insights, Team,
+     Wastage, Transfers, Learning and the Proofreader read up to 60 days of lines on every open, about 2,400 reads, and
+     a laptop left on one paid it at every update. The Dashboard reads about 140. The report is one tap away. */
+  function startTab() {
+    var t = (lsGet('lk.dash.intro') && lsGet('lk.prep.atab')) || 'dashboard', auto = false;
+    try { auto = !!sessionStorage.getItem('lk.upd.auto'); sessionStorage.removeItem('lk.upd.auto'); } catch (e) {}
+    if (!auto || !/^#\/admin/.test(location.hash) || ['insights', 'team', 'waste', 'transfers', 'learning', 'proofreader'].indexOf(t) < 0) return t;
+    lsSet('lk.prep.atab', 'dashboard');   // the page on screen, so a reload by hand stays on it
+    return 'dashboard';
+  }
   var A_GROUPS = [['today', 'Today', ['dashboard', 'overview', 'references', 'training', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people', 'training-records']], ['kitchen', 'Kitchen', ['kitchen-home', 'cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']]];
   var A_GROUP_NOTES = { today: 'What needs you, and how the kitchen is going.', reports: 'Read the recorded activity and follow it back to its source.', team: 'Who is in the kitchen, what each person may do, and their assessments.', kitchen: 'How the kitchen is set up, its records, the backup and the PIN.' };
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }

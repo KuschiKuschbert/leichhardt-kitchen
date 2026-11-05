@@ -63,9 +63,9 @@ Saves: reads a day on a normal day. Head chef: changes how the book works for th
 | 2.1 | Day digests: the 03:00 job writes one record per past day with its prep, order and wastage lines; a past-day fix updates it | makes 2.2 and 2.3 possible | medium | Plan B |
 | 2.2 | Prep and order list hints from the nightly summary instead of 14 days of lines (`loadPast()`, `loadOrdHist()`) | 20,000 to 35,000 | medium | Plan B |
 | 2.3 | Admin reports and Proofreader from digests and the nightly analysis plus today's live lines (`loadStats()`, `loadOrdStats()`) | 10,000 to 30,000 on admin days | medium | Plan B |
-| 2.4 | A past-day fix names its day (`markPast()`, `pastCheck()`) | about 7,000, removes a 50,000 worst case | low | Plan B |
-| 2.5 | One date-range query instead of one per day | 1,000 to 3,000 | low | Plan B |
-| 2.6 | After an update nobody asked for, the admin panel opens on Today | 2,000 to 4,000 per laptop reload | low, head chef | Plan B |
+| 2.4 | A past-day fix names its day (`markPast()`, `pastCheck()`); needs a rules change (`pastEdit` holds only five time stamps today), so it goes with 2.1 | about 7,000, removes a 50,000 worst case | low | Plan B, with 2.1 |
+| 2.5 | One date-range query instead of one per day | 1,000 to 3,000 | low | not needed once past days come from digests (2.1) |
+| 2.6 | After an update nobody asked for, a report page reopens on the Dashboard (`startTab()` in `js/prep.js`, flag `lk.upd.auto` from `js/upkeep.js`) | 2,000 to 4,000 per laptop reload | low, head chef | done 5 Nov |
 | 2.7 | Live lists restart only when access changed (`accessChanged()`); functions list 15 days; sections once a day | 3,000 to 7,000 | low to medium | Plan B |
 | 2.8 | A shared tablet keeps the past-day hints through a lock | about 13,000 today, less after 2.2 | privacy, head chef | not chosen |
 | 3.1 | Order the rule checks so most requests look up fewer records | 2,000 to 5,000 | medium | later |
@@ -84,7 +84,7 @@ Saves: reads a day on a normal day. Head chef: changes how the book works for th
 | 7.2 | A free outside timer starts the push job every 10 minutes | most missed pushes | medium (a token outside GitHub) | not chosen |
 | 7.3 | Google's own scheduler runs the push job | all missed pushes | low, needs pay as you go | Plan C |
 
-Build order for Plan B: 1.1 (done), then 2.4, 2.5, 2.6, 2.7, 5.4 and 6.2 together, then 2.1, 2.2 and 2.3, then 4.1 and 4.2. Check the real read count in the Firebase console (Firestore, Usage) after each step and note it here.
+Build order for Plan B: 1.1 and 2.6 (done 5 Nov), then 2.1 with 2.4 (one rules change: the digests and day-named stamps), then 2.2 and 2.3, then 2.7, 5.4 and 6.2, then 4.1 and 4.2. Check the real read count in the Firebase console (Firestore, Usage) after each step and note it here.
 
 Prices (US dollars, checked 5 Nov 2026): reads past the free 50,000 a day cost $0.03 per 100,000; scheduled backups are billed for storage (about $0.000041 per GiB a day), not reads; each record the security rules look up is a billed read, once per request. Budget alerts warn; they do not stop spending. Sources: cloud.google.com/firestore/pricing, firebase.google.com/docs/firestore/pricing, firebase.google.com/docs/firestore/backups.
 

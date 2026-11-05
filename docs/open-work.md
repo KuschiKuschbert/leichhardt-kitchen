@@ -14,7 +14,7 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 3. **Build round 2 of the work pages redesign** (chosen 5 Nov 2026: Low and Out, supplier groups, I'm on it, the wall board, see `docs/head-chef-decisions.md`). Four steps in [the options brief](work-pages-design-options/brief.md), Round 2, one pull request each. Remove this item when the last step is live.
 
-4. **Plan B for the free reads** (head chef, 5 Nov 2026; [the Firestore usage note](firestore-usage.md)). Done: the reads-used-up message, open screens update at most hourly (1.2, 6.3), release windows (1.1). To do, in order: the quick read fixes 2.4, 2.5, 2.6, 2.7, 5.4 and 6.2; day digests (2.1), the hints from them (2.2), the admin reports and Proofreader from them (2.3); the server jobs (4.1, 4.2). Later, on the head chef's word: Plan C (pay as you go with a budget alert, 4.3, 7.3). Also open: the cut-off push schedule mostly does not run on GitHub (7.1 or 7.2 until Plan C).
+4. **Plan B for the free reads** (head chef, 5 Nov 2026; [the Firestore usage note](firestore-usage.md)). Done: the reads-used-up message, open screens update at most hourly (1.2, 6.3), release windows (1.1), a report page reopens on the Dashboard after an update nobody asked for (2.6). To do, in order: day digests with day-named past-day stamps (2.1 and 2.4, one rules change), the hints from them (2.2), the admin reports and Proofreader from them (2.3); then 2.7, 5.4 and 6.2; then the server jobs (4.1, 4.2). Later, on the head chef's word: Plan C (pay as you go with a budget alert, 4.3, 7.3). Also open: the cut-off push schedule mostly does not run on GitHub (7.1 or 7.2 until Plan C).
 
 Remove each item here once it is done.
 
