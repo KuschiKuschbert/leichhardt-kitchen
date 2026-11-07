@@ -2,7 +2,7 @@
 
 Requested 7 November 2026 by the head chef: "Check them all out and grab benefits for us. Rewrite all design and function CLAUDE.md files necessary to achieve a beautiful merge of all those apps and create a new design for the whole app. Make up 3 different designs and give me your recommendations. I want to keep all the current functionality, but under a new scope using these apps as a role model. I want to maintain our colours and stuff, but I am open to a redesign where it makes sense. Show me designs." The seven apps: Linear, Things 3, Airbnb, Todoist, Flighty, Duolingo and Headspace.
 
-**Status: Home chosen, the rest waiting (8 November 2026).** The head chef chose B's now and next home, with the seasonal celebrations in it, and asked for every other page and the admin panel to change too, with the seven apps as the model (Round 3, below; drawings in `every-page.html`). Nothing in the book has changed yet: the head chef said not to start coding.
+**Status: chosen by the head chef on 8 November 2026 (see Chosen); not built.** The build runs in eight grouped steps (see Build), each its own pull request, starting when the head chef says go.
 
 Role-based analysis, not research with real staff: the eleven reviewers were fresh agents given the proposal, the screenshots and the briefs in `.claude/skills/service-council/reviewers.md`.
 
@@ -235,7 +235,7 @@ The head chef, after the coverage check: "I thought we agreed on looking at the 
 | 4. Orders | 0 | 6 | 0 | Back on the notebook page; a No supplier group first; how many ordered on each |
 | 5. Supplier order | 2 | 4 | 0 | Record order the main button, Mark order done quieter (they stay two different outcomes); boxes start empty with the usual amount as a hint |
 | 6. Delivery received | 0 | 6 | 0 | The reading starts empty and Save stays off until one is typed; Change time and notes stay |
-| 7. Wastage | 1 | 5 | 0 | Log again opens the form filled in, never logs in one tap; amounts in different units are never added up |
+| 7. Wastage | 1 | 5 | 0 | Amounts in different units are never added up. (The Log again fix followed a misdrawing: Make it again puts the item back on the prep list, as today; see Chosen) |
 | 8. Transfers | 3 | 3 | 0 | Mark returned as an outline button, with Undo; a return is always the whole loan, as today |
 | 9. Functions | 6 | 0 | 0 | |
 | 10. Service view | 2 | 3 | 1 | Dietaries on each round. The skeptic would fold it into Functions' Today card |
@@ -278,8 +278,34 @@ What they agreed on and what the check found:
 
 ## Chosen
 
-- **Home: B, now and next, with the seasonal celebrations in it** (head chef, 8 November 2026). Drawn in `every-page.html` on Diwali and on a plain day. Not built yet.
-- Everything else: waiting for the answers above.
+The head chef's answers, 8 November 2026:
+
+1. **Home: B, now and next, with the seasonal celebrations in it** (`previews/e-home-390.png`, `e-home-staff-390.png`, `e-home-1280.png`).
+2. **Admin: B, the Inbox, with a dashboard** (`previews/e-admin-b-1280.png`, `e-admin-b-dash-1280.png`, `e-admin-b-390.png`). Today opens on the Inbox with the day's numbers above it; the Dashboard chosen on 3 November (the Pass board with three written headlines, its tiles and charts, 7, 30 or 90 days) sits in B's sidebar; fixed views for the reports; People, Settings, Backup and PIN; Find with /. Left out, as the council asked: saving your own views (a new record), read history and a nightly-run row. The numbers come from the nightly record.
+3. **Build order as recommended**, in grouped releases (see Build).
+4. **Service view: kept**, with the dietaries on each round.
+5. **Drinks run: restyled**, last in its group.
+6. **Make it again means cook it again.** It stays as it works today: on a cooking fault or expired wastage line it puts the item back on today's prep list in one tap, with Undo (`wAgain()` in `js/prep.js`, 3 Nov 2026). Round 3's drawing had read it as logging the same waste again, and the council's fix followed that; both are corrected (`previews/e-waste-390.png`).
+7. **Line words stay in handwriting** (Caveat). Print stays for amounts, the small line and everything outside the lists.
+8. **Cancel function at the end of the card**, away from Print, with its Undo.
+9. **Urgent in one tap.** Every open prep line gets an Urgent flag with the word under it, filled black when on, beside Recipe and On it, which become the same icon-over-word buttons (`previews/e-prep-390.png`). The Start here number moves into the notebook's margin, like a handwritten line number, to give the words room. Measured with the 14-line list and its long names: **5 prep lines** fully visible on a 390 px phone (2 today; 6 with print words and Urgent behind ⋯). With shorter names more fit. A swipe to mark urgent would cost no width but cannot be seen, so it is not drawn.
+
+Earlier answers still standing: every feature and role kept (the coverage table above); the chef hat as a list; one-row lines; words on actions; no new reads, listeners or rules unless a step says so.
+
+## Build
+
+Eight steps, one pull request each, merged in the release windows, in this order (head chef, 8 November 2026). Each step runs the service council's quick check, counts taps and lines before and after in the click tests, keeps `tests/read-budget.test.js` within budget, adds its patterns to `docs/design-patterns.md` and `tests/design-patterns.test.js`, and updates `README.md` and `docs/prep-book.md` for what the team sees.
+
+| Step | What | Main files | State |
+| --- | --- | --- | --- |
+| 1 | Prep and Add a line: one-row lines with every marker, Urgent, Recipe and On it buttons, the Start here number in the margin, section chips and the day in the heading, section bars, your usual lines first in Add a line | `js/prep.js`, `css/app.css` | Not started |
+| 2 | Home: the now and next board on the kraft board, with the celebrations; Coming up with festivals; only what is still to come | `js/app.js`, `js/functions.js`, `css/app.css`, `js/seasonal/` | Not started |
+| 3 | Orders (supplier groups with time left, No supplier first), Supplier order as one card, Delivery received as arrivals with an empty reading | `js/prep.js`, `js/suppliers.js`, `js/deliveries.js` | Not started |
+| 4 | Wastage (Make it again as today) and Transfers (each loan a card, Mark returned with Undo) | `js/prep.js`, `css/app.css` | Not started |
+| 5 | Functions (Today and Upcoming, empty days folded), the function card with Cancel at the end, the service view with dietaries | `js/functions.js` | Not started |
+| 6 | Recipes and the recipe card (one search, Contains or Free from, the plating line, jump chips, the full allergen key) | `js/app.js`, `css/app.css` | Not started |
+| 7 | The chef hat as a list, then the kitchen pages: guides step by step, pings, Today's team timeline, drinks, minutes, mail, to-do, staff | `js/app.js`, `js/prep.js` | Not started |
+| 8 | Admin B: the Inbox with the day's numbers, the Dashboard in its sidebar, fixed views, Find | `js/prep.js`, `js/admin-dashboard.js` | Not started |
 
 ## Documents that change once chosen
 

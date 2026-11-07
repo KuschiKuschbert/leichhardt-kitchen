@@ -60,7 +60,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Admin flow baseline behind The Chef's Desk | `docs/admin-flow-spec.md` |
 | Smoker batch cards and what was left out (30 Oct 2026) | `docs/smoker-batches.md` |
 | Today's team: shifts, sections, breaks and the team chip, selected A with three pieces of B (7 Nov 2026), all four steps built (the chef's page, the staff side, the training numbers in `teamsum/main`), then split shifts and chefs' own sections (7 Nov 2026) | `docs/todays-team-options/brief.md`, `docs/prep-book.md` (Today's team) |
-| The whole book redesigned from seven apps (Linear, Things 3, Airbnb, Todoist, Flighty, Duolingo, Headspace): home chosen, B's now and next with the celebrations (8 Nov 2026); every page and three admin options drawn and reviewed, the admin choice and build order waiting; not built | `docs/whole-app-redesign-options/brief.md`, `every-page.html` there (read them before changing Home, list rows, the chef hat, the function page or the admin panel) |
+| The whole book redesigned from seven apps (Linear, Things 3, Airbnb, Todoist, Flighty, Duolingo, Headspace): chosen 8 Nov 2026 (B's now and next home with the celebrations, admin B Inbox with a dashboard, handwritten line words, Urgent in one tap), built in eight grouped steps, Prep first; not started | `docs/whole-app-redesign-options/brief.md` (Chosen, Build), `every-page.html` there: read them before changing Home, list rows, the chef hat, the function page or the admin panel |
 
 ## Service council (5 Nov 2026)
 
