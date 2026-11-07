@@ -184,11 +184,12 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
   // the landing page and the tab bar have Transfers
   {
     const p = await L.open(b, '#/', { extra, who: 'ann', wait: 1200 });
-    const names = await p.$$eval('.docket .dk-name', l => l.map(e => e.textContent));
-    ok(names.join(',') === 'Recipes,Prep list,Orders,Wastage,Transfers,Guides', 'landing: six dockets, Transfers before Guides (' + names.join(', ') + ')');
+    // the dockets went on 8 Nov 2026 (redesign step 2): the tab bar carries the pages, Transfers before Guides
+    const names = await p.$$eval('.tabbar a', l => l.map(e => e.getAttribute('href')));
+    ok(names.join(',') === '#/recipes,#/prep,#/orders,#/waste,#/transfers,#/guides', 'landing: six tabs, Transfers before Guides (' + names.join(', ') + ')');
     ok(!!(await p.$('.tabbar a[href="#/transfers"]')), 'landing: the tab bar has Transfers');
-    await p.click('.docket[href="#/transfers"]'); await L.settle(p, 900);
-    ok(await p.evaluate(() => location.hash) === '#/transfers' && /^Transfers/.test(await p.title()), 'landing: the docket opens the transfer list (' + await p.title() + ')');
+    await p.click('.tabbar a[href="#/transfers"]'); await L.settle(p, 900);
+    ok(await p.evaluate(() => location.hash) === '#/transfers' && /^Transfers/.test(await p.title()), 'landing: the tab opens the transfer list (' + await p.title() + ')');
     ok(await p.getAttribute('.tabbar a[href="#/transfers"]', 'aria-current') === 'page', 'the Transfers tab is marked as the page');
     await p.context().close();
   }

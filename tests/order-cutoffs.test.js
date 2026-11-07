@@ -32,8 +32,9 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
   const b = await L.start();
   let p, s;
 
-  // Sam, a sous chef, on the landing page: the bar shows the cut-offs whose reminder is on, soonest first
-  p = await L.open(b, '#/', { who: 'sam', extra: withCuts(CUTS), wait: 1500 });
+  // Sam, a sous chef, on a page (the bar left Home on 8 Nov 2026: Home's board shows the cut-offs, tests/home-board.test.js):
+  // the bar shows the cut-offs whose reminder is on, soonest first
+  p = await L.open(b, '#/recipes', { who: 'sam', extra: withCuts(CUTS), wait: 1500 });
   await L.waitFor(p, () => { const e = document.getElementById('cut-band'); return e && !e.hidden; }, null, 10000);
   let n = await names(p);
   ok(n.length === 3 && n[0] === 'PFD' && n[1].indexOf('Veg Zz<i') === 0 && n[2] === 'Six Hours', 'sous chef: the bar lists 4 hours ahead, and 6 for the one set so, soonest first (' + n.join(' | ') + ')');
@@ -42,7 +43,7 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
   const r0 = await bad(p);
   ok(!r0.i && !r0.img && !r0.attr && !r0.run, 'a supplier name with markup shows as words (' + JSON.stringify(r0) + ')');
   ok(!(await L.overflow(p)), 'the bar fits a phone');
-  ok(p.errors.length === 0, 'landing: no page errors ' + p.errors.join(' | '));
+  ok(p.errors.length === 0, 'recipes: no page errors ' + p.errors.join(' | '));
   ok(!(await p.$('#cut-band button')), 'the bar reminds and has no tick: a supplier order is ticked on the order list only (5 Nov 2026)');
   // the order list: every cut-off today as a tick list; ticking PFD there takes it off the bar for today
   await p.evaluate(() => { location.hash = '#/orders'; });
@@ -68,7 +69,7 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
 
   // All day on the cut-off day: on the bar at 08:00, when a 4 hour reminder for the same time is not yet
   const DAY = [{ id: 'allday', name: 'All Day', dd: [next], at: 14 * 60, pre: 1, lead: 0 }, { id: 'four', name: 'Four', dd: [next], at: 14 * 60, pre: 1 }];
-  p = await L.open(b, '#/', { who: 'sam', extra: withCuts(DAY), wait: 1500, clock: L.NOW - 6 * 3600000 });
+  p = await L.open(b, '#/recipes', { who: 'sam', extra: withCuts(DAY), wait: 1500, clock: L.NOW - 6 * 3600000 });
   await L.waitFor(p, () => { const e = document.getElementById('cut-band'); return e && !e.hidden; }, null, 10000);
   n = await names(p);
   ok(n.join() === 'All Day', 'all day: on the bar at 08:00, the 4 hour one not yet (' + n.join(' | ') + ')');
@@ -76,11 +77,11 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
 
   // an early cut-off: 06:00 tomorrow, 8 hours before, so the reminder starts at 22:00 tonight
   const EARLY = [{ id: 'early', name: 'Early Bread', dd: [(next + 1) % 7], at: 6 * 60, pre: 1, lead: 480 }];
-  p = await L.open(b, '#/', { who: 'sam', extra: withCuts(EARLY), wait: 1500 });
+  p = await L.open(b, '#/recipes', { who: 'sam', extra: withCuts(EARLY), wait: 1500 });
   await L.settle(p, 800);
   ok(!(await p.$('#cut-band:not([hidden])')), 'early cut-off: nothing at 14:00 the day before');
   await p.context().close();
-  p = await L.open(b, '#/', { who: 'sam', extra: withCuts(EARLY), wait: 1500, clock: L.NOW + 8.5 * 3600000 });
+  p = await L.open(b, '#/recipes', { who: 'sam', extra: withCuts(EARLY), wait: 1500, clock: L.NOW + 8.5 * 3600000 });
   await L.waitFor(p, () => { const e = document.getElementById('cut-band'); return e && !e.hidden; }, null, 10000);
   ok(/by tomorrow 06:00 in 7 h 30 min/.test(await txt(p, '#cut-band .cut-row')), 'early cut-off: on the bar at 22:30 the night before, as tomorrow 06:00');
   await p.evaluate(() => { location.hash = '#/orders'; });

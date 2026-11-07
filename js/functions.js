@@ -457,6 +457,8 @@
     if (el) { var h = bandHTML(); if (h !== lastBand || el.innerHTML !== h) { el.innerHTML = h; lastBand = h; } el.hidden = !h; fitFold(); }
     strip();
     var lc = document.getElementById('fn-land');
+    landHome = !!document.getElementById('hm-board');
+    if (window.LK_PREP && window.LK_PREP.homePaint) window.LK_PREP.homePaint();
     if (lc) { var lh = landHTML(); if (lc.innerHTML !== lh) lc.innerHTML = lh; lc.hidden = !lh; }
     var ck = document.getElementById('fn-check');
     if (ck) { var ch = checkHTML(); if (ck.innerHTML !== ch) ck.innerHTML = ch; ck.hidden = !ch; }
@@ -971,11 +973,37 @@
      those out and lists the rest (23 Oct 2026): a function behind the band's "+N more", one tomorrow pushed out by two
      order reminders, and the ones 2 and 3 days out. A function today that is over is left out. By day, then by when
      food first goes out, times TBC last in a day. Nothing to list: no card. */
+  /* Home's Now and next board (redesign step 2, 8 Nov 2026): today's functions with what still goes out, and today's
+     order reminders, from what the band already knows (no reads). Plain words: js/prep.js escapes them. Home has no
+     band, so its Coming up card (landHTML()) leaves out only what this board shows. */
+  function fnHomeRows() {
+    if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return [];
+    var t = now(), out = [];
+    showing(F.list, t, isSentK).forEach(function (x) {
+      var f = x.f;
+      if (x.kind === 'cancelled') { out.push({ id: f.id, kind: 'cancelled', name: f.name, sub: 'Cancelled, do not send', time: '', note: '', hot: true, at: f.first || 0 }); return; }
+      if (x.kind !== 'on') return;
+      var w = nowOf(f, t);
+      if (w.done) return;   // every round sent: nothing still to come
+      var n = (f.rounds || []).length, k = w.k, at = f.first && k >= 0 ? f.rounds[k].at : 0, left = at ? Math.round((at - t) / MIN) : null;
+      var what = f.first ? linesText(f, roundCounts(f, k)) : linesText(f);
+      out.push({ id: f.id, kind: 'on', name: f.name, sub: (!f.first ? 'Times TBC' : n > 1 ? 'Round ' + (k + 1) + ' of ' + n : 'All') + (what ? ' · ' + what : ''), time: w.time, at: at,
+        note: w.late ? 'Not sent yet' : left != null && left <= 60 ? 'In ' + left + ' min' : n > 1 ? 'Round ' + (k + 1) : '', hot: !!w.late || (left != null && left <= 15) });
+    });
+    soon(F.list, t).forEach(function (x) {
+      if (x.kind === 'order') out.push({ id: x.f.id, kind: 'order', name: 'Order the stock for ' + x.f.name, sub: dayName(x.f.date) + ' · ' + linesText(x.f), time: '', note: x.short ? 'Short notice' : 'Today', hot: !!x.short, at: 0 });
+    });
+    return out;
+  }
+  var landHome = false;   // the landing card sits on Home's board page (no band there): set by landSlot(), checked by paint()
   function landHTML() {
     if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
     var t = now(), today = kday(t), tom = addDays(today, 1), end = addDays(today, 3), R = bandRows(t), inBand = {};
-    R.a.forEach(function (x) { if (x.kind === 'on') inBand[x.f.id] = 1; });
-    R.b.forEach(function (x) { if (x.kind === 'tomorrow') inBand[x.f.id] = 1; });
+    if (landHome) fnHomeRows().forEach(function (x) { if (x.kind !== 'order') inBand[x.id] = 1; });
+    else {
+      R.a.forEach(function (x) { if (x.kind === 'on') inBand[x.f.id] = 1; });
+      R.b.forEach(function (x) { if (x.kind === 'tomorrow') inBand[x.f.id] = 1; });
+    }
     var list = F.list.filter(function (f) { return f.status === 'confirmed' && f.date >= today && f.date <= end && (f.date > today || t < f.until) && !inBand[f.id]; })
       .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.first || 9e15) - (b.first || 9e15) || String(a.name).localeCompare(String(b.name)); });
     if (!list.length) return '';
@@ -1094,7 +1122,8 @@
     // every booking from today on as the live list has them, removed ones included; null until the server answered
     live: function () { return F.state === 'ok' && F.all ? F.all.slice() : null; },
     bandSlot: function () { var h = bandHTML(); lastBand = h; return '<div class="fn-band" id="fn-band" role="region" aria-label="Functions"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
-    landSlot: function () { var h = landHTML(); return '<div id="fn-land"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
+    landSlot: function (home) { landHome = !!home; var h = landHTML(); return '<div id="fn-land"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
+    homeRows: fnHomeRows,
     checkSlot: function () { var h = checkHTML(); return '<div id="fn-check"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     hatLine: hatLine, page: pageHTML, watch: watch, paint: paint, catalogue: catalogue, recipeOf: recipeOf, nameOf: nameOf, sheetHTML: sheetHTML, print: printFunctions, esc: esc,
     statusHTML: statusHTML, setStatus: setStatus, statusBusy: function (id) { return !!F.jobs[id]; }, prepOps: prepOps, orderOps: orderOps

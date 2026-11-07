@@ -27,7 +27,7 @@ const retainedSearch = p => p.evaluate(() => document.getElementById('find') ===
       ok(!(await L.overflow(p)), 'the initial waiting shell fits a phone');
     } finally { releaseApp(); }
     p = await opening;
-    ok(await p.locator('.ink-startup').count() === 0 && await p.locator('.docket').count() > 0, 'the loaded landing replaces the startup shell with the book');
+    ok(await p.locator('.ink-startup').count() === 0 && await p.locator('.kb-home').count() > 0, 'the loaded landing replaces the startup shell with the book');
     ok(p.errors.length === 0, 'startup has no browser errors ' + p.errors.join(' | '));
     await p.context().close();
 

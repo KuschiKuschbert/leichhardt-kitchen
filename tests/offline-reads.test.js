@@ -43,7 +43,7 @@ const reads = (p, re) => p.evaluate(s => window.__fake.reads.filter(k => new Reg
   const cuts = [{ id: 'early', name: 'Early Meats', dd: [(dow + 2) % 7], at: 6 * 60, pre: 1, lead: 480 }, { id: 'veg', name: 'Veg Co', dd: [(dow + 2) % 7], at: 7 * 60, pre: 1, lead: 480 }];
   const cutX = { [fsKey(['config', 'main'])]: { people, sousIds: ['sam'], pingIds: ['sam'], showBadges: true, cutoffs: cuts },
     [fsKey(['cutdone', tom + '_early'])]: { day: tom, sid: 'early', on: true, at: at(today, '23:00'), by: 'sam' } };
-  p = await L.open(b, '#/', { who: 'sam', extra: cutX, clock: at(today, '23:50'), wait: 1800 });
+  p = await L.open(b, '#/recipes', { who: 'sam', extra: cutX, clock: at(today, '23:50'), wait: 1800 });
   const band = () => p.evaluate(() => { const e = document.getElementById('cut-band'); return e && !e.hidden ? e.textContent : ''; });
   ok(await until(p, () => { const e = document.getElementById('cut-band'); return !!e && !e.hidden && /Veg Co/.test(e.textContent) && !/Early Meats/.test(e.textContent); }), 'cut-offs before midnight: Early Meats is ticked (off the bar) and Veg Co is on it (' + await band() + ')');
   await p.evaluate(() => { window.__fake.cold = /cutdone/; });
@@ -57,9 +57,12 @@ const reads = (p, re) => p.evaluate(s => window.__fake.reads.filter(k => new Reg
   await go(p, '#/orders');
   t = await p.evaluate(() => { const l = document.querySelector('.cut-tl'), n = l && l.previousElementSibling; return n && n.classList.contains('cut-note') ? n.textContent : ''; });
   ok(/No signal\. Orders ticked on other phones show when the phone is back online\./.test(t), 'cut-offs after midnight with no signal: the tick list on the order list says so too (' + t + ')');
-  await go(p, '#/');
+  await go(p, '#/recipes');
   await warm(p);
   ok(await until(p, () => { const e = document.getElementById('cut-band'); return !!e && !/No signal/.test(e.textContent) && /Veg Co/.test(e.textContent) && !/Early Meats/.test(e.textContent); }), 'cut-offs, signal back: the note goes and Early Meats stays off (' + await band() + ')');
+  // Home's board (8 Nov 2026) holds the same list: Veg Co, and Early Meats stays off
+  await go(p, '#/');
+  ok(await until(p, () => { const e = document.getElementById('hm-board'); return !!e && /Veg Co order closes/.test(e.textContent) && !/Early Meats/.test(e.textContent); }), 'cut-offs, signal back: Home\'s board has Veg Co, not Early Meats');
   ok(p.errors.length === 0, 'cut-offs: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

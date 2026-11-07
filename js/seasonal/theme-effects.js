@@ -273,7 +273,7 @@
   }
   function homeSurface() {
     // The hash guard prevents stale Home DOM from keeping viewport motion alive during navigation.
-    return /^(?:#\/?)?$/.test(location.hash.split('?')[0]) && Boolean(document.querySelector('#app .wall-main .dockets'));
+    return /^(?:#\/?)?$/.test(location.hash.split('?')[0]) && Boolean(document.querySelector('#app .wall-main .kb-home'));
   }
   function surfaceFor(options) { return options?.surface === 'work' || !homeSurface() ? 'work' : 'home'; }
   function targets() {

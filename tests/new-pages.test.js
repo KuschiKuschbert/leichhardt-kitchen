@@ -25,7 +25,8 @@ function world(see) {
   return x;
 }
 const HIDE = { guides: false, pings: false, minutes: false };
-const docket = p => p.evaluate(() => Array.prototype.some.call(document.querySelectorAll('.docket'), a => a.getAttribute('href') === '#/guides'));
+// Home's way to Guides: a docket until 8 Nov 2026, since then the tab bar and the page tabs (the redesign's step 2)
+const docket = p => p.evaluate(() => Array.prototype.some.call(document.querySelectorAll('.docket, .tabbar a, .pnav a'), a => a.getAttribute('href') === '#/guides'));
 const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelectorAll('.tabbar a'), a => a.getAttribute('href') === '#/guides'));
 
 (async () => {
@@ -86,7 +87,7 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   // Bo (lead) sees all three while staff do not
   p = await L.open(b, '#/', { who: 'bo', extra: world(HIDE), wait: 2500 });
   await L.waitFor(p, () => !!window.LK_PREP && LK_PREP.state.configFull && LK_PREP.state.authed);
-  await L.waitFor(p, () => !!document.querySelector('.docket[href="#/guides"]'));
+  await L.waitFor(p, () => !!document.querySelector('.tabbar a[href="#/guides"]'));
   ok(await docket(p), 'lead: Guides docket shows');
   await L.waitFor(p, () => !!document.querySelector('.nt'));
   ok(await p.$('.nt') !== null, 'lead: the shift pings popup opens');

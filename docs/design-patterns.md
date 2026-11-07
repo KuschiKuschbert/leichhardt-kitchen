@@ -20,6 +20,7 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 - **The card:** `section.p-card` with `h2.p-h` (id `rtitle`, so the page's Back and focus land on it), a `.hint` line for what the page is for and when it was read, then the work. Buttons sit in a `.btn-row`: `.btn` for most, `.btn.dark` for the one main action. A quiet action in a sentence is a `.p-link` (Refresh, Try again).
 - **A failed read** never shows "nothing", "nobody" or "0": a `.p-err` line with role status says it could not load, a Try again, and the book tries once more after 5 minutes by itself (`retrySoon()`, `waiting()`). An answer from the phone's own copy with no signal is not "none" (`cacheOnly()`).
 - **Waiting** uses the Ink helpers, never a spinner: `inkLabel()` in a line, `inkWait()` for a block (`docs/loading-motion.md`).
+- **Home's board** (redesign step 2, 8 Nov 2026): a dark `.hm-board` with only what is still to come, one `.hm-a` row each (a drawing, the words with a small second line, the time and a short note on the right, `is-hot` when it is close), every row a tap to where it is done. Under it, `.hm-paper` cards hang from a pin (Prep by section with its `.hm-sec` rows and bars, Coming up). Worked out from what the phone holds, never a read of its own; `homeSlot()` draws it and `homePaint()` keeps it right. Nothing to come says so in one line.
 - **Words** follow `CLAUDE.md`, Writing style: short, 24-hour times, no em dashes. A person's name comes from the staff list (`mnName()`), never typed into code.
 
 ## Choosing

@@ -72,7 +72,7 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   await p.context().close();
 
   // a fresh phone with PFD already ticked by another chef: ticked here too, and not on the bar
-  p = await L.open(b, '#/', { who: 'sam', extra: extra(tickOf('pfd', 'sam', L.NOW - 3600000)), wait: 1500 });
+  p = await L.open(b, '#/recipes', { who: 'sam', extra: extra(tickOf('pfd', 'sam', L.NOW - 3600000)), wait: 1500 });
   await L.waitFor(p, () => { const e = document.getElementById('cut-band'); return e && !e.hidden && e.textContent.indexOf('Veg') >= 0; }, null, 10000);
   ok((await band(p)).join() === 'Veg', 'another phone: PFD, ticked elsewhere, is not on the bar');
   await p.context().close();
@@ -109,11 +109,11 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   ok(s[CD('pfd')] && s[CD('pfd')].by === s[CFG].headId && /Ordered by Head chef/.test(await txt(p, '.cut-tl li:nth-child(2) .cut-st')), 'Google account: ticks as the head chef on their daily PIN');
   await p.context().close();
 
-  // the Google account on the landing page, nobody signed in: the ticks are read as soon as the account is checked, so a
+  // the head chef's device (a page with the bar: Home has the board since 8 Nov 2026), nobody else signed in: the ticks are read as soon as the account is checked, so a
   // supplier a sous chef ticked is not on its bar (review, 24 Oct 2026). The kitchen settings are in step (every PIN
   // window set, fnIds), so nothing writes config/main and its listener does not fire again: the real path.
   const settled = { [CFG]: { people: people.concat([{ id: 'head', name: 'Head chef', role: 'head', active: true, add: true, tick: true, del: true }]), headId: 'head', sousIds: ['sam', 'head'], pingIds: ['sam', 'head'], staffIds: ['sam', 'ann', 'bo', 'head'], fnIds: [], showBadges: true, cutoffs: CUTS, pinOpen: { sam: L.NOW + 86400000 * 5, ann: L.NOW + 86400000 * 5, bo: L.NOW + 86400000 * 5, head: L.NOW + 86400000 * 5 } } };
-  p = await L.open(b, '#/', { admin: true, who: '', extra: Object.assign(settled, tickOf('pfd', 'sam', L.NOW - 3600000)), wait: 2000 });
+  p = await L.open(b, '#/recipes', { admin: true, who: '', extra: Object.assign(settled, tickOf('pfd', 'sam', L.NOW - 3600000)), wait: 2000 });
   await L.waitFor(p, () => { const e = document.getElementById('cut-band'); return e && !e.hidden && e.textContent.indexOf('Veg') >= 0 && e.textContent.indexOf('PFD') < 0; }, null, 8000);
   ok((await band(p)).join() === 'Veg', 'Google account, landing page: PFD, ticked by a sous chef, is not on the bar');
   ok(await p.evaluate(() => !window.__fake.writes.some(ops => ops.some(o => /config\/main$/.test(o.path)))), 'Google account, landing page: nothing wrote the kitchen settings on the way (the real path)');

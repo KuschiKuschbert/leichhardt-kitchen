@@ -571,12 +571,28 @@
   }
   /* Under the top bar, the recipe pages get their own tools row: how many recipes, and the Pass / Tiles switch. */
   var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste'], ['05', 'Transfers', '#/transfers', 'transfers', 'What other venues took from us, and what we took from them'], ['06', 'Guides', '#/guides', 'guides', 'How to work the equipment, clean it and find things']];
+  /* Home (redesign step 2, 8 Nov 2026, head chef; docs/whole-app-redesign-options/brief.md): on the kraft board, the day as
+     the heading, then the dark Now and next board and Prep by section (js/prep.js fills and repaints them), then Coming
+     up (the celebrations' line from js/seasonal/ and the functions of the next days). The six dockets went: the tab bar on
+     a phone and the page tabs on a laptop carry the pages. The function band and the cut-off bar stay on every other page;
+     here the board shows what they hold. Signed out and Functions only keep the dockets as before. The day is the
+     kitchen's (LK_TIME), never the phone's own date. */
+  function homeBoard(dt) {
+    var P = window.LK_PREP, T = window.LK_TIME;
+    return '<div class="wall is-home">' + topBar() +
+      '<main id="main" class="wall-main"><h2 class="wall-h hm-day" id="rtitle" tabindex="-1">' + esc(dt.toLocaleDateString('en-AU', { weekday: 'long' })) + '</h2><p class="wall-date">' + esc(dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })) + ' · <span id="hm-time">' + esc(T.clock(T.now())) + '</span></p>' +
+      minCard() + (window.LK_FN && window.LK_FN.checkSlot ? window.LK_FN.checkSlot() : '') +
+      // kb-home: where the celebrations hang their note (before it) and their Coming up line (in its slot)
+      '<div class="hm kb-home">' + P.homeSlot() + '<section class="hm-paper hm-up" aria-labelledby="hm-up-h"><div class="hm-ph"><h3 class="hm-pt" id="hm-up-h">Coming up</h3></div><div class="hm-kb" data-kb-coming-slot></div>' + (window.LK_FN ? window.LK_FN.landSlot(true) : '') + '</section></div>' +
+      installCard() + '<p class="wall-foot">Cook as written. Check with the head chef or sous chef before changing anything.</p></main>' + tabBar() + '</div>';
+  }
   function viewLanding() {
-    var d = window.LK_TIME.day().split('-'), today = new Date(+d[0], d[1] - 1, +d[2], 12).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
+    var d = window.LK_TIME.day().split('-'), dt = new Date(+d[0], d[1] - 1, +d[2], 12), today = dt.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
+    if (window.LK_PREP && window.LK_PREP.homeOn && window.LK_PREP.homeOn()) return homeBoard(dt);
     return '<div class="wall">' + topBar() + fnBand() +
       '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' + minCard() + (window.LK_FN && window.LK_FN.checkSlot ? window.LK_FN.checkSlot() : '') + (window.LK_FN ? window.LK_FN.landSlot() : '') + installCard() +
       // with no signal before the kitchen's settings are in: the no-signal sentence, not Kitchen sign in (28 Oct 2026)
-      (window.LK_PREP && window.LK_PREP.functionOnly() ? '<p><a class="btn dark" href="#/functions">Manage functions</a></p>' : offline() ? '<p class="hint" role="status">' + esc(offline()) + '</p>' : window.LK_PREP && !window.LK_PREP.privateAccess() ? '<p><a class="btn" href="#/prep">Kitchen sign in</a></p>' : '') + '<div class="dockets">' + DOCKETS.filter(function (d) { if (window.LK_PREP && (!window.LK_PREP.privateAccess() || window.LK_PREP.functionOnly())) return d[3] === 'recipes'; return d[3] !== 'guides' || featOn('guides'); }).map(function (d) {
+      (window.LK_PREP && window.LK_PREP.functionOnly() ? '<p><a class="btn dark" href="#/functions">Manage functions</a></p>' : offline() ? '<p class="hint" role="status">' + esc(offline()) + '</p>' : window.LK_PREP && !window.LK_PREP.privateAccess() ? '<p><a class="btn" href="#/prep">Kitchen sign in</a></p>' : '') + '<div class="dockets kb-home">' + DOCKETS.filter(function (d) { if (window.LK_PREP && (!window.LK_PREP.privateAccess() || window.LK_PREP.functionOnly())) return d[3] === 'recipes'; return d[3] !== 'guides' || featOn('guides'); }).map(function (d) {
         // Transfers and Guides are the long ones under the other four (a docket with a line under its name)
         return '<a class="docket' + (d[4] ? ' dk-wide' : '') + '" href="' + d[2] + '"><span class="dk-pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
           (d[4] ? '<span class="dk-sub">' + esc(d[4]) + '</span>' : '') +
@@ -1536,7 +1552,7 @@
     if (homeRest) restDraw();
     if (route.name === 'landing' && !docketArrived) {
       docketArrived = true;
-      var dockets = app.querySelector('.dockets'); if (dockets) dockets.classList.add('ink-docket-arrive');
+      var dockets = app.querySelector('.dockets, .hm'); if (dockets) dockets.classList.add('ink-docket-arrive');
     }
     paintRecipeStatus();
     if (route.name === 'settings') stAfter();

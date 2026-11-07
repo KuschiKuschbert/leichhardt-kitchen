@@ -36,7 +36,7 @@ const full = p => p.evaluate(() => {
   return { same: now === box.innerHTML, groups: box.querySelectorAll('.shelf, .tile-group').length };
 });
 const count = (p, g) => p.evaluate(s => document.querySelectorAll(s).length, g);
-const landing = async p => { await p.evaluate(() => { location.hash = '#/'; }); await L.waitFor(p, () => !!document.querySelector('.docket')); await L.settle(p, 600); };
+const landing = async p => { await p.evaluate(() => { location.hash = '#/'; }); await L.waitFor(p, () => !!document.querySelector('.kb-home')); await L.settle(p, 600); };
 
 (async () => {
   const b = await L.start();
