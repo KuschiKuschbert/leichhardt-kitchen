@@ -3724,9 +3724,10 @@ button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; curs
 .tm-pick select { min-height: 44px; }
 .tm-fold { display: block; width: 100%; min-height: 44px; margin: 0.4rem 0 0; padding: 0.6rem 0; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; font: 600 0.9375rem var(--body); text-decoration: underline; color: var(--ink); cursor: pointer; overflow-wrap: anywhere; }
 .tm-save { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin-top: 1rem; }
-/* Set today's team under a chef's done count: in the header's own height, so no list line is lost */
-.nb-ph .nb-pw { display: flex; flex-direction: column; align-items: flex-end; margin-left: auto; }
-.nb-tmset { display: inline-flex; align-items: center; min-height: 32px; font: 700 0.875rem var(--body); color: var(--ink); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+/* Set today's team by a chef's done count: above it, in the room the taller title leaves and the header's top padding,
+   so the header keeps its height and nothing below moves when it comes or goes (measured at 360, 390, 768, 1280 px) */
+.nb-ph .nb-pw { display: flex; flex-direction: column-reverse; align-items: flex-end; margin-left: auto; }
+.nb-tmset { display: inline-flex; align-items: center; min-height: 32px; margin-top: -1rem; font: 700 0.875rem var(--body); color: var(--ink); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
 /* the Shifts row: a name, From and To */
 .a-sh-head { display: grid; grid-template-columns: minmax(0, 1fr) 7.5rem 7.5rem 5.5rem; gap: 0.5rem; margin: 0.5rem 0 -0.25rem; font: 700 0.75rem var(--body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .a-sh-row { display: grid; grid-template-columns: minmax(0, 1fr) 7.5rem 7.5rem 5.5rem; }

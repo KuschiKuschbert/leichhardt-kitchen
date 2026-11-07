@@ -36,6 +36,7 @@ const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.n
   ok(!!c && c.due && /not set yet/.test(c.label) && c.href === '#/team', 'chip: a sous chef sees the Today\'s team chip, filled while not set (' + JSON.stringify(c) + ')');
   ok(/Set today's team/.test(await txt(p, '.nb-tmset') || ''), 'prep list: Set today\'s team under the done count');
   ok(await linesSeen(p) === 2, 'prep list: a sous chef still sees 2 list lines above Add a line (as before)');
+  const headWith = await p.evaluate(() => document.querySelector('.nb-left .nb-ph').getBoundingClientRect().height);
   ok(!(await titleCut(p)), 'top bar: "Kitchen Book" is whole at 390 px with the chip');
   await p.click('.wtop-who'); await L.settle(p, 300);
   ok(/Today's team\s*Not set yet/.test(await txt(p, '.wm .wm-team') || ''), 'chef hat: a Today\'s team tile says Not set yet');
@@ -78,6 +79,10 @@ const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.n
   ok(/Today's team saved at \d\d:\d\d: 3 people on/.test(await txt(p, '.tm-save') || ''), 'save: the page says it is saved, with how many on (' + (await txt(p, '.tm-save')) + ')');
   c = await chip(p);
   ok(!!c && !c.due, 'chip: plain once today\'s team is saved');
+  await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 800);
+  ok(!(await p.$('.nb-tmset')), 'prep list: Set today\'s team has gone once it is saved');
+  ok(Math.abs(await p.evaluate(() => document.querySelector('.nb-left .nb-ph').getBoundingClientRect().height) - headWith) < 0.5, 'prep list: the header keeps its height with or without the link, so nothing below moves');
+  await p.evaluate(() => { location.hash = '#/team'; }); await L.settle(p, 800);
   ok(p.errors.length === 0, 'page: no page errors ' + p.errors.join(' | '));
 
   // another chef saves meanwhile: this page's save is refused and says so, the changes stay, Refresh reads theirs
