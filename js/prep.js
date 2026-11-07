@@ -10038,13 +10038,17 @@
       timed.push({ at: b.at, icon: 'cup', title: on ? (split ? 'On your split' : 'On your break') : (split ? 'Your split' : 'Your break'), sub: 'Back' + (sec ? ' on ' + sec : '') + ' at ' + end,
         time: on ? end : tmHHMM(b.at), note: on ? 'Now' : b.len + ' min', hot: tmDue(p.id), attrs: teamOK() ? '' : ' data-tm="day" aria-haspopup="dialog"', href: teamOK() ? '#/team' : '' });
     }
-    // the order cut-offs on the bar for this phone, the same list and words (cutBandHTML())
+    // the order cut-offs on the bar for this phone, the same list and words (cutBandHTML()). Since 8 Nov 2026 (head chef:
+    // "the starting dashboard doesn't show the order cut-off") today's next one shows from the start of the day too, quiet,
+    // with its time and no time left, until its reminder starts (cutOnNow()); then the time left, a pill in the last hour
     if (cutWho() && cutState !== 'offline') {
-      var done = cutDone();
-      cutOn(0).concat(cutOn(1)).filter(function (c) { return cutOnNow(c, m) && !done[c.key]; }).forEach(function (c) {
-        var left = c.at - m, del = cutDel(c);
+      var done = cutDone(), ahead = cutOn(0).concat(cutOn(1)).filter(function (c) { return c.at > m && !done[c.key]; });
+      var later = ahead.filter(function (c) { return c.at < 1440 && !cutOnNow(c, m); });
+      var first = later.reduce(function (a, c) { return Math.min(a, c.at); }, 1440);
+      ahead.filter(function (c) { return cutOnNow(c, m) || later.indexOf(c) >= 0 && c.at === first; }).forEach(function (c) {
+        var left = c.at - m, del = cutDel(c), live = cutOnNow(c, m);
         timed.push({ at: c.at, icon: 'truck', title: c.s.name + ' order closes', sub: del ? del.charAt(0).toUpperCase() + del.slice(1) : '', time: (c.at >= 1440 ? 'Tomorrow ' : '') + hhmm(c.at % 1440),
-          note: homeLeft(left), hot: left <= CUT_SOON, href: '#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) });
+          note: live ? homeLeft(left) : '', hot: live && left <= CUT_SOON, href: '#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) });
       });
     }
     // today's functions and their next round still to go (js/functions.js, from what the band knows)
