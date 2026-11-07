@@ -4,6 +4,8 @@ Staff log a transfer as before. Today's lines stay on today's list. Open loans f
 
 Returned confirms the whole original quantity came back. It records the confirming person and time on the dated line. Partial returns are outside this change. Original amounts, units, people and venues are preserved. A staff member can undo their own confirmation for two minutes; a chef can reopen it later from the dated history. Shared tablets ask for a personal PIN first. View-only staff have no return control.
 
+Since the redesign's step 4 (8 Nov 2026) the open loans show as cards, one a pick-up: the lines one person logged together for one venue (`xCardsHTML()` in `js/prep.js`, worked out on the phone from the lines already read, no new field). Each card says Lent to or Borrowed from, how long (red from 7 days), when, who came or gave it and who logged it, then each item with its own **Mark returned** button (`data-p="tr-return"`, the same `returnXfer()`). A return is still one item, all of it.
+
 ## Data and reads
 
 The dated line at `transfers/<date>/lines/<id>` stays authoritative. Return fields are optional on older lines: `returned`, `returnedBy`, `returnedById`, `returnedAt`. Missing means unconfirmed, so old loans start outstanding.

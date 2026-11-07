@@ -4552,7 +4552,8 @@
     var row = btn.closest('.nb-row'); if (!row) return;
     var act = row.querySelector('.nb-x, .p-x[data-p="odel"], .p-x[data-p="orestore"], .p-x[data-p="wdel"], .p-x[data-p="wrestore"], .p-x[data-p="tr-del"], .p-x[data-p="tr-restore"]');
     // the title is the line's words and amount, without its Not sent slot, its New stamp or an order line's Used in
-    var who = (row.querySelector('.nb-meta .nb-wrote') || {}).textContent || '', t = row.querySelector('.nb-t'), c = t && t.cloneNode(true);
+    // an item on a loan card has no second line of its own: who logged it is on the card (xCardsHTML())
+    var who = (row.querySelector('.nb-meta .nb-wrote') || (row.closest('.tr-card') || row).querySelector('.nb-meta .nb-wrote') || {}).textContent || '', t = row.querySelector('.nb-t'), c = t && t.cloneNode(true);
     if (c) c.querySelectorAll('.nb-mk, .lk-stamp, .o-used, .w-rs, .w-act, .w-again, .tr-way, .tr-age').forEach(function (e) { e.remove(); });
     var name = c ? c.textContent.replace(/\s+/g, ' ').trim() : '';
     var completed = S.name === 'prep' && ptItem(btn.getAttribute('data-id')), completionWho = completed && completed.done ? 'Reported prepared by ' + preparedWorker(completed).name + '. Recorded by ' + (completed.doneBy || '') + '.' : '';
@@ -6516,9 +6517,14 @@
   function wRow(x) {
     // 22 Oct 2026: entries are removed and put back by the head chef only (the admin log, or this page on the Google device)
     var del = wAll() && !x.deleted;
+    /* Redesign step 4 (8 Nov 2026, as drawn in every-page.html, e-waste): the reason leads the small second line, with a
+       dot in the colour of today's bar, so the words and amount keep the first line; Make it again is its own button on
+       the right. The reason key is one of the five before it names a class; anything else gets no colour. */
+    var rk = REASONS.some(function (r) { return r[0] === x.reason; }) ? x.reason : '';
+    var rs = '<span class="w-rs' + (rk ? ' w-' + rk : '') + '">' + (rk ? '<span class="w-dot w-c-' + rk + '" aria-hidden="true"></span>' : '') + esc(reasonName(x.reason)) + '</span>';
     return '<li class="nb-row w-row' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '"><span class="w-time">' + (x.addedAt ? clock(x.addedAt) : '') + '</span>' +
-      '<span class="nb-main"><span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span> <span class="w-rs w-' + esc(x.reason) + '">' + esc(reasonName(x.reason)) + '</span>' + unsentMark(x) + justStamp(x.id) +
-      (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + wAgainHTML(x) + '</span>' + metaHTML([x.station ? esc(x.station) : ''], esc(x.addedBy || '')) + '</span>' +
+      '<span class="nb-main"><span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' + unsentMark(x) + justStamp(x.id) +
+      (x.action ? '<span class="w-act">' + esc(x.action) + '</span>' : '') + '</span>' + metaHTML([x.station ? esc(x.station) : ''], esc(x.addedBy || '')).replace('<span class="nb-meta">', '<span class="nb-meta">' + rs + ' ') + '</span>' + wAgainHTML(x) +
       (del ? '<button type="button" class="p-x" data-p="wdel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
       (x.deleted && wAll() ? '<button type="button" class="p-x" data-p="wrestore" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Put back ' + x.text) + '">Put back</button>' : '') +
       // the line's ⋯ (4 Nov 2026, S4): Change amount, and on a phone Remove or Put back
@@ -6621,9 +6627,18 @@
       pageReviewHTML() + '<button type="button" class="btn sheet-x" data-p="w-rv-close">Close</button></div>' : '';
     return whoTopHTML() +
       '<section class="nb-page o-page w-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Wastage</h2><span class="nb-date">' + esc(longDate(S.wDate)) + '</span></div>' +
-      (S.wState === 'offline' || S.wState !== 'ok' && !live.length ? '' : '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div>') + (add ? dockBtn('w-logbtn', 'w-log', 'Log waste') : '') + '</header>' +
+      (S.wState === 'offline' || S.wState !== 'ok' && !live.length ? '' : wCountHTML(live)) + (add ? dockBtn('w-logbtn', 'w-log', 'Log waste') : '') + '</header>' +
       sum + (can('add') ? '' : '<p class="hint w-ro">You can read the wastage log but not write in it.</p>') + '<div class="nb-body">' + body + '</div>' + rvFoot + '</section>' +
       (wAll() ? '<p class="hint w-past">Past days and earlier reviews are in the <a href="#/admin" data-p="a-go-waste">admin panel, Wastage</a>.</p>' : '') + logSheet + rvSheet + sheetHTML();
+  }
+  /* Today's count and, under it, the sections the waste came from (redesign step 4, 8 Nov 2026, as drawn): in the header's
+     own height, like a person's day on the prep list (.nb-pw), so the list does not move down. Never a total of different
+     units: the total above the list keeps each unit apart (totalsText()). */
+  function wCountHTML(live) {
+    var secs = [];
+    live.forEach(function (x) { var s = String(x.station || '').trim(); if (s && secs.indexOf(s) < 0) secs.push(s); });
+    var prog = '<div class="nb-prog">' + live.length + (live.length === 1 ? ' entry' : ' entries') + '</div>';
+    return secs.length ? '<div class="nb-pw is-day w-pw">' + prog + '<span class="w-secs">' + esc(secs.join(', ')) + '</span></div>' : prog;
   }
   function pageReviewHTML() {
     if (!S.wReview) return S.wReviewErr ? '<p class="hint" role="status">Could not load today\'s review. Check the signal. The book tries again in a few minutes.</p>' : '<p class="hint">Loading...</p>';
@@ -6929,6 +6944,40 @@
       (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + ret + '</span>' + metaHTML([esc(xWho(x))], esc(x.addedBy || ''), '', 'logged by ') + '</span>' + (open ? '' : tick) + xBtn(x) +
       (wxFixOk('x', x) || wAll() && x.id ? moreBtn(x, wxFixOk('x', x)) : '') + '</li>';
   }
+  /* Still out as cards (redesign step 4, 8 Nov 2026, as drawn in every-page.html, e-transfers, after Airbnb's trips): one
+     card a pick-up, saying who has it, since when and how long, then each item with its own Mark returned. A pick-up is the
+     lines one person logged together for one venue (addXfer() writes them a millisecond apart), so no field is added. A
+     return is still the whole of one line, as before, with Undo on the slip. Old loans (7 days or more) are red. */
+  function xPickKey(x) { return [x.date, x.dir === 'in' ? 'in' : 'out', okey(x.venue), okey(x.person), x.addedById || x.addedBy || ''].join('|'); }
+  function xCardsHTML(rows) {
+    var cards = [];
+    rows.forEach(function (x) {
+      var c = cards[cards.length - 1];
+      if (c && c.key === xPickKey(x) && Math.abs(xNum(x.addedAt) - c.at) < 60000) c.rows.push(x);
+      else cards.push({ key: xPickKey(x), at: xNum(x.addedAt), rows: [x] });
+    });
+    return cards.map(function (c) {
+      var x = c.rows[0], out = x.dir !== 'in', v = xStr(x.venue, 40), pn = xStr(x.person, 40);
+      var d = Math.round((parseYmd(dayNow()) - parseYmd(x.date)) / 86400000), old = d >= 7;
+      var age = d >= 1 && d <= 3660 ? (d === 1 ? '1 day' : d + ' days') : 'Today';
+      var head = (out ? 'Lent to ' : 'Borrowed from ') + v;
+      var since = (d >= 1 ? dayShort(x.date) + ' ' : '') + (x.addedAt ? clock(x.addedAt) : '');
+      var who = pn ? (out ? pn + ' came for it' : pn + ' gave it') : '';
+      return '<article class="tr-card' + (old ? ' is-old' : '') + '" aria-label="' + esc(head + ', ' + (d >= 1 ? age + ' out' : 'today')) + '"><div class="tr-ch"><h4 class="tr-cv">' + esc(head) + '</h4>' +
+        '<span class="tr-age' + (old ? ' is-old' : '') + (d >= 1 ? '' : ' is-today') + '" title="' + esc('Since ' + longDate(x.date)) + '">' + age + '</span></div>' +
+        metaHTML([esc(since), esc(who)], esc(x.addedBy || ''), '', 'logged by ').replace('class="nb-meta"', 'class="nb-meta tr-cs"') +
+        '<ul class="nb-rows">' + c.rows.map(xLoanRow).join('') + '</ul></article>';
+    }).join('');
+  }
+  // one item of a loan card: the words and amount, its note, and Mark returned (an outline button with its word)
+  function xLoanRow(x) {
+    var returning = S.xReturning && S.xReturning[x.date + '_' + x.id];
+    var ret = !x.deleted && !x.returned && (can('tick') || wAll()) ? '<button type="button" class="btn tr-ret" data-p="tr-return" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Mark ' + x.text + ' returned, all of it') + '"' + (returning ? ' disabled' : '') + '>' + (returning ? 'Saving...' : TR_TICK + 'Mark returned') + '</button>' : '';
+    return '<li class="nb-row tr-row tr-item' + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '"><span class="nb-main"><span class="nb-t"><strong>' + esc(x.text) + '</strong> <span class="w-amt">' + esc(num(+x.amount || 0) + ' ' + x.unit) + '</span>' + unsentMark(x) + justStamp(x.id) +
+      (x.note ? '<span class="w-act">' + esc(x.note) + '</span>' : '') + '</span></span>' + ret + xBtn(x) +
+      (wxFixOk('x', x) || wAll() && x.id ? moreBtn(x, wxFixOk('x', x)) : '') + '</li>';
+  }
+  var TR_TICK = '<svg class="tr-tick" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12.5 10 17.5 19 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   // the venue and person chips, and the often taken chips that follow the venue (redrawn while the venue is typed)
   function xVenueChips() {
     var f = S.xf, l = xVenues().slice(0, 8);
@@ -6988,8 +7037,8 @@
       S.xOpenState !== 'ok' ? inkWait('Loading what is still out...', 'transfers', 2) : '';
     var todayNote = S.xState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' : offX || (S.xState !== 'ok' ? inkWait('Loading transfers...', 'transfers', 4) : '');
     var openRows = earlier.concat(todayOpen);
-    var stillOut = '<h3 class="a-ch-h">Still out</h3>' + (openRows.length ? '<p class="hint">Tick the box only when the full amount is back. Earlier days say how long they have been out.</p>' : '') +
-      earlierNote + (openRows.length ? '<ul class="nb-rows tr-outstanding">' + openRows.map(xRow).join('') + '</ul>' : '') + todayNote +
+    var stillOut = '<h3 class="a-ch-h">Still out</h3>' + (openRows.length ? '<p class="hint">Mark returned when all of it is back.</p>' : '') +
+      earlierNote + (openRows.length ? '<div class="tr-outstanding tr-cards">' + xCardsHTML(openRows) + '</div>' : '') + todayNote +
       (!openRows.length && !earlierNote && !todayNote ? '<p class="nb-empty">Nothing is out. When another venue takes stock, or we take some from them, log it here so it comes back.</p>' : '');
     var doneHTML = done.length ? '<h3 class="a-ch-h">Done today</h3><ul class="nb-rows tr-done">' + done.map(xRow).join('') + '</ul>' : '';
     var acts = add ? '' : '<p class="hint w-ro">You can read the transfer list but not write in it.</p>';
