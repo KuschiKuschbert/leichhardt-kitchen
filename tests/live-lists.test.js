@@ -131,6 +131,41 @@ const write = (p, k, v) => p.evaluate(a => window.__fake.write(a.k, a.v), { k, v
     await p.context().close();
   }
 
+  // 6. Manage functions (js/fnedit.js changed()): it read every booking again, up to 400, on every functions event
+  // while open. Now the live list is laid over it; the whole list is read on open, on Read again, and at a change once
+  // the list is 30 minutes old
+  p = await L.open(b, '#/functions', { who: 'fay', extra: fx, wait: 2500 });
+  await L.settle(p, 1500);
+  const listed = () => p.evaluate(() => document.getElementById('main').innerText);
+  // the first of them on the page (a tap through the page: the chip row scrolls sideways at 390 px)
+  const tapFe = (pg, sel) => pg.evaluate(q => { const el = document.querySelector('#main ' + q); if (!el) throw new Error('no ' + q); el.click(); }, sel);
+  const fullReads = () => bills(p, fnRe, 'query');
+  ok(/Booking 3/.test(await listed()) && (await fullReads()).length === 1, 'Manage functions: open, the whole list is read once (' + (await fullReads()).length + ')');
+  await p.evaluate(() => { window.__fake.bill = []; });
+  await write(p, fsKey(['functions', 'fn3']), booking(3, { name: 'Booking 3 moved', upd: 2 }));
+  await L.settle(p, 800);
+  ok(/Booking 3 moved/.test(await listed()), 'Manage functions: a booking changed on another phone shows');
+  await write(p, fsKey(['functions', 'fn12']), booking(12, { name: 'Booking new' }));
+  await L.settle(p, 800);
+  ok(/Booking new/.test(await listed()), 'Manage functions: a new booking from another phone shows');
+  ok((await fullReads()).length === 0, 'Manage functions: a booking changed and one added: the whole list not read again (' + (await fullReads()).map(x => x.n).join(', ') + ')');
+  await write(p, fsKey(['functions', 'fn5']), booking(5, { removed: true, upd: 2 }));
+  await L.settle(p, 800);
+  ok(!/Booking 5\b/.test(await listed()), 'Manage functions: a booking deleted on another phone leaves Coming up');
+  ok((await fullReads()).length === 1, 'Manage functions: a deleted one leaves the live list, so the whole list is read once to say so (' + (await fullReads()).length + ')');
+  await p.evaluate(() => { window.__fake.bill = []; });
+  await tapFe(p, '[data-fe="chip"][data-v="deleted"]'); await L.settle(p, 300);
+  ok(/Booking 5\b/.test(await listed()), 'Manage functions: and is under Deleted');
+  await tapFe(p, '[data-fe="chip"][data-v="up"]'); await L.settle(p, 300);
+  await write(p, cfgK, Object.assign({}, await p.evaluate(k => window.__fake.dump()[k], cfgK), { showBadges: true }));
+  await L.settle(p, 800);
+  await p.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await L.settle(p, 500);
+  ok((await fullReads()).length === 0, 'Manage functions: the settings changed and back to the app: the whole list not read again (' + (await fullReads()).map(x => x.n).join(', ') + ')');
+  await tapFe(p, '[data-fe="reload"]'); await L.settle(p, 800);
+  ok((await fullReads()).length === 1, 'Manage functions: Read again reads the whole list (' + (await fullReads()).length + ')');
+  ok(p.errors.length === 0, 'Manage functions: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
