@@ -465,6 +465,8 @@ row('js/prep.js markPings() and markPast(): config/main pastEdit merge', { ok: C
   run: (db, w, r) => W(r, [['set', 'config/main', { pastEdit: { n: Date.now() } }, true]]) });
 row('js/prep.js markPast(): config/main pastEdit with the days that changed (Plan B 2.4)', { ok: CHEFS, asks: CHEFS,
   run: (db, w, r) => W(r, [['set', 'config/main', { pastEdit: { p: Date.now(), pPrev: 0, pFor: Date.now(), pDays: [PAST] } }, true]]) });
+row('js/prep.js whPatch(): config/main pastEdit with the wastage days that changed (7 Nov 2026)', { ok: CHEFS, asks: CHEFS,
+  run: (db, w, r) => W(r, [['set', 'config/main', { pastEdit: { w: Date.now(), wPrev: 0, wFor: Date.now(), wDays: [PAST] } }, true]]) });
 row('js/prep.js noteWriteSeen(): Got it on an Everyone ping (notes/<id>/seen/<today>_<me>)', { ok: KITCHEN, asks: KPINS,
   prep: (r, w) => put({ [`notes/n1/seen/${TODAY}_${w}`]: null }),
   run: (db, w, r) => W(r, [['set', `notes/n1/seen/${TODAY}_${w}`, { day: TODAY, at: Date.now() }]]) });

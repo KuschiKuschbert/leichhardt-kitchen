@@ -248,20 +248,24 @@ service cloud.firestore {
         // Day-named stamps (Plan B 2.4, 5 Nov 2026, docs/firestore-usage.md): with p (o) a newer book also writes the days
         // that changed (pDays, oDays: at most 10), the stamp before it (pPrev, oPrev) and the stamp those days belong to
         // (pFor, oFor), so other phones read just those days again. An older book writes p alone, leaving pFor behind, and
-        // a reader then reads every past day as before. t (7 Nov 2026): today's team was saved, so the other phones read
+        // a reader then reads every past day as before. A past wastage fix (w) names its days the same way since 7 Nov
+        // 2026 (wDays, wPrev, wFor), so the nightly analysis and backup read just those days again.
+        // t (7 Nov 2026): today's team was saved, so the other phones read
         // team/<day> again (docs/todays-team-options/brief.md).
         || (staff() && request.resource.data.by in resource.data.get('sousIds', [])
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pastEdit', 'by'])
           && request.resource.data.pastEdit is map
-          && request.resource.data.pastEdit.keys().hasOnly(['p', 'o', 'n', 'x', 'w', 't', 'pDays', 'pPrev', 'pFor', 'oDays', 'oPrev', 'oFor'])
+          && request.resource.data.pastEdit.keys().hasOnly(['p', 'o', 'n', 'x', 'w', 't', 'pDays', 'pPrev', 'pFor', 'oDays', 'oPrev', 'oFor', 'wDays', 'wPrev', 'wFor'])
           && request.resource.data.pastEdit.get('t', 0) is number
           && request.resource.data.pastEdit.get('p', 0) is number && request.resource.data.pastEdit.get('o', 0) is number
           && request.resource.data.pastEdit.get('n', 0) is number && request.resource.data.pastEdit.get('x', 0) is number
           && request.resource.data.pastEdit.get('w', 0) is number
           && request.resource.data.pastEdit.get('pPrev', 0) is number && request.resource.data.pastEdit.get('pFor', 0) is number
           && request.resource.data.pastEdit.get('oPrev', 0) is number && request.resource.data.pastEdit.get('oFor', 0) is number
+          && request.resource.data.pastEdit.get('wPrev', 0) is number && request.resource.data.pastEdit.get('wFor', 0) is number
           && request.resource.data.pastEdit.get('pDays', []) is list && request.resource.data.pastEdit.get('pDays', []).size() <= 10
-          && request.resource.data.pastEdit.get('oDays', []) is list && request.resource.data.pastEdit.get('oDays', []).size() <= 10)
+          && request.resource.data.pastEdit.get('oDays', []) is list && request.resource.data.pastEdit.get('oDays', []).size() <= 10
+          && request.resource.data.pastEdit.get('wDays', []) is list && request.resource.data.pastEdit.get('wDays', []).size() <= 10)
         // A returned past loan invalidates the head chef's saved transfer history.
         || (staff() && onlyKeys(['pastEdit', 'by'])
           && request.resource.data.pastEdit is map

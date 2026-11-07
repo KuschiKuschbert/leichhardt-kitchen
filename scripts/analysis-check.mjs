@@ -128,6 +128,12 @@ assert.equal((await analyse(K4, { days: 20, at: at + 50000 })).reused, 0, 'A pas
 await K4.collection('references').doc('milk').set({ alias: 'Milk', label: 'Milk', recipeId: 'milk' });
 assert.equal((await analyse(K4, { days: 20, at: at + 60000 })).reused, 0, 'A changed record link: every day is worked out again.');
 assert.equal((await analyse(K4, { days: 20, at: at + 70000 })).reused, 4, 'The next night takes them as published again.');
+await K4.collection('waste').doc(d17).collection('lines').doc('w1').set({ text: 'Brisket', amount: 2, unit: 'kg', reason: 'excess' });
+await K4.collection('config').doc('main').set({ pastEdit: { w: at + 75000, wPrev: 0, wFor: at + 75000, wDays: [d17] } }, { merge: true });
+const rW = await analyse(K4, { days: 20, at: at + 77000 });
+assert.deepEqual([rW.reused, JSON.stringify(await g4('range-30')).includes('Brisket')], [3, true], 'A wastage fix that names its day has that day read again (7 Nov 2026).');
+await K4.collection('config').doc('main').set({ pastEdit: { w: at + 78000 } }, { merge: true });
+assert.equal((await analyse(K4, { days: 20, at: at + 79000 })).reused, 0, 'An older book\'s wastage stamp names no day: every day is read.');
 await K4.collection('deliveries').doc('r1').set({ day: d17, receivedAt: at, supplier: 'Example supplier', chilled: 3 });
 assert.equal((await analyse(K4, { days: 20, at: at + 80000 })).reused, 3, 'A delivery recorded for an old day: that day is read again.');
 await db.recursiveDelete(K4);

@@ -19,8 +19,8 @@
   it instead of read again (5 queries and their lines a day), unless a past-day fix names the day (config/main.pastEdit,
   read as pastChanged() reads it on the phones). Every file is still the whole window. Every day is read on Sundays
   (kitchen time), without a usable earlier file (missing, unreadable, more than 36 hours old), after a past transfer fix
-  (its stamp names no day) or a stamp that cannot tell. So a fix to a waste line or review more than 14 days old is in
-  the backups from the next Sunday. BACKUP_NOW (milliseconds) sets the time for the emulator check only.
+  (its stamp names no day) or a stamp that cannot tell. A past prep, order or wastage fix names its days (wDays since 7
+  Nov 2026), so it is in the next night's backup. BACKUP_NOW (milliseconds) sets the time for the emulator check only.
 */
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -103,7 +103,7 @@ const since = prev ? Date.parse(prev.exportedAt) : NaN, fixed = new Set();
 let reuse = !!prev && new Date(NOW + ZONE).getUTCDay() !== 0 && Number.isFinite(since) && since < NOW && NOW - since < 36 * 3600000 &&
   DATED.every(k => prev[k] && typeof prev[k] === 'object' && !Array.isArray(prev[k]));
 const pe = (out.config && out.config.pastEdit) || {};
-for (const kind of ['p', 'o']) { const d = reuse ? namedSince(pe, kind, since) : []; if (d === null) reuse = false; else d.forEach(x => fixed.add(x)); }
+for (const kind of ['p', 'o', 'w']) { const d = reuse ? namedSince(pe, kind, since) : []; if (d === null) reuse = false; else d.forEach(x => fixed.add(x)); }
 if (reuse && (+pe.x || 0) > since) reuse = false;
 const prevToday = reuse ? kitchenDay(since) : '', prevFrom = reuse ? shift(prevToday, -(DAYS - 1)) : '';
 let lines = 0, dayN = 0, taken = 0;

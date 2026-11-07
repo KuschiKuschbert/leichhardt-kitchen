@@ -52,6 +52,10 @@ try {
   r = backup(lastNight);
   assert.equal(text(r.out, 'waste', day(17)), 'Brisket now', 'A stamp that cannot tell (its run began after last night\'s file): every day is read.');
 
+  await K.collection('config').doc('main').set({ pastEdit: { w: NOW - 3600000, wPrev: 0, wFor: NOW - 3600000, wDays: [day(17)] } });
+  r = backup(lastNight);
+  assert.deepEqual([text(r.out, 'days', day(16)), text(r.out, 'waste', day(17))], ['Bread last night', 'Brisket now'], 'A wastage fix that names its day has that day read again (7 Nov 2026).');
+
   await K.collection('config').doc('main').set({ pastEdit: { x: NOW - 3600000 } });
   r = backup(lastNight);
   assert.equal(text(r.out, 'waste', day(17)), 'Brisket now', 'A past transfer fix names no day: every day is read.');

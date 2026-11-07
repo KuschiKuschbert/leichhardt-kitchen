@@ -8236,11 +8236,13 @@
     var c = dayCache('lk.w.history', whTag());
     if (c && Array.isArray(c.ranges)) c.ranges.forEach(patch);
     if (date < dayNow()) {
-      var stamp = now(); S.whOwnStamp = stamp;
-      S.config.pastEdit = Object.assign({}, S.config.pastEdit, { w: stamp });
+      // the stamp names the day (wDays, wPrev, wFor, like a prep or order fix: pastNames()), so the nightly analysis and
+      // backup read that day again the next morning instead of from the next Sunday (7 Nov 2026, docs/firestore-usage.md)
+      var stamp = now(), mark = pastNames('w', [date], stamp); mark.w = stamp; S.whOwnStamp = stamp;
+      S.config.pastEdit = Object.assign({}, S.config.pastEdit, mark);
       if (S.wStats && S.wStats.loading) S.wStats = null;
       else if (S.wStats) S.wStats.tag = whTag();
-      sset(cfgDoc(), { pastEdit: { w: stamp } }, true).catch(function () { toast('Saved. Refresh history on other devices to see this change.'); });
+      sset(cfgDoc(), { pastEdit: mark }, true).catch(function () { toast('Saved. Refresh history on other devices to see this change.'); });
     }
     if (c) dayCacheSet('lk.w.history', whTag(), c);
   }
