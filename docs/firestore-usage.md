@@ -71,7 +71,7 @@ Saves: reads a day on a normal day. Head chef: changes how the book works for th
 | 3.1 | Order the rule checks so most requests look up fewer records | 2,000 to 5,000 | medium | later |
 | 3.2 | PIN sign-in as a claim on the account (a server function), so rules read no session records | 5,000 to 10,000 | medium to high, needs pay as you go | Plan C or later |
 | 4.1 | Trim the nightly jobs: delete old analysis without reading it, skip days before the book started, recent learning claims only, one range query for the summaries | about 1,200 now | low | built 7 Nov: the first three (`scripts/analysis.mjs`, `scripts/nightly-learn.mjs`, `scripts/analysis-check.mjs`); the summaries' one range query left out (it needs a collection-group query on `lines` and its index in production, for about 40 reads a night) |
-| 4.2 | Analysis and backup read only changed days, full run on Sundays | 1,700 now, 8,000 by January | medium | Plan B |
+| 4.2 | Analysis and backup read only changed days, full run on Sundays | 1,700 now, 8,000 by January | medium | analysis built 7 Nov: the last 14 days and the days a fix names, the rest taken as published (`REUSE_DAYS`, `scripts/analysis-check.mjs`); the backup next |
 | 4.3 | Firestore's own scheduled backups (storage, no reads) replace the read-heavy nightly backup; keep a weekly encrypted copy | 2,500 to 4,000 | medium, head chef, needs pay as you go | Plan C |
 | 5.1 | Visits counted once a day; adds and ticks counted nightly | about 300 writes | low | not chosen |
 | 5.2 | Stop indexing free-text fields | stored size down 50 to 70% | medium | later |
