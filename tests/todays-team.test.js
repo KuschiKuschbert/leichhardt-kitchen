@@ -37,9 +37,10 @@ const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.n
   let c = await chip(p);
   ok(!!c && c.due && /not set yet/.test(c.label) && c.href === '#/team', 'chip: a sous chef sees the Today\'s team chip, filled while not set (' + JSON.stringify(c) + ')');
   ok(/Set today's team/.test(await txt(p, '.nb-tmset') || ''), 'prep list: Set today\'s team under the done count');
-  // 2 lines until the redesign's step 1 (8 Nov 2026) put a phone line's buttons beside its words; 3 since
+  // 2 lines until the redesign's step 1 (8 Nov 2026) put a phone line's buttons beside its words; 3 since; 4 since the
+  // gap fix the same day (the number in the margin, smaller words, tighter rows; tests/prep-lines.test.js counts real fonts)
   const seen = await linesSeen(p);
-  ok(seen === 3, 'prep list: a sous chef still sees 3 list lines above Add a line, with Set today\'s team showing (' + seen + ')');
+  ok(seen === 4, 'prep list: a sous chef still sees 4 list lines above Add a line, with Set today\'s team showing (' + seen + ')');
   const headWith = await p.evaluate(() => document.querySelector('.nb-left .nb-ph').getBoundingClientRect().height);
   ok(!(await titleCut(p)), 'top bar: "Kitchen Book" is whole at 390 px with the chip');
   await p.click('.wtop-who'); await L.settle(p, 300);
@@ -143,7 +144,9 @@ const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.n
   c = await chip(p);
   ok(!!c && c.due && /^Your day: Lunch: Grill · Break 14:30$/.test(c.label), 'staff chip: once her day is set, filled from 30 minutes before her break (' + JSON.stringify(c) + ')');
   ok(await txt(p, '.nb-tmday') === 'Lunch: Grill · Break 14:30', 'staff prep list: her day under the done count (' + (await txt(p, '.nb-tmday')) + ')');
-  ok(await linesSeen(p) === 3, 'staff prep list: still 3 list lines above Add a line (as before)');
+  const staffSeen = await linesSeen(p);
+  // 3 until the gap fix (8 Nov 2026), 5 since: her day under the done count still takes no list line
+  ok(staffSeen === 5, 'staff prep list: still 5 list lines above Add a line with her day showing (' + staffSeen + ')');
   const hh = await p.evaluate(() => { const h = () => document.querySelector('.nb-left .nb-ph').getBoundingClientRect().height, a = h(), l = document.querySelector('.nb-tmday'); l.style.display = 'none'; const z = h(); l.style.display = ''; return [a, z]; });
   ok(Math.abs(hh[0] - hh[1]) < 0.5, 'staff prep list: the header keeps its height with the day line (' + JSON.stringify(hh) + ')');
   ok(!(await p.$('.ks-wrap')) && !(await p.$('.ux-section-picker')), 'staff section: not asked, the chef set it');

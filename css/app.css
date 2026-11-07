@@ -4296,3 +4296,23 @@ html.tm-open, html.tm-open body { overflow: hidden; }
   .hm-board { grid-row: 1 / span 3; }
   .hm-prep, .hm-team, .hm-up, .hm-prep[hidden] + .hm-up { grid-column: 2; grid-row: auto; }
 }
+/* ---------- Gap fix: prep lines (8 Nov 2026) ----------
+   The redesign promised 6 prep lines on a 390 px phone (brief, round 1: "aim for 6 lines visible at 390 px"); step 1 gave 3.
+   On a phone at the usual text size the line words are a little smaller and the rows tighter, the box keeps its 44 px tap
+   area but takes less of the row, the Start here number sits in the margin as drawn, and the section headings are shorter.
+   The list header keeps its height (Set today's team, a person's day). Large text and under 360 px keep their layout. */
+@media (min-width: 360px) and (max-width: 479px) {
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-row { grid-template-columns: 34px minmax(0, 1fr) auto; column-gap: 4px; padding-top: 3px; padding-bottom: 3px; min-height: 44px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-box { margin-left: -8px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-t { font-size: 1.3rem; line-height: 1.02; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-meta { font-size: 0.72rem; line-height: 1.15; margin-top: 1px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left div.nb-hd { min-height: 28px; padding-top: 6px; padding-bottom: 2px; }
+  /* the Start here number sits in the margin, as drawn, so the words keep their first line; the marks are a size smaller */
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-row { position: relative; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-rows + div.nb-hd, html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-rows + .nb-hd { margin-top: 4px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-body { margin-left: -18px; padding-left: 18px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-t[data-n]::before { position: absolute; left: -16px; top: 9px; min-width: 14px; height: 17px; margin: 0; padding: 0 2px; border-radius: 3px; font: 700 10.5px/17px var(--body); }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-roll, html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-urg { font-size: 0.62rem; padding: 1px 5px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-why { font-size: 0.66rem; padding: 0 5px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-marks { margin-left: 0.25rem; vertical-align: 0.15em; }
+}
