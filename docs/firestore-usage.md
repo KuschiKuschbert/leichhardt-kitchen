@@ -56,7 +56,7 @@ Saves: reads a day on a normal day. Head chef: changes how the book works for th
 
 | # | Option | Saves | Risk | Status |
 | --- | --- | --- | --- | --- |
-| 1.1 | Release windows: ready pull requests merge only 15:00 to 16:30 and 22:30 to midnight; `urgent` merges when green (`docs/auto-merge.md`) | 5,000 to 15,000 on busy days | low | done 5 Nov |
+| 1.1 | Release windows: ready pull requests merge only 15:00 to 16:30 and 22:30 to 02:30 (to midnight until 8 Nov 2026); `urgent` merges when green (`docs/auto-merge.md`) | 5,000 to 15,000 on busy days | low | done 5 Nov |
 | 1.2 | A screen left open takes an update nobody asked for at most once an hour | thousands on release days | low | done 5 Nov |
 | 1.3 | Screens left open update only between services and overnight | 1,000 to 5,000 | low, head chef | not chosen |
 | 1.4 | Personal phones keep a copy of the data (persistent cache) | 12,000 to 15,000 | high: reverses #387 and the private-data rule, head chef | not chosen |
