@@ -6,7 +6,7 @@ Requested 7 November 2026 by the head chef, in three messages:
 2. "Can we make head chef and sous chef, while they allocate the breaks, also allocate the section they're on?"
 3. "Can we make it so the head or sous chef can change sections depending on shifts, either lunch shift or dinner shift, and maybe have the options in the admin panel to create different kinds of shifts? For example a smoker shift, so that they can be assigned to?"
 
-**Status: designs drawn, waiting for the head chef's choice. Nothing is built.** `index.html` in this folder is the comparison page (open it in a browser). The pictures in `previews/` are mock-ups drawn inside the running book (the click-test stand-in, `tests/fake/`) with the book's own stylesheet, top bar and sheets, then photographed. Every name, section, shift and time in them is made up. Nothing in them saves. Baseline: `main` at `485b014`.
+**Status: chosen by the head chef on 7 November 2026 (see Chosen). To be built in four steps (see Build).** `index.html` in this folder is the comparison page (open it in a browser). The pictures in `previews/` are mock-ups drawn inside the running book (the click-test stand-in, `tests/fake/`) with the book's own stylesheet, top bar and sheets, then photographed. Every name, section, shift and time in them is made up. Nothing in them saves. Baseline: `main` at `485b014`.
 
 ## Today
 
@@ -154,13 +154,15 @@ Left out: B's sheet that opens by itself and its landing slip; A's start sheet o
 
 ## Questions for the head chef
 
-1. **The morning pop-up.** You asked for the book to ask the chef at sign-in. The council advises a quiet "Set today's team" line and a tile instead (3 of 5 in round 1, 4 of 6 in round 2). Do you want the sheet that opens by itself anyway (design B's roll call)?
-2. **Between and overlapping shifts.** With Lunch 10:00 to 15:00 and Dinner from 16:00, which section counts from 15:00 to 16:00? And when someone is on Smoker and Lunch at once? Suggested: in a gap, the next of their shifts; when two overlap, the one that started last.
-3. **The smoker shift.** Is it a shift with its own hours, like an early start (as drawn), or a job someone does on top of their lunch section?
-4. **A cook moved during service.** May cooks change their own section with one tap (and the chefs see it), or only the chefs?
-5. **Breaks.** Which lengths should the book offer (drawn: 10, 20 and 30 minutes), and up to how many breaks a person (drawn: two)? Should staff see the whole team's breaks, or only their own?
-6. ~~The chip on staff phones.~~ Answered 7 Nov 2026: yes, see Chosen so far.
-7. ~~The icon.~~ Answered 7 Nov 2026: Team and clock.
+All answered by the head chef on 7 November 2026:
+
+1. **The morning pop-up.** No pop-up: the Set today's team link under the done count and the chef chip.
+2. **Between and overlapping shifts.** The suggestion: in a gap, the next of that person's shifts; when two overlap, the one that started last.
+3. **The smoker shift.** Its own shift, with its own hours.
+4. **A cook moved during service.** Cooks may change their own section mid-shift. Every section worked is logged, for cross-training and section suggestions.
+5. **Breaks.** 30, 45, 60, 90 or 120 minutes. Staff see who is on break now and when they are back.
+6. **The chip on staff phones.** Yes.
+7. **The icon.** Team and clock.
 
 ## Top bar chip and team icon (second request)
 
@@ -200,21 +202,34 @@ A top bar button is a major change (the service rules). Round 1 had already cove
 **Recommended chip** (within what the measurements allow):
 1. **Chefs** (head chef, sous chefs, the admin): a round chip with the Team and clock icon, left of the bell, all day on every screen from 375 px. Filled in the tag colour until today's team is saved, plain after (`previews/chip-final-chef-unset-390.png`, `previews/chip-final-chef-set-390.png`, `previews/chip-final-chef-unset-1280.png`). One tap opens Today's team. This is the allocation shortcut the head chef asked for.
 2. **Staff on tablets and laptops**: the same round chip, only from 30 minutes before their break until they are back, and after a chef changes their day, filled in the tag colour (`previews/chip-final-staff-due-1280.png`, `previews/chip-final-staff-due-768.png`). One tap opens Your day. The shared tablet shows the person signed in, and nothing while it is locked.
-3. **Staff on phones**: no chip. The icon goes in front of their line on the prep list and in the chef hat, so it is learnt with its words (`previews/chip-final-phone-prep-390.png`, still 3 list lines; `previews/chip-final-phone-hat-390.png`). **Changed by the head chef, see Chosen so far.**
+3. **Staff on phones**: no chip. The icon goes in front of their line on the prep list and in the chef hat, so it is learnt with its words (`previews/chip-final-phone-prep-390.png`, still 3 list lines; `previews/chip-final-phone-hat-390.png`). **Changed by the head chef: a chip on staff phones too, see Chosen.**
 
-## Chosen so far
+## Chosen
 
-The design (A with three pieces of B, or another) and questions 1 to 5 are still the head chef's to answer. Two parts are chosen (head chef, 7 November 2026):
+**7 November 2026, by the head chef: A with three pieces of B, with the chip.** Recorded at the top of `docs/head-chef-decisions.md`.
 
-- **The icon: Team and clock** (two people and a clock, with the clock a touch bigger than first drawn).
-- **A staff chip on phones too**, "so they can see in one tap where they are and what time their break is". The council had advised against it on phones; the head chef weighed it. The tap count is the same as the chef hat (1), but a chip of its own is found without being shown, where the chef hat is a menu of many things (the new starter's point in both rounds). Recommended with it, so it stays quiet:
-  - It shows once the chef has set that person's day; no chip for someone not on today.
-  - Plain most of the day; filled in the tag colour with a white icon from 30 minutes before their break until they are back, and after a chef changes their day (`previews/chip-staff-phone-390.png`, `previews/chip-staff-phone-due-390.png`).
-  - One tap opens **Your day**: **Now** (section and shift, in large type), **Break** (time and length), **Later** (the next shift's section), who set it and when, See the team and Close (`previews/chip-staff-phone-sheet-390.png`).
-  - Small phones: below 390 px the round buttons sit 4 px apart instead of 8; below 375 px "Kitchen Book" is set at 1.3rem instead of 1.45rem, only while the chip shows. Measured: the title stays whole at 360, 375 and 390 px on the landing page and the prep list (`previews/chip-staff-phone-360.png`). Without these it was cut by 13 px at 360 px and 2 px at 375 px.
-  - Tablets and laptops as recommended: the same round chip (words wrap the page tabs). Chefs as recommended: all day, filled until the day is saved.
+- **Chefs** (head chef, sous chefs, the admin): no sheet that opens by itself. Today's team is a tile in the chef hat's Chef group, a Set today's team link under the done count on their prep list until the day is saved, a line in the admin's To do, and a round Team and clock chip next to the bell all day, filled until the day is saved.
+- **The chef's page**: one shift at a time; Same as last Saturday? Use it fills the people, shifts, sections and breaks to check, and nothing is saved until Save; Spread them fills a shift's breaks one after another; break lengths 30, 45, 60, 90 and 120 minutes; Save checks the server first and never overwrites a day another chef saved meanwhile.
+- **Shifts**: set up once in Admin, Kitchen, Shifts, each with its own hours (Lunch, Dinner, Smoker, and any others). A person's section is the one on the shift of theirs that is on now; in a gap, the next of their shifts; when two overlap, the one that started last.
+- **Staff**: "Lunch: Grill · Break 14:30" with the icon under the done count on the prep list (no list line lost) and in the chef hat; a round chip once their day is set, plain most of the day, filled from 30 minutes before their break until they are back and after a chef changes their day; one tap opens Your day: Now, Break, Later, and who is on break now and when they are back. A person the chef set is not asked Your section today.
+- **Section changes and training**: a cook may change their own section mid-shift (My section, one tap). Every section worked, from the chef's plan and from these changes, is logged with its times. All of it is used for training: the Training opportunities in the admin panel, Who worked where, the Team skills matrix and cross-training, and the chef's page suggesting each person's usual section and who is In training where.
+- **Kept from the council**: never "no break" when the book does not know; never yesterday's plan; the changed state in orange; no new listener.
 
-When the rest is chosen it goes at the top of `docs/head-chef-decisions.md` with the date.
+- **Small phones**: below 390 px the round buttons sit 4 px apart instead of 8; below 375 px "Kitchen Book" is set at 1.3rem instead of 1.45rem, only while the chip shows. Measured: the title stays whole at 360, 375 and 390 px on the landing page and the prep list (it was cut by 13 px at 360 and 2 px at 375 without). Words never go in the chip: they wrap the page tabs on a laptop.
+- **Why a staff chip on phones** when the council advised against it there: the tap count is the same as the chef hat (1), but a chip of its own is found without being shown, where the chef hat is a menu of many things (the new starter's point in both rounds).
+
+Pictures: the staff chip `previews/chip-staff-phone-390.png`, filled `previews/chip-staff-phone-due-390.png`, Your day `previews/chip-staff-phone-sheet-390.png` (On break now to be added under Later), 360 px `previews/chip-staff-phone-360.png`; the chef chip `previews/chip-final-chef-*.png`; the chef's page and the staff line `previews/mix-*.png` (break chips to read 30, 45, 60, 90, 120 min).
+
+## Build
+
+In small steps, each its own pull request, merged in a release window. Rules are published from the branch before the code that needs them (CLAUDE.md, How changes ship).
+
+1. **Rules and records.** The day's team record (written only by the chefs and the verified admin, read by every signed-in kitchen session; people, shifts, sections, break times and the five lengths checked; a save that would overwrite a newer one refused); the shifts in `config/main` (admin only); the section log (one record per person, day and stint, written by that person or a chef). Emulator checks for every sign-in in `tests/rules/client-shapes.test.mjs`. Looser rules, so published first, with the head chef's OK, then the Lock probe.
+2. **The Shifts row and the chef's page.** Admin, Kitchen, Shifts; Today's team with Use it, Spread them, the break chips and the server check; the tile, the Set today's team link, the To do line and the chef chip. Reads: the day's record when the page opens (1) and last week's same day for Use it (1).
+3. **The staff side.** The chip and Your day, the prep list and chef hat lines, sections following the plan and the shift, no section question when set, My section changes logged. Other phones hear a save through the stamp on `config/main` they already listen to (2 reads per phone per save; about 105 a day for 15 phones and 3 saves).
+4. **Training, cross-training and suggestions.** Every section allocated or changed counts for training (head chef, 7 Nov 2026). The nightly job adds the section log to the day digests and the analysis (`js/analysis-core.js`), so: Admin, Today, Training's person and section opportunities show shifts worked on each section next to the ticks ("Ann, Pans: 6 shifts in 30 days, Not assessed"), with no second training record (assessments stay in `training/<id>`, `docs/admin-intelligence.md`); Who worked where and the Team skills matrix count shifts as well as ticks; and the chef's page suggests each person's usual section for that weekday and shift ("Ann: Grill, 6 of the last 8 Saturdays") and marks who is In training on a section, so the chef can put them there to learn. All from small nightly records, never past days read on a phone.
+
+Tests for each step: a new `tests/todays-team.test.js` (the chef's page, the chip at 360, 390, 768 and 1280 px with the title whole and the tabs on one row, Your day, the section rules at the shift edges, offline never shown as Not set yet), `tests/roles.test.js` rows, `tests/read-budget.test.js`, `tests/safe-text.test.js` for names, and the rules checks.
 
 ## Files
 
