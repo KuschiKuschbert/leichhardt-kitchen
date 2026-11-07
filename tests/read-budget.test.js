@@ -1,7 +1,8 @@
 // Read budget (coding rules, 22 Oct 2026): what each page open and each reload costs in Firestore reads, counted the way
 // the real Firestore bills them (tests/fake: a getDoc is one read, a query one per document, at least one, a listener what
-// it first sends). The free plan stops the book for the day at 50,000 reads, so a change that goes over a budget here
-// either reads less or raises the budget in the same pull request, with the reason.
+// it first sends; since 7 Nov 2026 also the records the rules look up for each request, __fake.ruleBill). The free plan
+// stops the book for the day at 50,000 reads, so a change that goes over a budget here either reads less or raises the
+// budget in the same pull request, with the reason.
 const L = require('./lib');
 const { R, ok } = L.results();
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -17,7 +18,9 @@ for (let d = 1; d <= 7; d++) for (let i = 0; i < 20; i++) {
 }
 ['sam', 'ann', 'bo'].forEach(id => { extra[fsKey(['activity', id])] = { name: id, added: 3, ticked: 4, visits: 5, lastSeen: L.NOW - 3600000 }; });
 
-const billed = p => p.evaluate(() => window.__fake.bill.slice());
+// the reads a page asked for and the records the rules looked up for them (tests/fake: ruleBill), in one list
+const billed = p => p.evaluate(() => window.__fake.bill.concat((window.__fake.ruleBill || []).map(x => ({ kind: 'rules', path: 'rules', n: x.n }))));
+const unbill = p => p.evaluate(() => { window.__fake.bill = []; window.__fake.ruleBill = []; });
 const sum = b => b.reduce((t, x) => t + x.n, 0);
 function top(b) {
   const m = {};
@@ -54,7 +57,17 @@ async function reportData(p) {
   // reload ceiling records that existing runtime cost; no production reads or private persistent cache were added.
   // 5 Nov 2026 (Plan B 2.2): with the day digests the first open reads 14 past days for 15 reads (the index and one
   // query) and each rollover reads only the last day written: firstDig is measured below.
-  const BUDGET = { first: 680, firstSum: 300, firstDig: 300, reload: 40, admin: 760, adminDig: 760, adminSamePage: 60, admin2: 240 };
+  // 7 Nov 2026 (Plan B 2.7): the owner grant no longer starts the live lists again and the sections are read once a
+  // day: admin 633 to 626, admin again 221 to 211, admin with the digests 143 to 136. This seed has 6 lines today and no
+  // sections; tests/live-lists.test.js measures a real day (40 lines, 12 sections).
+  // 7 Nov 2026 (Plan B 6.2): the records the rules look up are counted too, about 4 for each request from a phone with a
+  // session (tests/fake: ruleBill). Measured with them: first open 923 (264 of them the rules'), with the summaries
+  // 540, with the digests 203, reload 86, admin 1238 (612), admin again 347, admin with the digests 396, the
+  // Proofreader 207 and Manage functions with 12 bookings ahead 97 (129 before the functions listener started only
+  // once on an open, the same pull request). The budgets went up by those lookups, not by new reads: first 680 to 960, firstSum 300 to 580,
+  // firstDig 300 to 240 (down, with the digests), reload 40 to 110, admin 760 to 1300, adminDig 760 to 440, admin2 240 to
+  // 400; proof and fnManage are new.
+  const BUDGET = { first: 960, firstSum: 580, firstDig: 240, reload: 110, admin: 1300, adminDig: 440, adminSamePage: 60, admin2: 400, proof: 260, fnManage: 140 };
   const show = !!process.env.RB_SHOW;
 
   // a staff phone opens the prep list for the first time today, then goes to orders, wastage and transfers
@@ -126,7 +139,7 @@ async function reportData(p) {
   if (show) console.log('admin: ' + admin + ' (' + top(bl) + ')');
   ok(beforeReturn.prep === 140 && beforeReturn.orders === 35 && !beforeReturn.missing, 'first admin visit has all 140 seeded past prep lines and 35 order lines');
   // Another report visit without a reload uses this page's loaded data and memory cache.
-  await p.evaluate(() => { window.__fake.bill = []; });
+  await unbill(p);
   await L.adminTab(p, 'insights'); await L.settle(p, 500);
   await L.adminTab(p, 'waste'); await L.settle(p, 500);
   await L.adminTab(p, 'transfers'); await L.settle(p, 500);
@@ -162,7 +175,38 @@ async function reportData(p) {
   ok(p.errors.length === 0, 'admin with the digests: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // the Proofreader (Plan B 6.2): the admin panel reopened on it, with the day digests
+  p = await measure(b, '#/admin', { admin: true, who: '', adminPage: 'proofreader', extra: withDig }, 3000);
+  bl = await billed(p);
+  const proof = sum(bl);
+  if (show) console.log('proofreader: ' + proof + ' (' + top(bl) + ')');
+  ok(await p.evaluate(() => !!document.querySelector('[data-t="proofreader"][aria-current="page"], [data-t="proofreader"][aria-pressed="true"]')) || await p.evaluate(() => window.LK_PREP.state.atab === 'proofreader'), 'proofreader: the admin panel opened on it');
+  ok(p.errors.length === 0, 'proofreader: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // Manage functions (Plan B 6.2): a functions coordinator opens #/functions with 12 bookings ahead
+  const F = require('../js/functions.js'), withFn = Object.assign({}, withSum);
+  withFn[fsKey(['config', 'main'])] = Object.assign({}, L.seed()[fsKey(['config', 'main'])]);
+  withFn[fsKey(['config', 'main'])].people = withFn[fsKey(['config', 'main'])].people.concat([{ id: 'fay', name: 'Fay', role: 'fnc', active: true }]);
+  withFn[fsKey(['config', 'main'])].staffIds = (withFn[fsKey(['config', 'main'])].staffIds || []).concat(['fay']);
+  withFn[fsKey(['config', 'main'])].fnIds = ['fay'];
+  withFn[fsKey(['pinset', 'fay'])] = { at: 1 };
+  withFn[fsKey(['staffpins', 'fay'])] = { hash: L.sha('lk:fay:5151') };
+  for (let i = 0; i < 12; i++) {
+    const d = L.ymd(new Date(L.NOW + (i * 5 + 1) * 86400000));
+    withFn[fsKey(['functions', 'fn' + i])] = F.derive({ v: 1, status: 'confirmed', name: 'Booking ' + i, date: d, start: F.kat(d, 1080), loc: 'Garden', guests: 30, mode: 'all', lines: [{ rid: 'pizza-platter', name: 'Pizza platter', qty: 2, unit: 'platter', u: [0], spec: '', fp: '' }], rounds: [{ at: F.kat(d, 1110), note: '' }], notes: '', kc: '', kcBy: '', kcAt: 0, was: {}, chg: [], cBy: 'fay', cAt: 1, by: 'fay', upd: 1, od: '', confAt: 1 });
+  }
+  p = await measure(b, '#/functions', { who: 'fay', extra: withFn }, 2500);
+  bl = await billed(p);
+  const fnManage = sum(bl);
+  if (show) console.log('manage functions: ' + fnManage + ' (' + top(bl) + ')');
+  ok(await p.evaluate(() => (document.body.textContent.match(/Booking \d+/g) || []).length) >= 12, 'manage functions: the 12 bookings are listed');
+  ok(p.errors.length === 0, 'manage functions: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   {
+    ok(proof <= BUDGET.proof, 'admin panel opened on the Proofreader with the day digests: ' + proof + ' reads (budget ' + BUDGET.proof + ')');
+    ok(fnManage <= BUDGET.fnManage, 'Manage functions with 12 bookings ahead: ' + fnManage + ' reads (budget ' + BUDGET.fnManage + ')');
     ok(first <= BUDGET.first, 'staff first open today: ' + first + ' reads (budget ' + BUDGET.first + ')');
     ok(firstSum <= BUDGET.firstSum, 'staff first open today with the nightly summaries: ' + firstSum + ' reads (budget ' + BUDGET.firstSum + ')');
     ok(firstDig <= BUDGET.firstDig, 'staff first open today with the summaries and day digests: ' + firstDig + ' reads (budget ' + BUDGET.firstDig + ')');

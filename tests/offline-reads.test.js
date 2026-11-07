@@ -216,7 +216,7 @@ const reads = (p, re) => p.evaluate(s => window.__fake.reads.filter(k => new Reg
     await p.context().close();
   }
 
-  // 11. The sections people write (watchSections()), started again with no signal for the next person: the copy in
+  // 11. The sections people write (loadSections(), once a day since 7 Nov 2026), for the next person with no signal: the copy in
   // memory is empty, which is not "no sections". The ones already known stay for the suggestions and the spell check.
   const secX = { [fsKey(['sections', 'larder'])]: { name: 'Larder', uses: 5 }, [fsKey(['sections', 'pastry'])]: { name: 'Pastry', uses: 3 } };
   p = await L.open(b, '#/prep', { who: 'sam', deviceMode: 'shared', extra: secX, wait: 1800 });

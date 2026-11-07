@@ -58,7 +58,7 @@
 
   /* ---------- small helpers ---------- */
   var LS = (function () { try { localStorage.getItem('x'); return localStorage; } catch (e) { return null; } })();
-  function privateKey(k) { return /^lk\.(past$|ord\.(hist(\.at)?|learned)$|[wx]\.(sum|note|history)$|use$|learned$|guides$|drinks$|mail\.sent$)/.test(k); }
+  function privateKey(k) { return /^lk\.(past$|ord\.(hist(\.at)?|learned)$|[wx]\.(sum|note|history)$|use$|learned$|secs$|guides$|drinks$|mail\.sent$)/.test(k); }
   function lsGet(k) { try { return LS ? LS.getItem(k) : null; } catch (e) { return null; } }
   function lsSet(k, v) { try { if (LS) { if (v == null || v === '') LS.removeItem(k); else LS.setItem(k, v); } } catch (e) {} }
   function clearPrivateCache() { try { Object.keys(LS || {}).forEach(function (k) { if (privateKey(k) || k === 'lk.fn') LS.removeItem(k); }); } catch (e) {} }
@@ -184,7 +184,7 @@
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: '', toastAct: null
   };
   var accessEpoch = 0;
-  var fb = null, sdkP = null, unsubCfg = null, unsubItems = null, unsubSec = null, unsubAct = null;
+  var fb = null, sdkP = null, unsubCfg = null, unsubItems = null, unsubAct = null;
   var itemsKey = '', cfgKey = '', toastTimer = null, resumed = false;
 
   /* ---------- Firebase (loaded only when the prep pages are opened) ---------- */
@@ -377,7 +377,7 @@
       scope = S.pin + '|' + (kitchenAccess() ? 'kitchen' : 'login');
       if (cfgKey === scope && unsubCfg) { S.configState = cfgLast || 'loading'; draw(); return; }
       if (unsubCfg) unsubCfg();
-      cfgKey = scope; cfgLast = '';
+      cfgKey = scope; cfgLast = ''; liveFor = S.uid + '|' + S.who;
       var full = scope.slice(-7) === 'kitchen', cfgFromCache = null;
       // includeMetadataChanges: the server's answer also comes in when it is the same as the copy's (both missing);
       // those snapshots are not billed
@@ -406,7 +406,7 @@
           Promise.resolve().then(settleRevokedWrites);
         }
         S.configState = 'ok'; resume();
-        if (full && kitchenAccess()) { pastCheck(); refreshDraft(); watchItems(); watchSections(); loadLearned(); }
+        if (full && kitchenAccess()) { pastCheck(); refreshDraft(); watchItems(); loadSections(); loadLearned(); }
         featSync();
         // the first PIN windows, once the settings are in (does nothing once everyone has one)
         if (full && S.level === 'owner') { seedPinOpen(); seedIds(); }
@@ -478,12 +478,13 @@
   function pageErr() { return quotaOn() ? 'Could not load this page.' : 'Could not load this page. Check the connection.'; }
   function quotaHTML() { return quotaOn() && S.configState !== 'error' ? '<p class="p-err quota-note" role="status">' + esc(quotaText()) + '</p>' : ''; }
   var cfgLast = '';   // what the settings listener now running last had: '' nothing yet, 'offline' only the empty copy, 'ok'
+  var liveFor = '';   // the device identity and person the live lists were started for (connect(), accessChanged())
   var unsubOrd = null, ordKey = '', ordSnap = {};
   var unsubW = null, wKey = '', unsubX = null, xKey = '', unsubXO = null, wSnap = {}, xSnap = {}, xoSnap = {};
   /* Stops every live listener (kitchen PIN forgotten or moved), so nothing keeps reading the old PIN. */
   function stopLive() {
-    [unsubCfg, unsubItems, unsubSec, unsubAct, unsubOrd, unsubW, unsubX, unsubXO].forEach(function (u) { if (u) u(); });
-    unsubCfg = unsubItems = unsubSec = unsubAct = unsubOrd = unsubW = unsubX = unsubXO = null; S.xOpen = []; S.xOpenState = 'idle'; cfgKey = itemsKey = ordKey = wKey = xKey = '';
+    [unsubCfg, unsubItems, unsubAct, unsubOrd, unsubW, unsubX, unsubXO].forEach(function (u) { if (u) u(); });
+    unsubCfg = unsubItems = unsubAct = unsubOrd = unsubW = unsubX = unsubXO = null; S.xOpen = []; S.xOpenState = 'idle'; cfgKey = itemsKey = ordKey = wKey = xKey = '';
     cutStop();
   }
   /* "Not sent": a line this phone changed that the server has not confirmed yet, from the listener's own
@@ -677,23 +678,50 @@
     });
     return out.sort(function (a, b) { return (b.uses || 0) - (a.uses || 0); });
   }
-  /* The sections people write (suggestions, the spell check, the admin Learning list) and, for the head chef's Google
-     account, who writes and ticks (admin Team). No signal before a listener's first server answer (28 Oct 2026): the
-     copy in memory holds at most this phone's own unsent counts, never the team's (listSnap() says 'wait'). The sections
-     already known stay; the Team table says there is no signal instead of showing everyone as never seen. Neither
-     draws again for a snapshot that changed nothing ('same'). */
-  var secLast = {}, secState = 'loading', actLast = {};
-  function watchSections() {
-    if (!kitchenAccess() || !S.configFull) return;
-    if (unsubSec || !fb) return;
-    secState = 'loading'; secLast = {};
-    unsubSec = fb.fs.onSnapshot(colRef('sections'), { includeMetadataChanges: true }, function (snap) {
-      var k = listSnap(snap, secState, secLast);
-      if (k === 'same' || k === 'wait') return;
-      secState = 'ok';
-      S.sections = snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; });
-      draw();
-    }, function () {});
+  /* For the head chef's Google account, who writes and ticks (admin Team). No signal before the listener's first server
+     answer (28 Oct 2026): the copy in memory holds at most this phone's own unsent counts, never the team's (listSnap()
+     says 'wait'), so the Team table says there is no signal instead of showing everyone as never seen. It does not draw
+     again for a snapshot that changed nothing ('same'). */
+  var actLast = {};
+  /* The sections people write: suggestions, the spell check (cleanSection()) and the admin Learning list. Read once a
+     day per phone (1 read per section, about 10 to 30) and kept in lk.secs until the kitchen day or the kitchen PIN
+     changes (Plan B 2.7, 7 Nov 2026). It was a live list: every line added with a section, on any phone, cost a read on
+     every phone with the book open, and every restart of the live lists read them all again. This phone's own new
+     sections and hides are laid over the copy at once (secMine()); another phone's new section reaches this one the
+     next day. The admin Learning list reads them again when it opens, at most every 30 minutes (fresh), so the head
+     chef sees today's. A failed read, or an answer only from the copy in memory (no signal, sdk()), keeps nothing and
+     tries again after 5 minutes or once the phone is back online. */
+  var SEC_STALE = 30 * 60000;
+  function secOf(x) {
+    if (!x || typeof x.name !== 'string' || !x.name || typeof x.id !== 'string') return null;
+    function n(v) { return typeof v === 'number' && isFinite(v) && v >= 0 ? v : 0; }
+    return { id: x.id, name: x.name.slice(0, 40), uses: n(x.uses), lastUsed: n(x.lastUsed), lastBy: typeof x.lastBy === 'string' ? x.lastBy : '', hidden: x.hidden === true };
+  }
+  function secsOf(list) { return (Array.isArray(list) ? list : []).map(secOf).filter(Boolean); }
+  function loadSections(fresh) {
+    if (!kitchenAccess() || !S.configFull || !fb || S.secBusy) return;
+    var tag = S.pin + '|' + dayNow();
+    if (fresh ? S.secFor === tag && Date.now() - (S.secAt || 0) < SEC_STALE : S.secFor === tag) return;
+    if (waiting('secs')) return;
+    if (!fresh) { var c = dayCache('lk.secs', tag); if (Array.isArray(c)) { S.sections = secsOf(c); S.secFor = tag; return; } }
+    S.secBusy = true;
+    fb.fs.getDocs(colRef('sections')).then(function (snap) {
+      S.secBusy = false;
+      if (S.pin + '|' + dayNow() !== tag) return;
+      S.sections = secsOf(snap.docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }));
+      S.secFor = tag; S.secAt = Date.now(); dayCacheSet('lk.secs', tag, S.sections); retryDone('secs'); draw();
+    }, function (e) { S.secBusy = false; retrySoon('secs', function () { loadSections(fresh); }, e); });
+  }
+  // this phone's own section write (a line added under it, or a hide), on the copy at once and in lk.secs when the copy
+  // is today's; the server's count comes with the next day's read
+  function secMine(id, ch) {
+    var list = (S.sections || []).slice(), i = -1;
+    list.forEach(function (x, k) { if (x.id === id) i = k; });
+    var x = secOf(Object.assign({ id: id, uses: 0, lastUsed: 0, lastBy: '' }, i >= 0 ? list[i] : {}, ch));
+    if (!x) return;
+    if (i >= 0) list[i] = x; else list.push(x);
+    S.sections = list;
+    if (S.secFor === S.pin + '|' + dayNow()) dayCacheSet('lk.secs', S.secFor, list);
   }
   function watchActivity() {
     if (!kitchenAccess() || !S.configFull) return;
@@ -717,8 +745,17 @@
   function privateAccess() { return deviceReady() && !S.privacyLocked && !!S.pin && !!(S.authed && me() && (!S.config.staffIds || S.config.staffIds.indexOf(S.who) >= 0) && canW() && S.sessExp > now() || S.user && S.level === 'owner' && ownerHere()); }
   function kitchenAccess() { return privateAccess() && !functionOnly(); }
   function routeAccess(name) { return privateAccess() && (!functionOnly() || name === 'fn' || name === 'functions' || name === 'deliveries'); }
+  /* Who may see what changed: the live lists start again for the new access (stopLive(), connect()). Not for the owner
+     grant on top of the head chef's own PIN on this phone (loadAdmins(), Plan B 2.7, 7 Nov 2026): it opens no list the
+     PIN did not, so the lists keep running. Starting them again read today's prep lines, the open transfers, the
+     cut-off ticks and the page's own list a second time on every admin unlock. A lock, a handover, another kitchen PIN,
+     person or device identity, the end of the grant, and a list that failed still start them again. */
   function accessChanged() {
-    stopLive(); connect(); notesInit();
+    var keep = S.level === 'owner' && kitchenAccess() && !!unsubCfg && cfgKey === S.pin + '|kitchen' && liveFor === S.uid + '|' + S.who &&
+      [S.itemsState, S.ordState, S.wState, S.xState].indexOf('error') < 0;
+    if (keep) { if (S.configFull) seedPinOpen(); cutWatch(); try { window.dispatchEvent(new Event('lk-cfg')); } catch (e) {} }
+    else { stopLive(); connect(); }
+    notesInit();
     if (window.LK_FN) window.LK_FN.watch();
     window.dispatchEvent(new Event('lk-access'));
   }
@@ -1940,8 +1977,9 @@
   }
   function noteSection(name) {
     if (!name || !fb) return;
-    var p = who();
-    sset(docRef('sections', slug(name)), { name: name, uses: fb.fs.increment(1), lastUsed: now(), lastBy: p ? p.name : '' }, true).catch(function () {});
+    var p = who(), id = slug(name), was = (S.sections || []).filter(function (x) { return x.id === id; })[0];
+    sset(docRef('sections', id), { name: name, uses: fb.fs.increment(1), lastUsed: now(), lastBy: p ? p.name : '' }, true).catch(function () {});
+    secMine(id, { name: name, uses: (was ? was.uses : 0) + 1, lastUsed: now(), lastBy: p ? p.name : '' });
   }
   /* The section box after a line is added: a section the person typed or picked stays for the next line; one the book
      filled in (the usual section from a suggestion or from what it learned) is cleared, so the next line gets its own. */
@@ -2816,6 +2854,21 @@
       return track(raw.setDoc(ref(fb.ownerDb, pin, 'adminDevices', uid), { by: id, pinAt: session.pinAt, issuedAt: session.issuedAt, exp: session.exp, googleUid: S.user.uid, at: raw.serverTimestamp(), v: 2 }));
     }).then(function () { current(); return session; });
   }
+  /* Move PIN copies every record on the old kitchen PIN to the new one: a read and a write for each, and 5 reads a day
+     for 400 days even when a day is empty. On the free plan a big book could use the day's 50,000 reads or 20,000 writes
+     in one go, and the book would stop for everyone until 18:00 (Plan B 5.4, 7 Nov 2026, docs/firestore-usage.md). So it
+     reads everything first and writes nothing until it knows the size. It stops reading once more than MOVE_WRITES
+     records or MOVE_READS reads have come in, and then refuses with nothing written: the old PIN keeps working. The
+     refusal is kept on this device in lk.move.big (when, and how many records it had counted) and out of date after 7
+     days, so another tap refuses at once without reading again. S.moveCap ({ w, r }) lowers both for the click tests. */
+  var MOVE_WRITES = 15000, MOVE_READS = 20000, MOVE_KEEP = 7 * 86400000;
+  function moveCap() { var c = S.moveCap || {}; return { w: c.w > 0 ? c.w : MOVE_WRITES, r: c.r > 0 ? c.r : MOVE_READS }; }
+  function moveBig() { try { var c = JSON.parse(lsGet('lk.move.big') || 'null'); return c && typeof c.at === 'number' && now() - c.at < MOVE_KEEP && now() >= c.at ? c : null; } catch (e) { return null; } }
+  function moveBigText(c) {
+    var cap = moveCap(), why = c && c.why === 'reads' ? 'Reading the whole book would take more than ' + cap.r.toLocaleString('en-AU') + ' reads, a big share of the free plan\'s 50,000 for the day. The book could then stop loading for everyone until 18:00.' :
+      'The book holds more than ' + cap.w.toLocaleString('en-AU') + ' records, and copying them would use most of the free plan\'s 20,000 writes for the day. The book could then stop saving for everyone until 18:00.';
+    return 'Not moved. ' + why + ' Nothing was changed. Moving the kitchen PIN now needs pay as you go for that day (Plan C).';
+  }
   function movePin() {
     var box = S.root.querySelector('#a-newpin'), np = box ? box.value.trim() : '';
     /* only the head chef (Google account) changes the kitchen PIN; the admin panel is for the head chef only, and this checks again */
@@ -2825,68 +2878,103 @@
     var box2 = S.root.querySelector('#a-newpin2');
     if (!box2 || box2.value.trim() !== np) { S.moveMsg = errMsg('The two PINs do not match. Type the new PIN again.'); draw(); return; }
     if (!arm('move-pin')) return;
-    S.moving = true; S.moveMsg = 'Copying...'; draw();
-    var f = fb.fs, old = S.pin, n = 0, destinationSession;
+    var big = moveBig(); if (big) { S.moveMsg = errMsg(moveBigText(big)); draw(); return; }   // refused in the last 7 days: no reads
+    S.moving = true; S.moveMsg = 'Reading the book before copying...'; draw();
+    var f = fb.fs, old = S.pin, cap = moveCap(), n = 0, reads = 0, done = 0, destinationSession, config;
     function oc(name) { return f.collection.apply(null, [fb.db, 'kitchens', old, name]); }
     function nd(name, id) { return f.doc(fb.db, 'kitchens', np, name, id); }
-    var ids = {}, skipped = 0;
-    function copyRoster() { return f.getDoc(f.doc(fb.db, 'kitchens', old, 'login', 'roster')).then(function (snap) { if (snap.exists()) { n++; return f.setDoc(nd('login', 'roster'), snap.data()); } }); }
-    function copyCol(name) { return f.getDocs(oc(name)).then(function (sn) { n += sn.docs.length; ids[name] = sn.docs.map(function (d) { return d.id; }); return Promise.all(sn.docs.map(function (d) { return f.setDoc(nd(name, d.id), d.data()); })); }); }
-    /* records under a note or a minutes entry (seen, hist, signs). Sign-offs and seen records need the newer rules
-       that let the head chef copy them; where the rules refuse, they are counted as left behind instead of stopping the move. */
-    function copySub(top, sub, soft) {
+    var ids = {}, skipped = 0, steps = [];
+    // what a read costs: a record, or 1 for a query that found nothing
+    function got(sn) { reads += sn && sn.docs ? Math.max(1, sn.docs.length) : 1; }
+    function guard() { if (n > cap.w || reads > cap.r) throw { code: 'too-big', why: n > cap.w ? 'records' : 'reads' }; }
+    // the records to write, in the order they were read, one step after another (a step's records go in parallel, a
+    // record under a note or a recipe after its parent). soft: sign-offs and seen records need the newer rules that let
+    // the head chef copy them; where the rules refuse, they are counted as left behind instead of stopping the move.
+    function step(list, soft) { steps.push({ list: list, soft: !!soft }); n += list.reduce(function (t, w) { return t + (w.batch ? w.batch.length : 1); }, 0); guard(); }
+    function readRoster() { return f.getDoc(f.doc(fb.db, 'kitchens', old, 'login', 'roster')).then(function (snap) { got(); step(snap.exists() ? [{ ref: nd('login', 'roster'), data: snap.data() }] : []); }); }
+    function readCol(name) { return f.getDocs(oc(name)).then(function (sn) { got(sn); ids[name] = sn.docs.map(function (d) { return d.id; }); step(sn.docs.map(function (d) { return { ref: nd(name, d.id), data: d.data() }; })); }); }
+    // records under a note, a minutes entry, a guide, a recipe, a drawing or a function (seen, hist, signs, pages)
+    function readSub(top, sub, soft) {
       return Promise.all((ids[top] || []).map(function (id) {
         return f.getDocs(f.collection(fb.db, 'kitchens', old, top, id, sub)).then(function (sn) {
-          return Promise.all(sn.docs.map(function (x) {
-            return f.setDoc(f.doc(fb.db, 'kitchens', np, top, id, sub, x.id), x.data()).then(function () { n++; }, function (e) { if (!soft) throw e; skipped++; });
-          }));
+          got(sn); return sn.docs.map(function (x) { return { ref: f.doc(fb.db, 'kitchens', np, top, id, sub, x.id), data: x.data() }; });
         });
-      }));
+      })).then(function (lists) { step([].concat.apply([], lists), soft); });
     }
     var today = dayNow(), dates = [], k;
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
     f.getDoc(f.doc(fb.db, 'kitchens', old, 'config', 'main')).then(function (sn) {
-      if (!sn.exists()) throw { code: 'permission-denied' }; var config = sn.data();
-      return moveBootstrap(np, config).then(function (session) { destinationSession = session; n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'config', 'main'), config); });
+      got(); if (!sn.exists()) throw { code: 'permission-denied' }; config = sn.data(); n++;
     })
-      .then(copyRoster).then(function () { return copyCol('pinset'); }).then(function () { return copyCol('staffpins'); }).then(function () { return copyCol('activity'); }).then(function () { return copyCol('sections'); })
-      .then(function () { return copyCol('learned'); }).then(function () { return copyCol('ordlearned'); }).then(function () { return copyCol('learnlog'); }).then(function () { return copyCol('summary'); }).then(function () { return copyCol('analysis'); }).then(function () { return copyCol('analysisDaily'); }).then(function () { return copyCol('proofHistory'); }).then(function () { return copyCol('dashwatch'); }).then(function () { return copyCol('references'); }).then(function () { return copySub('references', 'hist'); }).then(function () { return copyCol('training'); }).then(function () { return copySub('training', 'hist'); }).then(function () { return copyCol('daily'); }).then(function () { return copyCol('misses'); }).then(function () { return copyCol('views'); })
-      .then(function () { return copyCol('notes'); }).then(function () { return copyCol('directnotes'); }).then(function () { return copySub('directnotes', 'seen', true); }).then(function () { return copyCol('minutes'); }).then(function () { return copySub('minutes', 'hist'); })
-      .then(function () { return copySub('minutes', 'signs', true); }).then(function () { return copySub('notes', 'seen', true); })
-      .then(function () { return copyCol('guides'); }).then(function () { return copySub('guides', 'pages'); })
-      .then(function () { return copyCol('mail'); }).then(function () { return copyCol('mailstat'); }).then(function () { return copyCol('drinks'); }).then(function () { return copyCol('shifts'); }).then(function () { return copyCol('todos'); }).then(function () { return copyCol('cutdone'); }).then(function () { return copyCol('deliveries'); })
-      .then(function () { return bookDocs(old).then(function (l) { n += l.length; return Promise.all(l.map(function (d) { return f.setDoc(nd('book', d.id), d.data()); })); }); }).then(function () { return copyCol('recipes'); }).then(function () { return copySub('recipes', 'hist'); })
-      .then(function () { return copyCol('drawings'); }).then(function () { return copySub('drawings', 'hist'); })
-      .then(function () { return copyCol('drawtpl'); }).then(function () { return copyCol('drawlib'); })
-      .then(function () { return copyCol('functions'); }).then(function () { return copySub('functions', 'hist'); }).then(function () { return copyCol('fncontact'); }).then(function () { return copyCol('fnsent'); })
-      .then(function () { return supplierTools().then(function (store) { return store.copyTo(np); }).then(function (r) { n += r.suppliers + r.orders + r.audits + r.links; }); })
+      .then(readRoster).then(function () { return readCol('pinset'); }).then(function () { return readCol('staffpins'); }).then(function () { return readCol('activity'); }).then(function () { return readCol('sections'); })
+      .then(function () { return readCol('learned'); }).then(function () { return readCol('ordlearned'); }).then(function () { return readCol('learnlog'); }).then(function () { return readCol('summary'); }).then(function () { return readCol('analysis'); }).then(function () { return readCol('analysisDaily'); }).then(function () { return readCol('proofHistory'); }).then(function () { return readCol('dashwatch'); }).then(function () { return readCol('references'); }).then(function () { return readSub('references', 'hist'); }).then(function () { return readCol('training'); }).then(function () { return readSub('training', 'hist'); }).then(function () { return readCol('daily'); }).then(function () { return readCol('misses'); }).then(function () { return readCol('views'); })
+      .then(function () { return readCol('notes'); }).then(function () { return readCol('directnotes'); }).then(function () { return readSub('directnotes', 'seen', true); }).then(function () { return readCol('minutes'); }).then(function () { return readSub('minutes', 'hist'); })
+      .then(function () { return readSub('minutes', 'signs', true); }).then(function () { return readSub('notes', 'seen', true); })
+      .then(function () { return readCol('guides'); }).then(function () { return readSub('guides', 'pages'); })
+      .then(function () { return readCol('mail'); }).then(function () { return readCol('mailstat'); }).then(function () { return readCol('drinks'); }).then(function () { return readCol('shifts'); }).then(function () { return readCol('todos'); }).then(function () { return readCol('cutdone'); }).then(function () { return readCol('deliveries'); })
+      .then(function () { return bookDocs(old).then(function (l) { reads += Math.max(1, l.length); step(l.map(function (d) { return { ref: nd('book', d.id), data: d.data() }; })); }); }).then(function () { return readCol('recipes'); }).then(function () { return readSub('recipes', 'hist'); })
+      .then(function () { return readCol('drawings'); }).then(function () { return readSub('drawings', 'hist'); })
+      .then(function () { return readCol('drawtpl'); }).then(function () { return readCol('drawlib'); })
+      .then(function () { return readCol('functions'); }).then(function () { return readSub('functions', 'hist'); }).then(function () { return readCol('fncontact'); }).then(function () { return readCol('fnsent'); })
+      // the supplier workspace reads its own records (js/supplier-store.js) and writes them in its own step, from the same read
+      .then(function () { return supplierTools().then(function (store) { return store.exportAll().then(function (out) {
+        var m = (out.suppliers || []).length + (out.supplierlinks || []).length;
+        (out.suppliers || []).forEach(function (s) { m += ((out.supplierAudit || {})[s.id] || []).length + ((out.supplierOrders || {})[s.id] || []).length; });
+        reads += Math.max(1, m) + 2 * (out.suppliers || []).length; n += m; guard();
+        steps.push({ run: function () { return store.copyTo(np, out).then(function (r) { done += r.suppliers + r.orders + r.audits + r.links; }); } });
+      }); }); })
       .then(function () {
         var i = 0;
         function next() {
           if (i >= dates.length) return;
           var chunk = dates.slice(i, i + 20); i += 20;
-          S.moveMsg = 'Copying days ' + Math.min(i, dates.length) + ' of ' + dates.length + '...'; draw();
+          S.moveMsg = 'Reading days ' + Math.min(i, dates.length) + ' of ' + dates.length + '...'; draw();
           return Promise.all(chunk.map(function (d) {
-            function sub(top, col) { return f.getDocs(f.collection(fb.db, 'kitchens', old, top, d, col)).then(function (sn) { n += sn.docs.length; return Promise.all(sn.docs.map(function (x) { return f.setDoc(f.doc(fb.db, 'kitchens', np, top, d, col, x.id), x.data()); })); }); }
+            function sub(top, col) { return f.getDocs(f.collection(fb.db, 'kitchens', old, top, d, col)).then(function (sn) { got(sn); return sn.docs.map(function (x) { return { ref: f.doc(fb.db, 'kitchens', np, top, d, col, x.id), data: x.data() }; }); }); }
             return Promise.all([sub('days', 'items'), sub('orders', 'lines'), sub('waste', 'lines'), sub('transfers', 'lines'),
-              f.getDoc(f.doc(fb.db, 'kitchens', old, 'waste', d)).then(function (sn) { if (sn.exists()) { n++; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'waste', d), sn.data()); } })]);
-          })).then(next);
+              f.getDoc(f.doc(fb.db, 'kitchens', old, 'waste', d)).then(function (sn) { got(); return sn.exists() ? [{ ref: f.doc(fb.db, 'kitchens', np, 'waste', d), data: sn.data() }] : []; })]);
+          })).then(function (days) { step([].concat.apply([], [].concat.apply([], days))); return next(); });
         }
         return next();
       })
       .then(function () { return f.getDocs(f.collection(fb.db, 'kitchens', old, 'transferOpen')).then(function (sn) {
-        return Promise.all(sn.docs.map(function (d) { var v = d.data(), b = f.writeBatch(fb.db);
-          b.set(f.doc(fb.db, 'kitchens', np, 'transfers', v.date, 'lines', v.lineId), v.record);
-          b.set(f.doc(fb.db, 'kitchens', np, 'transferOpen', d.id), v); n += 2; return b.commit();
-        }));
+        got(sn);
+        step(sn.docs.map(function (d) { var v = d.data(); return { batch: [{ ref: f.doc(fb.db, 'kitchens', np, 'transfers', v.date, 'lines', v.lineId), data: v.record }, { ref: f.doc(fb.db, 'kitchens', np, 'transferOpen', d.id), data: v }] }; }));
       }); })
+      // everything is read and the book is small enough: only now is anything written, the new PIN's own records first
+      .then(function () { S.moveMsg = 'Copying ' + n + ' records...'; draw(); return moveBootstrap(np, config); })
+      .then(function (session) { destinationSession = session; return f.setDoc(f.doc(fb.db, 'kitchens', np, 'config', 'main'), config).then(function () { done++; }); })
       .then(function () {
-        S.moving = false; S.moveMsg = 'Copied ' + n + ' records. This device now uses the new PIN. Everyone else enters the new PIN next time they open the book.' +
+        var i = 0;
+        function next() {
+          if (i >= steps.length) return;
+          var s = steps[i++];
+          if (s.run) return s.run().then(next);
+          var k = 0;
+          // a step's records in parallel, as before, 200 at a time so a big step does not open thousands at once
+          function part() {
+            if (k >= s.list.length) return;
+            var some = s.list.slice(k, k + 200); k += 200;
+            return Promise.all(some.map(function (w) {
+              var p = w.batch ? (function () { var b = f.writeBatch(fb.db); w.batch.forEach(function (x) { b.set(x.ref, x.data); }); return b.commit(); })() : f.setDoc(w.ref, w.data);
+              return p.then(function () { done += w.batch ? w.batch.length : 1; }, function (e) { if (!s.soft) throw e; skipped++; });
+            })).then(function () { S.moveMsg = 'Copying ' + done + ' of ' + n + ' records...'; draw(); return part(); });
+          }
+          return Promise.resolve(part()).then(next);
+        }
+        return next();
+      })
+      .then(function () {
+        S.moving = false; S.moveMsg = 'Copied ' + done + ' records. This device now uses the new PIN. Everyone else enters the new PIN next time they open the book.' +
           (skipped ? ' ' + skipped + ' sign-offs and seen records were left on the old PIN: the published rules do not let the head chef copy them yet.' : '');
-        S.pin = np; lsSet('lk.prep.pin', np); sessKeep(destinationSession.by, destinationSession.exp, destinationSession.pinAt, destinationSession.issuedAt, destinationSession.mode); S.grantExp = destinationSession.exp; S.adminsFor = ''; accessEpoch++; S.items = []; S.learned = []; S.lists = null; S.learnFor = ''; S.sections = []; S.activity = []; S.actState = ''; gForget();
+        S.pin = np; lsSet('lk.prep.pin', np); sessKeep(destinationSession.by, destinationSession.exp, destinationSession.pinAt, destinationSession.issuedAt, destinationSession.mode); S.grantExp = destinationSession.exp; S.adminsFor = ''; accessEpoch++; S.items = []; S.learned = []; S.lists = null; S.learnFor = ''; S.sections = []; S.secFor = ''; S.secAt = 0; S.activity = []; S.actState = ''; gForget();
         stopLive(); S.rolledFor = ''; lsSet('lk.prep.rolled', ''); S.learnRan = false; S.weekAt = 0; S.stats = null; S.ordStats = null; S.views = S.misses = null; S.xStats = null; S.xLines = [];
         connect();
-      }).catch(function (e) { S.moving = false; S.moveMsg = errMsg(e && e.code === 'permission-denied' ? 'The rules do not allow the new PIN yet. Nothing was changed on the old PIN.' : 'Stopped part way. Nothing was changed on the old PIN, so it is safe to try again.'); draw(); });
+      }).catch(function (e) {
+        S.moving = false;
+        if (e && e.code === 'too-big') { var c = { at: now(), n: n, reads: reads, why: e.why }; lsSet('lk.move.big', JSON.stringify(c)); S.moveMsg = errMsg(moveBigText(c)); draw(); return; }
+        S.moveMsg = errMsg(e && e.code === 'permission-denied' ? 'The rules do not allow the new PIN yet. Nothing was changed on the old PIN.' : 'Stopped part way. Nothing was changed on the old PIN, so it is safe to try again.'); draw();
+      });
   }
   function hideLearned(id, hidden) {
     var e = S.learned.filter(function (x) { return x.id === id; })[0], ids = (e && e.ids) || [id];
@@ -3088,7 +3176,9 @@
   }
   function hideSection(id, hidden) {
     var sc = (S.sections || []).filter(function (x) { return x.id === id; })[0], nm = sc && sc.name ? slipName(sc.name) : 'The section';
-    sset(docRef('sections', id), { hidden: hidden }, true).then(function () { toast(hidden ? 'Hidden from suggestions: ' + nm : 'Back in suggestions: ' + nm); }, failed);
+    // on the copy at once, like the live list did; put back if the server refuses
+    if (sc) { secMine(id, { hidden: hidden }); draw(); }
+    sset(docRef('sections', id), { hidden: hidden }, true).then(function () { toast(hidden ? 'Hidden from suggestions: ' + nm : 'Back in suggestions: ' + nm); }, function (e) { if (sc) { secMine(id, { hidden: sc.hidden }); draw(); } failed(e); });
   }
   function canRecoverGoogle() {
     var head = (S.config || {}).headId;
@@ -5429,6 +5519,7 @@
     if (!S.draft) startDraft();
     var d = S.draft, owner = S.level === 'owner';
     if (owner && (['insights', 'team', 'waste', 'transfers', 'learning'].indexOf(S.atab || 'overview') >= 0 || S.atab === 'people' && S.personId)) { watchActivity(); loadStats(false); }
+    if (S.atab === 'learning') loadSections(true);   // the Learning list's sections, today's (loadSections(), at most every 30 minutes)
     // the Google account, not the person: the chef hat's Sign out is for the person (Prep is in the top bar and tab bar)
     var bar = '<div class="p-bar"><span>Google account: <strong>' + esc(S.user.email) + '</strong></span><span class="p-links"><button type="button" class="p-link" data-p="signout">' + (armed('signout:sent') ? 'Not sent yet.' : armed('signout') ? notSaved() + '. Tap again' : 'Sign out of Google') + '</button></span></div>';
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';

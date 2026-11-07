@@ -55,6 +55,20 @@ window.__fake = window.__fake || { mode: 'ok', writes: [], reads: [] };
 // sends (at least one) and then one per document that changed. Reads from the phone's own cache cost nothing.
 window.__fake.bill = window.__fake.bill || [];
 function bill(kind, path, n) { window.__fake.bill.push({ kind, path, n: Math.max(1, n) }); }
+/* The records the rules look up (Plan B 6.2, 7 Nov 2026): Firestore bills a read for each record a request's rules get()
+   or exists(), once per request. For the kitchen's records from a phone's device identity that is its admin grant
+   (adminDevices/<uid>, deviceAdmin()) and its session (sessions/<uid>), and with a session the person's PIN record
+   (pinset/<by>) and the kitchen settings (config/main): 4 a request, 2 with no session. Counted for each read, query,
+   listener start and write the rules let through; the head chef's Google account's own checks read nothing, and the
+   name picker (login/roster) is open. Kept apart from bill, so the tests that count a path's own reads are unchanged:
+   tests/read-budget.test.js adds them in. */
+window.__fake.ruleBill = window.__fake.ruleBill || [];
+function ruleBill(kind, ref) {
+  const k = key(ref.path);
+  if (!/^kitchens\/[^/]+\//.test(k) || /^kitchens\/[^/]+\/login\/roster$/.test(k)) return;
+  const u = authUser(ref); if (!u || !u.isAnonymous) return;
+  window.__fake.ruleBill.push({ kind, path: k, n: store[rootOfRef(ref) + '/sessions/' + authUid(ref)] ? 4 : 2 });
+}
 window.__fake.readLog = [];
 window.__fake.refused = window.__fake.refused || [];
 function refuse(kind, ref) { window.__fake.refused.push({ kind, path: key(ref.path) }); return Promise.reject({ code: 'permission-denied' }); }
@@ -271,7 +285,7 @@ export function getDoc(ref) {
   if (spent(ref)) return SPENT();
   if (cold(ref)) return pendingKeys.has(key(ref.path)) ? delay(cacheSnap(ref)) : Promise.reject({ code: 'unavailable' });
   if (readFails(ref)) return Promise.reject({ code: 'unavailable' });
-  bill('get', key(ref.path), 1);
+  bill('get', key(ref.path), 1); ruleBill('get', ref);
   return delay(result(ref));
 }
 // a query asks for a where on this field with this value
@@ -304,7 +318,7 @@ function denied(ref) { const d = window.__fake.denyReads; return !!(d && d.test(
 // 50,000 reads a day used up (5 Nov 2026). Refused reads are not billed.
 function spent(ref) { const x = window.__fake.exhausted; return !!(x && x.test(key(ref.path))); }
 const SPENT = () => Promise.reject({ code: 'resource-exhausted' });
-export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); if (cold(ref)) return delay(cacheSnap(ref)); if (spent(ref)) return SPENT(); if (readFails(ref)) return Promise.reject({ code: 'unavailable' }); if (rulesDenied(ref)) return refuse('query', ref); if (denied(ref)) return Promise.reject({ code: 'permission-denied' }); const r = result(ref); bill('query', key(ref.path), r.docs.length); return delay(r); }
+export function getDocs(ref) { window.__fake.reads.push(key(ref.path)); if (cold(ref)) return delay(cacheSnap(ref)); if (spent(ref)) return SPENT(); if (readFails(ref)) return Promise.reject({ code: 'unavailable' }); if (rulesDenied(ref)) return refuse('query', ref); if (denied(ref)) return Promise.reject({ code: 'permission-denied' }); const r = result(ref); bill('query', key(ref.path), r.docs.length); ruleBill('query', ref); return delay(r); }
 function readFails(ref) { const f = window.__fake.failReads; return !!(f && f.test(key(ref.path))); }
 // a read that must come from the server: refused when there is no signal ('hold', 'fail'). __fake.server can hold a
 // newer copy of a document than this phone has (say a line ticked on another phone), keyed by path.
@@ -316,7 +330,7 @@ export function getDocFromServer(ref) {
   if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || cold(ref) || readFails(ref)) return Promise.reject({ code: 'unavailable' });
   if (spent(ref)) return SPENT();
   if (readRefused(ref)) return refuse('server', ref);
-  bill('server', k, 1);
+  bill('server', k, 1); ruleBill('server', ref);
   if (sv && k in sv) { const v = sv[k]; return delay({ id: ref.path[ref.path.length - 1], ref, exists: () => v != null, data: () => (v == null ? undefined : clone(v)) }); }
   return delay(result(ref));
 }
@@ -336,7 +350,7 @@ export function getDocsFromServer(ref) {
     const ids = byId.op === 'in' ? byId.v : [byId.v];
     docs = ids.map(id => { const p = ref.path.concat([id]), dk = key(p); if (dk in sv) { const v = sv[dk]; return { id, ref: { path: p, appName: appOf(ref) }, exists: () => v != null, data: () => (v == null ? undefined : clone(v)) }; } return result({ type: 'doc', path: p, appName: appOf(ref) }); }).filter(d => d.exists());
   } else docs = result(ref).docs;
-  bill('query', k, docs.length);
+  bill('query', k, docs.length); ruleBill('server-query', ref);
   return delay({ docs, empty: !docs.length, size: docs.length, forEach: f => docs.forEach(f) });
 }
 // a document from the offline copy: known (even known to be missing) once it was read, refused otherwise, like the SDK
@@ -382,7 +396,7 @@ function deliver(s) {
   if (window.__fake.quiet && s.sig === sg) return;
   s.sig = sg;
   const now = {}; docs.forEach(d => { now[key(d.ref.path)] = JSON.stringify(d.exists() ? d.data() : null); });
-  if (!s.last) bill('listen', key(s.ref.path), docs.length);
+  if (!s.last) { bill('listen', key(s.ref.path), docs.length); ruleBill('listen', s.ref); }
   else { const ch = Object.keys(now).filter(k => s.last[k] !== now[k]).length; if (ch) window.__fake.bill.push({ kind: 'listen+', path: key(s.ref.path), n: ch }); }
   s.last = now;
   const out = result(s.ref);
@@ -411,6 +425,7 @@ function applyOp(o, stamp) {
 function finishOps(ops) {
   if (window.__fake.mode === 'deny' || window.__fake.deny && ops.some(o => window.__fake.deny.test(key(o.ref.path)))) return Promise.reject({ code: 'permission-denied' });
   if (window.__fake.mode === 'fail') return Promise.reject({ code: 'unavailable' });
+  if (ops.length) ruleBill('write', ops[0].ref);   // one request, however many records it writes
   const stamp = requestNow(), run = () => { ops.forEach(o => applyOp(o, stamp)); save(); notify(); };
   if (window.__fake.mode === 'hold') {
     ops.forEach(o => pendingKeys.add(key(o.ref.path))); run();

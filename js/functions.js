@@ -296,7 +296,7 @@
   function recipeOf(rid) { return D.recipes.filter(function (r) { return r.id === rid; })[0] || null; }
 
   /* state: the functions the kitchen may need (live), and how fresh they are */
-  var F = { list: [], state: 'idle', at: 0, err: '', key: '', unsub: null, more: false, offline: false, jobs: {} };
+  var F = { list: [], state: 'idle', at: 0, err: '', key: '', wait: '', unsub: null, more: false, offline: false, jobs: {} };
   // Private bookings are loaded only after a verified login, never from a shared localStorage cache.
   function nameOf(id) {
     if (!id) return 'Head chef (admin)';
@@ -309,11 +309,16 @@
     var st = prep.state;
     if (!/^\d{4,6}$/.test(st.pin || '') || st.configState !== 'ok') return;
     var key = st.pin + '|' + T.day();
-    if (key === F.key && F.unsub) return;
+    if (key === F.key && (F.unsub || F.wait === key)) return;
     if (F.unsub) { F.unsub(); F.unsub = null; }
-    F.key = key; if (!F.list.length || F.state === 'idle') F.state = 'loading';
+    F.key = key; F.wait = key; if (!F.list.length || F.state === 'idle') F.state = 'loading';
     var api = prep.book();
     api.ready().then(function () {
+      // asked again while the Firebase files loaded, or stopped since: only the last ask starts the listener (Plan B 2.7,
+      // 7 Nov 2026). Each ask used to start one and only the last could be stopped, so on one open two or three listeners
+      // read every booking and kept reading every change to one.
+      if (F.wait !== key || F.key !== key) return;
+      F.wait = '';
       var fs = api.fs();
       watchSent(api, fs);
       var served = false;   // this listener has had the server's answer
@@ -336,9 +341,9 @@
         else if (F.state !== 'ok') F.state = navigator.onLine === false ? 'offline' : 'loading';
         changed();
       }, function (e) { F.state = 'error'; F.err = e && e.code || ''; F.unsub = null; F.key = ''; changed(); });
-    }, function () { F.state = 'error'; changed(); });
+    }, function () { if (F.wait === key) F.wait = ''; F.state = 'error'; changed(); });
   }
-  function stop() { if (F.unsub) F.unsub(); if (F.unsub2) F.unsub2(); F.unsub = F.unsub2 = null; F.key = ''; }
+  function stop() { if (F.unsub) F.unsub(); if (F.unsub2) F.unsub2(); F.unsub = F.unsub2 = null; F.key = F.wait = ''; }
   /* Rounds ticked as sent (fnsent/<function>_<round time>): one more small listener, on yesterday and later, so an
      overnight round is still there after midnight. A round whose time was changed after it was ticked shows as not sent.
      No signal (28 Oct 2026): started again at midnight, the listener answers at once from the copy in memory, which holds
