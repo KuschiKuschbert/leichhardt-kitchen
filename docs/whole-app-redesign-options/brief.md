@@ -47,9 +47,9 @@ Five fresh reviewers, 7 November 2026, from the proposal and the screenshots abo
 
 ## In every design (the smaller core)
 
-1. **One row for each prep line.** Tick, words and amount, On it, ⋯. Tick and On it stay one tap. Urgent, Change amount, Move section and Remove go behind ⋯ with words (2 taps; Urgent was 1 through the ! button, which new starters tapped without knowing what it did). Recipe stays on the line as a word in the small line under the words, beside who added it and when (1 tap). Urgent shows as a small URGENT tag and a black rule at the left, as now.
+1. **One row for each prep line.** Tick, words and amount, On it, ⋯. Tick and On it stay one tap. Urgent, Change amount, Move section and Remove go behind ⋯ with words (2 taps; Urgent was 1 through the ! button, which new starters tapped without knowing what it did). Recipe stays one tap: its own small button on lines with a recipe. Urgent shows as a small URGENT tag and a black rule at the left, as now. *Corrected after the coverage check (below): this first put Recipe as a word in the small line, but the words and the small line tick the line (since 5 Nov 2026), so a link there would tick by mistake.*
 2. **One bar for the day and the sections:** Back, Today and Forward in the same bar as the section chips, which scroll sideways and fade at the edge.
-3. **Same words everywhere:** Add a line on every list, Delivery received (never Delivery arrived), Urgent (never a lone !).
+3. **The main button in the same place, in words that name the job:** Add a line, Add to the order, Log waste, Log a transfer. One name for one thing: Delivery received (never Delivery arrived), Urgent (never a lone !). *Corrected after the coverage check: this first said Add a line on every list.*
 4. **The chef hat starts with today:** Every day (Functions, Delivery received, Supplier order, Today's team, Kitchen mail, Shift pings) then Now and then. The same tiles for the same roles.
 5. **Functions fold empty days** into one line; Print prep sheet only where there is a function.
 6. **No new reads, listeners, rules or saved fields.** Nothing new moves on screen.
@@ -150,9 +150,9 @@ Also in the mix, from round 2: a bigger URGENT tag, a 44 px ⋯, Open the recipe
 
 Build in three steps, one pull request each, in the release windows:
 
-1. **Rows and words.** One-row lines on Prep, with the same row on Orders, Wastage and Transfers; the day bar with Today ▾; print line words; Add a line, Delivery received and Urgent everywhere. `css/app.css`, `js/prep.js`; the tests that count lines and header heights (`tests/todays-team.test.js` measures the list header), `tests/design-patterns.test.js` and the new A prep line pattern.
+1. **Rows and words.** One-row lines on Prep, keeping every marker a line shows today (see Every feature, checked); print words on the list lines of Prep, Orders, Wastage, Transfers and the wall board; the day bar with Today ▾; Delivery received on Orders and in supplier groups. `css/app.css`, `js/prep.js`; the tests that count lines and header heights (`tests/prep-a.test.js`, `tests/todays-team.test.js`), `tests/prep-wall-board.test.js`, `tests/design-patterns.test.js` and the new A prep line pattern.
 2. **The hat as a list.** Every day first, then More; status only from what the phone already holds. `js/app.js`, `tests/chef-menu.test.js`, `tests/hat-counts.test.js`, `tests/read-budget.test.js` unchanged.
-3. **Functions.** Empty days folded into one line, the function card, Cancel at the end of the card. `js/functions.js`, `tests/functions.test.js`, `tests/function-cancel.test.js`.
+3. **Functions.** Empty days folded into one line; the function sheet laid out as one card, keeping its banners, what goes out next, every round with its tick, the kitchen comment, notes, changes, Print function and Change this function; Cancel at the end of the card. `js/functions.js`, `tests/functions.test.js`, `tests/function-cancel.test.js`, `tests/function-print.test.js`.
 
 ## Questions for the head chef
 
@@ -161,6 +161,59 @@ Build in three steps, one pull request each, in the release windows:
 3. Move Cancel function from the right end of the function bar (your 26 Oct 2026 placement) to the end of the card, away from Print?
 4. Urgent on an existing line from 1 tap to 2 (behind ⋯)? It stays one tap in Add a line.
 5. B's now and next home: later, or not at all?
+
+## Every feature, checked
+
+The head chef asked on 7 November 2026: "Does our redesign consider every other feature across the board and codebase? Do we cover orders, wastage, transfer, guides, shift pings, today's team, drinks run, meeting minutes, functions, delivery received, admin panel, recipes and drawings, chef to-do, supplier order, manage staff and everything else?"
+
+It did not, at first. The designs drew Prep, the chef hat, Functions and the home page, and left the rest unsaid. So every route (`parseRoute()` in `js/app.js`), every chef hat entry for every role (`whoMenuOpen()`), the admin rooms, the sheets and the bands were checked against each design in the code and in the stand-in, and every other page was photographed today (`previews/today-*-390.png`, `today-admin-*-1280.png`). **Nothing is removed in the recommended mix.** Most pages do not change at all: they gain only a row in the hat list.
+
+What the check changed:
+
+- **Recipe on a prep line** is its own small button. The words and the small line under them tick the line (`rowHTML()`, since 5 Nov 2026), so the Recipe link drawn there would have ticked by mistake. Open the recipe is in ⋯ as well.
+- **A prep line keeps everything it shows today:** the Start here number, Urgent, Rolled, Waiting since or Usually by, Double up, Not sent, and who is on it in the box and the small line. The first drawings left these out; `previews/r-prep-390.png` has them, and still shows 6 lines.
+- **On the laptop** every action stays in the line, as today, now in words (`previews/r-prep-1280.png`).
+- **Words name the job:** Add a line, Add to the order, Log waste and Log a transfer stay. Only Delivery arrived (the Orders chip and the supplier groups, `js/prep.js`) changes, to Delivery received.
+- **Print words**, if chosen, go on every list line of Prep, Orders, Wastage, Transfers and the wall board, not Prep alone (`previews/r-orders-390.png`, `r-waste-390.png`). Titles, counts and the empty notes stay handwritten.
+- **The function card** is today's function sheet (`sheetHTML()` in `js/functions.js`) laid out again. It keeps the banners (cancelled, rescheduled, draft), what goes out next, every round with its tick, the kitchen comment, service and dietary notes, the changes, Print function and Change this function; Print prep sheet stays on each day of Functions and Service (`previews/r-fn-390.png`, `r-fn-end-390.png`). B's first card had dropped the round ticks.
+- **The hat list** keeps your day under your name, My section for staff and leads, Admin panel on the admin device, and the signed-out and functions-only versions.
+- **B and C missed more:** both remove the dockets the seasonal celebrations draw on (`docs/celebration-options/brief.md`); B's board overlaps the function band, the cut-off reminder bar, the start of shift sheet, the wall board and the admin To do; C's tap on the words to open a line clashes with tapping the words to tick.
+
+| Feature | Where | Recommended mix | If B or C were chosen | Tests that guard it |
+| --- | --- | --- | --- | --- |
+| **Home** | `#/`: dockets, the functions card, celebrations, install card; signed out sees Recipes only | No change | B: the board replaces the dockets. C: no home; opens on your page, Recipes when signed out. Both lose the dockets the celebrations draw on | Signed-out view, celebrations on Home (`phone-first`, `seasonal`) |
+| **Recipes** | `#/recipes`: Pass and Tiles, search, filters, Specials, the allergen switch | No change | C: / on the laptop also finds recipes (a second way in) | Search and filters (`recipes`, `recipe-filters`) |
+| **A recipe card** | `#/r/<id>`: chapters, allergens and lens, drawings, the trail, Change this recipe | No change. From a prep line: the Recipe button (1 tap) or Open the recipe in ⋯ | Same | Trail and Back (`back-navigation`) |
+| **Recipes & drawings** | `#/manage`, the editor, the drawing studio, multipliers | A row in the hat list. Nothing inside changes | Same | Editor and studio (`manage`, `draw`, `recipe-multiplier`) |
+| **Prep** | `#/prep` | One row a line, print words. Keeps: tick by the box or the words, On it, Start here numbers, Urgent, Rolled, Waiting since and Usually by, Double up, Not sent, Change amount, Move section, Remove and Put back, Undo, Done today, Set today's team, past days for chefs, Tonight for tomorrow, function platter lines, the Add sheet with your usual lines. Urgent on a line moves from ! to ⋯ (1 tap to 2) | B: same rows. C: tapping the words opens the line, which clashes with tapping the words to tick (5 Nov) | Lines and header heights (`prep-a`, `todays-team`), ticks, On it, double ups, Undo, offline writes, roles, safe text |
+| **Who did it on the shared tablet** | Prep on a shared screen: the Who's on it and who did it picker | No change: the same buttons open it | Same | `prep-attribution`, `device-prep-lock` |
+| **Wall board** | Prep on the shared kitchen tablet (round 2, R4) | Uses the same one-row line, so check it at tablet width | B's board is per person and must not copy it | `prep-wall-board` |
+| **Laptop prep** | Two-page notebook with Handy | Kept. Every action stays in the line, now in words (On it, Urgent, Recipe, Remove, ⋯) | C: Handy goes, Done today folds into the list | 1280 px layout |
+| **Orders** | `#/orders`: requests with Running low and Out now, Ordered ticks, supplier groups for chefs, regulars, past days | Already one row (51 px). Print words. The chip Delivery arrived becomes Delivery received. Add to the order stays | Same | `orders-a`, `order-learning`, `supplier-groups` |
+| **Supplier order** | `#/suppliers`: the order sheet, catalogue, history, cut-off sheet, the reminder bar with Mark order done | A row in the hat list with its cut-off line. Delivery arrived becomes Delivery received in supplier groups. Nothing else | B: the board shows the next cut-off from the same record | Supplier tests, `cutoff-patterns` |
+| **Delivery received** | `#/deliveries`: temperatures, mixed loads, immutable records | A row in the hat list. Nothing inside changes | Same | `deliveries` |
+| **Wastage** | `#/waste`: Log waste, Make it again, ⋯ with Change amount and Remove, the end-of-day review | Already one row. Print words. Log waste stays | Same | `closing-waste`, `waste-week` |
+| **Wastage history** | Admin Reports: ranges, filters, CSV | No change | Same | `wastage-history` |
+| **Transfers and returns** | `#/transfers`: Log a transfer, the age tag, loans still out, returns with Undo | Already one row. Print words. Log a transfer stays | Same | `transfers`, `transfer-returns` |
+| **Functions** | `#/fn`: today and the next days, Print prep sheet per day, the band under the top bar, the landing card | Days with nothing booked fold into one line. Print prep sheet only on days with a function | B: the board repeats the next round; the band and the board must agree | `functions`, `function-prep-print` |
+| **A function** | `#/fn/<id>` and its pop-up: banners, what goes out next, every round with its tick, kitchen comment, notes, changes, Print function, Change this function, Cancel | The same sheet laid out as one card. Cancel moves to the end of the card, away from Print (a question for the head chef). Contact stays with function managers only | Same as the mix | `function-cancel`, `function-print`, `functions` |
+| **Service view** | `#/fn/now`: rounds to send, ticks, both prints | No change | B: the board repeats the rounds | `functions` |
+| **Manage functions** | `#/functions`: the editor, drafts, delete and restore, Layout 2 print | No change | Same | `function-list-actions` |
+| **Guides** | `#/guides`: the sixth tab when guides are on, categories, search, PDFs; admin uploads | No change | Same | `guides` |
+| **Shift pings** | The bell, the pings sheet, the chef's writer, recipients, the sound | A row in the hat list for chefs. The bell stays | B: the board has a pings row | `shift-pings`, `ping-recipients` |
+| **Today's team** | `#/team`, the round team chip, each person's day | A row in the hat list with Not set yet. Your day stays under your name in the hat | B: the board shows your break from the same record | `todays-team` |
+| **Start of shift sheet** | Your day, once a day after the PIN | No change | B: it and the board say the same things; one of them should go | `shift-start` |
+| **Drinks run** | `#/drinks` | A row in the hat list | Same | `drinks` |
+| **Meeting minutes** | `#/minutes`: read, sign, the register, the admin editor | A row in the hat list with 1 to sign | Same | `minutes-sign` |
+| **Kitchen mail** | `#/mail`, the admin inbox | A row in the hat list (not for the head chef) | Same | `mail` |
+| **Chef to-do** | `#/todo` | A row in the hat list, no count (a count would need a read) | Same | `todo` |
+| **My section** | The staff hat tile | A row in the hat list for staff and leads | Same | `chef-menu` |
+| **Manage staff** | The chef's staff sheet and the admin Team room | A row in the hat list | Same | `people-safety`, `staff-draft` |
+| **Admin panel** | `#/admin`: Today, Reports, Team, Kitchen; Dashboard, Review desk, Proofreader, Training | A row in the hat list on the admin device. Nothing inside changes (The Chef's Desk, four rooms) | B: the board and the admin To do both say what needs you; keep them apart | Admin tests, `read-budget` |
+| **Settings** | `#/settings` | The last row in the hat list. Nothing inside changes | Same | `settings` |
+| **Signing in and out** | Who are you?, device choice, the daily PIN, handover, Sign out waiting for unsent work | Sign out stays at the top of the hat | Same | `device-sessions`, `device-lock-handover` |
+| **Bands and slips** | No signal, Update, the Undo slip, toasts, the function band, the cut-off reminder bar | No change | B: the function band and the reminder bar overlap the board | `after-the-tap`, `offline-writes` |
+| **Printing, CSV, install, QR, text size** | Run sheet, prep tiles, report CSVs, Install, QR sign | No change | Same | Print and CSV tests |
 
 ## Documents that change once chosen
 
@@ -186,4 +239,4 @@ The head chef asked for the design and function notes to be rewritten for the ne
 ## Files
 
 - `index.html`: the comparison page and every design screen (`?shot=a-prep` and so on draws one screen at its real size).
-- `previews/today-*.png`: today's book in the stand-in. `previews/a-*`, `b-*`, `c-*`: the three designs; `previews/r-*`: the recommended mix. All photographed from `index.html` at 390 x 844 and 1280 x 800.
+- `previews/today-*.png`: today's book in the stand-in, every page (the second set taken for the coverage check). `previews/a-*`, `b-*`, `c-*`: the three designs as scored; `previews/r-*`: the recommended mix, redrawn after the coverage check. All designs photographed from `index.html` at 390 x 844 and 1280 x 800.
