@@ -45,10 +45,11 @@ const onTop = (p, sel) => p.evaluate(s => {
       if (picker) await L.pick(p, '[data-k="ai-section"]', group);
       else await L.tap(p, groupControl(group));
       await L.settle(p, 300);
-      const pages = await p.locator('[data-p="a-tab"]').evaluateAll(nodes => nodes.map(el => ({ id: el.getAttribute('data-t'), label: el.textContent.trim() })));
+      const pages = await p.locator('[data-p="a-tab"]').evaluateAll(nodes => nodes.map(el => ({ id: el.getAttribute('data-t'), label: el.textContent.trim(), hidden: !el.getClientRects().length })));
       ok(pages.length > 0, w + ' admin: ' + label + ' exposes its destinations');
       for (const page of pages) {
-        v = await onTop(p, '[data-p="a-tab"][data-t="' + page.id + '"]');
+        // on a laptop Inbox and Dashboard show once, in the rail (gap fix, 8 Nov 2026): there they must be seen and tapped
+        v = await onTop(p, page.hidden ? '.a-quick[data-v="' + page.id + '"]' : '[data-p="a-tab"][data-t="' + page.id + '"]');
         ok(v === true, w + ' admin: ' + label + ' / ' + page.label + ' can be seen and tapped (' + v + ')');
       }
     }

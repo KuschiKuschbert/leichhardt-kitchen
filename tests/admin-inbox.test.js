@@ -60,6 +60,26 @@ const findList = p => p.$$eval('#fd-list .sheet-o', els => els.map(e => e.queryS
       ok(lay.count && new RegExp('^' + lay.count + ' to look at').test(lay.rows), width + ': the rail counts the Inbox rows (' + lay.count + ', ' + lay.rows + ')');
     } else ok(!lay.railFind && lay.headFind && !lay.quick, width + ': Find sits in the heading and the rooms stay one row (' + JSON.stringify(lay) + ')');
     ok(lay.find44, width + ': Find is at least 44 px');
+    // gap fix (8 Nov 2026, the audit against e-admin-b-1280): on a laptop the picked row opens beside the list with its
+    // own action, and Inbox and Dashboard show once (in the rail); a phone keeps the rows and the tabs as they were
+    const pane = () => p.evaluate(() => {
+      const vis = e => !!e && e.getClientRects().length > 0;
+      const pk = [...document.querySelectorAll('.dsh-need-pick')], pane = document.querySelector('.dsh-pick');
+      return { picks: pk.filter(vis).length, pressed: pk.filter(e => e.getAttribute('aria-pressed') === 'true').map(e => e.textContent), pane: vis(pane) ? pane.querySelector('.dsh-pick-t').textContent : '',
+        act: vis(pane) && pane.querySelector('[data-dsh="open"]') ? pane.querySelector('[data-dsh="open"]').getAttribute('data-t') : '', beside: vis(pane) && pane.getBoundingClientRect().left > document.querySelector('.dsh-need-list').getBoundingClientRect().right - 1,
+        tabs: ['inbox', 'dashboard'].filter(t => vis(document.querySelector('.a-tab[data-t="' + t + '"]'))).length };
+    });
+    let pv = await pane();
+    if (width >= 1000) {
+      ok(pv.picks >= 2 && pv.pressed.length === 1 && pv.pane === pv.pressed[0] && pv.beside && !!pv.act, width + ': the first Inbox row is open beside the list, with its own action (' + JSON.stringify(pv) + ')');
+      ok(pv.tabs === 0, width + ': Inbox and Dashboard show once, in the rail, not again in the Today tabs');
+      await closeMail(p);
+      const second = await p.$$eval('.dsh-need-pick', els => els[1].textContent);
+      const rb = await bill(p);
+      await p.locator('.dsh-need-pick').nth(1).click(); await L.settle(p, 300);
+      pv = await pane();
+      ok(pv.pane === second && pv.pressed.length === 1 && pv.pressed[0] === second && await p.evaluate(() => document.activeElement && document.activeElement.classList.contains('dsh-need-pick')) && await bill(p) === rb, width + ': a tap on another row opens it beside the list, keeps focus on the row and reads nothing (' + pv.pane + ')');
+    } else ok(pv.picks === 0 && !pv.pane && pv.tabs === 2, width + ': a phone or tablet keeps the rows and the Inbox and Dashboard tabs as they were (' + JSON.stringify(pv) + ')');
     ok(!(await L.overflow(p)) && p.errors.length === 0, width + ': no sideways scroll, no page errors ' + p.errors.join(' | '));
 
     // a number opens its report for the last 7 days

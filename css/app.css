@@ -4245,3 +4245,21 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fd-sheet #fd-q { width: 100%; margin: .2rem 0 .6rem; }
 .fd-list { max-height: min(52vh, 26rem); overflow-y: auto; }
 .fd-none { margin: .8rem .2rem; }
+
+/* ---------- Gap fix: admin (8 Nov 2026) ---------- */
+/* The audit of the redesign against e-admin-b-1280: on a laptop the picked Inbox row opens beside the list with its
+   action, and Inbox and Dashboard show once (in the rail), not again in the Today tabs. A phone keeps the rows as they
+   were: no pick buttons, no pane. */
+.dsh-need-pick, .dsh-pick { display: none; }
+@media (min-width: 1000px) {
+  .p-admin.ad-admin:has(.a-quick-list) .a-tab[data-t="inbox"], .p-admin.ad-admin:has(.a-quick-list) .a-tab[data-t="dashboard"] { display: none; }
+  .dsh-inbox .dsh-need-wrap { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+  .dsh-inbox .dsh-need-pick { display: flex; align-items: center; width: 100%; min-height: 44px; margin: 0; padding: 0; border: 0; background: none; color: var(--ink); font: 700 1rem/1.25 var(--body); text-align: left; cursor: pointer; }
+  .dsh-inbox .dsh-need-pick:hover { text-decoration: underline; }
+  .dsh-inbox .dsh-need-pick + .dsh-need-title { display: none; }
+  .dsh-inbox .dsh-need.is-picked { background: #FCEDE3; box-shadow: inset 3px 0 0 var(--accent); }
+  .dsh-inbox .dsh-pick { display: block; padding: 1rem 1.1rem 1.1rem; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--paper); }
+  .dsh-pick .dsh-pick-t { margin: .2rem 0 .35rem; font: 700 1.35rem/1.2 var(--display); }
+  .dsh-pick .dsh-pick-d { margin: 0 0 .75rem; color: var(--ink); line-height: 1.4; }
+  .dsh-pick .btn-row { margin-top: .5rem; }
+}
