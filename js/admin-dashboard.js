@@ -247,7 +247,7 @@
     return '<li class="dsh-need dsh-need-' + kind + '"><span class="dsh-need-mark" aria-hidden="true"></span><div><p class="dsh-tag dsh-tag-' + (kind === 'due' ? 'bad' : kind === 'ok' ? 'good' : 'flat') + '">' + esc(tag) + '</p><p class="dsh-need-title">' + esc(title) + '</p>' +
       (detail ? '<p class="dsh-need-detail">' + esc(detail) + '</p>' : '') + '</div>' + (open ? '<button type="button" class="btn" data-dsh="open" data-t="' + open + '">' + esc(label) + '</button>' : '') + '</li>';
   }
-  function needsHTML() {
+  function needsHTML(inbox) {
     var nd = api.needs ? api.needs() : {}, rows = [], clear = [], today = api.today();
     // Today's team (7 Nov 2026): not set yet for today, from what js/prep.js already read (no read of its own); an older
     // book sends nothing here and the row stays away
@@ -296,7 +296,10 @@
     if (failed || stale) rows.push(needRow('due', 'Nightly run', failed ? 'The last nightly run did not finish' : 'The nightly numbers are more than a day old', 'The numbers here are from ' + api.clock(state.data.at) + '. The Nightly learning run in GitHub needs a look.', '', ''));
     var fine = !!dd && !(failed || stale);
     var ok = clear.length || fine ? '<p class="dsh-clear"><span class="dsh-dot" aria-hidden="true"></span>' + (clear.length ? 'Nothing waiting for ' + esc(clear.join(', ').replace(/, ([^,]*)$/, ' or $1')) + '. ' : '') + (fine ? 'The nightly run finished.' : '') + '</p>' : '';
-    return '<section class="dsh-panel dsh-needs" aria-label="To do"><div class="dsh-panel-head"><h3 class="a-ch-h">To do</h3><span class="hint">' + (rows.length ? rows.length + ' to look at' : 'All clear') + '</span></div>' +
+    // the Inbox count beside Inbox in the laptop rail: the rows that need a look, not the ones still loading
+    state.count = rows.filter(function (r) { return r.indexOf('>Checking<') < 0; }).length;
+    var title = inbox ? 'Inbox' : 'To do';
+    return '<section class="dsh-panel dsh-needs" aria-label="' + title + '"><div class="dsh-panel-head"><h3 class="a-ch-h">' + title + '</h3><span class="hint">' + (rows.length ? rows.length + ' to look at' : 'All clear') + '</span></div>' +
       (rows.length ? '<ul class="dsh-need-list">' + rows.join('') + '</ul>' : '') + ok + '</section>';
   }
 
@@ -430,12 +433,48 @@
       return '<button type="button" class="chip" data-dsh="period" data-v="' + p + '" aria-pressed="' + (state.period === p) + '">' + p + ' days</button>';
     }).join('') + '</div><button type="button" class="chip" data-dsh="refresh"' + (state.loading ? ' disabled' : '') + '>Refresh</button></div>';
   }
+  /* ---------- The Inbox (redesign step 8, 8 Nov 2026, admin B as the head chef chose): today's numbers on top, then
+     everything that needs the head chef. The numbers are the same nightly record the Dashboard reads (no read of its own),
+     each a tap into its report; the functions come from the live list the book already keeps. A record not loaded or
+     not read says so in words, never 0. ---------- */
+  function dayTile(open, lab, num, sub, tone, href) {
+    // spaces between the parts, so the button's name reads "Waste, last 7 days 21 lines ..." and not run together
+    var inner = '<span class="dsh-dtile-lab">' + esc(lab) + '</span> <span class="dsh-dtile-num">' + num + '</span> <span class="dsh-dtile-sub' + (tone ? ' dsh-' + tone : '') + '">' + esc(sub) + '</span>';
+    return href ? '<a class="dsh-dtile" href="' + href + '">' + inner + '</a>' : '<button type="button" class="dsh-dtile" data-dsh="open" data-t="' + open + '" data-days="7">' + inner + '</button>';
+  }
+  function dayHTML() {
+    var d = state.data, body;
+    if (state.loading && d === undefined) body = '<p class="hint" role="status">Loading the numbers...</p>';
+    else if (state.error) body = '<p class="p-err" role="status">Could not load the numbers. Check the connection and tap Refresh.</p>';
+    else if (!d) body = '<p class="hint" role="status">The numbers come from the nightly run at 03:00. They will be here after the next run.</p>';
+    else if (!d.days.length) body = '<p class="hint" role="status">No finished kitchen days in the nightly numbers yet.</p>';
+    else {
+      var last = d.days[d.days.length - 1], p = last.p.n ? Math.round(100 * last.p.t / last.p.n) : null;
+      var w7 = d.days.slice(-7), w14 = rowsOf(7, 7), a = sum(w7, function (r) { return r.w.n; }), b = w14 ? sum(w14, function (r) { return r.w.n; }) : null;
+      var tiles = [
+        dayTile('insights', 'Prep ticked, ' + DAYS[dow(last.day)], p == null ? 'No lines' : p + '<small>%</small>', last.p.t + ' of ' + last.p.n + ' lines, ' + last.p.r + ' rolled over'),
+        dayTile('waste', 'Waste, last ' + w7.length + ' days', a + '<small> line' + (a === 1 ? '' : 's') + '</small>', b == null ? 'Lines logged, not dollars' : a > b ? (a - b) + ' more than the 7 days before' : a < b ? (b - a) + ' fewer than the 7 days before' : 'The same as the 7 days before', b == null || a === b ? '' : a > b ? 'up' : 'down')
+      ];
+      var w = api.week ? api.week() : null;
+      if (w && w.days && w.days[0]) {
+        var fns = w.days[0].fns.filter(function (f) { return !f.draft; }), guests = sum(fns, function (f) { return f.guests == null ? 0 : f.guests; });
+        var unknown = fns.some(function (f) { return f.guests == null; }), say = { loading: 'Loading the functions', error: 'Could not load the functions', offline: 'No signal', none: 'Not loaded on this device' }[w.fns];
+        var who = unknown ? (guests ? guests + ' guests known so far' : 'Guests not known yet') : guests + ' guests';
+        tiles.push(dayTile('', 'Functions today', say ? '<small>' + esc(say) + '</small>' : String(fns.length), say ? '' : fns.length ? who + (fns[0].start ? ', the first at ' + fns[0].start : '') : 'None booked', '', '#/fn'));
+      }
+      body = '<div class="dsh-dtiles">' + tiles.join('') + '</div>' + freshHTML();
+    }
+    return '<section class="dsh-panel dsh-day" aria-label="Today\'s numbers"><div class="dsh-panel-head"><h3 class="a-ch-h">Today\'s numbers</h3><button type="button" class="chip" data-dsh="refresh"' + (state.loading ? ' disabled' : '') + '>Refresh</button></div>' + body + '</section>';
+  }
   function render(adapter) {
     if (!bind(adapter)) return '';
     load(false);
     // Opened once on this device: from now on the panel returns to the last page used (lk.dash.intro, never out of date).
     if (api.seen) api.seen();
-    var head = '<section class="set-block dsh">' + needsHTML() + toolsHTML();
+    // Since redesign step 8 the panel asks for the Inbox or the Dashboard; an older book asks for neither and gets both, as before
+    var view = api.view === 'inbox' || api.view === 'dashboard' ? api.view : 'all';
+    if (view === 'inbox') return '<section class="set-block dsh dsh-inbox">' + dayHTML() + needsHTML(true) + '</section>';
+    var head = '<section class="set-block dsh">' + (view === 'all' ? needsHTML(false) : '') + toolsHTML();
     if (state.loading && state.data === undefined) return head + api.wait('Loading the dashboard...') + '</section>';
     if (state.error) return head + '<p class="p-err" role="status">Could not load the dashboard numbers. Check the connection and tap Refresh.</p></section>';
     if (!state.data) return head + '<p class="hint" role="status">The dashboard numbers come from the nightly run at 03:00. They will be here after the next run.</p></section>';
@@ -510,9 +549,11 @@
       var gone = watchLabel(w2.list[i]);
       watchSet(w2.list.filter(function (x, j) { return j !== i; }), 'Stopped watching ' + gone + '.'); return;
     }
-    if (a === 'open') { var t = el.getAttribute('data-t'); if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references', 'training', 'team'].indexOf(t) >= 0) api.open(t, state.period); }
+    // a tile of today's numbers on the Inbox says its own period (data-days="7"), the Dashboard's follow the period chips
+    if (a === 'open') { var t = el.getAttribute('data-t'); if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references', 'training', 'team'].indexOf(t) >= 0) api.open(t, el.getAttribute('data-days') === '7' ? 7 : state.period); }
   }
   // Typing in the watch list's Find box narrows the choices (the admin panel keeps focus and cursor through redraws).
   document.addEventListener('input', function (e) { if (valid() && state.add && e.target && e.target.id === 'dsh-watch-q') { state.add.q = String(e.target.value || '').slice(0, 80); redraw(); } });
-  window.LK_DASH = { API: API, render: render, click: click, reset: reset };
+  // count(): the Inbox rows from the last draw, for the laptop rail (null before the first), no read of its own
+  window.LK_DASH = { API: API, render: render, click: click, reset: reset, count: function () { return valid() && typeof state.count === 'number' ? state.count : null; } };
 })();

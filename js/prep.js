@@ -5385,12 +5385,15 @@
 
   /* The admin Dashboard (3 Nov 2026, docs/admin-dashboard-options/brief.md): js/admin-dashboard.js, loaded only when the
      page opens. It reads analysis/dashboard and analysis/health once (2 reads), kept in memory until Refresh. */
+  /* Since redesign step 8 (8 Nov 2026) the same file draws two pages: the Inbox (today's numbers, then what needs you)
+     and the Dashboard (headlines, tiles, the week ahead, the watch list, the charts). Both share the one read above. */
   var dashLoading = null, dashError = false;
   function dashModule() { return window.LK_DASH && window.LK_DASH.API === 1 ? window.LK_DASH : null; }
-  function dashHTML() {
+  function dashHTML(view) {
     if (!intelligenceAllowed()) return '';
     var m = dashModule();
     if (m) return m.render({
+      view: view === 'inbox' ? 'inbox' : 'dashboard',
       allowed: intelligenceAllowed, context: intelligenceContext, draw: draw, reasonName: reasonName,
       wait: function (text) { return inkWait(text, 'chef', 3); },
       clock: function (at) { return dayShort(T.day(at)) + ' at ' + hhmm(T.mins(at)); },
@@ -5460,7 +5463,7 @@
         S.atab = tab; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(tab)[0]] = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop();
       }
     });
-    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=1').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
+    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=2').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
     return '<section class="set-block"><h3 class="label">Dashboard</h3><p class="hint" role="status">' + (dashError ? 'Could not load the dashboard. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
   }
   function dashWeek() {
@@ -5478,7 +5481,7 @@
   // The functions listener can answer after the Dashboard is drawn: draw again only when the week ahead would change.
   var dashWeekSig = '';
   window.addEventListener('lk-fn', function () {
-    if (S.name !== 'admin' || S.atab !== 'dashboard' || !intelligenceAllowed() || !dashModule() || !S.root || !document.body.contains(S.root)) return;
+    if (S.name !== 'admin' || S.atab !== 'dashboard' && S.atab !== 'inbox' || !intelligenceAllowed() || !dashModule() || !S.root || !document.body.contains(S.root)) return;
     if (JSON.stringify(dashWeek()) !== dashWeekSig) draw();
   });
   document.addEventListener('click', function (e) { var el = e.target.closest('[data-dsh]'), m = dashModule(); if (el && S.root && S.root.contains(el) && intelligenceAllowed() && m) { e.preventDefault(); m.click(el); } });
@@ -5572,23 +5575,33 @@
     var bar = '<div class="p-bar"><span>Google account: <strong>' + esc(S.user.email) + '</strong></span><span class="p-links"><button type="button" class="p-link" data-p="signout">' + (armed('signout:sent') ? 'Not sent yet.' : armed('signout') ? notSaved() + '. Tap again' : 'Sign out of Google') + '</button></span></div>';
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
     var saveBlock = saveBarHTML();
-    var at = S.atab || 'dashboard';
+    var at = S.atab || 'inbox';
     // a sous chef on the head chef's device has no Kitchen mail page until the head chef switches it on (23 Oct 2026)
     if (at === 'mail' && !mlOwner()) at = S.atab = 'notes';
     // Review desk groups the two queues; saved records and reports remain separate. Existing page ids still work.
     var navBusy = intelligenceBusy(), mlN = mlInfo().n, ag = adminGroupOf(at), agTabs = ag[2].filter(function (t) { return t !== 'overview' && (t !== 'mail' || mlOwner()); });
     // The four rooms (4 Nov 2026, design B, docs/admin-pages-options/brief.md): a rail on a laptop and one row of four on
     // a phone, with the room's pages as tabs beside its title. Page ids are the same as before the rooms.
-    var chapters = '<aside class="a-nav"><p class="ad-nav-label">Admin panel</p><nav class="a-groups" aria-label="Admin rooms">' + A_GROUPS.map(function (g) {
-      return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '"' + (navBusy ? ' disabled' : '') + ' aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '"><span>' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</span></button>';
-    }).join('') + '</nav></aside>';
+    // Redesign step 8 (8 Nov 2026, admin B): on a laptop the rail is dark and starts with Find (/), then the Inbox with its
+    // count and the Dashboard, one tap from any room; the rooms follow. On a phone Find sits in the page heading and the
+    // four rooms stay one row. Drawn after the page, so the Inbox count is the one the page just drew (no read of its own).
+    function railHTML() {
+      var m = dashModule(), n = intelligenceAllowed() && m && m.count ? m.count() : null;
+      var quick = intelligenceAllowed() ? '<div class="a-quick-list">' + [['inbox', 'Inbox'], ['dashboard', 'Dashboard']].map(function (q) {
+        return '<button type="button" class="a-quick" data-p="a-view" data-v="' + q[0] + '"' + (navBusy ? ' disabled' : '') + ' aria-current="' + (at === q[0]) + '"><span>' + q[1] + '</span>' + (q[0] === 'inbox' && n ? '<em>' + n + '</em>' : '') + '</button>';
+      }).join('') + '</div>' : '';
+      return '<aside class="a-nav">' + findBtn('a-find-rail') + quick + '<p class="ad-nav-label">Admin panel</p><nav class="a-groups" aria-label="Admin rooms">' + A_GROUPS.map(function (g) {
+        return '<button type="button" class="a-group" data-p="a-group" data-g="' + g[0] + '"' + (navBusy ? ' disabled' : '') + ' aria-current="' + (ag[0] === g[0] ? 'page' : 'false') + '"><span>' + g[1] + (g[0] === 'today' && mlN ? ' (' + mlN + ')' : '') + '</span></button>';
+      }).join('') + '</nav></aside>';
+    }
+    function findBtn(cls) { return '<button type="button" class="a-find ' + cls + '" data-p="a-find"' + (navBusy ? ' disabled' : '') + ' aria-haspopup="dialog" aria-keyshortcuts="/"><span>Find</span><kbd aria-hidden="true">/</kbd></button>'; }
     var tabsBar = (agTabs.length > 1 ? '<nav class="a-tabs" aria-label="' + esc(ag[1]) + ' pages">' + agTabs.map(function (t) {
       return '<button type="button" class="a-tab" data-p="a-tab" data-t="' + t + '"' + (navBusy ? ' disabled' : '') + ' aria-pressed="' + (at === t || at === 'overview' && t === 'references') + '">' + A_TAB_NAMES[t] + (t === 'mail' && mlN ? ' (' + mlN + ')' : '') + '</button>';
     }).join('') + '</nav>' : '') + '<nav class="a-onpage" aria-label="On this page" hidden></nav>';
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = at === 'dashboard' ? dashHTML() : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'kitchen-home' ? kitchenHomeHTML(d, saveBlock) : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
+    var pane = at === 'dashboard' || at === 'inbox' ? dashHTML(at) : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'kitchen-home' ? kitchenHomeHTML(d, saveBlock) : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Create/edit functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it. Function editing still has its own tick.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       '<p class="hint">Tick Create/edit functions beside a person, then save. Their kitchen role stays the same.</p>' + peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + saveBlock
@@ -5603,7 +5616,7 @@
       '<p class="hint a-forget">To use a different kitchen PIN on this device, open Settings, This phone.</p></section>');
     var resume = INTELLIGENCE_PAGES.indexOf(at) < 0 && intelligenceAllowed() && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_INTELLIGENCE.resumeHTML ? window.LK_INTELLIGENCE.resumeHTML(at) : '';
     if (at !== 'proofreader' && intelligenceAllowed() && proofModule()) resume += proofModule().resumeHTML(proofAdapter());
-    return '<div class="p-admin ad-admin">' + bar + '<div class="ad-layout">' + chapters + '<div class="ad-main"><header class="ad-heading"><p class="ad-eyebrow">Kitchen administration</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + ag[1] + '</h2><p class="ad-intro">' + A_GROUP_NOTES[ag[0]] + '</p></header>' + tabsBar + '<div class="a-pane">' + (owner ? idCardHTML() : '') + resume + pane + '</div></div></div></div>';
+    return '<div class="p-admin ad-admin">' + bar + '<div class="ad-layout">' + railHTML() + '<div class="ad-main"><header class="ad-heading">' + findBtn('a-find-head') + '<p class="ad-eyebrow">Kitchen administration</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + ag[1] + '</h2><p class="ad-intro">' + A_GROUP_NOTES[ag[0]] + '</p></header>' + tabsBar + '<div class="a-pane">' + (owner ? idCardHTML() : '') + resume + pane + '</div></div></div></div>';
   }
   /* the same Remove button on the admin People tab and the sous chef's staff list, with a second tap to be sure */
   /* Head chef decision D6 (20 Oct 2026): someone who leaves is taken off the list, not deleted, so their name stays on
@@ -5669,20 +5682,21 @@
     return '<section class="set-block"><h2 class="p-h">Suppliers &amp; pars</h2><p>Current pars, manual items and the original supplier records are kept in the catalogue.</p>' +
       (supplierEdit() ? '<div class="btn-row"><a class="btn dark" href="#/suppliers/manage">Manage catalogue</a><a class="btn" href="#/suppliers">Supplier order</a></div>' : '<p class="hint">Only the head chef changes suppliers and pars. Sous chefs can use <a href="#/suppliers">Supplier order</a>.</p>') + '</section>';
   }
-  var A_TAB_NAMES = { 'kitchen-home': 'Overview', dashboard: 'Dashboard', overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
-  /* The admin page the panel opens on: the last one, after the Dashboard's first visit. After an update nobody asked
+  var A_TAB_NAMES = { 'kitchen-home': 'Overview', inbox: 'Inbox', dashboard: 'Dashboard', overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
+  /* The admin page the panel opens on: the Inbox on a first visit (redesign step 8, 8 Nov 2026; until then the
+     Dashboard: both read the same nightly record), then the last one used. After an update nobody asked
      for (the idle update or the 04:00 refresh, flagged by js/upkeep.js in lk.upd.auto for this tab only) a report page
-     opens on the Dashboard instead (Plan B, option 2.6 of docs/firestore-usage.md, 5 Nov 2026): Insights, Team,
+     opens on the Inbox instead (Plan B, option 2.6 of docs/firestore-usage.md, 5 Nov 2026): Insights, Team,
      Wastage, Transfers, Learning and the Proofreader read up to 60 days of lines on every open, about 2,400 reads, and
-     a laptop left on one paid it at every update. The Dashboard reads about 140. The report is one tap away. */
+     a laptop left on one paid it at every update. The Inbox reads about 140. The report is one tap away. */
   function startTab() {
-    var t = (lsGet('lk.dash.intro') && lsGet('lk.prep.atab')) || 'dashboard', auto = false;
+    var t = (lsGet('lk.dash.intro') && lsGet('lk.prep.atab')) || 'inbox', auto = false;
     try { auto = !!sessionStorage.getItem('lk.upd.auto'); sessionStorage.removeItem('lk.upd.auto'); } catch (e) {}
     if (!auto || !/^#\/admin/.test(location.hash) || ['insights', 'team', 'waste', 'transfers', 'learning', 'proofreader'].indexOf(t) < 0) return t;
-    lsSet('lk.prep.atab', 'dashboard');   // the page on screen, so a reload by hand stays on it
-    return 'dashboard';
+    lsSet('lk.prep.atab', 'inbox');   // the page on screen, so a reload by hand stays on it
+    return 'inbox';
   }
-  var A_GROUPS = [['today', 'Today', ['dashboard', 'overview', 'references', 'training', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people', 'training-records']], ['kitchen', 'Kitchen', ['kitchen-home', 'cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']]];
+  var A_GROUPS = [['today', 'Today', ['inbox', 'dashboard', 'overview', 'references', 'training', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people', 'training-records']], ['kitchen', 'Kitchen', ['kitchen-home', 'cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']]];
   var A_GROUP_NOTES = { today: 'What needs you, and how the kitchen is going.', reports: 'Read the recorded activity and follow it back to its source.', team: 'Who is in the kitchen, what each person may do, and their assessments.', kitchen: 'How the kitchen is set up, its records, the backup and the PIN.' };
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
@@ -5790,6 +5804,84 @@
     navJump = id; navJumpAt = Date.now();
     window.scrollTo({ top: Math.max(0, window.scrollY + tg.getBoundingClientRect().top - adminTopEdge() - 10), behavior: 'smooth' });
   }
+  /* Find (redesign step 8, 8 Nov 2026, admin B as the head chef chose): one box that goes to any admin page, a part of
+     the open page or a person, with / on a laptop. Built from what is already on the page and in memory (the rooms'
+     pages, the open page's headings as On this page reads them, the people list): no reads. A sheet on document.body
+     that dims the page and closes on the backdrop, Cancel and Escape (docs/design-patterns.md, Over the page). */
+  var fdLast = [];
+  function fdPage(t) {
+    if (intelligenceBusy() || !A_TAB_NAMES[t] || !S.root) return;
+    S.personId = ''; S.atab = t; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(t)[0]] = t; lsSet('lk.prep.atab', t); draw(); adminToTop();
+  }
+  function fdItems() {
+    var out = [];
+    adminHeads().forEach(function (h, i) {
+      var sn = h.querySelector('.a-sn'), t = h.textContent.trim();
+      if (sn) t = t.slice(sn.textContent.length).trim();
+      if (!h.id) h.id = 'fd-' + i;
+      if (t) out.push({ k: 'part', v: h.id, name: t, where: 'On this page' });
+    });
+    A_GROUPS.forEach(function (g) {
+      g[2].filter(function (t) { return t !== 'overview' && (t !== 'mail' || mlOwner()); }).forEach(function (t) { out.push({ k: 'page', v: t, name: A_TAB_NAMES[t], where: g[1] }); });
+    });
+    ((S.draft && S.draft.people) || []).filter(function (p) { return p && p.id && p.name && p.active !== false && !p.isNew; }).forEach(function (p) { out.push({ k: 'person', v: String(p.id), name: String(p.name), where: 'People' }); });
+    return out;
+  }
+  // the parts of the open page first, then every page; a person once a word is typed. The box is type="text": the shared
+  // search bar (LK_UX) wraps a type="search" box after it is drawn, which would take the cursor out of it
+  function fdListHTML(q) {
+    var words = String(q || '').toLowerCase().split(/\s+/).filter(Boolean), all = fdItems();
+    fdLast = (words.length ? all.filter(function (x) { var s = (x.name + ' ' + x.where).toLowerCase(); return words.every(function (w) { return s.indexOf(w) >= 0; }); }) : all.filter(function (x) { return x.k !== 'person'; })).slice(0, 40);
+    if (!fdLast.length) return '<p class="hint fd-none" role="status">Nothing called that. Try another word.</p>';
+    return fdLast.map(function (x, i) { return '<button type="button" class="sheet-o" data-fd="go" data-i="' + i + '"><strong>' + esc(x.name) + '</strong><span>' + esc(x.where) + '</span></button>'; }).join('');
+  }
+  function fdOpen(from) {
+    if (S.name !== 'admin' || intelligenceBusy() || document.getElementById('fd-sheet') || sheetOpen()) return;
+    var box = document.createElement('div'); box.id = 'fd-sheet';
+    box.innerHTML = '<div class="sheet-bg" data-fd="close"></div><div class="sheet fd-sheet" role="dialog" aria-modal="true" aria-labelledby="fd-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="fd-h">Find</h3>' +
+      '<label class="visually-hidden" for="fd-q">Find a page, a part of this page or a person</label><input id="fd-q" class="search" type="text" inputmode="search" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="A report, a setting or a person">' +
+      '<div class="sheet-list fd-list" id="fd-list">' + fdListHTML('') + '</div><button type="button" class="btn sheet-x" data-fd="close">Cancel</button></div>';
+    box._from = from; document.body.appendChild(box); document.documentElement.classList.add('sheet-open');
+    ovPush('fd', function () { fdClose(false, true); });
+    var q = box.querySelector('#fd-q'); if (q) q.focus();
+  }
+  function fdClose(keep, noBack) {
+    var box = document.getElementById('fd-sheet'); if (!box) return;
+    ovDone('fd', noBack);
+    box.remove(); document.documentElement.classList.remove('sheet-open');
+    if (!keep && box._from && document.body.contains(box._from)) box._from.focus();
+  }
+  // a page or a person opens on its heading; a part of the open page is scrolled to, as On this page does
+  function fdGo(x) {
+    if (!x) return;
+    fdClose(true);
+    ovAfterBack(function () {
+      if (x.k === 'part') { adminJumpTo(x.v); return; }
+      if (x.k === 'page') fdPage(x.v);
+      else { if (intelligenceBusy()) return; S.atab = 'people'; S.personId = x.v; S.agLast = S.agLast || {}; S.agLast.team = 'people'; lsSet('lk.prep.atab', 'people'); draw(); adminToTop(); }
+      var h = S.root && S.root.querySelector('#rtitle'); if (h) h.focus({ preventScroll: true });
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var el = e.target && e.target.closest ? e.target.closest('[data-fd]') : null; if (!el) return;
+    if (el.getAttribute('data-fd') === 'go') { fdGo(fdLast[+el.getAttribute('data-i')]); return; }
+    fdClose();
+  });
+  document.addEventListener('input', function (e) { if (e.target && e.target.id === 'fd-q') { var l = document.getElementById('fd-list'); if (l) l.innerHTML = fdListHTML(e.target.value); } });
+  document.addEventListener('keydown', function (e) {
+    var box = document.getElementById('fd-sheet');
+    if (box) {
+      if (e.key === 'Escape') { e.preventDefault(); fdClose(); return; }
+      if (e.key === 'Enter' && e.target && e.target.id === 'fd-q') { e.preventDefault(); fdGo(fdLast[0]); return; }
+      if (e.key === 'Tab') trapTab(e, box.querySelector('.sheet'), 'button, input');
+      return;
+    }
+    // / opens Find on the admin panel, unless a box has the cursor or something is already open over the page
+    if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || S.name !== 'admin' || !/^#\/admin/.test(location.hash) || typing() || sheetOpen() || !S.root) return;
+    var fb2 = S.root.querySelector('.a-find:not([disabled])');
+    if (fb2) { e.preventDefault(); fdOpen(fb2); }
+  });
+  window.addEventListener('hashchange', function () { fdClose(true, true); });
   /* A new page starts with its chapter title. Task Back restores its queue position separately. */
   /* A Kitchen row just opened (a tap, or Settings) stays in view: the row above may have closed, or the page opened at its
      top. Only on the Overview, and only once the row is drawn. */
@@ -10890,6 +10982,9 @@
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
     if (a === 'a-group') { if (intelligenceBusy()) return; S.personId = ''; var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2].filter(function (t) { return t !== 'mail' || mlOwner(); })[0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); } return; }
     if (a === 'a-tab') { if (intelligenceBusy()) return; S.personId = ''; S.atab = el.getAttribute('data-t'); S.agLast = S.agLast || {}; S.agLast[adminGroupOf(S.atab)[0]] = S.atab; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); return; }
+    // the laptop rail's Inbox and Dashboard (redesign step 8): the same as their tabs in Today
+    if (a === 'a-view') { fdPage(el.getAttribute('data-v')); return; }
+    if (a === 'a-find') { fdOpen(el); return; }
     if (a === 'staff-open') { if (isSous()) { startDraft(); S.staffOpen = true; draw(); seedPinOpen(); } return; }
     if (a === 'add-recipe') { addRecipe(id); return; }
     // a change waiting to send holds Sign in with Google, with no second tap past it (review, 29 Oct 2026): the sign-in
@@ -11265,8 +11360,9 @@
       mlDoneErr = true; retrySoon('mailDone', function () { loadMailDone(true); }, e); draw();
     });
   }
-  // the open mail is on screen: the Kitchen mail page, or Today's Dashboard with its To do (4 Nov 2026)
-  function mlOnTab() { return S.name === 'admin' && ((S.atab || 'insights') === 'mail' || S.atab === 'dashboard') && !!S.root && document.body.contains(S.root) && document.visibilityState !== 'hidden'; }
+  // the open mail is on screen: the Kitchen mail page, or Today's Inbox with the mail rows (the Dashboard's To do until
+  // redesign step 8, 8 Nov 2026)
+  function mlOnTab() { return S.name === 'admin' && ((S.atab || 'insights') === 'mail' || S.atab === 'inbox') && !!S.root && document.body.contains(S.root) && document.visibilityState !== 'hidden'; }
   /* the Mail tab is open: everything on it counts as seen, and the nudge clock starts again (saved with the head chef's
      account, config/admins, so reading mail on the laptop also stops the nudge on the phone) */
   // ids: only these messages (the To do shows the most urgent few); none: everything open (the Kitchen mail page)
