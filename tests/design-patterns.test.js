@@ -1,0 +1,63 @@
+// Design and behaviour patterns (head chef, 8 Nov 2026: "maintain consistency"). docs/design-patterns.md names the pieces
+// a new screen is built from; this file keeps that page true. Every class, colour token and helper below is one the page
+// names: if one is renamed or removed, this fails, so the page and the code change together (a test may not read docs/,
+// CLAUDE.md, so the names live here as well). It also fails when a file declares one top-level function or var name
+// twice: the second silently replaces the first (7 Nov 2026, a var and a function both called tmMine in js/prep.js).
+const assert = require('node:assert/strict');
+const fs = require('node:fs'), path = require('node:path');
+const root = path.join(__dirname, '..');
+const read = f => fs.readFileSync(path.join(root, f), 'utf8');
+const list = dir => fs.readdirSync(path.join(root, dir)).filter(f => f.endsWith('.js')).map(f => dir + '/' + f);
+const jsFiles = ['js', 'js/lib', 'js/seasonal'].filter(d => fs.existsSync(path.join(root, d))).flatMap(list);
+const css = fs.readdirSync(path.join(root, 'css')).filter(f => f.endsWith('.css')).map(f => read('css/' + f)).join('\n');
+const js = jsFiles.map(read).join('\n');
+
+// the names docs/design-patterns.md uses, by section
+const CLASSES = [
+  'nb-prog', 'p-card', 'p-h', 'hint', 'btn-row', 'btn', 'dark', 'p-link', 'p-err', 'chip', 'ux-picker',
+  'nt-wrap', 'nt-bg', 'nt', 'nt-grip', 'nt-in', 'nt-head', 'nt-eb', 'nt-h', 'nt-date', 'nt-body', 'nt-foot', 'nt-got',
+  'tm-chip', 'wtop-icons', 'is-due', 'nb-pw', 'nb-tmset', 'nb-tmday', 'tm-fold',
+  'set-block', 'label', 'a-ch-h', 'a-tablewrap', 'a-table', 'a-plain', 'sk-c', 'a-legend', 'wm-tile', 'wm-due'
+];
+const TOKENS = ['--ink', '--paper', '--bg', '--muted', '--faint', '--line', '--accent', '--accent-ink', '--tag', '--done', '--done-ink',
+  '--bar', '--bar-text', '--display', '--body', '--r-act', '--r-pick'];
+const HELPERS = ['tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'enhance',
+  'svButton', 'svStart', 'svDone', 'svFail', 'svLine', 'errMsg', 'failed', 'toast', 'slipName', 'arm', 'armed', 'W', 'canW',
+  'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML'];
+const GLOBALS = ['ICON', 'LK_UX'];
+
+const missing = [];
+CLASSES.forEach(c => { if (!new RegExp('\\.' + c.replace(/[-]/g, '\\-') + '(?![A-Za-z0-9_-])').test(css)) missing.push('.' + c); });
+TOKENS.forEach(t => { if (!new RegExp(t.replace(/[-]/g, '\\-') + '\\s*:').test(css)) missing.push(t); });
+HELPERS.forEach(h => { if (!new RegExp('function ' + h + '\\s*\\(').test(js)) missing.push(h + '()'); });
+GLOBALS.forEach(g => { if (!new RegExp('(var|const|window\\.)\\s*' + g + '\\s*=').test(js)) missing.push(g); });
+assert.deepEqual(missing, [], 'docs/design-patterns.md names these, but the code no longer has them: ' + missing.join(', ') + '. Change the page and this list with the code.');
+
+// one name, one meaning: a file's top-level function and var names (the smallest indent a function declaration has in it)
+const twice = [];
+jsFiles.forEach(f => {
+  const lines = read(f).split('\n'), fns = [];
+  lines.forEach((l, i) => { const m = /^( *)function ([A-Za-z0-9_$]+)\s*\(/.exec(l); if (m) fns.push({ ind: m[1].length, name: m[2], at: i + 1 }); });
+  if (!fns.length) return;
+  const top = Math.min(...fns.map(x => x.ind)), names = Object.create(null);
+  const add = (n, at) => { (names[n] = names[n] || []).push(at); };
+  fns.filter(x => x.ind === top).forEach(x => add(x.name, x.at));
+  lines.forEach((l, i) => {
+    const m = new RegExp('^ {' + top + '}var (.*)').exec(l); if (!m) return;
+    // the names a var line declares: before each top-level = (skipping what is inside brackets and strings)
+    let depth = 0, cur = '', q = '';
+    const parts = [];
+    for (const ch of m[1]) {
+      if (q) { if (ch === q) q = ''; cur += ch; continue; }
+      if (ch === '\'' || ch === '"' || ch === '`') { q = ch; cur += ch; continue; }
+      if ('([{'.includes(ch)) depth++; else if (')]}'.includes(ch)) depth--;
+      if (ch === ',' && depth === 0) { parts.push(cur); cur = ''; } else cur += ch;
+    }
+    parts.push(cur);
+    parts.forEach(p => { const n = /^\s*([A-Za-z0-9_$]+)\s*(=|;|$)/.exec(p); if (n) add(n[1], 'var ' + (i + 1)); });
+  });
+  Object.keys(names).forEach(n => { if (names[n].length > 1) twice.push(f + ': ' + n + ' (lines ' + names[n].join(', ') + ')'); });
+});
+assert.deepEqual(twice, [], 'A top-level name declared twice in one file: the second silently replaces the first. Rename one: ' + twice.join('; '));
+
+console.log('PASS design patterns: ' + CLASSES.length + ' classes, ' + TOKENS.length + ' colours and type, ' + (HELPERS.length + GLOBALS.length) + ' helpers still in the code; no top-level name declared twice in ' + jsFiles.length + ' files');
