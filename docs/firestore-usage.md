@@ -10,7 +10,7 @@ How it was checked. Source review of every Firestore call. The server jobs' own 
 | --- | --- | --- |
 | Phones, tablets and laptops | about 44,000 by 13:00 on 5 Nov | See the next table. |
 | Nightly backup | about 2,500 to 2,800 | Reads 45 days of everything. About 4,000 once 45 days of data exist. |
-| Nightly analysis | about 1,770 | Reads 90 days, about 280 of them empty days before the book started. |
+| Nightly analysis | about 1,770, plus about 400 for Today's team | Reads 90 days, about 280 of them empty days before the book started. Since 7 Nov 2026 also 8 weeks of `team/<day>` plans (up to 56) and 30 days of section picks (`shifts`, about 12 a day) for `teamsum/main`. |
 | Nightly learning and summaries | about 800 | Reads every learning claim ever, growing each night. |
 | Publish rules | 0 to 200, 850 on 4 Nov | Only when the rules change; 6 runs by hand on 4 Nov. |
 | Cut-off pushes | 5 to 15 | GitHub runs the 10-minute schedule only 3 to 7 times a day (a reliability problem, not a cost one). |

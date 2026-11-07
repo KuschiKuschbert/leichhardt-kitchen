@@ -204,6 +204,47 @@ const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.n
   ok(p.errors.length === 0, 'dinner: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // Step 4, the nightly training numbers (teamsum/main): on the chef's page a cook's usual section for today's weekday
+  // and shift fills in on a tick, and their row says it and what they are In training on; staff never read them
+  const at12 = d => new Date(d + 'T12:00:00Z'), dowToday = at12(today).getUTCDay(), wdName = at12(today).toLocaleDateString('en-AU', { weekday: 'long', timeZone: 'UTC' });
+  const yday = L.ymd(new Date(L.NOW - 86400000)), d3 = L.ymd(new Date(L.NOW - 3 * 86400000)), TSUM = fsKey(['teamsum', 'main']);
+  const tsumRec = { v: 1, at: L.NOW - 36000000, day: today, from: L.ymd(new Date(L.NOW - 30 * 86400000)), to: yday,
+    days: [{ day: d3, s: [{ p: 'ann', sec: 'Grill', sh: 'lunch' }, { p: 'bo', sec: 'Larder', sh: 'lunch' }] }, { day: yday, s: [{ p: 'ann', sec: 'Grill', sh: 'lunch' }, { p: 'ann', sec: 'Pans', sh: 'dinner' }] }],
+    usual: { [dowToday + '|lunch']: { ann: ['grill', 6, 8], bo: ['gone', 3, 8] } }, learn: { ann: ['Pans'] } };
+  const withSum = () => Object.assign(cfg(), { [TSUM]: tsumRec });
+  p = await L.open(b, '#/team', { who: 'sam', extra: withSum(), wait: 1800 });
+  ok(await onShift(p, 'ann'), 'usual: Ann is ticked onto Lunch');
+  ok(await p.$eval('select[data-k="tm-sec:ann"]', e => e.value) === 'grill', 'usual: she starts on her usual section, Grill');
+  const annRow = await p.evaluate(() => { const x = document.querySelector('[data-p="tm-on"][data-id="ann"]'); return x ? x.closest('.tm-row').querySelector('.tm-name').textContent : ''; });
+  ok(annRow.includes('Usually Grill, 6 of the last 8 ' + wdName + 's') && annRow.includes('In training: Pans'), 'usual: her row says her usual section and what she is in training on (' + annRow + ')');
+  await onShift(p, 'bo');
+  ok(await p.$eval('select[data-k="tm-sec:bo"]', e => e.value) === '', 'usual: a section taken off the list is not filled in');
+  ok(await p.evaluate(() => window.__fake.reads.filter(r => /\/teamsum\//.test(r)).length) === 1, 'usual: the numbers are read once');
+  ok(p.errors.length === 0, 'usual: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  p = await L.open(b, '#/prep', { who: 'ann', extra: withSum(), wait: 1800 });
+  await p.evaluate(() => { location.hash = '#/team'; }); await L.settle(p, 600);
+  ok(await p.evaluate(() => window.__fake.reads.filter(r => /\/teamsum\//.test(r)).length + window.__fake.refused.filter(r => /\/teamsum\//.test(r.path)).length) === 0, 'staff: the training numbers are never read');
+  await p.context().close();
+
+  // the admin: Who worked where counts the shifts, Reports, Team has a shifts table, Training shows shifts beside ticks
+  p = await L.open(b, '#/admin', { admin: true, who: '', width: 1280, height: 900, adminPage: '', wait: 2500, extra: Object.assign(withSum(), { [fsKey(['shifts', today + '_ann'])]: { day: today, sec: 'larder', name: 'Larder', auto: false, at: L.NOW - 3600000, by: 'ann' } }) });
+  await L.kitchenRow(p, 'secs', 600);
+  await L.waitFor(p, () => /Pans 1/.test((document.querySelector('[data-lvb="ks-days"]') || {}).textContent || ''), null, 6000).catch(() => {});
+  const where = await txt(p, '[data-lvb="ks-days"]') || '';
+  ok(/Ann/.test(where) && /Grill 2/.test(where) && /Pans 1/.test(where) && /Larder 1/.test(where) && /Bo/.test(where), 'admin: who worked where counts the shifts from the plans and today\'s pick (' + where.slice(0, 200) + ')');
+  await L.adminTab(p, 'team');
+  await L.waitFor(p, () => !!document.querySelector('.sk-shifts'), null, 8000).catch(() => {});
+  const grid = await txt(p, '.sk-shifts') || '';
+  ok(/Grill/.test(grid) && /Pans/.test(grid) && /Ann/.test(grid) && /Bo/.test(grid), 'admin: the Team report has shifts on each section (' + grid.slice(0, 160) + ')');
+  await L.adminTab(p, 'training');
+  await L.waitFor(p, () => /shifts? on it in the last 30 days/.test((document.querySelector('.ai-workspace') || {}).textContent || ''), null, 8000).catch(() => {});
+  const train = await txt(p, '.ai-workspace') || '';
+  ok(/Ann: Grill[^]*2 shifts on it in the last 30 days/.test(train), 'admin: Training shows the shifts on a section beside the ticks (' + (train.match(/Ann: Grill.{0,160}/) || [''])[0] + ')');
+  ok(!(await L.overflow(p)), 'admin: no sideways scroll');
+  ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // the smallest phones and the laptop: the title whole, the page tabs on one row, nothing sideways
   for (const w of [360, 375]) {
     p = await L.open(b, '#/prep', { who: 'sam', extra: cfg(), width: w, wait: 1600 });

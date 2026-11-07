@@ -338,9 +338,23 @@
   function trainingTicks(s, person, section) { return window.LK_ANALYSIS.trainingTicks(s, person, section); }
   function trainingActivity(s, person, section) {
     if (s === undefined) return state.errors['analysis/range-' + state.range] ? 'Activity counts could not be loaded. Saved assessments are still shown.' : 'Activity counts are not available while analysis is loading.';
-    if (!s) return 'No activity analysis has been published yet.';
+    if (!s) return 'No activity analysis has been published yet.' + teamShiftsText(person, section);
     var n = trainingTicks(s, person, section);
-    return n ? n + (n === 1 ? ' prep line ticked' : ' prep lines ticked') + ' in this period.' : 'No prep ticks recorded for this section in this period.';
+    return (n ? n + (n === 1 ? ' prep line ticked' : ' prep lines ticked') + ' in this period.' : 'No prep ticks recorded for this section in this period.') + teamShiftsText(person, section);
+  }
+  /* Today's team, step 4 (7 Nov 2026): shifts worked on the section in the last 30 days, from the nightly teamsum/main
+     (the chef's plans and each cook's own section picks). One read, once per visit, with the other records. Shifts are
+     a chance to learn, not competence. */
+  function teamShiftCounts() {
+    var t = data('teamsum/main');
+    return t && Array.isArray(t.days) ? window.LK_ANALYSIS.teamShiftCounts(t.days) : null;
+  }
+  function teamShiftsText(person, section) {
+    if (!window.LK_ANALYSIS.teamShiftCounts) return '';
+    var c = teamShiftCounts();
+    if (!c) return state.cache['teamsum/main'] === null ? ' Shifts on it are counted from Today\'s team once the nightly job has run.' : '';
+    var n = window.LK_ANALYSIS.teamShiftsOn(c, person, section);
+    return ' ' + (n ? n + (n === 1 ? ' shift' : ' shifts') + ' on it in the last 30 days.' : 'No shifts on it in the last 30 days.');
   }
   function trainingMaterials(records, person, section) {
     var seen = {}, recipes = api.recipes();
@@ -352,9 +366,9 @@
       return '<p>' + esc(recipe ? recipe.name : r.recipeId ? r.recipeId : 'Section guide') + ': ' + trainingStatus(r.status) + '.</p>' + linked(r);
     }).join('') + (related.length > 3 ? '<p class="hint">More references are in the training records below.</p>' : '') + '</details>' : '';
   }
-  function trainingQueue(s, records, people) { return window.LK_ANALYSIS.trainingQueue(s, records, people, api.sections()); }
+  function trainingQueue(s, records, people) { return window.LK_ANALYSIS.trainingQueue(s, records, people, api.sections(), window.LK_ANALYSIS.teamShiftCounts ? teamShiftCounts() : null); }
   function trainingOpportunities(s, records, people) {
-    var view = recordView('training-queue', trainingQueue(s, records, people), [['person', 'Person', function (r) { return r.person.name; }], ['section', 'Section', function (r) { return r.section; }], ['ticks', 'Completed jobs', function (r) { return r.ticks; }]], [['status', 'Status', function (r) { return trainingStatus(r.assessment ? r.assessment.status : 'not-assessed'); }]]), opportunities = view.rows;
+    var view = recordView('training-queue', trainingQueue(s, records, people), [['person', 'Person', function (r) { return r.person.name; }], ['section', 'Section', function (r) { return r.section; }], ['ticks', 'Completed jobs', function (r) { return r.ticks; }], ['shifts', 'Shifts worked', function (r) { return r.shifts || 0; }]], [['status', 'Status', function (r) { return trainingStatus(r.assessment ? r.assessment.status : 'not-assessed'); }]]), opportunities = view.rows;
     if (!trainingSections(s).length) return '<div class="ai-training-opportunities"><p class="hint">No sections are available. You can still add a recipe assessment.</p></div>';
     if (!opportunities.length) return '<div class="ai-training-opportunities">' + view.tools + '<p class="hint">No further section assessments need review in this view. Saved assessments remain available.</p></div>';
     return '<div class="ai-training-opportunities">' + view.tools + '<p class="hint">' + opportunities.length + ' person and section combinations to review.</p><ul class="ai-list">' + opportunities.slice(0, state.trainingLimit).map(function (o) {

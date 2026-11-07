@@ -275,6 +275,8 @@ function readRefused(ref) {
     return !(chefReader(ref) || (by && parent && parent.to === by && store[k] && store[k].by === by));
   }
   if (/\/todos\/[^/]+$/.test(k)) return !chefReader(ref);
+  // the nightly training numbers for Today's team (teamsum/main, 7 Nov 2026): chefs and the admin, never staff
+  if (/\/teamsum\/[^/]+$/.test(k)) return !chefReader(ref);
   if (at3(k, '(suppliers|supplierlinks|cutdone)(/|$)')) return !chefReader(ref);
   if (at3(k, 'mail/[^/]+$')) return !mailReader(ref);
   return false;

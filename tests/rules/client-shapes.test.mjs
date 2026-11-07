@@ -140,6 +140,7 @@ const seed = {
   'mail/x1': { from: 'ann', by: 'ann', cat: 'stock', pri: 'week', text: 'Out of foil', at: NOW, done: false, seen: false },
   'mail/x0': { from: 'ann', by: 'ann', cat: 'stock', pri: 'week', text: 'Gloves', at: NOW - 3 * DAY, done: true, doneAt: NOW - DAY, seen: true },
   'mailstat/x1': { by: 'ann', seen: false, done: false },
+  'teamsum/main': { v: 1, at: NOW, day: TODAY, from: TODAY, to: TODAY, days: [], usual: {}, learn: {} },
   'todos/td1': { text: 'Call the fridge tech', st: 'open', due: '', for: '', from: 'sam', at: NOW, doneAt: 0, doneBy: '', upd: NOW, by: 'sam' },
   'todos/td0': { text: 'Fixed the dishwasher', st: 'done', due: '', for: '', from: 'sam', at: NOW - DAY, doneAt: NOW - DAY, doneBy: 'sam', upd: NOW - DAY, by: 'sam' },
   [`cutdone/${TODAY}_northside`]: { day: TODAY, sid: 'northside', on: true, at: NOW, by: 'sam' },
@@ -281,6 +282,7 @@ row('js/prep.js ksCheck(): my section today (shifts/<today>_<me>)', { ok: KITCHE
 row('js/prep.js loadShifts() (admin People, Manage staff): 14 days of sections', { ok: KITCHEN, asks: CHEFS, run: db => getDocs(query(C(db, 'shifts'), where('day', '>=', kday(NOW - 13 * DAY)))) });
 row('js/prep.js teamLoad(): today\'s team (team/<today>), for the chip, Your day and the prep list line', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, `team/${TODAY}`)) });
 row('js/prep.js teamLast(): the same day last week, for Use it on the chef\'s page', { ok: KITCHEN, asks: CHEFS, run: db => getDoc(D(db, `team/${kday(NOW - 7 * DAY)}`)) });
+row('js/prep.js tsumLoad() and the admin Training: the nightly training numbers (teamsum/main)', { ok: CHEFS, asks: CHEFS, run: db => getDoc(D(db, 'teamsum/main')) });
 row('js/prep.js mlStatLoad(): what happened to a mail I sent (mailstat/<id>)', { ok: KITCHEN, asks: MAIL, run: db => getDoc(D(db, 'mailstat/x1')) });
 row('js/prep.js loadMail(): open mail (mail, done == false; sous chef mail off)', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(query(C(db, 'mail'), where('done', '==', false))) });
 row('js/prep.js loadMailDone(): mail ticked in the last 30 days', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(query(C(db, 'mail'), where('doneAt', '>=', NOW - 30 * DAY))) });
