@@ -320,7 +320,7 @@ The head chef asked for the design and function notes to be rewritten for the ne
 - `docs/head-chef-decisions.md`: the decision at the top, with its date.
 - This brief: a Chosen section and a Build table, one row per pull request.
 - `docs/design-patterns.md`, in the step that builds each piece: **A prep line** (one row: tick, words and amount, On it, ⋯; who, when and Recipe in the small line; the class and helper names), **The day bar** (date and section chips in one bar), and for B **The now and next board** (rows from data already on the phone; never "nothing" when a read failed) and **A booking card** (alert, facts, timeline, function bar). Each with its names in `tests/design-patterns.test.js`.
-- `CLAUDE.md`: the row in "Read the note before you change it" points here now; once built, the row names the chosen design, and "Things that are easy to break" gets one line if the board adds a rule (for example: the board shows only what the home page already reads).
+- `CLAUDE.md`: the short row in "Read the note before you change it" points here now; once built, the full row in `docs/session-map.md` names the chosen design, and "Things that are easy to break" gets one line if the board adds a rule (for example: the board shows only what the home page already reads).
 - `README.md` and `docs/prep-book.md`: what changed for the team, in the step that changes it.
 - `docs/open-work.md`: the steps left, removed as each ships.
 
