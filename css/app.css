@@ -3616,8 +3616,9 @@ i.dsh-c-load { background: var(--dsh-h3); }
 .w-rbig .w-rchip span { font-size: 0.75rem; font-weight: 400; color: var(--muted); }
 .w-rbig .w-rchip[aria-checked="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
 .w-rbig .w-rchip[aria-checked="true"] span { color: #fff; }
-.nb-t .w-again { display: flex; align-items: center; width: max-content; min-height: 36px; height: auto; margin-top: 6px; padding: 0 12px; font: 600 0.8125rem var(--body); }
-.nb-t .w-again.is-on { display: block; min-height: 0; padding: 2px 0; border: 0; font-size: 0.8125rem; font-weight: 600; color: var(--muted); }
+/* Make it again sits on the right of its line since the redesign's step 4 (8 Nov 2026), an outline button with its words */
+.w-row > .w-again { display: inline-flex; align-items: center; flex: 0 0 auto; align-self: center; min-height: 44px; height: auto; padding: 0 12px; border-radius: var(--r-act); font: 600 0.8125rem/1.15 var(--body); white-space: nowrap; }
+.w-row > .w-again.is-on { padding: 0 2px; border: 0; background: none; color: var(--muted); }
 @media (min-width: 720px) { .w-sheet, .tr-sheet, .p-sheet, .o-sheet { width: min(40rem, calc(100vw - 32px)); max-height: 86vh; max-height: 86dvh; } }
 /* A toast while a wastage sheet is open (3 Nov 2026): at the top of the screen, above the sheet, so its Undo can be
    tapped and the form under it stays clear */
@@ -3945,4 +3946,38 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 @media (max-width: 899px) {
   .su-info-line { border: 1.5px solid var(--tag); border-radius: 10px; background: var(--paper); }
   .su-info-line.attn { border-color: var(--small-ink); }
+}
+
+/* ---------- Redesign step 4 (8 Nov 2026, head chef): Wastage and Transfers. docs/whole-app-redesign-options/brief.md
+   (Chosen, Build step 4), every-page.html (e-waste, e-transfers). ---------- */
+/* Wastage: the reason leads the small second line with a dot in the colour of today's bar; the sections under the count */
+.w-row .nb-meta .w-rs { display: inline-flex; align-items: center; gap: 4px; margin-right: 2px; padding: 0 7px 0 6px; border-width: 1px; font-size: 0.6875rem; line-height: 1.55; color: var(--ink); vertical-align: 0.05em; }
+.w-rs .w-dot { width: 7px; height: 7px; }
+.w-secs { display: block; max-width: min(16rem, 52vw); margin: 0.1rem 0 0; font: 600 0.8125rem/1.3 var(--body); color: var(--muted); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Transfers: Still out as cards, one a pick-up (after Airbnb's trips): who has it, since when and how long, then each item
+   with its own Mark returned. Old loans (7 days or more) get a red edge and a red tag. */
+.tr-cards { display: grid; gap: 10px; margin: 6px 0 4px; }
+.tr-card { padding: 10px 12px 4px; border: 1.5px solid var(--ink); border-radius: 12px; background: var(--paper); box-shadow: 0 2px 0 rgba(28,29,31,0.08); }
+.tr-card.is-old { border-color: var(--tag); box-shadow: inset 4px 0 0 var(--tag); }
+.tr-ch { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.tr-cv { margin: 0; font: 700 0.8125rem/1.3 var(--body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink); }
+.tr-ch .tr-age { flex: 0 0 auto; vertical-align: 0; }
+.tr-age.is-today { border-color: var(--line); color: var(--muted); }
+.tr-card .tr-cs { display: block; margin: 2px 0 2px; }
+.tr-card .nb-rows { margin: 0; }
+.tr-card .tr-item { align-items: center; border-bottom: 0; border-top: 1px solid var(--rule); }
+.tr-card .tr-item .nb-main { min-width: 0; }
+.tr-ret { flex: 0 0 auto; min-height: 44px; padding: 0 12px; gap: 6px; font: 700 0.875rem/1 var(--body); white-space: nowrap; }
+.tr-ret[disabled] { opacity: 0.6; }
+.tr-tick { flex: 0 0 auto; }
+/* On a phone the handwritten words need the room: Make it again goes under the line's second line, still in its row,
+   and the words, the reason, the section and who keep the full width (measured at 390 px, 8 Nov 2026) */
+@media (max-width: 479px) {
+  .w-row:has(> .w-again) { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: start; }
+  .w-row:has(> .w-again) > .w-time { grid-column: 1; grid-row: 1; }
+  .w-row:has(> .w-again) > .nb-main { grid-column: 2; grid-row: 1; }
+  .w-row:has(> .w-again) > .w-again { grid-column: 2; grid-row: 2; justify-self: start; margin: 2px 0 4px; }
+  .w-row:has(> .w-again) > .p-x { grid-column: 3; grid-row: 1; }
+  .w-row:has(> .w-again) > .nb-more { grid-column: 4; grid-row: 1; }
+  .tr-ret { padding: 0 10px; font-size: 0.8125rem; }
 }

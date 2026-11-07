@@ -1,6 +1,7 @@
 // Transfers, Clean notebook (3 Nov 2026, work pages redesign A, docs/work-pages-design-options/brief.md): Still out
 // comes first, earlier days with how long each has been out (the age tag, a piece of B, darker from 7 days), then
-// today's, each with the return tick on the left; then Done today. Log a transfer opens a sheet that takes a whole
+// today's; then Done today. Since the redesign's step 4 (8 Nov 2026) each loan is a card that says who has it, since when
+// and how long (red from 7 days), with Mark returned on the right of each item. Log a transfer opens a sheet that takes a whole
 // pick-up: Add another item lists it, and Log the pick-up saves every item as its own line, with one Undo.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
@@ -22,12 +23,14 @@ const lines = async (p, text) => Object.entries(await store(p)).filter(([k, v]) 
   await L.waitFor(p, () => document.querySelectorAll('.tr-outstanding .tr-row').length === 3, null, 6000).catch(() => {});
 
   // Still out first: the earlier days with their age, then today's; the returned line under Done today
-  const out = await p.$$eval('.tr-outstanding .tr-row', l => l.map(e => e.querySelector('strong').textContent + (e.querySelector('.tr-age') ? ' ' + e.querySelector('.tr-age').firstChild.textContent + (e.querySelector('.tr-age.is-old') ? '!' : '') : '')));
-  ok(out.join(' | ') === 'Cream 9 days! | Butter 3 days | Brioche buns', 'Still out: earlier days with their age (darker from 7 days), then today\'s (' + out.join(' | ') + ')');
+  const out = await p.$$eval('.tr-outstanding .tr-card', l => l.map(c => c.querySelector('.tr-cv').textContent + ': ' + [...c.querySelectorAll('.tr-row strong')].map(e => e.textContent).join(', ') + ' ' + c.querySelector('.tr-age').textContent + (c.classList.contains('is-old') && c.querySelector('.tr-age.is-old') ? '!' : '')));
+  ok(out.join(' | ') === 'Lent to Grand Hotel: Cream 9 days! | Lent to Riviera: Butter 3 days | Lent to Riviera: Brioche buns Today', 'Still out: a card a loan, earlier days with their age (red from 7 days), then today\'s (' + out.join(' | ') + ')');
+  const sub = await txt(p, '.tr-card:nth-child(2) .tr-cs') || '';
+  ok(/Jo came for it · logged by Bo$/.test(sub.trim()), 'a card says since when, who came for it and who logged it (' + sub + ')');
   ok(/Lemons/.test(await txt(p, '.tr-done') || '') && !/Lemons/.test(await txt(p, '.tr-outstanding') || ''), 'Done today: the returned line, and only there');
   const order = await p.evaluate(() => ['.tr-outstanding', '.tr-done'].map(s => Math.round(document.querySelector(s).getBoundingClientRect().top)));
   ok(order[0] < order[1] && await L.docked(p, '.tr-logbtn'), 'page: Still out, then Done today, with Log a transfer docked above the tab bar (' + order.join(', ') + ')');
-  ok(await p.evaluate(() => [...document.querySelectorAll('.tr-outstanding .tr-row')].every(r => { const t = r.querySelector('.tr-return-box'), w = r.querySelector('.nb-t'); return t && t.getBoundingClientRect().right <= w.getBoundingClientRect().left; })), 'Still out: the return tick is on the left of every line');
+  ok(await p.evaluate(() => [...document.querySelectorAll('.tr-outstanding .tr-row')].every(r => { const t = r.querySelector('.tr-ret'), w = r.querySelector('.nb-t'), b = t && t.getBoundingClientRect(); return t && /Mark returned/.test(t.textContent) && b.left >= w.getBoundingClientRect().right - 1 && b.height >= 44; })), 'Still out: each item has Mark returned on its right, in words, at least 44 px');
   ok(!(await p.$('#tr-text')), 'page: no form until Log a transfer');
 
   // a pick-up of two items, one taken out again, then Log the pick-up

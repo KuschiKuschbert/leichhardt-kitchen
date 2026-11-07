@@ -48,12 +48,20 @@ const meta = (p, id) => p.evaluate(sel => {
 
     p = await L.open(b, '#/waste', { who: 'sam', extra, width: w, height: w === 390 ? 844 : 900, wait: 1600 });
     m = await meta(p, 's4w');
-    ok(!!m && m.text === 'Fryer · Ann' && m.under && m.shown && /^\d\d:\d\d$/.test((await txt(p, row('s4w') + ' .w-time') || '').trim()), w + ' px wastage: "Fryer · Ann" under the words, the time on the left (' + JSON.stringify(m) + ')');
+    // since the redesign's step 4 (8 Nov 2026) the reason leads the second line, so the words and amount keep the first
+    ok(!!m && m.text === 'Excess production Fryer · Ann' && m.under && m.shown && /^\d\d:\d\d$/.test((await txt(p, row('s4w') + ' .w-time') || '').trim()), w + ' px wastage: "Excess production Fryer · Ann" under the words, the time on the left (' + JSON.stringify(m) + ')');
     await p.context().close();
 
     p = await L.open(b, '#/transfers', { who: 'sam', extra, width: w, height: w === 390 ? 844 : 900, wait: 1600 });
-    m = await meta(p, 's4x');
-    ok(!!m && m.text === 'To Riviera, Jo came for it · logged by Bo' && m.under && m.shown, w + ' px transfers: the venue, who came and who logged it under the words (' + JSON.stringify(m) + ')');
+    // a loan is a card since the redesign's step 4 (8 Nov 2026): the venue heads it, and when, who came and who logged
+    // it are its second line, under the heading and above the item
+    m = await p.evaluate(sel => {
+      const r = document.querySelector(sel), c = r && r.closest('.tr-card'), h = c && c.querySelector('.tr-cv'), s = c && c.querySelector('.nb-meta');
+      if (!s || !h) return null;
+      const sb = s.getBoundingClientRect(), hb = h.getBoundingClientRect(), rb = r.getBoundingClientRect();
+      return { head: h.textContent, text: s.textContent.trim(), under: sb.top >= hb.bottom - 1 && sb.bottom <= rb.top + 1, shown: sb.height > 0 };
+    }, row('s4x'));
+    ok(!!m && m.head === 'Lent to Riviera' && /^\d\d:\d\d · Jo came for it · logged by Bo$/.test(m.text) && m.under && m.shown, w + ' px transfers: the card names the venue, then when, who came and who logged it, above the item (' + JSON.stringify(m) + ')');
     if (w === 390) {
       await p.click(row('s4x') + ' .nb-more'); await L.settle(p, 200);
       ok(/Written by Bo/.test(await txt(p, '#lm-sheet .lm-who') || ''), 'transfers: the ⋯ sheet still says who wrote it');
