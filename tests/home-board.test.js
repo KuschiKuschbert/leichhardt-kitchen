@@ -21,7 +21,10 @@ const people = [
 const SECS = [{ id: 'grill', name: 'Grill', off: false }, { id: 'sauce', name: 'Sauce', off: false }, { id: 'larder', name: 'Larder', off: false }];
 const SHIFTS = [{ id: 'lunch', name: 'Lunch', from: 600, to: 900, off: false }, { id: 'dinner', name: 'Dinner', from: 960, to: 1320, off: false }];
 // PFD closes at 15:00 for tomorrow's delivery: on the bar, the last hour (hot)
-const CUTS = [{ id: 'pfd', name: 'PFD ' + P, dd: [next], at: 15 * 60, pre: 1 }];
+const CUTS = [{ id: 'pfd', name: 'PFD ' + P, dd: [next], at: 15 * 60, pre: 1 },
+  // B&E closes at 19:00 with its reminder from 17:00, Meat Co at 20:00 from 19:00: at 14:00 neither reminder has started, so
+  // only the next one, B&E, is on the board, quiet (8 Nov 2026, head chef: the next cut-off on Home from the morning)
+  { id: 'bne', name: 'B&E Chicken', dd: [next], at: 19 * 60, pre: 1, lead: 120 }, { id: 'meat', name: 'Meat Co', dd: [next], at: 20 * 60, pre: 1, lead: 60 }];
 function fn(o) {
   const R0 = (o.rounds || []).map(x => ({ at: at(o.date, x), note: '' }));
   return M.derive({ v: 1, status: 'confirmed', name: o.name, date: o.date, start: o.start ? at(o.date, o.start) : 0, st: !o.start, loc: '', guests: 40, gu: false, mode: R0.length > 1 ? 'stag' : 'all',
@@ -56,6 +59,9 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
   ok(!!fnRow && /^Birthday 60th Zz<i/.test(fnRow.t) && /^Round 1 of 3 · 2 × Pizza$/.test(fnRow.s) && fnRow.tm === '14:10' && fnRow.n === 'In 10 min' && fnRow.hot, 'the function: its next round, what goes out, the time and In 10 min, hot (' + JSON.stringify(fnRow) + ')');
   ok(!!cut && /^PFD Zz<i/.test(cut.t) && cut.tm === '15:00' && cut.n === '1 h left' && cut.hot && /^#\/suppliers\/cutoff\/pfd\//.test(cut.href) && /^For /.test(cut.s), 'the cut-off: closes at 15:00, 1 h left, hot, to its supplier order (' + JSON.stringify(cut) + ')');
   ok(!!ping && ping.t === '1 new ping' && /^Fryer 2 is down/.test(ping.s), 'the new ping, with its words (' + JSON.stringify(ping) + ')');
+  const quiet = rows.find(r => r.t === 'B&E Chicken order closes');
+  ok(!!quiet && quiet.tm === '19:00' && quiet.n === '' && !quiet.hot && /^For /.test(quiet.s) && !rows.some(r => /^Meat Co/.test(r.t)), 'before its reminder starts, today\'s next cut-off shows quiet: its time, no time left, not hot; the one after it waits (' + JSON.stringify(quiet) + ')');
+  ok(rows.indexOf(cut) < rows.indexOf(quiet) && rows.indexOf(quiet) < rows.indexOf(ping), 'the quiet cut-off sits in its place by time');
   ok(rows.indexOf(fnRow) < rows.indexOf(cut) && rows.indexOf(cut) < rows.indexOf(ping), 'soonest first, the ping after the timed rows (' + rows.map(r => r.t.slice(0, 12)).join(' | ') + ')');
   ok(!rows.some(r => /^You are on/.test(r.t)) && !rows.some(r => /break/.test(r.t)), 'a sous chef with no section and no break on the plan: neither row');
   let s = await secs(p);
