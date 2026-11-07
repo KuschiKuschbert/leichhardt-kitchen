@@ -21,6 +21,23 @@ export const DIGEST_DAYS = 60;
 export const TEAM_DAYS = 30, TEAM_WEEKS = 8;
 const byId = list => list.slice().sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 const print = (prep, orders) => createHash('sha256').update(JSON.stringify([byId(prep), byId(orders)])).digest('hex').slice(0, 24);
+const hash = x => createHash('sha256').update(typeof x === 'string' ? x : JSON.stringify(x)).digest('hex').slice(0, 24);
+/* Plan B 4.2 (7 Nov 2026, docs/firestore-usage.md): a normal night reads the lines of the last REUSE_DAYS days and of the
+   older prep and order days a past-day fix names (config/main.pastEdit), and takes every other day from the published
+   generation (analysisDaily, 1 read a day instead of its 40 to 90 lines). A day is read again whenever anything that
+   goes into it may have changed: the code that works it out (CODE), the record links (references), its supplier
+   orders, deliveries or functions (side, a fingerprint per day), its dashboard row or its digest. A full run reads
+   every day: on Sundays (kitchen time), with options.full, after a past transfer fix (its stamp names no day) or a
+   stamp that cannot tell. Past prep, order and (since 7 Nov 2026, wDays) wastage fixes name their days. */
+export const REUSE_DAYS = 14;
+const CODE = hash(['../js/analysis-core.js', './dashboard.mjs', './analysis.mjs'].map(f => readFileSync(new URL(f, import.meta.url), 'utf8')).join('\n'));
+// the past days a stamp names as changed since `since`, like pastChanged() in js/prep.js: [] none, null cannot tell
+function namedSince(pe, kind, since) {
+  const p = +pe[kind] || 0, days = pe[kind + 'Days'];
+  if (p <= since) return [];
+  if (pe[kind + 'For'] !== p || !Array.isArray(days) || (+pe[kind + 'Prev'] || 0) > since) return null;
+  return days.filter(d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d));
+}
 export async function analyse(K, options = {}) {
   const at = options.at || Date.now(), today = new Date(at + 36000000).toISOString().slice(0, 10);
   const window = options.days || 90, budget = options.budget || 15000;
@@ -53,6 +70,7 @@ export async function analyse(K, options = {}) {
   const cfgSnap = await K.collection('config').doc('main').get(); reads += 1;
   const cfg = cfgSnap.exists ? cfgSnap.data() : {};
   const training = await read(K.collection('training'));
+  const refsPrint = hash(byId(refs));
   const bundled = { window: {} };
   runInNewContext(readFileSync(new URL('../js/data.js', import.meta.url), 'utf8'), bundled, { timeout: 1000 });
   const recipeIds = new Set(bundled.window.LK_DATA.recipes.map(r => r.id));
@@ -65,10 +83,42 @@ export async function analyse(K, options = {}) {
   }
   const deliveries = await read(K.collection('deliveries').where('day', '>=', from).where('day', '<=', to));
   const functions = await read(K.collection('functions').where('date', '>=', from).where('date', '<=', to));
-  const days = [], dash = [], digests = [];
-  // Read the whole rolling window to pick up late corrections. Never trust an earlier learnlog claim as freshness.
+  const days = [], dash = [], digests = [], side = {}, kept = {};
+  const sideOf = day => hash([byId(orders.filter(x => x.day === day)), byId(deliveries.filter(x => x.day === day)), byId(functions.filter(x => x.date === day))]);
+  const indexRef = K.collection('digest').doc('_index'), indexSnap = await indexRef.get(); reads += 1;
+  const before = (indexSnap.exists && indexSnap.data().days) || {};
+  // Plan B 4.2: which days can come from the published generation instead of their lines
+  const pe = (cfg && cfg.pastEdit) || {}, since = +prev.at || 0, fixed = new Set();
+  let reuse = !full && !!prev.generation && prev.code === CODE && prev.refsPrint === refsPrint && prev.days === window && since > 0;
+  for (const kind of ['p', 'o', 'w']) { const d = reuse ? namedSince(pe, kind, since) : []; if (d === null) reuse = false; else d.forEach(x => fixed.add(x)); }
+  if (reuse && (+pe.x || 0) > since) reuse = false;
+  const oldRows = {}, oldDays = {};
+  if (reuse && window > REUSE_DAYS) {
+    const ob = await K.collection('analysis').doc('dashboard').get(); reads += 1;
+    if (ob.exists && ob.data().generation === prev.generation) (ob.data().days || []).forEach(r => { if (r && isDay(r.day)) oldRows[r.day] = r; });
+    const want = [];
+    for (let i = window; i > REUSE_DAYS; i--) {
+      const day = shift(today, -i);
+      if (fixed.has(day) || (skipBefore && day < skipBefore) || !oldRows[day] || (prev.side || {})[day] !== sideOf(day) || (i <= DIGEST_DAYS && !before[day])) continue;
+      want.push(day);
+    }
+    if (reads + want.length > budget) throw new Error('analysis-read-budget');
+    const got = want.length ? await K.firestore.getAll(...want.map(d => K.collection('analysisDaily').doc(prev.generation + '_' + d))) : [];
+    reads += want.length;
+    got.forEach((sn, k) => { if (sn.exists && sn.data().day === want[k]) oldDays[want[k]] = sn.data(); });
+  }
+  let reused = 0;
+  // Read the rolling window to pick up late corrections. Never trust an earlier learnlog claim as freshness.
   for (let i = window; i >= 1; i--) {
     const day = shift(today, -i), input = {};
+    side[day] = sideOf(day);
+    if (oldDays[day]) {
+      // taken as published: lines unchanged by any fix the stamps name, and nothing else that goes into it changed
+      if (!first && isDay(prev.first) && day >= prev.first) first = day;
+      if (i <= DIGEST_DAYS) kept[day] = before[day];
+      days.push(oldDays[day]); dash.push(oldRows[day]); reused++;
+      continue;
+    }
     for (const [source, col, sub] of [['prep', 'days', 'items'], ['orders', 'orders', 'lines'], ['waste', 'waste', 'lines'], ['transfers', 'transfers', 'lines']]) {
       input[source] = skipBefore && day < skipBefore ? [] : await read(K.collection(col).doc(day).collection(sub));
     }
@@ -119,12 +169,12 @@ export async function analyse(K, options = {}) {
   for (const [n, data] of publications) batch.set(K.collection('analysis').doc('range-' + n), data);
   batch.set(K.collection('analysis').doc('dashboard'), board);
   batch.set(K.collection('teamsum').doc('main'), teamsum);
-  batch.set(K.collection('analysis').doc('current'), { v: 1, generation, at, from, to, days: window, reads, references: refs.length, suppliers: suppliers.length, inventory, comparisonOnly: true, previous: prev.generation || '', previousFrom: isDay(prev.from) ? prev.from : '', previousTo: isDay(prev.to) ? prev.to : '', first, full });
+  batch.set(K.collection('analysis').doc('current'), { v: 1, generation, at, from, to, days: window, reads, references: refs.length, suppliers: suppliers.length, inventory, comparisonOnly: true, previous: prev.generation || '', previousFrom: isDay(prev.from) ? prev.from : '', previousTo: isDay(prev.to) ? prev.to : '', first, full, reused, code: CODE, refsPrint, side });
   batch.set(K.collection('analysis').doc('health'), { at, status: 'ok', generation, reads });
   await batch.commit();
-  // The day digests, once everything above is published: only the days whose lines changed.
-  const indexRef = K.collection('digest').doc('_index'), indexSnap = await indexRef.get(); reads += 1;
-  const before = (indexSnap.exists && indexSnap.data().days) || {}, after = {}, write = [];
+  // The day digests, once everything above is published: only the days whose lines changed. A day taken from the
+  // published generation keeps its digest as it is.
+  const after = Object.assign({}, kept), write = [];
   for (const d of digests) {
     const fp = print(d.prep, d.orders), record = { v: 1, day: d.day, at, prep: d.prep, orders: d.orders };
     if (bytes(record) > 700000) continue;   // no digest: the phones read this day's lines
@@ -157,5 +207,5 @@ export async function analyse(K, options = {}) {
     for (let i = 0; i < refs.length; i += 400) { const b = K.firestore.batch(); refs.slice(i, i + 400).forEach(r => b.delete(r)); await b.commit(); }
     removed = refs.length;
   } catch (e) { await K.collection('analysis').doc('health').set({ at, status: 'ok', generation, reads, cleanup: 'pending' }).catch(() => {}); }
-  return { days: window, reads, full, first, cleanup, removed, digests: { written: write.length, deleted: gone.length }, team: { days: teamsum.days.length, plans: plans.length, picks: picks.length } };
+  return { days: window, reads, full, first, reused, cleanup, removed, digests: { written: write.length, deleted: gone.length }, team: { days: teamsum.days.length, plans: plans.length, picks: picks.length } };
 }

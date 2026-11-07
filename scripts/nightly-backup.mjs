@@ -13,10 +13,18 @@
   Needs FIREBASE_SA (a service account key, JSON) and KITCHEN_PIN. Nothing secret is printed: the log says how many
   records were read. Reads only; nothing is written to the book.
   For a test run against the Firestore emulator: FIRESTORE_EMULATOR_HOST=127.0.0.1:8089 KITCHEN_PIN=000000 node nightly-backup.mjs out.json
+
+  Plan B 4.2 (7 Nov 2026, docs/firestore-usage.md): PREV_BACKUP is last night's backup, decrypted by the workflow into
+  the runner's temporary folder. The prep, order, wastage, review and transfer days older than REUSE_DAYS are taken from
+  it instead of read again (5 queries and their lines a day), unless a past-day fix names the day (config/main.pastEdit,
+  read as pastChanged() reads it on the phones). Every file is still the whole window. Every day is read on Sundays
+  (kitchen time), without a usable earlier file (missing, unreadable, more than 36 hours old), after a past transfer fix
+  (its stamp names no day) or a stamp that cannot tell. A past prep, order or wastage fix names its days (wDays since 7
+  Nov 2026), so it is in the next night's backup. BACKUP_NOW (milliseconds) sets the time for the emulator check only.
 */
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { writeFileSync } from 'fs';
+import { writeFileSync, readFileSync } from 'fs';
 
 const PIN = process.env.KITCHEN_PIN || '';
 const DAYS = +(process.env.BACKUP_DAYS || 45);
@@ -51,8 +59,9 @@ async function subs(list, top, name) {
   return into;
 }
 
-const today = kitchenDay(Date.now());
-const out = { exportedAt: new Date().toISOString(), by: 'nightly backup', days: {}, orders: {}, waste: {}, wasteReviews: {}, transfers: {} };
+const NOW = process.env.FIRESTORE_EMULATOR_HOST && +process.env.BACKUP_NOW > 0 ? +process.env.BACKUP_NOW : Date.now();
+const today = kitchenDay(NOW);
+const out = { exportedAt: new Date(NOW).toISOString(), by: 'nightly backup', days: {}, orders: {}, waste: {}, wasteReviews: {}, transfers: {} };
 let reads = 0;
 const cfg = await K.collection('config').doc('main').get(); reads++;
 out.config = cfg.exists ? plain(cfg.data()) : null;
@@ -80,9 +89,32 @@ reads += out.functions.length + out.fncontact.length;
 reads += out.book.length + out.recipes.length + out.drawings.length;
 out.pins = (await all('pinset')).map(x => ({ id: x.id, name: x.name, setAt: x.setAt }));
 reads += out.notes.length + out.directnotes.length + out.minutes.length + out.pins.length;
-let lines = 0, dayN = 0;
+// Plan B 4.2: which old days come from last night's file (see the top)
+const REUSE_DAYS = 14, DATED = ['days', 'orders', 'waste', 'wasteReviews', 'transfers'];
+function namedSince(pe, kind, since) {
+  const p = +pe[kind] || 0, days = pe[kind + 'Days'];
+  if (p <= since) return [];
+  if (pe[kind + 'For'] !== p || !Array.isArray(days) || (+pe[kind + 'Prev'] || 0) > since) return null;
+  return days.filter(d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d));
+}
+let prev = null;
+if (process.env.PREV_BACKUP) { try { prev = JSON.parse(readFileSync(process.env.PREV_BACKUP, 'utf8')); } catch (e) { prev = null; } }
+const since = prev ? Date.parse(prev.exportedAt) : NaN, fixed = new Set();
+let reuse = !!prev && new Date(NOW + ZONE).getUTCDay() !== 0 && Number.isFinite(since) && since < NOW && NOW - since < 36 * 3600000 &&
+  DATED.every(k => prev[k] && typeof prev[k] === 'object' && !Array.isArray(prev[k]));
+const pe = (out.config && out.config.pastEdit) || {};
+for (const kind of ['p', 'o', 'w']) { const d = reuse ? namedSince(pe, kind, since) : []; if (d === null) reuse = false; else d.forEach(x => fixed.add(x)); }
+if (reuse && (+pe.x || 0) > since) reuse = false;
+const prevToday = reuse ? kitchenDay(since) : '', prevFrom = reuse ? shift(prevToday, -(DAYS - 1)) : '';
+let lines = 0, dayN = 0, taken = 0;
 for (let k = 0; k < DAYS; k++) {
   const d = shift(today, -k);
+  if (reuse && k >= REUSE_DAYS && !fixed.has(d) && d >= prevFrom && d < prevToday) {
+    DATED.forEach(key => { if (prev[key][d] != null) out[key][d] = prev[key][d]; });
+    if (out.days[d]) { lines += out.days[d].length; dayN++; }
+    taken++;
+    continue;
+  }
   const [items, ords, waste, review, trans] = await Promise.all([
     K.collection('days').doc(d).collection('items').get(), K.collection('orders').doc(d).collection('lines').get(),
     K.collection('waste').doc(d).collection('lines').get(), K.collection('waste').doc(d).get(),
@@ -96,5 +128,6 @@ for (let k = 0; k < DAYS; k++) {
   if (trans.size) out.transfers[d] = grab(trans);
 }
 writeFileSync(OUT, JSON.stringify(out, null, 1), { mode: 0o600, flag: 'wx' });
+console.log(taken ? taken + ' older days taken from the last backup (' + reads + ' reads).' : 'Every day read (' + reads + ' reads)' + (prev ? '' : ', no earlier backup to take older days from') + '.');
 console.log('Backed up ' + lines + ' prep lines from ' + dayN + ' of the last ' + DAYS + ' days, ' + (out.notes.length + out.directnotes.length) + ' shift pings, minutes from ' + out.minutes.length + ' meetings, ' + out.learned.length + ' learned items, ' + out.guides.length + ' guides and ' + out.recipes.length + ' recipes changed in the book (' + reads + ' reads).');
 process.exit(0);

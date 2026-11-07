@@ -604,6 +604,15 @@ await ok(W([['config/main', { pastEdit: { p: st, pDays: '2026-11-04' } }, true]]
 await ok(W([['config/main', { pastEdit: { p: st, pPrev: 'before' } }, true]], { id: 'sam' }), false, 'pastEdit: the stamp before is a number');
 await ok(W([['config/main', { pastEdit: { p: st, pFor: st, pDays: ['2026-11-04'] } }, true]], { id: 'ann' }), false, 'pastEdit: staff cannot name past days either');
 await ok(W([['config/main', { pastEdit: { p: st + 1 } }, true]], { id: 'sam' }), true, 'pastEdit: an older book still stamps p alone, leaving pFor behind');
+// A past wastage fix names its days too (7 Nov 2026)
+await ok(W([['config/main', { pastEdit: { w: st, wPrev: 0, wFor: st, wDays: ['2026-11-04'] } }, true]], { id: 'sam' }), true, 'pastEdit: a sous chef names the past wastage days that changed');
+await ok(W([['config/main', { pastEdit: { w: st + 2, wPrev: st, wFor: st + 2, wDays: ['2026-11-04', '2026-11-02'] } }, true]], { id: 'hd' }), true, 'pastEdit: the head chef names the past wastage days that changed');
+await ok(W([['config/main', { pastEdit: { p: st + 3 } }, true]], { id: 'sam' }), true, 'pastEdit: with wastage days in the map, a sous chef still stamps prep');
+await ok(W([['config/main', { pastEdit: { w: st, wFor: st, wDays: Array.from({ length: 11 }, (_, i) => '2026-10-' + String(10 + i)) } }, true]], { id: 'sam' }), false, 'pastEdit: at most 10 named wastage days');
+await ok(W([['config/main', { pastEdit: { w: st, wDays: '2026-11-04' } }, true]], { id: 'sam' }), false, 'pastEdit: the named wastage days are a list');
+await ok(W([['config/main', { pastEdit: { w: st, wPrev: 'before' } }, true]], { id: 'sam' }), false, 'pastEdit: the wastage stamp before is a number');
+await ok(W([['config/main', { pastEdit: { w: st, wFor: 'now' } }, true]], { id: 'sam' }), false, 'pastEdit: the wastage stamp the days belong to is a number');
+await ok(W([['config/main', { pastEdit: { w: st, wFor: st, wDays: ['2026-11-04'] } }, true]], { id: 'ann' }), false, 'pastEdit: staff cannot name past wastage days');
 // I'm on it (5 Nov 2026): a stamp names an active kitchen person, on an open line, never on a new line, with Tick
 await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'days/' + TODAY + '/items/on1'), line({ addedAt: Date.now() - 600000 })); });
 const ON = 'days/' + TODAY + '/items/on1', stamp = (id, name, x) => Object.assign({ onBy: name, onById: id, onAt: Date.now() }, x || {});

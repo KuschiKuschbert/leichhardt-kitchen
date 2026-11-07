@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: read
+  actions: read   # last night's backup file (Plan B 4.2): the older days are taken from it, not read again
 
 concurrency:
   group: nightly-backup
@@ -38,11 +39,29 @@ jobs:
       - name: Install
         working-directory: scripts
         run: npm ci --no-audit --no-fund
+      # Plan B 4.2 (7 Nov 2026, docs/backup-recovery.md): last night's file, decrypted into the runner's temporary folder
+      # only, so the days older than 14 that no fix names come from it. Anything wrong here and every day is read.
+      - name: Last night's backup, for the days that have not changed
+        id: prev
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BACKUP_KEY: ${{ secrets.BACKUP_KEY }}
+        run: |
+          set -euo pipefail
+          id=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/nightly-backup.yml/runs?status=success&per_page=1" --jq '.workflow_runs[0].id // empty')
+          [ -n "$id" ] || { echo "No earlier backup. Every day is read."; exit 0; }
+          gh run download "$id" -R "$GITHUB_REPOSITORY" -D "$RUNNER_TEMP/prev"
+          file=$(find "$RUNNER_TEMP/prev" -name '*.json.enc' | head -1)
+          [ -n "$file" ] || { echo "The earlier backup has no file. Every day is read."; exit 0; }
+          node scripts/backup-crypto.mjs decrypt "$file" "$RUNNER_TEMP/prev.json"
+          echo "file=$RUNNER_TEMP/prev.json" >> "$GITHUB_OUTPUT"
       - name: Read the book
         working-directory: scripts
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+          PREV_BACKUP: ${{ steps.prev.outputs.file }}
         run: node nightly-backup.mjs "$RUNNER_TEMP/backup.json"
       - name: Encrypt and verify
         env:
@@ -57,7 +76,7 @@ jobs:
           ls -l "$RUNNER_TEMP/out"
       - name: Remove plaintext
         if: always()
-        run: rm -f -- "$RUNNER_TEMP/backup.json" "$RUNNER_TEMP/backup-verified.json"
+        run: rm -rf -- "$RUNNER_TEMP/backup.json" "$RUNNER_TEMP/backup-verified.json" "$RUNNER_TEMP/prev.json" "$RUNNER_TEMP/prev"
       - name: Keep it for 90 days
         uses: actions/upload-artifact@v4
         with:
