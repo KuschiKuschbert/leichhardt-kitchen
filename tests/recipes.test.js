@@ -3,15 +3,18 @@ const L = require('./lib');
 const { R, ok } = L.results();
 const names = p => p.evaluate(() => [...document.querySelectorAll('#shelves a.dish:not(.faded), #results a.tile')].map(a => a.getAttribute('aria-label') || a.querySelector('.t-name').textContent));
 async function find(p, v) { await p.fill('#find', v); await L.settle(p, 250); }
-// Native smooth scrolling can still be moving after the page's other work settles.
+// Native smooth scrolling can still be moving after the page's other work settles. Since the redesign's step 6
+// (8 Nov 2026) the jump row stays under the top bar while the card scrolls, so a jump lands just under the row.
+const rowBottom = p => p.evaluate(() => { const nav = document.querySelector('.jumps'); return nav ? Math.max(0, Math.round(nav.getBoundingClientRect().bottom)) : 0; });
 async function waitForJump(p, id, allowEnd) {
   try {
     await L.waitFor(p, ({ id, allowEnd }) => {
       const target = document.getElementById(id);
       if (!target) return false;
+      const nav = document.querySelector('.jumps'), base = nav ? Math.max(0, nav.getBoundingClientRect().bottom) : 0;
       const top = target.getBoundingClientRect().top;
       const atEnd = Math.abs(scrollY + innerHeight - document.documentElement.scrollHeight) < 4;
-      return top >= -2 && (top < 60 || allowEnd && atEnd && top < innerHeight);
+      return top >= base - 2 && (top < base + 60 || allowEnd && atEnd && top < innerHeight);
     }, { id, allowEnd }, 4000);
   } catch (_) {
     console.error('Recipe jump did not reach its target: ' + JSON.stringify(await p.evaluate(id => ({
@@ -69,22 +72,48 @@ async function waitForJump(p, id, allowEnd) {
   ok(p.errors.length === 0, 'list: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // recipe card jump row (Pass and Tiles cards)
+  // recipe card jump row (Pass and Tiles cards). Since the redesign's step 6 (8 Nov 2026) it stays under the top bar
+  // while the card scrolls, and after Allergens, Ingredients and Method it names the plate and the side view.
   for (const view of ['pass', 'tiles']) {
     p = await L.open(b, '#/r/barra', { wait: 1200, settings: { view } });
     ok(await p.$('.jumps') !== null, view + ' card: jump row on a phone');
+    const words = await p.$$eval('.jumps [data-act="jump"]', l => l.map(e => e.textContent));
+    ok(words.join() === 'Allergens,Ingredients,Method,Plate,Side view', view + ' card: the row names every part, Allergens, Ingredients and Method first (' + words.join(', ') + ')');
+    ok(await p.$$eval('.jumps [data-act="jump"]', l => l.slice(0, 3).every(e => { const r = e.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth; })), view + ' card: Allergens, Ingredients and Method all show on a 390 px phone');
     await p.click('[data-act="jump"][data-val="r-steps"]'); await waitForJump(p, 'r-steps', false);
+    let base = await rowBottom(p);
     const st = await p.evaluate(() => document.getElementById('r-steps').getBoundingClientRect().top);
-    ok(st >= -2 && st < 60, view + ' card: Method jumps to the method (' + Math.round(st) + ')');
-    await p.click('[data-act="jump"][data-val="r-allergens"]', { timeout: 2000 }).catch(() => {});
+    const nav = await p.evaluate(() => Math.round(document.querySelector('.jumps').getBoundingClientRect().top));
+    ok(st >= base - 2 && st < base + 60, view + ' card: Method jumps to the method, just under the row (' + Math.round(st) + ', row ends ' + base + ')');
+    ok(nav >= 0 && nav < 10, view + ' card: the row stays under the top bar at the method (' + nav + ')');
+    // the allergens are one tap from the method
+    await p.click('[data-act="jump"][data-val="r-allergens"]'); await waitForJump(p, 'r-allergens', false);
+    base = await rowBottom(p);
+    const at = await p.evaluate(() => document.getElementById('r-allergens').getBoundingClientRect().top);
+    ok(at >= base - 2 && at < base + 60, view + ' card: Allergens from the method in one tap (' + Math.round(at) + ')');
+    for (const id of ['r-plate', 'r-side']) {
+      await p.click('[data-act="jump"][data-val="' + id + '"]'); await waitForJump(p, id, true);
+      base = await rowBottom(p);
+      const t = await p.evaluate(i => document.getElementById(i).getBoundingClientRect().top, id);
+      ok(t >= base - 2 && t < 844, view + ' card: ' + id + ' jumps to its drawing (' + Math.round(t) + ')');
+    }
     await p.evaluate(() => window.scrollTo(0, 0));
     await p.click('[data-act="jump"][data-val="r-ing"]'); await waitForJump(p, 'r-ing', true);
+    base = await rowBottom(p);
     const innerHeight = 844; const it = await p.evaluate(() => document.getElementById('r-ing').getBoundingClientRect().top);
     const atEnd = await p.evaluate(() => Math.abs(window.scrollY + innerHeight - document.documentElement.scrollHeight) < 4);
-    ok((it >= -2 && it < 60) || (atEnd && it < innerHeight), view + ' card: Ingredients jumps to the ingredients (' + Math.round(it) + ')');
-    ok(p.errors.length === 0, view + ' card: no page errors ' + p.errors.join(' | '));
+    ok((it >= base - 2 && it < base + 60) || (atEnd && it < innerHeight), view + ' card: Ingredients jumps to the ingredients (' + Math.round(it) + ')');
+    // the plating line runs across the card, under the name and its number
+    const head = await p.evaluate(() => { const h = document.querySelector('.card-head'), y = h.querySelector('.yield'), n = h.querySelector('.num'), t = h.querySelector('h2'); return { hw: Math.round(h.getBoundingClientRect().width), yw: Math.round(y.getBoundingClientRect().width), under: y.getBoundingClientRect().top >= Math.max(n.getBoundingClientRect().bottom, t.getBoundingClientRect().bottom) - 1 }; });
+    ok(head.under && head.yw >= head.hw - 2, view + ' card: the plating line runs across the card under the name and number (' + JSON.stringify(head) + ')');
+    ok(p.errors.length === 0 && !(await L.overflow(p)), view + ' card: no page errors, no sideways scroll ' + p.errors.join(' | '));
     await p.context().close();
   }
+  // a batch recipe: no plate, so no Plate chip; Tiles names the pan only when it has a drawing
+  p = await L.open(b, '#/r/jasmine-rice', { wait: 1200, settings: { view: 'tiles' } });
+  const bw = await p.$$eval('.jumps [data-act="jump"]', l => l.map(e => e.textContent));
+  ok(bw.slice(0, 3).join() === 'Allergens,Ingredients,Method' && bw.indexOf('Plate') < 0 && (bw.indexOf('Pan') < 0 || !!(await p.$('#r-plate'))), 'batch card: no Plate chip, and Pan only with a pan drawing (' + bw.join(', ') + ')');
+  await p.context().close();
   p = await L.open(b, '#/r/barra', { width: 1280, height: 900, wait: 1200 });
   ok(await p.evaluate(() => getComputedStyle(document.querySelector('.jumps')).display === 'none'), 'desktop card: no jump row (columns side by side)');
   await p.context().close();

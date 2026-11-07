@@ -608,11 +608,15 @@
     var shown = D.recipes.filter(function (r) { return matches(r.id) && freeOk(r.id) && (inKind(r) || settings.view !== 'tiles'); }).length;
     return shown === D.recipes.length ? plural(D.recipes.length, 'recipe', 'recipes') : shown + ' of ' + D.recipes.length + ' recipes';
   }
-  /* Search, with the recipe count above it and the Pass / Tiles switch right next to it. */
+  /* Search, with the recipe count above it and the Pass / Tiles switch right next to it. Since the redesign's step 6
+     (8 Nov 2026) it is one search pill with its magnifier inside, and the word Search is for screen readers only: on a
+     phone the count line shows only while a search or filter is on, so the list starts one line higher. */
+  var FIND_ICON = '<svg class="find-i" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 15.5 L21 21" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>';
   function searchField(placeholder, count) {
-    return '<div class="field find-bar"><div class="field-head"><label class="label" for="find">Search</label>' + (count != null ? '<span class="count' + (/ of /.test(count) ? ' is-on' : '') + '" id="count">' + esc(count) + '</span>' : '') + '</div>' +
+    var on = count != null && / of /.test(count);
+    return '<div class="field find-bar"><div class="field-head' + (on ? ' is-on' : '') + '"><label class="visually-hidden" for="find">Search</label>' + (count != null ? '<span class="count' + (on ? ' is-on' : '') + '" id="count">' + esc(count) + '</span>' : '') + '</div>' +
       // autocorrect off: iOS would turn "parmy" into "party" before the book's own typo fix sees it
-      '<div class="search-row"><span class="find-wrap' + (ui.query ? ' has-q' : '') + '"><input id="find" class="search" type="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" data-k="find" placeholder="' + esc(placeholder) + '" value="' + esc(ui.query) + '">' +
+      '<div class="search-row"><span class="find-wrap' + (ui.query ? ' has-q' : '') + '">' + FIND_ICON + '<input id="find" class="search" type="search" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" data-k="find" placeholder="' + esc(placeholder) + '" value="' + esc(ui.query) + '">' +
       '<button type="button" class="find-x" data-act="clearfind" aria-label="Clear the search">&times;</button></span>' + viewSwitch() + '</div></div>';
   }
   function freeChips(scroll) {
@@ -634,11 +638,13 @@
     return '<div class="field"><div class="row-label"><span class="label" id="free-label">Allergens</span>' + amodeSwitch(true) + '</div><div class="chips scroll" role="group" aria-labelledby="free-label">' +
       D.allergens.map(function (a) { var on = ui.free.indexOf(a) >= 0; return '<button type="button" class="chip" data-act="free" data-val="' + esc(a) + '" data-k="free:' + esc(a) + '" aria-pressed="' + on + '">' + esc(a) + '</button>'; }).join('') + '</div></div>';
   }
+  /* Contains or Free from (redesign step 6, 8 Nov 2026: it said Show where, which did not say which way the filter
+     works). Contains marks the dishes that have the allergen, at every level; Free from shows only the dishes without it. */
   function amodeSwitch(free) {
-    return '<span class="amode" role="group" aria-label="What the allergen chips do"><button type="button" class="chip sq" data-act="amode" data-val="lens" aria-pressed="' + !free + '">Show where</button><button type="button" class="chip sq" data-act="amode" data-val="free" aria-pressed="' + free + '">Free from</button></span>';
+    return '<span class="amode" role="group" aria-label="What the allergen chips do"><button type="button" class="chip sq" data-act="amode" data-val="lens" aria-pressed="' + !free + '">Contains</button><button type="button" class="chip sq" data-act="amode" data-val="free" aria-pressed="' + free + '">Free from</button></span>';
   }
   function lensChips(withSwitch) {
-    var hint = ui.lens ? 'Marked = has ' + ui.lens + '. ? = may have it.' : 'Pick one to see where it is, at every level.';
+    var hint = ui.lens ? 'Marked = has ' + ui.lens + '. ? = may have it.' : withSwitch ? 'Pick one to mark the dishes that contain it, at every level.' : 'Pick one to see where it is, at every level.';
     return '<div class="field"><div class="row-label"><span class="label" id="lens-label">' + (withSwitch ? 'Allergens' : 'Allergen lens') + '</span>' + (withSwitch ? amodeSwitch(false) : '') + '<span class="hint">' + esc(hint) + '</span></div>' +
       '<div class="chips scroll" role="group" aria-labelledby="lens-label">' + D.allergens.map(function (a) {
         return '<button type="button" class="chip" data-act="lens" data-val="' + esc(a) + '" data-k="lens:' + esc(a) + '" aria-pressed="' + (ui.lens === a) + '">' + esc(a) + '</button>';
@@ -646,11 +652,15 @@
   }
 
   /* ---------- recipe parts ---------- */
+  /* The name with its card number beside it, then the plating line across the whole card (redesign step 6, 8 Nov 2026).
+     The number used to stand beside every line, so on a phone the plating line wrapped to seven narrow lines. The
+     words are the recipe's own, as written: nothing is split or reworded. */
   function cardHead(r) {
-    return '<div class="card-head"><div><span class="eyebrow">' + esc(KIND[r.kind] + ' · ' + r.forLine) + '</span>' + (r.done ? DONE_TAG : '') +
-      '<h2 id="rtitle" tabindex="-1">' + esc(r.name) + '</h2><span class="yield">' + esc(r.yield) + '</span>' +
-      (r.menu ? '<span class="menu-line"><b>On the menu:</b> ' + esc(r.menu) + '</span>' : '') + '</div>' +
-      '<span class="num"><span class="visually-hidden">Card </span>' + esc(r.no) + '</span></div>';
+    return '<div class="card-head ch-grid"><div class="ch-name"><span class="eyebrow">' + esc(KIND[r.kind] + ' · ' + r.forLine) + '</span>' + (r.done ? DONE_TAG : '') +
+      '<h2 id="rtitle" tabindex="-1">' + esc(r.name) + '</h2></div>' +
+      '<span class="num"><span class="visually-hidden">Card </span>' + esc(r.no) + '</span>' +
+      '<div class="ch-line"><span class="yield">' + esc(r.yield) + '</span>' +
+      (r.menu ? '<span class="menu-line"><b>On the menu:</b> ' + esc(r.menu) + '</span>' : '') + '</div></div>';
   }
   function allergenBox(r) {
     var list = rows[r.id], miss = missing[r.id];
@@ -711,10 +721,11 @@
     if (!d) return '';
     return '<div class="sec"><h3 class="h3">' + esc(d.title || 'How to cut') + '</h3><svg class="diagram" viewBox="' + esc(d.viewBox) + '"' + (d.maxWidth ? ' style="max-width: ' + esc(d.maxWidth) + '"' : '') + ' role="img" aria-label="' + esc(d.label) + '">' + d.body + '</svg></div>';
   }
+  function sideArt(r) { return ART.sides && (r.side && r.side.charAt(0) === '@' ? ART.sides[r.side] : ART.sides[r.id]); }
   function sideView(r) {
-    var v = ART.sides && (r.side && r.side.charAt(0) === '@' ? ART.sides[r.side] : ART.sides[r.id]);
+    var v = sideArt(r);
     if (!v) return '';
-    return '<div class="sec"><h3 class="h3">From the side</h3><div class="side-art"><svg viewBox="' + esc(v.viewBox) + '" role="img" aria-label="' + esc(v.label || 'Side view of ' + r.name + ' with each part labelled') + '">' + v.body + '</svg></div></div>';
+    return '<div class="sec" id="r-side"><h3 class="h3">From the side</h3><div class="side-art"><svg viewBox="' + esc(v.viewBox) + '" role="img" aria-label="' + esc(v.label || 'Side view of ' + r.name + ' with each part labelled') + '">' + v.body + '</svg></div></div>';
   }
   function steps(r) {
     if (!r.sections.length) return '<div class="box beige"><span class="label">Method</span><div>Not written up yet. Ask the head chef or sous chef.</div></div>';
@@ -736,10 +747,16 @@
     });
     return '<nav class="crumbs" aria-label="Breadcrumb">' + parts.join('<span class="sep" aria-hidden="true">/</span>') + '</nav>';
   }
-  /* Phones and tablets (the columns stack): jump straight to the allergens, the ingredients or the method. */
-  function jumps() {
-    return '<nav class="jumps" aria-label="Jump to"><button type="button" class="chip" data-act="jump" data-val="r-allergens">Allergens</button>' +
-      '<button type="button" class="chip" data-act="jump" data-val="r-ing">Ingredients</button><button type="button" class="chip" data-act="jump" data-val="r-steps">Method</button></nav>';
+  /* Phones and tablets (the columns stack): jump straight to each part of the card. Since the redesign's step 6
+     (8 Nov 2026, one scrolling card, Airbnb's section row) the row stays under the top bar while the card scrolls, so
+     the allergens are one tap from the method, and after Allergens, Ingredients and Method (first, as before, so all
+     three show on a 390 px phone) it names the drawings the card has: the plate or the pan, and the side view. */
+  function jumps(r, pass) {
+    var dish = isDish(r), draw = dish ? (pass || (r.art && ART.plates[r.art])) : (r.art && ART.pans[r.art]);
+    var side = (dish || !pass) && sideArt(r);
+    var chip = function (id, word) { return '<button type="button" class="chip" data-act="jump" data-val="' + id + '">' + word + '</button>'; };
+    return '<nav class="jumps" aria-label="Jump to">' + chip('r-allergens', 'Allergens') + chip('r-ing', 'Ingredients') + chip('r-steps', 'Method') +
+      (draw ? chip('r-plate', dish ? 'Plate' : 'Pan') : '') + (side ? chip('r-side', 'Side view') : '') + '</nav>';
   }
   /* "Change this recipe" for the head chef, in its own slot so a sign-in or sign-out can redraw it (lk-who, lk-admin, lk-cfg) */
   function editSlot(r) {
@@ -750,10 +767,10 @@
     if (el && route.name === 'recipe') el.outerHTML = editSlot(byId[route.stack[route.stack.length - 1]]);
   }
   function recipeCard(r, stack, withHome) {
-    return '<article class="card' + (r.done ? ' done' : '') + '">' + crumbs(stack, withHome) + cardHead(r) + editSlot(r) + jumps() + allergenBox(r) +
+    return '<article class="card' + (r.done ? ' done' : '') + '">' + crumbs(stack, withHome) + cardHead(r) + editSlot(r) + jumps(r, false) + allergenBox(r) +
       '<div class="cols"><div class="col"><h3 class="h3" id="r-ing">Ingredients</h3>' + ingTable(r, stack, false) + tipBox(r) + guideBox(r) + usedBox(r, stack) +
-      (isDish(r) && r.art && ART.plates[r.art] ? '<div class="sec"><h3 class="h3">On the plate</h3>' + art(r, 'card-art') + '</div>' : '') + sideView(r) +
-      (!isDish(r) && r.art && ART.pans[r.art] ? '<div class="sec"><h3 class="h3">In the pan</h3>' + art(r, 'card-art') + '</div>' : '') + '</div>' +
+      (isDish(r) && r.art && ART.plates[r.art] ? '<div class="sec" id="r-plate"><h3 class="h3">On the plate</h3>' + art(r, 'card-art') + '</div>' : '') + sideView(r) +
+      (!isDish(r) && r.art && ART.pans[r.art] ? '<div class="sec" id="r-plate"><h3 class="h3">In the pan</h3>' + art(r, 'card-art') + '</div>' : '') + '</div>' +
       '<div class="col wide"><div id="r-steps" class="jump-at"></div>' + safetyBox(r) + diagram(r) + steps(r) + '</div></div></article>';
   }
 
@@ -915,17 +932,17 @@
     var left;
     if (dish) {
       var pk = ui.pick !== null && r.pins[ui.pick] && !r.pins[ui.pick].link ? r.pins[ui.pick] : null;
-      left = '<div class="stage' + (ui.lens ? ' lensed' : '') + (r.done ? ' done' : '') + '" data-rid="' + esc(r.id) + '">' + art(r, 'art') + r.pins.map(function (p, k) { return pinHTML(p, k, stack); }).join('') + '</div>' +
+      left = '<div id="r-plate" class="stage' + (ui.lens ? ' lensed' : '') + (r.done ? ' done' : '') + '" data-rid="' + esc(r.id) + '">' + art(r, 'art') + r.pins.map(function (p, k) { return pinHTML(p, k, stack); }).join('') + '</div>' +
         (pk ? '<div class="box outline" style="background: #fff"><span class="h3">' + esc(pk.label) + '</span>' + (pk.note ? '<div>' + esc(pk.note) + '</div>' : '') + '<div class="chips">' +
           ((pk.tags && pk.tags.length) ? pk.tags.map(function (t) { return '<span class="tag' + (t.slice(-1) === '?' ? ' maybe' : '') + '">' + esc(t) + '</span>'; }).join('') : '<span class="hint">No listed allergens</span>') + '</div></div>'
           : '<div class="hint" style="text-align: center">' + (r.pins.length ? 'Tap anything on the plate. A pin with an arrow opens its own recipe.' : 'No pins on this plate yet.') + '</div>') + sideView(r) +
         // a dish used on another (Side Salad on the Grill Maiden's Board) and a dish's tip box, as on Tiles
         usedBox(r, stack, 'Goes on') + tipBox(r);
     } else {
-      left = '<div class="pan-art' + (r.done ? ' done' : '') + '">' + art(r, 'art') + '</div>' + usedBox(r, stack, 'Goes on') + tipBox(r) + guideBox(r);
+      left = '<div class="pan-art' + (r.done ? ' done' : '') + '"' + (r.art && ART.pans[r.art] ? ' id="r-plate"' : '') + '>' + art(r, 'art') + '</div>' + usedBox(r, stack, 'Goes on') + tipBox(r) + guideBox(r);
     }
     // phones: the name, yield and allergens come first, then the drawing, then the rest (order in app.css, .cols under 900px)
-    return '<div class="page">' + trail + jumps() + lensFold() +
+    return '<div class="page">' + trail + jumps(r, true) + lensFold() +
       '<main id="main" class="cols"><div class="col">' + left + '</div><div class="col wide">' + cardHead(r) + editSlot(r) + allergenBox(r) +
       '<div class="sec"><h3 class="h3" id="r-ing">' + (dish ? 'Everything on it' : 'Into the pan') + '</h3>' + ingTable(r, stack, true) + '</div>' +
       '<div id="r-steps" class="jump-at"></div>' + safetyBox(r) + diagram(r) + (dish ? guideBox(r) : '') + steps(r) +
@@ -1737,7 +1754,7 @@
     var box, count = document.getElementById('count');
     if (view === 'tiles' && (box = document.getElementById('results'))) { box.innerHTML = tilesHTML(); if (count) count.textContent = countText(); }
     else if (view === 'pass' && (box = document.getElementById('shelves'))) { box.innerHTML = shelvesHTML(); if (count) count.textContent = passCount(); }
-    if (count) count.classList.toggle('is-on', / of /.test(count.textContent));
+    if (count) { count.classList.toggle('is-on', / of /.test(count.textContent)); if (count.parentNode) count.parentNode.classList.toggle('is-on', / of /.test(count.textContent)); }
   }
 
   /* A search that finds no recipe at all is queued on this phone (prefixes typed on the way are dropped).
