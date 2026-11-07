@@ -320,14 +320,15 @@ function hasPrivateContact(value) {
   await L.waitFor(p, () => /Jones 40th/.test((document.getElementById('fn-band') || {}).textContent || ''));
   ok(!!(await p.$('#fn-band a.fn-svc[href="#/fn/now"]')), 'service: with two functions on, the band offers the service view');
   await tap(p, '#fn-band a.fn-svc'); await L.settle(p, 500);
-  await L.waitFor(p, () => document.querySelectorAll('.fn-svc-row').length === 2);
+  // every round still to go is on the board since 8 Nov 2026 (the drawing): Smith's three and Jones's one
+  await L.waitFor(p, () => document.querySelectorAll('.fn-svc-row').length === 4);
   let sv = await p.$$eval('.fn-svc-row', els => els.map(e => e.textContent.replace(/\s+/g, ' ')));
   ok(/18:30 Late Smith 50th · Beer garden · round 1 of 3/.test(sv[0]) && /3 × Antipasto/.test(sv[0]) && /18:40 Jones 40th · Function room/.test(sv[1]) && /2 × Pizza/.test(sv[1]), 'service: the late round first, then the one due at 18:40 (' + sv.join(' / ').slice(0, 260) + ')');
   const tp = (await txt(p, '.fn-svc-page .fn-next') || '').replace(/\s+/g, ' ');
   ok(/To plate now 8 platters/.test(tp) && /4 ?× ?Antipasto Platter ?2 ?× ?Aussie Platter ?2 ?× ?Pizza Platter/.test(tp), 'service: to plate now adds both functions up, most first (' + tp.slice(0, 200) + ')');
   await tap(p, '.fn-svc-row [data-fn="sent"][data-id="smith"]'); await L.settle(p, 400);
   sv = await p.$$eval('.fn-svc-row', els => els.map(e => e.textContent.replace(/\s+/g, ' ')));
-  ok(/18:40 Jones 40th/.test(sv[0]) && /19:00 Later Smith 50th · Beer garden · round 2 of 3/.test(sv[1]), 'service: Sent moves Smith on to round 2, after Jones (' + sv.join(' / ').slice(0, 200) + ')');
+  ok(sv.length === 3 && /18:40 Jones 40th/.test(sv[0]) && /19:00 Smith 50th · Beer garden · round 2 of 3/.test(sv[1]) && /19:30 Smith 50th · Beer garden · round 3 of 3/.test(sv[2]) && !/Later/.test(sv.join(' ')), 'service: Sent takes Smith round 1 off; Jones, then Smith rounds 2 and 3, one time each (' + sv.join(' / ').slice(0, 260) + ')');
   ok(/Smith 50th round 1 sent 18:3\d, Ann/.test(await txt(p, '.fn-svc-just') || '') && !!(await p.$('.fn-svc-just [data-fn="unsent"]')), 'service: just sent shows who, with Undo');
   ok(await p.$eval('#fn-band', e => e.hidden), 'service: no band above the service view (it shows the same rounds)');
   await p.goto(L.BASE + '#/recipes'); await L.settle(p, 600);

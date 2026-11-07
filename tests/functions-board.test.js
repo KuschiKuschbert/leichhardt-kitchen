@@ -75,11 +75,13 @@ const flat = s => (s || '').replace(/\s+/g, ' ').trim();
 
   // 3. the service view: the board with the time left, the dietaries on every round, the prints at the end
   await p.goto(L.BASE + '#/fn/now'); await L.settle(p, 600);
-  await L.waitFor(p, () => document.querySelectorAll('.fn-svc-board .fn-svc-row').length === 2);
+  // every round still to go: the birthday's three and the club lunch, in time order (8 Nov 2026, as drawn)
+  await L.waitFor(p, () => document.querySelectorAll('.fn-svc-board .fn-svc-row').length === 4);
   const rows = await p.$$eval('.fn-svc-board .fn-svc-row', l => l.map(r => ({ t: r.textContent.replace(/\s+/g, ' ').trim(), cd: r.querySelector('.fn-svc-cd').textContent,
     diet: ((r.querySelector('.fn-svc-diet') || {}).textContent || ''), html: !!r.querySelector('.fn-svc-diet b') })));
-  ok(/^14:10 Birthday 60th · Function room · round 1 of 3/.test(rows[0].t) && rows[0].cd === 'In 10 min' && rows[1].cd === 'In 30 min', 'service: each round says how long until it goes (' + rows.map(r => r.cd).join(', ') + ')');
-  ok(/^Dietaries and notes3 gluten free, 1 vegan\. <b>Nut<\/b> allergy at table 4\.$/.test(rows[0].diet) && !rows[0].html && rows[1].diet === '', 'service: the dietaries on the round, as text; none where the booking has none (' + rows[0].diet + ')');
+  ok(/^14:10 Birthday 60th · Function room · round 1 of 3/.test(rows[0].t) && rows[0].cd === 'In 10 min' && rows[1].cd === 'In 30 min' && rows[2].cd === 'In 50 min' && rows[3].cd === 'In 1 h 30 min' && /^14:30 Club lunch/.test(rows[1].t) && /round 3 of 3/.test(rows[3].t), 'service: every round in time order, each saying how long until it goes (' + rows.map(r => r.cd).join(', ') + ')');
+  ok(/^Dietaries and notes3 gluten free, 1 vegan\. <b>Nut<\/b> allergy at table 4\.$/.test(rows[0].diet) && !rows[0].html && rows[1].diet === '' && rows[2].diet === rows[0].diet && rows[3].diet === rows[0].diet, 'service: the dietaries on every round, as text; none where the booking has none (' + rows[0].diet + ')');
+  ok(rows.every(r => !/Later/.test(r.t)), 'service: one state a row: no Later beside a time left');
   const ends = await p.evaluate(() => { const bd = document.querySelector('.fn-svc-board'), pr = document.querySelector('.fn-svc-prints'); return !!pr && !!(bd.compareDocumentPosition(pr) & Node.DOCUMENT_POSITION_FOLLOWING) && !!pr.querySelector('[data-fn="print-prep"]') && !!pr.querySelector('[data-fn="print-day"]'); });
   ok(ends, 'service: both prints at the end, after the board');
   ok(await reads(p) === bill, 'the service view reads nothing (before a tick: its own record comes back through the listener, as before)');
@@ -92,6 +94,20 @@ const flat = s => (s || '').replace(/\s+/g, ' ').trim();
   p = await L.open(b, '#/fn/now', { who: 'sam', extra: extra(), clock: at(today, '14:16'), width: 390, wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.fn-svc-board .fn-svc-row'));
   ok(await txt(p, '.fn-svc-row.is-late .fn-svc-cd') === '6 min late' && /Late/.test(await txt(p, '.fn-svc-row.is-late .fn-svc-top') || ''), 'service: a late round says Late and how late (' + await txt(p, '.fn-svc-row.is-late .fn-svc-cd') + ')');
+  await p.context().close();
+
+  // the night as drawn (every-page.html e-service, 8 Nov 2026 audit): at 18:10, rounds at 18:30, 19:15 and 20:00 are all on
+  // the board, in order, each with the dietaries and its own Sent, one state each (it showed only the next round)
+  const night = { eve: fn({ name: 'Birthday 60th', start: '17:30', rounds: ['18:30', '19:15', '20:00'], notes: '3 gluten free, 1 vegan.', lines: [['antipasto-platter', 'Antipasto Platter', [2, 2, 1]]] }) };
+  p = await L.open(b, '#/fn/now', { who: 'sam', extra: extra(night), clock: at(today, '18:10'), width: 390, wait: 1500 });
+  await L.waitFor(p, () => document.querySelectorAll('.fn-svc-board .fn-svc-row').length === 3).catch(() => {});
+  const nr = await p.$$eval('.fn-svc-board .fn-svc-row', l => l.map(r => ({ t: r.querySelector('.fn-due').textContent, cd: r.querySelector('.fn-svc-cd').textContent, top: r.querySelector('.fn-svc-top').textContent,
+    diet: ((r.querySelector('.fn-svc-dt') || {}).textContent || ''), sent: !!r.querySelector('[data-fn="sent"]') })));
+  ok(nr.map(r => r.t).join() === '18:30,19:15,20:00' && nr.map(r => r.cd).join() === 'In 20 min,In 1 h 5 min,In 1 h 50 min', 'service at 18:10: all three rounds in order, each with its time left (' + JSON.stringify(nr.map(r => [r.t, r.cd])) + ')');
+  ok(nr.every(r => r.diet === '3 gluten free, 1 vegan.' && r.sent), 'service at 18:10: the dietaries and a Sent on every round');
+  ok(nr.every(r => !(/Later/.test(r.top) && /In \d/.test(r.cd))) && !(await p.$('.fn-svc-page .fn-rounds')), 'service at 18:10: no row says Later and In N min; no second list of the next hour');
+  ok(p.errors.length === 0 && !(await L.overflow(p)), 'service at 18:10: no page errors, no sideways scroll ' + p.errors.join(' | '));
+  await p.screenshot({ path: '/tmp/claude-0/-home-user-leichhardt-kitchen/36563980-12d7-5a57-ba66-3e8ec92e72c1/scratchpad/gap-service-390.png', fullPage: true }).catch(() => {});
   await p.context().close();
 
   // 4. the band: dark like Home's board, and the tags still readable
