@@ -159,8 +159,8 @@ Left out: B's sheet that opens by itself and its landing slip; A's start sheet o
 3. **The smoker shift.** Is it a shift with its own hours, like an early start (as drawn), or a job someone does on top of their lunch section?
 4. **A cook moved during service.** May cooks change their own section with one tap (and the chefs see it), or only the chefs?
 5. **Breaks.** Which lengths should the book offer (drawn: 10, 20 and 30 minutes), and up to how many breaks a person (drawn: two)? Should staff see the whole team's breaks, or only their own?
-6. **The chip on staff phones.** You asked for it on staff phones too. The council advises no chip there (it saves no taps and looks like the bell to a wet thumb); the icon goes in front of their prep list line instead. A round chip does fit from 375 px. Which do you want?
-7. **The icon.** Team and clock (5 of 6), or one of the others?
+6. ~~The chip on staff phones.~~ Answered 7 Nov 2026: yes, see Chosen so far.
+7. ~~The icon.~~ Answered 7 Nov 2026: Team and clock.
 
 ## Top bar chip and team icon (second request)
 
@@ -200,11 +200,21 @@ A top bar button is a major change (the service rules). Round 1 had already cove
 **Recommended chip** (within what the measurements allow):
 1. **Chefs** (head chef, sous chefs, the admin): a round chip with the Team and clock icon, left of the bell, all day on every screen from 375 px. Filled in the tag colour until today's team is saved, plain after (`previews/chip-final-chef-unset-390.png`, `previews/chip-final-chef-set-390.png`, `previews/chip-final-chef-unset-1280.png`). One tap opens Today's team. This is the allocation shortcut the head chef asked for.
 2. **Staff on tablets and laptops**: the same round chip, only from 30 minutes before their break until they are back, and after a chef changes their day, filled in the tag colour (`previews/chip-final-staff-due-1280.png`, `previews/chip-final-staff-due-768.png`). One tap opens Your day. The shared tablet shows the person signed in, and nothing while it is locked.
-3. **Staff on phones**: no chip. The icon goes in front of their line on the prep list and in the chef hat, so it is learnt with its words (`previews/chip-final-phone-prep-390.png`, still 3 list lines; `previews/chip-final-phone-hat-390.png`).
+3. **Staff on phones**: no chip. The icon goes in front of their line on the prep list and in the chef hat, so it is learnt with its words (`previews/chip-final-phone-prep-390.png`, still 3 list lines; `previews/chip-final-phone-hat-390.png`). **Changed by the head chef, see Chosen so far.**
 
-## Chosen
+## Chosen so far
 
-Not chosen yet.
+The design (A with three pieces of B, or another) and questions 1 to 5 are still the head chef's to answer. Two parts are chosen (head chef, 7 November 2026):
+
+- **The icon: Team and clock** (two people and a clock, with the clock a touch bigger than first drawn).
+- **A staff chip on phones too**, "so they can see in one tap where they are and what time their break is". The council had advised against it on phones; the head chef weighed it. The tap count is the same as the chef hat (1), but a chip of its own is found without being shown, where the chef hat is a menu of many things (the new starter's point in both rounds). Recommended with it, so it stays quiet:
+  - It shows once the chef has set that person's day; no chip for someone not on today.
+  - Plain most of the day; filled in the tag colour with a white icon from 30 minutes before their break until they are back, and after a chef changes their day (`previews/chip-staff-phone-390.png`, `previews/chip-staff-phone-due-390.png`).
+  - One tap opens **Your day**: **Now** (section and shift, in large type), **Break** (time and length), **Later** (the next shift's section), who set it and when, See the team and Close (`previews/chip-staff-phone-sheet-390.png`).
+  - Small phones: below 390 px the round buttons sit 4 px apart instead of 8; below 375 px "Kitchen Book" is set at 1.3rem instead of 1.45rem, only while the chip shows. Measured: the title stays whole at 360, 375 and 390 px on the landing page and the prep list (`previews/chip-staff-phone-360.png`). Without these it was cut by 13 px at 360 px and 2 px at 375 px.
+  - Tablets and laptops as recommended: the same round chip (words wrap the page tabs). Chefs as recommended: all day, filled until the day is saved.
+
+When the rest is chosen it goes at the top of `docs/head-chef-decisions.md` with the date.
 
 ## Files
 
