@@ -334,7 +334,7 @@ eq(r.merged, [611], 'switching auto-merge off is tried once and never fails the 
 
 // 9. Release windows (head chef, Plan B, 5 Nov 2026): every merge reloads the screens left open, which read their lists
 // again, so ready pull requests merge only between services. Outside a window auto-merge goes off, except "urgent".
-ok(WINDOWS === '1500-1630 2230-2400', 'the windows are 15:00 to 16:30 and 22:30 to midnight, Queensland time (' + WINDOWS + ')');
+ok(WINDOWS === '1500-1630 2230-2400 0000-0230', 'the windows are 15:00 to 16:30 and 22:30 to 02:30, Queensland time (head chef, 8 Nov 2026: ' + WINDOWS + ')');
 ok(spawnSync('bash', ['-n', windowScript]).status === 0 && windowBody.indexOf('${{') < 0, 'the window step is valid bash with no GitHub expressions');
 const lbl = (...names) => names.map(name => ({ name }));
 const off = { autoMergeRequest: null };
@@ -347,7 +347,13 @@ ok(/#700: waits for the next release window/.test(r.out) && /open false/.test(r.
 r = pass('window open at 15:00', { list: mixed }, win('1500'));
 eq([r.off, r.on], [[], [701, 703]], 'every ready one without auto-merge gets it; those that have it are left as they are');
 r = pass('window open at 23:59', { list: [pr(706, 'BEHIND', null, off)] }, win('2359'));
-eq(r.on, [706], 'the night window runs to midnight');
+eq(r.on, [706], 'the night window is open at 23:59');
+r = pass('window open at 00:30', { list: [pr(708, 'BEHIND', null, off)] }, win('0030'));
+eq(r.on, [708], 'and past midnight (8 Nov 2026)');
+r = pass('window open at 02:29', { list: [pr(709, 'BEHIND', null, off)] }, win('0229'));
+eq(r.on, [709], 'until 02:30');
+r = pass('window closed at 02:30', { list: [pr(710, 'BEHIND')] }, win('0230'));
+eq(r.off, [710], 'the night window ends at 02:30');
 r = pass('window closed at 16:30', { list: [pr(707, 'BEHIND')] }, win('1630'));
 eq(r.off, [707], 'the afternoon window ends at 16:30');
 r = pass('Release now by hand at 10:00', { list: [pr(708, 'BEHIND', null, off)] }, win('1000', { RELEASE_NOW: 'true' }));
@@ -409,7 +415,8 @@ eq(sleepAt('2200'), 31 * 60, 'from 22:00 it sleeps until 22:31');
 eq(sleepAt('0800'), 20700, 'from 08:00 (7 hours to go) it sleeps 5 hours 45 minutes, then the queue starts the next wait');
 eq(sleepAt('1630'), 20700, 'from 16:30 (the night window is 6 hours away) the same');
 eq(sleepAt('1510'), 0, 'in a window it does not sleep');
-eq(sleepAt('0001'), 20700, 'just after midnight it waits too');
+eq(sleepAt('0001'), 0, 'just after midnight the night window is still open (8 Nov 2026)');
+eq(sleepAt('0230'), 20700, 'from 02:30 (the afternoon window is 12 and a half hours away) it sleeps 5 hours 45 minutes');
 const job = name => { const m = yml.match(new RegExp('\\n  ' + name + ':\\n([\\s\\S]*?)(?=\\n  [a-z]+:\\n|$)')); return m ? m[1] : ''; };
 ok(/if: github\.event_name == 'workflow_dispatch' && inputs\.wait/.test(job('wait')) && /timeout-minutes: 350/.test(job('wait')), 'the wait job runs only for the waiting run, under GitHub\'s 6 hour limit');
 ok(/needs: \[switch, backfill, wait\]/.test(job('queue')) && /actions: write/.test(job('queue')), 'the queue runs after the wait, and may start the waiting run');
