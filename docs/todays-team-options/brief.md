@@ -6,7 +6,7 @@ Requested 7 November 2026 by the head chef, in three messages:
 2. "Can we make head chef and sous chef, while they allocate the breaks, also allocate the section they're on?"
 3. "Can we make it so the head or sous chef can change sections depending on shifts, either lunch shift or dinner shift, and maybe have the options in the admin panel to create different kinds of shifts? For example a smoker shift, so that they can be assigned to?"
 
-**Status: chosen by the head chef on 7 November 2026 (see Chosen). To be built in four steps (see Build).** `index.html` in this folder is the comparison page (open it in a browser). The pictures in `previews/` are mock-ups drawn inside the running book (the click-test stand-in, `tests/fake/`) with the book's own stylesheet, top bar and sheets, then photographed. Every name, section, shift and time in them is made up. Nothing in them saves. Baseline: `main` at `485b014`.
+**Status: chosen by the head chef on 7 November 2026 (see Chosen). Built in four steps (see Build): steps 1 and 2 on 7 November 2026, the staff side and training next.** `index.html` in this folder is the comparison page (open it in a browser). The pictures in `previews/` are mock-ups drawn inside the running book (the click-test stand-in, `tests/fake/`) with the book's own stylesheet, top bar and sheets, then photographed. Every name, section, shift and time in them is made up. Nothing in them saves. Baseline: `main` at `485b014`.
 
 ## Today
 
@@ -223,6 +223,8 @@ Pictures: the staff chip `previews/chip-staff-phone-390.png`, filled `previews/c
 ## Build
 
 In small steps, each its own pull request, merged in a release window. Rules are published from the branch before the code that needs them (CLAUDE.md, How changes ship).
+
+Steps 1 to 3 were built together on 7 November 2026 in one pull request (the chef's page needs the rules, and one release means one rules publish): `docs/prep-book.md`, Today's team. Step 4 is next.
 
 1. **Rules and records.** The day's team record (written only by the chefs and the verified admin, read by every signed-in kitchen session; people, shifts, sections, break times and the five lengths checked; a save that would overwrite a newer one refused); the shifts in `config/main` (admin only); the section log (one record per person, day and stint, written by that person or a chef). Emulator checks for every sign-in in `tests/rules/client-shapes.test.mjs`. Looser rules, so published first, with the head chef's OK, then the Lock probe.
 2. **The Shifts row and the chef's page.** Admin, Kitchen, Shifts; Today's team with Use it, Spread them, the break chips and the server check; the tile, the Set today's team link, the To do line and the chef chip. Reads: the day's record when the page opens (1) and last week's same day for Use it (1).

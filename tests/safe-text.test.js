@@ -71,6 +71,23 @@ async function check(b, hash, o, name, see, then) {
   for (const t of ['waste', 'transfers', 'notes', 'mail', 'people', 'insights']) {
     await check(b, '#/admin', { admin: true, who: '' }, 'admin ' + t, t === 'waste' ? 'Waste' : t === 'transfers' ? 'Transfer' : t === 'notes' ? 'Ping' : t === 'mail' ? 'Mail' : null, async p => { await L.adminTab(p, t); });
   }
+  // Today's team (7 Nov 2026): a shift and a section named with markup, on the staff side (the day line, Your day, the
+  // chef hat) and on the chef's page
+  const tmPeople = [{ id: 'sam', name: 'Sam', role: 'sous', add: true, tick: true, del: true, active: true }, { id: 'ann', name: 'Ann', role: 'staff', add: true, tick: true, del: false, active: true }, { id: 'bo', name: 'Bo', role: 'staff', add: true, tick: true, del: false, active: true }];
+  const tx = Object.assign({}, extra, {
+    [fsKey(['config', 'main'])]: { people: tmPeople, sousIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, kitSecs: [{ id: 'grill', name: 'Grill ' + P, off: false }], kitShifts: [{ id: 'lunch', name: 'Shift ' + P, from: 600, to: 900, off: false }, { id: 'dinner', name: 'Late ' + P, from: 960, to: 1320, off: false }] },
+    [fsKey(['team', today])]: { day: today, on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }, { id: 'ann', sh: 'dinner', sec: 'grill' }, { id: 'bo', sh: 'lunch', sec: 'grill' }], br: [{ id: 'ann', sh: 'lunch', at: 870, len: 30 }, { id: 'bo', sh: 'lunch', at: 825, len: 45 }], v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam' }
+  });
+  await check(b, '#/prep', { who: 'ann', extra: tx }, 'staff day line and Your day', 'Shift', async p => {
+    await L.waitFor(p, () => !!document.querySelector('.wtop .tm-chip'), null, 8000).catch(() => {});
+    // today's booby-trapped ping comes up first: closed, then the chip
+    await p.evaluate(() => { const x = document.querySelector('.nt-wrap:not(.tm-dw) [data-note="dismiss"]'); if (x) x.click(); }); await L.settle(p, 400);
+    await p.click('.wtop .tm-chip'); await L.settle(p, 300);
+    ok(/Shift Zz<i id="pwn">/.test(await p.textContent('.tm-dw') || ''), 'Your day: the shift name shows as typed');
+    await p.keyboard.press('Escape'); await L.settle(p, 300);
+    await p.click('.wtop-who'); await L.settle(p, 300);
+  });
+  await check(b, '#/team', { who: 'sam', extra: tx }, 'chef\'s Today\'s team', 'Shift');
   // the drawing editor: a damaged drawing record with markup in its colours and anchors (the head chef's own drawing)
   const P2 = (id, name, role) => ({ id, name, role, add: true, tick: true, del: role !== 'staff', active: true });
   const dx = {

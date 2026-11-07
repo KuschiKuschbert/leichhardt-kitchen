@@ -3688,3 +3688,73 @@ button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; curs
 .dsh-wl-opts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
 .dsh-watch > .btn { justify-self: start; }
 @media (max-width: 560px) { .dsh-wl { grid-template-columns: minmax(0, 1fr) auto; } .dsh-wl .dsh-spark { grid-column: 1 / -1; grid-row: 2; } }
+/* Today's team (7 Nov 2026, docs/todays-team-options/brief.md): the round chip left of the bell (the bell's ring, the
+   tag colour with white until today's team is saved, about 5.6:1), the chef's page (#/team), Set today's team under
+   the done count, and the Shifts row in the admin panel's Kitchen. */
+.tm-slot { display: contents; }
+.tm-chip { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 44px; height: 44px; border: 2px solid var(--bar-text); border-radius: 50%; color: var(--bar-text); background: transparent; text-decoration: none; }
+.tm-chip.is-due { background: var(--tag); border-color: var(--tag); color: #fff; }
+.tm-chip[aria-current="page"] { background: var(--bar-text); border-color: var(--bar-text); color: var(--bar); }
+.tm-chip:focus-visible { outline: 2px solid var(--bar-accent); outline-offset: 2px; }
+.tm-chip { padding: 0; font: inherit; cursor: pointer; }
+/* Your day (staff, 7 Nov 2026): the sheet on the pings sheet's frame */
+html.tm-open, html.tm-open body { overflow: hidden; }
+.tm-dw .nt-body { padding: 0 18px 4px; }
+.tm-dayl { list-style: none; margin: 0.25rem 0 0; padding: 0; }
+.tm-dayl li { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); gap: 0.75rem; align-items: baseline; padding: 0.7rem 0; border-top: 1px solid var(--line); }
+.tm-dayl li:first-child { border-top: 0; }
+.tm-dayl .k { font: 700 0.75rem var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.tm-dayl b { display: block; font: 700 1.25rem/1.2 var(--display); overflow-wrap: anywhere; }
+.tm-dayl small { display: block; margin-top: 2px; font-size: 0.875rem; color: var(--muted); }
+.tm-dayl .is-later b { font-size: 1.0625rem; }
+.tm-off { margin: 0.5rem 0 0; padding-top: 0.7rem; border-top: 1px solid var(--line); font-size: 0.9375rem; overflow-wrap: anywhere; }
+.tm-changed { color: var(--accent-ink); }
+/* the day line under a person's done count: in the date's line, so the header keeps its height (a long line ends in
+   an ellipsis, the chip and Your day have it whole); orange with a dot once a chef changes it, until Your day is opened */
+.nb-ph .nb-pw.is-day { flex-direction: column; }
+.nb-tmday { display: block; max-width: min(16rem, 52vw); margin: 0.15rem 0 0; padding: 0; border: 0; background: none; font: 700 0.8125rem/1.3 var(--body); color: var(--ink); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.nb-tmday.is-changed { color: var(--accent-ink); }
+.nb-tmday.is-changed::before { content: '\25CF'; margin-right: 0.3em; }
+.nb-tmday:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wm-me-n small.wm-day { color: var(--ink); font-weight: 600; }
+/* small phones: the round buttons closer, and below 375 px the title a little smaller, only while the chip shows
+   (measured: "Kitchen Book" stays whole at 360, 375 and 390 px) */
+@media (max-width: 389px) { .wtop:has(.tm-chip) .wtop-icons { gap: 0.25rem; } }
+@media (max-width: 374px) { .wtop:has(.tm-chip) .wtop-brand b { font-size: 1.3rem; } }
+.wm-team .tm-icon { flex: none; }
+/* the chef's page */
+.tm-page .tm-same { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin: 0 0 1rem; padding: 0.75rem 0.9rem; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--paper); }
+.tm-page .tm-same .btn { min-height: 44px; white-space: nowrap; }
+.tm-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 0.75rem; }
+.tm-tabs .chip { min-height: 44px; }
+.tm-tabs .chip small { margin-left: 0.4rem; font-weight: 600; opacity: 0.8; }
+.tm-spread { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem; margin: 0 0 0.75rem; font-size: 0.9375rem; }
+.tm-spread .btn { min-height: 44px; }
+.tm-sum { margin: 0.25rem 0 0.5rem; padding: 0.6rem 0.9rem; border-radius: var(--radius); background: var(--beige); font-size: 0.9375rem; }
+.tm-list { list-style: none; margin: 0; padding: 0; }
+.tm-row { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 0.35rem 0.6rem; padding: 0.5rem 0; border-top: 1px solid var(--line); }
+.tm-list .tm-row:first-child { border-top: 0; }
+.tm-tick { width: 44px; height: 44px; display: grid; place-items: center; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: var(--paper); font: 700 1.25rem var(--body); cursor: pointer; }
+.tm-tick[aria-pressed="true"] { background: var(--ink); }
+.tm-tick:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tm-name { min-width: 0; font-weight: 700; font-size: 1.0625rem; overflow-wrap: anywhere; }
+.tm-name small { display: block; font-weight: 500; font-size: 0.8125rem; color: var(--muted); }
+.tm-row.is-off .tm-name { color: var(--muted); }
+.tm-picks { grid-column: 2; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.tm-picks .chip { min-height: 44px; }
+.tm-pick select { min-height: 44px; }
+.tm-fold { display: block; width: 100%; min-height: 44px; margin: 0.4rem 0 0; padding: 0.6rem 0; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; font: 600 0.9375rem var(--body); text-decoration: underline; color: var(--ink); cursor: pointer; overflow-wrap: anywhere; }
+.tm-save { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin-top: 1rem; }
+/* Set today's team by a chef's done count: above it, in the room the taller title leaves and the header's top padding,
+   so the header keeps its height and nothing below moves when it comes or goes (measured at 360, 390, 768, 1280 px) */
+.nb-ph .nb-pw { display: flex; flex-direction: column-reverse; align-items: flex-end; margin-left: auto; }
+.nb-tmset { display: inline-flex; align-items: center; min-height: 32px; margin-top: -1rem; font: 700 0.875rem var(--body); color: var(--ink); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
+/* the Shifts row: a name, From and To */
+.a-sh-head { display: grid; grid-template-columns: minmax(0, 1fr) 7.5rem 7.5rem 5.5rem; gap: 0.5rem; margin: 0.5rem 0 -0.25rem; font: 700 0.75rem var(--body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.a-sh-row { display: grid; grid-template-columns: minmax(0, 1fr) 7.5rem 7.5rem 5.5rem; }
+.a-sh-row .a-sh-t { min-width: 0; min-height: 44px; }
+@media (max-width: 560px) {
+  .a-sh-head { display: none; }
+  .a-sh-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .a-sh-row > input:first-of-type { grid-column: 1 / -1; }
+}

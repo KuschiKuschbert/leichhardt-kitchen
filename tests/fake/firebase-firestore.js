@@ -213,7 +213,7 @@ function isToday(day) {
   return t >= mid - 15 * 60000 && t < mid + 86400000 + 15 * 60000;
 }
 // the operational records (kitchenRead() in the rules): a live PIN session for someone who is not functions only
-const KITCHEN_COLS = ['config', 'days', 'orders', 'waste', 'summary', 'misses', 'views', 'notes', 'guides', 'drinks', 'shifts', 'activity', 'sections',
+const KITCHEN_COLS = ['config', 'days', 'orders', 'waste', 'summary', 'misses', 'views', 'notes', 'guides', 'drinks', 'shifts', 'team', 'activity', 'sections',
   'learned', 'ordlearned', 'learnlog', 'minutes', 'mailstat', 'transfers', 'transferOpen', 'digest'];
 /* The read rules by collection, before the record-by-record ones in readRefused() and rulesDenied(): true when the real
    rules refuse this phone the record (list false) or the query (list true). Everything here is open to the head chef's
@@ -726,6 +726,15 @@ function commitOps(ops) {
     return a.sent === true && !(old && old.sent === true) && a.sentBy !== (a.by || '');
   });
   if (badSent) return Promise.reject({ code: 'permission-denied' });
+  // Today's team (7 Nov 2026): team/<day> is written by the head chef and the sous chefs (or the admin), each save the
+  // next version of the stored one, its day its own, and when it was first set kept, like teamOk() in the rules
+  const badTeam = ops.some(o => {
+    if (o.kind === 'delete' || !/^kitchens\/[^/]+\/team\/[^/]+$/.test(key(o.ref.path))) return false;
+    const a = after(o), old = store[key(o.ref.path)];
+    if (!admin && !chef(cfgOf(o.ref))) return true;
+    return a.day !== o.ref.path.at(-1) || !Array.isArray(a.on) || !Array.isArray(a.br) || a.v !== (old ? old.v + 1 : 1) || (!!old && a.at !== old.at);
+  });
+  if (badTeam) return Promise.reject({ code: 'permission-denied' });
   return finishOps(ops);
 }
 export function writeBatch() {

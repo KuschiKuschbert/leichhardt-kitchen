@@ -31,7 +31,7 @@ const source = db.collection('kitchens').doc(sourcePin), restored = db.collectio
 const folder = mkdtempSync(join(tmpdir(), 'lk-backup-recovery-')), key = randomBytes(32).toString('base64');
 const scripts = fileURLToPath(new URL('.', import.meta.url)), at = Date.now();
 const day = n => new Date(at + 36000000 - n * 86400000).toISOString().slice(0, 10);
-const ARRAY_COLLECTIONS = ['activity', 'sections', 'learned', 'ordlearned', 'learnlog', 'summary', 'analysis', 'analysisDaily', 'references', 'training', 'proofHistory', 'dashwatch', 'misses', 'views', 'guides', 'mail', 'mailstat', 'drinks', 'shifts', 'daily', 'todos', 'cutdone', 'transferOpen',
+const ARRAY_COLLECTIONS = ['activity', 'sections', 'learned', 'ordlearned', 'learnlog', 'summary', 'analysis', 'analysisDaily', 'references', 'training', 'proofHistory', 'dashwatch', 'misses', 'views', 'guides', 'mail', 'mailstat', 'drinks', 'shifts', 'daily', 'todos', 'team', 'cutdone', 'transferOpen',
   'deliveries', 'notes', 'directnotes', 'minutes', 'book', 'recipes', 'drawings', 'drawtpl', 'drawlib', 'suppliers', 'supplierlinks', 'functions', 'fncontact', 'fnsent'];
 const HISTORIES = { referencesHist: ['references', 'hist'], trainingHist: ['training', 'hist'], notesSeen: ['notes', 'seen'], directnotesSeen: ['directnotes', 'seen'], minutesHist: ['minutes', 'hist'], minutesSigns: ['minutes', 'signs'], recipesHist: ['recipes', 'hist'], drawingsHist: ['drawings', 'hist'], supplierOrders: ['suppliers', 'orders'], supplierAudit: ['suppliers', 'audit'], functionsHist: ['functions', 'hist'] };
 const DATED = { days: ['days', 'items'], orders: ['orders', 'lines'], waste: ['waste', 'lines'], transfers: ['transfers', 'lines'] };
