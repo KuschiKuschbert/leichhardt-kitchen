@@ -1,0 +1,868 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Every Page Redesign</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=Caveat:wght@500;700&display=swap">
+<style>
+/* Every page, redesigned with the seven apps (8 Nov 2026): a preview only, never loaded by the book. The head chef chose B's
+   home and asked for every other page and the admin panel to change too. The mock pieces are copied from index.html so this
+   page stands alone. Every name, amount, function and time is made up. Nothing saves. ?shot=<id> draws one screen. */
+/* Whole-app redesign options (7 Nov 2026): a preview only, never loaded by the book. Three designs drawn with the
+   book's own colours and type from css/app.css. Every name, amount, function and time is made up. Nothing saves.
+   One light look on purpose: it is the book's look. Layout: a dark band like the top bar, then Today, the core,
+   and one section per design with its phone screens in a row and its laptop screen scaled to the column.
+   ?shot=<id> draws one screen at its real size for the photos in previews/. */
+:root {
+  --bg: #FBFAF7; --paper: #FFFFFF; --sheet: #FFFDF8; --ink: #1C1D1F; --muted: #55585E; --faint: #6B7077;
+  --accent: #E2602A; --accent-ink: #C2451A; --tag: #B83F15; --beige: #F2EFE8; --line: #E0DBCF; --rule: #E6DECF;
+  --bar: #2B2A27; --bar-text: #FBF8F1; --bar-accent: #F08A4B; --stone: #A39A88; --kraft: #C9B48F;
+  --done: #2E8B57; --done-ink: #237347; --done-tint: #EAF5EE; --hit: #FFF1E6;
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --hand: 'Caveat', 'Bradley Hand', cursive;
+  --r-act: 8px; --r-pick: 999px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.55 var(--body); }
+a { color: inherit; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.band { background: var(--bar); color: var(--bar-text); border-bottom: 4px solid var(--stone); }
+.band .wrap { padding-block: 36px 32px; }
+.kick { margin: 0 0 8px; font: 700 .8rem/1.3 var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--bar-accent); }
+h1 { margin: 0; font: 700 clamp(2.6rem, 7vw, 4.4rem)/.95 var(--display); text-wrap: balance; }
+.lede { max-width: 68ch; margin: 14px 0 0; color: #E9E4D8; }
+.lede b { color: var(--bar-text); }
+.verdict { display: inline-flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.vchip { font: 600 .9rem/1 var(--body); padding: 9px 14px; border-radius: var(--r-pick); border: 1.5px solid #6E675B; color: var(--bar-text); }
+.vchip.hot { background: var(--accent-ink); border-color: var(--accent-ink); }
+section.part { padding-block: 44px 8px; }
+h2 { margin: 0 0 6px; font: 700 clamp(1.9rem, 4.6vw, 2.7rem)/1 var(--display); text-wrap: balance; }
+h2 .lt { color: var(--accent-ink); }
+h3 { margin: 26px 0 8px; font: 700 1.25rem/1.15 var(--display); letter-spacing: .02em; text-transform: uppercase; }
+p { margin: 0 0 12px; max-width: 72ch; }
+.sub { color: var(--muted); max-width: 72ch; }
+.hand { font-family: var(--hand); font-weight: 700; }
+.tablewrap { overflow-x: auto; margin: 12px 0 8px; -webkit-mask-image: linear-gradient(90deg, #000 94%, transparent); mask-image: linear-gradient(90deg, #000 94%, transparent); padding-right: 24px; }
+table { border-collapse: collapse; min-width: 640px; width: 100%; font-size: .95rem; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px 9px 0; border-bottom: 1px solid var(--line); }
+th { font: 700 .8rem/1.2 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+td b { font-weight: 600; }
+td.num, th.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.best { color: var(--done-ink); font-weight: 700; }
+.worst { color: var(--tag); font-weight: 700; }
+.list { margin: 0 0 12px; padding-left: 1.2em; max-width: 72ch; }
+.list li { margin: 0 0 6px; }
+.pc { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px 28px; margin: 10px 0 4px; }
+.pc > div { min-width: 0; }
+.pc h4 { margin: 0 0 6px; font: 700 .85rem/1.2 var(--display); letter-spacing: .1em; text-transform: uppercase; }
+.pc .pro h4 { color: var(--done-ink); }
+.pc .con h4 { color: var(--tag); }
+.from { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 14px; }
+.from span { font: 600 .82rem/1 var(--body); padding: 7px 11px; border-radius: var(--r-pick); background: var(--beige); color: var(--ink); }
+.design-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; border-top: 3px solid var(--ink); padding-top: 18px; }
+.letter { font: 700 3.4rem/.8 var(--display); color: var(--accent-ink); }
+.rec { border: 2px solid var(--accent-ink); border-radius: 10px; padding: 18px 20px 8px; background: var(--hit); margin: 16px 0; max-width: 900px; }
+.rec h3 { margin-top: 0; color: var(--accent-ink); }
+.note { font-size: .9rem; color: var(--muted); }
+/* screens */
+.row { display: flex; gap: 22px; overflow-x: auto; padding: 14px 4px 22px; scroll-snap-type: x proximity; }
+figure { margin: 0; flex: none; scroll-snap-align: start; display: flex; flex-direction: column; gap: 10px; }
+figcaption { max-width: 390px; font-size: .92rem; color: var(--muted); }
+figcaption b { color: var(--ink); font-weight: 600; }
+.shotimg { width: 390px; height: auto; border-radius: 26px; border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(43,42,39,.14); background: var(--paper); }
+.lapbox { width: 100%; max-width: 1240px; aspect-ratio: 1280 / 800; position: relative; overflow: hidden; border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(43,42,39,.14); }
+.lapbox > .lt { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.lapfig { flex: 1 1 100%; max-width: 100%; }
+.lapfig figcaption { max-width: 72ch; }
+.shotimg.lap { width: 100%; max-width: 1240px; border-radius: 12px; }
+.shotimg.sm { width: 220px; border-radius: 18px; }
+.sm + figcaption { max-width: 220px; }
+#cov td:first-child { white-space: nowrap; }
+#cov { min-width: 980px; font-size: .9rem; }
+
+/* ---------- the mock book (m-) ---------- */
+.ph, .lt { position: relative; overflow: hidden; background: var(--bg); color: var(--ink); font: 400 16px/1.4 var(--body); text-align: left; }
+.ph { width: 390px; height: 844px; border-radius: 26px; box-shadow: 0 10px 30px rgba(43,42,39,.16); border: 1px solid var(--line); }
+.lt { width: 1280px; height: 800px; }
+.shot .ph, .shot .lt { border-radius: 0; box-shadow: none; border: 0; }
+.ph svg, .lt svg { display: block; }
+.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.m-top { position: absolute; left: 0; right: 0; top: 0; height: 68px; background: var(--bar); color: var(--bar-text); border-bottom: 4px solid var(--stone); display: flex; align-items: center; gap: 8px; padding: 0 12px 0 14px; z-index: 3; }
+.m-back { width: 32px; display: grid; place-items: center; }
+.m-kb { font: 700 30px/1 var(--hand); color: var(--bar-text); border-bottom: 3px solid var(--accent); padding: 0 2px; margin-right: 4px; transform: rotate(-4deg); }
+.m-title { font: 700 26px/1 var(--display); flex: 1; white-space: nowrap; }
+.m-chips { display: flex; gap: 8px; }
+.m-chip { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--bar-text); display: grid; place-items: center; position: relative; }
+.m-chip.due { background: var(--accent-ink); border-color: var(--accent-ink); }
+.m-chip .bdg { position: absolute; right: -3px; bottom: -3px; width: 18px; height: 18px; border-radius: 50%; background: var(--bar-text); color: var(--bar); font: 700 11px/18px var(--body); text-align: center; border: 2px solid var(--bar); }
+.m-tabs { position: absolute; left: 0; right: 0; bottom: 0; height: 68px; background: var(--bar); border-top: 3px solid var(--accent); display: flex; z-index: 3; }
+.m-tabs > div { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--bar-text); font: 700 12.5px/1 var(--display); letter-spacing: .05em; text-transform: uppercase; }
+.m-tabs > div.on { color: var(--bar-accent); }
+.m-body { position: absolute; left: 0; right: 0; top: 68px; bottom: 68px; overflow: hidden; padding: 12px 12px; }
+.m-act { position: absolute; left: 0; right: 0; bottom: 68px; padding: 10px 14px 12px; background: linear-gradient(rgba(251,250,247,0), var(--bg) 26%); z-index: 2; }
+.m-btn { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 18px; border-radius: var(--r-act); border: 1.5px solid var(--ink); background: var(--paper); font: 600 16px/1 var(--body); color: var(--ink); white-space: nowrap; }
+.m-btn.main { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; font-size: 18px; min-height: 52px; }
+.m-btn.dark { background: var(--ink); color: var(--bar-text); }
+.m-btn.quiet { border-color: var(--line); }
+.m-btn.wide { width: 100%; }
+.m-pill { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 15px; border-radius: var(--r-pick); border: 1.5px solid var(--ink); font: 700 14px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; background: var(--paper); flex: none; }
+.m-pill.on { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
+.m-pill.round { width: 44px; padding: 0; }
+.m-pill.date { text-transform: none; letter-spacing: 0; font: 600 15px/1 var(--body); }
+.m-pill.dk { background: var(--ink); color: var(--bar-text); }
+.m-bar { display: flex; gap: 8px; align-items: center; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+.m-sep { width: 1.5px; height: 30px; background: var(--line); flex: none; }
+/* notebook */
+.m-nb { position: relative; background: var(--sheet); border: 1.5px solid var(--ink); border-radius: 10px; padding: 8px 10px 0 20px; margin-top: 10px; box-shadow: 0 6px 0 rgba(28,29,31,.1); }
+.m-nb::before { content: ""; position: absolute; left: 10px; top: 0; bottom: 0; width: 1.5px; background: #EDB49B; }
+.m-nbh { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; border-bottom: 2px solid var(--ink); padding-bottom: 6px; }
+.m-nbt { font: 700 40px/.9 var(--hand); }
+.m-nbd { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.m-prog { font: 700 27px/1 var(--hand); color: var(--accent-ink); white-space: nowrap; }
+.m-link { font: 600 13.5px/1 var(--body); text-decoration: underline; text-underline-offset: 3px; }
+.m-sec { display: flex; justify-content: space-between; align-items: center; height: 30px; margin-top: 2px; font: 700 13px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--tag); }
+.m-r { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 4px 0; border-bottom: 1px solid var(--rule); position: relative; }
+.m-r.urgent::before { content: ""; position: absolute; left: -9px; top: 6px; bottom: 6px; width: 4px; border-radius: 2px; background: var(--ink); }
+.m-box { width: 28px; height: 28px; border: 2.5px solid var(--ink); border-radius: 6px; flex: none; display: grid; place-items: center; background: var(--paper); }
+.m-box.done { background: var(--done); border-color: var(--done); color: #fff; }
+.m-w { flex: 1; min-width: 0; }
+.m-t { font: 700 23px/1 var(--hand); }
+.m-t i { font: 600 15px/1 var(--body); font-style: normal; margin-left: 6px; white-space: nowrap; }
+.print .m-t { font: 600 18px/1.15 var(--body); }
+.print .m-t i { font-weight: 700; color: var(--ink); }
+.lt.print .m-t { font-size: 20px; }
+.m-m { font-size: 12.5px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-m a { color: var(--tag); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.m-tag { display: inline-block; vertical-align: 1px; margin-right: 6px; padding: 2px 5px; border-radius: 4px; background: var(--ink); color: #fff; font: 700 11px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; }
+.m-on { min-height: 44px; min-width: 54px; padding: 0 8px; border-radius: var(--r-pick); border: 1.5px solid #B9B1A2; font: 700 12px/1 var(--display); letter-spacing: .07em; text-transform: uppercase; display: grid; place-items: center; flex: none; background: var(--paper); }
+.m-on.is { border-color: var(--ink); background: var(--ink); color: var(--bar-text); }
+.m-dots { width: 30px; min-height: 44px; display: grid; place-items: center; font: 700 22px/1 var(--body); letter-spacing: 1px; flex: none; color: var(--muted); }
+.m-r.done .m-t { color: var(--faint); text-decoration: line-through 2.5px var(--accent-ink); }
+.m-fold { display: flex; justify-content: space-between; align-items: center; min-height: 48px; border-bottom: 1px solid var(--rule); font: 600 15px/1 var(--body); color: var(--muted); }
+.m-fold b { color: var(--ink); }
+.m-open { margin: 0 -10px 0 -20px; padding: 10px 10px 12px 20px; background: var(--hit); border-bottom: 1px solid var(--rule); display: flex; flex-wrap: wrap; gap: 8px; }
+.m-open .m-btn { min-height: 44px; font-size: 15px; padding: 0 13px; }
+.m-open .m-btn.del { color: var(--tag); border-color: #E6B8A6; }
+/* sheets */
+.m-dim { position: absolute; inset: 0; background: rgba(28,29,31,.45); z-index: 4; }
+.m-sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--paper); border-radius: 16px 16px 0 0; z-index: 5; padding: 8px 16px 18px; }
+.m-grip { width: 44px; height: 5px; border-radius: 3px; background: var(--line); margin: 2px auto 12px; }
+.m-eb { font: 700 12px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--tag); }
+.m-sh { font: 700 26px/1.05 var(--display); margin: 6px 0 2px; }
+.m-li { display: flex; align-items: center; gap: 14px; min-height: 52px; border-bottom: 1px solid var(--line); font: 600 17px/1.2 var(--body); }
+.m-li .ic { flex: none; }
+.m-li span { flex: 1; }
+.m-li small { font: 600 13px/1.2 var(--body); color: var(--tag); }
+.m-li small.ok { color: var(--done-ink); }
+.m-li.del { color: var(--tag); border-bottom: 0; }
+.m-li .chev { color: var(--faint); }
+.m-grp { font: 700 12px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 16px 0 8px; }
+.m-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.m-tile { border: 1.5px solid var(--ink); border-radius: 8px; min-height: 70px; padding: 8px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; text-align: center; font: 600 13.5px/1.15 var(--body); background: var(--paper); }
+.m-tile small { font: 700 11.5px/1 var(--body); color: var(--tag); }
+.m-tile small.ok { color: var(--done-ink); }
+.m-who { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.m-av { width: 40px; height: 40px; border-radius: 50%; background: var(--accent-ink); color: #fff; display: grid; place-items: center; font: 700 18px/1 var(--body); }
+/* pages */
+.m-h { font: 700 34px/1 var(--display); margin: 4px 0 4px; }
+.m-hint { font-size: 13.5px; color: var(--muted); margin: 0 0 10px; }
+.m-card { background: var(--paper); border: 1.5px solid var(--ink); border-radius: 10px; padding: 12px 14px; }
+.m-day { font: 700 13px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--tag); margin: 16px 0 8px; display: flex; justify-content: space-between; }
+.m-fn { display: flex; flex-direction: column; gap: 4px; }
+.m-fn b { font: 700 20px/1.1 var(--display); }
+.m-fn .facts { font-size: 14px; color: var(--muted); }
+.m-quietline { display: flex; align-items: center; gap: 10px; min-height: 48px; border: 1.5px dashed var(--line); border-radius: 10px; padding: 0 14px; color: var(--muted); font-size: 14.5px; }
+/* landing */
+.kraft { background: var(--kraft) repeating-linear-gradient(115deg, rgba(255,255,255,.05) 0 2px, rgba(0,0,0,.03) 2px 5px); }
+.m-dk { position: relative; background: #FFFDF8; padding: 12px 14px 18px; display: flex; align-items: center; gap: 12px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), 96% 100%, 92% calc(100% - 8px), 88% 100%, 84% calc(100% - 8px), 80% 100%, 76% calc(100% - 8px), 72% 100%, 68% calc(100% - 8px), 64% 100%, 60% calc(100% - 8px), 56% 100%, 52% calc(100% - 8px), 48% 100%, 44% calc(100% - 8px), 40% 100%, 36% calc(100% - 8px), 32% 100%, 28% calc(100% - 8px), 24% 100%, 20% calc(100% - 8px), 16% 100%, 12% calc(100% - 8px), 8% 100%, 4% calc(100% - 8px), 0 100%); }
+.m-dk .pin { position: absolute; top: 5px; left: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--accent-ink); }
+.m-dk .circ { width: 48px; height: 48px; border-radius: 50%; border: 1.5px solid var(--ink); display: grid; place-items: center; flex: none; }
+.m-dk b { font: 700 25px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; flex: 1; border-bottom: 2.5px solid var(--ink); padding-bottom: 4px; }
+.m-dk em { font: 700 14px/1 var(--display); letter-spacing: .08em; color: var(--tag); font-style: normal; }
+.m-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.m-mini > div { background: #FFFDF8; border: 1.5px solid var(--ink); border-radius: 8px; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font: 700 13px/1 var(--display); letter-spacing: .07em; text-transform: uppercase; }
+/* the board (B) */
+.m-board { background: var(--bar); color: var(--bar-text); border-radius: 12px; padding: 4px 14px 6px; }
+.m-bh { display: flex; justify-content: space-between; align-items: center; height: 38px; border-bottom: 1px solid #4A4740; font: 700 13px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; color: #CFC8BA; }
+.m-bh b { color: var(--bar-accent); font-size: 15px; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+.m-br { display: grid; grid-template-columns: 24px 1fr auto; column-gap: 10px; align-items: center; min-height: 56px; border-bottom: 1px solid #3D3B36; }
+.m-br:last-child { border-bottom: 0; }
+.m-br .what { font: 600 15.5px/1.2 var(--body); min-width: 0; }
+.m-br .what small { display: block; font: 500 12.5px/1.25 var(--body); color: #CFC8BA; margin-top: 2px; }
+.m-br .when { text-align: right; font: 700 26px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--bar-text); }
+.m-br .when small { display: block; margin-top: 4px; font: 700 11.5px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--bar-accent); }
+.m-br .when small.ok { color: #8FD3A9; }
+.m-br .when small.hot { color: var(--bar); background: var(--bar-accent); padding: 3px 6px; border-radius: 4px; display: table; margin-left: auto; }
+.m-secs { display: flex; flex-direction: column; gap: 9px; }
+.m-sl { display: grid; grid-template-columns: 70px 1fr 68px; gap: 10px; align-items: center; font: 600 14.5px/1 var(--body); }
+.m-sl .trk { height: 10px; border-radius: 5px; background: var(--beige); overflow: hidden; }
+.m-sl .trk i { display: block; height: 100%; background: var(--accent-ink); border-radius: 5px; }
+.m-sl .trk i.ok { background: var(--done); }
+.m-sl em { font-style: normal; text-align: right; color: var(--muted); font-size: 13.5px; }
+.m-up { display: grid; grid-template-columns: 56px 1fr; gap: 10px; min-height: 46px; align-items: center; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+.m-up b { font: 700 14px/1.1 var(--display); letter-spacing: .06em; text-transform: uppercase; }
+/* booking card (B) */
+.m-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin: 12px 0; }
+.m-facts div { font-size: 14px; color: var(--muted); }
+.m-facts b { display: block; color: var(--ink); font: 700 17px/1.15 var(--body); margin-top: 2px; }
+.m-alert { background: var(--tag); color: #fff; border-radius: 8px; padding: 10px 12px; display: flex; gap: 10px; align-items: center; font: 600 15px/1.25 var(--body); }
+.m-tl { position: relative; margin: 12px 0 4px; padding-left: 22px; }
+.m-tl::before { content: ""; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 2px; background: var(--line); }
+.m-tr { position: relative; padding: 4px 0 12px; }
+.m-tr::before { content: ""; position: absolute; left: -21px; top: 9px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink); background: var(--paper); }
+.m-tr.next::before { background: var(--accent-ink); border-color: var(--accent-ink); }
+.m-tr b { font: 700 18px/1 var(--display); font-variant-numeric: tabular-nums; margin-right: 6px; }
+.m-tr span { font: 600 15px/1.2 var(--body); }
+.m-tr div { font-size: 13.5px; color: var(--muted); margin-top: 3px; }
+.m-fbar { position: absolute; left: 0; right: 0; bottom: 68px; background: var(--paper); border-top: 1.5px solid var(--line); padding: 10px 14px; display: flex; gap: 8px; z-index: 2; }
+.m-fbar { gap: 6px; padding: 10px 12px; }
+.m-fbar .m-btn { min-height: 44px; font-size: 14px; padding: 0 9px; gap: 6px; }
+.m-fbar .cancel { margin-left: auto; border-color: #E6B8A6; color: var(--tag); }
+/* laptop */
+.lt .m-top { height: 96px; padding: 0 48px; gap: 18px; }
+.lt .m-kb { font-size: 44px; }
+.lt .m-brand { display: flex; flex-direction: column; gap: 2px; flex: none; }
+.lt .m-brand small { font: 700 12px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--bar-accent); }
+.lt .m-brand b { font: 700 44px/1 var(--display); }
+.lt .m-nav { display: flex; gap: 8px; flex: 1; justify-content: center; }
+.lt .m-nav span { padding: 10px 18px; border-radius: var(--r-pick); border: 2px solid var(--bar-text); font: 600 16px/1 var(--body); }
+.lt .m-nav span.on { background: var(--bar-text); color: var(--ink); }
+.lt .m-body { top: 96px; bottom: 0; padding: 22px 40px; }
+.lt .m-nb { margin-top: 14px; }
+.lt .m-t { font-size: 26px; }
+.m-two { display: grid; grid-template-columns: 1fr 1fr; gap: 0; filter: drop-shadow(0 14px 22px rgba(60,40,10,.18)); }
+.m-two > .m-nb { border-radius: 0; margin-top: 0; box-shadow: none; height: 600px; overflow: hidden; }
+.m-two > .m-nb + .m-nb { border-left: 0; background: #F6F1E6; }
+.m-two > .m-nb + .m-nb::before { display: none; }
+.m-find { position: absolute; left: 50%; top: 150px; transform: translateX(-50%); width: 620px; background: var(--paper); border-radius: 12px; box-shadow: 0 24px 60px rgba(28,29,31,.35); z-index: 6; overflow: hidden; border: 1.5px solid var(--ink); }
+.m-find .q { display: flex; align-items: center; gap: 12px; padding: 0 18px; height: 60px; border-bottom: 1.5px solid var(--line); font: 500 20px/1 var(--body); }
+.m-find .q kbd { margin-left: auto; font: 600 12px/1 var(--body); color: var(--muted); border: 1px solid var(--line); border-radius: 5px; padding: 5px 7px; }
+.m-find .g { font: 700 12px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 12px 18px 6px; }
+.m-find .it { display: flex; align-items: center; gap: 12px; padding: 0 18px; min-height: 46px; font: 600 16px/1.2 var(--body); }
+.m-find .it small { margin-left: auto; color: var(--muted); font-weight: 500; font-size: 13.5px; }
+.m-find .it.sel { background: var(--hit); box-shadow: inset 4px 0 0 var(--accent-ink); }
+.m-search { display: flex; align-items: center; gap: 10px; min-height: 50px; border: 1.5px solid var(--ink); border-radius: var(--r-act); padding: 0 14px; background: var(--paper); color: var(--faint); font-size: 16px; }
+.m-kbd { position: absolute; left: 0; right: 0; bottom: 0; height: 250px; background: #D6D3CC; z-index: 6; display: grid; place-items: center; color: #6B675F; font: 600 14px/1 var(--body); }
+.rx .m-tag { font-size: 12.5px; padding: 3px 7px; vertical-align: 0; }
+.m-tag.roll { background: var(--paper); color: var(--tag); box-shadow: inset 0 0 0 1.5px var(--tag); }
+.m-tag.why { background: var(--paper); color: var(--muted); box-shadow: inset 0 0 0 1.5px #B9B1A2; text-transform: none; letter-spacing: 0; font: 600 12px/1 var(--body); }
+.m-n { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 6px; border-radius: 50%; background: var(--accent-ink); color: #fff; font: 700 13px/1 var(--body); vertical-align: 2px; }
+.m-box .ini { font: 700 14px/1 var(--body); color: var(--ink); }
+.m-rxb { width: 40px; min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: none; color: var(--tag); font: 700 9.5px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; }
+.m-rxb .ic { width: 20px; height: 20px; }
+.m-tl.ticks::before, .m-tl.ticks .m-tr::before { display: none; }
+.m-tk { width: 26px; height: 26px; border: 2.5px solid var(--ink); border-radius: 6px; display: inline-grid; place-items: center; vertical-align: -7px; margin-right: 8px; background: var(--paper); }
+.rx .m-dots { width: 44px; margin-right: -6px; }
+.rx .m-nbh .m-arrows { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+.rx .m-nbh .m-arrows .m-pill { min-height: 40px; }
+.rx .m-day.cancel { margin-top: 22px; }
+.m-quietbtn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: var(--r-act); border: 1.5px solid #E6B8A6; color: var(--tag); font: 600 15px/1 var(--body); background: var(--paper); }
+@media (prefers-reduced-motion: no-preference) { .row { scroll-behavior: smooth; } }
+@media (max-width: 520px) { .shotimg { width: 300px; } figcaption { max-width: 300px; } }
+/* ---------- every page (e-): pieces added for the third look, 8 Nov 2026 ---------- */
+.e-kraft .m-body { background: var(--kraft) repeating-linear-gradient(115deg, rgba(255,255,255,.05) 0 2px, rgba(0,0,0,.03) 2px 5px); }
+.e-lights { position: absolute; left: 0; right: 0; top: 64px; height: 14px; z-index: 4; display: flex; justify-content: space-around; align-items: flex-start; pointer-events: none; }
+.e-lights i { width: 7px; height: 9px; border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%; background: #F6C453; box-shadow: 0 0 6px 2px rgba(246,196,83,.55); margin-top: 3px; }
+.e-lights i:nth-child(3n) { background: #F08A4B; box-shadow: 0 0 6px 2px rgba(240,138,75,.5); }
+.e-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; }
+.e-day { font: 700 40px/.9 var(--hand); color: var(--ink); }
+.e-date { font: 600 14px/1.2 var(--body); color: #3B3933; margin-top: 4px; }
+.e-pin { position: relative; }
+.e-pin::before { content: ""; position: absolute; top: -6px; left: 50%; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: var(--accent-ink); box-shadow: 0 2px 0 rgba(0,0,0,.2); z-index: 1; }
+.e-paper { background: #FFFDF8; border-radius: 4px; padding: 12px 14px; box-shadow: 0 3px 0 rgba(60,40,10,.12); }
+.e-fest { display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center; padding: 10px 0 10px; border-bottom: 1px solid #4A4740; }
+.e-fest b { font: 700 18px/1.05 var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--bar-text); }
+.e-fest p { margin: 3px 0 0; font: 500 13px/1.3 var(--body); color: #E9E4D8; max-width: none; }
+.e-fest em { font: 700 15px/1 var(--hand); color: var(--bar-accent); font-style: normal; }
+.e-up { display: grid; grid-template-columns: 52px 1fr; gap: 10px; align-items: center; min-height: 40px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.e-up:last-child { border-bottom: 0; }
+.e-up b { font: 700 13px/1.1 var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--tag); }
+.e-up .fest { display: inline-flex; align-items: center; gap: 6px; }
+.e-cd { font: 700 30px/1 var(--display); font-variant-numeric: tabular-nums; }
+.e-cd small { display: block; font: 700 11.5px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--tag); margin-top: 4px; }
+.e-card { background: var(--paper); border: 1.5px solid var(--ink); border-radius: 10px; padding: 12px 14px; }
+.e-card + .e-card { margin-top: 10px; }
+.e-row { display: flex; align-items: center; gap: 10px; min-height: 48px; border-bottom: 1px solid var(--rule); }
+.e-row:last-child { border-bottom: 0; }
+.e-row .grow { flex: 1; min-width: 0; }
+.e-row .t { font: 600 16px/1.2 var(--body); }
+.e-row .s { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.e-num { font: 700 17px/1 var(--body); font-variant-numeric: tabular-nums; }
+.e-seg { display: flex; border: 1.5px solid var(--ink); border-radius: var(--r-pick); overflow: hidden; }
+.e-seg span { flex: 1; text-align: center; min-height: 44px; display: grid; place-items: center; font: 700 14px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; }
+.e-seg span.on { background: var(--ink); color: var(--bar-text); }
+.e-bar { height: 8px; border-radius: 4px; background: var(--beige); overflow: hidden; }
+.e-bar i { display: block; height: 100%; background: var(--accent-ink); }
+.e-bar i.ok { background: var(--done); }
+.m-sec .e-bar { width: 70px; height: 6px; margin: 0 8px 0 auto; }
+.e-sheet-in { display: flex; align-items: center; gap: 10px; min-height: 52px; border: 2px solid var(--ink); border-radius: var(--r-act); padding: 0 14px; font: 600 18px/1 var(--body); }
+.e-sheet-in .cur { width: 2px; height: 22px; background: var(--accent-ink); }
+.e-sugg { display: flex; align-items: center; gap: 10px; min-height: 52px; border-bottom: 1px solid var(--line); }
+.e-sugg .t { font: 600 16px/1.2 var(--body); flex: 1; }
+.e-sugg .t small { display: block; font: 500 12.5px/1.2 var(--body); color: var(--muted); }
+.e-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 13px; border-radius: var(--r-pick); border: 1.5px solid var(--ink); font: 600 14.5px/1 var(--body); background: var(--paper); white-space: nowrap; }
+.e-chip.on { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
+.e-chip.soft { border-color: var(--line); }
+.e-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.e-scroll { display: flex; gap: 8px; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, #000 85%, transparent); mask-image: linear-gradient(90deg, #000 85%, transparent); }
+.e-big { font: 700 44px/1 var(--display); font-variant-numeric: tabular-nums; }
+.e-unit { font: 700 20px/1 var(--display); color: var(--muted); margin-left: 4px; }
+.e-stamp { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border: 2px solid var(--done-ink); color: var(--done-ink); border-radius: 6px; font: 700 12.5px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; transform: rotate(-3deg); }
+.e-arr { display: grid; grid-template-columns: 54px 20px 1fr; gap: 0 10px; }
+.e-arr .tm { font: 700 18px/1 var(--display); font-variant-numeric: tabular-nums; padding-top: 4px; }
+.e-arr .ln { position: relative; }
+.e-arr .ln::before { content: ""; position: absolute; left: 9px; top: 0; bottom: 0; width: 2px; background: var(--line); }
+.e-arr .ln i { position: absolute; left: 3px; top: 6px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--ink); background: var(--paper); }
+.e-arr .ln i.ok { background: var(--done); border-color: var(--done); }
+.e-arr .bd { padding-bottom: 14px; }
+.e-loan { border-left: 5px solid var(--accent-ink); }
+.e-loan.old { border-left-color: var(--tag); }
+.e-plate { display: block; }
+.e-shelf { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.e-dish { background: var(--paper); border: 1.5px solid var(--line); border-radius: 12px; padding: 10px; text-align: center; }
+.e-dish b { display: block; font: 700 16px/1.1 var(--display); margin-top: 6px; }
+.e-dish small { font-size: 12px; color: var(--muted); }
+.e-tagline { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; justify-content: center; }
+.e-al { display: inline-flex; align-items: center; min-height: 24px; padding: 0 7px; border-radius: 5px; border: 1.5px solid var(--ink); font: 700 11.5px/1 var(--body); }
+.e-al.maybe { border-style: dashed; background: var(--hit); }
+.e-facts { display: grid; grid-template-columns: repeat(3, 1fr); border: 1.5px solid var(--ink); border-radius: 10px; overflow: hidden; }
+.e-facts div { padding: 8px 10px; border-right: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+.e-facts div:last-child { border-right: 0; }
+.e-facts b { display: block; font: 700 17px/1.1 var(--body); color: var(--ink); margin-top: 3px; }
+.e-tabsline { display: flex; gap: 18px; border-bottom: 1.5px solid var(--line); }
+.e-tabsline span { padding: 12px 0 10px; font: 700 14px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.e-tabsline span.on { color: var(--ink); box-shadow: inset 0 -3px 0 var(--accent-ink); }
+.e-steps { display: flex; gap: 6px; }
+.e-steps i { flex: 1; height: 6px; border-radius: 3px; background: var(--beige); }
+.e-steps i.on { background: var(--accent-ink); }
+.e-ill { background: #F6F1E6; border-radius: 14px; display: grid; place-items: center; height: 250px; }
+.e-in { display: grid; grid-template-columns: 10px 1fr auto; gap: 10px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.e-in .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent-ink); margin-top: 6px; }
+.e-in .dot.read { background: transparent; }
+.e-in b { font: 600 15.5px/1.25 var(--body); }
+.e-in p { margin: 3px 0 0; font-size: 13.5px; color: var(--muted); max-width: none; }
+.e-in time { font: 700 14px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--muted); }
+.e-tl { position: relative; }
+.e-tl .hrs { display: grid; grid-template-columns: 70px repeat(6, 1fr); font: 600 11px/1 var(--body); color: var(--muted); margin-bottom: 6px; }
+.e-tl .pr { display: grid; grid-template-columns: 70px 1fr; align-items: center; min-height: 40px; border-bottom: 1px solid var(--line); }
+.e-tl .pr b { font: 600 14px/1.1 var(--body); }
+.e-tl .pr b small { display: block; font: 500 11.5px/1 var(--body); color: var(--muted); margin-top: 2px; }
+.e-tl .tr { position: relative; height: 22px; }
+.e-tl .sh { position: absolute; top: 3px; height: 16px; border-radius: 4px; background: var(--ink); }
+.e-tl .sh.dn { background: #6E675B; }
+.e-tl .br { position: absolute; top: 0; height: 22px; border-radius: 4px; background: var(--bar-accent); border: 2px solid var(--paper); }
+.e-tl .now { position: absolute; top: -18px; bottom: 0; width: 2px; background: var(--accent-ink); }
+.e-ticket { background: #FFFDF8; border: 1.5px dashed #B9B1A2; border-radius: 6px; padding: 12px 14px; font-family: var(--body); }
+.e-ticket .ln { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px dotted #CFC8BA; font-size: 15px; }
+.e-ticket .ln:last-child { border-bottom: 0; }
+.e-ring { width: 64px; height: 64px; border-radius: 50%; background: conic-gradient(var(--done) 0 66%, var(--beige) 66% 100%); display: grid; place-items: center; flex: none; }
+.e-ring span { width: 48px; height: 48px; border-radius: 50%; background: var(--paper); display: grid; place-items: center; font: 700 15px/1 var(--display); }
+.e-read { font: 400 16px/1.6 var(--body); }
+.e-read h4 { font: 700 15px/1.2 var(--display); letter-spacing: .08em; text-transform: uppercase; margin: 14px 0 4px; color: var(--tag); }
+.e-read p { margin: 0 0 8px; max-width: none; }
+.e-todo { display: flex; align-items: center; gap: 10px; min-height: 50px; border-bottom: 1px solid var(--rule); }
+.e-todo .t { flex: 1; font: 600 16px/1.2 var(--body); }
+.e-todo .t small { display: block; font: 500 12.5px/1.2 var(--body); color: var(--muted); margin-top: 2px; }
+.e-due { font: 700 12px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; padding: 5px 7px; border-radius: 5px; background: var(--beige); }
+.e-due.hot { background: var(--tag); color: #fff; }
+.e-role { display: inline-flex; align-items: center; min-height: 26px; padding: 0 9px; border-radius: var(--r-pick); border: 1.5px solid var(--ink); font: 700 12px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; }
+.e-role.sous { background: var(--ink); color: var(--bar-text); }
+/* admin */
+.a-side { position: absolute; top: 96px; bottom: 0; left: 0; width: 248px; padding: 18px 14px; border-right: 1px solid var(--line); background: #F6F3EC; display: flex; flex-direction: column; gap: 2px; }
+.a-side.dark { background: #2F2E2B; color: #E9E4D8; border-right: 0; }
+.a-side .g { font: 700 11.5px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 16px 10px 6px; }
+.a-side.dark .g { color: #A39A88; }
+.a-side .it { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 10px; border-radius: 8px; font: 600 15px/1 var(--body); }
+.a-side .it .ic { width: 18px; height: 18px; opacity: .8; }
+.a-side .it em { margin-left: auto; font: 700 12px/1 var(--body); font-style: normal; padding: 3px 7px; border-radius: 10px; background: var(--accent-ink); color: #fff; }
+.a-side .it em.q { background: transparent; color: inherit; opacity: .6; }
+.a-side .it.on { background: var(--paper); box-shadow: inset 3px 0 0 var(--accent-ink); }
+.a-side.dark .it.on { background: #45433D; color: #fff; }
+.a-side .find { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 10px; border-radius: 8px; border: 1px solid #55524A; color: #CFC8BA; font: 500 14px/1 var(--body); margin-bottom: 8px; }
+.a-side .find kbd { margin-left: auto; font: 600 11px/1 var(--body); border: 1px solid #6E675B; border-radius: 4px; padding: 3px 6px; }
+.a-main { position: absolute; top: 96px; bottom: 0; left: 248px; right: 0; padding: 22px 32px; overflow: hidden; }
+.a-h { display: flex; align-items: baseline; gap: 14px; }
+.a-h h5 { margin: 0; font: 700 32px/1 var(--display); }
+.a-h span { font-size: 14px; color: var(--muted); }
+.a-viewbar { display: flex; align-items: center; gap: 8px; margin: 14px 0 12px; padding-bottom: 12px; border-bottom: 1.5px solid var(--line); }
+.a-viewbar .e-chip { min-height: 36px; font-size: 14px; }
+.a-viewbar .sp { flex: 1; }
+.a-tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+.a-tbl th { text-align: left; font: 700 11.5px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 8px 10px 8px 0; border-bottom: 1.5px solid var(--ink); }
+.a-tbl td { padding: 10px 10px 10px 0; border-bottom: 1px solid var(--line); }
+.a-tbl td.n { font-variant-numeric: tabular-nums; text-align: right; }
+.a-split { position: absolute; top: 96px; bottom: 0; left: 248px; right: 0; display: grid; grid-template-columns: 1fr 440px; }
+.a-list { padding: 20px 24px; border-right: 1px solid var(--line); overflow: hidden; }
+.a-detail { padding: 22px 26px; background: var(--paper); overflow: hidden; }
+.a-inrow { display: grid; grid-template-columns: 28px 1fr auto; gap: 12px; align-items: center; min-height: 58px; padding: 0 10px; border-radius: 8px; border-bottom: 1px solid var(--line); }
+.a-inrow.sel { background: var(--hit); box-shadow: inset 3px 0 0 var(--accent-ink); }
+.a-inrow b { font: 600 15px/1.2 var(--body); }
+.a-inrow small { display: block; font: 500 12.5px/1.2 var(--body); color: var(--muted); margin-top: 3px; }
+.a-inrow time { font: 600 13px/1 var(--body); color: var(--muted); }
+.a-tile { background: var(--paper); border: 1.5px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.a-tile .k { font: 700 12px/1 var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.a-tile .v { font: 700 40px/1 var(--display); font-variant-numeric: tabular-nums; margin-top: 8px; }
+.a-tile .d { font: 600 13px/1.3 var(--body); margin-top: 6px; }
+.a-tile .d.up { color: var(--tag); }
+.a-tile .d.ok { color: var(--done-ink); }
+.a-spark { display: block; margin-top: 10px; }
+.a-brief { max-width: 760px; margin: 0 auto; }
+.a-brief h5 { font: 700 46px/1 var(--hand); margin: 0; }
+.a-head-line { font: 600 21px/1.35 var(--body); margin: 10px 0; }
+.a-head-line b { color: var(--accent-ink); }
+</style>
+</head>
+<body>
+<div id="page">
+<header class="band"><div class="wrap">
+  <p class="kick">Leichhardt Kitchen Book · design options · 8 November 2026</p>
+  <h1>Every page, with the seven apps</h1>
+  <p class="lede">The head chef chose <b>B's now and next home</b>, with the celebrations in it, and asked for every other page and the admin panel to change too, with the seven apps as the model. This page draws one design for each page and three for the admin panel. <b>Nothing is built.</b> The colours, the notebook, the kraft board and the type stay.</p>
+  <div class="verdict"><span class="vchip hot">Home: B, chosen</span><span class="vchip" id="cchip">Council: see the end</span><span class="vchip"><a href="index.html" style="color:inherit">The first page: three designs and scores</a></span></div>
+</div></header>
+<main class="wrap">
+<section class="part" id="rules"><h2>What holds on every page</h2><ul class="list">
+  <li><b>The main job stays one tap from its tab</b>: tick, add, find a recipe. Every page keeps what it can do today; the coverage table on the first page lists them.</li>
+  <li><b>One-row lines and print words</b> on every list, with every marker a line shows today. Handwriting stays for titles, counts and notes.</li>
+  <li><b>No new reads, listeners or rules</b> unless a page says so. The home board shows only what the home page already reads.</li>
+  <li><b>Words, not symbols</b>, and the main button in the same place, naming its job.</li>
+</ul></section>
+<div id="groups"></div>
+<section class="part" id="council"><h2>Council</h2><div id="counciltext"><p class="sub">To come.</p></div></section>
+<section class="part" id="asks" style="padding-bottom:56px"></section>
+</main>
+</div>
+<script>
+(function () {
+  'use strict';
+  /* icons: 24 px strokes in currentColor */
+  var P = {
+    back: '<path d="M15 5l-7 7 7 7"/>',
+    team: '<circle cx="8" cy="8" r="3"/><circle cx="15.5" cy="8" r="2.5"/><path d="M3 19c0-3 2.3-5 5-5 1.6 0 3 .6 3.9 1.7"/><circle cx="17" cy="17" r="4"/><path d="M17 15v2l1.4 1"/>',
+    bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+    hat: '<path d="M7 14.5c-2.5 0-4-1.8-4-3.8C3 8.6 4.8 7 7 7c.6-2.2 2.6-3.5 5-3.5S16.4 4.8 17 7c2.2 0 4 1.6 4 3.7 0 2-1.5 3.8-4 3.8"/><path d="M7 14.5V19h10v-4.5"/><path d="M7 16.5h10"/>',
+    plate: '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="4" stroke-dasharray="2 2"/><path d="M2.5 4v6M2.5 7h0"/><path d="M21.5 4c-1.2 1-1.5 3-1.5 5h1.5v9"/>',
+    prep: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M8 10l1.3 1.3L11.5 9M8 15l1.3 1.3 2.2-2.3M13.5 10.5H16M13.5 15.5H16"/>',
+    box: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/><path d="M8 5.2l8 4.6"/>',
+    bin: '<path d="M4 6h16M9 6V4h6v2M6 6l1 14h10l1-14"/><path d="M10 10v7M14 10v7"/>',
+    swap: '<path d="M4 8h15M15 4l4 4-4 4"/><path d="M20 16H5M9 12l-4 4 4 4"/>',
+    book: '<path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1z"/><path d="M12 6v14"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    tick: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    cal: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h3"/>',
+    truck: '<path d="M2.5 6.5h11v10h-11zM13.5 10h4l3 3v3.5h-7"/><circle cx="7" cy="17.5" r="2"/><circle cx="17" cy="17.5" r="2"/>',
+    cup: '<path d="M5 8h11v6a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1.2 1 1.2 1 2.4M11.5 3.5c0 1.2 1 1.2 1 2.4"/>',
+    mail: '<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/>',
+    doc: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
+    thermo: '<path d="M10 14.5V5a2 2 0 0 1 4 0v9.5a4 4 0 1 1-4 0z"/><path d="M12 9v7"/>',
+    pen: '<circle cx="9" cy="15" r="5"/><path d="M12.5 11.5L20 4M17 4h3v3"/>',
+    people: '<circle cx="9" cy="8" r="3.2"/><circle cx="16.5" cy="9" r="2.6"/><path d="M3 19.5c.4-3.4 3-5.5 6-5.5s5.6 2.1 6 5.5M15 14.2c3 .1 5.4 2 5.8 5.3"/>',
+    todo: '<rect x="4.5" y="4" width="15" height="17" rx="2"/><path d="M8.5 11l2.2 2.2L15.5 8.5M8.5 17h7"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/>',
+    out: '<path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/>',
+    search: '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/>',
+    print: '<path d="M7 9V3.5h10V9"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><path d="M7 14h10v6.5H7z"/>',
+    chev: '<path d="M9 5l7 7-7 7"/>',
+    flag: '<path d="M6 21V4M6 4h11l-2 4 2 4H6"/>',
+    scale: '<path d="M4 20h16M12 4v16M6 8h12M6 8l-2.5 6a3 3 0 0 0 5 0zM18 8l-2.5 6a3 3 0 0 0 5 0z"/>',
+    move: '<path d="M4 12h16M15 7l5 5-5 5M9 7L4 12l5 5"/>',
+    rm: '<path d="M4 6h16M9 6V4h6v2M6 6l1 14h10l1-14"/>',
+    coffee: '<path d="M4 9h12v4a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16M5 21h10"/>',
+    warn: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h0"/>'
+  };
+  function ic(n, s) { return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"' + (s ? ' style="width:' + s + 'px;height:' + s + 'px"' : '') + '>' + P[n] + '</svg>'; }
+
+  /* made-up data: a full Friday rail */
+  var PREP = [
+    { s: 'Grill', l: [
+      { t: 'Portion rump', q: '20', u: 1, by: 'Sam 13:02', n: 1 },
+      { t: 'Crumb chicken schnitzels', q: '30', by: 'Sam 12:40', on: 'Bo' },
+      { t: 'Skewer haloumi and capsicum', q: '24', by: 'Ann 11:15' } ] },
+    { s: 'Sauce', l: [
+      { t: 'Make gravy', q: '5 L', rx: 1, by: 'From yesterday', rby: 'from Sam, Thu', roll: 1, n: 2 },
+      { t: 'Laksa paste', q: '1 batch', rx: 1, by: 'Sam 10:05', d: 1 },
+      { t: 'Chimichurri', q: '2 L', rx: 1, by: 'Ann 12:20' } ] },
+    { s: 'Larder', l: [
+      { t: 'Slice onions', q: '2 tubs', by: 'Sam 13:00', n: 3, why: 'Waiting since 13:00' },
+      { t: 'Pick coriander', q: '', by: 'Ann 12:58' },
+      { t: 'Brine pork belly for Sunday roast', q: '2 trays', by: 'Sam 09:40' },
+      { t: 'Wash bok choy', q: '', by: 'Bo 09:10', d: 1 },
+      { t: 'Coleslaw', q: '3 L', rx: 1, by: 'Ann 08:55' } ] },
+    { s: 'Fryer', l: [ { t: 'Blanch chips', q: '6 trays', by: 'Bo 11:30' } ] },
+    { s: 'Pastry', l: [ { t: 'Brioche crumb', q: '1 tub', by: 'Ann 10:30' }, { t: 'Lemon curd', q: '1.5 L', rx: 1, by: 'Ann 10:32' } ] }
+  ];
+  var NLINES = PREP.reduce(function (n, g) { return n + g.l.length; }, 0);
+  var NDONE = PREP.reduce(function (n, g) { return n + g.l.filter(function (x) { return x.d; }).length; }, 0);
+
+  function top(o) {
+    o = o || {};
+    return '<div class="m-top">' + (o.back ? '<span class="m-back">' + ic('back', 24) + '</span>' : '<span class="m-kb">KB</span>') +
+      '<span class="m-title">Kitchen Book</span><span class="m-chips">' +
+      (o.team === false ? '' : '<span class="m-chip' + (o.teamDue ? ' due' : '') + '">' + ic('team') + '</span>') +
+      '<span class="m-chip">' + ic('bell') + '</span><span class="m-chip">' + ic('hat') + '<span class="bdg">' + (o.who || 'S') + '</span></span></span></div>';
+  }
+  var TABS = [['plate', 'Recipes'], ['prep', 'Prep'], ['box', 'Orders'], ['bin', 'Wastage'], ['swap', 'Transfers'], ['book', 'Guides']];
+  function tabs(on) {
+    return '<div class="m-tabs">' + TABS.map(function (t) { return '<div class="' + (t[1] === on ? 'on' : '') + '">' + ic(t[0]) + t[1] + '</div>'; }).join('') + '</div>';
+  }
+  function act(label) { return '<div class="m-act"><div class="m-btn main">' + ic('plus') + (label || 'Add a line') + '</div></div>'; }
+
+  /* one prep row (the core). o.print: words in print; o.noDots: details open in place instead of ⋯ */
+  function row(x, o) {
+    o = o || {};
+    if (o.rx) return rxRow(x, o);
+    var meta = x.on ? '<b style="color:var(--ink)">' + x.on + ' is on it</b> · ' + x.by : x.by;
+    if (x.rx) meta += ' · <a>Recipe</a>';
+    return '<div class="m-r' + (x.u ? ' urgent' : '') + (x.d ? ' done' : '') + '">' +
+      '<span class="m-box' + (x.d ? ' done' : '') + '">' + (x.d ? ic('tick', 18) : '') + '</span>' +
+      '<div class="m-w"><div class="m-t">' + x.t + (x.q ? ' <i>' + x.q + '</i>' : '') + '</div><div class="m-m">' + (x.u ? '<span class="m-tag">Urgent</span>' : '') + meta + '</div></div>' +
+      (x.d ? '' : '<span class="m-on' + (x.on ? ' is' : '') + '">' + (x.on ? x.on : 'On it') + '</span>') +
+      (o.noDots || x.d ? '' : '<span class="m-dots">⋯</span>') + '</div>';
+  }
+  /* the recommended line, after the coverage check: Start here number, Urgent, Rolled and Waiting since tags, who is on
+     it in the box and the small line; the words and the small line tick (as since 5 Nov 2026), so Recipe is its own button */
+  function rxRow(x, o) {
+    var tags = (x.u ? '<span class="m-tag">Urgent</span>' : '') + (x.roll ? '<span class="m-tag roll">Rolled</span>' : '') + (x.why ? '<span class="m-tag why">' + x.why + '</span>' : '');
+    var meta = tags + (x.on ? '<b style="color:var(--ink)">' + x.on + ' on it</b> · ' : '') + (x.rby || x.by);
+    return '<div class="m-r' + (x.u ? ' urgent' : '') + (x.d ? ' done' : '') + '">' +
+      '<span class="m-box' + (x.d ? ' done' : '') + '">' + (x.d ? ic('tick', 18) : x.on ? '<span class="ini">' + x.on.charAt(0) + '</span>' : '') + '</span>' +
+      '<div class="m-w"><div class="m-t">' + (x.n ? '<span class="m-n">' + x.n + '</span>' : '') + x.t + (x.q ? ' <i>' + x.q + '</i>' : '') + '</div><div class="m-m">' + meta + '</div></div>' +
+      (o.lap && !x.d ? '<span class="m-on' + (x.on ? ' is' : '') + '">' + (x.on ? x.on + ' ✓' : 'On it') + '</span><span class="m-on"' + (x.u ? ' style="background:var(--ink);color:#fff;border-color:var(--ink)"' : '') + '>Urgent</span>' +
+        '<span class="m-on" style="border:0;background:none;min-width:64px;color:var(--tag);text-decoration:underline;text-underline-offset:3px">' + (x.rx ? 'Recipe' : '') + '</span><span class="m-link" style="width:60px;text-align:center">Remove</span><span class="m-dots">⋯</span></div>' :
+      (x.rx && !x.d ? '<span class="m-rxb">' + ic('book') + 'Recipe</span>' : '') +
+      (x.d ? '' : '<span class="m-on' + (x.on ? ' is' : '') + '">' + (x.on ? x.on + ' ✓' : 'On it') + '</span>') +
+      (x.d ? '' : '<span class="m-dots">⋯</span>') + '</div>');
+  }
+  function rail(o) {
+    o = o || {};
+    var out = '';
+    PREP.forEach(function (g) {
+      var open = g.l.filter(function (x) { return !x.d; });
+      out += '<div class="m-sec"><span>' + g.s + '</span><span>' + (g.l.length - open.length) + '/' + g.l.length + '</span></div>';
+      open.forEach(function (x) {
+        out += row(x, o);
+        if (o.openOn && x.t === o.openOn) out += '<div class="m-open"><span class="m-btn">' + ic('flag', 18) + 'Urgent</span><span class="m-btn">' + ic('book', 18) + 'Recipe</span><span class="m-btn">' + ic('scale', 18) + 'Change amount</span><span class="m-btn">' + ic('move', 18) + 'Move section</span><span class="m-btn del">' + ic('rm', 18) + 'Remove</span></div>';
+      });
+    });
+    out += '<div class="m-fold"><span><b>Done today (' + NDONE + ')</b> Laksa paste, Wash bok choy</span><span class="m-link">Show</span></div>';
+    return out;
+  }
+  function dayBar(o) {
+    o = o || {};
+    return '<div class="m-bar"><span class="m-pill round">‹</span><span class="m-pill date dk">' + (o.rx ? 'Today ▾' : 'Today') + '</span><span class="m-pill round">›</span><span class="m-sep"></span>' +
+      '<span class="m-pill on">All</span><span class="m-pill">Grill</span><span class="m-pill">Sauce</span><span class="m-pill">Larder</span><span class="m-pill">Fryer</span></div>';
+  }
+  function nbHead(o) {
+    o = o || {};
+    return '<div class="m-nbh"><div><div class="m-nbt">Today</div><div class="m-nbd">Friday 13 November</div></div><div style="text-align:right"><div class="m-link" style="margin-bottom:8px">Set today\'s team</div><div class="m-prog">' + NDONE + ' of ' + NLINES + ' done</div></div></div>';
+  }
+  function prepPhone(o) {
+    o = o || {};
+    return '<div class="ph' + (o.print ? ' print' : '') + (o.rx ? ' rx' : '') + '">' + top({ teamDue: o.teamDue !== false, back: true }) +
+      '<div class="m-body">' + dayBar(o) + '<div class="m-nb">' + nbHead(o) + rail(o) + '</div></div>' + act() + tabs('Prep') + (o.extra || '') + '</div>';
+  }
+
+
+  /* ---------- every page: the third look (8 Nov 2026). Made-up names, amounts and times. ---------- */
+  P.phone = '<path d="M6 3h4l2 5-2.5 1.5a11 11 0 0 0 5 5L16 12l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2z"/>';
+  P.inbox = '<path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1.5 3h5L16 13h5"/>';
+  P.chart = '<path d="M4 20V4M4 20h16"/><path d="M8 16l4-5 3 3 5-7"/>';
+  P.list = '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>';
+  P.key = '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/>';
+  P.star = '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>';
+  P.arrow = '<path d="M5 12h14M13 6l6 6-6 6"/>';
+  P.back2 = '<path d="M19 12H5M11 6l-6 6 6 6"/>';
+  P.layers = '<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>';
+  P.user = '<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/>';
+  P.cake = '<path d="M4 21V12h16v9z"/><path d="M4 16c2 1.5 4 1.5 6 0s4-1.5 6 0 3 1.5 4 0"/><path d="M12 12V8M12 5.5v.5"/>';
+  function diya(s) {
+    s = s || 34;
+    return '<svg viewBox="0 0 32 32" width="' + s + '" height="' + s + '" aria-hidden="true"><path d="M16 4c3 4 3 7 0 9-3-2-3-5 0-9z" fill="#F6C453" stroke="#C2451A" stroke-width="1.2"/><path d="M3 16h26c-1.5 7-7 11-13 11S4.5 23 3 16z" fill="#E2602A" stroke="#1C1D1F" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 19h16" stroke="#FBF8F1" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  }
+  function lights() { var o = ''; for (var k = 0; k < 18; k++) o += '<i></i>'; return '<div class="e-lights">' + o + '</div>'; }
+  function phone(o, body) {
+    o = o || {};
+    return '<div class="ph' + (o.cls ? ' ' + o.cls : '') + '">' + top(o) + (o.fest ? lights() : '') + '<div class="m-body"' + (o.bs ? ' style="' + o.bs + '"' : '') + '>' + body + '</div>' +
+      (o.act ? act(o.act) : '') + tabs(o.tab || '') + (o.extra || '') + '</div>';
+  }
+  function lapTop(on, o) {
+    o = o || {};
+    var nav = '<div class="m-nav">' + TABS.map(function (t) { return '<span class="' + (t[1] === on ? 'on' : '') + '">' + t[1] + '</span>'; }).join('') + '</div>';
+    return '<div class="m-top">' + (o.back ? '<span class="m-back">' + ic('back', 26) + '</span>' : '<span class="m-kb">KB</span>') + '<div class="m-brand"><small>Leichhardt Hotel Kitchen</small><b>Kitchen Book</b></div>' + nav +
+      '<span class="m-chips"><span class="m-chip' + (o.teamDue ? ' due' : '') + '">' + ic('team') + '</span><span class="m-chip">' + ic('bell') + '</span><span class="m-chip">' + ic('hat') + '<span class="bdg">' + (o.who || 'S') + '</span></span></span></div>';
+  }
+  function boardRow(icon, what, small, when, tag, cls) {
+    return '<div class="m-br">' + icon + '<div class="what">' + what + (small ? '<small>' + small + '</small>' : '') + '</div><div class="when">' + when + (tag ? '<small' + (cls ? ' class="' + cls + '"' : '') + '>' + tag + '</small>' : '') + '</div></div>';
+  }
+  function festHead() {
+    return '<div class="e-fest">' + diya(36) + '<div><b>Diwali / Deepavali</b><p>Light over darkness, kept by Hindu, Jain and Sikh families.</p></div><em>English</em></div>';
+  }
+  function secBars(rows, wide) {
+    return '<div class="m-secs">' + rows.map(function (s) { return '<div class="m-sl"' + (wide ? ' style="grid-template-columns:90px 1fr 80px"' : '') + '><span>' + s[0] + '</span><span class="trk"><i class="' + (s[1] >= 100 ? 'ok' : '') + '" style="width:' + Math.max(s[1], 4) + '%"></i></span><em>' + s[2] + '</em></div>'; }).join('') + '</div>';
+  }
+  function plate(sz, rim, food) {
+    var r = sz / 2;
+    var f = { adobo: '<ellipse cx="' + (r - 8) + '" cy="' + (r + 2) + '" rx="' + r * .32 + '" ry="' + r * .24 + '" fill="#6B3A1E"/><ellipse cx="' + (r + 12) + '" cy="' + (r - 6) + '" rx="' + r * .26 + '" ry="' + r * .2 + '" fill="#7A4424"/><ellipse cx="' + (r + 4) + '" cy="' + (r + 16) + '" rx="' + r * .3 + '" ry="' + r * .14 + '" fill="#F4EFE2"/><path d="M' + (r - 14) + ' ' + (r - 10) + 'q6 -6 12 0" stroke="#4E9A3A" stroke-width="3" fill="none"/>',
+      nachos: '<path d="M' + (r - 26) + ' ' + (r + 6) + 'l18 -26 10 24z" fill="#F2C14E"/><path d="M' + (r - 4) + ' ' + (r - 22) + 'l26 6 -12 22z" fill="#E9B23A"/><circle cx="' + (r + 2) + '" cy="' + (r + 4) + '" r="' + r * .2 + '" fill="#7A3B22"/><circle cx="' + (r - 10) + '" cy="' + (r + 14) + '" r="6" fill="#86B75A"/><circle cx="' + (r + 14) + '" cy="' + (r + 12) + '" r="5" fill="#D8423B"/>',
+      corn: '<rect x="' + (r - 26) + '" y="' + (r - 9) + '" width="52" height="18" rx="9" fill="#E8A13C"/><path d="M' + (r - 20) + ' ' + r + 'h40" stroke="#C2451A" stroke-width="3" stroke-dasharray="4 4"/><circle cx="' + (r + 6) + '" cy="' + (r - 4) + '" r="3" fill="#4E9A3A"/>',
+      fish: '<path d="M' + (r - 26) + ' ' + r + 'q22 -20 44 0q-22 20 -44 0z" fill="#E7C08A"/><path d="M' + (r + 18) + ' ' + r + 'l10 -8v16z" fill="#D9A867"/><rect x="' + (r - 22) + '" y="' + (r + 14) + '" width="30" height="10" rx="3" fill="#F2D06B"/>' }[food] || '';
+    return '<svg class="e-plate" viewBox="0 0 ' + sz + ' ' + sz + '" width="' + sz + '" height="' + sz + '" aria-hidden="true"><circle cx="' + r + '" cy="' + (r + 3) + '" r="' + (r - 3) + '" fill="rgba(60,40,10,.12)"/><circle cx="' + r + '" cy="' + r + '" r="' + (r - 3) + '" fill="' + rim + '" stroke="#D9D4C8" stroke-width="1.5"/><circle cx="' + r + '" cy="' + r + '" r="' + (r * .68) + '" fill="' + (rim === '#4A4C52' ? '#5B5E65' : '#FFFFFF') + '" stroke="#E6E0D3"/>' + f + '</svg>';
+  }
+  function ePrepRail() {
+    var out = '';
+    PREP.forEach(function (g) {
+      var open = g.l.filter(function (x) { return !x.d; }), pct = Math.round((g.l.length - open.length) / g.l.length * 100);
+      out += '<div class="m-sec"><span>' + g.s + '</span><span class="e-bar"><i class="' + (pct >= 100 ? 'ok' : '') + '" style="width:' + Math.max(pct, 3) + '%"></i></span><span>' + (g.l.length - open.length) + '/' + g.l.length + '</span></div>';
+      open.forEach(function (x) { out += rxRow(x, { rx: true }); });
+    });
+    return out + '<div class="m-fold"><span><b>Done today (' + NDONE + ')</b> Laksa paste, Wash bok choy</span><span class="m-link">Show</span></div><div class="m-fold"><span><b>Tonight for tomorrow (4)</b></span><span class="m-link">Show</span></div>';
+  }
+
+  var E = {};
+  /* HOME: B's board on the kraft board, with the day's celebration built in */
+  E['e-home'] = { w: 390, g: 'home', cap: '<b>Home on Diwali, sous chef, 14:20.</b> The kraft board stays. The festival leads the board in its six languages; lamps sit by the day and lights hang under the top bar. Below: now and next, prep by section, coming up (festivals too).', html: function () {
+    return phone({ cls: 'e-kraft print', fest: true, teamDue: false }, '<div class="e-head"><div><div class="e-day">Sunday</div><div class="e-date">8 November · 14:20</div></div><div style="display:flex;gap:4px">' + diya(34) + diya(34) + '</div></div>' +
+      '<div class="m-board e-pin" style="margin-top:12px">' + festHead() + '<div class="m-bh"><span>Now and next</span><b>14:20</b></div>' +
+      boardRow(ic('coffee'), 'Your break', 'Back on Grill at 15:30', '15:00', '30 min') +
+      boardRow(ic('truck'), 'Produce order closes', 'For Monday\'s delivery', '16:00', '1 h 40 left', 'hot') +
+      boardRow(ic('cal'), 'Birthday 60th, 40 guests', 'Round 1 of 3 · platters by 18:20', '18:30', 'Round 1') + '</div>' +
+      '<div class="e-paper e-pin" style="margin-top:14px"><div class="m-day" style="margin-top:4px"><span>Prep by section</span><span>2 of 14 done</span></div>' + secBars([['Grill', 0, '3 left'], ['Sauce', 33, '2 left'], ['Larder', 20, '4 left']]) + '</div>' +
+      '<div class="e-paper e-pin" style="margin-top:14px"><div class="m-day" style="margin-top:4px"><span>Coming up</span></div><div class="e-up"><b>Mon 9</b><span class="fest">' + diya(18) + 'Tihar begins, 5 days</span></div><div class="e-up"><b>Sat 14</b><span>Wedding reception, 80 guests</span></div></div>');
+  } };
+  E['e-home-staff'] = { w: 390, g: 'home', cap: '<b>Home for a cook at 18:10, a plain day.</b> Your section and break first, the next round in 20 minutes, the pings. No festival: the board starts with Now and next. Tap a row to go to its page.', html: function () {
+    return phone({ cls: 'e-kraft print', who: 'A', teamDue: false }, '<div class="e-head"><div><div class="e-day">Friday</div><div class="e-date">13 November · 18:10</div></div></div>' +
+      '<div class="m-board e-pin" style="margin-top:12px"><div class="m-bh"><span>Now and next</span><b>18:10</b></div>' +
+      boardRow(ic('prep'), 'You are on Larder', '2 lines left · Slice onions first', '2', 'Left') +
+      boardRow(ic('cal'), 'Round 1, Birthday 60th', 'Arancini 80 · Pork sliders 40', '18:30', 'In 20 min', 'hot') +
+      boardRow(ic('coffee'), 'Your break', 'Done at 15:30', '15:00', 'Done', 'ok') +
+      boardRow(ic('bell'), '1 ping for everyone', 'Fryer 2 is down. Use fryer 1.', ic('chev', 20), '') + '</div>' +
+      '<div class="e-paper e-pin" style="margin-top:14px"><div class="m-day" style="margin-top:4px"><span>Coming up</span></div>' +
+      '<div class="e-up"><b>Sat 14</b><span>Wedding reception, 80 guests</span></div><div class="e-up"><b>Mon 16</b><span class="fest">' + diya(18) + 'Tihar ends</span></div><div class="e-up"><b>Tue 17</b><span>Nothing booked</span></div></div>');
+  } };
+  E['e-home-1280'] = { w: 1280, g: 'home', cap: '<b>Home on the laptop, Diwali.</b> The board and Coming up on the left; prep by section and who is on today on the right, all on the kraft board.', html: function () {
+    return '<div class="lt e-kraft print">' + lapTop('', {}) + '<div class="e-lights" style="top:92px">' + lights().replace('<div class="e-lights">', '').replace(/<\/div>$/, '') + '</div>' +
+      '<div class="m-body" style="display:grid;grid-template-columns:600px 1fr;gap:36px">' +
+      '<div><div class="e-head"><div><div class="e-day" style="font-size:56px">Sunday</div><div class="e-date">8 November · 14:20</div></div><div style="display:flex;gap:6px">' + diya(44) + diya(44) + diya(44) + '</div></div>' +
+      '<div class="m-board e-pin" style="margin-top:14px">' + festHead() + '<div class="m-bh"><span>Now and next</span><b>14:20</b></div>' +
+      boardRow(ic('coffee'), 'Your break', 'Back on Grill at 15:30', '15:00', '30 min') +
+      boardRow(ic('truck'), 'Produce order closes', 'For Monday\'s delivery', '16:00', '1 h 40 left', 'hot') +
+      boardRow(ic('cal'), 'Birthday 60th, 40 guests', 'Round 1 of 3 · platters by 18:20', '18:30', 'Round 1') +
+      boardRow(ic('bell'), '2 pings and meeting minutes to sign', 'Tap to read them', ic('chev', 20), '') + '</div></div>' +
+      '<div style="padding-top:70px"><div class="e-paper e-pin"><div class="m-day" style="margin-top:4px"><span>Prep by section</span><span>2 of 14 done</span></div>' + secBars([['Grill', 0, '3 left'], ['Sauce', 33, '2 left'], ['Larder', 20, '4 left'], ['Fryer', 0, '1 left'], ['Pastry', 0, '2 left']], true) + '</div>' +
+      '<div class="e-paper e-pin" style="margin-top:18px"><div class="m-day" style="margin-top:4px"><span>Coming up</span></div><div class="e-up"><b>Mon 9</b><span class="fest">' + diya(18) + 'Tihar begins</span></div><div class="e-up"><b>Sat 14</b><span>Wedding reception, 80 guests</span></div><div class="e-up"><b>Mon 16</b><span>Dry goods order closes 12:00</span></div></div>' +
+      '<div class="e-paper e-pin" style="margin-top:18px"><div class="m-day" style="margin-top:4px"><span>On today</span><span>Today\'s team</span></div>' + [['Grill', 'Bo · Sam from 17:00'], ['Sauce', 'Ann'], ['Larder', 'Fay · break 15:00'], ['Pastry', 'Finn']].map(function (r) { return '<div class="e-up" style="grid-template-columns:70px 1fr"><b>' + r[0] + '</b><span>' + r[1] + '</span></div>'; }).join('') + '</div></div></div></div>';
+  } };
+
+  /* WORK PAGES */
+  E['e-prep'] = { w: 390, g: 'work', cap: '<b>Prep</b> (Things, Duolingo). One row a line, as agreed, with a bar in each section heading that fills as lines are ticked. Done today and Tonight for tomorrow fold to one line each, like a logbook.', html: function () {
+    return '<div class="ph print rx">' + top({ back: true, teamDue: true }) + '<div class="m-body">' + dayBar({ rx: true }) + '<div class="m-nb">' + nbHead({}) + ePrepRail() + '</div></div>' + act() + tabs('Prep') + '</div>';
+  } };
+  E['e-add'] = { w: 390, g: 'work', cap: '<b>Add a line</b> (Todoist). Opens clean with the box ready. As you type, your usual lines come first with everything the book knows; one tap adds one. A new line asks for its section and amount: nothing is guessed.', html: function () {
+    return '<div class="ph print rx">' + top({ back: true, teamDue: true }) + '<div class="m-body">' + dayBar({ rx: true }) + '<div class="m-nb">' + nbHead({}) + ePrepRail() + '</div></div>' + tabs('Prep') +
+      '<div class="m-dim"></div><div class="m-sheet" style="bottom:250px;border-radius:16px 16px 0 0;padding-bottom:10px"><div class="m-grip"></div><div class="m-sh" style="margin:0 0 10px">Add to prep</div>' +
+      '<div class="e-sheet-in">oni<span class="cur"></span></div><div class="m-grp" style="margin-top:12px">Your usual</div>' +
+      [['Slice onions', '2 tubs · Larder'], ['Dice onions', '1 tub · Larder'], ['Pickled red onion', '1 batch · Larder · has a recipe']].map(function (x) { return '<div class="e-sugg"><div class="t">' + x[0] + '<small>' + x[1] + '</small></div><span class="e-chip">' + ic('plus', 16) + 'Add</span></div>'; }).join('') +
+      '<div class="e-sugg" style="border-bottom:0"><div class="t">New line "oni"<small>Pick its section and amount next</small></div><span class="e-chip soft">Next</span></div></div><div class="m-kbd">Keyboard</div></div>';
+  } };
+  E['e-orders'] = { w: 390, g: 'work', cap: '<b>Orders for a chef</b> (Flighty). Requests sit under the supplier whose cut-off is next, with the time left in big numbers. Out now leads. Staff see the plain list with Running low and Out now, as today.', html: function () {
+    function grp(name, closes, left, hot, lines) {
+      return '<div class="e-card" style="padding:10px 12px;margin-top:10px"><div style="display:flex;align-items:flex-end;justify-content:space-between"><div><div class="m-eb">' + name + '</div><div style="font-size:13px;color:var(--muted);margin-top:3px">Closes ' + closes + '</div></div><div class="e-cd" style="text-align:right;color:' + (hot ? 'var(--tag)' : 'var(--ink)') + '">' + left + '<small>' + (hot ? 'Left, closing soon' : 'Left') + '</small></div></div>' +
+        lines.map(function (x) { return '<div class="m-r" style="min-height:48px"><span class="m-box"></span><div class="m-w"><div class="m-t">' + x[0] + ' <i>' + x[1] + '</i></div><div class="m-m">' + (x[2] ? '<span class="m-tag' + (x[2] === 'Out now' ? '' : ' roll') + '">' + x[2] + '</span>' : '') + x[3] + '</div></div><span class="m-dots">⋯</span></div>'; }).join('') +
+        '<div class="m-link" style="margin:10px 0 2px">Open the ' + name.toLowerCase() + ' order</div></div>';
+    }
+    return phone({ cls: 'print rx', back: true, teamDue: true, tab: 'Orders', act: 'Add to the order' }, '<div class="m-bar" style="-webkit-mask-image:none;mask-image:none"><span class="m-pill date dk">Today ▾</span><span class="m-pill" style="margin-left:auto;text-transform:none;letter-spacing:0;font:600 14px/1 var(--body);gap:6px">' + ic('thermo', 18) + 'Delivery received</span></div>' +
+      grp('Dairy', '15:00 for Tuesday', '40 min', true, [['Milk', '6 L', 'Out now', 'Ann 13:00'], ['Cream', '2 L', '', 'Bo 12:40']]) +
+      grp('Produce', '16:00 for Monday', '1 h 40', false, [['Cos lettuce', '2 boxes', '', 'Bo 12:15'], ['Lemons', '', 'Running low', 'Fay 11:50']]));
+  } };
+  E['e-supplier'] = { w: 390, g: 'work', cap: '<b>A supplier order on one card</b> (Airbnb, Flighty). When it closes and what it is for, the requests from the order list, then each item with stock and par. Record order or Mark order done, as now. No prices or codes.', html: function () {
+    var it = [['Milk', '2 L', '12 L', '10 L', 'Ann asked: Out now'], ['Cream', '1 L', '4 L', '3 L', ''], ['Butter', '3 kg', '5 kg', '2 kg', ''], ['Eggs', '4 doz', '10 doz', '', '']];
+    return phone({ cls: 'rx', back: true, teamDue: true }, '<div class="m-eb">Supplier order</div><div class="m-h" style="margin-top:6px">Dairy</div>' +
+      '<div class="e-card" style="display:flex;align-items:center;justify-content:space-between;border-color:var(--tag)"><div><div style="font:600 15px/1.2 var(--body)">Closes today 15:00</div><div style="font-size:13px;color:var(--muted);margin-top:3px">For Tuesday\'s delivery</div></div><div class="e-cd" style="color:var(--tag);text-align:right">40 min<small>Left</small></div></div>' +
+      '<div class="m-day"><span>Item</span><span>Stock · par · order</span></div>' +
+      it.map(function (x) { return '<div class="e-row"><div class="grow"><div class="t">' + x[0] + '</div><div class="s">' + (x[4] ? '<span class="m-tag">' + x[4] + '</span>' : 'Usually ' + x[2]) + '</div></div><span style="font-size:13px;color:var(--muted);width:76px;text-align:right">' + x[1] + ' · ' + x[2] + '</span><span class="m-search" style="min-height:44px;width:70px;padding:0 10px;color:var(--ink);font-weight:600">' + (x[3] || '<span style="color:var(--faint)">0</span>') + '</span></div>'; }).join('') +
+      '<div style="display:flex;gap:8px;margin-top:14px"><span class="m-btn main" style="flex:1">Record order</span><span class="m-btn" style="flex:1">Mark order done</span></div><div class="m-link" style="margin-top:12px">Last 4 orders</div>');
+  } };
+  E['e-delivery'] = { w: 390, g: 'work', cap: '<b>Delivery received</b> (Flighty arrivals). Today\'s deliveries as arrivals with a stamp; the next one to record opens with the supplier picked and a big reading. Records stay as recorded.', html: function () {
+    return phone({ cls: 'rx', back: true, teamDue: true }, '<div class="m-h">Delivery received</div><p class="m-hint">Measured on arrival. Queensland time.</p>' +
+      '<div class="e-arr"><div class="tm">07:12</div><div class="ln"><i class="ok"></i></div><div class="bd"><b>Meat</b> · Bo<div style="display:flex;gap:8px;align-items:center;margin-top:4px"><span class="e-stamp">Chilled 3 °C</span></div></div>' +
+      '<div class="tm">09:40</div><div class="ln"><i class="ok"></i></div><div class="bd"><b>Produce</b> · Ann<div style="margin-top:4px"><span class="e-stamp">Chilled 4 °C</span></div></div>' +
+      '<div class="tm" style="color:var(--tag)">Now</div><div class="ln"><i></i></div><div class="bd"><div class="e-card"><div class="e-chips" style="margin-bottom:10px"><span class="e-chip on">Dairy</span><span class="e-chip">Dry goods</span><span class="e-chip">Other</span></div><div class="e-seg" style="margin-bottom:12px"><span class="on">Chilled</span><span>Frozen</span><span>Both</span></div>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between"><span class="m-pill round" style="width:52px;min-height:52px;font-size:24px">−</span><span><span class="e-big">3.5</span><span class="e-unit">°C</span></span><span class="m-pill round" style="width:52px;min-height:52px;font-size:24px">+</span></div>' +
+      '<div class="m-btn main wide" style="margin-top:12px">Save delivery</div></div></div></div>');
+  } };
+  E['e-waste'] = { w: 390, g: 'work', cap: '<b>Wastage</b> (Todoist, Duolingo). Today\'s count and the sections it came from (amounts in different units are never added up). Make it again chips log a usual waste in one tap with everything filled; Log waste for the rest. The end-of-day review stays.', html: function () {
+    var w = [['13:30', 'Chips', '2 kg', 'Excess production', 'Fryer · Bo'], ['11:05', 'Bread rolls', '12', 'Expired', 'Pastry · Finn'], ['09:40', 'Cream', '1 L', 'Spoiled', 'Larder · Ann']];
+    return '<div class="ph print rx">' + top({ back: true, teamDue: true }) + '<div class="m-body"><div class="m-nb"><div class="m-nbh"><div><div class="m-nbt">Wastage</div><div class="m-nbd">Friday 13 November</div></div><div style="text-align:right"><div class="m-prog">3 entries</div><div style="font:600 13px/1.2 var(--body);color:var(--muted)">Fryer, Pastry, Larder</div></div></div>' +
+      '<div class="m-grp" style="margin-top:12px">Make it again</div><div class="e-scroll"><span class="e-chip">' + ic('plus', 16) + 'Chips 2 kg</span><span class="e-chip">' + ic('plus', 16) + 'Bread rolls 12</span><span class="e-chip">' + ic('plus', 16) + 'Rice 1 kg</span></div>' +
+      '<div style="height:6px"></div>' + w.map(function (x) { return '<div class="m-r"><span style="font:600 13px/1 var(--body);color:var(--muted);width:40px;flex:none">' + x[0] + '</span><div class="m-w"><div class="m-t">' + x[1] + ' <i>' + x[2] + '</i></div><div class="m-m"><span class="m-tag why">' + x[3] + '</span>' + x[4] + '</div></div><span class="m-dots">⋯</span></div>'; }).join('') +
+      '<div class="m-btn" style="justify-content:flex-start;margin:14px 0;flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px"><b style="font-size:15px">End-of-day review</b><small style="color:var(--muted);font-weight:500">Not written yet</small></div></div></div>' + act('Log waste') + tabs('Wastage') + '</div>';
+  } };
+  E['e-transfers'] = { w: 390, g: 'work', cap: '<b>Transfers</b> (Airbnb reservations). Each loan is a card: who has it, what, since when, and Returned on the card (a return is always the whole loan, as today). Old loans turn red. Today\'s log underneath.', html: function () {
+    function loan(to, since, age, old, items) {
+      return '<div class="e-card e-loan' + (old ? ' old' : '') + '" style="margin-top:10px"><div style="display:flex;justify-content:space-between;align-items:baseline"><div class="m-eb" style="color:var(--ink)">' + to + '</div><span class="m-tag' + (old ? '' : ' roll') + '" style="margin:0">' + age + '</span></div><div style="font-size:13px;color:var(--muted);margin:3px 0 8px">' + since + '</div>' +
+        items.map(function (i) { return '<div style="font:600 16px/1.5 var(--body)">' + i + '</div>'; }).join('') + '<div style="display:flex;gap:8px;margin-top:10px"><span class="m-btn dark">' + ic('tick', 18) + 'Returned</span><span style="font-size:13px;color:var(--muted);align-self:center">All of it came back</span></div></div>';
+    }
+    return phone({ cls: 'rx', back: true, teamDue: true, tab: 'Transfers', act: 'Log a transfer' }, '<div class="e-seg"><span class="on">Out on loan (2)</span><span>Today (1)</span></div>' +
+      loan('Lent to Venue 2', 'Tue 10 Nov 15:20 · Sam', '3 days', false, ['Brioche buns 2 packs', 'Cream 2 L']) +
+      loan('Borrowed from Venue 3', 'Wed 4 Nov 11:05 · Ann', '9 days', true, ['Fryer oil 20 L']));
+  } };
+
+  /* FUNCTIONS */
+  E['e-fn'] = { w: 390, g: 'fn', cap: '<b>Functions</b> (Airbnb Today and Upcoming). Today\'s bookings as cards with what goes out next; Upcoming lists only the days with something on. Print prep sheet on each day.', html: function () {
+    return phone({ cls: 'rx', back: true, teamDue: true }, '<div class="e-seg" style="margin-bottom:12px"><span class="on">Today (1)</span><span>Upcoming (2)</span></div>' +
+      '<div class="e-card"><div class="m-eb">18:00 · Function room · 40 guests</div><div class="m-h" style="font-size:26px;margin:6px 0 8px">Birthday 60th</div>' +
+      '<div class="m-alert" style="font-size:14.5px">' + ic('clock') + '<span>Next out: Round 1 at 18:30. Platters on the pass by 18:20.</span></div>' +
+      '<div style="font-size:13.5px;color:var(--muted);margin-top:8px">3 rounds · 3 gluten free, 1 vegan</div><div style="display:flex;gap:8px;margin-top:10px"><span class="m-btn dark">Open</span><span class="m-btn">' + ic('print', 18) + 'Print prep sheet</span></div></div>' +
+      '<div class="m-day" style="margin-top:18px"><span>Coming up</span></div><div class="e-up"><b>Sat 14</b><span>Wedding reception · 80 guests · from 17:30</span></div><div class="e-up"><b>Tue 17</b><span>Club lunch · 25 guests · from 12:00</span></div><div class="m-quietline" style="margin-top:10px">' + ic('cal', 20) + 'Nothing else booked in the next 14 days.</div>');
+  } };
+  E['e-service'] = { w: 390, g: 'fn', cap: '<b>Service view</b> (Flighty). A live board of tonight\'s rounds: the next one with its countdown, the platters, and Sent when it goes. Both prints at the end.', html: function () {
+    return phone({ cls: 'rx', back: true, teamDue: false }, '<div class="m-h">Service</div><p class="m-hint">Tonight\'s rounds, in order. Up to date, 18:10.</p>' +
+      '<div class="m-board"><div class="m-bh"><span>Birthday 60th · 40 guests</span><b>18:10</b></div>' +
+      boardRow('<span class="m-box" style="width:24px;height:24px;background:transparent;border-color:#FBF8F1"></span>', 'Round 1', 'Arancini 80 · Pork sliders 40', '18:30', 'In 20 min', 'hot') +
+      boardRow('<span class="m-box" style="width:24px;height:24px;background:transparent;border-color:#FBF8F1"></span>', 'Round 2', 'Fish tacos 40 · Salt and pepper squid 40', '19:15', 'Next') +
+      boardRow('<span class="m-box" style="width:24px;height:24px;background:transparent;border-color:#FBF8F1"></span>', 'Round 3', 'Dessert cups 40', '20:00', 'Later') + '</div>' +
+      '<p class="m-hint" style="margin-top:10px">Tick a round when it has gone out. Undo for 2 minutes.</p><div style="display:flex;gap:8px"><span class="m-btn">' + ic('print', 18) + 'Prep sheet</span><span class="m-btn">' + ic('print', 18) + 'Run sheet</span></div>');
+  } };
+
+  /* RECIPES */
+  E['e-recipes'] = { w: 390, g: 'recipes', cap: '<b>Recipes</b> (Airbnb browsing, Linear controls). One search pill with Pass and Tiles inside it; one row of chips for the menu; Free from as a chip row. Plates in two columns with their allergens.', html: function () {
+    return phone({ cls: 'rx', back: true, teamDue: false, tab: 'Recipes' }, '<div class="m-search" style="border-radius:var(--r-pick);min-height:52px">' + ic('search', 20) + '<span style="flex:1">Dish, ingredient or allergen</span><span style="display:flex;gap:2px;border-left:1.5px solid var(--line);padding-left:10px;color:var(--ink)">' + ic('plate', 20) + '</span></div>' +
+      '<div class="e-scroll" style="margin-top:12px"><span class="e-chip on">All 128</span><span class="e-chip">Specials 3</span><span class="e-chip">Mains</span><span class="e-chip">Snackin\' plates</span><span class="e-chip">Sides</span></div>' +
+      '<div class="e-scroll" style="margin-top:8px"><span class="e-chip soft" style="font-weight:700">Free from</span><span class="e-chip soft">Gluten</span><span class="e-chip soft">Dairy</span><span class="e-chip soft">Nuts</span><span class="e-chip soft">Egg</span></div>' +
+      '<div class="m-day" style="margin-top:16px"><span>Specials</span><span>3</span></div><div class="e-shelf">' +
+      '<div class="e-dish">' + plate(120, '#FFFFFF', 'adobo').replace('<svg', '<svg style="margin:0 auto"') + '<b>Chicken Adobo</b><small>With jasmine rice</small><div class="e-tagline"><span class="e-al">Soy</span><span class="e-al maybe">Gluten?</span></div></div>' +
+      '<div class="e-dish">' + plate(120, '#FFFFFF', 'nachos').replace('<svg', '<svg style="margin:0 auto"') + '<b>Smoked Pulled Lamb Nachos</b><small>Mozzarella, ranch</small><div class="e-tagline"><span class="e-al">Dairy</span><span class="e-al">Egg</span></div></div></div>');
+  } };
+  E['e-recipe'] = { w: 390, g: 'recipes', cap: '<b>A recipe card</b> (Airbnb listing). The plate first, then a row of facts, then Allergens, Ingredients and Method as tabs that stay at the top while you scroll. The card\'s words come from the book as now.', html: function () {
+    return phone({ cls: 'rx', back: true, teamDue: false, tab: 'Recipes' }, '<div style="font-size:13.5px"><span class="m-link">The pass</span> / Chicken Adobo</div>' +
+      '<div style="display:grid;place-items:center;margin:8px 0 4px">' + plate(170, '#FFFFFF', 'adobo') + '</div>' +
+      '<div class="m-eb">Main · Special</div><div class="m-h" style="margin:4px 0 10px">Chicken Adobo</div>' +
+      '<div class="e-facts"><div>Card<b>124</b></div><div>Plate<b>180 g rice</b></div><div>Batch<b>2.5 kg</b></div></div>' +
+      '<div class="e-tabsline" style="margin-top:12px"><span class="on">Allergens</span><span>Ingredients</span><span>Method</span></div>' +
+      '<div style="padding-top:12px"><div style="display:flex;gap:8px;align-items:center;margin-bottom:8px"><span class="e-al" style="font-size:14px;min-height:30px">Soy</span><span style="font-size:14px">soy sauce</span></div><div style="display:flex;gap:8px;align-items:center"><span class="e-al maybe" style="font-size:14px;min-height:30px">Gluten?</span><span style="font-size:14px">check the soy sauce and stock labels</span></div>' +
+      '<div class="m-link" style="margin-top:14px">' + 'Change this recipe' + '</div></div>');
+  } };
+
+  /* KITCHEN PAGES */
+  E['e-guide'] = { w: 390, g: 'kitchen', cap: '<b>A guide, one step at a time</b> (Headspace, Duolingo). A big drawing, one short instruction, the steps as a bar. Back and Next at the thumb; All steps for the whole page and the PDF.', html: function () {
+    var fryer = '<svg viewBox="0 0 200 160" width="220" height="176" aria-hidden="true"><rect x="40" y="50" width="120" height="96" rx="8" fill="#FFFFFF" stroke="#1C1D1F" stroke-width="3"/><rect x="52" y="62" width="96" height="40" rx="4" fill="#F2C14E" stroke="#1C1D1F" stroke-width="2.5"/><path d="M60 62v-24h30v24M110 62v-24h30v24" fill="none" stroke="#1C1D1F" stroke-width="3"/><circle cx="64" cy="124" r="7" fill="#E2602A"/><rect x="84" y="118" width="54" height="12" rx="3" fill="#E6E0D3"/><path d="M164 92c14 0 18 10 18 22v20" fill="none" stroke="#C2451A" stroke-width="4" stroke-dasharray="6 5"/><rect x="168" y="132" width="26" height="20" rx="3" fill="#A39A88"/></svg>';
+    return phone({ cls: 'rx', back: true, teamDue: false, tab: 'Guides' }, '<div class="m-eb">Equipment · Clean the deep fryer</div><div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0"><b style="font:700 15px/1 var(--display);letter-spacing:.08em;text-transform:uppercase">Step 2 of 6</b><span class="m-link">All steps</span></div><div class="e-steps"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>' +
+      '<div class="e-ill" style="margin-top:14px">' + fryer + '</div><p style="font:600 20px/1.35 var(--body);margin:16px 0 6px">Drain the oil into the filter tin.</p><p style="font-size:15px;color:var(--muted);margin:0">Wear the long gloves. The oil must be off and cool to touch.</p>' +
+      '<div style="display:flex;gap:10px;position:absolute;left:12px;right:12px;bottom:80px"><span class="m-btn" style="flex:1">' + ic('back2', 18) + 'Back</span><span class="m-btn main" style="flex:2">Next step' + ic('arrow', 18) + '</span></div>');
+  } };
+  E['e-pings'] = { w: 390, g: 'kitchen', cap: '<b>Shift pings as an inbox</b> (Linear, Flighty alerts). The bell opens Now and Earlier; each ping says who it is for, who sent it and when. Chefs get New ping at the bottom.', html: function () {
+    function p(dot, who, msg, at) { return '<div class="e-in"><span class="dot' + (dot ? '' : ' read') + '"></span><div><b>' + msg + '</b><p>' + who + '</p></div><time>' + at + '</time></div>'; }
+    return phone({ cls: 'rx', back: true, teamDue: true, tab: 'Prep', extra: '<div class="m-dim"></div><div class="m-sheet" style="top:120px"><div class="m-grip"></div><div style="display:flex;justify-content:space-between;align-items:baseline"><div class="m-sh">Pings</div><span class="m-link">Mark all read</span></div>' +
+      '<div class="e-seg" style="margin:10px 0 4px"><span class="on">Now (2)</span><span>Earlier (5)</span></div>' +
+      p(1, 'Everyone · from Sam', 'Fryer 2 is down. Use fryer 1 for chips.', '14:05') + p(1, 'To you · from Sam', 'Your break 15:00, 30 min.', '13:50') + p(0, 'Everyone · from Sam', 'Function tonight: platters on the pass by 18:20.', '11:30') +
+      '<div class="m-btn main wide" style="position:absolute;left:16px;right:16px;bottom:84px">' + ic('plus') + 'New ping</div></div>' }, '');
+  } };
+  E['e-team'] = { w: 390, g: 'kitchen', cap: '<b>Today\'s team as a timeline</b> (Flighty). Each person\'s shift as a bar by section, the break in orange, a split shift as a gap, and a line for now. Change opens the plan, as today.', html: function () {
+    function bar(from, to, br, br2) { var x = function (h) { return ((h - 10) / 12 * 100) + '%'; }; return '<div class="tr"><span class="sh" style="left:' + x(from) + ';width:calc(' + x(to) + ' - ' + x(from) + ')"></span>' + (br ? '<span class="br" style="left:' + x(br) + ';width:calc(' + x(br + (br2 || .5)) + ' - ' + x(br) + ')"></span>' : '') + '</div>'; }
+    function pr(name, sec, b) { return '<div class="pr"><b>' + name + '<small>' + sec + '</small></b>' + b + '</div>'; }
+    return phone({ cls: 'rx', back: true, teamDue: false }, '<div style="display:flex;justify-content:space-between;align-items:baseline"><div class="m-h">Today\'s team</div><span class="m-link">Change</span></div><p class="m-hint">Set by Sam 09:12. Lunch 10:00 to 15:00, dinner 17:00 to 22:00.</p>' +
+      '<div class="e-tl"><div class="hrs"><span></span><span>10</span><span>12</span><span>14</span><span>16</span><span>18</span><span>20</span></div>' +
+      '<div style="position:relative"><span class="now" style="left:calc(70px + (100% - 70px) * ' + ((14.33 - 10) / 12) + ')"></span>' +
+      pr('Bo', 'Grill', bar(10, 22, 15)) + pr('Sam', 'Grill · sous', bar(13, 22, 18.5)) + pr('Ann', 'Sauce', bar(10, 18, 13.5)) +
+      pr('Fay', 'Larder · split', '<div class="tr"><span class="sh" style="left:0;width:' + (4.5 / 12 * 100) + '%"></span><span class="sh" style="left:' + (7.5 / 12 * 100) + '%;width:' + (4.5 / 12 * 100) + '%"></span></div>') +
+      pr('Finn', 'Pastry', bar(10, 16, 12.5)) + '</div></div>' +
+      '<div style="display:flex;gap:16px;margin-top:12px;font-size:13px;color:var(--muted)"><span><i style="display:inline-block;width:14px;height:10px;background:var(--ink);border-radius:2px;margin-right:6px"></i>On</span><span><i style="display:inline-block;width:14px;height:10px;background:var(--bar-accent);border-radius:2px;margin-right:6px"></i>Break</span><span><i style="display:inline-block;width:2px;height:12px;background:var(--accent-ink);margin-right:6px"></i>Now 14:20</span></div>');
+  } };
+  E['e-drinks'] = { w: 390, g: 'kitchen', cap: '<b>Drinks run as a café docket</b> (Duolingo\'s warmth, kept small). Your usual on top, the order as a docket to read out at the counter, I\'ll go in one tap. No points, no streaks.', html: function () {
+    return phone({ cls: 'rx', back: true, teamDue: false }, '<div class="m-nbt" style="font-size:42px">Drinks run</div><div class="e-card" style="margin-top:10px;display:flex;align-items:center;justify-content:space-between"><div><div class="m-eb" style="color:var(--muted)">Your usual</div><div style="font:600 16px/1.3 var(--body);margin-top:4px">Large long black, extra shot</div></div><span class="m-link">Change</span></div>' +
+      '<div class="m-day" style="margin-top:18px"><span>The order</span><span>3 drinks · 2 people</span></div><div class="e-ticket">' +
+      '<div class="ln"><span><b>1</b> Large long black, extra shot</span><span style="color:var(--muted)">Sam</span></div><div class="ln"><span><b>1</b> Flat white, oat, 1 sugar</span><span style="color:var(--muted)">Ann</span></div><div class="ln"><span><b>1</b> Coke No Sugar</span><span style="color:var(--muted)">Ann</span></div></div>' +
+      '<div class="m-btn main wide" style="margin-top:14px">I\'ll go</div><div class="m-link" style="margin-top:12px">Not signed in today: 2 more. Show them</div>');
+  } };
+  E['e-minutes'] = { w: 390, g: 'kitchen', cap: '<b>Meeting minutes, calm to read</b> (Headspace), a sous chef\'s view. One column of plain text, headings in the book\'s orange, and a footer with your Sign button. Chefs see how many have signed; staff see only their own.', html: function () {
+    return phone({ cls: 'rx', back: true, teamDue: false }, '<div class="m-eb">Kitchen meeting · Wed 11 Nov</div><div class="m-h" style="margin:6px 0 4px">Minutes</div><p class="m-hint">Version 2, published by Chef 12 Nov 09:30.</p><div class="e-read"><h4>Christmas menu</h4><p>Tastings on 20 November. Each section brings one idea.</p><h4>Cool room</h4><p>Deep clean every Monday before 10:00. Label and date everything that goes in.</p><h4>Breaks</h4><p>Breaks are on Today\'s team. Ask the sous chef before swapping.</p></div>' +
+      '<div style="position:absolute;left:0;right:0;bottom:68px;background:var(--paper);border-top:1.5px solid var(--line);padding:12px 14px;display:flex;align-items:center;gap:12px"><span class="e-ring"><span>6/9</span></span><div style="flex:1;font-size:13.5px;color:var(--muted)">6 of 9 have signed.<br>You have not yet.</div><span class="m-btn main" style="min-height:48px">Sign</span></div>');
+  } };
+  E['e-mail'] = { w: 390, g: 'kitchen', cap: '<b>Kitchen mail</b> (Linear). Pick what it is about, how soon, write it, send. Below, your mail with where it is: Sent, Read by Chef, Done.', html: function () {
+    return phone({ cls: 'rx', back: true, teamDue: false }, '<div class="m-nbt" style="font-size:42px">Kitchen mail</div><p class="m-hint" style="margin-top:6px">Anything Chef should know. Urgent? Tell the chef on shift now.</p>' +
+      '<div class="e-chips"><span class="e-chip on">Equipment</span><span class="e-chip">Stock</span><span class="e-chip">Recipe card</span><span class="e-chip">An idea</span></div><div class="e-seg" style="margin:10px 0"><span>Today</span><span class="on">This week</span><span>Whenever</span></div>' +
+      '<div class="m-search" style="min-height:80px;align-items:flex-start;padding-top:12px;color:var(--ink)">Fryer 2 takes 20 minutes to heat.</div><div class="m-btn main wide" style="margin-top:10px">Send to Chef</div>' +
+      '<div class="m-day" style="margin-top:18px"><span>Your mail</span></div><div class="e-row"><div class="grow"><div class="t">Walk-in door seal is torn</div><div class="s">Mon 9 Nov</div></div><span class="e-stamp" style="transform:none">Done</span></div><div class="e-row"><div class="grow"><div class="t">More piping bags</div><div class="s">Thu 12 Nov</div></div><span class="m-tag roll" style="margin:0">Read by Chef</span></div>');
+  } };
+  E['e-todo'] = { w: 390, g: 'kitchen', cap: '<b>Chef to-do</b> (Things 3). Today, Upcoming and Anytime, a one-line add at the top, the due day as a tag. Done today folds away.', html: function () {
+    function t(txt, sub, due, hot) { return '<div class="e-todo"><span class="m-box"></span><div class="t">' + txt + (sub ? '<small>' + sub + '</small>' : '') + '</div>' + (due ? '<span class="e-due' + (hot ? ' hot' : '') + '">' + due + '</span>' : '') + '</div>'; }
+    return phone({ cls: 'rx', back: true, teamDue: true }, '<div class="m-nbt" style="font-size:42px">Chef to-do</div><div class="m-search" style="margin-top:10px">' + ic('plus', 20) + 'New job</div>' +
+      '<div class="m-day"><span>Today</span><span>2</span></div>' + t('Book the hood clean', 'For Sam', 'Today', true) + t('Order piping bags', '', 'Today', true) +
+      '<div class="m-day"><span>Upcoming</span><span>2</span></div>' + t('Deep clean the cool room', 'For everyone', 'Mon 16') + t('Christmas menu tasting', '', 'Fri 20') +
+      '<div class="m-day"><span>Anytime</span><span>1</span></div>' + t('Label the dry store shelves', '', '') + '<div class="m-fold"><span><b>Done today (1)</b> Fix the pass light</span><span class="m-link">Show</span></div>');
+  } };
+  E['e-staff'] = { w: 390, g: 'kitchen', cap: '<b>Manage staff</b> (Linear lists, Airbnb profiles). Search, one row of filters, each person with role and what they may do in plain words. Tap a person for their card.', html: function () {
+    function p(n, role, sous, can) { return '<div class="e-row" style="min-height:58px"><span class="m-av" style="width:36px;height:36px;font-size:15px;background:' + (sous ? 'var(--ink)' : 'var(--accent-ink)') + '">' + n.charAt(0) + '</span><div class="grow"><div class="t">' + n + '</div><div class="s">' + can + '</div></div><span class="e-role' + (sous ? ' sous' : '') + '">' + role + '</span></div>'; }
+    return phone({ cls: 'rx', back: true, teamDue: true }, '<div class="m-h">Staff</div><div class="m-search" style="margin-top:8px">' + ic('search', 20) + 'Find a name</div><div class="e-scroll" style="margin:10px 0"><span class="e-chip on">Everyone 6</span><span class="e-chip">Staff 4</span><span class="e-chip">Sous 1</span><span class="e-chip">Functions 1</span></div>' +
+      p('Sam', 'Sous', 1, 'Add, tick, remove · Functions') + p('Ann', 'Staff', 0, 'Add, tick') + p('Bo', 'Staff', 0, 'Add, tick') + p('Fay', 'Lead', 0, 'Add, tick, remove') + p('Finn', 'Staff', 0, 'Add, tick') + '<div class="m-btn wide" style="margin-top:14px">' + ic('plus') + 'Add a person</div>');
+  } };
+
+  /* ADMIN: three ways */
+  function admTop() { return lapTop('', { who: 'H' }); }
+  E['e-admin-a-1280'] = { w: 1280, g: 'admin', cap: '<b>Admin A, the Desk tidied</b> (Linear\'s one header). The four rooms stay. Each room has one row of views and one filter bar on one line; the "On this page" row goes. Lists are dense. 2 levels instead of 3.', html: function () {
+    var rows = [['Fri 13', '13:30', 'Chips', '2 kg', 'Excess production', 'Fryer', 'Bo'], ['Fri 13', '11:05', 'Bread rolls', '12', 'Expired', 'Pastry', 'Finn'], ['Fri 13', '09:40', 'Cream', '1 L', 'Spoiled', 'Larder', 'Ann'], ['Thu 12', '21:50', 'Rice', '1.5 kg', 'Excess production', 'Sauce', 'Ann'], ['Thu 12', '14:10', 'Lettuce', '1 box', 'Spoiled', 'Larder', 'Fay'], ['Wed 11', '22:05', 'Chips', '3 kg', 'Excess production', 'Fryer', 'Bo'], ['Wed 11', '10:15', 'Milk', '2 L', 'Expired', 'Larder', 'Ann']];
+    return '<div class="lt">' + admTop() + '<div class="a-side"><div class="g">Admin panel</div>' + ['Today', 'Reports', 'Team', 'Kitchen'].map(function (r) { return '<div class="it' + (r === 'Reports' ? ' on' : '') + '" style="font:700 19px/1 var(--display);min-height:46px">' + r + '</div>'; }).join('') + '</div>' +
+      '<div class="a-main"><div class="a-h"><h5>Reports</h5><span>What happened, and where it came from.</span></div>' +
+      '<div class="e-tabsline" style="margin-top:12px">' + ['Insights', 'Wastage', 'Transfers', 'Team', 'Item evidence', 'Learning'].map(function (t) { return '<span class="' + (t === 'Wastage' ? 'on' : '') + '">' + t + '</span>'; }).join('') + '</div>' +
+      '<div class="a-viewbar"><span class="e-chip on">This week</span><span class="e-chip">Last week</span><span class="e-chip">30 days</span><span class="e-chip">Custom</span><span class="m-sep"></span><span class="e-chip soft">All sections ▾</span><span class="e-chip soft">All reasons ▾</span><span class="m-search" style="min-height:36px;width:200px;font-size:14px">' + ic('search', 16) + 'Item or person</span><span class="sp"></span><span class="m-btn" style="min-height:36px">Download CSV</span></div>' +
+      '<div style="display:flex;gap:28px;margin-bottom:10px"><div><span class="e-big" style="font-size:34px">7</span><span class="e-unit">entries</span><div style="font-size:13px;color:var(--muted)">this week</div></div><div><span class="e-big" style="font-size:34px">10.5</span><span class="e-unit">kg</span><div style="font-size:13px;color:var(--muted)">of the entries in kg; 12 rolls, 3 L, 1 box apart</div></div></div>' +
+      '<table class="a-tbl"><thead><tr><th>Day</th><th>Time</th><th>Item</th><th style="text-align:right">Amount</th><th>Reason</th><th>Section</th><th>Who</th></tr></thead><tbody>' + rows.map(function (r) { return '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td><td><b>' + r[2] + '</b></td><td class="n">' + r[3] + '</td><td>' + r[4] + '</td><td>' + r[5] + '</td><td>' + r[6] + '</td></tr>'; }).join('') + '</tbody></table></div></div>';
+  } };
+  E['e-admin-b-1280'] = { w: 1280, g: 'admin', cap: '<b>Admin B, Inbox and views</b> (Linear). One Inbox for everything that needs the head chef: mail, review items, minutes to publish, today\'s team, the nightly run. Saved views for the reports, people and settings in the same sidebar. Find (/) jumps to any setting, report or person. The picked item opens beside the list.', html: function () {
+    function r(i, t, s, at, sel) { return '<div class="a-inrow' + (sel ? ' sel' : '') + '">' + ic(i) + '<div><b>' + t + '</b><small>' + s + '</small></div><time>' + at + '</time></div>'; }
+    return '<div class="lt">' + admTop() + '<div class="a-side dark"><div class="find">' + ic('search', 16) + 'Find<kbd>/</kbd></div>' +
+      '<div class="it on">' + ic('inbox') + 'Inbox<em>5</em></div><div class="it">' + ic('chart') + 'Today\'s numbers</div>' +
+      '<div class="g">Views</div><div class="it">' + ic('bin') + 'Waste this week<em class="q">7</em></div><div class="it">' + ic('prep') + 'Prep left over<em class="q">3</em></div><div class="it">' + ic('truck') + 'Orders by supplier</div><div class="it">' + ic('swap') + 'Loans out<em class="q">2</em></div><div class="it">' + ic('star') + 'Training due<em class="q">4</em></div><div class="it">' + ic('plus') + 'New view</div>' +
+      '<div class="g">Kitchen</div><div class="it">' + ic('people') + 'People</div><div class="it">' + ic('gear') + 'Settings</div><div class="it">' + ic('key') + 'Backup and PIN</div></div>' +
+      '<div class="a-split"><div class="a-list"><div class="a-h" style="margin-bottom:12px"><h5>Inbox</h5><span>5 to look at</span></div>' +
+      r('mail', 'Fryer 2 takes 20 minutes to heat', 'Kitchen mail · Ann · Equipment · This week', '13:40', true) + r('star', '3 item links to check', 'Review desk · from the nightly run', '03:10') + r('doc', 'Minutes for 11 Nov are a draft', 'Meeting minutes · ready to publish', 'Thu') + r('team', 'Today\'s team is not set', 'Sam usually sets it by 09:30', '09:45') + r('tick', 'Nightly run finished', 'Learning, analysis and backup at 03:00 and 03:30', '03:31') + '</div>' +
+      '<div class="a-detail"><div class="m-eb">Kitchen mail · Equipment</div><div class="m-h" style="font-size:28px;margin:6px 0">Fryer 2 takes 20 minutes to heat</div><p style="font-size:14px;color:var(--muted)">From Ann · Fri 13 Nov 13:40 · This week</p><p style="font-size:16px;line-height:1.5">It used to take 8. Chips are slow at the start of service.</p>' +
+      '<div class="e-chips" style="margin:14px 0"><span class="e-chip">High</span><span class="e-chip on">Normal</span><span class="e-chip">Low</span></div><div style="display:flex;gap:8px"><span class="m-btn dark">' + ic('tick', 18) + 'Done</span><span class="m-btn">' + ic('bell', 18) + 'Ping Ann</span><span class="m-btn quiet">Add to to-do</span></div>' +
+      '<div class="m-day" style="margin-top:22px"><span>History</span></div><p style="font-size:13.5px;color:var(--muted)">Read 13:52 · Priority Normal 13:53</p></div></div></div>';
+  } };
+  E['e-admin-c-1280'] = { w: 1280, g: 'admin', cap: '<b>Admin C, the morning brief</b> (Flighty, Headspace). One calm page for the day: three sentences that say what changed, big numbers with a week\'s line, what needs you. Every number opens its report; settings move to their own page.', html: function () {
+    function spark(pts, col) { return '<svg class="a-spark" viewBox="0 0 160 36" width="100%" height="36" aria-hidden="true"><polyline points="' + pts + '" fill="none" stroke="' + col + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg>'; }
+    function tile(k, v, d, cls, pts, col) { return '<div class="a-tile"><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="d ' + cls + '">' + d + '</div>' + spark(pts, col) + '</div>'; }
+    return '<div class="lt">' + admTop() + '<div class="m-body" style="padding:26px 40px"><div class="a-brief"><div style="display:flex;justify-content:space-between;align-items:baseline"><h5>Friday</h5><span style="font-size:15px;color:var(--muted)">13 November · from the nightly run at 03:00 · <span class="m-link">Settings</span></span></div>' +
+      '<p class="a-head-line">Waste logged in kilograms is <b>10.5 kg</b> this week, <b>3 kg more</b> than last week. Chips is most of it.</p><p class="a-head-line">Prep was done on time <b>9 days in 10</b>. Larder ran late twice.</p><p class="a-head-line">Tonight: <b>1 function</b>, 40 guests. Today\'s team is <b>not set</b>.</p>' +
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px">' + tile('Waste in kg, week', '10.5 kg', '3 kg more than last week', 'up', '0,26 26,22 52,24 78,16 104,18 130,10 156,8', '#C2451A') + tile('Prep on time', '90%', 'Same as last week', 'ok', '0,12 26,10 52,14 78,10 104,12 130,10 156,11', '#2E8B57') + tile('Orders on time', '12 of 12', 'Every cut-off met', 'ok', '0,10 26,10 52,10 78,10 104,10 130,10 156,10', '#2E8B57') + '</div>' +
+      '<div class="m-day" style="margin-top:22px"><span>Needs you</span><span>5</span></div>' + [['mail', 'Fryer 2 takes 20 minutes to heat', 'Kitchen mail · Ann'], ['star', '3 item links to check', 'Review desk'], ['doc', 'Minutes for 11 Nov are a draft', 'Ready to publish']].map(function (x) { return '<div class="e-row"><span style="color:var(--tag)">' + ic(x[0]) + '</span><div class="grow"><div class="t">' + x[1] + '</div><div class="s">' + x[2] + '</div></div>' + ic('chev', 18) + '</div>'; }).join('') + '</div></div></div>';
+  } };
+  E['e-admin-b-390'] = { w: 390, g: 'admin', cap: '<b>Admin B on the phone.</b> The Inbox first; the views and settings sit under the menu at the top. A picked item opens as its own page with Done at the thumb.', html: function () {
+    function r(i, t, s, at) { return '<div class="a-inrow" style="padding:0 2px;grid-template-columns:24px 1fr auto">' + ic(i) + '<div><b>' + t + '</b><small>' + s + '</small></div><time>' + at + '</time></div>'; }
+    return phone({ cls: 'rx', back: true, teamDue: true, who: 'H' }, '<div style="display:flex;justify-content:space-between;align-items:center"><div class="m-h">Inbox</div><span class="m-pill" style="text-transform:none;letter-spacing:0;font:600 14px/1 var(--body);gap:6px">' + ic('list', 18) + 'Views</span></div><div class="m-search" style="margin:8px 0 6px">' + ic('search', 20) + 'Find a report, person or setting</div>' +
+      r('mail', 'Fryer 2 takes 20 minutes to heat', 'Kitchen mail · Ann', '13:40') + r('star', '3 item links to check', 'Review desk', '03:10') + r('doc', 'Minutes for 11 Nov are a draft', 'Ready to publish', 'Thu') + r('team', 'Today\'s team is not set', 'Usually set by 09:30', '09:45') + r('tick', 'Nightly run finished', 'Learning, analysis, backup', '03:31') +
+      '<div class="m-day" style="margin-top:16px"><span>Today\'s numbers</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="a-tile" style="padding:10px 12px"><div class="k">Waste in kg, week</div><div class="v" style="font-size:30px">10.5 kg</div><div class="d up">3 kg more</div></div><div class="a-tile" style="padding:10px 12px"><div class="k">Prep on time</div><div class="v" style="font-size:30px">90%</div><div class="d ok">Same</div></div></div>');
+  } };
+
+  var GROUPS = [
+    ['home', 'Home: B\'s board, with the celebrations', 'Your choice: B\'s now and next. It keeps the kraft board and the pins, so the book still looks like the kitchen\'s, and the day\'s celebration leads the board with its lamps, its lights under the top bar and its six-language line. Coming up holds festivals as well as functions and cut-offs. Built only from what the home page already reads.'],
+    ['work', 'Prep, Orders, Supplier order, Delivery received, Wastage, Transfers', 'The agreed one-row lines and print words on every list. Then each page gets the one idea from the seven apps that fits its job: progress you can see on Prep, your usual lines first when adding, a countdown on what closes next, arrivals with stamps, loans as cards.'],
+    ['fn', 'Functions and the service view', 'Bookings as cards with what goes out next, Upcoming only for days with something on, and the service view as a live board. The function page itself is the card drawn on the first page (every round tick, comment, changes, Cancel at the end).'],
+    ['recipes', 'Recipes and the recipe card', 'Browsing like Airbnb: one search, one row of chips, plates in two columns with their allergens. The card leads with the plate and a row of facts, with its chapters as tabs.'],
+    ['kitchen', 'Guides, pings, Today\'s team, drinks, minutes, mail, to-do, staff', 'Every page from the chef hat, each with its role model. The chef hat itself is the list drawn on the first page.'],
+    ['admin', 'The admin panel: three ways', 'The head chef asked for admin to change too. Today it has four rooms, then a row of tabs, then a row of "On this page" chips, then the work: three levels before any data. A tidies it, B rebuilds it around an inbox like Linear, C turns it into a morning brief like Flighty.']
+  ];
+
+  function screenHTML(id) { var s = E[id]; return s.w === 1280 ? '<div class="lapbox" data-lap>' + s.html() + '</div>' : s.html(); }
+  function figure(id) { var s = E[id]; return '<figure class="' + (s.w === 1280 ? 'lapfig' : '') + '">' + screenHTML(id) + '<figcaption>' + s.cap + '</figcaption></figure>'; }
+  var q = new URLSearchParams(location.search).get('shot');
+  if (q && E[q]) { document.body.className = 'shot'; document.getElementById('page').innerHTML = E[q].html(); return; }
+  document.getElementById('groups').innerHTML = GROUPS.map(function (g) {
+    var ids = Object.keys(E).filter(function (k) { return E[k].g === g[0]; });
+    return '<section class="part" id="g-' + g[0] + '"><div class="design-head"><h2>' + g[1] + '</h2></div><p>' + g[2] + '</p>' +
+      '<div class="row">' + ids.filter(function (k) { return E[k].w === 390; }).map(figure).join('') + '</div>' + ids.filter(function (k) { return E[k].w === 1280; }).map(figure).join('') + '</section>';
+  }).join('');
+  function fit() { document.querySelectorAll('[data-lap]').forEach(function (b) { b.firstElementChild.style.transform = 'scale(' + (b.clientWidth / 1280) + ')'; }); }
+  fit(); window.addEventListener('resize', fit);
+})();
+</script>
+</body>
+</html>
