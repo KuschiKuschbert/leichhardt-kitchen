@@ -294,7 +294,7 @@ Also answered on 8 November: **the recipe card keeps every drawing** (the plate 
 
 **Not drawn yet** (each build step draws these first, at 390, 768 and 1280 px, and shows them before it merges): tablet and laptop for every page and the wall board with the new prep line (step 1); Orders as staff see it (step 3); B's People, Settings and report views (step 8). Unchanged by choice, so not redrawn: the recipe and drawing editor and studio, Settings, signing in, the PIN and device choice, printing, CSV, and the celebrations on work pages.
 
-**Proposed, waiting for the head chef's OK** (overlaps with the new home that round 2 named): keep the start of shift sheet (a cook who opens straight on Prep never sees Home); keep the function band and the cut-off reminder bar on every page except Home, where the board already shows them.
+**The three overlaps with the new home** (answered 8 November): **keep the start of shift sheet, the function band and the cut-off reminder bar, all three in the new style.** The sheet still comes once a day after the PIN (a cook who opens straight on Prep never sees Home). The band and the bar stay on every page except Home, where the board already shows the next round and the next cut-off. The sheet is redrawn in step 2, the reminder bar in step 3, the band in step 5.
 
 Earlier answers still standing: every feature and role kept (the coverage table above); the chef hat as a list; one-row lines; words on actions; no new reads, listeners or rules unless a step says so.
 
@@ -305,10 +305,10 @@ Eight steps, one pull request each, merged in the release windows, in this order
 | Step | What | Main files | State |
 | --- | --- | --- | --- |
 | 1 | Prep and Add a line: one-row lines with every marker, Urgent, Recipe and On it buttons, the Start here number in the margin, section chips and the day in the heading, section bars, your usual lines first in Add a line | `js/prep.js`, `css/app.css` | Not started |
-| 2 | Home: the now and next board on the kraft board, with the celebrations; Coming up with festivals; only what is still to come | `js/app.js`, `js/functions.js`, `css/app.css`, `js/seasonal/` | Not started |
-| 3 | Orders (supplier groups with time left, No supplier first), Supplier order as one card, Delivery received as arrivals with an empty reading | `js/prep.js`, `js/suppliers.js`, `js/deliveries.js` | Not started |
+| 2 | Home: the now and next board on the kraft board, with the celebrations; Coming up with festivals; only what is still to come; the start of shift sheet in the new style | `js/app.js`, `js/functions.js`, `css/app.css`, `js/seasonal/` | Not started |
+| 3 | Orders (supplier groups with time left, No supplier first), Supplier order as one card, Delivery received as arrivals with an empty reading; the cut-off reminder bar in the new style | `js/prep.js`, `js/suppliers.js`, `js/deliveries.js` | Not started |
 | 4 | Wastage (Make it again as today) and Transfers (each loan a card, Mark returned with Undo) | `js/prep.js`, `css/app.css` | Not started |
-| 5 | Functions (Today and Upcoming, empty days folded), the function card with Cancel at the end, the service view with dietaries | `js/functions.js` | Not started |
+| 5 | Functions (Today and Upcoming, empty days folded), the function card with Cancel at the end, the service view with dietaries; the function band in the new style | `js/functions.js` | Not started |
 | 6 | Recipes and the recipe card (one search, Contains or Free from, the plating line, jump chips, the full allergen key) | `js/app.js`, `css/app.css` | Not started |
 | 7 | The chef hat as a list, then the kitchen pages: guides step by step, pings, Today's team timeline, drinks, minutes, mail, to-do, staff | `js/app.js`, `js/prep.js` | Not started |
 | 8 | Admin B: the Inbox with the day's numbers, the Dashboard in its sidebar, fixed views, Find | `js/prep.js`, `js/admin-dashboard.js` | Not started |
