@@ -48,7 +48,7 @@
   Specials always shows first. The head chef's Special switch in Manage Recipes puts a dish in it.
 */
 window.LK_DATA = {
-  updated: '31 October 2026',
+  updated: '7 November 2026',
   allergens: ['Gluten', 'Milk', 'Egg', 'Soy', 'Peanut', 'Tree nut', 'Fish', 'Crustacean', 'Mollusc', 'Sesame'],
   menuOrder: [
     { title: 'Specials', ids: ['chicken-adobo', 'lamb-nachos', 'buffalo-corn-cob-with-cashew-crumb'] },
@@ -2481,7 +2481,7 @@ window.LK_DATA = {
       labelNote: 'Check the beef stock label for allergens.'
     },
     {
-      id: 'cookie-dough', art: 'cookie-dough', no: '111', kind: 'batch', forLine: 'For the skillet cookie', name: 'Skillet Cookie Dough', short: 'Cookie dough',
+      id: 'cookie-dough', art: 'cookie-dough', no: '111', kind: 'batch', forLine: 'For the skillet cookie', name: 'Skillet Cookie Dough Prep', short: 'Cookie dough',
       yield: 'Batch: roughly 6.65 kg, portioned into 140 g balls. 15 balls per tub.',
       ingredients: [
         { q: '1.6 kg', name: 'Flour', note: 'sifted', tags: ['Gluten'] },
