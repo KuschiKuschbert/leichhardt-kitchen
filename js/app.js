@@ -418,6 +418,12 @@
   /* Chef to-do (#/todo, 23 Oct 2026): the head chef and the sous chefs with their PIN, or the head chef's Google device
      with nobody signed in (js/prep.js todoOK). Staff never get the row, and the rules keep the list from them. */
   function todoOK() { return !!(window.LK_PREP && window.LK_PREP.todoOK && window.LK_PREP.todoOK()); }
+  /* Today's team (#/team, 7 Nov 2026): the head chef and the sous chefs with their PIN, or the head chef's Google device;
+     "Not set yet" under it until today's team is saved. The Team and clock icon comes from js/prep.js. */
+  function teamItem(unset) {
+    var on = parseRoute().name === 'team' ? ' aria-current="page"' : '', icon = window.LK_PREP && window.LK_PREP.teamIcon ? window.LK_PREP.teamIcon(22) : ICON.team;
+    return '<a class="wm-a wm-tile wm-team" href="#/team" data-who="go"' + on + '>' + icon + '<span><b>Today\'s team</b>' + (unset ? '<small class="wm-due">Not set yet</small>' : '') + '</span></a>';
+  }
   function todoItem() {
     var on = parseRoute().name === 'todo' ? ' aria-current="page"' : '';
     return '<a class="wm-a wm-tile wm-todo" href="#/todo" data-who="go"' + on + '>' + ICON.todo + '<span><b>Chef to-do</b></span></a>';
@@ -474,7 +480,7 @@
           m.sec ? tile('data-who="sec" data-v="section"', ICON.spot, 'My section', '<small>' + esc(m.sec) + '</small>') : ''
         ]) +
         grid(m.chef || adm || m.book || supplierOK() ? 'Chef' : '', [
-          adm, m.book ? manageItem() : '',
+          m.team ? teamItem(m.teamUnset) : '', adm, m.book ? manageItem() : '',
           m.chef ? tile('data-who="open" data-v="pings"', ICON.bell, 'Shift pings') : '',
           m.todo ? todoItem() : '', supplierOK() ? supplierItem() : '',
           m.chef && !m.tab ? tile('data-who="open" data-v="staff"', ICON.team, 'Manage staff') : ''
@@ -484,7 +490,7 @@
       // Sign in, which would forget them (28 Oct 2026)
       body = (offline() ? '<p class="wm-h">' + esc(offline()) + '</p>' : '<p class="wm-h">Nobody signed in on this phone</p>' +
         '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b></span></a>') +
-        grid('', [adm, deliveryItem(), bookEdit() ? manageItem() : '', todoOK() ? todoItem() : '', supplierOK() ? supplierItem() : '', fnOK() ? fnItem() : '']) + set;
+        grid('', [adm, deliveryItem(), bookEdit() ? manageItem() : '', todoOK() ? todoItem() : '', window.LK_PREP && window.LK_PREP.teamOK && window.LK_PREP.teamOK() ? teamItem(false) : '', supplierOK() ? supplierItem() : '', fnOK() ? fnItem() : '']) + set;
     }
     el.innerHTML = '<div class="wm-bg" data-who="close"></div><nav class="wm" aria-label="' + (n ? esc(n) : 'Menu') + '" style="top:' + Math.round(r.bottom + 8) + 'px;right:' + Math.max(8, Math.round(window.innerWidth - r.right)) + 'px"><span class="wm-grip" aria-hidden="true"></span>' + body + '</nav>';
     document.body.appendChild(el); wmenu = el;
@@ -543,7 +549,8 @@
   /* The same top bar on every page as on the landing page: brand (goes home), the menu, Pings and the chef hat
      (its menu holds Admin and Settings). */
   function topIcons() {
-    return '<span class="wtop-icons">' + noteBellHTML() + whoMark() + '</span>';
+    // Today's team (7 Nov 2026): the round chip left of the bell, filled in by js/prep.js (empty for anyone it is not for)
+    return '<span class="wtop-icons"><span class="tm-slot">' + (window.LK_PREP && window.LK_PREP.teamChip ? window.LK_PREP.teamChip() : '') + '</span>' + noteBellHTML() + whoMark() + '</span>';
   }
   function topBar() {
     var returning = parseRoute().name !== 'landing';
@@ -1342,7 +1349,7 @@
     }
     if (parts[0] === 'deliveries') return { name: 'deliveries', stack: [] };
     if (parts[0] === 'settings') return { name: 'settings', stack: [] };
-    if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'transfers' || parts[0] === 'minutes' || parts[0] === 'mail' || parts[0] === 'drinks' || parts[0] === 'todo') return { name: parts[0], stack: [] };
+    if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'transfers' || parts[0] === 'minutes' || parts[0] === 'mail' || parts[0] === 'drinks' || parts[0] === 'todo' || parts[0] === 'team') return { name: parts[0], stack: [] };
     if (parts[0] === 'guides') return { name: 'guides', stack: [], gid: parts[1] || '' };
     if (parts[0] === 'manage') return { name: 'manage', stack: [], sub: parts.slice(1) };
     if (parts[0] === 'fn') return { name: 'fn', stack: [], fid: parts[1] || '' };
@@ -1362,7 +1369,7 @@
     writeJSON(LS, 'lk.views', v);
   }
   // the pages drawn by js/prep.js (Firebase): prep book, orders, wastage, minutes, guides, kitchen mail and the admin panel
-  var PREP_PAGES = { prep: 1, admin: 1, orders: 1, waste: 1, transfers: 1, minutes: 1, guides: 1, mail: 1, drinks: 1, todo: 1 };
+  var PREP_PAGES = { prep: 1, admin: 1, orders: 1, waste: 1, transfers: 1, minutes: 1, guides: 1, mail: 1, drinks: 1, todo: 1, team: 1 };
   /* Return only through pages opened in this run of the book. The browser keeps an opaque entry key; destinations
      and scroll positions stay in memory. A direct link or a reload starts a new trail with a fixed local fallback.
      Sheets own their same-address history entries (lkOv), so this never stamps or consumes one of those. */
@@ -1542,7 +1549,7 @@
     else if (window.LK_PREP && window.LK_PREP.warm && !warmed) { warmed = true; setTimeout(function () { window.LK_PREP.warm(); }, 900); }
     backSync();
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'transfers' ? 'Transfers · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'suppliers' ? 'Supplier order · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'transfers' ? 'Transfers · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'team' ? 'Today\'s team · ' : route.name === 'suppliers' ? 'Supplier order · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
     if (changed && route.name === 'recipe') noteView(route.stack[route.stack.length - 1]);
     // opening the recipes checks for the head chef's recipe changes when the last check is 30 minutes old (one read)

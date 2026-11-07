@@ -79,9 +79,9 @@
      this phone. No reads, no writes, nothing kept on the phone. */
   var PIN_AGAIN = 'Your PIN is saved. Type it again to sign in.';
   var SV_SLOW = 4000, SV_DONE = 1200, SV_WAIT = 'Waiting for the signal. Keep the book open.', svRec = {}, errSeen = {};
-  function svForm(k) { return k === 'n' ? JSON.stringify(S.nf || null) : k === 'm' ? mfSnap(S.mf) : k === 'g' ? gfSnap(S.gf) : k === 'c' ? JSON.stringify(S.cutDraft || null) : JSON.stringify(S.draft || null); }
+  function svForm(k) { return k === 't' ? tmSig(tmf) : k === 'n' ? JSON.stringify(S.nf || null) : k === 'm' ? mfSnap(S.mf) : k === 'g' ? gfSnap(S.gf) : k === 'c' ? JSON.stringify(S.cutDraft || null) : JSON.stringify(S.draft || null); }
   // the form open now (the Save bar has one form, whose draft is taken again after each save; c: the order cut-offs)
-  function svObj(k) { return k === 'n' ? S.nf : k === 'm' ? S.mf : k === 'g' ? S.gf : k === 'c' ? S.cutDraft : undefined; }
+  function svObj(k) { return k === 't' ? tmf : k === 'n' ? S.nf : k === 'm' ? S.mf : k === 'g' ? S.gf : k === 'c' ? S.cutDraft : undefined; }
   function svStop(k) { var r = svRec[k]; if (r) clearTimeout(r.timer); delete svRec[k]; }
   function svReset() { Object.keys(svRec).forEach(svStop); }
   // act: which button started it, where a form has two (the minutes' Publish and Save draft). slow: draws the 4 s line
@@ -1542,7 +1542,7 @@
     if (window.LK_UX) window.LK_UX.close();
     if (S.sheet) { S.sheet = ''; ovDone('reason'); } S.section = ''; S.secTyped = false;
     if (S.wLog || S.wRv || S.xLog || S.pLog || S.oLog) { S.wLog = S.wRv = S.xLog = S.pLog = S.oLog = false; ovDone('wsheet'); }
-    sessDrop(); ksClose(); noteClose('shut'); lmClose(); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; S.gf = null; S.gfSnap = ''; S.cutDraft = null; S.cutSnap = ''; S.bulk = ''; S.wrA = S.wrC = S.wpA = S.wpC = null; S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; tdReset(); dkf = null; dkSnap = ''; dkEditing = false; dkMsg = ''; dkOpen = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
+    sessDrop(); ksClose(); noteClose('shut'); lmClose(); S.nJust = null; S.guestIn = false; lsSet('lk.prep.guest', ''); S.drinkAsk = ''; S.who = ''; S.authed = false; S.pinStep = ''; S.staffOpen = false; S.minOpen = false; S.notesOpen = false; S.draft = null; S.nf = null; S.nOpen = false; S.mf = null; S.gf = null; S.gfSnap = ''; S.cutDraft = null; S.cutSnap = ''; S.bulk = ''; S.wrA = S.wrC = S.wpA = S.wpC = null; S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; tdReset(); tmReset(); dkf = null; dkSnap = ''; dkEditing = false; dkMsg = ''; dkOpen = ''; lsSet('lk.prep.who', ''); lsSet('lk.prep.tok', ''); resumed = true; featSync(); draw(); whoSync(); accessChanged(); }
   /* The chef mark's menu (js/app.js) asks what to show: Meeting minutes for everyone (when the page is on), and for the
      head chef and sous chefs Shift pings and Manage staff (22 Oct 2026: the Minutes register is "See who has signed" at
      the top of Meeting minutes). head: no Kitchen mail, the head chef's mail is read in the admin panel. tab: the head
@@ -1579,6 +1579,7 @@
       people: ps.length,
       sous: ps.filter(function (p) { return p.id !== c.headId && (c.sousIds || []).indexOf(p.id) >= 0; }).length,
       secs: kitSecs().map(function (x) { return String(x.name); }),
+      shifts: kitShifts().map(function (x) { return x.from != null && x.to != null ? x.name + ' ' + tmHHMM(x.from) + ' to ' + tmHHMM(x.to) : x.name; }),
       shown: FEATS.filter(function (f) { return see[f[0]]; }).map(function (f) { return f[1]; }),
       hidden: FEATS.filter(function (f) { return !see[f[0]]; }).map(function (f) { return f[1]; }),
       badges: c.showBadges !== false, sound: pingSound(), sousMail: c.sousMail === true,
@@ -1597,7 +1598,7 @@
      with its one Save (draftOf(), adminSave()), so the canonical capability lists keep their one save path
      (docs/staff-capabilities.md). A closed row draws nothing behind it: the sections' who is on today reads (loadShifts)
      only once that row is open. */
-  var K_ROWS = { secs: 'Kitchen sections', see: 'Pages staff see', badges: 'Weekly top tickers' };
+  var K_ROWS = { secs: 'Kitchen sections', shifts: 'Shifts', see: 'Pages staff see', badges: 'Weekly top tickers' };
   function kitchenHomeHTML(d, saveBlock) {
     var k = kitchenInfo(), plural = function (n, one, many) { return n + ' ' + (n === 1 ? one : many); };
     var list = function (a) { return a.length ? a.join(', ') : 'None'; };
@@ -1616,7 +1617,8 @@
     var held = !S.kOpen && draftPages().some(function (x) { return x !== 'people'; });
     return '<p class="hint k-home-lead">Each row says what it is set to. Tap it to change it.</p>' + (held ? saveBlock : '') +
       group('The kitchen', row('Order cut-offs', k ? plural(k.cuts, 'supplier', 'suppliers') : '', 'cutoffs') + row('Suppliers & pars', 'Catalogue and pars', 'suppliers') +
-        edit('secs', 'Kitchen sections', k ? list(k.secs) : '', function () { return ksAdminHTML(d); }) + row('Shift pings', k ? 'Sound: ' + sound(k.sound) : '', 'notes') +
+        edit('secs', 'Kitchen sections', k ? list(k.secs) : '', function () { return ksAdminHTML(d); }) +
+        edit('shifts', 'Shifts', k ? list(k.shifts) : '', function () { return shAdminHTML(d); }) + row('Shift pings', k ? 'Sound: ' + sound(k.sound) : '', 'notes') +
         row('Meeting minutes', 'Write and publish', 'minutes') + row('Guides', 'How-to guides', 'guides')) +
       group('The team\'s access', edit('see', 'Pages staff see', k ? (k.hidden.length ? list(k.shown) + '. Held back: ' + k.hidden.join(', ') : 'All three') : '', function () {
           return '<p class="hint">You, sous chefs and leads always see these. Untick one to hide it from Staff and View only until the team is ready.</p><div class="a-feats">' +
@@ -1650,7 +1652,7 @@
   function meChanged() { try { window.dispatchEvent(new Event('lk-me')); } catch (e) {} }
   // the role on the chef hat menu's person card (3 Nov 2026): Head chef for headId, otherwise the role's name (whoRole())
   function roleName() { if (!me()) return ''; return whoHead() ? 'Head chef' : whoRole(); }
-  function chefMenu() { return { role: roleName(), minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), head: whoHead(), tab: adminTabs(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK(), todo: todoOK() }; }
+  function chefMenu() { return { role: roleName(), minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), head: whoHead(), tab: adminTabs(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK(), todo: todoOK(), team: teamOK(), teamUnset: teamOK() && tm.st === 'ok' && !tm.rec }; }
   /* Functions (21 Oct 2026): who may enter and change function bookings. The person signed in with their own PIN and
      ticked for Functions (config/main fnIds, which only the head chef's Google account saves), or the head chef's Google
      device with nobody signed in. Being Head chef or Functions coordinator is not enough without the tick. The rules
@@ -2781,6 +2783,7 @@
       .then(function () { return all('mail'); }).then(function (r) { out.mail = r; return all('mailstat'); }).then(function (r) { out.mailstat = r; })
       .then(function () { return all('drinks'); }).then(function (r) { out.drinks = r; })
       .then(function () { return all('todos'); }).then(function (r) { out.todos = r; })
+      .then(function () { return all('team'); }).then(function (r) { out.team = r; })
       .then(function () { return all('cutdone'); }).then(function (r) { out.cutdone = r; })
       .then(function () { part = 'deliveries'; return f.getDocs(f.query(colRef('deliveries'), f.where('day', '>=', shift(dayNow(), -399)), f.where('day', '<=', dayNow()))).then(grab); }).then(function (r) { out.deliveries = r; })
       .then(function () { return all('transferOpen'); }).then(function (r) { out.transferOpen = r; })
@@ -2911,7 +2914,7 @@
       .then(function () { return readCol('notes'); }).then(function () { return readCol('directnotes'); }).then(function () { return readSub('directnotes', 'seen', true); }).then(function () { return readCol('minutes'); }).then(function () { return readSub('minutes', 'hist'); })
       .then(function () { return readSub('minutes', 'signs', true); }).then(function () { return readSub('notes', 'seen', true); })
       .then(function () { return readCol('guides'); }).then(function () { return readSub('guides', 'pages'); })
-      .then(function () { return readCol('mail'); }).then(function () { return readCol('mailstat'); }).then(function () { return readCol('drinks'); }).then(function () { return readCol('shifts'); }).then(function () { return readCol('todos'); }).then(function () { return readCol('cutdone'); }).then(function () { return readCol('deliveries'); })
+      .then(function () { return readCol('mail'); }).then(function () { return readCol('mailstat'); }).then(function () { return readCol('drinks'); }).then(function () { return readCol('shifts'); }).then(function () { return readCol('todos'); }).then(function () { return readCol('team'); }).then(function () { return readCol('cutdone'); }).then(function () { return readCol('deliveries'); })
       .then(function () { return bookDocs(old).then(function (l) { reads += Math.max(1, l.length); step(l.map(function (d) { return { ref: nd('book', d.id), data: d.data() }; })); }); }).then(function () { return readCol('recipes'); }).then(function () { return readSub('recipes', 'hist'); })
       .then(function () { return readCol('drawings'); }).then(function () { return readSub('drawings', 'hist'); })
       .then(function () { return readCol('drawtpl'); }).then(function () { return readCol('drawlib'); })
@@ -3058,7 +3061,7 @@
      A draft with nothing changed yet follows it. One with changes keeps them: when it is saved, only the rows and fields
      this draft touched are carried onto the list as it is now (mergeDraft), so a copy taken when the page opened never
      wipes what someone else saved in the meantime. */
-  function draftOf(c) { return { people: c.people || [], showBadges: c.showBadges !== false, staffSee: staffSee(c), kitSecs: c.kitSecs || [] }; }
+  function draftOf(c) { return { people: c.people || [], showBadges: c.showBadges !== false, staffSee: staffSee(c), kitSecs: c.kitSecs || [], kitShifts: c.kitShifts || [] }; }
   function draftBase() { try { return JSON.parse(S.draftSnap || 'null'); } catch (e) { return null; } }
   function refreshDraft() { if (S.draft && !draftDirty()) { var msg = S.saveMsg; startDraft(); S.saveMsg = msg; } }
   function draftStale() {
@@ -3080,7 +3083,7 @@
       if (!now_) return;
       Object.keys(p).forEach(function (k) { if (JSON.stringify(p[k]) !== JSON.stringify(w[k])) now_[k] = p[k]; });
     });
-    var m = { people: out, showBadges: d.showBadges !== was.showBadges ? d.showBadges : c.showBadges !== false, staffSee: {}, kitSecs: JSON.stringify(d.kitSecs) !== JSON.stringify(was.kitSecs) ? d.kitSecs : (c.kitSecs || []) }, see = staffSee(c);
+    var m = { people: out, showBadges: d.showBadges !== was.showBadges ? d.showBadges : c.showBadges !== false, staffSee: {}, kitSecs: JSON.stringify(d.kitSecs) !== JSON.stringify(was.kitSecs) ? d.kitSecs : (c.kitSecs || []), kitShifts: JSON.stringify(d.kitShifts) !== JSON.stringify(was.kitShifts) ? d.kitShifts : (c.kitShifts || []) }, see = staffSee(c);
     FEATS.forEach(function (f) { var k = f[0]; m.staffSee[k] = (d.staffSee || {})[k] !== (was.staffSee || {})[k] ? d.staffSee[k] : see[k]; });
     return m;
   }
@@ -3138,7 +3141,8 @@
       people: cfg.people.filter(function (p) { return String(p.name).trim(); }).map(function (p) {
         return { id: p.id, name: String(p.name).trim().slice(0, 40), role: p.role || 'staff', add: !!p.add, tick: !!p.tick, del: !!p.del, ping: !!p.ping, fn: !!p.fn, active: p.active !== false };
       }),
-      kitSecs: ksClean(cfg.kitSecs !== undefined ? cfg.kitSecs : ((S.config && S.config.kitSecs) || [])), showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
+      kitSecs: ksClean(cfg.kitSecs !== undefined ? cfg.kitSecs : ((S.config && S.config.kitSecs) || [])),
+      kitShifts: shClean(cfg.kitShifts !== undefined ? cfg.kitShifts : ((S.config && S.config.kitShifts) || [])), showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
       sousMail: !!(S.config && S.config.sousMail === true),   // set only from the Kitchen mail tab (mlSousSet)
       pingSound: pingSound(),   // set only from the Shift pings tab (pingSoundSet); kept as stored if js/chime.js did not load
       cutoffs: (function (l) { return CUT_OK ? cutClean(l) : (Array.isArray(l) ? l : []); })(S.config && S.config.cutoffs),   // set only from the Order cut-offs page (cutSave); kept as stored if js/cutoffs.js did not load
@@ -3477,6 +3481,7 @@
       if (wAll() && (S.atab === 'waste' || S.atab === 'insights')) draw();
     }
     // once per stamp, so a phone whose clock is a little behind never reads again on every config change
+    teamStamp();
     var ns = pastStamp('n');
     if (S.notesFor && ns > (S.notesRead || 0) && ns !== S.nMine && ns !== S.nStampDone) { S.nStampDone = ns; loadNotes(true); }
     // the copies stay as they are: loadPast() and loadOrdHist() read again only the days the stamp names (pastChanged())
@@ -4885,7 +4890,7 @@
     if (offNote) todayEmpty = '';
     var left = '<section class="nb-page nb-left"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
       // Done today sits behind the count (3 Nov 2026, work pages redesign A): a tap on "3 of 13 done" goes to it
-      (S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : doneN ? '<button type="button" class="nb-prog nb-progbtn" data-p="donejump" aria-label="' + doneN + ' of ' + live.length + ' done. Show Done today">' + doneN + ' of ' + live.length + ' done</button>' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>') + (add ? dockBtn('nb-addline', 'write', 'Add a line') : '') + '</header>' +
+      tmWrap(S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : doneN ? '<button type="button" class="nb-prog nb-progbtn" data-p="donejump" aria-label="' + doneN + ' of ' + live.length + ' done. Show Done today">' + doneN + ' of ' + live.length + ' done</button>' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>', S.date) + (add ? dockBtn('nb-addline', 'write', 'Add a line') : '') + '</header>' +
       (S.itemsState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' : '') +
       '<div class="nb-body">' + (flags ? '<div class="nb-lc">' + flags + '</div>' : '') + offNote + pageBody(S.items, S.date) + todayEmpty + '</div>' +
       (addNote || removed.length && can('del') ? '<div class="nb-foot">' + addNote + (removed.length && can('del') ? '<button type="button" class="nb-link" data-p="removed">' + (S.showRemoved ? 'Hide' : 'Show') + ' removed (' + removed.length + ')</button>' : '') + '</div>' : '') + '</section>';
@@ -5359,6 +5364,7 @@
       // minutes' sign-offs (loadSigns(): one query once, then kept for the session, like the register).
       needs: function () {
         var out = {};
+        out.team = teamNeed();
         if (mlOwner()) out.mail = mlErr ? 'error' : !mlOpen ? 'loading' : mlInfo();
         var m = featOn('minutes') ? mnOpenList()[0] : null;
         if (minsFailed()) out.minutes = 'error';
@@ -5407,6 +5413,7 @@
         });
       },
       open: function (tab, days) {
+        if (tab === 'team') { if (teamOK()) location.hash = '#/team'; return; }
         if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references', 'training'].indexOf(tab) < 0 || (tab === 'mail' && !mlOwner())) return;
         if (tab === 'insights' || tab === 'waste' || tab === 'transfers') setReportDays(days === 7 ? 7 : 30);
         S.atab = tab; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(tab)[0]] = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop();
@@ -5605,7 +5612,7 @@
   ['change', 'input'].forEach(function (ev) { document.addEventListener(ev, function (e) { if (e.target && e.target.getAttribute && e.target.getAttribute('data-a')) setTimeout(saveBarRefresh, 0); }, true); });
   /* The team list (Team, People) and Kitchen's sections, pages staff see and top tickers rows share one draft and one Save
      (5 Nov 2026, admin pages step 6), so the Save bar names where the unsaved changes are when one is not what is open. */
-  var DRAFT_PARTS = [['people', 'people', 'People'], ['secs', 'kitSecs', 'Kitchen sections'], ['see', 'staffSee', 'Pages staff see'], ['badges', 'showBadges', 'Weekly top tickers']];
+  var DRAFT_PARTS = [['people', 'people', 'People'], ['secs', 'kitSecs', 'Kitchen sections'], ['shifts', 'kitShifts', 'Shifts'], ['see', 'staffSee', 'Pages staff see'], ['badges', 'showBadges', 'Weekly top tickers']];
   function draftPages() {
     var old = draftBase(); if (!S.draft || !old) return [];
     return DRAFT_PARTS.filter(function (g) { return JSON.stringify(S.draft[g[1]]) !== JSON.stringify(old[g[1]]); }).map(function (g) { return g[0]; });
@@ -5808,12 +5815,15 @@
     // the chef to-do list: a chef with their PIN, or the head chef's Google device with nobody signed in
     if (S.name === 'todo' && todoOK()) return todoPageHTML();
     if (S.name === 'todo' && guest()) return todoNoHTML();
+    // Today's team (7 Nov 2026): a chef with their PIN, or the head chef's Google device with nobody signed in
+    if (S.name === 'team' && teamOK()) return teamPageHTML();
     if (guest()) return '<div class="is-guest">' + guestBarHTML() + (S.name === 'orders' ? ordersHTML() : S.name === 'waste' ? wasteHTML() : S.name === 'transfers' ? xferHTML() : listHTML()) + '</div>';
     if (!who() && !(S.user && S.level === 'owner')) return whoHTML();
     if (!S.authed && !S.user && !resumed) return loadingHTML();   // still finding out whether this phone is signed in (resume)
     if (!S.authed && !(S.user && S.level === 'owner')) return ownPinHTML();
     flushMisses(); flushViews();
     if (S.name === 'todo') return todoNoHTML();
+    if (S.name === 'team') return teamNoHTML();
     if (S.name === 'orders') return drinkNudgeHTML() + ordersHTML();
     if (S.name === 'waste') return drinkNudgeHTML() + wasteHTML();
     if (S.name === 'transfers') return drinkNudgeHTML() + xferHTML();
@@ -5872,6 +5882,7 @@
     if (ptPop) ptDraw();
     rendering = false;
     bandSync();
+    tmPaint();
     window.dispatchEvent(new Event('lk-back'));
   }
 
@@ -10396,6 +10407,7 @@
     if (a === 'cut-push-off') { pushOff(); return; }
     if (a.indexOf('cut-') === 0) { cutClick(a, el); return; }
     if (a.indexOf('todo-') === 0) { todoClick(a, el); return; }
+    if (a.indexOf('tm-') === 0) { teamClick(a, el); return; }
     if (a.indexOf('tr-') === 0) { trClick(a, el); return; }
     if (a === 'ml-cat') { mlf.cat = el.getAttribute('data-v'); mlMsg = ''; draw(); return; }
     if (a === 'ml-pri') { mlf.pri = el.getAttribute('data-v'); draw(); return; }
@@ -10663,6 +10675,7 @@
     if (!S.draft) return;
     var d = S.draft;
     if (a === 'a-add-person') { lvReveal('people'); lvReveal('staff'); d.people.push({ id: slug('person') + '-' + Date.now().toString(36), name: '', role: 'staff', add: true, tick: true, del: false, active: true, isNew: true }); draw(); var n = S.root.querySelector('[data-k="a-n' + (d.people.length - 1) + '"]'); if (n) n.focus(); return; }
+    if (a.indexOf('sh-') === 0 && shAdminClick(a, el, d)) return;
     if (a === 'ks-add') { d.kitSecs = d.kitSecs || []; d.kitSecs.push({ id: 'ks-' + Date.now().toString(36), name: '', off: false, isNew: true }); draw(); var kn = S.root.querySelector('[data-k="a-ks' + (d.kitSecs.length - 1) + '"]'); if (kn) kn.focus(); return; }
     if (a === 'ks-usual') { d.kitSecs = KS_USUAL.map(function (n) { return { id: slug(n), name: n, off: false }; }); draw(); return; }
     // a new section with its name typed asks a second tap, like a new person; a blank one goes in one (29 Oct 2026)
@@ -10776,6 +10789,7 @@
     var i = +el.getAttribute('data-i'), d = S.draft;
     if (a === 'name') d.people[i].name = el.value;
     if (a === 'ksec' && d.kitSecs && d.kitSecs[i]) d.kitSecs[i].name = el.value;
+    if (a === 'shname' || a === 'shfrom' || a === 'shto') shAdminInput(a, el, d);
   }
   function onChange(e) {
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
@@ -10786,6 +10800,7 @@
     if (k && k.indexOf('ml-pri:') === 0) { mlSetPri(k.slice(7), el.value); return; }
     if (k === 'ml-sous') { mlSousSet(el.checked); return; }
     if (k && /^cut-([tpr]\d|[oa]\d+-\d$)/.test(k)) { cutField(k, el, true); return; }
+    if (k && k.indexOf('tm-') === 0) { teamField(k, el); return; }
     // no redraw: typing a date on a keyboard changes it digit by digit, and a redraw would put the box back each time
     if (k === 'todo-due') { tdf.due = tdDue(el.value); var nd = S.root.querySelector('[data-p="todo-nodue"]'); if (nd) nd.hidden = !tdf.due; saveSync(); return; }
     if (k === 'g-file') { var gfl = el.files; gReadFiles(gfl); try { el.value = ''; } catch (x) {} return; }
@@ -10803,6 +10818,8 @@
     if (!a || !S.draft) return;
     if (a === 'badges') { S.draft.showBadges = el.checked; return; }
     if (a === 'staffsee') { S.draft.staffSee[el.getAttribute('data-f')] = el.checked; return; }
+    // a shift's name or times, once the box is left or a time picked: drawn again so Save changes follows
+    if (a === 'shname' || a === 'shfrom' || a === 'shto') { shAdminInput(a, el, S.draft); draw(); return; }
     var i = +el.getAttribute('data-i'), p = S.draft.people[i];
     if (a === 'role') {
       if (el.value === 'head' && S.level !== 'owner') { el.value = p.role; return; }
@@ -11370,6 +11387,348 @@
   // back on the page after 30 minutes away: read the open jobs again
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && S.name === 'todo' && S.root && document.body.contains(S.root)) todoLoad(); });
 
+  /* ---------- Today's team (7 Nov 2026, head chef; docs/todays-team-options/brief.md) ----------
+     The head chef and the sous chefs (and the head chef's admin device) put the people working today on the kitchen's
+     shifts (config/main.kitShifts { id, name, from, to, off }, set up in Admin, Kitchen, Shifts), with a section on
+     each shift and their breaks: team/<day> { day, on: [{ id, sh, sec }], br: [{ id, sh, at, len }], v, at, upd, by }.
+     at and len are minutes (at after midnight, kitchen time). v counts the saves and the rules refuse a save that is
+     not the next one, so a chef never writes over another chef's newer save unread. This part: the record, the chef's
+     page (#/team), the chef chip in the top bar, Set today's team under the done count and the admin's To do line. */
+  var TM_LENS = [30, 45, 60, 90, 120], TM_RETRY = 5 * 60000, TM_FRESH = 60000, TM_BREAKS = 2, TM_DAYLONG = 12 * 3600000;
+  /* today's record as read: day, rec (checked, or null when none is saved yet), st ('' not read, 'busy', 'ok', 'err'),
+     at (when it was read, time passing on this phone), stamp (the team stamp it answers). In memory only: it says who
+     works when, so it is never kept in the phone's own storage. */
+  var tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }, tmMine = 0;
+  /* the chef's page: tmf the plan as changed (null until the record is read), tmSnap the plan as read, tmSh the shift
+     shown, tmMsg the line under Save, tmShowOff the people not on the shift shown, tmSp the Spread them choices */
+  var tmf = null, tmSnap = '', tmSh = '', tmMsg = '', tmLastBusy = false, tmShowOff = false, tmSp = { from: null, len: 30 }, tmIconN = 0;
+  function tmMin(v) { return typeof v === 'number' && isFinite(v) && v >= 0 && v < 1440 ? Math.round(v) : null; }
+  function tmHHMM(m) { return pad(Math.floor(m / 60)) + ':' + pad(m % 60); }
+  function tmStr(v, n) { return typeof v === 'string' && v.length <= n ? v : null; }
+  function tmWeekday(day) { return parseYmd(day).toLocaleDateString('en-AU', { weekday: 'long' }); }
+  /* the Team and clock icon (head chef, 7 Nov 2026): two people and a clock. Each copy has its own mask id. */
+  function tmIcon(n) {
+    var id = 'tmm' + (++tmIconN), a = ' fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"';
+    return '<svg class="tm-icon" width="' + n + '" height="' + n + '" viewBox="0 0 24 24" aria-hidden="true"><defs><mask id="' + id + '"><rect width="24" height="24" fill="#fff"/><circle cx="17.2" cy="17" r="7.1" fill="#000"/></mask></defs>' +
+      '<g mask="url(#' + id + ')"><circle cx="8.3" cy="7.4" r="3"' + a + '/><path d="M2.6 18.5c.6-3.1 2.9-5 5.7-5s5.1 1.9 5.7 5"' + a + '/><circle cx="16" cy="6.6" r="2.4"' + a + '/><path d="M15.2 11.4c2.4-.2 4.4 1.2 5.2 3.6"' + a + '/></g>' +
+      '<circle cx="17.2" cy="17" r="5.3"' + a + '/><path d="M17.2 14.3v2.9l2 1.3"' + a + '/></svg>';
+  }
+  /* the kitchen's shifts as the head chef set them, the ones not taken off, in their order */
+  function kitShifts() {
+    return ((S.config && S.config.kitShifts) || []).filter(function (x) { return x && tmStr(x.id, 40) && String(x.name || '').trim() && !x.off; })
+      .map(function (x) { return { id: x.id, name: String(x.name).trim().slice(0, 40), from: tmMin(x.from), to: tmMin(x.to) }; });
+  }
+  function shClean(list) {
+    var seen = {};
+    return (Array.isArray(list) ? list : []).map(function (x) { x = x || {}; return { id: String(x.id || '').slice(0, 40), name: String(x.name || '').replace(/\s+/g, ' ').trim().slice(0, 40), from: tmMin(x.from), to: tmMin(x.to), off: !!x.off }; })
+      .filter(function (x) { if (!x.id || !x.name || seen[x.id]) return false; seen[x.id] = 1; return true; }).slice(0, 12);
+  }
+  /* A record read from Firestore, checked entry by entry (the rules check only the sizes): a person, a shift and a
+     section are short words, a break starts within the day and lasts one of the five lengths. Anything else is left out. */
+  function teamClean(x, day) {
+    if (!x || x.day !== day) return null;
+    var on = (Array.isArray(x.on) ? x.on : []).filter(function (o) { return o && tmStr(o.id, 80) && tmStr(o.sh, 40) && tmStr(o.sec == null ? '' : o.sec, 40) !== null; })
+      .map(function (o) { return { id: o.id, sh: o.sh, sec: o.sec || '' }; });
+    var br = (Array.isArray(x.br) ? x.br : []).filter(function (b) { return b && tmStr(b.id, 80) && tmStr(b.sh, 40) && tmMin(b.at) !== null && TM_LENS.indexOf(b.len) >= 0; })
+      .map(function (b) { return { id: b.id, sh: b.sh, at: tmMin(b.at), len: b.len }; });
+    return { day: day, on: on, br: br, v: typeof x.v === 'number' && x.v >= 1 ? Math.floor(x.v) : 1, at: typeof x.at === 'number' ? x.at : 0, upd: typeof x.upd === 'number' ? x.upd : 0, by: tmStr(x.by, 80) || '' };
+  }
+  /* who sets it: a chef signed in with their own PIN (sousIds or headId), or the head chef's Google device with nobody
+     signed in, as for Chef to-do (the rules check the same lists) */
+  function teamOK() {
+    if (!S.pin || !fb || S.configState !== 'ok') return false;
+    if (who()) return isSous();
+    return S.level === 'owner' && admDev();
+  }
+  function tmCanRead() { return teamOK() && (!who() || canW() || S.level === 'owner'); }
+  function tmNeedPin() { return teamOK() && !tmCanRead() && !sessP; }
+  function tmMe() { var p = me(); return p ? p.id : ((S.config && S.config.headId) || ''); }
+  // the next person on the phone starts with nothing of the last chef's
+  function tmReset() { tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }; tmf = null; tmSnap = ''; tmSh = ''; tmMsg = ''; tmShowOff = false; svStop('t'); }
+  /* today's team: one read (team/<today>) the first time a chef's page or top bar needs it each kitchen day, when the
+     page opens (unless read in the last minute), on Refresh and once for each team stamp another phone writes
+     (pastCheck()). A failed read, and a "no record" that came from the memory copy with no signal, is never "not set
+     yet": the chip and the page say it could not be checked, and it tries again after 5 minutes. */
+  function teamLoad(maxAge) {
+    var day = dayNow();
+    if (tm.day !== day || tm.epoch !== accessEpoch) { tm = { day: day, rec: null, st: '', at: 0, retry: 0, epoch: accessEpoch, stamp: 0 }; if (tmf && tmf.day !== day) { tmf = null; tmSnap = ''; } }
+    if (!tmCanRead() || tm.st === 'busy') return;
+    // after a failed read: 5 minutes before the next, whoever asks (a draw asks often), unless Refresh or Try again
+    if (tm.st === 'err' && maxAge !== 0 && Date.now() < tm.retry) return;
+    if (tm.st === 'ok' && Date.now() - tm.at < (maxAge == null ? TM_DAYLONG : maxAge)) return;
+    var mine = tm, stamp = pastStamp('t');
+    tm.st = 'busy';
+    fb.fs.getDoc(docRef('team', day)).then(function (sn) {
+      if (tm !== mine) return;
+      if (!sn.exists() && cacheOnly(sn)) throw { code: 'unavailable', cache: true };
+      tm.rec = sn.exists() ? teamClean(sn.data(), day) : null; tm.st = 'ok'; tm.at = Date.now(); tm.stamp = stamp;
+      // the page's plan follows the record until the chef changes something
+      if (!tmDirty()) tmFrom(tm.rec);
+      draw(); tmPaint();
+    }).catch(function () { if (tm !== mine) return; tm.st = 'err'; tm.retry = Date.now() + TM_RETRY; draw(); tmPaint(); });
+  }
+  // a stamp from another phone: read once more (pastCheck(), on the config listener every phone already has)
+  function teamStamp() {
+    var ts = pastStamp('t');
+    if (tm.day === dayNow() && tm.st === 'ok' && ts > tm.stamp && ts !== tmMine) teamLoad(0);
+  }
+  /* the plan being changed: on[person][shift] = section id ('' for none), br: [{ id, sh, at, len }] */
+  function tmFrom(rec) {
+    var on = {}, br = [];
+    (rec ? rec.on : []).forEach(function (o) { (on[o.id] = on[o.id] || {})[o.sh] = o.sec; });
+    (rec ? rec.br : []).forEach(function (b) { br.push({ id: b.id, sh: b.sh, at: b.at, len: b.len }); });
+    tmf = { day: dayNow(), base: rec ? rec.v : 0, at: rec ? rec.at : 0, on: on, br: br };
+    tmSnap = tmSig(tmf);
+  }
+  // the plan as saved: sorted, so the same plan always reads the same; a break of someone not on that shift goes
+  function tmOut(f) {
+    var on = [];
+    Object.keys(f.on).sort().forEach(function (id) { Object.keys(f.on[id]).sort().forEach(function (sh) { on.push({ id: id, sh: sh, sec: f.on[id][sh] || '' }); }); });
+    var br = f.br.filter(function (b) { return f.on[b.id] && f.on[b.id][b.sh] !== undefined && tmMin(b.at) !== null; })
+      .map(function (b) { return { id: b.id, sh: b.sh, at: b.at, len: b.len }; })
+      .sort(function (a, b) { return a.at - b.at || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0); });
+    return { on: on, br: br };
+  }
+  function tmSig(f) { return f ? JSON.stringify(tmOut(f)) : ''; }
+  function tmDirty() { return !!tmf && tmSig(tmf) !== tmSnap; }
+  function tmShift(id) { return kitShifts().filter(function (s) { return s.id === id; })[0] || null; }
+  function tmShNow() { var l = kitShifts(); return tmShift(tmSh) ? tmSh : (l[0] ? l[0].id : ''); }
+  // the people who can be put on a shift: everyone on the staff list but functions only, chefs first, then by name
+  function tmPeople() {
+    var rank = function (p) { return p.role === 'head' ? 0 : chefP(p) ? 1 : 2; };
+    return people().filter(function (p) { return p.role !== 'fnc' && String(p.name || '').trim(); })
+      .sort(function (a, b) { return rank(a) - rank(b) || String(a.name).localeCompare(String(b.name)); });
+  }
+  function tmOnShift(id, sh) { return !!(tmf && tmf.on[id] && tmf.on[id][sh] !== undefined); }
+  function tmBreaks(id, sh) { return tmf ? tmf.br.filter(function (b) { return b.id === id && b.sh === sh; }) : []; }
+  function tmSecName(id) { var s = kitSecs().filter(function (x) { return x.id === id; })[0]; return s ? s.name : ''; }
+  // break times: every 15 minutes within the shift's hours, or 06:00 to 23:45 for a shift with no hours set
+  function tmTimes(s, keep) {
+    var from = s && s.from != null ? s.from : 360, to = s && s.to != null && s.to > from ? s.to : 1425, out = [], m;
+    for (m = Math.ceil(from / 15) * 15; m <= to; m += 15) out.push(m);
+    if (keep != null && out.indexOf(keep) < 0) { out.push(keep); out.sort(function (a, b) { return a - b; }); }
+    return out;
+  }
+  function tmSpFrom(s) { var d = s && s.from != null ? s.from + 120 : 720; return tmSp.from != null ? tmSp.from : Math.min(1425, Math.ceil(d / 15) * 15); }
+  function tmSel(k, label, opts, cur) {
+    return '<label class="tm-pick"><span class="visually-hidden">' + esc(label) + '</span><select data-k="' + esc(k) + '" aria-label="' + esc(label) + '">' +
+      opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(o[0]) === String(cur) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>';
+  }
+  function tmRow(p, s) {
+    var on = tmOnShift(p.id, s.id), chef = chefP(p), others = [];
+    Object.keys((tmf.on[p.id] || {})).forEach(function (sh) { if (sh !== s.id) { var o = tmShift(sh); if (o) others.push(o.name + (chef ? '' : tmSecName(tmf.on[p.id][sh]) ? ': ' + tmSecName(tmf.on[p.id][sh]) : '')); } });
+    var sub = (chef ? (p.role === 'head' ? 'Head chef' : 'Sous chef') + (others.length ? '. ' : '') : '') + (others.length ? 'Also on ' + others.join(', ') : '');
+    var picks = '';
+    if (on) {
+      if (!chef) picks += tmSel('tm-sec:' + p.id, 'Section for ' + p.name, [['', 'No section']].concat(kitSecs().map(function (x) { return [x.id, x.name]; })), tmf.on[p.id][s.id]);
+      var bs = tmBreaks(p.id, s.id);
+      bs.forEach(function (b, n) {
+        picks += tmSel('tm-at:' + p.id + ':' + n, 'Break ' + (n + 1) + ' for ' + p.name, [['', 'No break']].concat(tmTimes(s, b.at).map(function (m) { return [m, 'Break ' + tmHHMM(m)]; })), b.at) +
+          tmSel('tm-len:' + p.id + ':' + n, 'How long, break ' + (n + 1) + ' for ' + p.name, TM_LENS.map(function (l) { return [l, l + ' min']; }), b.len);
+      });
+      if (bs.length < TM_BREAKS) picks += '<button type="button" class="chip tm-addbr" data-p="tm-addbr" data-id="' + esc(p.id) + '">+ Break</button>';
+    }
+    return '<li class="tm-row' + (on ? '' : ' is-off') + '"><button type="button" class="tm-tick" data-p="tm-on" data-id="' + esc(p.id) + '" aria-pressed="' + on + '" aria-label="' + esc(p.name + (on ? ' is on ' : ' is not on ') + s.name + '. Tap to change') + '">' + (on ? '✓' : '') + '</button>' +
+      '<span class="tm-name">' + esc(p.name) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' + (picks ? '<span class="tm-picks">' + picks + '</span>' : '') + '</li>';
+  }
+  function teamPageHTML() {
+    teamLoad();
+    var day = dayNow(), shs = kitShifts(), date = parseYmd(day).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
+    var top = '<section class="p-card tm-page"><h2 class="p-h" id="rtitle" tabindex="-1">Today\'s team</h2>';
+    var stampLine = tm.rec ? ' Set by ' + esc(tm.rec.by ? mnName(tm.rec.by) : 'the head chef') + ' at ' + esc(clock(tm.rec.upd)) + '.' : tm.st === 'ok' ? ' Not set yet.' : '';
+    var lead = '<p class="hint">' + esc(date) + '.' + stampLine + (tm.st === 'ok' || tm.st === 'err' ? ' <button type="button" class="p-link" data-p="tm-refresh">' + (tm.st === 'err' ? 'Try again' : 'Refresh') + '</button>' : '') + '</p>';
+    if (tmNeedPin()) return top + '<p class="hint">Type your PIN again to see today\'s team.</p><div class="btn-row"><button type="button" class="btn dark" data-p="tm-pin">Type my PIN</button></div></section>';
+    if (!tmf) return top + lead + (tm.st === 'err' ? '<p class="p-err">Could not load today\'s team. Check the signal.</p><div class="btn-row"><button type="button" class="btn" data-p="tm-refresh">Try again</button></div>' : '<p class="hint">' + inkLabel('Loading...', 'chef') + '</p>') + '</section>';
+    if (!shs.length) return top + lead + '<p class="hint">No shifts are set up yet. ' + (adminTabs() ? 'Add them in the admin panel, Kitchen, Shifts: Lunch, Dinner, Smoker or any other.' : 'Ask the head chef to set them up in the admin panel.') + '</p>' +
+      (adminTabs() ? '<div class="btn-row"><button type="button" class="btn dark" data-p="tm-setup">Set up the shifts</button></div>' : '') + '</section>';
+    var s = tmShift(tmShNow()), ps = tmPeople(), onL = ps.filter(function (p) { return tmOnShift(p.id, s.id); }), offL = ps.filter(function (p) { return !tmOnShift(p.id, s.id); });
+    var nobody = !Object.keys(tmf.on).length;
+    var use = nobody ? '<div class="tm-same"><span><b>Same as last ' + esc(tmWeekday(day)) + '?</b><br>Fills in who was on, their shifts, sections and breaks, for you to check.</span><button type="button" class="btn dark" data-p="tm-use"' + (tmLastBusy ? ' disabled aria-busy="true">Reading...' : '>Use it') + '</button></div>' : '';
+    var tabs = '<div class="tm-tabs" role="group" aria-label="Shift">' + shs.map(function (x) {
+      var n = ps.filter(function (p) { return tmOnShift(p.id, x.id); }).length;
+      return '<button type="button" class="chip" data-p="tm-sh" data-v="' + esc(x.id) + '" aria-pressed="' + (x.id === s.id) + '">' + esc(x.name) + '<small>' + n + '</small></button>';
+    }).join('') + '</div>';
+    var hours = s.from != null && s.to != null ? esc(s.name) + ' ' + tmHHMM(s.from) + ' to ' + tmHHMM(s.to) : esc(s.name);
+    var spread = onL.length ? '<div class="tm-spread"><span>Breaks from</span>' + tmSel('tm-spfrom', 'Spread the breaks from', tmTimes(s, tmSpFrom(s)).map(function (m) { return [m, tmHHMM(m)]; }), tmSpFrom(s)) +
+      '<span>one at a time,</span>' + tmSel('tm-splen', 'Each break', TM_LENS.map(function (l) { return [l, l + ' min']; }), tmSp.len) + '<button type="button" class="btn" data-p="tm-spread">Spread them</button></div>' : '';
+    var list = '<p class="tm-sum"><b>' + hours + '</b>: ' + (onL.length ? onL.length + ' on' : 'nobody on yet. Tick the people working it.') + '</p>' +
+      (onL.length ? '<ul class="tm-list">' + onL.map(function (p) { return tmRow(p, s); }).join('') + '</ul>' : '') +
+      (offL.length ? (tmShowOff || !onL.length ? '<ul class="tm-list">' + offL.map(function (p) { return tmRow(p, s); }).join('') + '</ul>' + (onL.length ? '<button type="button" class="tm-fold" data-p="tm-showoff" aria-expanded="true">Hide the people not on ' + esc(s.name) + '</button>' : '')
+        : '<button type="button" class="tm-fold" data-p="tm-showoff" aria-expanded="false">Not on ' + esc(s.name) + ': ' + esc(offL.map(function (p) { return p.name; }).join(', ')) + '. Show</button>') : '');
+    var dirty = tmDirty(), busy = svOf('t') === 'busy';
+    var save = '<div class="tm-save">' + svButton({ k: 't', p: 'tm-save', idle: 'Save today\'s team', off: !dirty, busy: busy }) + svLine('t', busy, tmMsg) + '</div>';
+    return top + lead + use + tabs + spread + list + save + '</section>';
+  }
+  function teamNoHTML() {
+    return '<section class="p-card tm-page"><h2 class="p-h" id="rtitle" tabindex="-1">Today\'s team</h2><p class="hint">The head chef and the sous chefs set today\'s team.</p>' +
+      '<div class="btn-row"><a class="btn" href="#/prep">Back to the prep list</a></div></section>';
+  }
+  function tmClearMsg() { if (svOf('t') === 'fail' || svOf('t') === 'done') svStop('t'); tmMsg = ''; }
+  function teamClick(a, el) {
+    var id = el.getAttribute('data-id') || '', v = el.getAttribute('data-v') || '';
+    if (a === 'tm-pin') { if (S.who) pickName(S.who); return; }
+    if (a === 'tm-setup') { adminOpen('kitchen-home:shifts'); return; }
+    // Refresh reads it again; with changes not saved it asks a second tap first, as they are dropped
+    if (a === 'tm-refresh') { if (tmDirty() && !arm('tm-refresh')) return; tmf = null; tmSnap = ''; tmClearMsg(); teamLoad(0); draw(); return; }
+    if (!teamOK() || !tmf || svOf('t') === 'busy') return;
+    var sh = tmShNow(), s = tmShift(sh);
+    if (a === 'tm-sh') { if (tmShift(v)) { tmSh = v; tmShowOff = false; tmSp.from = null; } draw(); return; }
+    if (a === 'tm-showoff') { tmShowOff = !tmShowOff; draw(); return; }
+    if (a === 'tm-on') {
+      if (!s) return;
+      var o = tmf.on[id];
+      if (o && o[sh] !== undefined) { delete o[sh]; if (!Object.keys(o).length) delete tmf.on[id]; tmf.br = tmf.br.filter(function (b) { return !(b.id === id && b.sh === sh); }); }
+      else {
+        // a cook already on another shift keeps that section to start with; anyone else starts with none
+        var was = o ? o[Object.keys(o)[0]] : '';
+        (tmf.on[id] = o || {})[sh] = was && kitSecs().some(function (x) { return x.id === was; }) ? was : '';
+      }
+      tmClearMsg(); draw(); return;
+    }
+    if (a === 'tm-addbr') {
+      if (!s || !tmOnShift(id, sh) || tmBreaks(id, sh).length >= TM_BREAKS) return;
+      var bs = tmBreaks(id, sh), last = bs.length ? bs[bs.length - 1] : null, t = tmTimes(s);
+      var at = last ? last.at + last.len : tmSpFrom(s); if (t.indexOf(at) < 0) at = t.filter(function (m) { return m >= at; })[0] || t[t.length - 1];
+      tmf.br.push({ id: id, sh: sh, at: at, len: 30 }); tmClearMsg(); draw(); return;
+    }
+    if (a === 'tm-spread') { tmSpread(); return; }
+    if (a === 'tm-use') { tmUseLast(); return; }
+    if (a === 'tm-save') { teamSave(); return; }
+  }
+  // a picker changed on the chef's page (no redraw needed for the Spread them choices)
+  function teamField(k, el) {
+    if (!tmf || svOf('t') === 'busy') return;
+    var p = k.split(':'), sh = tmShNow(), id = p[1], v = el.value;
+    if (p[0] === 'tm-spfrom') { tmSp.from = tmMin(+v); return; }
+    if (p[0] === 'tm-splen') { tmSp.len = TM_LENS.indexOf(+v) >= 0 ? +v : 30; return; }
+    if (!tmOnShift(id, sh)) return;
+    if (p[0] === 'tm-sec' && (v === '' || kitSecs().some(function (x) { return x.id === v; }))) tmf.on[id][sh] = v;
+    if (p[0] === 'tm-at' || p[0] === 'tm-len') {
+      var b = tmBreaks(id, sh)[+p[2]]; if (!b) return;
+      if (p[0] === 'tm-len') b.len = TM_LENS.indexOf(+v) >= 0 ? +v : b.len;
+      else if (v === '') tmf.br.splice(tmf.br.indexOf(b), 1);
+      else if (tmMin(+v) !== null) b.at = tmMin(+v);
+    }
+    tmClearMsg(); draw();
+  }
+  /* Spread them: the shift's breaks, one person after the other from the time picked, each as long as picked. It
+     replaces that shift's breaks in the plan; nothing is saved until Save. */
+  function tmSpread() {
+    var sh = tmShNow(), s = tmShift(sh); if (!s) return;
+    var from = tmSpFrom(s), len = tmSp.len, ids = tmPeople().filter(function (p) { return tmOnShift(p.id, sh); }).map(function (p) { return p.id; });
+    if (!ids.length) return;
+    tmf.br = tmf.br.filter(function (b) { return b.sh !== sh; });
+    var n = 0;
+    ids.forEach(function (id, i) { var at = from + i * len; if (at < 1440) { tmf.br.push({ id: id, sh: sh, at: at, len: len }); n++; } });
+    tmMsg = n + ' break' + (n === 1 ? '' : 's') + ' from ' + tmHHMM(from) + ', one at a time. Check them, then Save.'; draw();
+  }
+  /* Use it: the same day last week, filled in for the chef to check (never saved by itself). On a tap: one read. People
+     no longer on the staff list and shifts taken off are left out. */
+  function tmUseLast() {
+    if (tmLastBusy) return;
+    var day = shift(dayNow(), -7), wd = tmWeekday(day);
+    tmLastBusy = true; tmClearMsg(); draw();
+    fb.fs.getDoc(docRef('team', day)).then(function (sn) {
+      tmLastBusy = false;
+      if (!sn.exists() && cacheOnly(sn)) throw { code: 'unavailable' };
+      var rec = sn.exists() ? teamClean(sn.data(), day) : null, ids = {}, shs = {};
+      tmPeople().forEach(function (p) { ids[p.id] = 1; }); kitShifts().forEach(function (x) { shs[x.id] = 1; });
+      var on = rec ? rec.on.filter(function (o) { return ids[o.id] && shs[o.sh]; }) : [];
+      if (!tmf || !on.length) { tmMsg = 'No team was saved last ' + wd + '.'; draw(); return; }
+      tmf.on = {}; on.forEach(function (o) { (tmf.on[o.id] = tmf.on[o.id] || {})[o.sh] = kitSecs().some(function (x) { return x.id === o.sec; }) ? o.sec : ''; });
+      tmf.br = rec.br.filter(function (b) { return tmOnShift(b.id, b.sh); }).map(function (b) { return { id: b.id, sh: b.sh, at: b.at, len: b.len }; });
+      var n = Object.keys(tmf.on).length;
+      tmMsg = 'Filled in from last ' + wd + ': ' + n + (n === 1 ? ' person' : ' people') + '. Check each shift, then Save.'; draw();
+    }).catch(function () { tmLastBusy = false; tmMsg = errMsg('Could not read last ' + wd + '\'s team. Check the signal.'); draw(); });
+  }
+  /* Save: the plan with the next version, and the team stamp for the other phones, in one batch. Refused when another
+     chef saved since this page read it: the page says so and keeps the changes, and Refresh reads theirs. */
+  function teamSave() {
+    if (!teamOK() || !tmf || svOf('t') === 'busy') return;
+    if (!tmDirty()) { draw(); return; }   // nothing to save: the button is off, and this refuses too
+    if (tmf.day !== dayNow()) { tmMsg = errMsg('A new day started. Tap Refresh to set today\'s team.'); draw(); return; }
+    var keep = tmf, out = tmOut(tmf), t = now(), v = tmf.base + 1;
+    var d = { day: tmf.day, on: out.on, br: out.br, v: v, at: tmf.base ? tmf.at : t, upd: t };
+    var people_ = {}; out.on.forEach(function (o) { people_[o.id] = 1; });
+    svStart('t'); tmMsg = ''; tmMine = t; draw();
+    W([['set', docRef('team', d.day), d], ['set', cfgDoc(), { pastEdit: { t: t } }, true]]).then(function () {
+      tm.rec = teamClean(Object.assign({ by: tmMe() }, d), d.day); tm.st = 'ok'; tm.at = Date.now(); tm.stamp = t;
+      if (tmf === keep) { tmf.base = v; tmf.at = d.at; tmSnap = tmSig(tmf); }
+      var n = Object.keys(people_).length;
+      svDone('t', tmf === keep, function () { tmMsg = 'Today\'s team saved at ' + clock(t) + ': ' + n + (n === 1 ? ' person' : ' people') + ' on.'; });
+      draw(); tmPaint();
+    }, function (e) {
+      svFail('t', tmf === keep, true);
+      if (e && e.code === 'permission-denied' && tmCanRead()) {
+        // someone saved since this page read it, or this phone's PIN session went: read the record to tell which
+        fb.fs.getDocFromServer(docRef('team', d.day)).then(function (sn) {
+          var x = sn.exists() ? teamClean(sn.data(), d.day) : null;
+          if (x && x.v >= v) tmMsg = errMsg('Not saved: ' + (x.by ? mnName(x.by) : 'another chef') + ' saved today\'s team at ' + clock(x.upd) + '. Your changes are still here. Tap Refresh to start from theirs.');
+          else { tmMsg = errMsg('Not saved. Check your PIN and the signal, then try again.'); failed(e); }
+          draw();
+        }, function () { tmMsg = errMsg('Not saved. Check the signal, then try again.'); draw(); });
+        return;
+      }
+      tmMsg = errMsg('Not saved. Check the signal, then try again.'); failed(e); draw();
+    });
+  }
+  /* The chef chip in the top bar (round, the bell's size): filled until today's team is saved. No words: words in it
+     wrap the page tabs on a laptop and cut "Kitchen Book" on a phone (measured 7 Nov 2026). */
+  function teamChipHTML() {
+    if (!teamOK()) return '';
+    teamLoad();
+    var unset = tm.st === 'ok' && !tm.rec, label = unset ? 'Today\'s team, not set yet' : tm.st === 'err' ? 'Today\'s team, could not check' : 'Today\'s team';
+    return '<a class="tm-chip' + (unset ? ' is-due' : '') + '" href="#/team" aria-label="' + esc(label) + '"' + (S.name === 'team' ? ' aria-current="page"' : '') + '>' + tmIcon(20) + '</a>';
+  }
+  /* the chip follows the page: drawn again only when what it shows changed, or the top bar was drawn again without it
+     (js/app.js draws the icon group again on a sign-in, kitchen mail and the admin mark; each copy of the icon has its own
+     mask id, so drawing it every time would churn the top bar) */
+  var tmChipKey = null;
+  function tmPaint() {
+    var s = document.querySelector('.wtop .tm-slot'); if (!s) return;
+    var key = teamOK() ? [tm.day, tm.st, !!tm.rec, S.name === 'team'].join('|') : '';
+    if (key === tmChipKey && (!key || s.firstChild)) return;
+    var html = teamChipHTML(); tmChipKey = teamOK() ? [tm.day, tm.st, !!tm.rec, S.name === 'team'].join('|') : ''; s.innerHTML = html;
+  }
+  // under the done count on a chef's prep list, until today's team is saved (no list line lost: it sits in the header)
+  function tmHeadHTML(date) {
+    if (date !== dayNow() || !teamOK()) return '';
+    teamLoad();
+    return tm.st === 'ok' && !tm.rec ? '<a class="nb-tmset" href="#/team">Set today\'s team</a>' : '';
+  }
+  function tmWrap(prog, date) { var h = tmHeadHTML(date); return h ? '<div class="nb-pw">' + prog + h + '</div>' : prog; }
+  // the admin's To do (js/admin-dashboard.js): from what is already read, no read of its own
+  function teamNeed() { if (!teamOK()) return undefined; teamLoad(); return tm.st === 'ok' ? (tm.rec ? 'set' : 'unset') : tm.st === 'err' ? 'error' : 'loading'; }
+  function shAdminHTML(d) {
+    var list = d.kitShifts || [];
+    var time = function (i, k, v, lab) { return '<input type="time" class="search a-sh-t" data-a="sh' + k + '" data-i="' + i + '" step="900" value="' + (v == null ? '' : tmHHMM(v)) + '" aria-label="' + esc(lab) + '">'; };
+    var rows = list.map(function (s, i) {
+      var nm = s.name || 'this shift';
+      return '<li class="a-ks-row a-sh-row' + (s.off ? ' is-off' : '') + '"><label class="visually-hidden" for="a-sh' + i + '">Shift name</label><input id="a-sh' + i + '" class="search" data-k="a-sh' + i + '" data-a="shname" data-i="' + i + '" maxlength="40" autocomplete="off" placeholder="Shift name, like Lunch" value="' + esc(s.name) + '"' + (s.off ? ' disabled' : '') + '>' +
+        time(i, 'from', s.from, 'From, ' + nm) + time(i, 'to', s.to, 'To, ' + nm) +
+        '<button type="button" class="p-x" data-p="sh-rm" data-i="' + i + '" aria-label="' + esc((s.off ? 'Put back: ' : 'Remove: ') + nm) + '">' + (s.off ? 'Put back' : armed('sh-rm:' + s.id) ? 'Tap again to remove' : 'Remove') + '</button></li>';
+    }).join('');
+    return '<section class="set-block a-ks a-sh"><span class="hint">The kinds of shift the chefs put people on in Today\'s team, each with its own sections. From and To are optional: with them, each person\'s section follows the shift that is on. Renaming a shift keeps its history. Save changes at the bottom to put them live.</span>' +
+      (rows ? '<div class="a-sh-head" aria-hidden="true"><span>Shift</span><span>From</span><span>To</span></div><ul class="a-ks-list">' + rows + '</ul>' : '<p class="hint">No shifts yet, so Today\'s team has nothing to put people on.</p>') +
+      '<div class="btn-row"><button type="button" class="btn" data-p="sh-add">Add a shift</button>' + (list.length ? '' : '<button type="button" class="btn" data-p="sh-usual">Add Lunch and Dinner</button>') + '</div></section>';
+  }
+  function shAdminClick(a, el, d) {
+    var i = +el.getAttribute('data-i');
+    if (a === 'sh-add') { d.kitShifts = d.kitShifts || []; d.kitShifts.push({ id: 'sh-' + Date.now().toString(36), name: '', from: null, to: null, off: false, isNew: true }); draw(); var sn = S.root.querySelector('[data-k="a-sh' + (d.kitShifts.length - 1) + '"]'); if (sn) sn.focus(); return true; }
+    // the head chef's own times: none filled in (only times the head chef confirmed)
+    if (a === 'sh-usual') { d.kitShifts = [{ id: 'lunch', name: 'Lunch', from: null, to: null, off: false }, { id: 'dinner', name: 'Dinner', from: null, to: null, off: false }]; draw(); return true; }
+    // a new shift with its name typed asks a second tap, like a new section
+    if (a === 'sh-rm') { var x = (d.kitShifts || [])[i]; if (!x) return true; if (x.isNew && String(x.name || '').trim() && !arm('sh-rm:' + x.id)) return true; if (x.isNew) d.kitShifts.splice(i, 1); else x.off = !x.off; draw(); return true; }
+    return false;
+  }
+  function shAdminInput(a, el, d) {
+    var i = +el.getAttribute('data-i'), x = d.kitShifts && d.kitShifts[i];
+    if (!x) return;
+    if (a === 'shname') x.name = el.value;
+    if (a === 'shfrom' || a === 'shto') { var m = /^(\d{2}):(\d{2})/.exec(el.value || ''); x[a === 'shfrom' ? 'from' : 'to'] = m ? tmMin(+m[1] * 60 + +m[2]) : null; }
+  }
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && S.name === 'team' && S.root && document.body.contains(S.root)) teamLoad(TM_FRESH); });
+
   /* ---------- public bits used by app.js ---------- */
   /* The page Back closes the nearest local task first. Cancelling an edited form uses its existing two-tap
      discard check; returning from a panel keeps any other unfinished form in memory for the same person. */
@@ -11504,6 +11863,7 @@
       if (name === 'admin') S.draft = S.draft || null;
       draw();
       if (name === 'todo') todoLoad(TD_FRESH);
+      if (name === 'team') teamLoad(TM_FRESH);
       if (S.pin) { connect(); if (name === 'admin') sdk(); if (name === 'orders') { S.ordDate = dayNow(); watchOrders(); } if (name === 'waste') { S.wDate = dayNow(); watchWaste(); } if (name === 'transfers') { S.xDate = dayNow(); watchXfer(); } notesInit(); }
     },
     warm: function () { sdk().then(function () { rxSync(); }).catch(function () {}); if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },
@@ -11540,6 +11900,8 @@
     fnOK: fnOK, fnCancelOK: fnCancelOK, toast: toast, btnPatch: btnPatch,
     fnState: fnState,
     todoOK: todoOK,
+    // Today's team (7 Nov 2026): the chef chip in the top bar and its icon for the chef hat tile (js/app.js)
+    teamOK: teamOK, teamChip: teamChipHTML, teamIcon: tmIcon,
     book: bookApi,
     supplier: supplierApi,
     chefMenu: chefMenu,

@@ -62,7 +62,7 @@ The exporter remains `scripts/nightly-backup.mjs`; its JSON shape is unchanged.
 | `config` | `config/main`, including people, canonical permission ids and settings. |
 | `days`, `orders`, `waste`, `wasteReviews`, `transfers`, `deliveries` | The selected window, normally 45 Queensland calendar days, with original document ids, values and attribution. |
 | `activity`, `sections`, `learned`, `ordlearned`, `learnlog`, `summary`, `analysis`, `analysisDaily`, `references`, `training`, `proofHistory`, `dashwatch`, `misses`, `views` | Included activity, analysis, source links, assessment and correction records, and the admin Dashboard's watch list. |
-| `guides`, `mail`, `mailstat`, `drinks`, `shifts`, `daily`, `todos`, `cutdone`, `transferOpen` | Included team records, guide words/small pictures and outstanding-transfer index. |
+| `guides`, `mail`, `mailstat`, `drinks`, `shifts`, `daily`, `todos`, `team`, `cutdone`, `transferOpen` | Included team records, guide words/small pictures and outstanding-transfer index. |
 | `notes`, `directnotes`, `minutes`, `book`, `recipes`, `drawings`, `drawtpl`, `drawlib`, `suppliers`, `supplierlinks`, `functions`, `fncontact`, `fnsent` | Current included documents. Booking contacts remain private inside the encrypted archive. |
 | `referencesHist`, `trainingHist`, `notesSeen`, `directnotesSeen`, `minutesHist`, `minutesSigns`, `recipesHist`, `drawingsHist`, `supplierOrders`, `supplierAudit`, `functionsHist` | Included history, acknowledgements, sign-offs, catalogue audit and order subcollections, retaining parent and record ids. |
 | `pins` | Inventory only: exported id, name and set time when present. It is not a usable PIN proof. |

@@ -132,7 +132,7 @@ After approval, implement small reversible units under the existing shipping rul
 ## Routes
 Supplier tools: `#/suppliers`, `#/suppliers/<id>`, `#/suppliers/manage`, `#/suppliers/<id>/manage`, `#/suppliers/cutoff/<cut-off id>/<date>`. Read `docs/supplier-workspace.md` before changing its data contract. The three supplier scripts load only for an authorised chef. Goods are private Firestore data, never static assets.
 
-`#/` landing (six dockets), `#/recipes` (Pass or Tiles), `#/r/<id>[/<id>...]` a recipe and the trail to it, `#/prep`, `#/orders`, `#/deliveries`, `#/waste`, `#/transfers`, `#/guides`, `#/guides/<id>`, `#/minutes`, `#/mail`, `#/drinks`, `#/todo` (the chef to-do list: head chef and sous chefs only), `#/admin`, `#/settings`, `#/manage` (head chef, sous chefs and admin: the recipe list), `#/manage/r/<id>`, `#/manage/new`, `#/manage/new/<id>`, `#/manage/draw/<drawing id>`, `#/manage/draw/new/<recipe id>/<plate|pan|side|build>`, `#/fn` (functions: today and the next days), `#/fn/now` (the service view), `#/fn/<id>`, `#/functions` (function managers only), `#/functions/new`, `#/functions/<id>`.
+`#/` landing (six dockets), `#/recipes` (Pass or Tiles), `#/r/<id>[/<id>...]` a recipe and the trail to it, `#/prep`, `#/orders`, `#/deliveries`, `#/waste`, `#/transfers`, `#/guides`, `#/guides/<id>`, `#/minutes`, `#/mail`, `#/drinks`, `#/todo` (the chef to-do list: head chef and sous chefs only), `#/team` (Today's team: shifts, sections and breaks; head chef and sous chefs set it), `#/admin`, `#/settings`, `#/manage` (head chef, sous chefs and admin: the recipe list), `#/manage/r/<id>`, `#/manage/new`, `#/manage/new/<id>`, `#/manage/draw/<drawing id>`, `#/manage/draw/new/<recipe id>/<plate|pan|side|build>`, `#/fn` (functions: today and the next days), `#/fn/now` (the service view), `#/fn/<id>`, `#/functions` (function managers only), `#/functions/new`, `#/functions/<id>`.
 
 ## Ground rules (no exceptions)
 These hold for every session, every message and every change, however small. A hook in `.claude/settings.json` (`scripts/guard-main.mjs`) refuses edits and commits on `main`, so a session that skips them is stopped.
@@ -204,7 +204,7 @@ Short warnings. The full contract for each part is its section in `docs/code-con
 - **Held-back pages.** Any new link, card or read for guides, pings or minutes checks `featOn()`.
 - **Admin panel.** A new block gets a `.label` or `h3.a-ch-h` (the nav chips read them). Lists that grow go through `lvHTML()`. No hand-built long tables, no second sticky bar.
 - **Prep list.** Double ups merge only through `mergeDups()`, from a server read; a `dupOk` line never merges. Tomorrow's list cut comes from `cutFor()`.
-- **Top bar.** Pings and the chef hat only: one more button wraps "Kitchen Book" onto two lines on a laptop. Sign-offs and `hist` copies are immutable; a change after publishing is a new version.
+- **Top bar.** Pings, the chef hat and the round Today's team chip (7 Nov 2026), all the bell's size. A button with words in it wraps the page tabs on a laptop and cuts "Kitchen Book" on a phone (measured 7 Nov 2026, `docs/todays-team-options/brief.md`); anything more is a head chef decision. Sign-offs and `hist` copies are immutable; a change after publishing is a new version.
 - **Transfers.** A new line field needs the rules, `scripts/nightly-learn.mjs` and `tests/safe-text.test.js`. Six tabs is the most the phone tab bar fits.
 
 ## Changes that went wrong before (28 Oct 2026)

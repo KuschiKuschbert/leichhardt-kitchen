@@ -305,6 +305,7 @@ row(EXP_ALL + 'every minutes record, drafts too (no filter)', { ok: GOOGLE, asks
 row(EXP_ALL + 'a minutes record\'s earlier versions (minutes/<id>/hist)', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, 'minutes/m1/hist')) });
 row(EXP_ALL + 'every personal ping (the directnotes list, no filter)', { ok: CHEFS, asks: GOOGLE, run: db => getDocs(C(db, 'directnotes')) });
 row(EXP_ALL + 'every chef job (the todos list, no filter)', { ok: CHEFS, asks: GOOGLE, run: db => getDocs(C(db, 'todos')) });
+row(EXP_ALL + 'every day\'s team (the team list, no filter)', { ok: KITCHEN, asks: GOOGLE, run: db => getDocs(C(db, 'team')) });
 row(EXP_ALL + 'every supplier order tick (the cutdone list, no filter)', { ok: CHEFS, asks: GOOGLE, run: db => getDocs(C(db, 'cutdone')) });
 // the PIN move copies the PIN fingerprints too (copyCol(); its writes go to the new kitchen PIN, not rows here)
 row('js/prep.js movePin() copyCol(): the staffpins list', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, 'staffpins')) });

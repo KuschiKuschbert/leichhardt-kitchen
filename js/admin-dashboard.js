@@ -249,6 +249,11 @@
   }
   function needsHTML() {
     var nd = api.needs ? api.needs() : {}, rows = [], clear = [], today = api.today();
+    // Today's team (7 Nov 2026): not set yet for today, from what js/prep.js already read (no read of its own); an older
+    // book sends nothing here and the row stays away
+    if (nd.team === 'unset') rows.push(needRow('due', 'Not set', 'Today\'s team', 'Who is on which shift, their sections and breaks.', 'team', 'Set today\'s team'));
+    else if (nd.team === 'error') rows.push(needRow('wait', 'Not checked', 'Today\'s team', 'Could not load today\'s team. The book tries again by itself.', 'team', 'Open Today\'s team'));
+    else if (nd.team === 'set') clear.push('today\'s team');
     // Kitchen mail: the open messages the panel already read when the book opened.
     if (nd.mail === undefined) {} else if (nd.mail === 'error') rows.push(needRow('wait', 'Not checked', 'Kitchen mail', 'Could not load the mail. The book tries again by itself.', 'mail', 'Open mail'));
     else if (nd.mail === 'loading') rows.push(needRow('wait', 'Checking', 'Kitchen mail', 'Still loading.', '', ''));
@@ -505,7 +510,7 @@
       var gone = watchLabel(w2.list[i]);
       watchSet(w2.list.filter(function (x, j) { return j !== i; }), 'Stopped watching ' + gone + '.'); return;
     }
-    if (a === 'open') { var t = el.getAttribute('data-t'); if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references', 'training'].indexOf(t) >= 0) api.open(t, state.period); }
+    if (a === 'open') { var t = el.getAttribute('data-t'); if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references', 'training', 'team'].indexOf(t) >= 0) api.open(t, state.period); }
   }
   // Typing in the watch list's Find box narrows the choices (the admin panel keeps focus and cursor through redraws).
   document.addEventListener('input', function (e) { if (valid() && state.add && e.target && e.target.id === 'dsh-watch-q') { state.add.q = String(e.target.value || '').slice(0, 80); redraw(); } });
