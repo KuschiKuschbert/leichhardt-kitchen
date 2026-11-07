@@ -433,8 +433,16 @@ figcaption b { color: var(--ink); font-weight: 600; }
 .tb .m-nav { display: flex; gap: 6px; flex: 1; justify-content: center; }
 .tb .m-nav span { padding: 9px 13px; border-radius: var(--r-pick); border: 2px solid var(--bar-text); font: 600 15px/1 var(--body); }
 .tb .m-nav span.on { background: var(--bar-text); color: var(--ink); }
-.s1-wall { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 28px; }
-.s1-col { border-top: 3px solid var(--ink); margin-top: 14px; }
+.s1-wall { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
+.s1-col { padding: 0 18px; border-left: 1px solid var(--rule); margin-top: 6px; }
+.s1-col:nth-child(3n+1) { border-left: 0; padding-left: 0; }
+/* the wall board on the notebook paper (head chef, 8 Nov 2026): ruled page, the red margin, the handwritten title */
+.s1-wallnb { height: 664px; overflow: hidden; padding: 10px 22px 0 36px; }
+.s1-wallnb::before { left: 18px; }
+.s1-wallnb .m-r .m-n { left: -30px; }
+.s1-wall .m-t { font-size: 23px; }
+.s1-wall .m-on:empty { display: none; }
+.s1-wall .m-on { min-width: 52px; padding: 0 6px; }
 .s1-wall .m-r .m-link, .s1-wall .m-dots { display: none; }
 
 </style>
@@ -951,10 +959,10 @@ figcaption b { color: var(--ink); font-weight: 600; }
       '<div class="m-r done"><span class="m-box done">' + ic('tick', 18) + '</span><div class="m-w"><div class="m-t">Laksa paste <i>1 batch</i></div><div class="m-m">Ann 11:48</div></div></div><div class="m-r done"><span class="m-box done">' + ic('tick', 18) + '</span><div class="m-w"><div class="m-t">Wash bok choy</div><div class="m-m">Bo 10:02</div></div></div>' +
       '<div class="m-sec" style="margin-top:18px"><span>Your usual</span></div><div style="display:flex;flex-wrap:wrap;gap:8px">' + ['Slice onions 2 tubs', 'Make gravy 5 L', 'Portion rump 20', 'Coleslaw 3 L'].map(function (t) { return '<span class="e-chip">' + ic('plus', 16) + t + '</span>'; }).join('') + '</div></div></div></div></div>';
   } };
-  E['s1-wall-1280'] = { w: 1280, g: 'step1', cap: '<b>The wall board on the shared kitchen tablet.</b> As today: a column for each section, no tabs, List to go back. New: the Urgent button on every line (one tap, the tablet asks Who\'s on it as now for On it), and a bar in each column heading.', html: function () {
+  E['s1-wall-1280'] = { w: 1280, g: 'step1', cap: '<b>The wall board on the shared kitchen tablet, on the notebook paper</b> (head chef, 8 Nov 2026): one ruled page with the red margin and the handwritten title, a column for each section, no tabs, List to go back. New: the notebook look, the Urgent button on every line (one tap; the tablet asks Who\'s on it, as it does for On it), and a bar in each column heading.', html: function () {
     var nav = '<div class="m-nav">' + TABS.map(function (t) { return '<span class="' + (t[1] === 'Prep' ? 'on' : '') + '">' + t[1] + '</span>'; }).join('') + '</div>';
     return '<div class="lt rx">' + '<div class="m-top"><span class="m-back">' + ic('back', 26) + '</span><div class="m-brand"><small>Leichhardt Hotel Kitchen</small><b>Kitchen Book</b></div>' + nav + '<span class="m-chips"><span class="m-chip">' + ic('team') + '</span><span class="m-chip">' + ic('bell') + '</span><span class="m-chip">' + ic('hat') + '<span class="bdg">S</span></span></span></div>' +
-      '<div class="m-body" style="padding:20px 40px">' + s1Head(true, true).replace('<div class="m-nbh">', '<div class="m-nbh" style="border-bottom:2px solid var(--ink)">') + '<div class="s1-wall">' + wideRail(true) + '</div></div></div>';
+      '<div class="m-body" style="padding:18px 34px"><div class="m-nb s1-wallnb">' + s1Head(true, true) + '<div class="s1-wall">' + wideRail(true) + '</div></div></div></div>';
   } };
   var GROUPS = [
     ['step1', 'Step 1 at every size: Prep and Add a line', 'What step 1 builds, at every size, for the head chef to check before any code (8 Nov 2026): the phone and Add a line, a tablet, a laptop, and the wall board on the shared kitchen tablet. On a tablet and a laptop the lines are one row already today, so the change there is smaller: the Urgent button with its word, the chips on their own row with the day in the heading, and a bar in each section heading.'],
