@@ -4263,3 +4263,12 @@ html.tm-open, html.tm-open body { overflow: hidden; }
   .dsh-pick .dsh-pick-d { margin: 0 0 .75rem; color: var(--ink); line-height: 1.4; }
   .dsh-pick .btn-row { margin-top: .5rem; }
 }
+/* ---------- Gap fix: polish (8 Nov 2026) ---------- */
+/* the audit's small gaps against the chosen drawings (docs/whole-app-redesign-options/every-page.html) */
+/* Orders: a link pill centres its words (they sat at the top edge of the 44 px pill) */
+.o-sup-acts .chip, .chip.o-deliv { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+/* Add a line: the small heading over your usual lines */
+.nb-sgh { margin: 0.4rem 0 0.1rem; font: 700 0.72rem/1.2 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-ink); }
+/* Guides step by step: Back and Next stay at the bottom of the screen above the tab bar on a phone, within thumb reach,
+   while a long step or its page scrolls (the guide page has no other sticky bar) */
+@media (max-width: 719px) { .g-nav { position: sticky; bottom: calc(var(--tabbar-h) + 6px); z-index: 5; padding: 8px 0; background: var(--bg); } }

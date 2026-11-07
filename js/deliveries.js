@@ -35,6 +35,8 @@
   function span() { return Math.round((T.at(M.to) - T.at(M.day)) / 86400000) + 1; }
   function single() { return M.day === M.to; }
   function inView(day) { return day >= M.day && day <= M.to; }
+  // a day as people read it: "Sunday 8 November" (the day given, not today's clock)
+  function longDay(d) { var p = String(d || '').split('-'); return p.length === 3 ? new Date(+p[0], p[1] - 1, +p[2], 12).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' }) : String(d || ''); }
   function shownRows() { return M.sup ? M.rows.filter(function (r) { return same(r.supplier, M.sup); }) : M.rows; }
   function suppliersIn(list) { var seen = Object.create(null); return list.map(function (r) { return String(r.supplier || '').trim(); }).filter(function (n) { var k = n.toLowerCase(); if (!n || seen[k]) return false; seen[k] = 1; return true; }).sort(function (a, b) { return a.localeCompare(b); }); }
   function csvRows() {
@@ -161,12 +163,12 @@
       (admin() ? '<div class="dl-range"><label class="dl-field dl-filter" for="dl-view-day"><span class="label">From</span><input type="date" id="dl-view-day" value="' + esc(M.day) + '" max="' + T.day() + '"></label>' +
         '<label class="dl-field dl-filter" for="dl-view-to"><span class="label">To</span><input type="date" id="dl-view-to" value="' + esc(M.to) + '" min="' + esc(M.day) + '" max="' + T.day() + '"></label></div>' +
         (M.state === 'ok' && suppliersIn(M.rows).length > 1 ? '<label class="dl-field dl-filter" for="dl-sup-filter"><span class="label">Supplier</span><select id="dl-sup-filter"><option value="">All suppliers</option>' + suppliersIn(M.rows).map(function (n) { return '<option value="' + esc(n) + '"' + (same(n, M.sup) ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></label>' : '') : '') +
-      '<p class="hint">' + esc(single() ? M.day : M.day + ' to ' + M.to + ' (' + span() + ' days)') + (M.state === 'ok' && admin() ? ' · ' + shownRows().length + (shownRows().length === 1 ? ' delivery' : ' deliveries') : '') + '</p>' +
+      '<p class="hint">' + esc(single() ? longDay(M.day) : M.day + ' to ' + M.to + ' (' + span() + ' days)') + (M.state === 'ok' && admin() ? ' · ' + shownRows().length + (shownRows().length === 1 ? ' delivery' : ' deliveries') : '') + '</p>' +
       (admin() && B.csv && M.state === 'ok' && shownRows().length ? '<div class="btn-row"><button class="btn" type="button" data-dl="csv">Download CSV</button></div>' : '') + (M.state === 'error' ? '<p class="dl-error" role="alert">Could not read delivery records. Check the connection and tap Refresh.</p>' :
         // no signal, not loaded yet: the note, then only this phone's receipts still waiting to send
         M.state === 'offline' ? '<p class="dl-error" role="status">No signal. Today\'s deliveries show when the phone is back online.</p>' + (M.rows.length ? '<ol class="dl-receipts">' + M.rows.map(row).join('') + '</ol>' : '') :
         M.state !== 'ok' ? loading('Loading deliveries...', 'orders', 3) :
-        (shownRows().length ? '<ol class="dl-receipts">' + shownRows().map(row).join('') + '</ol>' : '<p class="hint">' + (M.sup ? 'No deliveries from this supplier in these dates.' : single() ? 'No deliveries recorded for this date.' : 'No deliveries recorded in these dates.') + '</p>') +
+        (shownRows().length ? '<ol class="dl-receipts">' + (today ? shownRows().slice().reverse() : shownRows()).map(row).join('') + '</ol>' : '<p class="hint">' + (M.sup ? 'No deliveries from this supplier in these dates.' : single() ? 'No deliveries recorded for this date.' : 'No deliveries recorded in these dates.') + '</p>') +
         // only once the server answered for today: a supplier due by the cut-offs with no receipt of that exact name yet
         (waiting.length ? '<p class="dl-waiting"><b>Not received yet today:</b> ' + waiting.map(esc).join(', ') + '</p>' : '')) + '</section></div>';
     if (focus) { var el = M.root.querySelector('[data-dl-field="' + focus + '"]'); if (el) { el.focus({ preventScroll: true }); if (pos) el.setSelectionRange(pos[0], pos[1]); } }

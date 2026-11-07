@@ -2656,7 +2656,8 @@
   function suggestHTML() {
     var list = typeahead(S.text).slice(0, 4);
     S.sugg = list;
-    return list.map(function (x, i) {
+    // a small heading when the first suggestions are lines this kitchen writes (learned), as drawn; recipe names alone have none
+    return (list.some(function (x) { return x.uses > 0; }) ? '<p class="nb-sgh">Your usual</p>' : '') + list.map(function (x, i) {
       var sec = sugSec(x), uq = String(S.qty || '').trim() || usualQty(x.text), bits = [uq, sec, matchRecipe(x.text) ? 'has a recipe' : ''].filter(Boolean).join(' · ');
       return '<div class="nb-sgr"><button type="button" class="nb-sg" data-p="sugg" data-i="' + i + '"><span class="nb-sgt">' + esc(x.text) + '</span>' + (bits ? '<span class="nb-us">' + esc(bits) + '</span>' : '') + '</button>' +
         (sec ? '<button type="button" class="nb-sgadd" data-p="sgadd" data-i="' + i + '" aria-label="' + esc('Add ' + x.text + (uq ? ', ' + uq : '') + ', to ' + sec) + '"><span aria-hidden="true">+ </span>Add</button>' : '') + '</div>';
@@ -5982,6 +5983,15 @@
      the change and once for its toast. Measured on an 80-line day, a phone 4 times slower: 136 ms in the tap before. */
   var holdDraw = 0, heldDraw = false;
   function batch(fn) { holdDraw++; try { fn(); } finally { if (--holdDraw === 0 && heldDraw) { heldDraw = false; draw(); } } }
+  /* Manage staff, writing pings and the minutes register are drawn on the prep route (chefOpen()), so the tab bar and the
+     laptop's page tabs lit Prep while they were open (audit, 8 Nov 2026). They light nothing then, like the other chef hat
+     pages. Two small lists, no reads. */
+  function navMark() {
+    var sub = S.name === 'prep' && !!(S.staffOpen || S.notesOpen || S.minOpen);
+    document.querySelectorAll('.tabbar a[href="#/prep"], .pnav a[href="#/prep"]').forEach(function (a) {
+      if (sub) a.removeAttribute('aria-current'); else if (S.name === 'prep') a.setAttribute('aria-current', 'page');
+    });
+  }
   function draw() {
     if (holdDraw) { heldDraw = true; return; }
     svTidy();
@@ -5989,6 +5999,7 @@
     noteRefresh();
     if (S.mins) { loadMine(); minCard(); }
     homePaint();   // Home's board, when it is on screen (redesign step 2)
+    navMark();
     if (!S.root || !document.body.contains(S.root) || rendering) return;
     rendering = true;
     var ae = document.activeElement, key = ae && ae.getAttribute && (ae.getAttribute('data-k') || (ae._uxSource && ae._uxSource.getAttribute('data-k'))), start = null, end = null;

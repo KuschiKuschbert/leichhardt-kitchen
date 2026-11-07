@@ -25,6 +25,7 @@ const bill = p => p.evaluate(() => window.__fake.bill.reduce((n, x) => n + x.n, 
   let r = await rows(p);
   const row = t => r.filter(x => x.t === t)[0] || {};
   ok(r.length >= 3 && r.length <= 4 && r.slice(0, 3).map(x => x.t).sort().join() === 'Dice onions,Onion jam,Pickled red onion', 'typing oni: your usual lines first, at most four (' + JSON.stringify(r.map(x => x.t)) + ')');
+  ok(await txt(p, '#p-sugg .nb-sgh') === 'Your usual', 'the usual lines sit under a small Your usual heading');
   ok(row('Dice onions').us === '1 tub · Larder' && row('Dice onions').add, 'Dice onions says its usual amount and section, with Add (' + row('Dice onions').us + ')');
   ok(row('Pickled red onion').us === 'Larder' && row('Pickled red onion').add, 'Pickled red onion: its section, no amount to guess, with Add');
   ok(!row('Onion jam').add, 'Onion jam has no section anywhere: no Add, nothing guessed');
