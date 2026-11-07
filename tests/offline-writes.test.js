@@ -16,8 +16,10 @@ const { R, ok } = L.results(), { txt } = L;
 const today = L.ymd(new Date(L.NOW));
 const mark = p => p.evaluate(() => { window.__mark = 1; });
 const reloaded = p => p.evaluate(() => window.__mark !== 1).catch(() => true);
-// A healthy update may use both eight-second network stages before the landing page arrives.
-const waitReload = p => L.waitFor(p, () => window.__mark !== 1, null, 20000).catch(() => {});
+// A healthy update may use both eight-second network stages before the landing page arrives. 30 seconds, not 20 (7 Nov
+// 2026): on a busy test runner the check, the files and the reload took longer than 20 (the 04:00 step, 5 Nov 2026).
+// It waits only until the reload, so a passing run is no slower.
+const waitReload = p => L.waitFor(p, () => window.__mark !== 1, null, 30000).catch(() => {});
 // what a reload or closing the tab would do: true when the book asks first
 const asks = p => p.evaluate(() => { const e = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(e); return e.defaultPrevented; });
 // the Not sent mark on the row whose words hold this text: 'shown' (it has a size on screen), 'hidden', 'none' or 'no row'
@@ -68,11 +70,19 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // all three; LK_PART=all runs every step in this one file.
   const PARTS = 3, PART = process.env.LK_PART === 'all' ? 0 : (+process.env.LK_PART || 1);
   let stepNo = 0;
-  // each step on its own: one that fails (say the page reloaded) is a FAIL, and the next steps still run
+  // pr, or v after ms milliseconds, whichever comes first. The timer goes with it, so it never keeps the file running.
+  function cap(pr, ms, v) { let t; return Promise.race([pr, new Promise(res => { t = setTimeout(() => res(v), ms); })]).finally(() => clearTimeout(t)); }
+  // each step on its own: one that fails (say the page reloaded) is a FAIL, and the next steps still run. A step that
+  // does not finish in 2 minutes is a FAIL by its name too (7 Nov 2026; the longest takes about 12 seconds): a call the
+  // browser never answers used to hold the whole file to the 10 minute limit with nothing said about where.
+  const STEP_LIMIT = 120000;
   async function step(n, fn) {
     if (PART && (stepNo++ % PARTS) !== PART - 1) return;
-    try { await fn(); } catch (e) { ok(false, 'step ' + n + ' stopped: ' + String(e && e.message || e).split('\n')[0]); }
-    if (p) await p.context().close().catch(() => {});
+    // the step's own promise never rejects, so one left behind by the 2 minute limit cannot stop the file later
+    const r = await cap(Promise.resolve().then(fn).then(() => 'done', e => ({ e })), STEP_LIMIT, 'late');
+    if (r === 'late') ok(false, 'step ' + n + ' did not finish in ' + STEP_LIMIT / 1000 + ' seconds');
+    else if (r !== 'done') ok(false, 'step ' + n + ' stopped: ' + String(r.e && r.e.message || r.e).split('\n')[0]);
+    if (p) await cap(p.context().close().catch(() => {}), 15000);
     p = null;
   }
 
@@ -588,7 +598,13 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
     await p.clock.fastForward('00:10:30');
     await waitReload(p);
-    ok(await reloaded(p), '04:00: sent, it refreshes 10 minutes later');
+    // what held it back, said in the FAIL line (it failed on GitHub's runners on 5 and 7 Nov 2026, never on a laptop)
+    const went = await reloaded(p), why = went ? '' : ' ' + JSON.stringify(await p.evaluate(() => ({
+      unsaved: lkUnsaved(), unsent: lkUnsent(), editing: lkEditing() && document.activeElement.tagName, idle: lkIdle(),
+      untouched: Math.round((Date.now() - lkTouch) / 1000), online: navigator.onLine, at: LK_TIME.clock(), day: LK_TIME.day(),
+      locked: !LK_PREP.privateAccess(), strip: (document.querySelector('.upd-bar span') || {}).textContent || ''
+    })).catch(e => String(e).slice(0, 120)));
+    ok(went, '04:00: sent, it refreshes 10 minutes later' + why);
   });
 
   // 10. the automatic update looks again before it reloads (final review, 28 Oct 2026). It asks the server, then fetches
@@ -898,11 +914,18 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     });
   }
 
-  // a swipe up the screen, the way a finger scrolls a phone: what the book hears as a touch
+  // a swipe up the screen, the way a finger scrolls a phone: what the book hears as a touch. Chrome waits for the page to
+  // take each touch, and one sent while the book reloads can wait for ever: 3 of 40 touches sent during a reload never
+  // came back (7 Nov 2026), and that held this file to the 10 minute limit (FILE_TIMEOUT) on 5 and 6 Nov 2026. So each
+  // touch waits 3 seconds at most, and a page that has gone (the book reloaded first) has had its swipe. What the step
+  // checks after it (did the book update?) is unchanged.
   const swipe = async p => {
     const c = await p.context().newCDPSession(p);
-    for (const [type, y] of [['touchStart', 600], ['touchMove', 500], ['touchMove', 400], ['touchEnd']]) await c.send('Input.dispatchTouchEvent', { type, touchPoints: y ? [{ x: 200, y }] : [] });
-    await c.detach();
+    for (const [type, y] of [['touchStart', 600], ['touchMove', 500], ['touchMove', 400], ['touchEnd']]) {
+      const r = await cap(c.send('Input.dispatchTouchEvent', { type, touchPoints: y ? [{ x: 200, y }] : [] }).then(() => 'sent', () => 'gone'), 3000, 'late');
+      if (r !== 'sent') break;
+    }
+    await cap(c.detach().catch(() => {}), 3000);
   };
 
   // 18. the 04:00 refresh held back all night (review of the fix, 28 Oct 2026): a tablet on Recipes from 03:57, with
