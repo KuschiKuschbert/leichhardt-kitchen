@@ -100,7 +100,8 @@ td { font-variant-numeric: tabular-nums; }
     <h2>A, with three pieces of B</h2>
     <ol>
       <li><b>Chef: a tile and a quiet line, no pop-up.</b> Today's team in the chef hat, a To do line in the admin panel, and "Set today's team" under the count on the chef's own prep list until the day is saved.</li>
-      <li><b>The chef's page with B's shortcuts:</b> "Same as last Saturday? Use it", then one shift at a time with "Spread them" for breaks. A normal morning is 7 taps.</li>
+      <li><b>The chef's page with B's shortcuts:</b> "Same as last Saturday? Use it", then one shift at a time with "Spread them" for breaks. Use it fills the names to check; only Save saves. A normal morning is 7 taps.</li>
+      <li><b>A round Team and clock chip</b> next to the bell: for chefs all day, for staff on tablets and laptops when their break is near or their day changed. See the chip section below.</li>
       <li><b>Staff: B's header line with A's words.</b> "Lunch: Grill · Break 14:30" under the count on the prep list, orange with "Changed 10:12 by Sam" when the chef moves it, and the full day under their name in the chef hat. No list line is lost.</li>
     </ol>
     <div class="shots">
@@ -117,7 +118,30 @@ td { font-variant-numeric: tabular-nums; }
     <div class="design">
       <div class="dhead"><span class="dletter">+</span><h2>A Today's team chip in the top bar</h2><span class="dtag">Your second request</span></div>
       <p class="sub" style="margin-top:8px">"A chip next to the shift ping bell and the chef hat, on the chefs' and the staff phones and tablets, for quicker access", with its own team icon.</p>
-      <!--CHIP-VERDICT-->
+      <div class="verdicts">
+        <div class="verdict"><span class="k">A chip at all?</span><b>Build smaller, 5 of 6</b><p>The skeptic said wait: ship the rest first and see if anyone misses it.</p></div>
+        <div class="verdict"><span class="k">Three ways, ranked</span><b>T2 14 · T1 13 · T3 9</b><p>T3 last for five: a team dot on the bell teaches people to ignore the ping dot.</p></div>
+        <div class="verdict"><span class="k">The icon</span><b>Team and clock, 5 of 6</b><p>Who is on, and when. The toques clash with the chef hat beside them.</p></div>
+      </div>
+      <div class="rec">
+        <span class="k">Recommended chip</span>
+        <h2>Round, the bell's size, for chefs all day and for staff when it matters</h2>
+        <ol>
+          <li><b>Chefs</b>: the round chip on every screen from 375 px, filled orange until today's team is saved. One tap opens Today's team.</li>
+          <li><b>Staff on tablets and laptops</b>: the chip only from 30 minutes before their break until they are back, and after a chef changes their day. One tap opens Your day.</li>
+          <li><b>Staff on phones</b>: no chip. The icon goes in front of their prep list line and the chef hat line, so it is learnt with its words.</li>
+          <li><b>Use it never saves blind</b>: it fills the page with last Saturday's names to check, and Save will not overwrite a day another chef saved.</li>
+        </ol>
+        <p class="note">Why round: a chip with words wraps the page tabs on a laptop (Guides drops to a second row at 768, 1180 and 1280 px) and cuts the title on phones. A round chip keeps the tabs on one row from 768 to 1440 px and the title whole on phones from 375 px.</p>
+        <div class="shots">
+          <figure><img src="previews/chip-final-chef-unset-390.png" alt="Chef's phone top bar: a filled orange round team chip left of the bell" loading="lazy"><figcaption><b>Chef, phone</b>: not set yet</figcaption></figure>
+          <figure><img src="previews/chip-final-chef-set-390.png" alt="Chef's phone top bar: a plain round team chip" loading="lazy"><figcaption><b>Chef, phone</b>: saved</figcaption></figure>
+          <figure class="wide"><img src="previews/chip-final-chef-unset-1280.png" alt="Laptop top bar with the round team chip, the page tabs on one row" loading="lazy"><figcaption><b>Laptop</b>: the tabs stay on one row</figcaption></figure>
+          <figure class="wide"><img src="previews/chip-final-staff-due-768.png" alt="Tablet top bar with the filled round team chip before a break" loading="lazy"><figcaption><b>Staff, tablet</b>: 30 minutes before the break</figcaption></figure>
+          <figure><img src="previews/chip-final-phone-prep-390.png" alt="Staff phone prep list with the team icon in front of Lunch: Grill, Break 14:30, three list lines visible" loading="lazy"><figcaption><b>Staff, phone</b>: the icon with its words</figcaption></figure>
+          <figure><img src="previews/chip-final-phone-hat-390.png" alt="Staff chef hat menu with the team icon in front of the day line" loading="lazy"><figcaption><b>Staff, chef hat</b>: the same icon</figcaption></figure>
+        </div>
+      </div>
       <h3>The icon</h3>
       <div class="shots">
         <figure class="wide"><img src="previews/chip-icons.png" alt="Three team icons drawn large and at their real size on the dark top bar: 1 Brigade, two chef toques; 2 Team and clock, two people with a small clock; 3 On the line, three people over a rail" loading="lazy"><figcaption><b>Three icons</b> in the book's icon style</figcaption></figure>
@@ -258,13 +282,15 @@ td { font-variant-numeric: tabular-nums; }
 
   <section class="sec" id="questions">
     <h2>Your call</h2>
-    <p class="sub">The council advises; you decide. These five answers shape the build.</p>
+    <p class="sub">The council advises; you decide. These seven answers shape the build.</p>
     <ol class="qs">
       <li><b>The morning pop-up.</b> You asked for the book to ask the chef at sign-in. The council advises the quiet "Set today's team" line and a tile instead. Do you want the sheet that opens by itself anyway (B's roll call)?</li>
       <li><b>Between and overlapping shifts.</b> With Lunch to 15:00 and Dinner from 16:00, which section counts from 15:00 to 16:00? And for someone on Smoker and Lunch at once? Suggested: in a gap, the next of their shifts; when two overlap, the one that started last.</li>
       <li><b>The smoker shift.</b> A shift with its own hours, like an early start (as drawn), or a job on top of a lunch section?</li>
       <li><b>A cook moved during service.</b> May cooks change their own section with one tap (the chefs see it), or only the chefs?</li>
       <li><b>Breaks.</b> Which lengths to offer (drawn: 10, 20, 30 minutes) and up to how many a person (drawn: two)? Should staff see the whole team's breaks, or only their own?</li>
+      <li><b>The chip on staff phones.</b> You asked for it there too. The council advises no chip on staff phones (it saves no taps and looks like the bell to a wet thumb). A round chip does fit from 375 px. Which do you want?</li>
+      <li><b>The icon.</b> Team and clock (5 of 6), or Brigade or On the line?</li>
     </ol>
   </section>
 

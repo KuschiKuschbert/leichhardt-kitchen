@@ -147,7 +147,7 @@ Six fresh reviewers, 7 November 2026: the five from round 1 and the kitchen scre
 **A with three pieces of B.** It ranked first, every reviewer asked for the same pieces of B, and it keeps every list line with no new pop-up.
 
 1. **Chef: a tile and a quiet line, no pop-up.** Today's team in the Chef group of the chef hat (`previews/a1-chef-hat-390.png`), the admin's To do line (`previews/a5-admin-1280.png`), and, answering "when they log in", a **Set today's team** link under "0 of 6 done" on the chef's own prep list until the day is saved (`previews/mix-chef-prep-390.png`; a sous chef still sees 2 list lines, as today).
-2. **The chef's page with B's shortcuts**: Same as last Saturday? **Use it**, then one shift at a time with **Spread them** for the breaks (`previews/mix-chef-page-390.png`). The page offers last Saturday's team rather than filling it in unasked, so the chef accepts it on purpose (the skeptic's worry). Normal day: 7 taps from the Set today's team link (the link, Use it, one section, one break, Save). Fresh day: about 43 instead of A's 52, as Spread them fills a shift's breaks in one tap.
+2. **The chef's page with B's shortcuts**: Same as last Saturday? **Use it**, then one shift at a time with **Spread them** for the breaks (`previews/mix-chef-page-390.png`). The page offers last Saturday's team rather than filling it in unasked, so the chef accepts it on purpose (the skeptic's worry). Use it only fills the page with the names to check; nothing is saved until Save, and Save refuses to overwrite a day another chef saved meanwhile (the chip council, below). Normal day: 7 taps from the Set today's team link (the link, Use it, one section, one break, Save). Fresh day: about 43 instead of A's 52, as Spread them fills a shift's breaks in one tap.
 3. **Staff: B's header line, A's wording.** "Lunch: Grill · Break 14:30" under "0 of 6 done" on the prep list, 3 list lines as today (`previews/mix-staff-prep-390.png`); orange with "Changed 10:12 by Sam" when the chef changes it (`previews/mix-staff-prep-changed-390.png`); A's full lines under their name in the chef hat ("Dinner from 16:00: Pans", `previews/a4-staff-hat-390.png`). Your day also goes in the start of shift sheet, but only on days the sheet comes up anyway: it does not come up more often.
 
 Left out: B's sheet that opens by itself and its landing slip; A's start sheet on extra days; C's board and its removal of the section pick. C's wide board can come later as the pass tablet view if the head chef wants it. Build in small steps, each its own pull request in one release window: rules and the Shifts row; the chef's page; the staff lines and sections following the plan.
@@ -159,6 +159,48 @@ Left out: B's sheet that opens by itself and its landing slip; A's start sheet o
 3. **The smoker shift.** Is it a shift with its own hours, like an early start (as drawn), or a job someone does on top of their lunch section?
 4. **A cook moved during service.** May cooks change their own section with one tap (and the chefs see it), or only the chefs?
 5. **Breaks.** Which lengths should the book offer (drawn: 10, 20 and 30 minutes), and up to how many breaks a person (drawn: two)? Should staff see the whole team's breaks, or only their own?
+6. **The chip on staff phones.** You asked for it on staff phones too. The council advises no chip there (it saves no taps and looks like the bell to a wet thumb); the icon goes in front of their prep list line instead. A round chip does fit from 375 px. Which do you want?
+7. **The icon.** Team and clock (5 of 6), or one of the others?
+
+## Top bar chip and team icon (second request)
+
+Asked the same day: "maybe have a chip next to the shift ping bell and the chef hat for today's team allocation, and on the staff phones and tablets as well, for quicker access?" and "can we create a nice team icon for that?"
+
+A top bar button is a major change (the service rules). Round 1 had already covered the feature, so the council ran once, combined: six fresh reviewers (the five and the screen designer) gave a verdict on a chip at all, ranked three chip designs and picked one of three icons. Role-based analysis, not research with real staff.
+
+**Measured** (click-test stand-in, staff and sous chef, landing page and prep list):
+- A chip with words in it ("Team", "14:30", "Break 14:30") wraps the page tabs onto two rows on a laptop (Guides drops to a second row at 768, 1180 and 1280 px), and cuts "Kitchen Book" to "Kitche..." on every phone width (`previews/chip-staff-390.png`).
+- A round chip, the bell's size, keeps the tabs on one row from 768 to 1440 px and keeps the title whole on phones from 375 px. It wraps the tabs at 720 px. At 360 px it needs 13 px more, so the title would be set a little smaller there. (At 1100 px the tabs already wrap today with no chip; that is for its own fix.)
+- No list line lost: the top bar keeps its height. No new reads: the chip shows the same day record.
+
+**Three chip designs**: T1, always there (round on a phone with a Your day sheet, `previews/chip-t1-*`); T2, only when it matters (from 30 minutes before a break until back, after a change, for chefs until the day is saved, `previews/chip-t2-*`); T3, no new button, Your day at the top of the bell's sheet (`previews/chip-t3-staff-bell-390.png`).
+
+**Three icons** in the book's icon style (`previews/chip-icons.png`, each on the chef hat's tile in `previews/chip-icon-*-menu-390.png`): Brigade (two toques), Team and clock (two people and a clock), On the line (three people over the pass rail).
+
+| Reviewer | Chip at all | First | Second | Third | Icon |
+| --- | --- | --- | --- | --- | --- |
+| Cook mid-service | Build smaller | T2 | T1 | T3 | On the line |
+| Head chef | Build smaller | T2 | T1 | T3 | Team and clock |
+| Skeptic | Don't build yet | T3 | T2 | T1 | Team and clock |
+| New starter | Build smaller | T1 | T2 | T3 | Team and clock |
+| Keeper of the book | Build smaller | T1 | T3 | T2 | Team and clock |
+| Kitchen screen designer | Build smaller | T2 | T1 | T3 | Team and clock |
+
+**Verdict: Build smaller (5 of 6). T2 14, T1 13, T3 9. Icon: Team and clock (5 of 6).**
+
+- On a phone the chip saves no taps for staff: their day is already on the prep list with none and in the chef hat with one (head chef, keeper, cook, designer, skeptic). Three round outline buttons side by side look alike to a wet thumb, and the bell is the one the cook must trust (cook).
+- On a tablet or laptop words would help ("Break 14:30", never a bare "14:30", which reads like a ping time or the clock: cook, new starter, designer), but the measurement shows words do not fit there without wrapping the tabs.
+- T3 was ranked last by five: a team dot on the bell teaches people to ignore the dot that carries deliveries and safety pings.
+- T2's filled orange fails contrast with dark text (about 4:1); use the tag colour with white (about 5.6:1) (designer).
+- Every reviewer: **Use it must never save blind.** It fills the page with last Saturday's names to check, nothing is saved until Save, a starter who was not here last Saturday is easy to add, and Save first checks the server and refuses to overwrite a day another chef already saved (keeper, the #400 rule).
+- The same icon in front of the prep list line and the chef hat line teaches it with its words (new starter). Make the clock a touch bigger so it stays apart from Manage staff's two people (designer).
+- The skeptic: ship the recommended design first and see whether anyone misses a chip.
+- Not shown: what the shared tablet's chip shows after a handover (it should be the person signed in, and nothing while locked); what someone with no shift today sees.
+
+**Recommended chip** (within what the measurements allow):
+1. **Chefs** (head chef, sous chefs, the admin): a round chip with the Team and clock icon, left of the bell, all day on every screen from 375 px. Filled in the tag colour until today's team is saved, plain after (`previews/chip-final-chef-unset-390.png`, `previews/chip-final-chef-set-390.png`, `previews/chip-final-chef-unset-1280.png`). One tap opens Today's team. This is the allocation shortcut the head chef asked for.
+2. **Staff on tablets and laptops**: the same round chip, only from 30 minutes before their break until they are back, and after a chef changes their day, filled in the tag colour (`previews/chip-final-staff-due-1280.png`, `previews/chip-final-staff-due-768.png`). One tap opens Your day. The shared tablet shows the person signed in, and nothing while it is locked.
+3. **Staff on phones**: no chip. The icon goes in front of their line on the prep list and in the chef hat, so it is learnt with its words (`previews/chip-final-phone-prep-390.png`, still 3 list lines; `previews/chip-final-phone-hat-390.png`).
 
 ## Chosen
 
@@ -167,4 +209,4 @@ Not chosen yet.
 ## Files
 
 - `brief.md` this brief; `index.html` the comparison page.
-- `previews/today-*.png` the book today; `previews/core-*.png` the Shifts row (every design); `previews/a*`, `previews/b*`, `previews/c*` the three designs; `previews/mix-*.png` the recommended mix.
+- `previews/today-*.png` the book today; `previews/core-*.png` the Shifts row (every design); `previews/a*`, `previews/b*`, `previews/c*` the three designs; `previews/mix-*.png` the recommended mix; `previews/chip-*.png` the top bar chip, its three designs, the icons and the recommended chip (`chip-final-*`).
