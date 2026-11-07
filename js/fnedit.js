@@ -27,6 +27,7 @@
   function lsSet(k, v) { try { if (v == null || v === '') localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
   function clone(x) { return JSON.parse(JSON.stringify(x)); }
   function now() { return T.now(); }
+  var LIST_STALE = 30 * 60000;   // Manage functions reads its whole list again at a change once it is this old (changed())
   function today() { return T.day(); }
   var E = { root: null, sub: [], list: null, listErr: false, q: '', chip: 'up', ed: null, pending: {}, armed: '', armTimer: null, removing: {}, identity: '', suspended: false };
   function identity() { var api = B(); return api.identity ? api.identity() : [api.pin(), api.who()].join('|'); }
@@ -152,15 +153,16 @@
   /* ---------- the list (#/functions) ---------- */
   function loadList() {
     E.list = E.list || 'loading'; E.listErr = false; draw();
-    var api = B(), owner = E.identity;
+    var api = B(), owner = E.identity, asked = E.listAsk = (E.listAsk || 0) + 1;   // the read on its way (changed() waits for it)
     api.ready().then(function () {
       var fs = api.fs();
       return fs.getDocs(fs.query(api.colRef('functions'), fs.orderBy('date', 'desc'), fs.limit(400)));
     }).then(function (sn) {
+      if (asked === E.listAsk) E.listAsk = 0;
       if (!owned(owner)) return;
       // A local Firestore snapshot may arrive before its write is acknowledged. Keep that card visible and disabled.
       E.list = sn.docs.map(function (x) { return E.removing[x.id] || M.derive(Object.assign({ id: x.id }, x.data())); }); E.listAt = now(); draw();
-    }, function () { if (!owned(owner)) return; E.listErr = true; if (E.list === 'loading') E.list = null; draw(); });
+    }, function () { if (asked === E.listAsk) E.listAsk = 0; if (!owned(owner)) return; E.listErr = true; if (E.list === 'loading') E.list = null; draw(); });
   }
   var CHIPS = [['up', 'Coming up'], ['draft', 'Drafts'], ['past', 'Past'], ['cancelled', 'Cancelled'], ['all', 'All'], ['deleted', 'Deleted']];
   function inChip(f, c) {
@@ -716,7 +718,7 @@
     if (window.LK_APP && window.LK_APP.noteRoute) window.LK_APP.noteRoute(true);
     E.sub = [e.id]; e.canonical = false;
   }
-  function drop() { clearTimeout(E.armTimer); E.armed = ''; E.pending = {}; E.ed = null; E.list = null; E.removing = {}; E.sub = []; E.identity = ''; E.suspended = false; E.root = null; }
+  function drop() { clearTimeout(E.armTimer); E.armed = ''; E.pending = {}; E.ed = null; E.list = null; E.listAsk = 0; E.removing = {}; E.sub = []; E.identity = ''; E.suspended = false; E.root = null; }
   function unmount() {
     var hadRoot = !!E.root, lock = workLock();
     flushPending(); E.root = null;
@@ -747,8 +749,22 @@
     backDisabled: function () { return !!(E.root && document.body.contains(E.root) && E.ed && E.ed.saving); },
     dirty: canSave,
     hasDraft: function () { return canSave() || Object.keys(localStorage || {}).some(function (k) { return k.indexOf('lk.fe.draft.') === 0; }); },
-    // the kitchen's functions changed (another manager saved): the list follows; an open form keeps what is typed
-    changed: function () { if (E.root && !E.sub.length) loadList(); },
+    // the kitchen's functions changed (another manager saved, a booking came in): the list follows; an open form keeps
+    // what is typed. The live list (js/functions.js live(): today and later, removed ones included) is laid over the
+    // list on the page, with no reads (7 Nov 2026, docs/firestore-usage.md). It read every booking again, up to 400, on
+    // every functions event: a booking changed, any change to config/main, coming back to the app, the signal coming or
+    // going. The whole list is read again on open, on Read again, and at a change once the list is 30 minutes old.
+    changed: function () {
+      if (!E.root || E.sub.length || E.list === 'loading' || E.listAsk) return;
+      var live = FN.live ? FN.live() : null;
+      if (!live || !Array.isArray(E.list) || now() - (E.listAt || 0) > LIST_STALE || live.length >= 150) { loadList(); return; }
+      var by = {}, start = T.at(T.day(), 0); live.forEach(function (f) { by[f.id] = f; });
+      // a booking from today on that left the live list was deleted (derive() sets a deleted one's kq to 0) or moved into
+      // the past on another phone: the whole list is read again, which says which. So is a live list cut at its 150.
+      if (E.list.some(function (x) { return !x.removed && !E.removing[x.id] && x.kq >= start && !by[x.id]; })) { loadList(); return; }
+      E.list = E.list.filter(function (x) { return !by[x.id]; }).concat(live.map(function (f) { return E.removing[f.id] || f; }));
+      draw();
+    },
     statusChanged: function (id, saved) {
       if (!E.root) return;
       if (saved && Array.isArray(E.list)) E.list = E.list.filter(function (f) { return f.id !== id; }).concat([saved]);
