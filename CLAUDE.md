@@ -12,55 +12,38 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 - Staff names or PINs (they live in Firestore).
 
 ## Read the note before you change it
-`CLAUDE.md` is loaded in every session, so it holds rules, not feature manuals. A feature's detail lives in `docs/<name>.md` and `README.md`. A new feature note goes in `docs/` with a three line pointer here, never a long bullet. Read the note first:
+`CLAUDE.md` is loaded in every session, so it holds rules, not feature manuals. A feature's detail lives in `docs/<name>.md` and `README.md`. A new feature note goes in `docs/` with one short row here (what it covers, where it is) and its full row, with dates and the design chosen, in `docs/session-map.md`. Never a long bullet. Read the note first:
 
 | Changing | Read |
 | --- | --- |
-| A new page, tab, button, setting, sheet or workflow; how a service task is done; removing a feature; any design choice | `.claude/skills/service-council/SKILL.md`: run the service council first (5 Nov 2026) |
-| Building any screen piece: the look, a page card, chips and pickers, Save, a sheet, a top bar chip, a list header line, a fold, an admin block, a chef hat tile | `docs/design-patterns.md` (8 Nov 2026): use one, or add the new one there and its names to `tests/design-patterns.test.js` |
-| Whole-app audit, consistency, redundancy, security and performance review | `docs/whole-app-audit.md` (brief), `docs/ux-council-audit.md` (evidence), `docs/whole-app-inventory.md` (route coverage) |
+| A new page, tab, button, setting, sheet or workflow; how a service task is done; removing a feature; any design choice | `.claude/skills/service-council/SKILL.md`: run the service council first |
+| Any screen piece: a page card, chips and pickers, Save, a sheet, a top bar chip, a list header line, a fold, an admin block, a chef hat tile | `docs/design-patterns.md`: use one, or add the new one there and its names to `tests/design-patterns.test.js` |
+| Home, list rows, the chef hat, the function page or the admin panel (the chosen whole-book redesign) | `docs/whole-app-redesign-options/brief.md` (Chosen, Build) and its `every-page.html` |
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over anything older in this file) |
+| Device choice, Google, daily PIN unlock, Update, Settings | `docs/device-sessions.md` (replaces earlier session wording), `docs/settings-options/brief.md` |
+| Staff Add/Tick/Delete and capability lists | `docs/staff-capabilities.md` |
+| Publishing the rules from GitHub | `docs/rules-publication.md` |
+| The saved shell, updates and rollback | `docs/saved-shell-generations.md` |
 | Head chef decisions; open items and older code to bring in line; how each prep and admin part works | `docs/head-chef-decisions.md`, `docs/open-work.md`, `docs/prep-book.md` (search, then read the part) |
-| Code contracts per feature: pings, minutes, mail, to-do, drinks, sections, guides, recipes and drawings, functions, wastage, transfers, cut-offs, the clock | `docs/code-contracts.md` |
-| Staff Add/Tick/Delete, canonical capability lists and staged publication | `docs/staff-capabilities.md` |
-| Saved public shell generations, update migration and compatible rollback | `docs/saved-shell-generations.md` |
-| GitHub rules publication, release confirmation and synthetic publisher checks | `docs/rules-publication.md` |
-| Device choice, Google persistence, daily PIN unlock, Update confirmation | `docs/device-sessions.md` (2 Nov 2026, replaces earlier session wording) |
-| Multiplying recipe amounts | `docs/recipe-multiplier.md` |
-| Shared-screen Prep attribution, modal picker, recorder identity and completion credit | `docs/shared-prep-attribution.md` |
-| Admin analysis, references, training records and nightly analysis | `docs/admin-intelligence.md` |
-| Admin autocorrect repairs, shared protected words and private correction history | `docs/proofreader-admin.md` |
-| Admin visual design, selected A: The Chef's Desk | `docs/admin-design-options/brief.md` |
-| Admin dashboard, selected A with B's headlines (3 Nov 2026) | `docs/admin-dashboard-options/brief.md` |
-| Admin pages redesign, selected B: Four rooms on the shared page kit (4 Nov 2026), built in seven steps by 5 Nov 2026 | `docs/admin-pages-options/brief.md` |
-| Prep, Orders, Wastage, Transfers and chef hat redesign, selected: shared fixes, then A with four pieces of B (3 Nov 2026), built in steps, the last on 4 Nov 2026 | `docs/work-pages-design-options/brief.md` |
-| Settings page for each role, selected A: One sorted page (3 Nov 2026) | `docs/settings-options/brief.md`, `docs/device-sessions.md` |
-| Seasonal celebration redesign, recommended set selected (3 Nov 2026) | `docs/celebration-options/brief.md` |
-| Recipe and drawing editor layout, selected A's chapters with B's full-screen studio (3 Nov 2026) | `docs/recipe-editor-options/brief.md` |
-| Drawing studio, selected B: quiet canvas, with more servingware colours (4 Nov 2026) | `docs/studio-options/brief.md` |
-| Shared controls, deferred search, table interactions and council audit | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
-| Loading, saving, measured progress and reduced motion | `docs/loading-motion.md` (current), `docs/loading-feedback-options/brief.md` (recommended set chosen 4 Nov 2026, findings and build steps) |
-| What a tap shows after it: a save, add, tick, Undo or Refresh, its words, where the person is left (5 Nov 2026) | `docs/action-feedback.md` (the rule), `docs/action-feedback-options/brief.md` (audit of 307 actions, designs, scores) |
-| What reads and writes Firestore, what each page costs, and the plan to stay inside the free plan (audit, 5 Nov 2026) | `docs/firestore-usage.md` |
-| Nightly backup format, protected decryption and isolated recovery checks | `docs/backup-recovery.md` |
-| Suppliers, order history, cut-off sheets | `docs/supplier-workspace.md` |
-| Order cut-off patterns (a day and time per delivery day) and the heads-up the day before, selected the recommended mix (5 Nov 2026) | `docs/cutoff-options/brief.md` |
-| Supplier order and Delivery received redesign, selected A: The Order Sheet (3 Nov 2026) | `docs/receiving-design-options/brief.md` |
-| Wastage history, ranges, CSV | `docs/wastage-history.md` |
-| CSV text, quoting and numeric values across reports | `docs/report-exports.md` |
+| Code contracts: pings, minutes, mail, to-do, drinks, sections, guides, recipes and drawings, functions, wastage, transfers, cut-offs, the clock | `docs/code-contracts.md` |
+| Firestore reads and writes, what each page costs | `docs/firestore-usage.md` |
+| What a tap shows after it | `docs/action-feedback.md` (the rule), `docs/action-feedback-options/brief.md` (the audit) |
+| Loading, saving, progress and motion | `docs/loading-motion.md` (current), `docs/loading-feedback-options/brief.md` |
+| Shared controls, search and tables | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
+| A whole-app audit | `docs/whole-app-audit.md`, `docs/ux-council-audit.md`, `docs/whole-app-inventory.md` |
+| Admin: analysis, proofreader, dashboard, pages, look | `docs/admin-intelligence.md`, `docs/proofreader-admin.md`, `docs/admin-dashboard-options/brief.md`, `docs/admin-pages-options/brief.md`, `docs/admin-design-options/brief.md`, `docs/admin-flow-spec.md` |
+| Prep, Orders, Wastage, Transfers and the chef hat; who did a Prep line on a shared screen | `docs/work-pages-design-options/brief.md`, `docs/shared-prep-attribution.md` |
+| Today's team | `docs/todays-team-options/brief.md`, `docs/prep-book.md` (Today's team) |
+| Recipe amounts, the recipe and drawing editor, the drawing studio, smoker batches | `docs/recipe-multiplier.md`, `docs/recipe-editor-options/brief.md`, `docs/studio-options/brief.md`, `docs/smoker-batches.md` |
+| Suppliers, order cut-offs, the supplier order and Delivery received | `docs/supplier-workspace.md`, `docs/cutoff-options/brief.md`, `docs/receiving-design-options/brief.md`, `docs/delivery-received.md` |
+| Wastage history and CSV reports | `docs/wastage-history.md`, `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |
-| Function cancel, Undo, delete | `docs/function-cancellation.md` |
-| Function print copy | `docs/function-printing.md` |
-| Delivery temperatures | `docs/delivery-received.md` |
-| Shift ping recipients | `docs/ping-recipients.md` |
-| Ping sound and the head chef's choice of sound | `docs/ping-sound.md` |
+| Functions: cancel, Undo, delete, print | `docs/function-cancellation.md`, `docs/function-printing.md` |
+| Pings: who gets them, the sound | `docs/ping-recipients.md`, `docs/ping-sound.md` |
 | Back arrow and page trail | `docs/navigation.md` |
-| Merging: ready means merge in the next release window, the one-at-a-time queue, `urgent`, the token | `docs/auto-merge.md` |
-| Seasonal celebrations, festival dates and their sources | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md` |
-| Admin flow baseline behind The Chef's Desk | `docs/admin-flow-spec.md` |
-| Smoker batch cards and what was left out (30 Oct 2026) | `docs/smoker-batches.md` |
-| Today's team: shifts, sections, breaks and the team chip, selected A with three pieces of B (7 Nov 2026), all four steps built (the chef's page, the staff side, the training numbers in `teamsum/main`), then split shifts and chefs' own sections (7 Nov 2026) | `docs/todays-team-options/brief.md`, `docs/prep-book.md` (Today's team) |
-| The whole book redesigned from seven apps (Linear, Things 3, Airbnb, Todoist, Flighty, Duolingo, Headspace): chosen 8 Nov 2026 (B's now and next home with the celebrations, admin B Inbox with a dashboard, handwritten line words, Urgent in one tap), built in eight grouped steps, Prep first; not started | `docs/whole-app-redesign-options/brief.md` (Chosen, Build), `every-page.html` there: read them before changing Home, list rows, the chef hat, the function page or the admin panel |
+| Merging, the queue, `urgent` | `docs/auto-merge.md` |
+| Nightly backup and recovery | `docs/backup-recovery.md` |
+| Seasonal celebrations and festival dates | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md`, `docs/celebration-options/brief.md` |
 
 ## Service council (5 Nov 2026)
 
@@ -85,51 +68,17 @@ After approval, implement small reversible units under the existing shipping rul
 - Times in messages to the head chef are Queensland time (Rockhampton, UTC+10, no daylight saving), 24-hour: "21:52", not "11:52 UTC". GitHub, workflow runs and tools report UTC, so add 10 hours before saying a time.
 
 ## Files
-**Shell** below means: loaded by `index.html`, listed in `SHELL` in `sw.js` and in both lists in `js/upkeep.js` (a startup file missing from one of the three breaks the saved copy). **Lazy** means loaded by the page that needs it and in none of them.
+**Shell** below means: loaded by `index.html`, listed in `SHELL` in `sw.js` and in both lists in `js/upkeep.js` (a startup file missing from one of the three breaks the saved copy). **Lazy** means loaded by the page that needs it and in none of them. Each file's full row, with its notes and tests: `docs/session-map.md`.
 
-| File | What it is |
-| --- | --- |
-| `index.html` | The page and its security header (which outside services may load) |
-| `js/boot.js` | Runs first in `<head>`: the install offer, the saved text size, the book's clock (`LK_TIME`) |
-| `js/device.js` | Personal/shared device choice and guarded Settings controls. `docs/device-sessions.md` |
-| `js/upkeep.js` | Runs at the end of `<body>`: the daily 04:00 self-refresh, automatic updates, the service worker registration |
-| `js/data.js` | Every recipe (the only file staff edit). Field guide at the top |
-| `js/overlay.js` | Lays the head chef's recipe changes (`book/index`, `recipes/<id>`, `lk.rx` on the phone) over `js/data.js`. After `js/data.js`, before `js/prep.js` and `js/app.js` |
-| `js/art.js` | Plates, pans, side views, build views, technique diagrams |
-| `js/amounts.js`, `js/learn.js`, `js/cutoffs.js`, `js/chime.js` | Shared with node, before `js/prep.js`, shell: typed amounts (`LK_AMT`), when tomorrow's list was written (`LK_LEARN`, `tests/learn.test.js`), order cut-offs (`LK_CUT`, also `scripts/cutoff-push.mjs`), ping sounds (`LK_CHIME`, `docs/ping-sound.md`) |
-| `js/controls.js`, `js/motion.js` | Shared pickers, deferred search and report tables (`docs/adaptive-controls.md`); Ink in motion helpers, callers own wait and offline states (`docs/loading-motion.md`). Shell |
-| `js/functions.js` | Functions: schedule maths (also run by node), the band under the top bar, the function sheet, `#/fn`, the landing card. Shell |
-| `js/app.js` | Routing, top bar, recipe views (Pass, Tiles), recipe cards, settings, install, QR |
-| `js/prep.js` | Prep list, orders, wastage, guides, admin panel, staff lock, insights, learning, suggestions |
-| `js/seasonal/`, `css/seasonal*.css`, `css/celebration-ticker.css`, `fonts/` | Seasonal celebrations: catalogue, calendar, effects, six-language copy, the Devanagari font. Shell. `docs/seasonal-celebrations.md` |
-| `js/firebase-config.js`, `css/app.css` | Public Firebase web config; the Leichhardt look |
-| `js/manage.js` | Manage Recipes & Drawings (`#/manage`). Lazy: `mountManage()` in `js/app.js`, for the head chef, sous chefs and the admin |
-| `js/draw.js`, `js/library.js`, `js/lib/*.js` | The drawing editor (`#/manage/draw/...`) and its library. Lazy, with the editor. `tests/library-check.js`, `tests/contact.js` |
-| `js/smart.js`, `js/compose.js` | Draw it for me (`book/matches`) and the recipe reader that draws a card in the book's look. Lazy, after `js/draw.js`. `tests/smart-match.js`, `tests/compose-read.js`, `tests/style-check.js` |
-| `menu-survey.md` | The 120 Queensland menus behind the library (inspiration only, no prices) |
-| `js/suppliers.js`, `js/supplier-core.js`, `js/supplier-store.js` | Supplier workspace (`#/suppliers`). Lazy, for an authorised chef. `docs/supplier-workspace.md` |
-| `js/deliveries.js` | Delivery received (`#/deliveries`). Lazy. `docs/delivery-received.md` |
-| `js/fnedit.js` | Manage functions (`#/functions`). Lazy, for someone ticked for Functions |
-| `js/admin-dashboard.js` | The admin Dashboard (`LK_DASH`): headlines, tiles and charts from the nightly `analysis/dashboard` record. Lazy, from `js/prep.js` when the page opens. `docs/admin-dashboard-options/brief.md` |
-| `js/analysis-core.js`, `js/admin-intelligence.js`, `js/proofreader-admin.js` | Admin Review desk: analysis maths (shared with node), the analysis workspace, the proofreader. Lazy, from `js/prep.js`, admin only. `docs/admin-intelligence.md`, `docs/proofreader-admin.md` |
-| `firestore.rules` | Rules template (see Never in this repo) |
-| `manifest.webmanifest`, `sw.js`, `icons/`, `icon.svg` | Installable app: manifest, service worker (saved shell generations), rope KB logo |
-| `qr.svg`, `qr.png`, `qr-sign.pdf` | QR code to open the book, and the A4 sign |
-| `README.md` | What the app does, for people and for the next session: the overview, with the long parts in `docs/head-chef-decisions.md`, `docs/prep-book.md` and `docs/open-work.md` |
-| `tests/` | Click tests (Playwright with a stand-in for Firebase in `tests/fake/`). `tests/rules/`: the rules on the emulator |
-| `.claude/settings.json`, `scripts/guard-main.mjs` | The main-branch guard: a Claude Code hook that refuses edits and commits on `main` |
-| `scripts/pre-merge.sh`, `.github/pull_request_template.md` | Run before merging (open pull requests, worktrees, whether `main` moved); the pull request sections |
-| `.github/workflows/auto-merge.yml` | Merges a ready pull request once Click tests pass, in a release window (15:00 to 16:30 or 22:30 to 02:30; `urgent` at any time), and brings `main` in one at a time, with the `AUTOMERGE_TOKEN` secret. `docs/auto-merge.md`. `tests/auto-merge-queue.test.js` runs the queue step (found by its name, "Move the queue on by one") with a stand-in for `gh`: change the two together |
-| `.claude/skills/service-council/`, `scripts/council-check.mjs`, `.github/workflows/council-check.yml` | The service council (when it runs, the two rounds, the reviewer briefs) and the Council check: red on a ready pull request that changes the app without a `Verdict:` line. Advice only, not required. `tests/council-check.test.js` |
-| `scripts/flaky-report.mjs`, `.github/workflows/flaky-report.yml` | Every Monday 07:13: the files that passed only on retry, hit the 10 minute limit or failed on the live site, kept in one issue (label `flaky-report`). `tests/flaky-report.test.js` |
-| `.github/workflows/pr-tests.yml` | The **Click tests** check on every pull request to `main` (branch protection requires it) |
-| `.github/workflows/publish-rules.yml`, `scripts/publish-rules.sh`, `.github/workflows/lock-probe.yml`, `.github/workflows/live-tests.yml` | Publish the rules from GitHub (secrets `FIREBASE_SA`, `KITCHEN_PIN`, `OWNER_EMAIL`) or from your own computer, prove the lock on the live book after (`tests/rules/probe.mjs`, also weekly), and run the click tests on the live site after each Pages deploy. `docs/rules-publication.md` |
-| `scripts/nightly-learn.mjs`, `scripts/nightly-analysis.mjs`, `scripts/analysis.mjs`, `scripts/dashboard.mjs`, `.github/workflows/nightly-learning.yml` | Nightly at 03:00 kitchen time: learning counts (`learned`, `ordlearned`), `summary/waste` and `summary/transfers`, then the analysis (`analysisDaily`, `analysis/*`, the admin Dashboard's numbers) and the day digests (`digest/<day>`, one record per past day, 5 Nov 2026), and Today's team's training numbers (`teamsum/main`, chefs and admin only, 7 Nov 2026), published only after every read succeeds. The phones never write learning counts. `docs/admin-intelligence.md` |
-| `scripts/nightly-backup.mjs`, `scripts/backup-crypto.mjs`, `.github/workflows/nightly-backup.yml` | Nightly encrypted backup at 03:30 kitchen time (AES-256-GCM, `BACKUP_KEY`, kept 90 days). Reads only. `docs/backup-recovery.md` |
-| `scripts/cutoff-push.mjs`, `.github/workflows/cutoff-push.yml` | Phone pushes for order cut-offs every 10 minutes (`push`, once each in `pushsent`, none once ticked in `cutdone`) |
-| `scripts/access-bootstrap.mjs`, `scripts/ping-index.mjs`, `scripts/transfer-index.mjs`, `scripts/*-check.mjs` | One-off index and migration jobs the Publish rules workflow runs before a rules change that needs them, and the emulator checks that prove them and the server jobs. Read the matching `docs/` note before running one |
-| `scripts/fold-recipes.mjs` | Folds the head chef's recipe changes from a Backup file into `js/data.js`: run it without `--write` first. Never commit the Backup file. `tests/fold-recipes.test.js` |
-| `scripts/session-check.mjs`, `.github/workflows/session-check.yml` | Legacy session diagnostic (by hand, prints by list place and role only). Current session and grant checks: `docs/device-sessions.md`, `tests/rules/device-auth.test.mjs` |
+- **Start:** `index.html` (the page and its security header), `js/boot.js` (first in `<head>`: the install offer, text size, the clock `LK_TIME`), `js/device.js` (device choice), `js/upkeep.js` (end of `<body>`: the 04:00 refresh, updates, the service worker), `sw.js` and `manifest.webmanifest` (the installable app and saved shell), `js/firebase-config.js`, `css/app.css`.
+- **Recipes:** `js/data.js` (every recipe, the only file staff edit, field guide at the top), `js/overlay.js` (the head chef's changes laid over it), `js/art.js` (plates, pans and diagrams).
+- **Shared, shell:** `js/amounts.js`, `js/learn.js`, `js/cutoffs.js`, `js/chime.js` (also run by node, before `js/prep.js`); `js/controls.js`, `js/motion.js`, `js/functions.js`; `js/seasonal/` with its css and `fonts/`.
+- **Main:** `js/app.js` (routing, top bar, recipe views and cards, settings), `js/prep.js` (prep, orders, wastage, guides, admin panel, staff lock, insights).
+- **Lazy:** `js/manage.js` (`mountManage()` in `js/app.js`); `js/draw.js`, `js/library.js`, `js/lib/*.js`, then `js/smart.js`, `js/compose.js`; `js/suppliers.js`, `js/supplier-core.js`, `js/supplier-store.js` (an authorised chef only); `js/deliveries.js`; `js/fnedit.js`; `js/admin-dashboard.js`, `js/analysis-core.js`, `js/admin-intelligence.js`, `js/proofreader-admin.js` (from `js/prep.js`).
+- **Rules and tests:** `firestore.rules` (a template, see Never in this repo); `tests/` (click tests, with a stand-in for Firebase in `tests/fake/`), `tests/rules/` (the rules on the emulator).
+- **Shipping:** `.github/workflows/pr-tests.yml` (Click tests), `auto-merge.yml` (the queue: `tests/auto-merge-queue.test.js` finds its step "Move the queue on by one" by name, so change the two together), `council-check.yml` and `scripts/council-check.mjs`, `flaky-report.yml`, `publish-rules.yml` with `scripts/publish-rules.sh`, `lock-probe.yml`, `live-tests.yml`; `scripts/guard-main.mjs` (the main-branch hook in `.claude/settings.json`), `scripts/pre-merge.sh`, `.github/pull_request_template.md`.
+- **Server jobs:** `nightly-learning.yml` and `scripts/nightly-*.mjs` (03:00: learning counts, summaries, the analysis, day digests, `teamsum/main`; the phones never write learning counts), `nightly-backup.yml` (03:30, reads only), `cutoff-push.yml` and `scripts/cutoff-push.mjs` (every 10 minutes); one-off index jobs (`scripts/access-bootstrap.mjs`, `scripts/*-index.mjs`, proved by `scripts/*-check.mjs`: read the matching note first); `scripts/fold-recipes.mjs` (run it without `--write` first, never commit the Backup file); `scripts/session-check.mjs` (legacy).
+- **Other:** `README.md` (the overview), `menu-survey.md` (the menus behind the drawing library, no prices), `icons/`, `icon.svg`, `qr.svg`, `qr.png`, `qr-sign.pdf`.
 
 ## Routes
 Supplier tools: `#/suppliers`, `#/suppliers/<id>`, `#/suppliers/manage`, `#/suppliers/<id>/manage`, `#/suppliers/cutoff/<cut-off id>/<date>`. Read `docs/supplier-workspace.md` before changing its data contract. The three supplier scripts load only for an authorised chef. Goods are private Firestore data, never static assets.
@@ -156,7 +105,8 @@ These hold for every session, every message and every change, however small. A h
 
 ## Keeping usage down (3 Nov 2026)
 Measured on 2 and 3 November 2026: about 45 pull requests in two days, 100 Click tests runs at 20 minutes each (33 hours of runner time; 21 cancelled by a newer push, 16 failed on timing), and 52 "merge `main` into the branch" commits across 40 pull requests. Most of the cost was repeated test runs and reading big files, not the work itself.
-- **Read big files in parts.** `docs/prep-book.md` is about 250 KB, `README.md` about 90 KB, and `docs/ux-council-audit.md`, `docs/whole-app-audit.md` and `docs/whole-app-inventory.md` are 30 to 72 KB each. Never read one whole: search for the heading or word you need (Grep), then read that part only. The audit notes are for audit work only.
+- **Read big files in parts.** `docs/prep-book.md` is about 290 KB, `README.md` about 120 KB, and `docs/ux-council-audit.md`, `docs/whole-app-audit.md` and `docs/whole-app-inventory.md` are 30 to 72 KB each. Never read one whole: search for the heading or word you need (Grep), then read that part only. The audit notes are for audit work only.
+- **Keep this file short** (8 Nov 2026). It loads in every session and every agent, so every 4 KB here costs about 1,000 tokens each time. A new note or file gets one short row here; its dates, the design chosen, its tests and the detail go in `docs/session-map.md` or its own note.
 - **Let the queue bring `main` in.** It updates one ready pull request at a time (How changes ship, step 7). Merge `main` in yourself only to fix a conflict, once. Every merge of `main` starts another Click tests run (about 6 minutes on five runners); with several sessions open that multiplies.
 - **Push when the work is finished.** Each push cancels the running Click tests and starts again. Make the fixes, run the files you changed (How changes ship, step 2), then push once.
 - **Every merge costs the kitchen's reads** (5 Nov 2026). A new version reloads the screens left open (at most once an hour) and every phone that comes back, and each reload reads its lists again. 48 merges in a day helped use up the free 50,000 reads by 13:00. Group small changes to one page in one pull request. Since 5 Nov 2026 ready pull requests merge only in the two release windows (`docs/auto-merge.md`).
