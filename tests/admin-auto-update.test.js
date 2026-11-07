@@ -1,4 +1,4 @@
-// An update nobody asked for opens the admin panel on the Dashboard (Plan B, option 2.6 of docs/firestore-usage.md,
+// An update nobody asked for opens the admin panel on the Inbox, the Dashboard until redesign step 8 (Plan B, option 2.6 of docs/firestore-usage.md,
 // 5 Nov 2026). Insights, Team, Wastage, Transfers, Learning and the Proofreader read up to 60 days of lines on every
 // open, about 2,400 reads with a month of data, and the head chef's laptop left on one paid it again at every update.
 // Update now, a reload by hand and opening the book still land on the page the head chef left.
@@ -17,7 +17,7 @@ const laptop = (page, hash) => ({ admin: true, who: '', adminPage: page, width: 
 (async () => {
   const b = await L.start();
 
-  // the laptop left on Insights takes an update by itself: it reopens on the Dashboard
+  // the laptop left on Insights takes an update by itself: it reopens on the Inbox (8 Nov 2026; it reads the same nightly record the Dashboard did)
   let p = await L.open(b, '#/admin', laptop('insights'));
   await L.waitFor(p, () => window.LK_PREP && window.LK_PREP.state.atab === 'insights', null, 10000).catch(() => {});
   ok(await atab(p) === 'insights', 'the laptop opens on Insights, the page it was left on');
@@ -29,10 +29,10 @@ const laptop = (page, hash) => ({ admin: true, who: '', adminPage: page, width: 
   await L.waitFor(p, () => !!(window.LK_PREP && window.LK_PREP.state && document.querySelector('#prep-root')), null, 15000).catch(() => {});
   await L.settle(p, 1500);
   ok(went, 'the update nobody asked for reloads the book');
-  ok(await atab(p) === 'dashboard', 'after it the admin panel opens on the Dashboard, not Insights (' + await atab(p) + ')');
+  ok(await atab(p) === 'inbox', 'after it the admin panel opens on the Inbox, not Insights (' + await atab(p) + ')');
   ok(await p.evaluate(() => { try { return sessionStorage.getItem('lk.upd.auto'); } catch (e) { return 'x'; } }) === null, 'the note is read once and gone');
   await p.evaluate(() => { location.reload(); }); await L.settle(p, 3000);
-  ok(await atab(p) === 'dashboard', 'a reload by hand after that keeps the Dashboard, the page now open');
+  ok(await atab(p) === 'inbox', 'a reload by hand after that keeps the Inbox, the page now open');
   ok(p.errors.length === 0, 'no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

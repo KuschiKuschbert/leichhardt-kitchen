@@ -24,13 +24,20 @@ const extra = { [path('analysis', 'dashboard')]: { v: 1, generation: 'g1', at: L
   [path('analysis', 'health')]: { at: L.NOW - 11 * 3600000, status: 'ok' } };
 const dashReads = p => p.evaluate(() => window.__fake.bill.filter(b => /\/analysis\/(dashboard|health)$/.test(b.path)).length);
 const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').length === 5, null, 10000);
+// Since redesign step 8 (8 Nov 2026) Today opens on the Inbox (today's numbers, then what needs you, the To do before)
+// and the Dashboard is the page beside it: the same nightly record, read once for both.
+const inbox = p => L.waitFor(p, () => !!document.querySelector('.dsh-inbox .dsh-needs'), null, 10000);
+const inboxNums = p => L.waitFor(p, () => document.querySelectorAll('.dsh-inbox .dsh-dtile').length >= 2, null, 10000);
+const toDash = async p => { await L.adminTab(p, 'dashboard'); await ready(p); };
 
 (async () => {
   const b = await L.start();
   for (const width of [390, 768, 1280]) {
     const p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width, height: 900, extra, wait: 1600 });
-    await ready(p);
-    ok(await L.txt(p, '.ad-title') === 'Today' && await p.evaluate(() => LK_PREP.state.atab) === 'dashboard', width + ': a first visit opens Today on the Dashboard');
+    await inboxNums(p);
+    ok(await L.txt(p, '.ad-title') === 'Today' && await p.evaluate(() => LK_PREP.state.atab) === 'inbox', width + ': a first visit opens Today on the Inbox');
+    await toDash(p);
+    ok(await p.locator('.dsh-needs').count() === 0 && await p.locator('.dsh-dtile').count() === 0, width + ': the Dashboard leaves today\'s numbers and the Inbox to the Inbox');
     ok(await p.locator('.dsh-head').count() === 3, width + ': three written headlines sit above the tiles');
     const heads = await L.txt(p, '.dsh-heads');
     ok(/Waste is up: \d+ lines in the last 7 days, 7 the 7 before\./.test(heads) && /Garnish was the slowest section to tick/.test(heads), width + ': headlines say what changed in plain words (' + heads.slice(0, 160) + ')');
@@ -74,12 +81,13 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
     [path('transfers', ago(9), 'lines', 'l1')]: loan, [path('transferOpen', ago(9) + '_l1')]: { date: ago(9), lineId: 'l1', record: loan, open: true } };
   for (const width of [390, 1280]) {
     const q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width, height: 900, extra: waiting, wait: 1600 });
-    await ready(q);
+    await inboxNums(q);
     await L.waitFor(q, () => { const t = (document.querySelector('.dsh-needs') || {}).textContent || ''; return /kitchen mails open/.test(t) && /still to sign/.test(t) && /not returned/.test(t); }, null, 10000).catch(() => {});
     const needs = await L.txt(q, '.dsh-needs');
     ok(/3 kitchen mails open/.test(needs), width + ': Needs you counts the open kitchen mail (' + needs.slice(0, 200) + ')');
-    // To do (4 Nov 2026, design B): at the top of Today, with the open mail itself, most urgent first, worked in place
-    ok(await q.evaluate(() => { const t = document.querySelector('.dsh-needs'), tools = document.querySelector('.dsh-tools'); return !!t && !!tools && /To do/.test(t.querySelector('h3').textContent) && !!(t.compareDocumentPosition(tools) & Node.DOCUMENT_POSITION_FOLLOWING); }), width + ': To do comes first on Today, above the numbers');
+    // To do (4 Nov 2026, design B), the Inbox since redesign step 8 (8 Nov 2026): Today opens on it, today's numbers above
+    // it, with the open mail itself, most urgent first, worked in place
+    ok(await q.evaluate(() => { const t = document.querySelector('.dsh-needs'), day = document.querySelector('.dsh-day'); return !!t && !!day && /Inbox/.test(t.querySelector('h3').textContent) && !!(day.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING); }), width + ': the Inbox is Today\'s first page, today\'s numbers above it');
     const rows = await q.$$eval('.dsh-needs .dsh-ml .ml-row', els => els.map(e => e.querySelector('.ml-text').textContent));
     ok(rows.length === 3 && /Cool room door seal/.test(rows[0]) && /Fryer 2/.test(rows[1]), width + ': To do lists the open mail, food safety first (' + rows.join(' | ') + ')');
     await L.waitFor(q, () => ['m1', 'm2', 'm3'].every(id => (window.__fake.dump()['kitchens/000000/mail/' + id] || {}).seen === true), null, 8000).catch(() => {});
@@ -98,7 +106,7 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
     await q.evaluate(() => { const x = document.querySelector('.mlp-wrap [data-ml="later"]'); if (x) x.click(); }); await L.settle(q, 300);
     await q.click('.dsh-needs [data-dsh="open"][data-t="mail"]'); await L.settle(q, 300);
     ok(await q.evaluate(() => LK_PREP.state.atab) === 'mail', width + ': Open mail opens the Kitchen mail page');
-    await L.adminTab(q, 'dashboard'); await ready(q);
+    await L.adminTab(q, 'inbox'); await inbox(q);
     await q.evaluate(() => { const x = document.querySelector('.mlp-wrap [data-ml="later"]'); if (x) x.click(); }); await L.settle(q, 200);
     await q.click('.dsh-needs [data-dsh="open"][data-t="references"]'); await L.settle(q, 300);
     ok(await q.evaluate(() => LK_PREP.state.atab) === 'references', width + ': the item links row opens the Review desk');
@@ -116,7 +124,7 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
     [path('functions', 'f3')]: booking('f3', { name: '<img src=x onerror="window.__dshInjected=3">', date: today }) };
   for (const width of [390, 1280]) {
     const q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width, height: 900, extra: weekly, wait: 1600 });
-    await ready(q);
+    await toDash(q);
     await L.waitFor(q, () => /Smith 50th/.test((document.querySelector('.dsh-week') || {}).textContent || ''), null, 10000).catch(() => {});
     const days = await q.$$eval('.dsh-wk-day', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
     ok(days.length === 7 && /^Today/.test(days[0]) && /^Tomorrow/.test(days[1]), width + ': the week ahead shows today and the next 6 days (' + days.length + ')');
@@ -133,13 +141,13 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
   }
 
   let q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: 1280, extra, failReads: 'transferOpen', wait: 1600 });
-  await ready(q);
+  await inbox(q);
   await L.waitFor(q, () => /Could not load the open transfers/.test(document.body.textContent), null, 8000).catch(() => {});
   ok(/Could not load the open transfers/.test(await L.txt(q, '.dsh-needs')), 'a failed transfers read says so, never "nothing waiting"');
   ok(!/Nothing waiting for[^.]*transfers/.test(await L.txt(q, '.dsh-needs')), 'a failed transfers read is not counted as clear');
   await q.context().close();
   q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: 1280, extra, wait: 1600 });
-  await ready(q);
+  await inboxNums(q);
   await L.waitFor(q, () => /Nothing waiting/.test(document.body.textContent), null, 8000).catch(() => {});
   ok(/Nothing waiting for [^.]*transfers\. The nightly run finished\./.test(await L.txt(q, '.dsh-needs')), 'with nothing waiting, Needs you says so in words');
   await q.context().close();
@@ -149,7 +157,7 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
   const watched = { ...extra, [wkey]: { list: ['sec:Larder', 'person:sam', 'item:brisket|kg', 'bogus', 42, 'item:<img src=x onerror="window.__dshInjected=4">|kg'], v: 1, at: L.NOW, by: 'sam' } };
   for (const width of [390, 1280]) {
     const q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width, height: 900, extra: watched, wait: 1600 });
-    await ready(q);
+    await toDash(q);
     await L.waitFor(q, () => document.querySelectorAll('.dsh-wl').length > 0, null, 8000).catch(() => {});
     const rows = await q.$$eval('.dsh-wl', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
     ok(rows.length === 4, width + ': the watch list shows the 4 good keys and drops the broken ones (' + rows.length + ')');
@@ -182,22 +190,24 @@ const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').len
     await q.context().close();
   }
   { const q = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: 1280, extra, failReads: 'dashwatch', wait: 1600 });
-    await ready(q); await L.waitFor(q, () => /Could not load the watch list/.test(document.body.textContent), null, 8000).catch(() => {});
+    await toDash(q); await L.waitFor(q, () => /Could not load the watch list/.test(document.body.textContent), null, 8000).catch(() => {});
     ok(/Could not load the watch list/.test(await L.txt(q, '.dsh-watch')) && await q.locator('[data-dsh="watch-add"]').count() === 0, 'a failed watch list read says so and offers no Add');
     await q.context().close(); }
 
   let p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: 390, extra, failReads: 'analysis/dashboard', wait: 1600 });
-  await L.waitFor(p, () => /Could not load the dashboard numbers/.test(document.body.textContent), null, 8000);
-  ok(await p.locator('.dsh-tile').count() === 0, 'a failed read says so and shows no numbers');
+  await L.waitFor(p, () => /Could not load the numbers/.test(document.body.textContent), null, 8000);
+  ok(await p.locator('.dsh-dtile').count() === 0 && /Could not load the numbers/.test(await L.txt(p, '.dsh-day')), 'a failed read says so on the Inbox and shows no numbers');
+  await L.adminTab(p, 'dashboard'); await L.settle(p, 300);
+  ok(/Could not load the dashboard numbers/.test(await L.txt(p, '.dsh')) && await p.locator('.dsh-tile').count() === 0, 'and the same on the Dashboard, with no second try by itself');
   await p.context().close();
 
   p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width: 390, wait: 1600 });
   await L.waitFor(p, () => /come from the nightly run at 03:00/.test(document.body.textContent), null, 8000);
-  ok(await p.locator('.dsh-tile').count() === 0, 'before the first nightly run the page says when the numbers come, never 0');
+  ok(await p.locator('.dsh-tile, .dsh-dtile').count() === 0, 'before the first nightly run the page says when the numbers come, never 0');
   await p.context().close();
 
   p = await L.open(b, '#/admin', { admin: true, adminPage: 'insights', who: '', width: 1280, extra: { ...extra, [path('analysis', 'health')]: { at: L.NOW - 3600000, status: 'failed' } }, dashIntro: true, wait: 1600 });
-  await ready(p);
+  await inboxNums(p);
   ok(/did not finish/.test(await L.txt(p, '.dsh-fresh')), 'a failed nightly run is named, with the time of the numbers shown');
   await L.adminTab(p, 'insights'); await p.context().close();
   p = await L.open(b, '#/admin', { admin: true, adminPage: 'insights', who: '', width: 1280, extra, wait: 1600 });

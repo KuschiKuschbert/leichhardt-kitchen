@@ -4202,3 +4202,46 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .st-can { color: var(--muted); font-size: 0.875rem; }
 .a-person.st-row { margin: 0; padding: 10px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }
 .st-acts { margin-top: 2px; }
+
+/* ---------- Redesign step 8 (8 Nov 2026, head chef: "b inbox with a dashboard"): Today opens on the Inbox with today's
+   numbers above it, the Dashboard is one tap away, Find (/) goes to any page, part or person, and on a laptop the rail is
+   dark with Find, the Inbox and the Dashboard over the four rooms. docs/whole-app-redesign-options/brief.md (Chosen,
+   Build step 8), every-page.html (e-admin-b-*). ---------- */
+.p-admin.ad-admin .ad-heading { position: relative; }
+.p-admin.ad-admin .a-find { display: inline-flex; align-items: center; justify-content: space-between; gap: .6rem; min-height: 44px; padding: 0 .9rem; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); color: var(--ink); font: 600 .9375rem/1 var(--body); cursor: pointer; }
+.p-admin.ad-admin .a-find::before { content: ''; width: 16px; height: 16px; flex: 0 0 16px; margin-right: -.2rem; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='M15.5 15.5 21 21'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='M15.5 15.5 21 21'/%3E%3C/svg%3E") center / contain no-repeat; }
+.p-admin.ad-admin .a-find span { margin-right: auto; }
+.p-admin.ad-admin .a-find kbd { padding: 3px 6px; border: 1px solid currentColor; border-radius: 4px; font: 600 .75rem/1 var(--body); opacity: .7; }
+.p-admin.ad-admin .a-find[disabled] { opacity: .5; cursor: default; }
+.p-admin.ad-admin .a-find-head { position: absolute; top: 0; right: 0; }
+.p-admin.ad-admin .a-find-head kbd, .p-admin.ad-admin .a-find-rail, .p-admin.ad-admin .a-quick-list { display: none; }
+/* the Inbox: today's numbers as tiles, each a tap into its report, then the rows that need the head chef */
+.dsh-day .dsh-panel-head .chip { min-height: 40px; }
+.dsh-dtiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.75rem), 1fr)); gap: .6rem; margin: .4rem 0 .5rem; }
+.dsh-dtile { display: flex; flex-direction: column; align-items: flex-start; gap: .25rem; min-width: 0; min-height: 44px; padding: .75rem .9rem; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--paper); color: var(--ink); font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
+.dsh-dtile-lab { color: var(--muted); font: 700 .75rem/1.3 var(--display); letter-spacing: .08em; text-transform: uppercase; }
+.dsh-dtile-num { font: 700 1.9rem/1.05 var(--display); }
+.dsh-dtile-num small { margin-left: .1rem; font-size: .55em; font-weight: 600; }
+.dsh-dtile-sub { color: var(--muted); font-size: .875rem; line-height: 1.3; }
+.dsh-dtile-sub.dsh-up { color: var(--accent-ink); }
+.dsh-dtile-sub.dsh-down { color: var(--done-ink); }
+.dsh-inbox .dsh-needs { margin-top: 1rem; }
+@media (min-width: 1000px) {
+  .p-admin.ad-admin .a-find-head { display: none; }
+  .p-admin.ad-admin .a-nav { padding: 1rem .75rem 1.25rem; border: 0; border-radius: 12px; background: var(--bar); color: var(--bar-text); }
+  .p-admin.ad-admin .a-nav .ad-nav-label { margin: 1.1rem 0 .5rem .7rem; color: rgba(251, 248, 241, .62); }
+  .p-admin.ad-admin .a-group { color: var(--bar-text); font-size: 1.3rem; }
+  .p-admin.ad-admin .a-group[aria-current="page"] { background: rgba(251, 248, 241, .12); box-shadow: inset 3px 0 var(--accent); color: var(--bar-text); }
+  .p-admin.ad-admin .a-find-rail { display: flex; width: 100%; margin-bottom: .7rem; border-color: rgba(251, 248, 241, .4); background: rgba(251, 248, 241, .08); color: var(--bar-text); }
+  .p-admin.ad-admin .a-quick-list { display: flex; flex-direction: column; gap: .2rem; }
+  .p-admin.ad-admin .a-quick { display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-height: 44px; padding: .5rem .7rem; border: 0; border-radius: 8px; background: transparent; color: var(--bar-text); font: 600 1rem/1.1 var(--body); text-align: left; cursor: pointer; }
+  .p-admin.ad-admin .a-quick[aria-current="true"] { background: rgba(251, 248, 241, .12); box-shadow: inset 3px 0 var(--accent); }
+  .p-admin.ad-admin .a-quick em { min-width: 1.5rem; padding: 2px 7px; border-radius: 11px; background: var(--accent); color: #fff; font: normal 700 .8125rem/1.25 var(--body); text-align: center; }
+}
+@media (min-width: 1000px) and (hover: hover) and (pointer: fine) {
+  .p-admin.ad-admin .a-group:not([aria-current="page"]):hover, .p-admin.ad-admin .a-quick:not([aria-current="true"]):hover { background: rgba(251, 248, 241, .08); }
+}
+/* Find: a type-to-find box over the list of pages, parts and people */
+.fd-sheet #fd-q { width: 100%; margin: .2rem 0 .6rem; }
+.fd-list { max-height: min(52vh, 26rem); overflow-y: auto; }
+.fd-none { margin: .8rem .2rem; }

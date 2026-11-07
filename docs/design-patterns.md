@@ -74,6 +74,9 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 - **A block** is a `.set-block` with a `.label` or an `h3.a-ch-h` heading (the page's chips read them).
 - **A list that grows** goes through `lvHTML()`: search, filters, sort, Show more and phone cards come with it.
 - **A table** sits in `.a-tablewrap` (a region that scrolls sideways and fades at its edge) as `.a-table.a-plain`. A colour scale (the skills matrix, shifts on each section) uses cells `.sk-c` with an `.a-legend` key, and counts, never a verdict.
+- **The Inbox** (redesign step 8, 8 Nov 2026) is Today's first page (`.dsh-inbox`): today's numbers as tiles (`.dsh-dtile`, each a tap into its report, a record not read says so in words, never 0), then what needs the head chef. A new thing that needs the head chef is a row there, not a new page.
+- **Find** (`.a-find`, the `/` key on a laptop) opens a sheet (`.fd-sheet`) with a type-to-find box over every page, the open page's parts (the On this page headings) and the people. It reads nothing. A new admin page is found by its tab name, a new block by its heading.
+- **The laptop rail** is dark: Find, the Inbox with its count and the Dashboard (`.a-quick`), then the four rooms. On a phone Find sits in the page heading and the rooms stay one row.
 
 ## The chef hat
 
