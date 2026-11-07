@@ -192,7 +192,7 @@ const addLine = async (p, text, sec) => {
   p = await L.open(b, '#/admin', { admin: true, extra: withSecs(shifts), failReads: '/shifts$', wait: 1800 });
   await L.kitchenRow(p, 'secs', 600);
   const blk = await txt(p, '.a-ks') || '';
-  ok(/Could not load who is on today\. Check the signal\./.test(blk) && !/Nobody yet|Nobody has picked a section yet/.test(blk), 'admin, who is on unreadable: says it could not load, not Nobody yet (' + blk.slice(-160) + ')');
+  ok(/Could not load who is on today\. Check the signal\./.test(blk) && !/Nobody yet|Nobody has picked a section yet|Nobody has been on a section yet/.test(blk), 'admin, who is on unreadable: says it could not load, not Nobody yet (' + blk.slice(-160) + ')');
   ok(!(await L.overflow(p)), 'admin, who is on unreadable: no sideways scroll at 390');
   await p.evaluate(() => { window.__fake.failReads = null; window.dispatchEvent(new Event('online')); });
   ok(await L.waitFor(p, () => /Grill\s*Ann/.test((document.querySelector('.a-ks-today') || {}).textContent || ''), null, 6000).then(() => true, () => false), 'admin, signal back: On today shows Ann on Grill by itself');

@@ -316,6 +316,15 @@ await ok(W([['team/2026-11-08', team({ day: '2026-11-08' })]], { id: 'sam' }), t
 await ok(getDoc(doc(anon, K + 'team/2026-11-07')), false, 'team: a PIN holder cannot read it while signed out');
 await ok(deleteDoc(doc(anon, K + 'team/2026-11-07')), false, 'team: staff cannot delete one');
 await ok(setDoc(doc(owner, K + 'team/2026-11-09'), team({ day: '2026-11-09', by: '' })), true, 'team: the head chef\'s Google device sets one');
+// Today's team, step 4 (7 Nov 2026): teamsum/main, the nightly training numbers: chefs and the admin read it, staff never
+await env.withSecurityRulesDisabled(async ctx => { await setDoc(doc(ctx.firestore(), K + 'teamsum/main'), { v: 1, day: '2026-11-07', days: [], usual: {}, learn: { ann: ['Grill'] } }); });
+await ok(W([['activity/ann', { lastSeen: 1 }, true]], { id: 'ann' }), true, 'teamsum: (Ann opens a session)');
+await ok(getDoc(doc(wPhone('w-sam'), K + 'teamsum/main')), true, 'teamsum: a sous chef with a PIN session reads it');
+await ok(getDoc(doc(owner, K + 'teamsum/main')), true, 'teamsum: so does the head chef\'s Google account');
+await ok(getDoc(doc(wPhone('w-ann'), K + 'teamsum/main')), false, 'teamsum: staff with a session cannot read it');
+await ok(getDoc(doc(anon, K + 'teamsum/main')), false, 'teamsum: nor the kitchen PIN alone');
+await ok(W([['teamsum/main', { v: 2 }]], { id: 'sam' }), false, 'teamsum: a sous chef cannot write it');
+await ok(setDoc(doc(owner, K + 'teamsum/main'), { v: 2 }), false, 'teamsum: nor the Google account (only the nightly job)');
 await ok(W([['config/main', { kitSecs: [{ id: 'grill', name: 'Grill', off: false }] }, true]], { id: 'sam' }), false, 'config: a sous chef cannot change the kitchen sections');
 await ok(setDoc(doc(owner, K + 'config/main'), { kitSecs: [{ id: 'grill', name: 'Grill', off: false }] }, { merge: true }), true, 'config: the head chef sets the kitchen sections');
 // One ping sound for the whole kitchen (head chef, 3 Nov 2026, docs/ping-sound.md): only the head chef's admin device

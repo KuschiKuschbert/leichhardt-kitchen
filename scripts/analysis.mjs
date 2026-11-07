@@ -13,6 +13,12 @@ const bytes = x => Buffer.byteLength(JSON.stringify(x));
    a fingerprint per day: only days whose lines changed are written (about 60 the first night, then 1 to 3), and a day
    that left the window is deleted. A day too large for one record gets none, and the phones read its lines. */
 export const DIGEST_DAYS = 60;
+/* Today's team, step 4 (head chef, 7 Nov 2026): every section allocated or worked counts for training. teamsum/main
+   holds the last 30 days' shifts worked per person and section (the chef's plans and each cook's own picks and moves),
+   each person's usual section per weekday and shift from the last 8 weeks' plans, and who is In training on which
+   section. Read by the chefs' pages (1 read), never by staff. Costs about 56 reads for the plans and one per person
+   per day for the picks (about 360 for 12 people). */
+export const TEAM_DAYS = 30, TEAM_WEEKS = 8;
 const byId = list => list.slice().sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 const print = (prep, orders) => createHash('sha256').update(JSON.stringify([byId(prep), byId(orders)])).digest('hex').slice(0, 24);
 const hash = x => createHash('sha256').update(typeof x === 'string' ? x : JSON.stringify(x)).digest('hex').slice(0, 24);
@@ -146,6 +152,14 @@ export async function analyse(K, options = {}) {
   const queue = core.trainingQueue(pub['30'], training, people, secs);
   board.needs = { links: core.linkQueue(pub['90'], refs).length, training: queue.length, inTraining: queue.filter(o => o.assessment && o.assessment.status === 'in-training').length };
   if (bytes(board) > 700000) throw new Error('analysis-dashboard-too-large');
+  const teamFrom = shift(today, -7 * TEAM_WEEKS), shiftFrom = shift(today, -TEAM_DAYS);
+  const plans = await read(K.collection('team').where('day', '>=', teamFrom).where('day', '<=', to));
+  const picks = await read(K.collection('shifts').where('day', '>=', shiftFrom).where('day', '<=', to));
+  // plain objects for Firestore (the shared code builds them without a prototype)
+  const teamsum = JSON.parse(JSON.stringify({ v: 1, at, day: today, from: shiftFrom, to,
+    days: core.teamStints(plans, picks, Array.isArray(cfg.kitSecs) ? cfg.kitSecs : [], shiftFrom, to),
+    usual: core.teamUsual(plans, today, TEAM_WEEKS), learn: core.teamLearning(training, people, secs) }));
+  if (bytes(teamsum) > 700000) throw new Error('analysis-teamsum-too-large');
   for (let i = 0; i < days.length; i += 8) {
     const batch = K.firestore.batch();
     for (const day of days.slice(i, i + 8)) batch.set(K.collection('analysisDaily').doc(generation + '_' + day.day), day);
@@ -154,6 +168,7 @@ export async function analyse(K, options = {}) {
   const batch = K.firestore.batch();
   for (const [n, data] of publications) batch.set(K.collection('analysis').doc('range-' + n), data);
   batch.set(K.collection('analysis').doc('dashboard'), board);
+  batch.set(K.collection('teamsum').doc('main'), teamsum);
   batch.set(K.collection('analysis').doc('current'), { v: 1, generation, at, from, to, days: window, reads, references: refs.length, suppliers: suppliers.length, inventory, comparisonOnly: true, previous: prev.generation || '', previousFrom: isDay(prev.from) ? prev.from : '', previousTo: isDay(prev.to) ? prev.to : '', first, full, reused, code: CODE, refsPrint, side });
   batch.set(K.collection('analysis').doc('health'), { at, status: 'ok', generation, reads });
   await batch.commit();
@@ -192,5 +207,5 @@ export async function analyse(K, options = {}) {
     for (let i = 0; i < refs.length; i += 400) { const b = K.firestore.batch(); refs.slice(i, i + 400).forEach(r => b.delete(r)); await b.commit(); }
     removed = refs.length;
   } catch (e) { await K.collection('analysis').doc('health').set({ at, status: 'ok', generation, reads, cleanup: 'pending' }).catch(() => {}); }
-  return { days: window, reads, full, first, reused, cleanup, removed, digests: { written: write.length, deleted: gone.length } };
+  return { days: window, reads, full, first, reused, cleanup, removed, digests: { written: write.length, deleted: gone.length }, team: { days: teamsum.days.length, plans: plans.length, picks: picks.length } };
 }

@@ -1512,6 +1512,13 @@ service cloud.firestore {
       allow create, update: if teamBy() && teamOk(day);
       allow delete: if isAdmin();
     }
+    // Today's team, step 4 (7 Nov 2026): teamsum/main, the nightly job's shifts worked per person and section, usual
+    // sections and who is In training. The head chef and the sous chefs (own PIN session) and the verified admin read
+    // it, never staff; only the nightly job writes it (a move to a new kitchen PIN does not copy it: it is rebuilt).
+    match /kitchens/KITCHEN_PIN/teamsum/{id} {
+      allow read: if isAdmin() || (sessOk(reader()) && !functionOnly(reader()) && chefId(reader()));
+      allow write: if false;
+    }
     // Only a person on the list (config/main.staffIds, kept in step by the admin panel and a sous chef's staff page)
     // may set a PIN, once. So nobody with just the kitchen PIN can make up a new writer.
     // The head chef may also create one: the move to a new kitchen PIN copies every stored PIN as it is.
