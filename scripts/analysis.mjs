@@ -22,7 +22,7 @@ const hash = x => createHash('sha256').update(typeof x === 'string' ? x : JSON.s
    goes into it may have changed: the code that works it out (CODE), the record links (references), its supplier
    orders, deliveries or functions (side, a fingerprint per day), its dashboard row or its digest. A full run reads
    every day: on Sundays (kitchen time), with options.full, after a past transfer fix (its stamp names no day) or a
-   stamp that cannot tell. So a fix to a waste line older than REUSE_DAYS shows from the next Sunday. */
+   stamp that cannot tell. Past prep, order and (since 7 Nov 2026, wDays) wastage fixes name their days. */
 export const REUSE_DAYS = 14;
 const CODE = hash(['../js/analysis-core.js', './dashboard.mjs', './analysis.mjs'].map(f => readFileSync(new URL(f, import.meta.url), 'utf8')).join('\n'));
 // the past days a stamp names as changed since `since`, like pastChanged() in js/prep.js: [] none, null cannot tell
@@ -84,7 +84,7 @@ export async function analyse(K, options = {}) {
   // Plan B 4.2: which days can come from the published generation instead of their lines
   const pe = (cfg && cfg.pastEdit) || {}, since = +prev.at || 0, fixed = new Set();
   let reuse = !full && !!prev.generation && prev.code === CODE && prev.refsPrint === refsPrint && prev.days === window && since > 0;
-  for (const kind of ['p', 'o']) { const d = reuse ? namedSince(pe, kind, since) : []; if (d === null) reuse = false; else d.forEach(x => fixed.add(x)); }
+  for (const kind of ['p', 'o', 'w']) { const d = reuse ? namedSince(pe, kind, since) : []; if (d === null) reuse = false; else d.forEach(x => fixed.add(x)); }
   if (reuse && (+pe.x || 0) > since) reuse = false;
   const oldRows = {}, oldDays = {};
   if (reuse && window > REUSE_DAYS) {

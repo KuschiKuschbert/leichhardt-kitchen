@@ -47,7 +47,9 @@ query. Staff and sous-chef PIN sessions cannot run the history query.
 
 Past ranges are read on demand and cached for the kitchen day. Today is read
 fresh on opening and on Refresh. Filters and view switches reuse loaded records.
-Only a complete read is cached. Past corrections stamp config/main.pastEdit.w;
+Only a complete read is cached. Past corrections stamp config/main.pastEdit.w (since 7 Nov 2026 with the days
+they changed, wDays, wPrev and wFor, like prep and order fixes, so the nightly analysis and backup read just
+those days again);
 other admin devices discard older copies. No polling or per-day query loops.
 
 Publish the additive owner-only read rule before merging the app. Existing

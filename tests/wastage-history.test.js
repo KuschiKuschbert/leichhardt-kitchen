@@ -159,6 +159,18 @@ async function csv(p) {
     ok(!(await p.$('[data-k="wh-period"]')) && await p.evaluate(() => !window.__fake.reads.some(x => x === '**/lines')), who + ': the staff page does not read private history');
     await p.context().close();
   }
+  // A past correction names its day in the stamp (7 Nov 2026), so the nightly jobs read just that day again
+  p = await report(b);
+  await p.click('[data-p="wdel"][data-id="cream"]'); await L.settle(p, 500);
+  let pe = await p.evaluate(k => (window.__fake.dump()[k] || {}).pastEdit || {}, key('config', 'main'));
+  ok(pe.wFor === pe.w && pe.w > 0 && JSON.stringify(pe.wDays) === JSON.stringify([ago(9)]), 'a past removal stamps its day: ' + JSON.stringify(pe));
+  await p.click('[data-p="wh-view"][data-v="reviews"]'); await L.waitFor(p, () => !!document.querySelector('#w-ra'));
+  await p.fill('[data-k="wh-review-date"]', ago(4)); await p.dispatchEvent('[data-k="wh-review-date"]', 'change'); await L.settle(p, 400);
+  await p.fill('#w-ra', 'Fryer oil'); await p.click('[data-p="wreview"][data-v="admin"]'); await L.settle(p, 600);
+  pe = await p.evaluate(k => (window.__fake.dump()[k] || {}).pastEdit || {}, key('config', 'main'));
+  ok(pe.wFor === pe.w && JSON.stringify((pe.wDays || []).slice().sort()) === JSON.stringify([ago(9), ago(4)].sort()), 'a past review saved straight after carries on the same run of named days: ' + JSON.stringify(pe));
+  ok(p.errors.length === 0, 'named stamps: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
   p = await L.open(b, '#/admin', { who: 'ann', admin: true, extra });
   ok(!(await p.$('[data-k="wh-period"]')) && await p.evaluate(() => !window.__fake.reads.some(x => x === '**/lines')), 'shared admin device still requires a chef PIN before showing history');
   await p.context().close();
