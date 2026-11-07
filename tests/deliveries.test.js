@@ -45,6 +45,10 @@ const save = async p => { await p.click('#dl-form button[type="submit"]'); await
   let saved = (await records(p)).find(x => x.supplier === 'Test supplier');
   ok(saved && saved.chilled === 3.5 && saved.frozen === null && saved.receivedAt === L.NOW - 15 * 60000, 'comma decimal and changed delivery time persist, unused temperature stays null');
   await p.reload(); await p.waitForSelector('.dl-receipt'); ok(/Test supplier/.test(await p.locator('.dl-receipts').innerText()), 'saved delivery survives reopening the app');
+  // redesign step 3 (8 Nov 2026): today's deliveries as arrivals: the time first, a dot, the supplier, the reading as a
+  // stamp; the frozen reading not taken is left out, never 0
+  const arr = await p.$eval('.dl-receipt', li => ({ first: li.firstElementChild.className, time: li.querySelector('.dl-at').textContent, dot: !!li.querySelector('.dl-dot'), stamps: [...li.querySelectorAll('.dl-readings div')].map(d => d.textContent) }));
+  ok(arr.first === 'dl-at' && arr.time === '13:45' && arr.dot && JSON.stringify(arr.stamps) === JSON.stringify(['Chilled3.5 °C']), 'arrivals: 13:45 first, a dot, one Chilled stamp, no Frozen and no 0 (' + JSON.stringify(arr) + ')');
   await fill(p, '', '-20'); await p.evaluate(() => { window.__fake.mode = 'deny'; }); await save(p);
   ok(/refused/.test(await p.locator('#dl-save-note').innerText()) && await p.inputValue('#dl-frozen') === '-20' && await p.inputValue('#dl-supplier') === 'Test supplier', 'refused save keeps the entered details');
   await p.evaluate(() => { window.__fake.mode = 'ok'; }); await save(p);

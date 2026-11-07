@@ -6257,7 +6257,7 @@
     if (S.ordDate === today) live.forEach(function (x) { if (x.ordered && x.orderedAt) { var left = x.orderedAt + ORD_HIDE - now(); if (left > 0 && left < nextHide) nextHide = left; } });
     if (nextHide < Infinity) ordHideTimer = setTimeout(function () { if (S.name === 'orders') draw(); }, nextHide + 500);
     var tabs = br ? '<div class="nb-nav o-nav"><label class="visually-hidden" for="o-day">Pick a date</label><input id="o-day" type="date" class="p-dateinput o-dateinput" data-k="o-day" value="' + esc(S.ordDate) + '">' +
-      (onToday ? '<a class="chip o-deliv" href="#/deliveries">Delivery arrived</a>' : '<button type="button" class="chip" data-p="otoday">Back to today</button>') + '</div>' : '';
+      (onToday ? '<a class="chip o-deliv" href="#/deliveries">Delivery received</a>' : '<button type="button" class="chip" data-p="otoday">Back to today</button>') + '</div>' : '';
     var add = can('add') && S.ordDate === today ?
       '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" enterkeyhint="done" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
       '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' + justHTML('o') +
@@ -6283,7 +6283,7 @@
     var offO = S.ordState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var body =
       (S.ordState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' :
-        offO + (grouped ? supGroupsHTML(own, function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') || byAdded(a, b); }) : own.length ? '<ul class="nb-rows">' + own.slice().sort(br && onToday ? function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') || byAdded(a, b); } : byAdded).map(ordRow).join('') + '</ul>' : (waitHTML || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))) + waitHTML);
+        offO + (grouped ? supGroupsHTML(own, function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') || byAdded(a, b); }, live.filter(function (x) { return earlier.indexOf(x) < 0 && overdue.indexOf(x) < 0; })) : own.length ? '<ul class="nb-rows">' + own.slice().sort(br && onToday ? function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') || byAdded(a, b); } : byAdded).map(ordRow).join('') + '</ul>' : (waitHTML || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))) + waitHTML);
     return whoTopHTML() + tabs +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Order list</h2><span class="nb-date">' + esc(longDate(S.ordDate)) + '</span></div>' +
       (S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') +
@@ -9973,13 +9973,14 @@
     return '<li class="cut-o is-ahead"><a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">by tomorrow ' + hhmm(c.t) + ' ' + esc(cutDel(c)) + '</span>' +
       (ro ? '<span class="cut-st">Tomorrow</span>' : '<button type="button" class="btn cut-early" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="false" aria-label="' + esc('Ordered already from ' + c.s.name + ', for tomorrow\'s cut-off') + '"' + (cutCanTick() ? '' : ' disabled') + '>Ordered already</button>') + '</li>';
   }
-  function cutRowHTML(c, ro) {
+  // more: a few words after the time, from the caller (the supplier groups add how many of its lines are ordered)
+  function cutRowHTML(c, ro, more) {
     var m = T.mins(), done = cutDone();
     var d = done[c.key], past = c.at <= m, who = d ? cutByName(d) : '';
     var st = d ? 'Ordered' + (who ? ' by ' + who : '') + (d.at ? ', ' + clock(d.at) : '') : past ? 'Closed, not ticked' : cutIn(c.at - m);
     var cls = d ? 'is-done' : past ? 'is-past' : c.at - m <= CUT_SOON ? 'is-soon' : '';
     return '<li class="cut-o ' + cls + '">' + (ro ? '<span class="cut-box cut-mark" aria-hidden="true">' + (d ? '&#10003;' : '') + '</span>' : '<button type="button" class="cut-box" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Ordered from ' : 'Tick when ordered from ') + c.s.name) + '"' + (cutCanTick() ? '' : ' disabled') + '><span aria-hidden="true">' + (d ? '&#10003;' : '') + '</span></button>') +
-      '<a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
+      '<a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + (more ? '<span class="o-sgs"> · ' + esc(more) + '</span>' : '') + '</span><span class="cut-st">' + esc(st) + '</span></li>';
   }
   function cutOrdHTML() {
     if (!cutHas()) return '';
@@ -9988,7 +9989,7 @@
   }
   /* Supplier groups (5 Nov 2026, head chef, round 2 of the work pages redesign, as drawn in B): on today's order list the
      head chef and sous chefs see the requests under each supplier's cut-off, its tick, time left and state as the
-     heading, then Open the supplier's order and Delivery arrived; what the catalogue cannot match goes under No supplier
+     heading, then Open the supplier's order and Delivery received (Delivery arrived until 8 Nov 2026); what the catalogue cannot match goes under No supplier
      yet. A request matches a catalogue item by its exact name or a confirmed alias only (LK_SUP_CORE.matchRequests), and
      goes under the first cut-off it matches. Staff never see suppliers: their list is as before, and so is a chef's on
      another day, while the catalogue is not read, or when no catalogue supplier is linked to today's cut-offs. The
@@ -10014,27 +10015,35 @@
     var ids = cutRowsNow().map(function (c) { return c.s.id; });
     return supCat.list.some(function (x) { return ids.indexOf(x.cutoffId) >= 0; });
   }
-  function supGroupsHTML(lines, order) {
+  /* Redesign step 3 (8 Nov 2026, head chef; Flighty, as drawn in every-page.html e-orders): what no supplier names comes
+     first, under No supplier yet (ordered by hand); then each supplier under its cut-off row, its tick (the one place to
+     tick it), the time left and how many of its lines are ordered. The count is of all today's lines it names, the ones
+     ticked more than 10 minutes ago in Ordered today too. No reads: the catalogue is the one already in memory. */
+  function supGroupsHTML(lines, order, all) {
     cutWatch(); pushKeep();
-    var C = window.LK_SUP_CORE, left = lines.slice();
+    var C = window.LK_SUP_CORE, rest = (all || lines).slice(), shown = {};
+    lines.forEach(function (x) { shown[x.id] = 1; });
     var groups = cutRowsNow().map(function (c) {
       var sups = supCat.list.filter(function (x) { return x.cutoffId === c.s.id; }), items = [];
       sups.forEach(function (x) { items = items.concat(x.items || []); });
       var hit = {};
-      C.matchRequests(items, left.map(function (x) { return { id: x.id, text: x.text }; })).matches.forEach(function (m) { m.requestIds.forEach(function (id) { hit[id] = 1; }); });
-      var mine = left.filter(function (x) { return hit[x.id]; });
-      left = left.filter(function (x) { return !hit[x.id]; });
-      return { c: c, lines: mine, linked: sups.length };
+      C.matchRequests(items, rest.map(function (x) { return { id: x.id, text: x.text }; })).matches.forEach(function (m) { m.requestIds.forEach(function (id) { hit[id] = 1; }); });
+      var mine = rest.filter(function (x) { return hit[x.id]; });
+      rest = rest.filter(function (x) { return !hit[x.id]; });
+      return { c: c, all: mine, lines: mine.filter(function (x) { return shown[x.id]; }), linked: sups.length };
     });
+    var left = rest.filter(function (x) { return shown[x.id]; });
     var rows = function (l) { return '<ul class="nb-rows">' + l.slice().sort(order).map(ordRow).join('') + '</ul>'; };
-    return '<section class="cut-today o-sups" aria-label="Supplier orders"><h3 class="nb-sh">By supplier</h3><p class="hint cut-how">Tick each supplier once the order is in, by phone, email or its site. This is the one place to tick it: every chef sees it, and its reminder and pushes stop.</p>' +
+    var count = function (l) { return l.filter(function (x) { return x.ordered; }).length + ' of ' + l.length + ' ordered'; };
+    return '<section class="cut-today o-sups" aria-label="Supplier orders">' +
       (cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '') +
+      (left.length ? '<div class="o-sup o-sup-none"><div class="o-sgh"><h3 class="nb-sh">No supplier yet</h3><span class="o-sgs">Order by hand · ' + esc(count(rest)) + '</span></div>' + rows(left) + '</div>' : '') +
+      '<p class="hint cut-how">Tick a supplier once its order is in, by phone, email or its site. Every chef sees it, and its reminder stops.</p>' +
       groups.map(function (g) {
         var c = g.c, to = '#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day);
-        return '<div class="o-sup"><ul class="cut-tl">' + cutRowHTML(c) + '</ul>' + (g.lines.length ? rows(g.lines) : '<p class="hint o-sup-empty">Nothing asked for from ' + esc(c.s.name) + ' yet.</p>') +
-          '<p class="o-sup-acts">' + (g.linked === 1 ? '<a class="chip" href="' + to + '">Open ' + esc(c.s.name) + ' order</a>' : '') + '<a class="chip" href="#/deliveries">Delivery arrived</a></p></div>';
-      }).join('') +
-      (left.length ? '<div class="o-sup o-sup-none"><h3 class="nb-sh">No supplier yet</h3>' + rows(left) + '</div>' : '') + cutAheadHTML() + pushHTML() + '</section>';
+        return '<div class="o-sup"><ul class="cut-tl">' + cutRowHTML(c, false, g.all.length ? count(g.all) : '') + '</ul>' + (g.lines.length ? rows(g.lines) : '<p class="hint o-sup-empty">Nothing asked for from ' + esc(c.s.name) + ' yet.</p>') +
+          '<p class="o-sup-acts">' + (g.linked === 1 ? '<a class="chip" href="' + to + '">Open ' + esc(c.s.name) + ' order</a>' : '') + '<a class="chip" href="#/deliveries">Delivery received</a></p></div>';
+      }).join('') + cutAheadHTML() + pushHTML() + '</section>';
   }
   // the same list at the top of Chef to-do, to see, not tick (5 Nov 2026: ticked on the order list only)
   function cutTodoHTML() {
