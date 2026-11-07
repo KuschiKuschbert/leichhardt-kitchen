@@ -4272,3 +4272,27 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 /* Guides step by step: Back and Next stay at the bottom of the screen above the tab bar on a phone, within thumb reach,
    while a long step or its page scrolls (the guide page has no other sticky bar) */
 @media (max-width: 719px) { .g-nav { position: sticky; bottom: calc(var(--tabbar-h) + 6px); z-index: 5; padding: 8px 0; background: var(--bg); } }
+/* ---------- Gap fix: Home (8 Nov 2026) ----------
+   From the audit of the redesign against its drawings: a chevron on board rows that open something and have no time,
+   Coming up with the next days' order cut-offs (chefs only) and a week of functions, and On today from 720 px. */
+.hm-chev { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: rgba(251, 248, 241, 0.7); }
+.hm-up:has(#hm-cuts:not([hidden])) { display: block; }
+#hm-cuts[hidden] { display: none; }
+.hm-cuts { list-style: none; margin: 0 0 0.2rem; padding: 0; }
+.hm-cuts li a { display: flex; align-items: baseline; gap: 0.4rem; min-height: 44px; padding: 0.3rem 0; color: var(--ink); text-decoration: none; }
+.hm-cuts li b { display: inline-block; min-width: 5.5rem; font: 700 0.8rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--small-ink); }
+.hm-up .kb-coming + #hm-cuts:not([hidden]), .hm-up #hm-cuts:not([hidden]) + #fn-land:not([hidden]) { padding-top: 0.4rem; border-top: 1px solid var(--line); }
+.hm-team { display: none; }
+.hm-pl { display: inline-flex; align-items: center; min-height: 44px; font-size: 0.9rem; font-weight: 700; }
+.hm-team-l { list-style: none; margin: 0; padding: 0; }
+.hm-team-l li { display: grid; grid-template-columns: minmax(4.5rem, 7rem) minmax(0, 1fr); gap: 0.75rem; padding: 0.45rem 0; border-top: 1px solid var(--line); }
+.hm-team-l li:first-child { border-top: 0; }
+.hm-tsec { font-weight: 600; overflow-wrap: anywhere; }
+.hm-tw { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.hm-tp { overflow-wrap: anywhere; }
+.hm-tp small { color: var(--muted); font-size: 0.85rem; }
+@media (min-width: 720px) {
+  .hm-team:not([hidden]) { display: block; }
+  .hm-board { grid-row: 1 / span 3; }
+  .hm-prep, .hm-team, .hm-up, .hm-prep[hidden] + .hm-up { grid-column: 2; grid-row: auto; }
+}

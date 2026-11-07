@@ -10076,7 +10076,9 @@
   }
   function homeRowHTML(r) {
     var inner = '<span class="hm-i" aria-hidden="true">' + homeIcon(r.icon) + '</span><span class="hm-w"><b class="hm-t">' + esc(r.title) + '</b>' + (r.sub ? '<small class="hm-s">' + esc(r.sub) + '</small>' : '') + '</span>' +
-      (r.time || r.note ? '<span class="hm-r">' + (r.time ? '<b class="hm-tm">' + esc(r.time) + '</b>' : '') + (r.note ? '<small class="hm-n">' + esc(r.note) + '</small>' : '') + '</span>' : '');
+      (r.time || r.note ? '<span class="hm-r">' + (r.time ? '<b class="hm-tm">' + esc(r.time) + '</b>' : '') + (r.note ? '<small class="hm-n">' + esc(r.note) + '</small>' : '') + '</span>' :
+      // a row with no time on its right (a ping, minutes to sign) shows a chevron there, as drawn: it opens something
+      '<span class="hm-r"><svg class="hm-chev" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>');
     var cls = 'hm-a' + (r.hot ? ' is-hot' : '');
     return '<li>' + (r.href ? '<a class="' + cls + '" href="' + r.href + '"' + (r.sec ? ' data-hm-sec="' + esc(r.sec) + '"' : '') + '>' + inner + '</a>' : '<button type="button" class="' + cls + '"' + (r.attrs || '') + '>' + inner + '</button>') + '</li>';
   }
@@ -10102,15 +10104,52 @@
       return '<li><a class="hm-sec" href="#/prep" data-hm-sec="' + esc(n) + '"><span class="hm-sn">' + esc(n || 'No section') + '</span><span class="nb-hbar' + (left ? '' : ' is-done') + '" aria-hidden="true"><i style="width:' + pct + '%"></i></span><span class="hm-sl">' + (left ? left + ' left' : 'Done') + '</span></a></li>';
     }).join('') + '</ul>';
   }
+  /* On today (8 Nov 2026, the audit of the redesign: drawn on the laptop's Home and missing): who is on each section today,
+     with their shift and breaks in words, for the chefs who set Today's team (staff see their own day on the board). From
+     the plan already read for the top bar's chip (teamLoad(), once a day): no read of its own. Shown from 720 px, as drawn. */
+  function homeTeamHTML() {
+    if (!teamOK()) return '';
+    teamLoad();
+    var rec = tm.rec;
+    if (!rec || !rec.on || !rec.on.length) return '';
+    var byId = {}; kitShifts().forEach(function (x) { byId[x.id] = x; });
+    var rows = rec.on.filter(function (o) { return byId[o.sh]; });
+    if (!rows.length) return '';
+    var order = kitSecs().map(function (x) { return x.id; }).concat(['']), groups = {};
+    rows.forEach(function (o) { var k = order.indexOf(o.sec) >= 0 ? o.sec : ''; (groups[k] = groups[k] || []).push(o); });
+    return '<div class="hm-ph"><h3 class="hm-pt">On today</h3><a class="hm-pl" href="#/team">Today\'s team</a></div><ul class="hm-team-l">' +
+      order.filter(function (k) { return groups[k]; }).map(function (k) {
+        return '<li><span class="hm-tsec">' + esc(k ? tmSecName(k) : 'No section') + '</span><span class="hm-tw">' + groups[k].map(function (o) {
+          return '<span class="hm-tp"><b>' + esc(mnName(o.id)) + '</b> <small>' + tmShiftWords(rec, o, byId[o.sh]) + '</small></span>';
+        }).join('') + '</span></li>';
+      }).join('') + '</ul>';
+  }
+  /* Coming up's order cut-offs (8 Nov 2026, the audit of the redesign): each supplier's next cut-off after today, in the
+     next 7 days, for the chefs who get the cut-off bar; from the kitchen's settings already held, no read. Today's are on
+     the board. A cut-off already ticked as ordered (today's and tomorrow's ticks are known) is left out. */
+  function homeCutsHTML() {
+    if (!cutWho()) return '';
+    var seen = {}, out = [], done = cutDone(), tom = shift(dayNow(), 1);
+    for (var plus = 1; plus <= 7; plus++) cutOn(plus).forEach(function (c) { if (!seen[c.s.id] && !done[c.key]) { seen[c.s.id] = 1; out.push(c); } });
+    if (!out.length) return '';
+    out.sort(function (a, b) { return a.at - b.at || String(a.s.name).localeCompare(String(b.s.name)); });
+    return '<ul class="hm-cuts">' + out.slice(0, 4).map(function (c) {
+      return '<li><a href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '"><b>' + esc(c.day === tom ? 'Tomorrow' : dayShort(c.day).replace(',', '')) + '</b> ' + esc(c.s.name) + ' order closes ' + esc(hhmm(c.at % 1440)) + '</a></li>';
+    }).join('') + '</ul>';
+  }
+  function homeCutSlot() { var h = homeCutsHTML(); return '<div id="hm-cuts"' + (h ? '' : ' hidden') + '>' + h + '</div>'; }
   function homeSlot() {
     if (!cutTick) cutTick = setInterval(cutPaint, 30000);   // the clock, the minutes left and rows that come and go (no reads)
-    var b = homeBoardHTML(), pp = homePrepHTML();
-    return '<section class="hm-board" id="hm-board" aria-labelledby="hm-board-h">' + b + '</section><section class="hm-paper hm-prep" id="hm-prep" aria-label="Prep by section"' + (pp ? '' : ' hidden') + '>' + pp + '</section>';
+    var b = homeBoardHTML(), pp = homePrepHTML(), tt = homeTeamHTML();
+    return '<section class="hm-board" id="hm-board" aria-labelledby="hm-board-h">' + b + '</section><section class="hm-paper hm-prep" id="hm-prep" aria-label="Prep by section"' + (pp ? '' : ' hidden') + '>' + pp + '</section>' +
+      '<section class="hm-paper hm-team" id="hm-team" aria-label="On today"' + (tt ? '' : ' hidden') + '>' + tt + '</section>';
   }
   function homePaint() {
     var t = document.getElementById('hm-time'); if (t) { var c = T.clock(now()); if (t.textContent !== c) t.textContent = c; }
     var b = document.getElementById('hm-board'); if (b) { var h = homeBoardHTML(); if (b.lkH !== h) { b.innerHTML = h; b.lkH = h; } }
     var pp = document.getElementById('hm-prep'); if (pp) { var ph = homePrepHTML(); if (pp.lkH !== ph) { pp.innerHTML = ph; pp.lkH = ph; } pp.hidden = !ph; }
+    var te = document.getElementById('hm-team'); if (te) { var th = homeTeamHTML(); if (te.lkH !== th) { te.innerHTML = th; te.lkH = th; } te.hidden = !th; }
+    var cu = document.getElementById('hm-cuts'); if (cu) { var ch = homeCutsHTML(); if (cu.lkH !== ch) { cu.innerHTML = ch; cu.lkH = ch; } cu.hidden = !ch; }
   }
   // a section on the board opens the prep list on that section's tab
   document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('[data-hm-sec]'); if (a) { S.tab = a.getAttribute('data-hm-sec') || ''; } }, true);
@@ -11950,6 +11989,12 @@
      the hours and the breaks in words and a bar for the day (the break in orange, a split as a gap). From the record
      already read (tm.rec) and the kitchen's shifts: no read of its own. Positions are worked out here from checked
      minutes (teamClean, kitShifts), clamped to 0 to 100. The editor below it changes the plan, as before. */
+  // one person's shift on the plan in words: "Lunch 10:00 to 15:00 · break 14:30" (HTML-safe); Today at a glance and Home's On today
+  function tmShiftBreaks(rec, o) { return rec.br.filter(function (b) { return b.id === o.id && b.sh === o.sh; }).sort(function (a, b) { return a.at - b.at; }); }
+  function tmShiftWords(rec, o, sh) {
+    return esc(sh.name) + (sh.from != null && sh.to != null ? ' ' + tmHHMM(sh.from) + ' to ' + tmHHMM(sh.to) : '') +
+      tmShiftBreaks(rec, o).map(function (b) { return tmIsSplit(b.len) ? ' · split ' + tmHHMM(b.at) + ', back ' + tmHHMM(b.at + b.len) : ' · break ' + tmHHMM(b.at) + (b.len !== 30 ? ', ' + b.len + ' min' : ''); }).join('');
+  }
   function tmTimelineHTML(rec) {
     var shs = kitShifts(), byId = {}; shs.forEach(function (x) { byId[x.id] = x; });
     var rows = rec.on.filter(function (o) { return byId[o.sh]; });
@@ -11964,9 +12009,7 @@
     if (hi > lo) for (var h = Math.ceil(lo / 180) * 180; h <= hi; h += 180) ticks += '<span style="left:' + pc(h) + '%">' + pad(Math.floor(h / 60)) + '</span>';
     var out = order.filter(function (k) { return groups[k]; }).map(function (k) {
       return '<h4 class="tm-tls">' + esc(k ? tmSecName(k) : 'No section') + '</h4>' + groups[k].map(function (o) {
-        var sh = byId[o.sh], bs = rec.br.filter(function (b) { return b.id === o.id && b.sh === o.sh; }).sort(function (a, b) { return a.at - b.at; });
-        var words = esc(sh.name) + (sh.from != null && sh.to != null ? ' ' + tmHHMM(sh.from) + ' to ' + tmHHMM(sh.to) : '') +
-          bs.map(function (b) { return tmIsSplit(b.len) ? ' · split ' + tmHHMM(b.at) + ', back ' + tmHHMM(b.at + b.len) : ' · break ' + tmHHMM(b.at) + (b.len !== 30 ? ', ' + b.len + ' min' : ''); }).join('');
+        var sh = byId[o.sh], bs = tmShiftBreaks(rec, o), words = tmShiftWords(rec, o, sh);
         var bar = sh.from != null && sh.to != null && hi > lo ? '<span class="tm-tlbar" aria-hidden="true"><i class="sh" style="left:' + pc(sh.from) + '%;width:' + wd(sh.from, sh.to, 0) + '%"></i>' +
           bs.map(function (b) { return '<i class="' + (tmIsSplit(b.len) ? 'sp' : 'br') + '" style="left:' + pc(b.at) + '%;width:' + wd(b.at, b.at + b.len, 0.6) + '%"></i>'; }).join('') + '</span>' : '';
         return '<div class="tm-tlr"><span class="tm-tln"><b>' + esc(mnName(o.id)) + '</b><small>' + words + '</small></span>' + bar + '</div>';
@@ -12577,7 +12620,7 @@
     sendFirst: sendFirst,
     minNudge: minNudgeHTML,
     // Home's now and next board (redesign step 2, 8 Nov 2026): js/app.js draws the slot, js/functions.js repaints it
-    homeOn: homeOn, homeSlot: homeSlot, homePaint: homePaint,
+    homeOn: homeOn, homeSlot: homeSlot, homePaint: homePaint, homeCutSlot: homeCutSlot,
     cutSlot: cutSlot, cutHat: cutHat,
     mailInfo: mlInfo,
     mailTab: mailTab,

@@ -389,7 +389,8 @@ function hasPrivateContact(value) {
   const brown = fn({ name: 'Brown 21st', date: day2, rounds: ['18:30'] });
   const wake = M.derive(Object.assign(fn({ name: 'Adams wake', date: day2 }), { start: 0, st: true, rounds: [], mode: 'all' }));
   const green = fn({ name: 'Green 30th', date: M.addDays(today, 3), start: '11:00', rounds: ['11:30'] });
-  const far = fn({ name: 'Far off', date: M.addDays(today, 4) });
+  // 8 days out: further off than the week Coming up looks ahead on Home (8 Nov 2026; it was 4 days with the 3-day window)
+  const far = fn({ name: 'Far off', date: M.addDays(today, 8) });
   p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith, tm, wake, brown, zed, green, far }), wait: 1500 });
   // four at most: with tomorrow's in it since 8 Nov 2026, Green 30th is the one more
   await L.waitFor(p, () => /Adams wake/.test((document.getElementById('fn-land') || {}).textContent || ''));
@@ -411,7 +412,9 @@ function hasPrivateContact(value) {
   const brd = (await txt(p, '#hm-board') || '').replace(/\s+/g, ' ');
   land = (await txt(p, '#fn-land') || '').replace(/\s+/g, ' ');
   ok(/Ward 60th/.test(brd) && /Lee 18th/.test(brd) && /Abbott do/.test(brd) && /Order the stock for Order five/.test(brd) && /Order the stock for Order six/.test(brd) && !/Brekky do|Kerr lunch/.test(brd), 'landing: the board shows today\'s three still to go and the two order reminders, not one already over (' + brd.slice(0, 260) + ')');
-  ok(/Tomorrow Kerr lunch, food 12:00/.test(land) && !/Ward 60th|Lee 18th|Abbott do|Brekky do|Order five|Order six/.test(land), 'landing: Coming up names tomorrow\'s function, not today\'s or the order reminders (' + land + ')');
+  // since 8 Nov 2026 Coming up looks a week ahead on Home, so the two functions whose stock is ordered today are named
+  // on their own days too (the board has the order reminders)
+  ok(/Tomorrow Kerr lunch, food 12:00.*Order five, food .*Order six, food /.test(land) && !/Ward 60th|Lee 18th|Abbott do|Brekky do/.test(land), 'landing: Coming up names tomorrow\'s function first, then the week\'s, not today\'s (' + land + ')');
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'landing busy day: no sideways scroll, no page errors ' + p.errors.join(' | '));
   await p.goto(L.BASE + '#/recipes'); await L.settle(p, 900);
   await L.waitFor(p, () => /\+2 more/.test((document.getElementById('fn-band') || {}).textContent || ''));

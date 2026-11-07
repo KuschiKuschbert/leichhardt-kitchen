@@ -35,6 +35,8 @@ const base = (x) => ({ [CFG]: Object.assign({ people, sousIds: ['sam'], pingIds:
 const full = () => Object.assign(base({ cutoffs: CUTS }), {
   [fsKey(['functions', 'bday'])]: fn({ name: 'Birthday 60th ' + P, date: today, start: '13:30', rounds: ['14:10', '15:00', '15:40'], lines: [['pizza-platter', 'Pizza Platter', [2, 2, 2]]] }),
   [fsKey(['functions', 'wed'])]: fn({ name: 'Wedding reception', date: tom, start: '18:00', rounds: ['18:30'], lines: [['pizza-platter', 'Pizza Platter', [4]]] }),
+  // 6 days out: in Coming up since it looks a week ahead (8 Nov 2026, the audit of the redesign)
+  [fsKey(['functions', 'quiz'])]: fn({ name: 'Quiz night', date: M.addDays(today, 6), start: '18:00', rounds: ['19:00'], lines: [['pizza-platter', 'Pizza Platter', [3]]] }),
   // Ann on Lunch at Larder, her break at 14:30 for 30 minutes
   [TEAM]: { day: today, on: [{ id: 'ann', sh: 'lunch', sec: 'larder' }, { id: 'sam', sh: 'lunch', sec: '' }], br: [{ id: 'ann', sh: 'lunch', at: 870, len: 30 }], v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam' },
   [fsKey(['notes', 'n1'])]: { text: 'Fryer 2 is down. Use fryer 1. ' + P, tag: 'none', start: today, until: today, dows: [], tm: 835, removed: false, at: 1, by: 'sam' }
@@ -67,6 +69,12 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
   let s = await secs(p);
   ok(s.join() === 'Larder:3 left,Grill:1 left,Sauce:2 left' && /0 of 6 done/.test(await txt(p, '#hm-prep .hm-pc') || ''), 'Prep by section: each section and its lines left, 0 of 6 done (' + s.join() + ')');
   ok(/Wedding reception/.test(await txt(p, '.hm-up') || '') && !/Birthday/.test(await txt(p, '.hm-up #fn-land') || ''), 'Coming up: tomorrow\'s wedding, not today\'s birthday the board shows');
+  // the audit of the redesign (8 Nov 2026): a week of functions and each supplier's next cut-off in Coming up, chevrons
+  ok(/Quiz night/.test(await txt(p, '.hm-up #fn-land') || ''), 'Coming up: a function 6 days out (Quiz night)');
+  const cuts = await p.$$eval('#hm-cuts li a', l => l.map(a => ({ t: a.textContent, href: a.getAttribute('href') })));
+  ok(cuts.length === 3 && cuts.some(c => /^.+ PFD Zz<i.* order closes 15:00$/.test(c.t) && /^#\/suppliers\/cutoff\/pfd\//.test(c.href)) && cuts.some(c => /B&E Chicken order closes 19:00$/.test(c.t)) && !(await p.$('#hm-cuts i#pwn')), 'Coming up: each supplier\'s next cut-off after today, as words, to its supplier order (' + JSON.stringify(cuts.map(c => c.t)) + ')');
+  const chev = await p.evaluate(() => [...document.querySelectorAll('#hm-board .hm-a')].map(a => ({ t: a.querySelector('.hm-t').textContent, chev: !!a.querySelector('.hm-chev'), tm: !!a.querySelector('.hm-tm') })));
+  ok(chev.length && chev.every(r => r.chev === !r.tm) && chev.some(r => r.chev), 'board rows with no time show a chevron, the timed ones none (' + JSON.stringify(chev.map(r => r.t.slice(0, 10) + ':' + r.chev)) + ')');
   const vb = await bad(p);
   ok(!vb.i && !vb.img && !vb.attr && !vb.run, 'the board shows the names as words, no markup (' + JSON.stringify(vb) + ')');
 
@@ -105,6 +113,7 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
   ok(sec.t === 'You are on Larder' && /^3 lines left · .+ first$/.test(sec.s) && sec.tm === '3' && sec.n === 'Left' && sec.href === '#/prep', 'staff: her section first, 3 lines left and which first (' + JSON.stringify(sec) + ')');
   ok(!!brk && brk.t === 'Your break' && brk.s === 'Back on Larder at 15:00' && brk.tm === '14:30' && brk.n === '30 min' && brk.hot && brk.tmd === 'day', 'staff: her break at 14:30, 30 min, opens Your day (' + JSON.stringify(brk) + ')');
   ok(!rows.some(r => /order closes/.test(r.t)), 'staff: no cut-off rows');
+  ok(!(await p.$('#hm-cuts li')) && await p.$eval('#hm-team', e => e.hidden).catch(() => true), 'staff: no cut-offs in Coming up and no On today card');
   await shut(p);
   await p.click('#hm-board .hm-a[data-tm="day"]'); await L.settle(p, 400);
   ok(!!(await p.$('.nt-wrap .nt')) && /Your day/.test(await txt(p, '.nt-wrap') || ''), 'the break row opens Your day');
@@ -127,6 +136,9 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
     const g = await p.evaluate(() => { const a = document.getElementById('hm-board').getBoundingClientRect(), c = document.getElementById('hm-prep').getBoundingClientRect(); return { side: c.left >= a.right - 1, below: c.top >= a.bottom - 1 }; });
     ok(!(await L.overflow(p)) && p.errors.length === 0 && (w >= 768 ? g.side : g.below), w + ' px: no sideways scroll, no errors, ' + (w >= 768 ? 'board and prep side by side' : 'prep under the board') + ' (' + JSON.stringify(g) + ') ' + p.errors.join(' | '));
     ok(await p.$$eval('#hm-board .hm-a, #hm-prep .hm-sec', l => l.every(e => e.getBoundingClientRect().height >= 44 - .1)), w + ' px: every row is at least 44 px high');
+    // On today, drawn on the laptop: who is on each section with their breaks, for the chef; not on a phone
+    const team = await p.evaluate(() => { const e = document.getElementById('hm-team'); return e ? { shown: getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0, text: e.innerText } : null; });
+    ok(!!team && (w >= 768 ? team.shown && /Larder/.test(team.text) && /Ann/.test(team.text) && /break 14:30/.test(team.text) && /Lunch/.test(team.text) : !team.shown), w + ' px: On today ' + (w >= 768 ? 'shows Ann on Larder with her break' : 'is not on a phone') + ' (' + JSON.stringify(team && team.text.slice(0, 80)) + ')');
     await p.context().close();
   }
 

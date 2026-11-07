@@ -587,7 +587,7 @@
       '<main id="main" class="wall-main"><h2 class="wall-h hm-day" id="rtitle" tabindex="-1">' + esc(dt.toLocaleDateString('en-AU', { weekday: 'long' })) + '</h2><p class="wall-date">' + esc(dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })) + ' · <span id="hm-time">' + esc(T.clock(T.now())) + '</span></p>' +
       minCard() + (window.LK_FN && window.LK_FN.checkSlot ? window.LK_FN.checkSlot() : '') +
       // kb-home: where the celebrations hang their note (before it) and their Coming up line (in its slot)
-      '<div class="hm kb-home">' + P.homeSlot() + '<section class="hm-paper hm-up" aria-labelledby="hm-up-h"><div class="hm-ph"><h3 class="hm-pt" id="hm-up-h">Coming up</h3></div><div class="hm-kb" data-kb-coming-slot></div>' + (window.LK_FN ? window.LK_FN.landSlot(true) : '') + '</section></div>' +
+      '<div class="hm kb-home">' + P.homeSlot() + '<section class="hm-paper hm-up" aria-labelledby="hm-up-h"><div class="hm-ph"><h3 class="hm-pt" id="hm-up-h">Coming up</h3></div><div class="hm-kb" data-kb-coming-slot></div>' + (P.homeCutSlot ? P.homeCutSlot() : '') + (window.LK_FN ? window.LK_FN.landSlot(true) : '') + '</section></div>' +
       installCard() + '<p class="wall-foot">Cook as written. Check with the head chef or sous chef before changing anything.</p></main>' + tabBar() + '</div>';
   }
   function viewLanding() {

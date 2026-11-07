@@ -1033,7 +1033,8 @@
   var landHome = false;   // the landing card sits on Home's board page (no band there): set by landSlot(), checked by paint()
   function landHTML() {
     if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
-    var t = now(), today = kday(t), tom = addDays(today, 1), end = addDays(today, 3), R = bandRows(t), inBand = {};
+    // Home's Coming up looks a week ahead, as drawn (8 Nov 2026, the audit of the redesign); the old landing kept 3 days
+    var t = now(), today = kday(t), tom = addDays(today, 1), end = addDays(today, landHome ? 7 : 3), R = bandRows(t), inBand = {};
     if (landHome) fnHomeRows().forEach(function (x) { if (x.kind !== 'order') inBand[x.id] = 1; });
     else {
       R.a.forEach(function (x) { if (x.kind === 'on') inBand[x.f.id] = 1; });
