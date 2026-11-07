@@ -54,7 +54,7 @@ const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.n
   await tap(p, '[data-p="tm-on"][data-id="ann"]'); await L.settle(p, 200);
   ok(await pick(p, 'tm-sec:ann', 'grill'), 'page: Ann on Lunch gets a section picker');
   ok(await onShift(p, 'sam'), 'page: Sam is ticked onto Lunch');
-  ok(!(await p.$('select[data-k="tm-sec:sam"]')), 'page: a sous chef has no section picker (their section is their role)');
+  ok(await p.$eval('select[data-k="tm-sec:sam"]', e => e.value === '' && e.options[0].textContent === 'Sous chef'), 'page: a sous chef has a section picker too, starting on their role');
   await tap(p, '[data-p="tm-addbr"][data-id="ann"]'); await L.settle(p, 200);
   ok(await pick(p, 'tm-at:ann:0', 870) && await pick(p, 'tm-len:ann:0', 45), 'page: Ann gets a break at 14:30 for 45 minutes');
   await L.settle(p, 150);
@@ -202,6 +202,51 @@ const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.n
   await L.waitFor(p, () => !!document.querySelector('.nb-tmday'), null, 8000);
   ok(await txt(p, '.nb-tmday') === 'Dinner: Pans · Break 19:00', 'dinner: at 16:30 her Dinner section and break (' + (await txt(p, '.nb-tmday')) + ')');
   ok(p.errors.length === 0, 'dinner: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // Chefs take a section too, and split shifts (head chef, 7 Nov 2026): a Day shift of 10:00 to 22:00 starts Spread
+  // them on a 2.5 hour split 4.5 hours in; splits and meal breaks spread apart; + Break starts with the split
+  const DAY = [{ id: 'day', name: 'Day', from: 600, to: 1320, off: false }];
+  p = await L.open(b, '#/team', { who: 'sam', extra: cfg({ kitShifts: DAY }), wait: 1800 });
+  await tap(p, '[data-p="tm-on"][data-id="ann"]'); await L.settle(p, 200);
+  await onShift(p, 'bo'); await onShift(p, 'sam');
+  ok(await pick(p, 'tm-sec:sam', 'pans'), 'chef section: Sam puts himself on Pans');
+  ok(await p.$eval('select[data-k="tm-spfrom"]', e => e.value) === '870' && await p.$eval('select[data-k="tm-splen"]', e => e.value) === '150' && await p.$eval('select[data-k="tm-spmode"]', e => e.value) === '0', 'split: on a 10:00 to 22:00 shift Spread them starts on a 2.5 hour split at 14:30, all together');
+  await tap(p, '[data-p="tm-addbr"][data-id="sam"]'); await L.settle(p, 200);
+  ok(await p.$eval('select[data-k="tm-len:sam:0"]', e => e.value) === '150' && await p.$eval('select[data-k="tm-at:sam:0"]', e => e.value) === '870', '+ Break: on a long shift the first one is the split');
+  await tap(p, '[data-p="tm-spread"]'); await L.settle(p, 200);
+  ok(/3 splits from 14:30, all together/.test(await txt(p, '.tm-save') || ''), 'split: Spread them, all together (' + (await txt(p, '.tm-save')) + ')');
+  await pick(p, 'tm-spfrom', 1080); await pick(p, 'tm-splen', 30); await pick(p, 'tm-spmode', '2'); await L.settle(p, 100);
+  await tap(p, '[data-p="tm-spread"]'); await L.settle(p, 200);
+  ok(/3 breaks from 18:00, two at a time/.test(await txt(p, '.tm-save') || ''), 'split: then the meal breaks, two at a time, keeping the splits (' + (await txt(p, '.tm-save')) + ')');
+  ok(await p.$$eval('[data-p="tm-addbr"]', e => e.length) === 3, 'split: a third break can still be added');
+  await tap(p, '[data-p="tm-save"]');
+  await L.waitFor(p, k => !!window.__fake.dump()[k], TEAM, 8000);
+  s = (await store(p))[TEAM];
+  ok(JSON.stringify(s.on.filter(o => o.id === 'sam')) === JSON.stringify([{ id: 'sam', sh: 'day', sec: 'pans' }]), 'chef section: saved (' + JSON.stringify(s.on) + ')');
+  ok(JSON.stringify(s.br) === JSON.stringify([{ id: 'ann', sh: 'day', at: 870, len: 150 }, { id: 'bo', sh: 'day', at: 870, len: 150 }, { id: 'sam', sh: 'day', at: 870, len: 150 }, { id: 'ann', sh: 'day', at: 1080, len: 30 }, { id: 'sam', sh: 'day', at: 1080, len: 30 }, { id: 'bo', sh: 'day', at: 1110, len: 30 }]), 'split: the splits and the meal breaks saved, chefs first, two at a time (' + JSON.stringify(s.br) + ')');
+  ok(p.errors.length === 0, 'split: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  // what Ann and Sam see: the split with the time they are back, every break left in Your day, Sam's section
+  const dayPlan = { day: today, on: [{ id: 'ann', sh: 'day', sec: 'grill' }, { id: 'sam', sh: 'day', sec: 'pans' }], br: [{ id: 'ann', sh: 'day', at: 870, len: 150 }, { id: 'ann', sh: 'day', at: 1080, len: 30 }], v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam' };
+  p = await L.open(b, '#/prep', { who: 'ann', extra: Object.assign(cfg({ kitShifts: DAY }), { [TEAM]: dayPlan }), wait: 1800 });
+  await L.waitFor(p, () => !!document.querySelector('.nb-tmday'), null, 8000);
+  ok(await txt(p, '.nb-tmday') === 'Day: Grill · Split 14:30 to 17:00', 'split, staff: her day line (' + (await txt(p, '.nb-tmday')) + ')');
+  c = await chip(p);
+  ok(!!c && c.due, 'split, staff: the chip is filled 30 minutes before her split');
+  await p.click('.wtop .tm-chip'); await L.settle(p, 400);
+  const sday = await txt(p, '.tm-dw .nt') || '';
+  ok(/Split\s*14:30 to 17:00\s*2\.5 hours/.test(sday) && /Break\s*18:00\s*30 minutes/.test(sday), 'split, Your day: the split and the meal break after it (' + sday + ')');
+  await p.keyboard.press('Escape'); await L.settle(p, 300);
+  ok(p.errors.length === 0, 'split, staff: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  p = await L.open(b, '#/prep', { who: 'ann', extra: Object.assign(cfg({ kitShifts: DAY }), { [TEAM]: dayPlan }), clock: L.NOW + 60 * 60000, wait: 1800 });
+  await L.waitFor(p, () => !!document.querySelector('.nb-tmday'), null, 8000);
+  ok(await txt(p, '.nb-tmday') === 'Day: Grill · On split, back 17:00', 'split, staff: during it, when she is back (' + (await txt(p, '.nb-tmday')) + ')');
+  await p.context().close();
+  p = await L.open(b, '#/prep', { who: 'sam', extra: Object.assign(cfg({ kitShifts: DAY }), { [TEAM]: dayPlan }), wait: 1800 });
+  await L.waitFor(p, () => !!document.querySelector('.nb-tmday'), null, 8000);
+  ok(await txt(p, '.nb-tmday') === 'Day: Pans', 'chef section: Sam\'s day line names his section, not his role (' + (await txt(p, '.nb-tmday')) + ')');
   await p.context().close();
 
   // Step 4, the nightly training numbers (teamsum/main): on the chef's page a cook's usual section for today's weekday
