@@ -5269,11 +5269,19 @@
     var items = d.people.map(function (p, i) { return { p: p, i: i }; });
     return lvHTML({
       key: 'staff', items: items, step: 15, tools: 10, noun: ['person', 'people'], ph: 'Search names', empty: 'No names yet.',
-      find: function (o) { return o.p.name; },
+      find: function (o) { return o.p.name + ' ' + ((ROLES[o.p.role] || {}).name || ''); },
+      // no filter row (8 Nov 2026): the shared filter chips re-form into a picker after each redraw, which moved Save under
+      // a held tap while a new name was typed; a kitchen's list is short and the search finds a name or a role
       sorts: [['order', 'Order added', function (a, b) { return a.i - b.i; }], ['name', 'Name A to Z', function (a, b) { return (b.p.isNew ? 1 : 0) - (a.p.isNew ? 1 : 0) || String(a.p.name).toLowerCase().localeCompare(String(b.p.name).toLowerCase()); }]],
+      // a row each (8 Nov 2026, redesign step 7, Linear lists): their initial, the name, and the role with what they may do
+      // in plain words, read from the team list as saved (only the head chef changes roles and what people may do)
       card: function (o) {
-        return '<li class="a-person"><div class="a-top">' + (o.p.isNew ? '<label class="visually-hidden" for="a-n' + o.i + '">Name</label><input id="a-n' + o.i + '" class="search a-name" data-k="a-n' + o.i + '" data-a="name" data-i="' + o.i + '" value="' + esc(o.p.name) + '" maxlength="40">' : '<span class="a-name-ro">' + esc(o.p.name) + '</span>') +
-          removePersonBtn(o.p, o.i) + '</div></li>';
+        var r = ROLES[o.p.role] || ROLES.staff, chef = isSousP(o.p) || isHeadP(o.p), ini = String(o.p.name || '').trim().charAt(0).toUpperCase();
+        var can = [o.p.add ? 'add' : '', o.p.tick ? 'tick' : '', o.p.del ? 'remove' : ''].filter(Boolean).join(', ');
+        var line = r.name + ' · ' + (can ? can.charAt(0).toUpperCase() + can.slice(1) : 'Reads only') + (o.p.fn ? ' · Functions' : '');
+        return '<li class="a-person st-row"><span class="st-av' + (chef ? ' is-chef' : '') + '" aria-hidden="true">' + esc(ini || '?') + '</span><div class="st-w"><div class="a-top">' +
+          (o.p.isNew ? '<label class="visually-hidden" for="a-n' + o.i + '">Name</label><input id="a-n' + o.i + '" class="search a-name" data-k="a-n' + o.i + '" data-a="name" data-i="' + o.i + '" value="' + esc(o.p.name) + '" maxlength="40">' : '<span class="a-name-ro">' + esc(o.p.name) + '</span>') +
+          '</div>' + (o.p.isNew ? '<small class="st-can">New: starts as Staff</small>' : '<small class="st-can">' + esc(line) + '</small>') + '<div class="st-acts">' + removePersonBtn(o.p, o.i) + '</div></div></li>';
       }
     });
   }
@@ -7284,9 +7292,15 @@
     return out.join('');
   }
   // isNew: not in what was last seen on this phone today (a ping with its own time pops up again with the others)
+  /* A ping as an inbox row since 8 Nov 2026 (redesign step 7, Linear's inbox): a dot while it is new to this phone, the
+     words, who it is for and who sent it, and the time it came on (its own time, or when it popped up). A Safety, Allergen
+     or Off ping keeps its tag. Worked out from the ping itself, no reads. */
   function noteRowHTML(n, isNew) {
-    var tm = noteTm(n);
-    return '<li class="nt-i t-' + esc(n.tag || 'none') + '"><span class="nt-tags">' + (isNew ? '<span class="nt-tag nt-new">New</span> ' : '') + '<span class="nt-tag">' + esc(noteTagName(n.tag) + (tm != null ? ' ' + tmText(tm) : '')) + '</span></span><p>' + linkNote(n.text) + '</p></li>';
+    var tm = noteTm(n), at = tm != null ? tm : noteFrom(n, dayNow()), by = personName(n.author || n.by);
+    var who = directNote(n.id) && n.to === S.who ? 'To you' : noteAudience(n);
+    var tag = n.tag && n.tag !== 'none' ? '<span class="nt-tag">' + esc(noteTagName(n.tag)) + '</span> ' : '';
+    return '<li class="nt-i t-' + esc(n.tag || 'none') + (isNew ? ' is-new' : '') + '">' + (isNew ? '<span class="visually-hidden">New. </span>' : '') + '<span class="nt-dot" aria-hidden="true"></span>' +
+      '<div class="nt-w"><p>' + linkNote(n.text) + '</p><span class="nt-meta">' + tag + esc(who + (by ? ' · from ' + by : '')) + '</span></div><time class="nt-at">' + esc(tmText(at)) + '</time></li>';
   }
   /* The pings sheet (23 Oct 2026). One sheet for what the team is told: the pings on now, then the minutes this person
      still has to sign. It slides up from the bottom on a phone and a tablet, and sits in the middle on a laptop. It opens:
@@ -7319,7 +7333,10 @@
     var out = '<header class="nt-head"><span class="nt-eb">' + esc(p ? p.name : 'Leichhardt Hotel Kitchen') + '</span><h2 class="nt-h" id="nt-h">' + h + '</h2><span class="nt-date">' + esc(pv ? pv.label : parseYmd(t).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })) + '</span></header><div class="nt-body">';
     if (!pv && showPings && (notesFailed() || S.nPrivateError)) out += '<p class="warn" role="status">' + esc(notesFailed() ? 'Could not check the pings. Check the signal.' : S.nPrivateError) + ' <button type="button" class="btn" data-note="refresh">Refresh pings</button></p>';
     if (showPings && list.length) {
-      out += '<ul class="nt-list">' + list.map(function (n) { return noteRowHTML(n, step === 'pings' && !pv && !!el.lkWas && el.lkWas.indexOf(n.id + ':' + (n.upd || n.at || 0)) < 0); }).join('') + '</ul>';
+      // the dot (and "New" for a screen reader): not read on this phone yet today (8 Nov 2026, the inbox look); before, only
+      // a ping that popped up after the others were read was marked New
+      var unread = pv ? [] : noteNew().map(function (n) { return n.id + ':' + (n.upd || n.at || 0); });
+      out += '<ul class="nt-list">' + list.map(function (n) { return noteRowHTML(n, unread.indexOf(n.id + ':' + (n.upd || n.at || 0)) >= 0); }).join('') + '</ul>';
       if (!pv) out += '<div class="nt-sum" id="nt-sum"></div>';   // filled in by noteDraw, so a tick elsewhere does not redraw the sheet
     } else if (showPings && !mins.length && !S.nPrivateError && !notesFailed()) out += '<p class="nt-none">No pings right now. Each ping is on for 30 minutes, then it is gone.</p>';
     if (step === 'pings' && mins.length) out += '<p class="nt-next">Next: ' + (mins.length === 1 ? 'minutes to sign' : 'minutes from ' + mins.length + ' meetings to sign') + '</p>';
@@ -7944,7 +7961,9 @@
       ((m.v || 1) > 1 ? '<p class="mn-changed">These minutes were changed after they were first published (version ' + m.v + '). If you signed before, read them again and sign this version.</p>' : '') +
       (mineN ? '<p class="mn-mine">Your actions: ' + mineN + ', marked Yours above.</p>' : '') +
       '<p>' + (st === 'present' ? 'I attended and have read and understood these minutes.' : 'I have read and understood these minutes.') + '</p>' +
-      '<button type="button" class="btn dark mn-signbtn" data-p="mn-sign" data-id="' + esc(m.id) + '"' + (S.mSigning ? ' disabled' : '') + '>Sign as ' + esc(p.name) + '</button>' +
+      // who is signing beside the button, with Not you? for the shared tablet (8 Nov 2026, council round 3, row 17)
+      '<div class="mn-signrow"><p class="mn-as">Signing as <b>' + esc(p.name) + '</b>. ' + notYouHTML() + '</p>' +
+      '<button type="button" class="btn dark mn-signbtn" data-p="mn-sign" data-id="' + esc(m.id) + '"' + (S.mSigning ? ' disabled' : '') + '>Sign as ' + esc(p.name) + '</button></div>' +
       '<span class="mn-err" role="status" id="mn-pinmsg">' + esc(S.mErr) + '</span><p class="hint">Your name, the version and the time are recorded. Apology and absent staff sign too.</p></section>';
   }
   /* the way to the register for a chef: the admin Minutes tab on the head chef's Google device (where minutes are
@@ -7960,7 +7979,9 @@
     loadMinutes();
     var p = me(), list = mnPub();
     // with minutes to read, the register link sits in the top bar (22 Oct 2026: it replaced the Minutes register in the chef hat menu)
-    var top = '<div class="nb-top mn-noprint"><span>' + (p ? 'Signing as <strong>' + esc(p.name) + '</strong>' : '') + '</span><span class="p-links">' + (list.length ? mnRegLink(true) : '') + notYouHTML() + '</span></div>';
+    // since 8 Nov 2026 (redesign step 7) "Signing as" and Not you? sit beside the Sign button at the end (mnSignHTML), so the
+    // top bar only carries See who has signed, for chefs
+    var reg = list.length ? mnRegLink(true) : '', top = reg ? '<div class="nb-top mn-noprint"><span></span><span class="p-links">' + reg + '</span></div>' : '';
     // loading and nothing published yet: the same notebook card as the order list and wastage
     function card(msg) {
       return top + '<section class="nb-page o-page mn-empty"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Meeting minutes</h2><span class="nb-date">Last ' + MN_DAYS + ' days</span></div></header>' +
@@ -9098,13 +9119,30 @@
       (admin ? '<p class="g-chg g-noprint"><button type="button" class="p-x g-chg-a" data-p="g-change" data-id="' + esc(g.id) + '">' + pen + '<span>' + (armed('g-change:' + g.id) ? 'Not saved. Tap again' : 'Change this guide') + '</span></button></p>' : '') + '</header>' +
       (g.id === G_FOOD.id ? foodRuleHTML() : '') +
       (g.id === G_SMOKE.id ? '<p class="g-noprint"><a class="btn" href="guides/smoke-prep-and-setup.pdf" download>Download printable sheets (PDF)</a></p>' : '') +
-      (steps.length ? '<section class="g-steps"><h3 class="g-h3">Steps</h3><ol class="g-ol">' + steps.map(function (t) { return '<li><span class="g-c" aria-hidden="true"></span><span>' + linkNote(t) + '</span></li>'; }).join('') + '</ol></section>' : '') +
+      (steps.length ? gStepsHTML(g, steps, pv, n) : '') +
       (n ? '<section class="g-pages" aria-label="Pages"><p class="hint g-noprint">' + (n > 1 ? n + ' pages. ' : '') + 'Tap a page to open it big.</p>' +
         (n > 2 ? '<div class="g-thumbs g-noprint">' + pv.urls.slice(0, n).map(function (u, k) { return u ? '<button type="button" class="g-thumb" data-p="g-zoom" data-i="' + k + '" aria-label="' + esc('Open page ' + (k + 1) + ' big') + '"><img src="' + esc(u) + '" alt=""><span>' + (k + 1) + '</span></button>' : ''; }).join('') + '</div>' : '') + figs +
         (pv.state === 'error' ? '<p class="p-err g-noprint">Could not load the pages. Check the connection. <button type="button" class="p-x" data-p="g-retry">Try again</button></p>' : '') + '</section>' : '') +
       (cards.length ? '<section class="g-rec g-noprint"><h3 class="g-h3">On these recipe cards</h3><div class="g-rchips">' + cards.map(function (r) { return '<a class="g-rchip" href="#/r/' + esc(r.id) + '">' + esc(r.name) + '</a>'; }).join('') + '</div></section>' : '') + '</article>';
   }
 
+  /* A guide's written steps (8 Nov 2026, redesign step 7, Headspace and Duolingo): it opens on All steps, as before; with
+     two steps or more, Step by step shows one step at a time, big, with the guide's own page beside it when it has pages
+     (the step's page, or the last one), the steps as a bar, and Back and Next at the thumb. Which step is open is kept in
+     memory for this guide only: nothing is saved and nothing is read. */
+  var gStep = { id: '', i: -1 };
+  function gStepsHTML(g, steps, pv, n) {
+    var on = gStep.id === g.id && gStep.i >= 0 && steps.length > 1, i = on ? Math.min(gStep.i, steps.length - 1) : 0;
+    var sw = steps.length > 1 ? '<div class="g-mode g-noprint" role="group" aria-label="How to show the steps"><button type="button" class="chip" data-p="g-mode" data-v="all" aria-pressed="' + !on + '">All steps</button><button type="button" class="chip" data-p="g-mode" data-v="one" aria-pressed="' + on + '">Step by step</button></div>' : '';
+    if (!on) return '<section class="g-steps"><div class="g-sh"><h3 class="g-h3">Steps</h3>' + sw + '</div><ol class="g-ol">' + steps.map(function (t) { return '<li><span class="g-c" aria-hidden="true"></span><span>' + linkNote(t) + '</span></li>'; }).join('') + '</ol></section>';
+    var u = n ? pv.urls[Math.min(i, n - 1)] : '', d = n ? (g.dims || [])[Math.min(i, n - 1)] || { w: 1414, h: 2000 } : null;
+    return '<section class="g-steps g-one" aria-live="polite"><div class="g-sh"><h3 class="g-h3">Step ' + (i + 1) + ' of ' + steps.length + '</h3>' + sw + '</div>' +
+      '<div class="g-bar" aria-hidden="true">' + steps.map(function (t, k) { return '<i' + (k <= i ? ' class="on"' : '') + '></i>'; }).join('') + '</div>' +
+      (u ? '<figure class="g-onepg"><button type="button" class="g-pgb" data-p="g-zoom" data-i="' + Math.min(i, n - 1) + '" aria-label="' + esc('Open page ' + (Math.min(i, n - 1) + 1) + ' big') + '"><img src="' + esc(u) + '" width="' + (+d.w || 1414) + '" height="' + (+d.h || 2000) + '" alt="' + esc('Page ' + (Math.min(i, n - 1) + 1) + ' of ' + g.title) + '"></button><figcaption>From the guide, page ' + (Math.min(i, n - 1) + 1) + '</figcaption></figure>' : '') +
+      '<p class="g-onetxt">' + linkNote(steps[i]) + '</p>' +
+      '<div class="g-nav g-noprint"><button type="button" class="btn" data-p="g-step" data-v="' + (i - 1) + '"' + (i ? '' : ' disabled') + '>Back</button>' +
+      (i < steps.length - 1 ? '<button type="button" class="btn dark" data-p="g-step" data-v="' + (i + 1) + '">Next step</button>' : '<button type="button" class="btn dark" data-p="g-mode" data-v="all">All steps</button>') + '</div></section>';
+  }
   /* A page opened big: over everything (appended to the body, so page redraws leave it alone), Previous and Next, Fit or Full size.
      Its clicks use data-gz. Escape or Close shuts it. Pinching zooms further on a phone. */
   var gz = null;
@@ -9648,7 +9686,8 @@
   /* who is on today, the order, then everyone else behind a note */
   function dkTeamHTML() {
     var all = dkTeam(), on = all.filter(function (p) { return dkToday(p.id); }), off = all.filter(function (p) { return !dkToday(p.id); });
-    return dkCount('On today', on.length) + dkListHTML(on, true) + dkRunHTML() +
+    // the order first, as a docket to read out at the counter (8 Nov 2026, redesign step 7), then who is on today
+    return dkRunHTML() + dkCount('On today', on.length) + dkListHTML(on, true) +
       (!off.length ? '' : dkAll ? dkCount('Not signed in today', off.length) + dkListHTML(off, false) + '<button type="button" class="dr-more" data-p="dk-all" aria-expanded="true">Hide them</button>'
         : '<button type="button" class="dr-more" data-p="dk-all" aria-expanded="false">Not signed in today: ' + off.length + ' more. Show them</button>');
   }
@@ -9665,7 +9704,8 @@
   function dkRunHTML() {
     var l = dkRunList();
     if (!l.length) return '';
-    return '<div class="dr-run"><h3 class="ml-h3">The order</h3><ul class="dr-order">' + dkGroups(l).map(function (x) {
+    var g = dkGroups(l), n = g.reduce(function (t, x) { return t + x.n; }, 0);
+    return '<div class="dr-run"><h3 class="ml-h3 dr-oh">The order<span class="dr-n">' + n + (n === 1 ? ' drink' : ' drinks') + ' · ' + l.length + (l.length === 1 ? ' person' : ' people') + '</span></h3><ul class="dr-order">' + g.map(function (x) {
       return '<li><b>' + x.n + ' x</b> ' + esc(x.t) + '</li>';
     }).join('') + '</ul></div>';
   }
@@ -9673,7 +9713,7 @@
     dkLoad();
     var mine = dkMine(), sum = dkSum(mine);
     var top = dkEditing ? dkFormHTML(false)
-      : '<div class="dr-mine"><span class="dr-txt"><span class="label">Your usual</span><span class="dr-what">' + (sum ? esc(sum) : dkList ? 'Not set yet.' : 'Loading...') + '</span></span>' +
+      : '<div class="dr-mine"><span class="dr-txt"><span class="label">Your usual' + (sum && dkToday(S.who) ? ' · you\'re in' : '') + '</span><span class="dr-what">' + (sum ? esc(sum) : dkList ? 'Not set yet.' : 'Loading...') + '</span></span>' +
         '<button type="button" class="dr-chg" data-p="dk-edit">' + (sum ? 'Change' : 'Set my usual') + '</button></div>';
     var team = !dkList ? (dkErr ? '<p class="p-err">Could not load the team\'s drinks. Check the connection.</p><div class="btn-row"><button type="button" class="btn" data-p="dk-retry">Try again</button></div>' : '<p class="hint">Loading...</p>')
       : dkTeamHTML();
@@ -10707,6 +10747,9 @@
       S.gq = ''; draw(); focusK('g-q'); return;
     }
     if (a === 'g-zoom') { var gzg = gById(S.gSel); if (gzg) gzOpen(gzg.id, i); return; }
+    // a guide's steps: All steps, or Step by step with Back and Next (in memory only)
+    if (a === 'g-mode') { gStep = el.getAttribute('data-v') === 'one' ? { id: S.gSel, i: 0 } : { id: '', i: -1 }; draw(); focusSel(el.getAttribute('data-v') === 'one' ? '[data-p="g-step"]:not([disabled])' : '[data-p="g-mode"][data-v="all"]'); return; }
+    if (a === 'g-step') { var gsv = +el.getAttribute('data-v'); if (gsv >= 0) { gStep = { id: S.gSel, i: gsv }; draw(); focusSel('[data-p="g-step"][data-v="' + (gsv + 1) + '"], [data-p="g-mode"][data-v="all"].btn, [data-p="g-step"]:not([disabled])'); } return; }
     if (a === 'g-retry') { var grg = gById(S.gSel); if (grg) { delete gPg[grg.id + ':' + (grg.v || 1)]; draw(); } return; }
     if (a === 'g-admin') { S.atab = 'guides'; lsSet('lk.prep.atab', 'guides'); location.hash = '#/admin'; return; }
     if (a === 'g-change') {
@@ -11095,7 +11138,8 @@
   var ML_CATS = [['safety', 'Food safety'], ['equipment', 'Equipment'], ['stock', 'Stock or supplier'], ['recipe', 'Recipe or card'], ['roster', 'Roster request put in'], ['idea', 'Idea'], ['other', 'Other']];
   var ML_PRI = [['today', 'Today'], ['week', 'This week'], ['any', 'Whenever']];
   var ML_MAX = 600, ML_STALE = 30 * 60000, ML_NUDGE = 10 * 3600000, ML_DONE_DAYS = 30, ML_KEEP = 60 * 86400000, ML_SENT_MAX = 40;
-  var mlf = { cat: '', pri: 'week', text: '' }, mlMsg = '', mlBusy = false, mlStatAt = 0, mlStatBusy = false;
+  /* nothing is picked for the person (8 Nov 2026, council round 3, row 18): How soon starts empty and Send asks for it */
+  var mlf = { cat: '', pri: '', text: '' }, mlMsg = '', mlBusy = false, mlStatAt = 0, mlStatBusy = false;
   // mlDoneIn: the done list came in from the server at least once (a tick alone does not make it the whole list)
   var mlOpen = null, mlErr = false, mlDone = null, mlDoneIn = false, mlDoneBusy = false, mlDoneErr = false, mlAt = 0, mlBusyR = false, mlDoneAt = 0, mlOpened = +(lsGet('lk.mail.opened') || 0), mlOpenedW = 0, mlPop = null, mlPrev = null, mlLastN = -1;
   function mlCat(id) { var c = ML_CATS.filter(function (x) { return x[0] === id; })[0]; return c ? c[1] : 'Other'; }
@@ -11127,10 +11171,11 @@
     var t = mlf.text.replace(/^\s+|\s+$/g, ''), p = who();
     if (mlBusy || !fb || !p) return;
     if (!mlf.cat) { mlMsg = 'Pick what it is about first.'; draw(); return; }
+    if (!mlf.pri) { mlMsg = 'Pick how soon it matters first.'; draw(); return; }
     if (!t) { mlMsg = 'Write a few words first.'; draw(); focusK('ml-text'); return; }
-    var ref = fb.fs.doc(colRef('mail')), id = ref.id, at = now(), cat = mlf.cat, pri = mlf.pri || 'week', text = t.slice(0, ML_MAX), w = S.who;
+    var ref = fb.fs.doc(colRef('mail')), id = ref.id, at = now(), cat = mlf.cat, pri = mlf.pri, text = t.slice(0, ML_MAX), w = S.who;
     var all = mlSentAll(); all.unshift({ id: id, w: w, cat: cat, pri: pri, text: text, at: at, p: 1 }); mlSentSave(all);
-    mlf = { cat: '', pri: 'week', text: '' }; mlBusy = true; mlMsg = ''; draw();
+    mlf = { cat: '', pri: '', text: '' }; mlBusy = true; mlMsg = ''; draw();
     W([['set', ref, { from: w, cat: cat, pri: pri, text: text, at: at, done: false, seen: false }], ['set', mlStatRef(id), { seen: false, done: false }]]).then(function () {
       mlBusy = false; mlSentPatch(id, { p: 0 }); toast('Sent. Thanks for letting Chef know.');
     }, function (e) {
@@ -11142,9 +11187,10 @@
   function mlSentHTML() {
     var l = mlMine();
     if (!l.length) return '';
-    return '<section class="p-card ml-sent"><h3 class="ml-h3">What you sent</h3><p class="hint">Seen means Chef has read it. Done means it has been dealt with. Kept on this phone for 60 days.</p><ul class="ml-sl">' + l.map(function (x) {
+    return '<section class="p-card ml-sent"><h3 class="ml-h3">Your mail</h3><p class="hint">Seen means Chef has read it. Done means it has been dealt with. Kept on this phone for 60 days.</p><ul class="ml-sl">' + l.map(function (x) {
       var st = x.p ? ['wait', 'Sending'] : x.d ? ['done', 'Done'] : x.s ? ['seen', 'Seen'] : ['sent', 'Sent'];
-      return '<li class="ml-si"><div class="ml-meta"><span class="ml-cat c-' + esc(x.cat) + '">' + esc(mlCat(x.cat)) + '</span><span class="ml-when">' + esc(mlWhen(x.at)) + '</span><span class="ml-st st-' + st[0] + '">' + st[1] + '</span></div><p class="ml-text">' + esc(x.text) + '</p></li>';
+      // a row like an inbox (8 Nov 2026, Linear): the words, then what it is about and when, its state on the right
+      return '<li class="ml-si"><div class="ml-sw"><p class="ml-text">' + esc(x.text) + '</p><div class="ml-meta"><span class="ml-cat c-' + esc(x.cat) + '">' + esc(mlCat(x.cat)) + '</span><span class="ml-when">' + esc(mlWhen(x.at)) + '</span></div></div><span class="ml-st st-' + st[0] + '">' + st[1] + '</span></li>';
     }).join('') + '</ul></section>';
   }
   function mailPageHTML() {
@@ -11507,12 +11553,14 @@
   function todoRow(x) {
     var done = x.st === 'done', due = tdDue(x.due), late = tdLate(x), today = !done && due === dayNow(), id = esc(x.id), meta = [];
     if (tdForOk(x.for)) meta.push('<span class="todo-tag">For ' + esc(mnName(x.for)) + '</span>');
-    if (due && !done) meta.push('<span class="todo-due' + (late ? ' is-late' : today ? ' is-today' : '') + '">' + (late ? 'Was due ' + esc(dayShort(due)) : today ? 'Due today' : 'Due ' + esc(dayShort(due))) + '</span>');
+    // the day as a tag on the right of the row (8 Nov 2026, Things 3): Due today and Was due in orange, a later day plain,
+    // nothing for a job with no day
+    var dueTag = due && !done ? '<span class="todo-due' + (late ? ' is-late' : today ? ' is-today' : '') + '">' + (late ? 'Was due ' + esc(dayShort(due)) : today ? 'Due today' : 'Due ' + esc(dayShort(due))) + '</span>' : '';
     meta.push(done ? '<span class="todo-by">Done by <b>' + esc(tdName(x.doneBy)) + '</b> ' + esc(mlWhen(tdNum(x.doneAt))) + '</span>'
       : '<span class="todo-by">Added by <b>' + esc(tdName(x.from)) + '</b> ' + esc(ago(tdNum(x.at))) + '</span>');
     return '<li class="todo-row' + (done ? ' is-done' : '') + (late ? ' is-late' : '') + '">' +
       '<button type="button" class="todo-tick" data-p="todo-tick" data-id="' + id + '" aria-pressed="' + done + '" aria-label="' + esc((done ? 'Untick: ' : 'Tick off: ') + String(x.text || '').slice(0, 40)) + '">' + TICK + '</button>' +
-      '<div class="todo-body"><p class="todo-text">' + esc(x.text) + '</p><div class="todo-meta">' + meta.join('') + '</div>' +
+      '<div class="todo-body"><div class="todo-top"><p class="todo-text">' + esc(x.text) + '</p>' + dueTag + '</div><div class="todo-meta">' + meta.join('') + '</div>' +
       '<div class="todo-acts">' + (done ? '' : '<button type="button" class="p-link" data-p="todo-edit" data-id="' + id + '">' + (armed('todo-edit:' + x.id) ? 'Not saved. Tap again' : 'Change') + '</button>') +
       '<button type="button" class="p-link" data-p="todo-del" data-id="' + id + '">' + (armed('todo-del:' + x.id) ? 'Not saved. Tap again to remove' : 'Remove') + '</button></div></div></li>';
   }
@@ -11530,13 +11578,15 @@
       '<button type="button" class="chip" data-p="todo-for" data-v="" aria-pressed="' + !tdf.fr + '">Anyone</button>' + chefs.map(function (p) {
         return '<button type="button" class="chip" data-p="todo-for" data-v="' + esc(p.id) + '" aria-pressed="' + (tdf.fr === p.id) + '">' + esc(p.name) + '</button>';
       }).join('') + '</div></div>' : '';
+    // a one-line add (8 Nov 2026, redesign step 7, Things 3): the day, who it is for and Add show once the job has words,
+    // or while a job is being changed (CSS: .todo-more under an empty box is hidden)
     return '<section class="todo-add' + (editing ? ' is-edit' : '') + '" aria-label="' + (editing ? 'Change a job' : 'Add a job') + '">' +
-      '<div class="field"><label class="label" for="todo-text">' + (editing ? 'Change the job' : 'New job') + '</label><textarea id="todo-text" class="todo-ta" data-k="todo-text" rows="2" maxlength="' + TD_MAX + '" placeholder="For example: book the hood clean">' + esc(tdf.text) + '</textarea></div>' +
-      '<div class="field"><label class="label" for="todo-due">Due by (optional)</label><div class="todo-dues"><input id="todo-due" type="date" class="p-dateinput" data-k="todo-due" value="' + esc(due) + '">' +
-      '<button type="button" class="chip" data-p="todo-nodue"' + (due ? '' : ' hidden') + '>No date</button></div></div>' + fr +
+      '<div class="field"><label class="label' + (editing ? '' : ' visually-hidden') + '" for="todo-text">' + (editing ? 'Change the job' : 'New job') + '</label><textarea id="todo-text" class="todo-ta" data-k="todo-text" rows="1" maxlength="' + TD_MAX + '" placeholder="New job">' + esc(tdf.text) + '</textarea></div>' +
       (tdMsg ? '<p class="p-err" role="alert">' + esc(tdMsg) + '</p>' : '') +
+      '<div class="todo-more"><div class="field"><label class="label" for="todo-due">Due by (optional)</label><div class="todo-dues"><input id="todo-due" type="date" class="p-dateinput" data-k="todo-due" value="' + esc(due) + '">' +
+      '<button type="button" class="chip" data-p="todo-nodue"' + (due ? '' : ' hidden') + '>No date</button></div></div>' + fr +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="todo-save"' + (editing && !tdDirty() ? ' disabled' : '') + '>' + (editing ? 'Save changes' : 'Add to the list') + '</button>' +
-      (editing ? '<button type="button" class="btn" data-p="todo-cancel">' + (armed('todo-cancel') ? 'Tap again to discard' : 'Cancel') + '</button>' : '') + '</div></section>';
+      (editing ? '<button type="button" class="btn" data-p="todo-cancel">' + (armed('todo-cancel') ? 'Tap again to discard' : 'Cancel') + '</button>' : '') + '</div></div></section>';
   }
   function todoPageHTML() {
     todoLoad();
@@ -11781,7 +11831,37 @@
         : '<button type="button" class="tm-fold" data-p="tm-showoff" aria-expanded="false">Not on ' + esc(s.name) + ': ' + esc(offL.map(function (p) { return p.name; }).join(', ')) + '. Show</button>') : '');
     var dirty = tmDirty(), busy = svOf('t') === 'busy';
     var save = '<div class="tm-save">' + svButton({ k: 't', p: 'tm-save', idle: 'Save today\'s team', off: !dirty, busy: busy }) + svLine('t', busy, tmMsg) + '</div>';
-    return top + lead + use + tabs + spread + list + save + '</section>';
+    // the saved plan at a glance first (8 Nov 2026), then the plan to change, as before
+    var glance = tm.rec ? tmTimelineHTML(tm.rec) : '';
+    return top + lead + glance + (glance ? '<h3 class="tm-edh">Change the plan</h3>' : '') + use + tabs + spread + list + save + '</section>';
+  }
+  /* Today at a glance (8 Nov 2026, redesign step 7, Flighty's timeline): the saved plan grouped by section, each row with
+     the hours and the breaks in words and a bar for the day (the break in orange, a split as a gap). From the record
+     already read (tm.rec) and the kitchen's shifts: no read of its own. Positions are worked out here from checked
+     minutes (teamClean, kitShifts), clamped to 0 to 100. The editor below it changes the plan, as before. */
+  function tmTimelineHTML(rec) {
+    var shs = kitShifts(), byId = {}; shs.forEach(function (x) { byId[x.id] = x; });
+    var rows = rec.on.filter(function (o) { return byId[o.sh]; });
+    if (!rows.length) return '';
+    var timed = shs.filter(function (x) { return x.from != null && x.to != null && x.to > x.from; });
+    var lo = timed.length ? Math.min.apply(null, timed.map(function (x) { return x.from; })) : 0, hi = timed.length ? Math.max.apply(null, timed.map(function (x) { return x.to; })) : 0;
+    function pc(m) { return hi > lo ? Math.max(0, Math.min(100, Math.round((m - lo) / (hi - lo) * 1000) / 10)) : 0; }
+    function wd(a, b, least) { return Math.round(Math.max(least, pc(b) - pc(a)) * 10) / 10; }
+    var secs = kitSecs(), order = secs.map(function (x) { return x.id; }).concat(['']), groups = {};
+    rows.forEach(function (o) { var k = order.indexOf(o.sec) >= 0 ? o.sec : ''; (groups[k] = groups[k] || []).push(o); });
+    var ticks = '';
+    if (hi > lo) for (var h = Math.ceil(lo / 180) * 180; h <= hi; h += 180) ticks += '<span style="left:' + pc(h) + '%">' + pad(Math.floor(h / 60)) + '</span>';
+    var out = order.filter(function (k) { return groups[k]; }).map(function (k) {
+      return '<h4 class="tm-tls">' + esc(k ? tmSecName(k) : 'No section') + '</h4>' + groups[k].map(function (o) {
+        var sh = byId[o.sh], bs = rec.br.filter(function (b) { return b.id === o.id && b.sh === o.sh; }).sort(function (a, b) { return a.at - b.at; });
+        var words = esc(sh.name) + (sh.from != null && sh.to != null ? ' ' + tmHHMM(sh.from) + ' to ' + tmHHMM(sh.to) : '') +
+          bs.map(function (b) { return tmIsSplit(b.len) ? ' · split ' + tmHHMM(b.at) + ', back ' + tmHHMM(b.at + b.len) : ' · break ' + tmHHMM(b.at) + (b.len !== 30 ? ', ' + b.len + ' min' : ''); }).join('');
+        var bar = sh.from != null && sh.to != null && hi > lo ? '<span class="tm-tlbar" aria-hidden="true"><i class="sh" style="left:' + pc(sh.from) + '%;width:' + wd(sh.from, sh.to, 0) + '%"></i>' +
+          bs.map(function (b) { return '<i class="' + (tmIsSplit(b.len) ? 'sp' : 'br') + '" style="left:' + pc(b.at) + '%;width:' + wd(b.at, b.at + b.len, 0.6) + '%"></i>'; }).join('') + '</span>' : '';
+        return '<div class="tm-tlr"><span class="tm-tln"><b>' + esc(mnName(o.id)) + '</b><small>' + words + '</small></span>' + bar + '</div>';
+      }).join('');
+    }).join('');
+    return '<section class="tm-tl" aria-label="Today at a glance"><h3 class="tm-tlh">Today at a glance</h3>' + (ticks ? '<div class="tm-tlx" aria-hidden="true"><span></span><span class="tm-tlt">' + ticks + '</span></div>' : '') + out + '</section>';
   }
   function teamNoHTML() {
     return '<section class="p-card tm-page"><h2 class="p-h" id="rtitle" tabindex="-1">Today\'s team</h2><p class="hint">The head chef and the sous chefs set today\'s team.</p>' +

@@ -29,7 +29,7 @@ const notesReads = p => p.evaluate(k => window.__fake.reads.filter(r => r === k)
   await p.clock.runFor(61 * 60000); await L.settle(p, 400);
   await L.waitFor(p, () => !!document.querySelector('.nt')).catch(() => {});
   t = await popTexts(p);
-  ok(t.length === 1 && /^New Ping 15:00\s*Fryer oil/.test(t[0]), 'at 15:00 the 15:00 ping pops up marked New with its time; the 13:50 one has gone (' + t.join(' | ') + ')');
+  ok(t.length === 1 && /^New\. Fryer oil change before service\s*Everyone · from Sam\s*15:00$/.test(t[0]), 'at 15:00 the 15:00 ping pops up marked New with its time; the 13:50 one has gone (' + t.join(' | ') + ')');
   ok(await bell(p) === 1, 'and the bell counts 1 (' + await bell(p) + ')');
   await p.clock.runFor(30 * 60000); await L.settle(p, 400);
   ok(await p.$('.nt') === null && await bell(p) === 0 && await p.evaluate(() => !document.querySelector('.nbell.has-new')), 'at 15:30 it is gone: the sheet closed by itself, nothing on the bell, no dot');
@@ -42,7 +42,7 @@ const notesReads = p => p.evaluate(k => window.__fake.reads.filter(r => r === k)
   await p.clock.runFor(61 * 60000); await L.settle(p, 400);
   await L.waitFor(p, () => !!document.querySelector('.nt')).catch(() => {});
   t = await popTexts(p);
-  ok(t.length === 1 && /^Safety 08:00\s*Safety: walk-in/.test(t[0]), 'at 08:00 it pops up, before 10:30 (' + t.join(' | ') + ')');
+  ok(t.length === 1 && /^New\. Safety: walk-in.*\s*Safety Everyone · from Sam\s*08:00$/.test(t[0]), 'at 08:00 it pops up, before 10:30, with its Safety tag and time (' + t.join(' | ') + ')');
   await p.clock.runFor(30 * 60000); await L.settle(p, 400);
   ok(await p.$('.nt') === null && await bell(p) === 0, 'at 08:30 a Safety ping is gone too (head chef, 24 Oct 2026: no exceptions)');
   await p.context().close();

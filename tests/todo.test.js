@@ -178,6 +178,10 @@ const T = (id, x) => ({ [fsKey(['todos', id])]: Object.assign({ text: 'Job ' + i
   // a date typed on a keyboard, digit by digit: the box keeps it and keeps the focus
   p = await L.open(b, '#/todo', { who: 'sam', extra: seed, wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('[data-k="todo-due"]'), null, 6000).catch(() => {});
+  // the day shows once the job has words (8 Nov 2026, the one-line add)
+  ok(await p.$eval('.todo-more', e => !e.getClientRects().length), 'one-line add: an empty box shows only the box, no day, chef or Add');
+  await p.fill('[data-k="todo-text"]', 'Book the hood clean'); await L.settle(p, 100);
+  ok(await p.$eval('.todo-more', e => e.getClientRects().length > 0), 'one-line add: words in the box bring the day, the chef and Add');
   await p.focus('[data-k="todo-due"]');
   // the date box takes the parts in the browser's own order (month first in the test browser, day first in Australia)
   await p.keyboard.type(/^en-US/.test(await p.evaluate(() => navigator.language)) ? '10302026' : '30102026'); await L.settle(p, 300);

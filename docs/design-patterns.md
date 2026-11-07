@@ -60,6 +60,12 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 - **An action that undoes the booking goes last** (Cancel function): alone in its own row at the end of the card, away from Print and the other buttons, with one short line on what it does (`.fn-end`). The same button, the same people.
 - **Days with nothing on fold into one quiet line** (Functions' Upcoming): "Nothing booked on Tue 10 Nov." (`.fn-quiet`), instead of a heading, a grey button and "None." for each day.
 - **A live board for service** (the service view): the rows still to go on the dark board (`.fn-svc-board`), each with a pill saying how long until it goes or how late it is (`.fn-svc-cd`), and what the kitchen must not miss on every row (the dietaries, `.fn-svc-diet`). The page is drawn again on its own timer, never read again.
+- **An inbox row** (Shift pings, redesign step 7): a dot while it is new to this phone (`.nt-dot`), the words, a small line saying who it is for and who sent it (`.nt-meta`, a Safety or Allergen tag first), and the time on the right (`.nt-at`).
+- **Step by step** (a guide's written steps): it opens on All steps; a two-chip switch (`.g-mode`) shows one step at a time with the steps as a bar (`.g-bar`) and Back and Next at the thumb. In memory only, nothing saved or read.
+- **A day at a glance** (Today's team): rows grouped by section, the hours and breaks in words, and a bar for the day (`.tm-tl`, `.tm-tlbar`; positions worked out from checked minutes), above the controls that change it.
+- **A docket to read out** (the drinks run's order): a dashed paper ticket first on the page (`.dr-run`), its count on the heading (`.dr-oh`).
+- **A person row** (Manage staff): their initial in a disc (`.st-av`, dark for chefs), the name, and the role with what they may do in plain words (`.st-can`).
+- **A one-line add** (Chef to-do): one box; the day, who it is for and Add show once it has words (`.todo-more`).
 - **A long run of rows that are not the point** folds into one line that names them and says Show (`.tm-fold`, with `aria-expanded`), instead of filling the screen.
 - **Nothing new over a list during service** unless it stops a mistake (`CLAUDE.md`, Service rules).
 
@@ -71,4 +77,4 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 
 ## The chef hat
 
-- **A tile** is a `.wm-tile` in its group (Kitchen or Chef). Its small second line says only what the book already holds, with no read of its own (`.wm-due` when it needs doing: "Not set yet", "1 to sign").
+- **A row** is a `.wm-tile` in its group, Every day or More (a list since 8 Nov 2026, redesign step 7; tiles before): the icon, the words, its small line on the right and a chevron, Settings last. The small line says only what the book already holds, with no read of its own (`.wm-due` when it needs doing: "Not set yet", "1 to sign").
