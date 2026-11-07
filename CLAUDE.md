@@ -58,7 +58,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Seasonal celebrations, festival dates and their sources | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md` |
 | Admin flow baseline behind The Chef's Desk | `docs/admin-flow-spec.md` |
 | Smoker batch cards and what was left out (30 Oct 2026) | `docs/smoker-batches.md` |
-| Today's team: shifts, sections, breaks and the team chip, selected A with three pieces of B (7 Nov 2026), steps 1 and 2 built (the chef's page), the staff side next | `docs/todays-team-options/brief.md`, `docs/prep-book.md` (Today's team) |
+| Today's team: shifts, sections, breaks and the team chip, selected A with three pieces of B (7 Nov 2026), steps 1 to 3 built (the chef's page and the staff side), training next | `docs/todays-team-options/brief.md`, `docs/prep-book.md` (Today's team) |
 
 ## Service council (5 Nov 2026)
 

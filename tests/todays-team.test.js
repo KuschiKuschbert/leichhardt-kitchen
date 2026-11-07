@@ -2,7 +2,9 @@
 // kitchen's shifts, with a section on each shift and their breaks. The round chip left of the bell (filled until the day
 // is saved), the chef hat tile and Set today's team under the done count lead to #/team. Use it fills last week's team
 // to check, Spread them sets a shift's breaks, Save writes team/<day> with the next version and never over a newer save.
-// The Shifts row in the admin panel. Staff get no chip and no page yet (the staff side is its own step).
+// The Shifts row in the admin panel. The staff side: once their day is set, a round chip (filled 30 minutes before a
+// break and after a change) opens Your day; their day under the done count and in the chef hat; their section follows
+// the plan and the shift that counts now (the next one in a gap), so they are not asked; their own moves are logged.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt, tap } = L;
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -121,12 +123,85 @@ const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.n
   ok(!!c && !c.due && /could not check/.test(c.label), 'no signal: the chip is plain and says it could not check');
   await p.context().close();
 
-  // staff: no chip, and the page by its address says who sets it
+  // staff, nothing set yet: no chip, no line, and the page by its address says who sets it
   p = await L.open(b, '#/prep', { who: 'ann', extra: cfg(), wait: 1800 });
-  ok(!(await p.$('.wtop .tm-chip')) && !(await p.$('.nb-tmset')), 'staff: no chip and no Set today\'s team');
+  ok(!(await p.$('.wtop .tm-chip')) && !(await p.$('.nb-tmset')) && !(await p.$('.nb-tmday')), 'staff: no chip, no Set today\'s team and no day line while it is not set');
   await p.evaluate(() => { location.hash = '#/team'; }); await L.settle(p, 800);
   ok(/The head chef and the sous chefs set today's team/.test(await txt(p, '.tm-page') || ''), 'staff: #/team says the head chef and the sous chefs set it');
   ok(p.errors.length === 0, 'staff: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // staff, today's team set: Ann on Lunch (10:00 to 15:00) on Grill with a break at 14:30, and on Dinner on Pans with a
+  // break at 19:00; Bo on a break now, back at 14:30. It is 14:00.
+  const plan = x => Object.assign({ day: today, on: [{ id: 'ann', sh: 'dinner', sec: 'pans' }, { id: 'ann', sh: 'lunch', sec: 'grill' }, { id: 'bo', sh: 'lunch', sec: 'larder' }, { id: 'sam', sh: 'lunch', sec: '' }],
+    br: [{ id: 'bo', sh: 'lunch', at: 825, len: 45 }, { id: 'ann', sh: 'lunch', at: 870, len: 30 }, { id: 'ann', sh: 'dinner', at: 1140, len: 60 }], v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam' }, x || {});
+  const SHIFT_ANN = fsKey(['shifts', today + '_ann']);
+  p = await L.open(b, '#/prep', { who: 'ann', extra: Object.assign(cfg(), { [TEAM]: plan() }), wait: 1800 });
+  await L.waitFor(p, () => !!document.querySelector('.wtop .tm-chip'), null, 8000);
+  c = await chip(p);
+  ok(!!c && c.due && /^Your day: Lunch: Grill · Break 14:30$/.test(c.label), 'staff chip: once her day is set, filled from 30 minutes before her break (' + JSON.stringify(c) + ')');
+  ok(await txt(p, '.nb-tmday') === 'Lunch: Grill · Break 14:30', 'staff prep list: her day under the done count (' + (await txt(p, '.nb-tmday')) + ')');
+  ok(await linesSeen(p) === 3, 'staff prep list: still 3 list lines above Add a line (as before)');
+  const hh = await p.evaluate(() => { const h = () => document.querySelector('.nb-left .nb-ph').getBoundingClientRect().height, a = h(), l = document.querySelector('.nb-tmday'); l.style.display = 'none'; const z = h(); l.style.display = ''; return [a, z]; });
+  ok(Math.abs(hh[0] - hh[1]) < 0.5, 'staff prep list: the header keeps its height with the day line (' + JSON.stringify(hh) + ')');
+  ok(!(await p.$('.ks-wrap')) && !(await p.$('.ux-section-picker')), 'staff section: not asked, the chef set it');
+  await L.waitFor(p, k => !!window.__fake.dump()[k], SHIFT_ANN, 6000);
+  s = (await store(p))[SHIFT_ANN];
+  ok(!!s && s.sec === 'grill' && s.auto === true && s.sh === 'lunch' && s.by === 'ann', 'staff section: kept as the plan set it, for Lunch (' + JSON.stringify(s) + ')');
+  ok(await p.$eval('[data-k="p-section"]', e => e.value) === 'Grill', 'staff section: a new prep line starts on Grill');
+  ok(await p.evaluate(() => window.__fake.reads.filter(r => /\/team\//.test(r)).length) === 1, 'staff reads: today\'s team is read once');
+
+  // Your day: Now, Break, Later, who is on a break now; Escape closes it and the focus goes back to the chip
+  await p.click('.wtop .tm-chip'); await L.settle(p, 400);
+  const day = await txt(p, '.tm-dw .nt') || '';
+  ok(/Your day/.test(day) && /Now\s*Grill\s*Lunch, 10:00 to 15:00/.test(day) && /Break\s*14:30\s*30 minutes/.test(day) && /Later\s*Pans\s*Dinner, 16:00 to 22:00/.test(day), 'Your day: now, her break and later (' + day + ')');
+  ok(/On break now: Bo, back 14:30\./.test(day) && /Set by Sam at \d\d:\d\d/.test(day), 'Your day: who is on a break now and when they are back, and who set it');
+  ok(await p.evaluate(() => !!document.activeElement && document.activeElement.classList.contains('nt-got')), 'Your day: the focus starts on Close');
+  ok(!(await L.overflow(p)), 'Your day: fits the phone');
+  await p.keyboard.press('Escape'); await L.settle(p, 400);
+  ok(!(await p.$('.tm-dw')) && await p.evaluate(() => !!document.activeElement && !!document.activeElement.closest('.wtop')), 'Your day: Escape closes it, the focus is back in the top bar');
+
+  // the chef hat: her day under her name
+  await p.click('.wtop-who'); await L.settle(p, 300);
+  const hat = await p.$$eval('.wm .wm-day', e => e.map(x => x.textContent));
+  ok(JSON.stringify(hat) === JSON.stringify(['Lunch: Grill · Break 14:30, 30 min', 'Dinner from 16:00: Pans']), 'chef hat: her day under her name (' + JSON.stringify(hat) + ')');
+  // she moves herself to Larder: kept with the shift and logged, and her day says Larder
+  await p.click('.wm [data-who="sec"]'); await L.settle(p, 300);
+  await p.click('.ks-b[data-v="larder"]'); await L.settle(p, 600);
+  s = (await store(p))[SHIFT_ANN];
+  ok(!!s && s.sec === 'larder' && s.auto === false && s.sh === 'lunch' && Array.isArray(s.log) && s.log.length === 1 && s.log[0].sh === 'lunch' && s.log[0].sec === 'larder', 'my section: her own move is kept with the shift and logged (' + JSON.stringify(s) + ')');
+  ok(await txt(p, '.nb-tmday') === 'Lunch: Larder · Break 14:30', 'my section: her day says Larder (' + (await txt(p, '.nb-tmday')) + ')');
+  ok(p.errors.length === 0, 'staff: no page errors ' + p.errors.join(' | '));
+
+  // a chef moves her break and saves: her phone hears the stamp, reads once more, and shows it as changed until she
+  // opens Your day. The chef's later save wins over her own move.
+  const v2 = plan({ v: 2, upd: L.NOW + 60000, br: [{ id: 'bo', sh: 'lunch', at: 825, len: 45 }, { id: 'ann', sh: 'lunch', at: 885, len: 30 }, { id: 'ann', sh: 'dinner', at: 1140, len: 60 }] });
+  await p.evaluate(([k, d, cf, t]) => { const f = window.__fake; f.write(k, d); const m = f.dump()[cf]; f.write(cf, Object.assign({}, m, { pastEdit: Object.assign({}, m.pastEdit || {}, { t }) })); }, [TEAM, v2, CFG, L.NOW + 60000]);
+  await L.waitFor(p, () => !!document.querySelector('.nb-tmday.is-changed'), null, 6000);
+  ok(await txt(p, '.nb-tmday') === 'Lunch: Grill · Break 14:45', 'changed: her day line shows the new break, and the plan again (' + (await txt(p, '.nb-tmday')) + ')');
+  c = await chip(p);
+  ok(!!c && c.due && /Changed$/.test(c.label), 'changed: the chip is filled and says changed (' + JSON.stringify(c) + ')');
+  ok(await p.evaluate(() => window.__fake.reads.filter(r => /\/team\//.test(r)).length) === 2, 'changed: one more read for the save');
+  await p.click('.nb-tmday'); await L.settle(p, 400);
+  ok(/Changed \d\d:\d\d by Sam/.test(await txt(p, '.tm-dw .nt-date') || ''), 'changed: Your day says when and who (' + (await txt(p, '.tm-dw .nt-date')) + ')');
+  await p.click('.tm-dw .nt-got'); await L.settle(p, 400);
+  ok(!(await p.$('.tm-dw')) && !(await p.$('.nb-tmday.is-changed')), 'changed: seen once Your day was opened');
+  ok(p.errors.length === 0, 'changed: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // between shifts the next one counts (15:30: Dinner from 16:00), and on Dinner its own section and break (16:30)
+  p = await L.open(b, '#/prep', { who: 'ann', extra: Object.assign(cfg(), { [TEAM]: plan() }), clock: L.NOW + 90 * 60000, wait: 1800 });
+  await L.waitFor(p, () => !!document.querySelector('.nb-tmday'), null, 8000);
+  ok(await txt(p, '.nb-tmday') === 'Dinner from 16:00: Pans · Break 19:00', 'gap: at 15:30 the next shift counts (' + (await txt(p, '.nb-tmday')) + ')');
+  c = await chip(p);
+  ok(!!c && !c.due, 'gap: the chip is plain, no break near');
+  await L.waitFor(p, k => !!window.__fake.dump()[k], SHIFT_ANN, 6000);
+  ok((await store(p))[SHIFT_ANN].sec === 'pans', 'gap: her section for the day is Pans, from the next shift');
+  await p.context().close();
+  p = await L.open(b, '#/prep', { who: 'ann', extra: Object.assign(cfg(), { [TEAM]: plan() }), clock: L.NOW + 150 * 60000, wait: 1800 });
+  await L.waitFor(p, () => !!document.querySelector('.nb-tmday'), null, 8000);
+  ok(await txt(p, '.nb-tmday') === 'Dinner: Pans · Break 19:00', 'dinner: at 16:30 her Dinner section and break (' + (await txt(p, '.nb-tmday')) + ')');
+  ok(p.errors.length === 0, 'dinner: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
   // the smallest phones and the laptop: the title whole, the page tabs on one row, nothing sideways
@@ -140,13 +215,23 @@ const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.n
     p = await L.open(b, '#/team', { who: 'sam', extra: cfg(), width: w, wait: 1600 });
     await tap(p, '[data-p="tm-on"][data-id="ann"]'); await L.settle(p, 200);
     ok(!(await L.overflow(p)), 'page at ' + w + ' px: no sideways scroll');
-    // the chip must not be what wraps the page tabs: the same top bar measured with it and without it (the test
-    // browsers' fallback fonts differ from machine to machine, so the tabs' own width is not the question here)
-    if (w > 700) {
-      const rows = await p.evaluate(() => { const n = document.querySelector('.pnav'), c = document.querySelector('.wtop .tm-chip'); if (!n || !c) return null; const withChip = n.getBoundingClientRect().height; c.style.display = 'none'; const without = n.getBoundingClientRect().height; c.style.display = ''; return [withChip, without]; });
-      ok(!!rows && Math.abs(rows[0] - rows[1]) < 1, 'top bar at ' + w + ' px: the chip does not wrap the page tabs (' + JSON.stringify(rows) + ')');
-    }
     ok(p.errors.length === 0, 'page at ' + w + ' px: no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
+  // The chip must not wrap the page tabs on a tablet or laptop. Measured in the book's own font, Barlow, which the phones
+  // and laptops show (the saved copy keeps it): the tests stand Google Fonts in with nothing, and the stand-in fonts differ
+  // from machine to machine (wider on GitHub's runner, 7 Nov 2026). The same top bar is measured with the chip and
+  // without it. If Barlow cannot load here, the check says so and measures nothing.
+  for (const w of [720, 768, 1200, 1280]) {
+    p = await L.open(b, '#/prep', { who: 'sam', extra: cfg(), width: w, wait: 1500 });
+    await p.context().unroute(/fonts\.(googleapis|gstatic)\.com/);
+    const css = await p.addStyleTag({ url: 'https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@700&display=swap' }).then(() => true, () => false);
+    const got = css && await p.evaluate(() => Promise.race([Promise.all(['600 16px Barlow', '700 16px "Barlow Condensed"'].map(f => document.fonts.load(f))).then(r => r.every(x => x.length > 0)), new Promise(r => setTimeout(() => r(false), 8000))]));
+    if (!got) { ok(true, 'top bar at ' + w + ' px: Barlow could not load here, the chip and the tabs were not measured'); await p.context().close(); continue; }
+    await L.settle(p, 300);
+    const rows = await p.evaluate(() => { const n = document.querySelector('.wtop .pnav'), c = document.querySelector('.wtop .tm-chip'); if (!n || !c) return null; const withChip = n.getBoundingClientRect().height; c.style.display = 'none'; const without = n.getBoundingClientRect().height; c.style.display = ''; return [withChip, without]; });
+    ok(!!rows && Math.abs(rows[0] - rows[1]) < 1, 'top bar at ' + w + ' px, in Barlow: the chip does not wrap the page tabs (' + JSON.stringify(rows) + ')');
     await p.context().close();
   }
 

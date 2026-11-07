@@ -467,7 +467,9 @@
     var grid = function (h, xs) { xs = xs.filter(Boolean).join(''); return xs ? (h ? '<p class="wm-h wm-sh">' + h + '</p>' : '') + '<div class="wm-grid">' + xs + '</div>' : ''; };
     var body;
     if (n) {
-      body = '<div class="wm-me"><span class="wm-av" aria-hidden="true">' + esc(initial(n)) + '</span><span class="wm-me-n"><span class="visually-hidden">Signed in as </span><b>' + esc(n) + '</b>' + (m.role ? '<small>' + esc(m.role) + '</small>' : '') + '</span></div>' +
+      body = '<div class="wm-me"><span class="wm-av" aria-hidden="true">' + esc(initial(n)) + '</span><span class="wm-me-n"><span class="visually-hidden">Signed in as </span><b>' + esc(n) + '</b>' + (m.role ? '<small>' + esc(m.role) + '</small>' : '') +
+          // Today's team (7 Nov 2026): their day under the name, from the plan already read ("Lunch: Grill · Break 14:30, 30 min")
+          (m.day || []).map(function (l) { return '<small class="wm-day">' + esc(l) + '</small>'; }).join('') + '</span></div>' +
         // the empty line is where the first tap says "Not saved yet", or "Not sent yet" when only a change waits to send
         // (the click handler below)
         '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Not ' + esc(n.split(' ')[0]) + '? Sign out</b><small aria-live="polite"></small></span></button>' +

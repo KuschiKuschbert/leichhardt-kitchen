@@ -3696,6 +3696,27 @@ button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; curs
 .tm-chip.is-due { background: var(--tag); border-color: var(--tag); color: #fff; }
 .tm-chip[aria-current="page"] { background: var(--bar-text); border-color: var(--bar-text); color: var(--bar); }
 .tm-chip:focus-visible { outline: 2px solid var(--bar-accent); outline-offset: 2px; }
+.tm-chip { padding: 0; font: inherit; cursor: pointer; }
+/* Your day (staff, 7 Nov 2026): the sheet on the pings sheet's frame */
+html.tm-open, html.tm-open body { overflow: hidden; }
+.tm-dw .nt-body { padding: 0 18px 4px; }
+.tm-dayl { list-style: none; margin: 0.25rem 0 0; padding: 0; }
+.tm-dayl li { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); gap: 0.75rem; align-items: baseline; padding: 0.7rem 0; border-top: 1px solid var(--line); }
+.tm-dayl li:first-child { border-top: 0; }
+.tm-dayl .k { font: 700 0.75rem var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.tm-dayl b { display: block; font: 700 1.25rem/1.2 var(--display); overflow-wrap: anywhere; }
+.tm-dayl small { display: block; margin-top: 2px; font-size: 0.875rem; color: var(--muted); }
+.tm-dayl .is-later b { font-size: 1.0625rem; }
+.tm-off { margin: 0.5rem 0 0; padding-top: 0.7rem; border-top: 1px solid var(--line); font-size: 0.9375rem; overflow-wrap: anywhere; }
+.tm-changed { color: var(--accent-ink); }
+/* the day line under a person's done count: in the date's line, so the header keeps its height (a long line ends in
+   an ellipsis, the chip and Your day have it whole); orange with a dot once a chef changes it, until Your day is opened */
+.nb-ph .nb-pw.is-day { flex-direction: column; }
+.nb-tmday { display: block; max-width: min(16rem, 52vw); margin: 0.15rem 0 0; padding: 0; border: 0; background: none; font: 700 0.8125rem/1.3 var(--body); color: var(--ink); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.nb-tmday.is-changed { color: var(--accent-ink); }
+.nb-tmday.is-changed::before { content: '\25CF'; margin-right: 0.3em; }
+.nb-tmday:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wm-me-n small.wm-day { color: var(--ink); font-weight: 600; }
 /* small phones: the round buttons closer, and below 375 px the title a little smaller, only while the chip shows
    (measured: "Kitchen Book" stays whole at 360, 375 and 390 px) */
 @media (max-width: 389px) { .wtop:has(.tm-chip) .wtop-icons { gap: 0.25rem; } }

@@ -224,7 +224,7 @@ Pictures: the staff chip `previews/chip-staff-phone-390.png`, filled `previews/c
 
 In small steps, each its own pull request, merged in a release window. Rules are published from the branch before the code that needs them (CLAUDE.md, How changes ship).
 
-Steps 1 and 2 were built together on 7 November 2026 (the chef's page needs the rules): `docs/prep-book.md`, Today's team.
+Steps 1 to 3 were built together on 7 November 2026 in one pull request (the chef's page needs the rules, and one release means one rules publish): `docs/prep-book.md`, Today's team. Step 4 is next.
 
 1. **Rules and records.** The day's team record (written only by the chefs and the verified admin, read by every signed-in kitchen session; people, shifts, sections, break times and the five lengths checked; a save that would overwrite a newer one refused); the shifts in `config/main` (admin only); the section log (one record per person, day and stint, written by that person or a chef). Emulator checks for every sign-in in `tests/rules/client-shapes.test.mjs`. Looser rules, so published first, with the head chef's OK, then the Lock probe.
 2. **The Shifts row and the chef's page.** Admin, Kitchen, Shifts; Today's team with Use it, Spread them, the break chips and the server check; the tile, the Set today's team link, the To do line and the chef chip. Reads: the day's record when the page opens (1) and last week's same day for Use it (1).

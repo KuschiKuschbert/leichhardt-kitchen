@@ -1652,7 +1652,7 @@
   function meChanged() { try { window.dispatchEvent(new Event('lk-me')); } catch (e) {} }
   // the role on the chef hat menu's person card (3 Nov 2026): Head chef for headId, otherwise the role's name (whoRole())
   function roleName() { if (!me()) return ''; return whoHead() ? 'Head chef' : whoRole(); }
-  function chefMenu() { return { role: roleName(), minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), head: whoHead(), tab: adminTabs(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK(), todo: todoOK(), team: teamOK(), teamUnset: teamOK() && tm.st === 'ok' && !tm.rec }; }
+  function chefMenu() { return { role: roleName(), minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), head: whoHead(), tab: adminTabs(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK(), todo: todoOK(), team: teamOK(), teamUnset: teamOK() && tm.st === 'ok' && !tm.rec, day: tmHatLines(me()) }; }
   /* Functions (21 Oct 2026): who may enter and change function bookings. The person signed in with their own PIN and
      ticked for Functions (config/main fnIds, which only the head chef's Google account saves), or the head chef's Google
      device with nobody signed in. Being Head chef or Functions coordinator is not enough without the tick. The rules
@@ -7418,7 +7418,7 @@
       // the signal is back; meanwhile the minute's own checks below still run
       if (S.notesFor && S.notesFor !== t) { if (!waiting('notes')) { loadNotes(true); return; } }
       else if (n1030 !== t && T.mins() >= NOTE_MIN) { n1030 = t; loadNotes(true); return; }
-      noteBell(); noteRefresh(); sheetNext();
+      noteBell(); noteRefresh(); tmTick(); sheetNext();
     }, 60000);
   }
   // back on the screen: a sheet whose pings ran out while the screen was off goes before anyone sees it
@@ -7449,7 +7449,7 @@
      closing sheet takes its history entry off with Back (ovDone), so the next one waits for that Back to land first. */
   var ksWant = false, ksWait = false, nextWait = false;
   // every sheet or popup over the page: these, the function sheet, the wastage reason sheet and the other bottom sheets
-  function sheetOpen() { return !!(ksPop || npop || mlPop || gz || S.sheet || document.querySelector('.wm-wrap, .fn-pop, .sheet-bg, .ux-picker[open]')); }
+  function sheetOpen() { return !!(ksPop || npop || mlPop || gz || tmPop || S.sheet || document.querySelector('.wm-wrap, .fn-pop, .sheet-bg, .ux-picker[open]')); }
   function typing() { var ae = document.activeElement; return !!(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'button'); }
   // a first PIN's One more thing, while it is on the screen (it shows only on the prep list)
   function dkFirstUp() { return S.drinkAsk === 'first' && S.name === 'prep' && !!(S.root && document.body.contains(S.root) && S.root.querySelector('.dr-first')); }
@@ -10231,11 +10231,18 @@
   /* who picks a section: staff and leads, once the head chef has set some up */
   function ksPicks(p) { return !!p && (p.role === 'staff' || p.role === 'lead') && kitSecs().length > 0; }
   function ksGet(id) { try { var v = JSON.parse(lsGet('lk.sec.' + id) || 'null'); return v && v.d === dayNow() ? v : null; } catch (e) { return null; } }
-  function ksPut(id, sec, name) { lsSet('lk.sec.' + id, JSON.stringify({ d: dayNow(), sec: sec, name: name })); }
+  /* lk.sec.<id>: today's section on this phone (out of date at midnight). Since Today's team (7 Nov 2026) also self (picked
+     by the person), at (when), sh (the shift it was for), auto (set by the plan) and log (their own picks today) */
+  function ksPut(id, sec, name, extra) { lsSet('lk.sec.' + id, JSON.stringify(Object.assign({ d: dayNow(), sec: sec, name: name }, extra || {}))); }
+  function ksLog(l) { return (Array.isArray(l) ? l : []).filter(function (x) { return x && typeof x.sh === 'string' && x.sh.length <= 40 && typeof x.sec === 'string' && x.sec.length <= 40 && typeof x.at === 'number'; }).map(function (x) { return { sh: x.sh, sec: x.sec, at: x.at }; }).slice(-30); }
   /* the section a line goes under when the box is left alone. Staff and leads only: a sous chef writes for every section. */
   function mySec() {
     var p = me(); if (!ksPicks(p)) return '';
-    var v = ksGet(p.id); if (!v || !v.sec) return '';
+    var v = ksGet(p.id), plan = tmPlanSec(p.id);
+    // Today's team (7 Nov 2026): the plan's section on the shift that counts now, unless the person moved themselves on
+    // that shift after the chef saved the plan
+    if (plan && !(v && v.self && v.sec && v.sh === plan.sh && v.at > tm.rec.upd)) return plan.name;
+    if (!v || !v.sec) return '';
     var s = kitSecs().filter(function (x) { return x.id === v.sec; })[0];
     return s ? s.name : '';   // renamed today: the new name; taken off the list: none
   }
@@ -10259,7 +10266,7 @@
     function ksDone() { clearTimeout(waitT); if (!ksWait) return; ksWait = false; sheetNext(); }
     fb.fs.getDoc(ref).then(function (s) {
       var x = s.exists() ? s.data() : null;
-      if (x && x.sec) { ksPut(id, x.sec, x.name || ''); draw(); }
+      if (x && x.sec) { ksPut(id, x.sec, x.name || '', { self: x.auto === false, at: typeof x.at === 'number' ? x.at : 0, sh: typeof x.sh === 'string' ? x.sh : '', auto: x.auto === true, log: ksLog(x.log) }); draw(); }
       else if (S.who === id && S.authed) ksWant = true;
       ksDone();
     }, function () { if (S.who === id && S.authed) ksWant = true; ksDone(); });
@@ -10268,6 +10275,11 @@
   function ksOpen(change) {
     var p = me(); if (ksPop || !ksPicks(p)) return;
     if (!change && ksGet(p.id)) return;   // asked by itself: picked (or skipped) in the meantime
+    if (!change && tmCanRead() && tm.st !== 'ok' && tm.st !== 'err') {
+      teamLoad();
+      if (tm.st === 'busy') { ksWant = true; ksWait = ksTeamWait = true; clearTimeout(ksTeamT); ksTeamT = setTimeout(ksTeamIn, 8000); return; }
+    }
+    if (!change && tmSecAuto(p)) { draw(); meChanged(); return; }   // the chef set it: not asked
     var cur = ksGet(p.id), out = change ? 'close' : 'skip';
     ksPrev = document.activeElement;
     var el = document.createElement('div');
@@ -10297,10 +10309,13 @@
   function ksPick(sid) {
     var p = me(), s = kitSecs().filter(function (x) { return x.id === sid; })[0];
     if (!p || !s) return;
-    var day = dayNow();
-    ksPut(p.id, s.id, s.name);
+    var day = dayNow(), t = now(), was = ksGet(p.id), d = { day: day, sec: s.id, name: s.name, auto: false, at: t };
+    /* With the kitchen's shifts set up (Today's team, 7 Nov 2026): the shift it is for, and the person's own picks today
+       in a log (at most 30), kept for cross-training and section suggestions. Without shifts, the record as before. */
+    if (kitShifts().length) { d.sh = tmShiftNow(p.id); d.log = ksLog(was && was.log).concat([{ sh: d.sh, sec: s.id, at: t }]).slice(-30); }
+    ksPut(p.id, s.id, s.name, { self: true, at: t, sh: d.sh || '', log: d.log || [] });
     // kept on the phone first, so a lost signal never loses the default section
-    sset(docRef('shifts', day + '_' + p.id), { day: day, sec: s.id, name: s.name, auto: false, at: now() }).catch(function () {});
+    sset(docRef('shifts', day + '_' + p.id), d).catch(function () {});
     ksClose(); draw(); meChanged();
     toast('You are on ' + s.name + ' today.');
   }
@@ -11398,7 +11413,7 @@
   /* today's record as read: day, rec (checked, or null when none is saved yet), st ('' not read, 'busy', 'ok', 'err'),
      at (when it was read, time passing on this phone), stamp (the team stamp it answers). In memory only: it says who
      works when, so it is never kept in the phone's own storage. */
-  var tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }, tmMine = 0;
+  var tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }, tmOwn = 0;
   /* the chef's page: tmf the plan as changed (null until the record is read), tmSnap the plan as read, tmSh the shift
      shown, tmMsg the line under Save, tmShowOff the people not on the shift shown, tmSp the Spread them choices */
   var tmf = null, tmSnap = '', tmSh = '', tmMsg = '', tmLastBusy = false, tmShowOff = false, tmSp = { from: null, len: 30 }, tmIconN = 0;
@@ -11440,11 +11455,13 @@
     if (who()) return isSous();
     return S.level === 'owner' && admDev();
   }
-  function tmCanRead() { return teamOK() && (!who() || canW() || S.level === 'owner'); }
+  /* who reads it: a chef as for setting it (a sous chef's PIN session, the head chef's Google device), and since the
+     staff side (Build 3) everyone else signed in on the kitchen with their own PIN session, as the rules read it */
+  function tmCanRead() { return teamOK() ? (!who() || canW() || S.level === 'owner') : tmAny() && kitchenAccess(); }
   function tmNeedPin() { return teamOK() && !tmCanRead() && !sessP; }
   function tmMe() { var p = me(); return p ? p.id : ((S.config && S.config.headId) || ''); }
   // the next person on the phone starts with nothing of the last chef's
-  function tmReset() { tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }; tmf = null; tmSnap = ''; tmSh = ''; tmMsg = ''; tmShowOff = false; svStop('t'); }
+  function tmReset() { if (tmPop) { tmPop.remove(); tmPop = null; tmPrev = null; } tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }; tmf = null; tmSnap = ''; tmSh = ''; tmMsg = ''; tmShowOff = false; svStop('t'); }
   /* today's team: one read (team/<today>) the first time a chef's page or top bar needs it each kitchen day, when the
      page opens (unless read in the last minute), on Refresh and once for each team stamp another phone writes
      (pastCheck()). A failed read, and a "no record" that came from the memory copy with no signal, is never "not set
@@ -11464,13 +11481,17 @@
       tm.rec = sn.exists() ? teamClean(sn.data(), day) : null; tm.st = 'ok'; tm.at = Date.now(); tm.stamp = stamp;
       // the page's plan follows the record until the chef changes something
       if (!tmDirty()) tmFrom(tm.rec);
-      draw(); tmPaint();
-    }).catch(function () { if (tm !== mine) return; tm.st = 'err'; tm.retry = Date.now() + TM_RETRY; draw(); tmPaint(); });
+      // the first read of the day that has me on it only notes what it says (tmSeen): a later change shows as changed
+      var p = me(); if (p && tmMy(p.id).length && !tmSeen(p.id)) tmSeenSet(p.id);
+      // a section the plan sets may answer Your section today (ksOpen() waits for this read)
+      if (p && ksPicks(p) && !ksGet(p.id)) tmSecAuto(p);
+      draw(); tmPaint(); ksTeamIn();
+    }).catch(function () { if (tm !== mine) return; tm.st = 'err'; tm.retry = Date.now() + TM_RETRY; draw(); tmPaint(); ksTeamIn(); });
   }
   // a stamp from another phone: read once more (pastCheck(), on the config listener every phone already has)
   function teamStamp() {
     var ts = pastStamp('t');
-    if (tm.day === dayNow() && tm.st === 'ok' && ts > tm.stamp && ts !== tmMine) teamLoad(0);
+    if (tm.day === dayNow() && tm.st === 'ok' && ts > tm.stamp && ts !== tmOwn) teamLoad(0);
   }
   /* the plan being changed: on[person][shift] = section id ('' for none), br: [{ id, sh, at, len }] */
   function tmFrom(rec) {
@@ -11650,7 +11671,7 @@
     var keep = tmf, out = tmOut(tmf), t = now(), v = tmf.base + 1;
     var d = { day: tmf.day, on: out.on, br: out.br, v: v, at: tmf.base ? tmf.at : t, upd: t };
     var people_ = {}; out.on.forEach(function (o) { people_[o.id] = 1; });
-    svStart('t'); tmMsg = ''; tmMine = t; draw();
+    svStart('t'); tmMsg = ''; tmOwn = t; draw();
     W([['set', docRef('team', d.day), d], ['set', cfgDoc(), { pastEdit: { t: t } }, true]]).then(function () {
       tm.rec = teamClean(Object.assign({ by: tmMe() }, d), d.day); tm.st = 'ok'; tm.at = Date.now(); tm.stamp = t;
       if (tmf === keep) { tmf.base = v; tmf.at = d.at; tmSnap = tmSig(tmf); }
@@ -11675,7 +11696,7 @@
   /* The chef chip in the top bar (round, the bell's size): filled until today's team is saved. No words: words in it
      wrap the page tabs on a laptop and cut "Kitchen Book" on a phone (measured 7 Nov 2026). */
   function teamChipHTML() {
-    if (!teamOK()) return '';
+    if (!teamOK()) { var p = me(); return p && tmAny() ? tmStaffChip(p) : ''; }
     teamLoad();
     var unset = tm.st === 'ok' && !tm.rec, label = unset ? 'Today\'s team, not set yet' : tm.st === 'err' ? 'Today\'s team, could not check' : 'Today\'s team';
     return '<a class="tm-chip' + (unset ? ' is-due' : '') + '" href="#/team" aria-label="' + esc(label) + '"' + (S.name === 'team' ? ' aria-current="page"' : '') + '>' + tmIcon(20) + '</a>';
@@ -11684,19 +11705,27 @@
      (js/app.js draws the icon group again on a sign-in, kitchen mail and the admin mark; each copy of the icon has its own
      mask id, so drawing it every time would churn the top bar) */
   var tmChipKey = null;
+  function tmKey() { return teamOK() ? [tm.day, tm.st, !!tm.rec, S.name === 'team'].join('|') : tmStaffKey(); }
   function tmPaint() {
     var s = document.querySelector('.wtop .tm-slot'); if (!s) return;
-    var key = teamOK() ? [tm.day, tm.st, !!tm.rec, S.name === 'team'].join('|') : '';
+    if (tmAny()) teamLoad();
+    var key = tmKey();
     if (key === tmChipKey && (!key || s.firstChild)) return;
-    var html = teamChipHTML(); tmChipKey = teamOK() ? [tm.day, tm.st, !!tm.rec, S.name === 'team'].join('|') : ''; s.innerHTML = html;
+    var html = teamChipHTML(); tmChipKey = tmKey(); s.innerHTML = html;
   }
-  // under the done count on a chef's prep list, until today's team is saved (no list line lost: it sits in the header)
+  /* By the done count on today's prep list, in the header's own height (no list line lost): a chef's Set today's team
+     until the day is saved, and for anyone on the plan their day in one line, which opens Your day on a tap. */
   function tmHeadHTML(date) {
-    if (date !== dayNow() || !teamOK()) return '';
+    if (date !== dayNow() || !tmAny()) return '';
     teamLoad();
-    return tm.st === 'ok' && !tm.rec ? '<a class="nb-tmset" href="#/team">Set today\'s team</a>' : '';
+    var p = me(), line = p && tm.rec ? tmDayLine(p) : '';
+    if (line) {
+      var ch = tmChanged(p.id);
+      return '<button type="button" class="nb-tmday' + (ch ? ' is-changed' : '') + '" data-tm="day" aria-haspopup="dialog" aria-label="' + esc('Your day: ' + line + (ch ? '. Changed' : '')) + '">' + esc(line) + '</button>';
+    }
+    return teamOK() && tm.st === 'ok' && !tm.rec ? '<a class="nb-tmset" href="#/team">Set today\'s team</a>' : '';
   }
-  function tmWrap(prog, date) { var h = tmHeadHTML(date); return h ? '<div class="nb-pw">' + prog + h + '</div>' : prog; }
+  function tmWrap(prog, date) { var h = tmHeadHTML(date); return h ? '<div class="nb-pw' + (/nb-tmday/.test(h) ? ' is-day' : '') + '">' + prog + h + '</div>' : prog; }
   // the admin's To do (js/admin-dashboard.js): from what is already read, no read of its own
   function teamNeed() { if (!teamOK()) return undefined; teamLoad(); return tm.st === 'ok' ? (tm.rec ? 'set' : 'unset') : tm.st === 'err' ? 'error' : 'loading'; }
   function shAdminHTML(d) {
@@ -11728,6 +11757,159 @@
     if (a === 'shfrom' || a === 'shto') { var m = /^(\d{2}):(\d{2})/.exec(el.value || ''); x[a === 'shfrom' ? 'from' : 'to'] = m ? tmMin(+m[1] * 60 + +m[2]) : null; }
   }
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && S.name === 'team' && S.root && document.body.contains(S.root)) teamLoad(TM_FRESH); });
+
+  /* ---------- Today's team, the staff side (7 Nov 2026, head chef) ----------
+     Everyone signed in on the kitchen reads today's team (the same read as the chefs, one a day and one for each save),
+     so each person sees their own day: the shift that counts now with its section, their next break, the shifts after,
+     and who is on a break now. The round chip shows once their day is set, filled from 30 minutes before their break
+     until they are back, and after a chef changes their day; one tap opens Your day. A cook's section follows the plan
+     and the shift that is on; one who moves themselves (My section) is kept in shifts/<day>_<id> with a log. */
+  var tmPop = null, tmPrev = null;
+  // who reads it: a chef (teamOK()), and everyone signed in with their own PIN who is not functions only
+  function tmAny() { return !!(S.pin && fb && S.configState === 'ok' && (teamOK() || (me() && !functionOnly()))); }
+  // my shifts in today's plan, in the kitchen's shift order: [{ s: shift, sec: section id }]
+  function tmMy(id) {
+    if (!tm.rec || tm.day !== dayNow() || !id) return [];
+    var on = tm.rec.on.filter(function (o) { return o.id === id; });
+    return kitShifts().map(function (s) { var o = on.filter(function (x) { return x.sh === s.id; })[0]; return o ? { s: s, sec: o.sec } : null; }).filter(Boolean);
+  }
+  function tmMyBreaks(id) { return tm.rec && tm.day === dayNow() ? tm.rec.br.filter(function (b) { return b.id === id && tmShift(b.sh); }).sort(function (a, b) { return a.at - b.at; }) : []; }
+  /* the shift of mine that counts now (head chef, 7 Nov 2026): the one that is on; when two are on, the one that started
+     last; in a gap, the next of mine; after the last, the last. Shifts with no hours count in the kitchen's order. */
+  function tmNow(mine, m) {
+    if (!mine.length) return null;
+    var timed = mine.filter(function (x) { return x.s.from != null && x.s.to != null; });
+    if (!timed.length) return mine[0];
+    var on = timed.filter(function (x) { return x.s.from <= m && m < x.s.to; }).sort(function (a, b) { return b.s.from - a.s.from; })[0];
+    if (on) return on;
+    var next = timed.filter(function (x) { return x.s.from > m; }).sort(function (a, b) { return a.s.from - b.s.from; })[0];
+    return next || timed.slice().sort(function (a, b) { return b.s.to - a.s.to; })[0];
+  }
+  // my next break, or the one I am on: none once the last is over
+  function tmNextBreak(id, m) { return tmMyBreaks(id).filter(function (b) { return b.at + b.len > m; })[0] || null; }
+  function tmOnBreak(b, m) { return !!b && b.at <= m && m < b.at + b.len; }
+  // the shift that counts for me now ('' with none), and the section the plan gives me on it: { sec, name, sh } or null
+  function tmShiftNow(id) { var n = tmNow(tmMy(id), T.mins()); return n ? n.s.id : ''; }
+  function tmPlanSec(id) {
+    var n = tmNow(tmMy(id), T.mins()); if (!n || !n.sec) return null;
+    var s = kitSecs().filter(function (x) { return x.id === n.sec; })[0];
+    return s ? { sec: s.id, name: s.name, sh: n.s.id } : null;
+  }
+  /* What this person last saw of their day on this phone: lk.team.seen.<id> { d, sig }, sig being their own lines in the
+     plan. Out of date at midnight (another day). The first read that has them on it only notes it; a chef's later save
+     that changes their lines makes their day "changed" until Your day is opened. Times only, no names. */
+  function tmMySig(id) { return tm.rec ? JSON.stringify([tm.rec.on.filter(function (o) { return o.id === id; }), tm.rec.br.filter(function (b) { return b.id === id; })]) : ''; }
+  function tmSeen(id) { try { var v = JSON.parse(lsGet('lk.team.seen.' + id) || 'null'); return v && v.d === dayNow() ? v : null; } catch (e) { return null; } }
+  function tmSeenSet(id) { if (tm.rec) lsSet('lk.team.seen.' + id, JSON.stringify({ d: dayNow(), sig: tmMySig(id) })); }
+  function tmChanged(id) { var s = tmSeen(id); return !!(tm.rec && s && tmMy(id).length && s.sig !== tmMySig(id)); }
+  // my section in words: a chef's is their role; a cook's is mySec() (the plan, unless they moved themselves since)
+  function tmSecWords(p, n) { return chefP(p) ? (p.role === 'head' ? 'Head chef' : 'Sous chef') : (mySec() || (n && n.sec ? tmSecName(n.sec) : '')); }
+  // one line for the prep list header and the chip's name: "Lunch: Grill · Break 14:30", "Dinner from 16:00: Pans"
+  function tmDayLine(p) {
+    var m = T.mins(), n = tmNow(tmMy(p.id), m); if (!n) return '';
+    var sec = tmSecWords(p, n), b = tmNextBreak(p.id, m);
+    var head = n.s.from != null && n.s.from > m ? n.s.name + ' from ' + tmHHMM(n.s.from) : n.s.name;
+    return head + (sec ? ': ' + sec : '') + (b ? ' · ' + (tmOnBreak(b, m) ? 'On break to ' + tmHHMM(b.at + b.len) : 'Break ' + tmHHMM(b.at)) : '');
+  }
+  // the shifts of mine after the one that counts now
+  function tmLater(mine, n) { return mine.filter(function (x) { return x !== n && x.s.from != null && n.s.from != null && x.s.from > n.s.from; }); }
+  // the chef hat's person card: the day line with the break's length, then the shifts after it
+  function tmHatLines(p) {
+    if (!p) return [];
+    var m = T.mins(), mine = tmMy(p.id), n = tmNow(mine, m); if (!n) return [];
+    var b = tmNextBreak(p.id, m), out = [tmDayLine(p) + (b && !tmOnBreak(b, m) ? ', ' + b.len + ' min' : '')];
+    tmLater(mine, n).forEach(function (x) { out.push(x.s.name + ' from ' + tmHHMM(x.s.from) + (chefP(p) || !x.sec ? '' : ': ' + tmSecName(x.sec))); });
+    return out;
+  }
+  // from 30 minutes before my next break until I am back
+  function tmDue(id) { var m = T.mins(), b = tmNextBreak(id, m); return !!b && m >= b.at - 30 && m < b.at + b.len; }
+  // the staff chip: once my day is set; filled near my break and after a change
+  function tmStaffChip(p) {
+    teamLoad();
+    if (!tmMy(p.id).length) return '';
+    var ch = tmChanged(p.id), due = tmDue(p.id) || ch, line = tmDayLine(p);
+    return '<button type="button" class="tm-chip' + (due ? ' is-due' : '') + '" data-tm="day" aria-haspopup="dialog" aria-label="' + esc('Your day: ' + line + (ch ? '. Changed' : '')) + '">' + tmIcon(20) + '</button>';
+  }
+  function tmStaffKey() { var p = me(); return p && !teamOK() && tmMy(p.id).length ? [tm.day, tmDue(p.id), tmChanged(p.id), tmDayLine(p)].join('|') : ''; }
+  // who is on a break now, and when they are back (not me)
+  function tmOnBreakNow(not) {
+    var m = T.mins(), out = [];
+    if (!tm.rec) return out;
+    tm.rec.br.forEach(function (b) { if (b.id !== not && tmOnBreak(b, m) && tmShift(b.sh)) out.push(mnName(b.id) + ', back ' + tmHHMM(b.at + b.len)); });
+    return out;
+  }
+  /* a section the plan sets answers Your section today: kept as the day's section, with the shift, and written once to
+     shifts/<day>_<id> marked as set (auto), so the admin's who worked where shows it */
+  function tmSecAuto(p) {
+    var x = tmPlanSec(p.id); if (!x || ksGet(p.id)) return false;
+    var day = dayNow();
+    ksPut(p.id, x.sec, x.name, { sh: x.sh, auto: true });
+    if (canW()) sset(docRef('shifts', day + '_' + p.id), { day: day, sec: x.sec, name: x.name, auto: true, at: now(), sh: x.sh }).catch(function () {});
+    return true;
+  }
+  /* Your day: a sheet on a tap (the chip or the line in the prep header), never by itself. It dims the page, closes on
+     the backdrop, Close, Escape and Back, and goes on document.body, one sheet at a time. Opening it counts as seen. */
+  function tmDayOpen() {
+    var p = me(); if (tmPop || !p || !tm.rec || sheetOpen()) return;
+    var m = T.mins(), mine = tmMy(p.id), n = tmNow(mine, m); if (!n) return;
+    var changed = tmChanged(p.id), b = tmNextBreak(p.id, m), later = tmLater(mine, n), by = tm.rec.by ? mnName(tm.rec.by) : 'the head chef';
+    var hours = function (s) { return s.from != null && s.to != null ? ', ' + tmHHMM(s.from) + ' to ' + tmHHMM(s.to) : ''; };
+    var rows = '<li><span class="k">' + (n.s.from != null && n.s.from > m ? 'Next' : 'Now') + '</span><span><b>' + esc(tmSecWords(p, n) || n.s.name) + '</b><small>' + esc(n.s.name + hours(n.s)) + '</small></span></li>' +
+      '<li><span class="k">Break</span><span>' + (b ? '<b>' + tmHHMM(b.at) + '</b><small>' + b.len + ' minutes' + (tmOnBreak(b, m) ? ', on it now, back ' + tmHHMM(b.at + b.len) : '') + '</small>' : '<b>No break set</b><small>Ask the chef if you need one.</small>') + '</span></li>' +
+      later.map(function (x) { return '<li class="is-later"><span class="k">Later</span><span><b>' + esc(chefP(p) || !x.sec ? x.s.name : tmSecName(x.sec)) + '</b><small>' + esc(x.s.name + hours(x.s)) + '</small></span></li>'; }).join('');
+    var off = tmOnBreakNow(p.id);
+    tmPrev = document.activeElement;
+    var el = document.createElement('div');
+    el.className = 'nt-wrap tm-dw';
+    el.innerHTML = '<div class="nt-bg" data-tm="close"></div><section class="nt" role="dialog" aria-modal="true" aria-labelledby="tm-dh" tabindex="-1"><div class="nt-grip" aria-hidden="true"></div><div class="nt-in">' +
+      '<header class="nt-head"><span class="nt-eb">' + esc(p.name) + '</span><h2 class="nt-h" id="tm-dh">Your day</h2><span class="nt-date">' + esc(parseYmd(dayNow()).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })) + '. ' +
+      (changed ? '<b class="tm-changed">Changed ' + esc(clock(tm.rec.upd)) + ' by ' + esc(by) + '</b>' : 'Set by ' + esc(by) + ' at ' + esc(clock(tm.rec.upd))) + '</span></header>' +
+      '<div class="nt-body"><ul class="tm-dayl">' + rows + '</ul>' + (off.length ? '<p class="tm-off"><b>On break now:</b> ' + esc(off.join('; ')) + '.</p>' : '') + '</div>' +
+      '<footer class="nt-foot"><button type="button" class="nt-got" data-tm="close">Close</button></footer></div></section>';
+    document.body.appendChild(el); tmPop = el;
+    ovPush('tmday', function () { tmDayClose(true); });
+    document.documentElement.classList.add('tm-open');
+    tmSeenSet(p.id); tmPaint();
+    var f = el.querySelector('.nt-got'); if (f) f.focus({ preventScroll: true });
+  }
+  function tmDayClose(noBack) {
+    if (!tmPop) return;
+    ovDone('tmday', noBack);
+    tmPop.remove(); tmPop = null;
+    document.documentElement.classList.remove('tm-open');
+    draw();
+    if (tmPrev && tmPrev.focus && document.body.contains(tmPrev)) { try { tmPrev.focus({ preventScroll: true }); } catch (e) {} }
+    else { var c = document.querySelector('.wtop [data-tm="day"]'); if (c) c.focus({ preventScroll: true }); }
+    tmPrev = null;
+    if (noBack) setTimeout(sheetNext, 0); else sheetNext();
+  }
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest && e.target.closest('[data-tm]'); if (!el) return;
+    var a = el.getAttribute('data-tm');
+    if (a === 'day') { e.preventDefault(); tmDayOpen(); return; }
+    if (a === 'close') { tmDayClose(); return; }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (!tmPop) return;
+    if (e.key === 'Escape') { e.preventDefault(); tmDayClose(); return; }
+    if (e.key === 'Tab') trapTab(e, tmPop);
+  });
+  /* the minute tick (startNoteTick(), no reads): the chip, and the prep header's line in place as a break comes and goes;
+     when the shift that counts for me changes (16:00 from Lunch to Dinner), the page once, for the section it follows */
+  var tmTickSh = null;
+  function tmTick() {
+    tmPaint();
+    var p = me(); if (!p || !tm.rec) return;
+    var sh = tmShiftNow(p.id);
+    if (tmTickSh !== null && sh !== tmTickSh && !typing() && !sheetOpen()) { tmTickSh = sh; draw(); return; }
+    tmTickSh = sh;
+    var el = S.root && document.body.contains(S.root) ? S.root.querySelector('.nb-tmday') : null, l = el ? tmDayLine(p) : '';
+    if (el && l && el.textContent !== l) { el.textContent = l; el.setAttribute('aria-label', 'Your day: ' + l + (tmChanged(p.id) ? '. Changed' : '')); }
+  }
+  /* Your section today, asked by itself, waits for today's team (at most 8 seconds), so a section the plan sets is not
+     asked for; the pings sheet waits with it (ksWait) */
+  var ksTeamWait = false, ksTeamT = 0;
+  function ksTeamIn() { clearTimeout(ksTeamT); if (!ksTeamWait) return; ksTeamWait = false; ksWait = false; sheetNext(); }
 
   /* ---------- public bits used by app.js ---------- */
   /* The page Back closes the nearest local task first. Cancelling an edited form uses its existing two-tap
