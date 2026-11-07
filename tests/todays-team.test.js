@@ -140,7 +140,12 @@ const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.n
     p = await L.open(b, '#/team', { who: 'sam', extra: cfg(), width: w, wait: 1600 });
     await tap(p, '[data-p="tm-on"][data-id="ann"]'); await L.settle(p, 200);
     ok(!(await L.overflow(p)), 'page at ' + w + ' px: no sideways scroll');
-    if (w > 700) ok(await p.evaluate(() => { const n = document.querySelector('.pnav'); return !n || n.getBoundingClientRect().height < 60; }), 'top bar at ' + w + ' px: the page tabs stay on one row with the chip');
+    // the chip must not be what wraps the page tabs: the same top bar measured with it and without it (the test
+    // browsers' fallback fonts differ from machine to machine, so the tabs' own width is not the question here)
+    if (w > 700) {
+      const rows = await p.evaluate(() => { const n = document.querySelector('.pnav'), c = document.querySelector('.wtop .tm-chip'); if (!n || !c) return null; const withChip = n.getBoundingClientRect().height; c.style.display = 'none'; const without = n.getBoundingClientRect().height; c.style.display = ''; return [withChip, without]; });
+      ok(!!rows && Math.abs(rows[0] - rows[1]) < 1, 'top bar at ' + w + ' px: the chip does not wrap the page tabs (' + JSON.stringify(rows) + ')');
+    }
     ok(p.errors.length === 0, 'page at ' + w + ' px: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
