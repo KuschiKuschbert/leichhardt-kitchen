@@ -30,7 +30,7 @@
 */
 import { syncTransfers } from './transfer-index.mjs';
 import { initializeApp, cert } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, FieldPath } from 'firebase-admin/firestore';
 import { createRequire } from 'module';
 const LEARN = createRequire(import.meta.url)('../js/learn.js');
 
@@ -199,7 +199,11 @@ try {
   const [tItems, tVenues] = await transferSummary(today);
   console.log('Transfer summary: ' + tItems + ' items, ' + tVenues + ' venues from ' + TR_DAYS + ' days.');
 } catch (e) { console.error('Transfer summary failed (' + String((e && (e.code || e.name)) || 'error') + '). The log leaves out the message: it can hold a typed name.'); process.exitCode = 1; }
-const claimed = new Set((await K.collection('learnlog').select().get()).docs.map(d => d.id));
+/* The claims of the days this run can learn, the last DAYS finished days: learnlog/<day> and learnlog/o-<day>, by id
+   range, 2 a day at most (Plan B 4.1, 7 Nov 2026). It read every claim ever made, 2 more reads every night. */
+const cFrom = shift(today, -DAYS), cTo = shift(today, -1), ID = FieldPath.documentId();
+const claimed = new Set((await Promise.all([[cFrom, cTo], ['o-' + cFrom, 'o-' + cTo]].map(([a, z]) =>
+  K.collection('learnlog').where(ID, '>=', a).where(ID, '<=', z).select().get()))).flatMap(sn => sn.docs.map(d => d.id)));
 const todo = [];
 for (let i = 1; i <= DAYS; i++) {
   const d = shift(today, -i);

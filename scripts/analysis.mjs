@@ -28,7 +28,17 @@ export async function analyse(K, options = {}) {
     if (reads > budget) throw new Error('analysis-read-budget');
     return sn.docs.map(d => ({ ...d.data(), id: d.id }));
   }
-  const old = await K.collection('analysis').doc('current').get();
+  const old = await K.collection('analysis').doc('current').get(), prev = old.exists ? old.data() : {};
+  const health = await K.collection('analysis').doc('health').get();
+  const isDay = d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d);
+  /* Plan B 4.1 (7 Nov 2026, docs/firestore-usage.md). The days before the book's first written day are empty, so they are
+     not read again: 4 reads a day, about 280 a night until the 90-day window moves past the start (mid-January 2027).
+     The first day is kept in analysis/current (first). A full run reads every day of the window again: on Sundays
+     (kitchen time), with options.full, or when the first day is not known yet. It also catches a line written into a
+     day before the first, and sweeps analysisDaily (below). */
+  const full = !!options.full || new Date(at + 36000000).getUTCDay() === 0 || !isDay(prev.first);
+  const skipBefore = full ? '' : prev.first;
+  let first = '';
   const refs = await read(K.collection('references'));
   const suppliers = await read(K.collection('suppliers'));
   const recipes = await read(K.collection('recipes'));
@@ -54,8 +64,9 @@ export async function analyse(K, options = {}) {
   for (let i = window; i >= 1; i--) {
     const day = shift(today, -i), input = {};
     for (const [source, col, sub] of [['prep', 'days', 'items'], ['orders', 'orders', 'lines'], ['waste', 'waste', 'lines'], ['transfers', 'transfers', 'lines']]) {
-      input[source] = await read(K.collection(col).doc(day).collection(sub));
+      input[source] = skipBefore && day < skipBefore ? [] : await read(K.collection(col).doc(day).collection(sub));
     }
+    if (!first && (input.prep.length || input.orders.length || input.waste.length || input.transfers.length)) first = day;
     if (i <= DIGEST_DAYS) digests.push({ day, prep: byId(input.prep), orders: byId(input.orders) });
     input.supplierOrders = orders.filter(x => x.day === day);
     input.deliveries = deliveries.filter(x => x.day === day);
@@ -93,7 +104,7 @@ export async function analyse(K, options = {}) {
   const batch = K.firestore.batch();
   for (const [n, data] of publications) batch.set(K.collection('analysis').doc('range-' + n), data);
   batch.set(K.collection('analysis').doc('dashboard'), board);
-  batch.set(K.collection('analysis').doc('current'), { v: 1, generation, at, from, to, days: window, reads, references: refs.length, suppliers: suppliers.length, inventory, comparisonOnly: true, previous: old.exists ? old.data().generation : '' });
+  batch.set(K.collection('analysis').doc('current'), { v: 1, generation, at, from, to, days: window, reads, references: refs.length, suppliers: suppliers.length, inventory, comparisonOnly: true, previous: prev.generation || '', previousFrom: isDay(prev.from) ? prev.from : '', previousTo: isDay(prev.to) ? prev.to : '', first, full });
   batch.set(K.collection('analysis').doc('health'), { at, status: 'ok', generation, reads });
   await batch.commit();
   // The day digests, once everything above is published: only the days whose lines changed.
@@ -116,11 +127,20 @@ export async function analyse(K, options = {}) {
   last.set(indexRef, { v: 1, at, days: after });
   await last.commit();
   // Keep the published generation and its predecessor. A reader can finish an evidence request during refresh.
-  const keep = new Set([generation, old.exists ? old.data().generation : '']);
+  /* Plan B 4.1: the generation before them is deleted by name, from the window analysis/current kept for it
+     (previousFrom, previousTo: about 90 deletes and no reads). Reading every analysisDaily id cost up to 400 reads a
+     night. That sweep still runs on a full run, after a cleanup that did not finish, and when the window is not known
+     (a record from before this change), so a run that wrote its days and then failed leaves nothing behind for long. */
+  const keep = new Set([generation, prev.generation || '']), drop = prev.previous || '';
+  const pending = health.exists && health.data().cleanup === 'pending', named = isDay(prev.previousFrom) && isDay(prev.previousTo) && prev.previousFrom <= prev.previousTo;
+  const cleanup = full || pending || (drop && !named) ? 'swept' : drop ? 'named' : 'none';
+  let removed = 0;
   try {
-  const obsolete = await K.collection('analysisDaily').select().limit(400).get();
-  const gone = obsolete.docs.filter(d => !keep.has(d.id.split('_')[0]));
-  for (let i = 0; i < gone.length; i += 400) { const b = K.firestore.batch(); gone.slice(i, i + 400).forEach(d => b.delete(d.ref)); await b.commit(); }
+    let refs = [];
+    if (cleanup === 'swept') refs = (await K.collection('analysisDaily').select().limit(400).get()).docs.filter(d => !keep.has(d.id.split('_')[0])).map(d => d.ref);
+    else if (cleanup === 'named' && !keep.has(drop)) for (let d = prev.previousFrom, n = 0; d <= prev.previousTo && n < 120; d = shift(d, 1), n++) refs.push(K.collection('analysisDaily').doc(drop + '_' + d));
+    for (let i = 0; i < refs.length; i += 400) { const b = K.firestore.batch(); refs.slice(i, i + 400).forEach(r => b.delete(r)); await b.commit(); }
+    removed = refs.length;
   } catch (e) { await K.collection('analysis').doc('health').set({ at, status: 'ok', generation, reads, cleanup: 'pending' }).catch(() => {}); }
-  return { days: window, reads, digests: { written: write.length, deleted: gone.length } };
+  return { days: window, reads, full, first, cleanup, removed, digests: { written: write.length, deleted: gone.length } };
 }

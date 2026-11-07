@@ -12,24 +12,28 @@ await K.collection('days').doc(yesterday).collection('items').doc('p').set({ tex
   preparedBy: 'Example cook', preparedById: 'bo', preparedAt: at - 1000, station: 'Larder' });
 await K.collection('waste').doc(yesterday).collection('lines').doc('w').set({ text: 'Milk', amount: 2, unit: 'L' });
 const get = async id => (await K.collection('analysis').doc(id).get()).data();
-await analyse(K, { days: 3, at });
+const r1 = await analyse(K, { days: 3, at });
 assert.equal((await get('range-7')).counts.prep, 1);
 assert.equal((await get('range-7')).people.bo.Larder, 1, 'Published analysis credits the reported worker.');
 assert.equal((await get('range-7')).people.ann, undefined, 'The recorder is not counted as a second worker.');
 const initialGeneration = (await get('current')).generation;
 assert.equal((await K.collection('analysisDaily').doc(initialGeneration + '_' + yesterday).get()).data().entries.find(e => e.source === 'prep').person, 'bo', 'The daily contribution keeps the same worker as the published range.');
 await K.collection('days').doc(yesterday).collection('items').doc('p').update({ doneAt: at - 500 });
-await analyse(K, { days: 3, at: at + 1 });
+const r2 = await analyse(K, { days: 3, at: at + 1 });
 assert.equal((await get('range-7')).counts.prep, 1);
 assert.equal((await get('range-7')).people.ann.Larder, 1, 'An old-client re-tick does not inherit a previous prepared worker.');
 assert.equal((await get('range-7')).people.bo, undefined);
 await K.collection('days').doc(yesterday).collection('items').doc('p').update({ deleted: true });
-await analyse(K, { days: 3, at: at + 2 });
+const r3 = await analyse(K, { days: 3, at: at + 2 });
 assert.equal((await get('range-7')).counts.prep, undefined);
 const generation = (await get('current')).generation;
 await assert.rejects(analyse(K, { days: 3, budget: 2, at: at + 3 }));
 assert.equal((await get('current')).generation, generation);
 assert.equal((await K.collection('analysisDaily').get()).size, 6);
+// Plan B 4.1 (7 Nov 2026): the empty days before the first written day are not read again, and the generation before
+// last is deleted by name, with no reads
+assert.deepEqual([r1.full, r1.first, r2.full, r1.reads - r2.reads], [true, yesterday, false, 8], 'The two empty days before the first are skipped (4 reads each): ' + JSON.stringify([r1.full, r1.first, r2.full, r1.reads, r2.reads]));
+assert.deepEqual([r2.cleanup, r3.cleanup, r3.removed], ['none', 'named', 3], 'The generation before last is deleted by name: ' + JSON.stringify([r2.cleanup, r3.cleanup, r3.removed]));
 await assert.rejects(analyse(K, { days: 91 }));
 for (let i = 0; i < 3000; i += 400) { const batch = db.batch(); for (let j = i; j < Math.min(3000, i + 400); j++) batch.set(K.collection('days').doc(yesterday).collection('items').doc('large-' + j), { text: 'x'.repeat(160), station: 's'.repeat(80), qty: 'q'.repeat(80) }); await batch.commit(); }
 await assert.rejects(analyse(K, { days: 3, at: at + 4 }), /analysis-day-too-large/);
@@ -80,4 +84,21 @@ const narrow = await analyse(K2, { days: 1, at: at + 180000 });
 assert.equal(narrow.digests.deleted, 2, 'The days that left the window lose their digests.');
 assert.equal(await dig('2026-10-28'), undefined); assert.equal((await dig('2026-10-30')).day, '2026-10-30');
 await db.recursiveDelete(K2);
-console.log('PASS analysis worker attribution, dashboard counts, day digests, old-client re-ticks, reruns, corrections, atomic publication, read budget and generation retention');
+// Plan B 4.1: a line written into a day before the first waits for the full run (Sundays, kitchen time, or options.full),
+// which also sweeps what a failed run left in analysisDaily
+const K3 = db.collection('kitchens').doc('000002');
+await db.recursiveDelete(K3);
+await K3.collection('days').doc(yesterday).collection('items').doc('p').set({ text: 'Milk', done: true, station: 'Larder' });
+const g3 = async id => (await K3.collection('analysis').doc(id).get()).data();
+await analyse(K3, { days: 3, at });
+await K3.collection('analysisDaily').doc('failedrun_' + yesterday).set({ day: yesterday, entries: [] });
+await K3.collection('days').doc('2026-10-28').collection('items').doc('early').set({ text: 'Milk', done: true, station: 'Larder' });
+const quiet = await analyse(K3, { days: 3, at: at + 1 });
+assert.deepEqual([quiet.full, (await g3('range-7')).counts.prep], [false, 1], 'A line written into a day before the first is not read on a normal night.');
+const swept = await analyse(K3, { days: 3, at: at + 2, full: true });
+assert.deepEqual([swept.cleanup, (await g3('range-7')).counts.prep, (await g3('current')).first], ['swept', 2, '2026-10-28'], 'The full run reads it and moves the first day back.');
+assert.equal((await K3.collection('analysisDaily').doc('failedrun_' + yesterday).get()).exists, false, 'The sweep removes what a failed run left.');
+assert.equal((await K3.collection('analysisDaily').get()).size, 6, 'Two generations are kept.');
+assert.equal((await analyse(K3, { days: 3, at: at + 86400000 })).full, true, 'Sundays (kitchen time) are a full run.');
+await db.recursiveDelete(K3);
+console.log('PASS analysis worker attribution, dashboard counts, day digests, old-client re-ticks, reruns, corrections, atomic publication, read budget, generation retention, skipped empty days, named and swept cleanup');
