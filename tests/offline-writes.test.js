@@ -598,7 +598,13 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
     await p.clock.fastForward('00:10:30');
     await waitReload(p);
-    ok(await reloaded(p), '04:00: sent, it refreshes 10 minutes later');
+    // what held it back, said in the FAIL line (it failed on GitHub's runners on 5 and 7 Nov 2026, never on a laptop)
+    const went = await reloaded(p), why = went ? '' : ' ' + JSON.stringify(await p.evaluate(() => ({
+      unsaved: lkUnsaved(), unsent: lkUnsent(), editing: lkEditing() && document.activeElement.tagName, idle: lkIdle(),
+      untouched: Math.round((Date.now() - lkTouch) / 1000), online: navigator.onLine, at: LK_TIME.clock(), day: LK_TIME.day(),
+      locked: !LK_PREP.privateAccess(), strip: (document.querySelector('.upd-bar span') || {}).textContent || ''
+    })).catch(e => String(e).slice(0, 120)));
+    ok(went, '04:00: sent, it refreshes 10 minutes later' + why);
   });
 
   // 10. the automatic update looks again before it reloads (final review, 28 Oct 2026). It asks the server, then fetches
