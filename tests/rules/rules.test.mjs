@@ -288,6 +288,34 @@ await ok(W([['shifts/2026-10-21_sam', sh({ sec: 'sous', name: 'Sous chef', auto:
 await ok(getDocs(collection(anon, K + 'shifts')), false, 'shifts: a PIN holder cannot read while signed out who is on which section');
 await ok(deleteDoc(doc(anon, K + 'shifts/2026-10-21_ann')), false, 'shifts: staff cannot delete one');
 await ok(setDoc(doc(owner, K + 'shifts/2026-10-01_old-hand'), sh({ day: '2026-10-01', by: 'old-hand' })), true, 'shifts: the head chef copies one as it is (move to a new kitchen PIN)');
+// Today's team (7 Nov 2026): the shift a section is for, and the person's own changes during the day, for training
+await ok(W([['shifts/2026-10-21_ann', sh({ sh: 'lunch', log: [{ sh: 'lunch', sec: 'grill', at: 1 }, { sh: 'lunch', sec: 'pans', at: 2 }] })]], { id: 'ann' }), true, 'shifts: Ann moves to Pans mid-shift, logged');
+await ok(W([['shifts/2026-10-21_ann', sh({ sh: 'x'.repeat(41) })]], { id: 'ann' }), false, 'shifts: a shift id over 40 characters is refused');
+await ok(W([['shifts/2026-10-21_ann', sh({ log: 'grill' })]], { id: 'ann' }), false, 'shifts: the log is a list');
+await ok(W([['shifts/2026-10-21_ann', sh({ log: Array.from({ length: 31 }, (_, i) => ({ sh: 'lunch', sec: 'grill', at: i })) })]], { id: 'ann' }), false, 'shifts: the log keeps at most 30 changes');
+
+// Today's team (7 Nov 2026): team/<day>, written by the head chef and the sous chefs, read by every kitchen session
+const team = x => Object.assign({ day: '2026-11-07', on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }], br: [{ id: 'ann', sh: 'lunch', at: 870, len: 30 }], v: 1, at: 1, upd: 1 }, x || {});
+await ok(W([['team/2026-11-07', team()]], { id: 'ann' }), false, 'team: staff cannot set today\'s team');
+await ok(W([['team/2026-11-07', team()]], { id: 'bo' }), false, 'team: a ping writer who is not a chef cannot either');
+await ok(setDoc(doc(anon, K + 'team/2026-11-07'), team({ by: 'sam' })), false, 'team: no session refused');
+await ok(W([['team/2026-11-07', team({ v: 2 })]], { id: 'sam' }), false, 'team: the first save is version 1');
+await ok(W([['team/2026-11-07', team()]], { id: 'sam', pin: '9999' }), false, 'team: wrong PIN refused');
+await ok(W([['team/2026-11-07', team()]], { id: 'sam' }), true, 'team: a sous chef sets today\'s team');
+await ok(W([['team/2026-11-07', team({ v: 2, upd: 2 })]], { id: 'hd' }), true, 'team: the head chef with their PIN saves the next version');
+await ok(W([['team/2026-11-07', team({ v: 2, upd: 3 })]], { id: 'sam' }), false, 'team: a save from a copy read before that one is refused (never over a newer save)');
+await ok(W([['team/2026-11-07', team({ v: 3, upd: 3 })]], { id: 'sam' }), true, 'team: read again, the sous chef saves version 3');
+await ok(W([['team/2026-11-07', team({ v: 4, upd: 4, at: 9 })]], { id: 'sam' }), false, 'team: when it was first set never changes');
+await ok(W([['team/2026-11-08', team()]], { id: 'sam' }), false, 'team: the day must be the record\'s own');
+await ok(W([['team/2026-11-08', team({ day: '2026-11-08', note: 'x' })]], { id: 'sam' }), false, 'team: no fields beyond the plan');
+await ok(W([['team/2026-11-08', team({ day: '2026-11-08', on: 'ann' })]], { id: 'sam' }), false, 'team: who is on is a list');
+await ok(W([['team/2026-11-08', team({ day: '2026-11-08', br: Array.from({ length: 121 }, () => ({ id: 'ann', sh: 'lunch', at: 870, len: 30 })) })]], { id: 'sam' }), false, 'team: at most 120 breaks');
+await ok(W([['team/2026-11-08', team({ day: '2026-11-08', v: 1.5 })]], { id: 'sam' }), false, 'team: the version is a whole number');
+await ok(W([['team/2026-11-08', team({ day: '2026-11-08', upd: 'now' })]], { id: 'sam' }), false, 'team: the times are numbers');
+await ok(W([['team/2026-11-08', team({ day: '2026-11-08' })]], { id: 'sam' }), true, 'team: tomorrow\'s team can be set the night before');
+await ok(getDoc(doc(anon, K + 'team/2026-11-07')), false, 'team: a PIN holder cannot read it while signed out');
+await ok(deleteDoc(doc(anon, K + 'team/2026-11-07')), false, 'team: staff cannot delete one');
+await ok(setDoc(doc(owner, K + 'team/2026-11-09'), team({ day: '2026-11-09', by: '' })), true, 'team: the head chef\'s Google device sets one');
 await ok(W([['config/main', { kitSecs: [{ id: 'grill', name: 'Grill', off: false }] }, true]], { id: 'sam' }), false, 'config: a sous chef cannot change the kitchen sections');
 await ok(setDoc(doc(owner, K + 'config/main'), { kitSecs: [{ id: 'grill', name: 'Grill', off: false }] }, { merge: true }), true, 'config: the head chef sets the kitchen sections');
 // One ping sound for the whole kitchen (head chef, 3 Nov 2026, docs/ping-sound.md): only the head chef's admin device
@@ -553,6 +581,9 @@ await ok(W([['config/main', { pastEdit: { p: Date.now() } }, true]], { id: 'sam'
 await ok(W([['config/main', { pastEdit: { x: 'now' } }, true]], { id: 'sam' }), false, 'pastEdit: the transfers stamp is a number');
 await ok(W([['config/main', { pastEdit: { n: Date.now() } }, true]], { id: 'sam' }), true, 'pastEdit: a sous chef stamps a change to today\'s shift pings (n)');
 await ok(W([['config/main', { pastEdit: { n: 'now' } }, true]], { id: 'sam' }), false, 'pastEdit: the pings stamp is a number');
+await ok(W([['config/main', { pastEdit: { t: Date.now() } }, true]], { id: 'sam' }), true, 'pastEdit: a sous chef stamps a change to today\'s team (t)');
+await ok(W([['config/main', { pastEdit: { t: 'now' } }, true]], { id: 'sam' }), false, 'pastEdit: the team stamp is a number');
+await ok(W([['config/main', { pastEdit: { t: Date.now() } }, true]], { id: 'ann' }), false, 'pastEdit: staff cannot stamp the team');
 await ok(W([['config/main', { pastEdit: { n: Date.now() } }, true]], { id: 'ann' }), false, 'pastEdit: staff cannot stamp the pings');
 await ok(W([['config/main', { pastEdit: { p: 'soon' } }, true]], { id: 'sam' }), false, 'pastEdit: times are numbers');
 // Day-named stamps (Plan B 2.4, 5 Nov 2026): the days that changed, the stamp before and the stamp they belong to

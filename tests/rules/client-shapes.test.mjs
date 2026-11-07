@@ -279,6 +279,8 @@ row('js/prep.js dkLoad(): the drinks run (the drinks list)', { ok: KITCHEN, asks
 row('js/prep.js dkLoad(): who was in today (the activity list)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, 'activity')) });
 row('js/prep.js ksCheck(): my section today (shifts/<today>_<me>)', { ok: KITCHEN, asks: ['ann', 'lou', 'tab'], run: (db, w, r) => getDoc(D(db, `shifts/${TODAY}_${ownId(r, w)}`)) });
 row('js/prep.js loadShifts() (admin People, Manage staff): 14 days of sections', { ok: KITCHEN, asks: CHEFS, run: db => getDocs(query(C(db, 'shifts'), where('day', '>=', kday(NOW - 13 * DAY)))) });
+row('js/prep.js teamLoad(): today\'s team (team/<today>), for the chip, Your day and the prep list line', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, `team/${TODAY}`)) });
+row('js/prep.js teamLast(): the same day last week, for Use it on the chef\'s page', { ok: KITCHEN, asks: CHEFS, run: db => getDoc(D(db, `team/${kday(NOW - 7 * DAY)}`)) });
 row('js/prep.js mlStatLoad(): what happened to a mail I sent (mailstat/<id>)', { ok: KITCHEN, asks: MAIL, run: db => getDoc(D(db, 'mailstat/x1')) });
 row('js/prep.js loadMail(): open mail (mail, done == false; sous chef mail off)', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(query(C(db, 'mail'), where('done', '==', false))) });
 row('js/prep.js loadMailDone(): mail ticked in the last 30 days', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(query(C(db, 'mail'), where('doneAt', '>=', NOW - 30 * DAY))) });
@@ -479,6 +481,16 @@ row('js/prep.js dkSave(): my usual drink (drinks/<me>)', { ok: KITCHEN, asks: KP
   run: (db, w, r) => W(r, [['set', 'drinks/' + ownId(r, w), { kind: 'flat', size: 'reg', milk: 'oat', shot: '', sugar: '1', note: '', cold: '', other: '', at: Date.now() }]]) });
 row('js/prep.js ksPick() and ksCheck(): my section today (shifts/<today>_<me>)', { ok: KITCHEN, asks: ['ownkit', 'kit', 'sam', 'ann', 'lou', 'tab'],
   run: (db, w, r) => W(r, [['set', `shifts/${TODAY}_${ownId(r, w)}`, { day: TODAY, sec: 'grill', name: 'Grill', auto: false, at: Date.now() }]]) });
+row('js/prep.js ksPick() with Today\'s team: my section moved mid-shift, with the shift and the log', { ok: KITCHEN, asks: ['ann', 'lou', 'tab'],
+  run: (db, w, r) => W(r, [['set', `shifts/${TODAY}_${ownId(r, w)}`, { day: TODAY, sec: 'pans', name: 'Pans', auto: false, at: Date.now(), sh: 'lunch', log: [{ sh: 'lunch', sec: 'grill', at: 1 }, { sh: 'lunch', sec: 'pans', at: 2 }] }]]) });
+// each sign-in sets its own made-up day, so one cell never meets another cell's version
+const TEAM_DAY = r => '2027-01-' + String(10 + ALL.indexOf(r));
+row('js/prep.js teamSave(): set the day\'s team (version 1)', { ok: CHEFS, asks: CHEFS,
+  run: (db, w, r) => W(r, [['set', 'team/' + TEAM_DAY(r), { day: TEAM_DAY(r), on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }], br: [{ id: 'ann', sh: 'lunch', at: 870, len: 30 }], v: 1, at: NOW, upd: NOW }]]) });
+row('js/prep.js teamSave(): change it (the next version) and stamp pastEdit.t in one batch', { ok: CHEFS, asks: CHEFS,
+  prep: r => put({ ['team/2027-02-' + String(10 + ALL.indexOf(r))]: { day: '2027-02-' + String(10 + ALL.indexOf(r)), on: [], br: [], v: 1, at: NOW, upd: NOW, by: 'sam' } }),
+  run: (db, w, r) => { const day = '2027-02-' + String(10 + ALL.indexOf(r));
+    return W(r, [['set', 'team/' + day, { day, on: [{ id: 'ann', sh: 'dinner', sec: 'pans' }], br: [], v: 2, at: NOW, upd: NOW + 1 }], ['set', 'config/main', { pastEdit: { t: Date.now() } }, true]]); } });
 row('js/prep.js cutOrdered(): tick a supplier order (cutdone; the Google device as owner, setDoc)', { ok: CHEFS, asks: CHEFS,
   run: (db, w, r) => { const data = { day: TMW, sid: 'veg-' + r, on: true, at: Date.now(), by: w || 'owner' }, p = `cutdone/${data.day}_${data.sid}`;
     return w ? W(r, [['set', p, data]]) : setDoc(D(db, p), data); } });
