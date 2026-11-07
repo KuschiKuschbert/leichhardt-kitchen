@@ -426,6 +426,17 @@ figcaption b { color: var(--ink); font-weight: 600; }
 .a-brief h5 { font: 700 46px/1 var(--hand); margin: 0; }
 .a-head-line { font: 600 21px/1.35 var(--body); margin: 10px 0; }
 .a-head-line b { color: var(--accent-ink); }
+.tb { position: relative; overflow: hidden; background: var(--bg); color: var(--ink); font: 400 16px/1.4 var(--body); width: 768px; height: 1024px; border-radius: 22px; box-shadow: 0 10px 30px rgba(43,42,39,.16); border: 1px solid var(--line); flex: none; }
+.shot .tb { border-radius: 0; box-shadow: none; border: 0; }
+.tb .m-top { height: 84px; padding: 0 16px; }
+.tb .m-body { top: 84px; }
+.tb .m-nav { display: flex; gap: 6px; flex: 1; justify-content: center; }
+.tb .m-nav span { padding: 9px 13px; border-radius: var(--r-pick); border: 2px solid var(--bar-text); font: 600 15px/1 var(--body); }
+.tb .m-nav span.on { background: var(--bar-text); color: var(--ink); }
+.s1-wall { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 28px; }
+.s1-col { border-top: 3px solid var(--ink); margin-top: 14px; }
+.s1-wall .m-r .m-link, .s1-wall .m-dots { display: none; }
+
 </style>
 </head>
 <body>
@@ -913,7 +924,40 @@ figcaption b { color: var(--ink); font-weight: 600; }
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px">' + tile('Waste in kg, week', '10.5 kg', '3 kg more than last week', 'up', '0,26 26,22 52,24 78,16 104,18 130,10 156,8', '#C2451A') + tile('Prep on time', '90%', 'Same as last week', 'ok', '0,12 26,10 52,14 78,10 104,12 130,10 156,11', '#2E8B57') + tile('Orders on time', '12 of 12', 'Every cut-off met', 'ok', '0,10 26,10 52,10 78,10 104,10 130,10 156,10', '#2E8B57') + '</div>' +
       '<div class="m-day" style="margin-top:22px"><span>Needs you</span><span>5</span></div>' + [['mail', 'Fryer 2 takes 20 minutes to heat', 'Kitchen mail · Ann'], ['star', '3 item links to check', 'Review desk'], ['doc', 'Minutes for 11 Nov are a draft', 'Ready to publish']].map(function (x) { return '<div class="e-row"><span style="color:var(--tag)">' + ic(x[0]) + '</span><div class="grow"><div class="t">' + x[1] + '</div><div class="s">' + x[2] + '</div></div>' + ic('chev', 18) + '</div>'; }).join('') + '</div></div></div>';
   } };
+  /* ---------- step 1 at every size (8 Nov 2026): Prep and Add a line on a tablet, a laptop and the wall board ---------- */
+  function wideRail(cols) {
+    var out = '';
+    PREP.forEach(function (g) {
+      var open = g.l.filter(function (x) { return !x.d; }), pct = Math.round((g.l.length - open.length) / g.l.length * 100);
+      var sec = '<div class="m-sec"><span>' + g.s + '</span><span class="e-bar"><i class="' + (pct >= 100 ? 'ok' : '') + '" style="width:' + Math.max(pct, 3) + '%"></i></span><span>' + (g.l.length - open.length) + '/' + g.l.length + '</span></div>';
+      var rows = open.map(function (x) { return rxRow(x, { rx: true, lap: true }); }).join('');
+      out += cols ? '<div class="s1-col">' + sec + rows + '</div>' : sec + rows;
+    });
+    return out;
+  }
+  function s1Head(wide, wall) {
+    return '<div class="m-nbh"><div><div class="m-nbt"' + (wide ? ' style="font-size:46px"' : '') + '>Today</div>' + (wall ? '<div class="m-nbd">Friday 13 November</div>' : '<div style="display:flex;gap:6px;align-items:center;margin-top:6px"><span class="m-pill round" style="min-height:40px;width:40px">‹</span><span class="m-pill date" style="min-height:40px">Fri 13 Nov ▾</span><span class="m-pill round" style="min-height:40px;width:40px">›</span></div>') + '</div>' +
+      '<div style="display:flex;align-items:center;gap:14px">' + (wall ? '' : '<span class="m-link">Set today\'s team</span>') + '<div class="m-prog">' + NDONE + ' of ' + NLINES + ' done</div>' + (wall ? '<span class="m-pill" style="text-transform:none;letter-spacing:0;font:600 15px/1 var(--body)">List</span>' : '') + '<span class="m-btn main" style="min-height:46px;font-size:16px">' + ic('plus', 18) + 'Add a line</span></div></div>';
+  }
+  var CHIPS = '<div class="m-bar" style="-webkit-mask-image:none;mask-image:none"><span class="m-pill on">All</span><span class="m-pill">Grill</span><span class="m-pill">Sauce</span><span class="m-pill">Larder</span><span class="m-pill">Fryer</span><span class="m-pill">Pastry</span></div>';
+  E['s1-tablet-768'] = { w: 768, g: 'step1', cap: '<b>Prep on a tablet, 768 px.</b> Lines were one row here already; now the lone ! is an Urgent button with its word, filled when on, beside On it, Recipe, Remove and ⋯. Section chips on their own row, the day in the heading, a bar in each section heading. Add a line stays in the heading.', html: function () {
+    return '<div class="tb rx"><div class="m-top"><span class="m-back">' + ic('back', 24) + '</span><div class="m-nav">' + TABS.slice(0, 5).map(function (t) { return '<span class="' + (t[1] === 'Prep' ? 'on' : '') + '">' + t[1] + '</span>'; }).join('') + '</div><span class="m-chips"><span class="m-chip due">' + ic('team') + '</span><span class="m-chip">' + ic('bell') + '</span><span class="m-chip">' + ic('hat') + '<span class="bdg">S</span></span></span></div><div class="m-body" style="padding:16px 20px;bottom:0">' + CHIPS + '<div class="m-nb" style="padding-left:30px">' + s1Head(true, false) + wideRail(false) + '</div></div></div>';
+  } };
+  E['s1-laptop-1280'] = { w: 1280, g: 'step1', cap: '<b>Prep on a laptop.</b> The two-page notebook stays: the list on the left with the same one-row lines and Urgent button, Handy on the right with Done today and your usual lines.', html: function () {
+    var nav = '<div class="m-nav">' + TABS.map(function (t) { return '<span class="' + (t[1] === 'Prep' ? 'on' : '') + '">' + t[1] + '</span>'; }).join('') + '</div>';
+    return '<div class="lt rx">' + '<div class="m-top"><span class="m-back">' + ic('back', 26) + '</span><div class="m-brand"><small>Leichhardt Hotel Kitchen</small><b>Kitchen Book</b></div>' + nav + '<span class="m-chips"><span class="m-chip due">' + ic('team') + '</span><span class="m-chip">' + ic('bell') + '</span><span class="m-chip">' + ic('hat') + '<span class="bdg">H</span></span></span></div>' +
+      '<div class="m-body">' + CHIPS.replace('m-bar"', 'm-bar" ') + '<div class="m-two" style="margin-top:14px;grid-template-columns:1.25fr .75fr"><div class="m-nb" style="padding-left:30px">' + s1Head(true, false) + wideRail(false) + '</div>' +
+      '<div class="m-nb"><div class="m-nbh"><div><div class="m-nbt" style="color:#6B655A">Handy</div><div class="m-nbd">Done today and your usual lines</div></div></div><div class="m-sec"><span>Done today (' + NDONE + ')</span></div>' +
+      '<div class="m-r done"><span class="m-box done">' + ic('tick', 18) + '</span><div class="m-w"><div class="m-t">Laksa paste <i>1 batch</i></div><div class="m-m">Ann 11:48</div></div></div><div class="m-r done"><span class="m-box done">' + ic('tick', 18) + '</span><div class="m-w"><div class="m-t">Wash bok choy</div><div class="m-m">Bo 10:02</div></div></div>' +
+      '<div class="m-sec" style="margin-top:18px"><span>Your usual</span></div><div style="display:flex;flex-wrap:wrap;gap:8px">' + ['Slice onions 2 tubs', 'Make gravy 5 L', 'Portion rump 20', 'Coleslaw 3 L'].map(function (t) { return '<span class="e-chip">' + ic('plus', 16) + t + '</span>'; }).join('') + '</div></div></div></div></div>';
+  } };
+  E['s1-wall-1280'] = { w: 1280, g: 'step1', cap: '<b>The wall board on the shared kitchen tablet.</b> As today: a column for each section, no tabs, List to go back. New: the Urgent button on every line (one tap, the tablet asks Who\'s on it as now for On it), and a bar in each column heading.', html: function () {
+    var nav = '<div class="m-nav">' + TABS.map(function (t) { return '<span class="' + (t[1] === 'Prep' ? 'on' : '') + '">' + t[1] + '</span>'; }).join('') + '</div>';
+    return '<div class="lt rx">' + '<div class="m-top"><span class="m-back">' + ic('back', 26) + '</span><div class="m-brand"><small>Leichhardt Hotel Kitchen</small><b>Kitchen Book</b></div>' + nav + '<span class="m-chips"><span class="m-chip">' + ic('team') + '</span><span class="m-chip">' + ic('bell') + '</span><span class="m-chip">' + ic('hat') + '<span class="bdg">S</span></span></span></div>' +
+      '<div class="m-body" style="padding:20px 40px">' + s1Head(true, true).replace('<div class="m-nbh">', '<div class="m-nbh" style="border-bottom:2px solid var(--ink)">') + '<div class="s1-wall">' + wideRail(true) + '</div></div></div>';
+  } };
   var GROUPS = [
+    ['step1', 'Step 1 at every size: Prep and Add a line', 'What step 1 builds, at every size, for the head chef to check before any code (8 Nov 2026): the phone and Add a line, a tablet, a laptop, and the wall board on the shared kitchen tablet. On a tablet and a laptop the lines are one row already today, so the change there is smaller: the Urgent button with its word, the chips on their own row with the day in the heading, and a bar in each section heading.'],
     ['home', 'Home: B\'s board, with the celebrations', 'Your choice: B\'s now and next. It keeps the kraft board and the pins, so the book still looks like the kitchen\'s, and the day\'s celebration leads the board with its lamps, its lights under the top bar and its six-language line. Coming up holds festivals as well as functions and cut-offs. Built only from what the home page already reads.'],
     ['work', 'Prep, Orders, Supplier order, Delivery received, Wastage, Transfers', 'The agreed one-row lines and print words on every list. Then each page gets the one idea from the seven apps that fits its job: progress you can see on Prep, your usual lines first when adding, a countdown on what closes next, arrivals with stamps, loans as cards.'],
     ['fn', 'Functions and the service view', 'Bookings as cards with what goes out next, Upcoming only for days with something on, and the service view as a live board. The function page itself is the card drawn on the first page (every round tick, comment, changes, Cancel at the end).'],
@@ -928,8 +972,9 @@ figcaption b { color: var(--ink); font-weight: 600; }
   if (q && E[q]) { document.body.className = 'shot'; document.getElementById('page').innerHTML = E[q].html(); return; }
   document.getElementById('groups').innerHTML = GROUPS.map(function (g) {
     var ids = Object.keys(E).filter(function (k) { return E[k].g === g[0]; });
+    if (g[0] === 'step1') ids = ['e-prep', 'e-add'].concat(ids);
     return '<section class="part" id="g-' + g[0] + '"><div class="design-head"><h2>' + g[1] + '</h2></div><p>' + g[2] + '</p>' +
-      '<div class="row">' + ids.filter(function (k) { return E[k].w === 390; }).map(figure).join('') + (g[0] === 'recipes' ? '<figure><img class="shotimg" src="previews/today-recipe-side-390.png" alt="Today: the Barramundi card, the plate with pins and From the side" loading="lazy"><figcaption><b>Further down the same card, today and unchanged.</b> The plate with its pins (a pin with an arrow opens its own recipe) and From the side, each layer named with its amount. The redesign keeps both, and the build, pan and How to cut drawings.</figcaption></figure>' : '') + '</div>' + ids.filter(function (k) { return E[k].w === 1280; }).map(figure).join('') + '</section>';
+      '<div class="row">' + ids.filter(function (k) { return E[k].w !== 1280; }).map(figure).join('') + (g[0] === 'recipes' ? '<figure><img class="shotimg" src="previews/today-recipe-side-390.png" alt="Today: the Barramundi card, the plate with pins and From the side" loading="lazy"><figcaption><b>Further down the same card, today and unchanged.</b> The plate with its pins (a pin with an arrow opens its own recipe) and From the side, each layer named with its amount. The redesign keeps both, and the build, pan and How to cut drawings.</figcaption></figure>' : '') + '</div>' + ids.filter(function (k) { return E[k].w === 1280; }).map(figure).join('') + '</section>';
   }).join('');
   function fit() { document.querySelectorAll('[data-lap]').forEach(function (b) { b.firstElementChild.style.transform = 'scale(' + (b.clientWidth / 1280) + ')'; }); }
   fit(); window.addEventListener('resize', fit);
