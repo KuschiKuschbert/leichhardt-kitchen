@@ -9,8 +9,10 @@ const longName = 'Prepare roasted vegetable and chickpea salad for the function 
 const longQuantity = '12.5 kg across 4 labelled containers';
 const extra = { [itemKey('reflow-long')]: { text: longName, qty: longQuantity, station: 'Sauce', recipe: 'gravy', urgent: true,
   done: false, deleted: false, addedBy: 'Sam', addedById: 'sam', addedAt: L.NOW - 300000 } };
-// below 480 px at any text size since 5 Nov 2026 (I'm on it's own button made the row too full for the words)
-const expectedReflow = width => width < 480;
+// below 480 px at any text size since 5 Nov 2026 (I'm on it's own button made the row too full for the words); since the
+// redesign's step 1 (8 Nov 2026) a phone from 360 px at the usual text size keeps one row with small buttons, so only under
+// 360 px or with large text do the actions sit under the words
+const expectedReflow = (width, text) => width < 360 || width < 480 && text !== 'normal';
 const item = (p, id) => p.evaluate(k => __fake.dump()[k], itemKey(id));
 async function resize(p, width, text, height = width === 568 ? 320 : 900) {
   await p.setViewportSize({ width, height });

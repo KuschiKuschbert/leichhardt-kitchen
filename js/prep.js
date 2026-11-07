@@ -2649,10 +2649,27 @@
     });
     return out.slice(0, 6);
   }
+  /* Typing suggestions (redesign step 1, 8 Nov 2026, Todoist's quick add, as drawn in every-page.html): right under the
+     box, your usual lines first, at most four, each with what the book knows (its usual amount, its section, a recipe).
+     The words fill the form, as before; Add puts the line on in one tap with the amount typed or its usual one. Nothing
+     is guessed: a line with no section known (none typed, none for you today, none learned) has no Add. No reads. */
   function suggestHTML() {
-    var list = typeahead(S.text);
+    var list = typeahead(S.text).slice(0, 4);
     S.sugg = list;
-    return list.map(function (x, i) { return '<button type="button" class="chip sq nb-sg" data-p="sugg" data-i="' + i + '">' + esc(x.text) + (x.section ? ' <span class="nb-us">' + esc(x.section) + '</span>' : '') + '</button>'; }).join('');
+    return list.map(function (x, i) {
+      var sec = sugSec(x), uq = String(S.qty || '').trim() || usualQty(x.text), bits = [uq, sec, matchRecipe(x.text) ? 'has a recipe' : ''].filter(Boolean).join(' · ');
+      return '<div class="nb-sgr"><button type="button" class="nb-sg" data-p="sugg" data-i="' + i + '"><span class="nb-sgt">' + esc(x.text) + '</span>' + (bits ? '<span class="nb-us">' + esc(bits) + '</span>' : '') + '</button>' +
+        (sec ? '<button type="button" class="nb-sgadd" data-p="sgadd" data-i="' + i + '" aria-label="' + esc('Add ' + x.text + (uq ? ', ' + uq : '') + ', to ' + sec) + '"><span aria-hidden="true">+ </span>Add</button>' : '') + '</div>';
+    }).join('');
+  }
+  // the section a suggestion would go under: the one in the box, else the line's own learned section
+  function sugSec(x) { return String(S.section || (S.secTyped ? '' : mySec()) || '').trim() || x.section || ''; }
+  function sgAdd(i) {
+    var x = (S.sugg || [])[i];
+    if (!x || !can('add') || !sugSec(x)) return;
+    S.text = x.text; S.pickedText = x.text;
+    if (!String(S.qty || '').trim()) S.qty = usualQty(x.text);
+    addTyped();
   }
   function pickSugg(i) {
     var x = (S.sugg || [])[i];
@@ -4395,6 +4412,11 @@
 
 
   /* ---------- drawing ---------- */
+  /* the line's own buttons say what they do in a word, with a small drawing above it on a phone (redesign step 1, 8 Nov 2026,
+     docs/whole-app-redesign-options/brief.md): Urgent is one tap again, with its word instead of a lone !. Wider screens show the word only. */
+  var AI_FLAG = '<svg class="nb-ai" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 21V4M6 4h11l-2 4 2 4H6"/></svg>';
+  var AI_BOOK = '<svg class="nb-ai" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1z"/><path d="M12 6v14"/></svg>';
+  var AI_ON = '<svg class="nb-ai" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/></svg>';
   var TICK = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M5 14 L11 20 L22 5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', transfers: 'Open the transfer list', minutes: 'Open the minutes', guides: 'Open the guides', mail: 'Open kitchen mail', drinks: 'Open the drinks run', admin: 'Open the admin panel' }[S.name] || 'Open the prep list'; }
@@ -4459,16 +4481,19 @@
     // the number is a badge drawn by CSS from data-n (.nb-t[data-n]::before), so the line's words stay its first text;
     // a screen reader hears "Start here, 1" after them
     var num = sn ? ' data-n="' + sn.n + '"' : '', numSay = sn ? '<span class="visually-hidden">. Start here, ' + sn.n + '</span>' : '';
-    var star = can('add') && !x.deleted && !readonly ? '<button type="button" class="nb-star" data-p="urgent" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.urgent + '" aria-label="' + esc((x.urgent ? 'Not urgent: ' : 'Mark urgent: ') + x.text) + '">!</button>' : '';
+    var star = can('add') && !x.deleted && !readonly ? '<button type="button" class="nb-star" data-p="urgent" data-id="' + esc(x.id) + '" aria-pressed="' + !!x.urgent + '" aria-label="' + esc((x.urgent ? 'Not urgent: ' : 'Mark urgent: ') + x.text) + '">' + AI_FLAG + '<span class="nb-aw">Urgent</span></button>' : '';
     var rid = x.recipe || ((matchRecipe(x.text) || {}).id || ''), rr = rid ? recipeById(rid) : null;
-    var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">recipe</a>' : '';
+    var link = rid ? '<a class="nb-go" href="#/r/' + encodeURIComponent(rid) + '" title="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '" aria-label="' + esc(rr ? 'Open the ' + rr.name + ' card' : 'Open the recipe') + '">' + AI_BOOK + '<span class="nb-aw">Recipe</span></a>' : '';
     var keep = !readonly && lineMenuOk(x, date);
     var del = delOk ? '<button type="button" class="nb-x" data-p="' + (x.deleted ? 'restore' : 'del') + '" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-label="' + (x.deleted ? 'Put back ' : 'Remove ') + esc(x.text) + '">' + (x.deleted ? 'Put back' : 'Remove') + '</button>' : '';
     var boxSay = x.done ? 'Untick ' + x.text : 'Tick ' + x.text + (on ? ', ' + on.name + ' on it' : '');
     // I'm on it: its own button on an open line of today's list (onTap()); the box stays one tap = done
     var onBtn = tickOk && !readonly && !x.done && date === dayNow() ? '<button type="button" class="nb-onbtn" data-p="onit" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!on + '" aria-label="' +
-      esc(!on ? (shared() ? 'Who\'s on it: ' : 'I\'m on it: ') + x.text : shared() ? 'Take ' + on.name + ' off ' + x.text : onMine(x) ? 'Take me off ' + x.text : 'Take over ' + x.text + ' from ' + on.name) + '"><span class="nb-onp">' +
+      esc(!on ? (shared() ? 'Who\'s on it: ' : 'I\'m on it: ') + x.text : shared() ? 'Take ' + on.name + ' off ' + x.text : onMine(x) ? 'Take me off ' + x.text : 'Take over ' + x.text + ' from ' + on.name) + '">' + AI_ON + '<span class="nb-onp">' +
       (on ? esc(on.name.trim().split(/\s+/)[0]) + ' &#10003;' : 'On it') + '</span></button>' : '';
+    // a ticked line of today keeps On it's room as an empty slot, so on a phone, where the buttons sit beside the words
+    // (redesign step 1, 8 Nov 2026), a tick does not widen the words and change the row's height under the finger
+    if (!onBtn && tickOk && !readonly && x.done && date === dayNow()) onBtn = '<span class="nb-onslot" aria-hidden="true"></span>';
     return '<li id="nbr-' + esc(x.id) + '" class="nb-row' + (on ? (onOther ? ' is-on-other' : ' is-on') : '') + (x.done ? ' is-done' : '') + (rolledN(x) && !x.done ? ' is-rolled' : '') + (x.urgent && !x.done ? ' is-urgent' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(date + '/' + x.id) + '">' +
       '<button type="button" class="nb-box" data-p="tick" data-id="' + esc(x.id) + '" data-d="' + esc(date) + '" aria-pressed="' + !!x.done + '" aria-label="' + esc(boxSay) + '"' + (tickOk ? '' : ' disabled') + '>' + (x.done ? TICK : on ? '<span class="nb-on-i" aria-hidden="true">' + esc(on.name.trim().charAt(0).toUpperCase()) + '</span>' : BOX) + '</button>' +
       // a tap on the words ticks too (the box is the button for keyboards and screen readers); Undo and the linger cover a slip.
@@ -4508,6 +4533,12 @@
     if (kind === 'w') return (S.wLines || []).filter(function (x) { return x.id === id && x.date === date; })[0] || null;
     if (kind === 'x') return xFind(date, id) || null;
     return (kind === 'o' ? (S.ordLines || []) : (S.items || [])).filter(function (x) { return x.id === id && (kind !== 'o' || !x.date || x.date === date); })[0] || null; }
+  /* A section heading's bar fills as its lines are ticked (redesign step 1, 8 Nov 2026): drawn from the lines already on
+     the page, no read. The width is a whole number from 0 to 100 worked out here, never a value from Firestore. */
+  function secBar(live) {
+    var n = live.length, d = live.filter(function (x) { return x.done; }).length, pct = n ? Math.round(d / n * 100) : 0;
+    return '<span class="nb-hbar' + (n && d === n ? ' is-done' : '') + '" aria-hidden="true"><i style="width:' + pct + '%"></i></span>';
+  }
   function moreBtn(x, fix) { return '<button type="button" class="nb-more' + (fix ? ' nb-more-fix' : '') + '" data-lm="open" data-id="' + esc(x.id) + '" aria-haspopup="dialog" aria-label="' + esc('More for ' + x.text) + '">⋯</button>'; }
   var lmOpenFrom = null;
   function lmClose(noBack) {
@@ -4662,7 +4693,7 @@
       var name = sec === FNCOL ? FNS : sec || (board ? 'No section' : ''), out;
       if (sec === TONIGHT) out = '<div class="nb-hd nb-hd-tonight"><span>Tonight, for tomorrow</span><span>' + live.length + '</span></div><p class="nb-sd nb-tonight-sd">On tomorrow\'s list. Tick here if it gets done tonight.</p>' +
         '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, (x.station ? '<span class="nb-also">' + esc(x.station) + '</span>' : '') + alsoHTML(x, x.station || '', twins)); }).join('') + '</ul>';
-      else out = (name ? '<div class="nb-hd"><span>' + esc(name) + '</span><span>' + live.filter(function (x) { return x.done; }).length + '/' + live.length + '</span></div>' : '') +
+      else out = (name ? '<div class="nb-hd"><span>' + esc(name) + '</span>' + secBar(live) + '<span>' + live.filter(function (x) { return x.done; }).length + '/' + live.length + '</span></div>' : '') +
         '<ul class="nb-rows">' + rows.map(function (x) { return rowHTML(x, date, false, alsoHTML(x, sec === FNCOL ? FNS : sec, twins)); }).join('') + '</ul>';
       return board ? '<section class="wb-col" aria-label="' + esc(sec === TONIGHT ? 'Tonight, for tomorrow' : name) + '">' + out + '</section>' : out;
     }).join('');
@@ -4875,9 +4906,10 @@
     var add = can('add') && S.date === today ?
       '<form class="nb-add" data-p-form="add">' +
       '<div class="nb-add-row"><label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" autocapitalize="sentences" placeholder="Write a new line..." maxlength="160" value="' + esc(S.text) + '">' +
+      '<div class="nb-sugg nb-sgl" id="p-sugg">' + suggestHTML() + '</div>' +
       '<label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section || (S.secTyped ? '' : mySec())) + '">' +
       '<label class="visually-hidden" for="p-qty">Amount</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.qty) + '">' +
-      '<button type="submit" class="nb-addbtn">Add</button></div>' + justHTML('p') + secChipsHTML('p-section', S.section || (S.secTyped ? '' : mySec())) + '<div class="w-pick nb-units" id="p-units">' + unitChipsHTML('p', S.qty) + '</div><div class="nb-sugg" id="p-sugg">' + suggestHTML() + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : '';
+      '<button type="submit" class="nb-addbtn">Add</button></div>' + justHTML('p') + secChipsHTML('p-section', S.section || (S.secTyped ? '' : mySec())) + '<div class="w-pick nb-units" id="p-units">' + unitChipsHTML('p', S.qty) + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : '';
     // no form (another day, or read only): the reason sits at the foot of the list, and there is no Add a line
     var addNote = add ? '' : S.date !== today ? '<p class="hint">You are looking at ' + esc(dayName(S.date)) + '. Lines are added on Today only.</p>' : '<p class="hint">You can read the book but not write in it. Ask the head chef if that is wrong.</p>';
     var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
@@ -4900,9 +4932,9 @@
     if (wall) {
       // the board has no Handy page: everything ticked off says so on the board itself
       if (live.length && doneN === live.length && !fnOpen) todayEmpty = '<p class="nb-empty">Everything on today\'s list is ticked off.</p>';
-      return whoTopHTML() + badgeStrip() + '<section class="wb" aria-labelledby="rtitle"><header class="nb-ph wb-h"><div class="wb-t"><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
+      return whoTopHTML() + badgeStrip() + '<section class="wb" aria-labelledby="rtitle"><header class="nb-ph wb-h"><button type="button" class="chip wb-list" data-p="wall" data-v="0"><span aria-hidden="true">&lsaquo; </span>Back to the prep list</button><div class="wb-t"><h2 class="nb-title" id="rtitle" tabindex="-1">' + esc(dayName(S.date)) + '</h2><span class="nb-date">' + esc(longDate(S.date)) + '</span></div>' +
         (S.itemsState !== 'ok' && !live.length || S.itemsState === 'offline' ? '' : '<div class="nb-prog">' + doneN + ' of ' + live.length + ' done</div>') +
-        '<button type="button" class="chip wb-list" data-p="wall" data-v="0">List</button>' + (add ? dockBtn('nb-addline', 'write', 'Add a line') : '') + '</header>' +
+        (add ? dockBtn('nb-addline', 'write', 'Add a line') : '') + '</header>' +
         (S.itemsState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' : '') + (flags ? '<div class="wb-flags">' + flags + '</div>' : '') + offNote +
         '<div class="wb-cols">' + pageBody(S.items, S.date, true) + '</div>' + todayEmpty + '</section>' + pSheet;
     }
@@ -10588,6 +10620,7 @@
     if (a === 'export') { exportAll(); return; }
     if (a === 'move-pin') { movePin(); return; }
     if (a === 'sugg') { pickSugg(i); return; }
+    if (a === 'sgadd') { sgAdd(i); return; }
     if (a === 'quick') { quickAdd(i); return; }
     if (a === 'fnneed') { fnNeedAdd(i); return; }
     if (a === 'fnneed-hide') { fnNeedHide(i); return; }

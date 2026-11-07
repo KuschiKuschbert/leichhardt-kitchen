@@ -28,6 +28,7 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 - **More, or a list from the kitchen's settings:** a `<select>` that the shared controls dress as a picker (`LK_UX.enhance`, `.ux-picker`): a bottom sheet on a phone, a centred box from 768 px.
 - **More than about 12:** the picker gets a type-to-find box with the likely few first (`AdaptivePicker` in `js/controls.js`).
 - **Fill in what the book knows** and keep it easy to change: the usual section, the unit, last week's team (Use it), a long shift's split. A suggestion fills every field it knows. Nothing is saved by itself.
+- **Suggestions while typing** sit right under the box as rows (`.nb-sgr`), the likely few first, each saying what the book knows on a small second line. A tap on the words fills the form; a one-tap **Add** beside them (`.nb-sgadd`) only when every field it needs is known, never guessed (Add a line, redesign step 1, 8 Nov 2026).
 
 ## Saving and after the tap
 
@@ -44,6 +45,9 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 ## Inside a list
 
 - **A line in a list's header** (Set today's team, a person's day under the done count) keeps the header's height, or a tick lands on the wrong row: wrap the count in `.nb-pw`, borrow the header's spare room (`.nb-tmset`) or the date's line (`.nb-tmday`, with an ellipsis when long), and measure the header with and without it in the test.
+- **A line's own buttons** say what they do in a word (Urgent, On it, Recipe, Remove), never a lone mark like !, and fill when on. On a phone, where they sit beside the words (redesign step 1, 8 Nov 2026), each is 44 px with a small drawing over its word (`.nb-ai` drawing, `.nb-aw` word). A ticked line keeps the room of the button it loses (`.nb-onslot`), so a tick never changes a row's height under the finger.
+- **A section heading's bar** (`.nb-hbar`) fills as its lines are ticked, drawn from the lines on the page with no read of its own.
+- **The way back from a full-screen view** (the wall board) is the first thing in its heading, in words, at least 44 px, and takes focus when the view opens (`.wb-list`, Back to the prep list).
 - **A long run of rows that are not the point** folds into one line that names them and says Show (`.tm-fold`, with `aria-expanded`), instead of filling the screen.
 - **Nothing new over a list during service** unless it stops a mistake (`CLAUDE.md`, Service rules).
 

@@ -3758,3 +3758,67 @@ html.tm-open, html.tm-open body { overflow: hidden; }
   .a-sh-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .a-sh-row > input:first-of-type { grid-column: 1 / -1; }
 }
+
+/* ---------- Redesign step 1 (8 Nov 2026, head chef): the prep line in one row on a phone, Urgent in one tap with its word,
+   a bar in each section heading, and the wall board on the notebook paper with a clear way back to the list.
+   docs/whole-app-redesign-options/brief.md (Chosen, Build step 1), every-page.html (Step 1 at every size). ---------- */
+.nb-ai { display: none; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+/* Urgent says its word, like On it, and fills black when on (it was a lone !); the tag beside the words is left out
+   where the button is, since the button says it */
+.nb-star { width: auto; padding: 0 2px; }
+.nb-star::before { display: none; }
+.nb-star .nb-aw { display: inline-block; padding: 5px 9px; border: 1.5px solid #BDB5A3; border-radius: 16px; font: 700 0.75rem/1.2 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.nb-star[aria-pressed="true"] .nb-aw { background: var(--ink); border-color: var(--ink); color: #fff; }
+.nb-row:has(.nb-star) .nb-urg { display: none; }
+/* a ticked line keeps On it's room only where the buttons sit beside the words on a phone (below) */
+.nb-onslot { display: none; }
+/* a section heading's bar fills as its lines are ticked */
+.nb-hbar { flex: 0 1 72px; min-width: 32px; height: 6px; margin: 0 10px 0 auto; border-radius: 3px; background: rgba(28,29,31,0.12); overflow: hidden; }
+.nb-hbar i { display: block; height: 100%; border-radius: 3px; background: var(--accent-ink); }
+.nb-hbar.is-done i { background: var(--done); }
+/* One row on a phone at the usual text size (360 to 479 px): the words, then Recipe, Urgent, On it and the dots as small
+   buttons with a drawing over the word. Below 360 px, or with large text, the actions stay under the words, as before. */
+@media (min-width: 360px) and (max-width: 479px) {
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-row { grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; column-gap: 6px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-box { align-self: center; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-acts { grid-column: 3; grid-row: 1; flex-wrap: nowrap; gap: 0; align-self: center; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-acts > .nb-go { order: 1; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-acts > .nb-star { order: 2; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-acts > :is(.nb-onbtn, .nb-onslot) { order: 3; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-onslot { display: block; flex: 0 0 44px; width: 44px; height: 44px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-acts > .nb-more { order: 4; width: 44px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-ai { display: block; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left :is(.nb-go, .nb-star, .nb-onbtn) { flex-direction: column; justify-content: center; gap: 2px; width: 44px; min-height: 44px; margin: 0; padding: 2px 0; border-radius: 8px; text-decoration: none; font: 700 9.5px/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink); }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-go { display: inline-flex; color: var(--accent-ink); }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left :is(.nb-star .nb-aw, .nb-onbtn .nb-onp) { max-width: 44px; padding: 0; border: 0; border-radius: 0; background: none; font: inherit; letter-spacing: inherit; color: inherit; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-star[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-onbtn[aria-pressed="true"] { background: var(--accent-ink); color: #fff; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-row.is-on-other .nb-onbtn[aria-pressed="true"] { background: var(--muted); }
+}
+/* extra large text on a wider screen: the Urgent button shows its flag in the old round button, so the words keep their
+   room (the button still says Mark urgent to a screen reader) */
+@media (min-width: 480px) {
+  html[data-text="xlarge"] .nb-star { width: 44px; justify-content: center; }
+  html[data-text="xlarge"] .nb-star .nb-aw { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; padding: 0; border: 0; }
+  html[data-text="xlarge"] .nb-star .nb-ai { display: block; width: 32px; height: 32px; padding: 5px; border: 1.5px solid #BDB5A3; border-radius: 50%; color: var(--muted); }
+  html[data-text="xlarge"] .nb-star[aria-pressed="true"] .nb-ai { background: var(--ink); border-color: var(--ink); color: #fff; }
+}
+/* the wall board on the shared tablet, on the notebook paper (head chef, 8 Nov 2026): the ruled page, the red margin and the
+   handwritten title, Urgent on every line, and Back to the prep list first in its heading */
+.wb { --rule: #DDD5C5; position: relative; background: var(--bar-text); border: 1.5px solid var(--ink); border-radius: 10px; padding: 0.4rem 1.25rem 1.25rem 2.4rem; box-shadow: 0 6px 0 rgba(28,29,31,0.12); }
+.wb::before { content: ''; position: absolute; left: 1.2rem; top: 0; bottom: 0; width: 2px; background: #E7B7A6; }
+.wb-h { border-bottom: 2px solid var(--ink); padding-bottom: 0.5rem; }
+.wb-col { border-top: 0; }
+.wb .nb-row .nb-star { display: inline-flex; align-items: center; }
+.wb-list { min-height: 44px; padding: 0 16px; border: 2px solid var(--ink); font: 600 1rem/1 var(--body); }
+/* Add a line (redesign step 1): typing suggestions as rows right under the box, at most four; the words fill the form,
+   Add puts the line on in one tap. On a laptop, where the box shares its row, they go under the whole row. */
+.nb-sugg.nb-sgl { flex: 1 1 100%; display: block; overflow: visible; padding: 0; -webkit-mask-image: none; mask-image: none; }
+.nb-sugg.nb-sgl:empty { display: none; }
+.nb-sgr { display: flex; align-items: center; gap: 0.5rem; border-bottom: 1px solid var(--line); }
+.nb-sgr:last-child { border-bottom: 0; }
+.nb-sgl .nb-sg { flex: 1 1 auto; min-width: 0; min-height: 48px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding: 4px 2px; border: 0; background: none; text-align: left; cursor: pointer; color: var(--ink); }
+.nb-sgt { font: 600 1.05rem/1.2 var(--body); }
+.nb-sgl .nb-us { margin: 2px 0 0; }
+.nb-sgadd { flex: 0 0 auto; min-height: 44px; min-width: 64px; padding: 0 14px; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: none; font: 700 0.95rem/1 var(--body); color: var(--ink); cursor: pointer; }
+@media (min-width: 900px) { .nb-left .nb-sgl { order: 1; } }

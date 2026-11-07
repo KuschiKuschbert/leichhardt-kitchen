@@ -37,7 +37,9 @@ const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.n
   let c = await chip(p);
   ok(!!c && c.due && /not set yet/.test(c.label) && c.href === '#/team', 'chip: a sous chef sees the Today\'s team chip, filled while not set (' + JSON.stringify(c) + ')');
   ok(/Set today's team/.test(await txt(p, '.nb-tmset') || ''), 'prep list: Set today\'s team under the done count');
-  ok(await linesSeen(p) === 2, 'prep list: a sous chef still sees 2 list lines above Add a line (as before)');
+  // 2 lines until the redesign's step 1 (8 Nov 2026) put a phone line's buttons beside its words; 3 since
+  const seen = await linesSeen(p);
+  ok(seen === 3, 'prep list: a sous chef still sees 3 list lines above Add a line, with Set today\'s team showing (' + seen + ')');
   const headWith = await p.evaluate(() => document.querySelector('.nb-left .nb-ph').getBoundingClientRect().height);
   ok(!(await titleCut(p)), 'top bar: "Kitchen Book" is whole at 390 px with the chip');
   await p.click('.wtop-who'); await L.settle(p, 300);

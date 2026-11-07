@@ -2,6 +2,8 @@
 // today's prep list as one column per section, like dockets on the rail. View and tick: the rows are the list's own, so
 // On it asks Who's on it? and the box asks Who did this?, the cook on it first. Wall board at the end of the section
 // tabs turns it on and the tablet keeps it (lk.wall); List turns it off. A personal phone never gets it.
+// Redesign step 1 (8 Nov 2026, head chef): the board sits on the notebook paper, Urgent is on every line in one tap, and the
+// way back is the first thing in the header, in words: Back to the prep list.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const today = L.ymd(new Date(L.NOW));
@@ -29,8 +31,19 @@ const wallSaved = p => p.evaluate(() => localStorage.getItem('lk.wall'));
   ok(col(c, 'Larder').rows.indexOf('Dice carrot') >= 0 && col(c, 'Larder').rows.indexOf('Pick parsley') >= 0 && col(c, 'Grill').rows.indexOf('Portion steaks') >= 0 && col(c, 'Pastry').rows.join() === 'Blind bake tart cases' && !/Old line/.test(await txt(p, '.wb') || ''), 'each line under its own section, no removed lines');
   const total = c.reduce((n, x) => n + x.rows.length, 0);
   ok(!(await p.$('.nb-tabs')) && !(await p.$('.nb-right')) && new RegExp('0 of ' + total + ' done').test(await txt(p, '.wb-h') || '') && await wallSaved(p) === '1', 'no tabs and no Handy page, the count in the header, and the tablet keeps the choice');
-  ok(!(await p.$('.wb .nb-x:visible, .wb .nb-star:visible, .wb .nb-more:visible')), 'view and tick: no urgent toggle, Remove or More on the board');
-  ok(await p.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-p') === 'wall' && document.activeElement.textContent === 'List'), 'focus goes to List, the way back');
+  ok(!(await p.$('.wb .nb-x:visible, .wb .nb-more:visible')) && (await p.$$('.wb .nb-row .nb-star:visible')).length === total, 'view and tick: Urgent on every line, no Remove or More on the board');
+  ok(await p.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-p') === 'wall' && /Back to the prep list$/.test(document.activeElement.textContent.trim())), 'focus goes to Back to the prep list, the way back');
+  const back = await p.$eval('.wb-h', h => { const b = h.querySelector('.wb-list'), r = b.getBoundingClientRect(), t = h.querySelector('.nb-title').getBoundingClientRect(); return { first: h.firstElementChild === b, h: Math.round(r.height), left: r.left <= t.left + 1 }; });
+  ok(back.first && back.h >= 44 && back.left, 'Back to the prep list is first in the header, at least 44 px high, at the left (' + JSON.stringify(back) + ')');
+
+  // Urgent on the board: one tap marks the line, a second tap takes it off
+  await p.click('#nbr-w1 .nb-star'); await L.settle(p, 500);
+  let u = await item(p, 'w1');
+  ok(u.urgent === true && u.urgentById === 'sam' && await p.$eval('#nbr-w1 .nb-star', e => e.getAttribute('aria-pressed')) === 'true', 'Urgent on the board: one tap marks Dice carrot urgent');
+  await L.settle(p, 3800);
+  await p.click('#nbr-w1 .nb-star'); await L.settle(p, 500);
+  u = await item(p, 'w1');
+  ok(u.urgent === false, 'a second tap takes it off');
 
   // view and tick: On it asks Who's on it?; the box ticks, asking Who did this? with the cook on it first
   await p.click('#nbr-w3 .nb-onbtn'); await L.settle(p, 400);
@@ -48,11 +61,11 @@ const wallSaved = p => p.evaluate(() => localStorage.getItem('lk.wall'));
   ok(new RegExp('1 of ' + total + ' done').test(await txt(p, '.wb-h') || '') && /1\/\d/.test(await txt(p, '.wb-col[aria-label="Grill"] .nb-hd') || ''), 'the count and the Grill column count the tick');
   ok(p.errors.length === 0 && !(await L.overflow(p)), '1280 px board: no page errors, no sideways scroll ' + p.errors.join(' | '));
 
-  // the board stays after a reload (the 04:00 refresh), and List takes it off
+  // the board stays after a reload (the 04:00 refresh), and Back to the prep list takes it off
   await p.reload(); await L.settle(p, 1600);
   ok(!!(await p.$('.wb-cols .wb-col')), 'after a reload the tablet is still on the board');
   await p.click('.wb-h [data-p="wall"]'); await L.settle(p, 400);
-  ok(!(await p.$('.wb')) && !!(await p.$('.nb .nb-left')) && !(await wallSaved(p)) && await p.evaluate(() => document.activeElement && document.activeElement.textContent === 'Wall board'), 'List: back to the notebook, the choice forgotten, focus on Wall board');
+  ok(!(await p.$('.wb')) && !!(await p.$('.nb .nb-left')) && !(await wallSaved(p)) && await p.evaluate(() => document.activeElement && document.activeElement.textContent === 'Wall board'), 'Back to the prep list: back to the notebook, the choice forgotten, focus on Wall board');
   await p.context().close();
 
   // a tablet held upright and a phone: the columns wrap, nothing scrolls sideways
