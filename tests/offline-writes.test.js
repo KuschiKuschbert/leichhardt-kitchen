@@ -20,6 +20,18 @@ const reloaded = p => p.evaluate(() => window.__mark !== 1).catch(() => true);
 // 2026): on a busy test runner the check, the files and the reload took longer than 20 (the 04:00 step, 5 Nov 2026).
 // It waits only until the reload, so a passing run is no slower.
 const waitReload = p => L.waitFor(p, () => window.__mark !== 1, null, 30000).catch(() => {});
+/* The 04:00 refresh asks the server about about 40 files first, with 8 seconds for all of them (lkFresh() in
+   js/upkeep.js). On a busy runner a file can take longer: that try gives up and the book tries again 10 minutes later,
+   as on a weak signal. Step 9 failed that way on GitHub on 5 and 7 Nov 2026 (its FAIL line: idle, nothing unsent,
+   online, 04:12), and holding js/prep.js for 9 seconds does the same here. A try that has not reloaded in 20 seconds
+   (the server check, the files and the reload) has given up, so the book's next try counts. 1 or 2: the try it took. */
+async function waitRefresh(p) {
+  await L.waitFor(p, () => window.__mark !== 1, null, 20000).catch(() => {});
+  if (await reloaded(p)) return 1;
+  await p.clock.fastForward('00:10:30');
+  await waitReload(p);
+  return 2;
+}
 // what a reload or closing the tab would do: true when the book asks first
 const asks = p => p.evaluate(() => { const e = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(e); return e.defaultPrevented; });
 // the Not sent mark on the row whose words hold this text: 'shown' (it has a size on screen), 'hidden', 'none' or 'no row'
@@ -597,7 +609,7 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     ok(await p.evaluate(() => Object.values(__fake.dump()).some(x => x && x.text === 'Portion the brisket' && x.addedById === 'sam')), '04:00: the same-person PIN sends the original pending prep entry');
     await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
     await p.clock.fastForward('00:10:30');
-    await waitReload(p);
+    await waitRefresh(p);
     // what held it back, said in the FAIL line (it failed on GitHub's runners on 5 and 7 Nov 2026, never on a laptop)
     const went = await reloaded(p), why = went ? '' : ' ' + JSON.stringify(await p.evaluate(() => ({
       unsaved: lkUnsaved(), unsent: lkUnsent(), editing: lkEditing() && document.activeElement.tagName, idle: lkIdle(),
@@ -1287,6 +1299,27 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
       ok(errs(p).length === 0, what + ': no page errors ' + errs(p).join(' | '));
     });
   }
+
+  // 26. the 04:00 refresh with a file slower than 8 seconds (7 Nov 2026): that try gives up and keeps the book as it is,
+  // and the next try, 10 minutes later, refreshes (what waitRefresh() allows for)
+  await step('26', async () => {
+    p = await L.open(b, '#/prep', { touch: true, wait: 1500 });
+    // nobody in a box: a refresh that has waited goes only when the book is idle (lkIdle()), like step 9
+    await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
+    await mark(p);
+    const SLOW = /\/js\/prep\.js/;
+    await p.context().route(SLOW, async r => { await new Promise(res => setTimeout(res, 9000)); r.continue().catch(() => {}); });
+    await p.clock.fastForward('14:01:00');
+    await L.waitFor(p, () => window.__mark !== 1, null, 20000).catch(() => {});
+    ok(!(await reloaded(p)), '04:00, a file slower than 8 seconds: that try gives up and the book stays as it is');
+    await p.context().unroute(SLOW);
+    // the daily PIN came up at 04:00 too, with its box in use: unlocked, as in step 9
+    await unlock(p, 'sam', '1111');
+    await p.evaluate(() => { if (document.activeElement) document.activeElement.blur(); });
+    await p.clock.fastForward('00:10:30');
+    await waitReload(p);
+    ok(await reloaded(p), '04:00, a file slower than 8 seconds: the next try, 10 minutes later, refreshes');
+  });
 
   await b.close();
   L.report(R);
