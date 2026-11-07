@@ -10,12 +10,22 @@ const count = p => p.evaluate(() => document.getElementById('count').textContent
   const p = await L.open(b, '#/recipes', { wait: 1200 });
   const all = await visible(p);
   ok(await p.getAttribute('#find', 'autocorrect') === 'off' && await p.getAttribute('#find', 'spellcheck') === 'false' && await p.getAttribute('#find', 'enterkeyhint') === 'search', 'search: no autocorrect, Search key');
-  ok(await p.$('[data-act="lens"]') !== null && await p.$('[data-act="free"]') === null, 'pass: one row of allergen chips, Show where by default');
+  ok(await p.$('[data-act="lens"]') !== null && await p.$('[data-act="free"]') === null, 'pass: one row of allergen chips, Contains by default');
+  // the switch says which way it works (redesign step 6, 8 Nov 2026: it said Show where)
+  ok(await p.$$eval('.amode [data-act="amode"]', l => l.map(e => e.textContent + ':' + e.getAttribute('aria-pressed')).join()) === 'Contains:true,Free from:false', 'pass: the switch reads Contains or Free from');
+  // one search pill: the magnifier inside, the word Search for screen readers, no count line on a phone until a filter is on
+  const pill = await p.evaluate(() => { const i = document.querySelector('.find-wrap .find-i'), s = document.getElementById('find'), lab = document.querySelector('label[for="find"]'), fh = document.querySelector('.find-bar .field-head'); const ir = i.getBoundingClientRect(), sr = s.getBoundingClientRect(); return { inside: ir.left >= sr.left && ir.right <= sr.right && ir.top >= sr.top && ir.bottom <= sr.bottom, label: !!lab && lab.textContent === 'Search' && lab.classList.contains('visually-hidden'), head: getComputedStyle(fh).display }; });
+  ok(pill.inside && pill.label && pill.head === 'none', 'search: one pill with the magnifier inside, the label for screen readers, no count line at rest (' + JSON.stringify(pill) + ')');
   await L.tap(p, '[data-act="amode"][data-val="free"]'); await L.settle(p, 300);
   await L.tap(p, '[data-act="free"][data-val="Gluten"]'); await L.settle(p, 300);
   const gf = await visible(p);
   ok(gf > 0 && gf < all, 'pass: Free from gluten works on the Pass (' + gf + ' of ' + all + ')');
   ok(new RegExp('^' + gf + ' of ').test(await count(p)), 'pass: the count says what is shown (' + await count(p) + ')');
+  ok(await p.evaluate(() => getComputedStyle(document.querySelector('.find-bar .field-head')).display !== 'none' && getComputedStyle(document.getElementById('count')).display !== 'none'), 'pass: the count line shows on a phone while a filter is on');
+  // a search changes only the results (the count line follows without a redraw of the bar)
+  await p.fill('#find', 'zzqqxx'); await L.settle(p, 300);
+  ok(await p.evaluate(() => document.querySelector('.find-bar .field-head').classList.contains('is-on')), 'pass: a search keeps the count line on');
+  await p.fill('#find', ''); await L.settle(p, 300);
   await L.tap(p, '[data-act="free"][data-val="Gluten"]'); await L.settle(p, 300);
   const kind = await p.evaluate(() => { const c = [...document.querySelectorAll('[data-act="kind"]')].find(e => e.getAttribute('data-val') !== 'all'); return c ? c.getAttribute('data-val') : ''; });
   await L.tap(p, '[data-act="kind"][data-val="' + kind + '"]'); await L.settle(p, 300);

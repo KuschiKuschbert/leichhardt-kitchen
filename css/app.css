@@ -4088,3 +4088,27 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 @media (min-width: 900px) {
   .fn-list-page .fn-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 }
+
+/* ---------- Redesign step 6 (8 Nov 2026, head chef): Recipes and the recipe card. docs/whole-app-redesign-options/brief.md
+   (Build step 6), every-page.html e-recipes and e-recipe. ---------- */
+/* the search is one pill with its magnifier inside; on a phone the count line shows only while a search or filter is on */
+.find-wrap .find-i { position: absolute; z-index: 1; left: 0.95rem; top: 50%; width: 20px; height: 20px; margin-top: -10px; color: var(--muted); pointer-events: none; }
+.find-wrap .search { padding-left: 2.75rem; border-radius: var(--r-pick); }
+@media (max-width: 719px) { .find-bar .field-head:not(.is-on) { display: none; } }
+/* the card's head: the name with its card number beside it, then the plating line across the whole card */
+.card-head.ch-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 1rem; row-gap: 0.55rem; }
+.card-head.ch-grid > .ch-line { grid-column: 1 / -1; }
+.card-head.ch-grid > .num { line-height: 0.9; }
+/* the jump row names every part of the card and stays under the top bar while the card scrolls (phones and tablets,
+   where the columns stack); it scrolls sideways when the parts do not fit, and fades at its edge */
+@media (max-width: 899px) {
+  .jumps { position: sticky; top: var(--fn-stick, 0px); z-index: 5; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; margin: 0 -1.25rem; padding: 0.4rem 1.25rem; background: var(--bg); -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent); }
+  .jumps::-webkit-scrollbar { display: none; }
+  .jumps::after { content: ''; flex: 0 0 1.75rem; }
+  .jumps .chip { flex: 0 0 auto; }
+  .card .jumps { margin: 0 -1.6rem; padding: 0.4rem 1.6rem; background: var(--paper); }
+  html.has-upd .jumps { top: calc(var(--fn-stick, 0px) + var(--upd-h)); }
+  /* a jump lands just under the row, not behind it */
+  #r-allergens, #r-ing, .jump-at, #r-plate, #r-side { scroll-margin-top: 4.5rem; }
+}
+@media (max-width: 599px) { .jumps, .card .jumps { margin: 0 -1rem; padding: 0.4rem 1rem; } }
