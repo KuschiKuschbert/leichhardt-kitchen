@@ -98,7 +98,7 @@ const val = (p, f) => txt(p, '.dr-fold[data-f="' + f + '"] .dr-val');
   await pick(p, 'cold', 'cokens'); await L.settle(p, 100);
   ok(await val(p, 'cold') === 'Coke No Sugar', 'cold: one soft drink or water at a time (' + await val(p, 'cold') + ')');
   await tap(p, '[data-p="dk-save"]'); await L.settle(p, 800);
-  ok(/^Your usualCoke No SugarChange$/.test(await txt(p, '.dr-mine') || ''), 'cold: just a soft drink saves as the usual (' + await txt(p, '.dr-mine') + ')');
+  ok(/^Your usual( · you're in)?Coke No SugarChange$/.test(await txt(p, '.dr-mine') || ''), 'cold: just a soft drink saves as the usual (' + await txt(p, '.dr-mine') + ')');
   const ac = (await store(p))[fsKey(['drinks', 'ann'])];
   ok(ac.kind === '' && ac.cold === 'cokens' && ac.milk === '' && ac.sugar === '', 'cold: saved with no coffee');
   ok(p.errors.length === 0, 'card: no page errors ' + p.errors.join(' | '));

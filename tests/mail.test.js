@@ -34,6 +34,10 @@ const mailReads = p => p.evaluate(() => (window.__fake.reads || []).filter(k => 
   ok(await p.$eval('[data-k="ml-text"]', e => e.value) === 'Fryer 1 keeps tripping', 'mail page: the message stays while picking');
   await tap(p, '[data-p="ml-cat"][data-v="equipment"]'); await L.settle(p, 100);
   ok(!(await p.$('.ml-roster')), 'mail page: the roster hint goes with another category');
+  // How soon starts with nothing picked (8 Nov 2026, council round 3): Send asks for it, nothing is guessed
+  ok(!(await p.$('[data-p="ml-pri"][aria-pressed="true"]')), 'mail page: How soon starts with nothing picked');
+  await tap(p, '[data-p="ml-send"]'); await L.settle(p, 200);
+  ok(/Pick how soon it matters/.test(await txt(p, '#prep-root') || '') && !Object.keys(await store(p)).some(k => /\/mail\/[^/]+$/.test(k) && !/\/m\d$/.test(k)), 'mail page: sending without How soon asks for it and sends nothing');
   await tap(p, '[data-p="ml-pri"][data-v="today"]'); await L.settle(p, 100);
   await tap(p, '[data-p="ml-send"]'); await L.settle(p, 800);
   let s = await store(p);
@@ -42,7 +46,7 @@ const mailReads = p => p.evaluate(() => (window.__fake.reads || []).filter(k => 
   const st = s[fsKey(['mailstat', id])];
   ok(!!st && st.seen === false && st.done === false && st.by === 'ann', 'send: its status record is saved with it');
   ok(await p.$eval('[data-k="ml-text"]', e => e.value) === '', 'send: the box is empty again');
-  ok(/What you sent/.test(await txt(p, '#prep-root') || '') && /Fryer 1 keeps tripping/.test(await txt(p, '.ml-sent') || ''), 'send: the message shows under What you sent');
+  ok(/Your mail/.test(await txt(p, '#prep-root') || '') && /Fryer 1 keeps tripping/.test(await txt(p, '.ml-sent') || ''), 'send: the message shows under Your mail');
   ok(/Sent/.test(await txt(p, '.ml-sent .ml-st') || ''), 'send: marked Sent');
   // the head chef reads it: next time the phone opens the page, it says Seen
   await p.evaluate(k => { const f = JSON.parse(localStorage.getItem('fake.fs')); f[k].seen = true; localStorage.setItem('fake.fs', JSON.stringify(f)); }, fsKey(['mailstat', id]));

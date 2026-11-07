@@ -452,9 +452,10 @@
   }
   /* The chef hat's menu (3 Nov 2026, the head chef's 24 Oct pick, built out in the work pages redesign): on a phone it
      comes up from the bottom as a sheet, in thumb reach; from 720 px it is a panel under the hat. A person card on top
-     (name, role, and Sign out, which hands the phone over the way "Not you?" on the page did), then tiles in two groups,
-     Kitchen and Chef, three across, and Settings. A sous chef's whole menu fits a 390 by 844 phone with no scroll. A
-     tile's small line only says what the book already knows (minutes to sign, today's section, Sign in with Google);
+     (name, role, and Sign out, which hands the phone over the way "Not you?" on the page did), then since 8 Nov 2026
+     (redesign step 7) a list in two groups, Every day and More, one row each with its small line on the right, and
+     Settings last. A sous chef's whole menu fits a 390 by 844 phone with no scroll. A
+     row's small line only says what the book already knows (minutes to sign, today's section, Sign in with Google);
      nothing is read to fill it. Every tappable item is still a .wm-a (the Tab trap and L.chefItems() read them). */
   function whoMenuOpen(btn) {
     var n = window.LK_PREP && window.LK_PREP.whoName ? window.LK_PREP.whoName() : '';
@@ -473,18 +474,21 @@
         // the empty line is where the first tap says "Not saved yet", or "Not sent yet" when only a change waits to send
         // (the click handler below)
         '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Not ' + esc(n.split(' ')[0]) + '? Sign out</b><small aria-live="polite"></small></span></button>' +
-        grid('Kitchen', [
+        // a list since 8 Nov 2026 (redesign step 7): the jobs of every day first, then the rest. The same items for the same
+        // people as the tiles had; only the order and the look changed.
+        grid('Every day', [
+          m.sec ? tile('data-who="sec" data-v="section"', ICON.spot, 'My section', '<small>' + esc(m.sec) + '</small>') : '',
+          m.fn ? fnItem() : fnViewItem(), deliveryItem(), supplierOK() ? supplierItem() : '',
+          m.team ? teamItem(m.teamUnset) : '',
           m.head || fnOnly ? '' : tile('href="#/mail" data-who="go"', ICON.mail, 'Kitchen mail'),
-          fnOnly ? '' : tile('href="#/drinks" data-who="go"', ICON.cup, 'Drinks run'),
+          m.chef ? tile('data-who="open" data-v="pings"', ICON.bell, 'Shift pings') : ''
+        ]) +
+        grid('More', [
+          adm,
           // a small line only while minutes wait to be signed (23 Oct 2026)
           m.minutes ? tile('href="#/minutes" data-who="go"', ICON.doc, 'Meeting minutes', m.toSign ? '<small class="wm-due">' + m.toSign + ' to sign</small>' : '') : '',
-          m.fn ? fnItem() : fnViewItem(), deliveryItem(),
-          m.sec ? tile('data-who="sec" data-v="section"', ICON.spot, 'My section', '<small>' + esc(m.sec) + '</small>') : ''
-        ]) +
-        grid(m.chef || adm || m.book || supplierOK() ? 'Chef' : '', [
-          m.team ? teamItem(m.teamUnset) : '', adm, m.book ? manageItem() : '',
-          m.chef ? tile('data-who="open" data-v="pings"', ICON.bell, 'Shift pings') : '',
-          m.todo ? todoItem() : '', supplierOK() ? supplierItem() : '',
+          fnOnly ? '' : tile('href="#/drinks" data-who="go"', ICON.cup, 'Drinks run'),
+          m.todo ? todoItem() : '', m.book ? manageItem() : '',
           m.chef && !m.tab ? tile('data-who="open" data-v="staff"', ICON.team, 'Manage staff') : ''
         ]) + set;
     } else {

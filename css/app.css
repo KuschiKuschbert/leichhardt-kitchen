@@ -1709,8 +1709,8 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .wm-adm .adm-n { position: static; margin-left: auto; flex: 0 0 auto; border-color: var(--paper); line-height: 16px; }   /* the count centred like on the hat, not the row's 1.25 */
 .wtop-btn.wtop-who { position: relative; }
 /* The chef hat's menu (3 Nov 2026, work pages redesign, the head chef's 24 Oct pick): a sheet from the bottom on a phone,
-   a panel under the hat from 720 px. A person card with Sign out, then Kitchen and Chef tiles three across (rectangles:
-   each one opens something), then Settings. It fits a sous chef's whole menu on a 390 by 844 phone with no scroll. */
+   a panel under the hat from 720 px. A person card with Sign out, then (since 8 Nov 2026) the Every day and More lists,
+   then Settings. It fits a sous chef's whole menu on a 390 by 844 phone with no scroll. */
 .wm { width: min(23rem, calc(100vw - 16px)); padding: 6px 8px 8px; max-height: calc(100dvh - 90px); }
 .wm-grip { display: none; }
 @media (max-width: 719px) {
@@ -1724,16 +1724,19 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .wm-me-n b { font: 700 1.3rem/1.1 var(--display); overflow-wrap: anywhere; }
 .wm-me-n small { color: var(--muted); font-size: 0.8125rem; }
 .wm .wm-out { margin: 0 0 2px; border: 1.5px solid var(--ink); border-radius: var(--r-act); }
-.wm .wm-sh { margin: 10px 2px 6px; padding-top: 8px; border-top: 1.5px solid var(--line); }
-.wm-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.wm-grid + .wm-set, .wm-out + .wm-set, .wm-in + .wm-set { margin-top: 8px; }
-.wm .wm-tile { position: relative; flex-direction: column; justify-content: center; gap: 4px; min-height: 70px; padding: 8px 4px; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); text-align: center; }
-button.wm-a.wm-tile { text-align: center; }
-.wm-tile span { align-items: center; }
-.wm-tile b { font-size: 0.8125rem; font-weight: 600; line-height: 1.15; overflow-wrap: anywhere; }
-.wm-tile small { font-size: 0.75rem; line-height: 1.2; }
+/* the hat as a list since 8 Nov 2026 (redesign step 7, docs/whole-app-redesign-options/brief.md): Every day, then More,
+   one 46 px row each (icon, words, the small line on the right in orange when it needs doing, a chevron), Settings last */
+.wm-grid { display: flex; flex-direction: column; }
+.wm-grid + .wm-set, .wm-out + .wm-set, .wm-in + .wm-set { margin-top: 4px; }
+.wm .wm-tile { position: relative; flex-direction: row; justify-content: flex-start; gap: 12px; min-height: 46px; padding: 4px 6px 4px 8px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; text-align: left; }
+button.wm-a.wm-tile { text-align: left; }
+.wm-tile span { flex: 1 1 auto; flex-direction: row; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
+.wm-tile b { font-size: 1rem; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.wm-tile small { flex: none; max-width: 55%; font-size: 0.8125rem; line-height: 1.2; text-align: right; }
+.wm-tile::after { content: ''; flex: none; width: 7px; height: 7px; margin: 0 6px 0 2px; border-top: 2px solid var(--muted); border-right: 2px solid var(--muted); rotate: 45deg; }
 .wm-tile[aria-current="page"] { background: var(--hit); }
-.wm-tile.wm-adm .adm-n { position: absolute; top: -7px; right: -5px; margin: 0; }
+.wm .wm-sh { margin: 12px 4px 2px; padding-top: 0; border-top: 0; color: var(--muted); }
+.wm .wm-set::after { content: ''; flex: none; width: 7px; height: 7px; margin: 0 6px 0 auto; border-top: 2px solid var(--muted); border-right: 2px solid var(--muted); rotate: 45deg; }
 .wm .wm-set { border-top: 1.5px solid var(--line); border-radius: 0 0 8px 8px; }
 /* who is signed in, on the hat itself: their initial in a small disc; on a shared screen their first name next to it too
    (phones and tablets; from 1100 to 1399 px the top bar has no room, from 1400 px every name shows as before) */
@@ -2963,7 +2966,7 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-audit-row > b, .su-audit-row > span { display: block; }
 .su-audit-row p { margin: 0.4rem 0; }
 .su-copy { min-height: 9rem; height: auto; font-size: 0.9375rem; padding: 0.75rem; }
-/* The phone's chef hat menu is a sheet of tiles since 3 Nov 2026 (its own block next to .wm-me): every item fits without
+/* The phone's chef hat menu was a sheet of tiles from 3 Nov 2026 and is a list since 8 Nov 2026 (next to .wm-me): every item fits without
    the older squeeze that kept the list menu short. */
 @media (max-width: 719px) { .wm-h:not(.wm-sh) { margin: 2px 10px; } }
 @media (max-width: 1099px) {
@@ -4112,3 +4115,90 @@ html.tm-open, html.tm-open body { overflow: hidden; }
   #r-allergens, #r-ing, .jump-at, #r-plate, #r-side { scroll-margin-top: 4.5rem; }
 }
 @media (max-width: 599px) { .jumps, .card .jumps { margin: 0 -1rem; padding: 0.4rem 1rem; } }
+
+/* ---------- Redesign step 7 (8 Nov 2026, head chef): the kitchen pages. docs/whole-app-redesign-options/brief.md
+   (Build step 7) and every-page.html. ---------- */
+/* Shift pings as an inbox (Linear): a dot while new, the words, who it is for and from, the time on the right */
+.nt-list { gap: 0; padding: 4px 18px; }
+.nt-i { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; align-items: start; gap: 4px 12px; padding: 12px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }
+.nt-i:last-child { border-bottom: 0; }
+.nt-dot { width: 10px; height: 10px; margin-top: 8px; border-radius: 50%; background: var(--line); }
+.nt-i.is-new .nt-dot { background: var(--accent-ink); }
+.nt-w { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.nt-meta { font-size: 0.875rem; color: var(--muted); }
+.nt-meta .nt-tag { margin-right: 4px; vertical-align: 1px; }
+.nt-at { padding-top: 4px; font: 700 0.9375rem/1.2 var(--body); color: var(--muted); font-variant-numeric: tabular-nums; }
+.nt-i.is-new .nt-at { color: var(--ink); }
+.t-safety.nt-i, .t-allergen.nt-i { margin: 0 -10px; padding-left: 10px; padding-right: 10px; border-left: 4px solid var(--accent-ink); background: #FFF6EF; }
+/* Chef to-do (Things 3): a one-line add, the rest once the job has words; the day as a tag on the right of each row */
+.todo-add { gap: 0.6rem; padding: 0; border: 0; background: none; }
+.todo-add .todo-ta { min-height: 48px; resize: vertical; }
+.todo-add:not(.is-edit):has(.todo-ta:placeholder-shown) .todo-more { display: none; }
+.todo-more { display: flex; flex-direction: column; gap: 0.8rem; }
+.todo-add.is-edit { padding: 12px 14px; border: 1.5px solid var(--accent); }
+.todo-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.todo-top .todo-due { flex: none; padding: 2px 9px; border: 1.5px solid var(--edge); border-radius: 12px; font-size: 0.8125rem; white-space: nowrap; }
+.todo-top .todo-due.is-today, .todo-top .todo-due.is-late { border-color: var(--accent-ink); background: var(--accent-ink); color: #fff; }
+.todo-row .todo-tick { flex-basis: 44px; border-radius: 10px; }
+/* Drinks run as a café docket: your usual on top, then the order to read out at the counter, then who is on today */
+.dr-page .dr-mine { padding: 10px 6px 10px 14px; border: 1.5px solid var(--ink); background: var(--paper); }
+.dr-page .dr-run { margin: 4px 0 18px; padding: 12px 16px 14px; border: 1.5px dashed var(--ink); border-radius: 4px; background: #fff; box-shadow: 0 3px 0 rgba(28, 29, 31, 0.08); }
+.dr-oh { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0 0 6px; padding-bottom: 6px; border-bottom: 1.5px dashed var(--line); }
+.dr-run .dr-order li { display: flex; gap: 8px; margin: 0; padding: 6px 0; border-bottom: 1px dotted var(--line); font-size: 1.0625rem; }
+.dr-run .dr-order li:last-child { border-bottom: 0; }
+.dr-run .dr-order b { flex: 0 0 auto; min-width: 2.2em; font-variant-numeric: tabular-nums; }
+.dr-oh .dr-n { flex: none; font: 600 0.875rem/1.2 var(--body); white-space: nowrap; }
+/* Meeting minutes, calm to read (Headspace): one column of plain text, headings in the book's orange, no box round each
+   part; who is signing and Not you? beside the Sign button at the end */
+@media screen {
+  .mn-doc .mn-box { gap: 0.5rem; padding: 0.4rem 0 0; border: 0; border-top: 1.5px solid var(--line); border-radius: 0; }
+  .mn-doc .mn-bh { color: var(--accent-ink); font-size: 1.25rem; }
+  .mn-doc .mn-ul, .mn-doc .mn-ol { font-size: 1.0625rem; line-height: 1.55; }
+}
+.mn-signrow { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; width: 100%; padding-top: 10px; border-top: 1.5px solid var(--line); }
+.mn-as { flex: 1 1 12rem; margin: 0; }
+.mn-as .p-link { margin-left: 2px; }
+/* Kitchen mail (Linear): the urgent box stays orange; your mail as rows, the words first and the state on the right */
+.ml-sent .ml-si { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.ml-sw { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ml-sent .ml-text { margin: 0; font-weight: 600; }
+.ml-sent .ml-st { flex: none; }
+.ml-page .ml-urgent { border-left-width: 4px; }
+/* A guide step by step (Headspace, Duolingo): All steps or one step at a time, the steps as a bar, Back and Next */
+.g-sh { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-bottom: 0.5rem; }
+.g-sh .g-h3 { margin: 0; }
+.g-mode { display: flex; gap: 6px; }
+.g-bar { display: flex; gap: 4px; margin: 0 0 12px; }
+.g-bar i { flex: 1 1 0; height: 6px; border-radius: 3px; background: var(--line); }
+.g-bar i.on { background: var(--accent-ink); }
+.g-onepg { margin: 0 0 10px; }
+.g-onepg img { display: block; max-width: 100%; max-height: 50vh; width: auto; height: auto; margin: 0 auto; border: 1px solid var(--line); }
+.g-onepg figcaption { margin-top: 4px; font-size: 0.8125rem; color: var(--muted); }
+.g-onetxt { margin: 0 0 14px; font: 600 1.3rem/1.4 var(--body); overflow-wrap: anywhere; }
+.g-nav { display: flex; gap: 10px; }
+.g-nav .btn { flex: 1 1 0; min-height: 52px; }
+.g-nav .btn.dark { flex-grow: 2; }
+/* Today's team at a glance (Flighty timeline): grouped by section, hours and breaks in words, a bar for the day */
+.tm-tl { margin: 4px 0 18px; }
+.tm-tlh { margin: 0 0 6px; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.tm-tls { margin: 10px 0 2px; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink); }
+.tm-tlx, .tm-tlr { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: center; gap: 10px; }
+.tm-tlt { position: relative; height: 16px; font-size: 0.75rem; color: var(--muted); }
+.tm-tlt span { position: absolute; top: 0; translate: -50% 0; }
+.tm-tlr { min-height: 46px; padding: 4px 0; border-bottom: 1px solid var(--line); }
+.tm-tln { display: flex; flex-direction: column; min-width: 0; }
+.tm-tln small { color: var(--muted); font-size: 0.8125rem; overflow-wrap: anywhere; }
+.tm-tlbar { position: relative; height: 12px; border-radius: 6px; background: var(--beige); }
+.tm-tlbar i { position: absolute; top: 0; bottom: 0; border-radius: 6px; }
+.tm-tlbar .sh { background: var(--ink); }
+.tm-tlbar .br { background: var(--accent); }
+.tm-tlbar .sp { background: var(--beige); }
+.tm-edh { margin: 6px 0 8px; padding-top: 12px; border-top: 1.5px solid var(--line); font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+/* Manage staff (Linear lists): a row each with the initial, the name, and the role with what they may do */
+.st-row { flex-direction: row !important; align-items: flex-start; gap: 12px !important; }
+.st-av { flex: none; display: grid; place-items: center; width: 36px; height: 36px; margin-top: 4px; border-radius: 50%; background: var(--accent-ink); color: #fff; font: 700 1rem/1 var(--display); }
+.st-av.is-chef { background: var(--ink); }
+.st-w { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.st-can { color: var(--muted); font-size: 0.875rem; }
+.a-person.st-row { margin: 0; padding: 10px 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }
+.st-acts { margin-top: 2px; }

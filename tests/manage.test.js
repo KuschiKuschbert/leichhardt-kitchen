@@ -25,7 +25,7 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   // who sees it: the head chef by PIN, the head chef's Google device with nobody signed in; not a sous chef or staff
   p = await L.open(b, '#/recipes', { who: 'ann', extra: cfg(), wait: 1400 });
   l = await L.chefItems(p);
-  ok(l.includes('manage') && l.indexOf('manage') < l.indexOf('pings'), 'head chef by PIN: Manage Recipes & Drawings is in the Chef group (' + l.join(', ') + ')');
+  ok(l.includes('manage') && l.indexOf('manage') > l.indexOf('pings'), 'head chef by PIN: Recipes & drawings is in the chef hat, under More after the Every day rows (' + l.join(', ') + ')');
   await go(p, '#/r/burger');
   ok(await p.$('#r-edit a[href="#/manage/r/burger"]') !== null, 'head chef: the card has Change this recipe');
   await p.context().close();

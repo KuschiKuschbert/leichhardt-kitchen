@@ -65,7 +65,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   // what the menu offers
   p = await L.open(b, '#/recipes', { who: 'ann', wait: 1800 });
   let m = await L.chefItems(p);
-  ok(m.join(',') === 'mail,drinks,fn,deliveries,settings,out', 'staff, nothing published: Kitchen mail, Drinks run, Functions to read, Settings and Sign out (on the person card), no Meeting minutes, no Chef group (' + m + ')');
+  ok(m.join(',') === 'fn,deliveries,mail,drinks,settings,out', 'staff, nothing published: Functions to read, Delivery received and Kitchen mail every day, Drinks run under More, Settings and Sign out (on the person card), no Meeting minutes, no chef rows (' + m + ')');
   ok(!m.includes('prep'), 'staff: the old Prep list item is gone');
   await p.context().close();
   // once Chef has published minutes, Meeting minutes joins the staff menu
@@ -74,7 +74,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
     att: [{ id: 'ann', st: 'present' }], guests: '', decisions: 'New menu from Friday', menu: '', safety: '', dates: '', other: '', acts: [], next: '', pubAt: L.NOW - 86400000, removed: false, at: 1, upd: 1, by: 'sam' };
   p = await L.open(b, '#/recipes', { who: 'ann', extra: pub, wait: 1800 });
   m = await L.chefItems(p);
-  ok(m.join(',') === 'mail,drinks,minutes,fn,deliveries,settings,out', 'staff, minutes published: Meeting minutes shows (' + m + ')');
+  ok(m.join(',') === 'fn,deliveries,mail,minutes,drinks,settings,out', 'staff, minutes published: Meeting minutes shows, under More (' + m + ')');
   await p.context().close();
   // #/minutes by its address with nothing published: the notebook card, like the order list
   p = await L.open(b, '#/minutes', { who: 'ann', wait: 1800 });
@@ -83,21 +83,21 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   await p.context().close();
   p = await L.open(b, '#/recipes', { who: 'sam', wait: 1800 });
   m = await L.chefItems(p);
-  ok(m.join(',') === 'mail,drinks,minutes,fn,deliveries,team,manage,pings,todo,suppliers,staff,settings,out', 'sous chef: the Chef group has Today\'s team (7 Nov 2026), Shift pings, Chef to-do, Supplier order and Manage staff, the register is in Meeting minutes (' + m + ')');
-  // the menu as a sheet of tiles (3 Nov 2026, the head chef's 24 Oct pick): a person card with Sign out, tiles big enough
-  // to tap, no second line with nothing to say, Sign out's line read out when it changes, and all of it on one phone
-  // screen with no scroll (it was 621 px of menu in a 506 px box)
+  ok(m.join(',') === 'fn,deliveries,suppliers,team,mail,pings,minutes,drinks,todo,manage,staff,settings,out', 'sous chef: Every day has Functions, Delivery received, Supplier order, Today\'s team, Kitchen mail and Shift pings; More has Meeting minutes (the register is in it), Drinks run, Chef to-do, Recipes & drawings and Manage staff (8 Nov 2026) (' + m + ')');
+  // the menu as a list since 8 Nov 2026 (redesign step 7; tiles from 3 Nov): a person card with Sign out, rows the menu's
+  // width and big enough to tap, no second line with nothing to say, Sign out's line read out when it changes, and all of
+  // it on one phone screen with no scroll (it was 621 px of menu in a 506 px box)
   await p.click('.wtop-who'); await L.settle(p, 150);
   let box = await menuBox(p);
-  ok(box.tiles.length === 11 && box.tiles.every(x => x[0] >= 64 && x[1] >= 64), 'sous chef 390 px: eleven tiles, each at least 64 px each way (' + JSON.stringify(box.tiles) + ')');
+  ok(box.tiles.length === 11 && box.tiles.every(x => x[0] >= 330 && x[1] >= 44), 'sous chef 390 px: eleven rows, each the width of the menu and at least 44 px high (' + JSON.stringify(box.tiles) + ')');
   ok(box.out >= 48, 'sous chef 390 px: Sign out is a full 48 px button (' + box.out + ')');
   ok(box.me === 'Sam|Sous chef' && box.outText === 'Not Sam? Sign out', 'sous chef: the person card says Sam, Sous chef, and Not Sam? Sign out (' + box.me + ', ' + box.outText + ')');
   // a second line only with something to say: Today's team has none set for today in this kitchen (7 Nov 2026)
   ok(box.small.join('|') === 'Not set yet', 'sous chef: no second lines in the menu but Today\'s team\'s Not set yet (' + box.small.join(' | ') + ')');
   ok(box.live === 'polite', 'sous chef: Sign out\'s second line is read out when it changes');
   ok(box.b >= box.vh - 1 && box.sh <= box.ch + 1 && box.t >= 0, 'sous chef 390 px: a sheet from the bottom of the screen that holds the whole menu with no scroll (' + JSON.stringify(box) + ')');
-  ok(box.focus === 'tile', 'sous chef: the menu opens with the first tile focused, not Sign out (' + box.focus + ')');
-  ok(box.icons === box.icons2, 'sous chef: every tile has its own icon');
+  ok(box.focus === 'tile', 'sous chef: the menu opens with the first row focused, not Sign out (' + box.focus + ')');
+  ok(box.icons === box.icons2, 'sous chef: every row has its own icon');
   await p.click('.wm a[href="#/minutes"]'); await L.settle(p, 600);
   await L.waitFor(p, () => !!document.querySelector('[data-p="mn-sous"]'), null, 5000).catch(() => {});
   ok(!!(await p.$('[data-p="mn-sous"]')), 'sous chef: Meeting minutes has See who has signed');
@@ -255,14 +255,14 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   p = await L.open(b, '#/recipes', { who: 'sam', settings: { text: 'xlarge' }, wait: 1800 });
   await p.click('.wtop-who'); await L.settle(p, 150);
   box = await menuBox(p);
-  ok(box.b <= box.vh && box.r <= box.w && box.t >= 0 && box.out >= 48 && box.tiles.every(x => x[1] >= 64), 'extra large text: the menu fits on the screen, Sign out 48 px and tiles 64 px or more (it may scroll) (' + JSON.stringify(box) + ')');
+  ok(box.b <= box.vh && box.r <= box.w && box.t >= 0 && box.out >= 48 && box.tiles.every(x => x[1] >= 44), 'extra large text: the menu fits on the screen, Sign out 48 px and rows 44 px or more (it may scroll) (' + JSON.stringify(box) + ')');
   ok(!(await L.overflow(p)), 'extra large text: no sideways scroll with the menu open (' + await L.overflow(p) + ')');
   await p.context().close();
 
   // the head chef by PIN: no Kitchen mail to herself, Admin panel says Sign in with Google, Manage staff stays
   p = await L.open(b, '#/recipes', { who: 'ann', extra: headCfg(), wait: 1800 });
   m = await L.chefItems(p);
-  ok(m.join(',') === 'drinks,minutes,functions,deliveries,team,admin,manage,pings,todo,suppliers,staff,settings,out', 'head chef by PIN: no Kitchen mail, Functions in its one place, Today\'s team, Shift pings, Chef to-do, Supplier order and Manage staff (' + m + ')');
+  ok(m.join(',') === 'functions,deliveries,suppliers,team,pings,admin,minutes,drinks,todo,manage,staff,settings,out', 'head chef by PIN: no Kitchen mail, Functions in its one place, Today\'s team, Shift pings, Admin panel first under More, Chef to-do, Supplier order and Manage staff (' + m + ')');
   await p.click('.wtop-who'); await L.settle(p, 150);
   box = await menuBox(p);
   ok(box.small.join('|') === 'Not set yet|Sign in with Google', 'head chef by PIN: the only second lines are Today\'s team\'s Not set yet and Sign in with Google (' + box.small.join(' | ') + ')');
@@ -273,7 +273,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   // Admin comes in after the owner check is read: wait for it, not for the page to be still
   for (let i = 0; i < 20 && await L.admItem(p) !== 'signed'; i++) await L.settle(p, 250);
   m = await L.chefItems(p);
-  ok(m.join(',') === 'drinks,minutes,functions,deliveries,team,admin,manage,pings,todo,suppliers,settings,out', 'head chef on her Google device: no Kitchen mail, no Manage staff, Today\'s team, Chef to-do and Supplier order (' + m + ')');
+  ok(m.join(',') === 'functions,deliveries,suppliers,team,pings,admin,minutes,drinks,todo,manage,settings,out', 'head chef on her Google device: no Kitchen mail, no Manage staff, Today\'s team, Chef to-do and Supplier order (' + m + ')');
   await p.click('.wtop-who'); await L.settle(p, 150);
   box = await menuBox(p);
   ok(box.sh <= box.ch + 1 && box.b >= box.vh - 1 && box.me === 'Ann|Head chef', 'head chef on her Google device, 390 px: the whole menu on one screen, no scroll, the card says Head chef (' + JSON.stringify(box) + ', 710 px of list before 22 Oct)');
