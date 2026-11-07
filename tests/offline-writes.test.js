@@ -70,10 +70,12 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // all three; LK_PART=all runs every step in this one file.
   const PARTS = 3, PART = process.env.LK_PART === 'all' ? 0 : (+process.env.LK_PART || 1);
   let stepNo = 0;
+  // pr, or v after ms milliseconds, whichever comes first. The timer goes with it, so it never keeps the file running.
+  function cap(pr, ms, v) { let t; return Promise.race([pr, new Promise(res => { t = setTimeout(() => res(v), ms); })]).finally(() => clearTimeout(t)); }
   // each step on its own: one that fails (say the page reloaded) is a FAIL, and the next steps still run. A step that
   // does not finish in 2 minutes is a FAIL by its name too (7 Nov 2026; the longest takes about 12 seconds): a call the
   // browser never answers used to hold the whole file to the 10 minute limit with nothing said about where.
-  const STEP_LIMIT = 120000, cap = (pr, ms, v) => Promise.race([pr, new Promise(res => setTimeout(() => res(v), ms))]);
+  const STEP_LIMIT = 120000;
   async function step(n, fn) {
     if (PART && (stepNo++ % PARTS) !== PART - 1) return;
     // the step's own promise never rejects, so one left behind by the 2 minute limit cannot stop the file later
@@ -912,13 +914,12 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
   // touch waits 3 seconds at most, and a page that has gone (the book reloaded first) has had its swipe. What the step
   // checks after it (did the book update?) is unchanged.
   const swipe = async p => {
-    const within = (pr, ms) => Promise.race([pr, new Promise(res => setTimeout(() => res('late'), ms))]);
     const c = await p.context().newCDPSession(p);
     for (const [type, y] of [['touchStart', 600], ['touchMove', 500], ['touchMove', 400], ['touchEnd']]) {
-      const r = await within(c.send('Input.dispatchTouchEvent', { type, touchPoints: y ? [{ x: 200, y }] : [] }).then(() => 'sent', () => 'gone'), 3000);
+      const r = await cap(c.send('Input.dispatchTouchEvent', { type, touchPoints: y ? [{ x: 200, y }] : [] }).then(() => 'sent', () => 'gone'), 3000, 'late');
       if (r !== 'sent') break;
     }
-    await within(c.detach().catch(() => {}), 3000);
+    await cap(c.detach().catch(() => {}), 3000);
   };
 
   // 18. the 04:00 refresh held back all night (review of the fix, 28 Oct 2026): a tablet on Recipes from 03:57, with
