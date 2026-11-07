@@ -44,9 +44,11 @@ const oneLine = (p, sel) => p.evaluate(s => [...document.querySelectorAll(s)].fi
       }
       const pick = await oneLine(p, '.a-pane .a-table .ux-picker-trigger');
       ok(pick.every(x => x.h <= 52), width + ' ' + t + ': a role in the staff table sits on one line (' + JSON.stringify(pick.filter(x => x.h > 52)) + ')');
-      // part 2: the page tabs are one row, and the open one can be seen in it
+      // part 2: the page tabs are one row, and the open one can be seen in it. Since 8 Nov 2026 a laptop shows Inbox and
+      // Dashboard once, in the rail: when the open tab is one of those, hidden in the row, the rail marks it instead
       const row = await p.evaluate(() => { const n = document.querySelector('.a-tabs'); if (!n) return null; const r = n.getBoundingClientRect(), on = n.querySelector('[aria-pressed="true"]'), o = on && on.getBoundingClientRect();
-        return { h: Math.round(r.height), inView: !!o && o.left >= r.left - 1 && o.right <= r.right + 1, pill: on ? getComputedStyle(on).borderTopLeftRadius : '' }; });
+        const q = document.querySelector('.a-quick[aria-current="true"]'), rail = !!on && !on.getClientRects().length && !!q && q.getClientRects().length > 0;
+        return { h: Math.round(r.height), inView: rail || !!o && o.left >= r.left - 1 && o.right <= r.right + 1, rail, pill: on ? getComputedStyle(on).borderTopLeftRadius : '' }; });
       if (row) ok(row.h <= 56 && row.inView && row.pill === '0px', width + ' ' + t + ': the page tabs are one underlined row with the open tab in view (' + JSON.stringify(row) + ')');
       ok(!await L.overflow(p), width + ' ' + t + ': no sideways scroll');
     }
