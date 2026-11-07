@@ -232,9 +232,11 @@
       await Promise.all(tasks); check(c.ctx, false, true); return out;
     }
     // Explicit owner PIN migration only. Same online-only client; copied records retain their original author and time.
-    async function copyTo(newPin) {
+    // given: what exportAll() already read for Move PIN, which counts the records before it writes any (7 Nov 2026), so
+    // they are read once. Without it the records are read here as before.
+    async function copyTo(newPin, given) {
       if (!/^\d{4,6}$/.test(newPin) || newPin === B.base()[1]) throw error('invalid', 'Choose a different kitchen PIN.');
-      var initial = { key: B.context(), generation: generation }, out = await exportAll(); check(initial, false, true);
+      var initial = { key: B.context(), generation: generation }, out = given && Array.isArray(given.suppliers) ? given : await exportAll(); check(initial, false, true);
       var c = await access(false, true), ops = [], counts = { suppliers: 0, orders: 0, audits: 0, links: 0 }; check(initial, false, true);
       function add(parts, value, kind) { ops.push({ parts: parts, value: withoutId(value) }); counts[kind]++; }
       out.suppliers.forEach(function (s) {

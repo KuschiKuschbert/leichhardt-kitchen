@@ -234,7 +234,7 @@ These hold for every file, old and new. When you touch code that breaks one, bri
 - A once-a-day job keeps its "done today" flag on the phone (`lk.*`), not only in memory, so the 04:00 refresh and updates do not run it again.
 - Admin past-day reports read past days from the day digests where they are current (`digestRead()`, 5 Nov 2026), the rest through the current memory-only Firestore cache and existing correction stamps (`pastRead()` in `js/prep.js`). Reuse loaded data within the page; after a full reload, re-read non-empty past days as needed. Do not introduce persistent private report storage. Refresh is a tap, never a timer.
 - Totals that every phone needs from many past days (what is usual, what is wasted often) are worked out by the nightly job into one small record that phones read once a day.
-- `tests/read-budget.test.js` sets a read budget for a staff phone's first open of the day, a reload, the admin panel and the admin panel again the same day (the stand-in in `tests/fake/` bills reads like Firestore: `__fake.bill`). A change that goes over it either reads less or raises the budget in the same pull request with the reason.
+- `tests/read-budget.test.js` sets a read budget for a staff phone's first open of the day, a reload, the admin panel and the admin panel again the same day, the Proofreader and Manage functions (the stand-in in `tests/fake/` bills reads like Firestore: `__fake.bill`, and the records the rules look up for each request, `__fake.ruleBill`, since 7 Nov 2026). A change that goes over it either reads less or raises the budget in the same pull request with the reason.
 
 **Saved copies on the phone**
 - Every saved copy (`lk.*`, IndexedDB) says in a comment what makes it out of date.

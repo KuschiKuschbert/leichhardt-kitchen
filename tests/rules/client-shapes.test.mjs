@@ -215,7 +215,7 @@ row('js/prep.js sumList(): summary/learned get', { ok: KITCHEN, asks: KITCHEN, r
 row('js/prep.js digestRead(): digest/_index get (when the job last read the lines)', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, 'digest/_index')) });
 row('js/prep.js digestRead(): the past days\' digests, one query by day', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(query(C(db, 'digest'), where('day', '>=', PAST), where('day', '<=', TODAY))) });
 row('js/prep.js loadLearned(): learned, the 500 most used (summary missing or old)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(query(C(db, 'learned'), orderBy('uses', 'desc'), limit(500))) });
-row('js/prep.js watchSections(): sections listener', { ok: KITCHEN, asks: KITCHEN, run: db => listen(C(db, 'sections')) });
+row('js/prep.js loadSections(): the sections, once a day (a listener until 7 Nov 2026)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, 'sections')) });
 row('js/prep.js watchActivity(): activity listener (the Google device)', { ok: KITCHEN, asks: GOOGLE, run: db => listen(C(db, 'activity')) });
 row('js/prep.js maybeRoll(): the last written day\'s prep lines', { ok: KITCHEN, asks: not('owner', 'vic', 'fay'), run: db => getDocs(C(db, `days/${YDAY}/items`)) });
 row('js/prep.js loadPast(): a past day\'s prep lines (14 days, dayCache)', { ok: KITCHEN, asks: KITCHEN, run: db => getDocs(C(db, `days/${YDAY}/items`)) });
