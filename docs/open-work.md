@@ -16,6 +16,8 @@ Done on 22 Oct 2026 by the head chef: the Browser key works only from `kuschikus
 
 4. **Plan B for the free reads** (head chef, 5 Nov 2026; [the Firestore usage note](firestore-usage.md)). Done: the reads-used-up message, open screens update at most hourly (1.2, 6.3), release windows (1.1), a report page reopens on the Dashboard after an update nobody asked for (2.6). The nightly digests and the day-named stamps (2.1, 2.4; rules published 5 Nov 18:13), and the hints, admin reports and Proofreader from them (2.2, 2.3, #565). The admin unlock keeps the live lists running, the sections are read once a day and the functions list starts one listener (2.7; its 15-day bound left out, see the usage note); Move PIN reads first and refuses past the free limits (5.4); the read-budget test counts the rules' lookups, the Proofreader and Manage functions (6.2). Manage functions no longer reads its whole list on every change (found and fixed 7 Nov, see the usage note). To do: the server jobs (4.1, 4.2). Later, on the head chef's word: Plan C (pay as you go with a budget alert, 4.3, 7.3). Also open: the cut-off push schedule mostly does not run on GitHub (7.1 or 7.2 until Plan C).
 
+5. **Choose the whole-app redesign** (7 Nov 2026). Three designs learning from seven apps, the council's scores and a recommended mix in [the options brief](whole-app-redesign-options/brief.md), with five questions for the head chef. Nothing is built until the head chef chooses; then the brief gets a Chosen section and a Build table, and this item goes.
+
 Remove each item here once it is done.
 
 ### Bringing the code in line (22 Oct 2026)

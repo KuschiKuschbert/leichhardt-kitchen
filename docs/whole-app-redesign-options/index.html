@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kitchen Book Redesign</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=Caveat:wght@500;700&display=swap">
+<style>
+/* Whole-app redesign options (7 Nov 2026): a preview only, never loaded by the book. Three designs drawn with the
+   book's own colours and type from css/app.css. Every name, amount, function and time is made up. Nothing saves.
+   One light look on purpose: it is the book's look. Layout: a dark band like the top bar, then Today, the core,
+   and one section per design with its phone screens in a row and its laptop screen scaled to the column.
+   ?shot=<id> draws one screen at its real size for the photos in previews/. */
+:root {
+  --bg: #FBFAF7; --paper: #FFFFFF; --sheet: #FFFDF8; --ink: #1C1D1F; --muted: #55585E; --faint: #6B7077;
+  --accent: #E2602A; --accent-ink: #C2451A; --tag: #B83F15; --beige: #F2EFE8; --line: #E0DBCF; --rule: #E6DECF;
+  --bar: #2B2A27; --bar-text: #FBF8F1; --bar-accent: #F08A4B; --stone: #A39A88; --kraft: #C9B48F;
+  --done: #2E8B57; --done-ink: #237347; --done-tint: #EAF5EE; --hit: #FFF1E6;
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --hand: 'Caveat', 'Bradley Hand', cursive;
+  --r-act: 8px; --r-pick: 999px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.55 var(--body); }
+a { color: inherit; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.band { background: var(--bar); color: var(--bar-text); border-bottom: 4px solid var(--stone); }
+.band .wrap { padding-block: 36px 32px; }
+.kick { margin: 0 0 8px; font: 700 .8rem/1.3 var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--bar-accent); }
+h1 { margin: 0; font: 700 clamp(2.6rem, 7vw, 4.4rem)/.95 var(--display); text-wrap: balance; }
+.lede { max-width: 68ch; margin: 14px 0 0; color: #E9E4D8; }
+.lede b { color: var(--bar-text); }
+.verdict { display: inline-flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.vchip { font: 600 .9rem/1 var(--body); padding: 9px 14px; border-radius: var(--r-pick); border: 1.5px solid #6E675B; color: var(--bar-text); }
+.vchip.hot { background: var(--accent-ink); border-color: var(--accent-ink); }
+section.part { padding-block: 44px 8px; }
+h2 { margin: 0 0 6px; font: 700 clamp(1.9rem, 4.6vw, 2.7rem)/1 var(--display); text-wrap: balance; }
+h2 .lt { color: var(--accent-ink); }
+h3 { margin: 26px 0 8px; font: 700 1.25rem/1.15 var(--display); letter-spacing: .02em; text-transform: uppercase; }
+p { margin: 0 0 12px; max-width: 72ch; }
+.sub { color: var(--muted); max-width: 72ch; }
+.hand { font-family: var(--hand); font-weight: 700; }
+.tablewrap { overflow-x: auto; margin: 12px 0 8px; -webkit-mask-image: linear-gradient(90deg, #000 94%, transparent); mask-image: linear-gradient(90deg, #000 94%, transparent); padding-right: 24px; }
+table { border-collapse: collapse; min-width: 640px; width: 100%; font-size: .95rem; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px 9px 0; border-bottom: 1px solid var(--line); }
+th { font: 700 .8rem/1.2 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+td b { font-weight: 600; }
+td.num, th.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.best { color: var(--done-ink); font-weight: 700; }
+.worst { color: var(--tag); font-weight: 700; }
+.list { margin: 0 0 12px; padding-left: 1.2em; max-width: 72ch; }
+.list li { margin: 0 0 6px; }
+.pc { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px 28px; margin: 10px 0 4px; }
+.pc > div { min-width: 0; }
+.pc h4 { margin: 0 0 6px; font: 700 .85rem/1.2 var(--display); letter-spacing: .1em; text-transform: uppercase; }
+.pc .pro h4 { color: var(--done-ink); }
+.pc .con h4 { color: var(--tag); }
+.from { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 14px; }
+.from span { font: 600 .82rem/1 var(--body); padding: 7px 11px; border-radius: var(--r-pick); background: var(--beige); color: var(--ink); }
+.design-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; border-top: 3px solid var(--ink); padding-top: 18px; }
+.letter { font: 700 3.4rem/.8 var(--display); color: var(--accent-ink); }
+.rec { border: 2px solid var(--accent-ink); border-radius: 10px; padding: 18px 20px 8px; background: var(--hit); margin: 16px 0; max-width: 900px; }
+.rec h3 { margin-top: 0; color: var(--accent-ink); }
+.note { font-size: .9rem; color: var(--muted); }
+/* screens */
+.row { display: flex; gap: 22px; overflow-x: auto; padding: 14px 4px 22px; scroll-snap-type: x proximity; }
+figure { margin: 0; flex: none; scroll-snap-align: start; display: flex; flex-direction: column; gap: 10px; }
+figcaption { max-width: 390px; font-size: .92rem; color: var(--muted); }
+figcaption b { color: var(--ink); font-weight: 600; }
+.shotimg { width: 390px; height: auto; border-radius: 26px; border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(43,42,39,.14); background: var(--paper); }
+.lapbox { width: 100%; max-width: 1240px; aspect-ratio: 1280 / 800; position: relative; overflow: hidden; border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(43,42,39,.14); }
+.lapbox > .lt { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.lapfig { flex: 1 1 100%; max-width: 100%; }
+.lapfig figcaption { max-width: 72ch; }
+.shotimg.lap { width: 100%; max-width: 1240px; border-radius: 12px; }
+
+/* ---------- the mock book (m-) ---------- */
+.ph, .lt { position: relative; overflow: hidden; background: var(--bg); color: var(--ink); font: 400 16px/1.4 var(--body); text-align: left; }
+.ph { width: 390px; height: 844px; border-radius: 26px; box-shadow: 0 10px 30px rgba(43,42,39,.16); border: 1px solid var(--line); }
+.lt { width: 1280px; height: 800px; }
+.shot .ph, .shot .lt { border-radius: 0; box-shadow: none; border: 0; }
+.ph svg, .lt svg { display: block; }
+.ic { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.m-top { position: absolute; left: 0; right: 0; top: 0; height: 68px; background: var(--bar); color: var(--bar-text); border-bottom: 4px solid var(--stone); display: flex; align-items: center; gap: 8px; padding: 0 12px 0 14px; z-index: 3; }
+.m-back { width: 32px; display: grid; place-items: center; }
+.m-kb { font: 700 30px/1 var(--hand); color: var(--bar-text); border-bottom: 3px solid var(--accent); padding: 0 2px; margin-right: 4px; transform: rotate(-4deg); }
+.m-title { font: 700 26px/1 var(--display); flex: 1; white-space: nowrap; }
+.m-chips { display: flex; gap: 8px; }
+.m-chip { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--bar-text); display: grid; place-items: center; position: relative; }
+.m-chip.due { background: var(--accent-ink); border-color: var(--accent-ink); }
+.m-chip .bdg { position: absolute; right: -3px; bottom: -3px; width: 18px; height: 18px; border-radius: 50%; background: var(--bar-text); color: var(--bar); font: 700 11px/18px var(--body); text-align: center; border: 2px solid var(--bar); }
+.m-tabs { position: absolute; left: 0; right: 0; bottom: 0; height: 68px; background: var(--bar); border-top: 3px solid var(--accent); display: flex; z-index: 3; }
+.m-tabs > div { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--bar-text); font: 700 12.5px/1 var(--display); letter-spacing: .05em; text-transform: uppercase; }
+.m-tabs > div.on { color: var(--bar-accent); }
+.m-body { position: absolute; left: 0; right: 0; top: 68px; bottom: 68px; overflow: hidden; padding: 12px 12px; }
+.m-act { position: absolute; left: 0; right: 0; bottom: 68px; padding: 10px 14px 12px; background: linear-gradient(rgba(251,250,247,0), var(--bg) 26%); z-index: 2; }
+.m-btn { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 18px; border-radius: var(--r-act); border: 1.5px solid var(--ink); background: var(--paper); font: 600 16px/1 var(--body); color: var(--ink); white-space: nowrap; }
+.m-btn.main { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; font-size: 18px; min-height: 52px; }
+.m-btn.dark { background: var(--ink); color: var(--bar-text); }
+.m-btn.quiet { border-color: var(--line); }
+.m-btn.wide { width: 100%; }
+.m-pill { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 15px; border-radius: var(--r-pick); border: 1.5px solid var(--ink); font: 700 14px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; background: var(--paper); flex: none; }
+.m-pill.on { background: var(--accent-ink); border-color: var(--accent-ink); color: #fff; }
+.m-pill.round { width: 44px; padding: 0; }
+.m-pill.date { text-transform: none; letter-spacing: 0; font: 600 15px/1 var(--body); }
+.m-pill.dk { background: var(--ink); color: var(--bar-text); }
+.m-bar { display: flex; gap: 8px; align-items: center; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+.m-sep { width: 1.5px; height: 30px; background: var(--line); flex: none; }
+/* notebook */
+.m-nb { position: relative; background: var(--sheet); border: 1.5px solid var(--ink); border-radius: 10px; padding: 8px 10px 0 20px; margin-top: 10px; box-shadow: 0 6px 0 rgba(28,29,31,.1); }
+.m-nb::before { content: ""; position: absolute; left: 10px; top: 0; bottom: 0; width: 1.5px; background: #EDB49B; }
+.m-nbh { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; border-bottom: 2px solid var(--ink); padding-bottom: 6px; }
+.m-nbt { font: 700 40px/.9 var(--hand); }
+.m-nbd { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.m-prog { font: 700 27px/1 var(--hand); color: var(--accent-ink); white-space: nowrap; }
+.m-link { font: 600 13.5px/1 var(--body); text-decoration: underline; text-underline-offset: 3px; }
+.m-sec { display: flex; justify-content: space-between; align-items: center; height: 30px; margin-top: 2px; font: 700 13px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--tag); }
+.m-r { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 4px 0; border-bottom: 1px solid var(--rule); position: relative; }
+.m-r.urgent::before { content: ""; position: absolute; left: -9px; top: 6px; bottom: 6px; width: 4px; border-radius: 2px; background: var(--ink); }
+.m-box { width: 28px; height: 28px; border: 2.5px solid var(--ink); border-radius: 6px; flex: none; display: grid; place-items: center; background: var(--paper); }
+.m-box.done { background: var(--done); border-color: var(--done); color: #fff; }
+.m-w { flex: 1; min-width: 0; }
+.m-t { font: 700 23px/1 var(--hand); }
+.m-t i { font: 600 15px/1 var(--body); font-style: normal; margin-left: 6px; white-space: nowrap; }
+.print .m-t { font: 600 18px/1.15 var(--body); }
+.print .m-t i { font-weight: 700; color: var(--ink); }
+.lt.print .m-t { font-size: 20px; }
+.m-m { font-size: 12.5px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.m-m a { color: var(--tag); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.m-tag { display: inline-block; vertical-align: 1px; margin-right: 6px; padding: 2px 5px; border-radius: 4px; background: var(--ink); color: #fff; font: 700 11px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; }
+.m-on { min-height: 44px; min-width: 54px; padding: 0 8px; border-radius: var(--r-pick); border: 1.5px solid #B9B1A2; font: 700 12px/1 var(--display); letter-spacing: .07em; text-transform: uppercase; display: grid; place-items: center; flex: none; background: var(--paper); }
+.m-on.is { border-color: var(--ink); background: var(--ink); color: var(--bar-text); }
+.m-dots { width: 30px; min-height: 44px; display: grid; place-items: center; font: 700 22px/1 var(--body); letter-spacing: 1px; flex: none; color: var(--muted); }
+.m-r.done .m-t { color: var(--faint); text-decoration: line-through 2.5px var(--accent-ink); }
+.m-fold { display: flex; justify-content: space-between; align-items: center; min-height: 48px; border-bottom: 1px solid var(--rule); font: 600 15px/1 var(--body); color: var(--muted); }
+.m-fold b { color: var(--ink); }
+.m-open { margin: 0 -10px 0 -20px; padding: 10px 10px 12px 20px; background: var(--hit); border-bottom: 1px solid var(--rule); display: flex; flex-wrap: wrap; gap: 8px; }
+.m-open .m-btn { min-height: 44px; font-size: 15px; padding: 0 13px; }
+.m-open .m-btn.del { color: var(--tag); border-color: #E6B8A6; }
+/* sheets */
+.m-dim { position: absolute; inset: 0; background: rgba(28,29,31,.45); z-index: 4; }
+.m-sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--paper); border-radius: 16px 16px 0 0; z-index: 5; padding: 8px 16px 18px; }
+.m-grip { width: 44px; height: 5px; border-radius: 3px; background: var(--line); margin: 2px auto 12px; }
+.m-eb { font: 700 12px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--tag); }
+.m-sh { font: 700 26px/1.05 var(--display); margin: 6px 0 2px; }
+.m-li { display: flex; align-items: center; gap: 14px; min-height: 52px; border-bottom: 1px solid var(--line); font: 600 17px/1.2 var(--body); }
+.m-li .ic { flex: none; }
+.m-li span { flex: 1; }
+.m-li small { font: 600 13px/1.2 var(--body); color: var(--tag); }
+.m-li small.ok { color: var(--done-ink); }
+.m-li.del { color: var(--tag); border-bottom: 0; }
+.m-li .chev { color: var(--faint); }
+.m-grp { font: 700 12px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 16px 0 8px; }
+.m-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.m-tile { border: 1.5px solid var(--ink); border-radius: 8px; min-height: 70px; padding: 8px 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; text-align: center; font: 600 13.5px/1.15 var(--body); background: var(--paper); }
+.m-tile small { font: 700 11.5px/1 var(--body); color: var(--tag); }
+.m-tile small.ok { color: var(--done-ink); }
+.m-who { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.m-av { width: 40px; height: 40px; border-radius: 50%; background: var(--accent-ink); color: #fff; display: grid; place-items: center; font: 700 18px/1 var(--body); }
+/* pages */
+.m-h { font: 700 34px/1 var(--display); margin: 4px 0 4px; }
+.m-hint { font-size: 13.5px; color: var(--muted); margin: 0 0 10px; }
+.m-card { background: var(--paper); border: 1.5px solid var(--ink); border-radius: 10px; padding: 12px 14px; }
+.m-day { font: 700 13px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--tag); margin: 16px 0 8px; display: flex; justify-content: space-between; }
+.m-fn { display: flex; flex-direction: column; gap: 4px; }
+.m-fn b { font: 700 20px/1.1 var(--display); }
+.m-fn .facts { font-size: 14px; color: var(--muted); }
+.m-quietline { display: flex; align-items: center; gap: 10px; min-height: 48px; border: 1.5px dashed var(--line); border-radius: 10px; padding: 0 14px; color: var(--muted); font-size: 14.5px; }
+/* landing */
+.kraft { background: var(--kraft) repeating-linear-gradient(115deg, rgba(255,255,255,.05) 0 2px, rgba(0,0,0,.03) 2px 5px); }
+.m-dk { position: relative; background: #FFFDF8; padding: 12px 14px 18px; display: flex; align-items: center; gap: 12px; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), 96% 100%, 92% calc(100% - 8px), 88% 100%, 84% calc(100% - 8px), 80% 100%, 76% calc(100% - 8px), 72% 100%, 68% calc(100% - 8px), 64% 100%, 60% calc(100% - 8px), 56% 100%, 52% calc(100% - 8px), 48% 100%, 44% calc(100% - 8px), 40% 100%, 36% calc(100% - 8px), 32% 100%, 28% calc(100% - 8px), 24% 100%, 20% calc(100% - 8px), 16% 100%, 12% calc(100% - 8px), 8% 100%, 4% calc(100% - 8px), 0 100%); }
+.m-dk .pin { position: absolute; top: 5px; left: 50%; width: 12px; height: 12px; border-radius: 50%; background: var(--accent-ink); }
+.m-dk .circ { width: 48px; height: 48px; border-radius: 50%; border: 1.5px solid var(--ink); display: grid; place-items: center; flex: none; }
+.m-dk b { font: 700 25px/1 var(--display); letter-spacing: .06em; text-transform: uppercase; flex: 1; border-bottom: 2.5px solid var(--ink); padding-bottom: 4px; }
+.m-dk em { font: 700 14px/1 var(--display); letter-spacing: .08em; color: var(--tag); font-style: normal; }
+.m-mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.m-mini > div { background: #FFFDF8; border: 1.5px solid var(--ink); border-radius: 8px; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font: 700 13px/1 var(--display); letter-spacing: .07em; text-transform: uppercase; }
+/* the board (B) */
+.m-board { background: var(--bar); color: var(--bar-text); border-radius: 12px; padding: 4px 14px 6px; }
+.m-bh { display: flex; justify-content: space-between; align-items: center; height: 38px; border-bottom: 1px solid #4A4740; font: 700 13px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; color: #CFC8BA; }
+.m-bh b { color: var(--bar-accent); font-size: 15px; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+.m-br { display: grid; grid-template-columns: 24px 1fr auto; column-gap: 10px; align-items: center; min-height: 56px; border-bottom: 1px solid #3D3B36; }
+.m-br:last-child { border-bottom: 0; }
+.m-br .what { font: 600 15.5px/1.2 var(--body); min-width: 0; }
+.m-br .what small { display: block; font: 500 12.5px/1.25 var(--body); color: #CFC8BA; margin-top: 2px; }
+.m-br .when { text-align: right; font: 700 26px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--bar-text); }
+.m-br .when small { display: block; margin-top: 4px; font: 700 11.5px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--bar-accent); }
+.m-br .when small.ok { color: #8FD3A9; }
+.m-br .when small.hot { color: var(--bar); background: var(--bar-accent); padding: 3px 6px; border-radius: 4px; display: table; margin-left: auto; }
+.m-secs { display: flex; flex-direction: column; gap: 9px; }
+.m-sl { display: grid; grid-template-columns: 70px 1fr 68px; gap: 10px; align-items: center; font: 600 14.5px/1 var(--body); }
+.m-sl .trk { height: 10px; border-radius: 5px; background: var(--beige); overflow: hidden; }
+.m-sl .trk i { display: block; height: 100%; background: var(--accent-ink); border-radius: 5px; }
+.m-sl .trk i.ok { background: var(--done); }
+.m-sl em { font-style: normal; text-align: right; color: var(--muted); font-size: 13.5px; }
+.m-up { display: grid; grid-template-columns: 56px 1fr; gap: 10px; min-height: 46px; align-items: center; border-bottom: 1px solid var(--line); font-size: 14.5px; }
+.m-up b { font: 700 14px/1.1 var(--display); letter-spacing: .06em; text-transform: uppercase; }
+/* booking card (B) */
+.m-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin: 12px 0; }
+.m-facts div { font-size: 14px; color: var(--muted); }
+.m-facts b { display: block; color: var(--ink); font: 700 17px/1.15 var(--body); margin-top: 2px; }
+.m-alert { background: var(--tag); color: #fff; border-radius: 8px; padding: 10px 12px; display: flex; gap: 10px; align-items: center; font: 600 15px/1.25 var(--body); }
+.m-tl { position: relative; margin: 12px 0 4px; padding-left: 22px; }
+.m-tl::before { content: ""; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 2px; background: var(--line); }
+.m-tr { position: relative; padding: 4px 0 12px; }
+.m-tr::before { content: ""; position: absolute; left: -21px; top: 9px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--ink); background: var(--paper); }
+.m-tr.next::before { background: var(--accent-ink); border-color: var(--accent-ink); }
+.m-tr b { font: 700 18px/1 var(--display); font-variant-numeric: tabular-nums; margin-right: 6px; }
+.m-tr span { font: 600 15px/1.2 var(--body); }
+.m-tr div { font-size: 13.5px; color: var(--muted); margin-top: 3px; }
+.m-fbar { position: absolute; left: 0; right: 0; bottom: 68px; background: var(--paper); border-top: 1.5px solid var(--line); padding: 10px 14px; display: flex; gap: 8px; z-index: 2; }
+.m-fbar { gap: 6px; padding: 10px 12px; }
+.m-fbar .m-btn { min-height: 44px; font-size: 14px; padding: 0 9px; gap: 6px; }
+.m-fbar .cancel { margin-left: auto; border-color: #E6B8A6; color: var(--tag); }
+/* laptop */
+.lt .m-top { height: 96px; padding: 0 48px; gap: 18px; }
+.lt .m-kb { font-size: 44px; }
+.lt .m-brand { display: flex; flex-direction: column; gap: 2px; flex: none; }
+.lt .m-brand small { font: 700 12px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--bar-accent); }
+.lt .m-brand b { font: 700 44px/1 var(--display); }
+.lt .m-nav { display: flex; gap: 8px; flex: 1; justify-content: center; }
+.lt .m-nav span { padding: 10px 18px; border-radius: var(--r-pick); border: 2px solid var(--bar-text); font: 600 16px/1 var(--body); }
+.lt .m-nav span.on { background: var(--bar-text); color: var(--ink); }
+.lt .m-body { top: 96px; bottom: 0; padding: 22px 40px; }
+.lt .m-nb { margin-top: 14px; }
+.lt .m-t { font-size: 26px; }
+.m-two { display: grid; grid-template-columns: 1fr 1fr; gap: 0; filter: drop-shadow(0 14px 22px rgba(60,40,10,.18)); }
+.m-two > .m-nb { border-radius: 0; margin-top: 0; box-shadow: none; height: 600px; overflow: hidden; }
+.m-two > .m-nb + .m-nb { border-left: 0; background: #F6F1E6; }
+.m-two > .m-nb + .m-nb::before { display: none; }
+.m-find { position: absolute; left: 50%; top: 150px; transform: translateX(-50%); width: 620px; background: var(--paper); border-radius: 12px; box-shadow: 0 24px 60px rgba(28,29,31,.35); z-index: 6; overflow: hidden; border: 1.5px solid var(--ink); }
+.m-find .q { display: flex; align-items: center; gap: 12px; padding: 0 18px; height: 60px; border-bottom: 1.5px solid var(--line); font: 500 20px/1 var(--body); }
+.m-find .q kbd { margin-left: auto; font: 600 12px/1 var(--body); color: var(--muted); border: 1px solid var(--line); border-radius: 5px; padding: 5px 7px; }
+.m-find .g { font: 700 12px/1 var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 12px 18px 6px; }
+.m-find .it { display: flex; align-items: center; gap: 12px; padding: 0 18px; min-height: 46px; font: 600 16px/1.2 var(--body); }
+.m-find .it small { margin-left: auto; color: var(--muted); font-weight: 500; font-size: 13.5px; }
+.m-find .it.sel { background: var(--hit); box-shadow: inset 4px 0 0 var(--accent-ink); }
+.m-search { display: flex; align-items: center; gap: 10px; min-height: 50px; border: 1.5px solid var(--ink); border-radius: var(--r-act); padding: 0 14px; background: var(--paper); color: var(--faint); font-size: 16px; }
+.m-kbd { position: absolute; left: 0; right: 0; bottom: 0; height: 250px; background: #D6D3CC; z-index: 6; display: grid; place-items: center; color: #6B675F; font: 600 14px/1 var(--body); }
+.rx .m-tag { font-size: 12.5px; padding: 3px 7px; vertical-align: 0; }
+.rx .m-dots { width: 44px; margin-right: -6px; }
+.rx .m-nbh .m-arrows { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+.rx .m-nbh .m-arrows .m-pill { min-height: 40px; }
+.rx .m-day.cancel { margin-top: 22px; }
+.m-quietbtn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border-radius: var(--r-act); border: 1.5px solid #E6B8A6; color: var(--tag); font: 600 15px/1 var(--body); background: var(--paper); }
+@media (prefers-reduced-motion: no-preference) { .row { scroll-behavior: smooth; } }
+@media (max-width: 520px) { .shotimg { width: 300px; } figcaption { max-width: 300px; } }
+</style>
+</head>
+<body>
+<div id="page">
+<header class="band"><div class="wrap">
+  <p class="kick">Leichhardt Kitchen Book · design options · 7 November 2026</p>
+  <h1>The whole book, quicker to read</h1>
+  <p class="lede">The head chef asked for a new design for the whole app that learns from seven well-made apps: Linear, Things 3, Airbnb, Todoist, Flighty, Duolingo and Headspace. <b>Every feature stays, every role stays, and the book keeps its colours, its notebook and its type.</b> The council said build smaller: fix what slows the line first. These are the three designs that came out of it.</p>
+  <div class="verdict"><span class="vchip hot">Round 1: Build smaller (4 of 5)</span><span class="vchip" id="r2chip">Round 2: A first with all six</span><span class="vchip">Nothing built yet</span></div>
+</div></header>
+
+<main class="wrap">
+<section class="part" id="apps">
+  <h2>What we took from seven apps</h2>
+  <p class="sub">Each app is good at one thing. This is what fits a kitchen in service, and what does not. The council crossed out anything without a kitchen problem behind it.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>App</th><th>What it does well</th><th>In the book</th><th>Left out</th></tr></thead>
+    <tbody>
+      <tr><td><b>Linear</b></td><td>The March 2026 refresh gave every page the same header and the same place for controls, and made navigation quieter so the work stands out.</td><td>One frame on every page: title, one bar for date and filters, the main action in the same place with the same words.</td><td>Dense rows, tiny text, keyboard-only flows.</td></tr>
+      <tr><td><b>Things 3</b></td><td>Today apart from Upcoming. Details stay tucked away until you need them.</td><td>One line per job; the rarer actions behind a tap. Coming up for the next days.</td><td>Drag to place a new line (wet hands).</td></tr>
+      <tr><td><b>Airbnb</b></td><td>The reservation redesign (May 2026) puts dates, notes and alerts on one card for the booking.</td><td>A function on one card: when, guests, rounds, what is due, notes, print and cancel.</td><td>Photos and selling.</td></tr>
+      <tr><td><b>Todoist</b></td><td>Quick Add starts clean and shows details only once you type.</td><td>Your usual items first as one tap, filling every field the book knows.</td><td>Guessing from typed words. The book never guesses.</td></tr>
+      <tr><td><b>Flighty</b></td><td>Departure-board clarity: big times for what matters now, and the screen changes with the moment.</td><td>A now and next board: the next cut-off, the next round, your break, from what the phone already holds.</td><td>Maps and constant movement.</td></tr>
+      <tr><td><b>Duolingo</b></td><td>Every step answers at once, and progress is easy to see.</td><td>Section counts and a bar that fills as lines are ticked.</td><td>Streaks, points, stamps and animations: no value in service.</td></tr>
+      <tr><td><b>Headspace</b></td><td>A kind voice and plain words for unfamiliar things.</td><td>Words on actions instead of symbols (Urgent, not !), the same name for a thing on every page.</td><td>Onboarding cards and illustrations: no kitchen complaint behind them yet.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="part" id="today">
+  <h2>Today</h2>
+  <p class="sub">Measured in the click-test stand-in on a 390 x 844 phone at 14:00. A prep line is 108 to 134 px tall because On it, !, Recipe and ⋯ sit on a second row under every line, so a sous chef sees <b>2 prep lines</b> above Add a line and a cook sees 3. An order line is 51 px. The date row, the section chips and the notebook heading take about 270 px before the first line.</p>
+  <div class="row">
+    <figure><img class="shotimg" src="previews/today-landing-390.png" alt="Today's landing page: five dockets on kraft paper" loading="lazy"><figcaption><b>Home.</b> Five or six dockets that repeat the tab bar. Reads nothing of its own.</figcaption></figure>
+    <figure><img class="shotimg" src="previews/today-prep-390.png" alt="Today's prep list: two lines visible" loading="lazy"><figcaption><b>Prep, sous chef.</b> 2 lines fully visible above Add a line.</figcaption></figure>
+    <figure><img class="shotimg" src="previews/today-hat-390.png" alt="Today's chef hat menu: eleven tiles" loading="lazy"><figcaption><b>Chef hat.</b> 11 tiles and Settings. Daily jobs sit beside monthly ones.</figcaption></figure>
+    <figure><img class="shotimg" src="previews/today-fn-390.png" alt="Today's functions page: empty days with print buttons" loading="lazy"><figcaption><b>Functions.</b> Empty days each have a grey Print prep sheet.</figcaption></figure>
+    <figure><img class="shotimg" src="previews/today-orders-390.png" alt="Today's order list" loading="lazy"><figcaption><b>Orders.</b> "Delivery arrived" here, "Delivery received" in the hat; "Add to the order" here, "Add a line" on Prep.</figcaption></figure>
+  </div>
+</section>
+
+<section class="part" id="core">
+  <h2>In all three designs</h2>
+  <p class="sub">What round 1 agreed on. Each design builds on this, then goes its own way.</p>
+  <ol class="list">
+    <li><b>One row for each prep line.</b> Tick, words and amount, On it, and ⋯. Tick and On it stay one tap. Urgent, Change amount, Move section and Remove go behind ⋯ with words (2 taps). Recipe stays on the line as a word in the small line under it (1 tap).</li>
+    <li><b>One bar for the day and the sections.</b> Back, the date and Forward sit in the same bar as the section chips.</li>
+    <li><b>Same words everywhere.</b> Add a line on every list. Delivery received, never Delivery arrived. Urgent, never a lone !.</li>
+    <li><b>The chef hat starts with today.</b> Every day: Functions, Delivery received, Supplier order, Today's team. The rest after.</li>
+    <li><b>Functions fold empty days</b> into one line, with Print prep sheet only where there is a function.</li>
+    <li><b>No new reads, listeners or rules.</b> Nothing new moves on screen.</li>
+  </ol>
+</section>
+
+<section class="part" id="designs"></section>
+
+<section class="part" id="compare">
+  <h2>Side by side</h2>
+  <p class="sub">Counted in these previews on a 390 x 844 phone with 14 prep lines in 5 sections. Today counted in the click-test stand-in.</p>
+  <div class="tablewrap"><table id="cmp"></table></div>
+</section>
+
+<section class="part" id="scores">
+  <h2>Round 2: scores</h2>
+  <p class="sub">Six fresh reviewers saw all three designs and today's screens, ranked them and scored each from 1 to 5. <b>Every reviewer ranked A first.</b></p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Reviewer</th><th class="num">A Tidy rows</th><th class="num">B Now and next</th><th class="num">C Straight to work</th><th>What they would take into the best</th></tr></thead>
+    <tbody>
+      <tr><td><b>Cook mid-service</b></td><td class="num">4</td><td class="num">3</td><td class="num">2</td><td>C's print words: handwriting is slow at arm's length. A bigger Recipe target.</td></tr>
+      <tr><td><b>Head chef</b></td><td class="num">4</td><td class="num">3</td><td class="num">2</td><td>B's function card, with Cancel away from the print buttons. A fade on the chip row.</td></tr>
+      <tr><td><b>Skeptic</b></td><td class="num">4</td><td class="num">2</td><td class="num">2</td><td>Build A and nothing more. Print words only after a try on the line. Drop badges that need reads.</td></tr>
+      <tr><td><b>New starter</b></td><td class="num">4</td><td class="num">3</td><td class="num">2</td><td>C's print words and plain-list hat; B's function alert, Cancel moved.</td></tr>
+      <tr><td><b>Keeper of the book</b></td><td class="num">4</td><td class="num">2</td><td class="num">2</td><td>B's function card. Prove every hat badge in the read budget test or drop it.</td></tr>
+      <tr><td><b>Kitchen screen designer</b></td><td class="num">4</td><td class="num">3</td><td class="num">2</td><td>B's function card, C's plain-list hat. 44 px for ⋯ and Recipe, a bigger URGENT tag.</td></tr>
+      <tr><td><b>Total</b></td><td class="num best">24</td><td class="num">16</td><td class="num worst">12</td><td></td></tr>
+    </tbody>
+  </table></div>
+  <h3>What they agreed on</h3>
+  <ul class="list">
+    <li><b>C's open-in-place line is a mis-tick waiting to happen</b> (five of six): a wet tap on the words pushes every row below it down, and nothing shows that the words open anything.</li>
+    <li><b>Cancel function beside Prep sheet</b> is one slip of a wet thumb away (four of six).</li>
+    <li><b>B's board must never be wrong</b>, and two of its lines (a delivery received, an order done by Sam) needed reads the home page does not make.</li>
+  </ul>
+  <h3>Corrected after round 2</h3>
+  <ul class="list">
+    <li>Lines that would need new reads are gone from the drawings: Meat in and 3 open on the hat, the delivery and the closed order on B's board. What is left comes from what the home page already reads.</li>
+    <li>Guides is not new: it is the book's sixth tab whenever guides are turned on (<code>featOn('guides')</code>). Today's stand-in had it off.</li>
+    <li>The board's small orange is <code>#F08A4B</code> on <code>#2B2A27</code>: 5.8 to 1, above AA's 4.5. The reviewer had assumed <code>#E2602A</code>.</li>
+    <li>The keeper noted the date box left the bar. In the mix, Today ▾ opens the calendar, so a set day is still two taps.</li>
+  </ul>
+</section>
+
+<section class="part" id="recommend"></section>
+
+<section class="part" id="method" style="padding-bottom:56px">
+  <h2>How this was made</h2>
+  <p class="sub">Role-based analysis, not research with real staff. Five reviewers in round 1 and six in round 2 were fresh agents given the proposal and these screens. The today screenshots come from the click-test stand-in with the book's own stylesheet. The designs are drawn by hand in this page with the book's colours and type; nothing in them reads or saves. The full brief is <code>docs/whole-app-redesign-options/brief.md</code>.</p>
+</section>
+</main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  /* icons: 24 px strokes in currentColor */
+  var P = {
+    back: '<path d="M15 5l-7 7 7 7"/>',
+    team: '<circle cx="8" cy="8" r="3"/><circle cx="15.5" cy="8" r="2.5"/><path d="M3 19c0-3 2.3-5 5-5 1.6 0 3 .6 3.9 1.7"/><circle cx="17" cy="17" r="4"/><path d="M17 15v2l1.4 1"/>',
+    bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+    hat: '<path d="M7 14.5c-2.5 0-4-1.8-4-3.8C3 8.6 4.8 7 7 7c.6-2.2 2.6-3.5 5-3.5S16.4 4.8 17 7c2.2 0 4 1.6 4 3.7 0 2-1.5 3.8-4 3.8"/><path d="M7 14.5V19h10v-4.5"/><path d="M7 16.5h10"/>',
+    plate: '<circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="4" stroke-dasharray="2 2"/><path d="M2.5 4v6M2.5 7h0"/><path d="M21.5 4c-1.2 1-1.5 3-1.5 5h1.5v9"/>',
+    prep: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M8 10l1.3 1.3L11.5 9M8 15l1.3 1.3 2.2-2.3M13.5 10.5H16M13.5 15.5H16"/>',
+    box: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/><path d="M8 5.2l8 4.6"/>',
+    bin: '<path d="M4 6h16M9 6V4h6v2M6 6l1 14h10l1-14"/><path d="M10 10v7M14 10v7"/>',
+    swap: '<path d="M4 8h15M15 4l4 4-4 4"/><path d="M20 16H5M9 12l-4 4 4 4"/>',
+    book: '<path d="M3 5c3-1 6-1 9 1 3-2 6-2 9-1v14c-3-1-6-1-9 1-3-2-6-2-9-1z"/><path d="M12 6v14"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    tick: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    clock: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    cal: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h3"/>',
+    truck: '<path d="M2.5 6.5h11v10h-11zM13.5 10h4l3 3v3.5h-7"/><circle cx="7" cy="17.5" r="2"/><circle cx="17" cy="17.5" r="2"/>',
+    cup: '<path d="M5 8h11v6a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5c0 1.2 1 1.2 1 2.4M11.5 3.5c0 1.2 1 1.2 1 2.4"/>',
+    mail: '<rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/>',
+    doc: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
+    thermo: '<path d="M10 14.5V5a2 2 0 0 1 4 0v9.5a4 4 0 1 1-4 0z"/><path d="M12 9v7"/>',
+    pen: '<circle cx="9" cy="15" r="5"/><path d="M12.5 11.5L20 4M17 4h3v3"/>',
+    people: '<circle cx="9" cy="8" r="3.2"/><circle cx="16.5" cy="9" r="2.6"/><path d="M3 19.5c.4-3.4 3-5.5 6-5.5s5.6 2.1 6 5.5M15 14.2c3 .1 5.4 2 5.8 5.3"/>',
+    todo: '<rect x="4.5" y="4" width="15" height="17" rx="2"/><path d="M8.5 11l2.2 2.2L15.5 8.5M8.5 17h7"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/>',
+    out: '<path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/>',
+    search: '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/>',
+    print: '<path d="M7 9V3.5h10V9"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><path d="M7 14h10v6.5H7z"/>',
+    chev: '<path d="M9 5l7 7-7 7"/>',
+    flag: '<path d="M6 21V4M6 4h11l-2 4 2 4H6"/>',
+    scale: '<path d="M4 20h16M12 4v16M6 8h12M6 8l-2.5 6a3 3 0 0 0 5 0zM18 8l-2.5 6a3 3 0 0 0 5 0z"/>',
+    move: '<path d="M4 12h16M15 7l5 5-5 5M9 7L4 12l5 5"/>',
+    rm: '<path d="M4 6h16M9 6V4h6v2M6 6l1 14h10l1-14"/>',
+    coffee: '<path d="M4 9h12v4a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16M5 21h10"/>',
+    warn: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h0"/>'
+  };
+  function ic(n, s) { return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"' + (s ? ' style="width:' + s + 'px;height:' + s + 'px"' : '') + '>' + P[n] + '</svg>'; }
+
+  /* made-up data: a full Friday rail */
+  var PREP = [
+    { s: 'Grill', l: [
+      { t: 'Portion rump', q: '20', u: 1, by: 'Sam 13:02' },
+      { t: 'Crumb chicken schnitzels', q: '30', by: 'Sam 12:40', on: 'Bo' },
+      { t: 'Skewer haloumi and capsicum', q: '24', by: 'Ann 11:15' } ] },
+    { s: 'Sauce', l: [
+      { t: 'Make gravy', q: '5 L', rx: 1, by: 'From yesterday' },
+      { t: 'Laksa paste', q: '1 batch', rx: 1, by: 'Sam 10:05', d: 1 },
+      { t: 'Chimichurri', q: '2 L', rx: 1, by: 'Ann 12:20' } ] },
+    { s: 'Larder', l: [
+      { t: 'Slice onions', q: '2 tubs', by: 'Sam 13:00' },
+      { t: 'Pick coriander', q: '', by: 'Ann 12:58' },
+      { t: 'Brine pork belly for Sunday roast', q: '2 trays', by: 'Sam 09:40' },
+      { t: 'Wash bok choy', q: '', by: 'Bo 09:10', d: 1 },
+      { t: 'Coleslaw', q: '3 L', rx: 1, by: 'Ann 08:55' } ] },
+    { s: 'Fryer', l: [ { t: 'Blanch chips', q: '6 trays', by: 'Bo 11:30' } ] },
+    { s: 'Pastry', l: [ { t: 'Brioche crumb', q: '1 tub', by: 'Ann 10:30' }, { t: 'Lemon curd', q: '1.5 L', rx: 1, by: 'Ann 10:32' } ] }
+  ];
+  var NLINES = PREP.reduce(function (n, g) { return n + g.l.length; }, 0);
+  var NDONE = PREP.reduce(function (n, g) { return n + g.l.filter(function (x) { return x.d; }).length; }, 0);
+
+  function top(o) {
+    o = o || {};
+    return '<div class="m-top">' + (o.back ? '<span class="m-back">' + ic('back', 24) + '</span>' : '<span class="m-kb">KB</span>') +
+      '<span class="m-title">Kitchen Book</span><span class="m-chips">' +
+      (o.team === false ? '' : '<span class="m-chip' + (o.teamDue ? ' due' : '') + '">' + ic('team') + '</span>') +
+      '<span class="m-chip">' + ic('bell') + '</span><span class="m-chip">' + ic('hat') + '<span class="bdg">' + (o.who || 'S') + '</span></span></span></div>';
+  }
+  var TABS = [['plate', 'Recipes'], ['prep', 'Prep'], ['box', 'Orders'], ['bin', 'Wastage'], ['swap', 'Transfers'], ['book', 'Guides']];
+  function tabs(on) {
+    return '<div class="m-tabs">' + TABS.map(function (t) { return '<div class="' + (t[1] === on ? 'on' : '') + '">' + ic(t[0]) + t[1] + '</div>'; }).join('') + '</div>';
+  }
+  function act(label) { return '<div class="m-act"><div class="m-btn main">' + ic('plus') + (label || 'Add a line') + '</div></div>'; }
+
+  /* one prep row (the core). o.print: words in print; o.noDots: details open in place instead of ⋯ */
+  function row(x, o) {
+    o = o || {};
+    var meta = x.on ? '<b style="color:var(--ink)">' + x.on + ' is on it</b> · ' + x.by : x.by;
+    if (x.rx) meta += ' · <a>Recipe</a>';
+    return '<div class="m-r' + (x.u ? ' urgent' : '') + (x.d ? ' done' : '') + '">' +
+      '<span class="m-box' + (x.d ? ' done' : '') + '">' + (x.d ? ic('tick', 18) : '') + '</span>' +
+      '<div class="m-w"><div class="m-t">' + x.t + (x.q ? ' <i>' + x.q + '</i>' : '') + '</div><div class="m-m">' + (x.u ? '<span class="m-tag">Urgent</span>' : '') + meta + '</div></div>' +
+      (x.d ? '' : '<span class="m-on' + (x.on ? ' is' : '') + '">' + (x.on ? x.on : 'On it') + '</span>') +
+      (o.noDots || x.d ? '' : '<span class="m-dots">⋯</span>') + '</div>';
+  }
+  function rail(o) {
+    o = o || {};
+    var out = '';
+    PREP.forEach(function (g) {
+      var open = g.l.filter(function (x) { return !x.d; });
+      out += '<div class="m-sec"><span>' + g.s + '</span><span>' + (g.l.length - open.length) + '/' + g.l.length + '</span></div>';
+      open.forEach(function (x) {
+        out += row(x, o);
+        if (o.openOn && x.t === o.openOn) out += '<div class="m-open"><span class="m-btn">' + ic('flag', 18) + 'Urgent</span><span class="m-btn">' + ic('book', 18) + 'Recipe</span><span class="m-btn">' + ic('scale', 18) + 'Change amount</span><span class="m-btn">' + ic('move', 18) + 'Move section</span><span class="m-btn del">' + ic('rm', 18) + 'Remove</span></div>';
+      });
+    });
+    out += '<div class="m-fold"><span><b>Done today (' + NDONE + ')</b> Laksa paste, Wash bok choy</span><span class="m-link">Show</span></div>';
+    return out;
+  }
+  function dayBar(o) {
+    o = o || {};
+    return '<div class="m-bar"><span class="m-pill round">‹</span><span class="m-pill date dk">' + (o.rx ? 'Today ▾' : 'Today') + '</span><span class="m-pill round">›</span><span class="m-sep"></span>' +
+      '<span class="m-pill on">All</span><span class="m-pill">Grill</span><span class="m-pill">Sauce</span><span class="m-pill">Larder</span><span class="m-pill">Fryer</span></div>';
+  }
+  function nbHead(o) {
+    o = o || {};
+    return '<div class="m-nbh"><div><div class="m-nbt">Today</div><div class="m-nbd">Friday 13 November</div></div><div style="text-align:right"><div class="m-link" style="margin-bottom:8px">Set today\'s team</div><div class="m-prog">' + NDONE + ' of ' + NLINES + ' done</div></div></div>';
+  }
+  function prepPhone(o) {
+    o = o || {};
+    return '<div class="ph' + (o.print ? ' print' : '') + (o.rx ? ' rx' : '') + '">' + top({ teamDue: o.teamDue !== false, back: true }) +
+      '<div class="m-body">' + dayBar(o) + '<div class="m-nb">' + nbHead(o) + rail(o) + '</div></div>' + act() + tabs('Prep') + (o.extra || '') + '</div>';
+  }
+
+  /* ---------- the screens ---------- */
+  var SCREENS = {
+    /* A */
+    'a-prep': { w: 390, cap: '<b>Prep, sous chef.</b> One row a line, the day and sections in one bar. Tick and On it one tap; Recipe stays as a word on the line.', html: function () { return prepPhone(); } },
+    'a-dots': { w: 390, cap: '<b>⋯ on a line.</b> The rarer actions in words: Urgent, Change amount, Move section, Remove. The same sheet the book uses now.', html: function () {
+      return prepPhone({ extra: '<div class="m-dim"></div><div class="m-sheet"><div class="m-grip"></div><div class="m-eb">Grill · Sam 13:02</div><div class="m-sh">Portion rump 20</div>' +
+        '<div class="m-li">' + ic('flag') + '<span>Take off Urgent</span></div>' +
+        '<div class="m-li">' + ic('scale') + '<span>Change amount</span></div>' +
+        '<div class="m-li">' + ic('move') + '<span>Move section</span></div>' +
+        '<div class="m-li del">' + ic('rm') + '<span>Remove the line</span></div>' +
+        '<div class="m-btn wide" style="margin-top:6px">Cancel</div></div>' });
+    } },
+    'a-hat': { w: 390, cap: '<b>Chef hat.</b> Every day first, then the rest. The same tiles, the same roles; a sous chef shown.', html: function () {
+      function t(i, n, s, ok) { return '<div class="m-tile">' + ic(i) + n + (s ? '<small' + (ok ? ' class="ok"' : '') + '>' + s + '</small>' : '') + '</div>'; }
+      return prepPhone({ extra: '<div class="m-dim"></div><div class="m-sheet"><div class="m-grip"></div>' +
+        '<div class="m-who"><span class="m-av">S</span><div><b style="font-size:18px">Sam</b><div style="font-size:14px;color:var(--muted)">Sous chef</div></div><span class="m-btn quiet" style="margin-left:auto;min-height:44px">' + ic('out', 18) + 'Sign out</span></div>' +
+        '<div class="m-grp">Every day</div><div class="m-tiles">' + t('cal', 'Functions', '1 today') + t('thermo', 'Delivery received') + t('truck', 'Supplier order', 'Closes 16:00') + t('team', 'Today\'s team', 'Not set yet') + t('mail', 'Kitchen mail') + t('bell', 'Shift pings') + '</div>' +
+        '<div class="m-grp">Now and then</div><div class="m-tiles">' + t('doc', 'Meeting minutes', '1 to sign') + t('cup', 'Drinks run') + t('todo', 'Chef to-do') + t('pen', 'Recipes &amp; drawings') + t('people', 'Manage staff') + t('gear', 'Settings') + '</div></div>' });
+    } },
+    'a-fn': { w: 390, cap: '<b>Functions.</b> Days with nothing booked fold into one line. Print prep sheet only where there is a function.', html: function () {
+      return '<div class="ph">' + top({ back: true, teamDue: true }) + '<div class="m-body"><div class="m-h">Functions</div><p class="m-hint">Confirmed functions and their platters. Up to date, 14:20.</p>' +
+        '<div class="m-day"><span>Today, Fri 13 Nov</span><span>1</span></div>' +
+        '<div class="m-card m-fn"><b>Birthday 60th</b><div class="facts">18:00 to 22:00 · Function room · 40 guests</div><div class="facts">Round 1 18:30 · Round 2 19:15 · Round 3 20:00</div><div style="display:flex;gap:8px;margin-top:8px"><span class="m-btn">' + ic('print', 18) + 'Print prep sheet</span><span class="m-btn quiet">Open</span></div></div>' +
+        '<div class="m-day"><span>Sat 14 Nov</span><span>1</span></div>' +
+        '<div class="m-card m-fn"><b>Wedding reception</b><div class="facts">17:30 to 23:00 · Courtyard · 80 guests</div><div style="display:flex;gap:8px;margin-top:8px"><span class="m-btn">' + ic('print', 18) + 'Print prep sheet</span><span class="m-btn quiet">Open</span></div></div>' +
+        '<div class="m-day"><span>Sun 15 to Thu 19 Nov</span><span>0</span></div><div class="m-quietline">' + ic('cal', 20) + 'Nothing booked for these five days.</div>' +
+        '</div>' + tabs('') + '</div>';
+    } },
+    'a-prep-1280': { w: 1280, cap: '<b>Laptop.</b> The two-page notebook stays; rows are one line each, so 13 open lines fit on the left page.', html: function () {
+      var nav = '<div class="m-nav">' + TABS.map(function (t) { return '<span class="' + (t[1] === 'Prep' ? 'on' : '') + '">' + t[1] + '</span>'; }).join('') + '</div>';
+      return '<div class="lt">' + '<div class="m-top"><span class="m-back">' + ic('back', 26) + '</span><div class="m-brand"><small>Leichhardt Hotel Kitchen</small><b>Kitchen Book</b></div>' + nav + '<span class="m-chips"><span class="m-chip due">' + ic('team') + '</span><span class="m-chip">' + ic('bell') + '</span><span class="m-chip">' + ic('hat') + '<span class="bdg">S</span></span></span></div>' +
+        '<div class="m-body">' + dayBar().replace('m-bar', 'm-bar" style="max-width:700px') +
+        '<div class="m-two" style="margin-top:14px"><div class="m-nb" style="padding-left:30px">' + nbHead() + rail() + '</div>' +
+        '<div class="m-nb"><div class="m-nbh"><div><div class="m-nbt" style="color:#6B655A">Handy</div><div class="m-nbd">Done today and quick add</div></div></div><div class="m-sec"><span>Done today (' + NDONE + ')</span></div>' +
+        '<div class="m-r done"><span class="m-box done">' + ic('tick', 18) + '</span><div class="m-w"><div class="m-t">Laksa paste<i>1 batch</i></div><div class="m-m">Ann 11:48</div></div></div>' +
+        '<div class="m-r done"><span class="m-box done">' + ic('tick', 18) + '</span><div class="m-w"><div class="m-t">Wash bok choy</div><div class="m-m">Bo 10:02</div></div></div>' +
+        '<div class="m-sec" style="margin-top:18px"><span>Your usual</span></div><div style="display:flex;flex-wrap:wrap;gap:8px">' + ['Slice onions 2 tubs', 'Make gravy 5 L', 'Portion rump 20', 'Coleslaw 3 L', 'Blanch chips 6 trays'].map(function (s) { return '<span class="m-pill" style="text-transform:none;letter-spacing:0;font:600 15px/1 var(--body)">' + s + '</span>'; }).join('') + '</div>' +
+        '<div class="m-btn main" style="margin-top:20px;max-width:240px">' + ic('plus') + 'Add a line</div></div></div></div></div>';
+    } },
+
+    /* B */
+    'b-home': { w: 390, cap: '<b>Home at 14:20, sous chef.</b> The board shows what is next, from what the phone already reads. Pages stay one tap away in the tab bar.', html: function () {
+      return '<div class="ph">' + top({ teamDue: false }) + '<div class="m-body" style="padding-top:14px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:baseline"><div class="m-nbt" style="font-size:38px">Friday</div><div class="m-nbd" style="font-size:14px">13 November</div></div>' +
+        '<div class="m-board" style="margin-top:8px"><div class="m-bh"><span>Now and next</span><b>14:20</b></div>' +
+        '<div class="m-br">' + ic('coffee') + '<div class="what">Your break<small>Back on Grill at 15:30</small></div><div class="when">15:00<small>30 min</small></div></div>' +
+        '<div class="m-br">' + ic('truck') + '<div class="what">Produce order closes<small>For Saturday\'s delivery</small></div><div class="when">16:00<small class="hot">1 h 40 left</small></div></div>' +
+        '<div class="m-br">' + ic('cal') + '<div class="what">Birthday 60th, 40 guests<small>Round 1 of 3 · platters by 18:20</small></div><div class="when">18:30<small>Round 1</small></div></div>' +
+        '<div class="m-br">' + ic('bell') + '<div class="what">2 pings and meeting minutes to sign<small>Tap to read them</small></div><div class="when" style="font-size:20px">' + ic('chev', 20) + '</div></div></div>' +
+        '<div class="m-day" style="margin-top:14px"><span>Prep by section</span><span>' + NDONE + ' of ' + NLINES + ' done</span></div>' +
+        '<div class="m-secs">' + [['Grill', 0, '3 left'], ['Sauce', 33, '2 left'], ['Larder', 20, '4 left'], ['Pastry', 0, '2 left']].map(function (s) { return '<div class="m-sl"><span>' + s[0] + '</span><span class="trk"><i style="width:' + Math.max(s[1], 4) + '%"></i></span><em>' + s[2] + '</em></div>'; }).join('') + '</div>' +
+        '<div class="m-day" style="margin-top:16px"><span>Coming up</span></div>' +
+        '<div class="m-up"><b>Sat 14</b><span>Wedding reception, 80 guests</span></div><div class="m-up"><b>Sun 15</b><span>Nothing booked</span></div><div class="m-up"><b>Mon 16</b><span>Dry goods order closes 12:00</span></div>' +
+        '</div>' + tabs('') + '</div>';
+    } },
+    'b-service': { w: 390, cap: '<b>The same home at 18:10.</b> The board follows the day: rounds come first in service, the closed order shows who did it.', html: function () {
+      return '<div class="ph">' + top({ teamDue: false }) + '<div class="m-body" style="padding-top:14px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:baseline"><div class="m-nbt" style="font-size:38px">Friday</div><div class="m-nbd" style="font-size:14px">13 November</div></div>' +
+        '<div class="m-board" style="margin-top:8px"><div class="m-bh"><span>Now and next</span><b>18:10</b></div>' +
+        '<div class="m-br">' + ic('cal') + '<div class="what">Round 1, Birthday 60th<small>Arancini 80 · Pork sliders 40</small></div><div class="when">18:30<small class="hot">In 20 min</small></div></div>' +
+        '<div class="m-br">' + ic('cal') + '<div class="what">Round 2<small>Fish tacos 40 · Salt and pepper squid 40</small></div><div class="when">19:15<small>Next</small></div></div>' +
+        '<div class="m-br">' + ic('cal') + '<div class="what">Round 3<small>Dessert cups 40</small></div><div class="when">20:00<small>Later</small></div></div>' +
+        '<div class="m-br">' + ic('cal') + '<div class="what">Wedding reception tomorrow<small>80 guests · from 17:30</small></div><div class="when" style="font-size:20px">Sat<small>Tomorrow</small></div></div></div>' +
+        '<div class="m-day" style="margin-top:14px"><span>Prep by section</span><span>12 of 14 done</span></div>' +
+        '<div class="m-secs">' + [['Grill', 100, 'Done'], ['Sauce', 100, 'Done'], ['Larder', 60, '2 left'], ['Pastry', 100, 'Done']].map(function (s) { return '<div class="m-sl"><span>' + s[0] + '</span><span class="trk"><i class="' + (s[1] === 100 ? 'ok' : '') + '" style="width:' + s[1] + '%"></i></span><em>' + s[2] + '</em></div>'; }).join('') + '</div>' +
+        '<div class="m-day" style="margin-top:16px"><span>Coming up</span></div>' +
+        '<div class="m-up"><b>Sat 14</b><span>Wedding reception, 80 guests</span></div><div class="m-up"><b>Sun 15</b><span>Nothing booked</span></div><div class="m-up"><b>Mon 16</b><span>Dry goods order closes 12:00</span></div>' +
+        '</div>' + tabs('') + '</div>';
+    } },
+    'b-fn': { w: 390, cap: '<b>A function on one card.</b> When, where, guests, what is due next, the rounds as a timeline, notes. Print and Cancel at the end of the bar, as decided on 26 Oct.', html: function () {
+      return '<div class="ph">' + top({ back: true, teamDue: false }) + '<div class="m-body">' +
+        '<div class="m-eb">Function · confirmed</div><div class="m-h" style="margin-top:6px">Birthday 60th</div>' +
+        '<div class="m-alert">' + ic('clock') + '<span>Platters on the pass by 18:20 for Round 1. 2 h 10 to go.</span></div>' +
+        '<div class="m-facts"><div style="grid-column:1/-1">When<b>Fri 13 Nov · 18:00 to 22:00</b></div><div>Where<b>Function room</b></div><div>Guests<b>40</b></div><div style="grid-column:1/-1">Dietary<b>3 gluten free · 1 vegan</b></div></div>' +
+        '<div class="m-day" style="margin-top:6px"><span>Rounds</span><span>3</span></div>' +
+        '<div class="m-tl"><div class="m-tr next"><b>18:30</b><span>Round 1</span><div>Arancini 80 · Pork sliders 40</div></div><div class="m-tr"><b>19:15</b><span>Round 2</span><div>Fish tacos 40 · Salt and pepper squid 40</div></div><div class="m-tr"><b>20:00</b><span>Round 3</span><div>Dessert cups 40</div></div></div>' +
+        '<div class="m-day" style="margin-top:0"><span>Notes</span></div><p style="font-size:14.5px;margin:0">Cake from the guest at 21:00. We give plates and candles.</p>' +
+        '</div><div class="m-fbar"><span class="m-btn">' + ic('print', 18) + 'Run sheet</span><span class="m-btn">' + ic('print', 18) + 'Prep sheet</span><span class="m-btn cancel">Cancel function</span></div>' + tabs('') + '</div>';
+    } },
+    'b-home-1280': { w: 1280, cap: '<b>Laptop home.</b> The board and Coming up on the left, prep by section and who is on today on the right. Pages stay in the top tabs.', html: function () {
+      var nav = '<div class="m-nav">' + TABS.map(function (t) { return '<span>' + t[1] + '</span>'; }).join('') + '</div>';
+      return '<div class="lt">' + '<div class="m-top"><span class="m-kb">KB</span><div class="m-brand"><small>Leichhardt Hotel Kitchen</small><b>Kitchen Book</b></div>' + nav + '<span class="m-chips"><span class="m-chip">' + ic('team') + '</span><span class="m-chip">' + ic('bell') + '</span><span class="m-chip">' + ic('hat') + '<span class="bdg">S</span></span></span></div>' +
+        '<div class="m-body" style="display:grid;grid-template-columns:560px 1fr;gap:40px"><div>' +
+        '<div style="display:flex;justify-content:space-between;align-items:baseline"><div class="m-nbt" style="font-size:52px">Friday</div><div class="m-nbd" style="font-size:16px">13 November · 14:20</div></div>' +
+        '<div class="m-board" style="margin-top:12px"><div class="m-bh"><span>Now and next</span><b>14:20</b></div>' +
+        '<div class="m-br">' + ic('coffee') + '<div class="what">Your break<small>Back on Grill at 15:30</small></div><div class="when">15:00<small>30 min</small></div></div>' +
+        '<div class="m-br">' + ic('truck') + '<div class="what">Produce order closes<small>For Saturday\'s delivery</small></div><div class="when">16:00<small class="hot">1 h 40 left</small></div></div>' +
+        '<div class="m-br">' + ic('cal') + '<div class="what">Birthday 60th, 40 guests<small>Round 1 of 3 · platters by 18:20</small></div><div class="when">18:30<small>Round 1</small></div></div>' +
+        '<div class="m-br">' + ic('bell') + '<div class="what">2 pings and meeting minutes to sign<small>Tap to read them</small></div><div class="when" style="font-size:20px">' + ic('chev', 20) + '</div></div></div>' +
+        '<div class="m-day" style="margin-top:18px"><span>Coming up</span></div><div class="m-up"><b>Sat 14</b><span>Wedding reception, 80 guests</span></div><div class="m-up"><b>Sun 15</b><span>Nothing booked</span></div><div class="m-up"><b>Mon 16</b><span>Dry goods order closes 12:00</span></div></div>' +
+        '<div><div class="m-day" style="margin-top:22px"><span>Prep by section</span><span>' + NDONE + ' of ' + NLINES + ' done</span></div>' +
+        '<div class="m-secs">' + [['Grill', 0, '3 left'], ['Sauce', 33, '2 left'], ['Larder', 20, '4 left'], ['Fryer', 0, '1 left'], ['Pastry', 0, '2 left']].map(function (s) { return '<div class="m-sl" style="grid-template-columns:90px 1fr 80px"><span>' + s[0] + '</span><span class="trk"><i style="width:' + Math.max(s[1], 3) + '%"></i></span><em>' + s[2] + '</em></div>'; }).join('') + '</div>' +
+        '<div class="m-day" style="margin-top:22px"><span>On today</span><span>From Today\'s team</span></div>' + [['Grill', 'Bo · Sam from 17:00'], ['Sauce', 'Ann'], ['Larder', 'Fay · break 15:00'], ['Pastry', 'Finn']].map(function (r) { return '<div class="m-up" style="grid-template-columns:90px 1fr"><b>' + r[0] + '</b><span>' + r[1] + '</span></div>'; }).join('') + '</div></div></div>';
+    } },
+
+    /* C */
+    'c-prep': { w: 390, cap: '<b>Prep in print.</b> Line words in Barlow for arm\'s length; handwriting stays for titles and counts. No ⋯: tap the words and the line opens in place.', html: function () {
+      return prepPhone({ print: true, noDots: true, openOn: 'Crumb chicken schnitzels' });
+    } },
+    'c-more': { w: 390, cap: '<b>The hat as a list.</b> Every page by name, a Find box at the top, what needs doing on the right. Settings and Sign out at the end.', html: function () {
+      function li(i, n, s, ok) { return '<div class="m-li">' + ic(i) + '<span>' + n + '</span>' + (s ? '<small' + (ok ? ' class="ok"' : '') + '>' + s + '</small>' : '') + '<span class="chev" style="flex:none">' + ic('chev', 18) + '</span></div>'; }
+      return '<div class="ph">' + top({ back: true, teamDue: true }) + '<div class="m-body">' +
+        '<div class="m-who"><span class="m-av">S</span><div><b style="font-size:18px">Sam</b><div style="font-size:14px;color:var(--muted)">Sous chef</div></div></div>' +
+        '<div class="m-search">' + ic('search', 20) + 'Find a page, recipe or setting</div>' +
+        '<div class="m-grp">Every day</div>' + li('cal', 'Functions', '1 today') + li('thermo', 'Delivery received') + li('truck', 'Supplier order', 'Closes 16:00') + li('team', 'Today\'s team', 'Not set yet') +
+        '<div class="m-grp">Kitchen</div>' + li('mail', 'Kitchen mail') + li('bell', 'Shift pings') + li('doc', 'Meeting minutes', '1 to sign') + li('cup', 'Drinks run') + li('todo', 'Chef to-do') +
+        '</div>' + tabs('') + '</div>';
+    } },
+    'c-prep-1280': { w: 1280, cap: '<b>Laptop, one wide page.</b> The Handy page goes; Done today folds into the list. Press / anywhere to find a page, a recipe, a line or a setting.', html: function () {
+      var nav = '<div class="m-nav">' + TABS.map(function (t) { return '<span class="' + (t[1] === 'Prep' ? 'on' : '') + '">' + t[1] + '</span>'; }).join('') + '</div>';
+      return '<div class="lt print">' + '<div class="m-top"><span class="m-back">' + ic('back', 26) + '</span><div class="m-brand"><small>Leichhardt Hotel Kitchen</small><b>Kitchen Book</b></div>' + nav + '<span class="m-chips"><span class="m-chip due">' + ic('team') + '</span><span class="m-chip">' + ic('bell') + '</span><span class="m-chip">' + ic('hat') + '<span class="bdg">S</span></span></span></div>' +
+        '<div class="m-body">' + dayBar().replace('m-bar', 'm-bar" style="max-width:760px') + '<div class="m-nb" style="height:600px;overflow:hidden;padding-left:30px">' + nbHead() + rail({ noDots: true }) + '</div></div>' +
+        '<div class="m-dim"></div><div class="m-find"><div class="q">' + ic('search', 22) + 'oni<kbd>Esc</kbd></div>' +
+        '<div class="g">Today\'s lines</div><div class="it sel">' + ic('prep') + 'Slice onions 2 tubs<small>Prep · Larder</small></div>' +
+        '<div class="g">Recipes</div><div class="it">' + ic('plate') + 'Pickled red onion<small>Larder</small></div><div class="it">' + ic('plate') + 'Onion rings<small>Fryer</small></div>' +
+        '<div class="g">Pages and settings</div><div class="it">' + ic('box') + 'Orders<small>Page</small></div><div class="it">' + ic('gear') + 'Text size<small>Settings</small></div></div></div>';
+    } }
+  };
+
+  /* the recommended mix: A, with C's print words and list hat, B's function card with Cancel away from Print */
+  function hatList(rows) {
+    return rows.map(function (r) { return r.g ? '<div class="m-grp">' + r.g + '</div>' : '<div class="m-li">' + ic(r[0]) + '<span>' + r[1] + '</span>' + (r[2] ? '<small>' + r[2] + '</small>' : '') + '<span class="chev" style="flex:none">' + ic('chev', 18) + '</span></div>'; }).join('');
+  }
+  SCREENS['r-prep'] = { w: 390, cap: '<b>Prep.</b> A\'s one-row lines with C\'s print words. Today ▾ opens the calendar. A bigger URGENT tag, a 44 px ⋯.', html: function () { return prepPhone({ print: true, rx: true }); } };
+  SCREENS['r-dots'] = { w: 390, cap: '<b>⋯ on a line.</b> Every rarer action in words, the recipe too, so Recipe also has a 44 px way in.', html: function () {
+    return prepPhone({ print: true, rx: true, extra: '<div class="m-dim"></div><div class="m-sheet"><div class="m-grip"></div><div class="m-eb">Sauce · from yesterday</div><div class="m-sh">Make gravy 5 L</div>' +
+      '<div class="m-li">' + ic('flag') + '<span>Mark urgent</span></div><div class="m-li">' + ic('book') + '<span>Open the recipe</span></div>' +
+      '<div class="m-li">' + ic('scale') + '<span>Change amount</span></div><div class="m-li">' + ic('move') + '<span>Move section</span></div>' +
+      '<div class="m-li del">' + ic('rm') + '<span>Remove the line</span></div><div class="m-btn wide" style="margin-top:6px">Cancel</div></div>' });
+  } };
+  SCREENS['r-hat'] = { w: 390, cap: '<b>Chef hat as a list.</b> Each page by name, what needs doing on the right, only from what the phone already holds. Every day first, then More.', html: function () {
+    return prepPhone({ print: true, rx: true, extra: '<div class="m-dim"></div><div class="m-sheet" style="padding-bottom:8px"><div class="m-grip"></div>' +
+      '<div class="m-who"><span class="m-av">S</span><div><b style="font-size:18px">Sam</b><div style="font-size:14px;color:var(--muted)">Sous chef</div></div><span class="m-btn quiet" style="margin-left:auto;min-height:44px">' + ic('out', 18) + 'Sign out</span></div>' +
+      hatList([{ g: 'Every day' }, ['cal', 'Functions', '1 today'], ['thermo', 'Delivery received'], ['truck', 'Supplier order', 'Closes 16:00'], ['team', 'Today\'s team', 'Not set yet'], ['mail', 'Kitchen mail'], ['bell', 'Shift pings'],
+        { g: 'More' }, ['doc', 'Meeting minutes', '1 to sign'], ['cup', 'Drinks run'], ['todo', 'Chef to-do'], ['pen', 'Recipes &amp; drawings'], ['people', 'Manage staff'], ['gear', 'Settings']]) + '</div>' });
+  } };
+  SCREENS['r-fn'] = { w: 390, cap: '<b>A function on one card</b> (B). Print in the bar at the thumb; Cancel function at the end of the card, away from Print, with its Undo.', html: function () {
+    return '<div class="ph rx">' + top({ back: true, teamDue: false }) + '<div class="m-body">' +
+      '<div class="m-eb">Function · confirmed</div><div class="m-h" style="margin-top:6px">Birthday 60th</div>' +
+      '<div class="m-alert">' + ic('clock') + '<span>Platters on the pass by 18:20 for Round 1. 2 h 10 to go.</span></div>' +
+      '<div class="m-facts"><div style="grid-column:1/-1">When<b>Fri 13 Nov · 18:00 to 22:00</b></div><div>Where<b>Function room</b></div><div>Guests<b>40</b></div><div style="grid-column:1/-1">Dietary<b>3 gluten free · 1 vegan</b></div></div>' +
+      '<div class="m-day" style="margin-top:6px"><span>Rounds</span><span>3</span></div>' +
+      '<div class="m-tl"><div class="m-tr next"><b>18:30</b><span>Round 1</span><div>Arancini 80 · Pork sliders 40</div></div><div class="m-tr"><b>19:15</b><span>Round 2</span><div>Fish tacos 40 · Salt and pepper squid 40</div></div><div class="m-tr"><b>20:00</b><span>Round 3</span><div>Dessert cups 40</div></div></div>' +
+      '<div class="m-day" style="margin-top:0"><span>Notes</span></div><p style="font-size:14.5px;margin:0 0 14px">Cake from the guest at 21:00. We give plates and candles.</p>' +
+      '<div style="border-top:1px solid var(--line);padding-top:12px;display:flex;align-items:center;gap:12px"><span class="m-quietbtn">Cancel function</span><span style="font-size:13px;color:var(--muted)">Undo for 2 minutes after.</span></div>' +
+      '</div><div class="m-fbar"><span class="m-btn">' + ic('print', 18) + 'Print run sheet</span><span class="m-btn">' + ic('print', 18) + 'Print prep sheet</span></div>' + tabs('') + '</div>';
+  } };
+  SCREENS['r-prep-1280'] = { w: 1280, cap: '<b>Laptop.</b> The two-page notebook stays, with print line words; Handy keeps Done today and your usual lines.', html: function () {
+    return SCREENS['a-prep-1280'].html().replace('<div class="lt">', '<div class="lt print rx">').replace('date dk">Today</span>', 'date dk">Today ▾</span>');
+  } };
+
+  var DESIGNS = [
+    { k: 'A', name: 'Tidy rows', tag: 'Changes the least', from: ['Linear: one frame', 'Things 3: one row a line', 'Headspace: words, not symbols'],
+      idea: 'Only the core. Home keeps its dockets, the notebook keeps its handwriting, the laptop keeps its two pages. Prep lines become one row each and the rest of the book uses the same words.',
+      shots: ['a-prep', 'a-dots', 'a-hat', 'a-fn', 'a-prep-1280'],
+      pro: ['Prep goes from 2 lines to 8 on a sous chef\'s phone, the problem every reviewer named.', 'Least to relearn: the same pages in the same places.', 'Two pull requests, no new reads, no rules change.'],
+      con: ['Home still answers "where do I go", not "what needs me now".', 'Urgent and Move section take a second tap.', 'Leaves the most of the seven apps on the table.'] },
+    { k: 'B', name: 'Now and next', tag: 'Rethinks the flow', from: ['Flighty: the board', 'Things 3: Today and Coming up', 'Airbnb: one card a booking', 'Duolingo: progress you can see'],
+      idea: 'The core, then home becomes a board for what is next: your break, the next cut-off, the next round, pings to read, prep by section, coming up. It changes through the day. The dockets go: they repeat the tab bar, which keeps every page one tap away. A function becomes one card like a booking.',
+      shots: ['b-home', 'b-service', 'b-fn', 'a-prep', 'b-home-1280'],
+      pro: ['Answers "what needs me now" in one glance, for cooks and chefs.', 'Brings cut-offs, rounds and breaks out of the hat, with no new reads (all already on the phone).', 'Functions read like a booking: what is due, then the rounds.'],
+      con: ['A new home to learn, and the dockets go.', 'The board must never be wrong: a cut-off or round that has changed has to change on it at once.', 'Four or five pull requests.'] },
+    { k: 'C', name: 'Straight to work', tag: 'Removes the most', from: ['Linear: find anything', 'Things 3: details in place', 'Todoist: start clean'],
+      idea: 'The core, then take things away. No home page: the book opens on your page (Prep for a cook, your last page for a chef) and the tab bar is the only menu. No ⋯: tap the words to open the line. The hat becomes a plain list with Find. Line words in print for arm\'s length. On the laptop the Handy page goes and / finds anything.',
+      shots: ['c-prep', 'c-more', 'c-prep-1280'],
+      pro: ['One less page and one less button on every line.', 'Print words read further away than handwriting (the cook\'s worry).', 'Find saves hunting on the laptop.'],
+      con: ['Loses the dockets and the handwritten lines that make the book feel like the kitchen\'s own.', 'Tapping the words to open a line is hidden: a new starter will not find it.', 'Two ways in to explain: signed out the book opens on Recipes, signed in on your page.'] }
+  ];
+
+  var CMP = [
+    ['Taps to tick a prep line', '1', '1', '1', '1'],
+    ['Taps to add a prep line (then type)', '1', '1', '1', '1'],
+    ['Taps for On it', '1', '1', '1', '1'],
+    ['Taps for Urgent on a line', '1', '2', '2', '2'],
+    ['Taps to a recipe from a prep line', '1', '1', '1', '1'],
+    ['Taps to the recipe list from where the book opens', '1', '1', '1', '1 (tab bar)'],
+    ['Prep lines fully visible at 390 px (sous chef)', '2', '{A}', '{A}', '{C}'],
+    ['What needs me now, on home', 'Nothing', 'Nothing', 'Break, cut-off, round, pings, sections', 'No home'],
+    ['Navigation levels to a supplier order', '2 (hat, tile)', '2', '2 (or the board row)', '2'],
+    ['New reads or listeners', 'None', 'None', 'None', 'None'],
+    ['Rules change', 'No', 'No', 'No', 'No'],
+    ['Pull requests to build', 'None', '2', '4 to 5', '4'],
+    ['Relearning for staff', 'None', 'Low', 'Medium (home)', 'High (no home, no ⋯, print)'],
+    ['Risk', 'None', 'Low', 'Medium (board must stay right)', 'Medium (hidden actions)']
+  ];
+
+  function screenHTML(id) {
+    var s = SCREENS[id];
+    if (s.w === 1280) return '<div class="lapbox" data-lap>' + s.html() + '</div>';
+    return s.html();
+  }
+  function figure(id) {
+    var s = SCREENS[id];
+    return '<figure class="' + (s.w === 1280 ? 'lapfig' : '') + '">' + screenHTML(id) + '<figcaption>' + s.cap + '</figcaption></figure>';
+  }
+
+  var q = new URLSearchParams(location.search).get('shot');
+  if (q && SCREENS[q]) {
+    document.body.className = 'shot';
+    document.getElementById('page').innerHTML = SCREENS[q].html();
+    return;
+  }
+
+  document.getElementById('designs').innerHTML = DESIGNS.map(function (d) {
+    var phones = d.shots.filter(function (id) { return SCREENS[id].w === 390; }), laps = d.shots.filter(function (id) { return SCREENS[id].w === 1280; });
+    return '<div class="design" id="design-' + d.k.toLowerCase() + '"><div class="design-head"><span class="letter">' + d.k + '</span><h2>' + d.name + ' <span class="lt">· ' + d.tag + '</span></h2></div>' +
+      '<div class="from">' + d.from.map(function (f) { return '<span>' + f + '</span>'; }).join('') + '</div><p>' + d.idea + '</p>' +
+      '<div class="row">' + phones.map(function (id) { return figure(id).replace(SCREENS[id].cap, id === 'a-prep' && d.k === 'B' ? '<b>Prep.</b> The same one-row lines as A.' : SCREENS[id].cap); }).join('') + '</div>' +
+      laps.map(figure).join('') +
+      '<div class="pc"><div class="pro"><h4>For</h4><ul class="list">' + d.pro.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div><div class="con"><h4>Against</h4><ul class="list">' + d.con.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul></div></div></div>';
+  }).join('<div style="height:34px"></div>');
+
+  document.getElementById('recommend').innerHTML = '<div class="design-head"><span class="letter">A+</span><h2>Recommended <span class="lt">· A, with three pieces of the others</span></h2></div>' +
+    '<div class="rec"><h3>Our recommendation</h3><p><b>A, with C\'s print line words and plain-list hat, and B\'s function card with Cancel moved away from Print.</b></p>' +
+    '<p>All six reviewers ranked A first. It fixes the one problem everyone named: prep goes from <b>2 to <span data-vis="r"></span> lines</b> on a sous chef\'s phone, with no new reads and no rules change. Each borrowed piece answers a complaint a reviewer made: print words for arm\'s length, a list with words instead of a grid of tiles, and one card for a function night. Three pull requests.</p>' +
+    '<p class="note">B\'s now and next home stays on the shelf: worth a second look once the rows have been used in service, built only from what the home page already reads.</p></div>' +
+    '<div class="row">' + ['r-prep', 'r-dots', 'r-hat', 'r-fn'].map(figure).join('') + '</div>' + figure('r-prep-1280') +
+    '<h3>Build in three steps</h3><ol class="list"><li><b>Rows and words.</b> One-row lines on Prep, with the same row on Orders, Wastage and Transfers; the day bar with Today ▾; print line words; Add a line, Delivery received and Urgent everywhere. <code>css/app.css</code>, <code>js/prep.js</code>, the tests that count lines and header heights.</li>' +
+    '<li><b>The hat as a list.</b> Every day first, then More; status only from what the phone already holds. <code>js/app.js</code>, <code>tests/chef-menu.test.js</code>, <code>tests/hat-counts.test.js</code>.</li>' +
+    '<li><b>Functions.</b> Empty days folded, the function card, Cancel at the end of the card. <code>js/functions.js</code>, the function tests.</li></ol>' +
+    '<h3>Questions for the head chef</h3><ol class="list"><li>Go with the recommended mix, A alone, B, C, or another mix?</li><li>Line words in print (Barlow), with handwriting kept for titles and counts? Or keep the handwriting?</li><li>Move Cancel function from the right end of the function bar (your 26 Oct placement) to the end of the card, away from Print?</li><li>Urgent on an existing line from 1 tap to 2 (behind ⋯)? It stays one tap in Add a line.</li><li>B\'s now and next home: later, or not at all?</li></ol>';
+
+  function fit() {
+    document.querySelectorAll('[data-lap]').forEach(function (b) { var lt = b.firstElementChild; lt.style.transform = 'scale(' + (b.clientWidth / 1280) + ')'; });
+  }
+  fit(); window.addEventListener('resize', fit);
+
+  /* visible prep lines, measured in the drawn screens: a row counts when it sits fully above the Add bar */
+  function visible(id) {
+    var box = document.createElement('div');
+    box.style.cssText = 'position:absolute;left:-2000px;top:0';
+    box.innerHTML = prepPhone({ print: id.charAt(0) === 'c' || id.charAt(0) === 'r', noDots: id.charAt(0) === 'c', rx: id.charAt(0) === 'r' });
+    document.body.appendChild(box);
+    var host = box.firstElementChild;
+    var lim = host.querySelector('.m-act').getBoundingClientRect().top;
+    var top0 = host.querySelector('.m-body').getBoundingClientRect().top;
+    var n = Array.prototype.filter.call(host.querySelectorAll('.m-r:not(.done)'), function (r) { var b = r.getBoundingClientRect(); return b.top >= top0 && b.bottom <= lim; }).length;
+    box.remove();
+    return n;
+  }
+  function table() {
+    var A = visible('a-prep'), C = visible('c-prep'), R = visible('r-prep');
+    document.querySelectorAll('[data-vis="r"]').forEach(function (e) { e.textContent = R; });
+    document.getElementById('cmp').innerHTML = '<thead><tr><th></th><th class="num">Today</th><th class="num">A Tidy rows</th><th class="num">B Now and next</th><th class="num">C Straight to work</th></tr></thead><tbody>' +
+      CMP.map(function (r) { return '<tr><td><b>' + r[0] + '</b></td>' + r.slice(1).map(function (c) { return '<td class="num">' + String(c).replace('{A}', A).replace('{C}', C) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody>';
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(table); else table();
+  window.LK_REDESIGN = { visible: visible };
+})();
+</script>
+</body>
+</html>
