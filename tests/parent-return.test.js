@@ -41,7 +41,7 @@ async function step(p, destination, selector, name) {
   return reached;
 }
 async function homeCheck(p, name) {
-  ok(await hash(p) === '#/' && !(await p.$(back)) && !!(await p.$('.dockets')), name + ': the return trail ends at the landing page');
+  ok(await hash(p) === '#/' && !(await p.$(back)) && !!(await p.$('.kb-home')), name + ': the return trail ends at the landing page');
   ok(await writes(p) === 0, name + ': returning makes no recipe, drawing, function, supplier or cut-off writes');
   ok(p.errors.length === 0 && !(await L.overflow(p)), name + ': no page errors or sideways scroll ' + p.errors.join(' | '));
 }
@@ -54,9 +54,9 @@ async function walk(p, paths, name) {
   const b = await L.start();
   let p;
   for (const c of [
-    { name: 'Direct sub-recipe', start: '#/r/barra/laksa', ready: '#rtitle', options: {}, paths: [['#/r/barra', '#rtitle'], ['#/recipes', '#find'], ['#/', '.dockets']] },
-    { name: 'Direct guide', start: '#/guides/combi', ready: '.g-top', options: { extra: L.guides() }, paths: [['#/guides', '.g-list'], ['#/', '.dockets']] },
-    { name: 'Direct kitchen function', start: '#/fn/visible', ready: '.fn-page .fn-last', options: { who: 'ann', extra }, paths: [['#/fn', '.fn-page'], ['#/', '.dockets']] }
+    { name: 'Direct sub-recipe', start: '#/r/barra/laksa', ready: '#rtitle', options: {}, paths: [['#/r/barra', '#rtitle'], ['#/recipes', '#find'], ['#/', '.kb-home']] },
+    { name: 'Direct guide', start: '#/guides/combi', ready: '.g-top', options: { extra: L.guides() }, paths: [['#/guides', '.g-list'], ['#/', '.kb-home']] },
+    { name: 'Direct kitchen function', start: '#/fn/visible', ready: '.fn-page .fn-last', options: { who: 'ann', extra }, paths: [['#/fn', '.fn-page'], ['#/', '.kb-home']] }
   ]) {
     p = await L.open(b, c.start, Object.assign({ wait: 1500 }, c.options));
     await wait(p, c.ready); await walk(p, c.paths, c.name); await p.context().close();
@@ -68,7 +68,7 @@ async function walk(p, paths, name) {
   if (await step(p, '#/manage', '#mg-q', 'Direct recipe editor')) {
     const kept = await p.evaluate(() => JSON.parse(localStorage.getItem('lk.mg.draft.burger') || 'null'));
     ok(kept && kept.e.d.name === 'Exact recipe draft after parent return', 'Direct recipe editor: the final name is kept before leaving');
-    await walk(p, [['#/', '.dockets']], 'Direct recipe editor');
+    await walk(p, [['#/', '.kb-home']], 'Direct recipe editor');
   }
   await p.context().close();
 
@@ -77,7 +77,7 @@ async function walk(p, paths, name) {
   if (await step(p, '#/manage/r/burger', '#mg-name', 'Direct drawing')) {
     const kept = await p.evaluate(() => JSON.parse(localStorage.getItem('lk.dw.draft.new-burger-plate') || 'null'));
     ok(kept && kept.els.length === 1 && kept.els[0].a === 'rump@1', 'Direct drawing: its exact last piece survives parent return');
-    await walk(p, [['#/manage', '#mg-q'], ['#/', '.dockets']], 'Direct drawing');
+    await walk(p, [['#/manage', '#mg-q'], ['#/', '.kb-home']], 'Direct drawing');
   }
   await p.context().close();
 
@@ -94,7 +94,7 @@ async function walk(p, paths, name) {
     if (await step(p, '#/functions', '#fe-q', name)) {
       const kept = await p.evaluate(() => JSON.parse(localStorage.getItem('lk.fe.draft.draft') || 'null'));
       ok(kept && kept.d.name === 'Exact function draft after return' && kept.d.startT === '17:15', name + ': parent return keeps the focused name and time');
-      await walk(p, [['#/', '.dockets']], name);
+      await walk(p, [['#/', '.kb-home']], name);
     }
     await p.context().close();
   }
@@ -107,7 +107,7 @@ async function walk(p, paths, name) {
       await p.fill('input[data-sf="qty"][data-i="t-stock"]', '7 kg');
       if (orderRoute === '#/suppliers' || await step(p, '#/suppliers', 'input[data-sf="qty"][data-i="t-stock"]', name)) {
         ok(await p.inputValue('input[data-sf="qty"][data-i="t-stock"]') === '7 kg', name + ': supplier quantity survives the return to its workspace');
-        await walk(p, [['#/', '.dockets']], name);
+        await walk(p, [['#/', '.kb-home']], name);
       }
     }
     await p.context().close();
@@ -168,7 +168,7 @@ async function walk(p, paths, name) {
   await L.waitFor(p, () => location.hash === '#/suppliers/northside', null, 6000);
   await wait(p, 'input[data-sf="qty"][data-i="t-stock"]');
   ok(await hash(p) === '#/suppliers/northside', 'Supplier order chip leaves the direct catalogue address as well as its local mode');
-  await walk(p, [['#/suppliers', 'input[data-sf="qty"][data-i="t-stock"]'], ['#/', '.dockets']], 'Supplier order chip parent');
+  await walk(p, [['#/suppliers', 'input[data-sf="qty"][data-i="t-stock"]'], ['#/', '.kb-home']], 'Supplier order chip parent');
   await p.context().close();
 
   p = await L.open(b, '#/orders', { who: 'ann', extra, wait: 1500 });

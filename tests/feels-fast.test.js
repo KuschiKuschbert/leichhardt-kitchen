@@ -26,17 +26,17 @@ const top = (p, sel) => p.evaluate(s => { const e = document.querySelector(s); r
     ok(p.errors.length === 0, at + 'no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
-  // a press: the docket gives way while held, and springs back
+  // a press: a row on Home gives way while held, and springs back (the dockets went on 8 Nov 2026: Prep by section's rows)
   const held = (p, sel, v) => L.waitFor(p, a => getComputedStyle(document.querySelector(a[0])).scale === a[1], [sel, v], 3000).then(() => true, () => false);
   const middle = (p, sel) => L.waitFor(p, s => { const e = document.querySelector(s), r = e && e.getBoundingClientRect(); return r && r.width ? r : null; }, sel, 5000)
     .then(() => p.evaluate(s => { const r = document.querySelector(s).getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; }, sel));
   let p = await L.open(b, '#/', { touch: true, wait: 800 });
-  let at = await middle(p, '.docket');
+  let at = await middle(p, '#hm-prep .hm-sec');
   await p.evaluate(() => document.addEventListener('click', e => e.preventDefault(), { capture: true, once: true }));   // stay on the landing page
   await p.mouse.move(at.x, at.y); await p.mouse.down();
-  ok(await held(p, '.docket', '0.97'), 'press: a docket gives way while held');
+  ok(await held(p, '#hm-prep .hm-sec', '0.97'), 'press: a row gives way while held');
   await p.mouse.up();
-  ok(await held(p, '.docket', 'none'), 'press: it springs back when let go');
+  ok(await held(p, '#hm-prep .hm-sec', 'none'), 'press: it springs back when let go');
   await p.context().close();
   // a pin on the plate keeps its own transform (it is placed with one) and is only scaled while held
   p = await L.open(b, '#/r/barra', { width: 1280, height: 900, wait: 800 });

@@ -133,12 +133,12 @@ const bad = p => p.evaluate(() => ({ i: document.querySelectorAll('#pwn').length
   await p.context().close();
 
   // Friday 12:30: the ordered one gets no bar; on a fresh book without the tick, Coast is on the bar with its date
-  p = await L.open(b, '#/', { who: 'sam', extra: Object.assign(withCuts([COAST, PFD]), { [fsKey(['cutdone', '2026-11-06_coast'])]: { day: '2026-11-06', sid: 'coast', on: true, at: THU, by: 'sam' } }), clock: FRI, wait: 1500 });
+  p = await L.open(b, '#/recipes', { who: 'sam', extra: Object.assign(withCuts([COAST, PFD]), { [fsKey(['cutdone', '2026-11-06_coast'])]: { day: '2026-11-06', sid: 'coast', on: true, at: THU, by: 'sam' } }), clock: FRI, wait: 1500 });
   await L.waitFor(p, () => { const e = document.getElementById('cut-band'); return e && !e.hidden; }, null, 10000);
   await L.settle(p, 500);
   ok(!/Coast/.test(await txt(p, '#cut-band')), 'Friday: ordered early, so no reminder for Coast');
   await p.context().close();
-  p = await L.open(b, '#/', { who: 'sam', extra: withCuts([COAST, PFD]), clock: FRI, wait: 1500 });
+  p = await L.open(b, '#/recipes', { who: 'sam', extra: withCuts([COAST, PFD]), clock: FRI, wait: 1500 });
   await L.waitFor(p, () => /Coast/.test(document.getElementById('cut-band')?.textContent || ''), null, 10000);
   ok(/by 16:00 in 3 h 30 min for Wed 11 Nov/.test(await txt(p, '#cut-band')), 'Friday 12:30: Coast on the bar, 16:00 for Wed 11 Nov');
   await p.context().close();

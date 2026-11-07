@@ -19,7 +19,7 @@
   function gated() {
     return Boolean(root.querySelector('#p-pin,[data-p-form="pin"],.p-names') || document.querySelector('#lk-device-choice[open],#lk-device-discard[open]'));
   }
-  function isHome() { return /^#\/(?:\?.*)?$/.test(location.hash || '#/') && Boolean(root.querySelector('.wall-main .dockets')); }
+  function isHome() { return /^#\/(?:\?.*)?$/.test(location.hash || '#/') && Boolean(root.querySelector('.wall-main .kb-home')); }
   function aboutButton() { return root.querySelector('.kb-occasion-trigger'); }
   function restoreBrand() {
     // Kitchen Book stays in the top bar (3 Nov 2026). Older pages replaced it with the celebration title; put it back.
@@ -130,7 +130,7 @@
     root.dataset.kbTheme = theme ? theme.id : 'off'; root.dataset.kbCelebrationSurface = surface;
     // The chef hat opens each person's menu and carries the mail count, so a celebration never replaces it (3 Nov 2026).
     let note = root.querySelector('[data-kb-season]');
-    const home = surface === 'home' ? root.querySelector('.wall-main .dockets') : null;
+    const home = surface === 'home' ? root.querySelector('.wall-main .kb-home') : null;
     if (!theme) {
       closeAbout(false); stopHandoff(); handoffPending = false;
       if (window.KB_CELEBRATION_TICKER?.status().themeId) KB_CELEBRATION_TICKER.clear();
@@ -158,23 +158,26 @@
         }
       }
     }
-    comingUp(surface === 'home' && !gated() ? root.querySelector('.wall-main .dockets') : null);
+    comingUp(surface === 'home' && !gated() ? root.querySelector('.wall-main .kb-home') : null);
     if (force || root.dataset.kbEffects !== signature) {
       KB_EFFECTS.render(theme || { id: 'off', effect: 'still' }, theme ? state.mode : 'still', state.density, { surface });
       root.dataset.kbEffects = signature;
     }
     publishSoon();
   }
-  // Coming up (3 Nov 2026): the next celebrations in the coming 7 days, from the offline calendar, above the dockets.
-  function comingUp(dockets) {
+  // Coming up (3 Nov 2026): the next celebrations in the coming 7 days, from the offline calendar. Home's anchor (kb-home)
+  // is the dockets when signed out, with the line above them, or since the redesign's step 2 (8 Nov 2026) the now and
+  // next board, with the line in its Coming up card ([data-kb-coming-slot]).
+  function comingUp(home) {
     let line = root.querySelector('[data-kb-coming]');
     const key = state.upcoming.map(item => item.id + '|' + item.when).join(',');
-    if (!dockets || !key) { line?.remove(); return; }
-    if (line && line.dataset.kbComing === key && line.nextElementSibling === dockets) return;
+    if (!home || !key) { line?.remove(); return; }
+    const slot = home.querySelector('[data-kb-coming-slot]');
+    if (line && line.dataset.kbComing === key && (slot ? line.parentNode === slot : line.nextElementSibling === home)) return;
     line?.remove();
     line = document.createElement('p'); line.className = 'kb-coming'; line.dataset.kbComing = key;
     line.innerHTML = '<span class="kb-coming-label">Coming up</span>' + state.upcoming.map(item => '<span class="kb-coming-item"><span class="kb-coming-mark" aria-hidden="true">' + (window.KB_STAMPS?.svg(item.id) || '') + '</span>' + esc(item.label) + ', ' + esc(item.when) + '</span>').join('');
-    dockets.before(line);
+    if (slot) slot.prepend(line); else home.before(line);
   }
   function schedule() { if (frame) return; frame = requestAnimationFrame(() => { frame = 0; update(false); }); }
   function status() { return { themeId: state.theme?.id || null, gated: gated(), surface, aboutOpen: Boolean(aboutOpen && panel?.isConnected), handoffCount, handoffActive: Boolean(handoffTimer && handoffTarget?.isConnected), route }; }

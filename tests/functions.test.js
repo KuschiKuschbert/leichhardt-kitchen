@@ -149,14 +149,17 @@ function hasPrivateContact(value) {
 
   // 2. staff on another phone: read only, the sheet has the full comment and its author, no contact, no saving
   const smith = fn({ rounds: ['18:30', '19:00', '19:30'], lines: [['antipasto-platter', 'Antipasto Platter', [3, 0, 0]], ['aussie-platter', 'Aussie Platter', [2, 2, 0]], ['pizza-platter', 'Pizza Platter', [0, 2, 3]]], kc: 'Cake comes out at 20:00.\nKeep the pass clear.', kcBy: 'fay', notes: 'Two vegetarians.' });
-  p = await L.open(b, '#/', { who: 'ann', extra: Object.assign(extra({ smith }), { [fsKey(['fncontact', 'smith'])]: { cname: 'Jo', phone: '0400 111 222', email: 'jo@example.com', upd: 1 } }), wait: 1200 });
+  p = await L.open(b, '#/recipes', { who: 'ann', extra: Object.assign(extra({ smith }), { [fsKey(['fncontact', 'smith'])]: { cname: 'Jo', phone: '0400 111 222', email: 'jo@example.com', upd: 1 } }), wait: 1200 });
   await L.waitFor(p, () => !!document.querySelector('#fn-band .fn-row'));
   { const m = await L.chefItems(p); ok(m.indexOf('functions') < 0 && m.indexOf('fn') >= 0, 'staff: Ann\'s chef hat has Functions to read (#/fn), not the managers\' page (' + m + ')'); }
   await p.click('.wtop-who'); await L.settle(p, 150); await p.click('.wm a[href="#/fn"]'); await L.settle(p, 500);
   { const pg = await txt(p, '#main') || ''; ok(/#\/fn$/.test(p.url()) && /Upcoming functions/.test(pg) && /Smith 50th/.test(pg) && !/Manage functions|New function/.test(pg), 'staff: Functions opens today and the next days, with no way to book or change one'); }
   await p.goto(L.BASE + '#/'); await L.settle(p, 600);
-  // today's function is in the band right above, so the landing card does not list it again (23 Oct 2026)
-  ok(/Smith 50th/.test(await txt(p, '#fn-band') || '') && await p.evaluate(() => { const e = document.getElementById('fn-land'); return !!e && e.hidden && !/Smith 50th/.test(e.textContent); }), 'landing: today\'s function is in the band, not again in a Functions card');
+  // Home (8 Nov 2026, redesign step 2): no band; today's function is on the now and next board, not again in Coming up
+  ok(!(await p.$('#fn-band')) && /Smith 50th/.test(await txt(p, '#hm-board') || '') && await p.evaluate(() => { const e = document.getElementById('fn-land'); return !!e && e.hidden && !/Smith 50th/.test(e.textContent); }), 'landing: today\'s function is on the board, not again in Coming up');
+  // the band is on every other page
+  await p.goto(L.BASE + '#/recipes'); await L.settle(p, 600);
+  await L.waitFor(p, () => !!document.querySelector('#fn-band .fn-row'));
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
   const sh = await txt(p, '.fn-sheet') || '';
   ok(/Cake comes out at 20:00\.\s*Keep the pass clear\./.test(sh) && /Fay,/.test(sh), 'sheet: the whole kitchen comment with its author');
@@ -373,12 +376,12 @@ function hasPrivateContact(value) {
   ok(p.errors.length === 0, 'strip: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // the landing card (23 Oct 2026): the band has its own rows for today's and tomorrow's functions, so the card leaves
-  // those out and lists the rest up to 3 days out, by day, then by when food goes out, times TBC last in a day; with
-  // nothing left there is no card
+  // the landing card (23 Oct 2026): it lists the functions up to 3 days out, by day, then by when food goes out, times TBC
+  // last in a day. Since Home's board (8 Nov 2026, redesign step 2) it is in Coming up, and leaves out only today's
+  // functions the board shows (tomorrow's are in the card: Home has no band)
   p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith, tm }), wait: 1500 });
-  await L.waitFor(p, () => /Tomorrow do/.test((document.getElementById('fn-band') || {}).textContent || ''));
-  ok(await p.evaluate(() => { const e = document.getElementById('fn-land'); return !!e && e.hidden && !/Smith 50th|Tomorrow do/.test(e.textContent); }), 'landing: only today and tomorrow booked, no Functions card (the band has both)');
+  await L.waitFor(p, () => /Tomorrow do/.test((document.getElementById('fn-land') || {}).textContent || ''));
+  ok(/Smith 50th/.test(await txt(p, '#hm-board') || '') && await p.evaluate(() => { const e = document.getElementById('fn-land'); return !!e && !e.hidden && /Tomorrow Tomorrow do/.test(e.textContent) && !/Smith 50th/.test(e.textContent); }), 'landing: today\'s function on the board, tomorrow\'s in Coming up');
   await p.context().close();
   // names against the alphabet, so only a sort by time passes: Zed at 12:00, Brown at 18:30, Adams with times TBC
   const zed = fn({ name: 'Zed lunch', date: day2, start: '11:30', rounds: ['12:00'] });
@@ -387,28 +390,34 @@ function hasPrivateContact(value) {
   const green = fn({ name: 'Green 30th', date: M.addDays(today, 3), start: '11:00', rounds: ['11:30'] });
   const far = fn({ name: 'Far off', date: M.addDays(today, 4) });
   p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith, tm, wake, brown, zed, green, far }), wait: 1500 });
-  await L.waitFor(p, () => /Green 30th/.test((document.getElementById('fn-land') || {}).textContent || ''));
+  // four at most: with tomorrow's in it since 8 Nov 2026, Green 30th is the one more
+  await L.waitFor(p, () => /Adams wake/.test((document.getElementById('fn-land') || {}).textContent || ''));
   let land = (await txt(p, '#fn-land') || '').replace(/\s+/g, ' ');
-  ok(/Smith 50th/.test(await txt(p, '#fn-band') || '') && !/Smith 50th|Tomorrow do|Far off/.test(land), 'landing: the card leaves out today\'s and tomorrow\'s functions (in the band) and the ones further off (' + land + ')');
-  ok(new RegExp(M.dayName(day2) + ' Zed lunch, food 12:00.*' + M.dayName(day2) + ' Brown 21st, food 18:30.*' + M.dayName(day2) + ' Adams wake, food TBC.*Green 30th, food 11:30').test(land), 'landing: 2 and 3 days out, by day, then by food time, times TBC last in a day (' + land + ')');
-  ok(/Open functions$/.test(land) && await p.$eval('#fn-land .fn-land-go', e => e.getAttribute('href')) === '#/fn', 'landing: the card opens Functions');
+  ok(/Smith 50th/.test(await txt(p, '#hm-board') || '') && !/Smith 50th|Far off/.test(land) && /Tomorrow Tomorrow do/.test(land), 'landing: Coming up leaves out today\'s function (on the board) and the ones further off, tomorrow first (' + land + ')');
+  ok(new RegExp(M.dayName(day2) + ' Zed lunch, food 12:00.*' + M.dayName(day2) + ' Brown 21st, food 18:30.*' + M.dayName(day2) + ' Adams wake, food TBC').test(land) && !/Green 30th/.test(land), 'landing: 2 and 3 days out, by day, then by food time, times TBC last in a day (' + land + ')');
+  ok(/Open functions, 1 more$/.test(land) && await p.$eval('#fn-land .fn-land-go', e => e.getAttribute('href')) === '#/fn', 'landing: the card opens Functions, and says one more');
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'landing: no sideways scroll, no page errors ' + p.errors.join(' | '));
   await p.context().close();
-  // a busy Sunday: three functions today and two order reminders push a function today and tomorrow's behind the
-  // band's "+2 more", so the card names them; one already over today is left out; with the band opened, no card
+  // a busy Sunday: three functions today and two order reminders. Home's board shows every one of today's still to go
+  // and the order reminders; Coming up names tomorrow's; one already over today is left out. On another page the band
+  // shows two of today's and the order reminders, then +2 more.
   const ward = fn({ name: 'Ward 60th', start: '16:30', rounds: ['17:00'] }), lee = fn({ name: 'Lee 18th', start: '17:30', rounds: ['18:00'] });
   const abbott = fn({ name: 'Abbott do', start: '18:30', rounds: ['19:00'] }), brekky = fn({ name: 'Brekky do', start: '07:00', rounds: ['07:30'] });
   const kerr = fn({ name: 'Kerr lunch', date: tomorrow, start: '11:30', rounds: ['12:00'] });
   const o5 = fn({ name: 'Order five', date: M.addDays(today, 5) }), o6 = fn({ name: 'Order six', date: M.addDays(today, 6) }); o5.od = today; o6.od = today;
   p = await L.open(b, '#/', { who: 'ann', extra: extra({ ward, lee, abbott, brekky, kerr, o5, o6 }), wait: 1500 });
   await L.waitFor(p, () => /Kerr lunch/.test((document.getElementById('fn-land') || {}).textContent || ''));
-  const bnd = (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ');
+  const brd = (await txt(p, '#hm-board') || '').replace(/\s+/g, ' ');
   land = (await txt(p, '#fn-land') || '').replace(/\s+/g, ' ');
-  ok(/Ward 60th/.test(bnd) && /Lee 18th/.test(bnd) && /Order five/.test(bnd) && /Order six/.test(bnd) && !/Abbott do|Kerr lunch/.test(bnd) && /\+2 more/.test(bnd), 'landing: the band shows two of today\'s and the two order reminders, then +2 more (' + bnd.slice(0, 200) + ')');
-  ok(/Today Abbott do, food 19:00.*Tomorrow Kerr lunch, food 12:00/.test(land) && !/Ward 60th|Lee 18th|Brekky do|Order five|Order six/.test(land), 'landing: the card names today\'s and tomorrow\'s functions behind +2 more, and not one already over (' + land + ')');
-  await tap(p, '#fn-band [data-fn="more"]'); await L.settle(p, 200);
-  ok(/Abbott do/.test(await txt(p, '#fn-band') || '') && /Kerr lunch/.test(await txt(p, '#fn-band') || '') && await p.$eval('#fn-land', e => e.hidden), 'landing: +2 more opens them in the band, and the card goes (nothing left to list)');
+  ok(/Ward 60th/.test(brd) && /Lee 18th/.test(brd) && /Abbott do/.test(brd) && /Order the stock for Order five/.test(brd) && /Order the stock for Order six/.test(brd) && !/Brekky do|Kerr lunch/.test(brd), 'landing: the board shows today\'s three still to go and the two order reminders, not one already over (' + brd.slice(0, 260) + ')');
+  ok(/Tomorrow Kerr lunch, food 12:00/.test(land) && !/Ward 60th|Lee 18th|Abbott do|Brekky do|Order five|Order six/.test(land), 'landing: Coming up names tomorrow\'s function, not today\'s or the order reminders (' + land + ')');
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'landing busy day: no sideways scroll, no page errors ' + p.errors.join(' | '));
+  await p.goto(L.BASE + '#/recipes'); await L.settle(p, 900);
+  await L.waitFor(p, () => /\+2 more/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  const bnd = (await txt(p, '#fn-band') || '').replace(/\s+/g, ' ');
+  ok(/Ward 60th/.test(bnd) && /Lee 18th/.test(bnd) && /Order five/.test(bnd) && /Order six/.test(bnd) && !/Abbott do|Kerr lunch/.test(bnd) && /\+2 more/.test(bnd), 'another page: the band shows two of today\'s and the two order reminders, then +2 more (' + bnd.slice(0, 200) + ')');
+  await tap(p, '#fn-band [data-fn="more"]'); await L.settle(p, 200);
+  ok(/Abbott do/.test(await txt(p, '#fn-band') || '') && /Kerr lunch/.test(await txt(p, '#fn-band') || ''), 'another page: +2 more opens them in the band');
   await p.context().close();
 
   // 4. upcoming totals: each booked line once, confirmed only

@@ -38,7 +38,7 @@ async function returned(p, h) {
     await returned(p, '#/');
     const landingHeader = await p.locator('.wtop').boundingBox();
     ok(header && landingHeader && header.height <= landingHeader.height + 1, screen + ': Back does not increase the header height');
-    ok(await back(p).count() === 0 && await p.locator('.dockets').count() === 1, screen + ': direct-page Back reaches the landing page without leaving the book');
+    ok(await back(p).count() === 0 && await p.locator('.kb-home').count() === 1, screen + ': direct-page Back reaches the landing page without leaving the book');
     ok(!(await L.overflow(p)) && p.errors.length === 0, screen + ': no overflow or page errors');
     await p.context().close();
   }

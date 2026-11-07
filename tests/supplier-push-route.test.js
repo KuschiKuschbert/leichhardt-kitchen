@@ -53,7 +53,7 @@ async function noSheet(p, label) {
   let p, text;
 
   // Unlinked route from the bar, sous chef on a phone: the card says to tick it on the Order list, which shows it done.
-  p = await L.open(b, '#/', { who: 'sam', extra: withVeg(), wait: 1500 });
+  p = await L.open(b, '#/recipes', { who: 'sam', extra: withVeg(), wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('#cut-band a.cut-n[href*="/veg/"]'), null, 10000);
   await p.click('#cut-band a.cut-n[href*="/veg/"]');
   await L.waitFor(p, day => location.hash === '#/suppliers/cutoff/veg/' + day, F.today, 10000);

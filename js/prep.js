@@ -5887,6 +5887,7 @@
     if (S.cutStamp && !(S.name === 'admin' && S.atab === 'cutoffs')) S.cutStamp = null;   // the stamp goes with the page
     noteRefresh();
     if (S.mins) { loadMine(); minCard(); }
+    homePaint();   // Home's board, when it is on screen (redesign step 2)
     if (!S.root || !document.body.contains(S.root) || rendering) return;
     rendering = true;
     var ae = document.activeElement, key = ae && ae.getAttribute && (ae.getAttribute('data-k') || (ae._uxSource && ae._uxSource.getAttribute('data-k'))), start = null, end = null;
@@ -7331,7 +7332,7 @@
     el.addEventListener('pointerdown', function () { el.lkAt = Date.now(); });
     el.addEventListener('keydown', function () { el.lkAt = Date.now(); });
     el.lkWas = s.d === dayNow() && s.sig ? String(s.sig).split('|') : null;   // New marks only what came since the last Got it today
-    el.innerHTML = '<div class="nt-bg" data-note="dismiss"></div><section class="nt" role="dialog" aria-modal="true" aria-labelledby="nt-h" tabindex="-1"><div class="nt-grip" aria-hidden="true"></div><div class="nt-in"></div></section>';
+    el.innerHTML = '<div class="nt-bg" data-note="dismiss"></div><section class="nt nt-board" role="dialog" aria-modal="true" aria-labelledby="nt-h" tabindex="-1"><div class="nt-grip" aria-hidden="true"></div><div class="nt-in"></div></section>';
     if (pv) el.setAttribute('data-pv', '1');
     npop = el;
     noteDraw(false);
@@ -9814,7 +9815,7 @@
   }
   // js/app.js draws the empty slot under the top bar (and the Functions band); this fills it and keeps it right as time passes
   function cutPaint() {
-    cutWatch(); pushKeep();
+    cutWatch(); pushKeep(); homePaint();
     var el = document.getElementById('cut-band');
     if (!el) return;
     var h = cutBandHTML();
@@ -9826,6 +9827,97 @@
     var h = cutBandHTML(); cutLast = h;
     return '<div class="cut-band" id="cut-band" role="region" aria-label="Order cut-offs"' + (h ? '' : ' hidden') + '>' + h + '</div>';
   }
+
+  /* ---------- Home: now and next (redesign step 2, 8 Nov 2026, head chef; docs/whole-app-redesign-options/brief.md) ----------
+     The landing page's dark board: only what is still to come, each row a tap to where it is done (your section and its
+     lines left, your next break, the order cut-offs the chefs get the bar for, today's functions with their next round,
+     new pings, minutes to sign), then a paper card with today's prep by section. All of it from what this phone already
+     holds (today's prep lines, Today's team, the cut-offs and their ticks, the functions, the pings and minutes): no reads
+     and no listeners of its own. js/app.js draws the slot; homePaint() keeps it right on every draw, on the 30 second
+     cut-off tick and when the functions change. The function band and the cut-off bar stay on every other page. */
+  function homeOn() { return privateAccess() && !functionOnly(); }
+  function homeIcon(k) { return window.LK_APP && window.LK_APP.icon ? window.LK_APP.icon(k) : ''; }
+  function homeLeft(m) { return m < 60 ? m + ' min left' : Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') + ' left'; }
+  // today's own lines (not a function's platters), from the live list; null until the server answered for today
+  function homeLines() { return S.date === dayNow() && S.itemsState === 'ok' ? (S.items || []).filter(function (x) { return !x.deleted && !x.fn; }) : null; }
+  function homeRows() {
+    var m = T.mins(), p = me(), out = [], timed = [], lines = homeLines();
+    // your section and its lines left: staff and leads from the plan or their own pick, a chef only when the plan gives one
+    var sec = p ? (chefP(p) ? ((tmPlanSec(p.id) || {}).name || '') : mySec()) : '';
+    if (sec && lines) {
+      var k = sec.trim().toLowerCase(), open = lines.filter(function (x) { return !x.done && String(x.station || '').trim().toLowerCase() === k; })
+        .sort(function (a, b) { return (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) || (a.addedAt || 0) - (b.addedAt || 0); });
+      out.push({ icon: 'todo', title: 'You are on ' + sec, sub: open.length ? (open.length === 1 ? '1 line left' : open.length + ' lines left') + ' · ' + open[0].text + ' first' : 'Everything on ' + sec + ' is ticked off',
+        time: open.length ? String(open.length) : '', note: open.length ? 'Left' : '', href: '#/prep', sec: open.length ? open[0].station : '' });
+    }
+    // your next break, or the one you are on (Your day opens on a tap; a chef's plan is on the team page)
+    var b = p && tm.rec ? tmNextBreak(p.id, m) : null;
+    if (b) {
+      var on = tmOnBreak(b, m), split = tmIsSplit(b.len), end = tmHHMM(b.at + b.len);
+      timed.push({ at: b.at, icon: 'cup', title: on ? (split ? 'On your split' : 'On your break') : (split ? 'Your split' : 'Your break'), sub: 'Back' + (sec ? ' on ' + sec : '') + ' at ' + end,
+        time: on ? end : tmHHMM(b.at), note: on ? 'Now' : b.len + ' min', hot: tmDue(p.id), attrs: teamOK() ? '' : ' data-tm="day" aria-haspopup="dialog"', href: teamOK() ? '#/team' : '' });
+    }
+    // the order cut-offs on the bar for this phone, the same list and words (cutBandHTML())
+    if (cutWho() && cutState !== 'offline') {
+      var done = cutDone();
+      cutOn(0).concat(cutOn(1)).filter(function (c) { return cutOnNow(c, m) && !done[c.key]; }).forEach(function (c) {
+        var left = c.at - m, del = cutDel(c);
+        timed.push({ at: c.at, icon: 'truck', title: c.s.name + ' order closes', sub: del ? del.charAt(0).toUpperCase() + del.slice(1) : '', time: (c.at >= 1440 ? 'Tomorrow ' : '') + hhmm(c.at % 1440),
+          note: homeLeft(left), hot: left <= CUT_SOON, href: '#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) });
+      });
+    }
+    // today's functions and their next round still to go (js/functions.js, from what the band knows)
+    (window.LK_FN && window.LK_FN.homeRows ? window.LK_FN.homeRows() : []).forEach(function (f) {
+      timed.push({ at: f.at ? T.mins(f.at) : 1440 * 2, icon: 'cal', title: f.name, sub: f.sub, time: f.time, note: f.note, hot: f.hot, attrs: ' data-fn="open" data-id="' + esc(f.id) + '" aria-haspopup="dialog"' });
+    });
+    out = out.concat(timed.sort(function (a, b) { return a.at - b.at; }));
+    // new pings, and minutes to sign (the late ones keep their own card above the board)
+    var nn = featOn('pings') ? noteNew() : [];
+    if (nn.length) out.push({ icon: 'bell', title: nn.length === 1 ? '1 new ping' : nn.length + ' new pings', sub: String(nn[0].text || '').replace(/\s+/g, ' ').slice(0, 120), attrs: ' data-note="open" aria-haspopup="dialog"' });
+    var ms = noteMins();
+    if (ms.length && !minNudgeHTML()) out.push({ icon: 'doc', title: 'Minutes to sign', sub: 'Kitchen meeting, ' + dayShort(ms[0].date) + (ms.length > 1 ? ' and ' + (ms.length - 1) + ' more' : ''), href: '#/minutes' });
+    return out;
+  }
+  function homeRowHTML(r) {
+    var inner = '<span class="hm-i" aria-hidden="true">' + homeIcon(r.icon) + '</span><span class="hm-w"><b class="hm-t">' + esc(r.title) + '</b>' + (r.sub ? '<small class="hm-s">' + esc(r.sub) + '</small>' : '') + '</span>' +
+      (r.time || r.note ? '<span class="hm-r">' + (r.time ? '<b class="hm-tm">' + esc(r.time) + '</b>' : '') + (r.note ? '<small class="hm-n">' + esc(r.note) + '</small>' : '') + '</span>' : '');
+    var cls = 'hm-a' + (r.hot ? ' is-hot' : '');
+    return '<li>' + (r.href ? '<a class="' + cls + '" href="' + r.href + '"' + (r.sec ? ' data-hm-sec="' + esc(r.sec) + '"' : '') + '>' + inner + '</a>' : '<button type="button" class="' + cls + '"' + (r.attrs || '') + '>' + inner + '</button>') + '</li>';
+  }
+  function homeBoardHTML() {
+    var head = '<div class="hm-bh"><h3 class="hm-bt" id="hm-board-h">Now and next</h3><b class="hm-clock">' + esc(T.clock(now())) + '</b></div>';
+    // before the kitchen's settings are in, nothing is known yet: never "Nothing due"
+    if (S.configState !== 'ok') return head + '<p class="hm-none">' + (offWait() ? esc(OFF_KITCHEN) : 'Checking the day...') + '</p>';
+    var rows = homeRows(), fs = window.LK_FN && window.LK_FN.state ? window.LK_FN.state() : null;
+    var warn = fs && fs.state === 'error' && !fs.at ? '<p class="hm-warn" role="status">Could not check the functions. Check the signal.</p>' : '';
+    return head + (rows.length ? '<ul class="hm-rows">' + rows.map(homeRowHTML).join('') + '</ul>' : '<p class="hm-none">Nothing due right now.</p>') + warn;
+  }
+  // today's prep by section: a bar each, as on the list's section headings; only once today's lines are in from the server
+  function homePrepHTML() {
+    var lines = homeLines();
+    if (!lines) return '';
+    var head = function (r) { return '<div class="hm-ph"><h3 class="hm-pt">Prep by section</h3>' + (r || '') + '</div>'; };
+    if (!lines.length) return head() + '<p class="hm-pnone">Nothing on today\'s prep list yet.</p><a class="hm-go" href="#/prep">Open the prep list</a>';
+    var by = {}, order = [];
+    lines.forEach(function (x) { var n = x.station || ''; if (!by[n]) { by[n] = { n: 0, d: 0 }; order.push(n); } by[n].n++; if (x.done) by[n].d++; });
+    var done = lines.filter(function (x) { return x.done; }).length;
+    return head('<span class="hm-pc">' + done + ' of ' + lines.length + ' done</span>') + '<ul class="hm-secs">' + order.map(function (n) {
+      var s = by[n], pct = Math.round(s.d / s.n * 100), left = s.n - s.d;
+      return '<li><a class="hm-sec" href="#/prep" data-hm-sec="' + esc(n) + '"><span class="hm-sn">' + esc(n || 'No section') + '</span><span class="nb-hbar' + (left ? '' : ' is-done') + '" aria-hidden="true"><i style="width:' + pct + '%"></i></span><span class="hm-sl">' + (left ? left + ' left' : 'Done') + '</span></a></li>';
+    }).join('') + '</ul>';
+  }
+  function homeSlot() {
+    if (!cutTick) cutTick = setInterval(cutPaint, 30000);   // the clock, the minutes left and rows that come and go (no reads)
+    var b = homeBoardHTML(), pp = homePrepHTML();
+    return '<section class="hm-board" id="hm-board" aria-labelledby="hm-board-h">' + b + '</section><section class="hm-paper hm-prep" id="hm-prep" aria-label="Prep by section"' + (pp ? '' : ' hidden') + '>' + pp + '</section>';
+  }
+  function homePaint() {
+    var t = document.getElementById('hm-time'); if (t) { var c = T.clock(now()); if (t.textContent !== c) t.textContent = c; }
+    var b = document.getElementById('hm-board'); if (b) { var h = homeBoardHTML(); if (b.lkH !== h) { b.innerHTML = h; b.lkH = h; } }
+    var pp = document.getElementById('hm-prep'); if (pp) { var ph = homePrepHTML(); if (pp.lkH !== ph) { pp.innerHTML = ph; pp.lkH = ph; } pp.hidden = !ph; }
+  }
+  // a section on the board opens the prep list on that section's tab
+  document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('[data-hm-sec]'); if (a) { S.tab = a.getAttribute('data-hm-sec') || ''; } }, true);
   /* A supplier's order is ticked as done only on the order list (head chef, 5 Nov 2026, round 2 of the work pages
      redesign): its tick confirms an order placed by phone, email or the supplier's site, for any supplier, linked to
      the catalogue or not, without quantities. The cut-off bar, Chef to-do and the supplier pages show whether it is
@@ -12235,6 +12327,8 @@
     signOut: function (force, quiet) { if (sendFirst()) { toast(SEND_FIRST); return false; } return signOutPerson(force, quiet); },
     sendFirst: sendFirst,
     minNudge: minNudgeHTML,
+    // Home's now and next board (redesign step 2, 8 Nov 2026): js/app.js draws the slot, js/functions.js repaints it
+    homeOn: homeOn, homeSlot: homeSlot, homePaint: homePaint,
     cutSlot: cutSlot, cutHat: cutHat,
     mailInfo: mlInfo,
     mailTab: mailTab,
