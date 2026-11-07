@@ -21,13 +21,21 @@ const texts = (p, sel) => p.$$eval(sel + ' .nb-row .nb-t', l => l.map(e => e.fir
   ok(JSON.stringify(mine) === JSON.stringify(['TEST CASE PRODUCT 12 X 250G', 'Test stock request']), 'the requests the catalogue names (by name or alias) are under it, Out first (' + mine.join(', ') + ')');
   const none = await texts(p, '.o-sup-none');
   ok(none.indexOf('Coriander') >= 0 && none.indexOf('Test stock request') < 0 && /No supplier yet/.test(await txt(p, '.o-sup-none') || ''), 'what it cannot match is under No supplier yet (' + none.join(', ') + ')');
-  ok(await p.getAttribute(grp + ' .o-sup-acts a[href^="#/suppliers/cutoff/northside/"]', 'href') === '#/suppliers/cutoff/northside/' + F.today && /Open Northside Test Foods order/.test(await txt(p, grp + ' .o-sup-acts') || '') && !!(await p.$(grp + ' .o-sup-acts a[href="#/deliveries"]')), 'Open the supplier\'s order, and Delivery arrived');
+  ok(await p.getAttribute(grp + ' .o-sup-acts a[href^="#/suppliers/cutoff/northside/"]', 'href') === '#/suppliers/cutoff/northside/' + F.today && /Open Northside Test Foods order/.test(await txt(p, grp + ' .o-sup-acts') || '') && /Delivery received/.test(await txt(p, grp + ' .o-sup-acts a[href="#/deliveries"]') || ''), 'Open the supplier\'s order, and Delivery received (Delivery arrived until 8 Nov 2026)');
+  // redesign step 3 (8 Nov 2026): No supplier yet comes first, and each group says how many of its lines are ordered
+  const order = await p.$$eval('.o-sups .o-sup', l => l.map(e => e.classList.contains('o-sup-none') ? 'none' : 'sup'));
+  ok(order[0] === 'none' && order.slice(1).every(x => x === 'sup'), 'No supplier yet first, then the suppliers (' + order.join() + ')');
+  ok(/Order by hand · 0 of \d+ ordered/.test(await txt(p, '.o-sup-none .o-sgh') || '') && /0 of 2 ordered/.test(await txt(p, grp + ' .cut-t') || ''), 'each group counts its lines: Order by hand, and 0 of 2 ordered under the supplier');
+  ok(/^in \d/.test((await txt(p, grp + ' .cut-st') || '').trim()) && await p.$eval(grp + ' .cut-st', e => parseFloat(getComputedStyle(e).fontSize) >= 20), 'the time left large on the right, like a departure board');
   const reads = await supplierReads(p);
   ok(reads > 0 && reads <= 2, 'the catalogue: one read per supplier (' + reads + ')');
   await p.click(grp + ' [data-p="cut-tick"]');
   await L.waitFor(p, k => { const d = window.__fake.dump()[k]; return d && d.on === true; }, F.key(['cutdone', F.today + '_northside']), 10000);
   await L.settle(p, 400);
   ok(await supplierReads(p) === reads && !!(await p.$(grp + ' .nb-row')), 'the tick saves from the group, and the page draws again with no second catalogue read');
+  await p.click(grp + ' [data-p="otick"][data-id="g-out"]');
+  await L.waitFor(p, () => /1 of 2 ordered/.test(document.querySelector('.o-sups .o-sup:not(.o-sup-none) .cut-t')?.textContent || ''), null, 8000).catch(() => {});
+  ok(/1 of 2 ordered/.test(await txt(p, grp + ' .cut-t') || '') && await supplierReads(p) === reads, 'a line ticked as ordered counts at once: 1 of 2 ordered, no read');
   ok(p.errors.length === 0 && !(await L.overflow(p)), 'chef: no page errors, no sideways scroll ' + p.errors.join(' | '));
   await p.context().close();
 

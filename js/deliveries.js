@@ -112,12 +112,16 @@
   }
   function same(a, b) { return String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase(); }
   function whenText(d) { return validDay(d.day) && d.day !== T.day() ? (B.dayShort ? B.dayShort(T.at(d.day)) : d.day) + ', ' + d.time : d.time + ' today'; }
+  /* Deliveries as arrivals (redesign step 3, 8 Nov 2026, head chef; Flighty, as drawn in every-page.html e-delivery):
+     the time on the left, a dot on a line (hollow while it waits for the connection), the supplier, and each reading as a
+     stamp. A reading not taken is left out, never shown as 0. The same record and words as before; no reads. */
   function row(r) {
-    return '<li class="dl-receipt"><div class="dl-receipt-head"><b>' + esc(r.supplier) + '</b><time>' + esc(T.clock(r.receivedAt)) + '</time></div>' +
-      '<dl class="dl-readings">' + (typeof r.chilled === 'number' ? '<div><dt>Chilled</dt><dd>' + esc(r.chilled) + ' °C</dd></div>' : '') +
-      (typeof r.frozen === 'number' ? '<div><dt>Frozen</dt><dd>' + esc(r.frozen) + ' °C</dd></div>' : '') + '</dl>' +
+    var reads = (typeof r.chilled === 'number' ? '<div><dt>Chilled</dt><dd>' + esc(r.chilled) + ' °C</dd></div>' : '') +
+      (typeof r.frozen === 'number' ? '<div><dt>Frozen</dt><dd>' + esc(r.frozen) + ' °C</dd></div>' : '');
+    return '<li class="dl-receipt' + (r.pending ? ' is-pending' : '') + '"><time class="dl-at">' + esc(T.clock(r.receivedAt)) + '</time><span class="dl-dot" aria-hidden="true"></span>' +
+      '<div class="dl-rb"><div class="dl-receipt-head"><b>' + esc(r.supplier) + '</b></div>' + (reads ? '<dl class="dl-readings">' + reads + '</dl>' : '') +
       (r.note ? '<p class="dl-note">' + esc(r.note) + '</p>' : '') + '<p class="hint">Received by ' + esc(r.receivedBy) +
-      (r.pending ? ' · Waiting for connection' : '') + '</p></li>';
+      (r.pending ? ' · Waiting for connection' : '') + '</p></div></li>';
   }
   function draw() {
     if (!M.root || !document.body.contains(M.root)) return;

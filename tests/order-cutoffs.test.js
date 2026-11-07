@@ -40,6 +40,9 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
   ok(n.length === 3 && n[0] === 'PFD' && n[1].indexOf('Veg Zz<i') === 0 && n[2] === 'Six Hours', 'sous chef: the bar lists 4 hours ahead, and 6 for the one set so, soonest first (' + n.join(' | ') + ')');
   ok(/Order now by 15:00 in 1 h/.test(await txt(p, '#cut-band .cut-row')), 'sous chef: the last hour says Order now, with the time and the time left');
   ok(await p.$eval('#cut-band .cut-row', e => e.classList.contains('is-soon')) && !(await p.$eval('#cut-band .cut-row:nth-child(2)', e => e.classList.contains('is-soon'))), 'sous chef: only the last hour is orange');
+  // redesign step 3 (8 Nov 2026): the bar in the board's look, dark like Home's Now and next, the time left a pill when hot
+  const look = await p.evaluate(() => { const b = getComputedStyle(document.getElementById('cut-band')).backgroundColor, t = document.querySelector('#cut-band .cut-row.is-soon .cut-t b:not(.cut-now)'); return { b, pill: t ? getComputedStyle(t).backgroundColor : '' }; });
+  ok(look.b === 'rgb(43, 42, 39)' && look.pill === 'rgb(240, 138, 75)', 'the bar is dark like the board, and the time left in the last hour is an orange pill (' + JSON.stringify(look) + ')');
   const r0 = await bad(p);
   ok(!r0.i && !r0.img && !r0.attr && !r0.run, 'a supplier name with markup shows as words (' + JSON.stringify(r0) + ')');
   ok(!(await L.overflow(p)), 'the bar fits a phone');

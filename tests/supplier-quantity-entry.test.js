@@ -75,6 +75,10 @@ function pagedFixture() {
   // Unconfirmed order units accept positive numbers, while invalid amounts still identify their exact field.
   p = await open(b, null, 390);
   ok(await p.getAttribute(qty('t-zero'), 'placeholder') === 'e.g. 2' && /Unit optional/.test(await p.textContent('[data-item="t-zero"] .su-qty')), 'unconfirmed unit: the row clearly allows a number without a unit');
+  // redesign step 3 (8 Nov 2026): the box starts empty with the last order's amount as its hint, never as a value
+  await L.waitFor(p, q => document.querySelector(q)?.placeholder === '2 kg', qty('t-stock'), 8000).catch(() => {});
+  const hints = await p.evaluate(ids => ids.map(id => { const e = document.querySelector('input[data-sf="qty"][data-i="' + id + '"]'); return e ? [e.placeholder, e.value] : null; }), ['t-stock', 't-case', 't-unset']);
+  ok(JSON.stringify(hints) === JSON.stringify([['2 kg', ''], ['1 case', ''], ['e.g. 2', '']]), 'the last order\'s amount is the grey hint in an empty box; no last order says e.g. 2 (' + JSON.stringify(hints) + ')');
   await p.fill(qty('t-stock'), '4 kg');
   for (const value of ['0', '-2', 'some']) {
     await p.fill(qty('t-zero'), value); await action(p, 'review');

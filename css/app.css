@@ -3891,3 +3891,58 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .nt.nt-board .nt-grip { position: relative; z-index: 1; background: rgba(251, 248, 241, 0.5); }
 .nt.nt-board { padding-top: 10px; background: var(--bg); }
 .nt.nt-board .nt-in { background: var(--bg); }
+
+/* ---------- Redesign step 3 (8 Nov 2026, head chef): Orders, the supplier order, Delivery received and the cut-off bar.
+   docs/whole-app-redesign-options/brief.md (Build, step 3), every-page.html (e-orders, e-supplier, e-delivery). ---------- */
+/* Orders for a chef: each supplier's cut-off row heads its group like a departure board (Flighty): the name small and
+   spaced, when it closes and how many are ordered under it, the time left large on the right, a ruled line below */
+.o-sups .o-sup { margin: 0.2rem 0 1.1rem; }
+.o-sup > .cut-tl li.cut-o { padding: 0.5rem 0 0.45rem; border-bottom: 1.5px solid var(--ink); }
+.o-sup .cut-o .cut-n { font: 700 0.85rem/1.25 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--small-ink); }
+.o-sup .cut-o .cut-t { margin-top: 2px; font-size: 0.85rem; color: var(--muted); }
+.o-sup .cut-o .cut-st { font: 700 1.35rem/1.1 var(--display); color: var(--ink); }
+.o-sup .cut-o.is-soon .cut-st { color: var(--tag); }
+.o-sup .cut-o.is-done .cut-st, .o-sup .cut-o.is-past .cut-st { font: 600 0.9rem/1.25 var(--body); }
+.o-sup .cut-o.is-done .cut-st { color: var(--done-ink); }
+.o-sup .cut-o.is-past .cut-st { color: var(--faint); }
+.o-sgs { white-space: nowrap; }
+.o-sgh { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.1rem 0.75rem; padding: 0.5rem 0 0.4rem; border-bottom: 1.5px solid var(--ink); }
+.o-sgh .nb-sh { margin: 0; }
+.o-sgh .o-sgs { font-size: 0.85rem; color: var(--muted); }
+.o-sup-none { border-top: 0; padding-top: 0; }
+.o-sups > .cut-how { margin: 0.2rem 0 0.1rem; font-size: 0.85rem; }
+/* the cut-off reminder bar in the board's look (step 2's Now and next): dark, the time left as a pill, hot in the last hour.
+   Same words, same times, same people, still no tick */
+.cut-band { background: var(--bar); border-bottom: 0; color: var(--bar-text); box-shadow: inset 0 -3px 0 var(--accent-ink); }
+.cut-band .cut-h { color: var(--bar-accent); }
+.cut-band .cut-go, .cut-band .cut-n { color: var(--bar-text); }
+.cut-band .cut-go:focus-visible, .cut-band .cut-n:focus-visible { outline: 3px solid var(--bar-accent); outline-offset: 2px; }
+.cut-band .cut-t { color: rgba(251, 248, 241, 0.78); }
+.cut-band .cut-t b { color: var(--bar-text); }
+.cut-band .cut-row + .cut-row { border-top-color: rgba(251, 248, 241, 0.16); }
+.cut-band .cut-row.is-soon .cut-n::before { background: var(--bar-accent); }
+.cut-band .cut-row.is-soon .cut-t b:not(.cut-now) { padding: 2px 7px; border-radius: 4px; background: var(--bar-accent); color: var(--bar); }
+.cut-band .cut-row.is-soon .cut-now { color: var(--bar-accent); }
+.cut-band .cut-note { color: var(--bar-text); }
+/* Delivery received: today's deliveries as arrivals (Flighty). The time, a dot on a line, the supplier, each reading a
+   stamp. The dot is hollow while the record waits for the connection. */
+.dl-receipts { margin: 0.75rem 0 0; }
+.dl-receipt { display: grid; grid-template-columns: 3.6rem 16px minmax(0, 1fr); column-gap: 0.6rem; padding: 0; border-top: 0; }
+.dl-at { padding-top: 0.15rem; font: 700 1.15rem/1.3 var(--display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dl-dot { position: relative; align-self: stretch; }
+.dl-dot::before { content: ''; position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; background: var(--line); }
+.dl-receipt:last-child .dl-dot::before { bottom: auto; height: 1.4rem; }
+.dl-dot::after { content: ''; position: absolute; left: 2px; top: 0.45rem; width: 12px; height: 12px; border-radius: 50%; background: var(--done); border: 2px solid var(--done); box-sizing: border-box; }
+.dl-receipt.is-pending .dl-dot::after { background: var(--paper); border-color: var(--muted); }
+.dl-rb { min-width: 0; padding: 0 0 1rem; }
+.dl-rb .dl-readings { gap: 0.4rem; margin: 0.4rem 0; }
+.dl-rb .dl-readings div { display: inline-flex; align-items: baseline; gap: 0.35rem; padding: 3px 8px; border: 1.5px solid var(--done-ink); border-radius: 4px; color: var(--done-ink); }
+.dl-rb .dl-readings dt { font: 700 0.75rem/1.2 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: inherit; }
+.dl-rb .dl-readings dd { font-size: 1rem; color: inherit; }
+.dl-rb .hint { margin: 0.2rem 0 0; }
+/* The supplier order on a phone: when it closes is one card at the top (Airbnb), outlined in the cut-off orange, the
+   same one line and height as before so the first To order box stays clear of the Review bar */
+@media (max-width: 899px) {
+  .su-info-line { border: 1.5px solid var(--tag); border-radius: 10px; background: var(--paper); }
+  .su-info-line.attn { border-color: var(--small-ink); }
+}
