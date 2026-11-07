@@ -55,7 +55,22 @@ await K2.collection('config').doc('main').set({ people: [{ id: 'ann', name: 'Ann
 await K2.collection('training').doc('t1').set({ personId: 'ann', section: 'Larder', status: 'confirmed', day: d2 });
 await K2.collection('training').doc('t2').set({ personId: 'dee', section: 'Larder', status: 'in-training', day: d2 });
 await K2.collection('training').doc('t3').set({ personId: 'cy', section: 'Larder', recipeId: 'slaw', status: 'confirmed', day: d2 });
-await analyse(K2, { days: 3, at });
+// Today's team, step 4 (7 Nov 2026): plans and own section picks, counted into teamsum/main
+await K2.collection('team').doc('2026-10-24').set({ day: '2026-10-24', on: [{ id: 'ann', sh: 'lunch', sec: 'larder' }], br: [], v: 1, at: 1, upd: 1, by: 'sam' });
+await K2.collection('team').doc('2026-10-17').set({ day: '2026-10-17', on: [{ id: 'ann', sh: 'lunch', sec: 'larder' }], br: [], v: 1, at: 1, upd: 1, by: 'sam' });
+await K2.collection('team').doc('2026-10-30').set({ day: '2026-10-30', on: [{ id: 'cy', sh: 'lunch', sec: 'grill' }, { id: 'sam', sh: 'lunch', sec: '' }], br: [], v: 1, at: 1, upd: 1, by: 'sam' });
+await K2.collection('team').doc('2026-08-01').set({ day: '2026-08-01', on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }], br: [], v: 1, at: 1, upd: 1, by: 'sam' });
+await K2.collection('shifts').doc('2026-10-30_dee').set({ day: '2026-10-30', sec: 'larder', name: 'Larder', auto: false, at: 1, by: 'dee', sh: 'lunch', log: [{ sh: 'lunch', sec: 'larder', at: 1 }] });
+await K2.collection('shifts').doc('2026-10-30_sam').set({ day: '2026-10-30', sec: 'sous', name: 'Sous chef', auto: true, at: 1, by: 'sam' });
+await K2.collection('shifts').doc('2026-09-01_dee').set({ day: '2026-09-01', sec: 'larder', name: 'Larder', auto: false, at: 1, by: 'dee' });
+const teamRun = await analyse(K2, { days: 3, at });
+const ts = (await K2.collection('teamsum').doc('main').get()).data();
+assert.deepEqual([ts.day, ts.from, ts.to], ['2026-10-31', '2026-10-01', '2026-10-30'], 'teamsum: built for today, from the last 30 days.');
+assert.deepEqual(ts.days, [{ day: '2026-10-17', s: [{ p: 'ann', sec: 'Larder', sh: 'lunch' }] }, { day: '2026-10-24', s: [{ p: 'ann', sec: 'Larder', sh: 'lunch' }] }, { day: '2026-10-30', s: [{ p: 'cy', sec: 'Grill', sh: 'lunch' }, { p: 'dee', sec: 'Larder', sh: 'lunch' }] }],
+  'teamsum: shifts worked from the plans and an own pick, a section taken off still by its name, not a chef role, nothing older than 30 days: ' + JSON.stringify(ts.days));
+assert.deepEqual(ts.usual, { '6|lunch': { ann: ['larder', 2, 2] } }, 'teamsum: Ann\'s usual Saturday lunch section, from the last 8 Saturdays\' plans.');
+assert.deepEqual(ts.learn, { dee: ['Larder'] }, 'teamsum: who is In training on which section.');
+assert.deepEqual([teamRun.team.plans, teamRun.team.picks], [3, 2], 'teamsum: 8 weeks of plans and 30 days of picks read.');
 const board = (await K2.collection('analysis').doc('dashboard').get()).data();
 assert.equal(board.generation, (await K2.collection('analysis').doc('current').get()).data().generation, 'The dashboard publishes with its generation.');
 assert.deepEqual(board.days.map(x => x.day), ['2026-10-28', '2026-10-29', '2026-10-30'], 'One row for every finished day, today left out.');

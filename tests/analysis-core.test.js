@@ -38,4 +38,34 @@ for (const patch of [
 ]) assert.equal(attributed(patch).entries[0].person, 'recorder', 'Legacy, malformed or stale attribution falls back to the recorder: ' + JSON.stringify(patch));
 assert.equal(attributed({ done: false }).entries[0].person, '', 'Undo removes completion credit even when an older client leaves prepared fields behind.');
 assert.equal(C.aggregate([attributed({ doneAt: 201 })]).people.recorder.Grill, 1, 'An old-client re-tick with a new timestamp cannot inherit an earlier worker.');
-console.log('PASS analysis exclusions, confirmed aliases, ambiguous joins, units, stamped worker attribution, legacy fallback and corrections');
+// Today's team, step 4 (7 Nov 2026): shifts worked per section from the plan and own moves, usual sections, In training
+const secs = [{ id: 'grill', name: 'Grill' }, { id: 'pans', name: 'Pans' }, { id: 'larder', name: ' Larder ', off: true }];
+const team = [
+  { day: '2026-11-07', on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }, { id: 'ann', sh: 'dinner', sec: 'pans' }, { id: 'sam', sh: 'lunch', sec: '' }, { id: '__proto__', sh: 'lunch', sec: 'grill' }] },
+  { day: '2026-10-31', on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }, { id: 'bo', sh: 'lunch', sec: 'pans' }] },
+  { day: '2026-10-24', on: [{ id: 'ann', sh: 'lunch', sec: 'pans' }, { id: 'bo', sh: 'lunch', sec: 'pans' }] },
+  { day: '2026-10-17', on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }] }];
+const picks = [
+  { day: '2026-11-07', by: 'ann', sec: 'larder', name: 'Larder', auto: false, sh: 'lunch', log: [{ sh: 'lunch', sec: 'larder', at: 1 }] },
+  { day: '2026-11-07', by: 'ann', sec: 'grill', auto: true, sh: 'lunch' },
+  { day: '2026-11-06', by: 'bo', sec: 'pans', name: 'Pans', auto: false },
+  { day: '2026-10-31', by: 'bo', sec: 'grill', name: 'Grill', auto: false },
+  { day: '2026-11-07', by: 'sam', sec: 'sous', name: 'Sous chef', auto: true },
+  { day: '2026-11-05', by: 'cy', sec: 'gone', name: 'Old section', auto: false }];
+const stints = C.teamStints(team, picks, secs, '2026-10-25', '2026-11-07');
+assert.deepEqual(stints, [
+  { day: '2026-10-31', s: [{ p: 'ann', sec: 'Grill', sh: 'lunch' }, { p: 'bo', sec: 'Pans', sh: 'lunch' }] },
+  { day: '2026-11-05', s: [{ p: 'cy', sec: 'Old section', sh: '' }] },
+  { day: '2026-11-06', s: [{ p: 'bo', sec: 'Pans', sh: '' }] },
+  { day: '2026-11-07', s: [{ p: 'ann', sec: 'Grill', sh: 'lunch' }, { p: 'ann', sec: 'Pans', sh: 'dinner' }, { p: 'ann', sec: 'Larder', sh: 'lunch' }] }],
+  'Stints: the plan, an own move from the log, a pick on a day with no plan; not a chef role, not a pick the plan overrides, not a doubled auto record, not a day outside the window, not a bad id.');
+const counts = C.teamShiftCounts(stints);
+assert.equal(counts.ann.Grill, 2); assert.equal(counts.ann.Larder, 1); assert.equal(counts.bo.Pans, 2); assert.equal(counts.sam, undefined);
+assert.equal(C.teamShiftCounts(stints, '2026-11-01').bo.Pans, 1, 'Counts from a day on.');
+const usual = C.teamUsual(team, '2026-11-14', 8);
+assert.deepEqual(JSON.parse(JSON.stringify(usual)), { '6|lunch': { ann: ['grill', 3, 4], bo: ['pans', 2, 4] } }, 'Usual: the section given most on that weekday and shift, at least twice, out of the weekdays with a plan.');
+assert.deepEqual(JSON.parse(JSON.stringify(C.teamUsual(team, '2026-11-14', 2))), { '6|lunch': { ann: ['grill', 2, 2] } }, 'Only the last weeks asked for count, and once is not usual (Bo on Pans).');
+const queue = C.trainingQueue(null, [{ personId: 'ann', section: 'Pans', status: 'in-training', day: '2026-11-01' }], [{ id: 'ann', name: 'Ann' }], ['Grill', 'Pans', 'Larder'], counts);
+assert.deepEqual(queue.map(o => [o.section, o.shifts]), [['Pans', 1], ['Grill', 2], ['Larder', 1]], 'Training rows carry the shifts worked, in training first.');
+assert.deepEqual(JSON.parse(JSON.stringify(C.teamLearning([{ personId: 'ann', section: 'Pans', status: 'in-training', day: '2026-11-01' }, { personId: 'ann', section: 'Grill', status: 'confirmed', day: '2026-11-01' }], [{ id: 'ann' }, { id: 'bo' }], ['Grill', 'Pans']))), { ann: ['Pans'] }, 'In training: the latest whole-section assessment only.');
+console.log('PASS analysis exclusions, confirmed aliases, ambiguous joins, units, stamped worker attribution, legacy fallback and corrections, team stints, usual sections and In training');
