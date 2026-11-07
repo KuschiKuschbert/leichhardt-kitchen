@@ -83,6 +83,9 @@ const teamSeed = {
   await p.click('[data-p="g-mode"][data-v="one"]'); await L.settle(p, 200);
   let g = await p.evaluate(() => ({ h: document.querySelector('.g-one .g-h3').textContent, bar: document.querySelectorAll('.g-bar i').length, on: document.querySelectorAll('.g-bar i.on').length, back: document.querySelector('.g-nav [data-p="g-step"]').disabled, text: document.querySelector('.g-onetxt').textContent }));
   ok(g.h === 'Step 1 of 3' && g.bar === 3 && g.on === 1 && g.back && /Turn the fryer off/.test(g.text), 'guide: Step by step shows step 1 of 3, the bar and Back off (' + JSON.stringify(g) + ')');
+  // the audit (8 Nov 2026): on a phone Back and Next stay at the bottom of the screen, above the tab bar, within thumb reach
+  const gn = await p.evaluate(() => { const n = document.querySelector('.g-nav'), t = document.querySelector('.tabbar'); return { pos: getComputedStyle(n).position, gap: Math.round(t.getBoundingClientRect().top - parseFloat(getComputedStyle(n).bottom) - (innerHeight - t.getBoundingClientRect().height) + t.getBoundingClientRect().height) }; });
+  ok(gn.pos === 'sticky', 'guide: Back and Next stick to the bottom on a phone (' + JSON.stringify(gn) + ')');
   await p.click('.g-nav [data-p="g-step"][data-v="1"]'); await L.settle(p, 200);
   await p.click('.g-nav [data-p="g-step"][data-v="2"]'); await L.settle(p, 200);
   g = await p.evaluate(() => ({ h: document.querySelector('.g-one .g-h3').textContent, text: document.querySelector('.g-onetxt').textContent, done: !!document.querySelector('.g-nav [data-p="g-mode"][data-v="all"]') }));
@@ -109,6 +112,8 @@ const teamSeed = {
   // Manage staff: a row each with the initial, the name, the role and what they may do
   p = await L.open(b, '#/recipes', { who: 'sam', wait: 1600 });
   await L.chef(p, 'staff'); await L.settle(p, 500);
+  // the audit (8 Nov 2026): Manage staff is drawn on the prep route, but the tab bar does not light Prep for it
+  ok(!(await p.$('.tabbar a[href="#/prep"][aria-current], .pnav a[href="#/prep"][aria-current]')), 'Manage staff: the tab bar lights nothing, not Prep');
   const st = await p.$$eval('.st-row', l => l.map(e => ({ av: (e.querySelector('.st-av') || {}).textContent, can: (e.querySelector('.st-can') || {}).textContent })));
   ok(st.length === 3 && st[0].av === 'S' && st[0].can === 'Sous chef · Add, tick, remove' && st[1].can === 'Staff · Add, tick', 'staff: initial, role and what they may do (' + JSON.stringify(st) + ')');
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'staff: no sideways scroll, no page errors ' + p.errors.join(' | '));

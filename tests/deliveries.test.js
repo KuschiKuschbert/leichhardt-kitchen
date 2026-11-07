@@ -49,6 +49,9 @@ const save = async p => { await p.click('#dl-form button[type="submit"]'); await
   // stamp; the frozen reading not taken is left out, never 0
   const arr = await p.$eval('.dl-receipt', li => ({ first: li.firstElementChild.className, time: li.querySelector('.dl-at').textContent, dot: !!li.querySelector('.dl-dot'), stamps: [...li.querySelectorAll('.dl-readings div')].map(d => d.textContent) }));
   ok(arr.first === 'dl-at' && arr.time === '13:45' && arr.dot && JSON.stringify(arr.stamps) === JSON.stringify(['Chilled3.5 °C']), 'arrivals: 13:45 first, a dot, one Chilled stamp, no Frozen and no 0 (' + JSON.stringify(arr) + ')');
+  // the audit (8 Nov 2026): the day as people read it, not 2026-11-08, and today's arrivals in the order they came
+  const dayLine = await p.$eval('.dl-history .hint', e => e.textContent);
+  ok(/^[A-Z][a-z]+day \d{1,2} [A-Z][a-z]+/.test(dayLine) && !/\d{4}-\d{2}-\d{2}/.test(dayLine), 'the day reads like a day (' + dayLine + ')');
   await fill(p, '', '-20'); await p.evaluate(() => { window.__fake.mode = 'deny'; }); await save(p);
   ok(/refused/.test(await p.locator('#dl-save-note').innerText()) && await p.inputValue('#dl-frozen') === '-20' && await p.inputValue('#dl-supplier') === 'Test supplier', 'refused save keeps the entered details');
   await p.evaluate(() => { window.__fake.mode = 'ok'; }); await save(p);

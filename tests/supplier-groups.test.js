@@ -22,6 +22,9 @@ const texts = (p, sel) => p.$$eval(sel + ' .nb-row .nb-t', l => l.map(e => e.fir
   const none = await texts(p, '.o-sup-none');
   ok(none.indexOf('Coriander') >= 0 && none.indexOf('Test stock request') < 0 && /No supplier yet/.test(await txt(p, '.o-sup-none') || ''), 'what it cannot match is under No supplier yet (' + none.join(', ') + ')');
   ok(await p.getAttribute(grp + ' .o-sup-acts a[href^="#/suppliers/cutoff/northside/"]', 'href') === '#/suppliers/cutoff/northside/' + F.today && /Open Northside Test Foods order/.test(await txt(p, grp + ' .o-sup-acts') || '') && /Delivery received/.test(await txt(p, grp + ' .o-sup-acts a[href="#/deliveries"]') || ''), 'Open the supplier\'s order, and Delivery received (Delivery arrived until 8 Nov 2026)');
+  // the audit (8 Nov 2026): the link pills under a group centre their words (they sat at the top edge)
+  const mid = await p.$$eval(grp + ' .o-sup-acts .chip', l => l.map(a => { const r = a.getBoundingClientRect(), g = document.createRange(); g.selectNodeContents(a); const t = g.getBoundingClientRect(); return Math.round(Math.abs((t.top + t.bottom) / 2 - (r.top + r.bottom) / 2)) + '/' + Math.round(r.height); }));
+  ok(mid.length >= 1 && mid.every(x => +x.split('/')[0] <= 3 && +x.split('/')[1] >= 44), 'the Open order and Delivery received pills: words in the middle, 44 px (' + mid.join(' ') + ')');
   // redesign step 3 (8 Nov 2026): No supplier yet comes first, and each group says how many of its lines are ordered
   const order = await p.$$eval('.o-sups .o-sup', l => l.map(e => e.classList.contains('o-sup-none') ? 'none' : 'sup'));
   ok(order[0] === 'none' && order.slice(1).every(x => x === 'sup'), 'No supplier yet first, then the suppliers (' + order.join() + ')');

@@ -243,12 +243,33 @@
      place; every other row opens its page. Shown before the numbers, so it never waits for the nightly record. ---------- */
   var MAIL_MAX = 8;
   function daysSince(day, today) { return Math.max(0, Math.round((Date.parse(today + 'T12:00:00Z') - Date.parse(day + 'T12:00:00Z')) / 86400000)); }
+  /* Gap fix (8 Nov 2026, the audit of the redesign against its drawing e-admin-b-1280): on a laptop the Inbox row the
+     head chef picks opens beside the list with what it is and its action, the row's own button (the page where it is
+     done). Only what the book already does: no new writes. On a phone the rows stay as they were. The pick is kept in
+     this tab's memory only (state.pick, by the row's page or title); a pick that has gone falls back to the first row. */
+  var picks = [], pickOn = false;
   function needRow(kind, tag, title, detail, open, label) {
-    return '<li class="dsh-need dsh-need-' + kind + '"><span class="dsh-need-mark" aria-hidden="true"></span><div><p class="dsh-tag dsh-tag-' + (kind === 'due' ? 'bad' : kind === 'ok' ? 'good' : 'flat') + '">' + esc(tag) + '</p><p class="dsh-need-title">' + esc(title) + '</p>' +
+    var i = picks.length, key = open || title;
+    picks.push({ kind: kind, tag: tag, title: title, detail: detail, open: open, label: label, key: key });
+    var tagCls = 'dsh-tag dsh-tag-' + (kind === 'due' ? 'bad' : kind === 'ok' ? 'good' : 'flat');
+    return '<li class="dsh-need dsh-need-' + kind + (pickOn ? '\u0001C' + i + '\u0001' : '') + '"><span class="dsh-need-mark" aria-hidden="true"></span><div><p class="' + tagCls + '">' + esc(tag) + '</p>' +
+      (pickOn ? '<button type="button" class="dsh-need-pick" data-dsh="pick" data-v="' + esc(key) + '" aria-pressed="\u0001P' + i + '\u0001">' + esc(title) + '</button>' : '') + '<p class="dsh-need-title">' + esc(title) + '</p>' +
       (detail ? '<p class="dsh-need-detail">' + esc(detail) + '</p>' : '') + '</div>' + (open ? '<button type="button" class="btn" data-dsh="open" data-t="' + open + '">' + esc(label) + '</button>' : '') + '</li>';
+  }
+  // the picked row beside the list (a laptop only, by CSS): its tag, title, detail and its own action
+  function pickHTML(x) {
+    if (!x) return '';
+    return '<aside class="dsh-pick" aria-label="' + esc('Picked: ' + x.title) + '"><p class="dsh-tag dsh-tag-' + (x.kind === 'due' ? 'bad' : x.kind === 'ok' ? 'good' : 'flat') + '">' + esc(x.tag) + '</p><p class="dsh-pick-t">' + esc(x.title) + '</p>' +
+      (x.detail ? '<p class="dsh-pick-d">' + esc(x.detail) + '</p>' : '') + (x.open === 'mail' ? '<p class="hint">Tick a mail done, or change how soon, on its row in the list.</p>' : '') +
+      (x.open ? '<div class="btn-row"><button type="button" class="btn dark" data-dsh="open" data-t="' + x.open + '">' + esc(x.label) + '</button></div>' : '<p class="hint">Still loading. It opens here when it is in.</p>') + '</aside>';
+  }
+  // the token placeholders needRow() left: the picked row is marked once every row is known
+  function pickMark(html, sel) {
+    return html.replace(/\u0001([CP])(\d+)\u0001/g, function (m, k, i) { var on = +i === sel; return k === 'C' ? (on ? ' is-picked' : '') : String(on); });
   }
   function needsHTML(inbox) {
     var nd = api.needs ? api.needs() : {}, rows = [], clear = [], today = api.today();
+    picks = []; pickOn = !!inbox;
     // Today's team (7 Nov 2026): not set yet for today, from what js/prep.js already read (no read of its own); an older
     // book sends nothing here and the row stays away
     if (nd.team === 'unset') rows.push(needRow('due', 'Not set', 'Today\'s team', 'Who is on which shift, their sections and breaks.', 'team', 'Set today\'s team'));
@@ -299,8 +320,14 @@
     // the Inbox count beside Inbox in the laptop rail: the rows that need a look, not the ones still loading
     state.count = rows.filter(function (r) { return r.indexOf('>Checking<') < 0; }).length;
     var title = inbox ? 'Inbox' : 'To do';
+    var sel = -1;
+    if (inbox && picks.length) { picks.forEach(function (x, i) { if (sel < 0 && x.key === state.pick) sel = i; }); if (sel < 0) sel = 0; }
+    var list = rows.length ? '<ul class="dsh-need-list">' + rows.join('') + '</ul>' : '', out;
+    pickOn = false;
+    if (inbox && rows.length) out = '<div class="dsh-need-wrap">' + pickMark(list, sel) + pickHTML(picks[sel]) + '</div>';
+    else out = list;
     return '<section class="dsh-panel dsh-needs" aria-label="' + title + '"><div class="dsh-panel-head"><h3 class="a-ch-h">' + title + '</h3><span class="hint">' + (rows.length ? rows.length + ' to look at' : 'All clear') + '</span></div>' +
-      (rows.length ? '<ul class="dsh-need-list">' + rows.join('') + '</ul>' : '') + ok + '</section>';
+      out + ok + '</section>';
   }
 
   /* ---------- The week ahead: functions, order cut-offs and how busy each weekday usually is ---------- */
@@ -534,6 +561,8 @@
     if (!valid()) return;
     var a = el.getAttribute('data-dsh');
     if (a === 'period') { var v = +el.getAttribute('data-v'); if ([7, 30, 90].indexOf(v) >= 0) { state.period = v; redraw(); } return; }
+    // an Inbox row picked on a laptop opens beside the list (gap fix, 8 Nov 2026); focus stays on the row's button
+    if (a === 'pick') { var pk = el.getAttribute('data-v') || ''; state.pick = pk; redraw(); setTimeout(function () { var b = [].filter.call(document.querySelectorAll('[data-dsh="pick"]'), function (x) { return x.getAttribute('data-v') === pk; })[0]; if (b) b.focus(); }, 0); return; }
     if (a === 'refresh') { if (!state.loading) { state.data = undefined; state.msg = ''; load(true); redraw(); } return; }
     if (a === 'watch-add') { state.add = { t: 'sec', q: '' }; state.msg = ''; redraw(); return; }
     if (a === 'watch-cancel') { state.add = null; redraw(); return; }

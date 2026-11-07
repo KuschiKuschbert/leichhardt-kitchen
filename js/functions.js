@@ -203,8 +203,10 @@
      time); the platters of the rounds due within 15 minutes or late, added together across functions (plate: what the
      pass plates now); and the rounds after those that are due within the hour (ahead). */
   var DUE_SOON = 15 * MIN;
+  /* all (8 Nov 2026, the service view's board as drawn, every-page.html e-service): every round of every function on now
+     that is not sent yet, in time order, so the board shows the whole night with its dietaries and its tick. */
   function service(list, now, isSent) {
-    var rows = [], ahead = [], plate = {};
+    var rows = [], ahead = [], plate = {}, all = [];
     showing(list, now, isSent).forEach(function (x) {
       var f = x.f;
       if (x.kind !== 'on' || !f.first) return;
@@ -216,10 +218,12 @@
       rows.push(r);
       if (r.due) (f.lines || []).forEach(function (l, i) { if (r.a[i]) { var p = plate[l.rid] = plate[l.rid] || { rid: l.rid, name: l.name, qty: 0 }; p.qty += r.a[i]; } });
       for (var j = k + 1; j < n; j++) if (f.rounds[j].at <= now + HOUR) ahead.push({ f: f, k: j, at: f.rounds[j].at, a: at(j) });
+      for (var i = k; i < n; i++) if (i === k || !isSent(f, i)) { var o = { f: f, k: i, at: f.rounds[i].at, a: at(i) }; o.late = o.at < now; o.due = o.at <= now + DUE_SOON; all.push(o); }
     });
     rows.sort(function (a, b) { return a.at - b.at; });
     ahead.sort(function (a, b) { return a.at - b.at; });
-    return { rows: rows, ahead: ahead, plate: Object.keys(plate).map(function (k) { return plate[k]; }).sort(function (a, b) { return b.qty - a.qty || a.name.localeCompare(b.name); }) };
+    all.sort(function (a, b) { return a.at - b.at || String(a.f.name).localeCompare(String(b.f.name)) || a.k - b.k; });
+    return { rows: rows, ahead: ahead, all: all, plate: Object.keys(plate).map(function (k) { return plate[k]; }).sort(function (a, b) { return b.qty - a.qty || a.name.localeCompare(b.name); }) };
   }
   // the first round still to come (its time not passed yet), or -1 when every round's time has passed
   function nextRound(f, now) { var R = f.rounds || [], i; for (i = 0; i < R.length; i++) if (R[i].at >= now) return i; return -1; }
@@ -932,14 +936,17 @@
     /* Redesign step 5 (8 Nov 2026, Flighty's live board, every-page.html e-service): the rounds still to go out on the
        dark board, each with how long until it goes (or how late it is), the platters, the function's service and
        dietary notes on every round, and its Sent tick, as before. Both prints moved to the end. The page is drawn again
-       every 20 seconds while open (no reads), so the minutes keep up. */
+       every 20 seconds while open (no reads), so the minutes keep up. Since 8 Nov 2026 (the audit against the drawing) the
+       board holds every round of the night still to go, not only each function's next one, and each row says one thing
+       about its time: how long until it goes, or how late it is (it said "Later" and "In 20 min" at once). The next hour's
+       plain list went: those rounds are on the board, with their dietaries and their tick. */
     function left(at) { var m = Math.round((at - t) / MIN); return m < 0 ? -m + ' min late' : !m ? 'Now' : m < 60 ? 'In ' + m + ' min' : 'In ' + Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + m % 60 + ' min' : ''); }
     var out = '<section class="set-block fn-page fn-svc-page"><div class="fn-page-head"><h2 id="rtitle" tabindex="-1">Service</h2></div><p class="hint">Every round still to go out, in order. Tick each round as it goes out.</p>' + (known() ? '' : waitHTML());
-    if (known() && !sv.rows.length) out += '<p class="hint">Nothing to send: no function has a round still to go out.</p>';
-    if (sv.rows.length) out += '<div class="fn-svc-board"><div class="fn-svc-bh"><h3 class="fn-svc-bt">Next out</h3><b class="fn-svc-clock">' + esc(kclock(t)) + '</b></div><ul class="fn-svc-rows">' + sv.rows.map(function (r) {
+    if (known() && !sv.all.length) out += '<p class="hint">Nothing to send: no function has a round still to go out.</p>';
+    if (sv.all.length) out += '<div class="fn-svc-board"><div class="fn-svc-bh"><h3 class="fn-svc-bt">Still to go out</h3><b class="fn-svc-clock">' + esc(kclock(t)) + '</b></div><ul class="fn-svc-rows">' + sv.all.map(function (r) {
       var n = r.f.rounds.length;
       return '<li class="fn-svc-row' + (r.late ? ' is-late' : r.due ? '' : ' is-later') + '"><p class="fn-svc-top"><b class="fn-due' + (r.late ? ' is-late' : '') + '">' + esc(when(r.at, kday(t))) + '</b>' +
-        (r.late ? ' <span class="fn-late">Late</span>' : r.due ? '' : ' <span class="fn-tag">Later</span>') + ' <button type="button" class="linkish fn-svc-name" data-fn="open" data-id="' + esc(r.f.id) + '" aria-haspopup="dialog">' + esc(r.f.name) + '</button>' +
+        (r.late ? ' <span class="fn-late">Late</span>' : '') + ' <button type="button" class="linkish fn-svc-name" data-fn="open" data-id="' + esc(r.f.id) + '" aria-haspopup="dialog">' + esc(r.f.name) + '</button>' +
         (r.f.loc ? ' · ' + esc(r.f.loc) : '') + (n > 1 ? ' · round ' + (r.k + 1) + ' of ' + n : '') + ' <span class="fn-svc-cd">' + esc(left(r.at)) + '</span></p>' +
         '<p class="fn-svc-what">' + svcLine(r.f, r.a) + ' <span class="fn-of">(' + sum(r.a) + ')</span></p>' +
         (r.f.rounds[r.k].note ? '<p class="fn-svc-note">' + esc(r.f.rounds[r.k].note) + '</p>' : '') +
@@ -951,9 +958,6 @@
       '<p class="fn-next-s">Late and due in the next 15 minutes, all functions together.</p><ul class="fn-next-list">' + sv.plate.map(function (p) {
         return bigRow(p.qty, p.name, p.rid);
       }).join('') + '</ul></section>';
-    if (sv.ahead.length) out += '<h3 class="fn-h">Coming up in the next hour</h3><ol class="fn-rounds">' + sv.ahead.map(function (r) {
-      return '<li class="fn-round"><span class="fn-round-t">' + esc(when(r.at, kday(t))) + '</span><span class="fn-round-w"><i>' + esc(r.f.name) + (r.f.rounds.length > 1 ? ', round ' + (r.k + 1) : '') + '</i>' + esc(linesText(r.f, r.a)) + ' <b>(' + sum(r.a) + ')</b></span><span></span></li>';
-    }).join('') + '</ol>';
     return out + stateNote() + '<div class="btn-row fn-svc-prints">' + prepButton(kday(t), t) + '<button type="button" class="btn" data-fn="print-day"' + (!known() || !printDayList(t).length ? ' disabled' : '') + '>Print run sheet</button></div>' +
       '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
   }
@@ -1029,7 +1033,8 @@
   var landHome = false;   // the landing card sits on Home's board page (no band there): set by landSlot(), checked by paint()
   function landHTML() {
     if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
-    var t = now(), today = kday(t), tom = addDays(today, 1), end = addDays(today, 3), R = bandRows(t), inBand = {};
+    // Home's Coming up looks a week ahead, as drawn (8 Nov 2026, the audit of the redesign); the old landing kept 3 days
+    var t = now(), today = kday(t), tom = addDays(today, 1), end = addDays(today, landHome ? 7 : 3), R = bandRows(t), inBand = {};
     if (landHome) fnHomeRows().forEach(function (x) { if (x.kind !== 'order') inBand[x.id] = 1; });
     else {
       R.a.forEach(function (x) { if (x.kind === 'on') inBand[x.f.id] = 1; });

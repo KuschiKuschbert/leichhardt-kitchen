@@ -320,14 +320,15 @@ function hasPrivateContact(value) {
   await L.waitFor(p, () => /Jones 40th/.test((document.getElementById('fn-band') || {}).textContent || ''));
   ok(!!(await p.$('#fn-band a.fn-svc[href="#/fn/now"]')), 'service: with two functions on, the band offers the service view');
   await tap(p, '#fn-band a.fn-svc'); await L.settle(p, 500);
-  await L.waitFor(p, () => document.querySelectorAll('.fn-svc-row').length === 2);
+  // every round still to go is on the board since 8 Nov 2026 (the drawing): Smith's three and Jones's one
+  await L.waitFor(p, () => document.querySelectorAll('.fn-svc-row').length === 4);
   let sv = await p.$$eval('.fn-svc-row', els => els.map(e => e.textContent.replace(/\s+/g, ' ')));
   ok(/18:30 Late Smith 50th · Beer garden · round 1 of 3/.test(sv[0]) && /3 × Antipasto/.test(sv[0]) && /18:40 Jones 40th · Function room/.test(sv[1]) && /2 × Pizza/.test(sv[1]), 'service: the late round first, then the one due at 18:40 (' + sv.join(' / ').slice(0, 260) + ')');
   const tp = (await txt(p, '.fn-svc-page .fn-next') || '').replace(/\s+/g, ' ');
   ok(/To plate now 8 platters/.test(tp) && /4 ?× ?Antipasto Platter ?2 ?× ?Aussie Platter ?2 ?× ?Pizza Platter/.test(tp), 'service: to plate now adds both functions up, most first (' + tp.slice(0, 200) + ')');
   await tap(p, '.fn-svc-row [data-fn="sent"][data-id="smith"]'); await L.settle(p, 400);
   sv = await p.$$eval('.fn-svc-row', els => els.map(e => e.textContent.replace(/\s+/g, ' ')));
-  ok(/18:40 Jones 40th/.test(sv[0]) && /19:00 Later Smith 50th · Beer garden · round 2 of 3/.test(sv[1]), 'service: Sent moves Smith on to round 2, after Jones (' + sv.join(' / ').slice(0, 200) + ')');
+  ok(sv.length === 3 && /18:40 Jones 40th/.test(sv[0]) && /19:00 Smith 50th · Beer garden · round 2 of 3/.test(sv[1]) && /19:30 Smith 50th · Beer garden · round 3 of 3/.test(sv[2]) && !/Later/.test(sv.join(' ')), 'service: Sent takes Smith round 1 off; Jones, then Smith rounds 2 and 3, one time each (' + sv.join(' / ').slice(0, 260) + ')');
   ok(/Smith 50th round 1 sent 18:3\d, Ann/.test(await txt(p, '.fn-svc-just') || '') && !!(await p.$('.fn-svc-just [data-fn="unsent"]')), 'service: just sent shows who, with Undo');
   ok(await p.$eval('#fn-band', e => e.hidden), 'service: no band above the service view (it shows the same rounds)');
   await p.goto(L.BASE + '#/recipes'); await L.settle(p, 600);
@@ -388,7 +389,8 @@ function hasPrivateContact(value) {
   const brown = fn({ name: 'Brown 21st', date: day2, rounds: ['18:30'] });
   const wake = M.derive(Object.assign(fn({ name: 'Adams wake', date: day2 }), { start: 0, st: true, rounds: [], mode: 'all' }));
   const green = fn({ name: 'Green 30th', date: M.addDays(today, 3), start: '11:00', rounds: ['11:30'] });
-  const far = fn({ name: 'Far off', date: M.addDays(today, 4) });
+  // 8 days out: further off than the week Coming up looks ahead on Home (8 Nov 2026; it was 4 days with the 3-day window)
+  const far = fn({ name: 'Far off', date: M.addDays(today, 8) });
   p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith, tm, wake, brown, zed, green, far }), wait: 1500 });
   // four at most: with tomorrow's in it since 8 Nov 2026, Green 30th is the one more
   await L.waitFor(p, () => /Adams wake/.test((document.getElementById('fn-land') || {}).textContent || ''));
@@ -410,7 +412,9 @@ function hasPrivateContact(value) {
   const brd = (await txt(p, '#hm-board') || '').replace(/\s+/g, ' ');
   land = (await txt(p, '#fn-land') || '').replace(/\s+/g, ' ');
   ok(/Ward 60th/.test(brd) && /Lee 18th/.test(brd) && /Abbott do/.test(brd) && /Order the stock for Order five/.test(brd) && /Order the stock for Order six/.test(brd) && !/Brekky do|Kerr lunch/.test(brd), 'landing: the board shows today\'s three still to go and the two order reminders, not one already over (' + brd.slice(0, 260) + ')');
-  ok(/Tomorrow Kerr lunch, food 12:00/.test(land) && !/Ward 60th|Lee 18th|Abbott do|Brekky do|Order five|Order six/.test(land), 'landing: Coming up names tomorrow\'s function, not today\'s or the order reminders (' + land + ')');
+  // since 8 Nov 2026 Coming up looks a week ahead on Home, so the two functions whose stock is ordered today are named
+  // on their own days too (the board has the order reminders)
+  ok(/Tomorrow Kerr lunch, food 12:00.*Order five, food .*Order six, food /.test(land) && !/Ward 60th|Lee 18th|Abbott do|Brekky do/.test(land), 'landing: Coming up names tomorrow\'s function first, then the week\'s, not today\'s (' + land + ')');
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'landing busy day: no sideways scroll, no page errors ' + p.errors.join(' | '));
   await p.goto(L.BASE + '#/recipes'); await L.settle(p, 900);
   await L.waitFor(p, () => /\+2 more/.test((document.getElementById('fn-band') || {}).textContent || ''));

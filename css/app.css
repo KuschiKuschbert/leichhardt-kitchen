@@ -4245,3 +4245,74 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fd-sheet #fd-q { width: 100%; margin: .2rem 0 .6rem; }
 .fd-list { max-height: min(52vh, 26rem); overflow-y: auto; }
 .fd-none { margin: .8rem .2rem; }
+
+/* ---------- Gap fix: admin (8 Nov 2026) ---------- */
+/* The audit of the redesign against e-admin-b-1280: on a laptop the picked Inbox row opens beside the list with its
+   action, and Inbox and Dashboard show once (in the rail), not again in the Today tabs. A phone keeps the rows as they
+   were: no pick buttons, no pane. */
+.dsh-need-pick, .dsh-pick { display: none; }
+@media (min-width: 1000px) {
+  .p-admin.ad-admin:has(.a-quick-list) .a-tab[data-t="inbox"], .p-admin.ad-admin:has(.a-quick-list) .a-tab[data-t="dashboard"] { display: none; }
+  .dsh-inbox .dsh-need-wrap { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
+  .dsh-inbox .dsh-need-pick { display: flex; align-items: center; width: 100%; min-height: 44px; margin: 0; padding: 0; border: 0; background: none; color: var(--ink); font: 700 1rem/1.25 var(--body); text-align: left; cursor: pointer; }
+  .dsh-inbox .dsh-need-pick:hover { text-decoration: underline; }
+  .dsh-inbox .dsh-need-pick + .dsh-need-title { display: none; }
+  .dsh-inbox .dsh-need.is-picked { background: #FCEDE3; box-shadow: inset 3px 0 0 var(--accent); }
+  .dsh-inbox .dsh-pick { display: block; padding: 1rem 1.1rem 1.1rem; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--paper); }
+  .dsh-pick .dsh-pick-t { margin: .2rem 0 .35rem; font: 700 1.35rem/1.2 var(--display); }
+  .dsh-pick .dsh-pick-d { margin: 0 0 .75rem; color: var(--ink); line-height: 1.4; }
+  .dsh-pick .btn-row { margin-top: .5rem; }
+}
+/* ---------- Gap fix: polish (8 Nov 2026) ---------- */
+/* the audit's small gaps against the chosen drawings (docs/whole-app-redesign-options/every-page.html) */
+/* Orders: a link pill centres its words (they sat at the top edge of the 44 px pill) */
+.o-sup-acts .chip, .chip.o-deliv { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+/* Add a line: the small heading over your usual lines */
+.nb-sgh { margin: 0.4rem 0 0.1rem; font: 700 0.72rem/1.2 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-ink); }
+/* Guides step by step: Back and Next stay at the bottom of the screen above the tab bar on a phone, within thumb reach,
+   while a long step or its page scrolls (the guide page has no other sticky bar) */
+@media (max-width: 719px) { .g-nav { position: sticky; bottom: calc(var(--tabbar-h) + 6px); z-index: 5; padding: 8px 0; background: var(--bg); } }
+/* ---------- Gap fix: Home (8 Nov 2026) ----------
+   From the audit of the redesign against its drawings: a chevron on board rows that open something and have no time,
+   Coming up with the next days' order cut-offs (chefs only) and a week of functions, and On today from 720 px. */
+.hm-chev { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; color: rgba(251, 248, 241, 0.7); }
+.hm-up:has(#hm-cuts:not([hidden])) { display: block; }
+#hm-cuts[hidden] { display: none; }
+.hm-cuts { list-style: none; margin: 0 0 0.2rem; padding: 0; }
+.hm-cuts li a { display: flex; align-items: baseline; gap: 0.4rem; min-height: 44px; padding: 0.3rem 0; color: var(--ink); text-decoration: none; }
+.hm-cuts li b { display: inline-block; min-width: 5.5rem; font: 700 0.8rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--small-ink); }
+.hm-up .kb-coming + #hm-cuts:not([hidden]), .hm-up #hm-cuts:not([hidden]) + #fn-land:not([hidden]) { padding-top: 0.4rem; border-top: 1px solid var(--line); }
+.hm-team { display: none; }
+.hm-pl { display: inline-flex; align-items: center; min-height: 44px; font-size: 0.9rem; font-weight: 700; }
+.hm-team-l { list-style: none; margin: 0; padding: 0; }
+.hm-team-l li { display: grid; grid-template-columns: minmax(4.5rem, 7rem) minmax(0, 1fr); gap: 0.75rem; padding: 0.45rem 0; border-top: 1px solid var(--line); }
+.hm-team-l li:first-child { border-top: 0; }
+.hm-tsec { font-weight: 600; overflow-wrap: anywhere; }
+.hm-tw { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.hm-tp { overflow-wrap: anywhere; }
+.hm-tp small { color: var(--muted); font-size: 0.85rem; }
+@media (min-width: 720px) {
+  .hm-team:not([hidden]) { display: block; }
+  .hm-board { grid-row: 1 / span 3; }
+  .hm-prep, .hm-team, .hm-up, .hm-prep[hidden] + .hm-up { grid-column: 2; grid-row: auto; }
+}
+/* ---------- Gap fix: prep lines (8 Nov 2026) ----------
+   The redesign promised 6 prep lines on a 390 px phone (brief, round 1: "aim for 6 lines visible at 390 px"); step 1 gave 3.
+   On a phone at the usual text size the line words are a little smaller and the rows tighter, the box keeps its 44 px tap
+   area but takes less of the row, the Start here number sits in the margin as drawn, and the section headings are shorter.
+   The list header keeps its height (Set today's team, a person's day). Large text and under 360 px keep their layout. */
+@media (min-width: 360px) and (max-width: 479px) {
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-row { grid-template-columns: 34px minmax(0, 1fr) auto; column-gap: 4px; padding-top: 3px; padding-bottom: 3px; min-height: 44px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-box { margin-left: -8px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-t { font-size: 1.3rem; line-height: 1.02; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-meta { font-size: 0.72rem; line-height: 1.15; margin-top: 1px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left div.nb-hd { min-height: 28px; padding-top: 6px; padding-bottom: 2px; }
+  /* the Start here number sits in the margin, as drawn, so the words keep their first line; the marks are a size smaller */
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-row { position: relative; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-rows + div.nb-hd, html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-rows + .nb-hd { margin-top: 4px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-body { margin-left: -18px; padding-left: 18px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-t[data-n]::before { position: absolute; left: -16px; top: 9px; min-width: 14px; height: 17px; margin: 0; padding: 0 2px; border-radius: 3px; font: 700 10.5px/17px var(--body); }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-roll, html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-urg { font-size: 0.62rem; padding: 1px 5px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-why { font-size: 0.66rem; padding: 0 5px; }
+  html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-marks { margin-left: 0.25rem; vertical-align: 0.15em; }
+}
