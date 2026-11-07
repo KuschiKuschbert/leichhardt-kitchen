@@ -337,5 +337,6 @@ The head chef asked for the design and function notes to be rewritten for the ne
 ## Files
 
 - `index.html`: the comparison page and every design screen (`?shot=a-prep` and so on draws one screen at its real size).
+- `roles.html`: every feature as a cook (staff) and as the head chef (admin) sees it in the chosen design, side by side; where staff cannot open a page it says what they see instead (`?shot=homeAdmin` and so on).
 - `every-page.html`: round 3, every page and the admin options with the council's results (`?shot=e-home` and so on). The mock pieces are copied from `index.html` so the page stands alone.
 - `previews/today-*.png`: today's book in the stand-in, every page (the second set taken for the coverage check). `previews/a-*`, `b-*`, `c-*`: the three designs as scored; `previews/r-*`: the recommended mix, redrawn after the coverage check. All designs photographed from `index.html` at 390 x 844 and 1280 x 800.
