@@ -125,7 +125,7 @@ jobs:
         run: npm ci --no-audit --no-fund && npm test
       - name: Check the nightly learning counts on the emulator
         working-directory: scripts
-        run: npm ci --no-audit --no-fund && ../tests/rules/node_modules/.bin/firebase emulators:exec --only firestore --project demo-test "node emulator-check.mjs && node transfer-index-check.mjs && node waste-range-check.mjs && node delivery-backup-check.mjs && node analysis-check.mjs && node capabilities-bootstrap-check.mjs && node backup-crypto-check.mjs && node backup-recovery-check.mjs && node rules-publisher-check.cjs"
+        run: npm ci --no-audit --no-fund && ../tests/rules/node_modules/.bin/firebase emulators:exec --only firestore --project demo-test "node emulator-check.mjs && node transfer-index-check.mjs && node waste-range-check.mjs && node delivery-backup-check.mjs && node backup-reuse-check.mjs && node analysis-check.mjs && node capabilities-bootstrap-check.mjs && node backup-crypto-check.mjs && node backup-recovery-check.mjs && node rules-publisher-check.cjs"
 
   test:
     # This name is the required check. It reports whenever the run was not cancelled, so a skipped or failed part
