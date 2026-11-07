@@ -290,11 +290,17 @@ The head chef's answers, 8 November 2026:
 8. **Cancel function at the end of the card**, away from Print, with its Undo.
 9. **Urgent in one tap.** Every open prep line gets an Urgent flag with the word under it, filled black when on, beside Recipe and On it, which become the same icon-over-word buttons (`previews/e-prep-390.png`). The Start here number moves into the notebook's margin, like a handwritten line number, to give the words room. Measured with the 14-line list and its long names: **5 prep lines** fully visible on a 390 px phone (2 today; 6 with print words and Urgent behind ⋯). With shorter names more fit. A swipe to mark urgent would cost no width but cannot be seen, so it is not drawn.
 
+Also answered on 8 November: **the recipe card keeps every drawing** (the plate with its tappable pins, From the side, the build and pan views, How to cut); the redesign changes only the top of the card (`previews/today-recipe-side-390.png` shows today's Barramundi card, unchanged further down).
+
+**Not drawn yet** (each build step draws these first, at 390, 768 and 1280 px, and shows them before it merges): tablet and laptop for every page and the wall board with the new prep line (step 1); Orders as staff see it (step 3); B's People, Settings and report views (step 8). Unchanged by choice, so not redrawn: the recipe and drawing editor and studio, Settings, signing in, the PIN and device choice, printing, CSV, and the celebrations on work pages.
+
+**Proposed, waiting for the head chef's OK** (overlaps with the new home that round 2 named): keep the start of shift sheet (a cook who opens straight on Prep never sees Home); keep the function band and the cut-off reminder bar on every page except Home, where the board already shows them.
+
 Earlier answers still standing: every feature and role kept (the coverage table above); the chef hat as a list; one-row lines; words on actions; no new reads, listeners or rules unless a step says so.
 
 ## Build
 
-Eight steps, one pull request each, merged in the release windows, in this order (head chef, 8 November 2026). Each step runs the service council's quick check, counts taps and lines before and after in the click tests, keeps `tests/read-budget.test.js` within budget, adds its patterns to `docs/design-patterns.md` and `tests/design-patterns.test.js`, and updates `README.md` and `docs/prep-book.md` for what the team sees.
+Eight steps, one pull request each, merged in the release windows, in this order (head chef, 8 November 2026). Each step first draws its screens at 390, 768 and 1280 px and shows them to the head chef, runs the service council's quick check, counts taps and lines before and after in the click tests, keeps `tests/read-budget.test.js` within budget, adds its patterns to `docs/design-patterns.md` and `tests/design-patterns.test.js`, and updates `README.md` and `docs/prep-book.md` for what the team sees.
 
 | Step | What | Main files | State |
 | --- | --- | --- | --- |

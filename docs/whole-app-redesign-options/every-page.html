@@ -462,7 +462,18 @@ figcaption b { color: var(--ink); font-weight: 600; }
 <li><b>Line words stay in handwriting.</b> Print stays for amounts and small lines.</li>
 <li><b>Cancel function at the end of the card.</b></li>
 <li><b>Urgent in one tap:</b> a flag on every open prep line, with the word under it, filled black when on. Measured below.</li>
-</ol><p class="note">Nothing is built yet. Next: the first group, Prep and Add a line, as its own pull request with the click tests that count lines and taps, once you say go.</p></section>
+</ol><h3>Not drawn yet: each build step draws these first and shows them before it merges</h3><ul class="list">
+<li><b>Tablet and laptop</b> for every page (only Home, Prep and admin are drawn at 1280), and the <b>wall board</b> on the shared kitchen tablet with the new prep line (step 1).</li>
+<li><b>Orders as staff see it</b>, the plain list with Running low and Out now (step 3).</li>
+<li><b>B's People, Settings and report views</b>: today's content in B's frame (step 8).</li>
+<li>Unchanged by choice, so not redrawn: Recipes and drawings editor and studio (3 and 4 Nov), Settings (3 Nov), signing in, the PIN and the device choice, printing, CSV, and the celebrations on work pages (the stamp by the name, the lights).</li>
+</ul>
+<h3>Three overlaps with the new home: proposed, waiting for your OK</h3><ul class="list">
+<li><b>Start of shift sheet</b> (Your day, once a day after the PIN): keep it. A cook who opens straight on Prep never sees Home, and the sheet is how pings and minutes reach them. The board shows the same things for anyone on Home.</li>
+<li><b>The function band</b> under the top bar: keep it on every page except Home, where the board already shows the next round.</li>
+<li><b>The cut-off reminder bar</b>: the same, kept on the work pages, left off Home where the board shows the next cut-off.</li>
+</ul>
+<p class="note">Nothing is built yet. Next: the first group, Prep and Add a line, as its own pull request with the click tests that count lines and taps, once you say go.</p></section>
 </main>
 </div>
 <script>
@@ -768,7 +779,7 @@ figcaption b { color: var(--ink); font-weight: 600; }
       '<div class="e-dish">' + plate(120, '#FFFFFF', 'corn').replace('<svg', '<svg style="margin:0 auto"') + '<b>Buffalo BBQ Corn</b><small>Card 122</small><div class="e-tagline"><span class="e-al">Dairy</span></div></div>' +
       '<div class="e-dish">' + plate(120, '#FFFFFF', 'fish').replace('<svg', '<svg style="margin:0 auto"') + '<b>Grilled Barramundi</b><small>With chips</small><div class="e-tagline"><span class="e-al maybe">Fish?</span></div></div></div>');
   } };
-  E['e-recipe'] = { w: 390, g: 'recipes', cap: '<b>A recipe card</b> (Airbnb listing). The plate first, then the plating line, a row of facts, and one scrolling card: the chips jump to Allergens, Ingredients and Method, as today. The full allergen list and its key stay word for word.', html: function () {
+  E['e-recipe'] = { w: 390, g: 'recipes', cap: '<b>A recipe card</b> (Airbnb listing). The plate first, then the plating line, a row of facts, and one scrolling card: the chips jump to Allergens, Ingredients and Method, as today. The full allergen list and its key stay word for word. Below them the card goes on exactly as today: the plate with its tappable pins, From the side, the build and pan views, How to cut, and the method you tick step by step.', html: function () {
     return phone({ cls: 'rx', back: true, teamDue: false, tab: 'Recipes' }, '<div style="font-size:13.5px"><span class="m-link">The pass</span> / Chicken Adobo</div>' +
       '<div style="display:grid;place-items:center;margin:4px 0 2px">' + plate(140, '#FFFFFF', 'adobo') + '</div>' +
       '<div class="m-eb">Main · Special</div><div class="m-h" style="margin:4px 0 4px">Chicken Adobo</div><p style="font-size:14.5px;margin:0 0 10px;color:#3B3933">Per plate on 180 g steamed jasmine rice, garnished with spring onion curls and sliced red chilli.</p>' +
@@ -918,7 +929,7 @@ figcaption b { color: var(--ink); font-weight: 600; }
   document.getElementById('groups').innerHTML = GROUPS.map(function (g) {
     var ids = Object.keys(E).filter(function (k) { return E[k].g === g[0]; });
     return '<section class="part" id="g-' + g[0] + '"><div class="design-head"><h2>' + g[1] + '</h2></div><p>' + g[2] + '</p>' +
-      '<div class="row">' + ids.filter(function (k) { return E[k].w === 390; }).map(figure).join('') + '</div>' + ids.filter(function (k) { return E[k].w === 1280; }).map(figure).join('') + '</section>';
+      '<div class="row">' + ids.filter(function (k) { return E[k].w === 390; }).map(figure).join('') + (g[0] === 'recipes' ? '<figure><img class="shotimg" src="previews/today-recipe-side-390.png" alt="Today: the Barramundi card, the plate with pins and From the side" loading="lazy"><figcaption><b>Further down the same card, today and unchanged.</b> The plate with its pins (a pin with an arrow opens its own recipe) and From the side, each layer named with its amount. The redesign keeps both, and the build, pan and How to cut drawings.</figcaption></figure>' : '') + '</div>' + ids.filter(function (k) { return E[k].w === 1280; }).map(figure).join('') + '</section>';
   }).join('');
   function fit() { document.querySelectorAll('[data-lap]').forEach(function (b) { b.firstElementChild.style.transform = 'scale(' + (b.clientWidth / 1280) + ')'; }); }
   fit(); window.addEventListener('resize', fit);
