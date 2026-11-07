@@ -2,7 +2,7 @@
 
 25 Oct 2026: the head chef requested one-click cancellation from Functions for sous chefs, the head chef, function managers and the admin, plus a clear checkbox to give a person create/edit access.
 
-- Cancel is a small action beside a confirmed function and on its sheet, including the manager's form. One tap cancels the saved booking. Nothing is deleted.
+- Cancel is a small action beside a confirmed function and on its sheet, including the manager's form. One tap cancels the saved booking. Nothing is deleted. Since 8 Nov 2026 (redesign step 5, head chef) it sits at the end of each card on Functions and alone in the last row of the function sheet, away from Print, with one line on what it does; the button, the people and Undo are the same.
 - A signed-in sous chef or head chef may cancel without gaining create/edit access or access to booking contacts. Function managers retain their existing rights. The verified admin is also allowed. Ordinary staff cannot cancel or give themselves permission.
 - Undo is available to the person who cancelled for two minutes, provided nobody changed the function afterwards. Undo restores its booked quantities, rounds and preparation work. Someone with full edit access may still use the existing confirmation flow later.
 - Cancellation reads the latest server version once and refuses an out-of-date screen. Undo also reads the previous history version. These are tap-only reads, never polling or per-item reads.

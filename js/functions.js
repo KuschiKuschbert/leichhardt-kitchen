@@ -600,9 +600,13 @@
     if (c.length) out += '<h3 class="fn-h">Changes</h3><ul class="fn-chg">' + c.slice(0, 5).map(function (x) { return '<li><span>' + esc(dayName(kday(x.at)) + ' ' + kclock(x.at)) + ', ' + esc(nameOf(x.by)) + '</span> ' + esc(x.what) + '</li>'; }).join('') + '</ul>';
     out += '<p class="fn-by fn-last">Last changed by ' + esc(nameOf(f.by)) + ', ' + esc(dayName(kday(f.upd)) + ' ' + kclock(f.upd)) + '.</p>';
     var can = P() && P().fnOK && P().fnOK();
-    out += '<div class="btn-row"><button type="button" class="btn" data-fn="print" data-id="' + esc(f.id) + '">Print function</button>' + statusHTML(f) +
+    out += '<div class="btn-row fn-acts"><button type="button" class="btn" data-fn="print" data-id="' + esc(f.id) + '">Print function</button>' +
       (inPop ? '<a class="btn dark" href="#/fn/' + encodeURIComponent(f.id) + '" data-fn="go">Open the full sheet</a>' : '') +
       (can ? '<a class="btn" href="#/functions/' + encodeURIComponent(f.id) + '"' + (inPop ? ' data-fn="go"' : '') + '>Change this function</a>' : '') + '</div>';
+    // Cancel at the end of the card, away from Print (head chef, 8 Nov 2026, redesign step 5): the same button, the same
+    // people and the same Undo (docs/function-cancellation.md), with one line on what it does
+    var st = statusHTML(f);
+    if (st) out += '<div class="fn-end">' + st + '<span class="fn-end-s">' + (f.status === 'cancelled' ? 'Undo puts the function back, with its prep and order lines.' : 'Takes its platters off the prep and order lists. Nothing is deleted.') + '</span></div>';
     return out;
   }
 
@@ -884,12 +888,23 @@
 
   /* ---------- #/fn: today, the next three days from tomorrow (or 14), and the platter totals per day ---------- */
   var pageDays = 3;
-  function cardHTML(f) {
-    var n = (f.rounds || []).length, tot = totalQty(f);
-    return '<li class="fn-card' + (f.status === 'cancelled' ? ' is-off' : '') + '"><a href="#/fn/' + encodeURIComponent(f.id) + '"><span class="fn-c1"><b>' + esc(f.name) + '</b>' +
-      (f.status === 'cancelled' ? ' <span class="fn-tag fn-t-off">Cancelled</span>' : f.mode === 'stag' ? ' <span class="fn-tag">Staggered, ' + n + ' rounds</span>' : '') + (f.kc ? ' <span class="fn-tag fn-t-kc">Kitchen comment</span>' : '') + '</span>' +
-      '<span class="fn-c2">Event ' + esc(when(f.start, f.date)) + ' · food from ' + esc(when(f.first, f.date)) + (f.loc ? ' · ' + esc(f.loc) : '') + '</span>' +
-      '<span class="fn-c3">' + esc(linesText(f)) + ' (' + tot + ')</span></a>' + (statusHTML(f) ? '<div class="fn-card-actions">' + statusHTML(f) + '</div>' : '') + '</li>';
+  /* A function on #/fn as one card (redesign step 5, 8 Nov 2026, Airbnb's Today and Upcoming, every-page.html e-fn): a
+     small line with the event start, the place and the guests; the name; today, what goes out next (the same words as
+     the band); when food goes out and how many rounds; what is booked; the service and dietary notes in short. The card
+     opens the function; Cancel sits at its end. x: the band's entry for a function on today, for its next round. */
+  function cardHTML(f, x) {
+    var n = (f.rounds || []).length, tot = totalQty(f), off = f.status === 'cancelled', nx = '';
+    if (x && x.kind === 'on' && !off && f.first) {
+      var w = nowOf(f, now());
+      nx = '<span class="fn-cnext' + (w.done ? ' is-done' : '') + '">' + (w.done ? w.html : '<span class="fn-cnext-l">Next out</span> <b class="fn-due' + (w.late ? ' is-late' : '') + '">' + esc(w.time) + '</b> ' + w.html) + '</span>';
+    }
+    var eb = ['Event ' + when(f.start, f.date), f.loc, guestsText(f)].filter(Boolean).join(' · ');
+    var food = (f.first ? 'Food from ' + when(f.first, f.date) : 'Food times TBC') + (n > 1 ? ' · ' + n + ' rounds' : '');
+    return '<li class="fn-card' + (off ? ' is-off' : '') + '"><a href="#/fn/' + encodeURIComponent(f.id) + '"><span class="fn-c0">' + esc(eb) + '</span><span class="fn-c1"><b>' + esc(f.name) + '</b>' +
+      (off ? ' <span class="fn-tag fn-t-off">Cancelled</span>' : '') + (f.kc ? ' <span class="fn-tag fn-t-kc">Kitchen comment</span>' : '') + '</span>' + nx +
+      '<span class="fn-c2">' + esc(food) + '</span><span class="fn-c3">' + esc(linesText(f)) + ' (' + tot + ')</span>' +
+      (f.notes ? '<span class="fn-cnote"><span class="fn-cnote-l">Notes</span> ' + esc(f.notes) + '</span>' : '') + '</a>' +
+      (statusHTML(f) ? '<div class="fn-card-actions">' + statusHTML(f) + '</div>' : '') + '</li>';
   }
   function totalsHTML(rows) {
     if (!rows || !rows.length) return '';
@@ -914,17 +929,23 @@
     var just = F.list.filter(function (f) { return f.status === 'confirmed'; }).map(function (f) {
       return (f.rounds || []).map(function (r, i) { var x = sentRec(f, i); return x && t - x.sentAt < 2 * MIN ? { f: f, i: i } : null; }).filter(Boolean);
     }).reduce(function (a, b) { return a.concat(b); }, []);
-    var out = '<section class="set-block fn-page fn-svc-page"><div class="fn-page-head"><h2 id="rtitle" tabindex="-1">Service</h2><div class="btn-row">' + prepButton(kday(t), t) + '<button type="button" class="btn" data-fn="print-day"' + (!known() || !printDayList(t).length ? ' disabled' : '') + '>Print run sheet</button></div></div>' + (known() ? '' : waitHTML());
+    /* Redesign step 5 (8 Nov 2026, Flighty's live board, every-page.html e-service): the rounds still to go out on the
+       dark board, each with how long until it goes (or how late it is), the platters, the function's service and
+       dietary notes on every round, and its Sent tick, as before. Both prints moved to the end. The page is drawn again
+       every 20 seconds while open (no reads), so the minutes keep up. */
+    function left(at) { var m = Math.round((at - t) / MIN); return m < 0 ? -m + ' min late' : !m ? 'Now' : m < 60 ? 'In ' + m + ' min' : 'In ' + Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + m % 60 + ' min' : ''); }
+    var out = '<section class="set-block fn-page fn-svc-page"><div class="fn-page-head"><h2 id="rtitle" tabindex="-1">Service</h2></div><p class="hint">Every round still to go out, in order. Tick each round as it goes out.</p>' + (known() ? '' : waitHTML());
     if (known() && !sv.rows.length) out += '<p class="hint">Nothing to send: no function has a round still to go out.</p>';
-    if (sv.rows.length) out += '<h3 class="fn-h">Next out</h3><ul class="fn-svc-rows">' + sv.rows.map(function (r) {
+    if (sv.rows.length) out += '<div class="fn-svc-board"><div class="fn-svc-bh"><h3 class="fn-svc-bt">Next out</h3><b class="fn-svc-clock">' + esc(kclock(t)) + '</b></div><ul class="fn-svc-rows">' + sv.rows.map(function (r) {
       var n = r.f.rounds.length;
       return '<li class="fn-svc-row' + (r.late ? ' is-late' : r.due ? '' : ' is-later') + '"><p class="fn-svc-top"><b class="fn-due' + (r.late ? ' is-late' : '') + '">' + esc(when(r.at, kday(t))) + '</b>' +
         (r.late ? ' <span class="fn-late">Late</span>' : r.due ? '' : ' <span class="fn-tag">Later</span>') + ' <button type="button" class="linkish fn-svc-name" data-fn="open" data-id="' + esc(r.f.id) + '" aria-haspopup="dialog">' + esc(r.f.name) + '</button>' +
-        (r.f.loc ? ' · ' + esc(r.f.loc) : '') + (n > 1 ? ' · round ' + (r.k + 1) + ' of ' + n : '') + '</p>' +
+        (r.f.loc ? ' · ' + esc(r.f.loc) : '') + (n > 1 ? ' · round ' + (r.k + 1) + ' of ' + n : '') + ' <span class="fn-svc-cd">' + esc(left(r.at)) + '</span></p>' +
         '<p class="fn-svc-what">' + svcLine(r.f, r.a) + ' <span class="fn-of">(' + sum(r.a) + ')</span></p>' +
         (r.f.rounds[r.k].note ? '<p class="fn-svc-note">' + esc(r.f.rounds[r.k].note) + '</p>' : '') +
+        (r.f.notes ? '<p class="fn-svc-diet"><span class="fn-svc-dl">Dietaries and notes</span><span class="fn-svc-dt">' + esc(r.f.notes) + '</span></p>' : '') +
         '<div class="fn-next-sent">' + sentCell(r.f, r.k) + '</div></li>';
-    }).join('') + '</ul>';
+    }).join('') + '</ul></div>';
     if (just.length) out += '<p class="fn-svc-just">' + just.map(function (j) { var x = sentRec(j.f, j.i); return esc(j.f.name) + (j.f.rounds.length > 1 ? ' round ' + (j.i + 1) : '') + ' sent ' + esc(kclock(x.sentAt) + ', ' + nameOf(x.sentBy)) + ' ' + sentCell(j.f, j.i).replace(/^<span class="fn-sent-ok">[\s\S]*?<\/small><\/span>/, ''); }).join('<br>') + '</p>';
     if (sv.plate.length) out += '<section class="fn-next" aria-label="To plate now"><p class="fn-next-h"><span class="fn-next-l">To plate now</span> <b>' + q + ' ' + (q === 1 ? 'platter' : 'platters') + '</b></p>' +
       '<p class="fn-next-s">Late and due in the next 15 minutes, all functions together.</p><ul class="fn-next-list">' + sv.plate.map(function (p) {
@@ -933,7 +954,8 @@
     if (sv.ahead.length) out += '<h3 class="fn-h">Coming up in the next hour</h3><ol class="fn-rounds">' + sv.ahead.map(function (r) {
       return '<li class="fn-round"><span class="fn-round-t">' + esc(when(r.at, kday(t))) + '</span><span class="fn-round-w"><i>' + esc(r.f.name) + (r.f.rounds.length > 1 ? ', round ' + (r.k + 1) : '') + '</i>' + esc(linesText(r.f, r.a)) + ' <b>(' + sum(r.a) + ')</b></span><span></span></li>';
     }).join('') + '</ol>';
-    return out + stateNote() + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
+    return out + stateNote() + '<div class="btn-row fn-svc-prints">' + prepButton(kday(t), t) + '<button type="button" class="btn" data-fn="print-day"' + (!known() || !printDayList(t).length ? ' disabled' : '') + '>Print run sheet</button></div>' +
+      '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
   }
   // the list has come from the server at least once (an empty answer from the copy in memory is not known)
   function known() { return F.state === 'ok' || !!F.at; }
@@ -947,24 +969,33 @@
     if (id) {
       var f = byId(id);
       if (!f) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Function</h2>' + (known() ? '<p>This function is not on the kitchen\'s list: it may be a draft, over, or cancelled a while ago.</p>' : waitHTML()) + stateNote() + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
-      return '<section class="set-block fn-page"><h2 id="rtitle" tabindex="-1">' + esc(f.name) + '</h2>' + sheetHTML(f, false) + stateNote() + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
+      // the function as one card (redesign step 5): the eyebrow and the name, then the sheet on its paper
+      return '<section class="set-block fn-page fn-one"><span class="fn-eb">Function</span><h2 id="rtitle" tabindex="-1">' + esc(f.name) + '</h2><div class="fn-cardbox">' + sheetHTML(f, false) + '</div>' + stateNote() + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
     }
-    var on = showing(F.list, t, isSentK), up = [], totals = dayTotals(F.list), days = [], i;
+    /* Today, then Upcoming (redesign step 5, 8 Nov 2026): two headings on one page, not tabs, so the coming days need no
+       extra tap. Upcoming shows only the days with a function, each with its Print prep sheet; the days with nothing
+       booked fold into one quiet line (they had a heading, a grey Print prep sheet and "None." each). */
+    var on = showing(F.list, t, isSentK), totals = dayTotals(F.list), days = [], i;
     for (i = 1; i <= pageDays; i++) days.push(addDays(today, i));
     var body = '';
     if (!known()) body = waitHTML();
     else {
-      body += '<h3 class="fn-h">Today, ' + esc(dayName(today)) + '</h3>' + prepButton(today, t) + (on.length ? '<div class="btn-row"><a class="btn dark" href="#/fn/now">Service view</a></div>' : '') + (on.length ? '<ul class="fn-cards">' + on.map(function (x) { return cardHTML(x.f); }).join('') + '</ul>' + totalsHTML(totals[today]) : '<p class="hint">No functions on now.</p>');
-      body += '<h3 class="fn-h">Upcoming functions</h3>';
+      body += '<div class="fn-sec"><h3 class="fn-h fn-sec-h">Today <span class="fn-sec-d">' + esc(dayName(today)) + '</span></h3><div class="btn-row fn-sec-acts">' + (on.length ? '<a class="btn dark" href="#/fn/now">Service view</a>' : '') + prepButton(today, t) + '</div>' +
+        (on.length ? '<ul class="fn-cards">' + on.map(function (x) { return cardHTML(x.f, x); }).join('') + '</ul>' + totalsHTML(totals[today]) : '<p class="hint">No functions on now.</p>') + '</div>';
+      var empty = [], booked = 0;
+      body += '<div class="fn-sec"><h3 class="fn-h fn-sec-h">Upcoming functions <span class="fn-sec-d">the next ' + pageDays + ' days</span></h3>';
       days.forEach(function (d) {
         var fs = F.list.filter(function (f) { return f.date === d && (f.status === 'confirmed' || f.status === 'cancelled'); }).sort(function (a, b) { return a.first - b.first; });
-        up.push(d);
-        body += '<div class="fn-day"><h4>' + esc(dayName(d)) + '</h4>' + prepButton(d, t) + (fs.length ? '<ul class="fn-cards">' + fs.map(cardHTML).join('') + '</ul>' + totalsHTML(totals[d]) : '<p class="hint">None.</p>') + '</div>';
+        if (!fs.length) { empty.push(d); return; }
+        booked++;
+        body += '<div class="fn-day"><div class="fn-day-h"><h4>' + esc(dayName(d)) + '</h4>' + prepButton(d, t) + '</div><ul class="fn-cards">' + fs.map(function (f) { return cardHTML(f); }).join('') + '</ul>' + totalsHTML(totals[d]) + '</div>';
       });
-      body += '<div class="btn-row">' + (pageDays < 14 ? '<button type="button" class="btn" data-fn="days" data-v="14">Show the next 14 days</button>' : '<button type="button" class="btn" data-fn="days" data-v="3">Show the next 3 days</button>') + '</div>';
+      if (empty.length) body += '<p class="fn-quiet">' + (!booked ? 'Nothing booked in the next ' + pageDays + ' days.' : empty.length > 3 ? 'Nothing booked on the other ' + empty.length + ' days.' :
+        'Nothing booked on ' + esc(empty.map(dayName).join(', ').replace(/, ([^,]*)$/, ' or $1')) + '.') + '</p>';
+      body += '<div class="btn-row">' + (pageDays < 14 ? '<button type="button" class="btn" data-fn="days" data-v="14">Show the next 14 days</button>' : '<button type="button" class="btn" data-fn="days" data-v="3">Show the next 3 days</button>') + '</div></div>';
     }
     var can = prep.fnOK && prep.fnOK();
-    return '<section class="set-block fn-page"><h2 id="rtitle" tabindex="-1">Functions</h2><p class="hint">Confirmed functions and their platters.</p>' +
+    return '<section class="set-block fn-page fn-list-page"><h2 id="rtitle" tabindex="-1">Functions</h2><p class="hint">Confirmed functions and their platters.</p>' +
       stateNote() + body + (can ? '<div class="btn-row"><a class="btn dark" href="#/functions">Manage functions</a></div>' : '') + '</section>';
   }
 

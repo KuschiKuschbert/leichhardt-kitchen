@@ -3981,3 +3981,110 @@ html.tm-open, html.tm-open body { overflow: hidden; }
   .w-row:has(> .w-again) > .nb-more { grid-column: 4; grid-row: 1; }
   .tr-ret { padding: 0 10px; font-size: 0.8125rem; }
 }
+
+/* ---------- Redesign step 5 (8 Nov 2026, head chef): Functions, the function card, the service view and the band.
+   docs/whole-app-redesign-options/brief.md (Chosen, Build step 5), every-page.html (e-fn, e-service). ---------- */
+/* the band under the top bar in the board's look (step 2's Now and next, step 3's cut-off bar): dark, the times in
+   orange, each function a row on the board. Same rows, same words, same people, same Hide and Show */
+.fn-band { background: var(--bar); border-bottom: 0; color: var(--bar-text); box-shadow: inset 0 -3px 0 var(--accent-ink); }
+.fn-band .fn-band-h { color: var(--bar-accent); }
+.fn-band .fn-band-n { color: rgba(251, 248, 241, 0.75); }
+.fn-band .fn-fold { border-color: rgba(251, 248, 241, 0.7); background: transparent; color: var(--bar-text); }
+.fn-band .fn-list { gap: 0; padding-bottom: 0.45rem; }
+.fn-band .fn-row { padding: 0.5rem 0; border: 0; border-top: 1px solid rgba(251, 248, 241, 0.16); border-radius: 0; background: none; color: var(--bar-text); }
+.fn-band .fn-li:first-child .fn-row { border-top: 0; }
+.fn-band .fn-row:hover { background: rgba(251, 248, 241, 0.06); }
+.fn-band .fn-row:focus-visible, .fn-band .fn-more:focus-visible, .fn-band .fn-fold:focus-visible { outline: 3px solid var(--bar-accent); outline-offset: 2px; }
+.fn-band .fn-row.is-cancelled, .fn-band .fn-row.is-moved { padding-left: 0.7rem; }
+.fn-band .fn-row.is-cancelled { background: rgba(226, 87, 74, 0.14); box-shadow: inset 4px 0 0 #E2574A; }
+.fn-band .fn-row.is-moved { background: rgba(143, 166, 214, 0.14); box-shadow: inset 4px 0 0 #8FA6D6; }
+.fn-band .fn-r2 { color: rgba(251, 248, 241, 0.82); }
+.fn-band .fn-r2 b, .fn-band .fn-r1 b { color: var(--bar-text); }
+.fn-band .fn-of { color: rgba(251, 248, 241, 0.6); }
+.fn-band .fn-due, .fn-strip .fn-due { color: var(--bar-accent); }
+.fn-band .fn-due.is-late, .fn-band .fn-late, .fn-strip .fn-due.is-late, .fn-strip .fn-late { color: #FF9C8A; }
+.fn-band .fn-tag, .fn-strip .fn-tag { color: var(--ink); }
+.fn-band .fn-t-off { color: #8A2414; }
+.fn-band .fn-more { border-color: rgba(251, 248, 241, 0.7); background: transparent; color: var(--bar-text); }
+.fn-band a.fn-svc { border-color: var(--bar-accent); background: var(--bar-accent); color: var(--bar); }
+.fn-band .fn-stale { color: var(--bar-text); }
+/* the one line that stays pinned once the band has scrolled off: the same dark */
+.fn-strip { background: var(--bar); border-bottom: 0; color: var(--bar-text); box-shadow: inset 0 -3px 0 var(--accent-ink), 0 2px 8px rgba(0, 0, 0, 0.18); }
+/* Functions: Today, then Upcoming (two headings on one page, not tabs). Each function is one card: a small line with the
+   event, place and guests, the name large, today's next round, food times, what is booked, the notes in short; Cancel
+   at the card's end. Days with nothing booked fold into one quiet line */
+.fn-list-page .fn-sec { margin-top: 0.4rem; }
+.fn-sec-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.2rem 0.6rem; padding-bottom: 0.35rem; border-bottom: 1.5px solid var(--ink); }
+.fn-sec-d { font: 600 0.9rem var(--body); color: var(--muted); }
+.fn-sec-acts { margin: 0.6rem 0; }
+.fn-page .fn-card { border: 1.5px solid var(--ink); border-radius: 12px; background: var(--paper); box-shadow: 0 3px 0 rgba(28, 29, 31, 0.1); overflow: hidden; }
+.fn-page .fn-card.is-off { border-color: #D9A196; background: #FBF3F1; }
+.fn-page .fn-card a { gap: 3px; padding: 0.75rem 0.9rem 0.6rem; border: 0; border-radius: 0; background: none; color: var(--ink); }
+.fn-page .fn-card a:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: -3px; }
+.fn-c0 { font: 700 0.75rem/1.3 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--small-ink); }
+.fn-page .fn-c1 b { font: 700 1.45rem/1.15 var(--display); }
+.fn-page .fn-card.is-off .fn-c1 b { text-decoration: line-through; }
+.fn-cnext { margin: 0.25rem 0 0.15rem; padding: 0.45rem 0.6rem; border-radius: 8px; background: var(--bar); color: var(--bar-text); font-size: 0.95rem; line-height: 1.35; }
+.fn-cnext b { color: var(--bar-text); }
+.fn-cnext .fn-due { color: var(--bar-accent); }
+.fn-cnext .fn-due.is-late, .fn-cnext .fn-late { color: #FF9C8A; }
+.fn-cnext .fn-of { color: rgba(251, 248, 241, 0.65); }
+.fn-cnext-l { font: 700 0.72rem var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--bar-accent); }
+.fn-cnext.is-done { background: var(--done-tint); color: var(--done-ink); }
+.fn-cnext.is-done .fn-of { color: var(--muted); }
+.fn-cnote { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 2px; font-size: 0.9rem; color: #3b3a36; }
+.fn-cnote-l { font: 700 0.72rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--small-ink); }
+.fn-page .fn-card-actions { padding: 0 0.9rem 0.6rem; border-top: 1px solid var(--line); padding-top: 0.4rem; }
+.fn-day-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.4rem 0.8rem; margin: 0.9rem 0 0.4rem; }
+.fn-day-h h4 { margin: 0; font: 700 1.05rem var(--display); }
+.fn-quiet { margin: 0.9rem 0 0.4rem; padding: 0.6rem 0.8rem; border: 1px dashed var(--edge); border-radius: 8px; color: var(--muted); }
+/* the function card: the sheet on its paper, Next out on the dark board, Cancel alone at the end */
+.fn-one .fn-eb { margin-bottom: 2px; }
+.fn-cardbox { padding: 0.4rem 1rem 1rem; border: 1.5px solid var(--ink); border-radius: 14px; background: var(--paper); box-shadow: 0 4px 0 rgba(28, 29, 31, 0.12); }
+.fn-next { border: 0; background: var(--bar); color: var(--bar-text); box-shadow: 0 5px 0 rgba(28, 29, 31, 0.16); }
+.fn-next .fn-next-l { color: var(--bar-accent); }
+.fn-next .fn-next-s { color: rgba(251, 248, 241, 0.82); }
+.fn-next .fn-x, .fn-next .fn-next-n .fn-x { color: rgba(251, 248, 241, 0.6); }
+.fn-next .fn-next-name a { color: var(--bar-text); }
+.fn-next .fn-late { color: #FF9C8A; }
+.fn-next .fn-sent-ok { color: #9FE0B7; }
+.fn-next .fn-sent-ok small { color: rgba(251, 248, 241, 0.72); }
+.fn-next .linkish { color: var(--bar-text); }
+.fn-next .btn, .fn-svc-board .btn { color: var(--ink); }
+.fn-next a:focus-visible, .fn-next button:focus-visible { outline: 3px solid var(--bar-accent); outline-offset: 2px; }
+.fn-acts { margin-top: 1rem; }
+.fn-end { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.9rem; margin-top: 1.1rem; padding-top: 0.9rem; border-top: 1.5px dashed var(--edge); }
+.fn-end .fn-cancel { min-height: 44px; }
+.fn-end-s { flex: 1 1 12rem; font-size: 0.875rem; color: var(--muted); }
+/* the service view as a live board: the rounds still to go, how long until each goes, the platters, the dietaries on
+   every round and the Sent tick; both prints at the end */
+.fn-svc-board { margin: 0.6rem 0 1rem; padding: 0.8rem 1rem 0.2rem; border-radius: 12px; background: var(--bar); color: var(--bar-text); box-shadow: 0 6px 0 rgba(28, 29, 31, 0.18); }
+.fn-svc-bh { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(251, 248, 241, 0.18); }
+.fn-svc-bt { margin: 0; font: 700 0.8rem/1.2 var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--bar-text); }
+.fn-svc-clock { font: 700 1rem/1 var(--display); letter-spacing: 0.06em; color: var(--bar-accent); }
+.fn-svc-board .fn-svc-rows { margin: 0; gap: 0; }
+.fn-svc-board .fn-svc-row, .fn-svc-board .fn-svc-row.is-late, .fn-svc-board .fn-svc-row.is-later { padding: 0.75rem 0 0.8rem; border: 0; border-top: 1px solid rgba(251, 248, 241, 0.14); border-radius: 0; background: none; color: var(--bar-text); }
+.fn-svc-board .fn-svc-row:first-child { border-top: 0; }
+.fn-svc-board .fn-svc-row.is-late { margin: 0 -1rem; padding-left: calc(1rem - 4px); padding-right: 1rem; border-left: 4px solid #E2574A; background: rgba(226, 87, 74, 0.14); }
+.fn-svc-board .fn-svc-row.is-later { opacity: 0.86; }
+.fn-svc-board .fn-svc-top .fn-due { font: 700 1.6rem/1 var(--display); color: var(--bar-text); }
+.fn-svc-board .fn-late, .fn-svc-board .fn-due.is-late { color: #FF9C8A; }
+.fn-svc-board .fn-tag { color: var(--ink); }
+.fn-svc-board .fn-svc-name { color: var(--bar-text); }
+.fn-svc-board .fn-svc-name:focus-visible { outline: 3px solid var(--bar-accent); outline-offset: 2px; }
+.fn-svc-cd { display: inline-block; margin-left: 0.3rem; padding: 2px 7px; border-radius: 4px; font: 700 0.72rem/1.3 var(--display); letter-spacing: 0.1em; text-transform: uppercase; white-space: nowrap; vertical-align: 2px; background: rgba(251, 248, 241, 0.14); color: var(--bar-text); }
+.fn-svc-row:not(.is-later) .fn-svc-cd { background: var(--bar-accent); color: var(--bar); }
+.fn-svc-row.is-late .fn-svc-cd { background: #E2574A; color: #fff; }
+.fn-svc-board .fn-svc-what { color: var(--bar-text); }
+.fn-svc-board .fn-x, .fn-svc-board .fn-of { color: rgba(251, 248, 241, 0.6); }
+.fn-svc-board .fn-svc-note { color: rgba(251, 248, 241, 0.82); }
+.fn-svc-diet { margin: 0.45rem 0 0; padding: 0.4rem 0.6rem; border-radius: 6px; background: rgba(251, 248, 241, 0.1); font-size: 0.95rem; line-height: 1.35; overflow-wrap: anywhere; }
+.fn-svc-dt { display: block; white-space: pre-wrap; }
+.fn-svc-dl { display: block; font: 700 0.72rem var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--bar-accent); white-space: normal; }
+.fn-svc-board .fn-sent-ok { color: #9FE0B7; }
+.fn-svc-board .fn-sent-ok small { color: rgba(251, 248, 241, 0.72); }
+.fn-svc-board .linkish { color: var(--bar-text); }
+.fn-svc-prints { margin: 0.8rem 0 0.6rem; }
+@media (min-width: 900px) {
+  .fn-list-page .fn-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}
