@@ -2,7 +2,7 @@
 
 Requested 7 November 2026 by the head chef: "Check them all out and grab benefits for us. Rewrite all design and function CLAUDE.md files necessary to achieve a beautiful merge of all those apps and create a new design for the whole app. Make up 3 different designs and give me your recommendations. I want to keep all the current functionality, but under a new scope using these apps as a role model. I want to maintain our colours and stuff, but I am open to a redesign where it makes sense. Show me designs." The seven apps: Linear, Things 3, Airbnb, Todoist, Flighty, Duolingo and Headspace.
 
-**Status: waiting for the head chef's choice. Nothing in the book has changed.** Recommended: A, with C's print line words and plain-list hat, and B's function card (see Recommendation). `index.html` in this folder is the comparison page (open it in a browser, or `?shot=<id>` for one screen at its real size). The designs are drawn by hand in that page with the book's colours, type and sizes from `css/app.css`; the today pictures in `previews/` were taken in the click-test stand-in (`tests/fake/`) with the book's own stylesheet and the real fonts. Every name, amount, function and time is made up. Nothing in them reads or saves. Baseline: `main` at `7ca3fb4`.
+**Status: Home chosen, the rest waiting (8 November 2026).** The head chef chose B's now and next home, with the seasonal celebrations in it, and asked for every other page and the admin panel to change too, with the seven apps as the model (Round 3, below; drawings in `every-page.html`). Nothing in the book has changed yet: the head chef said not to start coding.
 
 Role-based analysis, not research with real staff: the eleven reviewers were fresh agents given the proposal, the screenshots and the briefs in `.claude/skills/service-council/reviewers.md`.
 
@@ -215,6 +215,72 @@ What the check changed:
 | **Bands and slips** | No signal, Update, the Undo slip, toasts, the function band, the cut-off reminder bar | No change | B: the function band and the reminder bar overlap the board | `after-the-tap`, `offline-writes` |
 | **Printing, CSV, install, QR, text size** | Run sheet, prep tiles, report CSVs, Install, QR sign | No change | Same | Print and CSV tests |
 
+## Round 3: every page (8 November 2026)
+
+The head chef, after the coverage check: "I thought we agreed on looking at the apps that I gave you and use those for a new redesign, how can the other features stay all the same? Also, do like the home screen from B if we can implement the celebrations in there. But please have another look at all other features, with all those apps as a role model; I am sure we should definitely touch the admin panel as well. Don't start coding yet."
+
+`every-page.html` draws one design for every page and three for the admin panel, with the same rules as before: every feature and role kept, the book's colours, notebook, kraft board and type, one-row lines and print words, words not symbols, and no new reads, listeners or rules unless a page says so. Pictures: `previews/e-*.png`; today's home on Diwali for comparison: `previews/today-diwali-home-390.png`.
+
+**Home with the celebrations.** Diwali falls on 8 November 2026, so the home is drawn on it (`previews/e-home-390.png`, `e-home-1280.png`). The kraft board and the pins stay. The festival leads the dark board with its lamp and its six-language line, the lamps sit beside the day, the lights hang under the top bar, and Coming up holds festivals beside functions and cut-offs (Tihar begins tomorrow). This follows the celebration design chosen on 3 November (`docs/celebration-options/brief.md`: Home motifs behind the board, docket stamps where the mark is small, Coming up for the next 7 days from the offline calendar). On a plain day the board starts with Now and next (`e-home-staff-390.png`).
+
+**Every page and its model.** Prep (Things, Duolingo: a bar in each section heading), Add a line (Todoist: your usual lines first, nothing guessed), Orders for chefs (Flighty: each supplier's time left), Supplier order (Airbnb: one card), Delivery received (Flighty arrivals), Wastage (Todoist: Log again), Transfers (Airbnb: each loan a card), Functions (Airbnb Today and Upcoming), the service view (Flighty live board), Recipes and the card (Airbnb browsing and listing), a guide (Headspace, Duolingo: step by step), Shift pings (Linear inbox), Today's team (Flighty timeline), Drinks run (a café docket), Meeting minutes (Headspace: calm reading), Kitchen mail (Linear), Chef to-do (Things 3), Manage staff (Linear, Airbnb). Admin: A the Desk tidied, B Inbox and views (Linear), C Morning brief (Flighty, Headspace).
+
+**Council, round 3.** Six fresh reviewers saw every drawing and today's pages. Role-based analysis, not research with real staff.
+
+| Page | Keep | Fix | Drop | The fix, now in the drawing |
+| --- | --- | --- | --- | --- |
+| 1. Home | 0 | 6 | 0 | Only what is still to come; bigger labels on the board |
+| 2. Prep | 3 | 3 | 0 | Chips back on their own row; no letter in the box; the list ends above Add a line. Still 6 lines at 390 px |
+| 3. Add a line | 6 | 0 | 0 | |
+| 4. Orders | 0 | 6 | 0 | Back on the notebook page; a No supplier group first; how many ordered on each |
+| 5. Supplier order | 2 | 4 | 0 | Record order the main button, Mark order done quieter (they stay two different outcomes); boxes start empty with the usual amount as a hint |
+| 6. Delivery received | 0 | 6 | 0 | The reading starts empty and Save stays off until one is typed; Change time and notes stay |
+| 7. Wastage | 1 | 5 | 0 | Log again opens the form filled in, never logs in one tap; amounts in different units are never added up |
+| 8. Transfers | 3 | 3 | 0 | Mark returned as an outline button, with Undo; a return is always the whole loan, as today |
+| 9. Functions | 6 | 0 | 0 | |
+| 10. Service view | 2 | 3 | 1 | Dietaries on each round. The skeptic would fold it into Functions' Today card |
+| 11. Recipes | 1 | 5 | 0 | Contains and Free from as a clear switch |
+| 12. A recipe card | 0 | 6 | 0 | One scrolling card with jump chips; the plating line and the full allergen key back |
+| 13. A guide | 3 | 3 | 0 | Opens on All steps; the picture is the guide's own photo or PDF page |
+| 14. Shift pings | 5 | 1 | 0 | Only today's pings, from the same read as now |
+| 15. Today's team | 1 | 5 | 0 | Hours and break in words on every row, grouped by section |
+| 16. Drinks run | 2 | 2 | 1 | No I'll go (a new write). The skeptic would leave the page as it is; the head chef reviewer: build it last |
+| 17. Meeting minutes | 1 | 5 | 0 | Signing as Sam, Not you? beside Sign; See who has signed stays a tap |
+| 18. Kitchen mail | 3 | 3 | 0 | Headings back, nothing picked; the urgent box stays orange |
+| 19. Chef to-do | 6 | 0 | 0 | |
+| 20. Manage staff | 6 | 0 | 0 | |
+
+| Admin | Cook | Head chef | Skeptic | New starter | Keeper | Designer | Total |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| A, the Desk tidied | 3 | 3 | 4 | 3 | 4 | 4 | **21** |
+| B, Inbox and views | 4 | 4 | 3 | 4 | 2 | 3 | 20 |
+| C, Morning brief | 2 | 2 | 2 | 3 | 3 | 2 | 14 |
+
+First place split three to three. B's Inbox was liked by everyone; its saved views, New view, read history, nightly-run row and dark sidebar were not (new stored features and reads, and the paper look lost). The skeptic and the designer named the same mix, now drawn first (`previews/e-admin-ab-1280.png`, `e-admin-ab-390.png`): **A's four rooms on paper, with B's Inbox as the Today room.** It keeps the Chef's Desk chosen on 4 November, takes the levels from three to two, and the week's numbers come from the nightly record.
+
+What they agreed on and what the check found:
+
+- **Nothing saves in one tap or comes filled in** where it records something: the cook and the new starter's biggest risk (a 3.5 °C reading nobody took, a waste logged by a wet tap).
+- **Home shows only what is still to come.** Drinks, mail, minutes and to-do stay in the chef hat, as today; they were never on the dockets.
+- **Guides is not a new tab:** it is the sixth tab whenever guides are turned on (`featOn('guides')`). Four reviewers asked.
+- **The board's small orange** is `#F08A4B` on `#2B2A27`, 5.8 to 1, above AA; it is now 13 px for glare (the designer estimated 4.0 to 1 from the picture).
+- **Reads, checked in the code:** Delivery received already reads today's records on open (`js/deliveries.js`); your mail is the phone's own copy (`lk.mail.sent`); guides have written steps and their own photos or PDF (`docs/code-contracts.md`), not a drawing per step; See who has signed stays a tap. I'll go on Drinks would be a new write, so it is gone.
+- **Ship in groups, Prep first** (head chef, keeper, skeptic): every release reloads the phones and the team relearns pages mid-service.
+
+**Questions for the head chef (round 3):**
+
+1. Admin: the mix (A's rooms with B's Inbox as Today), B in full, A, or C?
+2. Build order, in grouped releases: Prep and Add a line; Home with the celebrations; Orders, Supplier order and Delivery received; Wastage and Transfers; Functions and the service view; Recipes and the card; the chef hat list and the kitchen pages; admin last. Change anything?
+3. Service view: keep it with the dietaries (5 of 6), or fold its round ticks into Functions' Today card?
+4. Drinks run: restyle it last, or leave it as it is?
+5. Make it again becomes Log again?
+6. Still open from round 2: line words in print; Cancel function at the end of the card; Urgent on a line taking 2 taps.
+
+## Chosen
+
+- **Home: B, now and next, with the seasonal celebrations in it** (head chef, 8 November 2026). Drawn in `every-page.html` on Diwali and on a plain day. Not built yet.
+- Everything else: waiting for the answers above.
+
 ## Documents that change once chosen
 
 The head chef asked for the design and function notes to be rewritten for the new design. They change in the pull request that builds each step, not now: `tests/design-patterns.test.js` fails when a pattern named in `docs/design-patterns.md` is not in the code, and `CLAUDE.md` holds rules, not plans. Once a design is chosen:
@@ -239,4 +305,5 @@ The head chef asked for the design and function notes to be rewritten for the ne
 ## Files
 
 - `index.html`: the comparison page and every design screen (`?shot=a-prep` and so on draws one screen at its real size).
+- `every-page.html`: round 3, every page and the admin options with the council's results (`?shot=e-home` and so on). The mock pieces are copied from `index.html` so the page stands alone.
 - `previews/today-*.png`: today's book in the stand-in, every page (the second set taken for the coverage check). `previews/a-*`, `b-*`, `c-*`: the three designs as scored; `previews/r-*`: the recommended mix, redrawn after the coverage check. All designs photographed from `index.html` at 390 x 844 and 1280 x 800.
