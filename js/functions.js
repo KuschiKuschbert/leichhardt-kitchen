@@ -305,7 +305,7 @@
   }
   function watch() {
     var prep = P(); if (!prep || !prep.state) return;
-    if (!prep.privateAccess()) { stop(); sheetClose(false, true); var printed = document.getElementById('fn-print'); if (printed) printed.remove(); F.list = []; F.sent = {}; F.state = 'idle'; lsSet('lk.fn', null); changed(); return; }
+    if (!prep.privateAccess()) { stop(); sheetClose(false, true); var printed = document.getElementById('fn-print'); if (printed) printed.remove(); F.list = []; F.all = null; F.sent = {}; F.state = 'idle'; lsSet('lk.fn', null); changed(); return; }
     var st = prep.state;
     if (!/^\d{4,6}$/.test(st.pin || '') || st.configState !== 'ok') return;
     var key = st.pin + '|' + T.day();
@@ -331,11 +331,14 @@
           F.offline = true; if (F.state !== 'ok') F.state = 'offline'; changed(); return;
         }
         if (!fromCopy) served = true;
-        F.list = snap.docs.filter(function (d) { return !d.data().removed; }).map(function (d) {
+        function one(d) {
           var job = F.jobs[d.id];
           // A cancellation waiting for its server acknowledgement must not look finished on this phone.
           return job && d.metadata && d.metadata.hasPendingWrites ? job.before : derive(Object.assign({ id: d.id }, d.data()));
-        });
+        }
+        F.list = snap.docs.filter(function (d) { return !d.data().removed; }).map(one);
+        // removed ones too, for Manage functions (live()), which lists them under Deleted
+        F.all = snap.docs.map(one);
         F.offline = fromCopy;
         if (!F.offline) { F.at = now(); F.cached = false; F.state = 'ok';  }
         else if (F.state !== 'ok') F.state = navigator.onLine === false ? 'offline' : 'loading';
@@ -1088,6 +1091,8 @@
 
   window.LK_FN = {
     M: M, list: function () { return F.list.slice(); }, state: function () { return F; },
+    // every booking from today on as the live list has them, removed ones included; null until the server answered
+    live: function () { return F.state === 'ok' && F.all ? F.all.slice() : null; },
     bandSlot: function () { var h = bandHTML(); lastBand = h; return '<div class="fn-band" id="fn-band" role="region" aria-label="Functions"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     landSlot: function () { var h = landHTML(); return '<div id="fn-land"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     checkSlot: function () { var h = checkHTML(); return '<div id="fn-check"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
