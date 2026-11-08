@@ -34,7 +34,7 @@ Guides includes a Food safety guide for everyone with access to that page. It re
 
 This guide is bundled with the book, searchable and readable without extra Firestore reads or writes. It stays outside the uploaded-guide editor. Existing page access and feature switches still apply. The on-screen guide is available from the saved app with no signal; the PDF needs opening once while connected before it is cached. Revert this change to remove the bundled guide; uploaded guides stay intact.
 
-The [Operandio cooling preview](docs/operandio-cooling-options/index.html) (8 November 2026) shows the chosen clock dropdown in the chef hat style. Anyone can start 2 hours; the 4-hour row becomes clickable when it ends, and starts only on another tick. Everyone gets a ping at each deadline. Closed-app operation is requested and needs server timing plus device push; the recommended backend requires a billing decision beyond the recorded free-plan choice. This is a clickable preview, not a released timer. [Brief and delivery plan](docs/operandio-cooling-options/brief.md).
+The [Operandio cooling preview](docs/operandio-cooling-options/index.html) (8 November 2026) shows the chosen compact clock dropdown in the chef hat style, reduced to 288 × 183 px for the ready and running states. Anyone can start 2 hours; the 4-hour row becomes clickable when it ends, and starts only on another tick. Everyone gets a ping at each deadline. Closed-app operation is requested and needs server timing plus device push; the recommended backend requires a billing decision beyond the recorded free-plan choice. This is a clickable preview, not a released timer. [Brief and delivery plan](docs/operandio-cooling-options/brief.md).
 
 ## What it does
 

@@ -29,14 +29,14 @@
     const firstDone=['first_due','second','second_due'].includes(stage);
     const secondDone=stage==='second_due';
     function row(hours,enabled,running,done,caption) {
-      return '<button type="button" class="oc-menu-row '+(enabled?'is-ready':'')+'" data-oc="start'+(hours===2?'1':'2')+'" '+(enabled?'':'disabled')+'><span class="oc-menu-tick" aria-hidden="true">'+(done?'✓':running?clock:'')+'</span><span class="oc-menu-label"><b>'+hours+' hours</b><small>'+caption+'</small></span><span class="oc-menu-state">'+(enabled?'Start':running?'Running':done?'Done':'Next')+'</span></button>';
+      return '<button type="button" class="oc-menu-row '+(enabled?'is-ready':'')+'" data-oc="start'+(hours===2?'1':'2')+'" '+(enabled?'':'disabled')+'><span class="oc-menu-tick" aria-hidden="true">'+(done?'✓':running?clock:'')+'</span><span class="oc-menu-label"><b>'+hours+' hours</b><small>'+caption+'</small></span><span class="oc-menu-state">'+(enabled?'Start':running?'':done?'Done':'Next')+'</span></button>';
     }
     const wrap=document.createElement('div');wrap.className='wm-wrap oc-modal';
-    wrap.innerHTML='<div class="wm-bg" data-oc="close"></div><section class="oc-dropdown" role="dialog" aria-modal="true" aria-labelledby="oc-title" tabindex="-1"><header class="oc-menu-head"><div><h2 id="oc-title">Operandio</h2><p>Batch cooling</p></div><button type="button" data-oc="close" class="oc-menu-close" aria-label="Close cooling timers">×</button></header>'+row(2,stage==='idle',stage==='first',firstDone,stage==='idle'?'Tick to start':stage==='first'?'1 h 42 min left · due 16:00':'Finished at 16:00')+row(4,stage==='first_due',stage==='second',secondDone,stage==='first_due'?'Tick to start the next stage':stage==='second'?'3 h 50 min left · due 20:10':secondDone?'Finished at 20:10':'Available after 2 hours')+'<footer class="oc-menu-foot">'+(secondDone?action('reset','Start another batch',true):'Everyone gets a ping when each timer ends.')+'</footer></section>';
+    wrap.innerHTML='<div class="wm-bg" data-oc="close"></div><section class="oc-dropdown" role="dialog" aria-modal="true" aria-labelledby="oc-title" tabindex="-1"><header class="oc-menu-head"><h2 id="oc-title">Operandio</h2><button type="button" data-oc="close" class="oc-menu-close" aria-label="Close cooling timers">×</button></header>'+row(2,stage==='idle',stage==='first',firstDone,stage==='idle'?'Tick to start':stage==='first'?'1 h 42 min left · due 16:00':'Finished at 16:00')+row(4,stage==='first_due',stage==='second',secondDone,stage==='first_due'?'Tick to start':stage==='second'?'3 h 50 min left · due 20:10':secondDone?'Finished at 20:10':'After 2 hours')+(secondDone?'<footer class="oc-menu-foot">'+action('reset','Start another batch',true)+'</footer>':'')+'</section>';
     document.body.appendChild(wrap);document.documentElement.classList.add('oc-sheet-open');
     const chip=document.querySelector('.oc-clock'),rect=chip.getBoundingClientRect(),menu=wrap.querySelector('.oc-dropdown');
     menu.style.top=Math.max(8,Math.min(rect.bottom+8,innerHeight-menu.offsetHeight-8))+'px';
-    menu.style.right=Math.max(8,Math.min(innerWidth-menu.offsetWidth-8,innerWidth-rect.right))+'px';
+    menu.style.left=Math.max(8,Math.min(innerWidth-menu.offsetWidth-8,rect.left+rect.width/2-menu.offsetWidth/2))+'px';
     chip.setAttribute('aria-expanded','true');menu.focus();
   }
   function open(kind) {

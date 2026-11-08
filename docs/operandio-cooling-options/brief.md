@@ -14,12 +14,16 @@ The mock example starts at 14:00, pings at 16:00, waits until someone ticks at 1
 
 The owner's next request selects a clock dropdown in the chef hat's style. This supersedes the council's recommendation of C below. It uses the chef hat's cream panel, charcoal border and compact rows, anchored below the clock at phone, tablet and desktop widths. The existing chef hat itself becomes a bottom sheet on phones; this two-row preview stays a dropdown, as requested.
 
-- **Operandio** is the heading, with **Batch cooling** underneath.
+- **Operandio** is the single-line heading, with a 44 px close button.
 - **2 hours** is clickable first. While running it shows time left and its deadline.
-- **4 hours** is disabled with “Available after 2 hours”. After the first deadline it becomes clickable with “Tick to start the next stage”. It never starts itself.
+- **4 hours** is disabled with “After 2 hours”. After the first deadline it becomes clickable with “Tick to start”. It never starts itself.
 - Both rows remain visible. A running or completed row cannot be restarted by another tick.
 - The same shift-style pings appear at both deadlines. Got it remains personal.
 - The clock and a timer row take two taps to start from Prep. Closing the dropdown takes one more tap. Existing Prep actions stay one tap, and the closed menu uses no list space.
+
+The owner then asked for a smaller dropdown so more of the page stays visible. The ready and running panels now measure **288 × 183 px**, down from **360 × 297 px** on the 390 px phone: about 51% less panel area. Both rows remain 62 px high, and the close target remains 44 px. The extra subtitle and explanatory footer are removed; the completed state alone adds Start another batch and measures 288 × 239 px. The menu is centred under the clock and clamped inside the viewport.
+
+Quick refinement check: no new controls or steps, no changed timing or access, and no new reads. Start remains two taps from Prep. Closed-menu list measurements remain the baseline. All five states were exercised at 390, 768 and 1280 px with no overflow; captions fit without clipping on the phone.
 
 Closed-app delivery is now part of the requested feature. Canonical server deadlines preserve the timer, and a scheduled sender plus device push provides notifications without an app window. Existing order push registration is chef-only and its ten-minute GitHub job is not a punctual alarm. Extend cooling opt-in to current kitchen staff separately from supplier reminders. Each device needs notification permission; iPhone/iPad needs the Home Screen app. OS settings and connectivity still govern arrival and sound.
 
