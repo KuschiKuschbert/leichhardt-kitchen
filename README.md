@@ -34,6 +34,8 @@ Guides includes a Food safety guide for everyone with access to that page. It re
 
 This guide is bundled with the book, searchable and readable without extra Firestore reads or writes. It stays outside the uploaded-guide editor. Existing page access and feature switches still apply. The on-screen guide is available from the saved app with no signal; the PDF needs opening once while connected before it is cached. Revert this change to remove the bundled guide; uploaded guides stay intact.
 
+The [Operandio cooling designs](docs/operandio-cooling-options/index.html) (8 November 2026) compare a clock sheet, a Prep card and the existing Pings sheet. The requested sequence is shared: one tick starts 2 hours, everyone gets a ping, then another tick starts 4 hours and everyone gets the second ping. The name stays Operandio. These are interactive proposals only; the council recommends the Pings sheet, and no placement has been selected or released. [Brief and delivery limits](docs/operandio-cooling-options/brief.md).
+
 ## What it does
 
 - **Drinks run notebook (8 November 2026).** The drinks page matches Chef to-do and Today's team: warm paper, burnt-orange headings, green ticks and handwritten drinks with typed quantities. Laptops show the grouped order on the left and Your usual plus the people on the right; phones keep the same reading order. The existing usual-drink editor uses one sheet, with the same Save and Cancel. [Style and verification](docs/drinks-notebook.md).

@@ -42,6 +42,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Wastage history and CSV reports | `docs/wastage-history.md`, `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |
 | Functions: cancel, Undo, delete, print | `docs/function-cancellation.md`, `docs/function-printing.md` |
+| Operandio shared cooling pings, design ideas only | `docs/operandio-cooling-options/brief.md` (2 hours, then a separate tick for 4 hours; no placement chosen) |
 | Pings: who gets them, the sound | `docs/ping-recipients.md`, `docs/ping-sound.md` |
 | Back arrow and page trail | `docs/navigation.md` |
 | Merging, the queue, `urgent` | `docs/auto-merge.md` |

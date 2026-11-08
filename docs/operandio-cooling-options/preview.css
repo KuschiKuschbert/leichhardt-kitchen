@@ -1,0 +1,61 @@
+/* Design preview only, built on the book's existing type, tokens, controls and sheet. */
+.oc-demo .wtop-icons { gap: 4px; }
+.oc-demo .wtop-start { gap: 0; }
+.oc-demo .wtop-brand b { font-size: 1.2rem; }
+.oc-demo .wtop-brand { gap: 4px; }
+.oc-demo .wtop .tm-chip { flex: 0 0 44px; }
+.oc-clock.oc-hot { background: var(--tag); }
+html.oc-sheet-open, html.oc-sheet-open body { overflow: hidden; }
+.oc-modal .nt { animation: none; max-height: min(88dvh,800px); }
+.oc-modal .nt-head { padding: 4px 20px 14px; border-bottom: 1px solid var(--line); }
+.oc-modal .nt-body { padding: 0 20px; }
+.oc-modal .nt-foot { padding: 14px 20px max(16px,env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
+.oc-modal .nt-foot .btn { width: 100%; justify-content: center; }
+.oc-batch { padding: 20px 0 14px; }
+.oc-batch-head { display: flex; align-items: center; gap: 12px; }
+.oc-symbol { width: 44px; height: 44px; display: grid; place-items: center; border: 1.5px solid var(--line); border-radius: var(--r-act); color: var(--accent-ink); }
+.oc-batch-head h3 { font: 700 1.7rem/1.05 var(--display); margin: 0 0 4px; }
+.oc-batch-head p { margin: 0; color: var(--muted); font-size: 1rem; }
+.oc-status { margin: 18px 0 8px; color: var(--accent-ink); font-weight: 700; }
+.oc-count { display: flex; align-items: baseline; gap: 12px; margin: 10px 0 14px; }
+.oc-count b { font: 700 3.4rem/1 var(--display); font-variant-numeric: tabular-nums; }
+.oc-count span { color: var(--muted); font-size: .95rem; }
+.oc-steps { padding: 0; margin: 10px 0 18px; list-style: none; }
+.oc-steps li { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.oc-step-no { flex: 0 0 30px; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid var(--line); font-weight: 700; }
+.oc-steps .is-current .oc-step-no { color: var(--paper); background: var(--accent-ink); border-color: var(--accent-ink); }
+.oc-steps .is-finished .oc-step-no { color: var(--done-ink); border-color: var(--done-ink); }
+.oc-steps b { display: block; font: 700 1.25rem var(--display); }
+.oc-steps small { display: block; margin-top: 4px; color: var(--muted); font-size: .95rem; }
+.oc-action { width: 100%; min-height: 50px; justify-content: center; gap: 9px; }
+.oc-check { width: 22px; height: 22px; display: grid; place-items: center; border: 1.5px solid currentColor; border-radius: 4px; font-size: 15px; }
+.oc-caption { margin: 12px 0 0; font-size: .95rem; color: var(--muted); line-height: 1.4; }
+.oc-other { display: flex; flex-direction: column; gap: 4px; padding: 16px 0; border-top: 1px solid var(--line); }
+.oc-other span { font-size: .95rem; color: var(--muted); }
+.oc-inline { margin: 0 0 20px; padding: 16px 20px; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); }
+.oc-inline-label { font: 700 .8rem var(--display); letter-spacing: .12em; color: var(--accent-ink); }
+.oc-inline .oc-batch { padding-top: 12px; }
+.oc-inline .oc-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.oc-inline .oc-steps li { display: block; border: 0; padding: 8px 0; }
+.oc-inline .oc-step-no { margin-bottom: 8px; }
+.oc-inline .oc-steps b { font-size: 1.05rem; }
+.oc-ping { padding: 22px 0 16px; }
+.oc-tag { color: var(--accent-ink); font: 700 .8rem var(--display); letter-spacing: .1em; }
+.oc-ping h3 { margin: 14px 0 10px; font: 700 1.75rem/1.2 var(--display); }
+.oc-ping-time { color: var(--muted); font-size: 1rem; }
+.oc-next { margin-top: 24px; border-top: 2px solid var(--ink); padding-top: 18px; }
+.oc-next b { font: 700 1.3rem var(--display); }
+.oc-next p { margin: 6px 0 16px; }
+.oc-next small { display: block; margin-top: 10px; color: var(--muted); }
+.oc-personal { margin: 0; width: 100%; text-align: center; color: var(--muted); font-size: .9rem; }
+@media(min-width:720px) { .oc-demo .wtop-brand b { font-size: 2rem; } .oc-inline .oc-steps { grid-template-columns: 1fr 1fr; } }
+.oc-inline { margin: 12px 0 18px; padding: 12px 14px; }
+.oc-inline .oc-inline-label { display: none; }
+.oc-compact .oc-batch-head h3 { font-size: 1.35rem; }
+.oc-compact .oc-batch-head p { font-size: .875rem; }
+.oc-compact .oc-symbol { width: 36px; height: 36px; }
+.oc-compact-state { margin: 12px 0 6px; font-size: .95rem; color: var(--accent-ink); font-weight: 700; }
+.oc-mini-steps { display: flex; gap: 16px; margin: 10px 0 14px; }
+.oc-mini-steps > span { flex: 1; }
+.oc-mini-steps b, .oc-mini-steps small { display: block; }
+.oc-mini-steps small { margin-top: 4px; color: var(--muted); font-size: .8rem; }
