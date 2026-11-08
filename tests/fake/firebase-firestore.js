@@ -200,6 +200,8 @@ function chefReader(ref) {
   const by = kitchenReader(ref), c = cfgOf(ref);
   return !!by && ((c.sousIds || []).indexOf(by) >= 0 || (!!c.headId && c.headId === by));
 }
+// Cleaning is held back until the admin enables it; canonical chefs retain the setup workspace.
+function cleaningReader(ref) { return !!kitchenReader(ref) && (chefReader(ref) || (cfgOf(ref).staffSee || {}).cleaning === true); }
 // someone ticked for Functions (fnIds) on their own PIN session, functions only or not (fncontact, functions/<id>/hist)
 function fnReader(ref) { if (isAdmin(ref)) return true; const by = sessionReader(ref); return !!by && (cfgOf(ref).fnIds || []).indexOf(by) >= 0; }
 // kitchen mail: the Google account, or a sous chef on their PIN session while the head chef has sous chef mail on
@@ -242,8 +244,9 @@ function colRefused(ref, list) {
     if (list) return !(ref.c || []).some(x => x.k === 'where' && x.f === 'day' && x.op === '==' && isToday(x.v));
     return store[k] !== undefined && !isToday(store[k].day);   // a new receipt's id may be checked before it is written
   }
+  if (c === 'cleaningTasks') return !cleaningReader(ref);
   if (c === 'cleaningDone') {
-    if (!kitchenReader(ref)) return true;
+    if (!cleaningReader(ref)) return true;
     if (chefReader(ref)) return false;
     const today = new Date(requestNow() + 36000000).toISOString().slice(0, 10);
     return list ? !asks(ref, 'day', '==', today) : store[k] !== undefined && store[k].day !== today;
@@ -681,7 +684,7 @@ function commitOps(ops) {
     const invalid = cleanOps.some(o => {
       const path = key(o.ref.path), old = store[path], d = after(o), c = cfgOf(o.ref), id = o.ref.path.at(-1);
       const root = rootOf(o), taskPath = tid => root + '/cleaningTasks/' + tid;
-      if (o.kind === 'delete' || !actor || d.by !== actor || (c.fnOnlyIds || []).includes(actor)) return true;
+      if (o.kind === 'delete' || !actor || d.by !== actor || (c.fnOnlyIds || []).includes(actor) || !cleaningReader(o.ref)) return true;
       if (o.ref.path[2] === 'cleaningTasks') {
         if (!chef(c) || !identifier(id) || !taskShape(d)) return true;
         if (!old) {

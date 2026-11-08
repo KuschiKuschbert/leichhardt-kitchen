@@ -1,0 +1,59 @@
+{
+  "note": "Synthetic tasks and people. Existing app fonts. Before is main 014a855, after is the admin release-toggle branch.",
+  "before": {
+    "rows": 7,
+    "overflow": false,
+    "minTarget": 44
+  },
+  "after": {
+    "rows": 7,
+    "overflow": false,
+    "minTarget": 44
+  },
+  "admin390": {
+    "off": true,
+    "setupLink": true,
+    "overflow": false,
+    "labels": [
+      {
+        "text": "Staff see Guides",
+        "height": 44
+      },
+      {
+        "text": "Staff see Shift pings",
+        "height": 44
+      },
+      {
+        "text": "Staff see Meeting minutes",
+        "height": 44
+      },
+      {
+        "text": "Turn on Cleaning for the team",
+        "height": 44
+      }
+    ]
+  },
+  "admin1280": {
+    "off": true,
+    "setupLink": true,
+    "overflow": false,
+    "labels": [
+      {
+        "text": "Staff see Guides",
+        "height": 44
+      },
+      {
+        "text": "Staff see Shift pings",
+        "height": 44
+      },
+      {
+        "text": "Staff see Meeting minutes",
+        "height": 44
+      },
+      {
+        "text": "Turn on Cleaning for the team",
+        "height": 44
+      }
+    ]
+  }
+}

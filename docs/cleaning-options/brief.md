@@ -8,6 +8,8 @@
 
 ## Confirmed by the head chef
 
+The follow-up [admin release switch](release-toggle.md) starts Cleaning off for the team while chefs prepare the schedule. It keeps the approved layout.
+
 - Move the Guides navigation chip into the chef-hat menu.
 - Explore a cleaning page with section-specific recurring work throughout the week.
 - Include coldroom, freezer, dry store, oven, fryers, behind equipment, pass and shelves, alongside the kitchen's existing sections.

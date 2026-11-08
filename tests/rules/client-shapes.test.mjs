@@ -69,7 +69,7 @@ const PEOPLE = [P('kit', 'Kit', 'head', { ping: true }), P('sam', 'Sam', 'sous',
   P('fay', 'Fay', 'fnc', { add: false, tick: false, del: false, fn: true }), P('finn', 'Finn', 'fnc', { add: false, tick: false, del: false, fn: true })];
 const IDS = PEOPLE.map(p => p.id);
 const CFG = { people: PEOPLE, headId: 'kit', sousIds: ['kit', 'sam'], pingIds: ['kit', 'sam'], staffIds: IDS, fnIds: ['fay', 'finn'], fnOnlyIds: ['fay', 'finn'],
-  pinOpen: {}, sousMail: false, showBadges: true, staffSee: { guides: true, pings: true, minutes: true },
+  pinOpen: {}, sousMail: false, showBadges: true, staffSee: { guides: true, pings: true, minutes: true, cleaning: true },
   kitSecs: [{ id: 'larder', name: 'Larder', off: false }], cutoffs: [{ id: 'northside', name: 'Northside Test Foods', dd: [1], at: 900, pre: 1, lead: 240 }] };
 Object.assign(CFG, Object.fromEntries(['add', 'tick', 'del'].map(cap => [cap + 'Ids', PEOPLE.filter(p => p.active !== false && !CFG.fnOnlyIds.includes(p.id) && (p.id === CFG.headId || p[cap] === true)).map(p => p.id)])));
 const ROSTER = { people: PEOPLE, staffIds: IDS, sousIds: CFG.sousIds, headId: 'kit', fnIds: CFG.fnIds, fnOnlyIds: CFG.fnOnlyIds };
@@ -779,6 +779,42 @@ row('js/prep.js cleaningTick(): shared screen reports another active worker', { 
 row('js/prep.js cleaningUndo(): recorder Undo preserves the cycle audit and advances version', { ok: TICKS, asks: TICKS,
   prep: (r, w) => put({ ['cleaningTasks/clean-undo-' + r]: cleanTask('clean-undo-' + r), [`cleaningDone/${TODAY}_clean-undo-${r}`]: cleanDone('clean-undo-' + r, w, NAME[r]) }),
   run: (db, w, r) => W(r, [['upd', `cleaningDone/${TODAY}_clean-undo-${r}`, { done: false, version: 2 }]]) });
+
+// The existing admin Save writes both documents atomically; changing Cleaning preserves the other page switches.
+for (const enabled of [true, false]) {
+  const see = { guides: true, pings: false, minutes: true, cleaning: enabled };
+  row('js/prep.js adminSave()/saveConfig(): turn Cleaning ' + (enabled ? 'on' : 'off') + ' with the other staffSee settings preserved', { ok: GOOGLE, asks: GOOGLE,
+    prep: () => put({ 'config/main': { ...CFG, staffSee: { ...see, cleaning: !enabled } } }),
+    after: () => put({ 'config/main': CFG, 'login/roster': ROSTER }),
+    run: async db => {
+      const b = writeBatch(db);
+      b.set(D(db, 'config/main'), { ...CFG, staffSee: see, updated: Date.now(), updatedBy: 'Head chef' });
+      b.set(D(db, 'login/roster'), ROSTER);
+      await b.commit();
+      const saved = (await getDocFromServer(D(db, 'config/main'))).data().staffSee;
+      if (!Object.keys(see).every(key => saved[key] === see[key]) || Object.keys(saved).length !== Object.keys(see).length) throw new Error('Saved page switches changed');
+    } });
+}
+for (const [state, staffSee] of [['off', { ...CFG.staffSee, cleaning: false }], ['missing', { guides: true, pings: true, minutes: true }]]) {
+  const release = { prep: () => put({ 'config/main': { ...CFG, staffSee } }), after: () => put({ 'config/main': CFG }) };
+  row('js/prep.js cleaningLoad(): task query while release is ' + state, { ...release, ok: CHEFS, asks: CHEFS,
+    run: db => getDocsFromServer(query(C(db, 'cleaningTasks'), where('until', '>', MIDNIGHT), limit(501))) });
+  row('js/prep.js cleaningLoad(): current completion query while release is ' + state, { ...release, ok: CHEFS, asks: [],
+    run: db => getDocsFromServer(query(C(db, 'cleaningDone'), where('day', '==', TODAY), limit(2001))) });
+  row('js/prep.js cleaningLoad(): chef weekly completion query while release is ' + state, { ...release, ok: CHEFS, asks: CHEFS,
+    run: db => getDocsFromServer(query(C(db, 'cleaningDone'), where('day', '>=', PAST), where('day', '<=', TMW), limit(2001))) });
+  row('js/prep.js cleaningSave(): retry reads generated revision while release is ' + state, { ...release, ok: CHEFS, asks: CHEFS,
+    prep: async r => { await release.prep(); await put({ ['cleaningTasks/clean-release-save-' + r]: cleanTask('clean-release-save-' + r) }); },
+    run: (db, w, r) => getDocFromServer(D(db, 'cleaningTasks/clean-release-save-' + r)) });
+  row('js/prep.js cleaningSave(): chef prepares schedule while release is ' + state, { ...release, ok: CHEFS, asks: CHEFS,
+    run: (db, w, r) => W(r, [['set', 'cleaningTasks/clean-release-new-' + state + '-' + r, cleanTask('clean-release-new-' + state + '-' + r, { by: w })]]) });
+  row('js/prep.js cleaningTick(): only chefs record completion while release is ' + state, { ...release, ok: CHEFS, asks: CHEFS,
+    prep: async r => { await release.prep(); await put({ ['cleaningTasks/clean-release-tick-' + r]: cleanTask('clean-release-tick-' + r), [`cleaningDone/${TODAY}_clean-release-tick-${r}`]: null }); },
+    run: (db, w, r) => W(r, [['set', `cleaningDone/${TODAY}_clean-release-tick-${r}`, cleanDone('clean-release-tick-' + r, w, NAME[r])]]) });
+  row('js/prep.js cleaningUndo(): only chefs Undo their completion while release is ' + state, { ...release, ok: CHEFS, asks: CHEFS,
+    prep: async (r, w) => { await release.prep(); await put({ ['cleaningTasks/clean-release-undo-' + r]: cleanTask('clean-release-undo-' + r), [`cleaningDone/${TODAY}_clean-release-undo-${r}`]: cleanDone('clean-release-undo-' + r, w, NAME[r]) }); },
+    run: (db, w, r) => W(r, [['upd', `cleaningDone/${TODAY}_clean-release-undo-${r}`, { done: false, version: 2 }]]) });
+}
 
 /* ---------- a person's PIN reset while their book is open (r2-1-2) ----------
    The owner's Reset PIN deletes pinset/<id>; the person's running config/main listener is refused at once, which is
