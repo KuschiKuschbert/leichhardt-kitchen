@@ -8,8 +8,17 @@ Approved by Kuschi, 25 October 2026. This policy replaces the earlier kitchen-PI
 - Staff: existing prep, orders, wastage, transfer, guide, published minute, ping-reading and kitchen-mail permissions after login. Existing restrictions on historical records remain.
 - Functions coordinator (`fnc`, canonical `fnOnlyIds`): public recipes, function management/service information and today's delivery temperature records. No operational lists, staff administration, supplier data or kitchen mail. The separate Functions tick (`fnIds`) still controls booking writes.
 - Head chef and sous chef: recipe and drawing management. Supplier catalogue editing remains head-chef/admin only.
+- Head chef / Sous chef panel (`#/chef`, chosen 8 November 2026): the current personal PIN session must match canonical `headId` or `sousIds`. Its four rooms share the admin shell and expose existing chef work under its existing checks. An editable role label, typed email or remembered Google does not grant panel access.
 - Admin: verified owner Google identity plus that device's current head-chef PIN session and matching device grant. Remembered Google alone never opens private operations. See [device sessions](device-sessions.md).
 - Personal devices keep Google remembered, have no idle logout and lock kitchen access at 04:00 Queensland time for a daily PIN unlock. Shared screens clear this device's Google and PIN on the 10-minute idle lock and at 04:00. Voluntary handover clears private work, waits for unsent writes and never transfers the previous person's authority. Scheduled locks preserve the same person's unfinished work behind the PIN screen.
+
+### Chef panel boundaries
+
+Today reuses the loaded current-day prep/order lists, team plan, Chef to-do, Shift pings and permitted shared Kitchen mail. An unread list says **Not read yet**; opening the dashboard adds no admin analytics, assessment or watch-list query. Reports is read only: opening a prep/order history report, changing its day or pressing Refresh reads that selected day, one document read per line and at least one for an empty query. Uncached or refreshed reports require a server answer, with explicit loading and failure states; a previously confirmed complete range can use the existing memory cache.
+
+Team reuses the planner, staff roster editor and minutes sign-off register. Canonical permission approvals and PIN resets remain owner-admin actions. Published minutes retain their existing read/sign-off checks; writing and publishing remain owner-only. Shared mail reading and triage still need the existing sharing switch. Function booking still needs its separate Functions tick, and supplier catalogue edits remain Head chef/admin only. Kitchen links open those existing workspaces. Owner analytics, assessments, reference records, waste/transfer/delivery history, settings, security and backups keep their current checks.
+
+The panel reuses existing editors, drafts and saves. Chef tab and room memory is separate from the saved owner admin tab. Role removal closes the panel and clears its private history/Find results; locks and handover use the existing device contract. This panel adds no rule, schema or permission change. See the [chosen implementation and verification](chef-panel-options/brief.md#chosen-implementation).
 
 ## Data boundaries
 

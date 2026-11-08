@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **8 November 2026, a Head chef / Sous chef panel like the real admin panel.** The owner clarified the requested design after the three examples: inspect how the admin account's panel is implemented and give Head chef and Sous chef a similar panel. Reuse the actual admin shell with Today, Reports, Team and Kitchen, its responsive rail, tabs and Find. Open it with the current personal chef PIN and canonical role; retain the existing service shortcuts. Working chef editors and registers belong inside the panel, with the current permissions. No wider owner-only access is implied. See [the chef panel brief](chef-panel-options/brief.md).
+
 Moved out of `README.md` on 3 November 2026 so sessions can read it in parts (README had grown past 350 KB). Dated decisions about how the book should work: who may do what and what moved where. Newest first. Add a new decision at the top with its date.
 
 - **8 November 2026, Drinks run in the same notebook style.** The head chef asked to match the Chef to-do and Today's team pages. Reuse their warm paper, orange headings and active choices, green ticks and responsive book: order on the left, Your usual and people on the right from 1100 px, the existing reading order on phones. Changing a usual keeps one form on a single sheet and the team steps aside. Retain grouping, Show them, first-PIN onboarding, saves, authority, data and reads. See [the notebook record](drinks-notebook.md).

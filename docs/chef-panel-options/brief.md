@@ -1,10 +1,50 @@
 # Head chef and sous chef panel
 
-Requested 8 November 2026. **Status: comparison verified; awaiting the owner's choice. No layout chosen and no application change released.**
+Requested 8 November 2026. **Chosen 8 November 2026: a dedicated Head chef / Sous chef panel like the real admin account.** The owner clarified: "please check how the admin panel is implemented in the admin account, we need a similar thing for head/chef and sous chef". This selects A's dedicated-panel direction with the actual admin shell and working subpages, rather than the earlier link-only example. Implementation and verification are recorded below; release remains subject to the existing queue.
+
+## Chosen implementation
+
+The real admin is rendered by adminHTML() in js/prep.js. Its four rooms, laptop rail, phone tabs, Find, On this page and content pane use the existing ad-* and a-* patterns. Both panels now call panelShellHTML() for that same markup.
+
+The chef hat adds Head chef panel or Sous chef panel at #/chef. A current personal chef PIN session opens it. Canonical headId/sousIds determine access; an editable role label, remembered Google or a typed email does not. The existing direct service links remain.
+
+| Room | Working pages |
+| --- | --- |
+| Today | Dashboard from today's already loaded lists, Chef to-do, Shift pings, conditional shared Kitchen mail |
+| Reports | Prep history and Order history, one selected day, with search and recorded status |
+| Team | Today's team planner, Manage staff and Meeting minutes sign-off register |
+| Kitchen | Overview and the existing recipe, supplier, function, delivery and guide workspaces |
+
+Chef to-do, Today's team, staff, pings, the register and shared mail use their existing renderers, state and writes inside the panel. There are no copied editors or second drafts. Team and to-do refresh, clock and view-restoration hooks recognise their chef subpages. Lazy recipe, supplier, function, delivery and guide tools keep their current routes and return through the normal page trail.
+
+Chef Find includes only permitted chef pages and current headings. It does not include owner reports, assessments, permission settings or people assessment pages. Chef tab/room state stays in memory and is separate from the saved admin tab. Handover clears it; scheduled locks hide retained drafts behind the original person's PIN and close private navigation sheets.
+
+### Reads, permissions and failure behaviour
+
+- Dashboard counts reuse the loaded current-day lists and existing team plan. No admin analytics, historical summary, assessment or watch-list query is added.
+- Opening a history report or changing its date reads only that selected prep/order day, one document read per line, at least one for an empty query. Refresh explicitly rereads it. The shared pastRead() cache and correction stamps are reused. The new strict option requires a server answer for an uncached or refreshed report, so an offline response cannot become an empty-day result. Previously confirmed complete ranges can use the existing memory cache.
+- The existing mail sharing switch still controls PIN chef reading and triage. The chef reader does not expose the sharing switch or owner Seen control. Functions booking still requires its separate tick; only Head chef/admin edit the supplier catalogue.
+- Manage staff remains the existing roster editor. Canonical permission approval and PIN resets remain owner-admin actions.
+- Owner analytics, assessments, reference records, waste/transfer/delivery history, kitchen settings, security and backups keep their current checks. No rule or schema change is required.
+- Loading, refused and failed history reads have explicit states. Canonical role removal closes the panel and its Find results. Existing write, unsaved-work and daily-device locks apply.
+
+### Acceptance and verification
+
+The dedicated panel is implemented. The new chef-panel browser file passes **143 checks** covering both chef PIN roles, all three widths, room navigation, real todo/ping/staff saves, selected-day histories, filtered Find, shared-mail triage, canonical revocation, daily lock, retained drafts and handover. It also covers missing canonical membership, returning from an old Prep/Orders date, today's metric destinations, an uncached report refusal and contextual minutes Preview Back. The existing chef-menu, head-chef and admin-hidden files pass another 174 checks.
+
+All 13 focused regression files passed: admin-nav, admin-kit, admin-inbox, admin-review-desk, read-budget, roles, page-roles, safe-text, todays-team, todo-notebook, local-back-navigation, device-prep-lock and device-lock-handover. App and test syntax, design-pattern registry and diff whitespace checks passed. The full 253-file app suite and required repository CI are release gates; their actual results and release status are recorded in [PR #607](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/607) before marking ready.
+
+The screenshots below show the implemented application with the repository's synthetic people and mocked Firebase. There were no page errors or sideways overflow at 390, 768 or 1280 px for either PIN chef role. These are source/mock checks, not live permission or production-data checks. No rule changed or publication is required. PR #607 tracks CI and release.
+
+| Phone | Laptop |
+| --- | --- |
+| ![Implemented Sous chef dashboard](implemented/sam-390-dashboard.png) | ![Implemented Sous chef dashboard and admin-style rail](implemented/sam-1280-dashboard.png) |
+
+Working subpages: [staff roster](implemented/sam-1280-people.png), [pings editor](implemented/sam-1280-notes.png), [team planner](implemented/sam-1280-plan.png) and [prep history](implemented/sam-1280-prep-history.png). Head chef: [phone](implemented/ann-390-dashboard.png), [laptop](implemented/ann-1280-dashboard.png).
 
 The owner asked for a head chef / sous chef panel alongside the admin-email panel. One shared implementation can use each person's current kitchen and personal PIN session, show the appropriate role heading and keep the owner admin destination separate.
 
-## What exists today
+## Baseline before this change
 
 The app already recognises canonical headId and sousIds. Chef tools live in the chef hat. The full admin panel requires verified owner Google, this device's current head-chef PIN session and a matching grant. Remembered Google or a typed email alone is insufficient.
 
@@ -116,9 +156,9 @@ The designer also flagged C's 14 px labels and exactly 44 px targets as cramped 
 - To inspect locally: node tests/serve.js, then /docs/chef-panel-options/ on its localhost address. Query states: design=a|b|c, role=head|sous, mail=0|1, fn=0|1, capture=1. B task detail: task=team.
 - Current source baseline: both PIN roles captured at 390 and 1280 px, zero page errors and no sideways overflow. The existing admin was captured at 1280 px. These fixtures use mocked Firebase; there was no live security, persistence, emulator or production validation, because application code and rules are unchanged.
 
-## Build after choice
+## Implementation and release checklist
 
-1. Record the owner's choice here and in docs/head-chef-decisions.md. Reconcile any requested extra capabilities before changing permissions.
+1. Owner choice is recorded above and in docs/head-chef-decisions.md. No wider permissions were requested.
 2. Implement the chosen navigation using the current menu, route, page and editor helpers. Canonical headId/sousIds and current session determine access. Never grant a chef role based on an editable label or an entered email.
 3. Reuse current data and destination loaders, without hub badge queries or copied editors. Respect feature switches. Show loading/refusal/offline states accurately, preserve drafts and clear private selection on lock, revocation and handover.
 4. Verify Head PIN, Sous PIN, owner with matching head session/grant, staff, lead, view-only, functions-only, locked remembered Google and shared-device handover. Cover individually disabled capabilities, Functions tick removal and shared-mail on/off. Check 390/768/1280, keyboard, back navigation, read budgets and saved-shell updates as applicable.
@@ -126,4 +166,4 @@ The designer also flagged C's 14 px labels and exactly 44 px targets as cramped 
 
 ## Resume
 
-Await the owner's design choice. The branch contains static examples and documentation only. No access change is approved or deployed by these notes.
+Continue verification of the chosen working panel. Keep PR #607 draft until the application checks pass, then update its description around the final implementation and use the existing release queue. The earlier proposal, screenshots and council scores below retain the design history; they do not override the owner's chosen admin-style panel.

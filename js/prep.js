@@ -1493,6 +1493,7 @@
     if (pt && pt.busy) pt.lockRetained = S.lockIdentity;
     S.lockRecorder = S.who || ''; S.privacyLocked = true; S.lockReason = reason; S.authed = false; S.level = ''; S.grantExp = 0; accessEpoch++; digestMem = null;
     stopLive(); clearPrivateCache(); ptClose(true, true); ksClose(); noteClose('shut'); lmClose();
+    chefHistoryClear(); fdLast = []; fdClose(true, true); ajClose(true, true);
     if (window.LK_UX) window.LK_UX.close();
     if (shared()) { if (fb && S.uid) fb.fs.deleteDoc(sessRef()).catch(function () {}); dropGoogle().catch(function () {}); }
     admMark(false); featSync(); accessChanged(); draw(); whoSync();
@@ -1524,6 +1525,7 @@
   function leave() {
     ptClose(true, true);
     S.privacyLocked = false; S.unlocking = false; S.lockRecorder = ''; S.lockHasDraft = false; S.lockIdentity = ''; S.workNotice = ''; S.grantExp = 0;
+    S.ctab = 'dashboard'; S.cgLast = {}; S.cDate = ''; chefHistoryClear(); fdLast = []; fdClose(true, true);
     accessEpoch++; digestMem = null;   // the day digests read for the person before
     stopLive(); clearPrivateCache();
     S.text = S.qty = S.otext = S.oqty = ''; S.wf = { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }; S.xf = xBlank();
@@ -1652,7 +1654,7 @@
   function meChanged() { try { window.dispatchEvent(new Event('lk-me')); } catch (e) {} }
   // the role on the chef hat menu's person card (3 Nov 2026): Head chef for headId, otherwise the role's name (whoRole())
   function roleName() { if (!me()) return ''; return whoHead() ? 'Head chef' : whoRole(); }
-  function chefMenu() { return { role: roleName(), minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), head: whoHead(), tab: adminTabs(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK(), todo: todoOK(), team: teamOK(), teamUnset: teamOK() && tm.st === 'ok' && !tm.rec, day: tmHatLines(me()) }; }
+  function chefMenu() { return { role: roleName(), minutes: featOn('minutes') && (isSous() || mnPub().length > 0), toSign: featOn('minutes') ? mnUnsigned().length : 0, chef: isSous(), panel: chefAllowed(), head: whoHead(), tab: adminTabs(), sec: ksPicks(me()) ? (mySec() || 'Pick one for today') : '', book: bookEdit(), fn: fnOK(), todo: todoOK(), team: teamOK(), teamUnset: teamOK() && tm.st === 'ok' && !tm.rec, day: tmHatLines(me()) }; }
   /* Functions (21 Oct 2026): who may enter and change function bookings. The person signed in with their own PIN and
      ticked for Functions (config/main fnIds, which only the head chef's Google account saves), or the head chef's Google
      device with nobody signed in. Being Head chef or Functions coordinator is not enough without the tick. The rules
@@ -5617,7 +5619,139 @@
       '<p class="hint a-forget">To use a different kitchen PIN on this device, open Settings, This phone.</p></section>');
     var resume = INTELLIGENCE_PAGES.indexOf(at) < 0 && intelligenceAllowed() && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_INTELLIGENCE.resumeHTML ? window.LK_INTELLIGENCE.resumeHTML(at) : '';
     if (at !== 'proofreader' && intelligenceAllowed() && proofModule()) resume += proofModule().resumeHTML(proofAdapter());
-    return '<div class="p-admin ad-admin">' + bar + '<div class="ad-layout">' + railHTML() + '<div class="ad-main"><header class="ad-heading">' + findBtn('a-find-head') + '<p class="ad-eyebrow">Kitchen administration</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + ag[1] + '</h2><p class="ad-intro">' + A_GROUP_NOTES[ag[0]] + '</p></header>' + tabsBar + '<div class="a-pane">' + (owner ? idCardHTML() : '') + resume + pane + '</div></div></div></div>';
+    return panelShellHTML(bar, railHTML(), findBtn('a-find-head') + '<p class="ad-eyebrow">Kitchen administration</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + ag[1] + '</h2><p class="ad-intro">' + A_GROUP_NOTES[ag[0]] + '</p>', tabsBar, (owner ? idCardHTML() : '') + resume + pane);
+  }
+  // The owner and PIN chefs use one responsive panel shell. Each supplies its own permitted rooms and real pages.
+  function panelShellHTML(bar, rail, heading, tabs, pane, extra) {
+    return '<div class="p-admin ad-admin' + (extra ? ' ' + extra : '') + '">' + bar + '<div class="ad-layout">' + rail + '<div class="ad-main"><header class="ad-heading">' + heading + '</header>' + tabs + '<div class="a-pane">' + pane + '</div></div></div></div>';
+  }
+  var C_GROUPS = [
+    ['today', 'Today', ['dashboard', 'todo', 'notes', 'mail']],
+    ['reports', 'Reports', ['prep-history', 'order-history']],
+    ['team', 'Team', ['plan', 'people', 'minutes']],
+    ['kitchen', 'Kitchen', ['kitchen-home', 'recipes', 'suppliers', 'functions', 'deliveries', 'guides']]
+  ];
+  var C_NAMES = { dashboard: 'Dashboard', todo: 'Chef to-do', notes: 'Shift pings', mail: 'Kitchen mail',
+    'prep-history': 'Prep history', 'order-history': 'Order history', plan: "Today's team", people: 'Manage staff',
+    minutes: 'Meeting minutes', 'kitchen-home': 'Overview', recipes: 'Recipes & drawings', suppliers: 'Supplier order',
+    functions: 'Functions', deliveries: 'Delivery received', guides: 'Guides' };
+  function chefAllowed() {
+    var p = me(), c = S.config || {};
+    return !!(kitchenAccess() && S.configState === 'ok' && S.configFull && p &&
+      (p.id === c.headId || Array.isArray(c.sousIds) && c.sousIds.indexOf(p.id) >= 0));
+  }
+  function chefPage(tab) { return S.name === 'chef' && chefAllowed() && S.ctab === tab; }
+  function teamHere() { return S.name === 'team' || chefPage('plan'); }
+  function todoHere() { return S.name === 'todo' || chefPage('todo'); }
+  function panelHere() { return S.name === 'admin' || S.name === 'chef' && chefAllowed(); }
+  function chefTabAllowed(tab) {
+    return chefAllowed() && !!C_NAMES[tab] && (tab !== 'mail' || mlOwner() || mlSous()) &&
+      (tab !== 'notes' || featOn('pings')) && (tab !== 'minutes' || featOn('minutes')) && (tab !== 'guides' || featOn('guides'));
+  }
+  function chefGroupOf(tab) { return C_GROUPS.filter(function (g) { return g[2].indexOf(tab) >= 0; })[0] || C_GROUPS[0]; }
+  function chefSelect(tab, day) {
+    if (!chefTabAllowed(tab) || localBackBusy()) return;
+    if (day === dayNow()) S.cDate = day;
+    S.ctab = tab; S.cgLast = S.cgLast || {}; S.cgLast[chefGroupOf(tab)[0]] = tab;
+    if (tab === 'people' && !S.draft) { startDraft(); seedPinOpen(); }
+    if (tab === 'todo') todoLoad();
+    if (tab === 'plan') teamLoad(TM_FRESH);
+    draw(); adminToTop();
+  }
+  function chefTile(tab, title, words, day) {
+    return '<button type="button" class="dsh-dtile c-tile" data-p="c-tab" data-t="' + tab + '"' + (day ? ' data-day="' + esc(day) + '"' : '') + '><span class="label">' + esc(title) + '</span><strong class="dsh-dtile-num">' + esc(words) + '</strong><small class="dsh-dtile-sub">' + esc(C_NAMES[tab]) + ' ›</small></button>';
+  }
+  function chefDashboardHTML() {
+    var prep = S.date === dayNow() && S.itemsState === 'ok' ? S.items.filter(function (x) { return !x.deleted; }) : null;
+    var orders = S.ordDate === dayNow() && S.ordState === 'ok' ? S.ordLines.filter(function (x) { return !x.deleted; }) : null;
+    var prepWait = S.date !== dayNow() || S.itemsState === 'idle' ? 'Not read yet' : S.itemsState === 'error' ? 'Could not load' : S.itemsState === 'offline' ? 'No signal' : 'Checking the list';
+    var orderWait = S.ordState === 'error' ? 'Could not load' : S.ordState === 'offline' ? 'No signal' : S.ordState === 'loading' ? 'Checking the list' : 'Not read yet';
+    var need = teamNeed(), teamText = { set: 'Plan saved', unset: 'Set the team', error: 'Could not load', loading: 'Checking the plan' }[need] || 'Checking the plan';
+    return '<section class="set-block"><h3 class="a-ch-h">Today at a glance</h3><p class="hint">' + esc(longDate(dayNow())) + '. From today’s lists on this device.</p><div class="dsh-dtiles c-tiles">' +
+      chefTile('prep-history', 'Prep', prep ? prep.filter(function (x) { return x.done; }).length + ' of ' + prep.length + ' done' : prepWait, dayNow()) +
+      chefTile('order-history', 'Orders', orders ? orders.filter(function (x) { return !x.ordered; }).length + ' still to order' : orderWait, dayNow()) +
+      chefTile('plan', "Today's team", teamText) + '</div></section>' +
+      '<section class="set-block"><h3 class="a-ch-h">Run the shift</h3><div class="btn-row"><button type="button" class="btn dark" data-p="c-tab" data-t="todo">Chef to-do</button>' +
+      (chefTabAllowed('notes') ? '<button type="button" class="btn" data-p="c-tab" data-t="notes">Write a shift ping</button>' : '') +
+      (chefTabAllowed('mail') ? '<button type="button" class="btn" data-p="c-tab" data-t="mail">Kitchen mail</button>' : '') +
+      '<a class="btn" href="#/fn/now">Functions service view</a></div></section>';
+  }
+  // One selected prep/order day on report open or date/Refresh tap, one read per line (at least one).
+  // Reuse pastRead's memory cache and correction stamps. No report query runs on the dashboard or a timer.
+  function chefHistoryClear() {
+    S.chefHistory = null;
+    ['chef-prep', 'chef-orders'].forEach(function (k) { delete LVR[k]; delete LV[k]; });
+  }
+  function chefHistoryLoad(force) {
+    if (!chefAllowed() || !fb || S.ctab !== 'prep-history' && S.ctab !== 'order-history') return;
+    var kind = S.ctab === 'order-history' ? 'o' : 'p', day = S.cDate || dayNow(), stamp = pastStamp(kind);
+    var key = [S.pin, S.uid, S.who, accessEpoch, kind, day, stamp].join('|'), st = S.chefHistory;
+    if (!force && st && st.key === key) return;
+    st = S.chefHistory = { key: key, kind: kind, day: day, loading: true, lines: null };
+    var epoch = accessEpoch;
+    pastRead(kind === 'o' ? ordCol(day) : itemsCol(day), (kind === 'o' ? 'o/' : 'd/') + day, day, false, force, true).then(function (sn) {
+      if (!chefAllowed() || epoch !== accessEpoch || S.chefHistory !== st) return;
+      st.lines = sn.docs.map(function (d) { return Object.assign({}, d.data(), { id: d.id }); });
+      st.loading = false; draw();
+    }, function (e) {
+      if (!chefAllowed() || epoch !== accessEpoch || S.chefHistory !== st) return;
+      st.loading = false; st.error = quotaOn() ? quotaText() : e && e.code === 'permission-denied' ? 'This session cannot read that day. Sign in again or ask the admin.' : 'Could not load this day. Check the connection and try again.';
+      draw();
+    });
+  }
+  function chefHistoryHTML() {
+    chefHistoryLoad(false);
+    var st = S.chefHistory, order = S.ctab === 'order-history', title = order ? 'Order history' : 'Prep history';
+    var head = '<section class="set-block c-history"><h3 class="a-ch-h">' + title + '</h3><div class="btn-row"><label class="label" for="c-date">Day</label><input id="c-date" class="search" type="date" data-k="c-date" value="' + esc(S.cDate || dayNow()) + '" max="' + dayNow() + '"><button type="button" class="btn" data-p="c-refresh"' + (st && st.loading ? ' disabled' : '') + '>Refresh</button></div>';
+    if (!st || st.loading) return head + inkWait('Reading this day...', order ? 'orders' : 'prep', 3) + '</section>';
+    if (st.error) return head + '<p class="p-err" role="status">' + esc(st.error) + '</p></section>';
+    var lines = st.lines || [], active = lines.filter(function (x) { return !x.deleted; }), done = active.filter(function (x) { return order ? x.ordered : x.done; }).length;
+    return head + '<p class="hint">' + esc(longDate(st.day)) + ': ' + done + ' of ' + active.length + (order ? ' ordered.' : ' ticked.') + ' Removed lines keep their record. Changes are made on the ' + (order ? '<a href="#/orders">order list</a>.' : '<a href="#/prep">prep list</a>.') + '</p>' +
+      lvHTML({ key: 'chef-' + (order ? 'orders' : 'prep'), items: lines, step: 20, noun: ['line', 'lines'], ph: 'Search this day',
+        find: function (x) { return [x.text, x.station, x.qty, x.addedBy].join(' '); },
+        card: function (x) { return '<div class="c-history-line"><strong>' + esc(x.text) + '</strong><span>' + esc(x.qty || '') + '</span><p class="hint">' + esc([x.station, x.addedBy, x.deleted ? 'Removed' : (order ? x.ordered : x.done) ? (order ? 'Ordered' : 'Ticked') : 'Open'].filter(Boolean).join(' · ')) + '</p></div>'; },
+        empty: 'No lines were recorded for this day.' }) + '</section>';
+  }
+  function chefKitchenHTML(tab) {
+    var cards = {
+      recipes: ['Recipes & drawings', 'Change recipes and their plating drawings.', '#/manage', 'Open recipes & drawings'],
+      suppliers: ['Supplier order', supplierEdit() ? 'Place orders, check earlier orders and change the catalogue.' : 'Read the catalogue, place orders and check earlier orders. The head chef changes the catalogue.', '#/suppliers', 'Open supplier order'],
+      functions: ['Functions', fnOK() ? 'Create or change a booking with your Functions permission.' : 'Read the bookings and run the service. Booking changes need the separate Functions permission.', fnOK() ? '#/functions' : '#/fn', fnOK() ? 'Manage functions' : 'View functions'],
+      deliveries: ['Delivery received', 'Record and read today’s delivery temperatures.', '#/deliveries', 'Open delivery received'],
+      guides: ['Guides', 'Read the guides available to your role.', '#/guides', 'Open guides']
+    };
+    if (tab !== 'kitchen-home') {
+      var c = cards[tab];
+      return '<section class="set-block"><h3 class="a-ch-h">' + c[0] + '</h3><p class="hint">' + c[1] + '</p><div class="btn-row"><a class="btn dark" href="' + c[2] + '">' + c[3] + '</a></div></section>';
+    }
+    return '<section class="set-block"><h3 class="a-ch-h">Kitchen tools</h3><p class="hint">The same book, suppliers and records, with your current permissions.</p><div class="dsh-dtiles c-tiles">' +
+      Object.keys(cards).filter(chefTabAllowed).map(function (t) { return chefTile(t, cards[t][0], cards[t][3]); }).join('') +
+      '</div></section>';
+  }
+  function chefHTML() {
+    if (!chefAllowed()) {
+      chefHistoryClear(); S.ctab = 'dashboard'; fdClose(true, true); fdLast = [];
+      return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Chef panel</h2><p class="hint">Only head chefs and sous chefs can open this panel. Sign in with your own chef PIN.</p><a class="btn" href="#/prep">Open the prep list</a></section>';
+    }
+    if (!chefTabAllowed(S.ctab)) S.ctab = 'dashboard';
+    var at = S.ctab, group = chefGroupOf(at), tabs = group[2].filter(chefTabAllowed), title = whoHead() ? 'Head chef panel' : 'Sous chef panel';
+    var find = function (cls) { return '<button type="button" class="a-find ' + cls + '" data-p="a-find" aria-haspopup="dialog" aria-keyshortcuts="/"><span>Find</span><kbd aria-hidden="true">/</kbd></button>'; };
+    var rail = '<aside class="a-nav">' + find('a-find-rail') + '<div class="a-quick-list"><button type="button" class="a-quick" data-p="c-tab" data-t="dashboard" aria-current="' + (at === 'dashboard') + '">Dashboard</button></div><p class="ad-nav-label">' + title + '</p><nav class="a-groups" aria-label="Chef rooms">' +
+      C_GROUPS.map(function (g) { return '<button type="button" class="a-group" data-p="c-group" data-g="' + g[0] + '" aria-current="' + (group[0] === g[0] ? 'page' : 'false') + '"><span>' + g[1] + '</span></button>'; }).join('') + '</nav></aside>';
+    var nav = '<nav class="a-tabs" aria-label="' + group[1] + ' pages">' + tabs.map(function (t) { return '<button type="button" class="a-tab" data-p="c-tab" data-t="' + t + '" aria-pressed="' + (at === t) + '">' + C_NAMES[t] + '</button>'; }).join('') + '</nav><nav class="a-onpage" aria-label="On this page" hidden></nav>';
+    var pane;
+    if (at === 'dashboard') pane = chefDashboardHTML();
+    else if (at === 'todo') pane = todoPageHTML();
+    else if (at === 'plan') pane = teamPageHTML();
+    else if (at === 'notes') { loadNotes(); pane = notesEditorHTML(); }
+    else if (at === 'people') pane = staffContentHTML(true);
+    else if (at === 'minutes') pane = minAdminHTML();
+    else if (at === 'mail') pane = mlListHTML('Kitchen mail', 'Shared with the chefs by the admin. Tick a message when it is dealt with. Seen still means the owner has read it.');
+    else if (at === 'prep-history' || at === 'order-history') pane = chefHistoryHTML();
+    else pane = chefKitchenHTML(at);
+    pane = pane.replace(/ id="rtitle"/g, '');
+    var bar = '<div class="p-bar"><span><strong>' + title + '</strong> · ' + esc(whoName()) + '</span><span class="p-links">' + (adminTabs() ? '<a class="p-link" href="#/admin">Admin panel</a>' : '') + '</span></div>';
+    return panelShellHTML(bar, rail, find('a-find-head') + '<p class="ad-eyebrow">' + title + '</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + group[1] + '</h2><p class="ad-intro">' + ({today:'Run the shift with the team.',reports:'Read the prep and order records for a day.',team:'Plan the team and look after the people.',kitchen:'The recipe book and the kitchen tools.'})[group[0]] + '</p>', nav, pane, 'chef-panel');
   }
   /* the same Remove button on the admin People tab and the sous chef's staff list, with a second tap to be sure */
   /* Head chef decision D6 (20 Oct 2026): someone who leaves is taken off the list, not deleted, so their name stays on
@@ -5743,7 +5877,7 @@
   }
   var navTick = false, navOn = '', navJump = '', navJumpAt = 0;
   function adminScroll(redraw) {
-    var nav = S.name === 'admin' && S.root && S.root.querySelector('.a-nav');
+    var nav = panelHere() && S.root && S.root.querySelector('.a-nav');
     if (!nav) return;
     var row = S.root.querySelector('.a-onpage');
     if (!row || row.hidden) return;
@@ -5764,11 +5898,11 @@
     });
   }
   window.addEventListener('scroll', function () {
-    if (navTick || S.name !== 'admin') return;
+    if (navTick || !panelHere()) return;
     navTick = true;
     requestAnimationFrame(function () { navTick = false; adminScroll(false); });
   }, { passive: true });
-  document.addEventListener('focusin', function (e) { if (S.name === 'admin' && e.target.closest && e.target.closest('.a-nav')) adminScroll(false); });
+  document.addEventListener('focusin', function (e) { if (panelHere() && e.target.closest && e.target.closest('.a-nav')) adminScroll(false); });
   /* A jump lands the heading under the phone picker, leaving the chapter rail beside a desktop page. */
   /* The jump list on a phone: a sheet on document.body (dims, closes on the backdrop, Cancel and Escape), clicks data-aj. */
   function ajOpen(from) {
@@ -5811,6 +5945,7 @@
      that dims the page and closes on the backdrop, Cancel and Escape (docs/design-patterns.md, Over the page). */
   var fdLast = [];
   function fdPage(t) {
+    if (S.name === 'chef') { chefSelect(t); return; }
     if (intelligenceBusy() || !A_TAB_NAMES[t] || !S.root) return;
     S.personId = ''; S.atab = t; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(t)[0]] = t; lsSet('lk.prep.atab', t); draw(); adminToTop();
   }
@@ -5822,6 +5957,10 @@
       if (!h.id) h.id = 'fd-' + i;
       if (t) out.push({ k: 'part', v: h.id, name: t, where: 'On this page' });
     });
+    if (S.name === 'chef') {
+      if (chefAllowed()) C_GROUPS.forEach(function (g) { g[2].filter(chefTabAllowed).forEach(function (t) { out.push({ k: 'page', v: t, name: C_NAMES[t], where: g[1] }); }); });
+      return out;
+    }
     A_GROUPS.forEach(function (g) {
       g[2].filter(function (t) { return t !== 'overview' && (t !== 'mail' || mlOwner()); }).forEach(function (t) { out.push({ k: 'page', v: t, name: A_TAB_NAMES[t], where: g[1] }); });
     });
@@ -5837,10 +5976,10 @@
     return fdLast.map(function (x, i) { return '<button type="button" class="sheet-o" data-fd="go" data-i="' + i + '"><strong>' + esc(x.name) + '</strong><span>' + esc(x.where) + '</span></button>'; }).join('');
   }
   function fdOpen(from) {
-    if (S.name !== 'admin' || intelligenceBusy() || document.getElementById('fd-sheet') || sheetOpen()) return;
-    var box = document.createElement('div'); box.id = 'fd-sheet';
+    if (!panelHere() || intelligenceBusy() || document.getElementById('fd-sheet') || sheetOpen()) return;
+    var box = document.createElement('div'), chefFind = S.name === 'chef'; box.id = 'fd-sheet';
     box.innerHTML = '<div class="sheet-bg" data-fd="close"></div><div class="sheet fd-sheet" role="dialog" aria-modal="true" aria-labelledby="fd-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="fd-h">Find</h3>' +
-      '<label class="visually-hidden" for="fd-q">Find a page, a part of this page or a person</label><input id="fd-q" class="search" type="text" inputmode="search" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="A report, a setting or a person">' +
+      '<label class="visually-hidden" for="fd-q">' + (chefFind ? 'Find a page or a part of this page' : 'Find a page, a part of this page or a person') + '</label><input id="fd-q" class="search" type="text" inputmode="search" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="' + (chefFind ? 'A page or a section' : 'A report, a setting or a person') + '">' +
       '<div class="sheet-list fd-list" id="fd-list">' + fdListHTML('') + '</div><button type="button" class="btn sheet-x" data-fd="close">Cancel</button></div>';
     box._from = from; document.body.appendChild(box); document.documentElement.classList.add('sheet-open');
     ovPush('fd', function () { fdClose(false, true); });
@@ -5854,7 +5993,7 @@
   }
   // a page or a person opens on its heading; a part of the open page is scrolled to, as On this page does
   function fdGo(x) {
-    if (!x) return;
+    if (!x || !panelHere()) return;
     fdClose(true);
     ovAfterBack(function () {
       if (x.k === 'part') { adminJumpTo(x.v); return; }
@@ -5878,7 +6017,7 @@
       return;
     }
     // / opens Find on the admin panel, unless a box has the cursor or something is already open over the page
-    if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || S.name !== 'admin' || !/^#\/admin/.test(location.hash) || typing() || sheetOpen() || !S.root) return;
+    if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || !panelHere() || !/^#\/(admin|chef)$/.test(location.hash) || typing() || sheetOpen() || !S.root) return;
     var fb2 = S.root.querySelector('.a-find:not([disabled])');
     if (fb2) { e.preventDefault(); fdOpen(fb2); }
   });
@@ -5908,20 +6047,21 @@
      first wherever the book is (28 Oct 2026, typedHere(); before, only the staff list did, and only on its own page). */
   function draftsDirty() { return draftDirty() || !!String(S.bulk || '').trim() || mfDirty() || nfDirty() || gfDirty() || cutDirty(); }
   function staffHTML() {
+    return '<div class="p-admin p-staff-page"><h2 class="p-h" id="rtitle" tabindex="-1">Manage staff</h2>' + prepLeaveHTML('staff-close') + staffContentHTML() + '</div>';
+  }
+  function staffContentHTML(heading) {
     var d = S.draft || (startDraft(), S.draft);
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
-    return '<div class="p-admin p-staff-page"><h2 class="p-h" id="rtitle" tabindex="-1">Manage staff</h2>' + prepLeaveHTML('staff-close') +
-      '<section class="set-block"><span class="hint">Add a person or remove one, then save. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the head chef.</span>' + staffListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' +
-      saveBarHTML() + '</div>';
+    return '<section class="set-block">' + (heading ? '<h3 class="a-ch-h">Manage staff</h3>' : '') + '<span class="hint">Add a person or remove one, then save. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the admin.</span>' + staffListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + saveBarHTML();
   }
   /* While connecting, show the page that is opening (not a generic prep book card), so nothing flashes. */
   // the pages other scripts draw are named too: before the kitchen's settings are in, they show this card (27 Oct 2026)
-  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', transfers: 'Transfers', admin: 'Admin panel', minutes: 'Meeting minutes', guides: 'Guides', mail: 'Kitchen mail', drinks: 'Drinks run', todo: 'Chef to-do',
+  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', transfers: 'Transfers', admin: 'Admin panel', chef: 'Chef panel', minutes: 'Meeting minutes', guides: 'Guides', mail: 'Kitchen mail', drinks: 'Drinks run', todo: 'Chef to-do',
     fn: 'Functions', functions: 'Manage functions', deliveries: 'Delivery received', suppliers: 'Supplier order', manage: 'Manage Recipes & Drawings' };
   function loadingHTML() {
     var t = esc(PAGE_NAME[S.name] || 'Prep book');
     var icon = ['prep', 'orders', 'waste', 'transfers', 'guides'].indexOf(S.name) >= 0 ? S.name : 'chef';
-    if (S.name === 'admin') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2>' + inkWait('Loading...', icon, 3) + '</section>';
+    if (S.name === 'admin' || S.name === 'chef') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + t + '</h2>' + inkWait('Loading...', icon, 3) + '</section>';
     return '<section class="nb-page o-page is-loading"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">' + t + '</h2><span class="nb-date">' + esc(longDate(dayNow())) + '</span></div></header>' +
       '<div class="nb-body">' + inkWait('Loading...', icon, 4) + '</div></section>';
   }
@@ -5946,18 +6086,19 @@
     if (S.configState === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Prep book</h2><p class="p-err">' + (quotaOn() ? esc(quotaText()) : 'Could not connect. Check the connection and try again.') + '</p><div class="btn-row"><button type="button" class="btn dark" data-p="retry">Try again</button></div></section>';
     if (S.configState !== 'ok') return loadingHTML();
     if (S.name === 'admin') return adminHTML();
+    if (S.name === 'chef') return chefHTML();
     // the chef to-do list: a chef with their PIN, or the head chef's Google device with nobody signed in
-    if (S.name === 'todo' && todoOK()) return todoPageHTML();
-    if (S.name === 'todo' && guest()) return todoNoHTML();
+    if (todoHere() && todoOK()) return todoPageHTML();
+    if (todoHere() && guest()) return todoNoHTML();
     // Today's team (7 Nov 2026): a chef with their PIN, or the head chef's Google device with nobody signed in
-    if (S.name === 'team' && teamOK()) return teamPageHTML();
+    if (teamHere() && teamOK()) return teamPageHTML();
     if (guest()) return '<div class="is-guest">' + guestBarHTML() + (S.name === 'orders' ? ordersHTML() : S.name === 'waste' ? wasteHTML() : S.name === 'transfers' ? xferHTML() : listHTML()) + '</div>';
     if (!who() && !(S.user && S.level === 'owner')) return whoHTML();
     if (!S.authed && !S.user && !resumed) return loadingHTML();   // still finding out whether this phone is signed in (resume)
     if (!S.authed && !(S.user && S.level === 'owner')) return ownPinHTML();
     flushMisses(); flushViews();
-    if (S.name === 'todo') return todoNoHTML();
-    if (S.name === 'team') return teamNoHTML();
+    if (todoHere()) return todoNoHTML();
+    if (teamHere()) return teamNoHTML();
     if (S.name === 'orders') return drinkNudgeHTML() + ordersHTML();
     if (S.name === 'waste') return drinkNudgeHTML() + wasteHTML();
     if (S.name === 'transfers') return drinkNudgeHTML() + xferHTML();
@@ -6009,7 +6150,7 @@
     var bodyEl = S.root.querySelector('.nb-body'), keepScroll = bodyEl ? S.root.querySelectorAll('.nb-body') : null, scrolls = [];
     if (keepScroll) Array.prototype.forEach.call(keepScroll, function (b) { scrolls.push(b.scrollTop); });
     if (key) ae._uxRedrawing = true;
-    if (S.name === 'team') tmKeepView();
+    if (teamHere()) tmKeepView();
     try { S.root.innerHTML = practiceHTML() + quotaHTML() + bodyHTML() + toastHTML(); }
     finally { if (key) delete ae._uxRedrawing; }
     if (S.toast) plainAway();
@@ -6017,7 +6158,7 @@
     document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet') || !!ptPop);
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
     if (window.LK_UX) window.LK_UX.enhance(S.root);
-    if (S.name === 'team') tmRestoreView();
+    if (teamHere()) tmRestoreView();
     if (key) { var el = S.root.querySelector('[data-k="' + key + '"]'); if (el && el._uxTrigger) el = el._uxTrigger; if (el) { if (window.LK_UX && window.LK_UX.restoreFocus) window.LK_UX.restoreFocus(el); else el.focus({ preventScroll: true }); if (start != null && el.setSelectionRange) { try { el.setSelectionRange(start, end); } catch (e) {} } } }
     else if (btnSel) {
       var back = S.root.querySelector(btnSel);
@@ -6025,7 +6166,7 @@
       if (back) back.focus({ preventScroll: true }); else focusPin();
     }
     else focusPin();
-    if (S.name === 'admin') { adminJumps(); kRowInView(); }
+    if (panelHere()) { adminJumps(); if (S.name === 'admin') kRowInView(); }
     if (ptPop) ptDraw();
     rendering = false;
     bandSync();
@@ -6452,11 +6593,11 @@
     if (!gotM || gotM.tag !== tag) { try { gotM = JSON.parse(lsGet('lk.st.got') || 'null'); } catch (e) { gotM = null; } if (!gotM || gotM.tag !== tag || !gotM.c) gotM = { tag: tag, c: {} }; }
     return gotM;
   }
-  function pastRead(ref, k, d, isDoc, force) {
+  function pastRead(ref, k, d, isDoc, force, strict) {
     var g = gotKeep(), n = g.c[k], live = d >= dayNow(), fs = fb.fs;
     function count(sn) { return isDoc ? (sn.exists() ? 1 : 0) : sn.docs.length; }
     var at = now();
-    function server() { return (isDoc ? fs.getDoc(ref) : fs.getDocs(ref)).then(function (sn) { if (!live) { g.c[k] = [count(sn), at]; lsSet('lk.st.got', JSON.stringify(g)); } return sn; }); }
+    function server() { return (isDoc ? (strict ? fs.getDocFromServer(ref) : fs.getDoc(ref)) : (strict ? fs.getDocsFromServer(ref) : fs.getDocs(ref))).then(function (sn) { if (!live) { g.c[k] = [count(sn), at]; lsSet('lk.st.got', JSON.stringify(g)); } return sn; }); }
     var fromCache = isDoc ? fs.getDocFromCache : fs.getDocsFromCache;
     // a past prep, order or transfer day changed on another phone since this copy was read (config/main.pastEdit): read it again
     var stale = !Array.isArray(n) || n[1] < pastStamp(k.charAt(0) === 'o' ? 'o' : k.charAt(0) === 'd' ? 'p' : k.charAt(0) === 'x' ? 'x' : '');
@@ -7628,7 +7769,7 @@
   // back on the screen: a sheet whose pings ran out while the screen was off goes before anyone sees it
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && /^\d{4,6}$/.test(S.pin) && fb) { noteRefresh(); noteBell(); loadNotes(); noteMaybePop(); rxSync(); } });
   window.addEventListener('lk-clock', function () {
-    if (S.name === 'team' && tm.day === dayNow() && (!tmf || tmf.day === dayNow())) { tmAwayPaint(); return; }
+    if (teamHere() && tm.day === dayNow() && (!tmf || tmf.day === dayNow())) { tmAwayPaint(); return; }
     draw();
   });
   document.addEventListener('click', function (e) {
@@ -9957,7 +10098,7 @@
     }, function () { if (cutSub) cutSub(); cutSub = null; cutErr = { key: cutSubKey + '|' + cutReader(), at: Date.now() }; cutSubKey = ''; });
   }
   // the shared ticks changed on this phone: the bar, the tick lists and the card in Supplier order (lk-cut) follow
-  function cutShow() { cutPaint(); if (S.name === 'orders' || S.name === 'todo') draw(); try { window.dispatchEvent(new Event('lk-cut')); } catch (e) {} }
+  function cutShow() { cutPaint(); if (S.name === 'orders' || todoHere()) draw(); try { window.dispatchEvent(new Event('lk-cut')); } catch (e) {} }
   function cutStop() { if (cutSub) cutSub(); cutSub = null; cutSubKey = ''; cutSeen = {}; cutState = 'loading'; }
   // the ticks are not in from the server yet (no signal): said on the bar and above the tick list
   var CUT_OFF = 'No signal. Orders ticked on other phones show when the phone is back online.';
@@ -11052,6 +11193,14 @@
     // Add a line (3 Nov 2026, work pages redesign A): the add form opens as a sheet, like Log waste
     if (a === 'write') { wSheetOpen('plog'); return; }
     if (a === 'learn-hide') { hideLearned(id, el.getAttribute('data-hide') === '1'); return; }
+    if (a === 'c-tab') { if (S.name === 'chef') chefSelect(el.getAttribute('data-t'), el.getAttribute('data-day')); return; }
+    if (a === 'c-group') {
+      if (!chefAllowed() || S.name !== 'chef') return;
+      var cg = C_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0];
+      if (cg) { var last = (S.cgLast || {})[cg[0]]; chefSelect(chefTabAllowed(last) ? last : cg[2].filter(chefTabAllowed)[0]); }
+      return;
+    }
+    if (a === 'c-refresh') { if (S.name === 'chef' && chefAllowed()) { chefHistoryLoad(true); draw(); } return; }
     if (a === 'a-group') { if (intelligenceBusy()) return; S.personId = ''; var gg = A_GROUPS.filter(function (g) { return g[0] === el.getAttribute('data-g'); })[0]; if (gg) { S.atab = (S.agLast || {})[gg[0]] || gg[2].filter(function (t) { return t !== 'mail' || mlOwner(); })[0]; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); } return; }
     if (a === 'a-tab') { if (intelligenceBusy()) return; S.personId = ''; S.atab = el.getAttribute('data-t'); S.agLast = S.agLast || {}; S.agLast[adminGroupOf(S.atab)[0]] = S.atab; lsSet('lk.prep.atab', S.atab); draw(); adminToTop(); return; }
     // the laptop rail's Inbox and Dashboard (redesign step 8): the same as their tabs in Today
@@ -11213,6 +11362,11 @@
   function onChange(e) {
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
+    if (k === 'c-date') {
+      if (!chefAllowed() || S.name !== 'chef') return;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(el.value) && T.day(T.at(el.value, 720)) === el.value && el.value <= dayNow()) S.cDate = el.value;
+      draw(); return;
+    }
     clearReturnArm();
     if (k && k.indexOf('lv-cf:') === 0) { var facetKey = k.slice(6), facetConfig = LVR[facetKey]; if (facetConfig) { var facetState = lvState(facetConfig); facetState.facets = facetState.facets || {}; facetState.facets[el.dataset.col] = el.value; facetState.shown = facetConfig.step || 15; lvRefresh(facetKey); } return; }
     if (k && k.indexOf('lv-s:') === 0) { var sk = k.slice(5), sc = LVR[sk]; if (sc) { var ss = lvState(sc); ss.sort = el.value; ss.col = null; ss.desc = false; ss.shown = sc.step || 15; lvRefresh(sk); } return; }
@@ -11398,7 +11552,7 @@
   function mlSousOn() { return !!(S.config && S.config.sousMail === true); }
   // a sous chef signed in with their PIN on #/mail, away from the head chef's admin panel (the rules check the same)
   function mlSous() { return mlSousOn() && !admDev() && isSous() && canW() && !!fb && /^\d{4,6}$/.test(S.pin); }
-  function mlReader() { return mlOwner() || (mlSous() && S.name === 'mail' && !!S.root && document.body.contains(S.root)); }
+  function mlReader() { return mlOwner() || (mlSous() && (S.name === 'mail' || chefPage('mail')) && !!S.root && document.body.contains(S.root)); }
   function mlSousSet(on) {
     if (S.level !== 'owner' || !mlHead()) return;
     track(fb.fs.setDoc(cfgDoc(), { sousMail: on }, { merge: true })).then(function () {
@@ -11817,7 +11971,7 @@
     if (a === 'todo-donebox') { tdDoneOpen = !el.parentNode.open; if (tdDoneOpen) todoLoadDone(); }
   }
   // back on the page after 30 minutes away: read the open jobs again
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && S.name === 'todo' && S.root && document.body.contains(S.root)) todoLoad(); });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && todoHere() && S.root && document.body.contains(S.root)) todoLoad(); });
 
   /* ---------- Today's team (7 Nov 2026, head chef; docs/todays-team-options/brief.md) ----------
      The head chef and the sous chefs (and the head chef's admin device) put the people working today on the kitchen's
@@ -12257,13 +12411,13 @@
     if (!teamOK()) { var p = me(); return p && tmAny() ? tmStaffChip(p) : ''; }
     teamLoad();
     var unset = tm.st === 'ok' && !tm.rec, label = unset ? 'Today\'s team, not set yet' : tm.st === 'err' ? 'Today\'s team, could not check' : 'Today\'s team';
-    return '<a class="tm-chip' + (unset ? ' is-due' : '') + '" href="#/team" aria-label="' + esc(label) + '"' + (S.name === 'team' ? ' aria-current="page"' : '') + '>' + tmIcon(20) + '</a>';
+    return '<a class="tm-chip' + (unset ? ' is-due' : '') + '" href="#/team" aria-label="' + esc(label) + '"' + (teamHere() ? ' aria-current="page"' : '') + '>' + tmIcon(20) + '</a>';
   }
   /* the chip follows the page: drawn again only when what it shows changed, or the top bar was drawn again without it
      (js/app.js draws the icon group again on a sign-in, kitchen mail and the admin mark; each copy of the icon has its own
      mask id, so drawing it every time would churn the top bar) */
   var tmChipKey = null;
-  function tmKey() { return teamOK() ? [tm.day, tm.st, !!tm.rec, S.name === 'team'].join('|') : tmStaffKey(); }
+  function tmKey() { return teamOK() ? [tm.day, tm.st, !!tm.rec, teamHere()].join('|') : tmStaffKey(); }
   function tmPaint() {
     var s = document.querySelector('.wtop .tm-slot'); if (!s) return;
     if (tmAny()) teamLoad();
@@ -12314,7 +12468,7 @@
     if (a === 'shname') x.name = el.value;
     if (a === 'shfrom' || a === 'shto') { var m = /^(\d{2}):(\d{2})/.exec(el.value || ''); x[a === 'shfrom' ? 'from' : 'to'] = m ? tmMin(+m[1] * 60 + +m[2]) : null; }
   }
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && S.name === 'team' && S.root && document.body.contains(S.root)) { teamLoad(TM_FRESH); tmAwayPaint(); } });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && teamHere() && S.root && document.body.contains(S.root)) { teamLoad(TM_FRESH); tmAwayPaint(); } });
   window.addEventListener('focus', function () { tmAwayPaint(); });
 
   /* ---------- Today's team, the staff side (7 Nov 2026, head chef) ----------
@@ -12493,7 +12647,7 @@
   }
   // Paint the saved status only. A passing minute or a clock correction must not replace a typed roster draft.
   function tmAwayPaint() {
-    if (S.name !== 'team' || !S.root || !document.body.contains(S.root)) return;
+    if (!teamHere() || !S.root || !document.body.contains(S.root)) return;
     var put = function (selector, html) {
       var el = S.root.querySelector(selector); if (!el || el._tmStatusHTML === html) return;
       var check = document.createElement('div'); check.innerHTML = html;
@@ -12577,7 +12731,7 @@
   function tmTick() {
     tmAwayPaint();
     tmPaint();
-    if (S.name === 'team') return;
+    if (teamHere()) return;
     var p = me(); if (!p || !tm.rec) return;
     var sh = tmShiftNow(p.id);
     if (tmTickSh !== null && sh !== tmTickSh && !typing() && !sheetOpen()) { tmTickSh = sh; draw(); return; }
@@ -12702,7 +12856,7 @@
     if (S.name === 'orders' && S.oLog) return pick('o-log-close', 'Back to the order list');
     if (S.root.querySelector('.g-edit')) return pick('g-cancel', 'Back to guides');
     if (S.root.querySelector('.n-edit')) return pick('n-cancel', 'Back to pings');
-    if (S.mf && S.mf.prev && (S.name === 'admin' && S.atab === 'minutes' || S.name === 'prep' && S.minOpen)) return pick('mn-prev', 'Back to writing');
+    if (S.mf && S.mf.prev && (S.name === 'admin' && S.atab === 'minutes' || S.name === 'prep' && S.minOpen || chefPage('minutes') && mnCanWrite())) return pick('mn-prev', 'Back to writing');
     if (S.name === 'admin' && S.atab === 'people' && S.personId) return pick('a-person-back', 'Back to all people');
     if (S.root.querySelector('.mn-form')) return pick('mn-cancel', 'Back to minutes');
     if (S.name === 'prep') {
@@ -12787,8 +12941,8 @@
       if (name === 'guides') { if ((sel || '') !== S.gSel) S.gSel = sel || ''; }
       if (name === 'admin') S.draft = S.draft || null;
       draw();
-      if (name === 'todo') todoLoad(TD_FRESH);
-      if (name === 'team') teamLoad(TM_FRESH);
+      if (name === 'todo' || chefPage('todo')) todoLoad(TD_FRESH);
+      if (name === 'team' || chefPage('plan')) teamLoad(TM_FRESH);
       if (S.pin) { connect(); if (name === 'admin') sdk(); if (name === 'orders') { S.ordDate = dayNow(); watchOrders(); } if (name === 'waste') { S.wDate = dayNow(); watchWaste(); } if (name === 'transfers') { S.xDate = dayNow(); watchXfer(); } notesInit(); }
     },
     warm: function () { sdk().then(function () { rxSync(); }).catch(function () {}); if (S.pin && S.configState !== 'ok' && S.configState !== 'loading') connect(); notesInit(); },

@@ -75,6 +75,8 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 
 ## Admin
 
+- **A role panel** uses panelShellHTML() for the owner's and chefs' same ad-admin/ad-layout shell, rail, heading, tabs and a-pane. Each supplies a separate permitted page list and state. The chef panel at #/chef uses the same responsive room navigation and Find, with working existing editors inside it; owner page descriptors and privileged loaders are never its source of access. [Chosen contract](chef-panel-options/brief.md).
+
 - **A block** is a `.set-block` with a `.label` or an `h3.a-ch-h` heading (the page's chips read them).
 - **A list that grows** goes through `lvHTML()`: search, filters, sort, Show more and phone cards come with it.
 - **A table** sits in `.a-tablewrap` (a region that scrolls sideways and fades at its edge) as `.a-table.a-plain`. A colour scale (the skills matrix, shifts on each section) uses cells `.sk-c` with an `.a-legend` key, and counts, never a verdict.

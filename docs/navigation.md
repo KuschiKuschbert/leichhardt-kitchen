@@ -61,7 +61,7 @@ without controls that could replace its saved order identifier.
 
 ## Boundaries and evidence
 
-No schema, rule, role, query, listener or persistent cache is added. Existing read budgets and save paths apply.
+Navigation adds no schema, rule, role, query, listener or persistent cache. Existing read budgets and save paths apply.
 Date selection, search, filters and admin tabs remain local controls without extra browser history entries.
 Lazy editors use revised script addresses and API checks (recipe/drawing/function UI 4, supplier UI 5) so an older delivered module asks for an update.
 
@@ -95,6 +95,24 @@ admin navigation, supplier save, permissions, offline, read-budget and full clic
 The compact-header checks cover normal and enlarged text at 390, 768 and 1280 px, one return control, a 44 px tap
 area, a 20 px glyph and no extra header height. Held recipe, drawing, function and supplier saves keep the arrow
 disabled until the outcome settles. Discard notices describe the arrow through aria-describedby while active.
+
+## Chef panel
+
+Chosen 8 November 2026: `#/chef` uses the actual admin panel's shared four-room shell, laptop rail, phone tabs,
+Find and On this page controls. A current canonical Head chef or Sous chef PIN role is required. Find includes
+only permitted chef pages and the visible page's headings. Local room and tab choices add no browser history
+entries; chef `ctab` memory is separate from the owner's saved `atab`.
+
+Today, Reports and Team switch their existing content inside the panel. Kitchen links open the existing recipe,
+supplier, function, delivery and guide routes, whose normal page Back returns to the chef panel. The nearest
+visible editor or minutes preview closes first, with the existing save and discard checks. A hidden privileged
+draft cannot intercept Back after its permission has expired.
+
+Scheduled locks close private navigation sheets and hide retained drafts behind the original person's PIN.
+Handover clears chef tab/room state and private report results with the existing private-work cleanup. Existing
+direct service links, editor drafts and owner permissions continue to use their current paths. The
+[chef panel brief](chef-panel-options/brief.md#chosen-implementation) records the selected-day report reads,
+permission checks and verification.
 
 ## Phone comparison
 

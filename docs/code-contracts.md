@@ -18,6 +18,12 @@ Every write goes through `W()` in `js/prep.js`, which adds the writer's id (`by`
 
 The prep pages read Firestore; keep the existing bounded readers and correction stamps. Firestore's cache is memory-only and disappears on reload. Admin report returns within the same page can reuse loaded data, while a full reload may need server reads again. Do not add persistent private reports to meet a read budget. Existing public assets and approved daily hint caches retain their documented invalidation and sign-out guards. No polling.
 
+## Chef panel
+
+The chosen Head chef / Sous chef panel (`#/chef`, 8 November 2026) shares the actual admin shell through `panelShellHTML()`, with its own permitted page descriptors and in-memory tab state. It does not relax the owner gate or use the owner page list for Find. Embedded editors keep their existing state and writes; `teamHere()` and `todoHere()` include the visible chef subpage in clock, view-restoration and refresh hooks. Shared mail still requires its existing switch. A visible minutes preview owns Back only while its writer remains authorised.
+
+Dashboard totals must belong to today, rather than a previously selected Prep or Orders day; unread data stays unknown. Its metric links select today's report. History reads only one selected prep/order day through `pastRead()`; the new optional strict argument requires a server answer for a first, stale or explicit refresh read. Complete confirmed copies retain the existing memory-cache checks and correction stamps. Clear the chef report state and its list registry on lock, handover and role removal. The [chosen contract and verification](chef-panel-options/brief.md#chosen-implementation) is authoritative.
+
 
 I'm on it (5 Nov 2026; its own button since that evening): a prep line may hold `onBy`, `onById`, `onAt`, the cook on it. The On it button (`data-p="onit"`, `onTap()`) stamps (`stampNow()`), takes off (`stampOff()`) or takes over; the tick box stays one tap = done (`tick()`). `tickNow()` and the picker's tick clear the stamp in the same write; rolled copies never carry it. On the shared device On it goes through `ptOpen()`/`ptSave()` (`pt.mode` 'on'), so the stamp keeps the picker's uncertain-save handling, and the tick's picker lists the cook on it first. The rules: the fields are in the tick group of `prepCapabilities()` and checked by `onStampOk()`/`onPerson()`; no list is passed into a rules function (`docs/rules-publication.md`).
 ## Shift pings sheet

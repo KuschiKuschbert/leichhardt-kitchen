@@ -2,6 +2,8 @@
 
 8 November 2026. Proposal only. Requested by the owner: alongside the admin panel unlocked by the admin email, can the head chef and sous chefs have a panel?
 
+Design history: the owner subsequently chose a dedicated panel like the real admin implementation. See [the chosen contract and verification](brief.md). The proposal below records the earlier discovery, not a pending design choice.
+
 ## Problem and proposed outcome
 
 The two PIN chef roles already have operational tools, but reach them through the chef hat's long list. A Head chef PIN also sees Admin panel, which asks for Google. A sous chef has no named panel. The owner wants a clear place for these roles. We have no measured evidence of how often people struggle to find those tools.

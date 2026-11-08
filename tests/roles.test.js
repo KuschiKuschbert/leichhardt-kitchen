@@ -57,16 +57,16 @@ function extra() {
 // the 8 sign-ins: who is on the phone, and what its menu and tabs must and must not hold. Guides shows for everyone in
 // the kitchen while staff see it (SEE.guides), and never for functions only
 const KITCHEN_TABS = ['Recipes', 'Prep', 'Orders', 'Wastage', 'Transfers'].concat(SEE.guides ? ['Guides'] : []);
-const CREW_NO = ['admin', 'todo', 'manage', 'pings', 'staff', 'functions', 'suppliers'];
+const CREW_NO = ['admin', 'chef', 'todo', 'manage', 'pings', 'staff', 'functions', 'suppliers'];
 const SIGNINS = [
   { id: 'staff', name: 'staff (Ann)', o: { who: 'ann' }, has: ['mail', 'drinks', 'fn', 'deliveries', 'settings', 'out'], no: CREW_NO, tabs: KITCHEN_TABS },
   { id: 'lead', name: 'lead (Lou)', o: { who: 'lou' }, has: ['mail', 'drinks', 'fn', 'out'], no: CREW_NO, tabs: KITCHEN_TABS },
   { id: 'view', name: 'view only (Vic)', o: { who: 'vic' }, has: ['mail', 'drinks', 'fn', 'out'], no: CREW_NO, tabs: KITCHEN_TABS },
-  { id: 'sous', name: 'sous chef (Sam)', o: { who: 'sam' }, has: ['todo', 'manage', 'pings', 'staff', 'fn', 'out'], no: ['admin', 'functions'], tabs: KITCHEN_TABS },
-  { id: 'head', name: 'head chef on PIN (Kit)', o: { who: 'kit' }, has: ['admin', 'todo', 'manage', 'pings', 'staff', 'out'], no: ['mail', 'functions'], tabs: KITCHEN_TABS, admin: true },
-  { id: 'owner', name: 'head chef\'s Google device with daily head PIN', o: { admin: true, who: 'kit' }, has: ['admin', 'todo', 'manage', 'functions', 'out'], no: ['mail'], tabs: KITCHEN_TABS, admin: true },
+  { id: 'sous', name: 'sous chef (Sam)', o: { who: 'sam' }, has: ['chef', 'todo', 'manage', 'pings', 'staff', 'fn', 'out'], no: ['admin', 'functions'], tabs: KITCHEN_TABS },
+  { id: 'head', name: 'head chef on PIN (Kit)', o: { who: 'kit' }, has: ['admin', 'chef', 'todo', 'manage', 'pings', 'staff', 'out'], no: ['mail', 'functions'], tabs: KITCHEN_TABS, admin: true },
+  { id: 'owner', name: 'head chef\'s Google device with daily head PIN', o: { admin: true, who: 'kit' }, has: ['admin', 'chef', 'todo', 'manage', 'functions', 'out'], no: ['mail'], tabs: KITCHEN_TABS, admin: true },
   { id: 'tablet', name: 'shared tablet (Bo)', o: { who: 'bo', settings: { shared: true }, touch: true }, has: ['mail', 'drinks', 'fn', 'out'], no: CREW_NO, tabs: KITCHEN_TABS },
-  { id: 'fnonly', name: 'functions only (Fay)', o: { who: 'fay' }, has: ['functions', 'deliveries', 'out'], no: ['admin', 'todo', 'manage', 'pings', 'staff', 'mail', 'drinks', 'fn', 'suppliers'], tabs: ['Recipes'], fnOnly: true }
+  { id: 'fnonly', name: 'functions only (Fay)', o: { who: 'fay' }, has: ['functions', 'deliveries', 'out'], no: ['admin', 'chef', 'todo', 'manage', 'pings', 'staff', 'mail', 'drinks', 'fn', 'suppliers'], tabs: ['Recipes'], fnOnly: true }
 ];
 const PAGES = ['#/', '#/prep', '#/orders', '#/waste', '#/transfers', '#/recipes', '#/fn'];
 const SIZES = [[390, 844], [768, 1024], [1280, 900]];
