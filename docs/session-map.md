@@ -6,6 +6,8 @@ When a note or a file is added: its full row goes here, and one short row (what 
 
 ## Which note to read before you change it
 
+Section prep pars, 8 November 2026: `docs/prep-par-options/brief.md` records the existing workflows, three design options, council review, measured previews and unresolved requirements. `index.html` is a standalone comparison and `preview.html` contains sample-only interactions. No design is chosen and no application capability is added.
+
 `CLAUDE.md`, "Read the note before you change it", has the short version of this table.
 
 | Changing | Read |

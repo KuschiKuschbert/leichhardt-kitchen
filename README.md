@@ -2,6 +2,8 @@
 
 # Leichhardt Kitchen Book
 
+Design exploration, 8 November 2026: [three options for section prep pars](docs/prep-par-options/index.html), with the [council, evidence and trade-offs](docs/prep-par-options/brief.md). No prep-par feature is implemented and no option has been chosen.
+
 The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order list, the wastage log, the transfer list (stock shared with the other venues) and the team's how-to guides, plus the head chef's admin panel. It works on any phone, tablet or computer with a web browser and can be installed as an app. Working rules for changing it are in `CLAUDE.md` (which note to read and every file, in full: `docs/session-map.md`), and each part's code contract (what a change must keep) is in `docs/code-contracts.md` and the feature notes in `docs/`. [AGENTS.md](AGENTS.md) tells Codex to read `CLAUDE.md` at the start of every task, so both agents use the same rules.
 
 On Home, signed-in kitchen staff can see **On today** below their own shift summary: the saved team, grouped by section, with names, shifts, hours and breaks. It is read only and works on phones, tablets and laptops. See [Today's team](docs/todays-team-options/brief.md#staff-home-roster-8-november-2026).
