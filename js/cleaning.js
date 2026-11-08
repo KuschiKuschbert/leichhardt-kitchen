@@ -24,7 +24,9 @@
   function access() {
     if (!C.allowed()) {
       var lock = B.workLock && B.workLock();
-      if (recorder && lock && lock.identity === recorder) { if (!M.suspended) clearReads(); M.suspended = true; context = ''; closePicker(true, true); }
+      // The sign-in roster arrives before private settings on unlock. Keep the same recorder's draft hidden
+      // until those settings can decide access; a confirmed disabled switch still clears a staff view.
+      if (recorder && (lock && lock.identity === recorder || C.identity() === recorder && !C.permissionsReady())) { if (!M.suspended) clearReads(); M.suspended = true; context = ''; closePicker(true, true); }
       else reset();
       return false;
     }
@@ -292,7 +294,7 @@
     else if (person && pickerValid() && !picker.busy && !picker.failed) tick(picker.task, picker.day, person);
   });
   document.addEventListener('keydown', function (event) { if (!popup) return; if (event.key === 'Escape') { event.preventDefault(); closePicker(); } if (event.key === 'Tab') { var pane = popup.querySelector('.pt-sheet'); if (picker.busy) { event.preventDefault(); pane.focus({ preventScroll: true }); } else B.trapTab(event, pane, 'button:not([disabled]), input:not([disabled])'); } });
-  ['lk-access', 'lk-who', 'lk-admin', 'lk-cfg'].forEach(function (name) { window.addEventListener(name, function () { var open = access(); draw(); if (open && shown()) { drawPicker(); load(); } }); });
+  ['lk-access', 'lk-who', 'lk-admin', 'lk-cfg', 'lk-feat'].forEach(function (name) { window.addEventListener(name, function () { var open = access(); draw(); if (open && shown()) { drawPicker(); load(); } }); });
   window.addEventListener('lk-clock', checkDay);
   window.addEventListener('focus', function () { if (shown()) checkDay(); });
   document.addEventListener('visibilitychange', function () { if (!document.hidden && shown()) checkDay(); });

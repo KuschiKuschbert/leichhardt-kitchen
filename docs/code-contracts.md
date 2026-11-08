@@ -82,6 +82,8 @@ Guides keep each PDF page or photo as a picture in its own Firestore record (`gu
 
 Guides, Shift pings and Meeting minutes can be held back from staff (the Pages staff see row of the admin Kitchen, Overview, `staffSee` in `config/main`). Any new link, card or read for those pages checks `featOn('guides' | 'pings' | 'minutes')` in `js/prep.js` (`LK_PREP.featOn` in `js/app.js`). It is worked out from the staff list and the person on the phone, kept in `lk.feat`, and `lk-feat` tells `js/app.js` to redraw the menus.
 
+Cleaning uses the same admin row and `featOn('cleaning')`, but its saved flag must be explicitly `true`; missing means off. Only canonical head/sous chefs retain setup access while off, with no lead bypass. The rules gate cleaning reads and completion writes too. Live config updates close a disabled staff page and clear its private memory. The saved `lk.feat` value is a hint, not authority. See `docs/cleaning-options/release-toggle.md`.
+
 ## Double ups (mergeDups)
 
 Double ups on the prep list merge by themselves (`mergeDups()` in `js/prep.js`). It reads the lines from the server first (`getDocsFromServer`, one query by id per 30 lines) and tries each group once per page load: keep both, or a phone with an old copy of the list can remove a line ticked elsewhere, or read again on every redraw. A line with `dupOk` is never merged.

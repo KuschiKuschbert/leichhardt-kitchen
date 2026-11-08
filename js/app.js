@@ -1132,7 +1132,10 @@
     if (!window.LK_PREP || !window.LK_PREP.cleaningOK) {
       root.innerHTML = mgNote('Reload the book', 'Kitchen cleaning needs the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>'); return;
     }
-    if (!cleaningOK()) return;
+    if (!cleaningOK()) {
+      if (window.LK_CLEANING) window.LK_CLEANING.unmount();
+      root.innerHTML = mgNote('Kitchen cleaning', 'Cleaning is not open to the team yet. The head chef will turn it on when setup is ready.', '<a class="btn dark" href="#/">Back to the start</a>'); return;
+    }
     if (window.LK_CLEANING) {
       if (window.LK_CLEANING.api === 1) window.LK_CLEANING.mount(root);
       else root.innerHTML = mgNote('Reload the book', 'Kitchen cleaning needs the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>');
@@ -1928,11 +1931,15 @@
     else if (route.name === 'home' && q()) updateResults();
   });
   // js/prep.js worked out that a page was switched on or off for this phone: redraw the menus, the dockets and the guides box
-  window.addEventListener('lk-feat', function () {
-    if (parseRoute().name === 'landing') { render(); return; }
+  function featureNavPaint() {
     var pn = app.querySelector('.pnav'), tb = app.querySelector('.tabbar');
     if (pn) pn.outerHTML = pillNav();
     if (tb) tb.outerHTML = tabBar();
+  }
+  window.addEventListener('lk-feat', function () {
+    whoMenuClose();
+    if (parseRoute().name === 'landing' || parseRoute().name === 'cleaning') { render(); return; }
+    featureNavPaint();
     try { window.dispatchEvent(new Event('lk-guides')); } catch (e) {}
   });
   // js/prep.js signed the head chef in or out on this phone (lk.admin changed): show or drop Admin in the chef hat's menu, and the head chef's Settings blocks
@@ -1965,7 +1972,12 @@
     if (m) { if (!m.hasAttribute('tabindex')) m.setAttribute('tabindex', '-1'); m.focus(); }
   });
   // the kitchen settings were read (who is Head chef): the head chef's link on a card and the manage page follow
-  window.addEventListener('lk-cfg', function () { editSlotRedraw(); if (parseRoute().name === 'manage' && !(window.LK_MG && window.LK_MG.open())) redrawManage(); feRedraw(); });
+  window.addEventListener('lk-cfg', function () {
+    editSlotRedraw(); if (parseRoute().name === 'manage' && !(window.LK_MG && window.LK_MG.open())) redrawManage(); feRedraw();
+    // Private settings can arrive after the sign-in roster without changing lk.feat's remembered values.
+    // Recheck Cleaning then as well; a missing setting never publishes it from the saved flag.
+    featureNavPaint(); if (parseRoute().name === 'cleaning') mountCleaning();
+  });
   /* Functions: who may change them follows the kitchen settings and who is signed in, straight away (a tick taken away
      closes the form on an open page; what was typed stays on the device). #/fn redraws when the functions change. */
   function feRedraw() { if (parseRoute().name === 'functions') mountFunctions(parseRoute()); }

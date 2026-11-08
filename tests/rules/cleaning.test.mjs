@@ -22,6 +22,7 @@ const people = [
 ].map(p => ({ active: true, ...p }));
 const ids = people.filter(p => p.active).map(p => p.id);
 const cfg = { people, staffIds: ids, headId: 'head', sousIds: ['head', 'sous'], fnIds: ['fn'], fnOnlyIds: ['fn'],
+  staffSee: { guides: true, pings: false, minutes: true, cleaning: true },
   addIds: ['staff', 'other', 'lead', 'sous'], tickIds: ['staff', 'other', 'lead', 'sous'], delIds: ['lead', 'sous'] };
 const roles = [
   { id: 'signedout', who: '', read: false, tick: false, chef: false },
@@ -84,14 +85,70 @@ try {
     const db = dbs[r.id], tid = 'matrix-' + r.id;
     await put({ [taskPath(tid)]: task(tid) });
     await check(r.id + ': one bounded schedule query', () => getDocs(query(collection(db, K + 'cleaningTasks'), where('until', '>', START), limit(501))), r.read);
-    await check(r.id + ': current day completion query', () => getDocs(query(collection(db, K + 'cleaningDone'), where('day', '==', TODAY), limit(1001))), r.read);
+    await check(r.id + ': current day completion query', () => getDocs(query(collection(db, K + 'cleaningDone'), where('day', '==', TODAY), limit(2001))), r.read);
     await check(r.id + ': read current completion', () => getDoc(ref(db, donePath('read'))), r.read);
     await check(r.id + ': read historical completion', () => getDoc(ref(db, donePath('read', YDAY))), r.chef);
-    await check(r.id + ': weekly completion query', () => getDocs(query(collection(db, K + 'cleaningDone'), where('day', '>=', YDAY), where('day', '<=', TOMORROW), limit(1001))), r.chef);
+    await check(r.id + ': weekly completion query', () => getDocs(query(collection(db, K + 'cleaningDone'), where('day', '>=', YDAY), where('day', '<=', TOMORROW), limit(2001))), r.chef);
     await check(r.id + ': create schedule', () => setDoc(ref(db, taskPath('new-' + r.id)), task('new-' + r.id, { by: r.who })), r.chef);
     await check(r.id + ': archive tomorrow', () => updateDoc(ref(db, taskPath(tid)), { until: START + DAY, by: r.who }), r.chef);
     await check(r.id + ': tick', () => setDoc(ref(db, donePath(tid)), done(tid, r.who)), r.tick);
   }
+
+  // Existing kitchens have no flag yet. Only canonical chefs may prepare and use the schedule until release.
+  for (const [state, staffSee] of [['off', { ...cfg.staffSee, cleaning: false }], ['missing', { guides: true, pings: false, minutes: true }]]) {
+    await put({ 'config/main': { ...cfg, staffSee } });
+    for (const r of roles) {
+      const db = dbs[r.id], tid = 'release-' + state + '-' + r.id, undoId = tid + '-undo';
+      const receipt = done(undoId, r.who);
+      await put({ [taskPath(tid)]: task(tid), [taskPath(undoId)]: task(undoId), [donePath(undoId)]: receipt });
+      await check(state + ' ' + r.id + ': read schedule metadata', () => getDoc(ref(db, taskPath('read'))), r.chef);
+      await check(state + ' ' + r.id + ': query schedules', () => getDocs(query(collection(db, K + 'cleaningTasks'), where('until', '>', START), limit(501))), r.chef);
+      await check(state + ' ' + r.id + ': read current completion', () => getDoc(ref(db, donePath('read'))), r.chef);
+      await check(state + ' ' + r.id + ': current completion query', () => getDocs(query(collection(db, K + 'cleaningDone'), where('day', '==', TODAY), limit(2001))), r.chef);
+      await check(state + ' ' + r.id + ': weekly completion query', () => getDocs(query(collection(db, K + 'cleaningDone'), where('day', '>=', YDAY), where('day', '<=', TOMORROW), limit(2001))), r.chef);
+      await check(state + ' ' + r.id + ': prepare a new schedule', () => setDoc(ref(db, taskPath(tid + '-new')), task(tid + '-new', { by: r.who })), r.chef);
+      await check(state + ' ' + r.id + ': archive tomorrow', () => updateDoc(ref(db, taskPath(tid)), { until: START + DAY, by: r.who }), r.chef);
+      await check(state + ' ' + r.id + ': tick', () => setDoc(ref(db, donePath(tid)), done(tid, r.who)), r.chef && r.tick);
+      await check(state + ' ' + r.id + ': retry identical completion', () => setDoc(ref(db, donePath(undoId)), receipt), r.chef && r.tick);
+      await check(state + ' ' + r.id + ': Undo own completion', () => updateDoc(ref(db, donePath(undoId)), { done: false, version: 2, by: r.who }), r.chef && r.tick);
+    }
+  }
+  const withoutSee = { ...cfg }; delete withoutSee.staffSee;
+  for (const [state, config] of [['no staffSee map', withoutSee], ['non-map staffSee', { ...cfg, staffSee: true }],
+    ['string flag', { ...cfg, staffSee: { cleaning: 'true' } }], ['numeric flag', { ...cfg, staffSee: { cleaning: 1 } }]]) {
+    await put({ 'config/main': config });
+    for (const id of ['staff', 'lead', 'sous', 'head']) {
+      await check(state + ' ' + id + ': only canonical chefs read', () => getDoc(ref(dbs[id], taskPath('read'))), ['head', 'sous'].includes(id));
+      const tid = 'malformed-' + n; await put({ [taskPath(tid)]: task(tid) });
+      await check(state + ' ' + id + ': only canonical chefs tick', () => setDoc(ref(dbs[id], donePath(tid)), done(tid, id)), ['head', 'sous'].includes(id));
+    }
+  }
+  await put({ 'config/main': { ...cfg, staffSee: { ...cfg.staffSee, cleaning: false }, sousIds: ['head'] } });
+  await check('sous role label without canonical membership cannot bypass release', () => getDoc(ref(dbs.sous, taskPath('read'))), false);
+  await put({ 'config/main': { ...cfg, staffSee: { ...cfg.staffSee, cleaning: false }, tickIds: cfg.tickIds.filter(id => id !== 'sous') },
+    [taskPath('sous-no-tick')]: task('sous-no-tick') });
+  await check('unreleased setup access does not grant a sous chef Tick capability', () => setDoc(ref(dbs.sous, donePath('sous-no-tick')), done('sous-no-tick', 'sous')), false);
+  await check('sous chef without Tick still prepares the unreleased schedule', () => setDoc(ref(dbs.sous, taskPath('sous-setup')), task('sous-setup', { by: 'sous' })));
+
+  // The release switch uses the existing admin config boundary, including on a shared head-chef device.
+  for (const enabled of [true, false]) for (const r of roles) {
+    const before = { ...cfg.staffSee, cleaning: !enabled };
+    await put({ 'config/main': { ...cfg, staffSee: before } });
+    const admin = ['owner', 'owner-shared'].includes(r.id);
+    await check(r.id + ': admin turns Cleaning ' + (enabled ? 'on' : 'off'), () => updateDoc(ref(dbs[r.id], 'config/main'),
+      { staffSee: { ...before, cleaning: enabled }, by: r.who }), admin);
+    await same(r.id + ': release preserves the other page switches', async () => {
+      const saved = (await getDoc(ref(dbs.head, 'config/main'))).data().staffSee;
+      const expected = { ...before, cleaning: admin ? enabled : !enabled };
+      return Object.keys(expected).every(key => saved[key] === expected[key]) && Object.keys(saved).length === Object.keys(expected).length;
+    });
+  }
+  await put({ 'config/main': cfg });
+  await check('enabling Cleaning restores team access to existing schedule', () => getDoc(ref(dbs.staff, taskPath('read'))));
+  await same('switching Cleaning off and on preserves completion history', async () => {
+    const saved = (await getDoc(ref(dbs.staff, donePath('read')))).data();
+    return saved.done === true && saved.doneById === 'staff' && saved.version === 1;
+  });
 
   await check('staff cannot query all completion history', () => getDocs(collection(dbs.staff, K + 'cleaningDone')), false);
   await check('chef cannot delete task history', () => deleteDoc(ref(dbs.head, taskPath('read'))), false);

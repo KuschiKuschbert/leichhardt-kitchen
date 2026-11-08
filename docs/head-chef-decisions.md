@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **8 November 2026, prepare Cleaning before release.** The head chef requested an admin toggle to turn Cleaning on once setup is ready. Reuse Admin → Kitchen → Overview → Pages staff see, with a Set up cleaning link. Cleaning starts off for the team; canonical head and sous chefs retain setup access. Only the verified admin enables it. Saving the switch publishes or hides the page for staff and leads, with matching server rules. Turning it off keeps all tasks and completion records. See [the release-switch contract](cleaning-options/release-toggle.md).
+
 - **8 November 2026, a Head chef / Sous chef panel like the real admin panel.** The owner clarified the requested design after the three examples: inspect how the admin account's panel is implemented and give Head chef and Sous chef a similar panel. Reuse the actual admin shell with Today, Reports, Team and Kitchen, its responsive rail, tabs and Find. Open it with the current personal chef PIN and canonical role; retain the existing service shortcuts. Working chef editors and registers belong inside the panel, with the current permissions. No wider owner-only access is implied. See [the chef panel brief](chef-panel-options/brief.md).
 
 Moved out of `README.md` on 3 November 2026 so sessions can read it in parts (README had grown past 350 KB). Dated decisions about how the book should work: who may do what and what moved where. Newest first. Add a new decision at the top with its date.
