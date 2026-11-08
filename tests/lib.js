@@ -33,7 +33,8 @@ function seed(extra) {
     { id: 'ann', name: 'Ann', role: 'staff', add: true, tick: true, del: false, active: true },
     { id: 'bo', name: 'Bo', role: 'staff', add: true, tick: true, del: false, active: true }
   ];
-  put(['config', 'main'], { people, sousIds: ['sam'], showBadges: true });
+  // The usual fixture has launched Cleaning. A replacement config may omit the flag to test its production default.
+  put(['config', 'main'], { people, sousIds: ['sam'], showBadges: true, staffSee: { cleaning: true } });
   put(['config', 'admins'], { x: 1 });
   [['sam', '1111'], ['ann', '2222'], ['bo', '3333']].forEach(([id, pin]) => { put(['staffpins', id], { hash: sha('lk:' + id + ':' + pin) }); put(['pinset', id], { at: 1 }); });
   // everyone already has a usual drink, so the drinks run card does not show on every page (drinks.test.js takes them away)
