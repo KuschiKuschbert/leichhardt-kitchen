@@ -46,6 +46,9 @@ async function unlock(p, id = 'sam', pin = '1111') {
       await p.click('.wtop-who'); await L.settle(p, 150); await p.click('.wm [data-who="out"]'); await L.settle(p, 400);
       if (await privateOn(p)) { await p.click('.wm [data-who="out"]'); await L.settle(p, 400); }
       ok(!(await left(p)).length && !await privateOn(p), 'explicit shared handover clears the old recipe, drawing and function drafts');
+      if (await p.evaluate(() => location.hash === '#/')) {
+        await p.click('.wtop-who'); await L.settle(p, 150); await p.click('.wm [data-who="signin"]'); await L.settle(p, 400);
+      }
       await unlock(p, 'ann', '2222');
       ok(await p.evaluate(() => LK_PREP.state.who === 'ann') && !(await left(p)).length, 'the next person receives their own access without the old drafts');
     } else ok(await privateOn(p), 'personal ' + (touch ? 'phone' : 'computer') + ': reopening after eleven idle minutes needs no new PIN');

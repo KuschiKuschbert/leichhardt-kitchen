@@ -1320,9 +1320,7 @@
     // or a queued action must finish. Restoring an already valid session in resume() keeps its route.
     var toHome = !functionOnly() && !keepWork && (!pend || pend.back);
     if (toHome) { pend = null; location.hash = '#/'; }
-    recoverWrites(id); loadAdmins(); accessChanged(); draw();
-    // Let the new page draw before playing its sign-in feedback.
-    if (toHome) setTimeout(function () { if (S.authed && S.who === id) whoSync(true); }, 0); else whoSync(true);
+    recoverWrites(id); loadAdmins(); accessChanged(); draw(); whoSync(true);
     if (pend) guestReplay(pend);
     dkCheck(); ksCheck(); noteMaybePop();
   }

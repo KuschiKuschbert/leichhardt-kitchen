@@ -387,15 +387,19 @@
      with Google, and Sign out's "Not saved yet" (or "Not sent yet"). js/prep.js says when the person changes (lk-who). */
   // the first letter of a name, for the disc on the hat and the menu's person card (a letter, never a symbol or space)
   function initial(n) { var m = String(n || '').trim().match(/[A-Za-z0-9\u00C0-\u024F]/); return m ? m[0].toUpperCase() : '?'; }
+  var whoFlipUntil = 0;
   function whoMark(flip) {
     var n = window.LK_PREP && window.LK_PREP.whoName ? window.LK_PREP.whoName() : '';
+    // Home can redraw as the saved day arrives. Keep fresh sign-in feedback through those header redraws.
+    if (!n) whoFlipUntil = 0;
+    else if (flip) whoFlipUntil = Date.now() + 1500;
     var rn = parseRoute().name, here = rn === 'settings' || rn === 'admin' ? ' aria-current="page"' : '';
     // open kitchen mail shows as a count on the hat, as it did on the Admin key
     var ml = mailOpen(), mt = ml ? ', ' + ml + ' open kitchen mail' : '';
     // who is signed in shows on the hat itself (3 Nov 2026, the Writing as row went): their initial in a small disc, and on
     // a shared screen their first name next to it, so the next cook sees at a glance whose phone it is
     var sh = n && window.LK_DEVICE && window.LK_DEVICE.mode() === 'shared' ? ' is-shared' : '';
-    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + sh + (n && flip ? ' flip' : '') + '" data-who="menu" aria-haspopup="true" aria-expanded="' + !!wmenu + '"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + (n ? '<span class="wtop-av" aria-hidden="true">' + esc(initial(n)) + '</span>' : '') + '<span class="wtop-lbl wtop-who-n">' + esc(n.split(' ')[0]) + '</span>' + mailBadge(ml) + '</button>';
+    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + sh + (n && Date.now() < whoFlipUntil ? ' flip' : '') + '" data-who="menu" aria-haspopup="true" aria-expanded="' + !!wmenu + '"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + (n ? '<span class="wtop-av" aria-hidden="true">' + esc(initial(n)) + '</span>' : '') + '<span class="wtop-lbl wtop-who-n">' + esc(n.split(' ')[0]) + '</span>' + mailBadge(ml) + '</button>';
   }
   /* Manage Recipes & Drawings (21 Oct 2026): the head chef only (js/prep.js bookEdit: their PIN as Head chef, or their
      Google device with nobody else signed in). Everyone else reads the recipes as before. */

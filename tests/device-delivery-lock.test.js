@@ -15,7 +15,7 @@ async function fill(p, supplier) {
   await p.fill('#dl-frozen', '-18.5');
   await p.click('[data-dl="note"]'); await p.fill('#dl-note', 'Original receiving details');
 }
-async function unlock(p, id, pin) {
+async function unlock(p, id, pin, newPerson) {
   const choice = p.locator('.p-name[data-id="' + id + '"]');
   if (await choice.count() && await choice.isVisible()) { await choice.click(); await L.settle(p, 200); }
   await p.locator('#pf1').fill(pin);
@@ -24,6 +24,11 @@ async function unlock(p, id, pin) {
   await L.waitFor(p, id => (LK_PREP.state.authed && LK_PREP.state.who === id && LK_PREP.privateAccess()) || /goes in by itself/.test(LK_PREP.state.pinMsg || ''), id, 8000).catch(() => {});
   if (await p.evaluate(() => /goes in by itself/.test(LK_PREP.state.pinMsg || ''))) await p.clock.runFor(21000);
   await L.waitFor(p, id => LK_PREP.state.authed && LK_PREP.state.who === id && LK_PREP.privateAccess(), id, 15000);
+  if (newPerson) {
+    await L.waitFor(p, () => !!document.querySelector('#hm-board'));
+    ok(await p.evaluate(() => location.hash === '#/'), 'a fresh person starts on Home after the PIN');
+    await p.evaluate(() => { location.hash = '#/deliveries'; });
+  }
   await L.waitFor(p, () => !!document.querySelector('#dl-supplier'));
 }
 async function open(b, mode) {
@@ -143,7 +148,7 @@ async function dailyLock(p) {
   await fill(p, 'Discarded handover example');
   await p.evaluate(() => LK_PREP.signOut(true)); await L.settle(p, 300);
   ok(!await p.evaluate(() => LK_DELIVERY.dirty()) && !await p.$('#dl-form'), 'manual sign-out clears the delivery draft and private screen');
-  await unlock(p, 'bo', '3333');
+  await unlock(p, 'bo', '3333', true);
   ok(await p.inputValue('#dl-supplier') === '' && !(await p.$('#dl-note')) && await p.evaluate(() => LK_DELIVERY.dirty()) === false && !(await receiptList(p)).length, 'the next signed-in person receives a fresh form and no previous receiver\'s payload');
   ok(!p.errors.length, 'manual receiving handover has no browser errors ' + p.errors.join(' | '));
   await p.context().close(); await b.close(); L.report(R);

@@ -62,6 +62,11 @@ const mark = p => p.evaluate(() => { const e = document.querySelector('.wtop-who
   await L.settle(p, 900);
   ok((await mark(p)) === 'on:Signed in as Ann:Ann' && await p.evaluate(() => location.hash) === '#/', 'Home: signing in as Ann brings the mark back with her name (' + await mark(p) + ')');
   ok((await anim(p)) === 'flip:who-flip', 'Home: the sign-in flips the mark in like a coin (' + await anim(p) + ')');
+  await p.evaluate(() => window.dispatchEvent(new Event('lk-mail')));
+  ok((await anim(p)) === 'flip:who-flip', 'Home: a header refresh keeps the fresh sign-in feedback');
+  await p.clock.runFor(1600);
+  await p.evaluate(() => window.dispatchEvent(new Event('lk-mail')));
+  ok((await anim(p)) === 'still:none', 'Home: a later header refresh does not replay the sign-in feedback');
   ok(p.errors.length === 0, 'who mark: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   // the order list, wastage and transfers have no Writing as row either; Sign out in the hat menu hands the phone over

@@ -111,6 +111,8 @@ const addLine = async (p, text, sec) => {
   ok(!!(await p.$('.ks-wrap')), 'PIN: asked straight after the PIN');
   await p.click('.ux-picker [data-v=""]'); await L.settle(p, 300);
   ok(!(await p.$('.ks-wrap')) && await mySecLine(p) === 'Pick one for today', 'skip: closed, and My section in the menu offers to pick one');
+  ok(await p.evaluate(() => location.hash === '#/'), 'PIN: Home opens before returning to Prep');
+  await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 600);
   ok(await p.$eval('[data-k="p-section"]', e => e.value) === '', 'skip: the section box stays empty');
   await p.reload(); await L.settle(p, 1500);
   ok(!(await p.$('.ks-wrap')), 'skip: not asked again today');
