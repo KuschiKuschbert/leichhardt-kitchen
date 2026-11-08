@@ -79,10 +79,10 @@ async function check(b, hash, o, name, see, then) {
     [fsKey(['team', today])]: { day: today, on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }, { id: 'ann', sh: 'dinner', sec: 'grill' }, { id: 'bo', sh: 'lunch', sec: 'grill' }], br: [{ id: 'ann', sh: 'lunch', at: 870, len: 30 }, { id: 'bo', sh: 'lunch', at: 825, len: 45 }], v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam' }
   });
   await check(b, '#/prep', { who: 'ann', extra: tx }, 'staff day line and Your day', 'Shift', async p => {
-    await L.waitFor(p, () => !!document.querySelector('.wtop .tm-chip'), null, 8000).catch(() => {});
+    await L.waitFor(p, () => !!document.querySelector('.wtop .tm-slot .tm-chip'), null, 8000).catch(() => {});
     // today's booby-trapped ping comes up first: closed, then the chip
     await p.evaluate(() => { const x = document.querySelector('.nt-wrap:not(.tm-dw) [data-note="dismiss"]'); if (x) x.click(); }); await L.settle(p, 400);
-    await p.click('.wtop .tm-chip'); await L.settle(p, 300);
+    await p.click('.wtop .tm-slot .tm-chip'); await L.settle(p, 300);
     ok(/Shift Zz<i id="pwn">/.test(await p.textContent('.tm-dw') || ''), 'Your day: the shift name shows as typed');
     await p.keyboard.press('Escape'); await L.settle(p, 300);
     await p.click('.wtop-who'); await L.settle(p, 300);

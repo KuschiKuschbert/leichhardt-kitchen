@@ -13033,7 +13033,7 @@
     var k = coolingPushKept(), show = coolingEligible(), personal = deviceMode() === 'personal', supported = pushCan();
     var on = !!(personal && coolingPushMatches(k) && supported && Notification.permission === 'granted');
     var state = !personal ? 'shared' : pushIOS() ? 'ios' : !supported ? 'no' : Notification.permission === 'denied' ? 'denied' : 'off';
-    var msg = coolingPushMsg || (on ? 'On. This phone receives Operandio cooling alerts, even with the app closed.' : state === 'shared' ? 'This shared screen shows alerts while signed in. Turn on closed-app alerts on your personal device.' : PUSH_SAY[state] || 'Each stage sends a phone notification. Your phone’s notification settings control its sound.');
+    var msg = coolingPushMsg || (on ? 'On. This phone receives Operandio cooling alerts, even with the app closed.' : state === 'shared' ? 'This shared screen shows alerts while signed in. Turn on closed-app alerts on your personal device.' : PUSH_SAY[state] || 'Each stage sends a phone notification.');
     return { show: show, on: on, busy: coolingPushBusy, enabled: show && personal && state !== 'ios' && supported,
       msg: msg, error: coolingPushError };
   }

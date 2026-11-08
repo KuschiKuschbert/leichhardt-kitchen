@@ -44,5 +44,14 @@ html.cooling-open, html.cooling-open body { overflow: hidden; }
   .wtop:has(.cooling-chip) .wtop-brand { gap: 4px; }
   .wtop:has(.cooling-chip) .wtop-brand b { font-size: 1.2rem; }
 }
+/* Keep the title and all four 44px controls on the smallest phones. */
+@media(max-width:389px) {
+  .wtop:has(.cooling-chip):has(.tm-slot .tm-chip) { padding-inline: 8px; gap: 0; }
+  .wtop:has(.cooling-chip):has(.tm-slot .tm-chip) .wtop-icons { gap: 0; }
+}
+/* The existing navigation wrap absorbs a wide fallback font before the title shrinks. */
+@media(min-width:1100px) {
+  .wtop:has(.cooling-chip) .wtop-start { flex-shrink: 0; }
+}
 
 .cooling-slot:empty { display: none; }

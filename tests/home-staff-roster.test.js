@@ -27,7 +27,7 @@ const noRows = p => p.$$eval('#hm-team .hm-tp', l => l.length === 0);
   await ready(p);
   const all = await text(p);
   ok(/Ann/.test(all) && /Sam/.test(all) && /Larder/.test(all) && /Grill/.test(all) && /Lunch 10:00 to 15:00/.test(all) && /Dinner 16:00 to 22:00/.test(all), 'staff without their own allocation still see everyone and every saved shift, section and hours (' + all + ')');
-  ok(!(await p.$('.wtop .tm-chip')) && !(await p.$('#hm-team a[href="#/team"], #hm-team button, #hm-team input, #hm-team select')), 'staff without an allocation have no own-day chip or roster editing controls');
+  ok(!(await p.$('.wtop .tm-slot .tm-chip')) && !(await p.$('#hm-team a[href="#/team"], #hm-team button, #hm-team input, #hm-team select')), 'staff without an allocation have no own-day chip or roster editing controls');
   ok(await teamReads(p) === 1 && await p.evaluate(() => __fake.bill.filter(x => /\/team\//.test(x.path) && /listen/.test(x.kind)).length) === 0, 'staff roster uses the existing single team read and has no team listener');
   ok(await p.evaluate(() => __fake.writes.flat().filter(x => /\/team\//.test(x.path)).length === 0), 'reading the roster writes no team record');
 

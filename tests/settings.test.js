@@ -16,8 +16,9 @@ const caps = p => p.evaluate(() => [...document.querySelectorAll('.st-caps li')]
   // Staff: their card, their rows, folded until tapped
   let p = await L.open(b, '#/settings', { who: 'ann', wait: 1500 });
   ok(await L.txt(p, '.st-you .st-name') === 'Ann' && /Staff/.test(await L.txt(p, '.st-you .st-role')), 'staff: the card says who is signed in and their role');
-  ok(JSON.stringify(await groups(p)) === JSON.stringify(['You', 'This phone', 'About and help']), 'staff: You, This phone, About and help (' + (await groups(p)) + ')');
+  ok(JSON.stringify(await groups(p)) === JSON.stringify(['You', 'This phone', 'Notifications', 'About and help']), 'staff: You, This phone, Notifications, About and help (' + (await groups(p)) + ')');
   const annRows = await rows(p);
+  ok(annRows.indexOf('cooling-push') >= 0 && await value(p, 'cooling-push') === 'Off', 'staff: Operandio cooling alerts have their own phone opt-in, Off');
   ok(annRows.indexOf('practice') < 0 && annRows.indexOf('ticks') < 0 && annRows.indexOf('push') < 0, 'staff: no Practice, Ticked steps or cut-off pushes (' + annRows + ')');
   // one ping sound for the whole kitchen, set only in the admin panel: no sound in Settings (head chef, 3 Nov 2026)
   ok(!/sound/i.test(await L.txt(p, '#main')), 'staff: no ping sound in Settings');
