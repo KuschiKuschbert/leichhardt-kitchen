@@ -11106,8 +11106,8 @@
     b = S.root && S.root.querySelector('[data-p="mn-pub"]'); if (b) b.disabled = !!S.mSaving || svHeld('m') || mfSame(true);
     b = S.root && S.root.querySelector('[data-p="n-save"]'); if (b) b.disabled = !!S.nSaving || svHeld('n') || nfSame();
     b = S.root && S.root.querySelector('[data-p="g-save"]'); if (b && S.gf) b.disabled = !!(S.gf.busy || S.gf.saving) || svHeld('g') || gfSame();
-    // Chef to-do: Save changes on a job opened with Change, on once something in it changed
-    b = S.root && S.root.querySelector('[data-p="todo-save"]'); if (b && tdf.id) b.disabled = !tdDirty();
+    // Chef to-do: an empty new job or an unchanged edit has nothing to save.
+    b = S.root && S.root.querySelector('[data-p="todo-save"]'); if (b) b.disabled = !tdDirty();
     // the end-of-day review (the wastage page or the admin Daily reviews form) and Change on the drinks run
     b = S.root && S.root.querySelector('[data-p="wreview"]'); if (b) b.disabled = !rvTyped(b.getAttribute('data-v') === 'page');
     b = S.root && S.root.querySelector('[data-p="dk-save"]'); if (b && dkMine()) b.disabled = dkBusy || !dkDirty();
@@ -11703,16 +11703,16 @@
   function todoRow(x) {
     var done = x.st === 'done', due = tdDue(x.due), late = tdLate(x), today = !done && due === dayNow(), id = esc(x.id), meta = [];
     if (tdForOk(x.for)) meta.push('<span class="todo-tag">For ' + esc(mnName(x.for)) + '</span>');
-    // the day as a tag on the right of the row (8 Nov 2026, Things 3): Due today and Was due in orange, a later day plain,
-    // nothing for a job with no day
+    // Open notebook B (8 Nov 2026): keep the day under its job, so a long job has the whole line for its words.
     var dueTag = due && !done ? '<span class="todo-due' + (late ? ' is-late' : today ? ' is-today' : '') + '">' + (late ? 'Was due ' + esc(dayShort(due)) : today ? 'Due today' : 'Due ' + esc(dayShort(due))) + '</span>' : '';
-    meta.push(done ? '<span class="todo-by">Done by <b>' + esc(tdName(x.doneBy)) + '</b> ' + esc(mlWhen(tdNum(x.doneAt))) + '</span>'
-      : '<span class="todo-by">Added by <b>' + esc(tdName(x.from)) + '</b> ' + esc(ago(tdNum(x.at))) + '</span>');
+    var byLine = done ? '<span class="todo-by">Done by <b>' + esc(tdName(x.doneBy)) + '</b> ' + esc(mlWhen(tdNum(x.doneAt))) + '</span>'
+      : '<span class="todo-by">Added by <b>' + esc(tdName(x.from)) + '</b> ' + esc(ago(tdNum(x.at))) + '</span>';
     return '<li class="todo-row' + (done ? ' is-done' : '') + (late ? ' is-late' : '') + '">' +
       '<button type="button" class="todo-tick" data-p="todo-tick" data-id="' + id + '" aria-pressed="' + done + '" aria-label="' + esc((done ? 'Untick: ' : 'Tick off: ') + String(x.text || '').slice(0, 40)) + '">' + TICK + '</button>' +
-      '<div class="todo-body"><div class="todo-top"><p class="todo-text">' + esc(x.text) + '</p>' + dueTag + '</div><div class="todo-meta">' + meta.join('') + '</div>' +
+      '<div class="todo-body"><div class="todo-top"><p class="todo-text">' + esc(x.text) + '</p></div><div class="todo-meta">' + dueTag + meta.join('') + '</div>' +
+      '<div class="todo-foot">' + byLine +
       '<div class="todo-acts">' + (done ? '' : '<button type="button" class="p-link" data-p="todo-edit" data-id="' + id + '">' + (armed('todo-edit:' + x.id) ? 'Not saved. Tap again' : 'Change') + '</button>') +
-      '<button type="button" class="p-link" data-p="todo-del" data-id="' + id + '">' + (armed('todo-del:' + x.id) ? 'Not saved. Tap again to remove' : 'Remove') + '</button></div></div></li>';
+      '<button type="button" class="p-link" data-p="todo-del" data-id="' + id + '">' + (armed('todo-del:' + x.id) ? 'Not saved. Tap again to remove' : 'Remove') + '</button></div></div></div></li>';
   }
   function tdFindText(x) { return x.text + ' ' + (tdForOk(x.for) ? mnName(x.for) : '') + ' ' + tdName(x.from); }
   function tdFilters() {
@@ -11728,14 +11728,14 @@
       '<button type="button" class="chip" data-p="todo-for" data-v="" aria-pressed="' + !tdf.fr + '">Anyone</button>' + chefs.map(function (p) {
         return '<button type="button" class="chip" data-p="todo-for" data-v="' + esc(p.id) + '" aria-pressed="' + (tdf.fr === p.id) + '">' + esc(p.name) + '</button>';
       }).join('') + '</div></div>' : '';
-    // a one-line add (8 Nov 2026, redesign step 7, Things 3): the day, who it is for and Add show once the job has words,
-    // or while a job is being changed (CSS: .todo-more under an empty box is hidden)
+    // One editor at every width: the right-hand page on a laptop, a one-line add above the jobs on smaller screens.
     return '<section class="todo-add' + (editing ? ' is-edit' : '') + '" aria-label="' + (editing ? 'Change a job' : 'Add a job') + '">' +
+      '<h3 class="todo-formtitle">' + (editing ? 'Change the job' : 'Add a job') + '</h3>' +
       '<div class="field"><label class="label' + (editing ? '' : ' visually-hidden') + '" for="todo-text">' + (editing ? 'Change the job' : 'New job') + '</label><textarea id="todo-text" class="todo-ta" data-k="todo-text" rows="1" maxlength="' + TD_MAX + '" placeholder="New job">' + esc(tdf.text) + '</textarea></div>' +
       (tdMsg ? '<p class="p-err" role="alert">' + esc(tdMsg) + '</p>' : '') +
       '<div class="todo-more"><div class="field"><label class="label" for="todo-due">Due by (optional)</label><div class="todo-dues"><input id="todo-due" type="date" class="p-dateinput" data-k="todo-due" value="' + esc(due) + '">' +
       '<button type="button" class="chip" data-p="todo-nodue"' + (due ? '' : ' hidden') + '>No date</button></div></div>' + fr +
-      '<div class="btn-row"><button type="button" class="btn dark" data-p="todo-save"' + (editing && !tdDirty() ? ' disabled' : '') + '>' + (editing ? 'Save changes' : 'Add to the list') + '</button>' +
+      '<div class="btn-row"><button type="button" class="btn dark" data-p="todo-save"' + (!tdDirty() ? ' disabled' : '') + '>' + (editing ? 'Save changes' : 'Add to the list') + '</button>' +
       (editing ? '<button type="button" class="btn" data-p="todo-cancel">' + (armed('todo-cancel') ? 'Tap again to discard' : 'Cancel') + '</button>' : '') + '</div></div></section>';
   }
   function todoPageHTML() {
@@ -11747,16 +11747,21 @@
       : (tdErr ? '<p class="hint todo-stale" role="status">No signal. This is the list as this device last read it.' + again + '</p>' : '') +
         lvHTML({ key: 'todo', items: tdOpen, step: 20, noun: ['job', 'jobs'], ph: 'Search the list', find: tdFindText, filters: tdFilters(),
           sorts: [['due', 'Due first', tdByDue], ['new', 'Newest first', function (a, b) { return tdNum(b.at) - tdNum(a.at); }], ['old', 'Oldest first', function (a, b) { return tdNum(a.at) - tdNum(b.at); }]],
-          card: todoRow, empty: 'Nothing on the list. Add the first job above.' });
+          card: todoRow, empty: 'Nothing on the list. Write a new job to start.' });
     var done = (tdDone || []).slice().sort(function (a, b) { return tdNum(b.doneAt) - tdNum(a.doneAt); });
     var doneIn = tdDone ? (tdDoneErr ? '<p class="hint todo-stale" role="status">No signal. This is what this device last read.' + again + '</p>' : '') +
         lvHTML({ key: 'tododone', items: done, step: 15, noun: ['job', 'jobs'], ph: 'Search done jobs', find: tdFindText, card: todoRow, empty: 'Nothing ticked off in the last 30 days.' })
       : tdDoneErr ? '<p class="p-err">Could not load. Check the signal.' + again + '</p>' : '<p class="hint">Loading...</p>';
-    return '<section class="p-card todo-page"><h2 class="p-h" id="rtitle" tabindex="-1">Chef to-do</h2>' +
-      '<p class="hint">Shared by the head chef and the sous chefs. Staff cannot see it. Tick a job when it is done.' +
-      (tdAt && !tdErr ? ' <button type="button" class="p-link" data-p="todo-refresh"' + (tdBusy ? ' disabled aria-busy="true">Reading...' : '>Refresh') + '</button>' : '') + '</p>' +
-      cutTodoHTML() + todoFormHTML() + '<div class="todo-list">' + open + '</div>' +
-      '<details class="todo-donebox"' + (tdDoneOpen ? ' open' : '') + '><summary data-p="todo-donebox">Done in the last 30 days' + (tdDone ? ' (' + done.length + ')' : '') + '</summary>' + doneIn + '</details></section>';
+    // Counts use the open jobs already read. A failed read never becomes a known total.
+    var count = tdOpen && !tdErr && !tdNeedPin() ? '<span class="todo-status">' + tdOpen.length + (tdOpen.length === 1 ? ' job' : ' jobs') + '<small>still to do</small></span>' : '';
+    return '<section class="todo-page todo-notebook" aria-labelledby="rtitle">' +
+      '<div class="todo-privacy"><p>Staff cannot see it. Tick a job when it is done.</p>' +
+      (tdAt && !tdErr ? ' <button type="button" class="p-link" data-p="todo-refresh"' + (tdBusy ? ' disabled aria-busy="true">Reading...' : '>Refresh') + '</button>' : '') +
+      '</div>' + cutTodoHTML() + '<div class="todo-book"><header class="todo-bookhead"><div><h2 class="p-h" id="rtitle" tabindex="-1">Chef to-do</h2>' +
+      '<p>Shared by the head chef and the sous chefs</p></div>' + count + '</header>' +
+      todoFormHTML() + '<div class="todo-work"><div class="todo-list">' + open + '</div>' +
+      '<details class="todo-donebox"' + (tdDoneOpen ? ' open' : '') + '><summary data-p="todo-donebox">Done in the last 30 days' + (tdDone ? ' (' + done.length + ')' : '') + '</summary>' + doneIn + '</details></div>' +
+      '<div class="todo-spine" aria-hidden="true"></div></div></section>';
   }
   function todoNoHTML() {
     return '<section class="p-card todo-page"><h2 class="p-h" id="rtitle" tabindex="-1">Chef to-do</h2><p class="hint">This list is for the head chef and the sous chefs.</p>' +

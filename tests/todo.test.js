@@ -38,8 +38,7 @@ const T = (id, x) => ({ [fsKey(['todos', id])]: Object.assign({ text: 'Job ' + i
   ok(!!n && n.st === 'open' && n.due === '2026-10-30' && n.for === 'sam' && n.from === 'sam' && n.by === 'sam' && n.doneAt === 0 && n.doneBy === '' && n.at >= L.NOW, 'add: saved with its words, day, chef, writer and time');
   ok((await rows(p)).indexOf('Call the fridge tech about the cool room door') >= 0, 'add: shows on the list');
   ok(await p.$eval('[data-k="todo-text"]', e => e.value) === '', 'add: the box is empty again');
-  await tap(p, '[data-p="todo-save"]'); await L.settle(p, 200);
-  ok(/Write the job first/.test(await txt(p, '.todo-add') || ''), 'add: an empty box asks for the job first');
+  ok(await p.$eval('[data-p="todo-save"]', e => e.disabled), 'add: an empty new job has nothing to save');
 
   // what is typed survives a redraw during service (another phone adds a prep line)
   await p.fill('[data-k="todo-text"]', 'Half typed');
