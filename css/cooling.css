@@ -44,6 +44,10 @@ html.cooling-open, html.cooling-open body { overflow: hidden; }
   .wtop:has(.cooling-chip) .wtop-brand { gap: 4px; }
   .wtop:has(.cooling-chip) .wtop-brand b { font-size: 1.2rem; }
 }
+/* Six page tabs stay on one row beside four controls at the tablet breakpoint. */
+@media(min-width:720px) and (max-width:899px) {
+  .wtop:has(.cooling-chip) .pnav a { padding-inline: .3rem; min-width: 44px; }
+}
 /* Keep the title and all four 44px controls on the smallest phones. */
 @media(max-width:389px) {
   .wtop:has(.cooling-chip):has(.tm-slot .tm-chip) { padding-inline: 8px; gap: 0; }
