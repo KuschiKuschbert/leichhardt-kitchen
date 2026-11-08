@@ -1,0 +1,56 @@
+/* Standalone design examples only. The book's controls, notebook, sheets and panel use css/app.css unchanged. */
+.rp-banner { margin: 0; padding: 7px 16px; background: var(--beige); color: var(--muted); font-size: .75rem; text-align: center; }
+.rp-preview-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 16px; padding: 0 12px; border-bottom: 1px solid var(--line); }
+.rp-preview-nav a { display: inline-flex; align-items: center; min-height: 44px; font-size: .8125rem; font-weight: 600; text-underline-offset: 4px; }
+#rp-preview-status { margin: 0; padding: 0 16px; color: var(--muted); font-size: .8125rem; }
+#rp-preview-status:not(:empty) { padding-block: 8px; }
+.rp-rolebar { display: flex; justify-content: center; padding: 4px 12px; background: var(--beige); }
+.rp-role-control { display: flex; align-items: center; gap: 12px; font-size: .8125rem; }
+.rp-role-control select { min-height: 44px; }
+.rp-mode { margin-bottom: .6rem; }
+.rp-mode .chip[aria-pressed="true"], .rp-section-field .chip[aria-pressed="true"] { background: var(--small-ink); border-color: var(--small-ink); color: var(--bar-text); }
+.rp-section-field { margin-block: .6rem; }
+.rp-minimum { margin: .6rem 0; padding: .5rem 0 .5rem .75rem; border-left: 3px solid var(--accent); }
+.rp-minimum > .label { color: var(--small-ink); }
+.rp-minimum p { margin: .25rem 0 0; }
+.rp-minimum b { white-space: nowrap; }
+.rp-row-minimum { display: block; margin-top: .2rem; color: var(--muted); font: 600 .8125rem/1.3 var(--body); }
+.rp-standard-note { margin-top: 1rem; }
+.rp-reference { padding: .7rem 0 .8rem; border-bottom: 1px solid var(--rule); }
+.rp-reference-name { margin: 0; font: 700 1.65rem/1.1 Caveat, cursive; }
+.rp-reference p { margin: .35rem 0; }
+.rp-reference .btn-row { margin-top: .45rem; }
+.rp-minline { font-size: .9375rem; }
+.rp-minline .label { color: var(--small-ink); margin-right: .35rem; }
+.rp-recipe-link, .rp-preview-reference { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; }
+.rp-recipe { margin: .8rem 0 0; padding-top: .7rem; border-top: 1px solid var(--line); font-size: .875rem; }
+.rp-status { margin: .65rem 0; font-size: .875rem; color: var(--done-ink); font-weight: 600; }
+.rp-status:empty { margin: 0; }
+.rp-exampletools { margin-top: .8rem; border-top: 1px solid var(--line); }
+.rp-exampletools summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-size: .8125rem; color: var(--muted); }
+.rp-sample-note { margin: 0 0 .6rem; }
+.rp-exampletools .btn-row { margin-bottom: .3rem; }
+.rp-panelgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 2rem; align-items: start; margin-top: 1.3rem; }
+.rp-editor { min-width: 0; }
+.rp-editor fieldset { display: grid; gap: 1rem; margin: 0; padding: 0; border: 0; min-width: 0; }
+.rp-editor fieldset > .hint { margin: -.6rem 0 0; }
+.rp-formgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); gap: .75rem; }
+.rp-editor .rp-instruction { min-height: 100px; resize: vertical; }
+.rp-catalogue-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .7rem 0; border-bottom: 1px solid var(--line); }
+.rp-catalogue-row > div { min-width: 0; }
+.rp-catalogue-row h4 { margin: 0; font: 600 1rem/1.3 var(--body); }
+.rp-catalogue-row p { margin: .3rem 0 0; }
+.rp-catalogue-row.selected h4::before { content: '› '; color: var(--small-ink); }
+.p-admin.ad-admin .rp-panelgrid > .set-block { padding-top: 0; border-top: 0; }
+.p-admin.ad-admin .a-groups { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (min-width: 1000px) { .p-admin.ad-admin .a-groups { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 999px) {
+  .rp-panelgrid { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+  .rp-editor { order: -1; }
+}
+@media (max-width: 719px) {
+  .rp-preview-nav { gap: 0 12px; }
+  .rp-preview-nav a { font-size: .75rem; }
+}
+/* All new reference controls meet the book's 44px target, including its quiet links. */
+.rp-preview .p-link, .rp-preview .nb-link { min-height: 44px; }

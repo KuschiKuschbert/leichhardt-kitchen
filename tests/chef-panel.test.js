@@ -18,9 +18,9 @@ function fixture(patch) {
 }
 const rooms = {
   today: ['dashboard', 'todo', 'notes'], reports: ['prep-history', 'order-history'],
-  team: ['plan', 'people', 'minutes'], kitchen: ['kitchen-home', 'recipes', 'suppliers', 'functions', 'deliveries', 'guides']
+  team: ['plan', 'people', 'minutes'], kitchen: ['kitchen-home', 'recipes', 'suppliers', 'functions', 'deliveries', 'guides'], prep: ['prep-standards']
 };
-const roomNames = { today: 'Today', reports: 'Reports', team: 'Team', kitchen: 'Kitchen' };
+const roomNames = { today: 'Today', reports: 'Reports', team: 'Team', kitchen: 'Kitchen', prep: 'Prep' };
 const ownerReads = p => p.evaluate(() => (__fake.reads || []).filter(k => /\/(daily|proofHistory|dashwatch|minuteshist|analysis|analysisDaily|references|training)(\/|$)|\/summary\/usage$/.test(k)));
 const refused = p => p.evaluate(() => (__fake.refused || []).map(x => x.kind + ' ' + x.path));
 const store = p => p.evaluate(() => __fake.dump());
@@ -58,7 +58,7 @@ async function visit(b, label, options, fn) {
       await L.waitFor(p, () => !!document.querySelector('[data-p="c-group"]'), null, 8000);
       ok(await p.locator('.p-admin.ad-admin .ad-layout .a-nav').count() === 1 && await p.locator('.ad-main .ad-heading').count() === 1 && await p.locator('.ad-main .a-tabs').count() === 1 && await p.locator('.ad-main .a-pane').count() === 1, label + ': same workspace shell as admin');
       ok((await L.txt(p, '.p-admin')).includes(who === 'ann' ? 'Head chef panel' : 'Sous chef panel'), label + ': names the signed-in chef panel');
-      ok((await p.locator('[data-p="c-group"]').evaluateAll(es => es.map(e => e.dataset.g))).join() === Object.keys(rooms).join(), label + ': four rooms in admin order');
+      ok((await p.locator('[data-p="c-group"]').evaluateAll(es => es.map(e => e.dataset.g))).join() === Object.keys(rooms).join(), label + ': five rooms in admin order');
       ok((await p.locator('.a-tabs [data-p="c-tab"]').evaluateAll(es => es.map(e => e.dataset.t))).join() === rooms.today.join(), label + ': Today starts with Dashboard, Chef to-do and Shift pings; mail is optional');
       ok(await ownerReads(p).then(x => !x.length), label + ': dashboard does not query owner analytics');
       ok(!(await p.$('[data-p="a-tab"], [data-p="a-group"], [data-p="move-pin"], [data-p="export"]')), label + ': no owner controls in chef workspace');

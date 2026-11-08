@@ -18,6 +18,8 @@ The head chef approved the compact 248 by 155 px clock dropdown, everyone with k
 
 ## Which note to read before you change it
 
+Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records the Prep room, canonical head-owned minimums, normal typed matching, complete Before service reference, private per-item schema, paged read policy, drafts and release requirements. `js/prep-standards.js` is lazy and uses the bridge in `js/prep.js`; it is not a startup shell file. `docs/prep-par-options/brief.md`, `index.html` and `refined.html` retain the council and design comparison. The implemented real-font density is recorded separately in `implemented-density.json`; browser, rules and backup checks cover the feature. PR #612 records release evidence.
+
 `CLAUDE.md`, "Read the note before you change it", has the short version of this table.
 
 | Changing | Read |

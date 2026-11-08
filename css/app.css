@@ -4574,6 +4574,39 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
   html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-marks { margin-left: 0.25rem; vertical-align: 0.15em; }
 }
 
+/* Head-chef section standards (8 Nov 2026): the existing notebook, Add sheet and role panel, no new palette. */
+.ps-viewbar { margin: 0 0 .75rem; }
+.ps-viewbar .chip[aria-pressed="true"] { background: var(--small-ink); border-color: var(--small-ink); color: var(--bar-text); }
+.ps-hint { flex: 1 1 100%; min-width: 0; }
+.ps-hint:empty { display: none; }
+.ps-minimum { margin: .4rem 0 .6rem; padding: .4rem 0 .4rem .75rem; border-left: 3px solid var(--accent); }
+.ps-minimum > .label, .ps-minline .label { color: var(--small-ink); }
+.ps-minimum p { margin: .3rem 0 0; }
+.ps-minimum .p-link, .ps-read .p-link, .ps-recipe { display: inline-flex; min-height: 44px; min-width: 44px; align-items: center; }
+.ps-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 2rem; align-items: start; margin-top: 1rem; }
+.ps-grid > *, .ps-fields, .ps-form-grid > * { min-width: 0; }
+.ps-section { max-width: 24rem; margin: .85rem 0; }
+.ps-fields { display: grid; gap: 1rem; }
+.ps-fields .search, .ps-fields .p-select { width: 100%; max-width: 100%; }
+.ps-fields textarea { min-height: 92px; resize: vertical; }
+.ps-fields > .hint { margin: -.5rem 0 0; }
+.ps-form-grid { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1fr); gap: .75rem; }
+.ps-catalogue-row { list-style: none; display: flex; gap: 1rem; align-items: center; justify-content: space-between; padding: .75rem 0; border-bottom: 1px solid var(--line); }
+.ps-catalogue-row > div { min-width: 0; overflow-wrap: anywhere; }
+.ps-catalogue-row .hint { margin: .25rem 0 0; }
+.ps-catalogue-row .btn { flex: 0 0 auto; }
+.ps-standard { list-style: none; padding: .8rem 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.ps-standard-name { margin: 0; font: 700 1.65rem/1.1 Caveat, cursive; }
+.ps-standard p { margin: .35rem 0; }
+.ps-standard .btn-row { margin-top: .5rem; }
+.ps-standard .ps-minline { font-size: .9375rem; }
+.ps-existing { color: var(--muted); font-size: .875rem; }
+.ps-archive { margin-top: 1.5rem; padding-top: .75rem; border-top: 1px solid var(--line); }
+.p-admin.ad-admin .ps-grid > .set-block { border-top: 0; padding-top: 0; }
+.p-admin.ad-admin .a-groups { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+@media (min-width: 1000px) { .p-admin.ad-admin .a-groups { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 999px) { .ps-grid { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; } .ps-grid > .ps-editor:has(.ps-fields) { order: -1; } }
+
 /* Cleaning (8 Nov 2026, approved C daily list + A chef week sheet). The same notebook, ruled rows, handwriting,
    chips, form controls and worker sheet as Prep and Today's team. Wide weeks become a day list on smaller screens. */
 .cln-page { width: 100%; min-width: 0; flex-direction: column; align-items: stretch; gap: 1rem; padding-bottom: 0; }

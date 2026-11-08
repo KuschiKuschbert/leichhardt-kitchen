@@ -1,7 +1,8 @@
 // How many prep lines a phone shows (8 Nov 2026, the redesign's own measure: "aim for 6 lines visible at 390 px").
 // Step 1 gave 3 on a 390 x 844 phone with the book's real fonts and 14 lines with long names; the gap fix puts the Start
 // here number in the margin, makes the line words a little smaller and the rows and section headings tighter, so staff
-// see 6 and a chef, who has the day controls above the chips, 5. Measured in the book's own fonts (Caveat, Barlow), which
+// see 6 and a chef, who has the day controls above the chips, 5. The approved Before service choice (8 Nov 2026)
+// adds one 44 px control row: now 5 staff / 4 chef. Removing only that choice must restore the previous 6 / 5. Measured in the book's own fonts (Caveat, Barlow), which
 // the click tests otherwise stand in with nothing: if they cannot load here, the check says so and measures nothing.
 const L = require('./lib');
 const { R, ok } = L.results();
@@ -15,10 +16,11 @@ const LINES = [
   ['f1', 'Blanch chips', 'Fryer', '4 trays'], ['f2', 'Crumb calamari', 'Fryer', '3 kg'], ['f3', 'Batter mix', 'Fryer', '2 L']
 ];
 const extra = Object.fromEntries(LINES.map(([id, text, station, qty, x], k) => [key(id), Object.assign({ text, station, qty, recipe: '', addedBy: 'Sam', addedById: 'sam', addedAt: L.NOW - (90 - k) * 60000, done: false, deleted: false }, x || {})]));
+extra[['kitchens', L.PIN, 'config', 'main'].join('/')] = Object.assign({}, L.seed()[['kitchens', L.PIN, 'config', 'main'].join('/')], { prepStandardsEnabled: true });
 const FONTS = 'https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@600;700&display=swap';
 (async () => {
   const b = await L.start();
-  for (const [who, want] of [['ann', 6], ['sam', 5]]) {
+  for (const [who, want] of [['ann', 5], ['sam', 4]]) {
     const p = await L.open(b, '#/prep', { who, width: 390, height: 844, extra, wait: 1500 });
     await p.context().unroute(/fonts\.(googleapis|gstatic)\.com/);
     const css = await p.addStyleTag({ url: FONTS }).then(() => true, () => false);
@@ -32,9 +34,14 @@ const FONTS = 'https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=B
       const small = [...document.querySelectorAll('.nb-left .nb-row')].flatMap(row => [...row.querySelectorAll('button,a')].filter(e => e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden').map(e => e.getBoundingClientRect()).filter(q => q.width < 43.9 || q.height < 43.9));
       const num = document.querySelector('.nb-left .nb-t[data-n]'), box = num && num.closest('.nb-row').querySelector('.nb-box').getBoundingClientRect();
       const nb = num && getComputedStyle(num, '::before'), body = document.querySelector('.nb-left .nb-body').getBoundingClientRect();
-      return { seen, small: small.length, margin: !!nb && nb.position === 'absolute' && body.left < box.left - 12, sw: document.documentElement.scrollWidth - innerWidth };
+      const choices = document.querySelector('.ps-viewbar'), choiceHeight = choices ? choices.getBoundingClientRect().height : 0;
+      if (choices) choices.style.display = 'none';
+      const withoutChoices = rows.filter(e => { const q = e.getBoundingClientRect(); return q.top >= 0 && q.bottom <= top + 0.5; }).length;
+      if (choices) choices.style.display = '';
+      return { seen, choiceHeight, withoutChoices, small: small.length, margin: !!nb && nb.position === 'absolute' && body.left < box.left - 12, sw: document.documentElement.scrollWidth - innerWidth };
     });
     ok(r.seen >= want, who + ' at 390 x 844, in the book\'s fonts: ' + r.seen + ' prep lines fully above Add a line (at least ' + want + '; 3 before)');
+    ok(r.choiceHeight === 44 && r.withoutChoices >= want + 1, who + ': the local Before service choice costs one row; existing work-row density is preserved (' + JSON.stringify(r) + ')');
     ok(r.small === 0 && r.sw <= 1, who + ': every control on the lines is still 44 px, no sideways scroll (' + JSON.stringify(r) + ')');
     ok(r.margin, who + ': the Start here number sits in the margin, left of the box, where the page shows it');
     ok(p.errors.length === 0, who + ': no page errors ' + p.errors.join(' | '));
