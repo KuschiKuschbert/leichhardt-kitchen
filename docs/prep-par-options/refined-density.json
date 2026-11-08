@@ -1,0 +1,35 @@
+[
+  {
+    "view": "a",
+    "fixture": "12 repeated rows of the same four mock tasks, no real app comparison",
+    "visible": 5,
+    "first": {
+      "top": 397.859375,
+      "bottom": 461.859375,
+      "height": 64
+    },
+    "addVisible": true
+  },
+  {
+    "view": "b",
+    "fixture": "12 repeated rows of the same four mock tasks, no real app comparison",
+    "visible": 5,
+    "first": {
+      "top": 397.859375,
+      "bottom": 461.859375,
+      "height": 64
+    },
+    "addVisible": true
+  },
+  {
+    "view": "c",
+    "fixture": "12 repeated rows of the same four mock tasks, no real app comparison",
+    "visible": 5,
+    "first": {
+      "top": 397.859375,
+      "bottom": 461.859375,
+      "height": 64
+    },
+    "addVisible": true
+  }
+]

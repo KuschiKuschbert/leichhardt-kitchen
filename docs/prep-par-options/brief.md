@@ -1,192 +1,168 @@
-# Prep pars by section: three design options
+# Head-chef prep standards and before-service guidance
 
-Requested 8 November 2026. **Design exploration only. No design has been chosen and no application feature has been implemented.** Source baseline: main `20c9472`. The figures in previews are synthetic examples, not kitchen targets. Actual approved quantities are **To come**.
+**Current design brief, clarified 8 November 2026. Design only; no app implementation.** The user has specified the management location and purpose. A staff layout has not been selected. This supersedes the earlier Kitchen-subpage/count-calculator recommendation. The [initial exploration](initial-exploration.md) remains historical evidence, not the current plan.
 
-Open [the comparison](index.html). [Original proposal](proposal.md). [Current staff screen](previews/current-ann-390.png), [current chef screen](previews/current-sam-390.png), [current Add sheet](previews/current-add-390.png), [current chef panel](previews/current-chef-1280.png).
+[Open the current previews](index.html). Source baseline: main `20c9472`. Every illustrated quantity and instruction is synthetic. Actual approved standards are **To come**.
 
-## What exists and what is new
+## What the user has specified
 
-| Existing capability | What the proposed feature adds |
+The head chef defines each section's permanent prep list and minimum quantities in a separate **Prep** room within the head-chef, admin and sous-chef panels. Staff writing a normal prep entry see the relevant minimum when the item matches their section's standard. A complete **Before service** reference shows everything to check, including items nobody added to today's work.
+
+The goal is explicit expectations for every staff member, including someone unfamiliar with a section. No individual staff identity, inferred competence or ranking is part of this design.
+
+First version: the management room, smart matching in the existing Add form, and the complete section reference. Counts, stock-shortfall calculators, saved readiness states, sign-offs and check history are deferred. The user did not request those extra workflows.
+
+Interpretation stated in chat: **minimum means usable prep that should be ready before service**. It is distinct from **Amount to make**. The app never silently copies a minimum into a production quantity. A minimum batch size, if needed later, would be a different field.
+
+## One Prep room across the panels
+
+Use the existing `panelShellHTML()` room navigation and one shared catalogue/editor. **Prep** sits beside Today, Reports, Team and Kitchen. Do not bury it under Kitchen or create three separate editors.
+
+| Access | Intended behaviour |
 | --- | --- |
-| Daily prep tasks with section-name text, amount text, optional recipe link, completion, On it, urgency and attribution | A lasting catalogue of individual prep items for each section, including items not requested today |
-| Stable configured section IDs, with the staff default following today's team | Targets bound to a stable section ID and prep-item ID, not a typed name or a daily task ID |
-| Learned usual amounts and weekday suggestions | Explicitly approved targets and units. Learning may help find candidate items, but cannot approve a target |
-| Supplier pars and optional stock counts during an order | Prepared-item pars, separate from the private supplier catalogue |
-| Add, Tick and Delete capabilities, role-specific panels | An explicit target-editing policy and rules for reading the new catalogue |
-| No current prep-stock ledger | Optional physical counts for the current preparation check. No inferred consumption or perpetual stock balance |
+| Canonical head chef with current PIN session | Set items, minimums, confirmed units, recognised aliases, optional recipes and check instructions |
+| Verified owner admin with existing matching head session and device grant | Same standards editor; existing owner-only tools stay separate |
+| Sous chef | Open Prep, read standards and the section reference; panel access does not grant editing of the head chef's minimums |
+| Authorised Prep staff | Read matching guidance and Before service through Prep, without management access |
 
-Relevant code: `js/prep.js:newItem()` at line 1964, `usualQty()` at 2460, `onList()` at 2525, `dupGroups()` at 2539 and `openTwin()` at 2608. `tickNow()` at 2253 records completion, not stock. `js/amounts.js` line 39 parses positive task amounts; a stock-count field would also need to accept explicit zero. `kitSecs()` and related helpers around `js/prep.js` line 10759 supply section identity and defaults.
+Existing Add, Tick and Delete capabilities still govern daily work. No check-writing capability is needed in the first version. Signed-out and Functions-only users gain no catalogue access. These are proposed permissions for new records; current rules do not already provide them.
 
-Two traps matter in every design. Existing duplicates can merge across sections and store other section names in `also`. A per-section target must not silently collapse into another section's task. Existing `onList()` includes completed work, so it cannot mean an item still has enough stock. New replenishment must remain possible after an earlier task was completed.
+Each item needs stable section and prep-item IDs, a display name, nullable non-negative minimum, confirmed unit, approved aliases, optional recipe/check instructions and archive state. Renames preserve identity. Free-text items do not need a recipe. Blank minimum says To come; explicit zero remains visible. Containers or batches need a chef-confirmed definition before any conversion is possible.
 
-## Council round 1
+The editor lets the head chef choose a section, find/add an item and edit these fields. Save stays off when unchanged, confirms the named item only after acknowledgement, and preserves failed drafts. Sous sees the same reference without edit controls. This uses the existing panel/search/save patterns, with explicit new server rules.
 
-Five independent agent reviews following `.claude/skills/service-council/SKILL.md`, each with the proposal, baseline screenshots and its role brief. This is role-based analysis, not research with kitchen staff.
+## Smart guidance during normal typing
 
-**Verdict: Build smaller, 4 of 5.** Pilot one section, establish confirmed items/units/targets and preserve ordinary prep work. Leave shared-batch allocation and automated replenishment out of the first version.
+```text
+ADD A LINE
+Section  Larder
+Prep     onions
 
-| Reviewer | Verdict | Main reasoning |
+Matches: Sliced onions · Larder
+Minimum ready before service: [4 tubs]
+Set by the head chef
+
+Amount to make  [                ]
+                         Add to Larder
+```
+
+The amount is an example, not a real kitchen target. Staff use their usual text field; no catalogue mode is required before guidance appears.
+
+1. Resolve the selected configured section by ID, preserving today's-team and personal-override precedence. Name it beside the match.
+2. Match against that section's canonical names and head-approved aliases in memory. Trim, lowercase and collapse spaces. A unique exact complete match can reveal the minimum automatically.
+3. Partial names or possible typos offer explicit choices. Selecting one links the canonical item, not a guessed minimum. Existing recipe token matching and learned plural folding are not authoritative matches.
+4. Two matches means Choose the prep item. No match means No section standard linked and normal free entry stays available. A failed read says Standards unavailable, never no match or zero.
+5. Re-evaluate when text or section changes. Clear the previous hint/link immediately. Never carry Larder's minimum to Grill. Keep a typed amount with its original unit; do not reinterpret it when a match changes.
+6. Add uses the amount the person entered. A smaller amount to make is not automatically wrong because some usable prep may already exist. Matching does not add work, change the quantity, or mark anything ready.
+
+Use the exact-name/approved-alias precedent from supplier matching without exposing supplier data or loading its chef-only module. Learned usual amounts remain separately labelled suggestions. No external AI call or database request per keystroke is needed.
+
+## Before service shows the complete section
+
+```text
+LARDER · BEFORE SERVICE
+The head chef's section standards
+
+Sliced onions        Minimum ready: [4 tubs]
+Check: [chef's preparation note]
+Recipe                                      Add prep
+
+Herb dressing        Minimum: To come
+Instructions: To come
+```
+
+List every active configured item, minimum/unit and the head chef's short check instructions and recipe link when provided. Never hide an item because it is absent, ticked, in progress or historically uncommon. Search supports long sections; empty, unset and unreadable states are distinct.
+
+Add prep opens the existing form with item, section and minimum visible, leaving Amount to make blank. Existing open work is shown for review before another task is created. Completed work is not stock and never removes an item from this reference. Staff without Add can still read it.
+
+The first version shows what to check. It has no saved ready/checked badge or mandatory sign-off. Later recorded checks would need a separate date/service/version/freshness and role contract; a prep-task tick must never stand in for one.
+
+## Three revised staff layouts
+
+All three share the required management room and matching rules. They differ in presentation, not in whether forgotten items are covered.
+
+| Design | Placement | Strength | Cost |
+| --- | --- | --- | --- |
+| A. Smart Add | Minimum under the usual typed-name field; deliberate Before service entry opens the complete reference | Least change to entry and compact work rows | Minimum is not permanently beside saved work; reference entry must be easy to find |
+| B. Minimums beside work | A's typing hint/reference plus a minimum beside every linked task's production quantity | Reminder stays visible while doing the work | Most clutter and extra section reads; rows must not grow under a ticking finger |
+| C. Before service view | A Work / Before service choice inside Prep under the section control; normal Add still shows matches | Clearest complete section check, including forgotten items | Extra page-level choice and fixed space above work; Work must remain the initial service view |
+
+No new global service tab or top-bar icon. Nothing opens automatically over a list. The user requested the separate management room, but has not selected the staff layout.
+
+## Code patterns and guidelines
+
+| Existing source | Design implication |
+| --- | --- |
+| `js/prep.js:typeahead()` ~2640, `suggestHTML()` 2658, `pickSugg()` 2677 | Reuse the current typing/suggestion surface with a separate authoritative standard match |
+| Text hook ~11334 and section edits ~11353 | Refresh the hint on both; current section changes do not refresh every suggestion |
+| `kitSecs()` 10759, `mySec()` 10768, `tmPlanSec()` 12506 | Preserve stable configured section IDs and existing default/override precedence |
+| `matchRecipe()` 3248, `learnedFor()` 2436 | Recipe subsets and learned folding must not silently assign a minimum |
+| `js/supplier-core.js:normaliseName()` 162 and `matchRequests()` 168 | Unique exact name/approved alias precedent; no private supplier-data reuse |
+| `onList()` 2525, `dupGroups()` 2539, `openTwin()` 2608 | Completed items remain in the reference; current cross-section name merging must not corrupt linked identities |
+| `panelShellHTML()`, `lvHTML()`, `W()`, `svButton()` | One role-aware editor, searchable growing lists, acknowledged saves and retained drafts |
+
+`AGENTS.md` delegates to `CLAUDE.md`. Its service rules keep the main job one tap away and require measured density costs. `docs/design-patterns.md` supplies notebook styling, 44 px controls, stable live-list height and panel navigation. `docs/action-feedback.md` governs named Add/Save/Undo responses. The private-access, device-session and staff-capability notes govern roles and work recovery. The chef-panel brief documents the current four rooms and shared-editor boundary. Smart-prep and admin-intelligence notes distinguish learned/requested quantities from approved minimums and consumption.
+
+## Costs and future implementation
+
+Propose one bounded versioned catalogue document per section, with explicit paging if the real list exceeds the selected bound. Read the selected section when matching/reference is first needed, reuse the permitted session cache, and refresh explicitly or after 30 minutes away. Show when standards were read. Typing/filtering adds no reads. No new polling/listener. B needs targets for every displayed section. Include rule-dependent reads in the measured budget.
+
+With this policy, another device's minimum changes appear on explicit refresh or a later reopening after the freshness interval. This is a disclosed trade-off, not instantaneous synchronisation. Refresh preserves typed work and clears incompatible links. A failed read never erases a known catalogue or fabricates zero.
+
+New catalogue records, aliases and task links require schema/rules, protected backups, revision checks and duplicate/rollover handling. Ordinary unmatched entry keeps working. Shared batches require deliberate handling rather than automatic name merging. No stock ledger or check-history collection is included.
+
+Estimated implementation: 2 to 3 small PRs for the standards foundation/editor, typed matching and staff reference; B's live-list changes may add another unit. Future tests must cover roles, alias ambiguity, section switches, missing data, units, stale edits, duplicates, completed items, offline/locks/handover, read budget and responsive layouts. This task changes no application source or rules.
+
+## Clarified council round 1
+
+Five fresh reviewers read [the revised proposal](refined-proposal.md) and the current screenshots. Earlier scores are not reused. This is role-based agent analysis, not staff research.
+
+**Build smaller, 4 of 5; Build, 1 of 5.** All support the specified standards, matching and full reference. Four recommend deferring recorded check statuses and stock calculations.
+
+| Reviewer | Verdict | Main concern |
 | --- | --- | --- |
-| Cook mid-service | Build smaller | Targets help, but every extra line or count competes with service. Prefer an optional target/count view through Add |
-| Head chef | Build smaller | The missing section catalogue is real; shortage frequency and time savings are unmeasured. Trial a confirmed checklist first |
-| Skeptic | Don't build | No observed evidence yet that maintaining the catalogue/count flow saves more than it costs. Trial a section checklist |
-| New starter | Build smaller | Complete coverage helps, but target, counted stock and already-requested work must have distinct plain labels |
-| Keeper | Build smaller | Stable identities, offline handling and permissions are the main cost. Pilot one section with a read ceiling |
+| Cook | Build smaller | Preserve Add/tick; minimum and amount must be clear with the keyboard open |
+| Head chef | Build smaller | Permanent standards solve omitted items; saved checks add a second workflow |
+| Skeptic | Build smaller | The three requirements fill a real gap; history/counting exceeds it |
+| New starter | Build | Use Minimum ready before service versus Amount to make |
+| Keeper | Build smaller | Explicit refresh, aliases, section changes and head-only editing |
 
-Disagreement is retained: the skeptic does not consider the supplied evidence sufficient to justify software yet. The design exploration requested by the user still compares the alternatives; it does not authorise implementation.
+The first-version scope incorporates the smaller recommendation without deferring any of the user's three requirements.
 
-## A. Targets on the prep list
+## Revised measurements and recommendation
 
-**Placement:** the existing `#/prep` list. Every linked task shows its section's target beneath its work quantity. Each section heading has **Section pars**, opening the complete section reference, including items absent from today's list. The shared target editor is reached through the existing Kitchen panel.
+All four refined views render at 390, 768 and 1280 px without sideways overflow, page errors or enabled controls smaller than 44 px (`refined-checks.json`). Fourteen sample checks cover matching, ambiguity, section changes, quantity/unit preservation, unknown/unavailable data, the complete reference, blank amount on reference Add, the separate room, unchanged Save and sous read-only editing.
 
-**Layout:** [staff phone](previews/a-ann-390.png), [tablet](previews/a-ann-768.png), [laptop](previews/a-ann-1280.png), [static screen](a.html).
+At 390 x 844, C shows two complete reference items. A's matching form is not a work list. B's initial sample has four open tasks and shows all four. To compare work-row density fairly within the mock, repeating the same four rows three times yields five fully visible rows above the fixed Add button in each design's Work view (`refined-density.json`). The short names fit B's minimum text inside its 64 px row minimum; this does not prove long names or the actual application's row actions will fit equally. These mock screens include preview navigation and omit some real service-shell details. They cannot establish unchanged application density.
 
-```text
-LARDER                           Section pars
-[ ] Slice onions              Prep: [2 tubs]
-    Target (par): [4 tubs]     Urgent  On it
-    Added by [person] at [time]
-```
+The source baseline remains five staff / four sous rows on its different six-task fixture. The previous inline-target prototype's three/three result is historical only. A real implementation must measure the chosen layout with the existing source fixture and actual fonts before accepting any density trade-off.
 
-**Interaction:** reading a target needs no extra tap. Section pars opens all configured items; selecting one opens the same per-item count/add form used in C. The target itself stays read only during service. Head chef/owner opens the shared editor to change target/unit, then explicitly saves. The ordinary tick, On it, urgency and Add controls remain.
+| Path from the Work view | Current app | Refined proposal/mock |
+| --- | --- | --- |
+| Open ordinary Add | 1 tap | 1 tap, fixed button in the phone mock |
+| Tick a visible task | 1 tap | 1 tap; reference is unchanged by the tick |
+| Reveal unique matched minimum while typing | Not available | 0 extra taps |
+| Resolve a partial or ambiguous name | Existing suggestions, no minimum | 1 explicit item choice |
+| Open the complete Before service reference | Not available | 1 view choice |
+| Start adding a reference item from Work | Not available | Before service, Add to prep: 2 taps, then enter amount and Add |
 
-**Prep workflow:** the task's quantity means work requested, not stock. A target alone never creates a suggested top-up. An optional current count in the item form provides the calculation. Existing open prep is displayed for review. Updating a target never silently changes an existing task quantity.
+Tap counts exclude typing, field focus, scrolling and exceptional conflict resolution. These are exercised mock paths and intended integration, not measured live staff time. Native on-screen keyboard behaviour, complete accessibility, server roles, live persistence and offline/concurrency guarantees are not established by these previews.
 
-**Strengths:** targets are visible beside work, little navigation to learn, familiar notebook rows. **Costs:** more vertical space and attention during service, repeated targets when a task appears more than once, and a task-only list still needs a separate catalogue entry. The rendered example adds stable extra height; it must never expand automatically while a person is ticking. This is the highest service-list clutter of the options.
+Six fresh reviewers compared the refined layouts without a parent preference. Four ranked A first and two ranked C first; **all six recommend combining A's normal typing guidance with C's complete Before service reference**, plus the common management Prep room. All placed B last.
 
-## B. Check the section
-
-**Placement:** a deliberate planning view reached from **Prep > Add a line > Check section pars**. The existing prep list remains the service view. The planner has a clear **Back to prep list**, not a new global tab. Chef Kitchen can link to the same catalogue and target editor.
-
-**Layout:** a notebook of every configured section item. Phone: stacked fields. Tablet/laptop: rows on the left, reviewed additions on the right. [Preview](preview.html?view=b).
-
-```text
-Back to prep list           CHECK THE SECTION
-[Larder] [Grill] [Sauce]     All / Count first
-
-Slice onions                 Target [6 kg]
-Counted now [2] kg            To prepare [4 kg]
-Already on today's list: [2 kg]  Review existing
-
-Pick coriander              Target: To come
-Count first                  No suggestion yet
-
-                         Review additions
-```
-
-**Interaction:** enter physical counts with each item's confirmed unit fixed beside the box. Select only resolved additions, review, then add explicitly. The screen contains items absent from today's list and completed items that may need replenishing. Head chef/owner edits targets in the same shared editor, rather than changing them while counting. Unit changes invalidate incompatible draft counts and suggestions.
-
-**Prep workflow:** `to prepare = max(target - counted amount, 0)` in the same confirmed unit. Missing count says **Count first**; missing target says **To come**. Show existing open prep separately, with Review existing before any additional quantity. Do not automatically treat an open task as stock or subtract it without a deliberate decision. Counts are local to this preparation check, timestamped and reconfirmed before adding. Completing work does not silently update them.
-
-**Strengths:** best whole-section coverage and morning handover workflow; quick comparison across many items; prepares several tasks in one review. **Costs:** highest build and learning cost, another deliberate view, multiple count fields and extra review taps. A phone shows fewer catalogue entries than service tasks because each entry has several fields. It risks becoming a stock-control workflow unless its scope is kept small.
-
-## C. Section pars inside Add a line
-
-**Placement:** reuse the existing Add sheet. A **Section pars** choice sits beside the current typed/recipe/suggestion paths. It browses the complete configured section catalogue, not only today's work or the top learned suggestions. A selected item's target is shown above the amount field. The lasting catalogue and target editor live under **Kitchen > Prep pars** in the existing owner panel; a proposed head-chef entry can use the same workspace once its permission contract is approved.
-
-**Layout:** one item at a time, with no new content on the service list. [Preview](preview.html?view=c). [Shared editor](preview.html?view=editor).
-
-```text
-ADD A LINE                              Close
-[Write] [Section pars]
-Section [Larder]     Search prep items...
-
-Slice onions
-Target (par) [6 kg]
-Counted now [2] kg       To prepare [4 kg]
-Amount to prep [4] kg          Add to Larder
-
-Added just now: Slice onions [4 kg]      Undo
-```
-
-**Interaction:** section defaults from `mySec()`, remains easy to change, and a selection fills name, identity, section and confirmed unit. It does not copy the par into the amount-to-make field. Enter a count to calculate the gap, or deliberately enter a manual prep amount. Add names the item, amount and section and offers Undo using the existing feedback pattern. A read-only list can be opened even when Add is unavailable; Add remains disabled by capability. Target changes happen in one shared editor, with unchanged Save disabled and failures preserving the draft.
-
-**Prep workflow:** same optional count arithmetic and duplicate checks as B, but one item at a time. No count means **Count first** for the suggestion; a clearly labelled manual amount still supports ordinary prep work. Known current target/unit may be shown next to existing learned suggestions, but usual quantity is never relabelled as target. Completed work must not hide the item from this catalogue.
-
-**Strengths:** no reduction in service-list space, retains the familiar Add path, smallest practical first version, and separates occasional target maintenance from service tasks. **Costs:** targets are not visible until the catalogue/item is opened; reviewing a whole section needs scrolling and repeated item selection. A later B view may be useful if staff actually count whole sections each morning.
-
-## Common interaction and data contract
-
-- **Coverage and identity:** configure each genuine prep item, including free-text/non-recipe items. Stable section ID plus prep-item ID is the target key; optional recipe ID is a reference. Renaming does not create a new target. Archived/disabled items remain recoverable. Typed unconfigured sections need an explicit mapping before par lookup; no nearest-name match.
-- **Blank and zero:** unset target is To come. Zero is an explicit no-routine-prep target. Uncounted is not zero. Zero stock is a valid measured amount. An unknown unit is not pieces. Container/batch sizes require confirmation before conversion.
-- **Outstanding work:** show matching outstanding tasks, their section and On it status. A person reviews whether that work covers the gap. Do not add the full deficit blindly; do not merge by name across sections. Use stable IDs and retry-safe add intent, with pending and concurrent-device reconciliation. Existing shared batches require manual handling in the first version.
-- **Dates and quantities:** target means quantity to have ready, not daily production volume. Only one standard target per item/section initially. No weekday, lunch/dinner or covers multiplier until requested. Function platter requirements stay separate. Counts do not carry through rollover; target links need explicit rollover support.
-- **Freshness:** count is labelled with its time and is only for the current check. Reconfirm after relevant prep changes, an interruption, changed target/unit or a new day. Scheduled locks retain the original person's draft but require reconfirming the physical count; handover clears it. No implied live inventory.
-- **Proposed authority:** existing authorised Prep users read targets. Existing Add permission is required to create work; Tick/Delete keep their own rules. Owner/head chef edit targets under explicit new rules. Sous chefs read/use by default; giving them target-editing authority is an unresolved product choice, not inherited from `#/chef`. Functions-only and signed-out users get no prep catalogue access.
-- **Feedback:** follow `svButton`, `svStart`, `svDone`, `svFail` and `W`; explicit named confirmation after server acknowledgement. Show Not sent while waiting, keep failed values, stay in place and support Undo. No auto-scroll, automatic overlay or save on selection.
-- **Smart help:** offer known item names and units; show where a suggestion came from; require Apply or Add. Use existing summaries rather than scanning past days on a phone. No consumption estimate, invented forecast or automatic par change. `js/smart.js` is the recipe drawing generator, not this feature's engine.
-
-## Size, reads and release implications
-
-All estimates below are proposals, not implemented schemas or measured production costs. A practical pilot could hold at most 100 item records in one versioned section document, keyed by stable item IDs. Larger sections need explicit paging, never silently omitted items. The cap needs validating against the real section inventory.
-
-B/C would read one selected section catalogue document on open, retain it only in the permitted in-memory session cache, and refresh on an explicit tap or after 30 minutes away. Same-session reopen within that window costs zero new catalogue reads. No read per item, polling, history scan or new listener. Recheck the selected target revision before confirming a new par-based task. The target save uses version checks and an immutable previous version. Rules-dependent reads must be included in the emulator's measured bill; the single catalogue read is not a claim of one total billed read.
-
-A needs the targets of all visible sections on Prep, so it adds up to one catalogue document read per displayed section, batched rather than queried in a loop. That makes its opening cost higher. Counts need no persistence for the first version. Existing work writes still pass through W(). New catalogue paths need explicit read/write rules, backup and restore support. No data belongs in public JS or recipe mirrors.
-
-Suggested release units, only after a design choice: (1) stable catalogue, identities, roles, zero/unit validation and protected target editor; (2) chosen staff surface with duplicate-safe Add and feedback; (3) B's multi-item check/review only if selected. A is about 2 to 3 small PRs; B 3 to 4; C 2 to 3. These are engineering estimates, not commitments. Tests must cover roles, incompatible units, blank/zero, repeated and concurrent Add, completed items, cross-section names, rollover, offline/lock/handover, stale edits, read budget, 44 px controls and 390/768/1280 layouts. No new implementation tests are added in this design task.
-
-## Evidence and applicable guidance
-
-- `AGENTS.md` lines 3 to 7 delegates to `CLAUDE.md`; the latter's service rules are lines 54 to 60. This task uses a fresh worktree and only design documentation/previews.
-- `docs/design-patterns.md` lines 11 to 16: existing tokens, notebook colours, type and 44 px targets. Lines 33 to 38: chips, searchable choices, known-field filling. Lines 54 to 55: stable list/header height. Lines 78 to 81: `panelShellHTML()` and `lvHTML()`.
-- `docs/action-feedback.md` lines 7 to 19: named, in-place responses, actual server confirmation, failed-draft retention and Undo.
-- `docs/whole-app-redesign-options/brief.md` line 121 rejects expanding operational rows that can move the tick under a finger. Its line 307 records a different 14-line/real-font measurement; it is not the fixture used here.
-- `docs/work-pages-design-options/brief.md`: chosen notebook prep flow and existing Add sheet. `docs/adaptive-controls.md`: narrow-screen layouts, searchable lists and consistent controls.
-- `docs/chef-panel-options/brief.md` lines 9, 18 and 28: current chef panel, one editor/draft, and restricted settings/reference access. `docs/private-kitchen-access.md`, `docs/device-sessions.md` and `docs/staff-capabilities.md`: personal-session and capability boundaries.
-- `docs/prep-book.md` lines 450 and 469: learned prep suggestions and nightly summaries. `docs/admin-intelligence.md` lines 11 to 15: requested prep is not consumption, units/sources stay distinct, identities are explicit.
-- `docs/supplier-workspace.md` lines 17 to 33: stable items, blank/zero pars, current-run counts and evidence-backed top-ups. This is a behavioural precedent, not a shared stock source.
-
-## Open requirements
-
-Actual section items, target quantities and units; whether stock is held separately by section or shared; who maintains targets; whether staff count a whole section at a time; how to define a tub/tray/batch; and whether targets need to vary by service or day. The proposals assume a single standard target, section-owned stock and optional current-check counts. No kitchen quantity has been invented or approved by these examples.
-
-## Measured previews and task paths
-
-Chromium, 390 x 844, the repository's default six-task synthetic Firebase fixture at 14:00, fallback fonts. Count a service row only when it is entirely above Add a line. Source and A use identical data, role and viewport. B/C do not alter the service screen, so their service count is the unchanged baseline, not a measurement of a new implementation.
-
-| Measure | Current | A | B | C |
+| Reviewer | A | B | C | Recommendation |
 | --- | --- | --- | --- | --- |
-| Staff service rows fully visible | 5 | 3 | 5, unchanged | 5, unchanged |
-| Sous chef service rows fully visible | 4 | 3 | 4, unchanged | 4, unchanged |
-| Open ordinary Add / tick visible task | 1 / 1 tap | 1 / 1 retained | 1 / 1 retained | 1 / 1 retained |
-| Ordinary typed add, action buttons only | 2 taps | 2 retained | 2 retained | 2 retained |
-| New count-to-add path, including one count-field focus | Not available | Section pars, choose, count, Add: 4 | Add, Check section, count, Review, Confirm: 5 | Add, Section pars, choose, count, Add: 5 |
-| Catalogue records fully visible in dedicated preview | Not available | Reference uses C catalogue | 3 | 6 before selecting; 1 focused item afterwards |
-| Additional views after Prep | None | Catalogue, item form | Add, section check, review | Add catalogue, item form |
-| Build estimate / relearning | Existing | 2 to 3 PRs / low | 3 to 4 PRs / highest | 2 to 3 PRs / low |
-| Main risk | No authoritative section targets | Service density and cross-section identity | Stale counts, duplicate work, greater scope | Discoverability and repeated item checks |
+| Cook | 4 | 3 | 4 | A plus C's prominent reference |
+| Head chef | 4 | 3 | 5 | C plus A's typing guidance |
+| Skeptic | 4 | 2 | 4 | A plus C; repeated row reminders need stronger evidence |
+| New starter | 4 | 3 | 5 | C plus A's distinct quantity labels |
+| Keeper | 4 | 3 | 4 | A plus C; protect against stale/wrong-section guidance |
+| Screen designer | 4 | 3 | 4 | A plus C; verify keyboard and phone editor flow |
 
-Tap paths are counted from the drawn controls and the exercised sample flow. The links from the live Add sheet and Kitchen panel are design specifications, not implemented or timed integrations. Keyboard entry, scrolling, changing section and conflict resolution add effort beyond these minimum paths. There is no claim of measured staff time saved.
+Scores are subjective service/fit scores out of five. Where a reviewer supplied two dimensions, the service/fit score is shown. They are not measured outcomes or staff research. The different first-place rankings reflect emphasis on service entry versus complete pre-service guidance, not disagreement about the shared feature.
 
-The B/C/editor previews were rendered at 390, 768 and 1280 px. The snapshot and local interaction results are in `preview-checks.json`; current-list geometry is in `baseline.json` and A geometry in `a-measurements.json`. These checks validate mockup layout and sample behaviour only. They do not validate Firestore, live permissions, concurrency, genuine stock or application integration.
+**Updated recommendation:** one connected feature with the dedicated Prep room, A's automatic hint during normal entry, and C's full reference one deliberate tap from Work. Keep Work as the initial view. Do not require staff to choose a catalogue mode before matching, and do not add B's permanent minimum line to every task initially.
 
-## Round 2 and recommendation
+This directly implements the user's clarified design intent: the head chef sets the standard once, staff see it while writing familiar prep, and anyone can see the complete list to check. It does not require stock counting or a second completion workflow. Short containers/batch definitions and keeping standards current remain the head chef's content responsibilities.
 
-Six fresh, independent reviewers read all three options and their rendered screenshots without a preferred option. All ranked **C, B, A**. Scores are subjective fit judgements out of 5, not measured outcomes. The screen designer also gave visual/accessibility scores; the table uses their service-fit score for consistency.
-
-| Reviewer | A | B | C | Main reservation |
-| --- | --- | --- | --- | --- |
-| Cook mid-service | 2 | 3 | 4 | C requires repeated selection for multiple items; A loses too much service space |
-| Head chef | 2 | 3 | 4 | Whole-section counting frequency and return on maintenance time remain unobserved |
-| Skeptic | 1 | 2 | 3 | Still recommends not building yet: trial an approved checklist first |
-| New starter | 2 | 3 | 4 | Existing work must not make a deficit look like an additional amount to add |
-| Keeper | 2 | 3 | 4 | Offline revision checks, read costs, concurrent adds and section identity remain unproven |
-| Kitchen screen designer | 2 | 3 | 4 | C's heading could be smaller; B's tablet quantities sit far from the names |
-| **Total / 30** | **11** | **17** | **23** | Six reviewers prefer C; that is not unanimous approval to implement |
-
-**Recommendation: C, with one shared Kitchen target editor and B's explicit existing-work warning.**
-
-It adds section targets at the moment staff choose what to prepare, preserves the current service list and uses the existing Add, section, unit and feedback patterns. A complete stable catalogue covers items that today's task list omits. A separate Kitchen editor keeps occasional target maintenance out of service.
-
-Start with one section and confirmed targets/units, keeping the count optional and manual prep available. A paper/checklist trial is a sensible way to resolve the unmeasured need before implementation. Add B's whole-section check later only if repeated item selection proves too slow for the actual routine. Do not add A's targets to every service row initially: its density and opening-read cost are not justified by the current evidence.
-
-The final preview incorporates a small review improvement: the selected-item button now says the known amount and section, such as **Add 3 L to Larder**, and the existing-work warning stays explicit. The counts, layout and ranking do not depend on this wording change. Sample additions name the item, amount and section and support Undo. The static Back destination now returns to an unchanged baseline screen. These are preview refinements only.
-
-### Validation and limits
-
-All nine B/C/editor viewport combinations have no sideways overflow or page errors, and every visible enabled interactive target measured at least 44 px. Eleven exercised sample paths cover unknown/zero counts, zero/unset targets, existing-job review, calculated Add, search, batch and single-item Undo, and read-only sous target editing. A and current-list images were generated from the source application with synthetic Firebase. A measurements show the density loss described above.
-
-No production data was read or changed. No application JavaScript, application CSS, schema, rules, saved-shell files or runtime feature flags were changed. Only documentation, standalone sample previews and their evidence are added. No application regression or emulator suite was run for this design-only task; a prototype is not evidence of live permission, persistence, concurrent-write or offline correctness. Full WCAG compliance and performance need implementation-level checks with real fonts and enlarged text.
-
-**Chosen: none.** The user requested designs and a recommendation only. No decision is recorded as approved in `docs/head-chef-decisions.md`.
+Open design details before implementation: real item/alias lists and quantities, container definitions, exact phone placement of Before service, native keyboard behaviour, long-name row density and mobile editor navigation. The separate management room and head-owned standards are now requirements, not unanswered location/ownership questions. No staff layout is chosen and no application implementation is authorised by this design task.
