@@ -2,7 +2,7 @@
 
 [Operandio cooling](docs/operandio-cooling.md) adds the approved compact clock dropdown: anyone with an active kitchen PIN can start two hours, then manually start a further four hours once the first stage ends. Logged-in open screens receive each Operandio ping. Shared server start times keep the countdown correct after reopening. No closed-app notifications, extra service or billing upgrade are required. [Design and council record](docs/operandio-cooling-options/brief.md).
 
-[Operandio clock animations](docs/operandio-clock-motion-options/brief.md) compare three designs on mobile and desktop, six previews in total. The owner is choosing a presentation; the current live timer remains unchanged.
+[Operandio clock animations](docs/operandio-clock-motion-options/brief.md) compare three designs on mobile and desktop, six previews in total. Mobile now stays a fixed filling ring in every state; the desktop pill choice remains pending. The current live timer remains unchanged.
 
 # Leichhardt Kitchen Book
 

@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **9 November 2026, mobile Operandio stays a filling ring.** The owner rejected the expanding mobile pill as crowded: "just the ring filling". Start, running and completion all keep the same small circular footprint. The ring turns green at the first deadline and the further four hours waits for an explicit tap. Desktop retains the pill studies for selection. [Updated previews](operandio-clock-motion-options/brief.md). This refines the mockups only.
+
 - **8 November 2026, Operandio clock motion comparison requested.** The owner asked for three animated designs on mobile and desktop, six in total. The requested flow expands the clock into Start, keeps the desktop countdown in the pill, fills a mobile clock, and changes to green Done with a chime. A separate tap starts the further four hours. [Six previews and council](operandio-clock-motion-options/brief.md). The design choice is pending; this request does not replace the working dropdown yet.
 
 - **8 November 2026, prepare Cleaning before release.** The head chef requested an admin toggle to turn Cleaning on once setup is ready. Reuse Admin → Kitchen → Overview → Pages staff see, with a Set up cleaning link. Cleaning starts off for the team; canonical head and sous chefs retain setup access. Only the verified admin enables it. Saving the switch publishes or hides the page for staff and leads, with matching server rules. Turning it off keeps all tasks and completion records. See [the release-switch contract](cleaning-options/release-toggle.md).
