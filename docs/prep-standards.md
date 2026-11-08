@@ -71,7 +71,7 @@ Rollback is a normal client revert. Preserve stored standards and their private 
 
 The focused rules suite and full existing real-rules gate pass. Browser checks cover the real panel, matching/reference paths, all three widths, canonical roles, stale saves, escaping, read behaviour and retained work. Final pagination regressions, complete browser regression results and release status are recorded in the PR rather than inferred from source.
 
-With the actual Barlow/Caveat fonts and the existing 14-task density fixture, the local Work / Before service choice uses one 44 px control row. Five staff rows or four chef rows are fully visible above Add at 390 by 844 px, compared with six/five when only that choice is removed. Existing work rows retain their geometry. Add and Tick remain one tap. [Measured evidence](prep-par-options/implemented-density.json). Native phone keyboard behaviour and live staff task time are not established by desktop browser checks.
+With the actual Barlow/Caveat fonts and the existing 14-task density fixture, the local Work / Before service choice has 44 px controls and adds 72 px including the existing spacing. Five staff rows or four chef rows are fully visible above Add at 390 by 844 px, compared with six/five when only that choice is removed. Existing work rows retain their geometry. System fallback fonts can lose two visible rows in the team fixture; the controlled comparison still restores the original row heights and counts. Add and Tick remain one tap. [Measured evidence](prep-par-options/implemented-density.json). Native phone keyboard behaviour and live staff task time are not established by desktop browser checks.
 
 ## Implemented screens
 
