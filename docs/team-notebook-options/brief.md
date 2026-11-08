@@ -14,6 +14,34 @@ The cook and new starter preferred B because all four saved Lunch people fit on 
 
 These are independent role-based reviews, not research with real kitchen staff. The head chef has not chosen either concept.
 
+## Follow-up: section-first assignment and Whole day
+
+On 8 November 2026 the head chef clarified the desired workflow: tap a section and assign people for Lunch, Dinner and future configured shifts, with horizontally scrollable shift tabs and a whole-day section. This is a proposed refinement of A, not approval to implement or deploy it. The original A/B images below document the earlier review; this interaction refinement is specified here and has not been built.
+
+The original 4 to 2 preference for A remains the result of that comparison. A separate six-reviewer follow-up supported this refinement: the head chef and keeper roles supported it directly; the cook, skeptic, new starter and screen designer supported it with the clarity safeguards below. This follow-up was not a new A/B vote. The original Build smaller value verdict is reused because the goal and data boundaries remain the same.
+
+### Proposed flow
+
+```text
+[Whole day: overview] | [Lunch] [Dinner] [Smoker] [other configured shifts] →
+
+Lunch  → Grill → Sam, Ann
+Dinner → Pans  → Sam
+
+One Save for the whole day's draft
+```
+
+- Keep Whole day discoverable beside a horizontally scrollable row of every active configured shift. Use faded edges and a partly visible next tab, 44 px controls, keyboard access and no horizontal page overflow. It is an in-page view, not a new top-bar or bottom-navigation item.
+- Inside a shift, choose a section, then tap the people working there. With Lunch selected, Grill then Sam takes two proposed taps. Further people for Grill take one each. Selecting a different shift adds one tab tap; Save is one shared action after planning all shifts. These are proposed interaction counts, not measured completed app behaviour.
+- Show the assignment context prominently, for example **Assigning to Grill · Lunch**. Each assignment or move says what it changed, and the draft remains visibly not saved. Do not carry an inconspicuous section choice into another shift.
+- The same person can have Grill for Lunch and Pans for Dinner. Many people can share a section; each person has one section per shift. The existing `tmf.on[person][shift]` mapping already supports that distinction.
+- If a person is already assigned elsewhere on that shift, show their current section and an explicit action such as **Move to Grill**. A section move keeps that person's breaks and every other shift assignment. **Clear section** keeps them on the shift and preserves breaks. **Remove from Lunch** is a separate explicit action.
+- Keep one draft across tab and section changes and one version-protected Save. Selecting a section must override any usual-section hint deliberately; hints must not silently replace the chef's chosen section. Existing break controls, split support, Use it, Spread them, training context, off-shift handling and conflict recovery remain available.
+- **Whole day overview** reviews the accumulated draft by person and shift, with each shift's section, hours, breaks, splits and return times. It shows **Draft, not saved** when changed. Use links back to a specific shift for editing rather than another editor. This view is not a shift ID, cannot be written as an assignment, and must remain distinct from a real configured shift called Full day.
+- The all-shift **Scheduled away now** summary stays visible and continues to use saved `tm.rec`, with its Saved plan label. Draft changes in Whole day must not be presented as staff's published current breaks. Retain the planned-versus-actual distinction and all unknown, error, freshness and clock safeguards above.
+
+The follow-up council's essential checks are: clear shift/section context; one draft and one Save; preservation of breaks and other shifts during moves; no overview key written to the database; no added reads; and a narrow-phone check with many shifts, a long staff list and expanded break controls. No new database schema, roles, listeners or actual-attendance collection is proposed.
+
 ## Problem and current page
 
 The existing `#/team` page shows the saved section overview before its editor. Even on a laptop the work sits in a narrow card. In the six-person synthetic fixture, the first editable row starts at 1168 px on a 390 px phone and 1170 px at 768 and 1280 px. No editable row is visible initially. Six complete saved overview rows fit on the phone, and seven at the other two widths. These are seven shift places across six people, not seven distinct people.
