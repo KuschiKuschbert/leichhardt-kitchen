@@ -45,7 +45,7 @@
 */
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, getDoc, getDocs, getDocFromServer, getDocsFromServer, onSnapshot, collection, query, where, orderBy, limit, documentId,
-  setDoc, deleteDoc, writeBatch, increment, setLogLevel } from 'firebase/firestore';
+  setDoc, deleteDoc, writeBatch, increment, serverTimestamp, Timestamp, setLogLevel } from 'firebase/firestore';
 import { anonContext, dailySession, adminGrant, seedOwnerDevice, nextFour } from './device-auth-fixtures.mjs';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -600,6 +600,25 @@ row('js/prep.js pushOff(): this phone\'s push address removed (the Google device
 row('js/manage.js mineHide(): hide a template or own piece (its next version)', { ok: CHEFS, asks: CHEFS,
   prep: r => put({ ['drawtpl/h-' + r]: { name: 'Round plate', slot: 'plate', surf: {}, els: [], defs: '{}', vb: '', svgS: '', svgF: '', v: 1, upd: 1, removed: false, by: 'sam' } }),
   run: (db, w, r) => W(r, [['set', 'drawtpl/h-' + r, { name: 'Round plate', slot: 'plate', surf: {}, els: [], defs: '{}', vb: '', svgS: '', svgF: '', v: 2, upd: Date.now(), removed: true }]]) });
+
+// Operandio: one shared current record, server-timestamp starts and revision compare-and-set.
+const coolRun = (extra = {}) => ({ v: 1, run: 'run-1234567890123456', rev: 1,
+  firstAt: Timestamp.fromMillis(NOW - 7200000 - 1000), firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann', ...extra });
+row('js/prep.js coolingWatch(): canonical current-run listener', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': coolRun() }), run: db => listen(D(db, 'cooling/current')) });
+row('js/prep.js coolingRead(): current-run recovery after an uncertain save', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': coolRun() }), run: db => getDocFromServer(D(db, 'cooling/current')) });
+row('js/prep.js coolingWrite(): first two-hour start through W()', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': null }),
+  run: (db, w, r) => W(r, [['set', 'cooling/current', coolRun({ firstAt: serverTimestamp(), firstBy: w, by: w })]]) });
+row('js/prep.js coolingWrite(): four-hour second stage through W()', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': coolRun() }),
+  run: (db, w, r) => W(r, [['upd', 'cooling/current', { rev: 2, secondAt: serverTimestamp(), secondBy: w }]]) });
+row('js/prep.js coolingWrite(): new batch after four-hour stage through W()', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': coolRun({ rev: 2, firstAt: Timestamp.fromMillis(NOW - 21600000 - 1000),
+    secondAt: Timestamp.fromMillis(NOW - 14400000 - 1000), secondBy: 'sam', by: 'sam' }) }),
+  run: (db, w, r) => W(r, [['set', 'cooling/current', coolRun({ run: 'next-1234567890123456', rev: 3,
+    firstAt: serverTimestamp(), firstBy: w, by: w })]]) });
 
 // functions
 const FN = r => 'fn-' + r;

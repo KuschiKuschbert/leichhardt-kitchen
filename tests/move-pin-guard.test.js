@@ -28,6 +28,9 @@ async function move(p) {
 const reads = p => p.evaluate(() => window.__fake.bill.reduce((t, x) => t + x.n, 0));
 async function admin(b, o) {
   const p = await L.open(b, '#/admin', Object.assign({ admin: true, wait: 1800, extra }, o || {}));
+  for (let stage = 0; stage < 2; stage++) {
+    if (await p.$('.cooling-wrap [data-cooling="got"]')) { await p.click('.cooling-wrap [data-cooling="got"]'); await L.settle(p, 400); }
+  }
   await L.adminTab(p, 'tools'); await L.settle(p, 200);
   return p;
 }
@@ -84,7 +87,39 @@ async function admin(b, o) {
   ok(!(await p.evaluate(() => localStorage.getItem('lk.move.big'))), 'a read lost part way: no refusal kept, so it can be tried again');
   await p.context().close();
 
-  // 5. Cleaning revisions and sign-offs cannot be copied through the old generic PIN mover. Either collection
+  // 5. An unfinished batch stays at its original kitchen address until both stages finish.
+  const coolingPath = fsKey(['cooling', 'current']);
+  const current = { v: 1, run: 'move-cooling-run-01', rev: 1, firstAt: { __fakeTimestamp: L.NOW }, firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' };
+  for (const [label, run] of [['running', current], ['waiting for the second start', { ...current, firstAt: { __fakeTimestamp: L.NOW - 10800000 } }]]) {
+    p = await admin(b, { extra: { ...extra, [coolingPath]: run } });
+    await p.evaluate(() => { window.__fake.writes = []; window.__fake.bill = []; });
+    msg = await move(p); s = await store(p);
+    ok(/Finish the current Operandio batch/.test(msg) && /Nothing was copied/.test(msg), label + ': the move explains why the batch must finish');
+    ok(onNew(s).length === 0 && !(await p.evaluate(prefix => window.__fake.writes.flat().some(w => w.path.startsWith(prefix)), 'kitchens/' + NEW + '/')), label + ': no destination authority or data is written');
+    ok(await p.evaluate(path => window.__fake.bill.some(x => x.kind === 'server' && x.path === path), coolingPath), label + ': the guard reads the current server record');
+    ok(await p.evaluate(() => window.LK_PREP.state.pin) === L.PIN, label + ': the working kitchen PIN stays unchanged');
+    ok(p.errors.length === 0, label + ': no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
+  // 6. A failed read cannot be treated as no active batch.
+  p = await admin(b, { extra });
+  await p.evaluate(() => { window.__fake.failReads = /\/cooling\/current$/; window.__fake.writes = []; });
+  msg = await move(p); s = await store(p);
+  ok(/^Stopped part way/.test(msg) && /safe to try again/.test(msg), 'timer unavailable: the move stops with a retryable explanation');
+  ok(onNew(s).length === 0, 'timer unavailable: no destination write');
+  ok(await p.evaluate(() => window.LK_PREP.state.pin) === L.PIN && !(await p.evaluate(() => localStorage.getItem('lk.move.big'))), 'timer unavailable: old PIN remains and no quota refusal is cached');
+  await p.context().close();
+
+  // 7. A finished batch needs no scheduler cutover. The old PIN retains its final record for audit.
+  p = await admin(b, { extra: { ...extra, [coolingPath]: { ...current, rev: 2, firstAt: { __fakeTimestamp: L.NOW - 25200000 }, secondAt: { __fakeTimestamp: L.NOW - 18000000 }, secondBy: 'ann' } } });
+  msg = await move(p); s = await store(p);
+  ok(/^Copied \d+ records/.test(msg) && await p.evaluate(() => window.LK_PREP.state.pin) === NEW, 'finished batch: the normal kitchen PIN move succeeds');
+  ok(!!s[coolingPath] && !s['kitchens/' + NEW + '/cooling/current'], 'finished batch: old history remains and the new kitchen is ready for a fresh batch');
+  ok(p.errors.length === 0, 'finished batch: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // 8. Cleaning revisions and sign-offs cannot be copied through the old generic PIN mover. Either collection
   // must stop the operation before it creates destination records, even when the book fits comfortably in the caps.
   const cleaning = [
     ['cleaningTasks', 'handles', { root: 'handles', prev: '', next: '', text: 'Wipe coldroom handles', area: 'Coldroom', section: '', sectionName: '', shared: true, dows: [0, 1, 2, 3, 4, 5, 6], guide: '', from: Date.parse(day(1) + 'T00:00:00+10:00'), until: 253402178400000, at: L.NOW - 86400000, by: 'sam' }],
