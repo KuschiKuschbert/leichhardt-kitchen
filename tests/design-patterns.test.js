@@ -20,13 +20,14 @@ const CLASSES = [
   'set-block', 'label', 'a-ch-h', 'a-tablewrap', 'a-table', 'a-plain', 'sk-c', 'a-legend', 'dsh-inbox', 'dsh-dtile', 'dsh-need-pick', 'dsh-pick', 'a-find', 'fd-sheet', 'a-quick', 'wm-tile', 'wm-due',
   'nt-dot', 'nt-meta', 'nt-at', 'g-mode', 'g-bar', 'tm-tl', 'tm-tlbar', 'dr-run', 'dr-oh', 'st-av', 'st-can', 'todo-more',
   'todo-notebook', 'todo-book', 'todo-bookhead', 'todo-spine', 'todo-work', 'todo-formtitle', 'todo-status', 'todo-privacy',
-  'tm-notebook', 'tm-nbook', 'tm-nhead', 'tm-nspine', 'tm-work', 'tm-viewbar', 'tm-shift-scroll', 'tm-person-pick', 'tm-dayperson', 'tm-away-slot'
+  'tm-notebook', 'tm-nbook', 'tm-nhead', 'tm-nspine', 'tm-work', 'tm-viewbar', 'tm-shift-scroll', 'tm-person-pick', 'tm-dayperson', 'tm-away-slot',
+  'dr-notebook', 'dr-book', 'dr-bookhead', 'dr-usual', 'dr-work', 'dr-spine', 'dr-people'
 ];
 const TOKENS = ['--ink', '--paper', '--bg', '--muted', '--faint', '--line', '--accent', '--accent-ink', '--tag', '--done', '--done-ink',
   '--bar', '--bar-text', '--display', '--body', '--r-act', '--r-pick', '--small-ink', '--hit'];
 const HELPERS = ['tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'enhance',
   'svButton', 'svStart', 'svDone', 'svFail', 'svLine', 'errMsg', 'failed', 'toast', 'slipName', 'arm', 'armed', 'W', 'canW',
-  'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'tmAwayHTML', 'tmNextHTML', 'tmAwayPaint'];
+  'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'tmAwayHTML', 'tmNextHTML', 'tmAwayPaint', 'dkRunHTML', 'dkTeamHTML', 'dkFormHTML'];
 const GLOBALS = ['ICON', 'LK_UX'];
 
 const missing = [];

@@ -4220,6 +4220,51 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .dr-run .dr-order li:last-child { border-bottom: 0; }
 .dr-run .dr-order b { flex: 0 0 auto; min-width: 2.2em; font-variant-numeric: tabular-nums; }
 .dr-oh .dr-n { flex: none; font: 600 0.875rem/1.2 var(--body); white-space: nowrap; }
+/* Drinks run uses the same notebook: the order to read on the left, your usual and the team on the right.
+   Phones keep the usual, order and people in one flow. Changing a usual keeps one form on a single sheet. */
+.p-card.dr-notebook { display: block; width: 100%; max-width: none; min-width: 0; padding: 0; border: 0; background: none; }
+.dr-notebook .dr-book { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: 'head' 'usual' 'order' 'people'; min-width: 0; border: 1.5px solid var(--edge); border-radius: var(--radius); background: var(--bar-text); box-shadow: 0 6px 0 color-mix(in srgb, var(--ink) 12%, transparent); }
+.dr-notebook .dr-book::before { content: ''; position: absolute; top: 0; bottom: 0; left: .8rem; width: 1px; background: var(--accent); opacity: .4; pointer-events: none; }
+.dr-notebook .dr-bookhead { grid-area: head; min-width: 0; margin: 0 .85rem 0 1.55rem; padding: .85rem 0 .65rem; border-bottom: 2px solid var(--accent); }
+.dr-notebook .dr-bookhead .p-h { margin: 0; color: var(--small-ink); font: 700 clamp(2.2rem, 4vw, 3.2rem)/1 'Caveat', cursive; overflow-wrap: anywhere; }
+.dr-notebook .dr-usual { grid-area: usual; min-width: 0; padding: .65rem .85rem 0 1.55rem; }
+.dr-notebook .dr-mine { gap: .6rem; margin: 0; padding: 0 0 .65rem; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }
+.dr-notebook .dr-mine .label { color: var(--small-ink); }
+.dr-notebook .dr-mine .dr-what { font: 700 1.5rem/1.1 'Caveat', cursive; }
+.dr-notebook .dr-work { grid-area: order; min-width: 0; padding: .75rem .85rem 1rem 1.55rem; }
+.dr-notebook .dr-run { min-width: 0; margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+.dr-notebook .dr-oh { flex-wrap: wrap; gap: .3rem .75rem; margin: 0; padding-bottom: .55rem; border-bottom-style: solid; color: var(--small-ink); font: 700 1.9rem/1.1 'Caveat', cursive; }
+.dr-notebook .dr-oh .dr-n { color: var(--muted); white-space: normal; }
+.dr-notebook .dr-order { margin: 0; }
+.dr-notebook .dr-order li { align-items: baseline; gap: .6rem; min-width: 0; padding: .6rem 0; border-bottom-style: solid; font: 700 1.55rem/1.15 'Caveat', cursive; }
+.dr-notebook .dr-order b { min-width: 2.2em; color: var(--small-ink); font: 700 1rem/1.3 var(--body); }
+.dr-notebook .dr-order li > span { min-width: 0; overflow-wrap: anywhere; }
+.dr-notebook .dr-people { grid-area: people; min-width: 0; padding: 0 .85rem 1rem 1.55rem; }
+.dr-notebook .dr-h { gap: .5rem; margin: 0; padding: .65rem 0 .4rem; border-top: 1px solid var(--line); color: var(--small-ink); font: 700 1.9rem/1.1 'Caveat', cursive; }
+.dr-notebook .dr-h .dr-n { color: var(--muted); font: 400 .875rem/1.3 var(--body); }
+.dr-notebook .dr-row { gap: .5rem; padding: .55rem 0; }
+.dr-notebook .dr-who { font: 700 1.5rem/1.1 'Caveat', cursive; }
+.dr-notebook .dr-row .dr-what { font-size: .875rem; }
+.dr-notebook .dr-chg, .dr-notebook .dr-more { color: var(--small-ink); }
+.dr-notebook .dr-spine { display: none; }
+.dr-notebook .dr-book.is-edit { grid-template-areas: 'head' 'order'; max-width: 44rem; margin-inline: auto; }
+.dr-notebook .dr-form { min-width: 0; }
+.dr-notebook .dr-form .search, .dr-notebook .dr-fold, .dr-notebook .chip,
+.dr-notebook .ux-picker-trigger { border-color: var(--faint); }
+.dr-notebook .chip[aria-pressed="true"], .dr-notebook .ml-sb[aria-pressed="true"],
+.dr-notebook .ux-choice-source > button[aria-pressed="true"] { background: var(--small-ink); border-color: var(--small-ink); color: var(--bar-text); }
+body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { background: var(--small-ink); border-color: var(--small-ink); color: var(--bar-text); }
+.dr-notebook .dr-prev { border-color: var(--line); background: none; }
+.dr-notebook .dr-prev .label { color: var(--small-ink); }
+@media (min-width: 1100px) {
+  .dr-notebook .dr-book:not(.is-edit) { grid-template-columns: minmax(0, 1.6fr) 24px minmax(18rem, 1fr); grid-template-areas: 'head spine usual' 'order spine people'; }
+  .dr-notebook .dr-book::before { left: 1.05rem; }
+  .dr-notebook .dr-bookhead { margin: 0 1.25rem 0 2.15rem; padding-top: 1.25rem; }
+  .dr-notebook .dr-work { padding: .85rem 1.25rem 1.25rem 2.15rem; }
+  .dr-notebook .dr-usual { padding: 1.25rem 1.25rem 0; background: var(--beige); border-radius: 0 var(--radius) 0 0; }
+  .dr-notebook .dr-people { padding: 0 1.25rem 1.25rem; background: var(--beige); border-radius: 0 0 var(--radius) 0; }
+  .dr-notebook .dr-spine { display: block; grid-area: spine; min-width: 0; background: repeating-linear-gradient(to bottom, var(--bar) 0 9px, transparent 9px 54px), var(--beige); box-shadow: 5px 0 9px color-mix(in srgb, var(--ink) 8%, transparent), -5px 0 9px color-mix(in srgb, var(--ink) 8%, transparent); }
+}
 /* Meeting minutes, calm to read (Headspace): one column of plain text, headings in the book's orange, no box round each
    part; who is signing and Not you? beside the Sign button at the end */
 @media screen {

@@ -16,6 +16,7 @@ When a note or a file is added: its full row goes here, and one short row (what 
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over anything older in this file) |
 | Head chef decisions; open items and older code to bring in line; how each prep and admin part works | `docs/head-chef-decisions.md`, `docs/open-work.md`, `docs/prep-book.md` (search, then read the part) |
 | Code contracts per feature: pings, minutes, mail, to-do, drinks, sections, guides, recipes and drawings, functions, wastage, transfers, cut-offs, the clock | `docs/code-contracts.md` |
+| Drinks run notebook (8 Nov 2026): grouped order on the left, Your usual and people on the right from 1100 px; original phone reading order and one usual-drink editor on a single sheet; same colours, data and taps | `docs/drinks-notebook.md`, `docs/code-contracts.md` (Drinks run), `tests/drinks-notebook.test.js`, `tests/drinks.test.js` |
 | Staff Add/Tick/Delete, canonical capability lists and staged publication | `docs/staff-capabilities.md` |
 | Saved public shell generations, update migration and compatible rollback | `docs/saved-shell-generations.md` |
 | GitHub rules publication, release confirmation and synthetic publisher checks | `docs/rules-publication.md` |

@@ -38,6 +38,8 @@ Chef to-do (`#/todo`, 23 Oct 2026): only the head chef's or sous chefs' current 
 
 ## Drinks run
 
+The matching notebook (8 Nov 2026, `docs/drinks-notebook.md`) changes presentation only: the grouped order is on the left and Your usual plus the people are on the right from 1100 px. Below that width keep Your usual, order, then people. `dkRunHTML()` renders the order once; `dkTeamHTML()` renders people only. `dkFormHTML()` remains the single usual-drink form and uses one sheet while editing; no team list appears behind it. Reflow must retain its draft, save fields, permissions and existing reads. First-PIN and nudge surfaces retain their existing rendering.
+
 Drinks run (`#/drinks`): each person writes only `drinks/<their id>`. The first PIN goes to "One more thing" (`S.drinkAsk = 'first'`); people who signed up before get the card once (`dkCheck()`, `lk.drink.<id>`). The team's drinks are one query when the page opens, again after 30 minutes: no listener. Clicks use `data-p` with `dk-` names; its classes are `dr-` (`dk-` classes are the landing dockets). The click tests seed a usual drink for Sam, Ann and Bo so the card stays off other pages.
 
 ## Kitchen sections
