@@ -59,3 +59,27 @@ html.oc-sheet-open, html.oc-sheet-open body { overflow: hidden; }
 .oc-mini-steps > span { flex: 1; }
 .oc-mini-steps b, .oc-mini-steps small { display: block; }
 .oc-mini-steps small { margin-top: 4px; color: var(--muted); font-size: .8rem; }
+
+/* Selected refinement: a compact menu under the clock, using the chef hat's row style. */
+.oc-clock[aria-expanded="true"] { background: var(--accent-ink); border-color: var(--accent-ink); color: var(--paper); }
+.oc-dropdown { position: absolute; width: min(360px,calc(100vw - 16px)); max-height: calc(100dvh - 16px); overflow-y: auto; padding: 6px 10px 0; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 0 10px 30px #0004; font-family: var(--body); }
+.oc-menu-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 8px 14px; border-bottom: 1px solid var(--line); }
+.oc-menu-head h2 { margin: 0; font: 700 1.55rem/1.1 var(--display); }
+.oc-menu-head p { margin: 4px 0 0; color: var(--muted); font-size: .875rem; }
+.oc-menu-close { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font-size: 28px; cursor: pointer; }
+.oc-menu-row { width: 100%; display: flex; align-items: center; gap: 12px; min-height: 83px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--ink); font: inherit; text-align: left; padding: 16px 8px; }
+.oc-menu-row.is-ready { cursor: pointer; }
+.oc-menu-row:disabled { opacity: 1; }
+.oc-menu-row:disabled .oc-menu-tick { color: var(--muted); border-color: var(--line); }
+.oc-menu-row.is-ready .oc-menu-tick { border-color: var(--accent-ink); color: var(--accent-ink); }
+.oc-menu-row.is-ready .oc-menu-state { color: var(--accent-ink); }
+.oc-menu-row:focus-visible, .oc-menu-close:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: -2px; background: var(--hit); }
+.oc-menu-row.is-ready:hover, .oc-menu-close:hover { background: var(--hit); }
+.oc-menu-tick { display: grid; place-items: center; flex: 0 0 28px; width: 28px; height: 28px; border: 1.5px solid var(--ink); border-radius: 5px; font-weight: 700; }
+.oc-menu-tick svg { width: 20px; height: 20px; }
+.oc-menu-label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.oc-menu-label b { font: 700 1.25rem/1.1 var(--display); }
+.oc-menu-label small { color: var(--muted); font-size: .8125rem; line-height: 1.3; }
+.oc-menu-state { margin-left: auto; font-size: .8125rem; font-weight: 700; color: var(--muted); }
+.oc-menu-foot { padding: 12px 8px 14px; color: var(--muted); font-size: .8125rem; line-height: 1.4; }
+.oc-dropdown:focus { outline: none; }

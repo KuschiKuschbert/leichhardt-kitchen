@@ -49,7 +49,7 @@ When a note or a file is added: its full row goes here, and one short row (what 
 | Function print copy | `docs/function-printing.md` |
 | Delivery temperatures | `docs/delivery-received.md` |
 | Shift ping recipients | `docs/ping-recipients.md` |
-| Operandio shared cooling pings (8 Nov 2026), designs only; fixed name, 2 hours, then a separate tick starts 4 hours | `docs/operandio-cooling-options/brief.md` (council, three designs, measurements), `technical-notes.md` there (proposed state and access) |
+| Operandio shared cooling pings (8 Nov 2026), chosen clock dropdown preview; 2 hours, then a separate tick starts 4 hours; closed-app delivery requested | `docs/operandio-cooling-options/brief.md` (choice, original council, previews and measurements), `technical-notes.md` there (proposed state, access, background push and billing boundary) |
 | Ping sound and the head chef's choice of sound | `docs/ping-sound.md` |
 | Back arrow and page trail | `docs/navigation.md` |
 | Merging: ready means merge in the next release window, the one-at-a-time queue, `urgent`, the token | `docs/auto-merge.md` |

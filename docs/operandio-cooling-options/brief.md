@@ -1,6 +1,6 @@
-# Operandio cooling pings: three designs
+# Operandio cooling pings: chosen clock dropdown
 
-Designs only, 8 November 2026. No placement has been chosen and no shared timer has been implemented or released. The earlier device-local timer remains draft PR #610.
+Design preview, 8 November 2026. The owner chose a compact clock dropdown like the chef hat, showing both timers, and asked for it to keep running with the app closed. No shared timer or background delivery has been implemented or released. The earlier device-local timer remains draft PR #610.
 
 ## Confirmed behaviour
 
@@ -8,7 +8,22 @@ The owner asks for a timer like a shift ping, which everyone can start. The name
 
 The mock example starts at 14:00, pings at 16:00, waits until someone ticks at 16:10, and pings again at 20:10. Got it closes only that person's message. It does not start another stage or silence anyone else. A duplicate start cannot reset a shared deadline.
 
-[Try the interactive comparison](index.html). Each example is local demonstration state only. The stage buttons above the three phones show both alerts and both running stages. No messages are sent, no account is used and no real timer runs.
+[Try the chosen dropdown](index.html). The stage buttons show the disabled second row, both countdowns, the enabled second stage and both pings. No messages are sent, no account is used and no real timer runs. [Original three options](comparison.html) remain as the review record.
+
+## Chosen refinement
+
+The owner's next request selects a clock dropdown in the chef hat's style. This supersedes the council's recommendation of C below. It uses the chef hat's cream panel, charcoal border and compact rows, anchored below the clock at phone, tablet and desktop widths. The existing chef hat itself becomes a bottom sheet on phones; this two-row preview stays a dropdown, as requested.
+
+- **Operandio** is the heading, with **Batch cooling** underneath.
+- **2 hours** is clickable first. While running it shows time left and its deadline.
+- **4 hours** is disabled with “Available after 2 hours”. After the first deadline it becomes clickable with “Tick to start the next stage”. It never starts itself.
+- Both rows remain visible. A running or completed row cannot be restarted by another tick.
+- The same shift-style pings appear at both deadlines. Got it remains personal.
+- The clock and a timer row take two taps to start from Prep. Closing the dropdown takes one more tap. Existing Prep actions stay one tap, and the closed menu uses no list space.
+
+Closed-app delivery is now part of the requested feature. Canonical server deadlines preserve the timer, and a scheduled sender plus device push provides notifications without an app window. Existing order push registration is chef-only and its ten-minute GitHub job is not a punctual alarm. Extend cooling opt-in to current kitchen staff separately from supplier reminders. Each device needs notification permission; iPhone/iPad needs the Home Screen app. OS settings and connectivity still govern arrival and sound.
+
+The [technical note](technical-notes.md) sets out the proposed server tasks, retries, access checks and device behaviour. Repository notes record a previous choice to stay on free Firebase. The recommended Functions/Cloud Tasks path needs billing-enabled Firebase and deployment; the new request does not authorise a billing change. No plan, API, queue or live notification has been changed.
 
 ## Council
 
@@ -26,7 +41,7 @@ The second round compared A, a clock sheet; B, a compact Prep card; and C, a sec
 | Screen designer | C | A | B | Clear stage sequence, readable controls and preserved Prep space |
 | Total | C: 16 | A: 12 | B: 8 | Five preferred C; one preferred B |
 
-**Recommendation: C with A's explicit cooling label and stage sequence.** It keeps timers and messages in the bell without another top-bar control or a permanent Prep card. A remains the closest match to the original request for a little clock. The new starter disagreed: Pings sounds like a place to read, so discovery needs clear wording. No user choice is recorded.
+**Recommendation: C with A's explicit cooling label and stage sequence.** It keeps timers and messages in the bell without another top-bar control or a permanent Prep card. A remains the closest match to the original request for a little clock. The new starter disagreed: Pings sounds like a place to read, so discovery needs clear wording. The owner subsequently chose the compact clock dropdown recorded above.
 
 The shared first-ping heading was refined after review to **First 2 hours finished**, with the requested Operandio sentence below it. This avoids suggesting the whole sequence is over. The second heading is **Next 4 hours finished**. These messages report elapsed time, not a recorded temperature check.
 
@@ -61,7 +76,7 @@ No horizontal document overflow or JavaScript errors in the three options at the
 - Reuse the kitchen-selected ping sound and sheet coordination. Keep private data behind the existing login and do not interrupt a PIN screen, typed work, another sheet or live Undo. “Everyone” needs a dedicated cooling audience rule that does not accidentally exclude people through the ordinary ping visibility switch or shared-tablet filter.
 - Ordinary shift pings stay chef-written. Starting this fixed cooling sequence does not grant general ping editing.
 - Current shift pings disappear after 30 minutes. Shared cooling needs an explicit persistent waiting/overdue policy rather than copying that rule blindly.
-- Signed-in, open app screens can show these pings. Closed or suspended phones require separate notification delivery; these previews do not promise it.
+- Signed-in, open app screens show shift-style pings. The chosen refinement also requires closed-app push delivery. This is a backend and device opt-in requirement, not something the local preview implements.
 
 The [technical note](technical-notes.md) records source-backed constraints, the proposed state model, read/write estimates and the implementation checks. These are proposals, not a deployed schema or permission change.
 
@@ -69,7 +84,11 @@ The [technical note](technical-notes.md) records source-backed constraints, the 
 
 The prototype uses a script-free snapshot of the current synthetic Prep page plus its own preview script. It does not load Firebase, service workers or app scripts. The examples were rendered at 390, 768 and 1280 px; both ping messages and the manual Start 4 hours transition were exercised. The stage-two example correctly says started 16:10 and due 20:10. No application tests or rules changes are needed for these docs-only prototypes. JavaScript syntax and whitespace checks pass.
 
-Screenshots: [comparison](comparison.png), [first ping](ping-2h-390.png), [second ping](ping-4h-390.png), [running stage](running-390.png). The screenshots are design evidence, not proof of shared delivery, permissions or real deadlines.
+Dropdown checks exercised all five states at 390, 768 and 1280 px, the two starts, both ping messages, personal Got it, Escape, backdrop close and return focus. The disabled row stayed disabled until the first stage ended. The dropdown fits every viewport without horizontal overflow or JavaScript errors. With the menu closed, measured header height, first-row position and full visible rows match the baseline: 390 px: 64 / 323 / 4; 768 px: 96 / 385.90625 / 6; 1280 px: 96 / 327.109375 / 4. The stage selector in the comparison page also switches correctly between the dropdown and both pings. These are mocked browser checks, not delivery tests.
+
+Chosen preview: [overview](dropdown-overview.png), [ready](dropdown-idle-390.png), [first countdown](dropdown-first-390.png), [second stage available](dropdown-first_due-390.png), [tablet](dropdown-idle-768.png), [desktop](dropdown-idle-1280.png).
+
+Original screenshots: [comparison](comparison.png), [first ping](ping-2h-390.png), [second ping](ping-4h-390.png), [running stage](running-390.png). The screenshots are design evidence, not proof of shared delivery, permissions or real deadlines.
 
 ## Rollback
 

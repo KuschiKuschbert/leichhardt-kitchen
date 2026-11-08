@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   const q = new URLSearchParams(location.search);
-  const design = ['a', 'b', 'c'].includes(q.get('design')) ? q.get('design') : 'a';
+  const design = ['a', 'b', 'c', 'd'].includes(q.get('design')) ? q.get('design') : 'a';
   let stage = ['idle', 'first', 'first_due', 'second', 'second_due'].includes(q.get('stage')) ? q.get('stage') : 'idle';
   const clock = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
   const check = '<span class="oc-check" aria-hidden="true">✓</span>';
@@ -23,8 +23,24 @@
     return '<div class="oc-batch"><div class="oc-batch-head"><span class="oc-symbol">'+clock+'</span><div><h3>Operandio</h3><p>Batch cooling · everyone</p></div></div><p class="oc-status">'+status+'</p>'+(!compact && (stage==='first'||stage==='second')?'<div class="oc-count"><b>'+(stage==='first'?'01:42':'03:50')+'</b><span>left in this stage</span></div>':'')+timeline()+
       (stage==='idle'?action('start1','Start 2 hours')+'<p class="oc-caption">Anyone in the kitchen can start it.</p>':stage==='first_due'?action('start2','Start 4 hours')+'<p class="oc-caption">Starts the next stage for everyone.</p>':stage==='second_due'?'<p class="oc-caption">Both elapsed-time pings have been sent.</p>'+action('reset','Start another batch',true):'<p class="oc-caption">Everyone sees the same timer. A second tick cannot restart it.</p>')+'</div>';
   }
-  function close() { document.querySelector('.oc-modal')?.remove();document.documentElement.classList.remove('oc-sheet-open');if(returnFocus?.isConnected)returnFocus.focus(); }
+  function close() { document.querySelector('.oc-modal')?.remove();document.documentElement.classList.remove('oc-sheet-open');document.querySelector('.oc-clock')?.setAttribute('aria-expanded','false');if(returnFocus?.isConnected)returnFocus.focus(); }
+  function openMenu() {
+    close();returnFocus=document.querySelector('.oc-clock');
+    const firstDone=['first_due','second','second_due'].includes(stage);
+    const secondDone=stage==='second_due';
+    function row(hours,enabled,running,done,caption) {
+      return '<button type="button" class="oc-menu-row '+(enabled?'is-ready':'')+'" data-oc="start'+(hours===2?'1':'2')+'" '+(enabled?'':'disabled')+'><span class="oc-menu-tick" aria-hidden="true">'+(done?'✓':running?clock:'')+'</span><span class="oc-menu-label"><b>'+hours+' hours</b><small>'+caption+'</small></span><span class="oc-menu-state">'+(enabled?'Start':running?'Running':done?'Done':'Next')+'</span></button>';
+    }
+    const wrap=document.createElement('div');wrap.className='wm-wrap oc-modal';
+    wrap.innerHTML='<div class="wm-bg" data-oc="close"></div><section class="oc-dropdown" role="dialog" aria-modal="true" aria-labelledby="oc-title" tabindex="-1"><header class="oc-menu-head"><div><h2 id="oc-title">Operandio</h2><p>Batch cooling</p></div><button type="button" data-oc="close" class="oc-menu-close" aria-label="Close cooling timers">×</button></header>'+row(2,stage==='idle',stage==='first',firstDone,stage==='idle'?'Tick to start':stage==='first'?'1 h 42 min left · due 16:00':'Finished at 16:00')+row(4,stage==='first_due',stage==='second',secondDone,stage==='first_due'?'Tick to start the next stage':stage==='second'?'3 h 50 min left · due 20:10':secondDone?'Finished at 20:10':'Available after 2 hours')+'<footer class="oc-menu-foot">'+(secondDone?action('reset','Start another batch',true):'Everyone gets a ping when each timer ends.')+'</footer></section>';
+    document.body.appendChild(wrap);document.documentElement.classList.add('oc-sheet-open');
+    const chip=document.querySelector('.oc-clock'),rect=chip.getBoundingClientRect(),menu=wrap.querySelector('.oc-dropdown');
+    menu.style.top=Math.max(8,Math.min(rect.bottom+8,innerHeight-menu.offsetHeight-8))+'px';
+    menu.style.right=Math.max(8,Math.min(innerWidth-menu.offsetWidth-8,innerWidth-rect.right))+'px';
+    chip.setAttribute('aria-expanded','true');menu.focus();
+  }
   function open(kind) {
+    if(design==='d'&&kind!=='ping')return openMenu();
     close();returnFocus=document.activeElement;
     const isPing=kind==='ping';
     const wrap=document.createElement('div');wrap.className='nt-wrap oc-modal';
@@ -39,15 +55,15 @@
     const chip=document.querySelector('[data-oc="open"]');if(chip)chip.classList.toggle('oc-hot',stage==='first_due'||stage==='second_due');
   }
   const icons=document.querySelector('.wtop-icons');
-  if(design==='a') {const el=document.createElement('button');el.className='tm-chip oc-clock';el.type='button';el.setAttribute('aria-label','Operandio cooling timer');el.dataset.oc='open';el.innerHTML=clock;icons.prepend(el);}
+  if(design==='a'||design==='d') {const el=document.createElement('button');el.className='tm-chip oc-clock';el.type='button';el.setAttribute('aria-label','Operandio cooling timer');el.dataset.oc='open';el.setAttribute('aria-haspopup','dialog');el.setAttribute('aria-expanded','false');el.innerHTML=clock;icons.prepend(el);}
   const bell=document.querySelector('.nbell');if(bell){bell.hidden=false;bell.dataset.oc='open';bell.setAttribute('aria-label',design==='c'?'Shift pings and Operandio cooling':'Shift pings');}
   paintCard();
   document.addEventListener('click',e=>{const a=e.target.closest('[data-oc]')?.dataset.oc;if(!a)return;
-    if(a==='close')return close();if(a==='open')return open(stage.endsWith('due')?'ping':'timer');
-    if(a==='start1'){stage='first';paintCard();if(design==='b')close();else open('timer');}
-    if(a==='start2'){stage='second';paintCard();if(design==='b')close();else open('timer');}
+    if(a==='close')return close();if(a==='open')return open(design!=='d'&&stage.endsWith('due')?'ping':'timer');
+    if(a==='start1'&&stage==='idle'){stage='first';paintCard();if(design==='b')close();else open('timer');}
+    if(a==='start2'&&stage==='first_due'){stage='second';paintCard();if(design==='b')close();else open('timer');}
     if(a==='reset'){stage='idle';paintCard();open('timer');}
   });
-  document.addEventListener('keydown',e=>{const dialog=document.querySelector('.oc-modal');if(!dialog)return;if(e.key==='Escape'){e.preventDefault();close();}if(e.key==='Tab'){const f=[...dialog.querySelectorAll('button')];const first=f[0],last=f.at(-1);if(e.shiftKey&&(document.activeElement===first||document.activeElement===dialog.querySelector('.nt'))){e.preventDefault();last.focus();}else if(!e.shiftKey&&(document.activeElement===last||document.activeElement===dialog.querySelector('.nt'))){e.preventDefault();first.focus();}}});
-  if(stage.endsWith('due'))open('ping');else if(q.get('open')!=='0'&&design!=='b')open('timer');
+  document.addEventListener('keydown',e=>{const dialog=document.querySelector('.oc-modal');if(!dialog)return;if(e.key==='Escape'){e.preventDefault();close();}if(e.key==='Tab'){const f=[...dialog.querySelectorAll('button:not(:disabled)')];const first=f[0],last=f.at(-1);if(e.shiftKey&&(document.activeElement===first||document.activeElement===dialog.querySelector('[role=dialog]'))){e.preventDefault();last.focus();}else if(!e.shiftKey&&(document.activeElement===last||document.activeElement===dialog.querySelector('[role=dialog]'))){e.preventDefault();first.focus();}}});
+  if(stage.endsWith('due')&&(design!=='d'||q.get('view')==='ping'))open('ping');else if(q.get('open')!=='0'&&design!=='b')open('timer');
 })();
