@@ -48,6 +48,10 @@ html.cooling-open, html.cooling-open body { overflow: hidden; }
 @media(min-width:720px) and (max-width:899px) {
   .wtop:has(.cooling-chip) .pnav a { padding-inline: .3rem; min-width: 44px; }
 }
+/* Cleaning's longer label also fits beside four controls on a small laptop. */
+@media(min-width:1200px) and (max-width:1279px) {
+  .wtop:has(.cooling-chip) .pnav a { padding-inline: 1rem; }
+}
 /* Keep the title and all four 44px controls on the smallest phones. */
 @media(max-width:389px) {
   .wtop:has(.cooling-chip):has(.tm-slot .tm-chip) { padding-inline: 8px; gap: 0; }

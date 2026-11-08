@@ -50,6 +50,8 @@ Actual app screenshots: [phone ready](operandio-cooling-options/app-phone-ready.
 
 Verification covers stage sequence, simultaneous starts, server acknowledgement, stale/offline state, locks, personal dismissal, two screens receiving the same deadline, reload recovery, screen sizes and keyboard use. Real Firestore emulator checks cover roles, strict write shapes and competing starts. Backup recovery runs the actual exporter and encrypted recovery flow against local emulators. No automated check sends a live kitchen ping.
 
+Focused verification passed: 11 core groups, 24 controller checks, 55 integration checks, 66 UI checks and 117 real-font header/team checks. Real emulator checks passed for 192 cooling cases and all 1,971 client calls across nine sign-ins after merging Cleaning. Combined backup recovery round-tripped 63 documents. The sheet-queue and uncertain-write conflict regressions fail on their earlier implementations.
+
 Before release: complete the browser and rules gates, publish the additive rules from this branch, verify the foundation and live Lock probe, then mark the application PR ready for the normal release queue. No cooling configuration switch or background service is needed.
 
 ## Rollback

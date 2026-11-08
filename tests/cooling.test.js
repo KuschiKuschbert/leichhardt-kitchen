@@ -151,7 +151,10 @@ for (const [id, pin] of [['vic', '4444'], ['fay', '5151']]) {
         [key('notes', 'cooling-queue-check')]: { text: 'Delivery: use the rear door', tag: 'delivery', start: day, until: day, dows: [], tm: 841, removed: false, at: 1, by: 'sam', author: 'sam' }
       } });
       await L.waitFor(p, () => !!document.querySelector('.cooling-ping'));
-      await advanceTo(p, L.NOW + 61000); await L.settle(p, 200);
+      await advanceTo(p, L.NOW + 61000);
+      // A foreground wake runs the same sheet queue after the shift ping becomes due.
+      await p.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+      await L.waitFor(p, () => !!document.querySelector('.nbell.has-new'));
       ok(await p.locator('.nt-wrap').count() === 1 && await p.locator('.cooling-ping').isVisible() && await p.locator('.nt-wrap:not(.cooling-wrap)').count() === 0, 'A normal shift ping becoming due waits behind the cooling alert instead of stacking a second sheet');
       await p.locator('.cooling-ping [data-cooling="got"]').click();
       await L.waitFor(p, () => !!document.querySelector('.nt-wrap:not(.cooling-wrap)'));
