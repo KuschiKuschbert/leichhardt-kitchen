@@ -571,7 +571,7 @@
   }
   function topBar() {
     var returning = parseRoute().name !== 'landing';
-    return '<header class="wtop' + (returning ? ' has-back' : '') + '"><div class="wtop-start">' + (returning ? pageBack() : '') + '<a class="wtop-brand" href="#/" aria-label="Kitchen Book, home">' + (returning ? '' : LOGO_MARK) + '<span class="rb-text"><span class="rb-eb">Leichhardt Hotel Kitchen</span><b>Kitchen Book</b></span></a></div>' + pillNav() + topIcons() + '</header>';
+    return '<header class="wtop' + (returning ? ' has-back' : '') + '"><div class="wtop-start">' + (returning ? pageBack() : '') + '<a class="wtop-brand" href="#/" aria-label="Kitchen Book, home">' + LOGO_MARK + '<span class="rb-text"><span class="rb-eb">Leichhardt Hotel Kitchen</span><b>Kitchen Book</b></span></a></div>' + pillNav() + topIcons() + '</header>';
   }
   /* Functions (js/functions.js): the band of today's functions right under the top bar, on every page. This is the empty
      slot; js/functions.js fills it and keeps it right as times pass and bookings change, without redrawing the page. */

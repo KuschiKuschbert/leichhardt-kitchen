@@ -2768,7 +2768,7 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
   .docket { grid-template-columns: auto minmax(0, 1fr); }
 }
 
-/* Back takes the mark's place inside the existing bar. Its small arrow keeps a full 44 px tap area. */
+/* Back keeps its full 44 px tap area. On phones the home link uses the KB mark beside it. */
 .wtop-start { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
 .wtop-start .wtop-brand, .wtop-start .rb-text { min-width: 0; }
 .wtop-back { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border: 0; border-radius: var(--r-act); background: transparent; color: var(--bar-text); cursor: pointer; }
@@ -2777,9 +2777,11 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .wtop-back:disabled { opacity: 0.45; cursor: default; }
 @media (max-width: 719px) {
   .wtop-start { flex: 1 1 auto; gap: 0.5rem; }
-  .wtop-start .wtop-brand { flex: 1 1 auto; }
-  .wtop-brand b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .wtop-start .wtop-brand { flex: 0 0 44px; min-height: 44px; }
+  .wtop-brand .rb-text { display: none; }
+  .wtop-brand .rb-mark { width: 44px; height: 39px; }
 }
+@media (min-width: 720px) { .wtop.has-back .rb-mark { display: none; } }
 @media (min-width: 720px) and (max-width: 899px) { .wtop-start { flex: none; } }
 @media (min-width: 720px) and (max-width: 979px) { .wtop.has-back:has(.nbell:not([hidden])) .wtop-brand { display: none; } }
 /* Supplier workspace. Shared controls keep the book's action/choice shapes and text-size settings. */
