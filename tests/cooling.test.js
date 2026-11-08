@@ -9,6 +9,8 @@ const stamp = value => ({ __fakeTimestamp: value });
 const millis = value => typeof value === 'number' ? value : value && (value.__fakeTimestamp != null ? value.__fakeTimestamp : value.seconds != null ? value.seconds * 1000 + (value.nanoseconds || 0) / 1000000 : NaN);
 const requests = p => p.evaluate(() => Object.entries(__fake.dump()).filter(([path]) => /\/coolingRequests\/[^/]+$/.test(path)).map(([path, data]) => ({ path, data })));
 const pushKey = key('coolingPush', 'anon-test');
+const sessionKey = key('sessions', 'anon-test');
+const sessionReads = p => p.evaluate(path => __fake.bill.filter(x => x.kind === 'server' && x.path === path).length, sessionKey);
 function firstRecord(id, at, by = 'ann') {
   return { v: 1, run: id, rev: 1, firstAt: at, firstDue: at + 2 * HOUR, firstBy: by,
     secondAt: 0, secondDue: 0, secondBy: '', schedule: { first: 'queued', second: '' } };
@@ -71,6 +73,7 @@ for (const [id, pin] of [['vic', '4444'], ['fay', '5151']]) {
     await step('two-stage shared sequence', async () => {
       p = await L.open(b, '#/prep', { who: 'ann', deviceMode: 'personal', extra: READY, wait: 1200 }); await clockOpen(p);
       await L.waitFor(p, () => !document.querySelector('[data-stage="2"]').disabled);
+      const sessionReadsBefore = await sessionReads(p);
       await p.locator('[data-stage="2"]').click();
       await L.waitFor(p, () => Object.keys(__fake.dump()).some(path => /\/coolingRequests\//.test(path)), null, 8000);
       let all = await requests(p), request = all[0];
@@ -78,6 +81,7 @@ for (const [id, pin] of [['vic', '4444'], ['fay', '5151']]) {
       ok(all.length === 1 && request.data.v === 1 && request.data.uid === 'anon-test' && request.data.by === 'ann' && request.data.stage === 1 && request.data.expectedRun === '' && request.data.expectedRev === 0,
         'First click writes one identity-bound stage-one request through W');
       ok(millis(request.data.sessionAt) === millis(session.issuedAt) && Number.isFinite(millis(request.data.at)), 'Request binds the actual daily session and has a server timestamp');
+      ok(await sessionReads(p) === sessionReadsBefore + 1, 'The first restored-session start reads the exact own-session Timestamp once');
       await p.locator('[data-stage="2"]').evaluate(el => el.dispatchEvent(new MouseEvent('click', { bubbles: true })));
       ok((await requests(p)).length === 1 && await p.locator('[data-stage="2"]').isDisabled() && await p.locator('[data-stage="2"]').getAttribute('aria-busy') === 'true', 'A duplicate click stays pending and cannot create another request');
       const at = Math.floor(await p.evaluate(() => LK_TIME.now())), record = firstRecord(request.path.split('/').pop(), at);
@@ -101,12 +105,22 @@ for (const [id, pin] of [['vic', '4444'], ['fay', '5151']]) {
         ok(await other.getByText('Operandio batch cooling time 2 hours is done.', { exact: true }).isVisible(), 'Bo still receives the first ping after Ann dismissed hers');
         ok(!other.errors.length, 'Bo’s separate delivery has no browser errors');
       } finally { await other.context().close(); }
+      // Preserve this tab's first-start cache while replacing the restored numeric session for the same person.
+      // The next request must bind the new generation, even though device, person and expiry are unchanged.
+      const renewedAt = Math.floor(await p.evaluate(() => LK_TIME.now())) - 1000;
+      await p.evaluate(({ path, at }) => {
+        const current = __fake.dump()[path];
+        __fake.write(path, { ...current, issuedAt: { __fakeTimestamp: at }, at: { __fakeTimestamp: at } });
+        LK_PREP.state.sessIssuedAt = at;
+        window.dispatchEvent(new Event('lk-access'));
+      }, { path: sessionKey, at: renewedAt });
       await clockOpen(p); await L.waitFor(p, () => !document.querySelector('[data-stage="4"]').disabled);
       ok(await p.locator('[data-timer="2"] button').count() === 0, 'The elapsed first timer remains read-only when four hours becomes available');
       await p.locator('[data-stage="4"]').click();
       await L.waitFor(p, () => Object.values(__fake.dump()).some(d => d && d.stage === 2 && d.expectedRev === 1));
       all = await requests(p); const second = all.find(x => x.data.stage === 2);
       ok(all.length === 2 && second.data.expectedRun === record.run && second.data.expectedRev === 1, 'A separate click creates stage two against the accepted run and revision');
+      ok(await sessionReads(p) === sessionReadsBefore + 2 && millis(second.data.sessionAt) === renewedAt && millis(second.data.sessionAt) !== millis(request.data.sessionAt), 'The same person’s newer issuedAt forces a new own-session read and cannot reuse the old timestamp cache');
       const secondAt = Math.floor(await p.evaluate(() => LK_TIME.now())), continued = { ...record, rev: 2, secondAt, secondDue: secondAt + 4 * HOUR, secondBy: 'ann', schedule: { first: 'queued', second: 'queued' } };
       await accept(p, second, continued, false);
       await L.waitFor(p, () => !!document.querySelector('[data-timer="4"] .lk-stamp'));
@@ -115,6 +129,20 @@ for (const [id, pin] of [['vic', '4444'], ['fay', '5151']]) {
       await L.waitFor(p, () => !!document.querySelector('.cooling-ping'), null, 10000);
       ok(await p.getByText('Operandio batch cooling time 4 hours is done.', { exact: true }).isVisible(), 'The second deadline produces the exact four-hour ping');
       ok((await requests(p)).length === 2, 'Deadline ticks never create request writes or restart either timer');
+    });
+    await step('restored-session read failure and retry', async () => {
+      p = await L.open(b, '#/prep', { who: 'ann', extra: READY, wait: 1200 }); await clockOpen(p);
+      await L.waitFor(p, () => !document.querySelector('[data-stage="2"]').disabled);
+      await p.evaluate(() => { __fake.failReads = /\/sessions\/anon-test$/; });
+      await p.locator('[data-stage="2"]').click();
+      await L.waitFor(p, () => !!document.querySelector('[data-timer="2"] .cooling-error'));
+      ok((await requests(p)).length === 0 && await p.getByRole('button', { name: 'Try again: start Operandio 2-hour timer' }).isEnabled(), 'A failed exact-session read creates no cooling request and offers an explicit Start retry');
+      const readsBeforeRetry = await p.evaluate(path => __fake.reads.filter(x => x === path).length, sessionKey);
+      await p.evaluate(() => { __fake.failReads = null; });
+      await p.getByRole('button', { name: 'Try again: start Operandio 2-hour timer' }).click();
+      await L.waitFor(p, () => Object.keys(__fake.dump()).some(path => /\/coolingRequests\//.test(path)));
+      const retried = (await requests(p))[0], current = await p.evaluate(path => __fake.dump()[path], sessionKey);
+      ok(await p.evaluate(path => __fake.reads.filter(x => x === path).length, sessionKey) === readsBeforeRetry + 1 && millis(retried.data.sessionAt) === millis(current.issuedAt), 'Explicit retry clears the failed timestamp lookup and reads the current exact session before creating the request');
     });
     await step('view-only cooling access', async () => {
       p = await L.open(b, '#/prep', { who: 'vic', extra: ROLES, wait: 1200 }); await clockOpen(p);
