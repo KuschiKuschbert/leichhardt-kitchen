@@ -37,6 +37,74 @@
     try { input.focus({ preventScroll: true }); } finally { if (s) s.restoringFocus = restoring; }
   }
 
+  // Drag only existing headings and grips. The body keeps native scrolling and fields keep their own gestures.
+  // Dismiss through Cancel/backdrop so drafts, unread pings, pending saves and overlay history keep their rules.
+  var swipePanels = new WeakMap(), swipeDrag = null, swipeClickUntil = 0;
+  function SwipeDismiss(panel) {
+    var dialog = panel.matches('dialog.ux-picker'), backdrop = panel.previousElementSibling;
+    var viewer = panel.matches('.gz-wrap');
+    if (!dialog && !viewer && (!backdrop || !backdrop.matches('.sheet-bg, .nt-bg, .wm-bg, .fn-pop-bg, .mlp-bg'))) return;
+    panel.classList.add('ux-swipe');
+    swipePanels.set(panel, function () {
+      if (dialog) panel.dispatchEvent(new Event('cancel', { cancelable: true }));
+      else if (viewer) { var close = panel.querySelector('[data-gz="close"]'); if (close) close.click(); }
+      else if (backdrop.isConnected) backdrop.click();
+    });
+    slice(panel.querySelectorAll('.sheet-grip, :scope > h3, .nt-grip, .nt-head, .wm-grip, .wm-me, :scope > .wm-h:first-of-type, .cooling-head, .fn-grip, .fn-sheet-top, .mlp-eb, .mlp-h, .ux-picker-grip, .ux-picker-head h2, .gz-bar')).forEach(function (handle) {
+      handle.classList.add('ux-swipe-handle');
+    });
+  }
+  function swipeReset() {
+    var drag = swipeDrag; swipeDrag = null; if (!drag) return;
+    drag.panel.classList.remove('ux-swipe-dragging');
+    drag.panel.style.removeProperty('--ux-swipe-y');
+    if (drag.panel.hasPointerCapture(drag.id)) drag.panel.releasePointerCapture(drag.id);
+    if (drag.moved) swipeClickUntil = performance.now() + 400;
+  }
+  document.addEventListener('pointerdown', function (e) {
+    swipeClickUntil = 0;
+    if (swipeDrag) { swipeReset(); return; }
+    if (!e.isPrimary || e.button !== 0 || !e.target.closest) return;
+    var handle = e.target.closest('.ux-swipe-handle'), panel = handle && handle.closest('.ux-swipe');
+    if (!panel || !swipePanels.has(panel) || panel.getAttribute('aria-busy') === 'true' || panel.inert ||
+        e.target.closest('button, a, input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="button"], [role="slider"]')) return;
+    swipeDrag = { panel: panel, id: e.pointerId, x: e.clientX, y: e.clientY, lastY: e.clientY, at: e.timeStamp, speed: 0, moved: false };
+  }, true);
+  document.addEventListener('pointermove', function (e) {
+    var drag = swipeDrag; if (!drag || drag.id !== e.pointerId) return;
+    if (!drag.panel.isConnected || drag.panel.getAttribute('aria-busy') === 'true') { swipeReset(); return; }
+    var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.moved) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 8) return;
+      if (dy <= 0 || Math.abs(dx) > dy / 1.3) { swipeReset(); return; }
+      drag.moved = true; drag.panel.classList.add('ux-swipe-dragging'); drag.panel.setPointerCapture(e.pointerId);
+    }
+    if (e.cancelable) e.preventDefault();
+    if (e.timeStamp > drag.at) drag.speed = (e.clientY - drag.lastY) / (e.timeStamp - drag.at);
+    drag.lastY = e.clientY; drag.at = e.timeStamp;
+    drag.panel.style.setProperty('--ux-swipe-y', Math.max(0, Math.min(innerHeight, dy)) + 'px');
+  }, { capture: true, passive: false });
+  document.addEventListener('pointerup', function (e) {
+    var drag = swipeDrag; if (!drag || drag.id !== e.pointerId) return;
+    var dy = e.clientY - drag.y, dx = Math.abs(e.clientX - drag.x);
+    var dismiss = drag.moved && dy > dx * 1.3 && (dy >= 72 || dy >= 32 && drag.speed >= 0.5 && e.timeStamp - drag.at < 80);
+    var close = swipePanels.get(drag.panel); swipeReset();
+    if (dismiss && close && drag.panel.isConnected && drag.panel.getAttribute('aria-busy') !== 'true') {
+      e.preventDefault(); close();
+    }
+  }, true);
+  document.addEventListener('pointercancel', swipeReset, true);
+  document.addEventListener('lostpointercapture', function (e) {
+    // Touch starts with implicit capture on the heading. Moving that capture to the panel is not a cancellation.
+    if (swipeDrag && swipeDrag.id === e.pointerId && e.target === swipeDrag.panel) swipeReset();
+  }, true);
+  // A completed/cancelled drag must not tap an option or the page exposed underneath it.
+  document.addEventListener('click', function (e) {
+    if (e.isTrusted && e.detail && performance.now() < swipeClickUntil) { e.preventDefault(); e.stopImmediatePropagation(); swipeClickUntil = 0; }
+  }, true);
+  window.addEventListener('hashchange', swipeReset);
+  window.addEventListener('resize', swipeReset);
+
   // Search keeps the visible draft separate from the query delivered to the page's existing filter.
   function SmartSearchBar(input, options) {
     if (searches.has(input)) return searches.get(input);
@@ -119,7 +187,7 @@
     var dialog = node('dialog', 'ux-picker' + (config.className ? ' ' + config.className : '')), heading = node('h2', '', config.label || 'Choose');
     var header = node('header', 'ux-picker-head'), close = node('button', 'ux-picker-close', '×'), grip = node('div', 'ux-picker-grip');
     var list = node('div', 'ux-picker-options'), footer = node('footer', 'ux-picker-footer');
-    var selected = (config.value || []).slice(), items = config.items || [], matching = items, cursor = -1, startY;
+    var selected = (config.value || []).slice(), items = config.items || [], matching = items, cursor = -1;
     var compact = items.length <= (config.threshold == null ? 12 : config.threshold), rowHeights = new Map(), measuredWidth, measuredScale, resizeObserver, scrollFrame;
     dialog.id = 'ux-picker-' + (++serial); heading.id = dialog.id + '-title'; dialog.setAttribute('aria-labelledby', heading.id);
     dialog.setAttribute('aria-modal', 'true'); grip.setAttribute('aria-hidden', 'true'); close.type = 'button'; close.setAttribute('aria-label', 'Close picker');
@@ -212,8 +280,6 @@
     close.addEventListener('click', function () { finish(false); });
     dialog.addEventListener('cancel', function (e) { e.preventDefault(); finish(false); });
     dialog.addEventListener('click', function (e) { if (e.target === dialog) { var r = dialog.getBoundingClientRect(); if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) finish(false); } });
-    grip.addEventListener('pointerdown', function (e) { startY = e.clientY; grip.setPointerCapture(e.pointerId); });
-    grip.addEventListener('pointerup', function (e) { if (startY != null && e.clientY - startY > 65 && innerWidth < 768) finish(false); startY = null; });
     list.addEventListener('scroll', function () { if (visible().length > 100 && !scrollFrame) scrollFrame = requestAnimationFrame(function () { scrollFrame = null; if (dialog.isConnected) render(); }); });
     dialog.addEventListener('keydown', function (e) {
       e.stopPropagation();
@@ -232,7 +298,7 @@
     });
     if (parentDialog) parentDialog.inert = true;
     var openedHash = location.hash;
-    document.body.appendChild(dialog); dialog.showModal(); render(cursor);
+    document.body.appendChild(dialog); dialog.showModal(); SwipeDismiss(dialog); render(cursor);
     if (window.ResizeObserver) {
       resizeObserver = new ResizeObserver(function () { if (list.clientWidth !== measuredWidth || getComputedStyle(document.documentElement).fontSize !== measuredScale) render(); });
       resizeObserver.observe(list); resizeObserver.observe(document.documentElement);
@@ -520,6 +586,7 @@
   }
 
   function enhance(root) {
+    slice(root.querySelectorAll('.sheet, .nt, .wm, .cooling-menu, .fn-sheet, .mlp, dialog.ux-picker, .gz-wrap')).forEach(SwipeDismiss);
     slice(root.querySelectorAll('button[data-mg="tag"], button[data-p="mn-attc"]')).forEach(cyclePicker);
     slice(root.querySelectorAll('.p-admin table')).forEach(reportTable);
     slice(root.querySelectorAll('select')).forEach(selectPicker);
@@ -545,7 +612,7 @@
   new MutationObserver(function (records) {
     var added = false;
     records.forEach(function (r) {
-      if (r.type === 'childList' && slice(r.addedNodes).some(function (n) { return n.nodeType === 1 && !n.classList.contains('ux-picker-trigger') && !n.closest('.ux-picker, .ux-choice-measure'); })) added = true;
+      if (r.type === 'childList' && slice(r.addedNodes).some(function (n) { return n.nodeType === 1 && !n.classList.contains('ux-picker-trigger') && (n.matches('dialog.ux-picker, .ux-picker-head, .ux-picker-head h2, .ux-picker-grip') || !n.closest('.ux-picker, .ux-choice-measure')); })) added = true;
       if (r.type === 'attributes') {
         var source = r.target._uxUpdate ? r.target : r.target.closest('.ux-choice-source'); if (source && source._uxUpdate) source._uxUpdate();
         if (r.attributeName === 'data-text') scheduleChoices();
