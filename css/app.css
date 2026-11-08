@@ -4374,6 +4374,36 @@ html.tm-open, html.tm-open body { overflow: hidden; }
   .tm-notebook .tm-away-row { column-gap: .4rem; }
   .tm-notebook .tm-person-pick { grid-template-columns: minmax(0, 1fr) minmax(4.5rem, 40%); }
 }
+/* Both notebooks use the book's warm paper, burnt orange and completed-work green.
+   Colour follows state; spacing, targets and the approved layouts stay the same. */
+.todo-book, .tm-notebook .tm-nbook { border-color: var(--edge); }
+.todo-bookhead .p-h, .todo-formtitle, .tm-notebook .tm-nhead .p-h,
+.tm-notebook .tm-away-title, .tm-notebook .tm-next-slot h3,
+.tm-notebook .tm-day > h3 { color: var(--small-ink); }
+.todo-bookhead::after { background: var(--accent); }
+.tm-notebook .tm-nhead { border-bottom-color: var(--accent); }
+.todo-notebook .todo-donebox, .tm-notebook .tm-away, .tm-notebook .tm-details,
+.tm-notebook .tm-batch, .tm-notebook .tm-save, .tm-notebook .tm-extra,
+.tm-notebook .tm-saved-overview { border-top-color: var(--line); border-bottom-color: var(--line); }
+.todo-notebook .chip, .tm-notebook .chip,
+.todo-notebook .todo-ta, .todo-notebook .lv-q, .todo-notebook .ux-picker-trigger,
+.tm-notebook .tm-find, .tm-notebook .tm-pick select, .tm-notebook .ux-picker-trigger { border-color: var(--faint); }
+.todo-notebook .chip[aria-pressed="true"], .tm-notebook .chip[aria-pressed="true"] {
+  background: var(--small-ink); border-color: var(--small-ink); color: var(--bar-text);
+}
+.todo-notebook .chip[aria-pressed="true"] .lv-n,
+.tm-notebook .tm-tabs .chip[aria-pressed="true"] small { opacity: 1; }
+.todo-notebook .todo-due.is-today, .todo-notebook .todo-due.is-late,
+.tm-notebook .tm-assign-info strong, .tm-notebook .tm-away-back { color: var(--small-ink); }
+.todo-notebook .todo-row.is-late::before { background: var(--tag); }
+.todo-notebook .todo-tick::before { border-color: var(--faint); }
+.todo-notebook .todo-tick[aria-pressed="true"]::before { border-color: var(--done-ink); }
+.todo-notebook .todo-row.is-done .todo-text,
+.todo-notebook .todo-donebox > summary,
+.tm-notebook .tm-person-pick[aria-pressed="true"] .tm-person-name { color: var(--done-ink); }
+.tm-notebook .tm-tick { border-color: var(--faint); }
+.tm-notebook .tm-tick[aria-pressed="true"] { background: var(--done-ink); border-color: var(--done-ink); color: var(--paper); }
+.tm-notebook .tm-away-row { background: var(--hit); }
 /* Manage staff (Linear lists): a row each with the initial, the name, and the role with what they may do */
 .st-row { flex-direction: row !important; align-items: flex-start; gap: 12px !important; }
 .st-av { flex: none; display: grid; place-items: center; width: 36px; height: 36px; margin-top: 4px; border-radius: 50%; background: var(--accent-ink); color: #fff; font: 700 1rem/1 var(--display); }
