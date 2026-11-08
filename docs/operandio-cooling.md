@@ -1,60 +1,57 @@
 # Operandio cooling
 
-Implemented for review on 8 November 2026. Not deployed or enabled. The head chef approved the [compact clock dropdown](operandio-cooling-options/brief.md), then said "lets go". The council verdict was **Build smaller** (5 of 5); the chosen dropdown supersedes its initial recommendation. Closed-app delivery still needs a billing decision and the deployment steps in [functions/README.md](../functions/README.md). The existing [free-plan decision](firestore-usage.md) has not been changed.
+Implemented for review on 8 November 2026. The head chef approved the [compact clock dropdown](operandio-cooling-options/brief.md), then said "lets go". The council verdict was **Build smaller** (5 of 5). The latest decision removes closed-app notifications: only logged-in, open app screens need the ping. This uses the existing Firestore service with no extra timer library, notification permission, backend deployment or billing upgrade. Release verification is recorded below.
 
 ## What staff do
 
 Tap the clock in the top bar. The Operandio dropdown is 248 by 155 px in its ordinary ready/running states, with 44 px controls. Anyone with current kitchen PIN access, including View only, can start a stage. Functions-only accounts cannot. The two fixed stages are:
 
-1. Tap Start beside **2 hours**. Its server-confirmed start creates a shared deadline two hours later.
-2. At that deadline, staff receive **"Operandio batch cooling time 2 hours is done."** The **4 hours** Start becomes available. A person must tap it; its deadline is four hours after that second tap.
-3. At the second deadline, staff receive **"Operandio batch cooling time 4 hours is done."** A new batch can then start a fresh two-hour stage.
+1. Tap Start beside **2 hours**. The server records its start time.
+2. Two hours later, each logged-in open screen shows **"Operandio batch cooling time 2 hours is done."** The **4 hours** Start becomes available. Someone must tap it; the next deadline is four hours after that second start.
+3. At the second deadline, each logged-in open screen shows **"Operandio batch cooling time 4 hours is done."** A new batch can then start a fresh two-hour stage.
 
-Got it dismisses only that person's alert on this device. It does not start a stage or silence another screen. A repeated or simultaneous Start cannot reset a deadline. There is one kitchen batch at a time, always named Operandio.
+Got it dismisses only that person's alert on this device. It does not start a stage or silence another screen. Repeated or simultaneous starts cannot reset a deadline. There is one kitchen batch at a time, always named Operandio.
 
-Start is a filled button; the locked second action is visibly disabled and says After 2 hours. Starting... appears immediately. Started uses the existing green stamp only after the server accepts the request and the matching canonical run arrives. Running and finished values are plain status, not buttons. Errors stay beside the action with Try again. An uncertain request is reconciled under its original ID; it is never silently replayed. A scheduling failure retains the true countdown with an explicit phone-alert warning.
+Start is a filled button; the locked second action is disabled and says After 2 hours. Starting... appears immediately. Started uses the existing green stamp only after server confirmation. Running and finished values are plain status. Errors stay beside the action with Try again. An uncertain write is reconciled against the shared record and never silently replayed.
 
-The dropdown and ping use the existing overlay stack, focus trap, Escape/Back, keyboard focus and sheet queue. Pings wait for PIN unlock, typing, Undo and other sheets. In-app sound uses the head chef's existing ping sound. A push opens the fixed `#/cooling` route through the ordinary PIN gate.
+The dropdown and ping use the existing overlay stack, focus trap, Escape/Back, keyboard focus and sheet queue. Pings wait for PIN unlock, typing, Undo and other sheets. Sound uses the head chef's existing ping sound. There is no separate notification preference. The fixed `#/cooling` route opens through the normal PIN gate.
 
-## Persistence and closed-app alerts
+## Persistence and delivery
 
-The browser displays server-established timestamps using `LK_TIME`; it does not own the timer. Reloading, closing a tab or another person starting a stage cannot move a deadline. Local ticks do no database reads.
+Firestore stores server-issued start timestamps. The client derives the fixed deadlines and displays them with `LK_TIME`. Reloading or closing the app does not pause an accepted stage. Reopening after sign-in reads the current shared state and shows the remaining or elapsed time. The second stage never starts itself.
 
-Personal devices can enable Operandio cooling alerts in Settings. The browser asks for notification permission and registers that device's token separately from supplier reminders. Shared devices show in-app pings while signed in, without retaining a personal background registration. iPhones need the installed home-screen app for web push. Notification permission, connectivity and phone settings determine delivery and sound; no exact-arrival or exactly-once guarantee is made. Foreground devices may show both the in-app ping and the operating-system notification. Stable notification tags reduce duplicates.
-
-Cloud Functions accept immutable start requests transactionally, save a scheduling outbox, and queue Cloud Tasks for each deadline. The backend shares the browser's pure duration/validation source via a generated deployment copy. Dispatch validates current membership and device ownership, retries transient failures, and records successful device deliveries. An opted-in personal device may receive an accepted alert after its daily PIN session expires; a removed person, replaced session owner or reset PIN is excluded. Delivery expires 24 hours after the deadline. See the backend README for retry limits and repair.
+Each authorised app subscribes to the same current record and checks its deadlines locally. Countdown ticks and deadlines make no database reads or writes. Closed apps send no notifications. A sleeping, suspended or disconnected screen may show a late ping when it resumes and reconciles; delivery is not guaranteed at the exact second. A locked device must unlock first. Unseen messages belong to the current batch; starting a new batch replaces the preceding batch's shared state.
 
 ## Authority, storage and cost
 
-All paths are below `kitchens/<PIN>`. New client rules are additive and must publish before the client. Existing Prep write capabilities and supplier push permissions are unchanged.
+The only cooling document is `kitchens/<PIN>/cooling/current`:
 
-| Path | Authority and use |
-| --- | --- |
-| `cooling/config` | Named kitchen read; server-only readiness switch. Missing/disabled means setup needed. |
-| `cooling/current` | Named kitchen read; server-only canonical run and schedule status. |
-| `coolingRequests/<id>` | Active kitchen PIN holder creates one strict immutable request bound to the current anonymous UID and issued session. Only that device/person can read its result. Server alone accepts/rejects. |
-| `coolingRuns/<run>` | Server-only run history. |
-| `coolingJobs/<run>_<stage>` and device receipts | Server-only scheduling and delivery runtime. |
-| `coolingPush/<uid>` | A personal PIN session may register only its own device. Tokens cannot be read by any client, including admin. The anonymous device may delete only its own registration. |
+```
+{v: 1, run, rev, firstAt, firstBy, secondAt, secondBy, by}
+```
 
-Per authorised session the client reads one readiness document and watches one canonical document, plus its own request result after a Start write is acknowledged. A restored numeric PIN session needs one named session read on its first Start to recover the exact server-issued timestamp; subsequent starts in that session reuse it. No collection scans or countdown reads. Local dismissal markers contain bounded run/stage IDs only, partitioned by kitchen, device and person. Notification metadata stores no token locally. Existing opt-ins refresh at most once per authorised kitchen day/session: one write, no token read. Backend reads/writes scale with starts, deadline dispatches, eligible devices and retries; enabling billing does not replace the existing read budget.
+`firstAt` and a started `secondAt` are Firestore Timestamps. Before stage two, `secondAt` is `0` and `secondBy` is empty. A unique run ID identifies the batch; the revision increases once for each accepted start. The client never supplies an authoritative deadline.
+
+All writes use `W()` and the original recorder's session. First/new-batch Start sets the canonical document. Second Start updates only its revision, second start and writer fields, preserving the exact first Timestamp. Rules require an active kitchen session, matching writer, strict fields, next revision, allowed sequence and a start equal to server request time. New batches are allowed only after the preceding second deadline. No client may delete the record or list cooling documents. Existing Prep and general ping write capabilities are unchanged.
+
+The rules are additive relative to the released app and must publish before the client. One live document subscription costs a read on subscribe and for each accepted shared change, subject to Firestore's ordinary reconnect billing. There are no request documents, scheduling jobs, delivery scans or token registrations. Personal dismissal markers contain bounded run/stage IDs only, partitioned by kitchen, device and person.
 
 ## Backup and kitchen PIN changes
 
-Browser Export includes `coolingCurrent` but no push tokens, requests, jobs or delivery receipts. Nightly recovery includes the current canonical run and bounded recent `coolingRuns`, retaining the active run even when older than the history window. Runtime and tokens are excluded. A recovered deadline is history, not authorisation to recreate jobs or replay alerts. See [backup recovery](backup-recovery.md).
+Browser Export and the nightly backup include the current canonical run and its exact server start times. There is no separate run history or scheduled work. A restored current run can show elapsed alerts when authorised screens open it. See [backup recovery](backup-recovery.md).
 
-Move PIN checks readiness before any destination write. If cooling is enabled, it stops with instructions to move or disable the notification service first. It also fails closed if that read fails. Blindly copying jobs or registrations would orphan or misroute alerts, so they are never included in the generic move.
+Move PIN checks the current timer before collecting the copy and again before the first destination write. An unfinished or unreadable batch stops the move. Finish both stages before changing the kitchen address so an outstanding timer stays with the kitchen using it. A completed record remains under the old PIN and in backups; the new kitchen begins ready for a fresh batch. As with the existing multi-step kitchen copy, coordinate the move while nobody is adding work or starting a new batch; the copy does not freeze other devices.
 
-Actual app screenshots: [phone ready](operandio-cooling-options/app-phone-ready.png), [phone running](operandio-cooling-options/app-phone-running.png), [tablet](operandio-cooling-options/app-tablet-running.png), [desktop](operandio-cooling-options/app-desktop-ready.png). These use synthetic test data.
+Actual app screenshots: [phone ready](operandio-cooling-options/app-phone-ready.png), [phone running](operandio-cooling-options/app-phone-running.png), [tablet](operandio-cooling-options/app-tablet-running.png), [desktop](operandio-cooling-options/app-desktop-ready.png). These use synthetic data.
 
 ## Files and verification
 
-`js/cooling-core.js` is the pure contract, `js/cooling.js` controls requests and listeners, and `js/cooling-ui.js`/`css/cooling.css` render the approved UI. `js/prep.js` supplies session, write, clock, queue and notification adapters; `js/app.js` supplies the chip, Settings and route. All three JS files and the CSS belong to the saved shell in `index.html`, `sw.js` and both `js/upkeep.js` lists. Immutable historical shell manifests stay untouched.
+`js/cooling-core.js` validates and derives timing, `js/cooling.js` manages the shared subscription and writes, and `js/cooling-ui.js`/`css/cooling.css` render the approved UI. `js/prep.js` supplies session, write, clock and sheet adapters; `js/app.js` supplies the chip and route. All three JS files and the CSS belong to the saved shell in `index.html`, `sw.js` and both `js/upkeep.js` lists. Historical shell manifests remain unchanged.
 
-Focused tests cover sequence/duration validation, races and rejected starts, write acknowledgement versus canonical acceptance, PIN locks and ownership changes, stale/offline data, personal dismissal, push payloads and routes, screen sizes and keyboard use. Real rules tests cover all kitchen roles and hostile request/token shapes. Backend unit and Firestore emulator tests cover transactions, outbox retry, dispatch receipts and token changes. CI runs those backend checks separately from the browser and rules suites. Backup recovery tests run the actual exporter and encrypted recovery flow against local emulators.
+Verification covers stage sequence, simultaneous starts, server acknowledgement, stale/offline state, locks, personal dismissal, two screens receiving the same deadline, reload recovery, screen sizes and keyboard use. Real Firestore emulator checks cover roles, strict write shapes and competing starts. Backup recovery runs the actual exporter and encrypted recovery flow against local emulators. No automated check sends a live kitchen ping.
 
-Before release: complete the full browser and rules checks, approve billing, deploy the backend and additive rules, verify actual personal-device notifications with the app closed and PIN locked, and enable `cooling/config` only after setup succeeds. Keep the application PR draft until those prerequisites are resolved. No live notifications are sent by automated tests.
+Before release: complete the browser and rules gates, publish the additive rules from this branch, verify the foundation and live Lock probe, then mark the application PR ready for the normal release queue. No cooling configuration switch or background service is needed.
 
 ## Rollback
 
-Disable `cooling/config` first to refuse new starts and dispatches, then roll back the client through the normal saved-shell process. Leave existing canonical/history records for inspection. Stop the dedicated tasks/functions after checking pending work. Do not remove unrelated supplier notification infrastructure. Re-enabling requires reconciling pending jobs and their deadlines; never replay expired alerts automatically.
+Revert the client through the normal saved-shell process. Leave the canonical record and additive rules for inspection and compatible older clients. Removing the new UI does not change ordinary shift pings or supplier reminders. Re-enabling reads the stored times; it never restarts a stage automatically.

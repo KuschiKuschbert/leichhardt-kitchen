@@ -6,16 +6,15 @@ When a note or a file is added: its full row goes here, and one short row (what 
 
 ## Operandio cooling, 8 November 2026
 
-The head chef approved the compact 248 by 155 px clock dropdown, everyone with kitchen PIN access starting the fixed two-hour stage, and a separate manual Start for the four-hour stage. Council: Build smaller, 5 of 5. [The feature contract](operandio-cooling.md) records UI feedback, authority, reads, persistence, delivery, backup and release prerequisites; [the design brief](operandio-cooling-options/brief.md) preserves the choices and visuals. Implementation is ready for review, not deployed. Closed-app delivery needs billing approval.
+The head chef approved the compact 248 by 155 px clock dropdown, everyone with kitchen PIN access starting two hours, and a separate manual Start for four hours. Council: Build smaller, 5 of 5. The latest clarification needs pings only on logged-in open screens; saved start times preserve the timer after closure. No new service or billing change. [Feature contract](operandio-cooling.md), [chosen design and council](operandio-cooling-options/brief.md).
 
 | Files | Role and checks |
 | --- | --- |
-| `js/cooling-core.js`, `js/cooling.js`, `js/cooling-ui.js`, `css/cooling.css` | Shell: pure contract, authorised request/listener controller and compact UI. Core/controller/UI/access/integration tests are `tests/cooling*.test.js`. |
-| `js/prep.js`, `js/app.js` | Existing session/write/overlay adapters, top chip, Settings opt-in and guarded route. |
-| `sw.js`, `index.html`, `js/upkeep.js` | Saved shell membership and fixed cooling push handling. `tests/cooling-push.test.js`, seasonal shell and native generation tests. |
-| `functions/`, `firebase.cooling.json` | Transactional start, durable scheduling and device delivery. Backend README has billing/deployment steps; `functions/test/` has unit and real emulator integration checks. |
-| `firestore.rules`, `tests/rules/cooling.test.mjs` | Strict additive request/token authority. Publish reviewed rules before dependent client. |
-| `scripts/nightly-backup.mjs`, `scripts/backup-recovery-check.mjs` | Current/recent run recovery, no runtime jobs or tokens. Move PIN blocks an enabled service before copying. |
+| `js/cooling-core.js`, `js/cooling.js`, `js/cooling-ui.js`, `css/cooling.css` | Shell: timing contract, shared subscription, direct writes and compact UI. Core/controller/UI/access/integration tests are `tests/cooling*.test.js`. |
+| `js/prep.js`, `js/app.js` | Existing session/write/overlay adapters, top chip and guarded route. |
+| `sw.js`, `index.html`, `js/upkeep.js` | Saved shell membership. Existing supplier push handling is unchanged. |
+| `firestore.rules`, `tests/rules/cooling.test.mjs` | Strict additive canonical stage transitions. Publish reviewed rules before dependent client. |
+| `scripts/nightly-backup.mjs`, `scripts/backup-recovery-check.mjs` | Current run and precise start-time recovery. Move PIN waits for an unfinished batch. |
 
 ## Which note to read before you change it
 

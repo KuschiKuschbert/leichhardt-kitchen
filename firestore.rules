@@ -1316,57 +1316,40 @@ service cloud.firestore {
         && request.resource.data.get('from', '') == resource.data.get('from', '') && request.resource.data.get('at', 0) == resource.data.get('at', 0);
       allow delete: if false;
     }
-    // Shared Operandio starts are requests, never client-chosen deadlines. The backend owns the accepted run,
-    // scheduling and delivery. Every current kitchen PIN may request a stage, including View only; this grants no
-    // ordinary Prep capability or permission to write shift pings. Publish these additive rules before the client.
-    function coolingReady() {
-      let p = /databases/$(database)/documents/kitchens/KITCHEN_PIN/cooling/config;
-      return exists(p) && get(p).data.get('v', 0) == 1 && get(p).data.get('enabled', false) == true;
-    }
-    function coolingRequestOk(id) {
+    // Shared Operandio timing uses server timestamps and a revision compare-and-set. Every current kitchen PIN,
+    // including View only, can start a stage; this grants no ordinary Prep capability or shift-ping permission.
+    function coolingOk() {
       let d = request.resource.data;
-      let s = get(sessDoc()).data;
-      return id.matches('[a-zA-Z0-9_-]{16,80}')
-        && d.keys().hasAll(['v', 'uid', 'by', 'sessionAt', 'stage', 'expectedRun', 'expectedRev', 'at'])
-        && d.keys().hasOnly(['v', 'uid', 'by', 'sessionAt', 'stage', 'expectedRun', 'expectedRev', 'at'])
-        && d.v == 1 && d.uid == request.auth.uid && d.by == s.by
-        && d.sessionAt is timestamp && d.sessionAt == s.issuedAt
-        && d.stage is int && d.stage in [1, 2]
-        && d.expectedRun is string && (d.expectedRun == '' || d.expectedRun.matches('[a-zA-Z0-9_-]{1,80}'))
-        && d.expectedRev is int && d.expectedRev >= 0
-        && d.at is timestamp && d.at == request.time;
+      return d.keys().hasAll(['v', 'run', 'rev', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by'])
+        && d.keys().hasOnly(['v', 'run', 'rev', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by'])
+        && d.v == 1 && d.run is string && d.run.matches('[a-zA-Z0-9_-]{16,80}')
+        && d.rev is int && d.rev >= 1
+        && d.firstAt is timestamp && d.firstBy is string && d.firstBy.size() > 0 && d.firstBy.size() <= 80
+        && (d.secondAt == 0 || d.secondAt is timestamp) && d.secondBy is string && d.secondBy.size() <= 80;
+    }
+    function coolingFirst() {
+      let d = request.resource.data;
+      return d.firstAt == request.time && d.firstBy == d.by && d.secondAt == 0 && d.secondBy == '';
+    }
+    function coolingNext() {
+      let d = request.resource.data;
+      let old = resource.data;
+      return d.rev == old.rev + 1 && (
+        (d.run == old.run && d.firstAt == old.firstAt && d.firstBy == old.firstBy
+          && old.firstAt is timestamp && old.secondAt == 0 && old.secondBy == ''
+          && request.time >= old.firstAt + duration.value(2, 'h')
+          && d.secondAt == request.time && d.secondBy == d.by)
+        || (d.run != old.run && old.secondAt is timestamp
+          && request.time >= old.secondAt + duration.value(4, 'h') && coolingFirst()));
     }
     match /kitchens/KITCHEN_PIN/cooling/{id} {
-      allow get: if id in ['current', 'config'] && kitchenRead();
-      allow list, write: if false;
+      allow get: if id == 'current' && kitchenRead();
+      allow list, delete: if false;
+      allow create: if id == 'current' && staff() && request.resource.data.by in cfg().get('staffIds', [])
+        && coolingOk() && request.resource.data.rev == 1 && coolingFirst();
+      allow update: if id == 'current' && staff() && request.resource.data.by in cfg().get('staffIds', [])
+        && coolingOk() && coolingNext();
     }
-    match /kitchens/KITCHEN_PIN/coolingRequests/{id} {
-      // Read after the create acknowledgement, so ownership exists; a different person on the same tablet cannot
-      // read the previous person's result. No client may rewrite a request or its server-written outcome.
-      allow get: if kitchenRead() && resource.data.uid == request.auth.uid && resource.data.by == reader();
-      allow list, update, delete: if false;
-      allow create: if staff() && request.resource.data.by in cfg().get('staffIds', [])
-        && coolingReady() && coolingRequestOk(id);
-    }
-    function coolingPushOk(uid) {
-      let d = request.resource.data;
-      let s = get(sessDoc()).data;
-      return uid == request.auth.uid && d.keys().hasAll(['v', 'uid', 'by', 'pinAt', 'tok', 'at', 'mode'])
-        && d.keys().hasOnly(['v', 'uid', 'by', 'pinAt', 'tok', 'at', 'mode'])
-        && d.v == 1 && d.uid == uid && d.by == s.by && d.pinAt is number && d.pinAt == s.pinAt
-        && s.mode == 'personal' && d.mode == 'personal'
-        && d.tok is string && d.tok.size() > 0 && d.tok.size() <= 4096
-        && d.at is timestamp && d.at == request.time;
-    }
-    match /kitchens/KITCHEN_PIN/coolingPush/{uid} {
-      // Separate from chef-only supplier pushes. Addresses are server-only and bound to a personal device's current
-      // member and PIN version. An anonymous device can always remove its own subscription, even after its PIN locks.
-      allow read: if false;
-      allow create, update: if staff() && request.resource.data.by in cfg().get('staffIds', []) && coolingPushOk(uid);
-      allow delete: if anonymousDevice() && uid == request.auth.uid;
-    }
-    match /kitchens/KITCHEN_PIN/coolingRuns/{run} { allow read, write: if false; }
-    match /kitchens/KITCHEN_PIN/coolingJobs/{job} { allow read, write: if false; }
 
     // Phone pushes for order cut-offs (24 Oct 2026): a chef's phone keeps its push address in push/<hash of it>
     // { tok, at, ua, by }. Only the server reads them (scripts/cutoff-push.mjs, with the service account, which these

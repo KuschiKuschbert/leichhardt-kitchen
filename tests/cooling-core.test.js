@@ -10,14 +10,14 @@ const otherId = 'operandio_example_0002';
 const FIRST = 7200000, SECOND = 14400000;
 let checks = 0;
 function check(name, body) { body(); checks++; console.log('PASS ' + name); }
+function stamp(ms) { const seconds = Math.floor(ms / 1000); return { seconds, nanoseconds: (ms - seconds * 1000) * 1000000 }; }
 function record(changes) {
-  return Object.assign({ v: 1, run: runId, rev: 1, firstAt: T, firstDue: T + FIRST, firstBy: 'example-cook',
-    secondAt: 0, secondDue: 0, secondBy: '', schedule: { first: 'queued', second: '' } }, changes);
+  return Object.assign({ v: 1, run: runId, rev: 1, firstAt: stamp(T), firstBy: 'example-cook',
+    secondAt: 0, secondBy: '', by: 'example-cook' }, changes);
 }
 function second(changes) {
   const start = T + FIRST + 10 * 60000;
-  return record(Object.assign({ rev: 2, secondAt: start, secondDue: start + SECOND, secondBy: 'example-chef',
-    schedule: { first: 'queued', second: 'queued' } }, changes));
+  return record(Object.assign({ rev: 2, secondAt: stamp(start), secondBy: 'example-chef', by: 'example-chef' }, changes));
 }
 try {
   check('the browser and node expose the same pure API without clock or DOM access', () => {
@@ -28,34 +28,46 @@ try {
   });
   check('only bounded safe run identities are accepted', () => {
     for (const value of ['a'.repeat(16), 'a'.repeat(80), runId, 'a_B-'.repeat(4)]) assert.equal(C.id(value), true);
-    for (const value of ['', 'a'.repeat(15), 'a'.repeat(81), '../operandio_0001', 'operandio/x_00001', '<script>123456789', 123, null]) assert.equal(C.id(value), false);
+    for (const value of ['', 'a'.repeat(15), 'a'.repeat(81), runId + '\n', runId + '\r', '../operandio_0001', 'operandio/x_00001', '<script>123456789', 123, null]) assert.equal(C.id(value), false);
   });
-  check('parsing preserves only the canonical fields and copies nested scheduling state', () => {
-    const raw = record({ extra: '<script>ignore()</script>' }), parsed = C.parse(raw);
+  check('parsing copies only canonical fields and derives fixed deadlines from Timestamp components', () => {
+    const raw = record({ extra: '<script>ignore()</script>', firstDue: 1, schedule: { first: 'queued' } }), parsed = C.parse(raw);
     assert.deepEqual(parsed, { id: runId, rev: 1, firstAt: T, firstDue: T + FIRST, firstBy: 'example-cook',
-      secondAt: 0, secondDue: 0, secondBy: '', schedule: { first: 'queued', second: '' } });
-    raw.schedule.first = 'failed'; raw.firstDue = 0;
-    assert.equal(parsed.schedule.first, 'queued'); assert.equal(parsed.firstDue, T + FIRST);
+      secondAt: 0, secondDue: 0, secondBy: '', by: 'example-cook' });
+    raw.firstAt.seconds = 0; raw.firstBy = 'different-cook';
+    assert.equal(parsed.firstAt, T); assert.equal(parsed.firstDue, T + FIRST); assert.equal(parsed.firstBy, 'example-cook');
+    assert.equal(C.parse(record({ firstAt: { ...stamp(T), toMillis() { throw Error('Components avoid method calls.'); } } })).firstAt, T);
   });
-  check('malformed dates, revision, actors and incomplete stages are rejected', () => {
+  check('numeric starts, malformed Timestamp components, revisions, actors and incomplete stages are rejected', () => {
     const broken = [null, {}, [], record({ v: 2 }), record({ rev: 0 }), record({ rev: 1.5 }), record({ rev: '1' }),
-      record({ firstAt: NaN }), record({ firstAt: Infinity }), record({ firstAt: -1 }), record({ firstAt: T + .5 }),
-      record({ firstAt: Number.MAX_SAFE_INTEGER, firstDue: Number.MAX_SAFE_INTEGER + FIRST }),
-      record({ firstDue: T + FIRST - 1 }), record({ firstDue: String(T + FIRST) }), record({ firstBy: '' }),
+      record({ firstAt: T }), record({ firstAt: NaN }), record({ firstAt: Infinity }), record({ firstAt: -1 }),
+      record({ firstAt: stamp(0) }), record({ firstAt: null }), record({ firstAt: new Date(T) }),
+      record({ firstAt: { seconds: T / 1000 } }), record({ firstAt: { seconds: '123', nanoseconds: 0 } }),
+      record({ firstAt: { seconds: -1, nanoseconds: 1 } }), record({ firstAt: { seconds: 253402300800, nanoseconds: 0 } }),
+      record({ firstAt: { seconds: 1.5, nanoseconds: 0 } }), record({ firstAt: { seconds: Infinity, nanoseconds: 0 } }),
+      record({ firstAt: { seconds: 1, nanoseconds: -1 } }), record({ firstAt: { seconds: 1, nanoseconds: 1000000000 } }),
+      record({ firstAt: { seconds: 1, nanoseconds: .5 } }), record({ firstAt: { seconds: 1, nanoseconds: NaN } }),
+      record({ firstAt: { seconds: 1, nanoseconds: '0' } }), record({ firstAt: { toMillis: () => T } }), record({ firstBy: '' }),
       record({ firstBy: ' staff ' }), record({ firstBy: 'x'.repeat(81) }), record({ firstBy: {} }),
-      record({ secondAt: null }), record({ secondDue: 1 }), record({ secondBy: ' ' }),
-      record({ schedule: null }), record({ schedule: [] }), record({ schedule: { first: 'sent', second: '' } }),
-      record({ schedule: { first: 'queued', second: 'queued' } }), second({ secondAt: T + FIRST - 1 }),
-      second({ secondDue: T + FIRST + SECOND }), second({ secondBy: '' }),
-      second({ schedule: { first: 'queued', second: '' } })];
+      record({ secondAt: null }), record({ secondAt: T + FIRST }), record({ secondBy: ' ' }), record({ by: '' }),
+      record({ by: 'another-cook' }), second({ secondAt: stamp(T + FIRST - 1) }), second({ secondBy: '' }),
+      second({ secondAt: { seconds: (T + FIRST) / 1000, nanoseconds: -1 } }), second({ by: 'example-cook' })];
     broken.forEach(value => assert.equal(C.parse(value), null, JSON.stringify(value)));
   });
-  check('a scheduling delay or failure does not alter the accepted timer deadline', () => {
-    for (const first of ['pending', 'queued', 'failed']) {
-      const parsed = C.parse(record({ schedule: { first, second: '' } }));
-      assert.equal(C.phase(parsed, T + FIRST), 'first_due');
-      assert.equal(C.remaining(parsed, 1, T + 1000), FIRST - 1000);
-    }
+  check('submillisecond starts round up and exact raw ordering prevents early stage two', () => {
+    const firstAt = { seconds: T / 1000, nanoseconds: 1 };
+    const run = C.parse(record({ firstAt }));
+    assert.equal(run.firstAt, T + 1); assert.equal(run.firstDue, T + FIRST + 1);
+    assert.equal(C.phase(run, T + FIRST), 'first'); assert.equal(C.allowed(run, 2, T + FIRST), false);
+    assert.equal(C.allowed(run, 2, T + FIRST + 1), true);
+    const justBefore = { seconds: T / 1000 + FIRST / 1000, nanoseconds: 0 };
+    assert.equal(C.parse(second({ firstAt, secondAt: justBefore })), null);
+    const exact = C.parse(second({ firstAt, secondAt: { ...justBefore, nanoseconds: 1 } }));
+    assert.equal(exact.secondAt, T + FIRST + 1);
+    assert.equal(exact.secondDue, T + FIRST + SECOND + 1);
+    assert.equal(C.parse(record({ firstAt: { seconds: T / 1000, nanoseconds: 999999999 } })).firstAt, T + 1000);
+    const sameRoundedMillis = { seconds: T / 1000, nanoseconds: 900000 };
+    assert.equal(C.parse(second({ firstAt: sameRoundedMillis, secondAt: { ...justBefore, nanoseconds: 800000 } })), null);
   });
   check('first timer runs for two hours and then waits without starting four hours', () => {
     const run = C.parse(record());

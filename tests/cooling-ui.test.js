@@ -86,12 +86,9 @@ async function shape(p) {
       ok(await p.evaluate(() => document.activeElement.getAttribute('data-timer') === '2'), 'After confirmation keyboard focus stays on the resulting timer row');
       await p.keyboard.press('Tab');
       ok(await p.evaluate(() => !!document.activeElement.closest('.cooling-menu')), 'Tab from a newly read-only row stays in the menu');
-      const unscheduled = { ...run, schedule: { first: 'failed', second: '' } };
-      await render(p, { run: unscheduled });
-      ok(await p.locator('.cooling-read .p-err').textContent() === 'The timer is running, but its phone alert could not be scheduled. Tell the head chef.' && await p.locator('[data-timer="2"] .lk-stamp').count() === 1 && await p.locator('.cooling-read button').count() === 0, 'A scheduling failure warns persistently without contradicting the confirmed timer or offering a false Start retry');
-      await render(p, { now: firstDue });
-      ok(await p.locator('.cooling-read .p-err').isVisible() && await p.locator('[data-stage="4"]').isEnabled(), 'The phone-alert warning survives clock updates and leaves the manual next stage available when due');
-      await render(p, { run, now: firstAt });
+      await render(p, { actionError: { stage: 2, message: 'Your Operandio 2-hour start was not saved. The shared timer changed. Check its current stage.' } });
+      ok(await p.locator('[data-timer="2"] .cooling-error').isVisible() && await p.locator('[data-timer="2"] .lk-stamp').count() === 1 && await p.locator('.visually-hidden[role="status"]').textContent() === '', 'A refused start keeps its error beside the shared timer and announces no successful start');
+      await render(p, { actionError: null });
       await p.keyboard.press('Escape');
       ok(await p.locator('.cooling-wrap').count() === 0 && await p.locator('[data-cooling="open"]').evaluate(el => el === document.activeElement), 'Escape closes and returns focus to the clock');
       await render(p, { now: firstDue }); await p.evaluate(() => window.__ui.ping(2));

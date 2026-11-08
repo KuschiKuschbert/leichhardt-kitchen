@@ -1355,11 +1355,6 @@
     var alerts = (pu.show ? stRow('push', 'Cut-off pushes on this phone', pu.on ? 'On' : 'Off', '<p class="hint">A push on this phone when a supplier\'s reminder starts and an hour before its cut-off, even with the book closed. Only for suppliers nobody has ticked off yet. Also on the order list.</p>' +
         '<div class="btn-row"><button type="button" class="btn' + (pu.on ? '' : ' dark') + '" data-act="stpush" data-val="' + (pu.on ? '0' : '1') + '"' + (pu.busy ? ' disabled' : '') + '>' + (pu.on ? 'Turn pushes off' : 'Turn pushes on') + '</button></div>' +
         (pu.msg ? '<p class="hint" role="status">' + esc(pu.msg) + '</p>' : '')) : '');
-    var cp = who && P.coolingPush ? P.coolingPush() : {};
-    if (cp.show) alerts += stRow('cooling-push', 'Operandio cooling alerts', cp.on ? 'On' : 'Off',
-      '<p class="hint">An alert when each Operandio timer ends, even with the app closed. Everyone can start the shared timer from the clock.</p>' +
-      '<div class="btn-row"><button type="button" class="btn' + (cp.on ? '' : ' dark') + '" data-act="stcoolingpush" data-k="stcoolingpush" data-val="' + (cp.on ? '0' : '1') + '"' + (cp.busy || !cp.enabled ? ' disabled' : '') + (cp.busy ? ' aria-busy="true"' : '') + '>' + (cp.busy ? (cp.on ? 'Turning off...' : 'Turning on...') : cp.on ? 'Turn cooling alerts off' : 'Turn cooling alerts on') + '</button></div>' +
-      (cp.msg ? '<p class="' + (cp.error ? 'p-err' : 'hint') + '" role="' + (cp.error ? 'alert' : 'status') + '">' + esc(cp.msg) + '</p>' : ''));
     // Team (sous chefs, not on the head chef's own device): Manage staff, and what the head chef set, read only
     var k = who && P.kitchenInfo ? P.kitchenInfo() : null;
     var team = m.chef && !m.tab ? stRow('staff', 'Manage staff', k ? plural(k.people, 'person', 'people') : '', '', { act: 'ststaff' }) +
@@ -1836,7 +1831,6 @@
       setTimeout(function () { if (el.isConnected) { el.classList.remove('is-armed'); el.textContent = 'Use a different kitchen PIN on this device'; } }, 4000);
       return;
     }
-    if (act === 'stcoolingpush') { if (window.LK_PREP && window.LK_PREP.coolingPushSet) window.LK_PREP.coolingPushSet(val === '1'); return; }
     if (act === 'stpush') { if (window.LK_PREP && window.LK_PREP.pushSet) window.LK_PREP.pushSet(val === '1'); return; }
     // Check for an update: the same header-only look as the automatic one (js/upkeep.js), no Firestore read
     if (act === 'updcheck') {
@@ -1923,7 +1917,6 @@
   // was already signed in) the mark flips in like a coin and settles, so the person sees it is now them.
   // js/prep.js read the head chef's open kitchen mail: redraw the count on the chef hat
   window.addEventListener('lk-cooling', function () {
-    if (parseRoute().name === 'settings') { render(); return; }
     var slot = app.querySelector('.cooling-slot'), P = window.LK_PREP;
     if (slot && P && P.coolingChip) { var html = P.coolingChip(); if (slot.innerHTML !== html) slot.innerHTML = html; }
   });

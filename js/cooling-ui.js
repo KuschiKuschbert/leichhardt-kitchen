@@ -77,11 +77,7 @@
         if (focused && pendingFocus === hours && !model.pending && !button.disabled) button.focus({ preventScroll: true });
       }
       if (pendingFocus === hours && !model.pending) pendingFocus = 0;
-      errorLine(entry, r.error && !r.started ? r.error : '');
-    }
-    function failedSchedule() {
-      var run = state().run, schedule = run && run.schedule;
-      return !!schedule && (schedule.first === 'failed' || !!run.secondAt && schedule.second === 'failed');
+      errorLine(entry, r.error);
     }
     function readStatus() {
       var s = state();
@@ -89,14 +85,13 @@
       if (s.bad) return 'Couldn’t read Operandio timers. Try again.';
       if (model.stale) return 'Not connected. The last timer is shown. Reconnect before starting.';
       if (!model.ready || !finite(model.now)) return 'Checking Operandio timers…';
-      if (failedSchedule()) return 'The timer is running, but its phone alert could not be scheduled. Tell the head chef.';
       return '';
     }
     function paintRead(host) {
       var message = readStatus(), retry = !!model.error || state().bad, line = host.querySelector('.cooling-read');
       if (!message) { if (line) line.remove(); return; }
       if (!line) { line = document.createElement('div'); line.className = 'cooling-read'; line.innerHTML = '<p></p>'; host.appendChild(line); }
-      var p = line.querySelector('p'), warning = retry || failedSchedule(); p.className = warning ? 'p-err' : ''; p.setAttribute('role', warning ? 'alert' : 'status'); text(p, message);
+      var p = line.querySelector('p'); p.className = retry ? 'p-err' : ''; p.setAttribute('role', retry ? 'alert' : 'status'); text(p, message);
       var button = line.querySelector('button');
       if (retry && !button) { button = document.createElement('button'); button.type = 'button'; button.className = 'btn'; button.dataset.cooling = 'retry'; button.textContent = 'Try again'; line.appendChild(button); }
       else if (!retry && button) button.remove();
@@ -223,7 +218,8 @@
       var current = validRun(model.run) ? model.run : null;
       if (pingRun && current && current.id === pingRun.id) pingRun = Object.assign({}, current);
       if (!model.available) { attempt++; model = { available: false }; close(); say(''); paintChip(); return; }
-      if (current && model.ready && !model.stale && !model.error) {
+      if (model.actionError) say('');
+      else if (current && model.ready && !model.stale && !model.error) {
         if (!runBefore || runBefore.id !== current.id) say('Started Operandio 2-hour timer. Due ' + at(current.firstDue) + '.');
         else if (!runBefore.secondAt && current.secondAt) say('Started Operandio 4-hour timer. Due ' + at(current.secondDue) + '.');
       }

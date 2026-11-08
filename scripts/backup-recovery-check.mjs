@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { decryptFile, encryptFile } from './backup-crypto.mjs';
+import Cooling from '../js/cooling-core.js';
 
 function localDemo(env) {
   const host = env.FIRESTORE_EMULATOR_HOST || '', project = env.GCLOUD_PROJECT || 'demo-test';
@@ -35,7 +36,7 @@ const ARRAY_COLLECTIONS = ['activity', 'sections', 'learned', 'ordlearned', 'lea
   'deliveries', 'notes', 'directnotes', 'minutes', 'book', 'recipes', 'drawings', 'drawtpl', 'drawlib', 'suppliers', 'supplierlinks', 'functions', 'fncontact', 'fnsent'];
 const HISTORIES = { referencesHist: ['references', 'hist'], trainingHist: ['training', 'hist'], notesSeen: ['notes', 'seen'], directnotesSeen: ['directnotes', 'seen'], minutesHist: ['minutes', 'hist'], minutesSigns: ['minutes', 'signs'], recipesHist: ['recipes', 'hist'], drawingsHist: ['drawings', 'hist'], supplierOrders: ['suppliers', 'orders'], supplierAudit: ['suppliers', 'audit'], functionsHist: ['functions', 'hist'] };
 const DATED = { days: ['days', 'items'], orders: ['orders', 'lines'], waste: ['waste', 'lines'], transfers: ['transfers', 'lines'] };
-const EXPECTED_FIELDS = ['exportedAt', 'by', 'config', 'pins', 'wasteReviews', 'coolingCurrent', 'coolingRuns', ...ARRAY_COLLECTIONS, ...Object.keys(HISTORIES), ...Object.keys(DATED)].sort();
+const EXPECTED_FIELDS = ['exportedAt', 'by', 'config', 'pins', 'wasteReviews', 'coolingCurrent', ...ARRAY_COLLECTIONS, ...Object.keys(HISTORIES), ...Object.keys(DATED)].sort();
 const identities = Object.fromEntries(ARRAY_COLLECTIONS.map(name => [name, name + '-sample']));
 Object.assign(identities, { activity: 'cook-a', drinks: 'cook-a', book: 'index', references: 'ref-a', training: 'training-a', notes: 'note-a', directnotes: 'direct-a', minutes: 'meeting-a', recipes: 'recipe-a', drawings: 'drawing-a', suppliers: 'supplier-a', functions: 'function-a' });
 const capabilityIds = { addIds: ['cook-a'], tickIds: ['cook-a', 'worker-a'], delIds: ['cook-a'] };
@@ -68,11 +69,14 @@ function flatten(archive) {
     }
   }
   for (const name of ARRAY_COLLECTIONS) list(archive[name], [name]);
-  // Canonical cooling records are audit data. This rehearsal copies no enablement, request, job or token that
-  // could re-arm delivery; a production recovery must reconcile the backend before enabling cooling again.
-  assert(archive.coolingCurrent === null || typeof archive.coolingCurrent === 'object');
-  if (archive.coolingCurrent !== null) record(['cooling', 'current'], archive.coolingCurrent, rows);
-  list(archive.coolingRuns, ['coolingRuns']);
+  // Restore exact accepted starts as Timestamps, never numeric milliseconds or a new serverTimestamp().
+  // A restored elapsed timer can show its ping on the next signed-in open app; it does not start another stage.
+  if (archive.coolingCurrent !== null) {
+    assert(Cooling.parse(archive.coolingCurrent), 'The included cooling record must have valid Timestamp starts and stage order.');
+    const current = { ...archive.coolingCurrent };
+    for (const field of ['firstAt', 'secondAt']) if (current[field] !== 0) current[field] = new Timestamp(current[field].seconds, current[field].nanoseconds);
+    record(['cooling', 'current'], current, rows);
+  }
   for (const [field, [collection, sub]] of Object.entries(HISTORIES)) for (const [id, records] of Object.entries(archive[field])) list(records, [collection, id, sub]);
   for (const [field, [collection, sub]] of Object.entries(DATED)) for (const [date, records] of Object.entries(archive[field])) list(records, [collection, date, sub]);
   for (const [date, review] of Object.entries(archive.wasteReviews)) record(['waste', date], review, rows);
@@ -101,20 +105,11 @@ try {
     if (name === 'training') Object.assign(data, { person: 'worker-a', source: 'recipe-a', scope: 'synthetic-only' });
     await put(source, name + '/' + identities[name], data);
   }
-  const coolingRun = (run, firstAt) => ({ v: 1, run, rev: 1, firstAt, firstDue: firstAt + 7200000, firstBy: 'cook-a',
-    secondAt: 0, secondDue: 0, secondBy: '', schedule: { first: 'queued', second: '' } });
-  const oldCooling = coolingRun('cooling-current-older', at - 4 * 86400000);
+  const firstStart = new Timestamp(Math.floor((at - 4 * 86400000) / 1000), 123456000);
+  const oldCooling = { v: 1, run: 'cooling-current-older', rev: 2, firstAt: firstStart, firstBy: 'cook-a',
+    secondAt: new Timestamp(firstStart.seconds + 7200 + 600, 789012000), secondBy: 'worker-a', by: 'worker-a' };
   await put(source, 'cooling/current', oldCooling);
-  await put(source, 'coolingRuns/' + oldCooling.run, oldCooling);
-  for (const [id, started] of [['cooling-run-recent', at - 3600000], ['cooling-run-boundary', at - 3 * 86400000],
-    ['cooling-run-too-old', at - 3 * 86400000 - 1], ['cooling-run-future', at + 1]]) {
-    await put(source, 'coolingRuns/' + id, coolingRun(id, started));
-  }
-  await put(source, 'cooling/config', { v: 1, enabled: true, excluded: 'synthetic-excluded-cooling-enable' });
-  await put(source, 'coolingRequests/omitted', { v: 1, stage: 1, excluded: 'synthetic-excluded-cooling-request' });
-  await put(source, 'coolingJobs/omitted', { state: 'pending', due: at + 1000, excluded: 'synthetic-excluded-cooling-job' });
-  await put(source, 'coolingJobs/omitted/devices/omitted', { state: 'sent', excluded: 'synthetic-excluded-cooling-device' });
-  await put(source, 'coolingPush/omitted', { tok: 'synthetic-excluded-cooling-token' });
+  await put(source, 'cooling/unrelated', { excluded: 'synthetic-excluded-cooling-document' });
   await put(source, 'deliveries/delivery-null', { day: day(1), chilled: null, frozen: 0, receivedById: 'worker-a', by: 'cook-a', receivedAt: at - 86400000, recordedAt: at });
   await put(source, 'deliveries/outside-window', { day: day(4), chilled: 1, frozen: -19, receivedById: 'cook-a', by: 'cook-a' });
   for (const [field, [collection, sub]] of Object.entries(HISTORIES)) await put(source, [collection, identities[collection], sub, 'version-1'].join('/'), { v: 1, event: field, by: 'cook-a', at: Timestamp.fromMillis(at - 1000), original: 'Original synthetic wording',
@@ -140,9 +135,10 @@ try {
   assert.deepEqual(original.functions.find(x => x.id === identities.functions).effects, effects);
   assert.deepEqual(original.functionsHist[identities.functions][0].was.effects, effects);
   assert.equal(original.deliveries.length, 2); assert(!original.deliveries.some(x => x.id === 'outside-window'));
-  assert.deepEqual(original.coolingCurrent, oldCooling, 'The named current cooling record remains included outside the history window.');
-  assert.deepEqual(original.coolingRuns.map(x => x.id).sort(), ['cooling-run-boundary', 'cooling-run-recent'], 'Cooling history includes the lower boundary and excludes older and future starts.');
-  assert(!JSON.stringify(original).includes('synthetic-excluded-cooling'), 'No deployment, request, job, delivery or token data enters the archive.');
+  const archivedCooling = { ...oldCooling, firstAt: { seconds: oldCooling.firstAt.seconds, nanoseconds: oldCooling.firstAt.nanoseconds },
+    secondAt: { seconds: oldCooling.secondAt.seconds, nanoseconds: oldCooling.secondAt.nanoseconds } };
+  assert.deepEqual(original.coolingCurrent, archivedCooling, 'The named current cooling record retains exact Timestamp components outside the date window.');
+  assert(!JSON.stringify(original).includes('synthetic-excluded-cooling'), 'The exporter reads only the named current cooling document.');
   assert.equal(original.days[day(4)], undefined); assert.equal(original.transfers[day(4)], undefined);
   assert(original.transferOpen.some(x => x.date === day(4)), 'The included older outstanding index survives independently of the bounded dated window.');
   const immutable = original.days[day(0)][0]; assert.equal(immutable.doneById, 'cook-a'); assert.equal(immutable.preparedById, 'worker-a'); assert.equal(immutable.doneAt, immutable.preparedAt);
@@ -152,6 +148,7 @@ try {
   assert.equal(statSync(recoveredFile).mode & 0o777, 0o600);
   assert.equal((await restored.listCollections()).length, 0, 'No target document is written before validation completes.');
   const invalid = { ...recovered, unexpectedSection: [] }; assert.throws(() => flatten(invalid));
+  assert.throws(() => flatten({ ...recovered, coolingCurrent: { ...archivedCooling, firstAt: oldCooling.firstAt.toMillis() } }), 'Numeric starts cannot be restored as canonical cooling timestamps.');
   assert.equal((await restored.listCollections()).length, 0, 'Unknown sections fail before any target write.');
   const batch = db.batch();
   for (const [path, data] of rows) batch.set(document(restored, path), data);
@@ -165,15 +162,17 @@ try {
   assert.deepEqual(roundTrip, original, 'Re-export of the recovered included data must equal the original export.');
   for (const name of ['staffpins', 'sessions', 'adminDevices', 'push', 'pushsent', 'login']) assert.equal((await restored.collection(name).get()).size, 0);
   assert.equal((await restored.collection('config').doc('admins').get()).exists, false);
-  assert.equal((await restored.collection('cooling').doc('config').get()).exists, false, 'Recovery cannot enable the cooling backend.');
-  for (const name of ['coolingRequests', 'coolingJobs', 'coolingPush']) assert.equal((await restored.collection(name).get()).size, 0, 'Recovery cannot recreate cooling execution or device authority.');
-  assert.equal((await restored.collection('coolingJobs').doc('omitted').collection('devices').get()).size, 0);
+  assert.equal((await restored.collection('cooling').doc('unrelated').get()).exists, false);
   assert.deepEqual((await restored.collection('cooling').doc('current').get()).data(), oldCooling);
-  // A kitchen with no cooling data still has an explicit null current and empty history, without fake state.
+  assert.equal(Cooling.phase(Cooling.parse((await restored.collection('cooling').doc('current').get()).data()), at), 'second_due', 'Recovery preserves elapsed deadlines instead of restarting timers.');
+  const firstOnly = { ...archivedCooling, rev: 1, secondAt: 0, secondBy: '', by: 'cook-a' };
+  const firstOnlyRow = flatten({ ...recovered, coolingCurrent: firstOnly }).find(([path]) => path.join('/') === 'cooling/current');
+  assert(firstOnlyRow[1].firstAt.isEqual(oldCooling.firstAt)); assert.equal(firstOnlyRow[1].secondAt, 0);
+  assert.equal(Cooling.phase(Cooling.parse(firstOnlyRow[1]), at), 'first_due', 'Restoring an elapsed first stage does not start the second.');
+  // A kitchen with no cooling data still has an explicit null current, without invented state.
   await document(restored, 'cooling/current').delete();
-  for (const item of original.coolingRuns) await document(restored, ['coolingRuns', item.id]).delete();
   const absentCooling = exportFile(restoredPin, join(folder, 'without-cooling.json'));
-  assert.equal(absentCooling.coolingCurrent, null); assert.deepEqual(absentCooling.coolingRuns, []);
+  assert.equal(absentCooling.coolingCurrent, null);
   assert.equal((await restored.collection('guides').doc(identities.guides).collection('pages').get()).size, 0);
   assert.equal((await restored.collection('pinset').doc('cook-a').get()).data().at, undefined);
   console.log('Backup recovery: local demo guards, authenticated export and ' + recordCount + ' included documents round-tripped with identities, temperatures, history and versions. Intentional omissions remain explicit.');

@@ -1,6 +1,6 @@
 # Operandio cooling pings: chosen clock dropdown
 
-Design preview, 8 November 2026. The owner chose a compact clock dropdown like the chef hat, showing both timers, and asked for it to keep running with the app closed. The chosen design is now implemented for review; see [the implementation contract](../operandio-cooling.md). It has not been deployed or enabled. The earlier device-local timer remains draft PR #610.
+Design preview, 8 November 2026. The owner chose a compact clock dropdown like the chef hat, showing both timers, and asked for it to keep running with the app closed. The chosen design is now implemented for review; see [the implementation contract](../operandio-cooling.md). The latest clarification requires alerts only on logged-in open screens. Saved starts preserve elapsed time after reopening; no closed-app delivery service is needed. The earlier device-local timer remains draft PR #610.
 
 ## Confirmed behaviour
 
@@ -47,9 +47,7 @@ This follows [After the tap](../action-feedback.md), [design patterns](../design
 
 Close dismisses the menu and returns focus to the clock. Start another batch is explicit after both stages finish and returns the local preview to ready. The prototype's stage selector now also exposes Starting and Couldn’t start. `result=hold` and `result=fail` are local demo modes for checking pending and failure; none contact a server.
 
-Closed-app delivery is now part of the requested feature. Canonical server deadlines preserve the timer, and a scheduled sender plus device push provides notifications without an app window. Existing order push registration is chef-only and its ten-minute GitHub job is not a punctual alarm. Extend cooling opt-in to current kitchen staff separately from supplier reminders. Each device needs notification permission; iPhone/iPad needs the Home Screen app. OS settings and connectivity still govern arrival and sound.
-
-The [technical note](technical-notes.md) sets out the proposed server tasks, retries, access checks and device behaviour. Repository notes record a previous choice to stay on free Firebase. The recommended Functions/Cloud Tasks path needs billing-enabled Firebase and deployment; the new request does not authorise a billing change. No plan, API, queue or live notification has been changed.
+The latest owner clarification removes closed-app notification delivery. Logged-in open screens show the pings, while saved server start times keep the timer correct after reopening. This narrows the existing approved design without changing its controls or sequence. Quick scope check: same two taps to start, same list space, fewer setup steps and no additional service or billing change. The [technical note](technical-notes.md) and [implementation contract](../operandio-cooling.md) record this simpler delivery model.
 
 ## Council
 
@@ -102,9 +100,9 @@ No horizontal document overflow or JavaScript errors in the three options at the
 - Reuse the kitchen-selected ping sound and sheet coordination. Keep private data behind the existing login and do not interrupt a PIN screen, typed work, another sheet or live Undo. “Everyone” needs a dedicated cooling audience rule that does not accidentally exclude people through the ordinary ping visibility switch or shared-tablet filter.
 - Ordinary shift pings stay chef-written. Starting this fixed cooling sequence does not grant general ping editing.
 - Current shift pings disappear after 30 minutes. Shared cooling needs an explicit persistent waiting/overdue policy rather than copying that rule blindly.
-- Signed-in, open app screens show shift-style pings. The chosen refinement also requires closed-app push delivery. This is a backend and device opt-in requirement, not something the local preview implements.
+- Signed-in, open app screens show shift-style pings. Closed-app notification delivery was removed by the owner; saved starts keep the timer correct when the app reopens.
 
-The [technical note](technical-notes.md) records source-backed constraints, the proposed state model, read/write estimates and the implementation checks. These are proposals, not a deployed schema or permission change.
+The [technical note](technical-notes.md) links the current state model, read/write costs and implementation checks. The static previews send no messages and make no database writes.
 
 ## Validation
 

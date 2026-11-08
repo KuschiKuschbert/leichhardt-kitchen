@@ -45,7 +45,7 @@
 */
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, getDoc, getDocs, getDocFromServer, getDocsFromServer, onSnapshot, collection, query, where, orderBy, limit, documentId,
-  setDoc, deleteDoc, writeBatch, increment, serverTimestamp, setLogLevel } from 'firebase/firestore';
+  setDoc, deleteDoc, writeBatch, increment, serverTimestamp, Timestamp, setLogLevel } from 'firebase/firestore';
 import { anonContext, dailySession, adminGrant, seedOwnerDevice, nextFour } from './device-auth-fixtures.mjs';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -601,38 +601,24 @@ row('js/manage.js mineHide(): hide a template or own piece (its next version)', 
   prep: r => put({ ['drawtpl/h-' + r]: { name: 'Round plate', slot: 'plate', surf: {}, els: [], defs: '{}', vb: '', svgS: '', svgF: '', v: 1, upd: 1, removed: false, by: 'sam' } }),
   run: (db, w, r) => W(r, [['set', 'drawtpl/h-' + r, { name: 'Round plate', slot: 'plate', surf: {}, els: [], defs: '{}', vb: '', svgS: '', svgF: '', v: 2, upd: Date.now(), removed: true }]]) });
 
-// Operandio: one shared canonical run, immutable personal start requests and device-bound cooling opt-in.
-const COOL_PERSONAL = KITCHEN.filter(r => !['ownkit', 'tab'].includes(r));
-const coolRequest = (r, w, stage = 1) => ({ v: 1, uid: UID[r], by: w, sessionAt: seed['sessions/' + UID[r]].issuedAt,
-  stage, expectedRun: stage === 1 ? '' : 'run-1234567890123456', expectedRev: stage === 1 ? 0 : 1, at: serverTimestamp() });
-const coolRequestId = r => 'request-' + r + '-1234567890123456';
-row('js/prep.js coolingRead(): backend readiness get (cooling/config)', { ok: KITCHEN, asks: KITCHEN,
-  prep: () => put({ 'cooling/config': { v: 1, enabled: true } }), run: db => getDocFromServer(D(db, 'cooling/config')) });
-row('js/prep.js coolingIssuedAt(): exact own session before first start after restore', { ok: ALL, asks: KITCHEN,
-  run: (db, w, r) => getDocFromServer(D(db, 'sessions/' + UID[r])) });
-row('js/prep.js coolingWatch(): canonical current-run listener (cooling/current)', { ok: KITCHEN, asks: KITCHEN,
-  prep: () => put({ 'cooling/current': { v: 1, run: 'run-1234567890123456', rev: 1, firstAt: NOW, firstDue: NOW + 7200000,
-    firstBy: 'ann', secondAt: 0, secondDue: 0, secondBy: '', schedule: { first: 'queued', second: '' } } }),
-  run: db => listen(D(db, 'cooling/current')) });
-row('js/prep.js coolingWrite(): immutable first-stage request through W()', { ok: KITCHEN, asks: KITCHEN,
-  prep: r => put({ ['coolingRequests/' + coolRequestId(r)]: null, 'cooling/config': { v: 1, enabled: true } }),
-  run: (db, w, r) => W(r, [['set', 'coolingRequests/' + coolRequestId(r), coolRequest(r, w)]]) });
-row('js/prep.js coolingWrite(): immutable second-stage request through W()', { ok: KITCHEN, asks: KITCHEN,
-  prep: r => put({ ['coolingRequests/' + coolRequestId(r)]: null, 'cooling/config': { v: 1, enabled: true } }),
-  run: (db, w, r) => W(r, [['set', 'coolingRequests/' + coolRequestId(r), coolRequest(r, w, 2)]]) });
-row('js/prep.js coolingWatch(): own acknowledged-request result listener', { ok: KITCHEN, asks: KITCHEN,
-  prep: (r, w) => put({ ['coolingRequests/' + coolRequestId(r)]: { ...coolRequest(r, w), at: seed['sessions/' + UID[r]].issuedAt, status: 'accepted' } }),
-  run: (db, w, r) => listen(D(db, 'coolingRequests/' + coolRequestId(r))) });
-row('js/prep.js coolingPushSave(): own personal device registration through W()', { ok: COOL_PERSONAL, asks: COOL_PERSONAL,
-  prep: r => put({ ['coolingPush/' + UID[r]]: null,
-    ['sessions/' + UID[r]]: { ...seed['sessions/' + UID[r]], mode: ['ownkit', 'tab'].includes(r) ? 'shared' : 'personal' } }),
-  after: r => put({ ['sessions/' + UID[r]]: seed['sessions/' + UID[r]] }),
-  run: (db, w, r) => W(r, [['set', 'coolingPush/' + UID[r], { v: 1, uid: UID[r], by: w, pinAt: 1,
-    tok: 'synthetic-cooling-token-' + r, at: serverTimestamp(), mode: 'personal' }]]) });
-row('js/prep.js coolingPushSet(): anonymous device removes only its own cooling subscription', { ok: ALL, asks: KITCHEN,
-  prep: (r, w) => put({ ['coolingPush/' + UID[r]]: { v: 1, uid: UID[r], by: w, pinAt: 1,
-    tok: 'synthetic-cooling-token-' + r, at: seed['sessions/' + UID[r]].issuedAt, mode: 'personal' } }),
-  run: (db, w, r) => deleteDoc(D(db, 'coolingPush/' + UID[r])) });
+// Operandio: one shared current record, server-timestamp starts and revision compare-and-set.
+const coolRun = (extra = {}) => ({ v: 1, run: 'run-1234567890123456', rev: 1,
+  firstAt: Timestamp.fromMillis(NOW - 7200000 - 1000), firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann', ...extra });
+row('js/prep.js coolingWatch(): canonical current-run listener', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': coolRun() }), run: db => listen(D(db, 'cooling/current')) });
+row('js/prep.js coolingRead(): current-run recovery after an uncertain save', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': coolRun() }), run: db => getDocFromServer(D(db, 'cooling/current')) });
+row('js/prep.js coolingWrite(): first two-hour start through W()', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': null }),
+  run: (db, w, r) => W(r, [['set', 'cooling/current', coolRun({ firstAt: serverTimestamp(), firstBy: w, by: w })]]) });
+row('js/prep.js coolingWrite(): four-hour second stage through W()', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': coolRun() }),
+  run: (db, w, r) => W(r, [['upd', 'cooling/current', { rev: 2, secondAt: serverTimestamp(), secondBy: w }]]) });
+row('js/prep.js coolingWrite(): new batch after four-hour stage through W()', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': coolRun({ rev: 2, firstAt: Timestamp.fromMillis(NOW - 21600000 - 1000),
+    secondAt: Timestamp.fromMillis(NOW - 14400000 - 1000), secondBy: 'sam', by: 'sam' }) }),
+  run: (db, w, r) => W(r, [['set', 'cooling/current', coolRun({ run: 'next-1234567890123456', rev: 3,
+    firstAt: serverTimestamp(), firstBy: w, by: w })]]) });
 
 // functions
 const FN = r => 'fn-' + r;
