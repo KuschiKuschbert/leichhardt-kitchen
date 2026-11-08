@@ -9791,11 +9791,11 @@
     return '<ul class="dr-team">' + rows + '</ul>' + (none.length ? '<p class="hint dr-none"><b>No usual yet:</b> ' + none.join(', ') + '. Ask them.</p>' : '');
   }
   function dkCount(h, n) { return '<h3 class="ml-h3 dr-h">' + h + '<span class="dr-n">' + n + '</span></h3>'; }
-  /* who is on today, the order, then everyone else behind a note */
+  /* People on today, then everyone else behind the same Show them fold. */
   function dkTeamHTML() {
     var all = dkTeam(), on = all.filter(function (p) { return dkToday(p.id); }), off = all.filter(function (p) { return !dkToday(p.id); });
-    // the order first, as a docket to read out at the counter (8 Nov 2026, redesign step 7), then who is on today
-    return dkRunHTML() + dkCount('On today', on.length) + dkListHTML(on, true) +
+    // The grouped order has its own notebook page; these are the same people and the existing off-today fold.
+    return dkCount('On today', on.length) + dkListHTML(on, true) +
       (!off.length ? '' : dkAll ? dkCount('Not signed in today', off.length) + dkListHTML(off, false) + '<button type="button" class="dr-more" data-p="dk-all" aria-expanded="true">Hide them</button>'
         : '<button type="button" class="dr-more" data-p="dk-all" aria-expanded="false">Not signed in today: ' + off.length + ' more. Show them</button>');
   }
@@ -9814,7 +9814,7 @@
     if (!l.length) return '';
     var g = dkGroups(l), n = g.reduce(function (t, x) { return t + x.n; }, 0);
     return '<div class="dr-run"><h3 class="ml-h3 dr-oh">The order<span class="dr-n">' + n + (n === 1 ? ' drink' : ' drinks') + ' · ' + l.length + (l.length === 1 ? ' person' : ' people') + '</span></h3><ul class="dr-order">' + g.map(function (x) {
-      return '<li><b>' + x.n + ' x</b> ' + esc(x.t) + '</li>';
+      return '<li><b>' + x.n + ' x</b> <span>' + esc(x.t) + '</span></li>';
     }).join('') + '</ul></div>';
   }
   function drinksPageHTML() {
@@ -9823,9 +9823,13 @@
     var top = dkEditing ? dkFormHTML(false)
       : '<div class="dr-mine"><span class="dr-txt"><span class="label">Your usual' + (sum && dkToday(S.who) ? ' · you\'re in' : '') + '</span><span class="dr-what">' + (sum ? esc(sum) : dkList ? 'Not set yet.' : 'Loading...') + '</span></span>' +
         '<button type="button" class="dr-chg" data-p="dk-edit">' + (sum ? 'Change' : 'Set my usual') + '</button></div>';
-    var team = !dkList ? (dkErr ? '<p class="p-err">Could not load the team\'s drinks. Check the connection.</p><div class="btn-row"><button type="button" class="btn" data-p="dk-retry">Try again</button></div>' : '<p class="hint">Loading...</p>')
-      : dkTeamHTML();
-    return '<section class="p-card dr-page"><h2 class="p-h" id="rtitle" tabindex="-1">Drinks run</h2>' + top + (dkEditing ? '' : team) + '</section>';
+    var order = !dkList ? (dkErr ? '<p class="p-err">Could not load the team\'s drinks. Check the connection.</p><div class="btn-row"><button type="button" class="btn" data-p="dk-retry">Try again</button></div>' : '<p class="hint">' + inkLabel('Loading...', 'chef') + '</p>')
+      : dkRunHTML() || '<p class="hint">Nothing on the order yet.</p>';
+    return '<section class="p-card dr-page dr-notebook" aria-labelledby="rtitle"><div class="dr-book' + (dkEditing ? ' is-edit' : '') + '">' +
+      '<header class="dr-bookhead"><h2 class="p-h" id="rtitle" tabindex="-1">Drinks run</h2></header>' +
+      (dkEditing ? '' : '<aside class="dr-usual" aria-label="Your usual">' + top + '</aside>') +
+      '<section class="dr-work" aria-label="' + (dkEditing ? 'Change your usual' : 'The order') + '">' + (dkEditing ? top : order) + '</section>' +
+      (dkEditing ? '' : '<div class="dr-spine" aria-hidden="true"></div>' + (dkList ? '<aside class="dr-people" aria-label="Team drinks">' + dkTeamHTML() + '</aside>' : '')) + '</div></section>';
   }
 
   /* ---------- order cut-offs (23 Oct 2026) ----------
