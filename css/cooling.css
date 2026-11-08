@@ -1,0 +1,65 @@
+/* Operandio: the approved compact clock dropdown, standard actions and separate read-only status. */
+.cooling-chip[hidden] { display: none; }
+.cooling-chip[aria-expanded="true"] { background: var(--accent-ink); border-color: var(--accent-ink); color: var(--bar-text); }
+html.cooling-open, html.cooling-open body { overflow: hidden; }
+.cooling-menu { position: absolute; width: min(248px,calc(100vw - 16px)); max-height: calc(100dvh - 16px); overflow-y: auto; padding: 0 6px 4px; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: var(--r-act); box-shadow: 0 10px 30px color-mix(in srgb,var(--ink) 25%,transparent); font-family: var(--body); }
+.cooling-head { display: flex; align-items: center; justify-content: space-between; min-height: 46px; padding: 0 2px; border-bottom: 1px solid var(--line); }
+.cooling-head h2 { margin: 0; font: 700 1.1rem/1.1 var(--display); }
+.cooling-close.btn { width: 44px; min-height: 44px; padding: 0; margin-right: -2px; font-size: 24px; border-color: var(--faint); }
+.cooling-entry { border-bottom: 1px solid var(--line); }
+.cooling-entry:nth-of-type(2) { border-bottom: 0; }
+.cooling-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 50px; padding: 3px 2px; }
+.cooling-label { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cooling-label b { font: 700 1rem/1.1 var(--display); }
+.cooling-detail, .cooling-status small { color: var(--muted); font-size: .8125rem; line-height: 1.2; }
+.cooling-detail:empty { display: none; }
+.cooling-action { flex: 0 0 auto; }
+.cooling-start.btn { width: 88px; min-height: 44px; padding: 0 4px; font: 700 .875rem var(--body); }
+.cooling-start.btn[aria-busy="true"] { background: var(--accent-ink); border-color: var(--accent-ink); color: var(--bar-text); cursor: wait; }
+.cooling-start:focus-visible, .cooling-close:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.cooling-status { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.cooling-status .lk-stamp { margin: 0; padding: 0 4px; min-height: 20px; font-size: .75rem; letter-spacing: 0; text-transform: none; }
+.cooling-done { color: var(--done-ink); font-size: .8125rem; font-weight: 700; }
+.cooling-error { padding: 0 2px 6px; font-size: .875rem; line-height: 1.25; }
+.cooling-read { border-top: 1px solid var(--line); padding: 8px 2px 4px; font-size: .875rem; line-height: 1.3; }
+.cooling-read p { margin: 0; }
+.cooling-read .btn { margin-top: 6px; min-height: 44px; }
+.cooling-new { padding: 4px 2px 0; }
+.cooling-new .cooling-action, .cooling-new .cooling-start { width: 100%; }
+.cooling-menu:focus, .cooling-entry:focus { outline: none; }
+.cooling-ping .nt-head { padding: 4px 20px 14px; border-bottom: 1px solid var(--line); }
+.cooling-ping .nt-body { padding: 20px; }
+.cooling-ping .nt-body h3 { margin: 0 0 12px; font: 700 1.75rem/1.2 var(--display); }
+.cooling-ping-time { color: var(--muted); }
+.cooling-next { border-top: 2px solid var(--ink); padding-top: 16px; margin-top: 22px; }
+.cooling-next b { font: 700 1.25rem var(--display); }
+.cooling-next .cooling-start { width: 100%; min-height: 48px; }
+.cooling-next .cooling-error { padding-top: 10px; }
+.cooling-ping .nt-foot { padding: 14px 20px max(16px,env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
+.cooling-ping .nt-got { width: 100%; }
+.cooling-ping .nt-foot p { margin: 0; color: var(--muted); font-size: .875rem; text-align: center; width: 100%; }
+@media(max-width:719px) {
+  .wtop:has(.cooling-chip) .wtop-icons { gap: 4px; }
+  .wtop:has(.cooling-chip) .wtop-start { gap: 0; }
+  .wtop:has(.cooling-chip) .wtop-brand { gap: 4px; }
+  .wtop:has(.cooling-chip) .wtop-brand b { font-size: 1.2rem; }
+}
+/* Six page tabs stay on one row beside four controls at the tablet breakpoint. */
+@media(min-width:720px) and (max-width:899px) {
+  .wtop:has(.cooling-chip) .pnav a { padding-inline: .3rem; min-width: 44px; }
+}
+/* Cleaning's longer label also fits beside four controls on a small laptop. */
+@media(min-width:1200px) and (max-width:1279px) {
+  .wtop:has(.cooling-chip) .pnav a { padding-inline: 1rem; }
+}
+/* Keep the title and all four 44px controls on the smallest phones. */
+@media(max-width:389px) {
+  .wtop:has(.cooling-chip):has(.tm-slot .tm-chip) { padding-inline: 8px; gap: 0; }
+  .wtop:has(.cooling-chip):has(.tm-slot .tm-chip) .wtop-icons { gap: 0; }
+}
+/* The existing navigation wrap absorbs a wide fallback font before the title shrinks. */
+@media(min-width:1100px) {
+  .wtop:has(.cooling-chip) .wtop-start { flex-shrink: 0; }
+}
+
+.cooling-slot:empty { display: none; }

@@ -4,6 +4,18 @@ Moved from `CLAUDE.md` on 8 November 2026, word for word, so the file every sess
 
 When a note or a file is added: its full row goes here, and one short row (what it covers, where it is) goes in `CLAUDE.md`. When the two disagree, the note itself wins, then `CLAUDE.md`.
 
+## Operandio cooling, 8 November 2026
+
+The head chef approved the compact 248 by 155 px clock dropdown, everyone with kitchen PIN access starting two hours, and a separate manual Start for four hours. Council: Build smaller, 5 of 5. The latest clarification needs pings only on logged-in open screens; saved start times preserve the timer after closure. No new service or billing change. [Feature contract](operandio-cooling.md), [chosen design and council](operandio-cooling-options/brief.md).
+
+| Files | Role and checks |
+| --- | --- |
+| `js/cooling-core.js`, `js/cooling.js`, `js/cooling-ui.js`, `css/cooling.css` | Shell: timing contract, shared subscription, direct writes and compact UI. Core/controller/UI/access/integration tests are `tests/cooling*.test.js`. |
+| `js/prep.js`, `js/app.js` | Existing session/write/overlay adapters, top chip and guarded route. |
+| `sw.js`, `index.html`, `js/upkeep.js` | Saved shell membership. Existing supplier push handling is unchanged. |
+| `firestore.rules`, `tests/rules/cooling.test.mjs` | Strict additive canonical stage transitions. Publish reviewed rules before dependent client. |
+| `scripts/nightly-backup.mjs`, `scripts/backup-recovery-check.mjs` | Current run and precise start-time recovery. Move PIN waits for an unfinished batch. |
+
 ## Which note to read before you change it
 
 Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records the Prep room, canonical head-owned minimums, normal typed matching, complete Before service reference, private per-item schema, paged read policy, drafts and release requirements. `js/prep-standards.js` is lazy and uses the bridge in `js/prep.js`; it is not a startup shell file. `docs/prep-par-options/brief.md`, `index.html` and `refined.html` retain the council and design comparison. The implemented real-font density is recorded separately in `implemented-density.json`; browser, rules and backup checks cover the feature. PR #612 records release evidence.

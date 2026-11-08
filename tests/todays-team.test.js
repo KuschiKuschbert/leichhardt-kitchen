@@ -21,7 +21,7 @@ const cfg = x => ({ [CFG]: Object.assign({ people, sousIds: ['sam'], pingIds: ['
 const store = p => p.evaluate(() => window.__fake.dump());
 // a picker on the page: the shared controls dress each select up, so set the select and send its change like a tap would
 const pick = (p, k, v) => p.evaluate(([k, v]) => { const s = document.querySelector('select[data-k="' + k + '"]'); if (!s) return false; s.value = String(v); s.dispatchEvent(new Event('change', { bubbles: true })); return true; }, [k, v]);
-const chip = p => p.evaluate(() => { const c = document.querySelector('.wtop .tm-chip'); return c ? { due: c.classList.contains('is-due'), label: c.getAttribute('aria-label'), href: c.getAttribute('href') } : null; });
+const chip = p => p.evaluate(() => { const c = document.querySelector('.wtop .tm-slot .tm-chip'); return c ? { due: c.classList.contains('is-due'), label: c.getAttribute('aria-label'), href: c.getAttribute('href') } : null; });
 const titleCut = p => p.evaluate(() => { const b = document.querySelector('.wtop-brand b'), i = document.querySelector('.wtop-icons'); return !b || b.scrollWidth > b.clientWidth + 1 || b.getBoundingClientRect().right > i.getBoundingClientRect().left + 1; });
 // tick a person onto the shift shown: the people not on it fold away once someone is on, so open the fold first
 const onShift = async (p, id) => { await p.evaluate(() => { const b = [...document.querySelectorAll('.tm-fold')].find(e => /Show$/.test(e.textContent.trim())); if (b) b.click(); }); await L.settle(p, 150); const done = await tap(p, '[data-p="tm-on"][data-id="' + id + '"]'); await L.settle(p, 200); return done; };
@@ -43,7 +43,7 @@ const withoutViewChoice = async p => {
 
   // a sous chef, nothing set for today yet: the chip is filled, the chef hat says Not set yet, the prep list says so too
   p = await L.open(b, '#/prep', { who: 'sam', extra: cfg(), wait: 1800 });
-  await L.waitFor(p, () => !!document.querySelector('.wtop .tm-chip'), null, 8000);
+  await L.waitFor(p, () => !!document.querySelector('.wtop .tm-slot .tm-chip'), null, 8000);
   let c = await chip(p);
   ok(!!c && c.due && /not set yet/.test(c.label) && c.href === '#/team', 'chip: a sous chef sees the Today\'s team chip, filled while not set (' + JSON.stringify(c) + ')');
   ok(/Set today's team/.test(await txt(p, '.nb-tmset') || ''), 'prep list: Set today\'s team under the done count');
@@ -62,7 +62,7 @@ const withoutViewChoice = async p => {
   ok(p.errors.length === 0, 'prep list: no page errors ' + p.errors.join(' | '));
 
   // the page: tick people onto Lunch, a section, a break, Spread them, Dinner with another section, Save
-  await p.click('.wtop .tm-chip'); await L.settle(p, 900);
+  await p.click('.wtop .tm-slot .tm-chip'); await L.settle(p, 900);
   ok(/#\/team$/.test(p.url()) && /Today's team/.test(await txt(p, '#rtitle') || ''), 'page: the chip opens Today\'s team');
   ok(/Not set yet/.test(await txt(p, '.tm-page .hint') || '') && !!(await p.$('[data-p="tm-use"]')), 'page: not set yet, and Same as last Saturday? Use it is offered');
   ok(await p.$eval('[data-p="tm-sh"][data-v="lunch"]', e => e.getAttribute('aria-pressed')) === 'true', 'page: Lunch is the shift shown first');
@@ -142,7 +142,7 @@ const withoutViewChoice = async p => {
 
   // staff, nothing set yet: no chip, no line, and the page by its address says who sets it
   p = await L.open(b, '#/prep', { who: 'ann', extra: cfg(), wait: 1800 });
-  ok(!(await p.$('.wtop .tm-chip')) && !(await p.$('.nb-tmset')) && !(await p.$('.nb-tmday')), 'staff: no chip, no Set today\'s team and no day line while it is not set');
+  ok(!(await p.$('.wtop .tm-slot .tm-chip')) && !(await p.$('.nb-tmset')) && !(await p.$('.nb-tmday')), 'staff: no chip, no Set today\'s team and no day line while it is not set');
   await p.evaluate(() => { location.hash = '#/team'; }); await L.settle(p, 800);
   ok(/The head chef and the sous chefs set today's team/.test(await txt(p, '.tm-page') || ''), 'staff: #/team says the head chef and the sous chefs set it');
   ok(p.errors.length === 0, 'staff: no page errors ' + p.errors.join(' | '));
@@ -154,7 +154,7 @@ const withoutViewChoice = async p => {
     br: [{ id: 'bo', sh: 'lunch', at: 825, len: 45 }, { id: 'ann', sh: 'lunch', at: 870, len: 30 }, { id: 'ann', sh: 'dinner', at: 1140, len: 60 }], v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam' }, x || {});
   const SHIFT_ANN = fsKey(['shifts', today + '_ann']);
   p = await L.open(b, '#/prep', { who: 'ann', extra: Object.assign(cfg(), { [TEAM]: plan() }), wait: 1800 });
-  await L.waitFor(p, () => !!document.querySelector('.wtop .tm-chip'), null, 8000);
+  await L.waitFor(p, () => !!document.querySelector('.wtop .tm-slot .tm-chip'), null, 8000);
   c = await chip(p);
   ok(!!c && c.due && /^Your day: Lunch: Grill · Break 14:30$/.test(c.label), 'staff chip: once her day is set, filled from 30 minutes before her break (' + JSON.stringify(c) + ')');
   ok(await txt(p, '.nb-tmday') === 'Lunch: Grill · Break 14:30', 'staff prep list: her day under the done count (' + (await txt(p, '.nb-tmday')) + ')');
@@ -174,7 +174,7 @@ const withoutViewChoice = async p => {
   ok(await p.evaluate(() => window.__fake.reads.filter(r => /\/team\//.test(r)).length) === 1, 'staff reads: today\'s team is read once');
 
   // Your day: Now, Break, Later, who is on a break now; Escape closes it and the focus goes back to the chip
-  await p.click('.wtop .tm-chip'); await L.settle(p, 400);
+  await p.click('.wtop .tm-slot .tm-chip'); await L.settle(p, 400);
   const day = await txt(p, '.tm-dw .nt') || '';
   ok(/Your day/.test(day) && /Now\s*Grill\s*Lunch, 10:00 to 15:00/.test(day) && /Break\s*14:30\s*30 minutes/.test(day) && /Later\s*Pans\s*Dinner, 16:00 to 22:00/.test(day), 'Your day: now, her break and later (' + day + ')');
   ok(/On break now: Bo, back 14:30\./.test(day) && /Set by Sam at \d\d:\d\d/.test(day), 'Your day: who is on a break now and when they are back, and who set it');
@@ -257,7 +257,7 @@ const withoutViewChoice = async p => {
   ok(await txt(p, '.nb-tmday') === 'Day: Grill · Split 14:30 to 17:00', 'split, staff: her day line (' + (await txt(p, '.nb-tmday')) + ')');
   c = await chip(p);
   ok(!!c && c.due, 'split, staff: the chip is filled 30 minutes before her split');
-  await p.click('.wtop .tm-chip'); await L.settle(p, 400);
+  await p.click('.wtop .tm-slot .tm-chip'); await L.settle(p, 400);
   const sday = await txt(p, '.tm-dw .nt') || '';
   ok(/Split\s*14:30 to 17:00\s*2\.5 hours/.test(sday) && /Break\s*18:00\s*30 minutes/.test(sday), 'split, Your day: the split and the meal break after it (' + sday + ')');
   await p.keyboard.press('Escape'); await L.settle(p, 300);
@@ -316,13 +316,18 @@ const withoutViewChoice = async p => {
   // the smallest phones and the laptop: the title whole, the page tabs on one row, nothing sideways
   for (const w of [360, 375]) {
     p = await L.open(b, '#/prep', { who: 'sam', extra: cfg(), width: w, wait: 1600 });
-    await L.waitFor(p, () => !!document.querySelector('.wtop .tm-chip'), null, 8000);
+    await L.waitFor(p, () => !!document.querySelector('.wtop .tm-slot .tm-chip'), null, 8000);
     ok(!(await titleCut(p)), 'top bar: "Kitchen Book" is whole at ' + w + ' px with the chip');
     await p.context().close();
   }
   for (const w of [390, 768, 1280]) {
     p = await L.open(b, '#/team', { who: 'sam', extra: cfg(), width: w, wait: 1600 });
     await tap(p, '[data-p="tm-on"][data-id="ann"]'); await L.settle(p, 200);
+    const controlsFit = await p.evaluate(() => {
+      const controls = [...document.querySelectorAll('.wtop .cooling-chip, .wtop .tm-slot .tm-chip, .wtop .nbell, .wtop .wtop-who')].filter(e => !!e.getClientRects().length);
+      return controls.length === 4 && controls.every(e => { const r = e.getBoundingClientRect(); return r.width >= 44 && r.height >= 44 && r.left >= 0 && r.right <= innerWidth; });
+    });
+    ok(controlsFit && !(await titleCut(p)), 'top bar at ' + w + ' px: clock, team, bell and chef hat retain 44px controls and the title fits');
     ok(!(await L.overflow(p)), 'page at ' + w + ' px: no sideways scroll');
     ok(p.errors.length === 0, 'page at ' + w + ' px: no page errors ' + p.errors.join(' | '));
     await p.context().close();
@@ -339,7 +344,7 @@ const withoutViewChoice = async p => {
     const got = css && await p.evaluate(() => Promise.race([Promise.all(['600 16px Barlow', '700 16px "Barlow Condensed"'].map(f => document.fonts.load(f))).then(r => r.every(x => x.length > 0)), new Promise(r => setTimeout(() => r(false), 8000))]));
     if (!got) { ok(true, 'top bar at ' + w + ' px: Barlow could not load here, the chip and the tabs were not measured'); await p.context().close(); continue; }
     await L.settle(p, 300);
-    const rows = await p.evaluate(() => { const n = document.querySelector('.wtop .pnav'), c = document.querySelector('.wtop .tm-chip'); if (!n || !c) return null; const withChip = n.getBoundingClientRect().height; c.style.display = 'none'; const without = n.getBoundingClientRect().height; c.style.display = ''; return [withChip, without]; });
+    const rows = await p.evaluate(() => { const n = document.querySelector('.wtop .pnav'), c = document.querySelector('.wtop .tm-slot .tm-chip'); if (!n || !c) return null; const withChip = n.getBoundingClientRect().height; c.style.display = 'none'; const without = n.getBoundingClientRect().height; c.style.display = ''; return [withChip, without]; });
     ok(!!rows && Math.abs(rows[0] - rows[1]) < 1, 'top bar at ' + w + ' px, in Barlow: the chip does not wrap the page tabs (' + JSON.stringify(rows) + ')');
     await p.context().close();
   }

@@ -45,7 +45,7 @@
 */
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import { doc, getDoc, getDocs, getDocFromServer, getDocsFromServer, onSnapshot, collection, query, where, orderBy, limit, documentId, startAfter,
-  setDoc, deleteDoc, writeBatch, increment, setLogLevel } from 'firebase/firestore';
+  setDoc, deleteDoc, writeBatch, increment, serverTimestamp, Timestamp, setLogLevel } from 'firebase/firestore';
 import { anonContext, dailySession, adminGrant, seedOwnerDevice, nextFour } from './device-auth-fixtures.mjs';
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -523,6 +523,10 @@ row('js/prep.js pushSave(): this phone\'s push address (push/<hash>; the Google 
 row('js/prep.js cutSave(), mlSousSet(), seedPinOpen(): admin settings merged into config/main (setDoc, no by)', { ok: GOOGLE, asks: GOOGLE,
   run: (db, w, r) => setDoc(D(db, 'config/main'), { cutoffs: [Object.assign({}, CFG.cutoffs[0], { at: 900 + ALL.indexOf(r) })], sousMail: false, pinOpen: { finn: NOW + DAY + ALL.indexOf(r) } }, { merge: true }) });
 // the ping sound every phone plays (Shift pings tab, 3 Nov 2026): only the head chef's Google device with their PIN
+row('js/prep.js psRolloutSet() (admin): smart prep availability merged into config/main through W()', { ok: GOOGLE, asks: GOOGLE,
+  prep: () => cfgMerge({ prepStandardsEnabled: false }),
+  run: (db, w, r) => W(r, [['set', 'config/main', { prepStandardsEnabled: true }, true]]),
+  after: () => cfgMerge({ prepStandardsEnabled: false }) });
 row('js/prep.js pingSoundSet() (admin): the ping sound merged into config/main', { ok: GOOGLE, asks: GOOGLE,
   run: (db, w, r) => W(r, [['set', 'config/main', { pingSound: ['bell', 'order', 'chime', 'marimba', 'timer', 'off'][ALL.indexOf(r) % 6] }, true]]) });
 row('js/prep.js mlSend(): a mail to the head chef with its status (mail and mailstat)', { ok: KITCHEN, asks: MAIL,
@@ -617,6 +621,25 @@ row('js/prep.js pushOff(): this phone\'s push address removed (the Google device
 row('js/manage.js mineHide(): hide a template or own piece (its next version)', { ok: CHEFS, asks: CHEFS,
   prep: r => put({ ['drawtpl/h-' + r]: { name: 'Round plate', slot: 'plate', surf: {}, els: [], defs: '{}', vb: '', svgS: '', svgF: '', v: 1, upd: 1, removed: false, by: 'sam' } }),
   run: (db, w, r) => W(r, [['set', 'drawtpl/h-' + r, { name: 'Round plate', slot: 'plate', surf: {}, els: [], defs: '{}', vb: '', svgS: '', svgF: '', v: 2, upd: Date.now(), removed: true }]]) });
+
+// Operandio: one shared current record, server-timestamp starts and revision compare-and-set.
+const coolRun = (extra = {}) => ({ v: 1, run: 'run-1234567890123456', rev: 1,
+  firstAt: Timestamp.fromMillis(NOW - 7200000 - 1000), firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann', ...extra });
+row('js/prep.js coolingWatch(): canonical current-run listener', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': coolRun() }), run: db => listen(D(db, 'cooling/current')) });
+row('js/prep.js coolingRead(): current-run recovery after an uncertain save', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': coolRun() }), run: db => getDocFromServer(D(db, 'cooling/current')) });
+row('js/prep.js coolingWrite(): first two-hour start through W()', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': null }),
+  run: (db, w, r) => W(r, [['set', 'cooling/current', coolRun({ firstAt: serverTimestamp(), firstBy: w, by: w })]]) });
+row('js/prep.js coolingWrite(): four-hour second stage through W()', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': coolRun() }),
+  run: (db, w, r) => W(r, [['upd', 'cooling/current', { rev: 2, secondAt: serverTimestamp(), secondBy: w }]]) });
+row('js/prep.js coolingWrite(): new batch after four-hour stage through W()', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': coolRun({ rev: 2, firstAt: Timestamp.fromMillis(NOW - 21600000 - 1000),
+    secondAt: Timestamp.fromMillis(NOW - 14400000 - 1000), secondBy: 'sam', by: 'sam' }) }),
+  run: (db, w, r) => W(r, [['set', 'cooling/current', coolRun({ run: 'next-1234567890123456', rev: 3,
+    firstAt: serverTimestamp(), firstBy: w, by: w })]]) });
 
 // functions
 const FN = r => 'fn-' + r;
