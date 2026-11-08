@@ -1,6 +1,6 @@
-# Today's team: two notebook designs
+# Today's team: chosen roster notebook
 
-8 November 2026. Status: **design study only, no design chosen and no application implementation**. The head chef requested two notebook-style concepts, matching the Chef to-do notebook, with who is on a break visible on Today's team. The explicit request for two supersedes the usual three concepts in the service council workflow. The council recommends A; the head chef's choice is still pending. This work stays in a draft design-only pull request.
+8 November 2026. Status: **refined A implemented and checked locally, CI and live release pending**. The head chef requested two notebook-style concepts, matching the Chef to-do notebook, with who is on a break visible on Today's team. The explicit request for two supersedes the usual three concepts in the service council workflow. After clarifying section-first assignment, scrollable configured shifts and a Whole day review, the head chef said "yeah lets go then" and authorised going live when ready. The original design previews and council scores below remain historical evidence, not implementation measurements.
 
 Read first: `CLAUDE.md`, `.claude/skills/service-council/SKILL.md`, `docs/todays-team-options/brief.md`, `docs/prep-book.md` (Today's team), `docs/chef-todo-options/brief.md` and `docs/whole-app-redesign-options/brief.md` (Build, step 7). The earlier Today's team decision and the chosen Chef to-do layout remain their own records.
 
@@ -10,17 +10,55 @@ Read first: `CLAUDE.md`, `.claude/skills/service-council/SKILL.md`, `docs/todays
 
 **Council recommendation: A, Open roster notebook (4 of 6 round 2 reviewers).** It keeps familiar inline editing and brings complete editable people onto the first screen. A planned start-time change retains the current three taps; B adds an Edit person tap. Both expose the same all-shift scheduled-away summary.
 
-The cook and new starter preferred B because all four saved Lunch people fit on the phone before scrolling. That is a real scan advantage. A is the recommendation because it retains the existing editing model with less selection state and relearning. No service-frequency study establishes which task matters most in this kitchen. The head chef decides.
+The cook and new starter preferred B because all four saved Lunch people fit on the phone before scrolling. That is a real scan advantage. The council recommended A because it retained the existing editing model with less selection state and relearning. No service-frequency study establishes which task matters most in this kitchen. The head chef then chose refined A.
 
-These are independent role-based reviews, not research with real kitchen staff. The head chef has not chosen either concept.
+These are independent role-based reviews, not research with real kitchen staff. The head chef subsequently chose the refined A described below.
+
+## Chosen
+
+The head chef chose **A, Open roster notebook, with section-first assignment and a Whole day draft review** on 8 November 2026. From 1100 px, the planner is the left page and saved scheduled-away information is the right page, joined by a notebook spine. Below that width it is one flow. Whole day stays visible beside the horizontally scrollable configured-shift tabs. In a shift, choose a section and then the people for it. One `tmf` draft spans every shift and the Whole day review, with one version-protected Save.
+
+The saved scheduled-away panel always reads `tm.rec`, never the unsaved draft. It shows all shifts, distinguishes meal breaks and splits, and gives checked return times. Whole day reviews draft assignments by person and real shift, with sections, hours, breaks and split return times, and links back to a shift to edit. It is an overview, never an assignment or a shift ID.
+
+The choice settles the design. The original 5 of 5 Build smaller verdict, 4 of 6 preference for A and six-reviewer follow-up remain the council record; no new council round or design choice is pending. The head chef authorised release when ready. No live release has yet been verified in this record.
+
+## Build
+
+Implemented in the existing `js/prep.js` team page and `css/app.css`. The work retains the existing access, reads, storage, schema, staff Your day, inline break editing, usual-section and training hints, Use it, Spread them, Save and conflict recovery. The original saved section overview remains available after the planner.
+
+| Part | Status |
+| --- | --- |
+| Notebook layout, pinned Whole day and scrollable shift tabs | Built locally |
+| Section-first add and move, explicit Clear section, separate Remove from shift | Built locally |
+| One draft, Whole day review and global Save | Built locally |
+| Defensive all-shift saved scheduled-away status and clock repaint | Built locally |
+| Focused notebook behaviour checks | Final 63 checks passed locally |
+| Responsive stress checks | Passed locally, details below |
+| Eight-file regression suite | Passed locally |
+| Follow-up review | No remaining defects reported |
+| Final notebook and existing team rerun | Both passed locally |
+| Pull request CI | Pending |
+| Live release, authorised by the head chef when ready | Pending |
+
+### Local implementation validation
+
+The eight-file regression run passed: `team-notebook`, `todays-team`, `kitchen-pages`, `safe-text`, `read-budget`, `design-patterns`, `clock` and `shared-tablet-chef`. The final focused rerun passed both `tests/team-notebook.test.js` (63 checks) and the existing `tests/todays-team.test.js`. Coverage includes draft retention and global Save, section moves and clear versus removal, conflict recovery, saved break status, deduplication, overlaps, malformed break data, day and clock boundaries, failed/stale states, memory-only metadata, read budgets and responsive layouts. Review found and fixed a malformed-break case that could have implied a false zero; the follow-up review reported no remaining defects. These are local checks with synthetic data, not verified live behaviour. Pull request CI and live release are pending.
+
+With Lunch active, choosing Grill then Sam takes two taps; another person on Grill takes one. Changing to Dinner, selecting its section and assigning a person takes three taps. One global Save publishes the accumulated day draft. This count excludes scrolling and typing. Inline break controls remain in Breaks and fine adjustments; their visible labels name Section, Break or Split, and Length. The original preview's three-tap break example and editable-row counts below are not measurements of this refined interface.
+
+Actual-font stress checks at 320, 390, 768 and 1280 px, with normal and largest text, found no page overflow or visible control below 44 px. Row heights stayed stable while assignment actions changed. Long names, section names, several shift tabs and expanded break controls were included. In the mobile stress fixture, scheduled-away rows, shift and section context and search can push the first complete assignment row below the initial fold. This build does not claim the original A preview's two complete phone editors.
+
+The ordinary synthetic fixture at 14:00 shows both saved scheduled-away people, across Lunch and Full day, at 390 and 1280 px. On the 390 x 844 phone, one complete assignment row is initially visible: its top is 689.8 px and bottom 772.3 px, above the navigation at 776 px. At 1280 px, three complete assignment rows are initially visible. These are compact section-assignment rows, not the inline break editors counted in the old previews. The earlier baseline had no editable row initially, but its six visible saved overview rows served a different purpose.
+
+Implementation screenshots: [390 px phone](implemented-390.png) · [1280 px laptop](implemented-1280.png). These show the built page with synthetic people and times. The historical preview figures below do not substitute for these implementation checks. Live release evidence belongs in the pull request and release record.
 
 ## Follow-up: section-first assignment and Whole day
 
-On 8 November 2026 the head chef clarified the desired workflow: tap a section and assign people for Lunch, Dinner and future configured shifts, with horizontally scrollable shift tabs and a whole-day section. This is a proposed refinement of A, not approval to implement or deploy it. The original A/B images below document the earlier review; this interaction refinement is specified here and has not been built.
+On 8 November 2026 the head chef clarified the desired workflow: tap a section and assign people for Lunch, Dinner and future configured shifts, with horizontally scrollable shift tabs and a whole-day section. This refinement of A is now chosen and implemented. The original A/B images below document the earlier review; they do not show the final section-first interaction.
 
 The original 4 to 2 preference for A remains the result of that comparison. A separate six-reviewer follow-up supported this refinement: the head chef and keeper roles supported it directly; the cook, skeptic, new starter and screen designer supported it with the clarity safeguards below. This follow-up was not a new A/B vote. The original Build smaller value verdict is reused because the goal and data boundaries remain the same.
 
-### Proposed flow
+### Chosen flow
 
 ```text
 [Whole day: overview] | [Lunch] [Dinner] [Smoker] [other configured shifts] →
@@ -32,25 +70,25 @@ One Save for the whole day's draft
 ```
 
 - Keep Whole day discoverable beside a horizontally scrollable row of every active configured shift. Use faded edges and a partly visible next tab, 44 px controls, keyboard access and no horizontal page overflow. It is an in-page view, not a new top-bar or bottom-navigation item.
-- Inside a shift, choose a section, then tap the people working there. With Lunch selected, Grill then Sam takes two proposed taps. Further people for Grill take one each. Selecting a different shift adds one tab tap; Save is one shared action after planning all shifts. These are proposed interaction counts, not measured completed app behaviour.
+- Inside a shift, choose a section, then tap the people working there. With Lunch selected, Grill then Sam takes two taps. Further people for Grill take one each. Selecting a different shift adds one tab tap; Save is one shared action after planning all shifts. These implementation interaction counts exclude scrolling and typing.
 - Show the assignment context prominently, for example **Assigning to Grill · Lunch**. Each assignment or move says what it changed, and the draft remains visibly not saved. Do not carry an inconspicuous section choice into another shift.
 - The same person can have Grill for Lunch and Pans for Dinner. Many people can share a section; each person has one section per shift. The existing `tmf.on[person][shift]` mapping already supports that distinction.
-- If a person is already assigned elsewhere on that shift, show their current section and an explicit action such as **Move to Grill**. A section move keeps that person's breaks and every other shift assignment. **Clear section** keeps them on the shift and preserves breaks. **Remove from Lunch** is a separate explicit action.
+- If a person is already assigned elsewhere on that shift, show their current section and an explicit **Move to Grill** action. A section move keeps that person's breaks and every other shift assignment. The selected assignment button becomes an explicit **Clear section** action, which keeps them on the shift and preserves breaks. **Remove from Lunch** is a separate explicit action using the existing shift-membership control.
 - Keep one draft across tab and section changes and one version-protected Save. Selecting a section must override any usual-section hint deliberately; hints must not silently replace the chef's chosen section. Existing break controls, split support, Use it, Spread them, training context, off-shift handling and conflict recovery remain available.
 - **Whole day overview** reviews the accumulated draft by person and shift, with each shift's section, hours, breaks, splits and return times. It shows **Draft, not saved** when changed. Use links back to a specific shift for editing rather than another editor. This view is not a shift ID, cannot be written as an assignment, and must remain distinct from a real configured shift called Full day.
-- The all-shift **Scheduled away now** summary stays visible and continues to use saved `tm.rec`, with its Saved plan label. Draft changes in Whole day must not be presented as staff's published current breaks. Retain the planned-versus-actual distinction and all unknown, error, freshness and clock safeguards above.
+- The all-shift **Scheduled away now** summary stays visible and continues to use saved `tm.rec`, with its Saved plan label. Draft changes in Whole day must not be presented as staff's published current breaks. Retain the planned-versus-actual distinction and all unknown, error, freshness and clock safeguards in the implementation contract.
 
-The follow-up council's essential checks are: clear shift/section context; one draft and one Save; preservation of breaks and other shifts during moves; no overview key written to the database; no added reads; and a narrow-phone check with many shifts, a long staff list and expanded break controls. No new database schema, roles, listeners or actual-attendance collection is proposed.
+The follow-up council's essential checks are: clear shift/section context; one draft and one Save; preservation of breaks and other shifts during moves; no overview key written to the database; no added reads; and a narrow-phone check with many shifts, a long staff list and expanded break controls. No new database schema, roles, listeners or actual-attendance collection is part of the chosen build.
 
-## Problem and current page
+## Original baseline
 
-The existing `#/team` page shows the saved section overview before its editor. Even on a laptop the work sits in a narrow card. In the six-person synthetic fixture, the first editable row starts at 1168 px on a 390 px phone and 1170 px at 768 and 1280 px. No editable row is visible initially. Six complete saved overview rows fit on the phone, and seven at the other two widths. These are seven shift places across six people, not seven distinct people.
+Before this change, the `#/team` page showed the saved section overview before its editor. Even on a laptop the work sat in a narrow card. In the six-person synthetic baseline fixture, the first editable row started at 1168 px on a 390 px phone and 1170 px at 768 and 1280 px. No editable row was visible initially. Six complete saved overview rows fitted on the phone, and seven at the other two widths. These were seven shift places across six people, not seven distinct people.
 
-The chef's page has no explicit away-now summary. Staff already have scheduled colleagues' breaks in Your day. The proposed chef summary must carry the same scheduled meaning, rather than imply an actual break check-in or attendance record.
+The original chef's page had no explicit away-now summary. Staff already had scheduled colleagues' breaks in Your day. The chosen chef summary carries the same scheduled meaning, without implying an actual break check-in or attendance record.
 
 Baseline: [phone](before-390.png), [laptop](before-1280.png). The fixture has six synthetic names, seven shift places, four Lunch people and two Dinner people, with Barlow and Caveat loaded. At 14:00, Bo has a saved meal break from 13:45 to 14:30 on Lunch, and Jess a saved split from 12:30 to 15:00 on Full day. All-shift status must keep Jess visible when Lunch is selected.
 
-## A: Open roster notebook
+## Original concept A: Open roster notebook
 
 [Design A](design-a.png)
 
@@ -68,7 +106,7 @@ Trade-offs:
 - At 19:30, the three scheduled-away people leave room for one complete editable person on the phone.
 - The full saved shift overview and batch break controls move into folds. Each needs one extra opening tap compared with today's exposed controls.
 
-## B: Section board and editor
+## Original concept B: Section board and editor
 
 [Design B](design-b.png)
 
@@ -87,9 +125,9 @@ Trade-offs:
 - Adds selection state. Any future implementation must keep every person's unsaved edits in one draft when selection changes.
 - The saved overview and batch controls have the same extra fold-opening tap as A.
 
-## Measured comparison
+## Historical preview comparison
 
-Measurements use a viewport height of 844 px, normal text, project fonts and the same fixture. Count only complete rows above the fixed phone navigation or the viewport bottom where navigation is at the top. A's editable rows, B's saved board people and the current full-day saved overview rows serve different purposes. Their counts must not be presented as equal-density alternatives.
+These measurements describe the original concept previews, before the chosen section-first refinement. They use a viewport height of 844 px, normal text, project fonts and the same fixture. Count only complete rows above the fixed phone navigation or the viewport bottom where navigation is at the top. A's editable rows, B's saved board people and the original full-day saved overview rows serve different purposes. Their counts must not be presented as equal-density alternatives or measurements of the implementation.
 
 | Measure | Current page | A | B |
 | --- | --- | --- | --- |
@@ -149,31 +187,31 @@ Four of six preferred A. The cook and new starter preferred B's complete phone r
 
 Common review refinements applied to both previews: use scheduled wording consistently, keep the clock typed, make Section and Length labels visible, and name each Edit action. The totals describe the reviewed concepts; they are not a new vote on those refinements.
 
-## Planned implementation contract
+## Implementation contract
 
-These are constraints for a future build after a choice, not changes made by this study.
+These are the preserved constraints for the chosen build. Local validation is recorded above.
 
 - Keep `#/team` restricted to the same authorised chefs. Staff Your day, the Team chip, header, personal section flow, session grants and all existing authority remain as they are.
 - Derive status from the loaded saved `tm.rec` only. Keep the editable `tmf` draft separate until a successful Save. Label unsaved work so it cannot be mistaken for the saved status.
 - Show Scheduled away now, All shifts and Saved plan, with Queensland display time. Include every relevant shift, not only the selected editor shift. Distinguish meal break from split and show return times.
 - Validate membership, day and break times, deduplicate people and handle overlapping entries defensively. Conflicting overlaps must say to check times rather than infer a reliable return time. Do not infer availability, attendance or an actual break check-in.
 - Keep loading, no saved plan, known nobody scheduled away, unknown, stale data and failed reads distinct. An error or an unverified plan must never become a false Nobody away or zero count. Show the known last-save or freshness information honestly.
-- Use `LK_TIME` and the kitchen day. The current minute tick does not paint the team page. A future targeted status painter must join the existing clock tick, focus and clock refresh paths without extra database polling or listeners. Do not promise exact second updates. Another device's saved changes may remain unknown until the existing read or Refresh.
+- Use `LK_TIME` and the kitchen day. `tmAwayHTML()`, `tmNextHTML()` and `tmAwayPaint()` derive and repaint the saved status through the existing clock tick, focus and clock refresh paths without extra database polling or listeners. Do not promise exact second updates. Another device's saved changes may remain unknown until the existing read or Refresh.
 - Preserve shift definitions and counts, editable sections and defaults, other-shift context, usual-section and training hints when known, and the off-shift fold.
 - Preserve up to three breaks including long splits, every supported length, add and remove break, and all Spread them modes. Do not reduce the editor to the single-break example shown here.
-- Preserve last week's Use it without saving automatically, one Save for the whole draft, version-conflict protection, and Refresh's unsaved-discard confirmation. For B, changing the selected person must retain all draft changes and still use that single Save.
-- Preserve the section-grouped saved shift overview and the existing loading, empty, error and no-shift states. Both proposed folds keep their capabilities and must offer 44 px controls.
-- No schema, rules, fields, roles, backend service, persistent cache, new listener, new database read, dependency or testing framework is planned. Reuse existing helpers, safe text handling and control patterns. Register any new screen pattern when implementing it.
+- Preserve last week's Use it without saving automatically, one Save for the whole draft, version-conflict protection, and Refresh's unsaved-discard confirmation. Shift, section and overview changes and resizing must retain every person's draft changes.
+- Preserve the section-grouped saved shift overview and the existing loading, empty, error and no-shift states. The saved-overview, fine-adjustment and batch-control folds keep their capabilities and must offer 44 px controls.
+- No schema, rules, fields, roles, backend service, persistent cache, new listener, new database read, dependency or testing framework is added. Reuse existing helpers, safe text handling and control patterns. The notebook and section-first patterns are recorded in `docs/design-patterns.md`.
 
-## Future acceptance criteria
+## Implementation acceptance criteria
 
-After the head chef chooses a concept, verify the following in the existing test setup:
+The local checks cover the following acceptance criteria in the existing test setup:
 
 - Scheduled status uses saved data, remains unchanged while editing the draft, and updates after successful Save. A failed or conflicting Save preserves draft recovery and truthful saved status.
 - All-shift status covers a meal break and a split on different shifts, supports three breaks, deduplicates a person, handles overlaps and invalid or absent membership, and uses the kitchen clock and day across boundaries.
 - Loading, unset, known zero away, stale/unknown and failed-read states stay distinguishable. Focus, clock and minute repaint paths update the loaded status without new reads or listeners.
 - Existing shift, section, training, break, batch, Use it, off-shift, overview, Save, conflict and Refresh flows remain reachable. Staff Your day and access checks retain their existing behaviour.
-- A retains inline editing; if B is chosen, changing people and resizing retain one complete draft, one editor and one Save. Focus and the scroll destination remain clear.
+- Section assignment adds or moves only the selected real shift. Clear section preserves membership and breaks; Remove from shift stays separate. Switching tabs and sections or resizing retains one complete draft and one Save. Whole day never becomes an assignment ID. Focus and the scroll destination remain clear.
 - Recheck 390, 768 and 1280 px with project fonts and largest text, long synthetic names, long sections, many scheduled-away people and three-break rows. Verify no sideways overflow or page errors, clear keyboard focus and at least 44 px controls.
 - Confirm saved-status derivation is pure and defensive, safe text handling is preserved, and the existing read budget does not increase. Run focused existing team, layout and safe-text checks appropriate to the final implementation.
 
@@ -190,6 +228,6 @@ After the head chef chooses a concept, verify the following in the existing test
 
 The measured preview snapshots cover both concepts at 14:00 and 19:30 at 390, 768 and 1280 px. They recorded no sideways overflow or page errors, and no measured visible control below 44 px. The current baseline also had no sideways overflow at those widths. These are normal-text fixture checks, not full accessibility or production validation.
 
-The previews use synthetic people and times. B's Edit selection and in-page scroll work locally; the folds open locally. Other service controls illustrate current or planned actions. Nothing saves or reads kitchen data. Both concepts were also checked at 320 px, and B's person selection was exercised. Six error, unset and known-zero cases were checked at 390 px with no overflow or page errors. Representative images: [could not check](previews/a-state-error.png), [no saved plan](previews/a-state-unset.png), [nobody scheduled away](previews/a-state-none.png). These examples do not implement or verify every future loading, freshness, overlap, draft, multi-break or clock state. The proposed tick integration and defensive saved-status derivation are not implemented.
+The previews use synthetic people and times. B's Edit selection and in-page scroll work locally; the folds open locally. Other service controls illustrate the earlier concepts. Nothing in these previews saves or reads kitchen data. Both concepts were also checked at 320 px, and B's person selection was exercised. Six error, unset and known-zero cases were checked at 390 px with no overflow or page errors. Representative images: [could not check](previews/a-state-error.png), [no saved plan](previews/a-state-unset.png), [nobody scheduled away](previews/a-state-none.png). These examples do not verify the implementation's loading, freshness, overlap, draft, multi-break or clock states.
 
-No app, backend, permission, saved-shell or live behaviour change is part of this study. The next decision is the head chef's choice between the two concepts; implementation remains pending.
+The preview study changed no app, backend, permission, saved-shell or live behaviour. The later choice, implementation and local validation are tracked in Chosen and Build above. Release is pending; release evidence belongs in the pull request and release record.

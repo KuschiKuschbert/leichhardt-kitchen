@@ -6009,6 +6009,7 @@
     var bodyEl = S.root.querySelector('.nb-body'), keepScroll = bodyEl ? S.root.querySelectorAll('.nb-body') : null, scrolls = [];
     if (keepScroll) Array.prototype.forEach.call(keepScroll, function (b) { scrolls.push(b.scrollTop); });
     if (key) ae._uxRedrawing = true;
+    if (S.name === 'team') tmKeepView();
     try { S.root.innerHTML = practiceHTML() + quotaHTML() + bodyHTML() + toastHTML(); }
     finally { if (key) delete ae._uxRedrawing; }
     if (S.toast) plainAway();
@@ -6016,6 +6017,7 @@
     document.documentElement.classList.toggle('sheet-open', !!S.root.querySelector('.sheet') || !!ptPop);
     if (scrolls.length) Array.prototype.forEach.call(S.root.querySelectorAll('.nb-body'), function (b, i) { if (scrolls[i] != null) b.scrollTop = scrolls[i]; });
     if (window.LK_UX) window.LK_UX.enhance(S.root);
+    if (S.name === 'team') tmRestoreView();
     if (key) { var el = S.root.querySelector('[data-k="' + key + '"]'); if (el && el._uxTrigger) el = el._uxTrigger; if (el) { if (window.LK_UX && window.LK_UX.restoreFocus) window.LK_UX.restoreFocus(el); else el.focus({ preventScroll: true }); if (start != null && el.setSelectionRange) { try { el.setSelectionRange(start, end); } catch (e) {} } } }
     else if (btnSel) {
       var back = S.root.querySelector(btnSel);
@@ -7625,7 +7627,10 @@
   }
   // back on the screen: a sheet whose pings ran out while the screen was off goes before anyone sees it
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && /^\d{4,6}$/.test(S.pin) && fb) { noteRefresh(); noteBell(); loadNotes(); noteMaybePop(); rxSync(); } });
-  window.addEventListener('lk-clock', function () { draw(); });
+  window.addEventListener('lk-clock', function () {
+    if (S.name === 'team' && tm.day === dayNow() && (!tmf || tmf.day === dayNow())) { tmAwayPaint(); return; }
+    draw();
+  });
   document.addEventListener('click', function (e) {
     var el = e.target.closest && e.target.closest('[data-note]');
     if (!el) return;
@@ -11116,6 +11121,12 @@
     var el = e.target, k = el.getAttribute && el.getAttribute('data-k');
     if (!S.root || !S.root.contains(el)) return;
     clearReturnArm();
+    if (k === 'tm-q') {
+      tmFind = String(el.value || '').slice(0, 100);
+      var tmListEl = S.root.querySelector('.tm-people'), tmListShift = tmShift(tmShNow());
+      if (tmListEl && tmListShift) tmListEl.innerHTML = tmPersonListHTML(tmListShift);
+      return;
+    }
     if (k && k.indexOf('wh-') === 0) {
       var wh = whState();
       if (k === 'wh-period') {
@@ -11816,6 +11827,9 @@
   /* the chef's page: tmf the plan as changed (null until the record is read), tmSnap the plan as read, tmSh the shift
      shown, tmMsg the line under Save, tmShowOff the people not on the shift shown, tmSp the Spread them choices */
   var tmf = null, tmSnap = '', tmSh = '', tmMsg = '', tmLastBusy = false, tmShowOff = false, tmSp = { from: null, len: null, mode: null }, tmIconN = 0;
+  // View choices are memory-only. Whole day is never a stored shift or a second draft.
+  var tmWhole = false, tmSec = '', tmFind = '', tmAssignMsg = '';
+  var tmUi = { shifts: 0, sections: 0, details: true, batch: false, overview: false };
   function tmMin(v) { return typeof v === 'number' && isFinite(v) && v >= 0 && v < 1440 ? Math.round(v) : null; }
   function tmHHMM(m) { return pad(Math.floor(m / 60)) + ':' + pad(m % 60); }
   function tmStr(v, n) { return typeof v === 'string' && v.length <= n ? v : null; }
@@ -11843,9 +11857,15 @@
     if (!x || x.day !== day) return null;
     var on = (Array.isArray(x.on) ? x.on : []).filter(function (o) { return o && tmStr(o.id, 80) && tmStr(o.sh, 40) && tmStr(o.sec == null ? '' : o.sec, 40) !== null; })
       .map(function (o) { return { id: o.id, sh: o.sh, sec: o.sec || '' }; });
-    var br = (Array.isArray(x.br) ? x.br : []).filter(function (b) { return b && tmStr(b.id, 80) && tmStr(b.sh, 40) && tmMin(b.at) !== null && TM_LENS.indexOf(b.len) >= 0; })
+    // Keep only an in-memory warning for dropped or normalised times. The saved-status panel must not call them zero.
+    var uncheckedBr = [];
+    var br = (Array.isArray(x.br) ? x.br : []).filter(function (b) {
+      var valid = b && tmStr(b.id, 80) && tmStr(b.sh, 40) && tmMin(b.at) !== null && TM_LENS.indexOf(b.len) >= 0;
+      if (b && tmStr(b.id, 80) && tmStr(b.sh, 40) && (!valid || tmMin(b.at) !== b.at)) uncheckedBr.push({ id: b.id, sh: b.sh });
+      return valid;
+    })
       .map(function (b) { return { id: b.id, sh: b.sh, at: tmMin(b.at), len: b.len }; });
-    return { day: day, on: on, br: br, v: typeof x.v === 'number' && x.v >= 1 ? Math.floor(x.v) : 1, at: typeof x.at === 'number' ? x.at : 0, upd: typeof x.upd === 'number' ? x.upd : 0, by: tmStr(x.by, 80) || '' };
+    return { day: day, on: on, br: br, uncheckedBr: uncheckedBr, v: typeof x.v === 'number' && x.v >= 1 ? Math.floor(x.v) : 1, at: typeof x.at === 'number' ? x.at : 0, upd: typeof x.upd === 'number' ? x.upd : 0, by: tmStr(x.by, 80) || '' };
   }
   /* who sets it: a chef signed in with their own PIN (sousIds or headId), or the head chef's Google device with nobody
      signed in, as for Chef to-do (the rules check the same lists) */
@@ -11860,14 +11880,14 @@
   function tmNeedPin() { return teamOK() && !tmCanRead() && !sessP; }
   function tmMe() { var p = me(); return p ? p.id : ((S.config && S.config.headId) || ''); }
   // the next person on the phone starts with nothing of the last chef's
-  function tmReset() { if (tmPop) { tmPop.remove(); tmPop = null; tmPrev = null; } tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1 }; tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }; tmf = null; tmSnap = ''; tmSh = ''; tmMsg = ''; tmShowOff = false; svStop('t'); }
+  function tmReset() { if (tmPop) { tmPop.remove(); tmPop = null; tmPrev = null; } tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1 }; tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }; tmf = null; tmSnap = ''; tmSh = ''; tmMsg = ''; tmShowOff = false; tmWhole = false; tmSec = ''; tmFind = ''; tmAssignMsg = ''; tmUi = { shifts: 0, sections: 0, details: true, batch: false, overview: false }; svStop('t'); }
   /* today's team: one read (team/<today>) the first time a chef's page or top bar needs it each kitchen day, when the
      page opens (unless read in the last minute), on Refresh and once for each team stamp another phone writes
      (pastCheck()). A failed read, and a "no record" that came from the memory copy with no signal, is never "not set
      yet": the chip and the page say it could not be checked, and it tries again after 5 minutes. */
   function teamLoad(maxAge) {
     var day = dayNow();
-    if (tm.day !== day || tm.epoch !== accessEpoch) { tm = { day: day, rec: null, st: '', at: 0, retry: 0, epoch: accessEpoch, stamp: 0 }; if (tmf && tmf.day !== day) { tmf = null; tmSnap = ''; } }
+    if (tm.day !== day || tm.epoch !== accessEpoch) { tm = { day: day, rec: null, st: '', at: 0, retry: 0, epoch: accessEpoch, stamp: 0 }; if (tmf && tmf.day !== day) { tmf = null; tmSnap = ''; tmSec = ''; tmFind = ''; tmAssignMsg = ''; } }
     if (!tmCanRead() || tm.st === 'busy') return;
     // after a failed read: 5 minutes before the next, whoever asks (a draw asks often), unless Refresh or Try again
     if (tm.st === 'err' && maxAge !== 0 && Date.now() < tm.retry) return;
@@ -11877,7 +11897,9 @@
     fb.fs.getDoc(docRef('team', day)).then(function (sn) {
       if (tm !== mine) return;
       if (!sn.exists() && cacheOnly(sn)) throw { code: 'unavailable', cache: true };
-      tm.rec = sn.exists() ? teamClean(sn.data(), day) : null; tm.st = 'ok'; tm.at = Date.now(); tm.stamp = stamp;
+      var checked = sn.exists() ? teamClean(sn.data(), day) : null;
+      if (sn.exists() && !checked) throw { code: 'data-loss' };
+      tm.rec = checked; tm.st = 'ok'; tm.at = Date.now(); tm.stamp = stamp;
       // the page's plan follows the record until the chef changes something
       if (!tmDirty()) tmFrom(tm.rec);
       // the first read of the day that has me on it only notes what it says (tmSeen): a later change shows as changed
@@ -11898,7 +11920,7 @@
     (rec ? rec.on : []).forEach(function (o) { (on[o.id] = on[o.id] || {})[o.sh] = o.sec; });
     (rec ? rec.br : []).forEach(function (b) { br.push({ id: b.id, sh: b.sh, at: b.at, len: b.len }); });
     tmf = { day: dayNow(), base: rec ? rec.v : 0, at: rec ? rec.at : 0, on: on, br: br };
-    tmSnap = tmSig(tmf);
+    tmSnap = tmSig(tmf); tmAssignMsg = '';
   }
   // the plan as saved: sorted, so the same plan always reads the same; a break of someone not on that shift goes
   function tmOut(f) {
@@ -11934,7 +11956,8 @@
   // splits go all together unless the chef picks otherwise (one at a time would put the last split into dinner service)
   function tmSpMode(s) { return tmSp.mode != null ? tmSp.mode : tmIsSplit(tmSpLen(s)) ? '0' : '1'; }
   function tmSel(k, label, opts, cur) {
-    return '<label class="tm-pick"><span class="visually-hidden">' + esc(label) + '</span><select data-k="' + esc(k) + '" aria-label="' + esc(label) + '">' +
+    var visible = k.indexOf('tm-sec:') === 0 ? 'Section' : k.indexOf('tm-len:') === 0 ? 'Length' : label.split(' for ')[0];
+    return '<label class="tm-pick"><span>' + esc(visible) + '</span><select data-k="' + esc(k) + '" aria-label="' + esc(label) + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>' +
       opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(o[0]) === String(cur) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>';
   }
   function tmRow(p, s) {
@@ -11959,6 +11982,63 @@
     return '<li class="tm-row' + (on ? '' : ' is-off') + '"><button type="button" class="tm-tick" data-p="tm-on" data-id="' + esc(p.id) + '" aria-pressed="' + on + '" aria-label="' + esc(p.name + (on ? ' is on ' : ' is not on ') + s.name + '. Tap to change') + '">' + (on ? '✓' : '') + '</button>' +
       '<span class="tm-name">' + esc(p.name) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' + (picks ? '<span class="tm-picks">' + picks + '</span>' : '') + '</li>';
   }
+  // Keep horizontal choices and native folds steady across a draft redraw. No saved copies or reads.
+  function tmKeepView() {
+    if (!S.root || !S.root.querySelector('.tm-notebook')) return;
+    [['.tm-shift-scroll', 'shifts'], ['.tm-section-choices', 'sections']].forEach(function (x) { var el = S.root.querySelector(x[0]); if (el) tmUi[x[1]] = el.scrollLeft; });
+    [['.tm-details', 'details'], ['.tm-batch', 'batch'], ['.tm-saved-overview', 'overview']].forEach(function (x) { var el = S.root.querySelector(x[0]); if (el) tmUi[x[1]] = el.open; });
+  }
+  function tmRestoreView() {
+    if (!S.root || !S.root.querySelector('.tm-notebook')) return;
+    [['.tm-shift-scroll', 'shifts'], ['.tm-section-choices', 'sections']].forEach(function (x) { var el = S.root.querySelector(x[0]); if (el) el.scrollLeft = tmUi[x[1]]; });
+    [['.tm-details', 'details'], ['.tm-batch', 'batch'], ['.tm-saved-overview', 'overview']].forEach(function (x) { var el = S.root.querySelector(x[0]); if (el) el.open = tmUi[x[1]]; });
+    var strip = S.root.querySelector('.tm-shift-scroll'), selected = strip && strip.querySelector('[data-p="tm-sh"][aria-pressed="true"]');
+    if (selected) { var a = strip.getBoundingClientRect(), b = selected.getBoundingClientRect(); if (b.right > a.right) strip.scrollLeft += b.right - a.right + 8; else if (b.left < a.left) strip.scrollLeft -= a.left - b.left + 8; }
+  }
+  function tmTabsHTML(shs, ps) {
+    return '<div class="tm-viewbar" role="group" aria-label="Team views"><button type="button" class="chip tm-whole" data-p="tm-whole" aria-pressed="' + tmWhole + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>Whole day<small>Overview</small></button>' +
+      '<div class="tm-shift-scroll scroll"><div class="tm-tabs" role="group" aria-label="Shift" data-adaptive="keep">' + shs.map(function (x) {
+        var n = ps.filter(function (p) { return tmOnShift(p.id, x.id); }).length;
+        return '<button type="button" class="chip" data-p="tm-sh" data-v="' + esc(x.id) + '" aria-pressed="' + (!tmWhole && x.id === tmShNow()) + '" title="' + esc(x.name) + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>' + esc(x.name) + '<small>' + n + '</small></button>';
+      }).join('') + '</div></div></div>';
+  }
+  function tmPersonListHTML(s) {
+    var sec = kitSecs().filter(function (x) { return x.id === tmSec; })[0], q = tmFind.toLowerCase().trim();
+    var list = tmPeople().filter(function (p) { var current = tmOnShift(p.id, s.id) ? tmSecName(tmf.on[p.id][s.id]) : ''; return !q || (p.name + ' ' + current).toLowerCase().indexOf(q) >= 0; });
+    if (!list.length) return '<li class="hint">No people match. Change the search.</li>';
+    return list.map(function (p) {
+      var on = tmOnShift(p.id, s.id), current = on ? tmf.on[p.id][s.id] : '', same = !!sec && on && current === sec.id;
+      var action = !sec ? 'Choose a section' : same ? 'Clear section' : on && current ? 'Move to ' + sec.name : 'Assign to ' + sec.name;
+      var detail = on ? (tmSecName(current) || (chefP(p) ? p.role === 'head' ? 'Head chef' : 'Sous chef' : 'No section')) + ' · ' + s.name : 'Not on ' + s.name;
+      return '<li><button type="button" class="tm-person-pick" data-p="tm-assign" data-id="' + esc(p.id) + '" aria-pressed="' + same + '" aria-label="' + esc(action + ': ' + p.name + '. ' + detail) + '"' + (!sec || svOf('t') === 'busy' ? ' disabled' : '') + '>' +
+        '<span class="tm-person-name">' + esc(p.name) + '</span><span class="tm-person-action" title="' + esc(action) + '">' + esc(action) + '</span><small class="tm-person-detail" title="' + esc(detail) + '">' + esc(detail) + '</small></button></li>';
+    }).join('');
+  }
+  function tmAssignHTML(s) {
+    var secs = kitSecs();
+    if (!secs.some(function (x) { return x.id === tmSec; })) tmSec = '';
+    var sectionName = tmSecName(tmSec);
+    return '<div class="tm-section-choices chips scroll" role="group" aria-label="Assign to section" data-adaptive="keep">' + secs.map(function (x) {
+      return '<button type="button" class="chip" data-p="tm-section" data-v="' + esc(x.id) + '" aria-pressed="' + (x.id === tmSec) + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>' + esc(x.name) + '</button>';
+    }).join('') + '</div><div class="tm-assign-info"><strong>' + (sectionName ? 'Assigning to ' + esc(sectionName) + ' · ' + esc(s.name) : 'Choose a section for ' + esc(s.name)) + '</strong>' +
+      '<span>' + (sectionName ? 'Tap a person to assign or move them. Clear section keeps their breaks.' : secs.length ? 'Then tap the people working there.' : 'No kitchen sections set yet. Use the shift controls below.') + '</span></div>' +
+      '<label class="visually-hidden" for="tm-find">Find a person</label><input id="tm-find" type="search" class="search tm-find" data-k="tm-q" placeholder="Find a person" value="' + esc(tmFind) + '" autocomplete="off">' +
+      '<ul class="tm-people" aria-label="Assign people to ' + esc(s.name) + '">' + tmPersonListHTML(s) + '</ul>';
+  }
+  function tmWholeHTML() {
+    var out = tmOut(tmf), shs = kitShifts(), ps = tmPeople().filter(function (p) { return shs.some(function (s) { return tmOnShift(p.id, s.id); }); });
+    var body = ps.map(function (p) {
+      return '<section class="tm-dayperson"><h4 class="tm-dayname">' + esc(p.name) + '</h4>' + shs.filter(function (s) { return tmOnShift(p.id, s.id); }).map(function (s) {
+        var sec = tmSecName(tmf.on[p.id][s.id]) || (chefP(p) ? p.role === 'head' ? 'Head chef' : 'Sous chef' : 'No section');
+        var hours = s.from != null && s.to != null ? tmHHMM(s.from) + ' to ' + tmHHMM(s.to) : 'Hours not set';
+        var breaks = tmShiftBreaks(out, { id: p.id, sh: s.id }).map(function (b) { return (tmIsSplit(b.len) ? 'Split ' : 'Break ') + tmHHMM(b.at) + ' to ' + tmHHMM(b.at + b.len) + (tmIsSplit(b.len) ? '' : ', ' + b.len + ' min'); });
+        return '<div class="tm-dayline"><div><b>' + esc(s.name) + ' · ' + esc(sec) + '</b><span>' + esc(hours) + '</span><small>' + esc(breaks.length ? breaks.join('; ') : 'Break not set') + '</small></div>' +
+          '<button type="button" class="p-link" data-p="tm-sh" data-v="' + esc(s.id) + '">Edit ' + esc(s.name) + '</button></div>';
+      }).join('') + '</section>';
+    }).join('');
+    return '<section class="tm-day" aria-label="Whole day plan"><h3>Whole day overview</h3><p class="hint">' + ps.length + (ps.length === 1 ? ' person' : ' people') + ' planned. Review every shift, then Save.</p>' +
+      (body || '<p class="hint">Nobody is on the plan yet. Choose a shift, then a section and person.</p>') + '</section>';
+  }
   function teamPageHTML() {
     teamLoad(); tsLoad();
     var day = dayNow(), shs = kitShifts(), date = parseYmd(day).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -11972,10 +12052,6 @@
     var s = tmShift(tmShNow()), ps = tmPeople(), onL = ps.filter(function (p) { return tmOnShift(p.id, s.id); }), offL = ps.filter(function (p) { return !tmOnShift(p.id, s.id); });
     var nobody = !Object.keys(tmf.on).length;
     var use = nobody ? '<div class="tm-same"><span><b>Same as last ' + esc(tmWeekday(day)) + '?</b><br>Fills in who was on, their shifts, sections and breaks, for you to check.</span><button type="button" class="btn dark" data-p="tm-use"' + (tmLastBusy ? ' disabled aria-busy="true">Reading...' : '>Use it') + '</button></div>' : '';
-    var tabs = '<div class="tm-tabs" role="group" aria-label="Shift">' + shs.map(function (x) {
-      var n = ps.filter(function (p) { return tmOnShift(p.id, x.id); }).length;
-      return '<button type="button" class="chip" data-p="tm-sh" data-v="' + esc(x.id) + '" aria-pressed="' + (x.id === s.id) + '">' + esc(x.name) + '<small>' + n + '</small></button>';
-    }).join('') + '</div>';
     var hours = s.from != null && s.to != null ? esc(s.name) + ' ' + tmHHMM(s.from) + ' to ' + tmHHMM(s.to) : esc(s.name);
     var spread = onL.length ? '<div class="tm-spread"><span>Breaks from</span>' + tmSel('tm-spfrom', 'Spread the breaks from', tmTimes(s, tmSpFrom(s)).map(function (m) { return [m, tmHHMM(m)]; }), tmSpFrom(s)) +
       tmSel('tm-spmode', 'How many at once', [['1', 'one at a time'], ['2', 'two at a time'], ['0', 'all together']], tmSpMode(s)) +
@@ -11985,10 +12061,18 @@
       (offL.length ? (tmShowOff || !onL.length ? '<ul class="tm-list">' + offL.map(function (p) { return tmRow(p, s); }).join('') + '</ul>' + (onL.length ? '<button type="button" class="tm-fold" data-p="tm-showoff" aria-expanded="true">Hide the people not on ' + esc(s.name) + '</button>' : '')
         : '<button type="button" class="tm-fold" data-p="tm-showoff" aria-expanded="false">Not on ' + esc(s.name) + ': ' + esc(offL.map(function (p) { return p.name; }).join(', ')) + '. Show</button>') : '');
     var dirty = tmDirty(), busy = svOf('t') === 'busy';
-    var save = '<div class="tm-save">' + svButton({ k: 't', p: 'tm-save', idle: 'Save today\'s team', off: !dirty, busy: busy }) + svLine('t', busy, tmMsg) + '</div>';
-    // the saved plan at a glance first (8 Nov 2026), then the plan to change, as before
-    var glance = tm.rec ? tmTimelineHTML(tm.rec) : '';
-    return top + lead + glance + (glance ? '<h3 class="tm-edh">Change the plan</h3>' : '') + use + tabs + spread + list + save + '</section>';
+    var save = '<div class="tm-save">' + svButton({ k: 't', p: 'tm-save', idle: 'Save today\'s team', off: !dirty, busy: busy }) + svLine('t', busy, tmMsg || tmAssignMsg) + '</div>';
+    var glance = tm.rec && tm.day === day ? tmTimelineHTML(tm.rec) : '';
+    var editor = tmWhole ? tmWholeHTML() : tmAssignHTML(s) + '<details class="tm-details" open><summary>Breaks and fine adjustments</summary>' +
+      '<p class="hint">Tick to put someone on ' + esc(s.name) + '. Untick to remove them and this shift\'s breaks.</p>' + list + '</details>' +
+      (spread ? '<details class="tm-batch"><summary>Set breaks in one go</summary>' + spread + '</details>' : '');
+    return '<section class="tm-page tm-notebook" aria-labelledby="rtitle">' + lead.replace('class="hint"', 'class="tm-stamp hint"') +
+      '<div class="tm-nbook"><div class="tm-nleft"><header class="tm-nhead"><div><h2 class="p-h" id="rtitle" tabindex="-1">Today\'s team</h2><p>' + esc(date) + '</p></div><div><b class="tm-nclock">' + esc(T.clock(now())) + '</b><small>Queensland time</small></div></header>' +
+      '<div class="tm-work">' + use + tmTabsHTML(shs, ps) + '<p class="tm-draftstate" role="status">' + (dirty ? 'Draft, not saved. One Save covers the whole day.' : tm.st === 'err' ? 'Could not check the saved plan. Changes are kept until Save.' : tm.rec ? 'Plan saved. Changes across shifts are saved together.' : 'No team saved yet. Choose shifts, assign people, then Save.') + '</p>' +
+      '<div class="tm-editor">' + editor + '</div>' + save + '</div></div><div class="tm-nspine" aria-hidden="true"></div><div class="tm-nright">' +
+      '<aside class="tm-away" aria-label="Scheduled away"><div class="tm-away-slot">' + tmAwayHTML() + '</div></aside>' +
+      '<aside class="tm-extra"><div class="tm-next-slot">' + tmNextHTML() + '</div>' +
+      (glance ? '<details class="tm-saved-overview"><summary>' + (tm.st === 'err' ? 'Last saved shift overview' : 'Saved shift overview') + '</summary>' + glance + '</details>' : '') + '</aside></div></div></section>';
   }
   /* Today at a glance (8 Nov 2026, redesign step 7, Flighty's timeline): the saved plan grouped by section, each row with
      the hours and the breaks in words and a bar for the day (the break in orange, a split as a gap). From the record
@@ -12026,7 +12110,7 @@
     return '<section class="p-card tm-page"><h2 class="p-h" id="rtitle" tabindex="-1">Today\'s team</h2><p class="hint">The head chef and the sous chefs set today\'s team.</p>' +
       '<div class="btn-row"><a class="btn" href="#/prep">Back to the prep list</a></div></section>';
   }
-  function tmClearMsg() { if (svOf('t') === 'fail' || svOf('t') === 'done') svStop('t'); tmMsg = ''; }
+  function tmClearMsg() { if (svOf('t') === 'fail' || svOf('t') === 'done') svStop('t'); tmMsg = ''; tmAssignMsg = ''; }
   function teamClick(a, el) {
     var id = el.getAttribute('data-id') || '', v = el.getAttribute('data-v') || '';
     if (a === 'tm-pin') { if (S.who) pickName(S.who); return; }
@@ -12035,7 +12119,18 @@
     if (a === 'tm-refresh') { if (tmDirty() && !arm('tm-refresh')) return; tmf = null; tmSnap = ''; tmClearMsg(); teamLoad(0); draw(); return; }
     if (!teamOK() || !tmf || svOf('t') === 'busy') return;
     var sh = tmShNow(), s = tmShift(sh);
-    if (a === 'tm-sh') { if (tmShift(v)) { tmSh = v; tmShowOff = false; tmSp.from = null; tmSp.len = null; tmSp.mode = null; } draw(); return; }
+    if (a === 'tm-whole') { tmWhole = true; draw(); return; }
+    if (a === 'tm-sh') { if (tmShift(v)) { if (tmShNow() !== v) { tmSec = ''; tmFind = ''; } tmSh = v; tmWhole = false; tmAssignMsg = ''; tmShowOff = false; tmSp.from = null; tmSp.len = null; tmSp.mode = null; } draw(); return; }
+    if (a === 'tm-section') { if (!tmWhole && kitSecs().some(function (x) { return x.id === v; })) { tmSec = v; tmAssignMsg = ''; draw(); } return; }
+    if (a === 'tm-assign') {
+      var chosen = kitSecs().filter(function (x) { return x.id === tmSec; })[0], person = tmPeople().filter(function (p) { return p.id === id; })[0];
+      if (tmWhole || !s || !chosen || !person || tmf.day !== dayNow()) return;
+      var prior = tmOnShift(id, sh) ? tmf.on[id][sh] : null, clear = prior === chosen.id;
+      (tmf.on[id] = tmf.on[id] || {})[sh] = clear ? '' : chosen.id;
+      tmClearMsg();
+      tmAssignMsg = clear ? person.name + ': section cleared for ' + s.name + '. Their shift and breaks are kept. Not saved yet.' : person.name + ' assigned to ' + chosen.name + ' for ' + s.name + '. Not saved yet.';
+      draw(); return;
+    }
     if (a === 'tm-showoff') { tmShowOff = !tmShowOff; draw(); return; }
     if (a === 'tm-on') {
       if (!s) return;
@@ -12064,6 +12159,7 @@
   // a picker changed on the chef's page (the Spread them choices need no redraw, but for the length)
   function teamField(k, el) {
     if (!tmf || svOf('t') === 'busy') return;
+    if (k === 'tm-q') return;
     var p = k.split(':'), sh = tmShNow(), id = p[1], v = el.value;
     if (p[0] === 'tm-spfrom') { tmSp.from = tmMin(+v); return; }
     // a split or a short break changes how many go at once unless the chef picked it: drawn again to show that
@@ -12120,7 +12216,7 @@
     var keep = tmf, out = tmOut(tmf), t = now(), v = tmf.base + 1;
     var d = { day: tmf.day, on: out.on, br: out.br, v: v, at: tmf.base ? tmf.at : t, upd: t };
     var people_ = {}; out.on.forEach(function (o) { people_[o.id] = 1; });
-    svStart('t'); tmMsg = ''; tmOwn = t; draw();
+    svStart('t'); tmMsg = ''; tmAssignMsg = ''; tmOwn = t; draw();
     W([['set', docRef('team', d.day), d], ['set', cfgDoc(), { pastEdit: { t: t } }, true]]).then(function () {
       tm.rec = teamClean(Object.assign({ by: tmMe() }, d), d.day); tm.st = 'ok'; tm.at = Date.now(); tm.stamp = t;
       if (tmf === keep) { tmf.base = v; tmf.at = d.at; tmSnap = tmSig(tmf); }
@@ -12205,7 +12301,8 @@
     if (a === 'shname') x.name = el.value;
     if (a === 'shfrom' || a === 'shto') { var m = /^(\d{2}):(\d{2})/.exec(el.value || ''); x[a === 'shfrom' ? 'from' : 'to'] = m ? tmMin(+m[1] * 60 + +m[2]) : null; }
   }
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && S.name === 'team' && S.root && document.body.contains(S.root)) teamLoad(TM_FRESH); });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && S.name === 'team' && S.root && document.body.contains(S.root)) { teamLoad(TM_FRESH); tmAwayPaint(); } });
+  window.addEventListener('focus', function () { tmAwayPaint(); });
 
   /* ---------- Today's team, the staff side (7 Nov 2026, head chef) ----------
      Everyone signed in on the kitchen reads today's team (the same read as the chefs, one a day and one for each save),
@@ -12289,6 +12386,111 @@
     return '<button type="button" class="tm-chip' + (due ? ' is-due' : '') + '" data-tm="day" aria-haspopup="dialog" aria-label="' + esc('Your day: ' + line + (ch ? '. Changed' : '')) + '">' + tmIcon(20) + '</button>';
   }
   function tmStaffKey() { var p = me(); return p && !teamOK() && tmMy(p.id).length ? [tm.day, tmDue(p.id), tmChanged(p.id), tmDayLine(p)].join('|') : ''; }
+  /* The chef's notebook reads only the saved plan. Draft section and break changes do not alter this status.
+     A current, successful read is the only state that can say nobody is scheduled away. */
+  function tmAwayData() {
+    var out = { state: 'unknown', rec: tm.rec, away: [], next: [], invalid: false }, day = dayNow(), m = T.mins();
+    if (T.ready && !T.ready()) { out.state = 'clock'; return out; }
+    if (tm.day !== day || (tm.rec && tm.rec.day !== day)) { out.state = 'day'; return out; }
+    if (tm.st === 'err') { out.state = 'error'; return out; }
+    if (tm.st === 'busy') { out.state = 'loading'; return out; }
+    if (tm.st !== 'ok') return out;
+    if (typeof tm.at !== 'number' || !isFinite(tm.at) || tm.at <= 0 || Date.now() - tm.at >= TM_DAYLONG) { out.state = 'stale'; return out; }
+    if (!tm.rec) { out.state = 'unset'; return out; }
+    if (!Array.isArray(tm.rec.on) || !Array.isArray(tm.rec.br) || S.configState !== 'ok' || tm.epoch !== accessEpoch) return out;
+    out.state = 'ready';
+    var persons = Object.create(null), shifts = Object.create(null), members = Object.create(null), entries = Object.create(null), byPerson = Object.create(null);
+    tmPeople().forEach(function (p) { if (tmStr(p.id, 80) && !persons[p.id]) persons[p.id] = p; });
+    kitShifts().forEach(function (s) { if (!shifts[s.id]) shifts[s.id] = s; });
+    tm.rec.on.forEach(function (o) { if (o && persons[o.id] && shifts[o.sh]) members[JSON.stringify([o.id, o.sh])] = true; });
+    out.invalid = (tm.rec.uncheckedBr || []).some(function (b) { return persons[b.id] && shifts[b.sh] && members[JSON.stringify([b.id, b.sh])]; });
+    tm.rec.br.forEach(function (b) {
+      if (!b || !persons[b.id] || !shifts[b.sh] || !members[JSON.stringify([b.id, b.sh])]) return;
+      if (typeof b.at !== 'number' || !isFinite(b.at) || Math.floor(b.at) !== b.at || b.at < 0 || b.at >= 1440 || TM_LENS.indexOf(b.len) < 0) { out.invalid = true; return; }
+      // One person with the same saved interval on two shifts is still one planned break.
+      var key = JSON.stringify([b.id, b.at, b.len]), x = entries[key];
+      if (x) { if (x.shifts.indexOf(shifts[b.sh].name) < 0) x.shifts.push(shifts[b.sh].name); return; }
+      x = { p: persons[b.id], at: b.at, len: b.len, end: b.at + b.len, shifts: [shifts[b.sh].name] };
+      entries[key] = x; (byPerson[b.id] = byPerson[b.id] || []).push(x);
+    });
+    Object.keys(byPerson).forEach(function (id) {
+      var list = byPerson[id].sort(function (a, b) { return a.at - b.at || a.end - b.end; }), groups = [];
+      list.forEach(function (b) {
+        var g = groups[groups.length - 1];
+        // Adjacent intervals do not overlap: starts are inclusive and return times are exclusive.
+        if (!g || b.at >= g.end) { g = { p: b.p, at: b.at, end: b.end, breaks: [] }; groups.push(g); }
+        g.breaks.push(b); g.end = Math.max(g.end, b.end);
+      });
+      groups.forEach(function (g) {
+        g.conflict = g.breaks.length > 1;
+        if (g.breaks.some(function (b) { return b.at <= m && m < b.end; })) out.away.push(g);
+        var next = g.breaks.filter(function (b) { return b.at > m; });
+        if (next.length) out.next.push({ p: g.p, at: next[0].at, breaks: g.breaks, conflict: g.conflict });
+      });
+    });
+    out.away.sort(function (a, b) { return a.at - b.at || String(a.p.name).localeCompare(String(b.p.name)); });
+    out.next.sort(function (a, b) { return a.at - b.at || String(a.p.name).localeCompare(String(b.p.name)); });
+    return out;
+  }
+  function tmAwayTime(m) { return tmHHMM(m % 1440) + (m >= 1440 ? ' next day' : ''); }
+  function tmAwayRanges(g) {
+    return g.breaks.map(function (b) { return (tmIsSplit(b.len) ? 'Split ' : 'Meal break ') + tmAwayTime(b.at) + ' to ' + tmAwayTime(b.end) + ' · ' + b.shifts.join(', '); }).join('; ');
+  }
+  function tmAwaySource(d) {
+    var r = d.rec, current = d.state === 'ready' || d.state === 'unset', line = 'All shifts · ' + (current ? 'Saved plan' : r ? 'Last saved plan' : 'Saved plan not checked');
+    if (r) {
+      if (r.day && r.day !== dayNow()) line += ' for ' + r.day;
+      if (typeof r.upd === 'number' && isFinite(r.upd) && r.upd > 0) line += ' · Set ' + (r.by ? 'by ' + mnName(r.by) + ' ' : '') + 'at ' + clock(r.upd);
+      else line += ' · Save time unknown';
+    }
+    if (tm.at > 0 && isFinite(tm.at) && tm.day === dayNow()) line += ' · Last checked ' + clock(now() - Math.max(0, Date.now() - tm.at));
+    return '<p class="tm-away-source">' + esc(line) + '</p>';
+  }
+  function tmAwayState(d) {
+    if (d.state === 'clock') return 'Checking the kitchen clock. Scheduled status is not available yet.';
+    if (d.state === 'day') return 'Today\'s saved plan has not been checked. Refresh to check today.';
+    if (d.state === 'error') return 'Could not check the latest saved plan. Try Refresh. Current scheduled status is unknown.';
+    if (d.state === 'loading') return 'Checking the saved plan. Current scheduled status is not available yet.';
+    if (d.state === 'stale') return 'The saved plan needs checking. Refresh to check the latest plan.';
+    if (d.state === 'unset') return 'No saved plan for today. Save today\'s team to publish the planned breaks.';
+    return 'Today\'s saved plan has not been checked. Current scheduled status is unknown.';
+  }
+  function tmAwayHTML() {
+    var d = tmAwayData(), head = '<h3 class="tm-away-title">Scheduled away now</h3>' + tmAwaySource(d);
+    if (d.state !== 'ready') return head + '<p class="' + (d.state === 'unset' || d.state === 'loading' || d.state === 'clock' ? 'tm-away-empty' : 'tm-away-warn') + '">' + esc(tmAwayState(d)) + '</p>';
+    var rows = d.away.map(function (g) {
+      var b = g.breaks[0];
+      return '<div class="tm-away-row' + (g.conflict ? ' is-conflict' : '') + '"><span class="tm-away-name">' + esc(g.p.name) + '</span><span class="tm-away-kind">' +
+        esc(g.conflict ? 'Check break times' : (tmIsSplit(b.len) ? 'Split' : 'Meal break') + ' · ' + b.shifts.join(', ')) + '</span><span class="tm-away-back' + (g.conflict ? ' tm-away-warn' : '') + '">' +
+        esc(g.conflict ? tmAwayRanges(g) : 'Back ' + tmAwayTime(b.end)) + '</span></div>';
+    }).join('');
+    return head + (rows || (d.invalid ? '' : '<p class="tm-away-empty">Nobody scheduled away now.</p>')) +
+      (d.invalid ? '<p class="tm-away-warn">Check break times in the saved plan. Some times could not be checked.</p>' : '');
+  }
+  function tmNextHTML() {
+    var d = tmAwayData(), head = '<h3 class="tm-next-title">Next planned breaks</h3>';
+    if (d.state !== 'ready') return head + '<p class="tm-away-empty">' + esc(d.state === 'unset' ? 'No saved breaks yet.' : 'Available after the saved plan is checked.') + '</p>';
+    var rows = d.next.slice(0, 3).map(function (g) {
+      var b = g.breaks[0];
+      return '<div class="tm-next-row"><span class="tm-next-name">' + esc(g.p.name) + '</span><span class="tm-next-at' + (g.conflict ? ' tm-away-warn' : '') + '">' +
+        esc(g.conflict ? 'Check break times · ' + tmAwayRanges(g) : tmAwayTime(b.at) + ' · ' + (tmIsSplit(b.len) ? 'Split' : 'Meal break') + ' · ' + b.shifts.join(', ') + ' · Back ' + tmAwayTime(b.end)) + '</span></div>';
+    }).join('');
+    return head + (rows || '<p class="tm-away-empty">' + (d.invalid ? 'Some saved break times need checking.' : 'No later breaks in the saved plan.') + '</p>') +
+      (d.next.length > 3 ? '<button type="button" class="p-link" data-p="tm-whole">Whole day overview</button>' : '');
+  }
+  // Paint the saved status only. A passing minute or a clock correction must not replace a typed roster draft.
+  function tmAwayPaint() {
+    if (S.name !== 'team' || !S.root || !document.body.contains(S.root)) return;
+    var put = function (selector, html) {
+      var el = S.root.querySelector(selector); if (!el || el._tmStatusHTML === html) return;
+      var check = document.createElement('div'); check.innerHTML = html;
+      if (el.innerHTML !== check.innerHTML) el.innerHTML = html;
+      el._tmStatusHTML = html;
+    };
+    put('.tm-away-slot', tmAwayHTML()); put('.tm-next-slot', tmNextHTML());
+    var el = S.root.querySelector('.tm-nclock'), text = tmHHMM(T.mins());
+    if (el && el.textContent !== text) el.textContent = text;
+  }
   // who is on a break now, and when they are back (not me)
   function tmOnBreakNow(not) {
     var m = T.mins(), out = [];
@@ -12360,7 +12562,9 @@
      when the shift that counts for me changes (16:00 from Lunch to Dinner), the page once, for the section it follows */
   var tmTickSh = null;
   function tmTick() {
+    tmAwayPaint();
     tmPaint();
+    if (S.name === 'team') return;
     var p = me(); if (!p || !tm.rec) return;
     var sh = tmShiftNow(p.id);
     if (tmTickSh !== null && sh !== tmTickSh && !typing() && !sheetOpen()) { tmTickSh = sh; draw(); return; }
