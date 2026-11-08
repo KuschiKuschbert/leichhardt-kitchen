@@ -2,6 +2,8 @@
 
 8 November 2026, Queensland. **Revised options, awaiting review. PR #606 remains draft.** The owner rejected the first A/B presentation. No option is chosen. No production features, rules, data or deployments changed by this work.
 
+**Staff-first correction:** both designs start with the person’s section and shift, their break window and return time, then visible coworkers. Prep, cleaning, shared timers and functions follow. The earlier previews omitted the break and folded the team too far down; that presentation is superseded.
+
 Open [the interactive comparison](index.html). It contains exactly two revised options, **A, Familiar Home** and **B, Working notebook**, with staff, chef, admin, Functions-only and public previews. Screen, scenario and device controls sit outside the app preview. All new operational examples are illustrative. Baseline images are real browser captures of the unchanged application using synthetic Firebase data, not photos of the live kitchen.
 
 ## Reading map and evidence
@@ -52,23 +54,26 @@ The first presentation was rejected because the phone layouts were effectively t
 
 ### A. Familiar Home
 
-Keep the current pinned overview: handwritten day, native `hm-board` Now and next and `hm-paper` sections. Add a compact cooling row using the existing board-row anatomy. Keep next function rounds and service emphasis in that board, rather than adding separate function cards. Put minimum-prep and cleaning-check links inside the existing Prep by section paper. Saved team and future summaries remain available through compact disclosures in their familiar papers. There is no separate Your section card or global section/service header.
+Keep the handwritten day, native dark Your day board and pinned paper. The first board shows **Your section**, configured shift hours, then **Your break**, its full window, length and return time. The next paper shows **On with you** with coworker names, sections, shift hours and relevant breaks, visible without opening a fold. Only then show a compact Kitchen work paper linking prep checks, cleaning, timers and functions. A due timer is the first row within that lower work group, so it is reachable without displacing the staff information. Coming up is a quiet disclosure after current work.
 
-Minimums and Cleaning open focused worksheets. The saved roster supplies scope silently; the opened worksheet names section, service/date and last check, with a local Change link. Prep keeps the ordinary list as its default and offers Minimums inside that page. Cooling opens the simple shared timer list. All work remains reachable through existing navigation; no seventh bottom tab or new top-bar icon.
+The scheduled shift team is derived from the already loaded saved daily plan, not a new roster. Where shift ownership/overlap cannot be established, label the list On today rather than claiming people are working now. View today’s full team retains the original whole-day, all-shift roster including hours and breaks. No personal allocation must not hide that published roster. No published plan or failed read must not invent a section, break or coworker.
 
-Advantages: preserves the familiar overview and native density, with fewer competing headings. Cost: minimum counts and cleaning completion need a worksheet-opening tap from Home. A is the smaller Home integration, but still needs every management, safety and permission contract below.
+Minimums and Cleaning open focused worksheets. The saved roster supplies scope; the worksheet names section/service/date with a local Change link. Ordinary Prep stays its own familiar default. The top team chip and Your day retain additional breaks, later assignments, people scheduled on break, return times, Changed status and who saved the plan and when. Prep-header and chef-hat day lines, pings and minutes keep their established access and behaviour.
+
+Advantages: staff can find the three essential facts immediately; fewer competing work cards; smaller change to Home. Cost: detailed work needs a worksheet-opening tap.
 
 ### B. Working notebook
 
-Home becomes one open ruled notebook containing actual service work. Handwritten item names use the native Caveat weight; amounts and metadata use Barlow. On a phone, Prep opens with inline usable-amount checks. Quiet internal Prep and Cleaning tabs have due counts and 44 px targets; opening Cleaning costs one additional tap. At desktop width Prep and Cleaning become facing pages of the same notebook. A compact cooling-timer strip stays above both phone tabs so expired timers remain visible. Functions and Coming up occupy a compact footer rather than extra large cards.
+**Use exactly the same staff-first block as A:** section, break with return, then visible coworkers. These facts are fixed priorities in both options, not a design choice. Below them, place the current timer/service summary and an open ruled service notebook with actual prep-count rows. On a phone, Prep and Cleaning pages have labelled counts; desktop can show facing pages. This saves a worksheet-opening tap once the person reaches their work, with more scroll and editable state on Home.
 
-The notebook uses saved scope with a short read-only line. Change belongs inside the active worksheet. Counts, pending saves and exceptions stay with their rows. Ordinary Prep remains available from its existing tab and is not replaced by minimum checks.
+Handwritten item names use the native Caveat weight; amounts and metadata use Barlow. Section/shift controls stay inside the worksheet. The next food time and any expired-timer link remain above the notebook but below the personal/team information. Later work does not push those first three staff facts off the initial phone view. Both layouts share controllers, records, permissions and read budgets.
 
-Advantages: counts can be entered directly on Home, and the phone layout visibly differs from A's overview. Cost: Home contains editable work; the phone hides cleaning rows behind one explicit tab, and notebook focus/save state needs more integration. Cooling and the next function food time remain visible above the worksheet while that tab is hidden. The notebook does not gain extra listeners, data or authority because more work is visible.
+Advantages: direct section checks after shift context. Cost: Home has more editing state and a longer flow; phone cleaning remains one explicit page tap away. Ordinary Prep remains available from its existing tab.
 
 | Comparison | A, Familiar Home | B, Working notebook |
 | --- | --- | --- |
-| Home's main job | Overview linking to focused worksheets | Direct service work in a single notebook |
+| First information | Section, break/return, visible coworkers | Same required staff-first block |
+| Work below it | Overview linking to focused worksheets | Direct service work in a single notebook |
 | Minimum count | Open worksheet, then record and save | Enter and save inline on Home |
 | Cleaning from Home | Open worksheet, then complete | Open Cleaning tab, then complete |
 | Wide screen | Current board and pinned papers | Facing Prep/Cleaning notebook pages |
@@ -108,9 +113,13 @@ The relevant In service card/band gains a slightly brighter stationary orange fr
 
 ### 3. Calmer Home for every role
 
-**Shared revision contract:** preserve the native SVG shell, handwritten day, small uppercase headings, existing font weights, six tabs and quiet paper/orange palette. Review controls never appear inside the kitchen interface. A keeps the current board/paper overview; B places real service rows in an open notebook. Both keep cooling visible and avoid a second function banner or permanent section/service control block. Keep seasonal presentation under existing settings and avoid motion while interacting.
+**Required order for staff:** (1) their section and shift hours, (2) their next break window, length and return, (3) visible coworkers with sections and relevant shift/break times, then (4) kitchen work and (5) upcoming information. Neither alternative can fold the first three facts away or replace them with feature summaries.
+
+**Shared revision contract:** preserve the native SVG shell, handwritten day, small uppercase headings, existing font weights, six tabs and quiet paper/orange palette. Review controls never appear inside the kitchen interface. A keeps the current board/paper overview; B places real service rows in an open notebook. Both keep timer/service summaries after staff context and avoid a second function banner or permanent section/service control block. Keep seasonal presentation under existing settings and avoid motion while interacting.
 
 Staff see their permitted operational work; chefs see authorised coordination links; Admin has the same operational Home and a management entry. Public stays recipe-only. Functions-only stays on its existing permitted docket/service scope with delivery access preserved. No kitchen operations are fetched for these two groups.
+
+**Verified source:** `js/prep.js:10044-10059` already supplies the personal break row; `homeTeamHTML():10119-10142` and `docs/todays-team-options/brief.md:238` preserve the saved whole-day roster. Reuse `tm.rec`, current section precedence, `tmNow`, `tmNextBreak`, `tmBreakWords`, `tmChanged` and the existing Your day entry. A return is derived from break start plus length; a split is 150 minutes or longer. Show On break now until the exclusive return boundary; after the last completed break say no remaining break rather than No break set. Additional breaks and later shifts stay in Your day. A failed/stale/unpublished plan is distinct from an empty successful roster.
 
 Use the saved roster without asking for the same scope on every Home visit. Scope is a read-only line in the relevant worksheet, with Change there only. If no usable assignment exists, the worksheet explicitly asks for section and shift/date before checks; do not assume Lunch or claim ready. Remember a selection per current person/device/service and clear it on handover; show when it differs from the saved plan. Selecting scope never grants authority. Overnight shifts use configured times and explicit service-date ownership. Completed lunch checks never become dinner checks.
 

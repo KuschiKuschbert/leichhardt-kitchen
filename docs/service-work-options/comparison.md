@@ -1,10 +1,10 @@
-# Revised Kitchen Book comparison
+# Staff-first Kitchen Book comparison
 
 **Revised options awaiting review. PR #606 remains draft. No option chosen.** The first presentation was rejected and is superseded. Baseline images use the unchanged application with synthetic data. Every new target, timer name, task, person, time and booking in the designs is illustrative, not approved operational setup.
 
-**A, Familiar Home** preserves the native Now and next board and pinned papers. It adds a compact cooling row and prep/cleaning worksheet links inside Prep by section. Function rounds stay on the board; saved team and future summaries use compact disclosures. **B, Working notebook** puts actual minimum counts inline on Home. Phone Prep/Cleaning tabs show due counts, with one extra tap for Cleaning; desktop shows facing pages. Cooling remains above both tabs, with compact functions and Coming up below.
+Both alternatives now start in the order requested: **your section and shift, your break window and return time, then visible coworkers**. The break is not removed or hidden, and the team is not folded below new features. Current-shift names, sections and relevant break/return details are visible. The original full-day roster and Your day remain available.
 
-Both use the current SVG masthead, navigation, Barlow/Barlow Condensed UI, actual Caveat 700 handwriting and the same paper/orange palette. Neither adds a global section/service header. Saved roster scope is used silently, then named with a local Change link in the relevant worksheet. The phone difference is overview versus direct work.
+**A, Familiar Home** puts compact work links after those staff facts. **B, Working notebook** puts the actual work notebook after the same staff facts. Their shared top section is deliberate; their work flow below it differs. Both preserve the current SVG masthead, six tabs, Barlow/Barlow Condensed and Caveat 700, and the existing paper/orange palette. Section/service selectors remain local to worksheets.
 
 The [complete proposal](brief.md) covers all five flows, management screens, permissions, schema, missing inputs, rollout and rollback. [Verification and council](verification.md) distinguish baseline checks from prototype checks and future implementation. [Reference study](references.md) records what was actually inspected.
 
@@ -14,7 +14,7 @@ Download [index.html](index.html) and open it in a browser to try the illustrati
 
 | Current app | A, Familiar Home | B, Working notebook |
 | --- | --- | --- |
-| ![Current staff Home](previews/current-home-staff-390.png) | ![Option A staff Home](previews/v2-a-home-staff-390.png) | ![Option B staff Home](previews/v2-b-home-staff-390.png) |
+| ![Current staff Home](previews/current-home-staff-390.png) | ![Option A staff Home](previews/v3-a-home-staff-390.png) | ![Option B staff Home](previews/v3-b-home-staff-390.png) |
 
 ## Busy function service, 390 px
 
@@ -22,19 +22,19 @@ Three simultaneous timers, unresolved cleaning and a function in service test th
 
 | A | B |
 | --- | --- |
-| ![A busy service](previews/v2-a-home-busy-390.png) | ![B busy service](previews/v2-b-home-busy-390.png) |
+| ![A busy service](previews/v3-a-home-busy-390.png) | ![B busy service](previews/v3-b-home-busy-390.png) |
 
 ## Shared tablet, 768 px
 
-| Current chef Home | A | B |
+| Current staff Home | A | B |
 | --- | --- | --- |
-| ![Current tablet](previews/current-home-chef-768.png) | ![A tablet](previews/v2-a-home-chef-768.png) | ![B tablet](previews/v2-b-home-chef-768.png) |
+| ![Current tablet](previews/current-home-staff-768.png) | ![A tablet](previews/v3-a-home-busy-768.png) | ![B tablet](previews/v3-b-home-busy-768.png) |
 
-## Chef desktop, 1280 px
+## Staff desktop, 1280 px
 
-| Current chef Home | A | B |
+| Current staff Home | A | B |
 | --- | --- | --- |
-| ![Current desktop](previews/current-home-chef-1280.png) | ![A desktop](previews/v2-a-home-chef-1280.png) | ![B desktop](previews/v2-b-home-chef-1280.png) |
+| ![Current desktop](previews/current-home-staff-1280.png) | ![A desktop](previews/v3-a-home-busy-1280.png) | ![B desktop](previews/v3-b-home-busy-1280.png) |
 
 ## Focused staff work
 
@@ -58,15 +58,19 @@ Par levels examples: [Admin panel](previews/v2-a-management-admin-1280.png), [He
 
 [Par levels](previews/v2-config-targets-390.png), [recipe/function mappings](previews/v2-config-mappings-390.png), [equipment and shared areas](previews/v2-config-equipment-390.png), [cleaning templates](previews/v2-config-templates-390.png), [exceptions](previews/v2-config-exceptions-390.png), [Timer chime and Test chime](previews/v2-config-cooling-390.png), [existing sections/shifts](previews/v2-config-sections-390.png), and [Admin rollout](previews/v2-config-rollout-390.png) have phone examples. The interactive prototype shows each at tablet and desktop widths too.
 
-## Exceptions and connectivity
+## Work connectivity states (earlier layout captures)
 
 | Missing setup | Checking records | Save failed | No signal |
 | --- | --- | --- | --- |
 | ![Missing setup](previews/v2-a-home-missing-390.png) | ![Loading](previews/v2-a-home-loading-390.png) | ![Failed save](previews/v2-a-home-failed-390.png) | ![Offline](previews/v2-a-home-offline-390.png) |
 
+## Break and roster states
+
+[On break now](previews/v3-a-home-onbreak-390.png), [break changed](previews/v3-a-home-changed-390.png), [break not set](previews/v3-a-home-breakunset-390.png), [no own allocation](previews/v3-a-home-unassigned-390.png) and [checking the roster](previews/v3-a-home-loading-390.png) illustrate distinct outcomes. Names and times are examples, not live kitchen data.
+
 ## Recommendation
 
-A is the quieter starting point: it keeps Home as a familiar overview. Choose B if staff should record section amounts directly on Home. Five fresh review passes preferred A; the security pass rated them equal. These are agent reviews, not venue staff research.
+A is the quieter starting point: it keeps work as a compact overview after the fixed staff-first information. Choose B if staff should record section amounts directly on Home. Five fresh review passes preferred A; the security pass rated them equal. These are agent reviews, not venue staff research.
 
 ## Decision
 

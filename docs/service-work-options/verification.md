@@ -10,11 +10,21 @@ The revised options are **A, Familiar Home**, retaining the native board and pin
 
 Font inspection identified an embedded Caveat SemiBold 600 file in the rejected prototype, where the current app uses Caveat Bold 700. It also identified changed heading roles, substituted masthead/navigation and a different paper treatment. The revision restores these native pieces. Device previews must have real iframe viewport widths so the application's media queries activate correctly.
 
-Revised screenshots reuse the existing `a-*` and `b-*` filenames. Fresh capture, interaction assertions, row/tap measurements and any new council scores must be recorded after they are performed. No new results are asserted by this revision note.
+The earlier native-style v2 images are retained for traceability; the current comparison uses the v3 staff-first Home captures and unchanged focused-feature examples. Current staff-first evidence appears below.
 
 The owner's later clarification also supersedes the earlier cooling-record proposal: shared timers have one-action 2-hour/4-hour presets, optional names, repeated existing `LK_CHIME.play('timer')` at expiry, Stop while running and Done after expiry. Any signed-in kitchen staff member can start/stop/mark Done, expressly including those with Add/Tick disabled. This timer-only exception does not expand other permissions. No temperature/stage/SOP approval or food-safety result belongs to timers. Absolute shared end times survive reload and devices; background/closed-app audio remains subject to browser limits. The source-backed repeat proposal is **[15 seconds]**, coalesced across due timers, with one sound leader per device and a shared-state check after audio resume. Shift pings settings stay unchanged. The historical observation/acknowledgement checks below do not define this revised feature.
 
 The owner also requires a **Par levels** area integrated into the authorised Admin, Head Chef and Sous Chef panels. Staff sheets display approved pars without target-edit authority. Shared sections/shifts stay Admin-only. No new implementation or verification result is implied by these instructions.
+
+## Current correction: staff information first
+
+The owner identified a preservation failure in the prior preview: it omitted the break and placed the team behind new work. Current A and B now both put section/shift first, break window/length/return second, and visible coworkers third. Work follows. This restores the agreed staff job before choosing how the additional tools are presented.
+
+Source audit: existing `homeBoardHTML` and `homeTeamHTML` in `js/prep.js`, `tmNow/tmNextBreak/tmBreakWords/tmChanged`, and the chosen staff contract in `docs/todays-team-options/brief.md:213,238`. The existing whole saved day is retained through View today’s full team; current-shift grouping does not claim actual attendance or hide the roster when the viewer has no allocation. Your day retains Changed, saved-by/time, later shifts and additional breaks. Public and Functions-only still receive no staff plan.
+
+A focused independent source/visual review confirmed the requested reading order and that the three visible coworkers and full break window fit above the 390 × 844 phone's bottom bar in both options. It flagged saved-plan provenance and multiple/later breaks; those were added to the Your day mock. This was a role-based review, not staff research or production validation. The previous six-reviewer rankings below do not establish that the rejected omission was acceptable.
+
+**89 staff-first assertions passed**, zero failed and zero browser errors. The three direct preservation checks failed against the previous `47cc588` prototype and passed after the correction. At 390 × 844 the section/break card ends around 365 px, all three coworkers around 644 px, and the work group starts around 662 px, above the fixed bottom bar at 776 px. Seventeen v3 captures cover A/B at 390/768/1280 widths on normal/busy days plus on-break, changed, unset-break, unassigned and loading examples. Tests also cover split and completed breaks, failed reads, multiple/later breaks, full-day roster access and restricted public/Functions-only scope. No production-loaded file or rules changed. The earlier 149 assertions remain evidence of that version's timer, role and worksheet interactions, not proof of this staff-first correction.
 
 ## Revised preview verified, 8 November 2026
 
