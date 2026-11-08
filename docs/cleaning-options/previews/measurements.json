@@ -1,0 +1,188 @@
+{
+  "results": [
+    {
+      "design": "a",
+      "role": "staff",
+      "width": 390,
+      "height": 844,
+      "overflow": 0,
+      "rows": 5,
+      "targets": [],
+      "fonts": true
+    },
+    {
+      "design": "a",
+      "role": "chef",
+      "width": 390,
+      "height": 844,
+      "overflow": 0,
+      "rows": 4,
+      "targets": [],
+      "fonts": true
+    },
+    {
+      "design": "a",
+      "role": "staff",
+      "width": 768,
+      "height": 1024,
+      "overflow": 0,
+      "rows": 6,
+      "targets": [],
+      "fonts": true
+    },
+    {
+      "design": "a",
+      "role": "chef",
+      "width": 768,
+      "height": 1024,
+      "overflow": 0,
+      "rows": 6,
+      "targets": [],
+      "fonts": true
+    },
+    {
+      "design": "a",
+      "role": "staff",
+      "width": 1280,
+      "height": 900,
+      "overflow": 0,
+      "rows": 6,
+      "targets": [],
+      "fonts": true
+    },
+    {
+      "design": "a",
+      "role": "chef",
+      "width": 1280,
+      "height": 900,
+      "overflow": 0,
+      "rows": 0,
+      "targets": [],
+      "fonts": true,
+      "matrixRows": 5
+    },
+    {
+      "design": "b",
+      "role": "staff",
+      "width": 390,
+      "height": 844,
+      "overflow": 0,
+      "rows": 3,
+      "targets": [],
+      "fonts": true
+    },
+    {
+      "design": "b",
+      "role": "chef",
+      "width": 390,
+      "height": 844,
+      "overflow": 0,
+      "rows": 4,
+      "targets": [],
+      "fonts": true
+    },
+    {
+      "design": "b",
+      "role": "staff",
+      "width": 768,
+      "height": 1024,
+      "overflow": 0,
+      "rows": 4,
+      "targets": [],
+      "fonts": true
+    },
+    {
+      "design": "b",
+      "role": "chef",
+      "width": 768,
+      "height": 1024,
+      "overflow": 0,
+      "rows": 5,
+      "targets": [],
+      "fonts": true
+    },
+    {
+      "design": "b",
+      "role": "staff",
+      "width": 1280,
+      "height": 900,
+      "overflow": 0,
+      "rows": 4,
+      "targets": [],
+      "fonts": true
+    },
+    {
+      "design": "b",
+      "role": "chef",
+      "width": 1280,
+      "height": 900,
+      "overflow": 0,
+      "rows": 0,
+      "targets": [],
+      "fonts": true,
+      "matrixRows": 4
+    },
+    {
+      "design": "c",
+      "role": "staff",
+      "width": 390,
+      "height": 844,
+      "overflow": 0,
+      "rows": 5,
+      "targets": [],
+      "fonts": true
+    },
+    {
+      "design": "c",
+      "role": "chef",
+      "width": 390,
+      "height": 844,
+      "overflow": 0,
+      "rows": 5,
+      "targets": [],
+      "fonts": true
+    },
+    {
+      "design": "c",
+      "role": "staff",
+      "width": 768,
+      "height": 1024,
+      "overflow": 0,
+      "rows": 6,
+      "targets": [],
+      "fonts": true
+    },
+    {
+      "design": "c",
+      "role": "chef",
+      "width": 768,
+      "height": 1024,
+      "overflow": 0,
+      "rows": 6,
+      "targets": [],
+      "fonts": true
+    },
+    {
+      "design": "c",
+      "role": "staff",
+      "width": 1280,
+      "height": 900,
+      "overflow": 0,
+      "rows": 6,
+      "targets": [],
+      "fonts": true
+    },
+    {
+      "design": "c",
+      "role": "chef",
+      "width": 1280,
+      "height": 900,
+      "overflow": 0,
+      "rows": 6,
+      "targets": [],
+      "fonts": true
+    }
+  ],
+  "errors": [],
+  "note": "rows counts full checklist task rows; matrixRows counts full table task rows in the wide chef view. Counts exclude fixed-footer occlusion and include the preview toolbar."
+}
