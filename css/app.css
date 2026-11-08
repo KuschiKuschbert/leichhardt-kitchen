@@ -4561,6 +4561,40 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
   .hm-board { grid-row: 1 / span 3; }
   .hm-prep, .hm-team, .hm-up, .hm-prep[hidden] + .hm-up { grid-column: 2; grid-row: auto; }
 }
+/* Staff-first Home (9 Nov 2026): section, break/return and scheduled coworkers before kitchen work.
+   Reuses the pinned board and paper; no header, navigation or work-list density changes. */
+.hm-staff-first { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.1rem; align-items: start; }
+.hm-staff-first > .hm-board, .hm-staff-first > .hm-paper { grid-column: auto; grid-row: auto; margin: 0; }
+.hm-day-row { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 0.75rem; align-items: center; min-height: 70px; padding: 0.55rem 0; }
+.hm-day-value { max-width: 9rem; font: 700 1.6rem/1.1 var(--display); color: var(--bar-text); text-align: right; overflow-wrap: anywhere; }
+.hm-day-break { min-height: 84px; }
+#hm-day .hm-r { max-width: 120px; }
+#hm-day .hm-tm { font-size: 1.5rem; }
+#hm-day .hm-n { font-size: 0.75rem; letter-spacing: 0.04em; }
+#hm-day .hm-s { line-height: 1.4; }
+.hm-day-changed { display: inline-block; margin-left: 0.45rem; padding: 2px 5px; border: 1px solid var(--bar-accent); border-radius: 4px; font: 600 0.7rem var(--body); letter-spacing: 0; color: var(--bar-accent); text-transform: none; }
+.hm-roster-caption { font-size: 0.75rem; color: var(--muted); }
+.hm-coworkers { list-style: none; margin: 0; padding: 0; }
+.hm-coworkers > li { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; padding: 0.45rem 0; border-bottom: 1px solid var(--line); font-size: 0.9375rem; overflow-wrap: anywhere; }
+.hm-coworkers > li:last-child { border-bottom: 0; }
+.hm-coworkers > li > span { min-width: 0; }
+.hm-coworkers b { font-weight: 600; }
+.hm-coworkers small { display: block; font-size: 0.75rem; margin-top: 0.1rem; color: var(--muted); }
+.hm-coworkers > li > span:last-child { flex: 0 1 auto; max-width: 32%; font-size: 0.8125rem; color: var(--muted); text-align: right; }
+.hm-full-team > summary { display: flex; align-items: center; gap: 0.35rem; min-height: 44px; font-size: 0.8125rem; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.hm-full-team > summary::before { content: '+'; text-decoration: none; }
+.hm-full-team[open] > summary::before { content: '−'; }
+.hm-full-team > summary:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 2px; border-radius: 4px; }
+.hm-full-team .hm-team { display: block; grid-column: auto; grid-row: auto; margin: 0; padding: 0.5rem 0 0; border-top: 1px solid var(--line); border-radius: 0; background: none; box-shadow: none; }
+.hm-full-team .hm-team::before { display: none; }
+.hm > #hm-board { grid-column: 1; grid-row: auto; }
+.hm-board[hidden] { display: none; }
+@media (min-width: 720px) {
+  .hm-staff-first { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 2rem; }
+  .hm-day-row { min-height: 78px; }
+  .hm-day-break { min-height: 92px; }
+  .hm-coworkers > li { padding: 0.55rem 0; }
+}
 /* ---------- Gap fix: prep lines (8 Nov 2026) ----------
    The redesign promised 6 prep lines on a 390 px phone (brief, round 1: "aim for 6 lines visible at 390 px"); step 1 gave 3.
    On a phone at the usual text size the line words are a little smaller and the rows tighter, the box keeps its 44 px tap

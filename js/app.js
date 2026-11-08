@@ -587,8 +587,8 @@
   /* Under the top bar, the recipe pages get their own tools row: how many recipes, and the Pass / Tiles switch. */
   var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste'], ['05', 'Transfers', '#/transfers', 'transfers', 'What other venues took from us, and what we took from them'], ['06', 'Cleaning', '#/cleaning', 'cleaning', 'The kitchen cleaning jobs for today and the week']];
   /* Home (redesign step 2, 8 Nov 2026, head chef; docs/whole-app-redesign-options/brief.md): on the kraft board, the day as
-     the heading, then the dark Now and next board and Prep by section (js/prep.js fills and repaints them), then Coming
-     up (the celebrations' line from js/seasonal/ and the functions of the next days). The six dockets went: the tab bar on
+     the heading, then personal section/shift and break/return, scheduled coworkers, work and Prep by section
+     (js/prep.js fills and repaints them), then Coming up (celebrations and the next functions). The six dockets went: the tab bar on
      a phone and the page tabs on a laptop carry the pages. The function band and the cut-off bar stay on every other page;
      here the board shows what they hold. Signed out and Functions only keep the dockets as before. The day is the
      kitchen's (LK_TIME), never the phone's own date. */

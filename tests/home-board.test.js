@@ -106,13 +106,14 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
   ok(b1 === b0, 'Home reads what Recipes reads for the same day (' + b0 + ' and ' + b1 + ')');
   await p.context().close();
 
-  // Ann, staff on Larder: her section and lines left first, her break, no cut-off (staff get no bar)
+  // Ann, staff on Larder: section/hours and full break stay above the separate work board.
   p = await L.open(b, '#/', { who: 'ann', extra: full(), wait: 1800 });
-  await L.waitFor(p, () => [...document.querySelectorAll('#hm-board .hm-t')].some(e => /You are on/.test(e.textContent)), null, 8000).catch(() => {});
+  await L.waitFor(p, () => /Larder/.test(document.querySelector('#hm-day')?.textContent || ''), null, 8000);
   rows = await board(p);
-  const sec = rows[0] || {}, brk = rows.find(r => /break/.test(r.t));
-  ok(sec.t === 'You are on Larder' && /^3 lines left · .+ first$/.test(sec.s) && sec.tm === '3' && sec.n === 'Left' && sec.href === '#/prep', 'staff: her section first, 3 lines left and which first (' + JSON.stringify(sec) + ')');
-  ok(!!brk && brk.t === 'Your break' && brk.s === 'Back on Larder at 15:00' && brk.tm === '14:30' && brk.n === '30 min' && brk.hot && brk.tmd === 'day', 'staff: her break at 14:30, 30 min, opens Your day (' + JSON.stringify(brk) + ')');
+  const sec = await txt(p, '[data-hm-priority="section"]') || '', brk = await txt(p, '[data-hm-priority="break"]') || '';
+  ok(/Your section/.test(sec) && /Larder/.test(sec) && /Lunch/.test(sec) && /10:00/.test(sec) && /15:00/.test(sec), 'staff: personal section and complete shift hours first (' + sec + ')');
+  ok(/Your break/.test(brk) && /14:30/.test(brk) && /15:00/.test(brk) && /30 min/.test(brk) && !!(await p.$('#hm-day [data-tm="day"]')), 'staff: full break window and duration open Your day (' + brk + ')');
+  ok(!rows.some(r => /Your break|You are on/.test(r.t)), 'staff: personal facts are not duplicated among the work reminders');
   ok(!rows.some(r => /order closes/.test(r.t)), 'staff: no cut-off rows');
   ok(!(await p.$('#hm-cuts li')), 'staff: no cut-offs in Coming up');
   const staffTeam = await txt(p, '#hm-team') || '';
@@ -120,7 +121,7 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
   ok(!(await p.$('#hm-team a[href="#/team"]')) && !(await p.$('#hm-team button, #hm-team input, #hm-team select')), 'staff: the roster has no team editor link or editing controls');
   const staffBill = await bill(p);
   await shut(p);
-  await p.click('#hm-board .hm-a[data-tm="day"]'); await L.settle(p, 400);
+  await p.click('#hm-day [data-tm="day"]'); await L.settle(p, 400);
   ok(!!(await p.$('.nt-wrap .nt')) && /Your day/.test(await txt(p, '.nt-wrap') || ''), 'the break row opens Your day');
   ok(p.errors.length === 0, 'staff: no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -128,15 +129,17 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
   ok(await bill(p) === staffBill, 'staff: Home with the roster reads what Recipes reads for the same day (' + staffBill + ' and ' + await bill(p) + ')');
   await p.context().close();
 
-  // Staff keep their own day first and can read the saved roster on every screen size, with no extra tap.
+  // Staff see coworkers immediately; the complete saved day remains one tap away at every width.
   for (const w of [390, 768, 1280]) {
     p = await L.open(b, '#/', { who: 'ann', extra: full(), width: w, height: w === 390 ? 844 : 900, wait: 1800 });
     await shut(p);
     const team = await p.evaluate(() => {
-      const e = document.getElementById('hm-team'), own = document.getElementById('hm-board');
-      return e && own ? { shown: !e.hidden && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0, text: e.innerText, ownFirst: !!(own.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING) } : null;
+      const e = document.getElementById('hm-with-body'), own = document.getElementById('hm-day');
+      return e && own ? { shown: e.getBoundingClientRect().height > 0, text: e.innerText, ownFirst: !!(own.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING) } : null;
     });
-    ok(!!team && team.shown && team.ownFirst && /Ann/.test(team.text) && /Sam/.test(team.text) && /Larder/.test(team.text), w + ' px staff: own day first, then the saved roster without opening a sheet (' + JSON.stringify(team) + ')');
+    ok(!!team && team.shown && team.ownFirst && /Sam/.test(team.text) && /Lunch/.test(team.text) && !/Ann/.test(team.text), w + ' px staff: own day then visible scheduled coworkers, without a sheet (' + JSON.stringify(team) + ')');
+    await p.click('#hm-full-team > summary');
+    ok(/Ann/.test(await txt(p, '#hm-team') || '') && /Sam/.test(await txt(p, '#hm-team') || ''), w + ' px staff: the whole saved day remains available in one tap');
     ok(!(await L.overflow(p)) && p.errors.length === 0, w + ' px staff: no sideways scroll or page errors ' + p.errors.join(' | '));
     const reads = await bill(p);
     await p.clock.runFor(61000); await L.settle(p, 150);
@@ -146,7 +149,7 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
 
   // nothing to come: one short line; signed out: the Recipes docket as before
   p = await L.open(b, '#/', { who: 'sam', extra: base(), wait: 1800 });
-  ok(await txt(p, '#hm-board .hm-none') === 'Nothing due right now.' && !(await p.$('#hm-board .hm-a')), 'nothing to come: Nothing due right now.');
+  ok(await p.locator('#hm-board').evaluate(e => e.hidden) && !(await p.$('#hm-board .hm-a')), 'nothing to come: the work board is hidden rather than competing with the personal day');
   ok(await p.$eval('.hm-up', e => getComputedStyle(e).display === 'none').catch(() => false), 'nothing coming up: no Coming up card');
   await p.context().close();
   p = await L.open(b, '#/', { noPin: true, who: '', wait: 1400 });
@@ -160,9 +163,11 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
     const g = await p.evaluate(() => { const a = document.getElementById('hm-board').getBoundingClientRect(), c = document.getElementById('hm-prep').getBoundingClientRect(); return { side: c.left >= a.right - 1, below: c.top >= a.bottom - 1 }; });
     ok(!(await L.overflow(p)) && p.errors.length === 0 && (w >= 768 ? g.side : g.below), w + ' px: no sideways scroll, no errors, ' + (w >= 768 ? 'board and prep side by side' : 'prep under the board') + ' (' + JSON.stringify(g) + ') ' + p.errors.join(' | '));
     ok(await p.$$eval('#hm-board .hm-a, #hm-prep .hm-sec', l => l.every(e => e.getBoundingClientRect().height >= 44 - .1)), w + ' px: every row is at least 44 px high');
-    // On today, drawn on the laptop: who is on each section with their breaks, for the chef; not on a phone
-    const team = await p.evaluate(() => { const e = document.getElementById('hm-team'); return e ? { shown: getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0, text: e.innerText } : null; });
-    ok(!!team && (w >= 768 ? team.shown && /Larder/.test(team.text) && /Ann/.test(team.text) && /break 14:30/.test(team.text) && /Lunch/.test(team.text) : !team.shown), w + ' px: On today ' + (w >= 768 ? 'shows Ann on Larder with her break' : 'is not on a phone') + ' (' + JSON.stringify(team && team.text.slice(0, 80)) + ')');
+    // The accepted quieter Home folds the full-day roster at every width, while keeping it available.
+    ok(await p.locator('#hm-full-team').evaluate(e => !e.open), w + ' px: full-day detail starts folded');
+    await p.click('#hm-full-team > summary');
+    const team = await txt(p, '#hm-team') || '';
+    ok(/Larder/.test(team) && /Ann/.test(team) && /break 14:30/.test(team) && /Lunch/.test(team), w + ' px: full On today retains section, shift and break details (' + team.slice(0, 100) + ')');
     await p.context().close();
   }
 
