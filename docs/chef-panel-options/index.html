@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Chef panel | Three design previews</title>
+  <link rel="stylesheet" href="preview.css">
+  <script src="preview.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#stage">Skip to the design</a>
+  <header class="comparison">
+    <div class="comparison-head"><div><p class="eyebrow">Design comparison · 8 November 2026</p><h1>A place for the chefs</h1></div><a href="proposal.md">Read the proposal</a></div>
+    <p>Three ways to gather the tools a Head chef or Sous chef already has. These are examples, with no connection to kitchen data. Choose a design and try the links.</p>
+    <div class="choices" role="group" aria-label="Design">
+      <button type="button" data-design="a"><b>A · Chef desk</b><span>A grouped panel</span></button>
+      <button type="button" data-design="b"><b>B · Shift notebook</b><span>Choose a job, then open it</span></button>
+      <button type="button" data-design="c"><b>C · Menu only</b><span>Keep everything in the hat</span></button>
+    </div>
+    <div class="preview-options">
+      <label class="role-label">Example role<select id="role"><option value="sous">Sous chef</option><option value="head">Head chef</option></select></label>
+      <label class="toggle"><input id="mail" type="checkbox"> Shared kitchen mail enabled</label>
+      <label class="toggle"><input id="fn" type="checkbox"> Functions booking permission</label>
+    </div>
+    <p id="tradeoff" class="tradeoff"></p>
+  </header>
+  <div class="capture-note">DESIGN PREVIEW · EXAMPLE PERSON · NO LIVE DATA</div>
+  <div class="book-top"><span class="book-brand">Kitchen Book</span><nav aria-label="Example work tabs"><button data-open="prep">Prep</button><button data-open="orders">Orders</button><button data-open="recipes">Recipes</button></nav><span class="hat" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 14.2A3.6 3.6 0 1 1 8.6 7.4a4.6 4.6 0 0 1 6.8 0A3.6 3.6 0 1 1 17 14.2V20H7Z"/><path d="M7 16.8h10"/></svg></span></div>
+  <main id="stage" tabindex="-1"></main>
+  <footer class="comparison-foot">Preview only. Personal PIN access follows the current role permissions. The owner admin panel still needs verified Google, the matching Head chef PIN session and its device grant. No rules or app behaviour have changed.</footer>
+  <dialog id="preview-dialog" aria-labelledby="dialog-title" aria-describedby="dialog-text"><form method="dialog"><p class="eyebrow">Preview only</p><h2 id="dialog-title"></h2><p id="dialog-text"></p><button class="primary" value="close">Back to the design</button></form></dialog>
+</body>
+</html>
