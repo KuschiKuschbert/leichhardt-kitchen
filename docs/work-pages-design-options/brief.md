@@ -68,4 +68,16 @@ The four pieces of B left for later, one pull request each, smallest first. The 
 | R1 | Low and Out on order requests, Out first for chefs | #536 | No rules change: the order line rules already take the field (a client shapes row proves it) |
 | R2 | Supplier groups on Orders for chefs; a supplier's order ticked only there | #538 (ticks), #543 (groups) | Pick supplier, remembered, still to come (R2c, a new record and rules) |
 | R3 | I'm on it: its own On it button; the box ticks in one tap | #541, then this pull request | #541 stamped on the first tap and ticked on the second; the head chef moved it to its own button the same evening (one tap = done stays). No rules change |
-| R4 | Wall board on the shared kitchen tablet, view and tick | this pull request | Client only: no reads, rules or saved data change. Built on R3's ticks |
+| R4 | Wall board for all Prep accounts on personal or shared devices (expanded 8 Nov 2026), with existing line permissions | this pull request | Client only: no reads, rules or saved data change. Built on R3's ticks |
+
+## Wall board account availability, 8 November 2026
+
+The head chef asked for the existing Wall board on all admin, head-chef, chef and sous-chef accounts. Every account already authorised for Prep can now choose the board on a personal or shared device. This supersedes R4's original shared-device restriction; the existing design and entry location stay.
+
+**Verdict: Build smaller (quick check).** Remove the two device-mode checks, retain the private Prep gate and existing line capabilities, and use the same tab and saved browser preference. No new navigation, step, data authority, read, listener, rule or stored field. The entry remains on today's Prep when at least two named sections occur in the list. Personal actions name the signed-in person; shared attribution retains the person picker. View-only accounts stay read-only. Functions-only, signed-out and expired sessions remain outside Prep.
+
+With the same synthetic personal-admin fixture, actual project fonts and 390 x 844 normal text, the header remains 90.3 px, the first row remains at 323 px and five complete Prep rows remain visible before and after. No row is lost and no page overflow occurs. Shared screens still open the board in one tap; personal devices gain that same one-tap choice. Back is one tap and the view choice survives a reload. View toggles add no reads.
+
+The updated wall-board test failed three personal-device checks out of 23 against the old app; both wall-board and new account tests pass with the change. The role matrix covers personal admin, head, sous, staff, lead and view-only accounts, plus signed-out, Functions-only, expired-session and Google-without-head-PIN exclusions. Personal tick/On it attribution, shared pickers, reload/Back, past-day exclusion and read reuse pass. Existing On it, read-budget and design-pattern checks pass locally. CI and release verification are recorded in the pull request.
+
+Synthetic screenshots: [personal account's Wall board entry](wall-accounts-entry-1280.png), [the board open on that account](wall-accounts-board-1280.png).

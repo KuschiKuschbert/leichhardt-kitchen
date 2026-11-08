@@ -16,6 +16,8 @@ Every write goes through `W()` in `js/prep.js`, which adds the writer's id (`by`
 
 ## Prep page reads
 
+Wall board (expanded 8 Nov 2026): every account already authorised for Prep can use the existing board on personal and shared devices. `wallOn()` only selects the saved browser view for today's Prep; the parent private-session/route gates and each row's capabilities remain authoritative. The entry stays at the end of today's section tabs when at least two named sections occur in the list. `lk.wall` remains a browser layout preference. Personal ticks and On it use the signed-in person; shared attribution still depends on `shared()`, not on being in board view. View-only accounts remain read-only; signed-out, expired and Functions-only sessions cannot enter Prep or its board. No new reads, listeners, writes, rules or stored fields.
+
 The prep pages read Firestore; keep the existing bounded readers and correction stamps. Firestore's cache is memory-only and disappears on reload. Admin report returns within the same page can reuse loaded data, while a full reload may need server reads again. Do not add persistent private reports to meet a read budget. Existing public assets and approved daily hint caches retain their documented invalidation and sign-out guards. No polling.
 
 

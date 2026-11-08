@@ -1,7 +1,8 @@
-// Wall board (5 Nov 2026, head chef, round 2 of the work pages redesign, as drawn in B): on the shared kitchen tablet,
+// Wall board (5 Nov 2026, head chef, round 2 of the work pages redesign, as drawn in B): on kitchen devices,
 // today's prep list as one column per section, like dockets on the rail. View and tick: the rows are the list's own, so
 // On it asks Who's on it? and the box asks Who did this?, the cook on it first. Wall board at the end of the section
-// tabs turns it on and the tablet keeps it (lk.wall); List turns it off. A personal phone never gets it.
+// tabs turns it on and the device keeps it (lk.wall); Back to the prep list turns it off. Since 8 Nov 2026 every
+// authenticated Prep account may use it on a personal device too, with the same personal/shared attribution rules.
 // Redesign step 1 (8 Nov 2026, head chef): the board sits on the notebook paper, Urgent is on every line in one tap, and the
 // way back is the first thing in the header, in words: Back to the prep list.
 const L = require('./lib');
@@ -77,10 +78,28 @@ const wallSaved = p => p.evaluate(() => localStorage.getItem('lk.wall'));
     await p.context().close();
   }
 
-  // a personal phone: no Wall board, and a kept choice does nothing there
-  p = await L.open(b, '#/prep', { who: 'ann', extra, width: 1280, height: 800, wait: 1600, init: () => { try { localStorage.setItem('lk.wall', '1'); } catch (e) {} } });
-  ok(!(await p.$('.wb')) && !(await p.$('[data-p="wall"]')) && !!(await p.$('.nb .nb-left')), 'personal phone: the list, with no Wall board');
-  await p.context().close();
+  // Personal devices keep the same board choice and layout. Their ticks name the signed-in person, with no shared picker.
+  for (const w of [390, 768, 1280]) {
+    p = await L.open(b, '#/prep', { who: 'ann', extra, width: w, height: 844, wait: 1600, init: () => { try { localStorage.setItem('lk.wall', '1'); } catch (e) {} } });
+    const personalBoard = !!(await p.$('.wb'));
+    ok(personalBoard && (await cols(p)).length === 4 && !(await L.overflow(p)) && !p.errors.length, w + ' px personal device: the saved choice opens the same four-section board without overflow or page errors');
+    if (personalBoard && w === 1280) {
+      await p.reload(); await L.settle(p, 1600);
+      ok(!!(await p.$('.wb')) && await wallSaved(p) === '1', 'personal device: the board choice survives reload');
+      await p.click('.wb-h [data-p="wall"]'); await L.settle(p, 250);
+      ok(!(await p.$('.wb')) && !!(await p.$('.nb-tabs [data-p="wall"]')) && !(await wallSaved(p)), 'personal device: Back restores the list and its Wall board entry');
+      await p.click('.nb-tabs [data-p="wall"]'); await L.settle(p, 250);
+      ok(!!(await p.$('.wb')) && await wallSaved(p) === '1', 'personal device: the existing section tab opens the board in one tap');
+      await p.click('#nbr-w3 .nb-onbtn');
+      await L.waitFor(p, k => (window.__fake.dump()[k] || {}).onById === 'ann', key('w3'), 6000);
+      ok(!(await p.$('#pt-sheet')) && (await item(p, 'w3')).done === false, 'personal device: On it stamps Ann without the shared Who\'s on it picker');
+      await p.click('#nbr-w3 .nb-box');
+      await L.waitFor(p, k => (window.__fake.dump()[k] || {}).done === true, key('w3'), 6000);
+      const own = await item(p, 'w3');
+      ok(!(await p.$('#pt-sheet')) && own.doneById === 'ann' && own.preparedById === 'ann', 'personal device: a tick keeps Ann as both cook and recorder without a shared attribution picker');
+    }
+    await p.context().close();
+  }
 
   await b.close();
   L.report(R);
