@@ -78,7 +78,9 @@ async function journey(browser, label, route, options, run) {
     await L.settle(p, 150);
     ok(await reads(p) === afterOff, 'typing after disabling makes no standards query');
     await p.evaluate(key => __fake.write(key, Object.assign({}, __fake.dump()[key], { minimum: 9, v: 2 })), ITEM);
-    await p.locator('[data-p="p-log-close"]').first().click();
+    await p.locator('.p-sheet button[data-p="p-log-close"]').click();
+    await p.locator('.p-sheet').waitFor({ state: 'detached' });
+    await L.settle(p, 200);
     await liveSwitch(p, true);
     await p.locator('[data-p="ps-view"][data-v="reference"]').click();
     await L.waitFor(p, () => !!document.querySelector('.ps-reference'), null, 8000);
