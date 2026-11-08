@@ -64,6 +64,7 @@ const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.n
   ok((await p.$eval('[data-p="tm-save"]', e => e.disabled)) === false, 'page: Save is on once something changed');
   ok(TEAM in (await store(p)) === false, 'page: nothing is saved before Save');
   await onShift(p, 'bo');
+  await p.locator('.tm-batch > summary').click();
   await pick(p, 'tm-spfrom', 720); await L.settle(p, 100);
   await tap(p, '[data-p="tm-spread"]'); await L.settle(p, 200);
   ok(/3 breaks from 12:00/.test(await txt(p, '.tm-save') || ''), 'page: Spread them sets 3 breaks from 12:00, one at a time (' + (await txt(p, '.tm-save')) + ')');
@@ -216,6 +217,7 @@ const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.n
   await tap(p, '[data-p="tm-on"][data-id="ann"]'); await L.settle(p, 200);
   await onShift(p, 'bo'); await onShift(p, 'sam');
   ok(await pick(p, 'tm-sec:sam', 'pans'), 'chef section: Sam puts himself on Pans');
+  await p.locator('.tm-batch > summary').click();
   ok(await p.$eval('select[data-k="tm-spfrom"]', e => e.value) === '870' && await p.$eval('select[data-k="tm-splen"]', e => e.value) === '150' && await p.$eval('select[data-k="tm-spmode"]', e => e.value) === '0', 'split: on a 10:00 to 22:00 shift Spread them starts on a 2.5 hour split at 14:30, all together');
   await tap(p, '[data-p="tm-addbr"][data-id="sam"]'); await L.settle(p, 200);
   ok(await p.$eval('select[data-k="tm-len:sam:0"]', e => e.value) === '150' && await p.$eval('select[data-k="tm-at:sam:0"]', e => e.value) === '870', '+ Break: on a long shift the first one is the split');
