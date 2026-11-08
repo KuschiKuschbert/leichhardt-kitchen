@@ -2,6 +2,12 @@
 const L = require('./lib');
 const { R, ok } = L.results();
 const CURRENT = ['kitchens', L.PIN, 'cooling', 'current'].join('/'), HOUR = 3600000;
+const CONFIG = ['kitchens', L.PIN, 'config', 'main'].join('/'), DAY = L.ymd(new Date(L.NOW));
+// Keep the real fourth header control present through both stages, with Cleaning's sixth page tab enabled.
+const team = {
+  [CONFIG]: { ...L.seed()[CONFIG], staffIds: ['sam', 'ann', 'bo'], kitSecs: [{ id: 'larder', name: 'Larder', off: false }], kitShifts: [{ id: 'day', name: 'Day', from: 600, to: 1320, off: false }] },
+  [['kitchens', L.PIN, 'team', DAY].join('/')]: { day: DAY, v: 1, by: 'sam', at: L.NOW - HOUR, upd: L.NOW - HOUR, on: [{ id: 'ann', sh: 'day', sec: 'larder' }], br: [] }
+};
 const millis = value => value && (value.__fakeTimestamp != null ? value.__fakeTimestamp : value.seconds * 1000 + (value.nanoseconds || 0) / 1000000);
 const saved = p => p.evaluate(path => __fake.dump()[path], CURRENT);
 const writes = p => p.evaluate(path => __fake.writes.flat().filter(x => x.path === path), CURRENT);
@@ -31,12 +37,17 @@ async function shape(p) {
     const control = [...document.querySelectorAll('.cooling-clock button, .cooling-clock-status')].find(el => getComputedStyle(el).visibility !== 'hidden' && !el.hidden && el.getClientRects().length);
     const nav = document.querySelector('.tabbar'), limit = nav && nav.getBoundingClientRect().height ? nav.getBoundingClientRect().top : innerHeight;
     return { control: rect(control), header: rect(document.querySelector('.wtop')), brand: rect(document.querySelector('.wtop-brand')),
-      peers: [...document.querySelectorAll('.wtop-back, .wtop .tm-slot, .wtop .nbell, .wtop .wtop-who')].map(rect),
+      peers: [...document.querySelectorAll('.wtop-back, .wtop .tm-slot .tm-chip, .wtop .nbell, .wtop .wtop-who')].filter(el => el.getClientRects().length).map(rect),
+      tabs: [...document.querySelectorAll('.wtop .pnav a')].map(rect),
       rows: [...document.querySelectorAll('.nb-row')].map(rect), fullRows: [...document.querySelectorAll('.nb-row')].filter(el => el.getBoundingClientRect().bottom <= limit).length,
       expanded: document.querySelector('.cooling-clock').dataset.clockState, hasDialog: !!document.querySelector('.cooling-wrap') };
   });
 }
-function sameLayout(a, b) { return JSON.stringify([a.header, a.peers, a.rows, a.fullRows]) === JSON.stringify([b.header, b.peers, b.rows, b.fullRows]); }
+function sameLayout(a, b) { return JSON.stringify([a.header, a.peers, a.tabs, a.rows, a.fullRows]) === JSON.stringify([b.header, b.peers, b.tabs, b.rows, b.fullRows]); }
+function controlsFit(a, width) {
+  const controls = [a.control, ...a.peers];
+  return controls.every(r => r[2] >= 44 && r[3] >= 44 && r[0] >= 0 && r[0] + r[2] <= width) && controls.every((r, i) => controls.slice(i + 1).every(s => r[0] + r[2] <= s[0] + .5 || s[0] + s[2] <= r[0] + .5));
+}
 (async () => {
   const browser = await L.start(); let p;
   async function step(label, fn) {
@@ -45,18 +56,21 @@ function sameLayout(a, b) { return JSON.stringify([a.header, a.peers, a.rows, a.
     finally { if (p) { ok(!p.errors.length, label + ': no browser errors ' + p.errors.join(' | ')); await p.context().close(); p = null; } }
   }
   try {
-    for (const width of [390, 768, 1280]) await step('clock states ' + width, async () => {
-      p = await L.open(browser, '#/prep', { who: 'ann', width, deviceMode: 'personal', wait: 1200 }); await phase(p, 'idle');
+    for (const width of [390, 768, 1200, 1280]) await step('clock states ' + width, async () => {
+      p = await L.open(browser, '#/prep', { who: 'ann', width, deviceMode: 'personal', extra: team, wait: 1200 }); await phase(p, 'idle');
+      await L.waitFor(p, () => !!document.querySelector('.wtop .tm-slot .tm-chip'));
       const realFonts = await fonts(p); await L.settle(p, 400);
       if (!realFonts) ok(true, width + ': real Barlow unavailable; width-sensitive navigation checks skipped');
-      const baseline = await shape(p), mobile = width < 1100;
+      const baseline = await shape(p), mobile = width < 1280;
       ok(baseline.control[2] === 44 && baseline.control[3] === 44, width + ': idle clock has a 44px target');
+      ok(await p.locator('.wtop .tm-slot .tm-chip').isVisible() && controlsFit(baseline, width), width + ': clock, Team, bell and chef controls fit together without overlap');
+      if (realFonts && width >= 720) ok(baseline.tabs.length === 6 && baseline.tabs.every(r => r[1] === baseline.tabs[0][1] && r[3] === 44), width + ': all six page tabs stay on one row with Team and the clock in Barlow ' + JSON.stringify(baseline.tabs));
       await p.locator('button[data-cooling="clock"]').evaluate(el => { window.__clockButton = el; });
       await clockTap(p); await phase(p, 'armed');
       let drawn = await shape(p);
       ok((await writes(p)).length === 0 && !drawn.hasDialog, width + ': first tap only reveals Start in place, with no write or dropdown');
       ok(drawn.control[2] === (mobile ? 44 : 152) && drawn.control[3] === 44, width + ': armed control keeps the chosen phone circle or desktop pill');
-      ok(sameLayout(baseline, drawn), width + ': arming leaves the header, peers and prep lines still');
+      ok(sameLayout(baseline, drawn) && controlsFit(drawn, width), width + ': arming leaves the header, peers and prep lines still without overlap');
       if (mobile) ok(JSON.stringify(baseline.brand) === JSON.stringify(drawn.brand) && await p.locator('.wtop-brand').evaluate(el => getComputedStyle(el).opacity === '1'), width + ': mobile brand is never displaced or faded');
       await p.keyboard.press('Escape'); await phase(p, 'idle');
       ok((await writes(p)).length === 0, width + ': Escape disarms without starting a batch');
@@ -73,7 +87,7 @@ function sameLayout(a, b) { return JSON.stringify([a.header, a.peers, a.rows, a.
       const first = await saved(p), firstAt = millis(first.firstAt), firstDue = firstAt + 2 * HOUR;
       ok(first.rev === 1 && first.secondAt === 0 && await p.locator('button[data-cooling="clock"]:visible').count() === 0 && await p.locator('.cooling-clock-status').getAttribute('aria-live') === 'off', width + ': accepted running timer is read-only and does not announce every countdown tick');
       drawn = await shape(p);
-      ok(drawn.control[2] === (mobile ? 44 : 152) && sameLayout(baseline, drawn), width + ': running has the selected footprint without moving list lines');
+      ok(drawn.control[2] === (mobile ? 44 : 152) && sameLayout(baseline, drawn) && controlsFit(drawn, width), width + ': running has the selected footprint without moving list lines or overlapping Team');
       const beforeProgress = await p.locator('.cooling-clock-status').innerHTML();
       await advance(p, firstAt + HOUR); await phase(p, 'first');
       ok(await p.locator('.cooling-clock-status').innerHTML() !== beforeProgress && (await writes(p)).length === 1, width + ': the ring/countdown advances locally without more shared writes');
@@ -97,7 +111,7 @@ function sameLayout(a, b) { return JSON.stringify([a.header, a.peers, a.rows, a.
       await advance(p, firstDue + HOUR); await phase(p, 'done1');
       ok((await saved(p)).secondAt === 0 && (await writes(p)).length === 1 && await p.evaluate(() => __coolingSounds === 1), width + ': waiting an extra hour never starts four hours or repeats the alert');
       drawn = await shape(p);
-      ok(drawn.control[2] === (mobile ? 44 : 152) && drawn.control[3] === 44 && sameLayout(baseline, drawn), width + ': green first completion retains its footprint and prep positions');
+      ok(drawn.control[2] === (mobile ? 44 : 152) && drawn.control[3] === 44 && sameLayout(baseline, drawn) && controlsFit(drawn, width), width + ': green first completion retains its footprint, Team control and prep positions');
       ok(/Start.*4.hour/i.test(await p.locator('button[data-cooling="clock"]').getAttribute('aria-label')), width + ': the green action names the separate four-hour start');
       await clockTap(p); await phase(p, 'second');
       const second = await saved(p), secondAt = millis(second.secondAt);

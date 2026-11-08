@@ -60,6 +60,7 @@ html.cooling-open, html.cooling-open body { overflow: hidden; }
 /* The existing navigation wrap absorbs a wide fallback font before the title shrinks. */
 @media(min-width:1100px) {
   .wtop:has(.cooling-chip) .wtop-start { flex-shrink: 0; }
+  .wtop:has(.cooling-clock) .pnav a { padding-inline: .65rem; }
 }
 
 .cooling-slot:empty { display: none; }
@@ -105,9 +106,9 @@ html.cooling-open, html.cooling-open body { overflow: hidden; }
 .cooling-clock[data-clock-state="armed"] .cooling-clock-play,
 .cooling-clock:is([data-clock-state="pending"],[data-clock-state="checking"]) .cooling-clock-wait,
 .cooling-clock[data-clock-state="error"] .cooling-clock-alert { display: block; }
-@media(min-width:1100px) {
+/* The full title, six tabs and four controls fit the countdown pill from 1280px. */
+@media(min-width:1280px) {
   .cooling-clock { flex-basis: 152px; width: 152px; }
-  .wtop:has(.cooling-clock) .pnav a { padding-inline: .65rem; }
   .cooling-clock .cooling-clock-control { transition: width 340ms cubic-bezier(.2,.85,.28,1), border-radius 340ms, background-color 180ms, border-color 180ms; }
   .cooling-clock:not([data-clock-state="idle"]) .cooling-clock-control { width: 152px; border-radius: 22px; }
   .cooling-clock-copy { display: flex; opacity: 0; translate: 5px 0; transition: opacity 160ms, translate 240ms; }

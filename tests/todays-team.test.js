@@ -321,15 +321,16 @@ const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.n
   // and laptops show (the saved copy keeps it): the tests stand Google Fonts in with nothing, and the stand-in fonts differ
   // from machine to machine (wider on GitHub's runner, 7 Nov 2026). The same top bar is measured with the chip and
   // without it. If Barlow cannot load here, the check says so and measures nothing.
-  for (const w of [720, 768, 1200, 1280]) {
+  for (const w of [720, 768, 1100, 1200, 1279, 1280]) {
     p = await L.open(b, '#/prep', { who: 'sam', extra: cfg(), width: w, wait: 1500 });
     await p.context().unroute(/fonts\.(googleapis|gstatic)\.com/);
     const css = await p.addStyleTag({ url: 'https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@700&display=swap' }).then(() => true, () => false);
     const got = css && await p.evaluate(() => Promise.race([Promise.all(['600 16px Barlow', '700 16px "Barlow Condensed"'].map(f => document.fonts.load(f))).then(r => r.every(x => x.length > 0)), new Promise(r => setTimeout(() => r(false), 8000))]));
     if (!got) { ok(true, 'top bar at ' + w + ' px: Barlow could not load here, the chip and the tabs were not measured'); await p.context().close(); continue; }
+    await p.evaluate(() => document.fonts.ready);
     await L.settle(p, 300);
     const rows = await p.evaluate(() => { const n = document.querySelector('.wtop .pnav'), c = document.querySelector('.wtop .tm-slot .tm-chip'); if (!n || !c) return null; const withChip = n.getBoundingClientRect().height; c.style.display = 'none'; const without = n.getBoundingClientRect().height; c.style.display = ''; return [withChip, without]; });
-    ok(!!rows && Math.abs(rows[0] - rows[1]) < 1, 'top bar at ' + w + ' px, in Barlow: the chip does not wrap the page tabs (' + JSON.stringify(rows) + ')');
+    ok(!!rows && rows.every(height => Math.abs(height - 44) < 1), 'top bar at ' + w + ' px, in Barlow: the chip keeps the page tabs on one row (' + JSON.stringify(rows) + ')');
     await p.context().close();
   }
 
