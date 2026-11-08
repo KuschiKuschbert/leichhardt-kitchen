@@ -1,6 +1,6 @@
 # Chef to-do: two notebook designs
 
-8 November 2026. Status: **B, Open notebook, implemented and checked locally; awaiting pull request checks and release**. The head chef explicitly requested two designs before coding, superseding the usual three in the service council and build-apps workflows. The choice changes presentation only: access, data and saved-shell contracts stay.
+8 November 2026. Status: **B, Open notebook, released and live-verified in PR600; colour refinement checked locally, awaiting CI and release**. The head chef explicitly requested two designs before coding, superseding the usual three in the service council and build-apps workflows. The choice changes presentation only: access, data and saved-shell contracts stay.
 
 Read first: `CLAUDE.md`, `docs/design-patterns.md`, `docs/code-contracts.md` (Chef to-do), `docs/whole-app-redesign-options/brief.md` (Chosen and Build, step 7). Existing state: one private shared list, one add form, shared search and filters through `lvHTML()`, due-first sort, lazy Done in the last 30 days.
 
@@ -22,6 +22,12 @@ All six round 2 reviewers preferred A. Scores before small corrections:
 Corrections applied to the previews after review: A's desktop deadlines moved beneath the job; the repeated unfiltered count was removed; tablet spacing was reduced; visible buttons were measured at a minimum of 44 by 44 px. These corrections and the scores describe the previews, before the head chef chose B.
 
 Council recommendation: A. It retains visible one-tap filters, gives jobs the available width and uses one notebook sheet at every size. B is useful if a permanently visible laptop add form matters more than list space.
+
+## Colour refinement, 8 November 2026
+
+After the approved notebook was released, the head chef requested the existing book colours on Chef to-do and Today's team. The small colour pass keeps B's layout and all interactions, using warm paper, burnt-orange headings and active choices, green completed jobs and quiet dividers. Existing tokens only; state still has words, checkmarks and strikethrough. The council quick check, contrast, unchanged tap and row measurements, and verification are in [the shared colour record](../team-notebook-options/brief.md#colour-refinement-8-november-2026). The layout choice below remains settled.
+
+Colour screenshot with synthetic data: [390 px phone](colour-390.png).
 
 ## Chosen
 
