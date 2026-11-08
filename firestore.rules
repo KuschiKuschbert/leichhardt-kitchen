@@ -1353,6 +1353,12 @@ service cloud.firestore {
 
     // Cleaning (8 Nov 2026): immutable schedule revisions retain missed occurrences after an edit or archive.
     // Changes start tomorrow. The two-way prev/next link permits only one successor in the same atomic batch.
+    // The admin opens Cleaning to the team when setup is ready. Missing is off; canonical chefs retain setup access.
+    function cleanEnabled(id) {
+      return chefId(id) || (cfg().get('staffSee', {}) is map
+        && cfg().get('staffSee', {}).get('cleaning', false) == true);
+    }
+    function cleanRead() { return kitchenRead() && cleanEnabled(reader()); }
     function cleanId(id) { return id is string && id.matches('[a-zA-Z0-9_-]{1,80}'); }
     function cleanText(value, n) { return value is string && value.size() <= n; }
     function cleanName(value) { return cleanText(value, 80) && value.size() > 0 && value.matches('.*[^ ].*'); }
@@ -1389,7 +1395,7 @@ service cloud.firestore {
           && getAfter(cleanTaskPath(d.next)).data.from == d.until));
     }
     match /kitchens/KITCHEN_PIN/cleaningTasks/{id} {
-      allow read: if kitchenRead();
+      allow read: if cleanRead();
       allow create: if staff() && chefId(request.resource.data.by) && cleanId(id) && cleanTaskShape(request.resource.data)
         && request.resource.data.next == '' && request.resource.data.until == 253402178400000 && cleanRecent(request.resource.data.at)
         && (request.resource.data.prev == '' ? request.resource.data.root == id && request.resource.data.from == cleanStart()
@@ -1420,11 +1426,11 @@ service cloud.firestore {
         && d.diff(resource.data).affectedKeys().hasOnly(['done', 'version', 'by']);
     }
     match /kitchens/KITCHEN_PIN/cleaningDone/{id} {
-      allow get: if kitchenRead() && (chefId(reader()) || resource == null || cleanToday(resource.data.day));
-      allow list: if kitchenRead() && (chefId(reader()) || cleanToday(resource.data.day));
-      allow create: if staff() && capability(request.resource.data.by, 'tick') && cleanDoneShape(id, request.resource.data)
+      allow get: if cleanRead() && (chefId(reader()) || resource == null || cleanToday(resource.data.day));
+      allow list: if cleanRead() && (chefId(reader()) || cleanToday(resource.data.day));
+      allow create: if staff() && cleanEnabled(request.resource.data.by) && capability(request.resource.data.by, 'tick') && cleanDoneShape(id, request.resource.data)
         && cleanToday(request.resource.data.day) && cleanDue(request.resource.data) && request.resource.data.version == 1 && cleanTick(request.resource.data);
-      allow update: if staff() && capability(request.resource.data.by, 'tick') && cleanDoneShape(id, request.resource.data)
+      allow update: if staff() && cleanEnabled(request.resource.data.by) && capability(request.resource.data.by, 'tick') && cleanDoneShape(id, request.resource.data)
         && cleanToday(request.resource.data.day) && cleanDue(request.resource.data)
         && request.resource.data.task == resource.data.task && request.resource.data.day == resource.data.day
         && (request.resource.data == resource.data || (request.resource.data.version == resource.data.version + 1

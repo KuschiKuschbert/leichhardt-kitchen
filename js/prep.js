@@ -784,10 +784,11 @@
   function canBrowse() { return (S.level === 'owner' && ownerHere()) || isSous(); }
   function can(what) { if (S.user && S.level === 'owner' && ownerHere()) return true; if (guest()) return what === 'add' || what === 'tick'; var p = me(), c = S.config || {}, ids = c[what + 'Ids']; return !!(p && !functionOnly() && (p.id === c.headId || Array.isArray(ids) && ids.indexOf(p.id) >= 0)); }
   /* ---------- new pages the head chef can hold back from staff ----------
-     Guides, Shift pings and Meeting minutes always show for the head chef, sous chefs and leads. Staff and View only see each one unless the head chef unticks it under New pages in the People
-     tab (config/main staffSee, missing means shown). It only hides the links and skips the reads: it is not a lock.
-     What this phone may see is kept in lk.feat, so the landing page and the top bar are right before the book connects. */
-  var FEATS = [['guides', 'Guides'], ['pings', 'Shift pings'], ['minutes', 'Meeting minutes']];
+     Guides, Shift pings and Meeting minutes always show for the head chef, sous chefs and leads. Staff and View only see each one unless the admin unticks it under Kitchen, Overview, Pages staff see
+     (config/main staffSee, missing means shown). Those three only hide links and skip reads.
+     Cleaning starts off until the admin explicitly enables it; only canonical chefs can prepare it while off.
+     Its rules also enforce this switch. lk.feat follows the loaded settings and never grants private access. */
+  var FEATS = [['guides', 'Guides'], ['pings', 'Shift pings'], ['minutes', 'Meeting minutes'], ['cleaning', 'Cleaning']];
   var featHave = (function () { try { return JSON.parse(lsGet('lk.feat') || 'null') || {}; } catch (e) { return {}; } })();
   /* Marks this phone or computer as the head chef's (lk.admin) once the owner probe has passed, and clears the mark on sign out
      or when the probe fails. js/app.js listens for lk-admin to show or drop Admin in the chef hat's menu. */
@@ -813,9 +814,10 @@
   function ownerHere() { return deviceReady() && !S.privacyLocked && !!S.user && S.authed && whoHead() && canW() && S.grantExp > now(); }
   function featCalc(k) {
     var p = who();
+    if (k === 'cleaning') return (S.config.staffSee || {}).cleaning === true || chefAllowed();
     return admDev() || (S.config.staffSee || {})[k] !== false || !!(p && (chefP(p) || p.role === 'lead' || (k === 'pings' && canPingP(p))));
   }
-  function featOn(k) { if (!kitchenAccess() || !S.configFull) return false; return S.configState === 'ok' && S.config ? featCalc(k) : admDev() || featHave[k] !== false; }
+  function featOn(k) { if (!kitchenAccess() || !S.configFull) return false; return S.configState === 'ok' && S.config ? featCalc(k) : admDev() || (k === 'cleaning' ? featHave[k] === true : featHave[k] !== false); }
   /* run when the staff list, the person on this phone or the Google sign-in changes */
   function featSync() {
     if (S.configState !== 'ok' || !S.config || !S.configFull) return;
@@ -1628,9 +1630,10 @@
         edit('secs', 'Kitchen sections', k ? list(k.secs) : '', function () { return ksAdminHTML(d); }) +
         edit('shifts', 'Shifts', k ? list(k.shifts) : '', function () { return shAdminHTML(d); }) + row('Shift pings', k ? 'Sound: ' + sound(k.sound) : '', 'notes') +
         row('Meeting minutes', 'Write and publish', 'minutes') + row('Guides', 'How-to guides', 'guides')) +
-      group('The team\'s access', edit('see', 'Pages staff see', k ? (k.hidden.length ? list(k.shown) + '. Held back: ' + k.hidden.join(', ') : 'All three') : '', function () {
-          return '<p class="hint">You, sous chefs and leads always see these. Untick one to hide it from Staff and View only until the team is ready.</p><div class="a-feats">' +
-            FEATS.map(function (f) { return '<label class="a-check"><input type="checkbox" data-a="staffsee" data-f="' + f[0] + '"' + (d.staffSee[f[0]] ? ' checked' : '') + '> Staff see ' + f[1] + '</label>'; }).join('') + '</div>';
+      group('The team\'s access', edit('see', 'Pages staff see', k ? (k.hidden.length ? list(k.shown) + '. Held back: ' + k.hidden.join(', ') : 'All pages') : '', function () {
+          return '<p class="hint">You and sous chefs can prepare these pages before the team sees them. Leads always see Guides, Shift pings and Meeting minutes.</p><div class="a-feats">' +
+            FEATS.map(function (f) { return '<label class="a-check"><input type="checkbox" data-a="staffsee" data-f="' + f[0] + '"' + (d.staffSee[f[0]] ? ' checked' : '') + '> ' + (f[0] === 'cleaning' ? 'Turn on Cleaning for the team' : 'Staff see ' + f[1]) + '</label>'; }).join('') + '</div>' +
+            '<p class="hint">Cleaning starts off. Set up the jobs and repeat days, then turn it on and save when ready. Turning it off keeps the schedule and completed records.</p><p><a class="btn" href="#/cleaning">Set up cleaning</a></p>';
         }) +
         edit('badges', 'Weekly top tickers on the prep book', k ? (k.badges ? 'Shown' : 'Hidden') : '', function () {
           return '<label class="a-check"><input type="checkbox" data-a="badges"' + (d.showBadges !== false ? ' checked' : '') + '> Show the weekly top tickers to everyone on the prep book</label>';
@@ -1781,7 +1784,7 @@
   /* Cleaning (8 Nov 2026): two bounded server queries only when the lazy page opens or Refresh is tapped.
      Immutable task revisions retain each day's expected jobs. W() owns pending writes and recorder identity. */
   var CLEAN_OPEN = 253402178400000, cleaningAttempt = null;
-  function cleaningOK() { return kitchenAccess(); }
+  function cleaningOK() { return featOn('cleaning'); }
   function cleaningChef() { return chefAllowed(); }
   function cleaningPermissionsReady() { return S.configState === 'ok' && !!S.configFull; }
   function cleaningTickOK() { return cleaningOK() && canW() && can('tick'); }
@@ -3270,7 +3273,7 @@
   }
   function headIdOf(people) { var h = people.filter(function (p) { return p.role === 'head' && p.active !== false && String(p.name).trim(); })[0]; return h ? h.id : ''; }
   function anyP() { return true; }
-  function staffSee(c) { var o = {}; FEATS.forEach(function (f) { o[f[0]] = ((c && c.staffSee) || {})[f[0]] !== false; }); return o; }
+  function staffSee(c) { var o = {}; FEATS.forEach(function (f) { var value = ((c && c.staffSee) || {})[f[0]]; o[f[0]] = f[0] === 'cleaning' ? value === true : value !== false; }); return o; }
   /* hold: keep these sousIds and pingIds as they are instead of working them out from the roles (see seedIds) */
   /* When a person may set their first PIN (22 Oct 2026, config/main pinOpen: { id: until, kitchen clock ms }). The rules
      let a PIN be set only before that time, so nobody can take a new person's name by setting a PIN first. A person on

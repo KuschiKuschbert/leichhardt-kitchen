@@ -36,7 +36,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Prep, Orders, Wastage, Transfers and the chef hat; who did a Prep line on a shared screen | `docs/work-pages-design-options/brief.md`, `docs/shared-prep-attribution.md` |
 | Head-set section minimums, Prep room, smart matching and Before service | `docs/prep-standards.md`, `docs/prep-par-options/brief.md` |
 | Today's team and its chosen notebook, council and build record | `docs/todays-team-options/brief.md`, `docs/team-notebook-options/brief.md` (Chosen, Build, council), `docs/prep-book.md` (Today's team) |
-| Cleaning page, Guides navigation move and council | `docs/cleaning-options/brief.md` (chosen C + A), `docs/cleaning-options/implementation.md` |
+| Cleaning page, Guides navigation move and council | `docs/cleaning-options/brief.md` (chosen C + A), `docs/cleaning-options/implementation.md`, `docs/cleaning-options/release-toggle.md` |
 | Chef to-do notebook layout | `docs/chef-todo-options/brief.md` (Chosen, implementation contract) |
 | Drinks run notebook style | `docs/drinks-notebook.md`, `docs/code-contracts.md` (Drinks run) |
 | Recipe amounts, the recipe and drawing editor, the drawing studio, smoker batches | `docs/recipe-multiplier.md`, `docs/recipe-editor-options/brief.md`, `docs/studio-options/brief.md`, `docs/smoker-batches.md` |
@@ -165,7 +165,7 @@ Short warnings. The full contract for each part is its section in `docs/code-con
 - **Recipes and drawings.** `js/overlay.js` loads after `js/data.js` and before `js/prep.js` and `js/app.js`. Edits start from `LK_RX.pristine(id)` or `LK_RX.change(id)`. Everything drawn from Firestore or IndexedDB goes through `LK_RX.clean()`. Walk drawing parts with `isPiece()` or `itemOfEl()`, not `el.t === 'item'`. Draw it for me uses `LIB.P.rng`, never `Math.random`, keeps `node tests/smart-match.js` at 85% or more and `node tests/style-check.js` clean.
 - **Functions.** Phone and email live only in `fncontact`. `first`, `last`, `from`, `until` and `kq` come from `derive()`. Keep rule checks on `functions` cheap and test the largest booking (12 lines, 8 rounds) on the emulator.
 - **Shared maths lives in one file** that the phones and the server jobs both run: cut-offs in `js/cutoffs.js`, the list batch time in `js/learn.js`, amounts in `js/amounts.js`.
-- **Held-back pages.** Any new link, card or read for guides, pings or minutes checks `featOn()`.
+- **Held-back pages.** Any new link, card or read for guides, pings, minutes or cleaning checks `featOn()`. Cleaning is off by default for the team, with canonical chef setup access and matching server rules.
 - **Admin panel.** A new block gets a `.label` or `h3.a-ch-h` (the nav chips read them). Lists that grow go through `lvHTML()`. No hand-built long tables, no second sticky bar.
 - **Prep list.** Double ups merge only through `mergeDups()`, from a server read; a `dupOk` line never merges. Tomorrow's list cut comes from `cutFor()`.
 - **Top bar.** Pings, the chef hat and the round Today's team chip (7 Nov 2026), all the bell's size. A button with words in it wraps the page tabs on a laptop and cuts "Kitchen Book" on a phone (measured 7 Nov 2026, `docs/todays-team-options/brief.md`); anything more is a head chef decision. Sign-offs and `hist` copies are immutable; a change after publishing is a new version.

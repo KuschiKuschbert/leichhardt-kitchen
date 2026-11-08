@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **8 November 2026, prepare Cleaning before release.** The head chef requested an admin toggle to turn Cleaning on once setup is ready. Reuse Admin → Kitchen → Overview → Pages staff see, with a Set up cleaning link. Cleaning starts off for the team; canonical head and sous chefs retain setup access. Only the verified admin enables it. Saving the switch publishes or hides the page for staff and leads, with matching server rules. Turning it off keeps all tasks and completion records. See [the release-switch contract](cleaning-options/release-toggle.md).
+
 - **8 November 2026, admin rollout for smart prep par levels.** Add an admin toggle to make the feature available to the team. Default off for setup; Admin → Prep controls hints and Before service, with standards and drafts preserved when off. [Contract](prep-standards.md).
 - **8 November 2026, section prep standards: implement the recommendation.** After reviewing the three designs and their alignment with the app, the head chef said “okay lets go”. Build the separate Prep room, A’s normal typing guidance and C’s complete Before service reference, with Work as the default. Canonical head/verified admin edit; sous reads. Keep existing free-text task quantities separate from minimums, and defer stock counts and saved readiness checks. See [implementation](prep-standards.md) and [the chosen design](prep-par-options/brief.md).
 

@@ -37,8 +37,8 @@ const cfgKey = ['kitchens', L.PIN, 'config', 'main'].join('/');
     ok(await p.evaluate(() => LK_PREP.state.atab) === 'kitchen-home' && await p.locator('#k-b-secs .a-ks [data-p="ks-add"]').count() === 1 && await p.locator('#k-b-secs .a-savebar [data-p="a-save"][disabled]').count() === 1,
       width + ': Kitchen sections opens in its row, with the editor and the Save bar (off)');
     await p.click('[data-p="k-row"][data-r="see"]'); await L.settle(p, 400);
-    ok(await p.locator('#k-b-secs').count() === 0 && await p.locator('#k-b-see [data-a="staffsee"]').count() === 3 && await p.locator('[data-p="k-row"][data-r="see"][aria-expanded="true"]').count() === 1,
-      width + ': Pages staff see opens in its row with the three pages, and Kitchen sections closes');
+    ok(await p.locator('#k-b-secs').count() === 0 && await p.locator('#k-b-see [data-a="staffsee"]').count() === 4 && await p.locator('[data-p="k-row"][data-r="see"][aria-expanded="true"]').count() === 1,
+      width + ': Pages staff see opens in its row with the four pages, and Kitchen sections closes');
     const top = await p.evaluate(() => document.getElementById('k-h-see').getBoundingClientRect().top);
     ok(top >= 0 && top < 900 - 160, width + ': the row just opened is in view (' + Math.round(top) + ')');
     await p.click('[data-p="k-row"][data-r="badges"]'); await L.settle(p, 400);
@@ -75,7 +75,7 @@ const cfgKey = ['kitchens', L.PIN, 'config', 'main'].join('/');
     await p.click('[data-p="a-save"]');
     const saved = await L.waitFor(p, k => ((window.__fake.dump()[k] || {}).kitSecs || []).some(x => x.name === 'Pastry'), cfgKey, 5000).then(() => true, () => false);
     const c = (await p.evaluate(() => window.__fake.dump()))[cfgKey] || {};
-    ok(saved && (c.kitSecs || []).map(x => x.name).join() === 'Grill,Larder,Pastry' && (c.staffSee || {}).guides === false && (c.staffSee || {}).pings === true && c.showBadges === false,
+    ok(saved && (c.kitSecs || []).map(x => x.name).join() === 'Grill,Larder,Pastry' && (c.staffSee || {}).guides === false && (c.staffSee || {}).pings === true && (c.staffSee || {}).minutes === true && (c.staffSee || {}).cleaning === true && c.showBadges === false,
       'one Save: the new section and the held back page are stored, the top tickers left as they were (' + JSON.stringify(c.kitSecs) + ' ' + JSON.stringify(c.staffSee) + ')');
     ok((c.delIds || []).includes('bo') && !(c.delIds || []).includes('ann') && (c.sousIds || []).includes('sam') && !(c.sousIds || []).includes('bo') && (c.staffIds || []).includes('bo'),
       'one Save: the canonical lists come from the list (delIds ' + JSON.stringify(c.delIds) + ', sousIds ' + JSON.stringify(c.sousIds) + ')');

@@ -135,12 +135,14 @@ async function journey(browser, label, route, options, run) {
     ok(await p.evaluate(key => __fake.dump()[key].instruction, ITEM) === '[Synthetic saved instruction]', 'the rollout switch does not save or replace the catalogue edit');
   });
 
-  await journey(browser, 'ordinary config save preserves rollout', '#/admin', { admin: true, who: 'ann', extra: fixture(true) }, async p => {
+  const bothFeatures = fixture(true); bothFeatures[CFG].staffSee = { cleaning: true };
+  await journey(browser, 'ordinary config save preserves rollout', '#/admin', { admin: true, who: 'ann', extra: bothFeatures }, async p => {
     await L.kitchenRow(p, 'badges');
     await p.locator('[data-a="badges"]').uncheck();
     await p.locator('[data-p="a-save"]').click();
     await L.waitFor(p, key => __fake.dump()[key].showBadges === false && !LK_PREP.unsent(), CFG, 8000);
-    ok((await saved(p)).prepStandardsEnabled === true, 'an ordinary full admin config save retains the current rollout flag');
+    const config = await saved(p);
+    ok(config.prepStandardsEnabled === true && config.staffSee.cleaning === true, 'an ordinary full admin config save retains both prep and cleaning rollout settings');
   });
 
   for (const who of ['ann', 'sam']) await journey(browser, who + ' PIN catalogue access', '#/chef', { who }, async p => {

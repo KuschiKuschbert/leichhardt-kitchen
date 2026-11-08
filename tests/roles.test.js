@@ -28,7 +28,7 @@ const PEOPLE = [P('kit', 'Kit', 'head'), P('sam', 'Sam', 'sous'), P('ann', 'Ann'
 // a supplier whose order closes at 15:00 today (the cut-off bar shows for the chefs at 14:00) and a function tonight
 const next = (new Date(L.NOW).getDay() + 1) % 7;
 // what staff see of the new pages (config/main staffSee): the Guides menu entry below follows it
-const SEE = { guides: true, pings: true, minutes: true };
+const SEE = { guides: true, pings: true, minutes: true, cleaning: true };
 /* Also what makes a page read more than an empty book does, so the reads it brings run under "no read the rules
    refuse": minutes published yesterday (each phone reads its own sign-off, loadMine()), an Everyone ping and personal
    pings to Ann and Lou on now (13:55, so they pop up and Got it writes who has seen them), and the guides. */

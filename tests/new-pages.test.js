@@ -1,7 +1,7 @@
 // New pages held back from staff: the head chef unticks Guides, Shift pings or Meeting minutes in the Pages staff
 // see row of the admin panel's Kitchen, Overview (Team, People until 5 Nov 2026), and Staff no longer see the links,
 // the bell, the popup or the minutes card. Sous chefs and leads still do.
-// With nothing saved yet (staffSee missing) everyone sees everything, as before.
+// With nothing saved yet (staffSee missing), those three pages remain open and Cleaning starts off.
 const L = require('./lib');
 const R = [];
 const ok = (c, m) => L.check(c, m, R);
@@ -24,7 +24,7 @@ function world(see) {
   x[fsKey(['minutes', 'm1'])] = { no: 1, v: 1, status: 'published', date: today, start: '14:00', loc: 'Kitchen', chair: 'sam', taker: 'sam', att: [{ id: 'ann', st: 'present' }], guests: '', decisions: 'Fryer oil every Monday', menu: '', safety: '', dates: '', other: '', acts: [], next: '', pubAt: L.NOW, removed: false, at: 1, upd: 1, by: 'sam' };
   return x;
 }
-const HIDE = { guides: false, pings: false, minutes: false };
+const HIDE = { guides: false, pings: false, minutes: false, cleaning: false };
 // Guides now lives under More in the chef hat. Inspect it without dismissing the pings sheet tested below.
 const guidesMenu = p => p.evaluate(() => { document.querySelector('.wtop-who').click(); const a = document.querySelector('.wm a[href="#/guides"]'); document.querySelector('[data-who="close"]').click(); return !!a; });
 const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelectorAll('.tabbar a'), a => a.getAttribute('href') === '#/guides'));
@@ -33,14 +33,14 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   const b = await L.start();
   let p, s;
 
-  // admin: Kitchen, Overview, the Pages staff see row (on Team, People until 5 Nov 2026) shows three ticks, all on while
-  // nothing is saved; unticking them saves staffSee
+  // admin: Kitchen, Overview, the Pages staff see row shows the three existing pages on and Cleaning off while
+  // nothing is saved; unticking the existing pages saves all four flags.
   p = await L.open(b, '#/admin', { admin: true, extra: world(), wait: 1800 });
   await p.click('.nt-got', { timeout: 3000 }).catch(() => {});
   await L.settle(p, 200);
   await L.kitchenRow(p, 'see');
   const ticks = await p.evaluate(() => Array.prototype.map.call(document.querySelectorAll('[data-a="staffsee"]'), e => e.getAttribute('data-f') + ':' + e.checked).join(','));
-  ok(ticks === 'guides:true,pings:true,minutes:true', 'admin: Pages staff see has Guides, Shift pings and Meeting minutes, all ticked to start (' + ticks + ')');
+  ok(ticks === 'guides:true,pings:true,minutes:true,cleaning:false', 'admin: Pages staff see starts with Guides, Shift pings and Meeting minutes on, and Cleaning off (' + ticks + ')');
   ok(/Staff see Guides/.test(await txt(p, '.a-feats') || ''), 'admin: the ticks say Staff see ...');
   for (const f of ['guides', 'pings', 'minutes']) await p.click('[data-a="staffsee"][data-f="' + f + '"]');
   await p.click('[data-p="a-save"]');
@@ -116,7 +116,7 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   ok(/Kitchen meeting/.test(await txt(p, '.nt .nt-a') || ''), 'guides only: the bell shows the minutes to sign for staff');
   await p.context().close();
 
-  // nothing saved yet: staff see everything, as before
+  // nothing saved yet: staff still see Guides, Shift pings and Meeting minutes
   p = await L.open(b, '#/', { who: 'ann', extra: world(), wait: 2500 });
   ok(await guidesMenu(p) && !(await tab(p)), 'default: staff see Guides in the hat, with no Guides tab, when nothing is saved');
   ok(await p.$('.nt') !== null, 'default: staff get the pings popup');
