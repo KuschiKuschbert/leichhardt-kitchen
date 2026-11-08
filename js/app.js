@@ -1609,6 +1609,7 @@
     }
     homeFew = false;
     app.innerHTML = html;
+    paintCooling();
     if (homeRest) restDraw();
     if (route.name === 'landing' && !docketArrived) {
       docketArrived = true;
@@ -1949,7 +1950,7 @@
     whoMenuClose(); editSlotRedraw(); redrawManage();
     if (parseRoute().name === 'settings') { render(); return; }
     var ic = app.querySelector('.wtop-icons');
-    if (ic) ic.outerHTML = topIcons();
+    if (ic) { ic.outerHTML = topIcons(); paintCooling(); }
   });
   window.addEventListener('lk-device', function () {
     if (window.LK_DEVICE) settings.shared = window.LK_DEVICE.mode() === 'shared';
@@ -1958,15 +1959,21 @@
   // js/prep.js signed a person in or out: redraw the chef mark in the top bar. On a sign-in just made (not a phone that
   // was already signed in) the mark flips in like a coin and settles, so the person sees it is now them.
   // js/prep.js read the head chef's open kitchen mail: redraw the count on the chef hat
-  window.addEventListener('lk-cooling', function () {
+  function paintCooling() {
     var slot = app.querySelector('.cooling-slot'), P = window.LK_PREP;
-    if (slot && P && P.coolingChip) { var html = P.coolingChip(); if (slot.innerHTML !== html) slot.innerHTML = html; }
-  });
-  window.addEventListener('lk-mail', function () { var ic = app.querySelector('.wtop-icons'); if (ic) ic.outerHTML = topIcons(); });
+    if (!slot || !P || !P.coolingChip) return;
+    var html = P.coolingChip();
+    // The timer patches its own state. Keep its button mounted through arming, pending and confirmation.
+    if (!html) slot.replaceChildren();
+    else if (!slot.querySelector('.cooling-clock')) slot.innerHTML = html;
+    if (P.coolingPaint) P.coolingPaint();
+  }
+  window.addEventListener('lk-cooling', paintCooling);
+  window.addEventListener('lk-mail', function () { var ic = app.querySelector('.wtop-icons'); if (ic) { ic.outerHTML = topIcons(); paintCooling(); } });
   // The Head chef's PIN also shows or drops Admin in the menu, so the whole icon group is redrawn.
   window.addEventListener('lk-who', function (e) {
     whoMenuClose(); editSlotRedraw(); redrawManage();
-    var ic = app.querySelector('.wtop-icons'); if (ic) ic.outerHTML = topIcons();
+    var ic = app.querySelector('.wtop-icons'); if (ic) { ic.outerHTML = topIcons(); paintCooling(); }
     var el = app.querySelector('.wtop-who'); if (el) el.outerHTML = whoMark(!!(e.detail && e.detail.signedIn));
   });
   // "Skip to content" must not change the address: #main is not a page, so the router would open the landing page

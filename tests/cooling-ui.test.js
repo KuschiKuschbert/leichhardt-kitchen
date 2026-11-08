@@ -28,7 +28,7 @@ async function fixture(browser, width, textSize) {
         else if (!e.shiftKey && (document.activeElement === last || out)) { e.preventDefault(); first.focus(); }
       }
     });
-    window.__ui.render(window.__model); document.querySelector('#fixture-icons').innerHTML = window.__ui.chipHTML();
+    window.__ui.render(window.__model); document.querySelector('#fixture-icons').innerHTML = window.__ui.chipHTML(); if (window.__ui.paintChip) window.__ui.paintChip();
   }, { stamp: firstAt, textSize });
   return p;
 }
@@ -49,7 +49,7 @@ async function shape(p) {
     for (const width of [390, 768, 1280]) for (const textSize of ['normal', 'xlarge']) {
       const p = await fixture(b, width, textSize);
       try {
-        await p.click('[data-cooling="open"]');
+        await p.evaluate(() => window.__ui.open(document.querySelector('.cooling-chip')));
         for (const [label, record, stamp] of [
           ['ready', null, firstAt], ['first running', run, firstAt + 18 * 60000], ['second available', run, firstDue],
           ['second running', { ...run, secondAt: firstDue + 10 * 60000, secondDue: firstDue + 250 * 60000 }, firstDue + 20 * 60000],
@@ -64,9 +64,9 @@ async function shape(p) {
     }
     const p = await fixture(b);
     try {
-      await p.evaluate(() => { window.__blocked = true; }); await p.click('[data-cooling="open"]');
+      await p.evaluate(() => { window.__blocked = true; }); await p.evaluate(() => window.__ui.open(document.querySelector('.cooling-chip')));
       ok(await p.locator('.cooling-wrap').count() === 0, 'Sheet coordination can refuse opening without creating another overlay');
-      await p.evaluate(() => { window.__blocked = false; }); await p.click('[data-cooling="open"]');
+      await p.evaluate(() => { window.__blocked = false; }); await p.evaluate(() => window.__ui.open(document.querySelector('.cooling-chip')));
       ok(await p.locator('[data-stage="2"]').isEnabled() && await p.locator('[data-stage="4"]').isDisabled(), 'First Start is available; 4 hours explains the blocked stage');
       await p.locator('[data-stage="2"]').evaluate(el => { window.__originalStart = el; });
       await p.click('[data-stage="2"]');
@@ -90,7 +90,7 @@ async function shape(p) {
       ok(await p.locator('[data-timer="2"] .cooling-error').isVisible() && await p.locator('[data-timer="2"] .lk-stamp').count() === 1 && await p.locator('.visually-hidden[role="status"]').textContent() === '', 'A refused start keeps its error beside the shared timer and announces no successful start');
       await render(p, { actionError: null });
       await p.keyboard.press('Escape');
-      ok(await p.locator('.cooling-wrap').count() === 0 && await p.locator('[data-cooling="open"]').evaluate(el => el === document.activeElement), 'Escape closes and returns focus to the clock');
+      ok(await p.locator('.cooling-wrap').count() === 0 && await p.evaluate(() => !!document.activeElement.closest('.cooling-clock, .cooling-chip')), 'Escape closes and returns focus to the clock');
       await render(p, { now: firstDue }); await p.evaluate(() => window.__ui.ping(2));
       ok(await p.getByText('Operandio batch cooling time 2 hours is done.', { exact: true }).isVisible(), 'First deadline uses the requested shift-style message');
       await p.getByRole('button', { name: 'Got it', exact: true }).click();
@@ -109,21 +109,68 @@ async function shape(p) {
       ok(await p.getByText('Operandio batch cooling time 4 hours is done.', { exact: true }).isVisible(), 'Second deadline uses the requested four-hour message');
       await p.evaluate(() => window.__fromBack());
       ok((await p.evaluate(() => window.__closed)).at(-1).noBack === true && await p.locator('.cooling-wrap').count() === 0, 'The injected Back callback closes without another history Back');
-      await p.click('[data-cooling="open"]');
+      await p.evaluate(() => window.__ui.open(document.querySelector('.cooling-chip')));
       await p.locator('.cooling-new button').click();
       ok((await p.evaluate(() => window.__calls)).at(-1) === 2 && await p.locator('.cooling-new [aria-busy]').count() === 1, 'Start another batch explicitly requests a new two-hour stage while preserving the old completed record');
       await p.keyboard.press('Escape');
-      await render(p, { run: null, pending: 0, stale: true }); await p.click('[data-cooling="open"]');
+      await render(p, { run: null, pending: 0, stale: true }); await p.evaluate(() => window.__ui.open(document.querySelector('.cooling-chip')));
       ok(await p.locator('[data-stage="2"]').isDisabled() && await p.getByText('Not connected. The last timer is shown. Reconnect before starting.', { exact: true }).isVisible(), 'A stale read never offers a shared start');
       await render(p, { stale: false, error: '<img src=x onerror=alert(1)>' });
       ok(await p.locator('.cooling-read img').count() === 0 && await p.getByText('<img src=x onerror=alert(1)>', { exact: true }).isVisible(), 'Read failure words are text, not HTML');
       await p.locator('.cooling-read button').click();
       ok(await p.getByText('Checking Operandio timers…', { exact: true }).isVisible(), 'Read retry answers immediately where the error was');
       await render(p, { available: false });
-      ok(await p.locator('.cooling-wrap').count() === 0 && await p.locator('[data-cooling="open"]').isHidden(), 'Losing access clears the private UI and hides the clock');
+      ok(await p.locator('.cooling-wrap').count() === 0 && await p.locator('.cooling-chip').isHidden(), 'Losing access clears the private UI and hides the clock');
       await p.evaluate(() => window.__ui.dispose());
       ok(p.errors.length === 0, 'Actions and recovery: no browser errors');
     } finally { await p.context().close(); }
+    // A refused local attempt is retained by the controller even after another device wins the start.
+    // Reading that refusal must not hide the winning countdown or block the following stage forever.
+    for (const hours of [2, 4]) {
+      const p = await fixture(b, 1280);
+      try {
+        if (hours === 2) {
+          await p.click('[data-cooling="clock"]'); await p.click('[data-cooling="clock"]');
+        } else {
+          await render(p, { run, now: firstDue }); await p.click('[data-cooling="clock"]');
+        }
+        const winner = hours === 2 ? { ...run, id: 'winning-first' } : { ...run, secondAt: firstDue + 1000, secondDue: firstDue + 4 * 3600000 + 1000 };
+        const due = hours === 2 ? winner.firstDue : winner.secondDue;
+        const refusal = { stage: hours, message: 'Your Operandio ' + hours + '-hour start was not saved. The shared timer changed. Check its current stage.' };
+        await render(p, { run: winner, now: hours === 2 ? firstAt + 1000 : winner.secondAt + 1000, pending: 0, actionError: refusal });
+        ok(await p.locator('.cooling-menu .cooling-error').isVisible(), hours + 'h competing start immediately shows the named refusal beside the winning shared timer');
+        await p.keyboard.press('Escape');
+        ok(await p.locator('.cooling-clock').getAttribute('data-clock-state') === (hours === 2 ? 'first' : 'second') && await p.locator('.cooling-clock-status').isVisible(), hours + 'h read refusal no longer masks the winning canonical countdown');
+        ok(await p.evaluate(() => !!window.__model.actionError), hours + 'h header recovery does not erase the controller refusal');
+        await p.evaluate(() => window.__ui.open(document.querySelector('.cooling-clock-status')));
+        ok(await p.locator('.cooling-menu .cooling-error').textContent() === refusal.message, hours + 'h refusal remains available in timer details after the clock recovers');
+        await p.keyboard.press('Escape');
+        await render(p, { actionError: { ...refusal } });
+        ok(await p.locator('.cooling-clock').getAttribute('data-clock-state') === 'error', hours + 'h a fresh refusal with the same words is not silently treated as already read');
+        await p.click('[data-cooling="clock"]'); await p.keyboard.press('Escape');
+        await render(p, { now: due });
+        ok(await p.locator('.cooling-clock').getAttribute('data-clock-state') === (hours === 2 ? 'done1' : 'done2'), hours + 'h the retained read refusal does not mask the completed shared stage');
+        await p.click('[data-cooling="clock"]');
+        if (hours === 4) {
+          await render(p, { now: due + 1000 });
+          ok(await p.locator('.cooling-clock').getAttribute('data-clock-state') === 'armed' && (await p.evaluate(() => window.__calls)).length === 1, 'A retained read refusal does not cancel new-batch arming on the next clock render');
+          if (await p.locator('.cooling-wrap').count()) await p.keyboard.press('Escape');
+          await p.click('[data-cooling="clock"]');
+        }
+        const calls = await p.evaluate(() => window.__calls);
+        ok(calls.length === 2 && calls.at(-1) === (hours === 2 ? 4 : 2), hours + 'h only the explicit next action starts the following stage or new batch once');
+        ok(!p.errors.length, hours + 'h competing start recovery has no browser errors');
+      } finally { await p.context().close(); }
+    }
+    const failed = await fixture(b);
+    try {
+      await failed.click('[data-cooling="clock"]'); await failed.click('[data-cooling="clock"]');
+      await render(failed, { pending: 0, run: null, actionError: { stage: 2, message: 'Couldn’t start Operandio 2-hour timer. Try again.' } });
+      await failed.keyboard.press('Escape');
+      ok(await failed.locator('.cooling-clock').getAttribute('data-clock-state') === 'error', 'A read refusal without a winning canonical run stays an error, not a ready or running timer');
+      await failed.click('[data-cooling="clock"]');
+      ok(await failed.getByRole('button', { name: 'Try again: start Operandio 2-hour timer' }).isEnabled(), 'A refusal without a winning run keeps its explicit retry after reopening details');
+    } finally { await failed.context().close(); }
   } finally { await b.close(); }
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

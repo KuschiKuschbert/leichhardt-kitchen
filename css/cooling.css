@@ -1,4 +1,4 @@
-/* Operandio: the approved compact clock dropdown, standard actions and separate read-only status. */
+/* Operandio: fixed mobile clock and the chosen desktop filling-face pill. The compact detail and ping sheets remain. */
 .cooling-chip[hidden] { display: none; }
 .cooling-chip[aria-expanded="true"] { background: var(--accent-ink); border-color: var(--accent-ink); color: var(--bar-text); }
 html.cooling-open, html.cooling-open body { overflow: hidden; }
@@ -60,6 +60,69 @@ html.cooling-open, html.cooling-open body { overflow: hidden; }
 /* The existing navigation wrap absorbs a wide fallback font before the title shrinks. */
 @media(min-width:1100px) {
   .wtop:has(.cooling-chip) .wtop-start { flex-shrink: 0; }
+  .wtop:has(.cooling-clock) .pnav a { padding-inline: .65rem; }
 }
 
 .cooling-slot:empty { display: none; }
+
+.cooling-clock { position: relative; display: block; flex: 0 0 44px; width: 44px; height: 44px; }
+.cooling-clock[hidden] { display: none; }
+.cooling-clock .cooling-clock-control { box-sizing: border-box; position: absolute; inset: 0 0 auto auto; display: flex; align-items: center; justify-content: flex-start; gap: 0; width: 44px; min-width: 44px; height: 44px; min-height: 44px; padding: 0; overflow: hidden; border: 2px solid var(--bar-text); border-radius: 50%; background: var(--bar); color: var(--bar-text); font-family: var(--body); text-align: left; white-space: nowrap; transition: background-color 180ms, border-color 180ms; }
+/* Keep both forms measured so swapping between action and readout preserves the pill transition. */
+.cooling-clock .cooling-clock-control[hidden] { display: flex; visibility: hidden; pointer-events: none; }
+.cooling-clock .cooling-clock-control:focus-visible { outline: 2px solid var(--bar-accent); outline-offset: 3px; }
+.cooling-clock .cooling-clock-control:disabled { opacity: 1; cursor: wait; }
+.cooling-clock .cooling-clock-status { cursor: default; }
+.cooling-clock-face { flex: 0 0 40px; position: relative; display: grid; place-items: center; width: 40px; height: 40px; }
+.cooling-clock-drawing { width: 22px; height: 22px; display: grid; place-items: center; }
+.cooling-clock-drawing svg { width: 22px; height: 22px; }
+.cooling-clock-progress { position: absolute; inset: 0; width: 40px; height: 40px; overflow: visible; fill: none; stroke: currentColor; stroke-width: 2.5; }
+.cooling-clock-progress > * { display: none; }
+.cooling-clock-track { opacity: .23; }
+.cooling-clock-ring { stroke: var(--bar-accent); stroke-dasharray: 100; stroke-dashoffset: 100; stroke-linecap: round; transform: rotate(-90deg); transform-origin: center; }
+.cooling-clock-sector { fill: var(--bar-accent); stroke: none; opacity: .65; }
+.cooling-clock-stage { display: none; position: absolute; right: 4px; bottom: 4px; min-width: 18px; padding: 1px 2px; border-radius: 5px; background: var(--bar); color: var(--bar-text); text-align: center; font: 700 12px/1 var(--display); }
+.cooling-clock-check, .cooling-clock-play, .cooling-clock-wait, .cooling-clock-alert { display: none; }
+.cooling-clock-check { font: 700 23px/1 var(--body); }
+.cooling-clock-play { width: 24px; height: 24px; }
+.cooling-clock-wait { font: 700 27px/1 var(--body); letter-spacing: 1px; margin-top: -5px; }
+.cooling-clock-alert { font: 700 26px/1 var(--display); }
+.cooling-clock-copy { display: none; flex: 0 0 auto; min-width: 0; flex-direction: column; gap: 1px; }
+.cooling-clock-copy strong { font: 700 18px/1.05 var(--display); letter-spacing: .015em; font-variant-numeric: tabular-nums; }
+.cooling-clock-copy small { font: 600 11px/1.15 var(--body); }
+.cooling-clock[data-clock-state="done1"] .cooling-clock-copy small { font-size: 13px; font-weight: 700; }
+.cooling-clock:is([data-clock-state="armed"],[data-clock-state="pending"]) .cooling-clock-control { background: var(--accent-ink); border-color: var(--accent-ink); }
+.cooling-clock[data-clock-state="error"] .cooling-clock-control { background: var(--tag); border-color: var(--tag); }
+.cooling-clock:is([data-clock-state="first"],[data-clock-state="second"]) .cooling-clock-control { border-color: transparent; }
+.cooling-clock:is([data-clock-state="first"],[data-clock-state="second"]) .cooling-clock-stage,
+.cooling-clock:is([data-clock-state="first"],[data-clock-state="second"]) .cooling-clock-track,
+.cooling-clock:is([data-clock-state="first"],[data-clock-state="second"]) .cooling-clock-ring { display: block; }
+.cooling-clock:is([data-clock-state="first"],[data-clock-state="second"]) .cooling-clock-drawing { width: 20px; height: 20px; translate: -2px -2px; }
+.cooling-clock:is([data-clock-state="first"],[data-clock-state="second"]) .cooling-clock-drawing svg { width: 20px; height: 20px; }
+.cooling-clock:is([data-clock-state="done1"],[data-clock-state="done2"]) .cooling-clock-control { background: var(--done-ink); border-color: var(--done-ink); }
+.cooling-clock:is([data-clock-state="done1"],[data-clock-state="done2"]) .cooling-clock-drawing { display: none; }
+.cooling-clock:is([data-clock-state="done1"],[data-clock-state="done2"]) .cooling-clock-check { display: block; }
+.cooling-clock:is([data-clock-state="armed"],[data-clock-state="pending"],[data-clock-state="error"],[data-clock-state="checking"]) .cooling-clock-drawing { display: none; }
+.cooling-clock[data-clock-state="armed"] .cooling-clock-play,
+.cooling-clock:is([data-clock-state="pending"],[data-clock-state="checking"]) .cooling-clock-wait,
+.cooling-clock[data-clock-state="error"] .cooling-clock-alert { display: block; }
+/* The full title, six tabs and four controls fit the countdown pill from 1280px. */
+@media(min-width:1280px) {
+  .cooling-clock { flex-basis: 152px; width: 152px; }
+  .cooling-clock .cooling-clock-control { transition: width 340ms cubic-bezier(.2,.85,.28,1), border-radius 340ms, background-color 180ms, border-color 180ms; }
+  .cooling-clock:not([data-clock-state="idle"]) .cooling-clock-control { width: 152px; border-radius: 22px; }
+  .cooling-clock-copy { display: flex; opacity: 0; translate: 5px 0; transition: opacity 160ms, translate 240ms; }
+  .cooling-clock:not([data-clock-state="idle"]) .cooling-clock-copy { opacity: 1; translate: 0 0; }
+  .cooling-clock:is([data-clock-state="armed"],[data-clock-state="pending"]) .cooling-clock-drawing { display: grid; }
+  .cooling-clock[data-clock-state="armed"] .cooling-clock-play,
+  .cooling-clock[data-clock-state="pending"] .cooling-clock-wait,
+  .cooling-clock:is([data-clock-state="first"],[data-clock-state="second"]) .cooling-clock-ring { display: none; }
+  .cooling-clock:is([data-clock-state="first"],[data-clock-state="second"]) .cooling-clock-sector { display: block; }
+  .cooling-clock:is([data-clock-state="first"],[data-clock-state="second"]) .cooling-clock-control { border-color: color-mix(in srgb,var(--bar-text) 38%,transparent); }
+  .cooling-clock[data-clock-state="armed"] .cooling-clock-control { animation: cooling-clock-settle 240ms ease-out; }
+}
+@keyframes cooling-clock-settle { 0%,100% { translate: 0 0; } 42% { translate: 0 -2px; } }
+@media(prefers-reduced-motion:reduce) {
+  .cooling-clock[data-clock-state] .cooling-clock-control, .cooling-clock-copy { transition: none; animation: none; }
+  .cooling-clock-copy { translate: none; }
+}

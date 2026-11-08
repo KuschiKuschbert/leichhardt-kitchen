@@ -61,6 +61,12 @@ Known limits, by design of the browsers:
 - A phone with its screen off, or the book in the background, does not ring: the sheet waits for the book to be on screen, as before. Ringing a locked phone would need push notifications for pings, which the book does not send.
 - A phone on silent or with its volume down stays quiet.
 
+## Operandio cooling exception, 9 November 2026
+
+The owner requested three louder chimes for each Operandio deadline. `LK_CHIME.playCooling()` plays three fixed soft-chime pairs 1.65 seconds apart, with twice the source amplitude through the existing limiter. The cooling adapter honours `pingSound() === 'off'`; ordinary pings keep their selected single sound. This adds no setting, read, audio asset or external service.
+
+`stopCooling()` cancels scheduled notes and any delayed resume. Closing the cooling ping, suspending/changing the signed-in session, hiding the app or leaving the page stops the remaining sequence. The next opening does not replay cancelled notes. Gesture wake, device volume and silent-mode behaviour are unchanged.
+
 ## Tests
 
 `tests/ping-sound.test.js` counts the notes the real browser is asked to play (each oscillator's pitch): the admin block and its Play and pick, the save and the People save keeping it, Off, a staff phone at a ping's own time, no sound after Got it or from the bell, the start of a shift, an unknown value from Firestore, a sous chef seeing no block, and `js/chime.js` failing to load. It also checks the one-sound decision: no block for the head chef's PIN on another phone, no sound in Settings for staff or a sous chef, and a sous chef's phone switching from Marimba to Oven timer when the head chef picks it, with no reload, even when waking the sound is slow. A sound held back until a tap is checked not to ring late. The notes are counted once the browser has answered every wake-up the page asked for (`window.__waking`), however long a busy runner takes, not after a set time. `tests/rules/rules.test.mjs` refuses the sound from every other sign-in and inside the saves they may make. `tests/seasonal-shell.test.js` checks the new startup file is in the saved shell and both update lists.

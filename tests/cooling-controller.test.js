@@ -12,7 +12,7 @@ function snap(data, meta = {}) { return Object.assign({ exists: data !== null, d
 function harness(options = {}) {
   let user = options.signedOut ? null : { uid: 'device-a', by: 'ann', pin: '000000', issuedAt: 1000, canRead: true };
   let clock = AT, nextId = 0, canOpen = true, uiOpen = '', uiRun = '', uiHours = 0, hooks;
-  const reads = [], writes = [], watchers = [], models = [], pings = [], seenWrites = [], chimes = [], storage = new Map();
+  const reads = [], writes = [], watchers = [], models = [], pings = [], seenWrites = [], chimes = [], soundStops = [], storage = new Map();
   const state = { synchronousWatchError: false };
   const host = {
     core: C, session: () => user, now: () => clock, timestamp: () => ({ serverTimestamp: true }),
@@ -22,7 +22,7 @@ function harness(options = {}) {
     write(kind, path, data, session) { const wait = deferred(); writes.push({ kind, path, data, session, wait }); return wait.promise; },
     readSeen(session) { return storage.get(session.by) || {}; },
     writeSeen(session, value) { seenWrites.push({ session, value }); storage.set(session.by, value); },
-    uiHooks: { canOpen: () => canOpen }, chime: value => chimes.push(value),
+    uiHooks: { canOpen: () => canOpen }, chime: value => chimes.push(value), stopChime: () => soundStops.push(true),
     mountUI(callbacks) {
       hooks = callbacks;
       return {
@@ -37,7 +37,7 @@ function harness(options = {}) {
     }
   };
   const controller = app.create(host);
-  return { controller, host, reads, writes, watchers, models, pings, seenWrites, chimes, storage, state,
+  return { controller, host, reads, writes, watchers, models, pings, seenWrites, chimes, soundStops, storage, state,
     user: value => { user = value; }, currentUser: () => user, clock: value => { clock = value; }, allow: value => { canOpen = value; },
     emit(data, meta) { watchers.filter(w => w.active).forEach(w => w.next(snap(data, meta))); },
     fail(error = { code: 'unavailable' }) { watchers.filter(w => w.active).forEach(w => w.failed(error)); },
@@ -60,6 +60,14 @@ async function test(name, body) { await body(); count++; console.log('ok ' + nam
     const h = harness(); await h.ready(); assert.equal(h.model().ready, true);
     for (let i = 0; i < 120; i++) { h.clock(AT + i * 1000); h.controller.tick(); }
     assert.equal(h.reads.length, 0); assert.deepEqual(h.watchers.map(w => w.path), ['cooling/current']); assert.equal(h.writes.length, 0);
+  });
+  await test('locking or replacing the session stops any remaining cooling chimes', async () => {
+    const h = harness(); await h.ready(record()); h.soundStops.length = 0;
+    h.clock(AT + 2 * HOUR); h.controller.tick(); assert.equal(h.chimes.length, 1);
+    h.controller.sync(); assert.equal(h.soundStops.length, 0);
+    h.user(Object.assign({}, h.currentUser(), { issuedAt: 2000 })); h.controller.sync();
+    assert.equal(h.soundStops.length, 1);
+    h.controller.stop(); assert.equal(h.soundStops.length, 2);
   });
   await test('cached or pending empty snapshots never manufacture an idle timer', async () => {
     for (const meta of [{ fromCache: true }, { hasPendingWrites: true }]) {
