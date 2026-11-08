@@ -10109,20 +10109,28 @@
       return '<li><a class="hm-sec" href="#/prep" data-hm-sec="' + esc(n) + '"><span class="hm-sn">' + esc(n || 'No section') + '</span><span class="nb-hbar' + (left ? '' : ' is-done') + '" aria-hidden="true"><i style="width:' + pct + '%"></i></span><span class="hm-sl">' + (left ? left + ' left' : 'Done') + '</span></a></li>';
     }).join('') + '</ul>';
   }
-  /* On today (8 Nov 2026, the audit of the redesign: drawn on the laptop's Home and missing): who is on each section today,
-     with their shift and breaks in words, for the chefs who set Today's team (staff see their own day on the board). From
-     the plan already read for the top bar's chip (teamLoad(), once a day): no read of its own. Shown from 720 px, as drawn. */
+  /* On today (8 Nov 2026): who is on each section, with their shifts and breaks, from the saved plan already read for
+     the top bar's chip (teamLoad(), once a day): no read of its own. Staff see it below their own day on every screen;
+     chefs keep the planner link and their existing tablet/laptop card. Staff never see the editor or an unsaved draft. */
   function homeTeamHTML() {
-    if (!teamOK()) return '';
+    var chef = teamOK();
+    if (!chef && (!homeOn() || !me() || !tmCanRead())) return '';
     teamLoad();
     var rec = tm.rec;
-    if (!rec || !rec.on || !rec.on.length) return '';
+    var head = '<div class="hm-ph"><h3 class="hm-pt">On today</h3>' + (chef ? '<a class="hm-pl" href="#/team">Today\'s team</a>' : '') + '</div>';
+    if (!chef) {
+      var note = tm.st === 'err' ? 'Could not check today\'s team. Check the signal.' :
+        tm.st !== 'ok' || tm.day !== dayNow() || tm.epoch !== accessEpoch ? 'Checking today\'s team...' :
+        rec && rec.day !== dayNow() ? 'Could not check today\'s team.' : !rec ? 'Today\'s team has not been set yet.' : '';
+      if (note) return head + '<p class="hint" role="status">' + note + '</p>';
+    }
+    if (!rec || !rec.on || !rec.on.length) return chef ? '' : head + '<p class="hint">Nobody is rostered today.</p>';
     var byId = {}; kitShifts().forEach(function (x) { byId[x.id] = x; });
     var rows = rec.on.filter(function (o) { return byId[o.sh]; });
-    if (!rows.length) return '';
+    if (!rows.length) return chef ? '' : head + '<p class="hint" role="status">Could not check today\'s team.</p>';
     var order = kitSecs().map(function (x) { return x.id; }).concat(['']), groups = {};
     rows.forEach(function (o) { var k = order.indexOf(o.sec) >= 0 ? o.sec : ''; (groups[k] = groups[k] || []).push(o); });
-    return '<div class="hm-ph"><h3 class="hm-pt">On today</h3><a class="hm-pl" href="#/team">Today\'s team</a></div><ul class="hm-team-l">' +
+    return head + '<ul class="hm-team-l">' +
       order.filter(function (k) { return groups[k]; }).map(function (k) {
         return '<li><span class="hm-tsec">' + esc(k ? tmSecName(k) : 'No section') + '</span><span class="hm-tw">' + groups[k].map(function (o) {
           return '<span class="hm-tp"><b>' + esc(mnName(o.id)) + '</b> <small>' + tmShiftWords(rec, o, byId[o.sh]) + '</small></span>';
@@ -10145,9 +10153,10 @@
   function homeCutSlot() { var h = homeCutsHTML(); return '<div id="hm-cuts"' + (h ? '' : ' hidden') + '>' + h + '</div>'; }
   function homeSlot() {
     if (!cutTick) cutTick = setInterval(cutPaint, 30000);   // the clock, the minutes left and rows that come and go (no reads)
-    var b = homeBoardHTML(), pp = homePrepHTML(), tt = homeTeamHTML();
-    return '<section class="hm-board" id="hm-board" aria-labelledby="hm-board-h">' + b + '</section><section class="hm-paper hm-prep" id="hm-prep" aria-label="Prep by section"' + (pp ? '' : ' hidden') + '>' + pp + '</section>' +
-      '<section class="hm-paper hm-team" id="hm-team" aria-label="On today"' + (tt ? '' : ' hidden') + '>' + tt + '</section>';
+    var b = homeBoardHTML(), pp = homePrepHTML(), tt = homeTeamHTML(), staff = !teamOK();
+    var prep = '<section class="hm-paper hm-prep" id="hm-prep" aria-label="Prep by section"' + (pp ? '' : ' hidden') + '>' + pp + '</section>';
+    var team = '<section class="hm-paper hm-team' + (staff ? ' hm-team-staff' : '') + '" id="hm-team" aria-label="On today"' + (tt ? '' : ' hidden') + '>' + tt + '</section>';
+    return '<section class="hm-board" id="hm-board" aria-labelledby="hm-board-h">' + b + '</section>' + (staff ? team + prep : prep + team);
   }
   function homePaint() {
     var t = document.getElementById('hm-time'); if (t) { var c = T.clock(now()); if (t.textContent !== c) t.textContent = c; }

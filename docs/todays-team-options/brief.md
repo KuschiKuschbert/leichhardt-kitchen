@@ -233,6 +233,18 @@ Steps 1 to 3 were built together on 7 November 2026 in one pull request (the che
 
 Tests for each step: a new `tests/todays-team.test.js` (the chef's page, the chip at 360, 390, 768 and 1280 px with the title whole and the tabs on one row, Your day, the section rules at the shift edges, offline never shown as Not set yet), `tests/roles.test.js` rows, `tests/read-budget.test.js`, `tests/safe-text.test.js` for names, and the rules checks.
 
+## Staff Home roster (8 November 2026)
+
+**Requested and implemented:** staff can see who is on today beside the shifts already shown on their Home page. The existing **On today** paper card sits directly after their own Now and next board, on phones, tablets and laptops. It groups the saved team by section and shows each person's name, shift, hours and breaks. Staff without a shift can also see the team. The planner remains for the head chef and sous chefs.
+
+**Quick check: Build smaller.** This is a small extension of the chosen Home design: no new page, tab, bar button, pop-up or normal task step. The session's product check supports seeing colleagues without asking the chef; usability keeps the personal shift first; engineering reuses the same saved record. No additional council round or visual direction is needed. This is role-based analysis, not staff research.
+
+**Contract:** render today's saved `tm.rec`, never the draft. Loading, not set, failed, wrong-day and confirmed empty plans have distinct states; none of the unavailable states may show a roster or say nobody is working. Signed-out, locked and Functions-only devices receive no staff roster. There is no staff planner link or editing control. Names and configured labels are escaped. The existing daily team read, config stamp and paint paths supply every update; there are no new reads, listeners or stored fields.
+
+**Measured in the click-test stand-in at 390 by 844 px, using made-up staff and shifts:** the personal board keeps its top (169 px), height (173 px) and two fully visible rows. The roster was hidden before; three person-shift rows are now fully visible directly below it. Opening the roster takes no tap from Home. The Prep tab still takes one tap, and its separate page keeps six fully visible lines in this fixture before and after. The Prep by section card moves below the team on staff Home; chef Home keeps its existing order and visibility.
+
+**Verification:** the updated Home checks fail four roster assertions on the old code and pass all 51 with the change. Focused staff roster and regression checks are recorded in the pull request. Phone before/after screenshots were inspected locally; only synthetic names and times were used. CI and the normal release queue remain the delivery gate.
+
 ## Files
 
 - `brief.md` this brief; `index.html` the comparison page.
