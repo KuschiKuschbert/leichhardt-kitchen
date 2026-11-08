@@ -1,5 +1,7 @@
 # Kitchen Book service work: design for approval
 
+**Latest-push check, 9 November:** the owner accepted the staff-first direction. [Checked against main `5f604bd`](latest-main-check.md), including a refreshed illustration using the new clock, mobile logo and conditional Cleaning navigation. The exact Home grouping remains unshipped. The feature inventory and lower-work models below describe the earlier `eedbdd7` baseline and must be reconciled with the newer implementations described in that check.
+
 8 November 2026, Queensland. **Revised options, awaiting review. PR #606 remains draft.** The owner rejected the first A/B presentation. No option is chosen. No production features, rules, data or deployments changed by this work.
 
 **Staff-first correction:** both designs start with the person’s section and shift, their break window and return time, then visible coworkers. Prep, cleaning, shared timers and functions follow. The earlier previews omitted the break and folded the team too far down; that presentation is superseded.

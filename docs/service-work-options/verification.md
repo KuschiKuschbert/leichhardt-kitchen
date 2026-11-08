@@ -1,5 +1,7 @@
 # Design evidence and review
 
+**Latest evidence:** [9 November compatibility check against main `5f604bd`](latest-main-check.md). Includes new-shell layout captures, Cleaning on/off and six passing existing browser suites. The older evidence below remains version-specific; the exact staff-first layout is still a proposal.
+
 8 November 2026, Queensland. Source `eedbdd7`. Revised options awaiting review. PR #606 remains draft and no option is chosen. This record distinguishes existing-app baseline checks, superseded prototype checks and future implementation acceptance.
 
 ## Revision after owner rejection

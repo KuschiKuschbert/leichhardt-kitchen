@@ -1,5 +1,7 @@
 # Staff-first Kitchen Book comparison
 
+**Latest-push refresh:** [See the staff-first layout inside the current app header and navigation](latest-main-check.md). The images and interactive comparison below predate the clock, logo, Cleaning and prep-standard merges. The owner accepted the staff-first direction; the exact layout has not shipped.
+
 **Revised options awaiting review. PR #606 remains draft. No option chosen.** The first presentation was rejected and is superseded. Baseline images use the unchanged application with synthetic data. Every new target, timer name, task, person, time and booking in the designs is illustrative, not approved operational setup.
 
 Both alternatives now start in the order requested: **your section and shift, your break window and return time, then visible coworkers**. The break is not removed or hidden, and the team is not folded below new features. Current-shift names, sections and relevant break/return details are visible. The original full-day roster and Your day remain available.
