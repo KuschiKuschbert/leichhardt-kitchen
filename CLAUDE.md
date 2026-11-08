@@ -33,7 +33,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | A whole-app audit | `docs/whole-app-audit.md`, `docs/ux-council-audit.md`, `docs/whole-app-inventory.md` |
 | Admin: analysis, proofreader, dashboard, pages, look | `docs/admin-intelligence.md`, `docs/proofreader-admin.md`, `docs/admin-dashboard-options/brief.md`, `docs/admin-pages-options/brief.md`, `docs/admin-design-options/brief.md`, `docs/admin-flow-spec.md` |
 | Prep, Orders, Wastage, Transfers and the chef hat; who did a Prep line on a shared screen | `docs/work-pages-design-options/brief.md`, `docs/shared-prep-attribution.md` |
-| Today's team | `docs/todays-team-options/brief.md`, `docs/prep-book.md` (Today's team) |
+| Today's team and its notebook council review | `docs/todays-team-options/brief.md`, `docs/team-notebook-options/brief.md` (two designs, council verdict and recommendation), `docs/prep-book.md` (Today's team) |
 | Chef to-do notebook layout | `docs/chef-todo-options/brief.md` (Chosen, implementation contract) |
 | Recipe amounts, the recipe and drawing editor, the drawing studio, smoker batches | `docs/recipe-multiplier.md`, `docs/recipe-editor-options/brief.md`, `docs/studio-options/brief.md`, `docs/smoker-batches.md` |
 | Suppliers, order cut-offs, the supplier order and Delivery received | `docs/supplier-workspace.md`, `docs/cutoff-options/brief.md`, `docs/receiving-design-options/brief.md`, `docs/delivery-received.md` |
@@ -48,7 +48,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 
 ## Service council (5 Nov 2026)
 
-Before building anything major (a new page, tab, button, setting, sheet or workflow, a change to how a service task is done, removing a feature, any design choice), run the council in `.claude/skills/service-council/SKILL.md`. Round 1: five critical reviewers ask whether it is needed and adds value. Round 2: three really different designs with pros and cons, scored by the council and a screen designer, which recommends one or a mix. The council advises; the head chef decides. Show the head chef the verdict, and then the designs, before building. Small changes get the quick check, fixes none. Every pull request that changes the app has a `Verdict:` line (the Council check shows red without one, but never stops a merge).
+Before building anything major (a new page, tab, button, setting, sheet or workflow, a change to how a service task is done, removing a feature, any design choice), run the council in `.claude/skills/service-council/SKILL.md`. Round 1: five critical reviewers ask whether it is needed and adds value. Round 2: the head chef's requested number of really different designs (three by default), with pros and cons, scored by the council and a screen designer, which recommends one or a mix. Record the verdict, scores, disagreement and recommendation in the feature's brief and link it in the reading map above. The council advises; the head chef decides. Show the head chef the verdict and designs before changing the app. Small changes get the quick check, fixes none. Every pull request that changes the app has a `Verdict:` line (the Council check shows red without one, but never stops a merge).
 
 **Service rules** (head chef, 5 Nov 2026). The book is used in a busy service: quick to read, few taps.
 - The main job of each work page (add a line, tick a line, find a recipe) is one tap from its tab.
