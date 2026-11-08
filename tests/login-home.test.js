@@ -1,4 +1,4 @@
-// A successful personal PIN starts on Home with that person's saved shift details.
+// The first personal PIN of the authentication day opens Home; later unlocks keep the person's task.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const key = (...p) => ['kitchens', L.PIN, ...p].join('/');
@@ -16,6 +16,11 @@ async function pin(p, id, value) {
   await p.locator('#pf1').fill(value);
   await L.waitFor(p, () => LK_PREP.privateAccess());
   await L.settle(p, 500);
+}
+async function signOutTo(p, route) {
+  await p.evaluate(route => { if (!LK_PREP.signOut(true)) throw new Error('Sign-out still has unfinished sending'); location.hash = route; }, route);
+  await L.waitFor(p, () => !LK_PREP.privateAccess());
+  await p.clock.runFor(21000); await L.settle(p, 200);
 }
 (async () => {
   const b = await L.start();
@@ -36,17 +41,56 @@ async function pin(p, id, value) {
   }
   p = await L.open(b, '#/orders', { who: 'ann', extra, wait: 700 });
   ok(await p.evaluate(() => location.hash) === '#/orders', 'a restored active session keeps its current page');
+  await signOutTo(p, '#/orders'); await pin(p, 'ann', '2222');
+  ok(await p.evaluate(() => location.hash) === '#/orders', 'a restored active session already counts as today\'s first login');
+  await p.context().close();
+  p = await L.open(b, '#/orders', { who: '', deviceMode: 'shared', extra, wait: 700 });
+  await pin(p, 'ann', '2222');
+  await p.evaluate(() => { location.hash = '#/orders'; }); await L.settle(p, 300);
+  await p.clock.runFor(11 * 60000); await L.waitFor(p, () => !LK_PREP.privateAccess());
+  ok(await txt(p, '.p-card button[type="submit"]') === 'Sign in', 'a later daily unlock button does not promise a move to Home');
+  await pin(p, 'ann', '2222');
+  ok(await p.evaluate(() => location.hash) === '#/orders', 'an idle unlock later that day keeps Orders open');
+  await signOutTo(p, '#/waste'); await p.reload({ waitUntil: 'load' }); await L.settle(p, 700);
+  await pin(p, 'ann', '2222');
+  ok(await p.evaluate(() => location.hash) === '#/waste', 'the daily mark survives sign-out and reload, keeping Wastage open');
+  await signOutTo(p, '#/r/laksa');
+  await p.click('.wtop-who'); await p.click('.wm [data-who="signin"]'); await L.settle(p, 300);
+  await pin(p, 'ann', '2222');
+  ok(await p.evaluate(() => location.hash) === '#/r/laksa', 'a later sign-in from the chef hat returns to the recipe');
+  await signOutTo(p, '#/waste'); await pin(p, 'bo', '3333');
+  ok(await p.evaluate(() => location.hash) === '#/', 'another person on the shared screen gets their own first Home landing');
+  await signOutTo(p, '#/orders'); await pin(p, 'ann', '2222');
+  ok(await p.evaluate(() => location.hash) === '#/orders', 'another person signing in does not reset the original person\'s daily mark');
+  await p.context().close();
+  p = await L.open(b, '#/orders', { who: 'ann', deviceMode: 'shared', extra, wait: 700, init: () => localStorage.setItem('lk.prep.seen', String(Date.now() - 11 * 60000)) });
+  await pin(p, 'ann', '2222');
+  ok(await p.evaluate(() => location.hash) === '#/orders', 'reopening an already idle valid session counts as a later login');
   await p.context().close();
   p = await L.open(b, '#/orders', { who: 'ann', dailyLocked: true, extra, wait: 700 });
   await pin(p, 'ann', '2222');
   ok(await p.evaluate(() => location.hash) === '#/', 'a fresh daily PIN opens Home');
   await p.context().close();
   const cutoff = Date.parse(day + 'T04:00:00+10:00');
+  p = await L.open(b, '#/orders', { who: '', deviceMode: 'shared', extra, clock: cutoff - 60000, wait: 700 });
+  await pin(p, 'ann', '2222');
+  await p.evaluate(() => { location.hash = '#/orders'; }); await L.settle(p, 200);
+  await p.clock.runFor(90000); await L.waitFor(p, () => !LK_PREP.privateAccess());
+  await pin(p, 'ann', '2222');
+  ok(await p.evaluate(() => location.hash) === '#/', '04:00 resets the daily Home landing even after a login just before it');
+  await p.context().close();
+  p = await L.open(b, '#/orders', { who: '', deviceMode: 'shared', extra, clock: cutoff + (19 * 60 + 59) * 60000, wait: 700 });
+  await pin(p, 'ann', '2222');
+  await p.clock.runFor(90000); await signOutTo(p, '#/orders'); await pin(p, 'ann', '2222');
+  ok(await p.evaluate(() => location.hash) === '#/orders', 'calendar midnight does not reset the 04:00 authentication day');
+  await p.context().close();
   p = await L.open(b, '#/orders', { who: 'ann', deviceMode: 'shared', extra, clock: cutoff - 60000, wait: 700 });
   await p.locator('#o-text').fill('Keep this original order draft');
   await p.clock.runFor(90000); await L.settle(p, 300);
   await pin(p, 'ann', '2222');
   ok(await p.evaluate(() => location.hash) === '#/orders' && await p.locator('#o-text').inputValue() === 'Keep this original order draft', 'a daily PIN recovers the same person\'s unfinished task before Home');
+  await signOutTo(p, '#/orders'); await pin(p, 'ann', '2222');
+  ok(await p.evaluate(() => location.hash) === '#/orders', 'a first daily PIN used to recover work does not defer a Home redirect to later');
   await p.context().close();
   const functionsOnly = Object.assign({}, extra, { [key('config', 'main')]: Object.assign({}, cfg, { fnOnlyIds: ['bo'], fnIds: ['bo'] }) });
   p = await L.open(b, '#/functions', { who: '', deviceMode: 'shared', extra: functionsOnly, wait: 700 });
@@ -70,6 +114,8 @@ async function pin(p, id, value) {
   p = await L.open(b, '#/prep', { who: '', deviceMode: 'shared', extra, wait: 700 });
   await p.click('.p-name[data-id="ann"]'); await p.locator('#pf1').fill('9999'); await L.settle(p, 700);
   ok(await p.evaluate(() => !LK_PREP.privateAccess() && location.hash === '#/prep') && !(await p.$('#hm-board')), 'a wrong PIN stays on the locked page');
+  await p.clock.runFor(21000); await pin(p, 'ann', '2222');
+  ok(await p.evaluate(() => location.hash) === '#/', 'a failed PIN never consumes the first successful Home landing');
   await p.context().close();
   await b.close(); L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

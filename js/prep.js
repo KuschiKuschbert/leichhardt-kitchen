@@ -1306,7 +1306,7 @@
   }
   function signedIn(id, hash) {
     if (!deviceReady() || !window.LK_DEVICE.verify(id)) { S.authed = false; S.pinMsg = 'This personal device is assigned to another person. Change it in Settings first.'; draw(); return; }
-    var keepWork = dirtyForUpdate() || sendingNow();
+    var keepWork = dirtyForUpdate() || sendingNow(), firstLogin = !homeLoginSeen(id);
     setTimeout(dailyFlush, 3000);   // yesterday's counts, once someone is signed in (W writes as them)
     S.privacyLocked = false; S.unlocking = false; S.lockHasDraft = false; S.lockIdentity = ''; S.lockRecorder = ''; S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
     lsSet('lk.prep.tok', ''); lsSet('lk.prep.seen', String(Date.now())); lsSet('lk.prep.day', dayNow()); lastAct = Date.now(); startIdle();
@@ -1316,9 +1316,10 @@
     // chef hat (back) is a real start
     S.guestIn = !!(pend && !pend.back);
     lsSet('lk.prep.guest', S.guestIn ? id + ':' + dayNow() : '');   // kept for a reload; out of date for another person or day
-    // A fresh kitchen PIN starts on Home. Keep the current task when this same person is recovering work,
-    // or a queued action must finish. Restoring an already valid session in resume() keeps its route.
-    var toHome = !functionOnly() && !keepWork && (!pend || pend.back);
+    // Only the first successful PIN of the authentication day starts on Home. Recovery and pending actions
+    // count as that day's login too, while keeping their task. Later PINs leave the current route alone.
+    var toHome = firstLogin && !functionOnly() && !keepWork && (!pend || pend.back);
+    homeLoginKeep(id, S.sessExp);
     if (toHome) { pend = null; location.hash = '#/'; }
     recoverWrites(id); loadAdmins(); accessChanged(); draw(); whoSync(true);
     if (pend) guestReplay(pend);
@@ -1327,6 +1328,11 @@
   /* Who signed in on this device today, newest first: "Who are you?" lists them first (lk.prep.here). */
   function hereGet() { try { var h = JSON.parse(lsGet('lk.prep.here') || 'null'); return h && h.d === dayNow() ? h.ids : []; } catch (e) { return []; } }
   function hereAdd(id) { var ids = hereGet().filter(function (x) { return x !== id; }); ids.unshift(id); lsSet('lk.prep.here', JSON.stringify({ d: dayNow(), ids: ids.slice(0, 12) })); }
+  // UI only, no authority: one expiry per kitchen, anonymous device and person. Survives sign-out and reload;
+  // out of date at the next 04:00 Queensland boundary. No operational data or extra server read.
+  function homeLoginKey(id) { return 'lk.prep.home.' + S.pin + '.' + S.uid + '.' + id; }
+  function homeLoginSeen(id) { return !!id && Number(lsGet(homeLoginKey(id))) === nextUnlock(now()); }
+  function homeLoginKeep(id, exp) { if (exp > now()) lsSet(homeLoginKey(id), String(exp)); }
   /* ---------- a shared kitchen device with nobody signed in (20 Oct 2026) ----------
      After the 10 minute lock, the prep list, orders and wastage still show. A tap that writes (tick, add, urgent, order,
      log waste) asks "Who are you?" first, then does that same thing once the PIN is right, so nobody taps twice. What was
@@ -1459,6 +1465,8 @@
     }
     if (S.user && S.who !== (S.config || {}).headId) { var previous = S.who; dropGoogle().then(function () { pickName(previous); accessChanged(); }); return; }
     var sv = savedSession(), hasSess = sv && sv.by === S.who && sv.exp > now() && sv.exp === nextUnlock(sv.issuedAt) && sv.issuedAt < now() + 60000 && sv.uid === S.uid && sv.mode === deviceMode() && (deviceMode() !== 'personal' || deviceOwner() === S.who);
+    // An existing valid session already signed in today, even if this shared screen now needs its idle PIN.
+    if (hasSess) homeLoginKeep(S.who, sv.exp);
     // a shared device handing over when it opens (a new kitchen day, or its idle time passed with the tab closed) takes
     // what the last person left on it, like Sign out (29 Oct 2026: their recipe, drawing and function drafts stayed for
     // the next person). A personal phone keeps its own drafts: the same person types their PIN again.
@@ -4424,7 +4432,7 @@
 
   function openLabel() {
     if (blockedRecorder()) return 'Resume your work';
-    return ((S.config || {}).fnOnlyIds || []).indexOf(S.who) >= 0 || S.pending && !S.pending.back ? 'Sign in' : 'Open Home';
+    return homeLoginSeen(S.who) || ((S.config || {}).fnOnlyIds || []).indexOf(S.who) >= 0 || S.pending && !S.pending.back ? 'Sign in' : 'Open Home';
   }
   function gateHTML() {
     return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">' + (S.name === 'admin' ? 'The admin panel needs the kitchen PIN on this device once, then the head chef\'s Google sign-in.' : 'Enter the kitchen PIN to open the prep list, orders, wastage, transfers, minutes and guides. This device remembers it.') + '</p>' +
@@ -4442,7 +4450,7 @@
     here.forEach(function (id) { var p = list.filter(function (x) { return x.id === id; })[0]; if (p) first.push(p); });
     list.forEach(function (p) { if (first.indexOf(p) < 0) rest.push(p); });
     function names(l) { return '<div class="p-names">' + l.map(function (p) { return '<button type="button" class="chip p-name" data-p="who" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>'; }).join('') + '</div>'; }
-    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2>' + workNoticeHTML(true) + '<p class="hint">' + (S.pending && !S.pending.back ? 'Pick your name and type your PIN. Then it is done for you.' : 'Pick your name. After your PIN, Home shows your shift details. The first time, choose your own 4-digit PIN.') + '</p>' +
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2>' + workNoticeHTML(true) + '<p class="hint">' + (S.pending && !S.pending.back ? 'Pick your name and type your PIN. Then it is done for you.' : 'Pick your name. Your first sign-in each day opens Home with your shift details. Later sign-ins return to your page. The first time, choose your own 4-digit PIN.') + '</p>' +
       (!list.length ? '<p class="p-err">No names are set up yet. The head chef adds them in the admin panel.</p>' :
         first.length ? '<p class="nb-ql p-here">Here today</p>' + names(first) + (rest.length ? '<p class="nb-ql p-here">Everyone</p>' + names(rest) : '') : names(list)) +
       (S.picking && shared() ? '<div class="btn-row"><button type="button" class="btn" data-p="who-back">Back to the list</button></div>' : '') + '</section>';
@@ -12604,7 +12612,7 @@
     whoName: whoName,
     // the no-signal sentence while the kitchen's settings are not loaded and there is no signal, otherwise '' (js/app.js)
     offline: function () { return offWait() ? OFF_KITCHEN : ''; },
-    // Sign in from the chef hat: "Who are you?" on Prep, then Home. Keep the old route for work recovery or Functions only.
+    // Sign in from the chef hat: "Who are you?" on Prep, then Home on the first daily PIN, otherwise back to this page.
     // Not with no signal before the settings are in: the person on this phone is known, and this would forget them
     signIn: function (back) {
       if (whoName() || offWait()) return;

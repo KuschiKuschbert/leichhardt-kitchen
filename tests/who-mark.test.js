@@ -25,7 +25,7 @@ const mark = p => p.evaluate(() => { const e = document.querySelector('.wtop-who
   await p.evaluate(() => { location.hash = '#/r/laksa'; }); await L.settle(p, 400);
   await L.tap(p, '.wtop-who'); await L.settle(p, 200);
   await p.click('.wm [data-who="signin"]'); await L.settle(p, 800);
-  ok(await p.evaluate(() => location.hash) === '#/prep' && /Who are you\?/.test(await txt(p, '#prep-root') || '') && /After your PIN, Home shows your shift details\./.test(await txt(p, '#prep-root') || ''), 'sign in from the hat: the name picker says Home follows the PIN');
+  ok(await p.evaluate(() => location.hash) === '#/prep' && /Who are you\?/.test(await txt(p, '#prep-root') || '') && /Your first sign-in each day opens Home with your shift details\./.test(await txt(p, '#prep-root') || ''), 'sign in from the hat: the name picker explains the first daily Home landing');
   await p.click('.p-name[data-id="ann"]'); await L.settle(p, 500);
   await p.type('#pf1', '2222'); await L.settle(p, 1200);
   ok(await p.evaluate(() => location.hash) === '#/' && !!(await p.$('#hm-board')), 'sign in from the hat: Home opens after the PIN (' + await p.evaluate(() => location.hash) + ')');

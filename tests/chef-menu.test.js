@@ -117,8 +117,8 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   await p.click('.p-name[data-id="sam"]'); await L.settle(p, 400);
   await p.type('#pf1', '1111');
   await L.waitFor(p, () => LK_PREP.privateAccess() && LK_PREP.state.who === 'sam', null, 8000);
-  await L.waitFor(p, () => location.hash === '#/' && !!document.querySelector('#hm-board'), null, 8000);
-  ok(await signedIn(p) && !(await p.$('[data-p="a-add-person"]')) && !!(await p.$('#hm-board')), 'sign in again: Home opens and the last Manage staff page stays closed');
+  await L.waitFor(p, () => location.hash === '#/prep' && !!document.querySelector('.nb-left'), null, 8000);
+  ok(await signedIn(p) && !(await p.$('[data-p="a-add-person"]')) && !!(await p.$('.nb-left')), 'sign in again today: the prep list stays open and the last Manage staff page stays closed');
   ok(p.errors.length === 0, 'sous chef menu: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

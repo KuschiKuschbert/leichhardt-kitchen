@@ -79,8 +79,7 @@ async function signOut(p) {
   await L.waitFor(p, r => { const u = window.__fakeUid(), st = window.LK_PREP.state; return st.authed && !!u && !!window.__fake.dump()[r + '/sessions/' + u] || /not right|Could not/.test(st.pinMsg || ''); }, root, 30000).catch(() => {});
   st = await state(p); s = await sessOf(p);
   ok(st.authed && s && s.by === 'sam' && s.pinAt === 99, 'then the PIN opens a new session with the new PIN time (' + JSON.stringify(s) + ')');
-  ok(await p.evaluate(() => location.hash === '#/'), 'reset PIN: a successful fresh PIN opens Home');
-  await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 500);
+  ok(await p.evaluate(() => location.hash === '#/prep'), 'reset PIN: another successful PIN today keeps the current prep list');
   await tickSelf(p, 'i3');
   ok((await item(p, 'i3') || {}).done === true, 'and the tick saves');
 
