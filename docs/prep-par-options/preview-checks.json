@@ -1,0 +1,127 @@
+[
+  {
+    "view": "b",
+    "width": 390,
+    "height": 844,
+    "overflow": 0,
+    "errors": [],
+    "visibleCatalogueRows": 3,
+    "smallTargets": []
+  },
+  {
+    "view": "b",
+    "width": 768,
+    "height": 1024,
+    "overflow": 0,
+    "errors": [],
+    "visibleCatalogueRows": 5,
+    "smallTargets": []
+  },
+  {
+    "view": "b",
+    "width": 1280,
+    "height": 900,
+    "overflow": 0,
+    "errors": [],
+    "visibleCatalogueRows": 4,
+    "smallTargets": []
+  },
+  {
+    "view": "c",
+    "width": 390,
+    "height": 844,
+    "overflow": 0,
+    "errors": [],
+    "visibleCatalogueRows": 6,
+    "smallTargets": []
+  },
+  {
+    "view": "c",
+    "width": 768,
+    "height": 1024,
+    "overflow": 0,
+    "errors": [],
+    "visibleCatalogueRows": 6,
+    "smallTargets": []
+  },
+  {
+    "view": "c",
+    "width": 1280,
+    "height": 900,
+    "overflow": 0,
+    "errors": [],
+    "visibleCatalogueRows": 6,
+    "smallTargets": []
+  },
+  {
+    "view": "editor",
+    "width": 390,
+    "height": 844,
+    "overflow": 0,
+    "errors": [],
+    "visibleCatalogueRows": 3,
+    "smallTargets": []
+  },
+  {
+    "view": "editor",
+    "width": 768,
+    "height": 1024,
+    "overflow": 0,
+    "errors": [],
+    "visibleCatalogueRows": 5,
+    "smallTargets": []
+  },
+  {
+    "view": "editor",
+    "width": 1280,
+    "height": 900,
+    "overflow": 0,
+    "errors": [],
+    "visibleCatalogueRows": 4,
+    "smallTargets": []
+  },
+  {
+    "check": "existing prep has separate review",
+    "passed": true
+  },
+  {
+    "check": "blank count stays unknown",
+    "passed": true
+  },
+  {
+    "check": "explicit zero count produces a gap",
+    "passed": true
+  },
+  {
+    "check": "explicit zero target means no routine prep",
+    "passed": true
+  },
+  {
+    "check": "only two eligible counted items in review",
+    "passed": true
+  },
+  {
+    "check": "confirmation is labelled sample only",
+    "passed": true
+  },
+  {
+    "check": "sample batch undo",
+    "passed": true
+  },
+  {
+    "check": "sample single-item calculation and named Add",
+    "passed": true
+  },
+  {
+    "check": "catalogue search",
+    "passed": true
+  },
+  {
+    "check": "unset target cannot create calculated prep",
+    "passed": true
+  },
+  {
+    "check": "sous preview is read only",
+    "passed": true
+  }
+]

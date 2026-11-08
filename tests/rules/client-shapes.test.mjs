@@ -44,7 +44,7 @@
   Run with the other rules checks: cd tests/rules && npm test.
 */
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, getDoc, getDocs, getDocFromServer, getDocsFromServer, onSnapshot, collection, query, where, orderBy, limit, documentId,
+import { doc, getDoc, getDocs, getDocFromServer, getDocsFromServer, onSnapshot, collection, query, where, orderBy, limit, documentId, startAfter,
   setDoc, deleteDoc, writeBatch, increment, serverTimestamp, Timestamp, setLogLevel } from 'firebase/firestore';
 import { anonContext, dailySession, adminGrant, seedOwnerDevice, nextFour } from './device-auth-fixtures.mjs';
 import { readFileSync } from 'node:fs';
@@ -110,6 +110,7 @@ const fnRec = (id, x) => { const f = Object.assign({ v: 1, status: 'confirmed', 
 const pline = id => { const f = fnRec(id); return functionModel.prepBody(f, f.lines[0], id); };
 const oline = id => functionModel.orderBody(fnRec(id), id);
 const line = x => Object.assign({ text: 'Slice onion', station: 'Larder', qty: '2 kg', qn: 2, qu: 'kg', recipe: '', addedBy: 'Ann', addedById: 'ann', addedAt: NOW - 3600000, done: false, deleted: false, by: 'ann' }, x || {});
+const prepStandard = x => Object.assign({ sectionId: 'larder', name: 'Sliced onions', aliases: ['onions'], minimum: 4, unit: 'tubs', instruction: 'Sample check instruction', recipe: '', archived: false, v: 1, at: NOW, by: 'kit' }, x || {});
 // a line as the page writes it: W() adds the writer
 const newLine = x => { const d = line(x); delete d.by; return d; };
 const xrec = x => Object.assign({ dir: 'out', venue: 'Causeway', person: 'Jo', text: 'Cream', amount: 2, unit: 'L', note: '', addedBy: 'Ann', addedById: 'ann', addedAt: NOW - 3600000, deleted: false, by: 'ann' }, x || {});
@@ -123,6 +124,7 @@ const ping = x => Object.assign({ text: 'Fish delivery 10:00', tag: 'delivery', 
 
 const seed = {
   'config/main': CFG, 'login/roster': ROSTER, 'config/admins': { x: 1 },
+  'prepStandards/onions': prepStandard(),
   [`days/${TODAY}/items/l1`]: line(), [`days/${YDAY}/items/l0`]: line({ text: 'Pick herbs', addedAt: NOW - DAY }),
   [`orders/${TODAY}/lines/o1`]: { text: 'Cream', qty: '4 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: NOW - 3600000, ordered: false, deleted: false, by: 'ann' },
   [`orders/${PAST}/lines/o0`]: { text: 'Milk', qty: '10 L', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: NOW - 5 * DAY, ordered: true, deleted: false, by: 'ann' },
@@ -290,6 +292,21 @@ row('js/prep.js todoLoad() and the Done list: todos, st == open and doneAt in 30
   run: db => Promise.all([getDocs(query(C(db, 'todos'), where('st', '==', 'open'))), getDocs(query(C(db, 'todos'), where('doneAt', '>=', NOW - 30 * DAY)))]) });
 row('js/prep.js cutWatch(): supplier order ticks listener (cutdone, day in today and tomorrow)', { ok: CHEFS, asks: CHEFS, run: db => listen(query(C(db, 'cutdone'), where('day', 'in', [TODAY, TMW]))) });
 row('js/supplier-store.js: the catalogue and a supplier (suppliers)', { ok: CHEFS, asks: CHEFS, run: db => Promise.all([getDocs(C(db, 'suppliers')), getDoc(D(db, 'suppliers/s1'))]) });
+row('js/prep.js psRead(): first active section page, server read with overflow sentinel', { ok: KITCHEN, asks: KITCHEN,
+  run: db => getDocsFromServer(query(C(db, 'prepStandards'), where('sectionId', '==', 'larder'), where('archived', '==', false), orderBy(documentId()), limit(101))) });
+row('js/prep.js psRead(): next active section page using the last displayed document id', { ok: KITCHEN, asks: KITCHEN,
+  run: db => getDocsFromServer(query(C(db, 'prepStandards'), where('sectionId', '==', 'larder'), where('archived', '==', false), orderBy(documentId()), startAfter('onions'), limit(101))) });
+row('js/prep.js psRead(): first management page includes archived standards', { ok: KITCHEN, asks: CHEFS,
+  run: db => getDocsFromServer(query(C(db, 'prepStandards'), where('sectionId', '==', 'larder'), orderBy(documentId()), limit(101))) });
+row('js/prep.js psRead(): next management page using the last displayed document id', { ok: KITCHEN, asks: CHEFS,
+  run: db => getDocsFromServer(query(C(db, 'prepStandards'), where('sectionId', '==', 'larder'), orderBy(documentId()), startAfter('onions'), limit(101))) });
+row('js/prep.js psSave(): current item revision before saving', { ok: KITCHEN, asks: ['owner', 'ownkit', 'kit'],
+  run: db => getDocFromServer(D(db, 'prepStandards/onions')) });
+row('js/prep.js psSave(): create a head-owned minimum through W()', { ok: ['owner', 'ownkit', 'kit'], asks: ['owner', 'ownkit', 'kit'],
+  run: (db, w, r) => W(r, [['set', 'prepStandards/new-' + r, prepStandard({ by: w })]]) });
+row('js/prep.js psSave(): update an item with the next revision through W()', { ok: ['owner', 'ownkit', 'kit'], asks: ['owner', 'ownkit', 'kit'],
+  prep: () => put({ 'prepStandards/edit': prepStandard() }),
+  run: (db, w, r) => W(r, [['set', 'prepStandards/edit', prepStandard({ v: 2, minimum: 0, archived: true, by: w })]]) });
 row('js/supplier-store.js: a supplier\'s orders (suppliers/<id>/orders, the last 21)', { ok: CHEFS, asks: CHEFS, run: db => getDocs(query(C(db, 'suppliers/s1/orders'), orderBy('at', 'desc'), limit(21))) });
 row('js/supplier-store.js: a cut-off\'s link (supplierlinks/<day>_<cut-off>)', { ok: CHEFS, asks: CHEFS, run: db => getDoc(D(db, `supplierlinks/${TODAY}_northside`)) });
 // the admin Backup (exportAll(), the Google device only): one row per list that has a rule of its own, so a rule
@@ -506,6 +523,10 @@ row('js/prep.js pushSave(): this phone\'s push address (push/<hash>; the Google 
 row('js/prep.js cutSave(), mlSousSet(), seedPinOpen(): admin settings merged into config/main (setDoc, no by)', { ok: GOOGLE, asks: GOOGLE,
   run: (db, w, r) => setDoc(D(db, 'config/main'), { cutoffs: [Object.assign({}, CFG.cutoffs[0], { at: 900 + ALL.indexOf(r) })], sousMail: false, pinOpen: { finn: NOW + DAY + ALL.indexOf(r) } }, { merge: true }) });
 // the ping sound every phone plays (Shift pings tab, 3 Nov 2026): only the head chef's Google device with their PIN
+row('js/prep.js psRolloutSet() (admin): smart prep availability merged into config/main through W()', { ok: GOOGLE, asks: GOOGLE,
+  prep: () => cfgMerge({ prepStandardsEnabled: false }),
+  run: (db, w, r) => W(r, [['set', 'config/main', { prepStandardsEnabled: true }, true]]),
+  after: () => cfgMerge({ prepStandardsEnabled: false }) });
 row('js/prep.js pingSoundSet() (admin): the ping sound merged into config/main', { ok: GOOGLE, asks: GOOGLE,
   run: (db, w, r) => W(r, [['set', 'config/main', { pingSound: ['bell', 'order', 'chime', 'marimba', 'timer', 'off'][ALL.indexOf(r) % 6] }, true]]) });
 row('js/prep.js mlSend(): a mail to the head chef with its status (mail and mailstat)', { ok: KITCHEN, asks: MAIL,

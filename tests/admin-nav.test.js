@@ -5,7 +5,7 @@ const L = require('./lib'); const { R, ok } = L.results();
   for (const width of [390, 768, 1280]) {
     const p = await L.open(b, '#/admin', { admin: true, width, height: 900, wait: 1800 });
     const groups = await p.locator('.a-group').evaluateAll(nodes => nodes.map(el => el.getAttribute('data-g')));
-    ok(JSON.stringify(groups) === JSON.stringify(['today', 'reports', 'team', 'kitchen']), width + ': four rooms: Today, Reports, Team and Kitchen (' + groups.join(', ') + ')');
+    ok(JSON.stringify(groups) === JSON.stringify(['today', 'reports', 'team', 'kitchen', 'prep']), width + ': five rooms: Today, Reports, Team, Kitchen and Prep (' + groups.join(', ') + ')');
     ok(await p.locator('.a-groups').isVisible() && await p.locator('[data-k="ai-section"]').count() === 0, width + ': the rooms are buttons at every width, with no section picker');
     if (width >= 1000) ok(await p.evaluate(() => getComputedStyle(document.querySelector('.a-groups')).boxShadow) === 'none', width + ': the laptop rail has no outline box (the phone row draws one)');
     await p.click('[data-g="today"]'); await L.settle(p, 200);

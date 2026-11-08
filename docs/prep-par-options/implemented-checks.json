@@ -1,0 +1,876 @@
+{
+  "note": "Actual implementation screenshots from synthetic browser-test records only. Real app fonts loaded locally via fonts.googleapis/fonts.gstatic route. All screenshots use the viewport; management is scrolled to the editor. Scroll positions are recorded. Measurements include visible new standards actions and local view controls. No production data or writes.",
+  "captured": "2026-11-08T12:37:24.152Z",
+  "measurements": [
+    {
+      "surface": "add",
+      "width": 390,
+      "screenshot": "implemented-add-390.png",
+      "fonts": [
+        {
+          "face": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 22px Caveat",
+          "loaded": true
+        },
+        {
+          "face": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        }
+      ],
+      "errors": [],
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "documentWidth": 390,
+      "horizontalOverflow": 0,
+      "controls": [
+        {
+          "action": "ps-view:work",
+          "label": "Work",
+          "width": 61.05,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "ps-view:reference",
+          "label": "Before service",
+          "width": 118.92,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "refresh",
+          "label": "Refresh",
+          "width": 44.86,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "under44": [],
+      "bodyFont": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "standardReads": 1
+    },
+    {
+      "surface": "reference",
+      "width": 390,
+      "screenshot": "implemented-reference-390.png",
+      "fonts": [
+        {
+          "face": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 22px Caveat",
+          "loaded": true
+        },
+        {
+          "face": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        }
+      ],
+      "errors": [],
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "documentWidth": 390,
+      "horizontalOverflow": 0,
+      "controls": [
+        {
+          "action": "ps-view:work",
+          "label": "Work",
+          "width": 61.05,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "ps-view:reference",
+          "label": "Before service",
+          "width": 118.92,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "refresh",
+          "label": "Refresh",
+          "width": 44.86,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "under44": [],
+      "bodyFont": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "standardReads": 1
+    },
+    {
+      "surface": "management",
+      "width": 390,
+      "screenshot": "implemented-management-390.png",
+      "fonts": [
+        {
+          "face": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 22px Caveat",
+          "loaded": true
+        },
+        {
+          "face": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        }
+      ],
+      "errors": [],
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollPosition": {
+        "x": 0,
+        "y": 608
+      },
+      "documentWidth": 390,
+      "horizontalOverflow": 0,
+      "controls": [
+        {
+          "action": "refresh",
+          "label": "Refresh",
+          "width": 44.86,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "new",
+          "label": "Add standard",
+          "width": 129.52,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "save",
+          "label": "Save standard",
+          "width": 135.11,
+          "height": 44,
+          "disabled": true
+        },
+        {
+          "action": "cancel",
+          "label": "Close editor",
+          "width": 119.41,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "archive",
+          "label": "Archive standard",
+          "width": 155.55,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "under44": [],
+      "bodyFont": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "standardReads": 1
+    },
+    {
+      "surface": "add",
+      "width": 768,
+      "screenshot": "implemented-add-768.png",
+      "fonts": [
+        {
+          "face": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 22px Caveat",
+          "loaded": true
+        },
+        {
+          "face": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        }
+      ],
+      "errors": [],
+      "viewport": {
+        "width": 768,
+        "height": 900
+      },
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "documentWidth": 768,
+      "horizontalOverflow": 0,
+      "controls": [
+        {
+          "action": "ps-view:work",
+          "label": "Work",
+          "width": 61.05,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "ps-view:reference",
+          "label": "Before service",
+          "width": 118.92,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "refresh",
+          "label": "Refresh",
+          "width": 44.86,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "under44": [],
+      "bodyFont": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "standardReads": 1
+    },
+    {
+      "surface": "reference",
+      "width": 768,
+      "screenshot": "implemented-reference-768.png",
+      "fonts": [
+        {
+          "face": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 22px Caveat",
+          "loaded": true
+        },
+        {
+          "face": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        }
+      ],
+      "errors": [],
+      "viewport": {
+        "width": 768,
+        "height": 900
+      },
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "documentWidth": 768,
+      "horizontalOverflow": 0,
+      "controls": [
+        {
+          "action": "ps-view:work",
+          "label": "Work",
+          "width": 61.05,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "ps-view:reference",
+          "label": "Before service",
+          "width": 118.92,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "refresh",
+          "label": "Refresh",
+          "width": 44.86,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "under44": [],
+      "bodyFont": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "standardReads": 1
+    },
+    {
+      "surface": "management",
+      "width": 768,
+      "screenshot": "implemented-management-768.png",
+      "fonts": [
+        {
+          "face": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 22px Caveat",
+          "loaded": true
+        },
+        {
+          "face": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        }
+      ],
+      "errors": [],
+      "viewport": {
+        "width": 768,
+        "height": 900
+      },
+      "scrollPosition": {
+        "x": 0,
+        "y": 731
+      },
+      "documentWidth": 768,
+      "horizontalOverflow": 0,
+      "controls": [
+        {
+          "action": "refresh",
+          "label": "Refresh",
+          "width": 44.86,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "new",
+          "label": "Add standard",
+          "width": 129.52,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "save",
+          "label": "Save standard",
+          "width": 135.11,
+          "height": 44,
+          "disabled": true
+        },
+        {
+          "action": "cancel",
+          "label": "Close editor",
+          "width": 119.41,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "archive",
+          "label": "Archive standard",
+          "width": 155.55,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "under44": [],
+      "bodyFont": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "standardReads": 1
+    },
+    {
+      "surface": "add",
+      "width": 1280,
+      "screenshot": "implemented-add-1280.png",
+      "fonts": [
+        {
+          "face": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 22px Caveat",
+          "loaded": true
+        },
+        {
+          "face": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        }
+      ],
+      "errors": [],
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "documentWidth": 1280,
+      "horizontalOverflow": 0,
+      "controls": [
+        {
+          "action": "ps-view:work",
+          "label": "Work",
+          "width": 61.05,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "ps-view:reference",
+          "label": "Before service",
+          "width": 118.92,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "refresh",
+          "label": "Refresh",
+          "width": 44.86,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "under44": [],
+      "bodyFont": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "standardReads": 1
+    },
+    {
+      "surface": "reference",
+      "width": 1280,
+      "screenshot": "implemented-reference-1280.png",
+      "fonts": [
+        {
+          "face": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 22px Caveat",
+          "loaded": true
+        },
+        {
+          "face": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        }
+      ],
+      "errors": [],
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "documentWidth": 1280,
+      "horizontalOverflow": 0,
+      "controls": [
+        {
+          "action": "ps-view:work",
+          "label": "Work",
+          "width": 61.05,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "ps-view:reference",
+          "label": "Before service",
+          "width": 118.92,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "refresh",
+          "label": "Refresh",
+          "width": 44.86,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "add",
+          "label": "Add to prep",
+          "width": 113.73,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "under44": [],
+      "bodyFont": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "standardReads": 1
+    },
+    {
+      "surface": "management",
+      "width": 1280,
+      "screenshot": "implemented-management-1280.png",
+      "fonts": [
+        {
+          "face": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "face": "700 22px Caveat",
+          "loaded": true
+        },
+        {
+          "face": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        }
+      ],
+      "errors": [],
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "scrollPosition": {
+        "x": 0,
+        "y": 741
+      },
+      "documentWidth": 1280,
+      "horizontalOverflow": 0,
+      "controls": [
+        {
+          "action": "refresh",
+          "label": "Refresh",
+          "width": 44.86,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "new",
+          "label": "Add standard",
+          "width": 129.52,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "edit",
+          "label": "Edit",
+          "width": 62.56,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "save",
+          "label": "Save standard",
+          "width": 135.11,
+          "height": 44,
+          "disabled": true
+        },
+        {
+          "action": "cancel",
+          "label": "Close editor",
+          "width": 119.41,
+          "height": 44,
+          "disabled": false
+        },
+        {
+          "action": "archive",
+          "label": "Archive standard",
+          "width": 155.55,
+          "height": 44,
+          "disabled": false
+        }
+      ],
+      "under44": [],
+      "bodyFont": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "standardReads": 1
+    }
+  ]
+}

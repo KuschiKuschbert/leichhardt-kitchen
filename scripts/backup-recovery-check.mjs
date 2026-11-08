@@ -33,7 +33,7 @@ const folder = mkdtempSync(join(tmpdir(), 'lk-backup-recovery-')), key = randomB
 const scripts = fileURLToPath(new URL('.', import.meta.url)), at = Date.now();
 const day = n => new Date(at + 36000000 - n * 86400000).toISOString().slice(0, 10);
 const dayAt = n => Date.parse(day(n) + 'T00:00:00+10:00');
-const ARRAY_COLLECTIONS = ['activity', 'sections', 'learned', 'ordlearned', 'learnlog', 'summary', 'analysis', 'analysisDaily', 'references', 'training', 'proofHistory', 'dashwatch', 'misses', 'views', 'guides', 'mail', 'mailstat', 'drinks', 'shifts', 'daily', 'todos', 'team', 'cutdone', 'transferOpen',
+const ARRAY_COLLECTIONS = ['activity', 'sections', 'prepStandards', 'learned', 'ordlearned', 'learnlog', 'summary', 'analysis', 'analysisDaily', 'references', 'training', 'proofHistory', 'dashwatch', 'misses', 'views', 'guides', 'mail', 'mailstat', 'drinks', 'shifts', 'daily', 'todos', 'team', 'cutdone', 'transferOpen',
   'deliveries', 'cleaningTasks', 'cleaningDone', 'notes', 'directnotes', 'minutes', 'book', 'recipes', 'drawings', 'drawtpl', 'drawlib', 'suppliers', 'supplierlinks', 'functions', 'fncontact', 'fnsent'];
 const HISTORIES = { referencesHist: ['references', 'hist'], trainingHist: ['training', 'hist'], notesSeen: ['notes', 'seen'], directnotesSeen: ['directnotes', 'seen'], minutesHist: ['minutes', 'hist'], minutesSigns: ['minutes', 'signs'], recipesHist: ['recipes', 'hist'], drawingsHist: ['drawings', 'hist'], supplierOrders: ['suppliers', 'orders'], supplierAudit: ['suppliers', 'audit'], functionsHist: ['functions', 'hist'] };
 const DATED = { days: ['days', 'items'], orders: ['orders', 'lines'], waste: ['waste', 'lines'], transfers: ['transfers', 'lines'] };
@@ -41,6 +41,13 @@ const EXPECTED_FIELDS = ['exportedAt', 'by', 'config', 'pins', 'wasteReviews', '
 const identities = Object.fromEntries(ARRAY_COLLECTIONS.map(name => [name, name + '-sample']));
 Object.assign(identities, { activity: 'cook-a', drinks: 'cook-a', book: 'index', references: 'ref-a', training: 'training-a', notes: 'note-a', directnotes: 'direct-a', minutes: 'meeting-a', recipes: 'recipe-a', drawings: 'drawing-a', suppliers: 'supplier-a', functions: 'function-a' });
 identities.cleaningDone = day(2) + '_' + identities.cleaningTasks;
+const standard = { sectionId: identities.sections, name: 'Synthetic dressing', aliases: ['Synthetic sauce'], minimum: 1.25, unit: 'L', instruction: 'Check the labelled date and chill before service.', recipe: 'recipe-a', archived: false, v: 2, at: at - 60 * 86400000, by: 'cook-a' };
+const prepStandards = [
+  { id: identities.prepStandards, ...standard },
+  { id: 'standard-zero', ...standard, name: 'Synthetic zero minimum', minimum: 0, aliases: [], instruction: '', recipe: '' },
+  { id: 'standard-unset', ...standard, name: 'Synthetic unset minimum', minimum: null },
+  { id: 'standard-archived', ...standard, name: 'Synthetic archived standard', archived: true, v: 3 }
+].sort((a, b) => a.id.localeCompare(b.id));
 const capabilityIds = { addIds: ['cook-a'], tickIds: ['cook-a', 'worker-a'], delIds: ['cook-a'] };
 const orderEffect = text => ({ text, qty: '2 platters', recipes: ['recipe-a'], fn: 'function-a', dupOk: true });
 const effects = { prep: { 'fn-function-a-recipe-a': { text: 'Synthetic platter: Synthetic function', qty: '2 platters', station: 'Functions', recipe: 'recipe-a', fn: 'function-a', dupOk: true } },
@@ -97,6 +104,7 @@ try {
   const people = [{ id: 'cook-a', name: 'Synthetic recorder', role: 'head', active: true }, { id: 'worker-a', name: 'Synthetic preparer', role: 'staff', active: true }];
   await put(source, 'config/main', { people, staffIds: people.map(x => x.id), headId: 'cook-a', sousIds: ['cook-a'], ...capabilityIds, proofWords: ['burrata'], proofV: 2 });
   for (const name of ARRAY_COLLECTIONS) {
+    if (name === 'prepStandards') continue;
     let data = { text: 'Synthetic ' + name, v: 2, by: 'cook-a', at: Timestamp.fromMillis(at), nested: { zero: 0, missing: null, labels: ['°C', 'quotes " and commas,'] } };
     if (name === 'cleaningTasks') data = { root: identities.cleaningTasks, prev: '', next: 'cleaning-revision-2', text: 'Synthetic original cleaning job', area: 'Synthetic area', section: '', sectionName: '', shared: true, dows: [0, 1, 2, 3, 4, 5, 6], guide: '', from: dayAt(5), until: dayAt(1), at: dayAt(5) + 60000, by: 'cook-a' };
     if (name === 'cleaningDone') data = { day: day(2), task: identities.cleaningTasks, version: 1, done: true, doneAt: dayAt(2) + 3600000, doneById: 'cook-a', doneBy: 'Synthetic recorder', workerId: 'worker-a', worker: 'Synthetic cleaner', by: 'cook-a' };
@@ -109,6 +117,7 @@ try {
     if (name === 'training') Object.assign(data, { person: 'worker-a', source: 'recipe-a', scope: 'synthetic-only' });
     await put(source, name + '/' + identities[name], data);
   }
+  for (const { id, ...data } of prepStandards) await put(source, 'prepStandards/' + id, data);
   const firstStart = new Timestamp(Math.floor((at - 4 * 86400000) / 1000), 123456000);
   const oldCooling = { v: 1, run: 'cooling-current-older', rev: 2, firstAt: firstStart, firstBy: 'cook-a',
     secondAt: new Timestamp(firstStart.seconds + 7200 + 600, 789012000), secondBy: 'worker-a', by: 'worker-a' };
@@ -141,6 +150,7 @@ try {
 
   const originalFile = join(folder, 'source.json'), encryptedFile = join(folder, 'protected.json.enc'), recoveredFile = join(folder, 'verified.json');
   const original = exportFile(sourcePin, originalFile);
+  assert.deepEqual(original.prepStandards, prepStandards, 'Full active and archived standards survive regardless of age, preserving zero and unset minima, section identity, aliases, guidance and recipe links.');
   for (const [field, ids] of Object.entries(capabilityIds)) assert.deepEqual(original.config[field], ids, 'Canonical action ids must be included exactly.');
   assert.deepEqual(original.functions.find(x => x.id === identities.functions).effects, effects);
   assert.deepEqual(original.functionsHist[identities.functions][0].was.effects, effects);
@@ -193,7 +203,7 @@ try {
   assert.equal(absentCooling.coolingCurrent, null);
   assert.equal((await restored.collection('guides').doc(identities.guides).collection('pages').get()).size, 0);
   assert.equal((await restored.collection('pinset').doc('cook-a').get()).data().at, undefined);
-  console.log('Backup recovery: local demo guards, authenticated export and ' + recordCount + ' included documents round-tripped with identities, temperatures, history and versions. Intentional omissions remain explicit.');
+  console.log('Backup recovery: local demo guards, authenticated export and ' + recordCount + ' included documents round-tripped with identities, prep standards, temperatures, history and versions. Intentional omissions remain explicit.');
 } finally {
   const cleanup = await Promise.allSettled([ownSource ? db.recursiveDelete(source) : undefined, ownRestored ? db.recursiveDelete(restored) : undefined]);
   try { rmSync(folder, { recursive: true, force: true }); }

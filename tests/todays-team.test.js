@@ -17,7 +17,7 @@ const people = [
 ];
 const SECS = [{ id: 'grill', name: 'Grill', off: false }, { id: 'pans', name: 'Pans', off: false }, { id: 'larder', name: 'Larder', off: false }];
 const SHIFTS = [{ id: 'lunch', name: 'Lunch', from: 600, to: 900, off: false }, { id: 'dinner', name: 'Dinner', from: 960, to: 1320, off: false }];
-const cfg = x => ({ [CFG]: Object.assign({ people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, kitSecs: SECS, kitShifts: SHIFTS }, x || {}) });
+const cfg = x => ({ [CFG]: Object.assign({ people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, prepStandardsEnabled: true, kitSecs: SECS, kitShifts: SHIFTS }, x || {}) });
 const store = p => p.evaluate(() => window.__fake.dump());
 // a picker on the page: the shared controls dress each select up, so set the select and send its change like a tap would
 const pick = (p, k, v) => p.evaluate(([k, v]) => { const s = document.querySelector('select[data-k="' + k + '"]'); if (!s) return false; s.value = String(v); s.dispatchEvent(new Event('change', { bubbles: true })); return true; }, [k, v]);
@@ -26,6 +26,16 @@ const titleCut = p => p.evaluate(() => { const b = document.querySelector('.wtop
 // tick a person onto the shift shown: the people not on it fold away once someone is on, so open the fold first
 const onShift = async (p, id) => { await p.evaluate(() => { const b = [...document.querySelectorAll('.tm-fold')].find(e => /Show$/.test(e.textContent.trim())); if (b) b.click(); }); await L.settle(p, 150); const done = await tap(p, '[data-p="tm-on"][data-id="' + id + '"]'); await L.settle(p, 200); return done; };
 const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.nb-addline').getBoundingClientRect().top; return [...document.querySelectorAll('[id^="nbr-"]')].filter(e => { const q = e.getBoundingClientRect(); return q.top >= 0 && q.bottom <= bar; }).length; });
+// Measure the approved local view choice separately from the unchanged team header and work rows.
+const withoutViewChoice = async p => {
+  const rows = () => p.locator('[id^="nbr-"]').evaluateAll(nodes => nodes.map(e => ({ top: e.getBoundingClientRect().top, height: e.getBoundingClientRect().height })));
+  const before = await rows();
+  const height = await p.$eval('.ps-viewbar', e => { const h = e.getBoundingClientRect().height; e.style.display = 'none'; return h; });
+  const seen = await linesSeen(p);
+  const after = await rows();
+  await p.$eval('.ps-viewbar', e => { e.style.display = ''; });
+  return { height, seen, shift: before[0].top - after[0].top, rowsSame: before.length === after.length && before.every((row, i) => Math.abs(row.height - after[i].height) < 0.1) };
+};
 
 (async () => {
   const b = await L.start();
@@ -38,9 +48,12 @@ const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.n
   ok(!!c && c.due && /not set yet/.test(c.label) && c.href === '#/team', 'chip: a sous chef sees the Today\'s team chip, filled while not set (' + JSON.stringify(c) + ')');
   ok(/Set today's team/.test(await txt(p, '.nb-tmset') || ''), 'prep list: Set today\'s team under the done count');
   // 2 lines until the redesign's step 1 (8 Nov 2026) put a phone line's buttons beside its words; 3 since; 4 since the
-  // gap fix the same day (the number in the margin, smaller words, tighter rows; tests/prep-lines.test.js counts real fonts)
+  // gap fix the same day. The approved 44 px Work / Before service choice now costs one row in this fallback-font
+  // fixture; tests/prep-lines.test.js separately counts the real fonts on a 390 x 844 screen.
   const seen = await linesSeen(p);
-  ok(seen === 4, 'prep list: a sous chef still sees 4 list lines above Add a line, with Set today\'s team showing (' + seen + ')');
+  ok(seen === 3, 'prep list: a sous chef sees 3 list lines with Before service and Set today\'s team showing (' + seen + ')');
+  const chefWithoutChoice = await withoutViewChoice(p);
+  ok(chefWithoutChoice.height === 44 && chefWithoutChoice.shift === 72 && chefWithoutChoice.rowsSame && chefWithoutChoice.seen === 4, 'prep list: the view choice and its spacing shift unchanged rows by 72 px; removing it restores the previous 4 sous-chef rows (' + JSON.stringify(chefWithoutChoice) + ')');
   const headWith = await p.evaluate(() => document.querySelector('.nb-left .nb-ph').getBoundingClientRect().height);
   ok(!(await titleCut(p)), 'top bar: "Kitchen Book" is whole at 390 px with the chip');
   await p.click('.wtop-who'); await L.settle(p, 300);
@@ -146,8 +159,11 @@ const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.n
   ok(!!c && c.due && /^Your day: Lunch: Grill · Break 14:30$/.test(c.label), 'staff chip: once her day is set, filled from 30 minutes before her break (' + JSON.stringify(c) + ')');
   ok(await txt(p, '.nb-tmday') === 'Lunch: Grill · Break 14:30', 'staff prep list: her day under the done count (' + (await txt(p, '.nb-tmday')) + ')');
   const staffSeen = await linesSeen(p);
-  // 3 until the gap fix (8 Nov 2026), 5 since: her day under the done count still takes no list line
-  ok(staffSeen === 5, 'staff prep list: still 5 list lines above Add a line with her day showing (' + staffSeen + ')');
+  // The test replaces the fonts with nothing: system fallback wrapping yields 3 or 4 here. Check the exact added
+  // space and unchanged rows below; prep-lines.test.js verifies the approved density with the real app fonts.
+  ok(staffSeen >= 3 && staffSeen <= 4, 'staff prep list: 3 to 4 fallback-font lines with Before service and her day showing (' + staffSeen + ')');
+  const staffWithoutChoice = await withoutViewChoice(p);
+  ok(staffWithoutChoice.height === 44 && staffWithoutChoice.shift === 72 && staffWithoutChoice.rowsSame && staffWithoutChoice.seen === 5, 'staff prep list: the view choice and its spacing shift unchanged rows by 72 px; removing it restores the previous 5 rows (' + JSON.stringify(staffWithoutChoice) + ')');
   const hh = await p.evaluate(() => { const h = () => document.querySelector('.nb-left .nb-ph').getBoundingClientRect().height, a = h(), l = document.querySelector('.nb-tmday'); l.style.display = 'none'; const z = h(); l.style.display = ''; return [a, z]; });
   ok(Math.abs(hh[0] - hh[1]) < 0.5, 'staff prep list: the header keeps its height with the day line (' + JSON.stringify(hh) + ')');
   ok(!(await p.$('.ks-wrap')) && !(await p.$('.ux-section-picker')), 'staff section: not asked, the chef set it');

@@ -1,0 +1,202 @@
+[
+  {
+    "view": "panel",
+    "width": 390,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
+    "overflow": 0,
+    "errors": [],
+    "phoneRowsAboveAdd": 0,
+    "smallTargets": []
+  },
+  {
+    "view": "panel",
+    "width": 768,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
+    "overflow": 0,
+    "errors": [],
+    "phoneRowsAboveAdd": null,
+    "smallTargets": []
+  },
+  {
+    "view": "panel",
+    "width": 1280,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
+    "overflow": 0,
+    "errors": [],
+    "phoneRowsAboveAdd": null,
+    "smallTargets": []
+  },
+  {
+    "view": "a",
+    "width": 390,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
+    "overflow": 0,
+    "errors": [],
+    "phoneRowsAboveAdd": 0,
+    "smallTargets": []
+  },
+  {
+    "view": "a",
+    "width": 768,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
+    "overflow": 0,
+    "errors": [],
+    "phoneRowsAboveAdd": null,
+    "smallTargets": []
+  },
+  {
+    "view": "a",
+    "width": 1280,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
+    "overflow": 0,
+    "errors": [],
+    "phoneRowsAboveAdd": null,
+    "smallTargets": []
+  },
+  {
+    "view": "b",
+    "width": 390,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
+    "overflow": 0,
+    "errors": [],
+    "phoneRowsAboveAdd": 2,
+    "smallTargets": []
+  },
+  {
+    "view": "b",
+    "width": 768,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
+    "overflow": 0,
+    "errors": [],
+    "phoneRowsAboveAdd": null,
+    "smallTargets": []
+  },
+  {
+    "view": "b",
+    "width": 1280,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
+    "overflow": 0,
+    "errors": [],
+    "phoneRowsAboveAdd": null,
+    "smallTargets": []
+  },
+  {
+    "view": "c",
+    "width": 390,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
+    "overflow": 0,
+    "errors": [],
+    "phoneRowsAboveAdd": 1,
+    "smallTargets": []
+  },
+  {
+    "view": "c",
+    "width": 768,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
+    "overflow": 0,
+    "errors": [],
+    "phoneRowsAboveAdd": null,
+    "smallTargets": []
+  },
+  {
+    "view": "c",
+    "width": 1280,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
+    "overflow": 0,
+    "errors": [],
+    "phoneRowsAboveAdd": null,
+    "smallTargets": []
+  },
+  {
+    "check": "approved alias shows head minimum",
+    "passed": true
+  },
+  {
+    "check": "minimum does not fill amount",
+    "passed": true
+  },
+  {
+    "check": "section change removes old minimum",
+    "passed": true
+  },
+  {
+    "check": "section keeps typed amount and unit",
+    "passed": true
+  },
+  {
+    "check": "ambiguous name requires two explicit choices",
+    "passed": true
+  },
+  {
+    "check": "ambiguous match attaches no minimum",
+    "passed": true
+  },
+  {
+    "check": "explicit match keeps typed amount and unit",
+    "passed": true
+  },
+  {
+    "check": "unlisted free entry remains explicit",
+    "passed": true
+  },
+  {
+    "check": "unavailable is not no match",
+    "passed": true
+  },
+  {
+    "check": "full reference includes configured items",
+    "passed": true
+  },
+  {
+    "check": "reference opens Add with blank amount",
+    "passed": true
+  },
+  {
+    "check": "separate fifth Prep room",
+    "passed": true
+  },
+  {
+    "check": "unchanged standard Save disabled",
+    "passed": true
+  },
+  {
+    "check": "sous standards read only",
+    "passed": true
+  },
+  {
+    "check": "panel Prep room does not select global service Prep",
+    "passed": true
+  },
+  {
+    "check": "Escape closes the Add sheet",
+    "passed": true
+  },
+  {
+    "check": "Escape returns focus to Add",
+    "passed": true
+  },
+  {
+    "check": "closing and reopening Add preserves typed amount",
+    "passed": true
+  },
+  {
+    "check": "backdrop closes the Add sheet",
+    "passed": true
+  },
+  {
+    "check": "reference heading does not imply saved service checks",
+    "passed": true
+  }
+]

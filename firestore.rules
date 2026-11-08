@@ -1468,6 +1468,36 @@ service cloud.firestore {
       allow create, update: if cutDoneOk(id) && (isAdmin() || (staff() && chefId(request.resource.data.by)));
       allow delete: if false;
     }
+    // Section prep standards: one item per document so every value is checked and a stale editor cannot replace
+    // another item. Staff read the head chef's standards; only the current head recorder changes them. No stock or
+    // service-check state is stored here. A section query is bounded by the client and adds no listener.
+    function prepStandardId(id) { return id is string && id.matches('[a-zA-Z0-9_-]{1,80}'); }
+    function prepStandardText(value, size) { return value is string && value.size() > 0 && value.size() <= size && value.matches('.*\\S.*'); }
+    function prepStandardAlias(aliases, index) { return aliases.size() <= index || prepStandardText(aliases[index], 160); }
+    function prepStandardOk(id) {
+      let d = request.resource.data;
+      return prepStandardId(id)
+        && d.keys().hasOnly(['sectionId', 'name', 'aliases', 'minimum', 'unit', 'instruction', 'recipe', 'archived', 'v', 'at', 'by'])
+        && d.keys().hasAll(['sectionId', 'name', 'aliases', 'minimum', 'unit', 'instruction', 'recipe', 'archived', 'v', 'at', 'by'])
+        && prepStandardId(d.sectionId) && prepStandardText(d.name, 160)
+        && d.aliases is list && d.aliases.size() <= 12
+        && prepStandardAlias(d.aliases, 0) && prepStandardAlias(d.aliases, 1) && prepStandardAlias(d.aliases, 2)
+        && prepStandardAlias(d.aliases, 3) && prepStandardAlias(d.aliases, 4) && prepStandardAlias(d.aliases, 5)
+        && prepStandardAlias(d.aliases, 6) && prepStandardAlias(d.aliases, 7) && prepStandardAlias(d.aliases, 8)
+        && prepStandardAlias(d.aliases, 9) && prepStandardAlias(d.aliases, 10) && prepStandardAlias(d.aliases, 11)
+        && (d.minimum == null || (d.minimum is number && d.minimum >= 0 && d.minimum <= 1000000))
+        && prepStandardText(d.unit, 40) && d.instruction is string && d.instruction.size() <= 500
+        && d.recipe is string && (d.recipe == '' || d.recipe.matches('[a-zA-Z0-9_-]{1,160}'))
+        && d.archived is bool && d.v is int && d.v > 0
+        && d.at is number && d.at >= 0 && d.at <= request.time.toMillis() + 300000
+        && d.by is string && d.by == reader();
+    }
+    match /kitchens/KITCHEN_PIN/prepStandards/{id} {
+      allow read: if kitchenRead();
+      allow create, update: if (isAdmin() || headWrite()) && prepStandardOk(id) && nextVersion()
+        && (resource == null || request.resource.data.sectionId == resource.data.sectionId);
+      allow delete: if false;
+    }
     // Supplier catalogue and order history (24 Oct 2026). Goods and pars never live in the public shell or config/main.
     // A chef's current PIN session may read; only the head chef or the verified owner changes the catalogue. The page
     // validates each item and snapshot line, while these rules bound the arrays and enforce roles, revisions and the
