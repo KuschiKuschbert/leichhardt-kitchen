@@ -36,7 +36,8 @@ async function signOutTo(p, route) {
     ok(/Lunch/.test(shift) && /10:00 to 15:00/.test(shift) && /Grill/.test(shift) && /14:30/.test(shift), route + ': Home shows Ann\'s first shift, hours, section and break');
     ok(/Dinner/.test(shift) && /16:00 to 22:00/.test(shift) && /Pans/.test(shift) && /19:00/.test(shift), route + ': Home also shows her later shift and break');
     ok(!/Break 14:00/.test(shift), route + ': another person\'s break stays out of her shift details');
-    ok(!(await L.overflow(p)) && !p.errors.length, route + ': no sideways scroll or browser errors');
+    const overflow = await L.overflow(p);
+    ok(!overflow && !p.errors.length, route + ': no sideways scroll or browser errors (overflow: ' + overflow + '; errors: ' + p.errors.join(' | ') + ')');
     await p.context().close();
   }
   p = await L.open(b, '#/orders', { who: 'ann', extra, wait: 700 });
@@ -110,6 +111,24 @@ async function signOutTo(p, route) {
   await p.context().close();
   p = await L.open(b, '#/', { who: 'ann', extra, failReads: '/team/', wait: 1000 });
   ok(/Could not check your shift details/.test(await txt(p, '[data-hm-shift-status]') || ''), 'a failed plan read is shown as an error, not an empty shift');
+  await p.context().close();
+  const longName = Object.assign({}, extra, { [key('config', 'main')]: Object.assign({}, cfg, { people: people.map(person => person.id === 'ann' ? Object.assign({}, person, { name: 'Alexandertheverylongname' }) : person) }) });
+  p = await L.open(b, '#/prep', { who: '', deviceMode: 'shared', extra: longName, wait: 700 });
+  await pin(p, 'ann', '2222');
+  const animationOverflow = await p.evaluate(() => {
+    const button = document.querySelector('.wtop-who'), animation = button.getAnimations()[0];
+    if (!animation) return 'No sign-in animation';
+    const originalTime = animation.currentTime;
+    animation.pause();
+    let worst = 0;
+    for (let time = 0; time <= 1100; time += 25) {
+      animation.currentTime = time;
+      worst = Math.max(worst, document.documentElement.scrollWidth - innerWidth);
+    }
+    animation.currentTime = originalTime; animation.play();
+    return worst;
+  });
+  ok(typeof animationOverflow === 'number' && animationOverflow <= 1, 'the whole sign-in animation fits a phone with a long shared-screen name (' + animationOverflow + ' px over)');
   await p.context().close();
   p = await L.open(b, '#/prep', { who: '', deviceMode: 'shared', extra, wait: 700 });
   await p.click('.p-name[data-id="ann"]'); await p.locator('#pf1').fill('9999'); await L.settle(p, 700);
