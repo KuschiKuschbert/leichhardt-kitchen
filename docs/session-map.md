@@ -4,6 +4,10 @@ Moved from `CLAUDE.md` on 8 November 2026, word for word, so the file every sess
 
 When a note or a file is added: its full row goes here, and one short row (what it covers, where it is) goes in `CLAUDE.md`. When the two disagree, the note itself wins, then `CLAUDE.md`.
 
+## Operandio clock motion, 8 November 2026
+
+The owner requested three animated designs on mobile and desktop, six in total: clock to Start pill, desktop countdown, mobile filling clock, green Done and chime, then an explicit tap for four hours. Choice is pending. [Brief and council](operandio-clock-motion-options/brief.md), [interactive comparison](operandio-clock-motion-options/index.html). All source, synthetic snapshots and recordings live in `docs/operandio-clock-motion-options/`; no production timer files change.
+
 ## Operandio cooling, 8 November 2026
 
 The head chef approved the compact 248 by 155 px clock dropdown, everyone with kitchen PIN access starting two hours, and a separate manual Start for four hours. Council: Build smaller, 5 of 5. The latest clarification needs pings only on logged-in open screens; saved start times preserve the timer after closure. No new service or billing change. [Feature contract](operandio-cooling.md), [chosen design and council](operandio-cooling-options/brief.md).

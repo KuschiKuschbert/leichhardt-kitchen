@@ -2,6 +2,8 @@
 
 [Operandio cooling](docs/operandio-cooling.md) adds the approved compact clock dropdown: anyone with an active kitchen PIN can start two hours, then manually start a further four hours once the first stage ends. Logged-in open screens receive each Operandio ping. Shared server start times keep the countdown correct after reopening. No closed-app notifications, extra service or billing upgrade are required. [Design and council record](docs/operandio-cooling-options/brief.md).
 
+[Operandio clock animations](docs/operandio-clock-motion-options/brief.md) compare three designs on mobile and desktop, six previews in total. The owner is choosing a presentation; the current live timer remains unchanged.
+
 # Leichhardt Kitchen Book
 
 The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order list, the wastage log, the transfer list (stock shared with the other venues) and the team's how-to guides, plus the head chef's admin panel. It works on any phone, tablet or computer with a web browser and can be installed as an app. Working rules for changing it are in `CLAUDE.md` (which note to read and every file, in full: `docs/session-map.md`), and each part's code contract (what a change must keep) is in `docs/code-contracts.md` and the feature notes in `docs/`. [AGENTS.md](AGENTS.md) tells Codex to read `CLAUDE.md` at the start of every task, so both agents use the same rules.
