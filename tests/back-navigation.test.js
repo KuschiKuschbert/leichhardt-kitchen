@@ -16,13 +16,15 @@ async function returned(p, h) {
 (async () => {
   const b = await L.start();
   let p;
-  // The arrow replaces the logo, so returning never adds a row or makes the header taller.
+  // Back sits beside the mobile logo and replaces the desktop mark, without adding a header row.
   for (const width of [390, 768, 1280]) for (const text of ['normal', 'xlarge']) {
     const screen = width + ' ' + text;
     p = await L.open(b, '#/orders', { width, settings: { text }, wait: 1600 });
     ok(await back(p).getAttribute('aria-label') === 'Back to Kitchen Book', screen + ': a direct page has a named local fallback');
     const box = await back(p).boundingBox(), icon = await back(p).locator('svg').boundingBox();
     const header = await p.locator('.wtop').boundingBox();
+    ok(await p.locator('.wtop-brand .rb-mark').isVisible() === (width < 720) && (width < 720 ? !(await p.locator('.wtop-brand .rb-text').isVisible()) : width < 1100 || await p.locator('.wtop-brand .rb-text').isVisible()), screen + ': mobile uses the KB logo and larger screens keep adaptive branding');
+    ok(await p.locator('.wtop-brand').getAttribute('aria-label') === 'Kitchen Book, home', screen + ': the home link keeps its accessible name');
     ok(box && Math.abs(box.height - 44) <= 1 && Math.abs(box.width - 44) <= 1 && icon && icon.width >= 18 && icon.width <= 20.5 && icon.height <= 20.5, screen + ': compact arrow keeps a 44 px tap target with an 18 to 20 px icon');
     ok(await back(p).count() === 1 && await p.locator('.page-return').count() === 0 && (await back(p).innerText()).trim() === '', screen + ': one icon-only return control uses the existing header');
     ok(await p.evaluate(() => {
@@ -39,6 +41,7 @@ async function returned(p, h) {
     const landingHeader = await p.locator('.wtop').boundingBox();
     ok(header && landingHeader && header.height <= landingHeader.height + 1, screen + ': Back does not increase the header height');
     ok(await back(p).count() === 0 && await p.locator('.kb-home').count() === 1, screen + ': direct-page Back reaches the landing page without leaving the book');
+    ok(await p.locator('.wtop-brand .rb-mark').isVisible() && (width < 720 ? !(await p.locator('.wtop-brand .rb-text').isVisible()) : width < 1100 || await p.locator('.wtop-brand .rb-text').isVisible()), screen + ': Home uses the same mobile logo and adaptive branding');
     ok(!(await L.overflow(p)) && p.errors.length === 0, screen + ': no overflow or page errors');
     await p.context().close();
   }

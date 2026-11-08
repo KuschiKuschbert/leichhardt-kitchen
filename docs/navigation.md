@@ -6,10 +6,29 @@ task without losing work. A back action never submits a form or records an order
 ## Page return
 
 Each task page has one 20 px arrow in the existing dark header, inside a transparent 44 px tap area. The arrow
-replaces the book mark; the landing page keeps its mark and has no Back control. The header grows no taller for
+replaces the book mark from 720 px. Below 720 px, the KB mark replaces the title beside Back and stays a Home link
+with the accessible name "Kitchen Book, home". Its tap area is at least 44 px. The landing page keeps its mark and
+has no Back control. The header grows no taller for
 Back. Its accessible label and tooltip name the destination, and its keyboard focus uses the book's existing
 outline. Primary Save and Record controls keep their size. No separate return row, repeated editor footer or
 floating recipe Zoom out control is added. Recipe hierarchy links stay available as quiet breadcrumbs.
+
+### Mobile logo, 8 November 2026
+
+The owner chose the existing chalk KB logo in place of the mobile title. Small-change service check:
+**Verdict: Build.** It frees space in the existing bar without adding a control, step, read or overlay.
+The existing mark and Home label stay recognisable. Larger screens keep the current adaptive branding.
+No new design choice or council reviewers were needed.
+
+Measured with the Firebase stand-in on a 390 × 844 px phone: Add a prep line stays one tap from Prep,
+the header stays 64 px high, and four prep rows remain visible above the Add dock, before and after.
+[Before](mobile-header-logo/390-before.png), [after](mobile-header-logo/390-after.png).
+Shared-device checks at 360, 375, 390, 430 and 719 px, with normal and extra-large text, keep the logo and
+44 px header controls on screen. Tapping the logo opens Home. The navigation suite checks Back,
+accessible naming, normal and enlarged text at 390, 768 and 1280 px. Team controls, wide-font and
+design-pattern checks cover the existing header layouts.
+
+## Return trail
 
 The arrow returns through the pages opened in this run of the book. Opening or reloading a direct link starts a
 fresh trail: a nested recipe returns to its parent, a guide to Guides, a function to Functions, a supplier to
