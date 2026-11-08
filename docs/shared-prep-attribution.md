@@ -4,6 +4,8 @@ Approved for Prep first, 1 November 2026. Transfers, Wastage, orders, delivery c
 
 ## Interaction
 
+Wall board is available on personal and shared devices to all accounts already authorised for Prep (8 November 2026). Attribution still follows the device type: personal actions name the signed-in person, and shared actions use the existing person picker described below. Board view does not grant another account's write capabilities.
+
 Keep the existing notebook sheet, handwritten rows, function strip, section/date controls, Add, quantities, suggestions, Quick add, Handy, completion controls and navigation. No replacement prep layout or extra progress system.
 
 **Since 5 November 2026 (I'm on it, head chef; its own button since that evening):** **On it** on an open line opens this sheet as **Who's on it?** and saves only the stamp (`onBy`, `onById`, `onAt`, with the same eligibility, busy, retry and reconcile handling); On it on a stamped line takes the cook off, with Undo. The tick box keeps one tap: it opens Who did this? as before, with the cook on the line first under **On it** (and focused), because someone else may have finished it. That morning the first tap on the box stamped and the second saved at once for the stamped cook; that went with the one-tap tick. `ptOpen(date, id, mode)`, `pt.mode`; `tests/prep-on-it.test.js`, `tests/prep-wall-board.test.js`.
