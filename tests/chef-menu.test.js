@@ -83,13 +83,13 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   await p.context().close();
   p = await L.open(b, '#/recipes', { who: 'sam', wait: 1800 });
   m = await L.chefItems(p);
-  ok(m.join(',') === 'fn,deliveries,suppliers,team,mail,pings,minutes,drinks,todo,manage,staff,settings,out', 'sous chef: Every day has Functions, Delivery received, Supplier order, Today\'s team, Kitchen mail and Shift pings; More has Meeting minutes (the register is in it), Drinks run, Chef to-do, Recipes & drawings and Manage staff (8 Nov 2026) (' + m + ')');
+  ok(m.includes('chef') && m.filter(x => x !== 'chef').join(',') === 'fn,deliveries,suppliers,team,mail,pings,minutes,drinks,todo,manage,staff,settings,out', 'sous chef: the chef panel is added alongside all existing menu links (' + m + ')');
   // the menu as a list since 8 Nov 2026 (redesign step 7; tiles from 3 Nov): a person card with Sign out, rows the menu's
   // width and big enough to tap, no second line with nothing to say, Sign out's line read out when it changes, and all of
   // it on one phone screen with no scroll (it was 621 px of menu in a 506 px box)
   await p.click('.wtop-who'); await L.settle(p, 150);
   let box = await menuBox(p);
-  ok(box.tiles.length === 11 && box.tiles.every(x => x[0] >= 330 && x[1] >= 44), 'sous chef 390 px: eleven rows, each the width of the menu and at least 44 px high (' + JSON.stringify(box.tiles) + ')');
+  ok(box.tiles.length === 12 && box.tiles.every(x => x[0] >= 330 && x[1] >= 44), 'sous chef 390 px: twelve rows, each the width of the menu and at least 44 px high (' + JSON.stringify(box.tiles) + ')');
   ok(box.out >= 48, 'sous chef 390 px: Sign out is a full 48 px button (' + box.out + ')');
   ok(box.me === 'Sam|Sous chef' && box.outText === 'Not Sam? Sign out', 'sous chef: the person card says Sam, Sous chef, and Not Sam? Sign out (' + box.me + ', ' + box.outText + ')');
   // a second line only with something to say: Today's team has none set for today in this kitchen (7 Nov 2026)
@@ -262,7 +262,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   // the head chef by PIN: no Kitchen mail to herself, Admin panel says Sign in with Google, Manage staff stays
   p = await L.open(b, '#/recipes', { who: 'ann', extra: headCfg(), wait: 1800 });
   m = await L.chefItems(p);
-  ok(m.join(',') === 'functions,deliveries,suppliers,team,pings,admin,minutes,drinks,todo,manage,staff,settings,out', 'head chef by PIN: no Kitchen mail, Functions in its one place, Today\'s team, Shift pings, Admin panel first under More, Chef to-do, Supplier order and Manage staff (' + m + ')');
+  ok(m.includes('chef') && m.filter(x => x !== 'chef').join(',') === 'functions,deliveries,suppliers,team,pings,admin,minutes,drinks,todo,manage,staff,settings,out', 'head chef by PIN: the chef panel is added alongside all existing menu links (' + m + ')');
   await p.click('.wtop-who'); await L.settle(p, 150);
   box = await menuBox(p);
   ok(box.small.join('|') === 'Not set yet|Sign in with Google', 'head chef by PIN: the only second lines are Today\'s team\'s Not set yet and Sign in with Google (' + box.small.join(' | ') + ')');
@@ -273,7 +273,7 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   // Admin comes in after the owner check is read: wait for it, not for the page to be still
   for (let i = 0; i < 20 && await L.admItem(p) !== 'signed'; i++) await L.settle(p, 250);
   m = await L.chefItems(p);
-  ok(m.join(',') === 'functions,deliveries,suppliers,team,pings,admin,minutes,drinks,todo,manage,settings,out', 'head chef on her Google device: no Kitchen mail, no Manage staff, Today\'s team, Chef to-do and Supplier order (' + m + ')');
+  ok(m.includes('chef') && m.filter(x => x !== 'chef').join(',') === 'functions,deliveries,suppliers,team,pings,admin,minutes,drinks,todo,manage,settings,out', 'head chef on her Google device: the chef panel is added alongside all existing menu links (' + m + ')');
   await p.click('.wtop-who'); await L.settle(p, 150);
   box = await menuBox(p);
   ok(box.sh <= box.ch + 1 && box.b >= box.vh - 1 && box.me === 'Ann|Head chef', 'head chef on her Google device, 390 px: the whole menu on one screen, no scroll, the card says Head chef (' + JSON.stringify(box) + ', 710 px of list before 22 Oct)');

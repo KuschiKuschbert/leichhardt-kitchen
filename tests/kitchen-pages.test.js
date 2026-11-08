@@ -37,7 +37,7 @@ const teamSeed = {
     return { heads, rows, last: last && last.classList.contains('wm-set'), mw: Math.round(mr.width) };
   });
   ok(hat.heads.join('|') === 'Every day|More', 'hat: two groups, Every day then More (' + hat.heads.join(', ') + ')');
-  ok(hat.rows.length === 11 && hat.rows.every(r => r.h >= 44 && r.w >= hat.mw - 40) && hat.last, 'hat: eleven rows the width of the menu, 44 px or more, Settings last (' + JSON.stringify(hat.rows.map(r => [r.w, r.h])) + ')');
+  ok(hat.rows.length === 12 && hat.rows.some(r => r.t === 'Sous chef panel') && hat.rows.every(r => r.h >= 44 && r.w >= hat.mw - 40) && hat.last, 'hat: twelve rows including the chef panel, each the width of the menu, 44 px or more, Settings last (' + JSON.stringify(hat.rows.map(r => [r.w, r.h])) + ')');
   const team = hat.rows.filter(r => r.t === 'Today\'s team')[0];
   ok(!!team && team.small !== null && team.small < 40, 'hat: Today\'s team\'s Not set yet sits at the right of its row (' + JSON.stringify(team) + ')');
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'hat 390: no sideways scroll, no page errors ' + p.errors.join(' | '));

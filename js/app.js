@@ -484,6 +484,7 @@
           m.chef ? tile('data-who="open" data-v="pings"', ICON.bell, 'Shift pings') : ''
         ]) +
         grid('More', [
+          m.panel ? tile('href="#/chef" data-who="go"', ICON.chef, m.head ? 'Head chef panel' : 'Sous chef panel') : '',
           adm,
           // a small line only while minutes wait to be signed (23 Oct 2026)
           m.minutes ? tile('href="#/minutes" data-who="go"', ICON.doc, 'Meeting minutes', m.toSign ? '<small class="wm-due">' + m.toSign + ' to sign</small>' : '') : '',
@@ -1388,7 +1389,7 @@
     }
     if (parts[0] === 'deliveries') return { name: 'deliveries', stack: [] };
     if (parts[0] === 'settings') return { name: 'settings', stack: [] };
-    if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'transfers' || parts[0] === 'minutes' || parts[0] === 'mail' || parts[0] === 'drinks' || parts[0] === 'todo' || parts[0] === 'team') return { name: parts[0], stack: [] };
+    if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'chef' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'transfers' || parts[0] === 'minutes' || parts[0] === 'mail' || parts[0] === 'drinks' || parts[0] === 'todo' || parts[0] === 'team') return { name: parts[0], stack: [] };
     if (parts[0] === 'guides') return { name: 'guides', stack: [], gid: parts[1] || '' };
     if (parts[0] === 'manage') return { name: 'manage', stack: [], sub: parts.slice(1) };
     if (parts[0] === 'fn') return { name: 'fn', stack: [], fid: parts[1] || '' };
@@ -1408,7 +1409,7 @@
     writeJSON(LS, 'lk.views', v);
   }
   // the pages drawn by js/prep.js (Firebase): prep book, orders, wastage, minutes, guides, kitchen mail and the admin panel
-  var PREP_PAGES = { prep: 1, admin: 1, orders: 1, waste: 1, transfers: 1, minutes: 1, guides: 1, mail: 1, drinks: 1, todo: 1, team: 1 };
+  var PREP_PAGES = { prep: 1, admin: 1, chef: 1, orders: 1, waste: 1, transfers: 1, minutes: 1, guides: 1, mail: 1, drinks: 1, todo: 1, team: 1 };
   /* Return only through pages opened in this run of the book. The browser keeps an opaque entry key; destinations
      and scroll positions stay in memory. A direct link or a reload starts a new trail with a fixed local fallback.
      Sheets own their same-address history entries (lkOv), so this never stamps or consumes one of those. */
@@ -1442,7 +1443,7 @@
     return '#/';
   }
   function backTitle(hash) {
-    var r = parseRoute(hash), names = { landing: 'Kitchen Book', home: 'recipes', prep: 'prep list', orders: 'order list', waste: 'wastage', transfers: 'transfers', minutes: 'meeting minutes', mail: 'kitchen mail', drinks: 'drinks run', todo: 'Chef to-do', admin: 'admin panel', settings: 'Settings', guides: 'guides', fn: 'functions', functions: 'Manage functions', manage: 'Manage recipes', suppliers: 'Supplier order', deliveries: 'Delivery received' };
+    var r = parseRoute(hash), names = { landing: 'Kitchen Book', home: 'recipes', prep: 'prep list', orders: 'order list', waste: 'wastage', transfers: 'transfers', minutes: 'meeting minutes', mail: 'kitchen mail', drinks: 'drinks run', todo: 'Chef to-do', admin: 'admin panel', chef: 'chef panel', settings: 'Settings', guides: 'guides', fn: 'functions', functions: 'Manage functions', manage: 'Manage recipes', suppliers: 'Supplier order', deliveries: 'Delivery received' };
     if (r.name === 'recipe') return 'recipe';
     return names[r.name] || 'Kitchen Book';
   }
@@ -1588,7 +1589,7 @@
     else if (window.LK_PREP && window.LK_PREP.warm && !warmed) { warmed = true; setTimeout(function () { window.LK_PREP.warm(); }, 900); }
     backSync();
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'transfers' ? 'Transfers · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'team' ? 'Today\'s team · ' : route.name === 'suppliers' ? 'Supplier order · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : '')) + 'Leichhardt Kitchen Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'transfers' ? 'Transfers · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'team' ? 'Today\'s team · ' : route.name === 'suppliers' ? 'Supplier order · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : route.name === 'chef' ? 'Chef panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
     if (changed && route.name === 'recipe') noteView(route.stack[route.stack.length - 1]);
     // opening the recipes checks for the head chef's recipe changes when the last check is 30 minutes old (one read)

@@ -9,6 +9,7 @@ const { R, ok } = L.results(), { txt } = L;
   for (const h of ['#/', '#/prep', '#/recipes']) {
     const p = await L.open(b, h, { who: 'ann', wait: 1200 });
     ok(await L.admItem(p) === 'none', 'staff ' + h + ': no Admin in the chef hat menu');
+    ok(!(await L.chefItems(p)).includes('chef'), 'staff ' + h + ': no chef panel in the chef hat menu');
     ok(await p.$('.wtop .wtop-who') !== null, 'staff ' + h + ': the chef mark (with Settings) still there');
     ok(p.errors.length === 0, 'staff ' + h + ': no page errors ' + p.errors.join(' | '));
     await p.context().close();
@@ -31,6 +32,7 @@ const { R, ok } = L.results(), { txt } = L;
   ok(await p.evaluate(() => localStorage.getItem('lk.admin')) === '1', 'head chef: lk.admin set by the owner probe');
   ok(await p.$('.wtop .adm') === null, 'head chef #/prep: no Admin key in the top bar any more');
   ok(await L.admItem(p) === 'signed', 'head chef #/prep: Admin panel in the chef hat menu, after the probe');
+  ok((await L.chefItems(p)).includes('chef'), 'head chef #/prep: chef panel is available alongside Admin');
   await p.click('.wtop-who'); await L.settle(p, 150);
   await p.click('.wm .wm-adm');
   await L.settle(p, 1500);
