@@ -1494,9 +1494,8 @@ service cloud.firestore {
     }
     match /kitchens/KITCHEN_PIN/prepStandards/{id} {
       allow read: if kitchenRead();
-      allow create: if (isAdmin() || headWrite()) && prepStandardOk(id) && request.resource.data.v == 1;
-      allow update: if (isAdmin() || headWrite()) && prepStandardOk(id)
-        && request.resource.data.v == resource.data.v + 1 && request.resource.data.sectionId == resource.data.sectionId;
+      allow create, update: if (isAdmin() || headWrite()) && prepStandardOk(id) && nextVersion()
+        && (resource == null || request.resource.data.sectionId == resource.data.sectionId);
       allow delete: if false;
     }
     // Supplier catalogue and order history (24 Oct 2026). Goods and pars never live in the public shell or config/main.
