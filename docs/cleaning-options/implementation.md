@@ -37,7 +37,7 @@ The focused cleaning browser suite passed 112 checks, including lost acknowledge
 - [Completed job](implementation/cleaning-done-390.png)
 - [Existing Prep reference](implementation/prep-reference-390.png)
 
-Rules are additive for new collections and must be published before this client is released. Publication must pass compilation, foundation verification and the live Lock probe. The branch remains a draft until implementation checks and publication finish; it is not a claim that the page is live.
+Rules are additive for new collections and were published before the client: [Publish rules, run 42471882907](https://github.com/KuschiKuschbert/leichhardt-kitchen/actions/runs/42471882907) passed on implementation commit `fff3121`, including compilation/publication, canonical foundation verification and the live Lock probe. [PR #609](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/609) tracks the full required CI result and normal release queue. Published rules do not mean the client page is live; release follows the repository’s normal window.
 
 ## Rollback
 
