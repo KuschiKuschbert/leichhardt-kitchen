@@ -185,9 +185,9 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
   // the landing page and the tab bar have Transfers
   {
     const p = await L.open(b, '#/', { extra, who: 'ann', wait: 1200 });
-    // the dockets went on 8 Nov 2026 (redesign step 2): the tab bar carries the pages, Transfers before Guides
+    // the dockets went on 8 Nov 2026 (redesign step 2): the tab bar carries the pages, Transfers before Cleaning
     const names = await p.$$eval('.tabbar a', l => l.map(e => e.getAttribute('href')));
-    ok(names.join(',') === '#/recipes,#/prep,#/orders,#/waste,#/transfers,#/guides', 'landing: six tabs, Transfers before Guides (' + names.join(', ') + ')');
+    ok(names.join(',') === '#/recipes,#/prep,#/orders,#/waste,#/transfers,#/cleaning', 'landing: six tabs, Transfers before Cleaning (' + names.join(', ') + ')');
     ok(!!(await p.$('.tabbar a[href="#/transfers"]')), 'landing: the tab bar has Transfers');
     await p.click('.tabbar a[href="#/transfers"]'); await L.settle(p, 900);
     ok(await p.evaluate(() => location.hash) === '#/transfers' && /^Transfers/.test(await p.title()), 'landing: the tab opens the transfer list (' + await p.title() + ')');

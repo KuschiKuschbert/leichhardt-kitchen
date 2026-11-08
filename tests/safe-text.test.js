@@ -27,6 +27,12 @@ extra[fsKey(['todos', 'x2'])] = { text: 'Done ' + P, st: 'done', due: '', for: '
 extra[fsKey(['drinks', 'ann'])] = { kind: 'flat', size: 'reg', milk: 'oat', shot: '', sugar: '1', note: 'Note ' + P, other: 'Other ' + P, at: L.NOW - 86400000, by: 'ann' };
 extra[fsKey(['guides', 'x1'])] = { title: 'Guide ' + P, cat: 'cleaning', sum: 'Sum ' + P, steps: 'Step ' + P, kw: '', text: '', thumb: '', pages: 0, dims: [], v: 1, file: '', removed: false, at: L.NOW - 86400000, upd: L.NOW - 86400000 };
 extra[fsKey(['sections', 'x1'])] = { name: 'Section ' + P, uses: 3, hidden: false };
+// Cleaning keeps immutable task wording, area/section names and the completion's worker snapshot as plain text.
+extra[fsKey(['cleaningTasks', 'x1'])] = { root: 'x1', prev: '', next: '', text: 'Cleaning ' + P, area: 'Area ' + P,
+  section: 'x1', sectionName: 'Section ' + P, shared: false, dows: [0, 1, 2, 3, 4, 5, 6], guide: 'guide" data-pwn="1',
+  from: Date.parse(today + 'T00:00:00+10:00'), until: 253402178400000, at: L.NOW - 600000, by: 'sam' };
+extra[fsKey(['cleaningDone', today + '_x1'])] = { day: today, task: 'x1', version: 1, done: true, doneAt: L.NOW - 60000,
+  doneById: 'ann', doneBy: 'Recorder ' + P, workerId: 'ann', worker: 'Worker ' + P, by: 'ann' };
 Object.assign(extra, L.wasteSum([{ t: 'Often ' + P, n: 3, r: { prep: 3 }, unit: 'kg', reason: 'prep', sec: 'Sec' + P, amt: 1, last: { unit: 'kg', reason: 'prep', sec: 'Sec' + P, amt: 1 } }]));
 
 // what a page must not have: the marker element, an injected image, an attribute broken out of its quotes, the handler run
@@ -57,6 +63,13 @@ async function check(b, hash, o, name, see, then) {
     await p.fill('#tr-text', 'Ta'); await L.settle(p, 300);
   });
   await check(b, '#/deliveries', { who: 'ann' }, 'deliveries', 'Delivery');
+  await check(b, '#/cleaning', { who: 'sam' }, 'cleaning', 'Cleaning', async p => {
+    await L.waitFor(p, () => !!document.querySelector('.cln-row'));
+    const words = await L.txt(p, '.cln-page');
+    ok(words.includes('Area ' + P) && words.includes('Worker ' + P) && words.includes('Section ' + P), 'cleaning: area, worker and responsible section remain literal text');
+    await L.tap(p, '[data-cln="setup"]'); await L.tap(p, '[data-cln="edit"][data-id="x1"]');
+    ok(await p.inputValue('#cln-text') === 'Cleaning ' + P && await p.inputValue('#cln-area') === 'Area ' + P, 'cleaning editor: saved text and area remain literal input values');
+  });
   await check(b, '#/drinks', { who: 'sam' }, 'drinks run', null);
   await check(b, '#/todo', { who: 'sam' }, 'chef to-do', 'Todo', async p => { await L.waitFor(p, () => !!document.querySelector('.todo-row'), null, 5000).catch(() => {}); await L.tap(p, '.todo-donebox summary'); await L.waitFor(p, () => !!document.querySelector('[data-lv="tododone"] .todo-row'), null, 5000).catch(() => {}); });
   await check(b, '#/guides', { who: 'ann' }, 'guides', 'Guide');
