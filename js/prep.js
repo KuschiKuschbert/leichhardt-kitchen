@@ -7797,7 +7797,7 @@
      closing sheet takes its history entry off with Back (ovDone), so the next one waits for that Back to land first. */
   var ksWant = false, ksWait = false, nextWait = false;
   // every sheet or popup over the page: these, the function sheet, the wastage reason sheet and the other bottom sheets
-  function sheetOpen() { return !!(ksPop || npop || mlPop || gz || tmPop || S.sheet || document.querySelector('.wm-wrap, .fn-pop, .sheet-bg, .ux-picker[open]')); }
+  function sheetOpen() { return !!(ksPop || npop || mlPop || gz || tmPop || S.sheet || document.querySelector('.wm-wrap, .fn-pop, .sheet-bg, .ux-picker[open], .kt-wrap')); }
   function typing() { var ae = document.activeElement; return !!(ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && ae.type !== 'button'); }
   // a first PIN's One more thing, while it is on the screen (it shows only on the prep list)
   function dkFirstUp() { return S.drinkAsk === 'first' && S.name === 'prep' && !!(S.root && document.body.contains(S.root) && S.root.querySelector('.dr-first')); }
@@ -12916,6 +12916,8 @@
   window.addEventListener('storage', function (e) { if (((e.key === 'lk.prep.who' || e.key === 'lk.prep.sess') && !e.newValue || e.key === 'lk.auth.lock') && (S.authed || S.user)) signOutPerson(true, true); });
   window.LK_PREP = {
     afterOverlay: ovAfterBack,
+    // The device timer takes its turn with sheets and live Undo; it never reads kitchen records.
+    timerBusy: sheetBusy, timerNext: sheetNext, timerTrap: trapTab,
     // today's free reads used up (5 Nov 2026): js/functions.js leaves "check the signal" out while it is
     quota: quotaOn,
     pickerOverlay: function (close) {

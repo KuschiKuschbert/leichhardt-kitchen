@@ -47,7 +47,8 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 ## Over the page
 
 - **A bottom sheet** (Your day, the pings sheet): `.nt-wrap` holding the dimmed `.nt-bg` (a tap closes) and `section.nt` (role dialog) with `.nt-grip`, `.nt-in`, a header `.nt-head` (`.nt-eb` eyebrow, `.nt-h` title, `.nt-date` line), `.nt-body` and `.nt-foot` with its `.nt-got` button. It goes on `document.body`, closes on the backdrop, the button, Escape and Back (`ovPush()`, `ovDone()`), keeps Tab inside (`trapTab()`), and takes its turn with the other sheets (`sheetOpen()`, `sheetBusy()`, `sheetNext()`). It opens on a tap, never by itself over a list, unless it stops a mistake.
-- **The top bar** holds the round chips only, each 44 px with the bell's ring (`.tm-chip` in `.wtop-icons`): no words, as words wrap the page tabs on a laptop and cut "Kitchen Book" on a phone. Filled (`is-due`) only when it needs attention. A new one is a head chef decision.
+- **The top bar** holds the round controls only, each 44 px with the bell's ring (`.tm-chip` and `.kt-chip` in `.wtop-icons`): no full text buttons, as those wrap the page tabs on a laptop and cut "Kitchen Book" on a phone. Filled (`is-due`) only when it needs attention. A new one is a head chef decision. The timer clock was requested on 8 Nov 2026.
+- **The kitchen timer** reuses that ring and the standard sheet (`.kt-wrap`), with explicit units in `.kt-fields`, a large `.kt-countdown` and `.kt-status` words. Its small `.kt-badge` shows approximate time left, a pause mark or Done without widening the control. `ktButtonHTML()` draws the clock; `ktDraw()` draws its sheet; `ktPaint()` updates only the changing words. The countdown does not announce each second, and expiry never opens a sheet. Keep the visible alarm limit in `.kt-help`. [Contract and checks](timer-options/brief.md).
 
 ## Inside a list
 

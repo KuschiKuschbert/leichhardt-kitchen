@@ -50,6 +50,7 @@ When a note or a file is added: its full row goes here, and one short row (what 
 | Delivery temperatures | `docs/delivery-received.md` |
 | Shift ping recipients | `docs/ping-recipients.md` |
 | Ping sound and the head chef's choice of sound | `docs/ping-sound.md` |
+| Kitchen timer (requested 8 Nov 2026): one device-local countdown, round clock, standard sheet, minutes and seconds, pause/resume, reload recovery, finished marker and browser alarm limits. The session uses A's sheet within the direct request; no lettered user choice was recorded | `docs/timer-options/brief.md` (council, concept scores and evidence limits, storage contract, action feedback, checks and rollback), `tests/kitchen-timer.test.js` |
 | Back arrow and page trail | `docs/navigation.md` |
 | Merging: ready means merge in the next release window, the one-at-a-time queue, `urgent`, the token | `docs/auto-merge.md` |
 | Seasonal celebrations, festival dates and their sources | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md` |

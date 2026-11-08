@@ -43,6 +43,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |
 | Functions: cancel, Undo, delete, print | `docs/function-cancellation.md`, `docs/function-printing.md` |
 | Pings: who gets them, the sound | `docs/ping-recipients.md`, `docs/ping-sound.md` |
+| Kitchen timer and its clock button | `docs/timer-options/brief.md` (device storage, sheet, alarm limits and checks) |
 | Back arrow and page trail | `docs/navigation.md` |
 | Merging, the queue, `urgent` | `docs/auto-merge.md` |
 | Nightly backup and recovery | `docs/backup-recovery.md` |
@@ -164,7 +165,7 @@ Short warnings. The full contract for each part is its section in `docs/code-con
 - **Held-back pages.** Any new link, card or read for guides, pings or minutes checks `featOn()`.
 - **Admin panel.** A new block gets a `.label` or `h3.a-ch-h` (the nav chips read them). Lists that grow go through `lvHTML()`. No hand-built long tables, no second sticky bar.
 - **Prep list.** Double ups merge only through `mergeDups()`, from a server read; a `dupOk` line never merges. Tomorrow's list cut comes from `cutFor()`.
-- **Top bar.** Pings, the chef hat and the round Today's team chip (7 Nov 2026), all the bell's size. A button with words in it wraps the page tabs on a laptop and cuts "Kitchen Book" on a phone (measured 7 Nov 2026, `docs/todays-team-options/brief.md`); anything more is a head chef decision. Sign-offs and `hist` copies are immutable; a change after publishing is a new version.
+- **Top bar.** Pings, the chef hat, the round Today's team chip (7 Nov 2026) and the requested kitchen timer clock (8 Nov 2026, `docs/timer-options/brief.md`), all the bell's size. A button with words in it wraps the page tabs on a laptop and cuts "Kitchen Book" on a phone (measured 7 Nov 2026, `docs/todays-team-options/brief.md`); anything more is a head chef decision. Sign-offs and `hist` copies are immutable; a change after publishing is a new version.
 - **Transfers.** A new line field needs the rules, `scripts/nightly-learn.mjs` and `tests/safe-text.test.js`. Six tabs is the most the phone tab bar fits.
 
 ## Changes that went wrong before (28 Oct 2026)

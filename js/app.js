@@ -269,6 +269,7 @@
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
 
   var ICON = {
+    clock: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     todo: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5H7a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V6A1.5 1.5 0 0 0 17 4.5h-2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><rect x="9" y="3" width="6" height="3" rx="1" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M9 13l2 2 4-4.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     chef: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14.2A3.6 3.6 0 1 1 8.6 7.4a4.6 4.6 0 0 1 6.8 0A3.6 3.6 0 1 1 17 14.2V20H7Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M7 16.8h10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>',
     cup: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h11v5.5A4.5 4.5 0 0 1 11.5 19h-2A4.5 4.5 0 0 1 5 14.5Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M8.5 3.5c-.8 1 .8 2 0 3M12 3.5c-.8 1 .8 2 0 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>',
@@ -553,11 +554,186 @@
     var P = window.LK_PREP, i = P && P.noteInfo ? P.noteInfo() : { on: false, n: 0, unread: false, sign: 0 };
     return '<button type="button" class="wtop-btn nbell' + (i.error || i.unread || i.sign ? ' has-new' : '') + '" data-note="open"' + (i.on ? '' : ' hidden') + ' aria-label="' + esc(P && P.noteBellLabel ? P.noteBellLabel(i) : '') + '">' + BELL + '<span class="wtop-lbl">Pings</span></button>';
   }
+  /* One kitchen timer on this device (8 Nov 2026). No database calls. lk.timer holds only duration and state,
+     replaced on every action and removed on Cancel. A deadline survives navigation, reload and suspended tabs.
+     The saved clock gap travels with it: correcting kitchen time must not shorten a duration already running. */
+  var ktState = ktRead(), ktPop = null, ktOverlayDone = null, ktPulse = 0, ktStoreFailed = false;
+  var ktDraft = { minutes: '5', seconds: '0' }, ktMessage = '';
+  function ktRead() {
+    try {
+      var v = JSON.parse(localStorage.getItem('lk.timer') || 'null');
+      if (!v || v.v !== 1 || ['running', 'paused', 'done'].indexOf(v.status) < 0 ||
+          !Number.isInteger(v.duration) || v.duration < 1 || v.duration > 59999 ||
+          typeof v.remaining !== 'number' || !isFinite(v.remaining) || v.remaining < 0 || v.remaining > v.duration * 1000 ||
+          typeof v.end !== 'number' || !isFinite(v.end) || v.end < 0 ||
+          typeof v.gap !== 'number' || !isFinite(v.gap) || (v.status === 'running' && !v.end) ||
+          (v.status === 'paused' && !v.remaining)) return null;
+      return { v: 1, status: v.status, duration: v.duration, remaining: v.remaining, end: v.end, gap: v.gap };
+    } catch (e) { return null; }
+  }
+  function ktSave() {
+    try { if (ktState) localStorage.setItem('lk.timer', JSON.stringify(ktState)); else localStorage.removeItem('lk.timer'); ktStoreFailed = false; }
+    catch (e) { ktStoreFailed = true; }
+  }
+  function ktLeft() {
+    if (!ktState || ktState.status === 'done') return 0;
+    if (ktState.status === 'paused') return ktState.remaining;
+    return Math.max(0, Math.min(ktState.duration * 1000, ktState.end + window.LK_TIME.gap() - ktState.gap - window.LK_TIME.now()));
+  }
+  function ktTime(ms) {
+    var secs = Math.ceil(ms / 1000), hrs = Math.floor(secs / 3600), mins = Math.floor(secs / 60) % 60;
+    return (hrs ? hrs + ':' : '') + (mins < 10 ? '0' : '') + mins + ':' + (secs % 60 < 10 ? '0' : '') + secs % 60;
+  }
+  function ktLabel() {
+    return !ktState ? 'Kitchen timer' : ktState.status === 'done' ? 'Timer finished. Open timer' :
+      'Timer ' + (ktState.status === 'paused' ? 'paused' : 'running') + ', ' + ktTime(ktLeft()) + ' remaining. Open timer';
+  }
+  function ktBadge() {
+    if (!ktState) return '';
+    if (ktState.status === 'done') return 'Done';
+    if (ktState.status === 'paused') return 'II';
+    var secs = Math.ceil(ktLeft() / 1000);
+    return secs >= 3600 ? Math.ceil(secs / 3600) + 'h' : secs >= 60 ? Math.ceil(secs / 60) + 'm' : secs + 's';
+  }
+  function ktButtonHTML() {
+    return '<button type="button" class="kt-chip' + (ktState ? ' is-' + ktState.status : '') + '" data-kt="open" aria-haspopup="dialog" aria-expanded="' + !!ktPop + '" aria-label="' + esc(ktLabel()) + '" title="' + esc(ktLabel()) + '">' + ICON.clock + '<span class="kt-badge" aria-hidden="true">' + ktBadge() + '</span></button>';
+  }
+  function ktPaint() {
+    var el = document.querySelector('[data-kt="open"]');
+    if (el) {
+      el.className = 'kt-chip' + (ktState ? ' is-' + ktState.status : '');
+      var label = ktLabel(), badge = ktBadge();
+      if (el.getAttribute('aria-label') !== label) { el.setAttribute('aria-label', label); el.title = label; }
+      el.setAttribute('aria-expanded', String(!!ktPop));
+      if (el.lastElementChild.textContent !== badge) el.lastElementChild.textContent = badge;
+    }
+    var count = document.getElementById('kt-countdown');
+    if (count) { var text = ktTime(ktLeft()); if (count.textContent !== text) count.textContent = text; }
+  }
+  function ktSay(words) {
+    var el = document.getElementById('kt-live');
+    if (!el) { el = document.createElement('div'); el.id = 'kt-live'; el.className = 'visually-hidden'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); document.body.appendChild(el); }
+    el.textContent = words;
+  }
+  function ktTick() {
+    clearTimeout(ktPulse); ktPulse = 0;
+    if (ktState && ktState.status === 'running' && ktLeft() === 0 && document.visibilityState !== 'hidden') {
+      ktState.status = 'done'; ktState.remaining = 0; ktSave();
+      ktSay('Timer finished.');
+      if (window.LK_CHIME) window.LK_CHIME.play('timer');
+      ktDraw();
+    }
+    ktPaint();
+    if (ktState && ktState.status === 'running' && document.visibilityState !== 'hidden') ktPulse = setTimeout(ktTick, 250);
+  }
+  function ktDraw() {
+    if (!ktPop) return;
+    var st = ktState && ktState.status, left = ktLeft(), old = document.activeElement;
+    var action = old && old.getAttribute('data-kt'), hadFocus = old && ktPop.contains(old);
+    var status = st === 'running' ? 'Timer running' : st === 'paused' ? 'Timer paused' : st === 'done' ? 'Timer finished' : 'Set a timer';
+    var content = st ? '<p class="kt-countdown" id="kt-countdown" role="timer" aria-live="off" aria-label="Time remaining">' + ktTime(left) + '</p>' :
+      '<div class="kt-fields"><label for="kt-minutes">Minutes<input id="kt-minutes" type="number" inputmode="numeric" min="0" max="999" step="1" value="' + esc(ktDraft.minutes) + '"></label>' +
+      '<label for="kt-seconds">Seconds<input id="kt-seconds" type="number" inputmode="numeric" min="0" max="59" step="1" value="' + esc(ktDraft.seconds) + '"></label></div>';
+    var buttons = !st ? '<button type="submit" class="btn dark" data-kt="start">Start timer</button>' :
+      st === 'done' ? '<button type="button" class="btn dark" data-kt="again">Start again</button>' :
+      '<button type="button" class="btn dark" data-kt="' + (st === 'paused' ? 'resume' : 'pause') + '">' + (st === 'paused' ? 'Resume timer' : 'Pause timer') + '</button>';
+    ktPop.innerHTML = '<div class="nt-bg" data-kt="close"></div><section class="nt" role="dialog" aria-modal="true" aria-labelledby="kt-heading" aria-describedby="kt-help" tabindex="-1">' +
+      '<div class="nt-grip" aria-hidden="true"></div><form class="nt-in" novalidate><header class="nt-head"><span class="nt-eb">On this device</span><h2 class="nt-h" id="kt-heading">Kitchen timer</h2></header>' +
+      '<div class="nt-body kt-body"><p class="kt-status" id="kt-status">' + status + '</p>' + content +
+      '<p class="hint kt-help" id="kt-help">Keep the app open and the screen awake to hear the alarm. Sound may be delayed in the background or muted on this device.</p>' +
+      '<p class="p-err" id="kt-error" role="alert"' + (ktMessage ? '' : ' hidden') + '>' + esc(ktMessage) + '</p>' +
+      (ktStoreFailed ? '<p class="p-err" role="status">This device could not save the timer. Keep this page open; reloading may lose your changes.</p>' : '') + '</div>' +
+      '<footer class="nt-foot">' + buttons + (st ? '<button type="button" class="btn" data-kt="cancel">' + (st === 'done' ? 'New timer' : 'Cancel timer') + '</button>' : '') +
+      '<button type="button" class="btn" data-kt="close">Close</button></footer></form></section>';
+    if (hadFocus || old === document.body) {
+      var next = ktPop.querySelector('button[data-kt="' + (action === 'pause' ? 'resume' : action === 'resume' || action === 'start' || action === 'again' ? 'pause' : action || 'close') + '"]');
+      (next || ktPop.querySelector('.nt')).focus({ preventScroll: true });
+    }
+  }
+  function ktOpen() {
+    var P = window.LK_PREP;
+    if (ktPop || !P || P.timerBusy()) return;
+    ktTick(); ktMessage = '';
+    ktPop = document.createElement('div'); ktPop.className = 'nt-wrap kt-wrap';
+    document.body.appendChild(ktPop); document.documentElement.classList.add('kt-open');
+    ktDraw();
+    ktOverlayDone = P.pickerOverlay(function () { ktClose(true); });
+    ktPop.querySelector('.nt').focus({ preventScroll: true }); ktPaint();
+  }
+  function ktClose(noBack) {
+    if (!ktPop) return;
+    ktPop.remove(); ktPop = null; document.documentElement.classList.remove('kt-open');
+    var done = ktOverlayDone; ktOverlayDone = null; if (done) done(noBack);
+    ktPaint();
+    var button = document.querySelector('[data-kt="open"]'); if (button) button.focus({ preventScroll: true });
+    if (window.LK_PREP) window.LK_PREP.timerNext();
+  }
+  function ktStart(duration) {
+    ktState = { v: 1, status: 'running', duration: duration, remaining: duration * 1000, end: window.LK_TIME.now() + duration * 1000, gap: window.LK_TIME.gap() };
+    ktMessage = ''; ktSave(); if (window.LK_CHIME) window.LK_CHIME.wake();
+    ktDraw(); ktTick(); ktSay('Timer started for ' + ktTime(duration * 1000) + '.');
+  }
+  function ktSubmit() {
+    if (ktState) return;
+    var m = ktDraft.minutes.trim(), s = ktDraft.seconds.trim();
+    if (!/^\d{1,3}$/.test(m || '0') || !/^\d{1,2}$/.test(s || '0') || +m > 999 || +s > 59 || +m * 60 + +s < 1) {
+      ktMessage = 'Enter 0 to 999 minutes and 0 to 59 seconds, with at least 1 second.';
+      var err = document.getElementById('kt-error'); err.textContent = ktMessage; err.hidden = false;
+      ktPop.querySelector('#kt-minutes').focus(); return;
+    }
+    ktStart(+m * 60 + +s);
+  }
+  document.addEventListener('submit', function (e) { if (ktPop && ktPop.contains(e.target)) { e.preventDefault(); ktSubmit(); } });
+  document.addEventListener('input', function (e) {
+    if (!ktPop || !ktPop.contains(e.target)) return;
+    if (e.target.id === 'kt-minutes' || e.target.id === 'kt-seconds') {
+      ktDraft[e.target.id === 'kt-minutes' ? 'minutes' : 'seconds'] = e.target.value;
+      ktMessage = ''; document.getElementById('kt-error').hidden = true;
+    }
+  });
+  document.addEventListener('focusin', function (e) { if (ktPop && (e.target.id === 'kt-minutes' || e.target.id === 'kt-seconds')) e.target.select(); });
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest && e.target.closest('[data-kt]'); if (!el) return;
+    var a = el.getAttribute('data-kt');
+    if (a === 'open') { ktOpen(); return; }
+    if (!ktPop || !ktPop.contains(el)) return;
+    if (a === 'close') { ktClose(); return; }
+    if (a === 'start') return; // the form owns Enter and the button alike
+    if (a === 'cancel') {
+      if (ktState) ktDraft = { minutes: String(Math.floor(ktState.duration / 60)), seconds: String(ktState.duration % 60) };
+      ktState = null; ktSave(); ktDraw(); ktTick(); ktSay('Timer cleared. Set a new timer.');
+      ktPop.querySelector('#kt-minutes').focus(); return;
+    }
+    if (!ktState) return;
+    if (a === 'again' && ktState.status === 'done') { ktStart(ktState.duration); return; }
+    if (a === 'pause' && ktState.status === 'running') {
+      var left = ktLeft(); if (!left) { ktTick(); return; }
+      ktState.remaining = left; ktState.status = 'paused'; ktState.end = 0;
+    } else if (a === 'resume' && ktState.status === 'paused') {
+      ktState.end = window.LK_TIME.now() + ktState.remaining; ktState.gap = window.LK_TIME.gap(); ktState.status = 'running';
+    } else return;
+    ktSave(); ktDraw(); ktTick(); ktSay(ktState.status === 'paused' ? 'Timer paused.' : 'Timer resumed.');
+  });
+  document.addEventListener('keydown', function (e) {
+    if (!ktPop) return;
+    if (e.key === 'Escape') { e.preventDefault(); ktClose(); }
+    else if (e.key === 'Tab') window.LK_PREP.timerTrap(e, ktPop, 'button:not([disabled]), input');
+  });
+  window.addEventListener('storage', function (e) {
+    if (e.key !== 'lk.timer' && e.key !== null) return;
+    ktState = ktRead(); ktStoreFailed = false; ktMessage = ''; ktDraw(); ktTick();
+  });
+  document.addEventListener('visibilitychange', ktTick);
+  window.addEventListener('pageshow', ktTick);
+  window.addEventListener('lk-clock', ktTick);
+  window.addEventListener('hashchange', function () { if (ktPop) ktClose(true); });
+  ktTick();
+
   /* The same top bar on every page as on the landing page: brand (goes home), the menu, Pings and the chef hat
      (its menu holds Admin and Settings). */
   function topIcons() {
     // Today's team (7 Nov 2026): the round chip left of the bell, filled in by js/prep.js (empty for anyone it is not for)
-    return '<span class="wtop-icons"><span class="tm-slot">' + (window.LK_PREP && window.LK_PREP.teamChip ? window.LK_PREP.teamChip() : '') + '</span>' + noteBellHTML() + whoMark() + '</span>';
+    return '<span class="wtop-icons">' + ktButtonHTML() + '<span class="tm-slot">' + (window.LK_PREP && window.LK_PREP.teamChip ? window.LK_PREP.teamChip() : '') + '</span>' + noteBellHTML() + whoMark() + '</span>';
   }
   function topBar() {
     var returning = parseRoute().name !== 'landing';

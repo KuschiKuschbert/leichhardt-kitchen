@@ -3696,11 +3696,11 @@ button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; curs
    tag colour with white until today's team is saved, about 5.6:1), the chef's page (#/team), Set today's team under
    the done count, and the Shifts row in the admin panel's Kitchen. */
 .tm-slot { display: contents; }
-.tm-chip { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 44px; height: 44px; border: 2px solid var(--bar-text); border-radius: 50%; color: var(--bar-text); background: transparent; text-decoration: none; }
+.tm-chip, .kt-chip { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 44px; height: 44px; border: 2px solid var(--bar-text); border-radius: 50%; color: var(--bar-text); background: transparent; text-decoration: none; }
 .tm-chip.is-due { background: var(--tag); border-color: var(--tag); color: #fff; }
 .tm-chip[aria-current="page"] { background: var(--bar-text); border-color: var(--bar-text); color: var(--bar); }
-.tm-chip:focus-visible { outline: 2px solid var(--bar-accent); outline-offset: 2px; }
-.tm-chip { padding: 0; font: inherit; cursor: pointer; }
+.tm-chip:focus-visible, .kt-chip:focus-visible { outline: 2px solid var(--bar-accent); outline-offset: 2px; }
+.tm-chip, .kt-chip { padding: 0; font: inherit; cursor: pointer; }
 /* Your day (staff, 7 Nov 2026): the sheet on the pings sheet's frame */
 html.tm-open, html.tm-open body { overflow: hidden; }
 .tm-dw .nt-body { padding: 0 18px 4px; }
@@ -4572,4 +4572,34 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
   html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-roll, html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-urg { font-size: 0.62rem; padding: 1px 5px; }
   html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-why { font-size: 0.66rem; padding: 0 5px; }
   html:not([data-text="large"]):not([data-text="xlarge"]) #prep-root.is-book .nb-left .nb-marks { margin-left: 0.25rem; vertical-align: 0.15em; }
+}
+
+/* Kitchen timer: the normal round top-bar control and sheet, with no extra list row. */
+.kt-chip { position: relative; }
+.kt-chip.is-running { border-color: var(--bar-accent); color: var(--bar-accent); }
+.kt-chip.is-done { background: var(--tag); border-color: var(--tag); }
+.kt-badge { position: absolute; right: -4px; bottom: -5px; min-width: 20px; padding: 1px 3px; border: 2px solid var(--bar); border-radius: var(--r-pick); background: var(--bar-text); color: var(--bar); font: 700 .75rem/1.1 var(--display); }
+.kt-badge:empty { display: none; }
+html.kt-open, html.kt-open body { overflow: hidden; }
+.kt-wrap .nt-in { margin: 0; }
+.kt-wrap .nt-body { padding: 0 18px 4px; }
+.kt-wrap .nt-foot { flex-wrap: wrap; }
+.kt-wrap .nt-foot .btn { flex: 1 1 auto; min-height: 48px; justify-content: center; }
+.kt-status { margin: 12px 0; font: 700 1.25rem var(--display); }
+.kt-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+.kt-fields label { min-width: 0; font-weight: 600; }
+.kt-fields input { display: block; width: 100%; min-width: 0; min-height: 56px; margin-top: 6px; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: var(--r-act); background: var(--paper); color: var(--ink); font: 600 2rem var(--body); }
+.kt-countdown { margin: 12px 0; font: 700 clamp(3rem, 12vw, 5rem)/1.1 var(--display); font-variant-numeric: tabular-nums; text-align: center; }
+.kt-help { display: block; margin: 16px 0 8px; font-size: 1rem; }
+@media (max-width: 599px) {
+  .wtop:has(.kt-chip) .wtop-icons { gap: 4px; }
+  .wtop:has(.kt-chip) .wtop-start { gap: 0; }
+  .wtop:has(.kt-chip) .wtop-brand { gap: 4px; }
+  .wtop:has(.kt-chip) .wtop-brand b { font-size: 1.2rem; }
+}
+@media print { .kt-wrap, .kt-chip { display: none !important; } }
+@media (max-width: 389px) {
+  .wtop:has(.kt-chip) { padding-left: 8px; padding-right: 8px; gap: 4px; }
+  .wtop:has(.kt-chip) .wtop-icons { gap: 2px; }
+  .wtop:has(.kt-chip) .wtop-brand b { font-size: 1.05rem; }
 }
