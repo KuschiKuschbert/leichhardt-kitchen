@@ -1,6 +1,51 @@
 # Design evidence and review
 
-8 November 2026, Queensland. Source `eedbdd7`. Design only, awaiting approval. This record distinguishes existing-app baseline checks, prototype checks and future implementation acceptance.
+8 November 2026, Queensland. Source `eedbdd7`. Revised options awaiting review. PR #606 remains draft and no option is chosen. This record distinguishes existing-app baseline checks, superseded prototype checks and future implementation acceptance.
+
+## Revision after owner rejection
+
+The owner rejected the first A/B presentation: the phone layouts differed mainly in colour, the section/service header was unwanted, and the native fonts/style and quiet hierarchy had been lost. The earlier visual recommendation and prototype review are explicitly superseded. Their historical results below are not verification of this revision; existing-app baseline evidence still applies to its recorded source and fixtures.
+
+The revised options are **A, Familiar Home**, retaining the native board and pinned-paper overview with local worksheet links, and **B, Working notebook**, putting actual minimum counts and cleaning work in one Home notebook. B has phone Prep/Cleaning tabs with due counts and facing pages on desktop; the cooling strip remains above them. Both retain the current SVG shell, native CSS/type roles and actual Caveat 700 font. Neither adds a global section/service header. Saved scope and Change belong in the relevant worksheet.
+
+Font inspection identified an embedded Caveat SemiBold 600 file in the rejected prototype, where the current app uses Caveat Bold 700. It also identified changed heading roles, substituted masthead/navigation and a different paper treatment. The revision restores these native pieces. Device previews must have real iframe viewport widths so the application's media queries activate correctly.
+
+Revised screenshots reuse the existing `a-*` and `b-*` filenames. Fresh capture, interaction assertions, row/tap measurements and any new council scores must be recorded after they are performed. No new results are asserted by this revision note.
+
+The owner's later clarification also supersedes the earlier cooling-record proposal: shared timers have one-action 2-hour/4-hour presets, optional names, repeated existing `LK_CHIME.play('timer')` at expiry, Stop while running and Done after expiry. Any signed-in kitchen staff member can start/stop/mark Done, expressly including those with Add/Tick disabled. This timer-only exception does not expand other permissions. No temperature/stage/SOP approval or food-safety result belongs to timers. Absolute shared end times survive reload and devices; background/closed-app audio remains subject to browser limits. The source-backed repeat proposal is **[15 seconds]**, coalesced across due timers, with one sound leader per device and a shared-state check after audio resume. Shift pings settings stay unchanged. The historical observation/acknowledgement checks below do not define this revised feature.
+
+The owner also requires a **Par levels** area integrated into the authorised Admin, Head Chef and Sous Chef panels. Staff sheets display approved pars without target-edit authority. Shared sections/shifts stay Admin-only. No new implementation or verification result is implied by these instructions.
+
+## Revised preview verified, 8 November 2026
+
+The owner rejected the first phone designs and clarified the scope: simple shared 2-hour/4-hour timers with the existing repeating chime, plus a new integrated Par levels area for Admin, Head Chef and Sous Chef. The revised A and B use the actual application CSS, extracted SVG shell/navigation and the correct Caveat Bold 700 alongside Barlow/Barlow Condensed. A is a pinned overview; B opens real prep-count rows in a ruled service notebook with Prep/Cleaning pages. The palette is identical and there is no global section/service selector header. A local Change disclosure belongs inside a worksheet.
+
+**149 revised-prototype browser assertions passed**, zero failed and zero page errors. This is isolated browser evidence with all external requests blocked. Coverage: both layouts, six screens and 390/768/1280 widths; native day typography and identical palette; different phone structures; no visible global selectors; five-role procurement/panel gating; eight conditions; Par levels edit entry for Chef/Admin and denial for staff; existing Admin authority for shared sections; active Prep/Cleaning announcements; amount focus; scope changes clearing the old section's demo amounts; navigation focus; retained failed zero input; one-action 2-hour/4-hour starts; another staff member's Stop/Done; other timers staying active; in-document navigation preserving a demo deadline; and genuine 390 px iframe review mode with a two-frame comparison.
+
+A controlled-clock check replaced only sound output with a counter: opening the preview emitted no sound, an explicit sound-demo action called the existing `LK_CHIME` timer sound, the repeat occurred after [15 seconds], and Done prevented later repeats. This verifies calls into the real chime API and the prototype scheduler, not physical speakers, production cross-device delivery, locked/background or closed-browser alarms. The preview's Test chime button calls the unchanged existing sound code. A repeated-alarm demo is explicitly opened and started by the reviewer.
+
+Prototype timers stay in that document's memory across preview navigation. They are not real shared kitchen records, are not retained on reload, and prove no backend persistence or session authorisation. Shared confirmation, cross-tab audio leadership, remote Done and failed acknowledgements remain production acceptance work. Current Add/Tick-disabled, view-only and porter timer permissions are specified as the owner's explicit timer exception, not represented as independently proven backend rules.
+
+Two additional focused checks confirmed that the Admin panel preview retains Reports while the Chef preview does not imply owner-only report access.
+
+28 new v2 screenshots cover both layouts at phone/tablet/desktop widths, staff feature views, Admin and Chef Par levels panels, all eight management subpages and five exception states. No page errors or horizontal overflow were detected in those captures. The old 9-file/423-check baseline was not rerun: no production-loaded file or rule changed.
+
+At 390 × 844 on the illustrative busy-day fixture, A shows three complete Now and next rows and three pinned groups in its full overview. B shows two complete prep-item rows above the fixed navigation, with zero global scope selectors; its cleaning page is a labelled tab. These are different tasks and are not comparable task-throughput figures. The ordinary Prep list is untouched: its prior busy-fixture 3 staff / 2 chef row baseline and one-tap primary actions remain the implementation regression target. A opens minimums in one tap before Record amount; B exposes Record amount directly on Home. B's phone Cleaning page costs one tab tap. Timer presets, Stop and Done are each one action on the timer page.
+
+### Fresh review of the revision
+
+Six independent agent review passes, with the role-based limitations stated. Scores are design judgements, not a user study.
+
+| Perspective | A | B | Main trade-off or correction |
+| --- | --- | --- | --- |
+| Working cook | 4/5 | 3/5 | A supports quick scans; B records amounts directly. Move B's next food time above the worksheet |
+| New staff | 4/5 | 3/5 | A easier to enter; clarify one finished timer versus the total |
+| Product / head chef | 4/5 | 3/5 | Real overview-versus-work difference. Keep timer terminology simple |
+| Accessibility / screen design | 4/5 | 3/5 | Native controls and input focus work; expose worksheet selection and update changed scope |
+| Security | 4/5 | 4/5 | Same permission boundary; B needs extra draft/handover testing |
+| Maintainer / skeptic | 5/5 | 4/5 | A smaller integration; both need one shared controller/subscription lifecycle |
+
+Adopted: B's next food time above the book; no duplicate event card; 1 finished, 3 total timer wording; 3 timers instead of 3 batches; active worksheet `aria-pressed` verified; changing section updates scope and removes the previous section's example counts; and local-only timer/persistence disclaimers. No option is chosen. A is recommended for a calmer Home; B is the direct-work alternative.
 
 ## Existing-app baseline
 
@@ -37,9 +82,11 @@ The busy-day fixture has 14 prep lines, current function/service reminders and r
 
 Open work inspected: [#599 first daily staff sign-in](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/599), ready with green Click tests but merge state DIRTY, and [#430 prep attribution concepts](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/430), draft. Neither was modified. Reconcile both before implementing changed Home/session/attribution paths. A historical document's top status can be stale: the current whole-app preview brief says not built at its top, but its Build table and current code show shipped units.
 
-## Independent council
+A later pre-merge inspection also found [draft #607](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/607), a separate pending Head/Sous panel comparison. Its selected panel must be reused for the new Par levels entry. No panel choice or owner-only authority is inferred from that draft.
 
-Role-based agent review, not research with real kitchen staff. Exactly two designs were requested, which overrides the general three-design guidance. The initial review used the complete written proposal and actual baseline screenshots; the prototype was not ready then, so those reviewers explicitly limited their visual claims.
+## Superseded initial council
+
+Historical role-based agent review, not research with real kitchen staff. Its rankings refer to the rejected first presentation and do not rank Familiar Home against Working notebook. Exactly two designs were requested, which overrides the general three-design guidance. The initial review used the complete written proposal and actual baseline screenshots; the prototype was not ready then, so those reviewers explicitly limited their visual claims.
 
 | Perspective | Initial verdict | Ranking | Challenge adopted |
 | --- | --- | --- | --- |
@@ -51,19 +98,19 @@ Role-based agent review, not research with real kitchen staff. Exactly two desig
 
 Round 1: four Build verdicts and one Build smaller. All five ranked A ahead of B from the written layouts and baseline images. The product/accessibility/security proposals were accepted into the written contract. The new-staff recommendation means staged complete slices rather than dropping any of the five required features. No reviewer is presented as a real chef/staff participant or as evidence of deployed security/accessibility.
 
-## Concrete prototype review and checks
+## Superseded prototype review and checks
 
-Six fresh reviewers then examined the two concrete options: working chef, product/head chef, new starter, accessibility/screen design, security, and architecture/keeper of book. **Five preferred A; security rated the options equal because the same data boundary is required.** These were agent review passes, not staff research. The accessibility reviewer additionally exercised the phone prototype in Chromium. B's wide-screen comparison remains useful; all reviewers warned about extra grouping or responsive complexity.
+Six fresh reviewers examined the rejected first prototype: working chef, product/head chef, new starter, accessibility/screen design, security, and architecture/keeper of book. **Five preferred its A; security rated its options equal because the same data boundary is required.** These were agent review passes, not staff research. The accessibility reviewer additionally exercised that phone prototype in Chromium. These preferences are superseded and must not be carried forward as scores for the revised options.
 
-Corrections adopted: exact six existing tabs, existing KB masthead and fonts, two bounded attention rows with View all 3 batches, compact side-by-side phone scope, derived readiness, distinct cooling actions, preserved navigation focus, non-stretched status chips, no team/ping controls for public/Functions-only, and no canned checked counts during loading/missing setup. The prototype explicitly says that simulated confirmations persist nothing. Normal cleaning references are visibly illustrative; missing setup does not present an approved task.
+The earlier pass checked six tabs, bounded attention rows, side-by-side phone scope, derived readiness, distinct cooling actions, navigation focus, status chips, role gating and loading/missing states. Its claimed match to the current masthead and fonts was contradicted by the later source/font audit described above. The owner rejected the global scope block and shared phone structure. Simulated confirmations persisted nothing; its cleaning references were illustrative and missing setup did not present an approved task.
 
-**Verified in standalone Chromium:** 83 assertions passed, zero failed, zero page errors. Checks covered both layouts and six feature screens at 390/768/1280 widths; eight Home conditions; five-role procurement DOM gating; all eight management subpages; chef denial for shared sections/shifts; heading focus after navigation; quantity-input focus; acknowledgement remaining unresolved; and failed quantity entry retaining an explicit zero. Network requests outside the local prototype were blocked for this check, confirming the embedded fonts and preview run without backend or external dependencies. This verifies an isolated mock, not server permissions or real record persistence.
+**Historical first-prototype result in standalone Chromium:** 83 assertions passed, zero failed, zero page errors. Checks covered its two layouts and six feature screens at 390/768/1280 widths; eight Home conditions; five-role procurement DOM gating; all eight management subpages; chef denial for shared sections/shifts; heading focus after navigation; quantity-input focus; acknowledgement remaining unresolved; and failed quantity entry retaining an explicit zero. Network requests outside that local prototype were blocked, confirming that version ran without backend or external dependencies. This verified an isolated mock, not server permissions, correct native styling or real record persistence. It does not verify the revision.
 
-The prototype script passed `node --check`; local Markdown links resolve; `git diff --check` is part of final packaging. Capture scripts and assertions are scratch tools outside application/test source. They add no runtime dependency. Embedded Barlow, Barlow Condensed and Caveat retain their SIL Open Font Licences in the HTML and `font-licenses.txt`.
+That prototype script passed `node --check` and its local Markdown links resolved. Fresh parsing/link/diff checks belong to revised packaging. Capture scripts and assertions are scratch tools outside application/test source. They add no runtime dependency. Embedded Barlow, Barlow Condensed and Caveat retain their SIL Open Font Licences in the HTML and `font-licenses.txt`.
 
-At 390 × 844, final screenshots show **two full attention rows and the first selected-section action inside the viewport**: A's Minimum prep action bottom is approximately 687 px on the busy day and 631 px normally; B is 690/634 px. Both are above the 776 px visible region allowing for the bottom navigation. Every batch remains discoverable through the explicit total. The complete minimum-sheet view shows one full rich item row at this width; it has more fields than the ordinary list and does not replace it.
+In the rejected first version's 390 × 844 screenshots, two full attention rows and the first selected-section action were inside the viewport: its A Minimum prep action bottom was approximately 687 px on the busy day and 631 px normally; its B was 690/634 px. The complete minimum sheet showed one full rich item row. These are superseded density results, not measurements of the revised native layout or Working notebook. Historical image files remain for traceability; the revised comparison uses separately named v2 captures.
 
-| Main action | Existing app | A | B |
+| Historical first-version action | Existing app | Rejected A | Rejected B |
 | --- | --- | --- | --- |
 | Open ordinary Prep from its tab | 1 tap | 1, unchanged | 1, unchanged |
 | Tick / On it / Urgent / linked Recipe | 1 tap in ordinary Prep | 1, unchanged | 1, unchanged |
@@ -73,16 +120,16 @@ At 390 × 844, final screenshots show **two full attention rows and the first se
 | Record cleaning from Home | No dated schedule | Open Cleaning, Record completion | Same |
 | Full ordinary Prep rows on busy 390 px fixture | Staff 3 / Chef 2 | Unchanged ordinary list | Unchanged ordinary list |
 
-The tap values for ordinary work are source observations plus existing click-test coverage, not a timed staff study. New controls were exercised where stated; placeholder links to preserved out-of-scope pages show an explanation instead of pretending the production app is embedded.
+These historical tap values for ordinary work are source observations plus existing click-test coverage, not a timed staff study. First-version controls were exercised where stated. Revised paths differ: Familiar Home opens worksheets, while Working notebook permits inline prep counts and adds an explicit Cleaning-tab tap on phones. Revised counts must be measured before reporting results.
 
 ## Verification after approval
 
-New production business rules, data permissions and actual persistence are **not implemented or verified**. The acceptance plan in the brief requires controlled-clock tests, all-role rule call shapes, second-device persistence, concurrency, unresolved handover, denied notifications, failures/offline saves, historical data retention, backup/PIN-move, compatibility and rollout rehearsal.
+New production business rules, data permissions and actual persistence are **not implemented or verified**. The acceptance plan in the brief requires controlled-clock timer expiry/repeated-chime/Stop/Done tests; all-role rule call shapes including the all-kitchen-staff timer exception; Par levels panel access and staff edit denial; second-device persistence; concurrency; unresolved handover; audio settings/wake; failures/offline saves; history; backup/PIN-move; compatibility and rollout rehearsal.
 
-Real background, locked-device, closed-browser, physical sound and installed-iOS/Android behaviour remain untested. Automated preview or desktop checks cannot prove those. The initial supported promise is visible due/overdue state with best-effort enabled foreground alerts; no guaranteed unattended alarm.
+Real background, locked-device, closed-browser, physical sound and installed-iOS/Android behaviour remain untested. Automated preview or desktop checks cannot prove those. The timer contract is persistent expired state and a repeating existing chime while enabled foreground code can run, until any kitchen staff member marks Done; no guaranteed closed-app alarm.
 
 ## Current status and resume
 
 Designed: specification and isolated illustrative prototypes. Implemented: no production features. Merged/deployed by this work: no. Production data/rules changes: none.
 
-Next action is the owner's design approval, A or B, after reviewing the complete package. After approval, refresh main/open work, finalise role call shapes and missing venue inputs, then implement Unit 1. Keep incomplete operational setup visible and gated; do not convert demo figures into approved targets or procedures.
+Next action is review of the revised A, Familiar Home, and B, Working notebook, with fresh verification recorded separately. PR #606 remains draft; no design choice is recorded. After design approval, refresh main/open work, finalise role call shapes and missing venue inputs, then implement Unit 1. Keep incomplete operational setup visible and gated; do not convert demo figures into approved targets or procedures.
