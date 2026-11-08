@@ -4,9 +4,9 @@ Moved from `CLAUDE.md` on 8 November 2026, word for word, so the file every sess
 
 When a note or a file is added: its full row goes here, and one short row (what it covers, where it is) goes in `CLAUDE.md`. When the two disagree, the note itself wins, then `CLAUDE.md`.
 
-## Operandio clock motion, 8 November 2026
+## Operandio clock motion, 9 November 2026
 
-The owner requested three animated designs on mobile and desktop, six in total: clock to Start pill, desktop countdown, mobile filling clock, green Done and chime, then an explicit tap for four hours. On 9 November the owner removed all mobile expansion and chose the fixed filling ring. Desktop choice is pending. [Brief and council](operandio-clock-motion-options/brief.md), [interactive comparison](operandio-clock-motion-options/index.html). All source, synthetic snapshots and recordings live in `docs/operandio-clock-motion-options/`; no production timer files change.
+The owner chose B's desktop countdown pill and the fixed mobile filling ring, authorised implementation and live release, and requested three louder chimes. The 4-hour stage still waits for a separate tap after 2 hours. [Decision, comparison and verification](operandio-clock-motion-options/brief.md), [feature contract](operandio-cooling.md). `js/cooling-ui.js` and `css/cooling.css` own the presentation; `js/app.js`, `js/prep.js` and `js/cooling.js` retain the clock while headers redraw and adapt the existing controller. `js/chime.js` owns the bounded three-chime sound. No new data reads, writes or rules. The preview source and recordings remain under `docs/operandio-clock-motion-options/` as the decision record.
 
 ## Operandio cooling, 8 November 2026
 

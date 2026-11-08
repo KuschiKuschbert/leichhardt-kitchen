@@ -1,20 +1,23 @@
 # Operandio cooling
 
-Implemented for review on 8 November 2026. The head chef approved the [compact clock dropdown](operandio-cooling-options/brief.md), then said "lets go". The council verdict was **Build smaller** (5 of 5). The latest decision removes closed-app notifications: only logged-in, open app screens need the ping. This uses the existing Firestore service with no extra timer library, notification permission, backend deployment or billing upgrade. Release verification is recorded below.
+The head chef selected **B, filling desktop clock face**, with a fixed mobile ring, and authorised implementation and release on 9 November 2026. Each deadline plays three louder chimes. The shared timer, permissions and open-screen delivery remain the previously approved feature. [Design comparison and decision](operandio-clock-motion-options/brief.md).
 
 ## What staff do
 
-Tap the clock in the top bar. The Operandio dropdown is 248 by 155 px in its ordinary ready/running states, with 44 px controls. Anyone with current kitchen PIN access, including View only, can start a stage. Functions-only accounts cannot. The two fixed stages are:
+Anyone with current kitchen PIN access, including View only, can start a stage. Functions-only accounts cannot. The two fixed stages are:
 
-1. Tap Start beside **2 hours**. The server records its start time.
-2. Two hours later, each logged-in open screen shows **"Operandio batch cooling time 2 hours is done."** The **4 hours** Start becomes available. Someone must tap it; the next deadline is four hours after that second start.
-3. At the second deadline, each logged-in open screen shows **"Operandio batch cooling time 4 hours is done."** A new batch can then start a fresh two-hour stage.
+1. Tap the clock. On desktop it smoothly expands to **Start · Operandio · 2 h**; on mobile it remains a 44px circle and shows an orange play icon. Tap Start or play to begin two hours.
+2. Once the server confirms the start, desktop shows the countdown in the pill with a filling clock face. Mobile keeps the same small clock with a filling perimeter ring. Running timers are read-only status.
+3. At two hours the clock turns green and each logged-in open screen gets **"Operandio batch cooling time 2 hours is done."** The desktop action says **Done / Start 4 h**; mobile shows a green tick. Four hours waits until someone explicitly starts it from that control or the ping. Its deadline is four hours after that separate start.
+4. At the second deadline each logged-in open screen gets **"Operandio batch cooling time 4 hours is done."** The green control can arm another batch; a further explicit Start begins its two-hour stage. The compact timer details also retain Start another batch.
 
-Got it dismisses only that person's alert on this device. It does not start a stage or silence another screen. Repeated or simultaneous starts cannot reset a deadline. There is one kitchen batch at a time, always named Operandio.
+Got it dismisses only that person's alert on this device and stops any remaining chimes there. It does not start a stage or silence another screen. Repeated or simultaneous starts cannot reset a deadline. There is one kitchen batch at a time, always named Operandio.
 
-Start is a filled button; the locked second action is disabled and says After 2 hours. Starting... appears immediately. Started uses the existing green stamp only after server confirmation. Running and finished values are plain status. Errors stay beside the action with Try again. An uncertain write is reconciled against the shared record and never silently replayed.
+Pending feedback appears immediately in the same control. A countdown or confirmed success never appears from a local estimate or an unresolved write. Named failures persist with an explicit retry; uncertain writes are reconciled against the shared record and never silently replayed. The compact details menu remains available through `#/cooling`, existing API calls and error detail. Pings and details retain the existing overlay stack, focus trap, Escape/Back and sheet queue. Pings wait for PIN unlock, typing, Undo and other sheets.
 
-The dropdown and ping use the existing overlay stack, focus trap, Escape/Back, keyboard focus and sheet queue. Pings wait for PIN unlock, typing, Undo and other sheets. Sound uses the head chef's existing ping sound. There is no separate notification preference. The fixed `#/cooling` route opens through the normal PIN gate.
+The desktop pill reserves its space so neighbouring controls and the list do not move. Mobile never expands or hides the brand. All action targets remain at least 44px, and reduced motion removes the expansion and gentle settle. Countdown updates are not live announcements; stage changes are announced separately.
+
+Each Operandio alert uses three stronger soft chimes, 1.65 seconds apart, through the existing audio limiter. The kitchen's sound Off setting still silences it. Other pings retain their selected single sound. Closing the cooling ping, locking or changing the session, hiding the app or leaving the page cancels remaining cooling notes. There is no new preference or permission. Device volume, silent mode and browser gesture restrictions still apply.
 
 ## Persistence and delivery
 
@@ -34,7 +37,7 @@ The only cooling document is `kitchens/<PIN>/cooling/current`:
 
 All writes use `W()` and the original recorder's session. First/new-batch Start sets the canonical document. Second Start updates only its revision, second start and writer fields, preserving the exact first Timestamp. Rules require an active kitchen session, matching writer, strict fields, next revision, allowed sequence and a start equal to server request time. New batches are allowed only after the preceding second deadline. No client may delete the record or list cooling documents. Existing Prep and general ping write capabilities are unchanged.
 
-The rules are additive relative to the released app and must publish before the client. One live document subscription costs a read on subscribe and for each accepted shared change, subject to Firestore's ordinary reconnect billing. There are no request documents, scheduling jobs, delivery scans or token registrations. Personal dismissal markers contain bounded run/stage IDs only, partitioned by kitchen, device and person.
+The existing additive rules shipped with the original timer. The pill, ring and chime update changes no rules or data contract. One live document subscription costs a read on subscribe and for each accepted shared change, subject to Firestore's ordinary reconnect billing. There are no request documents, scheduling jobs, delivery scans or token registrations. Personal dismissal markers contain bounded run/stage IDs only, partitioned by kitchen, device and person.
 
 ## Backup and kitchen PIN changes
 
@@ -42,7 +45,7 @@ Browser Export and the nightly backup include the current canonical run and its 
 
 Move PIN checks the current timer before collecting the copy and again before the first destination write. An unfinished or unreadable batch stops the move. Finish both stages before changing the kitchen address so an outstanding timer stays with the kitchen using it. A completed record remains under the old PIN and in backups; the new kitchen begins ready for a fresh batch. As with the existing multi-step kitchen copy, coordinate the move while nobody is adding work or starting a new batch; the copy does not freeze other devices.
 
-Actual app screenshots: [phone ready](operandio-cooling-options/app-phone-ready.png), [phone running](operandio-cooling-options/app-phone-running.png), [tablet](operandio-cooling-options/app-tablet-running.png), [desktop](operandio-cooling-options/app-desktop-ready.png). These use synthetic data.
+Original dropdown release screenshots: [phone ready](operandio-cooling-options/app-phone-ready.png), [phone running](operandio-cooling-options/app-phone-running.png), [tablet](operandio-cooling-options/app-tablet-running.png), [desktop](operandio-cooling-options/app-desktop-ready.png). These use synthetic data.
 
 ## Files and verification
 
@@ -52,7 +55,7 @@ Verification covers stage sequence, simultaneous starts, server acknowledgement,
 
 Focused verification passed: 11 core groups, 24 controller checks, 55 integration checks, 66 UI checks and 117 real-font header/team checks. Real emulator checks passed for 192 cooling cases and all 1,971 client calls across nine sign-ins after merging Cleaning. Combined backup recovery round-tripped 63 documents. The sheet-queue and uncertain-write conflict regressions fail on their earlier implementations.
 
-Before release: complete the browser and rules gates, publish the additive rules from this branch, verify the foundation and live Lock probe, then mark the application PR ready for the normal release queue. No cooling configuration switch or background service is needed.
+The original timer release used additive rules published before its client. The current presentation update uses those unchanged rules and needs no database deployment, configuration switch or background service. Its current verification is recorded in the [motion brief](operandio-clock-motion-options/brief.md).
 
 ## Rollback
 

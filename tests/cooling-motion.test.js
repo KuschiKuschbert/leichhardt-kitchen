@@ -1,0 +1,141 @@
+// Approved B desktop pill and fixed mobile ring, through real app/session/controller code and fake Firestore.
+const L = require('./lib');
+const { R, ok } = L.results();
+const CURRENT = ['kitchens', L.PIN, 'cooling', 'current'].join('/'), HOUR = 3600000;
+const millis = value => value && (value.__fakeTimestamp != null ? value.__fakeTimestamp : value.seconds * 1000 + (value.nanoseconds || 0) / 1000000);
+const saved = p => p.evaluate(path => __fake.dump()[path], CURRENT);
+const writes = p => p.evaluate(path => __fake.writes.flat().filter(x => x.path === path), CURRENT);
+async function phase(p, value) {
+  await L.waitFor(p, value => document.querySelector('.cooling-clock')?.dataset.clockState === value, value, 10000);
+  await L.settle(p, 450);
+}
+async function advance(p, at) {
+  const before = await p.evaluate(() => LK_TIME.now());
+  await p.clock.fastForward(Math.max(0, Math.ceil(at - before)));
+  await p.evaluate(() => window.dispatchEvent(new Event('lk-clock')));
+}
+async function clockTap(p) { await p.locator('button[data-cooling="clock"]:visible').click(); }
+async function fonts(p) {
+  await p.context().unroute(/fonts\.(googleapis|gstatic)\.com/);
+  const css = await p.addStyleTag({ url: 'https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@700&display=swap' }).then(() => true, () => false);
+  const loaded = !!css && await p.evaluate(() => Promise.race([
+    Promise.all(['600 16px Barlow', '700 16px "Barlow Condensed"'].map(f => document.fonts.load(f))).then(all => all.every(loaded => loaded.length)),
+    new Promise(resolve => setTimeout(() => resolve(false), 8000))
+  ]));
+  if (loaded) await p.evaluate(() => document.fonts.ready);
+  return loaded;
+}
+async function shape(p) {
+  return p.evaluate(() => {
+    const rect = el => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; };
+    const control = [...document.querySelectorAll('.cooling-clock button, .cooling-clock-status')].find(el => getComputedStyle(el).visibility !== 'hidden' && !el.hidden && el.getClientRects().length);
+    const nav = document.querySelector('.tabbar'), limit = nav && nav.getBoundingClientRect().height ? nav.getBoundingClientRect().top : innerHeight;
+    return { control: rect(control), header: rect(document.querySelector('.wtop')), brand: rect(document.querySelector('.wtop-brand')),
+      peers: [...document.querySelectorAll('.wtop-back, .wtop .tm-slot, .wtop .nbell, .wtop .wtop-who')].map(rect),
+      rows: [...document.querySelectorAll('.nb-row')].map(rect), fullRows: [...document.querySelectorAll('.nb-row')].filter(el => el.getBoundingClientRect().bottom <= limit).length,
+      expanded: document.querySelector('.cooling-clock').dataset.clockState, hasDialog: !!document.querySelector('.cooling-wrap') };
+  });
+}
+function sameLayout(a, b) { return JSON.stringify([a.header, a.peers, a.rows, a.fullRows]) === JSON.stringify([b.header, b.peers, b.rows, b.fullRows]); }
+(async () => {
+  const browser = await L.start(); let p;
+  async function step(label, fn) {
+    try { await fn(); }
+    catch (e) { ok(false, label + ': ' + String(e.message || e).split('\n')[0]); }
+    finally { if (p) { ok(!p.errors.length, label + ': no browser errors ' + p.errors.join(' | ')); await p.context().close(); p = null; } }
+  }
+  try {
+    for (const width of [390, 768, 1280]) await step('clock states ' + width, async () => {
+      p = await L.open(browser, '#/prep', { who: 'ann', width, deviceMode: 'personal', wait: 1200 }); await phase(p, 'idle');
+      const realFonts = await fonts(p); await L.settle(p, 400);
+      if (!realFonts) ok(true, width + ': real Barlow unavailable; width-sensitive navigation checks skipped');
+      const baseline = await shape(p), mobile = width < 1100;
+      ok(baseline.control[2] === 44 && baseline.control[3] === 44, width + ': idle clock has a 44px target');
+      await p.locator('button[data-cooling="clock"]').evaluate(el => { window.__clockButton = el; });
+      await clockTap(p); await phase(p, 'armed');
+      let drawn = await shape(p);
+      ok((await writes(p)).length === 0 && !drawn.hasDialog, width + ': first tap only reveals Start in place, with no write or dropdown');
+      ok(drawn.control[2] === (mobile ? 44 : 152) && drawn.control[3] === 44, width + ': armed control keeps the chosen phone circle or desktop pill');
+      ok(sameLayout(baseline, drawn), width + ': arming leaves the header, peers and prep lines still');
+      if (mobile) ok(JSON.stringify(baseline.brand) === JSON.stringify(drawn.brand) && await p.locator('.wtop-brand').evaluate(el => getComputedStyle(el).opacity === '1'), width + ': mobile brand is never displaced or faded');
+      await p.keyboard.press('Escape'); await phase(p, 'idle');
+      ok((await writes(p)).length === 0, width + ': Escape disarms without starting a batch');
+      await p.locator('button[data-cooling="clock"]').focus(); await p.keyboard.press('Enter'); await phase(p, 'armed');
+      await p.evaluate(() => { __fake.mode = 'hold'; });
+      await p.keyboard.press('Space'); await phase(p, 'pending');
+      ok(await p.locator('button[data-cooling="clock"]').evaluate(el => el === window.__clockButton && el.disabled && el.getAttribute('aria-busy') === 'true'), width + ': keyboard start preserves its button and waits visibly for acknowledgement');
+      await L.waitFor(p, path => __fake.writes.flat().some(x => x.path === path), CURRENT);
+      ok((await writes(p)).length === 1 && await p.locator('.cooling-clock-status:visible').count() === 0, width + ': pending has one write and no confirmed running readout');
+      await p.locator('button[data-cooling="clock"]').evaluate(el => el.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+      await p.evaluate(() => __fake.ack()); await L.settle(p, 150);
+      ok((await writes(p)).length === 1 && await p.locator('.cooling-clock').getAttribute('data-clock-state') === 'pending', width + ': repeated tap or listener acknowledgement alone cannot finish a pending start');
+      await p.evaluate(() => { __fake.mode = 'ok'; __fake.release(); }); await phase(p, 'first');
+      const first = await saved(p), firstAt = millis(first.firstAt), firstDue = firstAt + 2 * HOUR;
+      ok(first.rev === 1 && first.secondAt === 0 && await p.locator('button[data-cooling="clock"]:visible').count() === 0 && await p.locator('.cooling-clock-status').getAttribute('aria-live') === 'off', width + ': accepted running timer is read-only and does not announce every countdown tick');
+      drawn = await shape(p);
+      ok(drawn.control[2] === (mobile ? 44 : 152) && sameLayout(baseline, drawn), width + ': running has the selected footprint without moving list lines');
+      const beforeProgress = await p.locator('.cooling-clock-status').innerHTML();
+      await advance(p, firstAt + HOUR); await phase(p, 'first');
+      ok(await p.locator('.cooling-clock-status').innerHTML() !== beforeProgress && (await writes(p)).length === 1, width + ': the ring/countdown advances locally without more shared writes');
+      ok(await p.locator('.cooling-clock-status').evaluate((host, mobile) => {
+        const ring = host.querySelector('.cooling-clock-ring'), face = host.querySelector('.cooling-clock-sector');
+        return mobile ? getComputedStyle(ring).display !== 'none' && Math.abs(parseFloat(ring.style.strokeDashoffset) - 50) < 1 && getComputedStyle(face).display === 'none'
+          : getComputedStyle(face).display !== 'none' && !!face.getAttribute('d') && getComputedStyle(ring).display === 'none';
+      }, mobile), width + ': halfway progress uses the chosen perimeter ring on mobile or filling face on desktop');
+      if (!mobile) ok(/1:00:0\d|0:59:5\d/.test(await p.locator('.cooling-clock-status').textContent()), 'Desktop keeps a numeric countdown in its pill');
+      await p.evaluate(() => { location.hash = '#/orders'; });
+      await L.waitFor(p, () => !!document.querySelector('.ob') || location.hash === '#/orders' && document.querySelector('.cooling-clock')?.dataset.clockState === 'first');
+      await phase(p, 'first');
+      ok(await p.locator('.cooling-clock-status').isVisible() && await p.locator('button[data-cooling="clock"]:visible').count() === 0, width + ': route redraw paints the current running state immediately');
+      await p.evaluate(() => { location.hash = '#/prep'; }); await phase(p, 'first');
+      // A spoken alarm is delivered only when the corresponding screen ping can open.
+      await p.evaluate(() => { window.__coolingSounds = 0; const original = LK_CHIME.playCooling; LK_CHIME.playCooling = function () { window.__coolingSounds++; return original ? original.apply(this, arguments) : true; }; });
+      await advance(p, firstDue + 1000); await phase(p, 'done1');
+      await L.waitFor(p, () => !!document.querySelector('.cooling-ping'));
+      ok(await p.getByText('Operandio batch cooling time 2 hours is done.', { exact: true }).isVisible() && await p.evaluate(() => __coolingSounds === 1), width + ': first completion shows the named ping and invokes one three-chime sequence');
+      await p.getByRole('button', { name: 'Got it', exact: true }).click();
+      await advance(p, firstDue + HOUR); await phase(p, 'done1');
+      ok((await saved(p)).secondAt === 0 && (await writes(p)).length === 1 && await p.evaluate(() => __coolingSounds === 1), width + ': waiting an extra hour never starts four hours or repeats the alert');
+      drawn = await shape(p);
+      ok(drawn.control[2] === (mobile ? 44 : 152) && drawn.control[3] === 44 && sameLayout(baseline, drawn), width + ': green first completion retains its footprint and prep positions');
+      ok(/Start.*4.hour/i.test(await p.locator('button[data-cooling="clock"]').getAttribute('aria-label')), width + ': the green action names the separate four-hour start');
+      await clockTap(p); await phase(p, 'second');
+      const second = await saved(p), secondAt = millis(second.secondAt);
+      ok(second.rev === 2 && secondAt >= firstDue + HOUR && millis(second.firstAt) === firstAt && (await writes(p)).length === 2, width + ': only the explicit green-clock tap starts a further four hours');
+      await advance(p, secondAt + 4 * HOUR + 1000); await phase(p, 'done2');
+      await L.waitFor(p, () => !!document.querySelector('.cooling-ping'));
+      ok(await p.evaluate(() => __coolingSounds === 2), width + ': second completion invokes one further three-chime sequence');
+      await p.getByRole('button', { name: 'Got it', exact: true }).click();
+      await clockTap(p); await phase(p, 'armed');
+      ok((await writes(p)).length === 2 && (await saved(p)).run === first.run, width + ': first new-batch tap arms without changing the completed record');
+      await clockTap(p); await phase(p, 'first');
+      ok((await saved(p)).run !== first.run && (await saved(p)).secondAt === 0 && (await writes(p)).length === 3, width + ': the second new-batch tap starts exactly one fresh two-hour timer');
+      if (realFonts) ok(!await L.overflow(p), width + ': chosen clock fits the native-font header without sideways scroll');
+      await p.emulateMedia({ reducedMotion: 'reduce' });
+      ok(await p.locator('.cooling-clock-status').evaluate(el => getComputedStyle(el).animationName === 'none' && getComputedStyle(el).transitionDuration.split(',').every(v => parseFloat(v) === 0)), width + ': Reduce motion keeps status while removing decorative motion');
+    });
+    await step('clock read failure and retry', async () => {
+      p = await L.open(browser, '#/prep', { who: 'ann', wait: 1200 }); await phase(p, 'idle');
+      await clockTap(p); await phase(p, 'armed'); await p.evaluate(() => { __fake.mode = 'deny'; }); await clockTap(p); await phase(p, 'error');
+      ok(!await saved(p) && /Operandio/.test(await p.locator('button[data-cooling="clock"]').getAttribute('aria-label')), 'Refused inline start does not claim success and retains named error state');
+      await L.waitFor(p, () => !!document.querySelector('.cooling-menu .cooling-error'));
+      ok(await p.locator('.cooling-menu [role="alert"]').isVisible(), 'Refused inline start opens readable error detail and explicit retry');
+      await p.evaluate(() => { __fake.mode = 'ok'; });
+      await p.getByRole('button', { name: 'Try again: start Operandio 2-hour timer' }).click(); await phase(p, 'first');
+      ok((await saved(p)).rev === 1, 'Only explicit retry starts the refused first stage');
+      await p.keyboard.press('Escape');
+      await L.notYou(p); await L.waitFor(p, () => !LK_PREP.privateAccess());
+      ok(await p.locator('.cooling-clock:visible').count() === 0, 'Changing person removes the previous private timer display');
+    });
+    await step('clock cached empty read', async () => {
+      p = await L.open(browser, '#/prep', { who: 'ann', cold: '/cooling/current$', wait: 1200 });
+      await L.waitFor(p, () => !!document.querySelector('.cooling-clock'));
+      await clockTap(p); await L.waitFor(p, () => !!document.querySelector('.cooling-menu'));
+      ok(await p.locator('.cooling-menu [data-stage="2"]').isDisabled() && (await writes(p)).length === 0, 'Cached empty clock opens connection details without offering a start');
+      await p.evaluate(() => __fake.warm()); await L.waitFor(p, () => !document.querySelector('.cooling-menu [data-stage="2"]').disabled);
+      await p.keyboard.press('Escape'); await phase(p, 'idle');
+      ok((await writes(p)).length === 0, 'Reconnecting restores idle without replaying the earlier tap');
+    });
+  } finally { if (p) await p.context().close(); await browser.close(); }
+  L.report(R);
+})().catch(e => { console.error(e); process.exit(1); });

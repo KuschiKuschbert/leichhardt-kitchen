@@ -12,8 +12,8 @@ function firstRecord(at, by = 'ann') {
   return { v: 1, run: 'cooling-fixture-run-01', rev: 1, firstAt: stamp(at), firstBy: by, secondAt: 0, secondBy: '', by };
 }
 async function clockOpen(p) {
-  await L.waitFor(p, () => !!document.querySelector('[data-cooling="open"]:not([hidden])'), null, 10000);
-  await p.locator('[data-cooling="open"]').click();
+  await L.waitFor(p, () => !!document.querySelector('.cooling-clock:not([hidden])'), null, 10000);
+  await p.evaluate(() => LK_PREP.coolingOpen(document.querySelector('.cooling-chip')));
   await L.waitFor(p, () => !!document.querySelector('.cooling-menu'), null, 8000);
 }
 async function ready(p, hours = 2) {
@@ -50,7 +50,7 @@ for (const [id, pin] of [['vic', '4444'], ['fay', '5151']]) {
       ok(box.width === 248 && box.height <= 157 && box.fits && !await L.overflow(p), width + ': approved compact dropdown fits the real app');
       ok(await p.locator('[data-stage="4"]').isDisabled(), width + ': a confirmed empty timer offers 2 hours and keeps 4 hours unavailable');
       await p.keyboard.press('Escape');
-      ok(await p.locator('.wtop').evaluate(el => el.getBoundingClientRect().height) === before && await p.locator('[data-cooling="open"]').evaluate(el => el === document.activeElement), width + ': closing keeps header height and returns focus to the clock');
+      ok(await p.locator('.wtop').evaluate(el => el.getBoundingClientRect().height) === before && await p.evaluate(() => !!document.activeElement.closest('.cooling-clock')), width + ': closing keeps header height and returns focus to the clock');
       const read = await p.evaluate(() => __fake.reads.concat(__fake.bill.map(x => x.path)).filter(path => /\/cooling\//.test(path)));
       ok(read.length > 0 && read.every(path => path === CURRENT) && !(await p.evaluate(() => __fake.refused)).some(x => /\/cooling/.test(x.path)), width + ': cooling reads only the authorised canonical document');
     });
@@ -132,7 +132,7 @@ for (const [id, pin] of [['vic', '4444'], ['fay', '5151']]) {
     for (const role of ['functions-only', 'daily locked', 'signed out']) await step(role + ' hidden clock', async () => {
       const options = role === 'functions-only' ? { who: 'fay', extra: ROLES } : role === 'daily locked' ? { who: 'ann', dailyLocked: true } : { who: '' };
       p = await L.open(b, role === 'functions-only' ? '#/functions' : '#/prep', { ...options, wait: 1200 });
-      ok(await p.locator('[data-cooling="open"]:not([hidden])').count() === 0, role + ': no private cooling clock appears');
+      ok(await p.locator('.cooling-clock:not([hidden])').count() === 0, role + ': no private cooling clock appears');
       ok(!(await p.evaluate(() => __fake.reads)).some(path => /\/cooling\//.test(path)), role + ': no cooling state is read');
     });
     await step('due alert waits for PIN', async () => {

@@ -3,8 +3,9 @@
 (function () {
   'use strict';
   var CLOCK = '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.9"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
+  var CLOCK_FACE = '<span class="cooling-clock-face" aria-hidden="true"><svg class="cooling-clock-progress" viewBox="0 0 44 44"><circle class="cooling-clock-track" cx="22" cy="22" r="18"/><circle class="cooling-clock-ring" cx="22" cy="22" r="18" pathLength="100"/><path class="cooling-clock-sector"/></svg><span class="cooling-clock-drawing">' + CLOCK + '</span><b class="cooling-clock-stage"></b><span class="cooling-clock-check">✓</span><svg class="cooling-clock-play" viewBox="0 0 24 24"><path d="m8 5 11 7-11 7Z" fill="currentColor"/></svg><span class="cooling-clock-wait">···</span><span class="cooling-clock-alert">!</span></span><span class="cooling-clock-copy"><strong></strong><small></small></span>';
   function mount(hooks) {
-    var H = hooks || {}, model = {}, wrap = null, kind = '', pingStage = 0, pingRun = null, previous = null, disposed = false, attempt = 0, pendingFocus = 0;
+    var H = hooks || {}, model = {}, wrap = null, kind = '', pingStage = 0, pingRun = null, previous = null, disposed = false, attempt = 0, pendingFocus = 0, armed = '', clockFocus = false, startingCall = false, deferredModel = null, dismissedError = '';
     if (typeof H.esc !== 'function' || typeof H.clock !== 'function') throw new Error('Cooling UI needs the book text and clock helpers.');
     var live = document.createElement('div');
     live.className = 'visually-hidden'; live.setAttribute('role', 'status'); live.setAttribute('aria-live', 'polite'); live.setAttribute('aria-atomic', 'true');
@@ -38,14 +39,65 @@
     }
     function chipHTML() {
       if (!model.available) return '';
-      var s = state(), due = s.firstDone && (!s.run.secondAt || s.secondDone);
-      return '<button type="button" class="tm-chip cooling-chip' + (due ? ' is-due' : '') + '" data-cooling="open" aria-haspopup="dialog" aria-expanded="' + !!wrap + '" aria-label="Operandio cooling timers">' + CLOCK + '</button>';
+      // Stable markup: the app inserts this once; paintChip updates the original controls in place.
+      return '<span class="cooling-clock" data-clock-state="checking"><button type="button" class="tm-chip cooling-chip cooling-clock-control" data-cooling="clock" aria-label="Checking Operandio timers">' + CLOCK_FACE + '</button><span class="cooling-clock-status cooling-clock-control" role="status" aria-live="off" tabindex="-1" hidden>' + CLOCK_FACE + '</span></span>';
+    }
+    function armKey(s) { return s.run ? s.run.id + ':' + s.run.secondAt : 'empty'; }
+    function actionErrorKey(value) {
+      var error = value && value.actionError;
+      return error ? JSON.stringify([error.stage, String(error.message || '')]) : '';
+    }
+    function headerError(s) {
+      // Acknowledging our refusal never changes the shared result or removes its detail from the menu.
+      return !!model.actionError && !(dismissedError === actionErrorKey(model) && s.ready && s.run);
+    }
+    function clockState() {
+      var s = state(), run = s.run, hours = model.pending || (run && run.secondAt ? 4 : 2), phase;
+      if (model.pending) phase = 'pending';
+      else if (headerError(s)) phase = 'error';
+      else if (!s.ready) phase = model.error || s.bad ? 'error' : 'checking';
+      else if (armed && armed === armKey(s)) phase = 'armed';
+      else if (!run) phase = 'idle';
+      else if (s.secondDone) phase = 'done2';
+      else if (run.secondAt) phase = 'second';
+      else if (s.firstDone) phase = 'done1';
+      else phase = 'first';
+      var running = phase === 'first' || phase === 'second', due = run && (hours === 4 ? run.secondDue : run.firstDue), began = run && (hours === 4 ? run.secondAt : run.firstAt);
+      var progress = running ? Math.max(0, Math.min(1, (model.now - began) / (due - began))) : phase === 'done1' || phase === 'done2' ? 1 : 0;
+      var seconds = running ? Math.max(0, Math.ceil((due - model.now) / 1000)) : 0;
+      var countdown = Math.floor(seconds / 3600) + ':' + String(Math.floor(seconds % 3600 / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
+      var primary = phase === 'idle' ? '' : phase === 'armed' ? 'Start' : phase === 'pending' ? 'Starting…' : phase === 'error' ? 'Check timer' : phase === 'checking' ? 'Check timer' : running ? countdown : 'Done';
+      var secondary = phase === 'done1' ? 'Start 4 h →' : phase === 'done2' ? 'Start new batch →' : phase === 'checking' ? model.stale ? 'Not connected' : 'Checking…' : phase === 'error' ? 'Operandio · details' : 'Operandio · ' + (phase === 'armed' ? 2 : hours) + ' h';
+      var label = phase === 'idle' ? 'Operandio cooling timer. Prepare 2-hour start' : phase === 'armed' ? (s.secondDone ? 'Start another Operandio batch, 2-hour timer' : 'Start Operandio 2-hour timer') : phase === 'pending' ? 'Starting Operandio ' + hours + '-hour timer. Waiting for confirmation.' : phase === 'done1' ? 'Operandio 2 hours done. Start 4-hour timer' : phase === 'done2' ? 'Operandio 2-hour and 4-hour stages done. Prepare a new batch' : running ? 'Operandio ' + hours + '-hour timer, ' + countdown + ' remaining' : model.actionError ? String(model.actionError.message || 'Couldn’t start Operandio. Check the timer.') : readStatus();
+      if (phase === 'pending' && model.error) label += ' ' + String(model.error);
+      return { phase: phase, hours: hours, running: running, progress: progress, primary: primary, secondary: secondary, label: label || 'Check Operandio timers' };
+    }
+    function sector(progress) {
+      if (progress <= 0) return '';
+      if (progress >= 1) return 'M22 4 A18 18 0 1 1 22 40 A18 18 0 1 1 22 4Z';
+      var angle = progress * Math.PI * 2 - Math.PI / 2;
+      return 'M22 22 L22 4 A18 18 0 ' + (progress > .5 ? 1 : 0) + ' 1 ' + (22 + 18 * Math.cos(angle)).toFixed(3) + ' ' + (22 + 18 * Math.sin(angle)).toFixed(3) + 'Z';
     }
     function paintChip() {
-      var s = state(), due = s.firstDone && (!s.run.secondAt || s.secondDone);
-      document.querySelectorAll('[data-cooling="open"]').forEach(function (chip) {
-        chip.hidden = !model.available; chip.classList.toggle('is-due', !!due); chip.setAttribute('aria-expanded', String(!!wrap));
+      if (disposed) return;
+      var c = clockState(), restore = clockFocus && !model.pending && !wrap;
+      document.querySelectorAll('.cooling-clock').forEach(function (chip) {
+        var button = chip.querySelector('button'), status = chip.querySelector('.cooling-clock-status');
+        var focused = document.activeElement === button || document.activeElement === status || restore && document.activeElement === document.body;
+        chip.hidden = !model.available; chip.dataset.clockState = c.phase;
+        button.hidden = c.running; status.hidden = !c.running; button.disabled = c.phase === 'pending';
+        button.setAttribute('aria-busy', String(c.phase === 'pending'));
+        button.setAttribute('aria-label', c.label); status.setAttribute('aria-label', c.label); button.title = c.label; status.title = c.label;
+        if (c.phase === 'checking' || c.phase === 'error') { button.setAttribute('aria-haspopup', 'dialog'); button.setAttribute('aria-expanded', String(!!wrap)); }
+        else { button.removeAttribute('aria-haspopup'); button.removeAttribute('aria-expanded'); }
+        chip.querySelectorAll('.cooling-clock-control').forEach(function (control) {
+          text(control.querySelector('strong'), c.primary); text(control.querySelector('small'), c.secondary); text(control.querySelector('.cooling-clock-stage'), c.hours + 'h');
+          control.querySelector('.cooling-clock-ring').style.strokeDashoffset = String(100 * (1 - c.progress));
+          control.querySelector('.cooling-clock-sector').setAttribute('d', sector(c.progress));
+        });
+        if (focused && model.available && !wrap && !model.pending) (c.running ? status : button).focus({ preventScroll: true });
       });
+      if (restore) clockFocus = false;
     }
     function errorLine(host, message) {
       var line = host.querySelector('.cooling-error');
@@ -118,13 +170,13 @@
         if (!same) {
           text(title, 'Another Operandio batch has started.'); text(detail, 'Open the clock to see the current timers.');
           var oldFocus = host.contains(document.activeElement); host.replaceChildren(); if (oldFocus) wrap.querySelector('.nt-got').focus({ preventScroll: true });
-          errorLine(next, '');
+          errorLine(next, error);
         } else if (run.secondAt) {
           text(title, s.secondDone ? 'The next 4 hours have finished.' : 'The next 4 hours are running.');
           text(detail, 'Started ' + at(run.secondAt) + ' · due ' + at(run.secondDue) + '.');
           var focus = host.contains(document.activeElement) || pendingFocus === 4 && !model.pending && document.activeElement === document.body; host.replaceChildren(); if (focus) wrap.querySelector('.nt-got').focus({ preventScroll: true });
           if (!model.pending) pendingFocus = 0;
-          errorLine(next, '');
+          errorLine(next, error);
         } else {
           text(title, 'Next: another 4 hours'); text(detail, model.pending === 4 ? 'Waiting for confirmation.' : 'Waiting for someone to start it.');
           actionButton(host, 4, s.ready && s.firstDone, model.pending === 4, error, 'Start 4 hours'); errorLine(next, error);
@@ -134,7 +186,7 @@
     }
     function place() {
       if (!wrap || kind !== 'menu') return;
-      var menu = wrap.querySelector('.cooling-menu'), chip = document.querySelector('[data-cooling="open"]'), anchor = chip || previous;
+      var menu = wrap.querySelector('.cooling-menu'), chip = document.querySelector('.cooling-clock-control:not([hidden])'), anchor = chip || previous;
       var rect = anchor && anchor.getBoundingClientRect ? anchor.getBoundingClientRect() : { left: innerWidth - 44, width: 44, bottom: 56 };
       menu.style.top = Math.max(8, Math.min(rect.bottom + 8, innerHeight - menu.offsetHeight - 8)) + 'px';
       menu.style.left = Math.max(8, Math.min(innerWidth - menu.offsetWidth - 8, rect.left + rect.width / 2 - menu.offsetWidth / 2)) + 'px';
@@ -147,7 +199,8 @@
       if (nextKind === 'ping') {
         var s = state(); if (!s.ready || (stage === 2 ? !s.firstDone : stage !== 4 || !s.secondDone)) return false;
       }
-      previous = anchor || document.querySelector('[data-cooling="open"]') || document.activeElement;
+      armed = '';
+      previous = anchor || document.querySelector('.cooling-clock-control:not([hidden])') || document.activeElement;
       kind = nextKind; pingStage = stage || 0; pingRun = nextKind === 'ping' ? Object.assign({}, state().run) : null; wrap = document.createElement('div');
       wrap.className = nextKind === 'menu' ? 'wm-wrap cooling-wrap' : 'nt-wrap cooling-wrap';
       if (nextKind === 'menu') {
@@ -165,28 +218,52 @@
     function close(noBack) {
       if (!wrap) return;
       var oldKind = kind, oldStage = pingStage, oldRun = pingRun && pingRun.id, focus = previous;
+      if (model.available && model.actionError && Array.prototype.some.call(wrap.querySelectorAll('.cooling-error'), function (line) {
+        return !!line.getClientRects().length && line.textContent === String(model.actionError.message || '');
+      })) dismissedError = actionErrorKey(model);
       wrap.remove(); wrap = null; kind = ''; pingStage = 0; pingRun = null; previous = null; pendingFocus = 0;
       document.documentElement.classList.remove('cooling-open'); paintChip();
-      if (focus && focus.isConnected && focus.focus) focus.focus({ preventScroll: true });
+      if (focus && focus.isConnected && focus.focus) {
+        if (focus.hidden) focus = document.querySelector('.cooling-clock-control:not([hidden])') || focus;
+        focus.focus({ preventScroll: true });
+      }
       if (H.closed) H.closed(oldKind, !!noBack, oldStage, oldRun);
     }
     function start(hours) {
       var s = state();
       if (model.pending || !s.ready || !(hours === 2 ? !s.run || s.secondDone : hours === 4 && s.firstDone && !s.run.secondAt)) return;
       var token = ++attempt;
-      pendingFocus = hours;
+      pendingFocus = hours; armed = ''; dismissedError = '';
       model = Object.assign({}, model, { pending: hours, actionError: null });
       if (wrap) { if (kind === 'menu') paintMenu(); else paintPing(); }
+      paintChip();
       say('Starting Operandio ' + hours + '-hour timer. Waiting for confirmation.');
       function failed() {
         if (disposed || token !== attempt || model.pending !== hours) return;
         render(Object.assign({}, model, { pending: 0, actionError: { stage: hours, message: 'Couldn’t start Operandio ' + hours + '-hour timer. Try again.' } }));
       }
-      try { var result = H.onStart && H.onStart(hours); if (result && result.catch) result.catch(failed); if (!H.onStart) failed(); } catch (e) { failed(); }
+      // The controller synchronises first, then publishes its pending state. Keep that synchronous reconciliation
+      // inside this tap so the button and focus do not briefly fall back to the pre-start state.
+      startingCall = true; deferredModel = null;
+      try { var result = H.onStart && H.onStart(hours); if (result && result.catch) result.catch(failed); if (!H.onStart || result === false && !deferredModel) failed(); } catch (e) { failed(); }
+      finally { startingCall = false; if (deferredModel) { var next = deferredModel; deferredModel = null; render(next); } }
     }
     function click(event) {
-      var button = event.target.closest('[data-cooling]'); if (!button || disposed) return;
+      if (disposed) return;
+      if (armed && !event.target.closest('.cooling-clock')) { armed = ''; paintChip(); }
+      var button = event.target.closest('[data-cooling]'); if (!button) return;
       var action = button.getAttribute('data-cooling');
+      if (action === 'clock') {
+        event.preventDefault();
+        if (!model.available || model.pending || wrap || H.canOpen && !H.canOpen('menu')) return;
+        var c = clockState(), s = state();
+        if (c.running) return;
+        if (c.phase === 'error' || c.phase === 'checking') { show('menu', 0, button); return; }
+        if (c.phase === 'done1') { clockFocus = true; start(4); return; }
+        if (c.phase === 'armed') { clockFocus = true; start(2); return; }
+        armed = armKey(s); paintChip(); say(s.secondDone ? 'Start another Operandio batch. Tap Start for 2 hours.' : 'Start Operandio 2-hour timer. Tap Start to confirm.');
+        return;
+      }
       if (action === 'open') { event.preventDefault(); if (wrap) close(); else show('menu', 0, button); return; }
       if (!wrap || !wrap.contains(button)) return;
       if (action === 'close') { close(); return; }
@@ -200,6 +277,7 @@
       }
     }
     function key(event) {
+      if (!wrap && armed && event.key === 'Escape') { armed = ''; paintChip(); event.preventDefault(); return; }
       if (!wrap) return;
       if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); return; }
       if (event.key === 'Tab') {
@@ -213,17 +291,22 @@
     }
     function render(next) {
       if (disposed) return;
+      if (startingCall) { deferredModel = next; return; }
       var old = model, runBefore = validRun(old.run) ? old.run : null;
       model = Object.assign({}, next || {});
+      if (!model.available || model.pending || model.actionError !== old.actionError || actionErrorKey(model) !== actionErrorKey(old)) dismissedError = '';
       var current = validRun(model.run) ? model.run : null;
+      var s = state();
+      if (!s.ready || model.pending || headerError(s) || armed && (armed !== armKey(s) || s.run && !s.secondDone)) armed = '';
       if (pingRun && current && current.id === pingRun.id) pingRun = Object.assign({}, current);
-      if (!model.available) { attempt++; model = { available: false }; close(); say(''); paintChip(); return; }
+      if (!model.available) { attempt++; model = { available: false }; armed = ''; clockFocus = false; close(); say(''); paintChip(); return; }
       if (model.actionError) say('');
       else if (current && model.ready && !model.stale && !model.error) {
         if (!runBefore || runBefore.id !== current.id) say('Started Operandio 2-hour timer. Due ' + at(current.firstDue) + '.');
         else if (!runBefore.secondAt && current.secondAt) say('Started Operandio 4-hour timer. Due ' + at(current.secondDue) + '.');
       }
       if (wrap) { if (kind === 'menu') paintMenu(); else paintPing(); }
+      if (clockFocus && !wrap && (headerError(s) || model.error)) show('menu', 0);
       paintChip();
     }
     function dispose() {
@@ -231,7 +314,7 @@
       document.removeEventListener('click', click); document.removeEventListener('keydown', key); window.removeEventListener('resize', place);
     }
     document.addEventListener('click', click); document.addEventListener('keydown', key); window.addEventListener('resize', place);
-    return { chipHTML: chipHTML, open: function (anchor) { return show('menu', 0, anchor); }, ping: function (stage, anchor) { return show('ping', stage, anchor); }, render: render, close: close, dispose: dispose, isOpen: function () { return !!wrap; } };
+    return { chipHTML: chipHTML, paintChip: paintChip, open: function (anchor) { return show('menu', 0, anchor); }, ping: function (stage, anchor) { return show('ping', stage, anchor); }, render: render, close: close, dispose: dispose, isOpen: function () { return !!wrap; } };
   }
   window.LK_COOLING_UI = { mount: mount };
 }());

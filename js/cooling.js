@@ -131,6 +131,7 @@
     }
     function suspend() {
       epoch++; stopCurrent();
+      if (H.stopChime) H.stopChime();
       session = null; sessionKey = ''; ownerKey = ''; currentRead = false;
       stale = false; error = ''; actionError = null; run = null;
       ui.close(true); paint();
@@ -215,7 +216,8 @@
     }
     function dispose() { if (disposed) return; suspend(); disposed = true; ui.dispose(); }
     paint();
-    return { sync: sync, tick: tick, open: open, chipHTML: function () { return ui.chipHTML(); }, start: start, acknowledge: acknowledge,
+    return { sync: sync, tick: tick, open: open, chipHTML: function () { return ui.chipHTML(); },
+      paintChip: function () { if (ui.paintChip) ui.paintChip(); }, start: start, acknowledge: acknowledge,
       retryRead: retryRead, isBusy: function () { return !!pending; }, pendingWork: pendingWork, stop: suspend, dispose: dispose,
       snapshot: function () { return model(); } };
   }

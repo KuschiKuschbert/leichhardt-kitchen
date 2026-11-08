@@ -2,11 +2,13 @@
 
 ## Chosen
 
-**9 November refinement:** the owner rejected mobile pill expansion because it crowds the header. All mobile previews now use the same fixed 44px filling ring, including Start, pending and completion. The three desktop pill designs remain for comparison; no desktop choice or production implementation has been authorised. These remain six previews, with a shared mobile treatment. The working timer is unchanged.
+**Chosen: B on desktop, fixed filling ring on mobile.** On 9 November the owner said "yeah lets go with b", then "implement and bring live", and requested three loud chimes. The mobile ring remains fixed at 44px in every state. Four hours always waits for a separate tap after two hours. This branch implements that choice using the existing shared timer, not the accelerated preview clock.
+
+The original three desktop designs remain below as the decision record. The prototype comparison uses synthetic time and single preview chimes; production uses the saved server deadlines and three stronger chimes. Implementation verification and release status are recorded at the end of this brief.
 
 Open [the interactive comparison](index.html). Tick Preview chime, then Play animation to hear the existing soft chime. Manual tapping also works. A full automated demo takes 18 seconds, with simulated taps; the manual preview waits for the explicit next tap before starting four hours. All time is synthetic. No preview reads or writes kitchen data.
 
-Desktop keeps clock → Start → two-hour countdown → green Done / Start 4 h → explicit tap → four-hour countdown → final Done. Mobile keeps a fixed circle: clock → orange play icon → filling ring → green tick and chime → explicit tap → four-hour filling ring → final green tick. The first tap arms Start; the second starts two hours. A running mobile clock is a read-only status and never expands. After two hours, four hours waits indefinitely for an explicit tap. The existing Operandio ping supplies the named completion message in a future production implementation.
+Desktop keeps clock → Start → two-hour countdown → green Done / Start 4 h → explicit tap → four-hour countdown → final Done. Mobile keeps a fixed circle: clock → orange play icon → filling ring → green tick and chime → explicit tap → four-hour filling ring → final green tick. The first tap arms Start; the second starts two hours. A running mobile clock is a read-only status and never expands. After two hours, four hours waits indefinitely for an explicit tap. The production implementation keeps the existing named Operandio completion ping.
 
 ## Three desktop designs, shared mobile ring
 
@@ -54,7 +56,7 @@ The underlying shared timer retains the earlier Round 1 **Build smaller, 5 of 5*
 
 Original council recommendation: **A**, with explicit duration labels and a readable desktop Start 4 h caption. Five of six preferred its familiar clock and quiet movement. The cook preferred B's larger progress area for a quick bench glance. C's stage number reads more clearly, but its two arcs and loss of clock hands require more explanation.
 
-All six flagged the small next-action caption beneath Done. The desktop previews strengthen it to 13px bold while retaining the owner's requested Done label. The designer also identified B's translucent fill contrast; that was increased before the final recordings to 3.28:1 against the header, with 4.13:1 for the hands against the fill. The keeper and skeptic raised countdown screen-reader chatter; the visual readout now opts out of live announcements while the separate polite region announces stage changes only. Tiny duration badges and C's arc interpretation remain visible trade-offs for the owner to compare. The later owner instruction selects the mobile perimeter ring, while the desktop choice remains pending.
+All six flagged the small next-action caption beneath Done. The desktop previews strengthen it to 13px bold while retaining the owner's requested Done label. The designer also identified B's translucent fill contrast; that was increased before the final recordings to 3.28:1 against the header, with 4.13:1 for the hands against the fill. The keeper and skeptic raised countdown screen-reader chatter; the visual readout now opts out of live announcements while the separate polite region announces stage changes only. Tiny duration badges and C's arc interpretation remain visible trade-offs for the owner to compare. The owner subsequently selected B for desktop and the fixed perimeter ring for mobile. That choice supersedes the council recommendation.
 
 ## Verification and boundaries
 
@@ -63,8 +65,24 @@ All six flagged the small next-action caption beneath Done. The desktop previews
 - The hidden button and status retain matching geometry so changing to final Done animates smoothly while the hidden element stays invisible and unavailable to pointer/focus interaction.
 - Three desktop browser recordings and the revised shared mobile recording show the full sequence. The same mobile recording is supplied in all three pairs, matching their verified identical rendering. A portable comparison embeds all six previews and local assets. Its 30 browser checks cover frame APIs, responsive modes, tabs, Play, Reset, chime and full-size previews. Google web fonts remain a network dependency; the font stack supplies a fallback.
 - This is presentation verification. Shared-device notifications, permission enforcement, network loss, saved deadlines, reopening and personal Got it remain the existing live timer's responsibility. A chosen implementation must reuse that controller and preserve those behaviours, including Start another batch and existing pings.
-- No production files, shell version, service worker, Firestore rules or data change. Reverting this documentation PR removes the studies.
+- Those checks describe the design previews. The approved implementation below changes the production presentation and cooling sound while preserving the existing timer controller, saved shell membership and rules.
 
 ## Source
 
 `preview.html` is a script-free synthetic native Prep snapshot with only the existing chime and preview motion script loaded. `motion.js` and `motion.css` implement the three studies. `index.html`, `gallery.js` and `gallery.css` compare them. Baseline and state PNGs document the layouts; six GIFs provide replay without running JavaScript. The [proposal](proposal.md) records the scope before the drawings.
+
+
+## Approved implementation, 9 November 2026
+
+The production clock uses the existing authoritative model and start hooks. Header inserts mount the clock once, then patch its control in place through arming, pending and confirmation. Desktop uses B's filled face and one gentle settle; mobile uses the fixed perimeter ring. The existing details route, personal pings, permissions, recovery and new-batch action remain.
+
+`LK_CHIME.playCooling()` schedules three stronger soft chimes through the existing limiter. `stopCooling()` cancels any remaining or delayed notes. The cooling adapter honours sound Off and stops the sequence when the ping closes or the session changes; the sound module also cancels on hiding or leaving the page. Ordinary ping sounds stay unchanged. No new reads, listeners, fields, permissions, external assets or services.
+
+Production verification uses synthetic kitchen data and does not start a real batch:
+
+- UI: 85 checks; shared-controller integration: 55; real-app motion: 83 with real Barlow fonts; controller: 25 test groups. Covers confirmation before countdown, explicit four-hour start, a new batch, fixed mobile geometry, stable neighbouring controls, route repaint, reduced motion and session lock.
+- Competing starts: closing a visible refusal restores the confirmed shared countdown without clearing the controller's error detail. The expanded UI regression fails 7 checks on the previous source and passes all 85 with the fix. A new refusal still appears, and stale or missing shared state stays protected. Independently reviewed in Chromium.
+- Sound: 34 cooling checks plus 34 existing ping-sound checks. A real OfflineAudioContext measured +4.37 dB RMS and +3.06 dB peak against the ordinary chime, with a peak of 0.726 and no clipping. Physical speaker volume still depends on the device; no hardware or Safari interruption claim is made.
+- Actual app screenshots: [desktop Start](implementation/1280-armed.png), [countdown](implementation/1280-first.png), [Done](implementation/1280-done1.png); [mobile Start](implementation/390-armed.png), [ring](implementation/390-first.png), [Done](implementation/390-done1.png).
+
+The full Click tests gate and Pages release follow [PR #615](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/615). This presentation and sound update needs no rules or backend deployment.

@@ -13084,16 +13084,22 @@
     if (coolingPaintTimer) return;
     coolingPaintTimer = setTimeout(function () { coolingPaintTimer = null; try { window.dispatchEvent(new Event('lk-cooling')); } catch (e) {} }, 0);
   }
+  function coolingChime() {
+    var C = window.LK_CHIME;
+    if (pingSound() === 'off' || !C) return;
+    if (C.playCooling) C.playCooling(); else C.play('chime');
+  }
+  function coolingStopChime() { if (window.LK_CHIME && window.LK_CHIME.stopCooling) window.LK_CHIME.stopCooling(); }
   function coolingGet() {
     if (coolingController || !window.LK_COOLING_APP || !window.LK_COOLING_UI) return coolingController;
     coolingController = window.LK_COOLING_APP.create({ session: coolingSession, now: now, watch: coolingWatch, write: coolingWrite,
-      timestamp: function () { return fb.fs.serverTimestamp(); }, changed: coolingChanged, chime: noteChime,
+      timestamp: function () { return fb.fs.serverTimestamp(); }, changed: coolingChanged, chime: coolingChime, stopChime: coolingStopChime,
       readSeen: function (session) { try { return JSON.parse(lsGet(coolingSeenKey(session)) || '{}'); } catch (e) { return {}; } },
       writeSeen: function (session, seen) { lsSet(coolingSeenKey(session), JSON.stringify(seen)); },
       uiHooks: { esc: esc, clock: T.clock,
         canOpen: function () { return coolingEligible() && !namesUp() && !sheetBusy(); },
         opened: function (kind, closeFromBack) { ovPush('cooling', closeFromBack); },
-        closed: function (kind, noBack) { ovDone('cooling', noBack); setTimeout(sheetNext, 0); },
+        closed: function (kind, noBack) { if (kind === 'ping') coolingStopChime(); ovDone('cooling', noBack); setTimeout(sheetNext, 0); },
         trapTab: trapTab }
     });
     return coolingController;
@@ -13111,6 +13117,7 @@
     if (coolingRouteWant && !sheetBusy() && !namesUp()) { coolingRouteWant = false; coolingController.open(document.querySelector('.cooling-chip')); }
   }
   function coolingOpen(anchor) { var c = coolingGet(); if (c) { c.sync(); c.open(anchor); } }
+  function coolingPaint() { var c = coolingGet(); if (c) { c.sync(); c.paintChip(); } }
   function coolingBusy() { return !!(coolingController && coolingController.isBusy()); }
   function coolingOwner() { var p = coolingController && coolingController.pendingWork(); return p && (p.by || p.person) || ''; }
   function coolingRoute() { if (coolingRouteHandled === location.hash) return; coolingRouteHandled = location.hash; coolingRouteWant = true; coolingSync(); coolingTick(); }
@@ -13197,7 +13204,7 @@
     push: function () { var w = pushWhoId(), st = w ? pushState() : ''; return { show: !!w, on: st === 'on', busy: !!S.pushBusy, msg: S.pushMsg || (st === 'ios' || st === 'denied' ? PUSH_SAY[st] : '') }; },
     pushSet: function (on) { if (on) pushOn(); else pushOff(); },
     coolingChip: function () { var c = coolingGet(); return c ? c.chipHTML() : ''; },
-    coolingOpen: coolingOpen, coolingRoute: coolingRoute,
+    coolingOpen: coolingOpen, coolingRoute: coolingRoute, coolingPaint: coolingPaint,
     secOpen: function () { ksOpen(true); },
     // Manual Sign out never overrides unsent work. Automatic locks retain it behind the original person's PIN.
     signOut: function (force, quiet) { if (sendFirst()) { toast(SEND_FIRST); return false; } return signOutPerson(force, quiet); },
