@@ -10447,9 +10447,9 @@
   }
 
   /* ---------- Home: now and next (redesign step 2, 8 Nov 2026, head chef; docs/whole-app-redesign-options/brief.md) ----------
-     The landing page's dark board: only what is still to come, each row a tap to where it is done (your section and its
-     lines left, your next break, the order cut-offs the chefs get the bar for, today's functions with their next round,
-     new pings, minutes to sign), then a paper card with today's prep by section. All of it from what this phone already
+     Personal section/shift and break/return stay first, followed by visible saved coworkers. Work comes after them:
+     the order cut-offs the chefs get the bar for, today's functions with their next round, new pings and minutes to
+     sign, each a tap to where it is done, then today's prep by section. All of it from what this phone already
      holds (today's prep lines, Today's team, the cut-offs and their ticks, the functions, the pings and minutes): no reads
      and no listeners of its own. js/app.js draws the slot; homePaint() keeps it right on every draw, on the 30 second
      cut-off tick and when the functions change. The function band and the cut-off bar stay on every other page. */
@@ -10459,22 +10459,8 @@
   // today's own lines (not a function's platters), from the live list; null until the server answered for today
   function homeLines() { return S.date === dayNow() && S.itemsState === 'ok' ? (S.items || []).filter(function (x) { return !x.deleted && !x.fn; }) : null; }
   function homeRows() {
-    var m = T.mins(), p = me(), out = [], timed = [], lines = homeLines();
-    // your section and its lines left: staff and leads from the plan or their own pick, a chef only when the plan gives one
-    var sec = p ? (chefP(p) ? ((tmPlanSec(p.id) || {}).name || '') : mySec()) : '';
-    if (sec && lines) {
-      var k = sec.trim().toLowerCase(), open = lines.filter(function (x) { return !x.done && String(x.station || '').trim().toLowerCase() === k; })
-        .sort(function (a, b) { return (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) || (a.addedAt || 0) - (b.addedAt || 0); });
-      out.push({ icon: 'todo', title: 'You are on ' + sec, sub: open.length ? (open.length === 1 ? '1 line left' : open.length + ' lines left') + ' · ' + open[0].text + ' first' : 'Everything on ' + sec + ' is ticked off',
-        time: open.length ? String(open.length) : '', note: open.length ? 'Left' : '', href: '#/prep', sec: open.length ? open[0].station : '' });
-    }
-    // your next break, or the one you are on (Your day opens on a tap; a chef's plan is on the team page)
-    var b = p && tm.rec ? tmNextBreak(p.id, m) : null;
-    if (b) {
-      var on = tmOnBreak(b, m), split = tmIsSplit(b.len), end = tmHHMM(b.at + b.len);
-      timed.push({ at: b.at, icon: 'cup', title: on ? (split ? 'On your split' : 'On your break') : (split ? 'Your split' : 'Your break'), sub: 'Back' + (sec ? ' on ' + sec : '') + ' at ' + end,
-        time: on ? end : tmHHMM(b.at), note: on ? 'Now' : b.len + ' min', hot: tmDue(p.id), attrs: teamOK() ? '' : ' data-tm="day" aria-haspopup="dialog"', href: teamOK() ? '#/team' : '' });
-    }
+    // Personal section and break have their own fixed place above the work, never in this time-sorted group.
+    var m = T.mins(), out = [], timed = [];
     // the order cut-offs on the bar for this phone, the same list and words (cutBandHTML()). Since 8 Nov 2026 (head chef:
     // "the starting dashboard doesn't show the order cut-off") today's next one shows from the start of the day too, quiet,
     // with its time and no time left, until its reminder starts (cutOnNow()); then the time left, a pill in the last hour
@@ -10508,13 +10494,88 @@
     var cls = 'hm-a' + (r.hot ? ' is-hot' : '');
     return '<li>' + (r.href ? '<a class="' + cls + '" href="' + r.href + '"' + (r.sec ? ' data-hm-sec="' + esc(r.sec) + '"' : '') + '>' + inner + '</a>' : '<button type="button" class="' + cls + '"' + (r.attrs || '') + '>' + inner + '</button>') + '</li>';
   }
+  /* Staff-first Home (9 Nov 2026): the published plan already loaded for the Team chip supplies this projection.
+     No read, listener, write or saved copy of its own. Never use the chef's unsaved tmf draft or a stale/failed plan. */
+  function homePlanData() {
+    if (!homeOn() || !me() || !tmCanRead()) return null;
+    teamLoad();
+    return tmAwayData();
+  }
+  function homePlanNote(d) {
+    if (d.state === 'unset') return 'Today\'s team has not been set yet.';
+    if (d.state === 'error') return 'Could not check today\'s team. Check the signal.';
+    if (d.state === 'stale') return 'Today\'s saved plan needs checking.';
+    return 'Checking today\'s team...';
+  }
+  function homeShiftHours(s) { return s.from != null && s.to != null ? tmHHMM(s.from) + ' to ' + tmHHMM(s.to) : 'Hours not set'; }
+  function homeDayHTML() {
+    var d = homePlanData(); if (!d) return '';
+    var p = me(), ready = d.state === 'ready', m = T.mins(), mine = ready ? tmMy(p.id) : [], n = tmNow(mine, m);
+    var unavailable = ready && !n && d.rec.on.some(function (o) { return o.id === p.id; });
+    // A person's own valid choice for today stays known independently of the roster. An automatic plan pick does not.
+    var pick = ksPicks(p) && ksGet(p.id), manual = pick && pick.self === true && pick.auto !== true ? kitSecs().filter(function (s) { return s.id === pick.sec; })[0] : null;
+    var sec = n ? tmSecWords(p, n) : manual ? manual.name : '';
+    var title = 'Your section', sub = n ? n.s.name + ' · ' + homeShiftHours(n.s) : ready ? 'No shift has been allocated to you' : homePlanNote(d);
+    var value = sec || (ready || d.state === 'unset' ? 'Not assigned' : d.state === 'error' ? 'Unavailable' : 'Checking...');
+    if (unavailable) { sub = 'Your saved shift is unavailable. Check with the chef.'; value = sec || 'Unavailable'; }
+    if (manual && !n) sub = 'Your pick today · ' + sub;
+    var changed = ready && tmChanged(p.id), head = '<div class="hm-bh"><h3 class="hm-bt" id="hm-day-h">Your day' +
+      (changed ? ' <span class="hm-day-changed">Changed</span>' : '') + '</h3><b class="hm-clock">' + esc(T.clock(now())) + '</b></div>';
+    var section = '<li data-hm-priority="section"><a class="hm-a hm-day-row" href="#/prep"' + (sec ? ' data-hm-sec="' + esc(sec) + '"' : '') + '>' +
+      '<span class="hm-i" aria-hidden="true">' + homeIcon('todo') + '</span><span class="hm-w"><b class="hm-t">' + title + '</b><small class="hm-s">' + esc(sub) + '</small></span><b class="hm-day-value">' + esc(value) + '</b></a></li>';
+    var all = ready ? tmMyBreaks(p.id).filter(function (x) { return mine.some(function (y) { return y.s.id === x.sh; }); }) : [];
+    var b = ready && n ? tmNextBreak(p.id, m) : null, row;
+    if (b && all.indexOf(b) < 0) b = all.filter(function (x) { return x.at + x.len > m; })[0] || null;
+    if (b) {
+      var on = tmOnBreak(b, m), split = tmIsSplit(b.len), start = tmAwayTime(b.at), end = tmAwayTime(b.at + b.len), shift = tmShift(b.sh);
+      var length = split ? b.len / 60 + ' hours' : b.len + ' minutes';
+      row = { icon: 'cup', title: on ? (split ? 'On your split' : 'On break now') : split ? 'Your split' : 'Your break',
+        sub: (on ? start + ' to ' + end + ' · ' + length : length + ' · back at ' + end) + (shift && shift.id !== n.s.id ? ' · ' + shift.name : ''),
+        time: on ? end : start, note: on ? 'Return' : 'to ' + end, attrs: teamOK() ? '' : ' data-tm="day" aria-haspopup="dialog"', href: teamOK() ? '#/team' : '' };
+    } else {
+      var last = all.length ? all[all.length - 1] : null;
+      row = { icon: 'cup', title: last ? 'Next break' : 'Your break', time: last ? 'None left' : ready || d.state === 'unset' ? 'Not set' : d.state === 'error' ? 'Unavailable' : 'Checking...',
+        sub: !ready ? homePlanNote(d) : !n ? 'No break has been allocated to you' : last ? 'Earlier break ' + tmAwayTime(last.at) + ' to ' + tmAwayTime(last.at + last.len) : 'A chef has not set your break yet',
+        attrs: ready && n && !teamOK() ? ' data-tm="day" aria-haspopup="dialog"' : '', href: teamOK() ? '#/team' : '#/prep' };
+      if (ready && n && !teamOK()) row.href = '';
+    }
+    if (unavailable || ready && (d.rec.uncheckedBr || []).some(function (x) { return x.id === p.id; })) {
+      row = { icon: 'cup', title: 'Your break', time: 'Unavailable', sub: 'Check your saved shift and break times with the chef.', href: teamOK() ? '#/team' : '#/prep' };
+    }
+    var br = homeRowHTML(row).replace('<li>', '<li data-hm-priority="break">').replace('class="hm-a', 'class="hm-a hm-day-break');
+    return head + '<ul class="hm-rows">' + section + br + '</ul>';
+  }
+  function homeWithHTML() {
+    var d = homePlanData(); if (!d) return '';
+    var p = me(), m = T.mins(), ready = d.state === 'ready', n = ready ? tmNow(tmMy(p.id), m) : null;
+    var byShift = {}; kitShifts().forEach(function (s) { byShift[s.id] = s; });
+    var all = ready ? d.rec.on.filter(function (o) { return byShift[o.sh]; }) : [];
+    var hours = function (s) { return s && s.from != null && s.to != null && s.from < s.to; };
+    var scoped = !!n && (hours(n.s) || all.some(function (o) { return o.id !== p.id && o.sh === n.s.id; }));
+    var rows = scoped ? all.filter(function (o) { var s = byShift[o.sh]; return o.id !== p.id && (o.sh === n.s.id || hours(s) && hours(n.s) && s.from < n.s.to && n.s.from < s.to); }) : all;
+    var ownSec = n && n.sec;
+    rows.sort(function (a, b) { return (a.sec === ownSec ? 0 : 1) - (b.sec === ownSec ? 0 : 1) ||
+      (n && a.sh === n.s.id ? 0 : 1) - (n && b.sh === n.s.id ? 0 : 1) || mnName(a.id).localeCompare(mnName(b.id)); });
+    var head = '<div class="hm-ph"><h3 class="hm-pt">' + (scoped ? 'On with you' : 'On today') + '</h3>' +
+      '<span class="hm-roster-caption">' + esc(scoped ? n.s.name + ' team' : 'Saved plan') + '</span></div>';
+    if (!ready) return head + '<p class="hint" role="status">' + esc(homePlanNote(d)) + '</p>';
+    if (!rows.length) return head + '<p class="hint">' + (scoped ? 'No other staff are rostered alongside this shift.' : d.rec.on.length ? 'Could not check today\'s team.' : 'Nobody is rostered today.') + '</p>';
+    var seen = {};
+    return head + '<ul class="hm-coworkers">' + rows.filter(function (o) { var k = JSON.stringify([o.id, o.sh]); if (seen[k]) return false; seen[k] = true; return true; }).map(function (o) {
+      var s = byShift[o.sh], breaks = tmShiftBreaks(d.rec, o), line = (scoped && n.s.id === o.sh ? '' : s.name + ' · ') + homeShiftHours(s);
+      line += breaks.map(function (b) { return ' · ' + (tmIsSplit(b.len) ? 'split ' : 'break ') + tmAwayTime(b.at) + ' to ' + tmAwayTime(b.at + b.len) +
+        (tmOnBreak(b, m) ? ', back ' + tmAwayTime(b.at + b.len) : ''); }).join('');
+      return '<li><span><b>' + esc(mnName(o.id)) + '</b><small>' + esc(line) + '</small></span><span>' + esc(o.sec ? tmSecName(o.sec) || 'No section' : 'No section') + '</span></li>';
+    }).join('') + '</ul>';
+  }
   function homeBoardHTML() {
     var head = '<div class="hm-bh"><h3 class="hm-bt" id="hm-board-h">Now and next</h3><b class="hm-clock">' + esc(T.clock(now())) + '</b></div>';
     // before the kitchen's settings are in, nothing is known yet: never "Nothing due"
     if (S.configState !== 'ok') return head + '<p class="hm-none">' + (offWait() ? esc(OFF_KITCHEN) : 'Checking the day...') + '</p>';
     var rows = homeRows(), fs = window.LK_FN && window.LK_FN.state ? window.LK_FN.state() : null;
     var warn = fs && fs.state === 'error' && !fs.at ? '<p class="hm-warn" role="status">Could not check the functions. Check the signal.</p>' : '';
-    return head + (rows.length ? '<ul class="hm-rows">' + rows.map(homeRowHTML).join('') + '</ul>' : '<p class="hm-none">Nothing due right now.</p>') + warn;
+    if (!rows.length && !warn && (!fs || fs.state === 'ok')) return '';
+    return head + (rows.length ? '<ul class="hm-rows">' + rows.map(homeRowHTML).join('') + '</ul>' : '<p class="hm-none">Checking the work...</p>') + warn;
   }
   // today's prep by section: a bar each, as on the list's section headings; only once today's lines are in from the server
   function homePrepHTML() {
@@ -10539,12 +10600,8 @@
     teamLoad();
     var rec = tm.rec;
     var head = '<div class="hm-ph"><h3 class="hm-pt">On today</h3>' + (chef ? '<a class="hm-pl" href="#/team">Today\'s team</a>' : '') + '</div>';
-    if (!chef) {
-      var note = tm.st === 'err' ? 'Could not check today\'s team. Check the signal.' :
-        tm.st !== 'ok' || tm.day !== dayNow() || tm.epoch !== accessEpoch ? 'Checking today\'s team...' :
-        rec && rec.day !== dayNow() ? 'Could not check today\'s team.' : !rec ? 'Today\'s team has not been set yet.' : '';
-      if (note) return head + '<p class="hint" role="status">' + note + '</p>';
-    }
+    var state = tmAwayData();
+    if (state.state !== 'ready') return head + '<p class="hint" role="status">' + esc(homePlanNote(state)) + '</p>';
     if (!rec || !rec.on || !rec.on.length) return chef ? '' : head + '<p class="hint">Nobody is rostered today.</p>';
     var byId = {}; kitShifts().forEach(function (x) { byId[x.id] = x; });
     var rows = rec.on.filter(function (o) { return byId[o.sh]; });
@@ -10574,14 +10631,28 @@
   function homeCutSlot() { var h = homeCutsHTML(); return '<div id="hm-cuts"' + (h ? '' : ' hidden') + '>' + h + '</div>'; }
   function homeSlot() {
     if (!cutTick) cutTick = setInterval(cutPaint, 30000);   // the clock, the minutes left and rows that come and go (no reads)
-    var b = homeBoardHTML(), pp = homePrepHTML(), tt = homeTeamHTML(), staff = !teamOK();
+    var day = homeDayHTML(), crew = homeWithHTML(), b = homeBoardHTML(), pp = homePrepHTML(), tt = homeTeamHTML(), staff = !teamOK();
     var prep = '<section class="hm-paper hm-prep" id="hm-prep" aria-label="Prep by section"' + (pp ? '' : ' hidden') + '>' + pp + '</section>';
     var team = '<section class="hm-paper hm-team' + (staff ? ' hm-team-staff' : '') + '" id="hm-team" aria-label="On today"' + (tt ? '' : ' hidden') + '>' + tt + '</section>';
-    return '<section class="hm-board" id="hm-board" aria-labelledby="hm-board-h">' + b + '</section>' + (staff ? team + prep : prep + team);
+    var first = '<div class="hm-staff-first"><section class="hm-board" id="hm-day" aria-labelledby="hm-day-h"' + (day ? '' : ' hidden') + '>' + day + '</section>' +
+      '<section class="hm-paper hm-with" id="hm-with" aria-label="Your team"><div id="hm-with-body">' + crew + '</div>' +
+      '<details class="hm-full-team" id="hm-full-team"><summary>View today\'s full team</summary>' + team + '</details></section></div>';
+    return first + '<section class="hm-board" id="hm-board" aria-labelledby="hm-board-h"' + (b ? '' : ' hidden') + '>' + b + '</section>' + prep;
   }
   function homePaint() {
     var t = document.getElementById('hm-time'); if (t) { var c = T.clock(now()); if (t.textContent !== c) t.textContent = c; }
-    var b = document.getElementById('hm-board'); if (b) { var h = homeBoardHTML(); if (b.lkH !== h) { b.innerHTML = h; b.lkH = h; } }
+    var dy = document.getElementById('hm-day'); if (dy) {
+      var dh = homeDayHTML();
+      if (dy.lkH !== dh) {
+        var active = document.activeElement, priority = dy.contains(active) && active.closest('[data-hm-priority]');
+        var focusRow = priority && priority.getAttribute('data-hm-priority');
+        dy.innerHTML = dh; dy.lkH = dh;
+        if (focusRow === 'section' || focusRow === 'break') { var target = dy.querySelector('[data-hm-priority="' + focusRow + '"] .hm-a'); if (target) target.focus({ preventScroll: true }); }
+      }
+      dy.hidden = !dh;
+    }
+    var cw = document.getElementById('hm-with-body'); if (cw) { var wh = homeWithHTML(); if (cw.lkH !== wh) { cw.innerHTML = wh; cw.lkH = wh; } }
+    var b = document.getElementById('hm-board'); if (b) { var h = homeBoardHTML(); if (b.lkH !== h) { b.innerHTML = h; b.lkH = h; } b.hidden = !h; }
     var pp = document.getElementById('hm-prep'); if (pp) { var ph = homePrepHTML(); if (pp.lkH !== ph) { pp.innerHTML = ph; pp.lkH = ph; } pp.hidden = !ph; }
     var te = document.getElementById('hm-team'); if (te) { var th = homeTeamHTML(); if (te.lkH !== th) { te.innerHTML = th; te.lkH = th; } te.hidden = !th; }
     var cu = document.getElementById('hm-cuts'); if (cu) { var ch = homeCutsHTML(); if (cu.lkH !== ch) { cu.innerHTML = ch; cu.lkH = ch; } cu.hidden = !ch; }

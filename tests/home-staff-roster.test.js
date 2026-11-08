@@ -15,7 +15,7 @@ const config = x => Object.assign({ people, staffIds: people.map(p => p.id), sou
 const plan = x => Object.assign({ day: today, on: [{ id: 'ann', sh: 'lunch', sec: 'larder' }, { id: 'ann', sh: 'dinner', sec: 'grill' }, { id: 'sam', sh: 'dinner', sec: '' }],
   br: [{ id: 'ann', sh: 'lunch', at: 870, len: 30 }], v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam' }, x || {});
 const fixture = (p, c) => Object.assign({ [CFG]: config(c) }, p === null ? {} : { [TEAM]: p || plan() });
-const text = p => txt(p, '#hm-team').then(t => t || '');
+const text = async p => { const detail = p.locator('#hm-full-team'); if (await detail.count() && !(await detail.evaluate(e => e.open))) { if (await p.locator('dialog[open]').count()) { await p.keyboard.press('Escape'); await L.settle(p, 100); } await p.click('#hm-full-team > summary'); } return (await txt(p, '#hm-team')) || ''; };
 const ready = p => L.waitFor(p, () => !!document.querySelector('#hm-team .hm-tp'), null, 6000).catch(() => {});
 const teamReads = p => p.evaluate(() => __fake.reads.filter(k => /\/team\//.test(k)).length);
 const noFalseZero = t => !/Nobody|No one|No staff|No people/i.test(t);

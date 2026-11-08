@@ -298,6 +298,8 @@ Also answered on 8 November: **the recipe card keeps every drawing** (the plate 
 
 Earlier answers still standing: every feature and role kept (the coverage table above); the chef hat as a list; one-row lines; words on actions; no new reads, listeners or rules unless a step says so.
 
+**Home refinement, approved 9 November:** [staff-first Home](../home-staff-first.md) supersedes the personal/work mixing in step 2. Keep section and shift, full break and return, then visible scheduled coworkers before the work board. Retain the complete saved roster in a disclosure and all existing clock/navigation behaviour.
+
 ## Build
 
 Eight steps, one pull request each, merged in the release windows, in this order (head chef, 8 November 2026). Each step first draws its screens at 390, 768 and 1280 px and shows them to the head chef, runs the service council's quick check, counts taps and lines before and after in the click tests, keeps `tests/read-budget.test.js` within budget, adds its patterns to `docs/design-patterns.md` and `tests/design-patterns.test.js`, and updates `README.md` and `docs/prep-book.md` for what the team sees.

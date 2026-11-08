@@ -235,6 +235,8 @@ Tests for each step: a new `tests/todays-team.test.js` (the chef's page, the chi
 
 ## Staff Home roster (8 November 2026)
 
+**9 November update:** the owner approved [staff-first Home](../home-staff-first.md). Personal section/shift and full break/return stay before visible scheduled coworkers; the complete saved day remains in a disclosure. The paragraph below records the earlier whole-day-card presentation.
+
 **Requested and implemented:** staff can see who is on today beside the shifts already shown on their Home page. The existing **On today** paper card sits directly after their own Now and next board, on phones, tablets and laptops. It groups the saved team by section and shows each person's name, shift, hours and breaks. Staff without a shift can also see the team. The planner remains for the head chef and sous chefs.
 
 **Quick check: Build smaller.** This is a small extension of the chosen Home design: no new page, tab, bar button, pop-up or normal task step. The session's product check supports seeing colleagues without asking the chef; usability keeps the personal shift first; engineering reuses the same saved record. No additional council round or visual direction is needed. This is role-based analysis, not staff research.
