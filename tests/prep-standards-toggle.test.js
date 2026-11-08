@@ -1,7 +1,11 @@
 // The owner controls rollout; switching it off keeps ordinary prep and unfinished catalogue work intact.
 // All records and people are synthetic. The browser uses the Firebase stand-in only.
 const L = require('./lib');
+const fs = require('fs'), path = require('path');
 const { R, ok } = L.results();
+// The reference container appears before its server answer. Exercise the loaded-row wait with deliberate latency.
+const slowSDK = fs.readFileSync(path.join(__dirname, 'fake/firebase-firestore.js'), 'utf8')
+  .replace('setTimeout(() => r(v), 5)', 'setTimeout(() => r(v), 80)');
 const key = (...parts) => ['kitchens', L.PIN, ...parts].join('/');
 const CFG = key('config', 'main'), ITEM = key('prepStandards', 'onions');
 const day = L.ymd(new Date(L.NOW));
@@ -61,7 +65,7 @@ async function journey(browser, label, route, options, run) {
     ok(values.text === 'onions' && values.qty === '2 half tubs' && values.button, 'ordinary free-text prep and its combined amount remain usable while standards are off (' + JSON.stringify(values) + ')');
   });
 
-  await journey(browser, 'live staff rollout', '#/prep', { extra: fixture(false) }, async p => {
+  await journey(browser, 'live staff rollout', '#/prep', { extra: fixture(false), fakeSDK: { 'firebase-firestore.js': slowSDK } }, async p => {
     await enter(p);
     await liveSwitch(p, true);
     await L.waitFor(p, () => /Minimum ready before service/.test((document.querySelector('#ps-hint') || {}).textContent || ''), null, 8000);
@@ -83,9 +87,10 @@ async function journey(browser, label, route, options, run) {
     await L.settle(p, 200);
     await liveSwitch(p, true);
     await p.locator('[data-p="ps-view"][data-v="reference"]').click();
-    await L.waitFor(p, () => !!document.querySelector('.ps-reference'), null, 8000);
-    ok(/Slice onions/.test(await p.locator('.ps-reference').innerText()) && /9 tubs/.test(await p.locator('.ps-reference').innerText()) && await reads(p) > afterOff,
-      're-enabling reloads current standards rather than using the minimum cached before rollout was paused');
+    const referenceReady = await L.waitFor(p, () => !!document.querySelector('.ps-reference .ps-standard'), null, 8000);
+    const referenceText = await p.locator('.ps-reference').innerText();
+    ok(referenceReady && /Slice onions/.test(referenceText) && /9 tubs/.test(referenceText) && await reads(p) > afterOff,
+      're-enabling reloads current standards rather than using the minimum cached before rollout was paused (' + referenceText.replace(/\s+/g, ' ') + ')');
     await liveSwitch(p, false);
     ok(!(await p.locator('.ps-reference, .ps-viewbar').count()) && await p.locator('.nb-addline').isVisible(), 'disabling while checking a section returns to ordinary work');
     await liveSwitch(p, true);
