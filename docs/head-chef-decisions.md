@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **8 November 2026, mobile title becomes the existing KB logo.** The owner asked to replace "Kitchenbook" with the logo on mobile. Below 720 px, show the existing chalk KB mark in place of the title on every page, beside Back on task pages. The mark stays a Home link with its accessible name and a 44 px tap area. Larger screens keep the current branding. [Navigation](navigation.md).
+
 - **9 November 2026, Operandio B and three louder chimes approved for release.** The owner selected B's desktop filling face/countdown pill with the fixed mobile ring, then explicitly said "implement and bring live". Each cooling deadline should repeat the chime three times, louder. The further four-hour stage still waits for someone to start it. Keep existing shared times, permissions, pings and new-batch support. Sound Off and device volume remain respected; closing the ping or losing the active session stops remaining chimes. [Chosen design and release record](operandio-clock-motion-options/brief.md).
 
 - **9 November 2026, mobile Operandio stays a filling ring.** The owner rejected the expanding mobile pill as crowded: "just the ring filling". Start, running and completion all keep the same small circular footprint. The ring turns green at the first deadline and the further four hours waits for an explicit tap. Desktop retains the pill studies for selection. [Updated previews](operandio-clock-motion-options/brief.md). This refines the mockups only.
