@@ -10,6 +10,8 @@ The head chef defines each section's permanent prep list and minimum quantities 
 
 The goal is explicit expectations for every staff member, including someone unfamiliar with a section. No individual staff identity, inferred competence or ranking is part of this design.
 
+**Style requirement confirmed, 8 November 2026:** match the current app's design language, colours and controls exactly, following `AGENTS.md`, `CLAUDE.md` and the linked design patterns. This is a refinement of the previews, not approval to implement the feature or a new visual style.
+
 First version: the management room, smart matching in the existing Add form, and the complete section reference. Counts, stock-shortfall calculators, saved readiness states, sign-offs and check history are deferred. The user did not request those extra workflows.
 
 Interpretation stated in chat: **minimum means usable prep that should be ready before service**. It is distinct from **Amount to make**. The app never silently copies a minimum into a production quantity. A minimum batch size, if needed later, would be a different field.
@@ -103,6 +105,25 @@ No new global service tab or top-bar icon. Nothing opens automatically over a li
 
 `AGENTS.md` delegates to `CLAUDE.md`. Its service rules keep the main job one tap away and require measured density costs. `docs/design-patterns.md` supplies notebook styling, 44 px controls, stable live-list height and panel navigation. `docs/action-feedback.md` governs named Add/Save/Undo responses. The private-access, device-session and staff-capability notes govern roles and work recovery. The chef-panel brief documents the current four rooms and shared-editor boundary. Smart-prep and admin-intelligence notes distinguish learned/requested quantities from approved minimums and consumption.
 
+### Alignment with the existing app
+
+The first refined previews used the app's colour tokens but generic forms and panels. The current previews reuse the application's actual CSS classes and structural markup. They load `css/app.css` directly, with the same Barlow, Barlow Condensed and Caveat font families as `index.html`. No replacement palette or shared app styling is introduced.
+
+| Surface | Existing design reused |
+| --- | --- |
+| Staff frame | Dark `.wtop`, `.page`, `main.prep`, `#prep-root.is-book` and the existing six-item `.tabbar` |
+| Prep notebook | Warm ruled `.nb` pages, `.nb-ph` header, `.nb-title`, handwritten `.nb-prog`, square `.nb-box` ticks and `.nb-row` hierarchy |
+| Add | Orange `.btn.dark.nb-addline` in `.wk-dock`; body-mounted `.sheet-bg` and `.sheet.p-sheet`, dashed `.nb-in` fields and unit chips |
+| Matching | Suggestions immediately under the typed item using `.nb-sgr` and `.nb-sg`; a short minimum line with explicit words |
+| Before service | Notebook headings, neutral rules, ordinary buttons and recipe links; no new status colours or readiness ticks |
+| Management | Existing `.ad-admin` / `.ad-layout` shell, dark desktop `.a-nav` rail, phone room row, `.a-pane`, list search and one editor |
+
+Orange means headings or a selected choice; green means completed work or confirmed feedback. Minimums use labelled text, not a new warning colour. Surfaces, dividers, typography and action/picker corner radii come from the shared stylesheet. Added CSS is limited to the new content's layout, the fifth management room and the isolated preview controls.
+
+The mock duplicates only the relevant markup, not production JavaScript helpers or access logic. The requested Prep room and Before service placement remain proposed additions. Preview navigation and sample roles are outside the simulated product frame; the Add sheet also has a clearly labelled preview-only matching demo fold. [Source staff screenshot](previews/style-source-ann-390.png), [source Add sheet](previews/style-source-add-390.png) and [source chef panel](previews/style-source-panel-1280.png) provide comparison with the existing application using synthetic fixtures and loaded app fonts.
+
+The clarified council and recommendation still apply: the feature proposal has not changed. This pass corrects the previews' visual consistency rather than choosing a new workflow.
+
 ## Costs and future implementation
 
 Propose one bounded versioned catalogue document per section, with explicit paging if the real list exceeds the selected bound. Read the selected section when matching/reference is first needed, reuse the permitted session cache, and refresh explicitly or after 30 minutes away. Show when standards were read. Typing/filtering adds no reads. No new polling/listener. B needs targets for every displayed section. Include rule-dependent reads in the measured budget.
@@ -131,11 +152,21 @@ The first-version scope incorporates the smaller recommendation without deferrin
 
 ## Revised measurements and recommendation
 
-All four refined views render at 390, 768 and 1280 px without sideways overflow, page errors or enabled controls smaller than 44 px (`refined-checks.json`). Fourteen sample checks cover matching, ambiguity, section changes, quantity/unit preservation, unknown/unavailable data, the complete reference, blank amount on reference Add, the separate room, unchanged Save and sous read-only editing.
+All four styled views render at 390, 768 and 1280 px without sideways overflow or page errors (`refined-checks.json`). New feature and preview controls meet 44 px targets. The existing header brand link is inherited unchanged and excluded from that target claim. Twenty sample checks cover matching, ambiguity, section changes, quantity/unit preservation, unknown/unavailable data, the complete reference, blank amount on reference Add, the separate room, unchanged Save, sous read-only editing, the panel navigation state, and sheet dismissal/focus/draft retention.
 
-At 390 x 844, C shows two complete reference items. A's matching form is not a work list. B's initial sample has four open tasks and shows all four. To compare work-row density fairly within the mock, repeating the same four rows three times yields five fully visible rows above the fixed Add button in each design's Work view (`refined-density.json`). The short names fit B's minimum text inside its 64 px row minimum; this does not prove long names or the actual application's row actions will fit equally. These mock screens include preview navigation and omit some real service-shell details. They cannot establish unchanged application density.
+The screenshots use loaded Barlow, Barlow Condensed and Caveat fonts. Their existing Google font files were fetched through the environment proxy into a temporary test cache, then supplied to the browser; no new font or dependency is added to the application. The panel captures show the full page, including the editor. At 390 x 844, C shows one complete reference item above the fixed Add button with the external preview banner/navigation present. A deliberately opens the Add sheet, so no work rows are counted behind its backdrop.
 
-The source baseline remains five staff / four sous rows on its different six-task fixture. The previous inline-target prototype's three/three result is historical only. A real implementation must measure the chosen layout with the existing source fixture and actual fonts before accepting any density trade-off.
+The density probe repeats the same four Larder tasks to 12 rows, with representative existing Urgent, Recipe, On it and More controls. It compares the same mock before and after removing one added surface (`refined-density.json`).
+
+| Work view at 390 x 844 | With preview banner/navigation | Product frame only | Product frame with the stated addition removed |
+| --- | --- | --- | --- |
+| A | 4 rows | 5 rows | 6 without the local Work / Before service choices |
+| B | 2 rows | 4 rows | 5 without persistent minimum text |
+| C, switched to Work | 4 rows | 5 rows | 6 without the local Work / Before service choices |
+
+The extra choice row costs about 70 px and one fully visible work row on this fixture. B's permanent minimum costs another row in the product frame. This supports keeping the reminder in Add and reviewing the compact placement of Before service before implementation. Add and tick remain one tap. These are mock layout measurements, not equivalent production capacity: start-here badges, varied long task names, every role's actions and real section grouping are not all represented.
+
+For the source baseline, `style-source-checks.json` records six staff / five sous rows with the actual fonts and the existing six-task fixture. The historical `baseline.json` recorded five/four with fallback fonts; it is retained as earlier evidence, not the current real-font baseline. Neither fixture establishes unchanged density for a future implementation, which must be checked in the actual app with the same tasks and fonts.
 
 | Path from the Work view | Current app | Refined proposal/mock |
 | --- | --- | --- |
@@ -146,7 +177,7 @@ The source baseline remains five staff / four sous rows on its different six-tas
 | Open the complete Before service reference | Not available | 1 view choice |
 | Start adding a reference item from Work | Not available | Before service, Add to prep: 2 taps, then enter amount and Add |
 
-Tap counts exclude typing, field focus, scrolling and exceptional conflict resolution. These are exercised mock paths and intended integration, not measured live staff time. Native on-screen keyboard behaviour, complete accessibility, server roles, live persistence and offline/concurrency guarantees are not established by these previews.
+Tap counts exclude typing, field focus, scrolling and exceptional conflict resolution. These are exercised mock paths and intended integration, not measured live staff time. Native on-screen keyboard behaviour, complete accessibility, server roles, live persistence and offline/concurrency guarantees are not established by these previews. The mock keeps quantity and unit as separate state with numeric entry and the existing unit-chip styling; future integration must preserve the current app's combined free-text quantity behaviour. Existing shell navigation and some row actions are context only, and the catalogue uses static sample list markup rather than calling live `lvHTML()`.
 
 Six fresh reviewers compared the refined layouts without a parent preference. Four ranked A first and two ranked C first; **all six recommend combining A's normal typing guidance with C's complete Before service reference**, plus the common management Prep room. All placed B last.
 

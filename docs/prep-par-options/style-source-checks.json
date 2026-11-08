@@ -1,0 +1,82 @@
+[
+  {
+    "who": "ann",
+    "fixture": "tests/lib.js default six synthetic tasks",
+    "width": 390,
+    "height": 844,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "rows": [
+      {
+        "name": "Portion rump 20. Start here, 1 Urgent",
+        "top": 263,
+        "bottom": 314
+      },
+      {
+        "name": "Make gravy 5 L. Start here, 2 Rolled",
+        "top": 347.75,
+        "bottom": 414.703125
+      },
+      {
+        "name": "Laksa 1 batch",
+        "top": 414.703125,
+        "bottom": 465.703125
+      },
+      {
+        "name": "Slice onions 2 tubs. Start here, 3 Waiting since 13:00",
+        "top": 499.453125,
+        "bottom": 566.40625
+      },
+      {
+        "name": "Pick coriander",
+        "top": 566.40625,
+        "bottom": 617.40625
+      },
+      {
+        "name": "Wash bok choy",
+        "top": 617.40625,
+        "bottom": 668.40625
+      }
+    ],
+    "fullRowsAboveAdd": 6
+  },
+  {
+    "who": "sam",
+    "fixture": "tests/lib.js default six synthetic tasks",
+    "width": 390,
+    "height": 844,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "rows": [
+      {
+        "name": "Portion rump 20. Start here, 1 Urgent",
+        "top": 323,
+        "bottom": 374
+      },
+      {
+        "name": "Make gravy 5 L. Start here, 2 Rolled",
+        "top": 407.75,
+        "bottom": 474.703125
+      },
+      {
+        "name": "Laksa 1 batch",
+        "top": 474.703125,
+        "bottom": 525.703125
+      },
+      {
+        "name": "Slice onions 2 tubs. Start here, 3 Waiting since 13:00",
+        "top": 559.453125,
+        "bottom": 626.40625
+      },
+      {
+        "name": "Pick coriander",
+        "top": 626.40625,
+        "bottom": 677.40625
+      },
+      {
+        "name": "Wash bok choy",
+        "top": 677.40625,
+        "bottom": 728.40625
+      }
+    ],
+    "fullRowsAboveAdd": 5
+  }
+]

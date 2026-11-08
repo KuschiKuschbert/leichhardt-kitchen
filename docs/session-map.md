@@ -6,7 +6,7 @@ When a note or a file is added: its full row goes here, and one short row (what 
 
 ## Which note to read before you change it
 
-Section prep standards, clarified 8 November 2026: `docs/prep-par-options/brief.md` records the requested separate Prep room, head-owned minimums, smart matching during normal typing and complete Before service reference. `index.html` and `refined.html` show the revised sample-only designs; `initial-exploration.md` retains the superseded initial comparison. No staff layout is chosen and no application capability is added.
+Section prep standards, clarified 8 November 2026: `docs/prep-par-options/brief.md` records the requested separate Prep room, head-owned minimums, smart matching during normal typing and complete Before service reference. `index.html` and `refined.html` show the revised sample-only designs using the existing app's notebook, Add sheet, panel markup, colours and fonts as requested. Source screenshots and `style-source-checks.json` record the real-font comparison; `initial-exploration.md` retains the superseded initial comparison. No staff layout is chosen and no application capability is added.
 
 `CLAUDE.md`, "Read the note before you change it", has the short version of this table.
 

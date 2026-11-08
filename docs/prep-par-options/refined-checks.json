@@ -2,97 +2,121 @@
   {
     "view": "panel",
     "width": 390,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
     "overflow": 0,
     "errors": [],
-    "fullRows": 0,
+    "phoneRowsAboveAdd": 0,
     "smallTargets": []
   },
   {
     "view": "panel",
     "width": 768,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
     "overflow": 0,
     "errors": [],
-    "fullRows": 0,
+    "phoneRowsAboveAdd": null,
     "smallTargets": []
   },
   {
     "view": "panel",
     "width": 1280,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
     "overflow": 0,
     "errors": [],
-    "fullRows": 0,
+    "phoneRowsAboveAdd": null,
     "smallTargets": []
   },
   {
     "view": "a",
     "width": 390,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
     "overflow": 0,
     "errors": [],
-    "fullRows": 0,
+    "phoneRowsAboveAdd": 0,
     "smallTargets": []
   },
   {
     "view": "a",
     "width": 768,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
     "overflow": 0,
     "errors": [],
-    "fullRows": 0,
+    "phoneRowsAboveAdd": null,
     "smallTargets": []
   },
   {
     "view": "a",
     "width": 1280,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
     "overflow": 0,
     "errors": [],
-    "fullRows": 0,
+    "phoneRowsAboveAdd": null,
     "smallTargets": []
   },
   {
     "view": "b",
     "width": 390,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
     "overflow": 0,
     "errors": [],
-    "fullRows": 4,
+    "phoneRowsAboveAdd": 2,
     "smallTargets": []
   },
   {
     "view": "b",
     "width": 768,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
     "overflow": 0,
     "errors": [],
-    "fullRows": 4,
+    "phoneRowsAboveAdd": null,
     "smallTargets": []
   },
   {
     "view": "b",
     "width": 1280,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
     "overflow": 0,
     "errors": [],
-    "fullRows": 4,
+    "phoneRowsAboveAdd": null,
     "smallTargets": []
   },
   {
     "view": "c",
     "width": 390,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
     "overflow": 0,
     "errors": [],
-    "fullRows": 2,
+    "phoneRowsAboveAdd": 1,
     "smallTargets": []
   },
   {
     "view": "c",
     "width": 768,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
     "overflow": 0,
     "errors": [],
-    "fullRows": 3,
+    "phoneRowsAboveAdd": null,
     "smallTargets": []
   },
   {
     "view": "c",
     "width": 1280,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "targetScope": "Feature and preview controls; inherited .wtop-brand link excluded",
     "overflow": 0,
     "errors": [],
-    "fullRows": 3,
+    "phoneRowsAboveAdd": null,
     "smallTargets": []
   },
   {
@@ -149,6 +173,30 @@
   },
   {
     "check": "sous standards read only",
+    "passed": true
+  },
+  {
+    "check": "panel Prep room does not select global service Prep",
+    "passed": true
+  },
+  {
+    "check": "Escape closes the Add sheet",
+    "passed": true
+  },
+  {
+    "check": "Escape returns focus to Add",
+    "passed": true
+  },
+  {
+    "check": "closing and reopening Add preserves typed amount",
+    "passed": true
+  },
+  {
+    "check": "backdrop closes the Add sheet",
+    "passed": true
+  },
+  {
+    "check": "reference heading does not imply saved service checks",
     "passed": true
   }
 ]

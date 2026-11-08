@@ -2,7 +2,7 @@
 
 # Leichhardt Kitchen Book
 
-Design clarification, 8 November 2026: [head-chef section prep standards](docs/prep-par-options/index.html), with a separate Prep room in the management panels, minimum guidance during normal typing and a complete Before service reference. The [brief](docs/prep-par-options/brief.md) records scope, matching, council and trade-offs. No application feature is implemented and no staff layout is chosen.
+Design clarification, 8 November 2026: [head-chef section prep standards](docs/prep-par-options/index.html), with a separate Prep room in the management panels, minimum guidance during normal typing and a complete Before service reference. The previews reuse the current app's notebook, Add sheet, panel, colours and typography, as requested. The [brief](docs/prep-par-options/brief.md) records scope, matching, council and trade-offs. No application feature is implemented and no staff layout is chosen.
 
 The Leichhardt Hotel kitchen's app: the recipe book, the prep list, the order list, the wastage log, the transfer list (stock shared with the other venues) and the team's how-to guides, plus the head chef's admin panel. It works on any phone, tablet or computer with a web browser and can be installed as an app. Working rules for changing it are in `CLAUDE.md` (which note to read and every file, in full: `docs/session-map.md`), and each part's code contract (what a change must keep) is in `docs/code-contracts.md` and the feature notes in `docs/`. [AGENTS.md](AGENTS.md) tells Codex to read `CLAUDE.md` at the start of every task, so both agents use the same rules.
 

@@ -1,35 +1,116 @@
 [
   {
     "view": "a",
-    "fixture": "12 repeated rows of the same four mock tasks, no real app comparison",
-    "visible": 5,
-    "first": {
-      "top": 397.859375,
-      "bottom": 461.859375,
-      "height": 64
+    "width": 390,
+    "height": 844,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "fixture": "Same four Larder sample tasks repeated to 12 rows, including representative existing row actions. No real-app fixture comparison.",
+    "withPreviewControls": {
+      "visible": 4,
+      "first": {
+        "top": 426.375,
+        "bottom": 493.328125,
+        "height": 66.953125
+      },
+      "addTop": 716,
+      "addVisible": true
     },
-    "addVisible": true
+    "productFrame": {
+      "visible": 5,
+      "first": {
+        "top": 332.59375,
+        "bottom": 399.546875,
+        "height": 66.953125
+      },
+      "addTop": 716,
+      "addVisible": true
+    },
+    "withoutAddedSurface": {
+      "visible": 6,
+      "first": {
+        "top": 263,
+        "bottom": 329.953125,
+        "height": 66.953125
+      },
+      "addTop": 716,
+      "addVisible": true
+    },
+    "removedForComparison": "Only local Work / Before service chips"
   },
   {
     "view": "b",
-    "fixture": "12 repeated rows of the same four mock tasks, no real app comparison",
-    "visible": 5,
-    "first": {
-      "top": 397.859375,
-      "bottom": 461.859375,
-      "height": 64
+    "width": 390,
+    "height": 844,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "fixture": "Same four Larder sample tasks repeated to 12 rows, including representative existing row actions. No real-app fixture comparison.",
+    "withPreviewControls": {
+      "visible": 2,
+      "first": {
+        "top": 426.375,
+        "bottom": 531.296875,
+        "height": 104.921875
+      },
+      "addTop": 716,
+      "addVisible": true
     },
-    "addVisible": true
+    "productFrame": {
+      "visible": 4,
+      "first": {
+        "top": 332.59375,
+        "bottom": 437.515625,
+        "height": 104.921875
+      },
+      "addTop": 716,
+      "addVisible": true
+    },
+    "withoutAddedSurface": {
+      "visible": 5,
+      "first": {
+        "top": 332.59375,
+        "bottom": 399.546875,
+        "height": 66.953125
+      },
+      "addTop": 716,
+      "addVisible": true
+    },
+    "removedForComparison": "Only persistent row minimums"
   },
   {
     "view": "c",
-    "fixture": "12 repeated rows of the same four mock tasks, no real app comparison",
-    "visible": 5,
-    "first": {
-      "top": 397.859375,
-      "bottom": 461.859375,
-      "height": 64
+    "width": 390,
+    "height": 844,
+    "fonts": "Barlow, Barlow Condensed, Caveat loaded",
+    "fixture": "Same four Larder sample tasks repeated to 12 rows, including representative existing row actions. No real-app fixture comparison.",
+    "withPreviewControls": {
+      "visible": 4,
+      "first": {
+        "top": 426.375,
+        "bottom": 493.328125,
+        "height": 66.953125
+      },
+      "addTop": 716,
+      "addVisible": true
     },
-    "addVisible": true
+    "productFrame": {
+      "visible": 5,
+      "first": {
+        "top": 332.59375,
+        "bottom": 399.546875,
+        "height": 66.953125
+      },
+      "addTop": 716,
+      "addVisible": true
+    },
+    "withoutAddedSurface": {
+      "visible": 6,
+      "first": {
+        "top": 263,
+        "bottom": 329.953125,
+        "height": 66.953125
+      },
+      "addTop": 716,
+      "addVisible": true
+    },
+    "removedForComparison": "Only local Work / Before service chips"
   }
 ]
