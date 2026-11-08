@@ -94,3 +94,7 @@ Use `.ps-viewbar` for the local Work / Before service choice, `.ps-standard` for
 ## The chef hat
 
 - **A row** is a `.wm-tile` in its group, Every day or More (a list since 8 Nov 2026, redesign step 7; tiles before): the icon, the words, its small line on the right and a chevron, Settings last. The small line says only what the book already holds, with no read of its own (`.wm-due` when it needs doing: "Not set yet", "1 to sign").
+
+## Cleaning notebook (8 November 2026)
+
+The approved daily list and chef week sheet use `.cln-page`, `.cln-book`, `.cln-row` and `.cln-matrix` inside the existing `.nb-wrap` notebook. Keep the common `.nb-title`, `.nb-t`, `.nb-meta`, tick SVGs and warm-paper colour tokens. Section headings identify responsibility; area and confirmed worker/time share the existing metadata line, so a tick does not change row height. Week cells use words for Missed and Due, alongside the tick and a nearby legend. On phones `.cln-day-pick` selects one day's full-width rows rather than squeezing seven columns. `.cln-form` uses normal fields, shared picker enhancement and Save / Saved / Try again states. The shared-device worker picker reuses `.sheet.pt-sheet`. The whole page is lazy and contributes no startup reads. See `docs/cleaning-options/implementation.md`.

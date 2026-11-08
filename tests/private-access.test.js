@@ -5,7 +5,7 @@ const deletion={v:1,status:'draft',name:'Audit deletion',date:'',start:0,loc:'',
 const extra = {[key(['functions','delete-me'])]:deletion,[key(['config','main'])]:cfg,[key(['pinset','fay'])]:{at:1},[key(['staffpins','fay'])]:{hash:L.sha('lk:fay:5151')}};
 (async()=>{
  const b=await L.start();
- for(const route of ['#/prep','#/orders','#/waste','#/guides','#/functions','#/fn/now','#/manage']) {
+ for(const route of ['#/prep','#/orders','#/waste','#/cleaning','#/guides','#/functions','#/fn/now','#/manage']) {
   const p=await L.open(b,route,{who:'',extra,wait:1400});
   ok(/Who are you/.test(await p.locator('body').innerText()) && !await p.$('.nb-row, .fe-row, .fn-svc-row, .mg-results'),route+': signed out sees login only');
   ok(!p.errors.length,route+': no page errors '+p.errors.join(' | '));await p.context().close();
@@ -16,13 +16,15 @@ const extra = {[key(['functions','delete-me'])]:deletion,[key(['config','main'])
  ok(/Public special/.test(await p.locator('body').innerText()),'fresh signed-out visitor sees a newly published recipe without knowing the kitchen PIN');await p.context().close();
  p=await L.open(b,'#/functions',{who:'fay',extra,wait:1600});
  ok(/Functions/.test(await p.locator('body').innerText()) && !!await p.$('#fe-root'), 'function-only account opens function management');
- const menu=await L.chefItems(p);ok(menu.includes('functions') && !menu.includes('mail') && !menu.includes('drinks') && !menu.includes('manage'), 'function-only menu has no kitchen or recipe management');
+ const menu=await L.chefItems(p);ok(menu.includes('functions') && !menu.includes('mail') && !menu.includes('drinks') && !menu.includes('manage') && !menu.includes('guides') && !menu.includes('cleaning'), 'function-only menu has no kitchen or recipe management');
  await p.goto(L.BASE+'#/functions/delete-me');await L.settle(p,900);
  await p.click('[data-fe="remove"]');await p.click('[data-fe="remove"]');await L.settle(p,1100);
  ok(await p.evaluate(k=>{const d=__fake.dump();return d[k]?.removed===true&&d[k].v===2&&!!d[k+'/hist/1']},key(['functions','delete-me'])),'function deletion keeps an immutable previous version');
  ok(!/Audit deletion/.test(await p.locator('body').innerText()),'deleted function leaves normal management lists');
  await p.goto(L.BASE+'#/orders');await L.settle(p,1000);
- ok(/Functions account/.test(await p.locator('body').innerText()) && !await p.$('.nb-row'), 'function-only direct order URL is refused');await p.context().close();
+ ok(/Functions account/.test(await p.locator('body').innerText()) && !await p.$('.nb-row'), 'function-only direct order URL is refused');
+ await p.goto(L.BASE+'#/cleaning');await L.settle(p,700);
+ ok(/Functions account/.test(await p.locator('body').innerText()) && !await p.$('#cleaning-root') && await p.evaluate(()=>!window.LK_CLEANING), 'function-only direct cleaning URL is refused before its module loads');await p.context().close();
  p=await L.open(b,'#/manage',{who:'sam',extra,wait:1600});ok(!!await p.$('#mg-results'),'sous chef can manage recipes');await p.context().close();
  p=await L.open(b,'#/manage',{who:'ann',extra,wait:1400});ok(!await p.$('#mg-results'),'staff cannot manage recipes');await p.context().close();
  p=await L.open(b,'#/admin',{admin:true,who:'',extra,wait:1600});

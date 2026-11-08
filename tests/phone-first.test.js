@@ -50,7 +50,7 @@ const cfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'so
   await L.waitFor(p, () => !!document.querySelector('#hm-prep:not([hidden]) .hm-sec'));
   const bottoms = await p.evaluate(() => ['#hm-board', '#hm-prep'].map(s => Math.round(document.querySelector(s).getBoundingClientRect().bottom)));
   const tabs = await p.$$eval('.tabbar a', l => l.map(e => e.getAttribute('href')));
-  ok(bottoms.every(x => x <= 844 - 68) && tabs.join() === '#/recipes,#/prep,#/orders,#/waste,#/transfers,#/guides', 'landing: the board and Prep by section fit above the tab bar, which has the six pages (' + bottoms + ')');
+  ok(bottoms.every(x => x <= 844 - 68) && tabs.join() === '#/recipes,#/prep,#/orders,#/waste,#/transfers,#/cleaning', 'landing: the board and Prep by section fit above the tab bar, which has the six pages (' + bottoms + ')');
   await p.evaluate(() => { location.hash = '#/r/laksa'; }); await L.settle(p, 300);
   await p.evaluate(() => { location.hash = '#/settings'; }); await L.settle(p, 400);
   const order = await p.evaluate(() => [...document.querySelectorAll('[aria-labelledby="st-g-phone"] .st-btn .st-l')].map(e => e.textContent));

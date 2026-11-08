@@ -7,6 +7,7 @@
   and sign-offs, what the prep and order lists have learned, the learning log, the chef to-do list, tallies, sections,
   empty searches, card opens, the guides' words and small pictures, the recipes the head chef changed or added in the
   book with their earlier versions, shared protected words and immutable proofreader history, and who has set a PIN.
+  Cleaning includes every schedule revision and completion records within the selected day window.
   People's PIN fingerprints and the guides' page pictures are left out, like the button.
   The workflow then encrypts the file with the BACKUP_KEY secret and keeps it as a GitHub artifact for 90 days.
 
@@ -72,6 +73,11 @@ out.prepStandards = await all('prepStandards'); reads += Math.max(1, out.prepSta
 // One day range query, only the backup window. No separate read for each delivery day.
 out.deliveries = grab(await K.collection('deliveries').where('day', '>=', shift(today, -(DAYS - 1))).where('day', '<=', today).get());
 reads += Math.max(1, out.deliveries.length);
+// Nightly only: retain every schedule revision, including ones closed before the backup window, so the original
+// task wording and revision links survive. One completion range query costs one read per record (or one if empty).
+out.cleaningTasks = await all('cleaningTasks'); reads += Math.max(1, out.cleaningTasks.length);
+out.cleaningDone = grab(await K.collection('cleaningDone').where('day', '>=', shift(today, -(DAYS - 1))).where('day', '<=', today).get());
+reads += Math.max(1, out.cleaningDone.length);
 out.referencesHist = await subs(out.references, 'references', 'hist');
 out.trainingHist = await subs(out.training, 'training', 'hist');
 out.notes = await all('notes'); out.notesSeen = await subs(out.notes, 'notes', 'seen');

@@ -1316,6 +1316,86 @@ service cloud.firestore {
         && request.resource.data.get('from', '') == resource.data.get('from', '') && request.resource.data.get('at', 0) == resource.data.get('at', 0);
       allow delete: if false;
     }
+    // Cleaning (8 Nov 2026): immutable schedule revisions retain missed occurrences after an edit or archive.
+    // Changes start tomorrow. The two-way prev/next link permits only one successor in the same atomic batch.
+    function cleanId(id) { return id is string && id.matches('[a-zA-Z0-9_-]{1,80}'); }
+    function cleanText(value, n) { return value is string && value.size() <= n; }
+    function cleanName(value) { return cleanText(value, 80) && value.size() > 0 && value.matches('.*[^ ].*'); }
+    function cleanStart() { return request.time.toMillis() - (request.time.toMillis() + 36000000) % 86400000; }
+    function cleanMid(value) { return value is int && value >= 0 && (value + 36000000) % 86400000 == 0; }
+    function cleanRecent(value) { return value is number && value >= request.time.toMillis() - 60000 && value <= request.time.toMillis() + 60000; }
+    function cleanDay(day) { return day is string && day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}'); }
+    function cleanDayStart(day) {
+      return timestamp.date(int(day.split('-')[0]), int(day.split('-')[1]), int(day.split('-')[2])).toMillis() - 36000000;
+    }
+    function cleanToday(day) { return cleanDay(day) && cleanDayStart(day) == cleanStart(); }
+    function cleanTaskPath(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/cleaningTasks/$(id); }
+    function cleanTaskShape(d) {
+      return d.keys().hasAll(['root', 'prev', 'next', 'text', 'area', 'section', 'sectionName', 'shared', 'dows', 'guide', 'from', 'until', 'at', 'by'])
+        && d.keys().hasOnly(['root', 'prev', 'next', 'text', 'area', 'section', 'sectionName', 'shared', 'dows', 'guide', 'from', 'until', 'at', 'by'])
+        && cleanId(d.root) && (d.prev == '' || cleanId(d.prev)) && (d.next == '' || cleanId(d.next))
+        && cleanText(d.text, 160) && d.text.size() > 0 && d.text.matches('.*[^ ].*') && cleanName(d.area)
+        && cleanText(d.section, 80) && cleanText(d.sectionName, 80) && d.shared is bool && cleanText(d.guide, 80)
+        && d.dows is list && d.dows.size() > 0 && d.dows.size() <= 7 && d.dows.toSet().size() == d.dows.size()
+        && d.dows.toSet().hasOnly([0, 1, 2, 3, 4, 5, 6])
+        && cleanMid(d.from) && cleanMid(d.until) && d.until >= d.from && d.at is number;
+    }
+    function cleanReplacement(id, d) {
+      let old = get(cleanTaskPath(d.prev)).data;
+      let closed = getAfter(cleanTaskPath(d.prev)).data;
+      return d.prev != id && old.root == d.root && old.until == 253402178400000 && old.from <= d.from
+        && d.from == cleanStart() + 86400000 && closed.until == d.from && closed.next == id;
+    }
+    function cleanClose(id, d) {
+      return resource.data.until == 253402178400000 && d.until == cleanStart() + 86400000 && d.until >= d.from
+        && d.diff(resource.data).affectedKeys().hasOnly(['until', 'by', 'next'])
+        && (d.next == '' || (d.next != id && !exists(cleanTaskPath(d.next))
+          && getAfter(cleanTaskPath(d.next)).data.prev == id && getAfter(cleanTaskPath(d.next)).data.root == d.root
+          && getAfter(cleanTaskPath(d.next)).data.from == d.until));
+    }
+    match /kitchens/KITCHEN_PIN/cleaningTasks/{id} {
+      allow read: if kitchenRead();
+      allow create: if staff() && chefId(request.resource.data.by) && cleanId(id) && cleanTaskShape(request.resource.data)
+        && request.resource.data.next == '' && request.resource.data.until == 253402178400000 && cleanRecent(request.resource.data.at)
+        && (request.resource.data.prev == '' ? request.resource.data.root == id && request.resource.data.from == cleanStart()
+          : cleanReplacement(id, request.resource.data));
+      allow update: if staff() && chefId(request.resource.data.by) && cleanTaskShape(request.resource.data) && cleanClose(id, request.resource.data);
+      allow delete: if false;
+    }
+    // One record per revision and date, with a compare-and-set version. A late competing tick cannot replace
+    // someone else's stamp. Undo keeps that stamp for audit and belongs to its recorder for two minutes only.
+    function cleanDoneShape(id, d) {
+      return d.keys().hasAll(['day', 'task', 'version', 'done', 'doneAt', 'doneById', 'doneBy', 'workerId', 'worker', 'by'])
+        && d.keys().hasOnly(['day', 'task', 'version', 'done', 'doneAt', 'doneById', 'doneBy', 'workerId', 'worker', 'by'])
+        && cleanDay(d.day) && cleanId(d.task) && id == d.day + '_' + d.task && d.version is int && d.version > 0
+        && d.done is bool && d.doneAt is number && d.doneAt > 0 && cleanId(d.doneById) && cleanName(d.doneBy)
+        && cleanId(d.workerId) && cleanName(d.worker);
+    }
+    function cleanDue(d) {
+      let task = get(cleanTaskPath(d.task)).data;
+      let start = cleanDayStart(d.day);
+      return task.from <= start && task.until > start && ((start + 36000000) / 86400000 + 4) % 7 in task.dows;
+    }
+    function cleanTick(d) {
+      return d.done && cleanRecent(d.doneAt) && d.doneById == d.by && d.workerId in cfg().get('staffIds', [])
+        && !functionOnly(d.workerId) && (get(sessDoc()).data.mode == 'shared' || d.workerId == d.by);
+    }
+    function cleanUndo(d) {
+      return !d.done && resource.data.doneById == d.by && request.time.toMillis() - resource.data.doneAt < 120000
+        && d.diff(resource.data).affectedKeys().hasOnly(['done', 'version', 'by']);
+    }
+    match /kitchens/KITCHEN_PIN/cleaningDone/{id} {
+      allow get: if kitchenRead() && (chefId(reader()) || resource == null || cleanToday(resource.data.day));
+      allow list: if kitchenRead() && (chefId(reader()) || cleanToday(resource.data.day));
+      allow create: if staff() && capability(request.resource.data.by, 'tick') && cleanDoneShape(id, request.resource.data)
+        && cleanToday(request.resource.data.day) && cleanDue(request.resource.data) && request.resource.data.version == 1 && cleanTick(request.resource.data);
+      allow update: if staff() && capability(request.resource.data.by, 'tick') && cleanDoneShape(id, request.resource.data)
+        && cleanToday(request.resource.data.day) && cleanDue(request.resource.data)
+        && request.resource.data.task == resource.data.task && request.resource.data.day == resource.data.day
+        && (request.resource.data == resource.data || (request.resource.data.version == resource.data.version + 1
+          && request.resource.data.done != resource.data.done && (request.resource.data.done ? cleanTick(request.resource.data) : cleanUndo(request.resource.data))));
+      allow delete: if false;
+    }
     // Phone pushes for order cut-offs (24 Oct 2026): a chef's phone keeps its push address in push/<hash of it>
     // { tok, at, ua, by }. Only the server reads them (scripts/cutoff-push.mjs, with the service account, which these
     // rules do not cover), so no phone can read anyone's address. A chef writes their own phone's, and removes only one

@@ -1710,11 +1710,11 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .wtop-btn.wtop-who { position: relative; }
 /* The chef hat's menu (3 Nov 2026, work pages redesign, the head chef's 24 Oct pick): a sheet from the bottom on a phone,
    a panel under the hat from 720 px. A person card with Sign out, then (since 8 Nov 2026) the Every day and More lists,
-   then Settings. It fits a sous chef's whole menu on a 390 by 844 phone with no scroll. */
-.wm { width: min(23rem, calc(100vw - 16px)); padding: 6px 8px 8px; max-height: calc(100dvh - 90px); }
+   then Settings. The menu scrolls within the screen when its entries or the chosen text size need more room. */
+.wm { width: min(23rem, calc(100vw - 16px)); padding: 6px 8px 8px; max-height: calc(100dvh - var(--wm-top, 82px) - 8px); }
 .wm-grip { display: none; }
 @media (max-width: 719px) {
-  .wm { top: auto !important; right: 0 !important; left: 0; bottom: 0; width: 100%; max-height: calc(100dvh - 40px); border-width: 2px 0 0; border-radius: 16px 16px 0 0; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
+  .wm { top: auto !important; right: 0 !important; left: 0; bottom: 0; width: 100%; max-height: calc(100dvh - 44px); border-width: 2px 0 0; border-radius: 16px 16px 0 0; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25);
     padding: 2px max(12px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)); }
   .wm-grip { display: block; width: 40px; height: 4px; margin: 6px auto 4px; border-radius: 2px; background: var(--edge); }
 }
@@ -4606,3 +4606,86 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .p-admin.ad-admin .a-groups { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 @media (min-width: 1000px) { .p-admin.ad-admin .a-groups { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 999px) { .ps-grid { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; } .ps-grid > .ps-editor:has(.ps-fields) { order: -1; } }
+
+/* Cleaning (8 Nov 2026, approved C daily list + A chef week sheet). The same notebook, ruled rows, handwriting,
+   chips, form controls and worker sheet as Prep and Today's team. Wide weeks become a day list on smaller screens. */
+.cln-page { width: 100%; min-width: 0; flex-direction: column; align-items: stretch; gap: 1rem; padding-bottom: 0; }
+.cln-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .35rem .75rem; }
+.cln-page .p-link { min-width: 44px; min-height: 44px; max-width: 100%; }
+.cln-book, .cln-plan { width: 100%; min-width: 0; flex: 0 0 auto; height: auto; min-height: 0; padding: 0 1rem; border-radius: var(--radius); box-shadow: 0 6px 0 color-mix(in srgb, var(--ink) 12%, transparent); }
+.cln-page .nb-ph > div:first-child { min-width: 0; }
+.cln-page .nb-title { overflow-wrap: anywhere; }
+.cln-progress { flex: none; text-align: right; }
+.cln-progress small { display: block; margin-top: .2rem; color: var(--muted); font: 400 .75rem/1.3 var(--body); }
+.cln-readline { display: flex; align-items: center; justify-content: space-between; gap: .5rem; min-height: 44px; }
+.cln-readline .hint { min-width: 0; margin: 0; }
+.cln-readline .p-link { flex: none; font-size: .8125rem; }
+.cln-body { min-height: 8rem; max-height: none; overflow: visible; padding-bottom: 1rem; }
+.cln-body .nb-hd { gap: .6rem; margin: .3rem 0 0; overflow-wrap: anywhere; }
+.cln-group-count { flex: none; font: 400 .8125rem var(--body); letter-spacing: 0; color: var(--muted); }
+.cln-row { flex-wrap: nowrap; }
+.cln-row .nb-box { align-self: center; margin-top: 0; }
+.cln-row .nb-main { min-width: 0; }
+.cln-row .nb-meta { font-size: .8125rem; }
+.cln-row.is-done .nb-t { color: var(--muted); }
+.cln-row.is-pending .nb-meta { color: var(--accent-ink); font-weight: 600; }
+.cln-how { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+.cln-row-error { display: block; color: var(--accent-ink); font: 600 .8125rem/1.4 var(--body); }
+.cln-row-error .p-link { margin-left: .25rem; }
+.cln-empty { padding: .25rem 0 .75rem; }
+.cln-empty .nb-empty { color: var(--muted); }
+.cln-empty .hint { margin: -.5rem 0 .75rem; }
+.cln-week-nav { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .6rem; }
+.cln-week-nav > .chip { width: 44px; padding: 0; font-size: 1.5rem; }
+.cln-week-nav > span { font-weight: 600; font-size: .9375rem; }
+.cln-week-nav > .p-link { margin-left: auto; font-size: .8125rem; }
+.cln-legend { margin: .5rem 0 .7rem; line-height: 1.5; }
+.cln-day-pick { gap: 2px; }
+.cln-day-pick .chip { flex: 1 1 44px; min-width: 44px; padding: .35rem .15rem; }
+.cln-day-pick small { display: block; margin-top: .15rem; font-size: .6875rem; font-weight: 400; }
+.cln-selected-day { margin: .9rem 0 .1rem; font: 700 1.8rem/1.1 'Caveat', cursive; }
+.cln-matrix, .cln-wide-empty { display: none; }
+.cln-plan .nb-title { font-size: 2.6rem; }
+.cln-plan .nb-date { margin-bottom: 0; }
+.cln-plan .nb-ph > .p-link { flex: none; font-size: .875rem; }
+.cln-plan-body { min-width: 0; padding-bottom: 1rem; }
+.cln-templates { margin: .75rem 0 1rem; padding: 0; list-style: none; }
+.cln-templates > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .25rem .75rem; padding: .6rem 0; border-bottom: 1px solid var(--rule); }
+.cln-templates > li > div:first-child { flex: 1 1 12rem; min-width: 0; }
+.cln-templates b { display: block; font: 700 1.6rem/1.1 'Caveat', cursive; overflow-wrap: anywhere; }
+.cln-templates small { display: block; margin-top: .15rem; font-size: .8125rem; line-height: 1.35; color: var(--muted); overflow-wrap: anywhere; }
+.cln-template-actions { display: flex; flex-wrap: wrap; gap: .7rem; font-size: .875rem; }
+.cln-form, .cln-form fieldset { display: grid; gap: .8rem; min-width: 0; }
+.cln-form fieldset { margin: 0; padding: .85rem 0 0; border: 0; border-top: 1.5px solid var(--ink); }
+.cln-form legend { padding: 0 .5rem 0 0; font: 700 1.8rem/1.2 'Caveat', cursive; }
+.cln-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: .8rem; }
+.cln-form .field { min-width: 0; }
+.cln-form input { width: 100%; min-width: 0; min-height: 44px; padding: .6rem .7rem; border: 1.5px solid var(--edge); border-radius: var(--r-act); background: var(--paper); color: var(--ink); font: inherit; }
+.cln-form input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.cln-repeat { margin-top: .35rem; }
+.cln-repeat .chip { min-width: 44px; }
+.cln-save-note { min-height: 1.4em; margin: 0; overflow-wrap: anywhere; }
+.cln-form .btn-row { align-items: center; }
+.cln-form .btn { max-width: 100%; white-space: normal; }
+@media (min-width: 720px) { .cln-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1000px) {
+  .cln-matrix, .cln-wide-empty { display: block; }
+  .cln-day-pick, .cln-week-day { display: none; }
+  .cln-matrix table { width: 100%; table-layout: fixed; border-collapse: collapse; }
+  .cln-matrix th, .cln-matrix td { padding: .35rem .25rem; text-align: center; vertical-align: middle; border-bottom: 1px solid var(--rule); }
+  .cln-matrix th:first-child { width: 30%; text-align: left; }
+  .cln-matrix thead th { color: var(--accent-ink); font: 700 .9375rem/1.25 var(--display); letter-spacing: .05em; }
+  .cln-matrix th small { display: block; margin-top: .2rem; color: var(--muted); font: 400 .75rem/1.3 var(--body); letter-spacing: 0; }
+  .cln-matrix .is-today { background: var(--hit); }
+  .cln-matrix .cln-matrix-group th { padding-top: 1rem; color: var(--accent-ink); font: 700 .9375rem/1.3 var(--display); letter-spacing: .14em; text-transform: uppercase; }
+  .cln-task-title { font: 700 1.6rem/1.1 'Caveat', cursive; overflow-wrap: anywhere; }
+  .cln-cell { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem; min-width: 44px; min-height: 56px; width: 100%; padding: .2rem; border: 0; border-radius: var(--r-act); background: none; color: var(--ink); font: 400 .75rem/1.25 var(--body); }
+  button.cln-cell { cursor: pointer; }
+  .cln-cell svg { width: 26px; height: 26px; }
+  .cln-cell small { display: block; width: 100%; font-size: .6875rem; overflow-wrap: anywhere; }
+  .cln-cell.is-done { color: var(--done-ink); }
+  .cln-cell:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .cln-missed { color: var(--accent-ink); font-weight: 600; }
+  .cln-due, .cln-not-due { color: var(--muted); }
+  .cln-not-due { font-size: 1.5rem; }
+}

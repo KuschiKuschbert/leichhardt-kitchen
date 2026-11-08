@@ -31,13 +31,15 @@ const source = db.collection('kitchens').doc(sourcePin), restored = db.collectio
 const folder = mkdtempSync(join(tmpdir(), 'lk-backup-recovery-')), key = randomBytes(32).toString('base64');
 const scripts = fileURLToPath(new URL('.', import.meta.url)), at = Date.now();
 const day = n => new Date(at + 36000000 - n * 86400000).toISOString().slice(0, 10);
+const dayAt = n => Date.parse(day(n) + 'T00:00:00+10:00');
 const ARRAY_COLLECTIONS = ['activity', 'sections', 'prepStandards', 'learned', 'ordlearned', 'learnlog', 'summary', 'analysis', 'analysisDaily', 'references', 'training', 'proofHistory', 'dashwatch', 'misses', 'views', 'guides', 'mail', 'mailstat', 'drinks', 'shifts', 'daily', 'todos', 'team', 'cutdone', 'transferOpen',
-  'deliveries', 'notes', 'directnotes', 'minutes', 'book', 'recipes', 'drawings', 'drawtpl', 'drawlib', 'suppliers', 'supplierlinks', 'functions', 'fncontact', 'fnsent'];
+  'deliveries', 'cleaningTasks', 'cleaningDone', 'notes', 'directnotes', 'minutes', 'book', 'recipes', 'drawings', 'drawtpl', 'drawlib', 'suppliers', 'supplierlinks', 'functions', 'fncontact', 'fnsent'];
 const HISTORIES = { referencesHist: ['references', 'hist'], trainingHist: ['training', 'hist'], notesSeen: ['notes', 'seen'], directnotesSeen: ['directnotes', 'seen'], minutesHist: ['minutes', 'hist'], minutesSigns: ['minutes', 'signs'], recipesHist: ['recipes', 'hist'], drawingsHist: ['drawings', 'hist'], supplierOrders: ['suppliers', 'orders'], supplierAudit: ['suppliers', 'audit'], functionsHist: ['functions', 'hist'] };
 const DATED = { days: ['days', 'items'], orders: ['orders', 'lines'], waste: ['waste', 'lines'], transfers: ['transfers', 'lines'] };
 const EXPECTED_FIELDS = ['exportedAt', 'by', 'config', 'pins', 'wasteReviews', ...ARRAY_COLLECTIONS, ...Object.keys(HISTORIES), ...Object.keys(DATED)].sort();
 const identities = Object.fromEntries(ARRAY_COLLECTIONS.map(name => [name, name + '-sample']));
 Object.assign(identities, { activity: 'cook-a', drinks: 'cook-a', book: 'index', references: 'ref-a', training: 'training-a', notes: 'note-a', directnotes: 'direct-a', minutes: 'meeting-a', recipes: 'recipe-a', drawings: 'drawing-a', suppliers: 'supplier-a', functions: 'function-a' });
+identities.cleaningDone = day(2) + '_' + identities.cleaningTasks;
 const standard = { sectionId: identities.sections, name: 'Synthetic dressing', aliases: ['Synthetic sauce'], minimum: 1.25, unit: 'L', instruction: 'Check the labelled date and chill before service.', recipe: 'recipe-a', archived: false, v: 2, at: at - 60 * 86400000, by: 'cook-a' };
 const prepStandards = [
   { id: identities.prepStandards, ...standard },
@@ -94,7 +96,9 @@ try {
   await put(source, 'config/main', { people, staffIds: people.map(x => x.id), headId: 'cook-a', sousIds: ['cook-a'], ...capabilityIds, proofWords: ['burrata'], proofV: 2 });
   for (const name of ARRAY_COLLECTIONS) {
     if (name === 'prepStandards') continue;
-    const data = { text: 'Synthetic ' + name, v: 2, by: 'cook-a', at: Timestamp.fromMillis(at), nested: { zero: 0, missing: null, labels: ['°C', 'quotes " and commas,'] } };
+    let data = { text: 'Synthetic ' + name, v: 2, by: 'cook-a', at: Timestamp.fromMillis(at), nested: { zero: 0, missing: null, labels: ['°C', 'quotes " and commas,'] } };
+    if (name === 'cleaningTasks') data = { root: identities.cleaningTasks, prev: '', next: 'cleaning-revision-2', text: 'Synthetic original cleaning job', area: 'Synthetic area', section: '', sectionName: '', shared: true, dows: [0, 1, 2, 3, 4, 5, 6], guide: '', from: dayAt(5), until: dayAt(1), at: dayAt(5) + 60000, by: 'cook-a' };
+    if (name === 'cleaningDone') data = { day: day(2), task: identities.cleaningTasks, version: 1, done: true, doneAt: dayAt(2) + 3600000, doneById: 'cook-a', doneBy: 'Synthetic recorder', workerId: 'worker-a', worker: 'Synthetic cleaner', by: 'cook-a' };
     if (name === 'deliveries') Object.assign(data, { supplier: 'Synthetic supplier', day: day(0), chilled: 0, frozen: -18.5, receivedById: 'cook-a', receivedAt: at - 60000, recordedAt: at });
     if (name === 'guides') Object.assign(data, { title: 'Synthetic guide', pages: 1, thumb: 'synthetic-small-picture', words: 'Included words' });
     if (name === 'transferOpen') Object.assign(data, { date: day(4), line: 'old-loan', amount: 3, unit: 'kg', returned: false });
@@ -107,6 +111,12 @@ try {
   for (const { id, ...data } of prepStandards) await put(source, 'prepStandards/' + id, data);
   await put(source, 'deliveries/delivery-null', { day: day(1), chilled: null, frozen: 0, receivedById: 'worker-a', by: 'cook-a', receivedAt: at - 86400000, recordedAt: at });
   await put(source, 'deliveries/outside-window', { day: day(4), chilled: 1, frozen: -19, receivedById: 'cook-a', by: 'cook-a' });
+  await put(source, 'cleaningTasks/cleaning-revision-2', { root: identities.cleaningTasks, prev: identities.cleaningTasks, next: '', text: 'Synthetic revised cleaning job', area: 'Synthetic area', section: 'synthetic-section', sectionName: 'Synthetic section', shared: false, dows: [0, 1, 2, 3, 4, 5, 6], guide: 'synthetic-guide', from: dayAt(1), until: 253402178400000, at: dayAt(2) + 3600000, by: 'cook-a' });
+  await put(source, 'cleaningTasks/cleaning-archived', { root: 'cleaning-archived', prev: '', next: '', text: 'Synthetic archived cleaning job', area: 'Synthetic area', section: '', sectionName: '', shared: true, dows: [0], guide: '', from: dayAt(20), until: dayAt(10), at: dayAt(20) + 60000, by: 'cook-a' });
+  const reopenedCleaning = { day: day(0), task: 'cleaning-revision-2', version: 2, done: false, doneAt: at - 60000, doneById: 'cook-a', doneBy: 'Synthetic recorder', workerId: 'worker-a', worker: 'Synthetic cleaner', by: 'cook-a' };
+  await put(source, 'cleaningDone/' + day(0) + '_cleaning-revision-2', reopenedCleaning);
+  await put(source, 'cleaningDone/' + day(4) + '_' + identities.cleaningTasks, { ...reopenedCleaning, day: day(4), task: identities.cleaningTasks, version: 1, done: true, doneAt: dayAt(4) + 3600000 });
+  await put(source, 'cleaningDone/' + day(-1) + '_cleaning-revision-2', { ...reopenedCleaning, day: day(-1), version: 1, done: true, doneAt: dayAt(-1) + 3600000 });
   for (const [field, [collection, sub]] of Object.entries(HISTORIES)) await put(source, [collection, identities[collection], sub, 'version-1'].join('/'), { v: 1, event: field, by: 'cook-a', at: Timestamp.fromMillis(at - 1000), original: 'Original synthetic wording',
     ...(field === 'functionsHist' ? { was: { v: 1, status: 'confirmed', effects } } : {}) });
   for (const [field, [collection, sub]] of Object.entries(DATED)) {
@@ -131,6 +141,14 @@ try {
   assert.deepEqual(original.functions.find(x => x.id === identities.functions).effects, effects);
   assert.deepEqual(original.functionsHist[identities.functions][0].was.effects, effects);
   assert.equal(original.deliveries.length, 2); assert(!original.deliveries.some(x => x.id === 'outside-window'));
+  assert.equal(original.cleaningTasks.length, 3, 'Every cleaning revision survives, including archived schedules older than the selected window.');
+  assert.equal(original.cleaningDone.length, 2, 'Only cleaning completion records inside the selected window are included.');
+  assert(original.cleaningDone.every(x => x.day >= day(2) && x.day <= day(0)));
+  const cleaningStamp = original.cleaningDone.find(x => x.id === identities.cleaningDone);
+  assert.equal(cleaningStamp.doneById, 'cook-a'); assert.equal(cleaningStamp.workerId, 'worker-a'); assert.equal(cleaningStamp.doneAt, dayAt(2) + 3600000);
+  assert.deepEqual(original.cleaningDone.find(x => x.id === day(0) + '_cleaning-revision-2'), { ...reopenedCleaning, id: day(0) + '_cleaning-revision-2' }, 'Undo retains the original worker and recorder stamp with its incremented version.');
+  assert.equal(original.cleaningTasks.find(x => x.id === identities.cleaningTasks).next, 'cleaning-revision-2');
+  assert.equal(original.cleaningTasks.find(x => x.id === 'cleaning-revision-2').prev, identities.cleaningTasks);
   assert.equal(original.days[day(4)], undefined); assert.equal(original.transfers[day(4)], undefined);
   assert(original.transferOpen.some(x => x.date === day(4)), 'The included older outstanding index survives independently of the bounded dated window.');
   const immutable = original.days[day(0)][0]; assert.equal(immutable.doneById, 'cook-a'); assert.equal(immutable.preparedById, 'worker-a'); assert.equal(immutable.doneAt, immutable.preparedAt);

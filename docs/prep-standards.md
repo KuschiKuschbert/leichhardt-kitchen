@@ -61,7 +61,7 @@ Changing items or sections does not silently discard edits. Cancel and Archive u
 
 ## Backup and release
 
-Nightly and manual backups include full current and archived standards. The isolated encrypted recovery rehearsal covers aliases, instructions, recipe links, revisions, zero and unset minima. The kitchen-PIN copy preserves standards and starts their destination revisions at 1 with the current head recorder and copy time. It does not delete the source.
+Nightly and manual backups include full current and archived standards. The isolated encrypted recovery rehearsal covers aliases, instructions, recipe links, revisions, zero and unset minima. Where the existing kitchen-PIN copy checks allow a move, standards keep their IDs and facts and start their destination revisions at 1 with the current head recorder and copy time. The source remains unchanged. Existing cleaning history blocks the entire PIN copy before any destination write until a reviewed cleaning-copy procedure is available.
 
 The rules change is additive: a new private collection with head-only writes. Publish the reviewed rules before releasing the client that uses the collection, then verify the existing foundation and live Lock probe. No migration or production standards seeding is required. Keep publication, browser/emulator verification and actual live deployment evidence separate in the PR.
 
