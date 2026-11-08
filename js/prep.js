@@ -1306,6 +1306,7 @@
   }
   function signedIn(id, hash) {
     if (!deviceReady() || !window.LK_DEVICE.verify(id)) { S.authed = false; S.pinMsg = 'This personal device is assigned to another person. Change it in Settings first.'; draw(); return; }
+    var keepWork = dirtyForUpdate() || sendingNow();
     setTimeout(dailyFlush, 3000);   // yesterday's counts, once someone is signed in (W writes as them)
     S.privacyLocked = false; S.unlocking = false; S.lockHasDraft = false; S.lockIdentity = ''; S.lockRecorder = ''; S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
     lsSet('lk.prep.tok', ''); lsSet('lk.prep.seen', String(Date.now())); lsSet('lk.prep.day', dayNow()); lastAct = Date.now(); startIdle();
@@ -1315,7 +1316,13 @@
     // chef hat (back) is a real start
     S.guestIn = !!(pend && !pend.back);
     lsSet('lk.prep.guest', S.guestIn ? id + ':' + dayNow() : '');   // kept for a reload; out of date for another person or day
-    recoverWrites(id); loadAdmins(); accessChanged(); draw(); whoSync(true);
+    // A fresh kitchen PIN starts on Home. Keep the current task when this same person is recovering work,
+    // or a queued action must finish. Restoring an already valid session in resume() keeps its route.
+    var toHome = !functionOnly() && !keepWork && (!pend || pend.back);
+    if (toHome) { pend = null; location.hash = '#/'; }
+    recoverWrites(id); loadAdmins(); accessChanged(); draw();
+    // Let the new page draw before playing its sign-in feedback.
+    if (toHome) setTimeout(function () { if (S.authed && S.who === id) whoSync(true); }, 0); else whoSync(true);
     if (pend) guestReplay(pend);
     dkCheck(); ksCheck(); noteMaybePop();
   }
@@ -1334,7 +1341,7 @@
       .map(function (k) { return '[' + k + '="' + String(el.getAttribute(k)).replace(/["\\]/g, '\\$&') + '"]'; }).join('');
   }
   function guestReplay(pend) {
-    if (pend.back) { location.hash = pend.back; return; }   // Sign in from the chef hat: back to the page the person was on
+    if (pend.back) { location.hash = pend.back; return; }   // Retained work or Functions-only sign-in returns to its task.
     if (pend.form === 'add') { if (S.text.trim()) addTyped(); return; }
     if (pend.form === 'oadd') { addOrder(); return; }
     if (pend.form === 'wadd') { addWaste(); return; }
@@ -1384,11 +1391,8 @@
         return track(b.commit()).then(function () {
           return sessOpenRetry(id, h, setAt).then(function () {
             if (!current()) return;
-            // One more thing (the usual drink) takes the whole prep list, so it comes only when the PIN was set there with
-            // nothing waiting. Set on the order list or wastage, from the chef hat's Sign in or for a tap on a shared
-            // device (S.pending, which signedIn() replays), the drinks run card asks instead and the page stays put.
-            var ask = S.name === 'prep' && !S.pending;
-            S.drinkAsk = ask ? 'first' : 'again'; if (ask) dkEdit();
+            // A new starter sees their shift on Home first. Their usual drink can be set from Drinks run.
+            S.drinkAsk = 'again';
             signedIn(id, h); S.tok = h; bump({ visits: 1, lastSeen: now() });
           }, function (e) {
             if (!current() || e && e.code === 'cancelled') return;
@@ -4420,7 +4424,10 @@
   var AI_ON = '<svg class="nb-ai" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/></svg>';
   var TICK = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M5 14 L11 20 L22 5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', transfers: 'Open the transfer list', minutes: 'Open the minutes', guides: 'Open the guides', mail: 'Open kitchen mail', drinks: 'Open the drinks run', admin: 'Open the admin panel' }[S.name] || 'Open the prep list'; }
+  function openLabel() {
+    if (blockedRecorder()) return 'Resume your work';
+    return ((S.config || {}).fnOnlyIds || []).indexOf(S.who) >= 0 || S.pending && !S.pending.back ? 'Sign in' : 'Open Home';
+  }
   function gateHTML() {
     return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">' + (S.name === 'admin' ? 'The admin panel needs the kitchen PIN on this device once, then the head chef\'s Google sign-in.' : 'Enter the kitchen PIN to open the prep list, orders, wastage, transfers, minutes and guides. This device remembers it.') + '</p>' +
       '<div class="field"><label class="label" for="p-pin">PIN</label>' + pinField('p-pin', 'p-pin', S.pinInput, true) + '</div>' +
@@ -4437,7 +4444,7 @@
     here.forEach(function (id) { var p = list.filter(function (x) { return x.id === id; })[0]; if (p) first.push(p); });
     list.forEach(function (p) { if (first.indexOf(p) < 0) rest.push(p); });
     function names(l) { return '<div class="p-names">' + l.map(function (p) { return '<button type="button" class="chip p-name" data-p="who" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>'; }).join('') + '</div>'; }
-    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2>' + workNoticeHTML(true) + '<p class="hint">' + (S.pending && S.pending.back ? 'Pick your name and type your PIN. Then the book goes back to where you were.' : S.pending ? 'Pick your name and type your PIN. Then it is done for you.' : 'Pick your name. The first time, you choose your own 4-digit PIN to go with it.') + '</p>' +
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2>' + workNoticeHTML(true) + '<p class="hint">' + (S.pending && !S.pending.back ? 'Pick your name and type your PIN. Then it is done for you.' : 'Pick your name. After your PIN, Home shows your shift details. The first time, choose your own 4-digit PIN.') + '</p>' +
       (!list.length ? '<p class="p-err">No names are set up yet. The head chef adds them in the admin panel.</p>' :
         first.length ? '<p class="nb-ql p-here">Here today</p>' + names(first) + (rest.length ? '<p class="nb-ql p-here">Everyone</p>' + names(rest) : '') : names(list)) +
       (S.picking && shared() ? '<div class="btn-row"><button type="button" class="btn" data-p="who-back">Back to the list</button></div>' : '') + '</section>';
@@ -10042,6 +10049,16 @@
       out.push({ icon: 'todo', title: 'You are on ' + sec, sub: open.length ? (open.length === 1 ? '1 line left' : open.length + ' lines left') + ' · ' + open[0].text + ' first' : 'Everything on ' + sec + ' is ticked off',
         time: open.length ? String(open.length) : '', note: open.length ? 'Left' : '', href: '#/prep', sec: open.length ? open[0].station : '' });
     }
+    // Your own saved shifts, hours, sections and breaks, from Today's team already loaded for the top bar.
+    // No new read or listener. Keep every shift visible, including a later shift after a split.
+    var mine = p ? tmMy(p.id) : [], current = tmNow(mine, m);
+    mine.forEach(function (x) {
+      var words = x.s.from != null && x.s.to != null ? [tmHHMM(x.s.from) + ' to ' + tmHHMM(x.s.to)] : [];
+      var section = x === current ? tmSecWords(p, x) : x.sec && tmSecName(x.sec);
+      if (section) words.push(section);
+      tmShiftBreaks(tm.rec, { id: p.id, sh: x.s.id }).forEach(function (br) { words.push(tmBreakWords(br, m) + (!tmIsSplit(br.len) ? ', ' + br.len + ' min' : '')); });
+      out.push({ icon: 'todo', title: 'Your shift: ' + x.s.name, sub: words.join(' · '), href: teamOK() ? '#/team' : '', attrs: teamOK() ? '' : ' data-tm="day" aria-haspopup="dialog"' });
+    });
     // your next break, or the one you are on (Your day opens on a tap; a chef's plan is on the team page)
     var b = p && tm.rec ? tmNextBreak(p.id, m) : null;
     if (b) {
@@ -10088,7 +10105,8 @@
     if (S.configState !== 'ok') return head + '<p class="hm-none">' + (offWait() ? esc(OFF_KITCHEN) : 'Checking the day...') + '</p>';
     var rows = homeRows(), fs = window.LK_FN && window.LK_FN.state ? window.LK_FN.state() : null;
     var warn = fs && fs.state === 'error' && !fs.at ? '<p class="hm-warn" role="status">Could not check the functions. Check the signal.</p>' : '';
-    return head + (rows.length ? '<ul class="hm-rows">' + rows.map(homeRowHTML).join('') + '</ul>' : '<p class="hm-none">Nothing due right now.</p>') + warn;
+    var p = me(), shiftMsg = p && !teamOK() && !tmMy(p.id).length ? (tm.st === 'err' ? 'Could not check your shift details. Check the connection.' : tm.day === dayNow() && tm.st === 'ok' ? 'No shift details set for you today.' : 'Checking your shift details...') : '';
+    return head + (shiftMsg ? '<p class="hm-warn" role="status" data-hm-shift-status>' + shiftMsg + '</p>' : '') + (rows.length ? '<ul class="hm-rows">' + rows.map(homeRowHTML).join('') + '</ul>' : '<p class="hm-none">Nothing due right now.</p>') + warn;
   }
   // today's prep by section: a bar each, as on the list's section headings; only once today's lines are in from the server
   function homePrepHTML() {
@@ -12588,7 +12606,7 @@
     whoName: whoName,
     // the no-signal sentence while the kitchen's settings are not loaded and there is no signal, otherwise '' (js/app.js)
     offline: function () { return offWait() ? OFF_KITCHEN : ''; },
-    // Sign in from the chef hat with nobody signed in: "Who are you?" on the prep list, then back to the page it came from.
+    // Sign in from the chef hat: "Who are you?" on Prep, then Home. Keep the old route for work recovery or Functions only.
     // Not with no signal before the settings are in: the person on this phone is known, and this would forget them
     signIn: function (back) {
       if (whoName() || offWait()) return;

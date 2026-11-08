@@ -44,6 +44,8 @@ async function signOut(p) {
   const cutoff = (Math.floor((L.NOW + 6 * 3600000) / 86400000) + 1) * 86400000 - 6 * 3600000;
   ok(s && s.v === 2 && s.by === 'sam' && s.pinAt === 1 && s.exp === cutoff && s.mode === 'shared' && s.issuedAt.seconds * 1000 + s.issuedAt.nanoseconds / 1000000 > L.NOW - 1000, 'fresh PIN opens a v2 device session ending at the exact next Brisbane04 (' + JSON.stringify(s) + ')');
   ok((await secrets(p)).length === 0, 'nothing secret is kept on the phone');
+  ok(await p.evaluate(() => location.hash === '#/'), 'fresh PIN: Home opens before returning to Prep');
+  await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 500);
   // a tick goes through the session: it carries who ticked it, and no proof
   await tickSelf(p, 'i1');
   let wb = await batchFor(p, '/items/i1$'), i1 = await item(p, 'i1');
@@ -77,6 +79,8 @@ async function signOut(p) {
   await L.waitFor(p, r => { const u = window.__fakeUid(), st = window.LK_PREP.state; return st.authed && !!u && !!window.__fake.dump()[r + '/sessions/' + u] || /not right|Could not/.test(st.pinMsg || ''); }, root, 30000).catch(() => {});
   st = await state(p); s = await sessOf(p);
   ok(st.authed && s && s.by === 'sam' && s.pinAt === 99, 'then the PIN opens a new session with the new PIN time (' + JSON.stringify(s) + ')');
+  ok(await p.evaluate(() => location.hash === '#/'), 'reset PIN: a successful fresh PIN opens Home');
+  await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 500);
   await tickSelf(p, 'i3');
   ok((await item(p, 'i3') || {}).done === true, 'and the tick saves');
 

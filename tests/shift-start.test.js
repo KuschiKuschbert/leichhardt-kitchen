@@ -211,7 +211,7 @@ async function pin(p, name, digits) {
   ok(/fryer 2/.test(await txt(p, '.nt-list') || '') && await txt(p, '.nt-eb') === 'Bo', 'tablet Close: Ann\'s Close does not hold the Safety ping back from Bo');
   await p.context().close();
 
-  // a first PIN set on the order list: One more thing is not on the screen there, so the pings still come up
+  // a first PIN set on the order list: Home opens and the pings still come up
   const kim = { [CFG]: { people: people.concat([{ id: 'kim', name: 'Kim Lee', role: 'staff', add: true, tick: true, del: false, active: true }]), sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo', 'kim'], showBadges: true } };
   p = await L.open(b, '#/orders', { who: '', board: true, extra: Object.assign(kim, ping('n1', 'Safety: walk-in door sticks', { tag: 'safety' })), wait: 1500 });
   await L.settle(p, 600); await p.clock.runFor(61000); await L.settle(p, 300);
@@ -220,7 +220,7 @@ async function pin(p, name, digits) {
   await p.keyboard.type('4444'); await L.settle(p, 600);
   await p.keyboard.type('4444'); await L.settle(p, 1000);
   await L.waitFor(p, () => !!document.querySelector('.nt-wrap')).catch(() => {});
-  ok(/walk-in/.test(await txt(p, '.nt-list') || '') && await p.evaluate(() => location.hash) === '#/orders', 'first PIN on the order list: the pings sheet still comes up');
+  ok(/walk-in/.test(await txt(p, '.nt-list') || '') && await p.evaluate(() => location.hash) === '#/' && !!(await p.$('#hm-board')), 'first PIN on the order list: Home opens with the pings sheet');
   await p.context().close();
 
   // the sheet keeps its place while another phone ticks a line, and closes by itself when its ping is removed

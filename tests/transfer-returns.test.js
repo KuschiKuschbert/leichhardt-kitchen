@@ -67,6 +67,8 @@ const extra = { [source]: record, [index]: { date: old, lineId: 'loan', record, 
     ok(!!await p.$('[data-k="pf1"]') && !await p.$('.tr-outstanding'), 'shared tablet: return information stays hidden behind the idle PIN lock');
     await p.click('[data-p="who-change"]'); await L.settle(p, 200);
     await p.click('.p-name[data-id="ann"]'); await L.settle(p, 250); await p.keyboard.type('2222'); await L.settle(p, 1200);
+    ok(await p.evaluate(() => location.hash === '#/'), 'shared tablet: the next person starts on Home');
+    await p.evaluate(() => { location.hash = '#/transfers'; }); await L.settle(p, 600);
     await p.click('.tr-outstanding [data-p="tr-return"]'); await L.settle(p, 400);
     ok((await p.evaluate(k => window.__fake.dump()[k], source)).returnedById === 'ann', 'shared tablet: return belongs to the person who entered their PIN');
     await p.context().close();

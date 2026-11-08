@@ -24,7 +24,10 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
   ok(same(s[CFG].sousIds, ['sam', 'ann']) && same(s[CFG].pingIds, ['sam', 'ann']), 'admin: the head chef is in sousIds and pingIds');
   ok(!!(await p.$('#pf1')) && !(await p.$('.a-groups')), 'bootstrap: the chosen head chef must verify their own PIN before receiving admin access');
   await p.fill('#pf1', '2222');
-  await L.waitFor(p, () => LK_PREP.state.level === 'owner' && !!document.querySelector('.a-groups'), null, 8000);
+  await L.waitFor(p, () => LK_PREP.state.level === 'owner' && !!document.querySelector('#hm-board'), null, 8000);
+  ok(await p.evaluate(() => location.hash === '#/'), 'bootstrap: the verified head PIN opens Home');
+  await p.evaluate(() => { location.hash = '#/admin'; });
+  await L.waitFor(p, () => !!document.querySelector('.a-groups'), null, 8000);
   await L.adminTab(p, 'people'); await L.settle(p, 250);
   ok(await p.evaluate(() => [...document.querySelectorAll('#a-r1 option')].some(o => o.value === 'head')), 'admin: Head chef is available after the verified daily unlock');
   ok(await p.$('.a-nohead') === null, 'admin: the hint goes once a head chef is set');

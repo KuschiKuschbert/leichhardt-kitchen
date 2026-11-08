@@ -1,5 +1,5 @@
-// The drinks run: a new person is asked for their usual coffee or drink straight after setting their PIN, people who
-// signed up before see a card once, and #/drinks shows everyone's usual so whoever does the run can read the order off the phone.
+// The drinks run: a new PIN opens Home, then the person can set their usual from Drinks run. People with no usual see
+// a card once on the work pages, and #/drinks shows everyone's usual so whoever does the run can read the order off the phone.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt, tap } = L;
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -13,7 +13,7 @@ const val = (p, f) => txt(p, '.dr-fold[data-f="' + f + '"] .dr-val');
 (async () => {
   const b = await L.start();
 
-  // a new person: PIN, then "One more thing"
+  // a new person: PIN, then Home; Drinks run stays available from the chef hat
   const cfg = { people: [
     { id: 'sam', name: 'Sam', role: 'sous', add: true, tick: true, del: true, active: true },
     { id: 'ann', name: 'Ann', role: 'staff', add: true, tick: true, del: false, active: true },
@@ -24,8 +24,11 @@ const val = (p, f) => txt(p, '.dr-fold[data-f="' + f + '"] .dr-val');
   await p.click('.p-name[data-id="kim"]');
   await p.keyboard.type('4444'); await L.settle(p, 600);
   await p.keyboard.type('4444'); await L.settle(p, 1000);
-  ok(/One more thing, Kim/.test(await txt(p, '#prep-root') || ''), 'first PIN: asked for a usual drink straight after');
-  ok(!!(await p.$('[data-p="dk-skip"]')), 'first PIN: Skip for now is offered');
+  ok(await p.evaluate(() => location.hash) === '#/' && !!(await p.$('#hm-board')) && !(await p.$('.dr-first')), 'first PIN: Home opens without the drinks form');
+  await tap(p, '.wtop-who'); await L.settle(p, 200);
+  await p.click('.wm a[href="#/drinks"]'); await L.settle(p, 900);
+  await tap(p, '[data-p="dk-edit"]'); await L.settle(p, 200);
+  ok(!!(await p.$('[data-p="dk-cancel"]')) && !(await p.$('[data-p="dk-skip"]')), 'Drinks run: Set my usual opens a form with Cancel');
   await tap(p, '[data-p="dk-save"]'); await L.settle(p, 200);
   ok(/Pick a coffee or a cold drink first/.test(await txt(p, '.dr-form') || ''), 'first PIN: saving with nothing picked asks for a drink');
   ok(!(await p.$('[data-f="size"]')), 'form: no size until a coffee is picked');
@@ -48,18 +51,19 @@ const val = (p, f) => txt(p, '.dr-fold[data-f="' + f + '"] .dr-val');
   await tap(p, '[data-p="dk-save"]'); await L.settle(p, 900);
   let s = await store(p), d = s[fsKey(['drinks', 'kim'])];
   ok(!!d && d.by === 'kim' && d.kind === 'flat' && d.size === 'large' && d.milk === 'oat' && d.shot === 'extra' && d.sugar === '1' && d.note === 'Extra hot' && d.cold === 'water' && d.other === 'no ice' && d.at >= L.NOW, 'save: Kim\'s usual is saved under her own id');
-  ok(await L.whoIs(p) === 'Kim Lee' && !!(await p.$('#prep-root .nb-left')), 'save: then the prep list, Kim signed in');
+  ok(await L.whoIs(p) === 'Kim Lee' && await p.evaluate(() => location.hash) === '#/drinks' && /Large oat flat white/.test(await txt(p, '.dr-mine') || ''), 'save: Drinks run shows Kim\'s usual with Kim still signed in');
   ok(!(await p.$('.dr-nudge')), 'save: no drinks card afterwards');
   ok(p.errors.length === 0, 'first PIN: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // a first PIN set on the order list (23 Oct 2026): the drinks run card asks there, and Prep is the prep list after
+  // a first PIN set on Orders opens Home; visiting the work pages still offers the usual-drink card
   p = await L.open(b, '#/orders', { who: '', extra: { [fsKey(['config', 'main'])]: cfg }, wait: 1200 });
   await p.click('.p-name[data-id="kim"]');
   await p.keyboard.type('4444'); await L.settle(p, 600);
   await p.keyboard.type('4444'); await L.settle(p, 1000);
-  ok(await L.whoIs(p) === 'Kim Lee' && /#\/orders$/.test(p.url()) && !/One more thing/.test(await txt(p, '#prep-root') || ''), 'first PIN on the order list: the order list, not One more thing');
-  ok(/New: the drinks run/.test(await txt(p, '.dr-nudge') || ''), 'first PIN on the order list: the drinks run card asks for a usual');
+  ok(await L.whoIs(p) === 'Kim Lee' && await p.evaluate(() => location.hash) === '#/' && !!(await p.$('#hm-board')) && !(await p.$('.dr-first')), 'first PIN on the order list: Home opens without a drinks detour');
+  await p.evaluate(() => { location.hash = '#/orders'; }); await L.settle(p, 900);
+  ok(/New: the drinks run/.test(await txt(p, '.dr-nudge') || ''), 'visiting Orders after the first PIN: the drinks run card asks for a usual');
   await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 900);
   ok(!/One more thing/.test(await txt(p, '#prep-root') || '') && !!(await p.$('.nb-left')) && !!(await p.$('.dr-nudge')), 'first PIN on the order list: Prep shows the list with the card, not One more thing');
   ok(p.errors.length === 0, 'first PIN on the order list: no page errors ' + p.errors.join(' | '));

@@ -197,8 +197,8 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     ok(await off(p, '[data-p="dk-save"]') === true, 'drinks: a space typed alone leaves Save off');
     await p.context().close();
   });
-  // the first usual: Skip for now over something picked asks a second tap, like Cancel
-  await safe('drinks skip', async () => {
+  // A new starter reaches Home first; cancelling their optional usual asks before discarding a pick.
+  await safe('new starter drinks cancel', async () => {
     const cfgK = { people: [
       { id: 'sam', name: 'Sam', role: 'sous', add: true, tick: true, del: true, active: true },
       { id: 'kim', name: 'Kim Lee', role: 'staff', add: true, tick: true, del: false, active: true }
@@ -207,13 +207,16 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     await p.click('.p-name[data-id="kim"]');
     await p.keyboard.type('4444'); await L.settle(p, 600);
     await p.keyboard.type('4444'); await L.settle(p, 1000);
-    await L.waitFor(p, () => !!document.querySelector('[data-p="dk-skip"]'), null, 8000);
+    ok(await p.evaluate(() => location.hash === '#/'), 'new starter drinks: the first PIN opens Home');
+    await p.evaluate(() => { location.hash = '#/drinks'; }); await L.settle(p, 600);
+    await L.waitFor(p, () => !!document.querySelector('[data-p="dk-edit"]'), null, 8000);
+    await p.click('[data-p="dk-edit"]'); await L.settle(p, 200);
     await pickDk(p, 'kind', 'flat');
-    await p.click('[data-p="dk-skip"]'); await L.settle(p, 200);
-    ok(!!(await p.$('.dr-form')) && await txt(p, '[data-p="dk-skip"]') === 'Tap again to skip', 'drinks skip: the first tap on Skip for now keeps the pick and asks again');
-    await fits(p, 'drinks Skip armed at 390');
-    await p.click('[data-p="dk-skip"]'); await L.settle(p, 300);
-    ok(!(await p.$('.dr-form')) && !(await store(p))[fsKey(['drinks', 'kim'])], 'drinks skip: the second tap skips, with nothing saved');
+    await p.click('[data-p="dk-cancel"]'); await L.settle(p, 200);
+    ok(!!(await p.$('.dr-form')) && await txt(p, '[data-p="dk-cancel"]') === 'Tap again to discard', 'new starter drinks: the first Cancel keeps the pick and asks again');
+    await fits(p, 'drinks Cancel armed at 390');
+    await p.click('[data-p="dk-cancel"]'); await L.settle(p, 300);
+    ok(!(await p.$('.dr-form')) && !(await store(p))[fsKey(['drinks', 'kim'])], 'new starter drinks: the second Cancel discards the optional pick, with nothing saved');
     await p.context().close();
   });
 
@@ -283,6 +286,8 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     await L.waitFor(p, () => !!document.querySelector('.p-name[data-id="bo"]'), null, 8000);
     await p.click('.p-name[data-id="bo"]'); await L.settle(p, 300);
     await p.fill('#pf1', '3333'); await L.settle(p, 1500);
+    ok(await p.evaluate(() => location.hash === '#/'), 'section hand-over: Bo starts on Home');
+    await S(p, () => { location.hash = '#/prep'; }); await L.settle(p, 600);
     await L.waitFor(p, () => !!document.querySelector('[data-p="write"]'), null, 8000); await L.pLog(p);
     ok(await S(p, () => window.LK_PREP.state.who) === 'bo' && await p.inputValue('#p-section') === '' && !(await S(p, () => window.LK_PREP.state.secTyped)), 'section hand-over: Bo\'s Section box does not hold Sam\'s Larder (' + await p.inputValue('#p-section') + ')');
     ok(p.errors.length === 0, 'section hand-over: no page errors ' + p.errors.join(' | '));

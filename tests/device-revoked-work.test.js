@@ -92,6 +92,8 @@ async function handover(p, label, expectedAttempts = 1) {
   await p.locator('.p-name[data-id="sam"]').click();
   await p.locator('#pf1').fill('1111');
   await L.waitFor(p, () => LK_PREP.state.authed && LK_PREP.state.who === 'sam' && LK_PREP.privateAccess(), null, 8000);
+  ok(await p.evaluate(() => location.hash === '#/'), label + ': the next person starts on Home');
+  await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 500);
   ok(await p.locator('#p-text').inputValue() === '', label + ': the next person sees a clean form');
   ok(await p.evaluate(() => !LK_PREP.ownerHere()), label + ': the next PIN session does not inherit the original Google admin grant');
   ok(await deniedAdminRead(p), label + ': the next person is still refused a private admin read by the server');

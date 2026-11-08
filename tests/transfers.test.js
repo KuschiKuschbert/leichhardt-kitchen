@@ -126,6 +126,8 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
     ok(!!await p.$('[data-k="pf1"]') && !await p.$('.tr-row'), 'shared tablet: transfers are hidden behind the idle PIN lock');
     await p.click('[data-p="who-change"]'); await L.settle(p, 200);
     await p.click('.p-name[data-id="ann"]'); await L.settle(p,250); await p.keyboard.type('2222'); await L.settle(p,1000);
+    ok(await p.evaluate(() => location.hash === '#/'), 'shared tablet: the next person starts on Home');
+    await p.evaluate(() => { location.hash = '#/transfers'; }); await L.settle(p, 600);
     await L.xLog(p);
     await p.fill('#tr-venue', 'Riviera'); await p.fill('#tr-person', 'Jess'); await p.fill('#tr-text', 'Cream'); await p.fill('#tr-amt', '2');
     await L.choose(p, '[data-p="tr-unit"][data-v="L"]');

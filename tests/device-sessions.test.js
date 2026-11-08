@@ -119,7 +119,10 @@ function denyGrantInit() {
     ok(initial.anonymous && initial.uid === initial.primaryUid && initial.uid !== 'owner' && initial.googleUid === 'owner' && !await isPrivate(p), 'legacy Google moves to the owner app and a new anonymous device still needs a fresh PIN');
     ok(JSON.stringify(await record(p, 'sessions', 'owner')) === JSON.stringify(legacy), 'migration preserves the old shared Google-UID session document');
     await unlock(p, 'kit');
-    await L.waitFor(p, () => LK_PREP.state.level === 'owner' && !!document.querySelector('.ad-admin'), null, 8000);
+    await L.waitFor(p, () => LK_PREP.state.level === 'owner' && !!document.querySelector('#hm-board'), null, 8000);
+    ok(await p.evaluate(() => location.hash === '#/'), 'a fresh head PIN opens Home');
+    await p.evaluate(() => { location.hash = '#/admin'; });
+    await L.waitFor(p, () => !!document.querySelector('.ad-admin'), null, 8000);
     const current = await auth(p), session = await record(p, 'sessions', initial.uid);
     ok(current.uid === initial.uid && session && session.v === 2 && session.by === 'kit' && session.exp === tomorrow, 'the fresh PIN opens a daily v2 session on the new device without changing its anonymous identity');
     ok(JSON.stringify(await record(p, 'sessions', 'owner')) === JSON.stringify(legacy) && await p.evaluate(path => !__fake.writes.flat().some(w => w.path === path), key('sessions', 'owner')), 'neither migration nor the new PIN writes to or deletes the legacy shared-UID session');
@@ -131,7 +134,10 @@ function denyGrantInit() {
     ok(initial.anonymous && initial.googleUid && initial.uid !== initial.googleUid && !await isPrivate(p), mode + ': remembered Google authentication never substitutes for today\'s PIN');
     ok(!(await p.locator('.ad-admin').count()), mode + ': the admin workspace stays hidden before the head-chef PIN');
     await unlock(p, 'kit');
-    await L.waitFor(p, () => LK_PREP.state.level === 'owner' && !!document.querySelector('.ad-admin'), null, 8000);
+    await L.waitFor(p, () => LK_PREP.state.level === 'owner' && !!document.querySelector('#hm-board'), null, 8000);
+    ok(await p.evaluate(() => location.hash === '#/'), 'a fresh head PIN opens Home');
+    await p.evaluate(() => { location.hash = '#/admin'; });
+    await L.waitFor(p, () => !!document.querySelector('.ad-admin'), null, 8000);
     const current = await auth(p), session = await record(p, 'sessions', initial.uid), grant = await record(p, 'adminDevices', initial.uid);
     ok(current.uid === initial.uid && current.anonymous && current.googleUid === initial.googleUid, mode + ': completing Google and PIN authentication keeps the primary anonymous UID stable');
     ok(session && grant && session.by === 'kit' && grant.by === 'kit' && grant.googleUid === initial.googleUid && grant.exp === session.exp && millis(grant.issuedAt) === millis(session.issuedAt), mode + ': the owner grant is bound to this exact verified device session');
@@ -155,7 +161,10 @@ function denyGrantInit() {
     ok(mode === 'own' ? current.googleUid === initial.googleUid : !current.googleUid, mode + ': daily lock ' + (mode === 'own' ? 'remembers personal Google authentication' : 'signs out the shared Google account'));
     if (mode === 'shared') { await p.locator('[data-p="signin"]').click(); await L.settle(p, 500); }
     await unlock(p, 'kit');
-    await L.waitFor(p, () => LK_PREP.state.level === 'owner' && !!document.querySelector('.ad-admin'), null, 8000);
+    await L.waitFor(p, () => LK_PREP.state.level === 'owner' && !!document.querySelector('#hm-board'), null, 8000);
+    ok(await p.evaluate(() => location.hash === '#/'), 'a fresh head PIN opens Home');
+    await p.evaluate(() => { location.hash = '#/admin'; });
+    await L.waitFor(p, () => !!document.querySelector('.ad-admin'), null, 8000);
     const unlocked = await auth(p), fresh = await record(p, 'sessions', initial.uid), bound = await record(p, 'adminDevices', initial.uid);
     ok(unlocked.uid === initial.uid && unlocked.googleUid === initial.googleUid && fresh && fresh.exp === cutoff + 86400000 && millis(fresh.issuedAt) >= cutoff && bound && millis(bound.issuedAt) === millis(fresh.issuedAt), mode + ': the next day opens only after a fresh PIN and receives a newly bound grant on the same device');
   });

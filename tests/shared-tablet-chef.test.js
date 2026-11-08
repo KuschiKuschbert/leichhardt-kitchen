@@ -19,7 +19,10 @@ const uid = p => p.evaluate(async () => (await LK_PREP.book().ready()).auth.curr
     const p = await L.open(b, '#/admin', { admin: true, who: '', deviceMode, dailyLocked: true, wait: 1600 });
     const initial = await uid(p);
     ok(!await p.$('.a-groups') && !await p.evaluate(() => LK_PREP.privateAccess()), deviceMode + ': remembered Google alone cannot open the admin panel');
-    await p.fill('#pf1', '4444'); await L.waitFor(p, () => LK_PREP.state.level === 'owner' && !!document.querySelector('.a-groups'), null, 8000);
+    await p.fill('#pf1', '4444'); await L.waitFor(p, () => LK_PREP.state.level === 'owner' && !!document.querySelector('#hm-board'), null, 8000);
+    ok(await p.evaluate(() => location.hash === '#/'), deviceMode + ': the fresh head PIN opens Home');
+    await p.evaluate(() => { location.hash = '#/admin'; });
+    await L.waitFor(p, () => !!document.querySelector('.a-groups'), null, 8000);
     ok(await uid(p) === initial, deviceMode + ': Google plus the head daily PIN unlocks the existing anonymous device');
     await L.waitFor(p, () => !LK_PREP.unsaved(), null, 8000);
     await p.evaluate(() => LK_PREP.signOut(true)); await L.settle(p, 500);

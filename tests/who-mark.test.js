@@ -21,14 +21,14 @@ const mark = p => p.evaluate(() => { const e = document.querySelector('.wtop-who
   await p.click('.wm a[href="#/settings"]'); await L.settle(p, 400);
   ok(await p.evaluate(() => location.hash) === '#/settings' && !(await p.$('.wm')), 'recipes: Settings opens from the menu and the menu closes');
   ok(await p.evaluate(() => document.querySelector('.wtop-who').getAttribute('aria-current')) === 'page', 'settings: the chef mark is marked as the current page');
-  // Sign in from the hat: "Who are you?", the PIN, then back to the page it came from
+  // Sign in from the hat: "Who are you?", the PIN, then Home with the person's shift details
   await p.evaluate(() => { location.hash = '#/r/laksa'; }); await L.settle(p, 400);
   await L.tap(p, '.wtop-who'); await L.settle(p, 200);
   await p.click('.wm [data-who="signin"]'); await L.settle(p, 800);
-  ok(await p.evaluate(() => location.hash) === '#/prep' && /Who are you\?/.test(await txt(p, '#prep-root') || '') && /goes back to where you were/.test(await txt(p, '#prep-root') || ''), 'sign in from the hat: "Who are you?" on the prep list, saying it goes back');
+  ok(await p.evaluate(() => location.hash) === '#/prep' && /Who are you\?/.test(await txt(p, '#prep-root') || '') && /After your PIN, Home shows your shift details\./.test(await txt(p, '#prep-root') || ''), 'sign in from the hat: the name picker says Home follows the PIN');
   await p.click('.p-name[data-id="ann"]'); await L.settle(p, 500);
   await p.type('#pf1', '2222'); await L.settle(p, 1200);
-  ok(await p.evaluate(() => location.hash) === '#/r/laksa', 'sign in from the hat: back on the recipe after the PIN (' + await p.evaluate(() => location.hash) + ')');
+  ok(await p.evaluate(() => location.hash) === '#/' && !!(await p.$('#hm-board')), 'sign in from the hat: Home opens after the PIN (' + await p.evaluate(() => location.hash) + ')');
   ok((await mark(p)) === 'on:Signed in as Ann:', 'sign in from the hat: the mark has her name (' + await mark(p) + ')');
   ok(p.errors.length === 0, 'sign in from the hat: no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -50,7 +50,7 @@ const mark = p => p.evaluate(() => { const e = document.querySelector('.wtop-who
   p = await L.open(b, '#/prep', { who: 'sam', wait: 1200 });
   ok(await txt(p, '.wtop-who .wtop-av') === 'S' && !(await p.$('.nb-top')), 'personal phone: the hat carries Sam\'s initial and the prep list has no Writing as row');
   await p.context().close();
-  // sign out and in again on the prep list: the mark follows without a reload
+  // sign out on the prep list and sign in to Home: the mark follows without a reload
   p = await L.open(b, '#/prep', { who: 'sam', deviceMode: 'shared', wait: 1200 });
   ok((await mark(p)) === 'on:Signed in as Sam:Sam', 'shared prep list: mark on for Sam, his first name next to the hat (' + await mark(p) + ')');
   ok(!(await L.overflow(p)), 'shared prep list: no sideways scroll with the name on the hat');
@@ -60,12 +60,12 @@ const mark = p => p.evaluate(() => { const e = document.querySelector('.wtop-who
   await L.settle(p, 500);
   await p.type('#pf1', '2222');
   await L.settle(p, 900);
-  ok((await mark(p)) === 'on:Signed in as Ann:Ann', 'prep list: signing in as Ann brings the mark back with her name (' + await mark(p) + ')');
-  ok((await anim(p)) === 'flip:who-flip', 'prep list: the sign-in flips the mark in like a coin (' + await anim(p) + ')');
+  ok((await mark(p)) === 'on:Signed in as Ann:Ann' && await p.evaluate(() => location.hash) === '#/', 'Home: signing in as Ann brings the mark back with her name (' + await mark(p) + ')');
+  ok((await anim(p)) === 'flip:who-flip', 'Home: the sign-in flips the mark in like a coin (' + await anim(p) + ')');
   ok(p.errors.length === 0, 'who mark: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   // the order list, wastage and transfers have no Writing as row either; Sign out in the hat menu hands the phone over
-  // and the next person signs in on that page
+  // and the next person's PIN opens Home
   for (const pg of ['orders', 'waste', 'transfers']) {
     p = await L.open(b, '#/' + pg, { who: 'sam', deviceMode: 'shared', wait: 1200 });
     ok(!(await p.$('.nb-top')) && (await mark(p)) === 'on:Signed in as Sam:Sam', pg + ': no Writing as row, Sam on the hat');
@@ -73,7 +73,7 @@ const mark = p => p.evaluate(() => { const e = document.querySelector('.wtop-who
     ok(/Who are you\?/.test(await txt(p, '#prep-root') || '') && (await mark(p)) === 'on:Menu and Settings:', pg + ': Sign out asks who is writing and takes the name off the mark');
     await p.click('.p-name[data-id="ann"]'); await L.settle(p, 500);
     await p.type('#pf1', '2222'); await L.settle(p, 900);
-    ok(await p.evaluate(() => location.hash) === '#/' + pg && await L.whoIs(p) === 'Ann', pg + ': Ann signs in and stays on the page');
+    ok(await p.evaluate(() => location.hash) === '#/' && !!(await p.$('#hm-board')) && await L.whoIs(p) === 'Ann', pg + ': Ann signs in and lands on Home');
     ok(p.errors.length === 0, pg + ' sign out: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }

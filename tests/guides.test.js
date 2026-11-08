@@ -90,9 +90,9 @@ async function saved(p) { await L.waitFor(p, () => !window.LK_PREP.state.gf, nul
   ok(p.errors.length === 0, 'guides page: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // No kitchen PIN on this phone: the PIN screen opens the guides
+  // No kitchen PIN on this phone: sign-in now names the Home destination
   p = await L.open(b, '#/guides', { noPin: true, extra });
-  ok(/Open the guides/.test(await p.locator('[data-p="pin-go"]').innerText()), 'guides: with no kitchen PIN the PIN screen says Open the guides');
+  ok(/Open Home/.test(await p.locator('[data-p="pin-go"]').innerText()), 'guides: with no kitchen PIN the sign-in screen names Home');
   await p.context().close();
 
   // Recipe cards and the recipe search find guides, from the list kept on the phone (no extra reads)

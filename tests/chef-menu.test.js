@@ -117,7 +117,8 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   await p.click('.p-name[data-id="sam"]'); await L.settle(p, 400);
   await p.type('#pf1', '1111');
   await L.waitFor(p, () => LK_PREP.privateAccess() && LK_PREP.state.who === 'sam', null, 8000);
-  ok(await signedIn(p) && !(await p.$('[data-p="a-add-person"]')) && !!(await p.$('.nb-left')), 'sign in again: the prep list, not the last Manage staff page');
+  await L.waitFor(p, () => location.hash === '#/' && !!document.querySelector('#hm-board'), null, 8000);
+  ok(await signedIn(p) && !(await p.$('[data-p="a-add-person"]')) && !!(await p.$('#hm-board')), 'sign in again: Home opens and the last Manage staff page stays closed');
   ok(p.errors.length === 0, 'sous chef menu: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -215,6 +216,8 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   ok(!(await signedIn(p)) && /Who are you\?/.test(await txt(p, '#prep-root') || ''), 'Not you?: the second tap asks who is writing');
   await p.click('.p-name[data-id="bo"]'); await L.settle(p, 300);
   await p.keyboard.type('3333'); await L.settle(p, 900);
+  ok(await p.evaluate(() => location.hash) === '#/' && !!(await p.$('#hm-board')), 'Not you?: Bo lands on Home after his PIN');
+  await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 600);
   ok(await L.whoIs(p) === 'Bo' && await p.inputValue('#p-text') === '', 'Not you?: Bo signs in and the previous person typed line is cleared');
   ok(p.errors.length === 0, 'Not you?: no page errors ' + p.errors.join(' | '));
   await p.context().close();

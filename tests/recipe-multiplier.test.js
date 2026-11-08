@@ -132,10 +132,14 @@ async function coldRecipeChecks(b) {
   if (await choice.count() && await choice.isVisible()) await choice.click();
   await p.fill('#pf1', '2222');
   await L.waitFor(p, () => LK_PREP.bookEdit() && LK_PREP.state.who === 'ann', null, 8000);
+  await L.settle(p, 300);
+  ok(await p.evaluate(() => location.hash === '#/') && !!(await p.$('#hm-board')), 'a fresh PIN with no unfinished editor opens Home');
   await p.clock.fastForward(61000);
+  await p.evaluate(() => { location.hash = '#/manage/r/multiply-test'; });
+  await L.settle(p, 300);
   await p.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
   const unlocked = await L.waitFor(p, () => document.querySelector('#mg-name')?.value === 'Multiplier test').catch(() => false);
-  ok(unlocked && await p.evaluate(() => LK_PREP.privateAccess() && LK_PREP.state.who === 'ann' && location.hash === '#/manage/r/multiply-test' && __fake.reads.filter(x => x.endsWith('/recipes/multiply-test')).length === 2), 'the same person unlocks and a normal wake opens the freshly accepted recipe after the existing retry delay');
+  ok(unlocked && await p.evaluate(() => LK_PREP.privateAccess() && LK_PREP.state.who === 'ann' && location.hash === '#/manage/r/multiply-test' && __fake.reads.filter(x => x.endsWith('/recipes/multiply-test')).length === 2), 'after Home, reopening the editor accepts one fresh recipe response after the existing retry delay');
   ok(!p.errors.length, 'locked late recipe has no browser errors ' + p.errors.join(' | '));
   await p.context().close();
 }

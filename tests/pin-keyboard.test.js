@@ -49,9 +49,7 @@ const active = p => p.evaluate(() => { const a = document.activeElement; return 
   ok((await active(p)) === 'pf2:numeric', 'new person: after four digits the cursor is in "Type it again" (' + await active(p) + ')');
   await p.keyboard.type('4444');
   await L.settle(p, 900);
-  ok(/One more thing, Kim/.test(await txt(p, '#prep-root') || ''), 'new person: asked for a usual drink straight after the PIN');
-  await p.click('[data-p="dk-skip"]');
-  await L.settle(p, 300);
+  ok(await p.evaluate(() => location.hash === '#/') && !!(await p.$('#hm-board')) && !(await p.$('.dr-first')), 'new person: the PIN typed early opens Home without a drinks detour');
   ok(await L.whoIs(p) === 'Kim', 'new person: signed in with the PIN typed early (' + await L.whoIs(p) + ')');
   ok(p.errors.length === 0, 'pin keyboard new person: no page errors ' + p.errors.join(' | '));
   await p.context().close();
