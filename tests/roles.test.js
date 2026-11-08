@@ -27,7 +27,7 @@ const PEOPLE = [P('kit', 'Kit', 'head'), P('sam', 'Sam', 'sous'), P('ann', 'Ann'
   P('vic', 'Vic', 'view', { add: false, tick: false, del: false }), P('fay', 'Fay', 'fnc', { add: false, tick: false, del: false, fn: true })];
 // a supplier whose order closes at 15:00 today (the cut-off bar shows for the chefs at 14:00) and a function tonight
 const next = (new Date(L.NOW).getDay() + 1) % 7;
-// what staff see of the new pages (config/main staffSee): the tabs below follow it
+// what staff see of the new pages (config/main staffSee): the Guides menu entry below follows it
 const SEE = { guides: true, pings: true, minutes: true };
 /* Also what makes a page read more than an empty book does, so the reads it brings run under "no read the rules
    refuse": minutes published yesterday (each phone reads its own sign-off, loadMine()), an Everyone ping and personal
@@ -56,7 +56,8 @@ function extra() {
 }
 // the 8 sign-ins: who is on the phone, and what its menu and tabs must and must not hold. Guides shows for everyone in
 // the kitchen while staff see it (SEE.guides), and never for functions only
-const KITCHEN_TABS = ['Recipes', 'Prep', 'Orders', 'Wastage', 'Transfers'].concat(SEE.guides ? ['Guides'] : []);
+const KITCHEN_TABS = ['Recipes', 'Prep', 'Orders', 'Wastage', 'Transfers', 'Cleaning'];
+const KITCHEN_MENU = ['cleaning'].concat(SEE.guides ? ['guides'] : []);
 const CREW_NO = ['admin', 'chef', 'todo', 'manage', 'pings', 'staff', 'functions', 'suppliers'];
 const SIGNINS = [
   { id: 'staff', name: 'staff (Ann)', o: { who: 'ann' }, has: ['mail', 'drinks', 'fn', 'deliveries', 'settings', 'out'], no: CREW_NO, tabs: KITCHEN_TABS },
@@ -66,7 +67,7 @@ const SIGNINS = [
   { id: 'head', name: 'head chef on PIN (Kit)', o: { who: 'kit' }, has: ['admin', 'chef', 'todo', 'manage', 'pings', 'staff', 'out'], no: ['mail', 'functions'], tabs: KITCHEN_TABS, admin: true },
   { id: 'owner', name: 'head chef\'s Google device with daily head PIN', o: { admin: true, who: 'kit' }, has: ['admin', 'chef', 'todo', 'manage', 'functions', 'out'], no: ['mail'], tabs: KITCHEN_TABS, admin: true },
   { id: 'tablet', name: 'shared tablet (Bo)', o: { who: 'bo', settings: { shared: true }, touch: true }, has: ['mail', 'drinks', 'fn', 'out'], no: CREW_NO, tabs: KITCHEN_TABS },
-  { id: 'fnonly', name: 'functions only (Fay)', o: { who: 'fay' }, has: ['functions', 'deliveries', 'out'], no: ['admin', 'chef', 'todo', 'manage', 'pings', 'staff', 'mail', 'drinks', 'fn', 'suppliers'], tabs: ['Recipes'], fnOnly: true }
+  { id: 'fnonly', name: 'functions only (Fay)', o: { who: 'fay' }, has: ['functions', 'deliveries', 'out'], no: ['admin', 'chef', 'todo', 'manage', 'pings', 'staff', 'mail', 'drinks', 'fn', 'suppliers', 'cleaning', 'guides'], tabs: ['Recipes'], fnOnly: true }
 ];
 const PAGES = ['#/', '#/prep', '#/orders', '#/waste', '#/transfers', '#/recipes', '#/fn'];
 const SIZES = [[390, 844], [768, 1024], [1280, 900]];
@@ -153,7 +154,7 @@ const refusedNow = p => p.evaluate(() => (window.__fake.refused || []).map(x => 
           }
         }
         // the menu and the tabs this sign-in has, and must not have
-        const miss = s.has.filter(x => !r.menu.includes(x)), extraItems = s.no.filter(x => r.menu.includes(x));
+        const miss = s.has.concat(s.fnOnly ? [] : KITCHEN_MENU).filter(x => !r.menu.includes(x)), extraItems = s.no.filter(x => r.menu.includes(x));
         ok(!miss.length && !extraItems.length, at + ': the chef hat menu (' + r.menu.join(', ') + ')' + (miss.length ? ' is missing ' + miss.join(', ') : '') + (extraItems.length ? ' should not have ' + extraItems.join(', ') : ''));
         ok(JSON.stringify(r.tabs) === JSON.stringify(s.tabs), at + ': the tabs (' + r.tabs.join(', ') + ')' + (JSON.stringify(r.tabs) === JSON.stringify(s.tabs) ? '' : ', not ' + s.tabs.join(', ')));
         await p.context().close();

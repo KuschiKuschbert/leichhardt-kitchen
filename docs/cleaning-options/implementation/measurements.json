@@ -1,0 +1,638 @@
+{
+  "note": "Synthetic Firebase jobs and people only. All eight areas shown daily to measure the layout; this is not an approved operating schedule. Fonts are the same families already loaded by the app.",
+  "measurements": [
+    {
+      "name": "cleaning-staff-390",
+      "width": 390,
+      "textSize": "normal",
+      "overflow": false,
+      "targets": [],
+      "rowsVisible": 7,
+      "rows": [
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 264.0625,
+          "bottom": 316
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 316,
+          "bottom": 367.9375
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 367.9375,
+          "bottom": 419.875
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 468.671875,
+          "bottom": 520.609375
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 520.609375,
+          "bottom": 572.546875
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 572.546875,
+          "bottom": 624.484375
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 673.28125,
+          "bottom": 725.21875
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 725.21875,
+          "bottom": 777.15625
+        }
+      ],
+      "fonts": {
+        "body": true,
+        "display": true,
+        "caveat": true
+      },
+      "titleFont": "Caveat, cursive",
+      "errors": []
+    },
+    {
+      "name": "cleaning-chef-week-390",
+      "width": 390,
+      "textSize": "normal",
+      "overflow": false,
+      "targets": [],
+      "rowsVisible": 3,
+      "rows": [
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 524.125,
+          "bottom": 576.0625
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 576.0625,
+          "bottom": 628
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 628,
+          "bottom": 679.9375
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 728.734375,
+          "bottom": 780.671875
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 780.671875,
+          "bottom": 832.609375
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 832.609375,
+          "bottom": 884.546875
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 933.34375,
+          "bottom": 985.28125
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 985.28125,
+          "bottom": 1037.21875
+        }
+      ],
+      "fonts": {
+        "body": true,
+        "display": true,
+        "caveat": true
+      },
+      "titleFont": "Caveat, cursive",
+      "errors": []
+    },
+    {
+      "name": "cleaning-staff-768",
+      "width": 768,
+      "textSize": "normal",
+      "overflow": false,
+      "targets": [],
+      "rowsVisible": 7,
+      "rows": [
+        {
+          "w": 694,
+          "h": 54.59375,
+          "y": 312.71875,
+          "bottom": 367.3125
+        },
+        {
+          "w": 694,
+          "h": 54.59375,
+          "y": 367.3125,
+          "bottom": 421.90625
+        },
+        {
+          "w": 694,
+          "h": 54.59375,
+          "y": 421.90625,
+          "bottom": 476.5
+        },
+        {
+          "w": 694,
+          "h": 54.59375,
+          "y": 525.296875,
+          "bottom": 579.890625
+        },
+        {
+          "w": 694,
+          "h": 54.59375,
+          "y": 579.890625,
+          "bottom": 634.484375
+        },
+        {
+          "w": 694,
+          "h": 54.59375,
+          "y": 634.484375,
+          "bottom": 689.078125
+        },
+        {
+          "w": 694,
+          "h": 54.59375,
+          "y": 737.875,
+          "bottom": 792.46875
+        },
+        {
+          "w": 694,
+          "h": 54.59375,
+          "y": 792.46875,
+          "bottom": 847.0625
+        }
+      ],
+      "fonts": {
+        "body": true,
+        "display": true,
+        "caveat": true
+      },
+      "titleFont": "Caveat, cursive",
+      "errors": []
+    },
+    {
+      "name": "cleaning-chef-week-768",
+      "width": 768,
+      "textSize": "normal",
+      "overflow": false,
+      "targets": [],
+      "rowsVisible": 4,
+      "rows": [
+        {
+          "w": 694,
+          "h": 54.59375,
+          "y": 553.28125,
+          "bottom": 607.875
+        },
+        {
+          "w": 694,
+          "h": 54.59375,
+          "y": 607.875,
+          "bottom": 662.46875
+        },
+        {
+          "w": 694,
+          "h": 54.59375,
+          "y": 662.46875,
+          "bottom": 717.0625
+        },
+        {
+          "w": 694,
+          "h": 54.59375,
+          "y": 765.859375,
+          "bottom": 820.453125
+        },
+        {
+          "w": 694,
+          "h": 54.59375,
+          "y": 820.453125,
+          "bottom": 875.046875
+        },
+        {
+          "w": 694,
+          "h": 54.59375,
+          "y": 875.046875,
+          "bottom": 929.640625
+        },
+        {
+          "w": 694,
+          "h": 54.59375,
+          "y": 978.4375,
+          "bottom": 1033.03125
+        },
+        {
+          "w": 694,
+          "h": 54.59375,
+          "y": 1033.03125,
+          "bottom": 1087.625
+        }
+      ],
+      "fonts": {
+        "body": true,
+        "display": true,
+        "caveat": true
+      },
+      "titleFont": "Caveat, cursive",
+      "errors": []
+    },
+    {
+      "name": "cleaning-staff-1280",
+      "width": 1280,
+      "textSize": "normal",
+      "overflow": false,
+      "targets": [],
+      "rowsVisible": 8,
+      "rows": [
+        {
+          "w": 1166,
+          "h": 52.8125,
+          "y": 312.71875,
+          "bottom": 365.53125
+        },
+        {
+          "w": 1166,
+          "h": 52.8125,
+          "y": 365.53125,
+          "bottom": 418.34375
+        },
+        {
+          "w": 1166,
+          "h": 52.8125,
+          "y": 418.34375,
+          "bottom": 471.15625
+        },
+        {
+          "w": 1166,
+          "h": 52.8125,
+          "y": 519.953125,
+          "bottom": 572.765625
+        },
+        {
+          "w": 1166,
+          "h": 52.8125,
+          "y": 572.765625,
+          "bottom": 625.578125
+        },
+        {
+          "w": 1166,
+          "h": 52.8125,
+          "y": 625.578125,
+          "bottom": 678.390625
+        },
+        {
+          "w": 1166,
+          "h": 52.8125,
+          "y": 727.1875,
+          "bottom": 780
+        },
+        {
+          "w": 1166,
+          "h": 52.8125,
+          "y": 780,
+          "bottom": 832.8125
+        }
+      ],
+      "fonts": {
+        "body": true,
+        "display": true,
+        "caveat": true
+      },
+      "titleFont": "Caveat, cursive",
+      "errors": []
+    },
+    {
+      "name": "cleaning-chef-week-1280",
+      "width": 1280,
+      "textSize": "normal",
+      "overflow": false,
+      "targets": [],
+      "rowsVisible": 0,
+      "rows": [],
+      "fonts": {
+        "body": true,
+        "display": true,
+        "caveat": true
+      },
+      "titleFont": "Caveat, cursive",
+      "errors": []
+    },
+    {
+      "name": "cleaning-done-390",
+      "width": 390,
+      "textSize": "normal",
+      "overflow": false,
+      "targets": [],
+      "rowsVisible": 7,
+      "rows": [
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 264.0625,
+          "bottom": 316
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 316,
+          "bottom": 367.9375
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 367.9375,
+          "bottom": 419.875
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 468.671875,
+          "bottom": 520.609375
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 520.609375,
+          "bottom": 572.546875
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 572.546875,
+          "bottom": 624.484375
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 673.28125,
+          "bottom": 725.21875
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 725.21875,
+          "bottom": 777.15625
+        }
+      ],
+      "fonts": {
+        "body": true,
+        "display": true,
+        "caveat": true
+      },
+      "titleFont": "Caveat, cursive",
+      "errors": []
+    },
+    {
+      "name": "cleaning-editor-390",
+      "width": 390,
+      "textSize": "normal",
+      "overflow": false,
+      "targets": [],
+      "rowsVisible": 6,
+      "rows": [
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 324.0625,
+          "bottom": 376
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 376,
+          "bottom": 427.9375
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 427.9375,
+          "bottom": 479.875
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 528.671875,
+          "bottom": 580.609375
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 580.609375,
+          "bottom": 632.546875
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 632.546875,
+          "bottom": 684.484375
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 733.28125,
+          "bottom": 785.21875
+        },
+        {
+          "w": 324,
+          "h": 51.9375,
+          "y": 785.21875,
+          "bottom": 837.15625
+        }
+      ],
+      "fonts": {
+        "body": true,
+        "display": true,
+        "caveat": true
+      },
+      "titleFont": "Caveat, cursive",
+      "errors": []
+    },
+    {
+      "name": "cleaning-staff-390-large",
+      "width": 390,
+      "textSize": "large",
+      "overflow": false,
+      "targets": [],
+      "rowsVisible": 6,
+      "rows": [
+        {
+          "w": 316,
+          "h": 57.421875,
+          "y": 277.703125,
+          "bottom": 335.125
+        },
+        {
+          "w": 316,
+          "h": 57.421875,
+          "y": 335.125,
+          "bottom": 392.546875
+        },
+        {
+          "w": 316,
+          "h": 57.421875,
+          "y": 392.546875,
+          "bottom": 449.96875
+        },
+        {
+          "w": 316,
+          "h": 57.421875,
+          "y": 499.359375,
+          "bottom": 556.78125
+        },
+        {
+          "w": 316,
+          "h": 57.421875,
+          "y": 556.78125,
+          "bottom": 614.203125
+        },
+        {
+          "w": 316,
+          "h": 57.421875,
+          "y": 614.203125,
+          "bottom": 671.625
+        },
+        {
+          "w": 316,
+          "h": 57.421875,
+          "y": 721.015625,
+          "bottom": 778.4375
+        },
+        {
+          "w": 316,
+          "h": 57.421875,
+          "y": 778.4375,
+          "bottom": 835.859375
+        }
+      ],
+      "fonts": {
+        "body": true,
+        "display": true,
+        "caveat": true
+      },
+      "titleFont": "Caveat, cursive",
+      "errors": []
+    },
+    {
+      "name": "cleaning-staff-390-xlarge",
+      "width": 390,
+      "textSize": "xlarge",
+      "overflow": false,
+      "targets": [],
+      "rowsVisible": 6,
+      "rows": [
+        {
+          "w": 308,
+          "h": 62.9375,
+          "y": 291.359375,
+          "bottom": 354.296875
+        },
+        {
+          "w": 308,
+          "h": 62.9375,
+          "y": 354.296875,
+          "bottom": 417.234375
+        },
+        {
+          "w": 308,
+          "h": 62.9375,
+          "y": 417.234375,
+          "bottom": 480.171875
+        },
+        {
+          "w": 308,
+          "h": 62.9375,
+          "y": 530.171875,
+          "bottom": 593.109375
+        },
+        {
+          "w": 308,
+          "h": 62.9375,
+          "y": 593.109375,
+          "bottom": 656.046875
+        },
+        {
+          "w": 308,
+          "h": 62.9375,
+          "y": 656.046875,
+          "bottom": 718.984375
+        },
+        {
+          "w": 308,
+          "h": 62.9375,
+          "y": 768.984375,
+          "bottom": 831.921875
+        },
+        {
+          "w": 308,
+          "h": 62.9375,
+          "y": 831.921875,
+          "bottom": 894.859375
+        }
+      ],
+      "fonts": {
+        "body": true,
+        "display": true,
+        "caveat": true
+      },
+      "titleFont": "Caveat, cursive",
+      "errors": []
+    },
+    {
+      "name": "prep-reference-390",
+      "width": 390,
+      "textSize": "normal",
+      "overflow": false,
+      "targets": [],
+      "rowsVisible": 0,
+      "rows": [],
+      "fonts": {
+        "body": true,
+        "display": true,
+        "caveat": true
+      },
+      "titleFont": "Caveat, cursive",
+      "errors": []
+    },
+    {
+      "name": "team-reference-390",
+      "width": 390,
+      "textSize": "normal",
+      "overflow": false,
+      "targets": [],
+      "rowsVisible": 0,
+      "rows": [],
+      "fonts": {
+        "body": true,
+        "display": true,
+        "caveat": true
+      },
+      "titleFont": "Caveat, cursive",
+      "errors": []
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 8 November 2026. Source baseline `c2fae37`.
 
-**Chosen: pending.** The head chef requested three designs and a council before deciding. These are interactive design previews, not the live cleaning system. No navigation, application data or Firestore rules have changed.
+**Chosen: C daily list + A chef week review (8 November 2026).** After reviewing the three designs and council recommendation, the head chef approved the recommendation and required an exact match to the existing app’s design, style and fonts. The original interactive previews remain design evidence; implementation uses the existing app shell and notebook components. See [the implementation record](implementation.md).
 
 [Compare the designs](index.html) · [Original proposal](proposal.md)
 
@@ -33,7 +33,7 @@ There was no verdict disagreement. The keeper preferred deferring the weekly com
 
 Guides moves to **chef hat → More → Guides**, retaining its current visibility and access checks. Links from recipes and search stay. Individual cleaning jobs can link to their relevant guide when one exists and the person may see it.
 
-The vacated sixth navigation position becomes **Cleaning**. The total remains six destinations: Recipes, Prep, Orders, Wastage, Transfers, Cleaning. This replacement is proposed for the head chef's choice; no extra top-bar icon is added. The preview's small design/role controls are demonstration tools, not part of the planned product.
+The vacated sixth navigation position becomes **Cleaning**. The total remains six destinations: Recipes, Prep, Orders, Wastage, Transfers, Cleaning. The head chef approved this replacement; no extra top-bar icon is added. The preview's small design/role controls are demonstration tools, not part of the planned product.
 
 Guides costs two taps from a work page instead of one. Cleaning opens in one tap and an immediately visible task takes one further tap to mark done. The chef hat has an additional Cleaning entry under Every day for discoverability.
 
@@ -63,7 +63,7 @@ Removes the most navigation: one ruled list, all today's due jobs under Cooking 
 
 ## Completion behaviour to carry into the chosen design
 
-These are implementation requirements to resolve and verify, not backend features delivered by the previews.
+These requirements informed the approved implementation. The original previews remain synthetic, and implementation checks are recorded separately.
 
 - A tick belongs to a stable task ID and a dated occurrence. Repeating weekdays generate separate occurrences; a repeat task is never reset by deleting its past completion.
 - A personal phone attributes to its current signed-in person. Shared tablets must use the book's existing explicit attribution pattern so the recorded cleaner is not silently the person who last unlocked the screen.
@@ -87,14 +87,13 @@ Current phone screenshots use `tests/lib.js`, synthetic Firebase, a staff identi
 
 Preview counts and round 2 scores are recorded below. Browser checks have completed. Count complete rows above any fixed footer, not the number of records or partially visible rows. Preview toolbar space is included so the counts are conservative for these exact previews. Count targets and fit separately from font legibility; automated checks are not full accessibility certification.
 
-## Left to decide together
+## Schedule details still to decide together
 
-1. Which layout, or which combination, feels most useful on the actual kitchen devices?
-2. Which exact jobs repeat on which days, and which section owns each shared-area job?
-3. Is a job due once per day, per close, or separately for lunch and dinner? The current preview assumes one occurrence per day only.
-4. What existing paper or chat record should this replace?
+1. Which exact jobs repeat on which days, and which section owns each shared-area job?
+2. Is a job due once per day, per close, or separately for lunch and dinner? The current preview assumes one occurrence per day only.
+3. What existing paper or chat record should this replace?
 
-The next build should start from one real week's cleaning list. No schedule or layout is marked approved until the head chef chooses it.
+The layout is approved. The app starts with no operational jobs: chefs add the actual jobs, responsibilities and weekdays. The eight confirmed areas are suggestions, not a seeded cleaning programme. The first implementation uses one occurrence per calendar day in Queensland; multiple services would need a separate decision.
 
 
 ## Measured comparison
@@ -135,16 +134,16 @@ Each reviewer saw all three phone designs, wide chef views and the same measurem
 
 Disagreement is substantive: the head-chef reviewer values a weekly completion review from the start; the skeptic and keeper would defer it until a real week's jobs establish its value. The new starter ranks B above A because the section context is easier to understand. Do not record unanimous support for a hybrid.
 
-## Recommendation for discussion
+## Recommendation accepted by the head chef
 
 Start with **C's grouped daily list**, clear section ownership, one-tap completion, who/when and Undo. It is the strongest phone design and the council's first choice.
 
-Keep **A's chef-only weekly matrix** as the proposed companion for weekly oversight, with plain labelled states and its legend beside the grid. Whether to include it in the first release is the remaining trade-off. Do not adopt B's full section-first page unless a larger real workload justifies the extra controls.
+Keep **A's chef-only weekly matrix** as the proposed companion for weekly oversight, with plain labelled states and its legend beside the grid. The head chef accepted the companion week view for this implementation. Do not adopt B's full section-first page unless a larger real workload justifies the extra controls.
 
-Before building, confirm the task list for one week and make owner text larger and How to easier to read. On a shared tablet, the completion identity must be explicit. The selected implementation still needs actual role, offline, conflict and read-budget tests.
+Actual task procedures and repeat days are entered by chefs, with no example schedule promoted to production. The implementation uses readable owner text and How to links. On a shared tablet, the completion identity must be explicit. The selected implementation still needs actual role, offline, conflict and read-budget tests.
 
-## Delivery and next step
+## Delivery
 
-Design-only draft. The live navbar and kitchen pages remain unchanged. The three previews and council are complete; a layout choice and the real repeat schedule are the next conversation. The repository's service council says: “Before building a design, show the three designs and the recommendation.” This draft provides that review point.
+The three previews and both council rounds are complete. The head chef chose the recommendation and authorised implementation with the app’s existing typography, colours and controls. The branch now implements that choice; [implementation evidence and release status](implementation.md) distinguish code verification from production rollout.
 
-Another PR added the chef panel while this exploration was running. These previews are anchored to c2fae37 and show a labelled menu excerpt. Reconcile the current chef-panel navigation and instructions before implementing the chosen design; do not restore the older full chef menu.
+The implementation is based on the current chef-panel navigation from #607, with its existing role checks. The previews remain anchored to c2fae37 and show a labelled menu excerpt.

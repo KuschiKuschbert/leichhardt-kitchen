@@ -25,8 +25,8 @@ function world(see) {
   return x;
 }
 const HIDE = { guides: false, pings: false, minutes: false };
-// Home's way to Guides: a docket until 8 Nov 2026, since then the tab bar and the page tabs (the redesign's step 2)
-const docket = p => p.evaluate(() => Array.prototype.some.call(document.querySelectorAll('.docket, .tabbar a, .pnav a'), a => a.getAttribute('href') === '#/guides'));
+// Guides now lives under More in the chef hat. Inspect it without dismissing the pings sheet tested below.
+const guidesMenu = p => p.evaluate(() => { document.querySelector('.wtop-who').click(); const a = document.querySelector('.wm a[href="#/guides"]'); document.querySelector('[data-who="close"]').click(); return !!a; });
 const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelectorAll('.tabbar a'), a => a.getAttribute('href') === '#/guides'));
 
 (async () => {
@@ -50,13 +50,13 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   ok(JSON.stringify(s[CFG].sousIds) === '["sam","head"]' && JSON.stringify(s[CFG].pingIds) === '["sam","head"]' && s[CFG].headId === 'head', 'admin: sousIds and pingIds keep the daily head-PIN owner');
   await p.goto(L.BASE + '#/');
   await L.settle(p, 1500);
-  ok(await docket(p), 'admin: the head chef still sees the Guides docket');
+  ok(await guidesMenu(p), 'admin: the head chef still sees the Guides menu link');
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // Ann (staff) with all three held back: no Guides docket or tab, no bell, no popup, no minutes card
+  // Ann (staff) with all three held back: no Guides menu link or tab, no bell, no popup, no minutes card
   p = await L.open(b, '#/', { who: 'ann', extra: world(HIDE), wait: 2500 });
-  ok(!(await docket(p)), 'staff: no Guides docket on the landing page');
+  ok(!(await guidesMenu(p)), 'staff: no Guides menu link on the landing page');
   ok(!(await tab(p)), 'staff: no Guides in the tab bar');
   ok(!(await shown(p, '.nbell')), 'staff: no Pings bell');
   ok(await p.$('.nt') === null, 'staff: the shift pings sheet does not open');
@@ -64,7 +64,7 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   ok(await p.evaluate(() => localStorage.getItem('lk.feat')) === JSON.stringify(HIDE), 'staff: this phone remembers what it may see (lk.feat)');
   await p.reload({ waitUntil: 'load' });
   await L.settle(p, 150);
-  ok(!(await docket(p)), 'staff: after a reload the Guides docket stays away before the book connects');
+  ok(!(await guidesMenu(p)), 'staff: after a reload the Guides menu link stays away before the book connects');
   await p.goto(L.BASE + '#/guides');
   await L.settle(p, 800);
   ok(/not open to everyone yet/.test(await txt(p, '#prep-root') || ''), 'staff: #/guides says Guides are not open yet');
@@ -87,8 +87,8 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
   // Bo (lead) sees all three while staff do not
   p = await L.open(b, '#/', { who: 'bo', extra: world(HIDE), wait: 2500 });
   await L.waitFor(p, () => !!window.LK_PREP && LK_PREP.state.configFull && LK_PREP.state.authed);
-  await L.waitFor(p, () => !!document.querySelector('.tabbar a[href="#/guides"]'));
-  ok(await docket(p), 'lead: Guides docket shows');
+  await L.waitFor(p, () => window.LK_PREP.kitchenAccess() && window.LK_PREP.featOn('guides'));
+  ok(await guidesMenu(p), 'lead: Guides menu link shows');
   await L.waitFor(p, () => !!document.querySelector('.nt'));
   ok(await p.$('.nt') !== null, 'lead: the shift pings popup opens');
   await p.click('.nt-got');
@@ -105,7 +105,7 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
 
   // only Guides held back: Ann gets the pings popup and the minutes card, but no Guides
   p = await L.open(b, '#/', { who: 'ann', extra: world({ guides: false, pings: true, minutes: true }), wait: 2500 });
-  ok(!(await docket(p)), 'guides only: no Guides docket for staff');
+  ok(!(await guidesMenu(p)), 'guides only: no Guides menu link for staff');
   await L.waitFor(p, () => !!document.querySelector('.nt'));
   ok(await p.$('.nt') !== null, 'guides only: the pings popup opens for staff');
   // the minutes are read from Firestore: wait for the bell to say so (under load the page goes still before the read)
@@ -118,7 +118,7 @@ const tab = p => p.evaluate(() => Array.prototype.some.call(document.querySelect
 
   // nothing saved yet: staff see everything, as before
   p = await L.open(b, '#/', { who: 'ann', extra: world(), wait: 2500 });
-  ok(await docket(p) && await tab(p), 'default: staff see Guides when nothing is saved');
+  ok(await guidesMenu(p) && !(await tab(p)), 'default: staff see Guides in the hat, with no Guides tab, when nothing is saved');
   ok(await p.$('.nt') !== null, 'default: staff get the pings popup');
   await p.click('.nt-got');
   await p.goto(L.BASE + '#/recipes');
