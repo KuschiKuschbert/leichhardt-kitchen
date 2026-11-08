@@ -4874,12 +4874,12 @@
   function whoTopHTML() {
     return me() ? '' : '<div class="nb-top"><span></span><span class="p-links">' + notYouHTML() + '</span></div>';
   }
-  /* Wall board (5 Nov 2026, head chef, round 2 of the work pages redesign, as drawn in B): on the shared kitchen tablet,
+  /* Wall board (5 Nov 2026; personal devices too, head chef 8 Nov 2026): for every account that can open Prep,
      today's prep list as one column per section, like dockets on the rail. View and tick: the rows and their ticks are
      the list's own (rowHTML), so I'm on it and Who's on it? work the same. Wall board at the end of the section tabs
-     turns it on, List on the board turns it off. A choice for this tablet, kept in lk.wall ('1'): never out of date,
-     like the text size, and only a shared device reads it, so a personal phone always gets the list. */
-  function wallOn() { return shared() && S.name === 'prep' && S.date === dayNow() && lsGet('lk.wall') === '1'; }
+     turns it on, Back to the prep list turns it off. A browser choice, kept in lk.wall ('1'): never out of date,
+     like the text size. The existing Prep access gate and each line's permissions still apply. */
+  function wallOn() { return S.name === 'prep' && S.date === dayNow() && lsGet('lk.wall') === '1'; }
   function listHTML() {
     var today = dayNow();
     if (S.date !== today && !canBrowse() && !S.user) { S.date = today; S.tab = ''; watchItems(); }
@@ -4899,7 +4899,7 @@
     var fnTab = fnLive.length ? '<button type="button" class="nb-tab nb-tab-fn" data-p="tab" data-v="' + FN_TAB + '" aria-pressed="' + (S.tab === FN_TAB) + '">Functions' + (fnOpen ? ' <span class="nb-tab-n">' + fnOpen + '</span>' : '') + '</button>' : '';
     var tabHTML = tabs.length || fnTab ? '<nav class="nb-tabs" aria-label="Sections"><button type="button" class="nb-tab" data-p="tab" data-v="" aria-pressed="' + !S.tab + '">All</button>' +
       tabs.map(function (t) { return '<button type="button" class="nb-tab" data-p="tab" data-v="' + esc(t) + '" aria-pressed="' + (S.tab === t) + '">' + esc(t) + '</button>'; }).join('') + fnTab +
-      (shared() && S.date === today && tabs.length > 1 ? '<button type="button" class="nb-tab nb-tab-wall" data-p="wall" data-v="1">Wall board</button>' : '') + '</nav>' : '';
+      (S.date === today && tabs.length > 1 ? '<button type="button" class="nb-tab nb-tab-wall" data-p="wall" data-v="1">Wall board</button>' : '') + '</nav>' : '';
     // Closing soon and the waste review note: above the lines on phones and tablets (.nb-lc), at the top of Handy on big
     // screens (.nb-rc), so they do not push the lines down; CSS shows one of the two
     // (with no signal and the day not loaded, Closing soon gives no count of the lines left open: it would count only
@@ -11101,7 +11101,7 @@
     if (a === 'day') { S.date = shift(S.date, +el.getAttribute('data-d')); S.tab = ''; watchItems(); draw(); return; }
     if (a === 'today') { S.date = dayNow(); S.tab = ''; watchItems(); draw(); return; }
     if (a === 'tab') { S.tab = el.getAttribute('data-v') || ''; draw(); return; }
-    // the wall board on the shared kitchen tablet (wallOn()), kept for this tablet; focus goes to the way back
+    // The wall board (wallOn()), kept for this browser; focus goes to the way back.
     if (a === 'wall') { lsSet('lk.wall', el.getAttribute('data-v') === '1' ? '1' : ''); S.tab = ''; draw(); var wb = S.root && S.root.querySelector('[data-p="wall"]'); if (wb) wb.focus(); return; }
     if (a === 'tick') { tick(dt || S.date, id); return; }
     if (a === 'onit') { onTap(dt || S.date, id); return; }

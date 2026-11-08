@@ -486,7 +486,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
   /* a row that scrolls sideways fades at its edge, so there is clearly more (22 Oct 2026); the spacer lets the last tab clear the fade */
   -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 1.75rem), transparent); }
 .nb-tabs::after { content: ''; flex: 0 0 1.25rem; }
-/* Wall board (5 Nov 2026): the shared kitchen tablet's prep list, one column per section like dockets on the rail. The
+/* Wall board (5 Nov 2026; personal devices too, 8 Nov): today's prep list, one column per section like dockets on the rail. The
    columns wrap instead of scrolling sideways; a phone gets one column. */
 .wb { display: flex; flex-direction: column; gap: 0.8rem; }
 .wb-h { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 0.75rem; }
@@ -3807,7 +3807,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
   html[data-text="xlarge"] .nb-star .nb-ai { display: block; width: 32px; height: 32px; padding: 5px; border: 1.5px solid #BDB5A3; border-radius: 50%; color: var(--muted); }
   html[data-text="xlarge"] .nb-star[aria-pressed="true"] .nb-ai { background: var(--ink); border-color: var(--ink); color: #fff; }
 }
-/* the wall board on the shared tablet, on the notebook paper (head chef, 8 Nov 2026): the ruled page, the red margin and the
+/* the wall board on today's Prep, on the notebook paper (head chef, 8 Nov 2026): the ruled page, the red margin and the
    handwritten title, Urgent on every line, and Back to the prep list first in its heading */
 .wb { --rule: #DDD5C5; position: relative; background: var(--bar-text); border: 1.5px solid var(--ink); border-radius: 10px; padding: 0.4rem 1.25rem 1.25rem 2.4rem; box-shadow: 0 6px 0 rgba(28,29,31,0.12); }
 .wb::before { content: ''; position: absolute; left: 1.2rem; top: 0; bottom: 0; width: 2px; background: #E7B7A6; }
