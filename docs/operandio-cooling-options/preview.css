@@ -60,28 +60,27 @@ html.oc-sheet-open, html.oc-sheet-open body { overflow: hidden; }
 .oc-mini-steps b, .oc-mini-steps small { display: block; }
 .oc-mini-steps small { margin-top: 4px; color: var(--muted); font-size: .8rem; }
 
-/* Selected refinement: a compact menu under the clock, using the chef hat's row style. */
+/* Selected refinement: standard action buttons, separate read-only timing status. */
 .oc-clock[aria-expanded="true"] { background: var(--accent-ink); border-color: var(--accent-ink); color: var(--paper); }
-.oc-dropdown { position: absolute; width: min(288px,calc(100vw - 16px)); max-height: calc(100dvh - 16px); overflow-y: auto; padding: 2px 8px 6px; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: 12px; box-shadow: 0 10px 30px #0004; font-family: var(--body); }
-.oc-menu-head { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 2px; border-bottom: 1px solid var(--line); }
-.oc-menu-head h2 { margin: 0; font: 700 1.2rem/1.1 var(--display); }
-.oc-menu-close { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font-size: 28px; cursor: pointer; }
-.oc-menu-row { width: 100%; display: flex; align-items: center; gap: 10px; min-height: 62px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--ink); font: inherit; text-align: left; padding: 9px 4px; }
-.oc-menu-row.is-ready { cursor: pointer; }
-.oc-menu-row:disabled { opacity: 1; }
-.oc-menu-row:disabled .oc-menu-tick { color: var(--muted); border-color: var(--line); }
-.oc-menu-row.is-ready .oc-menu-tick { border-color: var(--accent-ink); color: var(--accent-ink); }
-.oc-menu-row.is-ready .oc-menu-state { color: var(--accent-ink); }
-.oc-menu-row:focus-visible, .oc-menu-close:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: -2px; background: var(--hit); }
-.oc-menu-row.is-ready:hover, .oc-menu-close:hover { background: var(--hit); }
-.oc-menu-tick { display: grid; place-items: center; flex: 0 0 24px; width: 24px; height: 24px; border: 1.5px solid var(--ink); border-radius: 5px; font-weight: 700; }
-.oc-menu-tick svg { width: 20px; height: 20px; }
-.oc-menu-label { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.oc-menu-label b { font: 700 1.125rem/1.1 var(--display); }
-.oc-menu-label small { color: var(--muted); font-size: .8125rem; line-height: 1.3; }
-.oc-menu-state { margin-left: auto; font-size: .8125rem; font-weight: 700; color: var(--muted); }
-.oc-menu-foot { padding: 6px 4px 0; color: var(--muted); font-size: .8125rem; line-height: 1.4; }
-.oc-dropdown:focus { outline: none; }
-
-.oc-menu-row:last-child { border-bottom: 0; }
-.oc-menu-state:empty { display: none; }
+.oc-dropdown { position: absolute; width: min(248px,calc(100vw - 16px)); max-height: calc(100dvh - 16px); overflow-y: auto; padding: 0 6px 4px; background: var(--paper); color: var(--ink); border: 2px solid var(--ink); border-radius: var(--r-act); box-shadow: 0 10px 30px #0004; font-family: var(--body); }
+.oc-menu-head { display: flex; align-items: center; justify-content: space-between; min-height: 46px; padding: 0 2px; border-bottom: 1px solid var(--line); }
+.oc-menu-head h2 { margin: 0; font: 700 1.1rem/1.1 var(--display); }
+.oc-menu-close.btn { width: 44px; min-height: 44px; padding: 0; margin-right: -2px; font-size: 24px; border-color: var(--faint); }
+.oc-menu-entry { border-bottom: 1px solid var(--line); }
+.oc-menu-entry:last-child { border-bottom: 0; }
+.oc-menu-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 50px; padding: 3px 2px; }
+.oc-menu-label { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.oc-menu-label b { font: 700 1rem/1.1 var(--display); }
+.oc-menu-label small, .oc-menu-status small { color: var(--muted); font-size: .8125rem; line-height: 1.2; }
+.oc-menu-label small:empty { display: none; }
+.oc-menu-start.btn { flex: 0 0 88px; width: 88px; min-height: 44px; padding: 0 4px; font: 700 .875rem var(--body); }
+.oc-menu-start.btn[aria-busy="true"] { background: var(--accent-ink); border-color: var(--accent-ink); color: var(--bar-text); cursor: wait; }
+.oc-menu-start:focus-visible, .oc-menu-close:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.oc-menu-status { display: flex; flex: 0 0 auto; flex-direction: column; align-items: flex-end; gap: 3px; }
+.oc-menu-status .lk-stamp { margin: 0; padding: 0 4px; min-height: 20px; font-size: .75rem; letter-spacing: 0; text-transform: none; }
+.oc-menu-done { color: var(--done-ink); font-size: .8125rem; font-weight: 700; }
+.oc-menu-error { padding: 0 2px 6px; font-size: .875rem; line-height: 1.25; }
+.oc-menu-foot { padding: 4px 2px 0; }
+.oc-menu-foot .oc-action { min-height: 44px; padding: 0 8px; font-size: .875rem; }
+.oc-dropdown:focus, .oc-menu-entry:focus { outline: none; }
+.oc-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
