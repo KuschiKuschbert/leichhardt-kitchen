@@ -70,7 +70,9 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.context().close();
 
   // Backup: one JSON file with notes and who has seen them, minutes with earlier versions and sign-offs, and order learning
-  p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra });
+  const coolingCurrent = { v: 1, run: 'backup-cooling-run-01', rev: 1, firstAt: { __fakeTimestamp: L.NOW }, firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' };
+  const coolingBackup = { ...extra, [fsKey(['cooling', 'current'])]: coolingCurrent };
+  p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra: coolingBackup });
   await L.adminTab(p, 'tools');
   await L.settle(p, 200);
   const dl = p.waitForEvent('download', { timeout: 15000 });
@@ -78,6 +80,8 @@ const store = page => page.evaluate(() => window.__fake.dump());
   const file = await dl;
   const chunks = []; for await (const c of await file.createReadStream()) chunks.push(c);
   const bk = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  ok(JSON.stringify(bk.coolingCurrent) === JSON.stringify(coolingCurrent), 'backup: the canonical cooling run retains its identity and server start times exactly');
+  ok((await p.evaluate(() => window.__fake.reads)).includes(fsKey(['cooling', 'current'])), 'backup: the current shared timer is read by its fixed document path');
   ok(/^leichhardt-prep-backup-\d{4}-\d{2}-\d{2}\.json$/.test(file.suggestedFilename()), 'backup: a dated JSON file (' + file.suggestedFilename() + ')');
   ok(bk.references[0].v === 2 && bk.referencesHist['ai-test'][0].v === 1 && bk.training[0].status === 'in-training' && bk.trainingHist['ai-test'][0].v === 1 && bk.analysisDaily[0].day === today, 'backup: analysis, references, training and histories preserved');
   ok(bk.notes.length === 1 && bk.notes[0].id === 'n1' && bk.notes[0].text === 'Fryer oil change', 'backup: shift pings included');

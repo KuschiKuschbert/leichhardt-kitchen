@@ -43,6 +43,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Wastage history and CSV reports | `docs/wastage-history.md`, `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |
 | Functions: cancel, Undo, delete, print | `docs/function-cancellation.md`, `docs/function-printing.md` |
+| Operandio cooling: compact clock, shared 2-hour then manual 4-hour stages, logged-in screen alerts | `docs/operandio-cooling.md`, `docs/operandio-cooling-options/brief.md` |
 | Pings: who gets them, the sound | `docs/ping-recipients.md`, `docs/ping-sound.md` |
 | Back arrow and page trail | `docs/navigation.md` |
 | Merging, the queue, `urgent` | `docs/auto-merge.md` |
@@ -77,6 +78,7 @@ After approval, implement small reversible units under the existing shipping rul
 - **Start:** `index.html` (the page and its security header), `js/boot.js` (first in `<head>`: the install offer, text size, the clock `LK_TIME`), `js/device.js` (device choice), `js/upkeep.js` (end of `<body>`: the 04:00 refresh, updates, the service worker), `sw.js` and `manifest.webmanifest` (the installable app and saved shell), `js/firebase-config.js`, `css/app.css`.
 - **Recipes:** `js/data.js` (every recipe, the only file staff edit, field guide at the top), `js/overlay.js` (the head chef's changes laid over it), `js/art.js` (plates, pans and diagrams).
 - **Shared, shell:** `js/amounts.js`, `js/learn.js`, `js/cutoffs.js`, `js/chime.js` (also run by node, before `js/prep.js`); `js/controls.js`, `js/motion.js`, `js/functions.js`; `js/seasonal/` with its css and `fonts/`.
+- **Cooling, shell:** `js/cooling-core.js`, `js/cooling.js`, `js/cooling-ui.js`, `css/cooling.css` (see `docs/operandio-cooling.md`).
 - **Main:** `js/app.js` (routing, top bar, recipe views and cards, settings), `js/prep.js` (prep, orders, wastage, guides, admin panel, staff lock, insights).
 - **Lazy:** `js/manage.js` (`mountManage()` in `js/app.js`); `js/draw.js`, `js/library.js`, `js/lib/*.js`, then `js/smart.js`, `js/compose.js`; `js/suppliers.js`, `js/supplier-core.js`, `js/supplier-store.js` (an authorised chef only); `js/deliveries.js`; `js/fnedit.js`; `js/admin-dashboard.js`, `js/analysis-core.js`, `js/admin-intelligence.js`, `js/proofreader-admin.js` (from `js/prep.js`).
 - **Rules and tests:** `firestore.rules` (a template, see Never in this repo); `tests/` (click tests, with a stand-in for Firebase in `tests/fake/`), `tests/rules/` (the rules on the emulator).

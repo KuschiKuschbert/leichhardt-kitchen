@@ -1316,6 +1316,41 @@ service cloud.firestore {
         && request.resource.data.get('from', '') == resource.data.get('from', '') && request.resource.data.get('at', 0) == resource.data.get('at', 0);
       allow delete: if false;
     }
+    // Shared Operandio timing uses server timestamps and a revision compare-and-set. Every current kitchen PIN,
+    // including View only, can start a stage; this grants no ordinary Prep capability or shift-ping permission.
+    function coolingOk() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['v', 'run', 'rev', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by'])
+        && d.keys().hasOnly(['v', 'run', 'rev', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by'])
+        && d.v == 1 && d.run is string && d.run.matches('[a-zA-Z0-9_-]{16,80}')
+        && d.rev is int && d.rev >= 1
+        && d.firstAt is timestamp && d.firstBy is string && d.firstBy.size() > 0 && d.firstBy.size() <= 80
+        && (d.secondAt == 0 || d.secondAt is timestamp) && d.secondBy is string && d.secondBy.size() <= 80;
+    }
+    function coolingFirst() {
+      let d = request.resource.data;
+      return d.firstAt == request.time && d.firstBy == d.by && d.secondAt == 0 && d.secondBy == '';
+    }
+    function coolingNext() {
+      let d = request.resource.data;
+      let old = resource.data;
+      return d.rev == old.rev + 1 && (
+        (d.run == old.run && d.firstAt == old.firstAt && d.firstBy == old.firstBy
+          && old.firstAt is timestamp && old.secondAt == 0 && old.secondBy == ''
+          && request.time >= old.firstAt + duration.value(2, 'h')
+          && d.secondAt == request.time && d.secondBy == d.by)
+        || (d.run != old.run && old.secondAt is timestamp
+          && request.time >= old.secondAt + duration.value(4, 'h') && coolingFirst()));
+    }
+    match /kitchens/KITCHEN_PIN/cooling/{id} {
+      allow get: if id == 'current' && kitchenRead();
+      allow list, delete: if false;
+      allow create: if id == 'current' && staff() && request.resource.data.by in cfg().get('staffIds', [])
+        && coolingOk() && request.resource.data.rev == 1 && coolingFirst();
+      allow update: if id == 'current' && staff() && request.resource.data.by in cfg().get('staffIds', [])
+        && coolingOk() && coolingNext();
+    }
+
     // Cleaning (8 Nov 2026): immutable schedule revisions retain missed occurrences after an edit or archive.
     // Changes start tomorrow. The two-way prev/next link permits only one successor in the same atomic batch.
     // The admin opens Cleaning to the team when setup is ready. Missing is off; canonical chefs retain setup access.

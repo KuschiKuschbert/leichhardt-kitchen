@@ -567,7 +567,7 @@
      (its menu holds Admin and Settings). */
   function topIcons() {
     // Today's team (7 Nov 2026): the round chip left of the bell, filled in by js/prep.js (empty for anyone it is not for)
-    return '<span class="wtop-icons"><span class="tm-slot">' + (window.LK_PREP && window.LK_PREP.teamChip ? window.LK_PREP.teamChip() : '') + '</span>' + noteBellHTML() + whoMark() + '</span>';
+    return '<span class="wtop-icons"><span class="cooling-slot">' + (window.LK_PREP && window.LK_PREP.coolingChip ? window.LK_PREP.coolingChip() : '') + '</span><span class="tm-slot">' + (window.LK_PREP && window.LK_PREP.teamChip ? window.LK_PREP.teamChip() : '') + '</span>' + noteBellHTML() + whoMark() + '</span>';
   }
   function topBar() {
     var returning = parseRoute().name !== 'landing';
@@ -1423,6 +1423,7 @@
       return { name: 'suppliers', stack: [], sid: parts[1] === 'manage' ? '' : valid(parts[1]), mode: parts[1] === 'manage' || parts[2] === 'manage' ? 'manage' : 'order', cutoffId: '', cutoffDay: '' };
     }
     if (parts[0] === 'deliveries') return { name: 'deliveries', stack: [] };
+    if (parts[0] === 'cooling') return { name: 'prep', stack: [], cooling: true };
     if (parts[0] === 'cleaning') return { name: 'cleaning', stack: [] };
     if (parts[0] === 'settings') return { name: 'settings', stack: [] };
     if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'chef' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'transfers' || parts[0] === 'minutes' || parts[0] === 'mail' || parts[0] === 'drinks' || parts[0] === 'todo' || parts[0] === 'team') return { name: parts[0], stack: [] };
@@ -1615,6 +1616,7 @@
     }
     paintRecipeStatus();
     if (route.name === 'settings') stAfter();
+    if (route.cooling && window.LK_PREP && window.LK_PREP.coolingRoute) window.LK_PREP.coolingRoute();
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
     if (!locked && route.name === 'manage') mountManage(route); else if (window.LK_MG) window.LK_MG.unmount();
@@ -1956,6 +1958,10 @@
   // js/prep.js signed a person in or out: redraw the chef mark in the top bar. On a sign-in just made (not a phone that
   // was already signed in) the mark flips in like a coin and settles, so the person sees it is now them.
   // js/prep.js read the head chef's open kitchen mail: redraw the count on the chef hat
+  window.addEventListener('lk-cooling', function () {
+    var slot = app.querySelector('.cooling-slot'), P = window.LK_PREP;
+    if (slot && P && P.coolingChip) { var html = P.coolingChip(); if (slot.innerHTML !== html) slot.innerHTML = html; }
+  });
   window.addEventListener('lk-mail', function () { var ic = app.querySelector('.wtop-icons'); if (ic) ic.outerHTML = topIcons(); });
   // The Head chef's PIN also shows or drops Admin in the menu, so the whole icon group is redrawn.
   window.addEventListener('lk-who', function (e) {
