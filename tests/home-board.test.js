@@ -3,6 +3,7 @@
 // its lines left, your break, the order cut-offs a chef gets the bar for, today's functions and their next round, new
 // pings), each a tap to where it is done; Prep by section with a bar each; Coming up with the functions of the next days.
 // The function band and the cut-off bar leave Home and stay on the other pages. Signed out keeps the Recipes docket.
+// Staff also see the saved roster below their own day on phones, tablets and laptops, with no team editing controls.
 // All of it from what the phone already holds: no reads of its own. The pages open at 14:00.
 const L = require('./lib');
 const M = require('../js/functions.js');
@@ -113,12 +114,35 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
   ok(sec.t === 'You are on Larder' && /^3 lines left · .+ first$/.test(sec.s) && sec.tm === '3' && sec.n === 'Left' && sec.href === '#/prep', 'staff: her section first, 3 lines left and which first (' + JSON.stringify(sec) + ')');
   ok(!!brk && brk.t === 'Your break' && brk.s === 'Back on Larder at 15:00' && brk.tm === '14:30' && brk.n === '30 min' && brk.hot && brk.tmd === 'day', 'staff: her break at 14:30, 30 min, opens Your day (' + JSON.stringify(brk) + ')');
   ok(!rows.some(r => /order closes/.test(r.t)), 'staff: no cut-off rows');
-  ok(!(await p.$('#hm-cuts li')) && await p.$eval('#hm-team', e => e.hidden).catch(() => true), 'staff: no cut-offs in Coming up and no On today card');
+  ok(!(await p.$('#hm-cuts li')), 'staff: no cut-offs in Coming up');
+  const staffTeam = await txt(p, '#hm-team') || '';
+  ok(/On today/.test(staffTeam) && /Ann/.test(staffTeam) && /Sam/.test(staffTeam) && /Larder/.test(staffTeam) && /Lunch 10:00 to 15:00/.test(staffTeam), 'staff: On today shows the saved team, their sections and shift hours (' + staffTeam + ')');
+  ok(!(await p.$('#hm-team a[href="#/team"]')) && !(await p.$('#hm-team button, #hm-team input, #hm-team select')), 'staff: the roster has no team editor link or editing controls');
+  const staffBill = await bill(p);
   await shut(p);
   await p.click('#hm-board .hm-a[data-tm="day"]'); await L.settle(p, 400);
   ok(!!(await p.$('.nt-wrap .nt')) && /Your day/.test(await txt(p, '.nt-wrap') || ''), 'the break row opens Your day');
   ok(p.errors.length === 0, 'staff: no page errors ' + p.errors.join(' | '));
   await p.context().close();
+  p = await L.open(b, '#/recipes', { who: 'ann', extra: full(), wait: 1800 });
+  ok(await bill(p) === staffBill, 'staff: Home with the roster reads what Recipes reads for the same day (' + staffBill + ' and ' + await bill(p) + ')');
+  await p.context().close();
+
+  // Staff keep their own day first and can read the saved roster on every screen size, with no extra tap.
+  for (const w of [390, 768, 1280]) {
+    p = await L.open(b, '#/', { who: 'ann', extra: full(), width: w, height: w === 390 ? 844 : 900, wait: 1800 });
+    await shut(p);
+    const team = await p.evaluate(() => {
+      const e = document.getElementById('hm-team'), own = document.getElementById('hm-board');
+      return e && own ? { shown: !e.hidden && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0, text: e.innerText, ownFirst: !!(own.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING) } : null;
+    });
+    ok(!!team && team.shown && team.ownFirst && /Ann/.test(team.text) && /Sam/.test(team.text) && /Larder/.test(team.text), w + ' px staff: own day first, then the saved roster without opening a sheet (' + JSON.stringify(team) + ')');
+    ok(!(await L.overflow(p)) && p.errors.length === 0, w + ' px staff: no sideways scroll or page errors ' + p.errors.join(' | '));
+    const reads = await bill(p);
+    await p.clock.runFor(61000); await L.settle(p, 150);
+    ok(await bill(p) === reads, w + ' px staff: the roster minute tick adds no reads');
+    await p.context().close();
+  }
 
   // nothing to come: one short line; signed out: the Recipes docket as before
   p = await L.open(b, '#/', { who: 'sam', extra: base(), wait: 1800 });
