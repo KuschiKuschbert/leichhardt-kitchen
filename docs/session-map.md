@@ -66,6 +66,7 @@ When a note or a file is added: its full row goes here, and one short row (what 
 
 | File | What it is |
 | --- | --- |
+| `AGENTS.md` | Added 8 November 2026: Codex reads the full `CLAUDE.md` at the start of every task, including its required notes and skills. Shared rules stay in `CLAUDE.md`; this entry point only refers to them. Checked the relative link and Markdown-only scope. |
 | `index.html` | The page and its security header (which outside services may load) |
 | `js/boot.js` | Runs first in `<head>`: the install offer, the saved text size, the book's clock (`LK_TIME`) |
 | `js/device.js` | Personal/shared device choice and guarded Settings controls. `docs/device-sessions.md` |
