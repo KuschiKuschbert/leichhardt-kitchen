@@ -38,7 +38,7 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
   // a sous chef's save once demoted the head chef to Staff in the people list: every phone still reads Ann as Head chef
   const demoted = cfg([P('sam', 'Sam', 'sous'), P('ann', 'Ann', 'staff', { del: false, ping: false }), P('bo', 'Bo', 'staff')], { headId: 'ann', sousIds: ['sam', 'ann'], pingIds: ['sam', 'ann'] });
   p = await L.open(b, '#/prep', { who: 'ann', extra: demoted, wait: 1500 });
-  { const m = await L.chefItems(p); ok(m.join(',') === 'fn,deliveries,suppliers,team,pings,admin,minutes,drinks,todo,manage,staff,settings,out', 'head chef PIN: the chef menu has Today\'s team, Shift pings, Chef to-do, Supplier order and Manage staff like a sous chef, and no Kitchen mail to herself (' + m + ')'); }
+  { const m = await L.chefItems(p); ok(m.includes('chef') && m.filter(x => x !== 'chef').join(',') === 'fn,deliveries,suppliers,team,pings,admin,minutes,drinks,todo,manage,staff,settings,out', 'head chef PIN: the chef panel is added alongside the existing chef and admin menu links (' + m + ')'); }
   ok(p.errors.length === 0, 'head chef PIN: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -72,7 +72,7 @@ const cfg = (people, lists) => { const e = {}; e[CFG] = Object.assign({ people, 
 
   // staff stay staff: Bo has no sous chef pages
   p = await L.open(b, '#/prep', { who: 'bo', extra: demoted, wait: 1500 });
-  { const m = await L.chefItems(p); ok(!m.includes('staff') && !m.includes('pings') && m.includes('out'), 'staff PIN: no Chef group for Bo, Sign out is there (' + m + ')'); }
+  { const m = await L.chefItems(p); ok(!m.includes('chef') && !m.includes('staff') && !m.includes('pings') && m.includes('out'), 'staff PIN: no chef panel or Chef group for Bo, Sign out is there (' + m + ')'); }
   await p.context().close();
 
   // the Head chef's PIN on a phone without the Google sign-in: Admin shows in the chef hat menu and leads to the sign-in.
