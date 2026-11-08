@@ -17,7 +17,7 @@ const people = [
 ];
 const SECS = [{ id: 'grill', name: 'Grill', off: false }, { id: 'pans', name: 'Pans', off: false }, { id: 'larder', name: 'Larder', off: false }];
 const SHIFTS = [{ id: 'lunch', name: 'Lunch', from: 600, to: 900, off: false }, { id: 'dinner', name: 'Dinner', from: 960, to: 1320, off: false }];
-const cfg = x => ({ [CFG]: Object.assign({ people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, kitSecs: SECS, kitShifts: SHIFTS }, x || {}) });
+const cfg = x => ({ [CFG]: Object.assign({ people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, prepStandardsEnabled: true, kitSecs: SECS, kitShifts: SHIFTS }, x || {}) });
 const store = p => p.evaluate(() => window.__fake.dump());
 // a picker on the page: the shared controls dress each select up, so set the select and send its change like a tap would
 const pick = (p, k, v) => p.evaluate(([k, v]) => { const s = document.querySelector('select[data-k="' + k + '"]'); if (!s) return false; s.value = String(v); s.dispatchEvent(new Event('change', { bubbles: true })); return true; }, [k, v]);

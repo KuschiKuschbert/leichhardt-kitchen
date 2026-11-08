@@ -75,7 +75,7 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 
 ## Section prep standards
 
-The approved Prep room and staff guidance reuse the notebook, shared Add sheet and role panel. `psPanelHTML()` loads the one private standards editor. `psHintHTML()` adds a short `.ps-minimum` line below the normal typed item, with a canonical name, configured section and read time. It never writes the minimum into the combined quantity field. `psReferenceHTML()` draws the complete section reference inside the existing notebook; its item count is separate from completed tasks.
+The approved Prep room and staff guidance reuse the notebook, shared Add sheet and role panel. `psPanelHTML()` loads the one private standards editor. `psRolloutHTML()` uses the shared checkbox and acknowledged status pattern for the admin-only, default-off Smart prep par levels switch. `psHintHTML()` adds a short `.ps-minimum` line below the normal typed item, with a canonical name, configured section and read time. It never writes the minimum into the combined quantity field. `psReferenceHTML()` draws the complete section reference inside the existing notebook; its item count is separate from completed tasks.
 
 Use `.ps-viewbar` for the local Work / Before service choice, `.ps-standard` for neutral ruled reference rows and the existing suggestion rows for uncertain matches. The management `.ps-grid`, `.ps-section`, `.ps-fields`, `.ps-form-grid` and `.ps-catalogue-row` use the existing fields, `lvHTML()` and acknowledged Save helpers. The shared panel now has five rooms. `LK_PREP_STANDARDS` is lazy and retains one draft per signed-in person. [Implementation and limits](prep-standards.md).
 

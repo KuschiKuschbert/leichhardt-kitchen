@@ -82,6 +82,15 @@ async function main() {
       await env.withSecurityRulesDisabled(context => setDoc(ref(context.firestore(), 'existing'), record()));
       await check(deleteDoc(ref(db, 'existing')), false, label + ' cannot hard-delete a standard');
     }
+    // Rollout uses the existing owner-only config permission, independently from the head's catalogue edit right.
+    await check(setDoc(doc(admin, K + 'config/main'), { prepStandardsEnabled: true, by: 'head' }, { merge: true }), true,
+      'verified owner can enable smart prep for everyone');
+    for (const [label, db, by] of [['PIN head', head, 'head'], ['sous', phone('sous'), 'sous'], ['staff', staff, 'staff']]) {
+      await check(setDoc(doc(db, K + 'config/main'), { prepStandardsEnabled: false, by }, { merge: true }), false,
+        label + ' cannot change the owner rollout setting');
+    }
+    await check(setDoc(doc(admin, K + 'config/main'), { prepStandardsEnabled: false, by: 'head' }, { merge: true }), true,
+      'verified owner can disable smart prep without changing catalogue permissions');
     const page = (db, active, after = '', size = 101) => getDocs(query(collection(db, K + 'prepStandards'), where('sectionId', '==', 'paging'),
       ...(active ? [where('archived', '==', false)] : []), orderBy(documentId()), ...(after ? [startAfter(after)] : []), limit(size)));
     const sameIds = (snapshot, ids) => {

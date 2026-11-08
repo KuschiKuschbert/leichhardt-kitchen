@@ -325,5 +325,9 @@
     state.draft[name] = value;
     state.message = ''; state.bad = false; api.saveStop(SAVE); patchEditor();
   }
-  window.LK_PREP_STANDARDS = { API: 1, render: render, reference: reference, hint: hint, match: match, click: click, input: input, reset: reset, draft: draft, unsaved: unsaved, busy: busy };
+  function availabilityChanged() {
+    Object.keys(state.staff).forEach(function (id) { state.staff[id].request += 1; });
+    state.staff = Object.create(null); state.picked = null;
+  }
+  window.LK_PREP_STANDARDS = { API: 1, render: render, reference: reference, hint: hint, match: match, click: click, input: input, reset: reset, draft: draft, unsaved: unsaved, busy: busy, availabilityChanged: availabilityChanged };
 })();

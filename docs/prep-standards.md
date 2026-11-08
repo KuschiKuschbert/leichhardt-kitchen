@@ -6,9 +6,11 @@ Chosen 8 November 2026 after the three-design comparison and style alignment. Th
 
 The head-chef, sous-chef and verified admin panels share a fifth room, **Prep**. It contains one section catalogue and editor. The canonical head chef or matching verified owner device can add, edit, archive and restore standards. Sous chefs can read them. An editable staff role label never grants write access.
 
+The verified admin controls **Smart prep par levels** in **Admin → Prep**. It is off until `config/main.prepStandardsEnabled` is explicitly `true`. While off, the staff view choice, matching hints and reference actions are hidden and make no standards reads; the normal prep list keeps its previous density. Head and sous chefs can still open the catalogue to prepare it. Turning it off keeps all standards, today’s work and unfinished drafts. Connected devices apply changes through the existing config listener; no extra listener or polling is added. Only verified admin can change this rollout setting, using the existing owner-only config permission. A PIN head chef’s catalogue editing right does not include rollout control. Other admin config saves preserve the current flag.
+
 Each standard has an item name, minimum ready before service, unit, approved matching names, optional recipe and short check instruction. A blank minimum says **To come**; zero is a real minimum. Units can describe a chef-confirmed container size. No real standards or sample quantities are seeded automatically. Sections must first exist in the kitchen configuration.
 
-On the staff Prep page, **Work** remains the default. **Before service** shows the selected section's complete active reference, including items absent from today's tasks or already ticked. It has instructions, recipe links and an Add to prep action for people with Add permission. Already open matching work is shown for context. There are no stock counts, shortfall calculations, saved readiness ticks or service sign-offs.
+When enabled, **Work** remains the default on the staff Prep page. **Before service** shows the selected section's complete active reference, including items absent from today's tasks or already ticked. It has instructions, recipe links and an Add to prep action for people with Add permission. Already open matching work is shown for context. There are no stock counts, shortfall calculations, saved readiness ticks or service sign-offs.
 
 In the existing Add sheet, typing an exact canonical name or a unique head-approved matching name reveals **Minimum ready before service**. Matching is scoped to a uniquely resolved configured section ID. Partial words, likely typos and ambiguous names require an explicit choice. Unknown text remains ordinary free entry; unavailable standards are reported separately.
 
@@ -45,7 +47,7 @@ The design initially proposed one document per section. Per-item records allow c
 
 ## Reads and freshness
 
-Records stay in memory for the current kitchen/device/person. There is no persistent private browser cache. Reads occur on first need, explicit Refresh, a new kitchen day or reopening after 30 minutes away. Typing, filtering and normal redraws reuse the current complete data. Another device's changes appear at the next permitted refresh, not instantly.
+Records stay in memory for the current kitchen/device/person. There is no persistent private browser cache. Reads occur on first need, explicit Refresh, a new kitchen day or reopening after 30 minutes away. Changing availability invalidates staff caches and pending page replies without discarding management drafts; re-enabling reads a fresh section when needed. Typing, filtering and normal redraws reuse the current complete data. Another device's changes appear at the next permitted refresh, not instantly.
 
 Queries select a section and order by document ID. Staff queries also select `archived == false`. Each page requests at most 101 records, returning 100 and using the extra record only to detect a following page. Cost is the returned records plus each full page's sentinel, with at least one read for an empty query.
 
@@ -71,9 +73,11 @@ Rollback is a normal client revert. Preserve stored standards and their private 
 
 The focused rules suite and full existing real-rules gate pass. Browser checks cover the real panel, matching/reference paths, all three widths, canonical roles, stale saves, escaping, read behaviour and retained work. Final pagination regressions, complete browser regression results and release status are recorded in the PR rather than inferred from source.
 
-With the actual Barlow/Caveat fonts and the existing 14-task density fixture, the local Work / Before service choice has 44 px controls and adds 72 px including the existing spacing. Five staff rows or four chef rows are fully visible above Add at 390 by 844 px, compared with six/five when only that choice is removed. Existing work rows retain their geometry. System fallback fonts can lose two visible rows in the team fixture; the controlled comparison still restores the original row heights and counts. Add and Tick remain one tap. [Measured evidence](prep-par-options/implemented-density.json). Native phone keyboard behaviour and live staff task time are not established by desktop browser checks.
+When enabled, with the actual Barlow/Caveat fonts and the existing 14-task density fixture, the local Work / Before service choice has 44 px controls and adds 72 px including the existing spacing. Five staff rows or four chef rows are fully visible above Add at 390 by 844 px, compared with six/five when only that choice is removed. Existing work rows retain their geometry. System fallback fonts can lose two visible rows in the team fixture; the controlled comparison still restores the original row heights and counts. Add and Tick remain one tap. [Measured evidence](prep-par-options/implemented-density.json). Native phone keyboard behaviour and live staff task time are not established by desktop browser checks.
 
 ## Implemented screens
+
+Admin rollout switch, default off: [phone](prep-par-options/implemented-rollout-390.png), [tablet](prep-par-options/implemented-rollout-768.png), [laptop](prep-par-options/implemented-rollout-1280.png). All three use the existing checkbox styling, have 44 px targets and no horizontal overflow. [Measured checks](prep-par-options/implemented-rollout-checks.json).
 
 These use synthetic records in the real application, with the actual Barlow/Caveat fonts. They are viewport captures; the management views are scrolled to the editor. [Recorded font, overflow, control-size and scroll checks](prep-par-options/implemented-checks.json) cover all nine views. No horizontal overflow or added control smaller than 44 px was found.
 

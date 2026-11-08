@@ -593,7 +593,7 @@ function commitOps(ops) {
     if (/\/config\/main$/.test(path) && next) {
       const names = ['addIds', 'tickIds', 'delIds'];
       if (admin) return names.some(k => next[k] !== undefined && (!Array.isArray(next[k]) || next[k].length > 80)) || names.some(k => old && old[k] !== undefined) && names.some(k => next[k] === undefined);
-      return names.some(k => changes.includes(k));
+      return names.some(k => changes.includes(k)) || changes.includes('prepStandardsEnabled');
     }
     if (admin) return false;
     const line = path.match(/^kitchens\/[^/]+\/(days|orders)\/[^/]+\/(items|lines)\/[^/]+$/);

@@ -1,0 +1,35 @@
+{
+  "note": "Actual Admin Prep rollout control, synthetic records, real app fonts, default off.",
+  "screens": [
+    {
+      "width": 390,
+      "overflow": 0,
+      "control": {
+        "width": 358,
+        "height": 44
+      },
+      "off": true,
+      "errors": []
+    },
+    {
+      "width": 768,
+      "overflow": 0,
+      "control": {
+        "width": 728,
+        "height": 44
+      },
+      "off": true,
+      "errors": []
+    },
+    {
+      "width": 1280,
+      "overflow": 0,
+      "control": {
+        "width": 1016,
+        "height": 44
+      },
+      "off": true,
+      "errors": []
+    }
+  ]
+}

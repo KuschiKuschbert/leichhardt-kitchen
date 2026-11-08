@@ -396,8 +396,13 @@
         // the server answered, so the signal is back: an owner check that failed for want of it goes again now (one read,
         // only after a failure), not after its 5-minute wait. Wifi with no internet sends no online event.
         if (recoveredServer && S.user && S.adminsOff && S.adminsOff === (S.user.email || '')) delete S.retryAt.admins;
+        var parWasOn = !!(S.config && S.config.prepStandardsEnabled === true);
         S.configFull = full;
         S.config = snap.exists() ? snap.data() : { people: [] };
+        if (parWasOn !== (S.config.prepStandardsEnabled === true)) {
+          if (psModule() && psModule().availabilityChanged) psModule().availabilityChanged();
+          if (S.config.prepStandardsEnabled !== true) psView = 'work';
+        }
         S.config.people = S.config.people || [];
         headFix(S.config);
         if (!cached && !(snap.metadata && snap.metadata.hasPendingWrites) && Array.isArray(S.config.staffIds)) {
@@ -1539,7 +1544,7 @@
     S.pastBusy = S.minsBusy = S.viewBusy = S.missBusy = S.useBusy = false; S.pastPart = null; S.ordStats = null; S.views = S.misses = null; S.viewErr = S.missErr = S.useErr = S.wReviewErr = false; S.wReview = null; S.wReviewFor = S.wNoteFor = '';
     svReset(); S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.actState = ''; S.hist = {}; S.stats = null;
     ['lk.fn', 'lk.mail.sent', 'lk.drinks', 'lk.guides', 'lk.notes', 'lk.minutes'].forEach(function (k) { lsSet(k, ''); });
- if (psModule()) psModule().reset(); psView = 'work'; psError = false; if (window.LK_INTELLIGENCE) window.LK_INTELLIGENCE.reset(); if (window.LK_PROOFREADER) window.LK_PROOFREADER.reset(); proofRepairStamp = {}; if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_CLEANING) window.LK_CLEANING.reset(); if (window.LK_SUP) window.LK_SUP.reset(true); if (supplierService) supplierService.reset();
+ if (psModule()) psModule().reset(); psView = 'work'; psError = false; psRolloutBusy = psRolloutBad = false; psRolloutMessage = ''; psRolloutTarget = false; if (window.LK_INTELLIGENCE) window.LK_INTELLIGENCE.reset(); if (window.LK_PROOFREADER) window.LK_PROOFREADER.reset(); proofRepairStamp = {}; if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_CLEANING) window.LK_CLEANING.reset(); if (window.LK_SUP) window.LK_SUP.reset(true); if (supplierService) supplierService.reset();
     // an editor an older copy of its file has no drop(): it closes as before
     if (window.LK_MG && window.LK_MG.drop) window.LK_MG.drop(); if (window.LK_FE && window.LK_FE.drop) window.LK_FE.drop();
     if (window.LK_UX) window.LK_UX.close();
@@ -3277,6 +3282,7 @@
       kitSecs: ksClean(cfg.kitSecs !== undefined ? cfg.kitSecs : ((S.config && S.config.kitSecs) || [])),
       kitShifts: shClean(cfg.kitShifts !== undefined ? cfg.kitShifts : ((S.config && S.config.kitShifts) || [])), showBadges: cfg.showBadges !== false, staffSee: staffSee(cfg),
       sousMail: !!(S.config && S.config.sousMail === true),   // set only from the Kitchen mail tab (mlSousSet)
+      prepStandardsEnabled: !!(S.config && S.config.prepStandardsEnabled === true), // the Admin Prep switch; keep it on other config saves
       pingSound: pingSound(),   // set only from the Shift pings tab (pingSoundSet); kept as stored if js/chime.js did not load
       cutoffs: (function (l) { return CUT_OK ? cutClean(l) : (Array.isArray(l) ? l : []); })(S.config && S.config.cutoffs),   // set only from the Order cut-offs page (cutSave); kept as stored if js/cutoffs.js did not load
       sousIds: hold ? (hold.sousIds || []) : idsFor(cfg.people, isSousP), pingIds: hold ? (hold.pingIds || []) : idsFor(cfg.people, canPingP),
@@ -3298,7 +3304,7 @@
   // Save is off while nothing changed, and this refuses too (28 Oct 2026), so a button left on cannot save the list again
   // Saving... on the button only (4 Nov 2026: it showed again under it); Saved on it for 1.2 s, then the grey line says so
   function adminSave() {
-    if (S.busy || svHeld('a')) return;
+    if (S.busy || psRolloutBusy || svHeld('a')) return;
     if (!draftDirty()) { draw(); return; }   // nothing changed: nothing saved, and a button left on goes off
     S.busy = true; S.saveMsg = ''; svStart('a'); draw();
     saveConfig(mergeDraft()).then(function () { S.busy = false; startDraft(); svDone('a', !!S.draft, function () { S.saveMsg = 'Saved. Everyone sees the changes now.'; }); draw(); },
@@ -5056,7 +5062,8 @@
         (S.itemsState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' : '') + (flags ? '<div class="wb-flags">' + flags + '</div>' : '') + offNote +
         '<div class="wb-cols">' + pageBody(S.items, S.date, true) + '</div>' + todayEmpty + '</section>' + pSheet;
     }
-    if (psView === 'reference' && S.date === today) { left = psReferenceHTML(); tabHTML = ''; }
+    if (!psEnabled()) psView = 'work';
+    if (psEnabled() && psView === 'reference' && S.date === today) { left = psReferenceHTML(); tabHTML = ''; }
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today<span class="nb-qsub"> and quick add</span>' : 'Done on ' + esc(dayShort(S.date))) + '</span></div></header>' +
       '<div class="nb-body nb-side">' + sideH + '</div></section>';
     return whoTopHTML() +
@@ -5064,7 +5071,7 @@
       '<button type="button" class="chip" data-p="today" aria-pressed="' + (S.date === today) + '">Today</button>' +
       '<label class="visually-hidden" for="p-day">Pick a date</label><input id="p-day" type="date" class="p-dateinput" data-k="p-day" value="' + esc(S.date) + '">' +
       '<button type="button" class="chip" data-p="day" data-d="1" aria-label="Forward one day">&rsaquo;</button></div>' : '') +
-      badgeStrip() + (S.date === today ? psViewHTML() : '') + '<div class="nb-wrap"><div class="nb">' + left + '<div class="nb-spine" aria-hidden="true"></div>' + right + '</div>' + tabHTML + '</div>' + pSheet;
+      badgeStrip() + (psEnabled() && S.date === today ? psViewHTML() : '') + '<div class="nb-wrap"><div class="nb">' + left + '<div class="nb-spine" aria-hidden="true"></div>' + right + '</div>' + tabHTML + '</div>' + pSheet;
   }
   function ago(ms) {
     if (!ms) return 'never';
@@ -5406,17 +5413,41 @@
   /* Section standards are private, head-owned reference data (8 Nov 2026). The module loads only for Add,
      Before service or the management Prep room. No startup read, listener or saved private browser copy. */
   var psLoading = null, psError = false, psView = 'work';
+  var psRolloutBusy = false, psRolloutTarget = false, psRolloutMessage = '', psRolloutBad = false;
   function psModule() { return window.LK_PREP_STANDARDS && window.LK_PREP_STANDARDS.API === 1 ? window.LK_PREP_STANDARDS : null; }
-  function psCanRead() { return kitchenAccess() && S.configState === 'ok' && S.configFull; }
+  function psEnabled() { return !!(kitchenAccess() && S.configState === 'ok' && S.configFull && S.config.prepStandardsEnabled === true); }
+  function psCanRead() { return kitchenAccess() && S.configState === 'ok' && S.configFull && (psEnabled() || chefAllowed()); }
   function psCanEdit() { var p = me(); return !!(psCanRead() && canW() && p && p.id === S.config.headId); }
-  function psBusy() { var p = psModule(); return !!(p && p.busy()); }
+  function psBusy() { var p = psModule(); return psRolloutBusy || !!(p && p.busy()); }
+  function psRolloutAllowed() { return S.level === 'owner' && ownerHere() && psCanEdit(); }
+  function psRolloutHTML() {
+    var on = psEnabled();
+    if (!psRolloutBusy && !psRolloutBad && on !== psRolloutTarget) psRolloutMessage = '';
+    if (!psRolloutAllowed()) return '<p class="hint">Smart prep par levels are ' + (on ? 'on for the team.' : 'off for the team. An admin can turn them on when the standards are ready.') + '</p>';
+    return '<section class="set-block"><label class="a-check" for="ps-rollout"><input type="checkbox" id="ps-rollout" data-k="ps-rollout" data-p="ps-rollout"' + ((psRolloutBusy ? psRolloutTarget : on) ? ' checked' : '') + (psRolloutBusy || S.busy ? ' disabled' : '') + '> Smart prep par levels</label>' +
+      '<p class="hint">Turn on matching minimums and Before service for everyone with kitchen access. You can keep setting up standards while this is off. Turning it off keeps the standards and current prep work.</p>' +
+      '<p id="ps-rollout-status" class="' + (psRolloutBad ? 'p-err' : 'hint') + '" role="status">' + esc(psRolloutBusy ? 'Saving smart prep par levels...' : psRolloutMessage || (on ? 'On for the team.' : 'Off for the team.')) +
+      (psRolloutBad ? ' <button type="button" class="p-link" data-p="ps-rollout-retry">Try again</button>' : '') + '</p></section>';
+  }
+  function psRolloutSet(on) {
+    if (!psRolloutAllowed() || psRolloutBusy || S.busy) { draw(); return; }
+    var context = writeContext();
+    psRolloutBusy = true; psRolloutTarget = !!on; psRolloutBad = false; psRolloutMessage = ''; draw();
+    W([['set', cfgDoc(), { prepStandardsEnabled: !!on }, true]], context).then(function () {
+      if (stableIdentity() !== context.identity) return;
+      psRolloutBusy = false; psRolloutMessage = on ? 'Smart prep par levels are on for the team.' : 'Smart prep par levels are off. Standards and prep work are kept.'; draw();
+    }, function () {
+      if (stableIdentity() !== context.identity) return;
+      psRolloutBusy = false; psRolloutBad = true; psRolloutMessage = 'Could not save smart prep par levels. Check the connection or your admin access and try again.'; draw();
+    });
+  }
   function psSectionId(name) {
     var key = String(name || '').trim().toLowerCase(), found = kitSecs().filter(function (s) { return s.name.trim().toLowerCase() === key; });
     return key && found.length === 1 ? found[0].id : '';
   }
   function psInputSection() { return psSectionId(S.section || (S.secTyped ? '' : mySec())); }
   function psDefaultSection() { return psSectionId(S.tab) || psSectionId(mySec()) || ''; }
-  function psCanAdd() { return psCanRead() && can('add') && S.date === dayNow(); }
+  function psCanAdd() { return psEnabled() && psCanRead() && can('add') && S.date === dayNow(); }
   function psLoad() {
     if (!psCanRead() || psLoading || psError || psModule()) return;
     psLoading = window.LK_APP.load('js/prep-standards.js?v=1').then(function () {
@@ -5431,6 +5462,7 @@
   function psRead(sectionId, options) {
     if (!psCanRead() || !kitSecs().some(function (s) { return s.id === sectionId; })) return Promise.reject({ code: 'permission-denied' });
     options = options || {};
+    if (options.audience !== 'manage' && !psEnabled()) return Promise.reject({ code: 'permission-denied' });
     var identity = stableIdentity(), f = fb.fs, after = options.after || '';
     if (after && !/^[A-Za-z0-9_-]{1,80}$/.test(after)) return Promise.reject({ code: 'invalid-argument' });
     var constraints = [f.where('sectionId', '==', sectionId)];
@@ -5442,7 +5474,7 @@
     // at least one for empty. Staff guidance waits for a complete active list; management pages explicitly.
     // Typing/filtering use memory. Equality filters and document-ID ordering use Firestore's existing indexes.
     return f.getDocsFromServer(f.query.apply(null, [colRef('prepStandards')].concat(constraints))).then(function (sn) {
-      if (!psCanRead() || stableIdentity() !== identity) throw { code: 'cancelled' };
+      if (!psCanRead() || stableIdentity() !== identity || options.audience !== 'manage' && !psEnabled()) throw { code: 'cancelled' };
       var docs = sn.docs.slice(0, 100);
       return { items: docs.map(function (d) { return Object.assign({}, d.data(), { id: d.id }); }),
         next: sn.docs.length > 100 ? docs[docs.length - 1].id : '' };
@@ -5491,12 +5523,12 @@
       saveStop: svStop, saveHeld: svHeld, arm: arm, armed: armed, btnPatch: btnPatch, errMsg: errMsg,
       pick: psPick, add: psAdd, openWork: psOpenWork };
   }
-  function psPanelHTML() { var p = psModule(); return !psCanRead() ? '' : p ? p.render(psAdapter()) : psWaitHTML(); }
+  function psPanelHTML() { var p = psModule(); return !psCanRead() ? '' : psRolloutHTML() + (p ? p.render(psAdapter()) : psWaitHTML()); }
   function psHintHTML() {
-    if (!S.pLog || !psCanRead()) return '';
+    if (!S.pLog || !psEnabled() || !psCanRead()) return '';
     var p = psModule(); return p ? p.hint(psAdapter(), psInputSection(), S.text) : psWaitHTML();
   }
-  function psHintPaint() { var box = document.getElementById('ps-hint'); if (box && psCanRead()) box.innerHTML = psHintHTML(); }
+  function psHintPaint() { var box = document.getElementById('ps-hint'); if (box) box.innerHTML = psHintHTML(); }
   function psReferenceHTML() {
     var p = psModule();
     return '<section class="nb-page nb-left ps-reference-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Before service</h2><span class="nb-date">The head chef\'s section standards</span></div></header><div class="nb-body">' + (p ? p.reference(psAdapter(), psDefaultSection()) : psWaitHTML()) + '</div></section>';
@@ -5504,7 +5536,7 @@
   function psViewHTML() {
     return '<div class="chips ps-viewbar" role="group" aria-label="Prep view"><button type="button" class="chip" data-p="ps-view" data-v="work" aria-pressed="' + (psView === 'work') + '">Work</button><button type="button" class="chip" data-p="ps-view" data-v="reference" aria-pressed="' + (psView === 'reference') + '">Before service</button></div>';
   }
-  function psEventTarget(el) { return !!(el && el.closest('#ps-hint, .ps-manager, .ps-reference') && psCanRead()); }
+  function psEventTarget(el) { return !!(el && psCanRead() && (el.closest('.ps-manager') || psEnabled() && el.closest('#ps-hint, .ps-reference'))); }
   document.addEventListener('click', function (e) { var el = e.target.closest('[data-ps]'), p = psModule(); if (p && psEventTarget(el)) { e.preventDefault(); p.click(el); } });
   function psInputEvent(e) { var p = psModule(); if (p && e.target.matches('[data-ps-field]') && psEventTarget(e.target)) p.input(e.target); }
   document.addEventListener('input', psInputEvent);
@@ -11165,7 +11197,8 @@
     if (!el || !S.root || !S.root.contains(el)) return;
     var a = el.getAttribute('data-p'), id = el.getAttribute('data-id'), i = +el.getAttribute('data-i'), dt = el.getAttribute('data-d');
     if (a === 'ps-load') { psError = false; psLoad(); draw(); return; }
-    if (a === 'ps-view' && S.name === 'prep' && psCanRead() && S.date === dayNow()) { psView = el.getAttribute('data-v') === 'reference' ? 'reference' : 'work'; draw(); focusSel('#rtitle'); return; }
+    if (a === 'ps-rollout-retry') { psRolloutSet(psRolloutTarget); return; }
+    if (a === 'ps-view' && S.name === 'prep' && psEnabled() && psCanRead() && S.date === dayNow()) { psView = el.getAttribute('data-v') === 'reference' ? 'reference' : 'work'; draw(); focusSel('#rtitle'); return; }
     if (a === 'device-request') { window.LK_DEVICE.request(); return; }
     if (a === 'owner-head') { bootstrapHead(id); return; }
     if (a === 'owner-create') { var input = S.root.querySelector('#owner-name'); bootstrapHead('', input && input.value); return; }
@@ -11598,6 +11631,7 @@
     if (k && k.indexOf('lv-s:') === 0) { var sk = k.slice(5), sc = LVR[sk]; if (sc) { var ss = lvState(sc); ss.sort = el.value; ss.col = null; ss.desc = false; ss.shown = sc.step || 15; lvRefresh(sk); } return; }
     if (k && k.indexOf('ml-pri:') === 0) { mlSetPri(k.slice(7), el.value); return; }
     if (k === 'ml-sous') { mlSousSet(el.checked); return; }
+    if (k === 'ps-rollout') { psRolloutSet(el.checked); return; }
     if (k && /^cut-([tpr]\d|[oa]\d+-\d$)/.test(k)) { cutField(k, el, true); return; }
     if (k && k.indexOf('tm-') === 0) { teamField(k, el); return; }
     // no redraw: typing a date on a keyboard changes it digit by digit, and a redraw would put the box back each time

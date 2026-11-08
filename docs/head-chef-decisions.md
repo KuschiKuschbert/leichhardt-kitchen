@@ -1,5 +1,7 @@
 # Head chef decisions
 
+
+8 November 2026: add an admin toggle to make smart prep par levels available to the team. Default off for setup; Admin → Prep controls hints and Before service, with standards and drafts preserved when off. [Contract](prep-standards.md).
 - **8 November 2026, section prep standards: implement the recommendation.** After reviewing the three designs and their alignment with the app, the head chef said “okay lets go”. Build the separate Prep room, A’s normal typing guidance and C’s complete Before service reference, with Work as the default. Canonical head/verified admin edit; sous reads. Keep existing free-text task quantities separate from minimums, and defer stock counts and saved readiness checks. See [implementation](prep-standards.md) and [the chosen design](prep-par-options/brief.md).
 
 - **8 November 2026, prep standards previews: match the current app exactly.** The head chef requested the existing application's design language, colour scheme and style from `AGENTS.md` and `CLAUDE.md`. Reuse the notebook, controls, Add sheet and role-panel patterns for the three previews. This refines the design requirement; it does not authorise app implementation or select a staff layout. See [the design alignment](prep-par-options/brief.md#alignment-with-the-existing-app).

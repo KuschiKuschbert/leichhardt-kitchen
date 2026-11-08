@@ -1,6 +1,6 @@
 # Head-chef prep standards and before-service guidance
 
-**Chosen 8 November 2026:** after the style-aligned previews, the user said “okay lets go”. Implement the recommended separate Prep room plus A’s normal typing guidance and C’s complete Before service reference. Work stays the initial view. [Implementation and release contract](../prep-standards.md). The comparison below records the design exploration; mock measurements are not production verification.
+**Chosen 8 November 2026:** after the style-aligned previews, the user said “okay lets go”. Implement the recommended separate Prep room plus A’s normal typing guidance and C’s complete Before service reference. Work stays the initial view. The later admin rollout request adds a default-off switch in Admin → Prep; chefs can set up standards before staff guidance is enabled. [Implementation and release contract](../prep-standards.md). The comparison below records the design exploration; mock measurements are not production verification.
 
 [Open the current previews](index.html). Source baseline: main `20c9472`. Every illustrated quantity and instruction is synthetic. Actual approved standards are **To come**.
 

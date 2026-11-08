@@ -15,7 +15,7 @@ function standard(sectionId, name, aliases, minimum, unit, patch) {
 }
 function fixture(patch) {
   return Object.assign({
-    [CFG]: { people: JSON.parse(JSON.stringify(people)), headId: 'ann', sousIds: ['sam', 'ann'], staffIds: ['sam', 'ann', 'bo'], fnIds: [], fnOnlyIds: [], addIds: ['sam', 'ann', 'bo'], tickIds: ['sam', 'ann', 'bo'], delIds: ['sam', 'ann'], kitSecs: sections, showBadges: true },
+    [CFG]: { people: JSON.parse(JSON.stringify(people)), headId: 'ann', sousIds: ['sam', 'ann'], staffIds: ['sam', 'ann', 'bo'], fnIds: [], fnOnlyIds: [], addIds: ['sam', 'ann', 'bo'], tickIds: ['sam', 'ann', 'bo'], delIds: ['sam', 'ann'], kitSecs: sections, showBadges: true, prepStandardsEnabled: true },
     [key('prepStandards', 'onions')]: standard('larder', 'Slice onions', ['onions', 'sliced onions'], 4, 'tubs'),
     [key('prepStandards', 'slaw')]: standard('larder', 'Slaw', ['coleslaw'], 2, 'tubs'),
     [key('prepStandards', 'herb')]: standard('larder', 'Herb sauce', ['sauce'], 1, 'L'),

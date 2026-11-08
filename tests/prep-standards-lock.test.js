@@ -16,7 +16,7 @@ function fixture() {
       ],
       headId: 'ann', sousIds: ['sam', 'ann'], staffIds: ['sam', 'ann', 'bo'], fnIds: [], fnOnlyIds: [],
       addIds: ['sam', 'ann', 'bo'], tickIds: ['sam', 'ann', 'bo'], delIds: ['sam', 'ann'],
-      kitSecs: [{ id: 'larder', name: 'Larder', off: false }, { id: 'grill', name: 'Grill', off: false }], showBadges: true
+      kitSecs: [{ id: 'larder', name: 'Larder', off: false }, { id: 'grill', name: 'Grill', off: false }], showBadges: true, prepStandardsEnabled: true
     },
     [STANDARD]: { sectionId: 'larder', name: 'Slice onions', aliases: ['onions'], minimum: 4, unit: 'tubs',
       instruction, recipe: '', archived: false, v: 1, at: cutoff - 3600000, by: 'ann' },

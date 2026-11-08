@@ -16,6 +16,7 @@ const LINES = [
   ['f1', 'Blanch chips', 'Fryer', '4 trays'], ['f2', 'Crumb calamari', 'Fryer', '3 kg'], ['f3', 'Batter mix', 'Fryer', '2 L']
 ];
 const extra = Object.fromEntries(LINES.map(([id, text, station, qty, x], k) => [key(id), Object.assign({ text, station, qty, recipe: '', addedBy: 'Sam', addedById: 'sam', addedAt: L.NOW - (90 - k) * 60000, done: false, deleted: false }, x || {})]));
+extra[['kitchens', L.PIN, 'config', 'main'].join('/')] = Object.assign({}, L.seed()[['kitchens', L.PIN, 'config', 'main'].join('/')], { prepStandardsEnabled: true });
 const FONTS = 'https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@600;700&display=swap';
 (async () => {
   const b = await L.start();
