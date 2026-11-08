@@ -4,6 +4,19 @@ Moved from `CLAUDE.md` on 8 November 2026, word for word, so the file every sess
 
 When a note or a file is added: its full row goes here, and one short row (what it covers, where it is) goes in `CLAUDE.md`. When the two disagree, the note itself wins, then `CLAUDE.md`.
 
+## Operandio cooling, 8 November 2026
+
+The head chef approved the compact 248 by 155 px clock dropdown, everyone with kitchen PIN access starting the fixed two-hour stage, and a separate manual Start for the four-hour stage. Council: Build smaller, 5 of 5. [The feature contract](operandio-cooling.md) records UI feedback, authority, reads, persistence, delivery, backup and release prerequisites; [the design brief](operandio-cooling-options/brief.md) preserves the choices and visuals. Implementation is ready for review, not deployed. Closed-app delivery needs billing approval.
+
+| Files | Role and checks |
+| --- | --- |
+| `js/cooling-core.js`, `js/cooling.js`, `js/cooling-ui.js`, `css/cooling.css` | Shell: pure contract, authorised request/listener controller and compact UI. Core/controller/UI/access/integration tests are `tests/cooling*.test.js`. |
+| `js/prep.js`, `js/app.js` | Existing session/write/overlay adapters, top chip, Settings opt-in and guarded route. |
+| `sw.js`, `index.html`, `js/upkeep.js` | Saved shell membership and fixed cooling push handling. `tests/cooling-push.test.js`, seasonal shell and native generation tests. |
+| `functions/`, `firebase.cooling.json` | Transactional start, durable scheduling and device delivery. Backend README has billing/deployment steps; `functions/test/` has unit and real emulator integration checks. |
+| `firestore.rules`, `tests/rules/cooling.test.mjs` | Strict additive request/token authority. Publish reviewed rules before dependent client. |
+| `scripts/nightly-backup.mjs`, `scripts/backup-recovery-check.mjs` | Current/recent run recovery, no runtime jobs or tokens. Move PIN blocks an enabled service before copying. |
+
 ## Which note to read before you change it
 
 `CLAUDE.md`, "Read the note before you change it", has the short version of this table.

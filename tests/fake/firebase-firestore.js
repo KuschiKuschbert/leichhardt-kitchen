@@ -215,12 +215,22 @@ function isToday(day) {
 // the operational records (kitchenRead() in the rules): a live PIN session for someone who is not functions only
 const KITCHEN_COLS = ['config', 'days', 'orders', 'waste', 'summary', 'misses', 'views', 'notes', 'guides', 'drinks', 'shifts', 'team', 'activity', 'sections',
   'learned', 'ordlearned', 'learnlog', 'minutes', 'mailstat', 'transfers', 'transferOpen', 'digest'];
+const COOLING_COLS = ['cooling', 'coolingRequests', 'coolingPush', 'coolingRuns', 'coolingJobs'];
+const coolingCollection = ref => ref.path[0] === 'kitchens' && COOLING_COLS.includes(ref.path[2]);
 /* The read rules by collection, before the record-by-record ones in readRefused() and rulesDenied(): true when the real
    rules refuse this phone the record (list false) or the query (list true). Everything here is open to the head chef's
    Google account, apart from the records nobody reads (pushes, PIN tries, the old proofs). */
 function colRefused(ref, list) {
   const rel = ref.path.slice(2), c = rel[0], k = key(ref.path);
   if (ref.path[0] !== 'kitchens' || ref.group) return false;
+  // These records have no admin exception. Tokens, jobs and archive internals are server-only; a start result
+  // belongs to both this device and the person currently using it, including after shared-device handover.
+  if (coolingCollection(ref)) {
+    if (list || rel.length !== 2 || !kitchenReader(ref)) return true;
+    if (c === 'cooling') return !['current', 'config'].includes(rel[1]);
+    if (c === 'coolingRequests') return !store[k] || store[k].uid !== authUid(ref) || store[k].by !== kitchenReader(ref);
+    return true;
+  }
   if (c === 'adminDevices') return list || !(rawOwner(ref) || authUid(ref) && rel[1] === authUid(ref));
   if (c === 'sessions') return list || !authUid(ref) || rel[1] !== authUid(ref);
   if (c === 'push' || c === 'tries' || c === 'proofs') return true;
@@ -298,6 +308,7 @@ const asks = (ref, f, op, v) => (ref.c || []).some(x => x.k === 'where' && x.f =
    by someone who does not manage pings must ask for their own (to == them), and only a chef lists who has seen one. */
 function rulesDenied(ref) {
   const k = key(ref.path);
+  if (ref.group && [...COOLING_COLS, 'devices'].includes(ref.group)) return true;
   if (/^kitchens\/[^/]+\/(adminDevices|sessions)$/.test(k)) return true;
   if (ref.group && !isAdmin(ref)) return true;
   if (colRefused(ref, true)) return true;
@@ -437,6 +448,29 @@ function finishOps(ops) {
 }
 const exactKeys = (value, names) => value && Object.keys(value).length === names.length && names.every(name => Object.hasOwn(value, name));
 const freshStamp = value => !!(value && value.__st) || stampMillis(value) === requestNow();
+// Like coolingRequestOk/coolingPushOk in the real rules. Only the tests' explicit __fake.write() can publish
+// an accepted run or outcome: accepting a request here would hide a missing or failed deployed backend.
+function coolingWriteRefused(o, stamp) {
+  if (!coolingCollection(o.ref)) return false;
+  const rel = o.ref.path.slice(2), root = rootOfRef(o.ref), uid = authUid(o.ref), user = authUser(o.ref);
+  if (rel.length !== 2 || !['coolingRequests', 'coolingPush'].includes(rel[0])) return true;
+  if (rel[0] === 'coolingPush' && o.kind === 'delete') return !(user && user.isAnonymous && uid && rel[1] === uid);
+  const by = kitchenReader(o.ref), ss = store[root + '/sessions/' + uid], old = store[key(o.ref.path)];
+  if (!by || o.kind === 'delete') return true;
+  const base = o.kind === 'set' && !o.merge ? {} : old || {}, d = resolveVal(o.data, base, stamp);
+  if (rel[0] === 'coolingRequests') {
+    const ready = store[root + '/cooling/config'];
+    return o.kind !== 'set' || old !== undefined || !ready || ready.v !== 1 || ready.enabled !== true ||
+      !/^[a-zA-Z0-9_-]{16,80}$/.test(rel[1]) ||
+      !exactKeys(d, ['v', 'uid', 'by', 'sessionAt', 'stage', 'expectedRun', 'expectedRev', 'at']) ||
+      d.v !== 1 || d.uid !== uid || d.by !== by || stampMillis(d.sessionAt) !== stampMillis(ss.issuedAt) ||
+      ![1, 2].includes(d.stage) || typeof d.expectedRun !== 'string' || d.expectedRun !== '' && !/^[a-zA-Z0-9_-]{1,80}$/.test(d.expectedRun) ||
+      !Number.isInteger(d.expectedRev) || d.expectedRev < 0 || stampMillis(d.at) !== stamp;
+  }
+  return !exactKeys(d, ['v', 'uid', 'by', 'pinAt', 'tok', 'at', 'mode']) || d.v !== 1 || d.uid !== uid || rel[1] !== uid || d.by !== by ||
+    typeof d.pinAt !== 'number' || d.pinAt !== ss.pinAt || ss.mode !== 'personal' || d.mode !== 'personal' ||
+    typeof d.tok !== 'string' || !d.tok.length || d.tok.length > 4096 || stampMillis(d.at) !== stamp;
+}
 function controlWrite(ops) {
   const first = ops[0] && ops[0].ref;
   if (!first) return null;
@@ -511,6 +545,8 @@ function controlWrite(ops) {
 function commitOps(ops) {
   window.__fake.writes.push(ops.map(o => ({ kind: o.kind, path: key(o.ref.path), data: o.data, app: appOf(o.ref) })));
   if (ops.some(o => appOf(o.ref) !== appOf(ops[0].ref))) return Promise.reject({ code: 'invalid-argument' });
+  const stamp = requestNow();
+  if (ops.some(o => coolingWriteRefused(o, stamp))) return Promise.reject({ code: 'permission-denied' });
   const admin = !!(ops.length && isAdmin(ops[0].ref)), control = controlWrite(ops);
   if (control !== null) return control ? finishOps(ops) : Promise.reject({ code: 'permission-denied' });
   // the older PIN proof was switched off in phase 2 of PIN sessions (22 Oct 2026): the rules refuse any proofs write
@@ -550,7 +586,7 @@ function commitOps(ops) {
   // like staff() in the rules: any other write from a phone (no Google account) names its writer (by), and that writer
   // has this phone's running session
   const free = /\/(staffpins|pinset|tries|sessions|proofs)\/[^/]+$/;
-  if (!admin && ops.some(o => o.kind !== 'delete' && !free.test(key(o.ref.path)) && !(o.data && o.data.by && o.data.by === actor))) return Promise.reject({ code: 'permission-denied' });
+  if (!admin && ops.some(o => o.kind !== 'delete' && !coolingCollection(o.ref) && !free.test(key(o.ref.path)) && !(o.data && o.data.by && o.data.by === actor))) return Promise.reject({ code: 'permission-denied' });
   // the rules see a record as it will be after the write (request.resource.data): a merge or an update keeps the fields
   // already stored, by among them (27 Oct 2026: a merge with no by kept a sous chef's id and the rules refused the head chef)
   const after = o => Object.assign({}, o.kind === 'set' && !o.merge ? {} : (store[key(o.ref.path)] || {}), o.data || {});

@@ -84,6 +84,28 @@ async function admin(b, o) {
   ok(!(await p.evaluate(() => localStorage.getItem('lk.move.big'))), 'a read lost part way: no refusal kept, so it can be tried again');
   await p.context().close();
 
+  // 5. An enabled cooling service has jobs outside the browser copy. Stop before creating destination authority or data.
+  const coolingConfig = fsKey(['cooling', 'config']);
+  p = await admin(b, { extra: { ...extra, [coolingConfig]: { v: 1, enabled: true } } });
+  await p.evaluate(() => { window.__fake.writes = []; window.__fake.bill = []; });
+  msg = await move(p); s = await store(p);
+  ok(/Operandio cooling is enabled/.test(msg) && /Move or disable its notification service/.test(msg) && /Nothing was copied/.test(msg), 'enabled cooling: the refusal explains the required service cutover');
+  ok(onNew(s).length === 0 && !(await p.evaluate(prefix => window.__fake.writes.flat().some(w => w.path.startsWith(prefix)), 'kitchens/' + NEW + '/')), 'enabled cooling: no destination session, grant or data write is attempted');
+  ok(await p.evaluate(path => window.__fake.bill.some(x => x.kind === 'server' && x.path === path), coolingConfig), 'enabled cooling: the guard checks deployment readiness on the server');
+  ok(await p.evaluate(() => window.LK_PREP.state.pin === localStorage.getItem('lk.prep.pin')) && await p.evaluate(() => window.LK_PREP.state.pin) === L.PIN, 'enabled cooling: the working kitchen PIN stays unchanged');
+  ok(p.errors.length === 0, 'enabled cooling: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // 6. A failed readiness read cannot be treated as a disabled service, even with a disabled cached record.
+  p = await admin(b, { extra: { ...extra, [coolingConfig]: { v: 1, enabled: false } } });
+  await p.evaluate(() => { window.__fake.failReads = /\/cooling\/config$/; window.__fake.writes = []; });
+  msg = await move(p); s = await store(p);
+  ok(/^Stopped part way/.test(msg) && /safe to try again/.test(msg), 'cooling readiness unavailable: the move stops with a retryable explanation');
+  ok(onNew(s).length === 0 && !(await p.evaluate(prefix => window.__fake.writes.flat().some(w => w.path.startsWith(prefix)), 'kitchens/' + NEW + '/')), 'cooling readiness unavailable: no destination write is attempted');
+  ok(await p.evaluate(() => window.LK_PREP.state.pin) === L.PIN && await p.evaluate(() => localStorage.getItem('lk.prep.pin')) === L.PIN && !(await p.evaluate(() => localStorage.getItem('lk.move.big'))), 'cooling readiness unavailable: old PIN remains and no quota refusal is cached');
+  ok(p.errors.length === 0, 'cooling readiness unavailable: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

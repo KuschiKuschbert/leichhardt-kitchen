@@ -963,7 +963,7 @@
   function stableIdentity() { return [S.pin, S.uid || '', S.who || ''].join('|'); }
   function writeContext() { return { uid: S.uid, person: S.who, pin: S.pin, by: wBy(), admin: ownerHere(), identity: stableIdentity(), exp: S.sessExp || 0, issuedAt: S.sessIssuedAt, canonicalSerial: S.canonicalSerial || 0 }; }
   function workLock() { return S.privacyLocked || S.unlocking ? { identity: S.lockIdentity, person: S.lockRecorder, reason: S.lockReason } : null; }
-  function blockedRecorder() { return writeTickets.length ? writeTickets[0].person : workLock() && (S.lockHasDraft || dirtyForUpdate()) ? S.lockRecorder || '' : ''; }
+  function blockedRecorder() { return writeTickets.length ? writeTickets[0].person : coolingOwner() ? coolingOwner() : workLock() && (S.lockHasDraft || dirtyForUpdate()) ? S.lockRecorder || '' : ''; }
   function copyWrite(value) {
     if (Array.isArray(value)) return value.map(copyWrite);
     if (value && Object.getPrototypeOf(value) === Object.prototype) { var out = {}; Object.keys(value).forEach(function (k) { out[k] = copyWrite(value[k]); }); return out; }
@@ -1047,7 +1047,7 @@
     pr.then(done, done);
     return pr;
   }
-  function sendingNow() { return pending > 0 || writeTickets.length > 0; }
+  function sendingNow() { return pending > 0 || writeTickets.length > 0 || coolingBusy(); }
   function syncState() { return offline ? 'off' : (pending && Date.now() - pendSince > 3000 ? 'wait' : ''); }
   // the strip, and the Not sent marks and their room with it (28 Oct 2026): wherever this device writes, a PIN session
   // or the head chef's Google account with nobody signed in by PIN (privateAccess()). Both keep a change in this tab's
@@ -1527,7 +1527,7 @@
     S.privacyLocked = false; S.unlocking = false; S.lockRecorder = ''; S.lockHasDraft = false; S.lockIdentity = ''; S.workNotice = ''; S.grantExp = 0;
     S.ctab = 'dashboard'; S.cgLast = {}; S.cDate = ''; chefHistoryClear(); fdLast = []; fdClose(true, true);
     accessEpoch++; digestMem = null;   // the day digests read for the person before
-    stopLive(); clearPrivateCache();
+    stopLive(); if (coolingController) coolingController.stop(); clearPrivateCache();
     S.text = S.qty = S.otext = S.oqty = ''; S.wf = { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }; S.xf = xBlank();
     if (mlf) mlf.text = '';
     S.config = null; S.configFull = false; S.configState = 'idle'; S.past = []; S.pastFor = ''; S.week = null; S.ordHist = []; S.ordHistFor = ''; S.wSum = S.xSum = S.wStats = S.xStats = S.wNote = null;
@@ -2784,6 +2784,9 @@
     var today = dayNow(), dates = [], k;
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
     f.getDoc(cfgDoc()).then(function (sn) { out.config = sn.exists() ? sn.data() : null; })
+      // One named canonical read for this manual backup. Backend archive history belongs to the nightly export;
+      // tokens, readiness configuration, requests and delivery jobs must never be restored as live work.
+      .then(function () { part = 'cooling current'; return f.getDocFromServer(docRef('cooling', 'current')).then(function (sn) { out.coolingCurrent = sn.exists() ? sn.data() : null; }, function (e) { if (e && e.code === 'permission-denied') { left.push('cooling current'); return; } throw e; }); })
       .then(function () { return all('activity'); }).then(function (r) { out.activity = r; })
       .then(function () { return all('sections'); }).then(function (r) { out.sections = r; })
       .then(function () { return all('learned'); }).then(function (r) { out.learned = r; })
@@ -2926,7 +2929,12 @@
     }
     var today = dayNow(), dates = [], k;
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
-    f.getDoc(f.doc(fb.db, 'kitchens', old, 'config', 'main')).then(function (sn) {
+    // One source readiness read before any destination write. Copying live cooling state cannot move its server
+    // queue or device registrations; require an explicit backend cutover instead of silently losing scheduled alerts.
+    f.getDocFromServer(f.doc(fb.db, 'kitchens', old, 'cooling', 'config')).then(function (sn) {
+      got(); if (sn.exists() && sn.data().enabled === true) throw { code: 'cooling-cutover' };
+      return f.getDoc(f.doc(fb.db, 'kitchens', old, 'config', 'main'));
+    }).then(function (sn) {
       got(); if (!sn.exists()) throw { code: 'permission-denied' }; config = sn.data(); n++;
     })
       .then(readRoster).then(function () { return readCol('pinset'); }).then(function () { return readCol('staffpins'); }).then(function () { return readCol('activity'); }).then(function () { return readCol('sections'); })
@@ -2995,6 +3003,7 @@
         connect();
       }).catch(function (e) {
         S.moving = false;
+        if (e && e.code === 'cooling-cutover') { S.moveMsg = errMsg('Operandio cooling is enabled. Move or disable its notification service before changing the kitchen PIN. Nothing was copied.'); draw(); return; }
         if (e && e.code === 'too-big') { var c = { at: now(), n: n, reads: reads, why: e.why }; lsSet('lk.move.big', JSON.stringify(c)); S.moveMsg = errMsg(moveBigText(c)); draw(); return; }
         S.moveMsg = errMsg(e && e.code === 'permission-denied' ? 'The rules do not allow the new PIN yet. Nothing was changed on the old PIN.' : 'Stopped part way. Nothing was changed on the old PIN, so it is safe to try again.'); draw();
       });
@@ -5610,7 +5619,7 @@
       '<p class="hint">Tick Create/edit functions beside a person, then save. Their kitchen role stays the same.</p>' + peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + saveBlock
     ) : (
       '<section class="set-block"><span class="label">Backup</span><span class="hint">Saves everything the prep book holds as one file on this device. The server also backs the book up every night at 03:30.</span><div class="btn-row"><button type="button" class="btn" data-p="export"' + (S.exporting ? ' disabled' : '') + '>' + (S.exporting ? esc(S.exporting) : 'Download a backup') + '</button></div>' +
-        '<details class="a-how"><summary>What a backup holds</summary><p class="hint">People, prep lines, orders, wastage, delivery temperatures and transfers between venues from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, function bookings with their contacts and earlier versions, the chef to-do list, what the prep and order lists have learned, tallies and the guides\' words. People\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files).</p></details></section>' +
+        '<details class="a-how"><summary>What a backup holds</summary><p class="hint">People, prep lines, orders, wastage, delivery temperatures and transfers between venues from the last 400 days, shift pings and who has seen them, meeting minutes with earlier versions and sign-offs, function bookings with their contacts and earlier versions, the chef to-do list, what the prep and order lists have learned, tallies and the guides\' words. The current Operandio timer is included as an audit record; its history is in the nightly backup. Cooling jobs and push addresses, people\'s PIN fingerprints and the guides\' page pictures are left out (keep the original files).</p></details></section>' +
       '<section class="set-block"><span class="label">Kitchen PIN</span><span class="hint">The kitchen PIN is the lock on the whole book, so keep it to staff only. Writing needs a person\'s own PIN as well.</span>' +
       '<p class="hint a-step"><strong>Step 1.</strong> Ask for the new PIN to be added to the security rules. <strong>Step 2.</strong> Type it twice below and copy everything to it. The old PIN keeps working until its rules are removed.</p>' +
       '<div class="field"><label class="label" for="a-newpin">New 4 digit kitchen PIN</label><input id="a-newpin" class="search" inputmode="numeric" maxlength="4" autocomplete="off" data-k="a-newpin" placeholder="4 digits" value="' + esc(S.newPin) + '"></div>' +
@@ -7809,6 +7818,7 @@
     if (ovBack) { nextWait = true; return; }
     nextWait = false;
     if (ksWant && !sheetOpen() && !dkFirstUp()) { ksWant = false; ksOpen(); if (ksPop) return; }
+    coolingTick();
     noteMaybePop();
     mlMaybePop();
   }
@@ -10519,8 +10529,8 @@
     var ref = docRef('push', k.h);
     (k.by === 'owner' ? track(fb.fs.deleteDoc(ref)) : W([['del', ref]])).then(function () {
       lsSet('lk.push', '');
-      import(SDK + 'firebase-messaging.js').then(function (fm) { return fm.deleteToken(fm.getMessaging(fb.app)); }).catch(function () {});
-      S.pushBusy = false; S.pushMsg = 'Off. This phone gets no more pushes.'; pushDraw();
+      if (!coolingPushMatches(coolingPushKept())) import(SDK + 'firebase-messaging.js').then(function (fm) { return fm.deleteToken(fm.getMessaging(fb.app)); }).catch(function () {});
+      S.pushBusy = false; S.pushMsg = 'Off. This phone gets no more cut-off pushes.'; pushDraw();
     }, function () { S.pushBusy = false; S.pushMsg = 'Could not turn it off. Check the connection and try again.'; pushDraw(); });
   }
   /* once a kitchen day, and straight away when the kitchen PIN changed, a phone that is turned on gets its address again
@@ -12911,9 +12921,154 @@
     setTimeout(function () { if (!S.authed && !S.privacyLocked && S.configState === 'ok' && !S.sessFor) { resumed = false; resume(); } loadAdmins(); accessChanged(); draw(); }, 0);
   });
   window.addEventListener('beforeunload', function (e) {
-    if (typedHere() && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { e.preventDefault(); e.returnValue = ''; }
+    if ((typedHere() || coolingBusy()) && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { e.preventDefault(); e.returnValue = ''; }
   });
   window.addEventListener('storage', function (e) { if (((e.key === 'lk.prep.who' || e.key === 'lk.prep.sess') && !e.newValue || e.key === 'lk.auth.lock') && (S.authed || S.user)) signOutPerson(true, true); });
+  /* Operandio: one canonical live record while authorised, one readiness read per PIN session, and a temporary
+     own-request listener after a start write resolves. Countdown/alert ticks never read Firestore. */
+  var coolingController = null, coolingTickTimer = null, coolingRouteWant = false, coolingRouteHandled = '', coolingPaintTimer = null;
+  var coolingPushBusy = false, coolingPushMsg = '', coolingPushError = false, coolingPushKeepKey = '', coolingPushMessageKey = '';
+  function coolingEligible() { return !!(fb && kitchenAccess() && canW() && me()); }
+  function coolingSession() {
+    var context = writeContext(); context.admin = false;
+    return { uid: S.uid, by: S.who, pin: S.pin, issuedAt: S.sessIssuedAt,
+      pinAt: S.sessPinAt, mode: deviceMode(), canRead: coolingEligible(), context: context };
+  }
+  function coolingRef(path, session) {
+    if (!/^(cooling\/(current|config)|coolingRequests\/[A-Za-z0-9_-]{16,80})$/.test(path)) throw new Error('Invalid cooling path');
+    return fb.fs.doc.apply(null, [fb.db, 'kitchens', session.pin].concat(path.split('/')));
+  }
+  function coolingSnapshot(sn) {
+    return { exists: sn.exists(), data: sn.exists() ? sn.data() : null,
+      fromCache: !!(sn.metadata && sn.metadata.fromCache), hasPendingWrites: !!(sn.metadata && sn.metadata.hasPendingWrites) };
+  }
+  function coolingRead(path, session) { return fb.fs.getDocFromServer(coolingRef(path, session)).then(coolingSnapshot); }
+  function coolingWatch(path, next, fail, session) {
+    return fb.fs.onSnapshot(coolingRef(path, session), { includeMetadataChanges: true }, function (sn) { next(coolingSnapshot(sn)); }, fail);
+  }
+  var coolingStampCache = null;
+  function coolingSessionCurrent(session) {
+    return coolingEligible() && coolingPushMatches(session) && session.mode === deviceMode()
+      && millis(session.issuedAt) === millis(S.sessIssuedAt) && session.context.exp === S.sessExp;
+  }
+  function coolingIssuedAt(session) {
+    // Rules bind the exact Firestore Timestamp, including microseconds. A toMillis/fromMillis round trip loses
+    // precision. Fresh sessions retain the original value; restored numeric sessions need one own-document read
+    // on their first start. Nothing is read just for opening the dropdown or ticking the countdown.
+    if (session.issuedAt && typeof session.issuedAt.toMillis === 'function') return Promise.resolve(session.issuedAt);
+    var key = [session.pin, session.uid, session.by, session.mode, session.pinAt, millis(session.issuedAt)].join('|');
+    if (coolingStampCache && coolingStampCache.key === key) return coolingStampCache.promise;
+    var cached = { key: key, promise: null }; coolingStampCache = cached;
+    cached.promise = Promise.resolve().then(function () {
+      return fb.fs.getDocFromServer(fb.fs.doc(fb.db, 'kitchens', session.pin, 'sessions', session.uid));
+    }).then(function (sn) {
+      var value = sn.exists() && sn.data();
+      if (!value || value.v !== 2 || value.by !== session.by || value.pinAt !== session.pinAt || value.mode !== session.mode
+        || value.exp !== session.context.exp || !value.issuedAt || typeof value.issuedAt.toMillis !== 'function'
+        || millis(value.issuedAt) !== millis(session.issuedAt)) throw { code: 'permission-denied' };
+      return value.issuedAt;
+    }).catch(function (e) { if (coolingStampCache === cached) coolingStampCache = null; throw e; });
+    return cached.promise;
+  }
+  function coolingWrite(path, data, session) {
+    if (!coolingSessionCurrent(session)) return Promise.reject({ code: 'cancelled', definite: true });
+    return coolingIssuedAt(session).then(function (issuedAt) {
+      if (!coolingSessionCurrent(session)) throw { code: 'cancelled', definite: true };
+      // Do not classify a later W() failure as definite: its acknowledgement may have been lost.
+      return W([['set', coolingRef(path, session), Object.assign({}, data, { sessionAt: issuedAt })]], session.context);
+    }, function (e) { throw Object.assign({}, e, { definite: true }); });
+  }
+  // Personal dismissal markers only, no timer times, names or content. Bound to this kitchen/device/person and capped
+  // by the controller; a different run ID never inherits an old dismissal. No reads or writes to other people's alerts.
+  function coolingSeenKey(session) { return 'lk.cooling.seen.' + session.pin + '.' + session.uid + '.' + session.by; }
+  function coolingChanged() {
+    if (coolingPaintTimer) return;
+    coolingPaintTimer = setTimeout(function () { coolingPaintTimer = null; try { window.dispatchEvent(new Event('lk-cooling')); } catch (e) {} }, 0);
+  }
+  function coolingGet() {
+    if (coolingController || !window.LK_COOLING_APP || !window.LK_COOLING_UI) return coolingController;
+    coolingController = window.LK_COOLING_APP.create({ session: coolingSession, now: now, get: coolingRead, watch: coolingWatch, write: coolingWrite,
+      timestamp: function () { return fb.fs.serverTimestamp(); }, changed: coolingChanged, chime: noteChime,
+      readSeen: function (session) { try { return JSON.parse(lsGet(coolingSeenKey(session)) || '{}'); } catch (e) { return {}; } },
+      writeSeen: function (session, seen) { lsSet(coolingSeenKey(session), JSON.stringify(seen)); },
+      uiHooks: { esc: esc, clock: T.clock,
+        canOpen: function () { return coolingEligible() && !namesUp() && !sheetBusy(); },
+        opened: function (kind, closeFromBack) { ovPush('cooling', closeFromBack); },
+        closed: function (kind, noBack) { ovDone('cooling', noBack); setTimeout(sheetNext, 0); },
+        trapTab: trapTab }
+    });
+    return coolingController;
+  }
+  function coolingSync() {
+    var c = coolingGet(); if (!c) return;
+    c.sync(); coolingPushKeep();
+    if (coolingEligible() && !coolingTickTimer) coolingTickTimer = setInterval(coolingTick, 1000);
+    if (!coolingEligible() && coolingTickTimer) { clearInterval(coolingTickTimer); coolingTickTimer = null; }
+  }
+  function coolingTick() {
+    if (!coolingController) return;
+    if (!coolingEligible()) { coolingSync(); return; }
+    coolingController.tick();
+    if (coolingRouteWant && !sheetBusy() && !namesUp()) { coolingRouteWant = false; coolingController.open(document.querySelector('.cooling-chip')); }
+  }
+  function coolingOpen(anchor) { var c = coolingGet(); if (c) { c.sync(); c.open(anchor); } }
+  function coolingBusy() { return !!(coolingController && coolingController.isBusy()); }
+  function coolingOwner() { var p = coolingController && coolingController.pendingWork(); return p && (p.by || p.person) || ''; }
+  function coolingRoute() { if (coolingRouteHandled === location.hash) return; coolingRouteHandled = location.hash; coolingRouteWant = true; coolingSync(); coolingTick(); }
+  window.addEventListener('lk-clock', coolingTick);
+  window.addEventListener('lk-access', coolingSync);
+  window.addEventListener('online', function () { if (coolingController) coolingController.retryRead(); });
+  window.addEventListener('hashchange', function () { if (location.hash !== '#/cooling') { coolingRouteWant = false; coolingRouteHandled = ''; } });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) { coolingSync(); coolingTick(); } });
+
+  /* Cooling push is separate from supplier reminders. Opt-in stores no token locally, and only this anonymous
+     device UID may own its registration. Personal sessions may expire overnight without ending an opted-in alert. */
+  function coolingPushKept() { try { return JSON.parse(lsGet('lk.cooling.push') || 'null'); } catch (e) { return null; } }
+  function coolingPushMatches(k) { return !!(k && k.uid === S.uid && k.by === S.who && k.pin === S.pin && k.pinAt === S.sessPinAt); }
+  function coolingPushInfo() {
+    var messageKey = [S.pin, S.uid, S.who, S.sessPinAt].join('|');
+    // Feedback belongs to the person and PIN generation that requested it. Keep an in-flight operation busy
+    // across a handover, but never show the previous person's success or error as the new person's setting.
+    if (messageKey !== coolingPushMessageKey) { coolingPushMessageKey = messageKey; coolingPushMsg = ''; coolingPushError = false; }
+    var k = coolingPushKept(), show = coolingEligible(), personal = deviceMode() === 'personal', supported = pushCan();
+    var on = !!(personal && coolingPushMatches(k) && supported && Notification.permission === 'granted');
+    var state = !personal ? 'shared' : pushIOS() ? 'ios' : !supported ? 'no' : Notification.permission === 'denied' ? 'denied' : 'off';
+    var msg = coolingPushMsg || (on ? 'On. This phone receives Operandio cooling alerts, even with the app closed.' : state === 'shared' ? 'This shared screen shows alerts while signed in. Turn on closed-app alerts on your personal device.' : PUSH_SAY[state] || 'Each stage sends a phone notification. Your phone’s notification settings control its sound.');
+    return { show: show, on: on, busy: coolingPushBusy, enabled: show && personal && state !== 'ios' && supported,
+      msg: msg, error: coolingPushError };
+  }
+  function coolingPushSave(tok, session) {
+    if (!coolingEligible() || !coolingPushMatches(session) || deviceMode() !== 'personal') return Promise.reject({ code: 'cancelled' });
+    return W([['set', docRef('coolingPush', session.uid), { v: 1, uid: session.uid, by: session.by, pinAt: session.pinAt,
+      tok: tok, at: fb.fs.serverTimestamp(), mode: 'personal' }]], session.context).then(function () {
+      if (coolingPushMatches(session)) lsSet('lk.cooling.push', JSON.stringify({ uid: session.uid, by: session.by, pin: session.pin, pinAt: session.pinAt, day: dayNow() }));
+    });
+  }
+  function coolingPushSet(on) {
+    if (!coolingEligible() || coolingPushBusy || deviceMode() !== 'personal') return;
+    var session = coolingSession(), info = coolingPushInfo();
+    if (on && !info.enabled) { coolingPushMsg = info.msg; coolingChanged(); return; }
+    coolingPushBusy = true; coolingPushError = false; coolingPushMsg = on ? 'Turning cooling alerts on...' : 'Turning cooling alerts off...'; coolingChanged();
+    var task = on ? Notification.requestPermission().then(function (p) { if (p !== 'granted') throw { code: 'denied' }; return pushToken(); }).then(function (tok) { return coolingPushSave(tok, session); }) : W([['del', docRef('coolingPush', session.uid)]], session.context).then(function () { lsSet('lk.cooling.push', ''); });
+    task.then(function () {
+      coolingPushBusy = false;
+      coolingPushMsg = coolingPushMatches(session) ? on ? 'Cooling alerts are on for this phone.' : 'Cooling alerts are off for this phone.' : '';
+      coolingChanged();
+    }, function (e) {
+      coolingPushBusy = false; coolingPushError = coolingPushMatches(session);
+      coolingPushMsg = !coolingPushError ? '' : on ? PUSH_SAY[e && e.code] || 'Could not turn cooling alerts on. Try again.' : 'Could not turn cooling alerts off. Try again.';
+      coolingChanged();
+    });
+  }
+  // Refresh the FCM token at most once each authorised kitchen day/session when already opted in. One write, no read.
+  function coolingPushKeep() {
+    var k = coolingPushKept(), key = [S.pin, S.uid, S.who, dayNow(), millis(S.sessIssuedAt)].join('|');
+    if (!coolingEligible() || deviceMode() !== 'personal' || !coolingPushMatches(k) || k.day === dayNow() || coolingPushKeepKey === key || !pushCan() || Notification.permission !== 'granted') return;
+    coolingPushKeepKey = key;
+    var session = coolingSession();
+    pushToken().then(function (tok) { return coolingPushSave(tok, session); }).catch(function () {});
+  }
+
   window.LK_PREP = {
     afterOverlay: ovAfterBack,
     // today's free reads used up (5 Nov 2026): js/functions.js leaves "check the signal" out while it is
@@ -12990,6 +13145,9 @@
     whoRole: whoRole, myCan: myCan, kitchenInfo: kitchenInfo, adminOpen: adminOpen, forgetPin: forgetPin,
     push: function () { var w = pushWhoId(), st = w ? pushState() : ''; return { show: !!w, on: st === 'on', busy: !!S.pushBusy, msg: S.pushMsg || (st === 'ios' || st === 'denied' ? PUSH_SAY[st] : '') }; },
     pushSet: function (on) { if (on) pushOn(); else pushOff(); },
+    coolingChip: function () { var c = coolingGet(); return c ? c.chipHTML() : ''; },
+    coolingOpen: coolingOpen, coolingRoute: coolingRoute,
+    coolingPush: coolingPushInfo, coolingPushSet: coolingPushSet,
     secOpen: function () { ksOpen(true); },
     // Manual Sign out never overrides unsent work. Automatic locks retain it behind the original person's PIN.
     signOut: function (force, quiet) { if (sendFirst()) { toast(SEND_FIRST); return false; } return signOutPerson(force, quiet); },

@@ -557,7 +557,7 @@
      (its menu holds Admin and Settings). */
   function topIcons() {
     // Today's team (7 Nov 2026): the round chip left of the bell, filled in by js/prep.js (empty for anyone it is not for)
-    return '<span class="wtop-icons"><span class="tm-slot">' + (window.LK_PREP && window.LK_PREP.teamChip ? window.LK_PREP.teamChip() : '') + '</span>' + noteBellHTML() + whoMark() + '</span>';
+    return '<span class="wtop-icons"><span class="cooling-slot">' + (window.LK_PREP && window.LK_PREP.coolingChip ? window.LK_PREP.coolingChip() : '') + '</span><span class="tm-slot">' + (window.LK_PREP && window.LK_PREP.teamChip ? window.LK_PREP.teamChip() : '') + '</span>' + noteBellHTML() + whoMark() + '</span>';
   }
   function topBar() {
     var returning = parseRoute().name !== 'landing';
@@ -1355,6 +1355,11 @@
     var alerts = (pu.show ? stRow('push', 'Cut-off pushes on this phone', pu.on ? 'On' : 'Off', '<p class="hint">A push on this phone when a supplier\'s reminder starts and an hour before its cut-off, even with the book closed. Only for suppliers nobody has ticked off yet. Also on the order list.</p>' +
         '<div class="btn-row"><button type="button" class="btn' + (pu.on ? '' : ' dark') + '" data-act="stpush" data-val="' + (pu.on ? '0' : '1') + '"' + (pu.busy ? ' disabled' : '') + '>' + (pu.on ? 'Turn pushes off' : 'Turn pushes on') + '</button></div>' +
         (pu.msg ? '<p class="hint" role="status">' + esc(pu.msg) + '</p>' : '')) : '');
+    var cp = who && P.coolingPush ? P.coolingPush() : {};
+    if (cp.show) alerts += stRow('cooling-push', 'Operandio cooling alerts', cp.on ? 'On' : 'Off',
+      '<p class="hint">An alert when each Operandio timer ends, even with the app closed. Everyone can start the shared timer from the clock.</p>' +
+      '<div class="btn-row"><button type="button" class="btn' + (cp.on ? '' : ' dark') + '" data-act="stcoolingpush" data-k="stcoolingpush" data-val="' + (cp.on ? '0' : '1') + '"' + (cp.busy || !cp.enabled ? ' disabled' : '') + (cp.busy ? ' aria-busy="true"' : '') + '>' + (cp.busy ? (cp.on ? 'Turning off...' : 'Turning on...') : cp.on ? 'Turn cooling alerts off' : 'Turn cooling alerts on') + '</button></div>' +
+      (cp.msg ? '<p class="' + (cp.error ? 'p-err' : 'hint') + '" role="' + (cp.error ? 'alert' : 'status') + '">' + esc(cp.msg) + '</p>' : ''));
     // Team (sous chefs, not on the head chef's own device): Manage staff, and what the head chef set, read only
     var k = who && P.kitchenInfo ? P.kitchenInfo() : null;
     var team = m.chef && !m.tab ? stRow('staff', 'Manage staff', k ? plural(k.people, 'person', 'people') : '', '', { act: 'ststaff' }) +
@@ -1388,6 +1393,7 @@
       return { name: 'suppliers', stack: [], sid: parts[1] === 'manage' ? '' : valid(parts[1]), mode: parts[1] === 'manage' || parts[2] === 'manage' ? 'manage' : 'order', cutoffId: '', cutoffDay: '' };
     }
     if (parts[0] === 'deliveries') return { name: 'deliveries', stack: [] };
+    if (parts[0] === 'cooling') return { name: 'prep', stack: [], cooling: true };
     if (parts[0] === 'settings') return { name: 'settings', stack: [] };
     if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'chef' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'transfers' || parts[0] === 'minutes' || parts[0] === 'mail' || parts[0] === 'drinks' || parts[0] === 'todo' || parts[0] === 'team') return { name: parts[0], stack: [] };
     if (parts[0] === 'guides') return { name: 'guides', stack: [], gid: parts[1] || '' };
@@ -1578,6 +1584,7 @@
     }
     paintRecipeStatus();
     if (route.name === 'settings') stAfter();
+    if (route.cooling && window.LK_PREP && window.LK_PREP.coolingRoute) window.LK_PREP.coolingRoute();
     if (!changed) Array.prototype.forEach.call(app.querySelectorAll('.chips.scroll'), function (el, i) { if (rowsAt[i]) el.scrollLeft = rowsAt[i]; });
     fitPins();
     if (!locked && route.name === 'manage') mountManage(route); else if (window.LK_MG) window.LK_MG.unmount();
@@ -1829,6 +1836,7 @@
       setTimeout(function () { if (el.isConnected) { el.classList.remove('is-armed'); el.textContent = 'Use a different kitchen PIN on this device'; } }, 4000);
       return;
     }
+    if (act === 'stcoolingpush') { if (window.LK_PREP && window.LK_PREP.coolingPushSet) window.LK_PREP.coolingPushSet(val === '1'); return; }
     if (act === 'stpush') { if (window.LK_PREP && window.LK_PREP.pushSet) window.LK_PREP.pushSet(val === '1'); return; }
     // Check for an update: the same header-only look as the automatic one (js/upkeep.js), no Firestore read
     if (act === 'updcheck') {
@@ -1914,6 +1922,11 @@
   // js/prep.js signed a person in or out: redraw the chef mark in the top bar. On a sign-in just made (not a phone that
   // was already signed in) the mark flips in like a coin and settles, so the person sees it is now them.
   // js/prep.js read the head chef's open kitchen mail: redraw the count on the chef hat
+  window.addEventListener('lk-cooling', function () {
+    if (parseRoute().name === 'settings') { render(); return; }
+    var slot = app.querySelector('.cooling-slot'), P = window.LK_PREP;
+    if (slot && P && P.coolingChip) { var html = P.coolingChip(); if (slot.innerHTML !== html) slot.innerHTML = html; }
+  });
   window.addEventListener('lk-mail', function () { var ic = app.querySelector('.wtop-icons'); if (ic) ic.outerHTML = topIcons(); });
   // The Head chef's PIN also shows or drops Admin in the menu, so the whole icon group is redrawn.
   window.addEventListener('lk-who', function (e) {

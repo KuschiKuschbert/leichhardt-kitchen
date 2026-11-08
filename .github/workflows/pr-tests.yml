@@ -11,7 +11,8 @@
 #   browser     the browser files in five shares of equal work on five runners at once (SHARD=k/5, 4 Nov 2026), each failed file retried
 #               once on its own (RETRY=1, reported as a warning), passing files on one line each (QUIET=1)
 #   rules       the rules on the emulator and the nightly job checks, beside the browser shares
-#   Click tests passes only when scope, every browser share and rules passed, or when the pull request is docs only
+#   cooling     server unit checks and real Firestore transactions, with mocked task/messaging adapters
+#   Click tests passes only when scope, every browser share, rules and cooling passed, or when the pull request is docs only
 # The failures are in the run summary and as annotations, so a session reads a few lines, not the whole log.
 name: PR click tests
 
@@ -127,11 +128,40 @@ jobs:
         working-directory: scripts
         run: npm ci --no-audit --no-fund && ../tests/rules/node_modules/.bin/firebase emulators:exec --only firestore --project demo-test "node emulator-check.mjs && node transfer-index-check.mjs && node waste-range-check.mjs && node delivery-backup-check.mjs && node backup-reuse-check.mjs && node analysis-check.mjs && node capabilities-bootstrap-check.mjs && node backup-crypto-check.mjs && node backup-recovery-check.mjs && node rules-publisher-check.cjs"
 
+  cooling:
+    name: Cooling backend checks
+    needs: scope
+    if: needs.scope.outputs.docs != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            functions/package-lock.json
+            tests/rules/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Check cooling server transitions and delivery retries
+        working-directory: functions
+        run: npm ci --no-audit --no-fund && npm run check && npm test
+      - name: Install the existing emulator tools
+        working-directory: tests/rules
+        run: npm ci --no-audit --no-fund
+      - name: Check cooling transactions on the Firestore emulator
+        working-directory: functions
+        run: ../tests/rules/node_modules/.bin/firebase emulators:exec --config ../tests/rules/firebase.json --only firestore,auth --project demo-test "node test/emulator.mjs"
+
   test:
     # This name is the required check. It reports whenever the run was not cancelled, so a skipped or failed part
     # never leaves it waiting. A run cancelled by a newer push reports nothing, so no false failure wakes a session.
     name: Click tests
-    needs: [scope, browser, rules]
+    needs: [scope, browser, rules, cooling]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -142,10 +172,12 @@ jobs:
           DOCS: ${{ needs.scope.outputs.docs }}
           BROWSER: ${{ needs.browser.result }}
           RULES: ${{ needs.rules.result }}
+          COOLING: ${{ needs.cooling.result }}
         run: |
-          echo "scope=$SCOPE docs=$DOCS browser=$BROWSER rules=$RULES"
+          echo "scope=$SCOPE docs=$DOCS browser=$BROWSER rules=$RULES cooling=$COOLING"
           [ "$SCOPE" = "success" ] || { echo "::error::Scope and parse did not pass"; exit 1; }
-          if [ "$DOCS" = "true" ]; then echo "Docs only: browser and rules skipped."; exit 0; fi
+          if [ "$DOCS" = "true" ]; then echo "Docs only: browser, rules and cooling skipped."; exit 0; fi
           [ "$BROWSER" = "success" ] || { echo "::error::A browser share did not pass: see its summary and annotations"; exit 1; }
           [ "$RULES" = "success" ] || { echo "::error::The rules or nightly checks did not pass"; exit 1; }
+          [ "$COOLING" = "success" ] || { echo "::error::The cooling backend checks did not pass"; exit 1; }
           echo "All parts passed."

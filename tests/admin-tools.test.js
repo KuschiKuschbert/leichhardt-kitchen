@@ -70,7 +70,16 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.context().close();
 
   // Backup: one JSON file with notes and who has seen them, minutes with earlier versions and sign-offs, and order learning
-  p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra });
+  const coolingCurrent = { v: 1, run: 'backup-cooling-run-01', rev: 1, firstAt: L.NOW, firstDue: L.NOW + 7200000, firstBy: 'ann', secondAt: 0, secondDue: 0, secondBy: '', schedule: { first: 'queued', second: '' } };
+  const coolingBackup = { ...extra,
+    [fsKey(['cooling', 'current'])]: coolingCurrent,
+    [fsKey(['cooling', 'config'])]: { v: 1, enabled: true },
+    [fsKey(['coolingPush', 'backup-device'])]: { tok: 'synthetic-cooling-backup-token', uid: 'backup-device', by: 'ann' },
+    [fsKey(['coolingRequests', 'backup-request-01'])]: { status: 'accepted', marker: 'synthetic-cooling-backup-request' },
+    [fsKey(['coolingJobs', 'backup-cooling-run-01_1'])]: { state: 'queued', marker: 'synthetic-cooling-backup-job' },
+    [fsKey(['coolingJobs', 'backup-cooling-run-01_1', 'devices', 'backup-device'])]: { state: 'sent', marker: 'synthetic-cooling-backup-receipt' }
+  };
+  p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra: coolingBackup });
   await L.adminTab(p, 'tools');
   await L.settle(p, 200);
   const dl = p.waitForEvent('download', { timeout: 15000 });
@@ -78,6 +87,9 @@ const store = page => page.evaluate(() => window.__fake.dump());
   const file = await dl;
   const chunks = []; for await (const c of await file.createReadStream()) chunks.push(c);
   const bk = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  ok(JSON.stringify(bk.coolingCurrent) === JSON.stringify(coolingCurrent), 'backup: the canonical cooling run retains its identity, starts and deadlines exactly');
+  ok(!/synthetic-cooling-backup-/.test(JSON.stringify(bk)) && !['coolingConfig', 'coolingRequests', 'coolingJobs', 'coolingPush'].some(k => Object.hasOwn(bk, k)), 'backup: deployment enablement, requests, jobs, delivery receipts and push tokens stay out');
+  ok(!(await p.evaluate(() => window.__fake.reads)).some(path => /\/(coolingRequests|coolingJobs|coolingPush)(\/|$)/.test(path)), 'backup: the browser never reads cooling execution records or device tokens');
   ok(/^leichhardt-prep-backup-\d{4}-\d{2}-\d{2}\.json$/.test(file.suggestedFilename()), 'backup: a dated JSON file (' + file.suggestedFilename() + ')');
   ok(bk.references[0].v === 2 && bk.referencesHist['ai-test'][0].v === 1 && bk.training[0].status === 'in-training' && bk.trainingHist['ai-test'][0].v === 1 && bk.analysisDaily[0].day === today, 'backup: analysis, references, training and histories preserved');
   ok(bk.notes.length === 1 && bk.notes[0].id === 'n1' && bk.notes[0].text === 'Fryer oil change', 'backup: shift pings included');

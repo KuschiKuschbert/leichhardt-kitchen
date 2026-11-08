@@ -3,7 +3,7 @@
    cannot publish an all-or-nothing update, and an expired round must never select files after a newer round.
    lk-book-v8 retains already saved lazy modules, Firebase files and fonts. Neither store holds kitchen records. */
 var CACHE = 'lk-book-v8';
-var SHELL = ['./', './index.html', 'css/app.css', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/controls.js', 'js/motion.js', 'js/device.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/chime.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'icon.svg', 'manifest.webmanifest', 'icons/icon-192.png', 'js/seasonal/au-global.js', 'js/seasonal/india.js', 'js/seasonal/nepal.js', 'js/seasonal/bali.js', 'js/seasonal/philippines.js', 'js/seasonal/catalog.js', 'js/seasonal/marks.js', 'js/seasonal/motion-policy.js', 'js/seasonal/calendar.js', 'js/seasonal/theme-brand.js', 'js/seasonal/theme-effects.js', 'js/seasonal/celebration-copy.js', 'js/seasonal/celebration-ticker.js', 'js/seasonal/theme-bridge.js', 'js/seasonal/seasonal.js', 'css/seasonal-brand.css', 'css/seasonal-effects.css', 'css/celebration-ticker.css', 'css/seasonal.css', 'fonts/NotoSansDevanagari-Regular.ttf', 'fonts/NotoSansDevanagari-Bold.ttf'];
+var SHELL = ['./', './index.html', 'css/app.css', 'css/cooling.css', 'js/data.js', 'js/art.js', 'js/overlay.js', 'js/controls.js', 'js/motion.js', 'js/device.js', 'js/app.js', 'js/amounts.js', 'js/learn.js', 'js/cutoffs.js', 'js/chime.js', 'js/cooling-core.js', 'js/cooling-ui.js', 'js/cooling.js', 'js/prep.js', 'js/functions.js', 'js/firebase-config.js', 'js/boot.js', 'js/upkeep.js', 'icon.svg', 'manifest.webmanifest', 'icons/icon-192.png', 'js/seasonal/au-global.js', 'js/seasonal/india.js', 'js/seasonal/nepal.js', 'js/seasonal/bali.js', 'js/seasonal/philippines.js', 'js/seasonal/catalog.js', 'js/seasonal/marks.js', 'js/seasonal/motion-policy.js', 'js/seasonal/calendar.js', 'js/seasonal/theme-brand.js', 'js/seasonal/theme-effects.js', 'js/seasonal/celebration-copy.js', 'js/seasonal/celebration-ticker.js', 'js/seasonal/theme-bridge.js', 'js/seasonal/seasonal.js', 'css/seasonal-brand.css', 'css/seasonal-effects.css', 'css/celebration-ticker.css', 'css/seasonal.css', 'fonts/NotoSansDevanagari-Regular.ttf', 'fonts/NotoSansDevanagari-Bold.ttf'];
 var SHELL_DB = 'lk-shell-v1-' + encodeURIComponent(new URL(self.registration.scope).pathname);
 var SHELL_PREFIX = SHELL_DB + '-', shellDBPromise = null, shellState = null, shellPins = {};
 var shellFiles = SHELL.filter(function (f) { return f !== './'; });
@@ -372,25 +372,38 @@ self.addEventListener('fetch', function (e) {
   }
   e.respondWith(asked || u.search ? net().catch(saved) : saved().then(function (copy) { return copy || net(); }));
 });
-/* Phone pushes for order cut-offs (24 Oct 2026): scripts/cutoff-push.mjs sends them through Firebase Cloud Messaging
-   with data only, and the worker shows them. A validated cut-off ID and date open its supplier sheet. Older pushes
-   open the order list. No URL or arbitrary route from a push is ever followed. */
+/* Data-only phone pushes use fixed local routes. Order cut-offs keep their existing presentation; cooling events
+   accept only their named type, run and stage, then build the approved words here. No URL, supplied title, message
+   or arbitrary route from a cooling push is followed. Server scheduling does not depend on an open app window. */
 function supplierPushData(d) {
   return d && typeof d.sid === 'string' && /^[a-z0-9-]{1,40}$/.test(d.sid) && typeof d.day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d.day) ? { sid: d.sid, day: d.day } : {};
 }
+function coolingPushData(d) {
+  return d && d.type === 'cooling' && typeof d.run === 'string' && /^[A-Za-z0-9_-]{16,80}$/.test(d.run)
+    && (d.stage === '1' || d.stage === '2') ? { type: 'cooling', run: d.run, stage: d.stage } : null;
+}
 self.addEventListener('push', function (e) {
-  var d = {};
-  try { var j = e.data ? e.data.json() : {}; d = (j && (j.data || j.notification)) || {}; } catch (x) {}
-  var title = String(d.title || 'Kitchen Book').slice(0, 80), body = String(d.body || '').slice(0, 200), tag = String(d.tag || 'lk-cut').slice(0, 60);
-  e.waitUntil(self.registration.showNotification(title, { body: body, tag: tag, renotify: true, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: supplierPushData(d) }));
+  var d;
+  try { var j = e.data ? e.data.json() : null; d = j && (j.data || j.notification); } catch (x) { return; }
+  if (!d || typeof d !== 'object' || Array.isArray(d)) return;
+  var cooling = coolingPushData(d);
+  // Never reinterpret a malformed or unknown typed message as a supplier push.
+  if (Object.prototype.hasOwnProperty.call(d, 'type') && !cooling) return;
+  var title = cooling ? 'Operandio' : String(d.title || 'Kitchen Book').slice(0, 80);
+  var body = cooling ? 'Operandio batch cooling time ' + (cooling.stage === '1' ? '2' : '4') + ' hours is done.' : String(d.body || '').slice(0, 200);
+  var tag = cooling ? 'lk-cooling-' + cooling.run + '-' + cooling.stage : String(d.tag || 'lk-cut').slice(0, 60);
+  // Retries replace the same cooling stage notification without sounding it again. OS settings still govern sound.
+  e.waitUntil(self.registration.showNotification(title, { body: body, tag: tag, renotify: !cooling, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: cooling || supplierPushData(d) }));
 });
 self.addEventListener('notificationclick', function (e) {
   e.notification.close();
-  var data = supplierPushData(e.notification.data), path = data.sid ? './#/suppliers/cutoff/' + encodeURIComponent(data.sid) + '/' + data.day : './#/orders';
+  var payload = e.notification.data, cooling = coolingPushData(payload);
+  if (payload && Object.prototype.hasOwnProperty.call(payload, 'type') && !cooling) return;
+  var data = cooling || supplierPushData(payload);
+  var path = cooling ? './#/cooling' : data.sid ? './#/suppliers/cutoff/' + encodeURIComponent(data.sid) + '/' + data.day : './#/orders';
   var url = new URL(path, self.registration.scope).href;
-  // a window of the book this worker runs (other pages share the origin on GitHub Pages, and only such a window can be
-  // moved): brought forward, then moved to the order list (Chrome lets navigate run after focus; Firefox may never answer a
-  // move within the page, so it is not waited on past 3 seconds). No such window: a new one opens on the order list.
+  // Only a window belonging to this app scope can move. Focus first, then navigate to its fixed destination;
+  // Firefox may never answer an in-page navigation, so do not wait beyond 3 seconds. Otherwise open a new app window.
   e.waitUntil(self.clients.matchAll({ type: 'window' }).then(function (cs) {
     var c = cs.filter(function (x) { return x.url.indexOf(self.registration.scope) === 0; })[0];
     if (!c) return self.clients.openWindow(url);
