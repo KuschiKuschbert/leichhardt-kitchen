@@ -10,6 +10,26 @@ The search wrapper grows to fill a row (`flex: 1 1 10rem`). Inside a standard `.
 
 The app stays dependency-free. Existing form controls remain the value and validation source. Shared DOM components enhance new and redrawn controls. Existing save handlers, permissions and reads remain authoritative.
 
+## Swipe to close (9 November 2026)
+
+The owner requested swipe dismissal for existing bottom sheets and modals. `SwipeDismiss()` in `js/controls.js` enhances the current sheet, pings/day, chef menu, cooling menu/alert, function, mail and native picker/dialog headings and grips. The full-page guide viewer supports dragging its toolbar; its page keeps pinch and horizontal page turning. These are existing overlays with existing close controls, not new screens.
+
+Drag down 72 px, or flick at least 32 px at 0.5 px/ms, from a grip or heading. The panel follows the pointer. Short, sideways, upward, cancelled and multi-touch gestures return it to its resting position. Only the grip/title handles take the gesture; lists, options, form fields and other page content retain native interaction. Touch, pen and mouse use the same helper. Reduced motion removes the return transition. An accidental click after dragging is consumed; the next deliberate tap still works.
+
+The helper clicks the original backdrop or sends the native dialog's existing Cancel event. It never saves, acknowledges or removes history directly. Pings stay unread, add-form drafts stay in memory under their existing Cancel rules, and nested picker cancellation only closes that picker. Worker-attribution sheets resist dismissal while waiting for a save. PIN and identity gates keep their existing behaviour because they are not dismissible overlay panels. Newly drawn headings are enhanced again, including reused native dialogs.
+
+### Council quick check
+
+Verdict: Build (small change, requested gesture on existing controls). It helps staff return to their list without finding a small Close button. There is no new tab, popup, step or service-page layout. Prep's Add a line remains one tap from its tab; closing an open sheet gains one optional gesture alongside its existing controls. The stand-in at 390 x 844 px shows six fully visible Prep rows before and after, with the same 90.27 px header and 68.75 px first row. This is a role-based quick check against synthetic fixtures, not staff research.
+
+### Verification
+
+The initial pinned-old-source gesture tests fail 9 of 31 assertions. The expanded final `swipe-dismiss.test.js` passes all 36 assertions with real Chromium CDP touch at 390 and 768 px and mouse dragging at 1280 px. Checks cover following the finger, snap-back on cancellation, short/horizontal/upward gestures, two-finger cancellation, busy-save guards, replaced picker titles, nested cancellation, unchanged selection and drafts, scrolling, unread safety pings, line and chef menus, the identity gate and Escape. The test waits for entrance animations before locating the touch target. Touch capture moving from the heading to the panel must not be mistaken for losing the gesture.
+
+All 17 selected existing test files pass, including shared adaptive controls, overlay Back, Prep attribution, Prep/Orders/Wastage/Transfers sheets, cooling behaviour and update confirmation. Changed JavaScript parses and `git diff --check` passes. These are local stand-in browser checks; physical-device and live-release behaviour remain separate from that evidence.
+
+No dependency, shell manifest, Firestore read, write, rule, stored field or persistent copy changes. Rollback is a normal revert of the client changes.
+
 ## Direct unit chips and two-way choices (3 November 2026)
 
 The owner selected the existing transfer picker's left/right pattern for two-way choices where space permits, and asked to restore the unit chips to remove the tap needed to open their picker. This is a narrow reuse of the selected controls. It does not change the surrounding page layouts.

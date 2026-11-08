@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **9 November 2026, swipe to close existing sheets and modals.** The owner said the sheets and modals were hard to dismiss and asked for swiping. A downward drag from the existing grip or title closes through Cancel/backdrop, with the same draft, unread and pending-save rules. Keep normal body scrolling and the existing close controls. No new screen or step. [Behaviour and checks](adaptive-controls.md#swipe-to-close-9-november-2026).
+
 - **9 November 2026, Operandio B and three louder chimes approved for release.** The owner selected B's desktop filling face/countdown pill with the fixed mobile ring, then explicitly said "implement and bring live". Each cooling deadline should repeat the chime three times, louder. The further four-hour stage still waits for someone to start it. Keep existing shared times, permissions, pings and new-batch support. Sound Off and device volume remain respected; closing the ping or losing the active session stops remaining chimes. [Chosen design and release record](operandio-clock-motion-options/brief.md).
 
 - **9 November 2026, mobile Operandio stays a filling ring.** The owner rejected the expanding mobile pill as crowded: "just the ring filling". Start, running and completion all keep the same small circular footprint. The ring turns green at the first deadline and the further four hours waits for an explicit tap. Desktop retains the pill studies for selection. [Updated previews](operandio-clock-motion-options/brief.md). This refines the mockups only.

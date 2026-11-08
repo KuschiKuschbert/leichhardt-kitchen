@@ -1023,6 +1023,12 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .sheet-bg { position: fixed; inset: 0; z-index: 60; background: rgba(28, 29, 31, 0.45); }
 .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 61; max-height: 80vh; max-height: 80dvh; overflow: auto; box-sizing: border-box; padding: 10px 16px calc(16px + env(safe-area-inset-bottom)); background: var(--paper); color: var(--ink); border-radius: 16px 16px 0 0; box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.2); font-family: var(--body); animation: sheetUp 0.18s ease-out; }
 .sheet-grip { width: 44px; height: 5px; margin: 0 auto 10px; border-radius: 3px; background: var(--edge); }
+/* Swipe uses a separate translation so centred modals keep their existing transform. */
+.ux-swipe { translate: 0 var(--ux-swipe-y, 0px); transition: translate 0.16s ease-out; }
+.ux-swipe-handle { touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
+.ux-swipe-dragging { transition: none; }
+.ux-swipe-dragging .ux-swipe-handle { cursor: grabbing; }
+@media (prefers-reduced-motion: reduce) { .ux-swipe { transition: none; } }
 .sheet h3 { margin: 0 0 6px; font: 700 1.35rem var(--display); }
 .sheet-list { display: flex; flex-direction: column; }
 .sheet-o { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 58px; padding: 10px 6px; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }

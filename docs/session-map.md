@@ -4,6 +4,10 @@ Moved from `CLAUDE.md` on 8 November 2026, word for word, so the file every sess
 
 When a note or a file is added: its full row goes here, and one short row (what it covers, where it is) goes in `CLAUDE.md`. When the two disagree, the note itself wins, then `CLAUDE.md`.
 
+## Swipe to close, 9 November 2026
+
+The owner requested swiping to dismiss the existing sheets and modals. The small-change quick check retains the same layout, visible rows and service taps. `js/controls.js` shares header/grip drag handling and routes dismissal through the original backdrop/Cancel action; `css/app.css` adds pointer feedback and reduced-motion support. [Contract, council and verification](adaptive-controls.md#swipe-to-close-9-november-2026), [shared pattern](design-patterns.md#over-the-page); `tests/swipe-dismiss.test.js`, `tests/adaptive-controls.test.js`, `tests/overlays-back.test.js`. No new reads, rules or saved data.
+
 ## Operandio clock motion, 9 November 2026
 
 The owner chose B's desktop countdown pill and the fixed mobile filling ring, authorised implementation and live release, and requested three louder chimes. The 4-hour stage still waits for a separate tap after 2 hours. [Decision, comparison and verification](operandio-clock-motion-options/brief.md), [feature contract](operandio-cooling.md). `js/cooling-ui.js` and `css/cooling.css` own the presentation; `js/app.js`, `js/prep.js` and `js/cooling.js` retain the clock while headers redraw and adapt the existing controller. `js/chime.js` owns the bounded three-chime sound. No new data reads, writes or rules. The preview source and recordings remain under `docs/operandio-clock-motion-options/` as the decision record.
