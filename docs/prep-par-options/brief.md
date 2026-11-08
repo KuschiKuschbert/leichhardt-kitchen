@@ -1,6 +1,6 @@
 # Head-chef prep standards and before-service guidance
 
-**Current design brief, clarified 8 November 2026. Design only; no app implementation.** The user has specified the management location and purpose. A staff layout has not been selected. This supersedes the earlier Kitchen-subpage/count-calculator recommendation. The [initial exploration](initial-exploration.md) remains historical evidence, not the current plan.
+**Chosen 8 November 2026:** after the style-aligned previews, the user said “okay lets go”. Implement the recommended separate Prep room plus A’s normal typing guidance and C’s complete Before service reference. Work stays the initial view. [Implementation and release contract](../prep-standards.md). The comparison below records the design exploration; mock measurements are not production verification.
 
 [Open the current previews](index.html). Source baseline: main `20c9472`. Every illustrated quantity and instruction is synthetic. Actual approved standards are **To come**.
 
@@ -10,7 +10,7 @@ The head chef defines each section's permanent prep list and minimum quantities 
 
 The goal is explicit expectations for every staff member, including someone unfamiliar with a section. No individual staff identity, inferred competence or ranking is part of this design.
 
-**Style requirement confirmed, 8 November 2026:** match the current app's design language, colours and controls exactly, following `AGENTS.md`, `CLAUDE.md` and the linked design patterns. This is a refinement of the previews, not approval to implement the feature or a new visual style.
+**Style requirement confirmed, 8 November 2026:** match the current app's design language, colours and controls exactly, following `AGENTS.md`, `CLAUDE.md` and the linked design patterns. The subsequent “okay lets go” approved implementation of the recommendation using this existing style.
 
 First version: the management room, smart matching in the existing Add form, and the complete section reference. Counts, stock-shortfall calculators, saved readiness states, sign-offs and check history are deferred. The user did not request those extra workflows.
 
@@ -27,7 +27,7 @@ Use the existing `panelShellHTML()` room navigation and one shared catalogue/edi
 | Sous chef | Open Prep, read standards and the section reference; panel access does not grant editing of the head chef's minimums |
 | Authorised Prep staff | Read matching guidance and Before service through Prep, without management access |
 
-Existing Add, Tick and Delete capabilities still govern daily work. No check-writing capability is needed in the first version. Signed-out and Functions-only users gain no catalogue access. These are proposed permissions for new records; current rules do not already provide them.
+Existing Add, Tick and Delete capabilities still govern daily work. No check-writing capability is needed in the first version. Signed-out and Functions-only users gain no catalogue access. These were proposed permissions at design review; the approved implementation adds the rules described in the implementation contract.
 
 Each item needs stable section and prep-item IDs, a display name, nullable non-negative minimum, confirmed unit, approved aliases, optional recipe/check instructions and archive state. Renames preserve identity. Free-text items do not need a recipe. Blank minimum says To come; explicit zero remains visible. Containers or batches need a chef-confirmed definition before any conversion is possible.
 
@@ -89,7 +89,7 @@ All three share the required management room and matching rules. They differ in 
 | B. Minimums beside work | A's typing hint/reference plus a minimum beside every linked task's production quantity | Reminder stays visible while doing the work | Most clutter and extra section reads; rows must not grow under a ticking finger |
 | C. Before service view | A Work / Before service choice inside Prep under the section control; normal Add still shows matches | Clearest complete section check, including forgotten items | Extra page-level choice and fixed space above work; Work must remain the initial service view |
 
-No new global service tab or top-bar icon. Nothing opens automatically over a list. The user requested the separate management room, but has not selected the staff layout.
+No new global service tab or top-bar icon. Nothing opens automatically over a list. The user subsequently approved the recommended A+C combination and separate management room.
 
 ## Code patterns and guidelines
 
@@ -103,7 +103,7 @@ No new global service tab or top-bar icon. Nothing opens automatically over a li
 | `onList()` 2525, `dupGroups()` 2539, `openTwin()` 2608 | Completed items remain in the reference; current cross-section name merging must not corrupt linked identities |
 | `panelShellHTML()`, `lvHTML()`, `W()`, `svButton()` | One role-aware editor, searchable growing lists, acknowledged saves and retained drafts |
 
-`AGENTS.md` delegates to `CLAUDE.md`. Its service rules keep the main job one tap away and require measured density costs. `docs/design-patterns.md` supplies notebook styling, 44 px controls, stable live-list height and panel navigation. `docs/action-feedback.md` governs named Add/Save/Undo responses. The private-access, device-session and staff-capability notes govern roles and work recovery. The chef-panel brief documents the current four rooms and shared-editor boundary. Smart-prep and admin-intelligence notes distinguish learned/requested quantities from approved minimums and consumption.
+`AGENTS.md` delegates to `CLAUDE.md`. Its service rules keep the main job one tap away and require measured density costs. `docs/design-patterns.md` supplies notebook styling, 44 px controls, stable live-list height and panel navigation. `docs/action-feedback.md` governs named Add/Save/Undo responses. The private-access, device-session and staff-capability notes govern roles and work recovery. The chef-panel brief documents the original four rooms and shared-editor boundary; this approved feature adds Prep as the fifth. Smart-prep and admin-intelligence notes distinguish learned/requested quantities from approved minimums and consumption.
 
 ### Alignment with the existing app
 
@@ -132,7 +132,7 @@ With this policy, another device's minimum changes appear on explicit refresh or
 
 New catalogue records, aliases and task links require schema/rules, protected backups, revision checks and duplicate/rollover handling. Ordinary unmatched entry keeps working. Shared batches require deliberate handling rather than automatic name merging. No stock ledger or check-history collection is included.
 
-Estimated implementation: 2 to 3 small PRs for the standards foundation/editor, typed matching and staff reference; B's live-list changes may add another unit. Future tests must cover roles, alias ambiguity, section switches, missing data, units, stale edits, duplicates, completed items, offline/locks/handover, read budget and responsive layouts. This task changes no application source or rules.
+Estimated implementation: 2 to 3 small PRs for the standards foundation/editor, typed matching and staff reference; B's live-list changes may add another unit. Future tests must cover roles, alias ambiguity, section switches, missing data, units, stale edits, duplicates, completed items, offline/locks/handover, read budget and responsive layouts. The design phase changed no application source or rules. The later approved implementation is recorded in the linked implementation contract.
 
 ## Clarified council round 1
 
@@ -196,4 +196,4 @@ Scores are subjective service/fit scores out of five. Where a reviewer supplied 
 
 This directly implements the user's clarified design intent: the head chef sets the standard once, staff see it while writing familiar prep, and anyone can see the complete list to check. It does not require stock counting or a second completion workflow. Short containers/batch definitions and keeping standards current remain the head chef's content responsibilities.
 
-Open design details before implementation: real item/alias lists and quantities, container definitions, exact phone placement of Before service, native keyboard behaviour, long-name row density and mobile editor navigation. The separate management room and head-owned standards are now requirements, not unanswered location/ownership questions. No staff layout is chosen and no application implementation is authorised by this design task.
+Open design details before implementation: real item/alias lists and quantities, container definitions, exact phone placement of Before service, native keyboard behaviour, long-name row density and mobile editor navigation. The separate management room and head-owned standards are now requirements, not unanswered location/ownership questions. The later implementation approval is recorded at the top of this brief; remaining product limits and verification are in the implementation note.

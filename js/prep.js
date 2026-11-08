@@ -79,9 +79,9 @@
      this phone. No reads, no writes, nothing kept on the phone. */
   var PIN_AGAIN = 'Your PIN is saved. Type it again to sign in.';
   var SV_SLOW = 4000, SV_DONE = 1200, SV_WAIT = 'Waiting for the signal. Keep the book open.', svRec = {}, errSeen = {};
-  function svForm(k) { return k === 't' ? tmSig(tmf) : k === 'n' ? JSON.stringify(S.nf || null) : k === 'm' ? mfSnap(S.mf) : k === 'g' ? gfSnap(S.gf) : k === 'c' ? JSON.stringify(S.cutDraft || null) : JSON.stringify(S.draft || null); }
+  function svForm(k) { return k === 'ps' ? JSON.stringify(psModule() && psModule().draft() || null) : k === 't' ? tmSig(tmf) : k === 'n' ? JSON.stringify(S.nf || null) : k === 'm' ? mfSnap(S.mf) : k === 'g' ? gfSnap(S.gf) : k === 'c' ? JSON.stringify(S.cutDraft || null) : JSON.stringify(S.draft || null); }
   // the form open now (the Save bar has one form, whose draft is taken again after each save; c: the order cut-offs)
-  function svObj(k) { return k === 't' ? tmf : k === 'n' ? S.nf : k === 'm' ? S.mf : k === 'g' ? S.gf : k === 'c' ? S.cutDraft : undefined; }
+  function svObj(k) { return k === 'ps' ? psModule() && psModule().draft() : k === 't' ? tmf : k === 'n' ? S.nf : k === 'm' ? S.mf : k === 'g' ? S.gf : k === 'c' ? S.cutDraft : undefined; }
   function svStop(k) { var r = svRec[k]; if (r) clearTimeout(r.timer); delete svRec[k]; }
   function svReset() { Object.keys(svRec).forEach(svStop); }
   // act: which button started it, where a form has two (the minutes' Publish and Save draft). slow: draws the 4 s line
@@ -1538,7 +1538,7 @@
     S.pastBusy = S.minsBusy = S.viewBusy = S.missBusy = S.useBusy = false; S.pastPart = null; S.ordStats = null; S.views = S.misses = null; S.viewErr = S.missErr = S.useErr = S.wReviewErr = false; S.wReview = null; S.wReviewFor = S.wNoteFor = '';
     svReset(); S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.actState = ''; S.hist = {}; S.stats = null;
     ['lk.fn', 'lk.mail.sent', 'lk.drinks', 'lk.guides', 'lk.notes', 'lk.minutes'].forEach(function (k) { lsSet(k, ''); });
- if (window.LK_INTELLIGENCE) window.LK_INTELLIGENCE.reset(); if (window.LK_PROOFREADER) window.LK_PROOFREADER.reset(); proofRepairStamp = {}; if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(true); if (supplierService) supplierService.reset();
+ if (psModule()) psModule().reset(); psView = 'work'; psError = false; if (window.LK_INTELLIGENCE) window.LK_INTELLIGENCE.reset(); if (window.LK_PROOFREADER) window.LK_PROOFREADER.reset(); proofRepairStamp = {}; if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(true); if (supplierService) supplierService.reset();
     // an editor an older copy of its file has no drop(): it closes as before
     if (window.LK_MG && window.LK_MG.drop) window.LK_MG.drop(); if (window.LK_FE && window.LK_FE.drop) window.LK_FE.drop();
     if (window.LK_UX) window.LK_UX.close();
@@ -2794,6 +2794,7 @@
       .then(function () { return all('analysis'); }).then(function (r) { out.analysis = r; })
       .then(function () { return all('analysisDaily'); }).then(function (r) { out.analysisDaily = r; })
       .then(function () { return all('proofHistory'); }).then(function (r) { out.proofHistory = r; })
+      .then(function () { return all('prepStandards'); }).then(function (r) { out.prepStandards = r; })
       .then(function () { return all('dashwatch'); }).then(function (r) { out.dashwatch = r; })
       .then(function () { return all('references'); }).then(function (r) { out.references = r; out.referencesHist = {}; return subs(r, 'references', 'hist', out.referencesHist); })
       .then(function () { return all('training'); }).then(function (r) { out.training = r; out.trainingHist = {}; return subs(r, 'training', 'hist', out.trainingHist); })
@@ -2915,7 +2916,7 @@
     // the head chef copy them; where the rules refuse, they are counted as left behind instead of stopping the move.
     function step(list, soft) { steps.push({ list: list, soft: !!soft }); n += list.reduce(function (t, w) { return t + (w.batch ? w.batch.length : 1); }, 0); guard(); }
     function readRoster() { return f.getDoc(f.doc(fb.db, 'kitchens', old, 'login', 'roster')).then(function (snap) { got(); step(snap.exists() ? [{ ref: nd('login', 'roster'), data: snap.data() }] : []); }); }
-    function readCol(name) { return f.getDocs(oc(name)).then(function (sn) { got(sn); ids[name] = sn.docs.map(function (d) { return d.id; }); step(sn.docs.map(function (d) { return { ref: nd(name, d.id), data: d.data() }; })); }); }
+    function readCol(name) { return f.getDocs(oc(name)).then(function (sn) { got(sn); ids[name] = sn.docs.map(function (d) { return d.id; }); step(sn.docs.map(function (d) { return { ref: nd(name, d.id), data: name === 'prepStandards' ? Object.assign({}, d.data(), { v: 1, by: config.headId, at: now() }) : d.data() }; })); }); }
     // records under a note, a minutes entry, a guide, a recipe, a drawing or a function (seen, hist, signs, pages)
     function readSub(top, sub, soft) {
       return Promise.all((ids[top] || []).map(function (id) {
@@ -2930,7 +2931,7 @@
       got(); if (!sn.exists()) throw { code: 'permission-denied' }; config = sn.data(); n++;
     })
       .then(readRoster).then(function () { return readCol('pinset'); }).then(function () { return readCol('staffpins'); }).then(function () { return readCol('activity'); }).then(function () { return readCol('sections'); })
-      .then(function () { return readCol('learned'); }).then(function () { return readCol('ordlearned'); }).then(function () { return readCol('learnlog'); }).then(function () { return readCol('summary'); }).then(function () { return readCol('analysis'); }).then(function () { return readCol('analysisDaily'); }).then(function () { return readCol('proofHistory'); }).then(function () { return readCol('dashwatch'); }).then(function () { return readCol('references'); }).then(function () { return readSub('references', 'hist'); }).then(function () { return readCol('training'); }).then(function () { return readSub('training', 'hist'); }).then(function () { return readCol('daily'); }).then(function () { return readCol('misses'); }).then(function () { return readCol('views'); })
+      .then(function () { return readCol('learned'); }).then(function () { return readCol('ordlearned'); }).then(function () { return readCol('learnlog'); }).then(function () { return readCol('summary'); }).then(function () { return readCol('analysis'); }).then(function () { return readCol('analysisDaily'); }).then(function () { return readCol('proofHistory'); }).then(function () { return readCol('prepStandards'); }).then(function () { return readCol('dashwatch'); }).then(function () { return readCol('references'); }).then(function () { return readSub('references', 'hist'); }).then(function () { return readCol('training'); }).then(function () { return readSub('training', 'hist'); }).then(function () { return readCol('daily'); }).then(function () { return readCol('misses'); }).then(function () { return readCol('views'); })
       .then(function () { return readCol('notes'); }).then(function () { return readCol('directnotes'); }).then(function () { return readSub('directnotes', 'seen', true); }).then(function () { return readCol('minutes'); }).then(function () { return readSub('minutes', 'hist'); })
       .then(function () { return readSub('minutes', 'signs', true); }).then(function () { return readSub('notes', 'seen', true); })
       .then(function () { return readCol('guides'); }).then(function () { return readSub('guides', 'pages'); })
@@ -4911,8 +4912,9 @@
       '<form class="nb-add" data-p-form="add">' +
       '<div class="nb-add-row"><label class="visually-hidden" for="p-text">Prep item</label><input id="p-text" class="nb-in nb-in-text" data-k="p-text" enterkeyhint="done" autocomplete="off" autocapitalize="sentences" placeholder="Write a new line..." maxlength="160" value="' + esc(S.text) + '">' +
       '<div class="nb-sugg nb-sgl" id="p-sugg">' + suggestHTML() + '</div>' +
+      '<div id="ps-hint" class="ps-hint" aria-live="polite">' + psHintHTML() + '</div>' +
       '<label class="visually-hidden" for="p-section">Section</label><input id="p-section" class="nb-in nb-in-sec" data-k="p-section" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(S.section || (S.secTyped ? '' : mySec())) + '">' +
-      '<label class="visually-hidden" for="p-qty">Amount</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.qty) + '">' +
+      '<label class="visually-hidden" for="p-qty">Amount to make</label><input id="p-qty" class="nb-in nb-in-qty" data-k="p-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount to make" maxlength="40" value="' + esc(S.qty) + '">' +
       '<button type="submit" class="nb-addbtn">Add</button></div>' + justHTML('p') + secChipsHTML('p-section', S.section || (S.secTyped ? '' : mySec())) + '<div class="w-pick nb-units" id="p-units">' + unitChipsHTML('p', S.qty) + '</div><div class="nb-sugg nb-qs" id="p-qsugg">' + qtyChipsHTML() + '</div><p class="nb-hint" id="p-hint" aria-live="polite">' + esc(hintText(S.text)) + '</p>' + recipePicker() + (S.quickChips ? '<div class="nb-qadd"><span class="nb-ql">Quick add</span><div class="nb-usual">' + S.quickChips + '</div></div>' : '') + '</form>' : '';
     // no form (another day, or read only): the reason sits at the foot of the list, and there is no Add a line
     var addNote = add ? '' : S.date !== today ? '<p class="hint">You are looking at ' + esc(dayName(S.date)) + '. Lines are added on Today only.</p>' : '<p class="hint">You can read the book but not write in it. Ask the head chef if that is wrong.</p>';
@@ -4942,6 +4944,7 @@
         (S.itemsState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' : '') + (flags ? '<div class="wb-flags">' + flags + '</div>' : '') + offNote +
         '<div class="wb-cols">' + pageBody(S.items, S.date, true) + '</div>' + todayEmpty + '</section>' + pSheet;
     }
+    if (psView === 'reference' && S.date === today) { left = psReferenceHTML(); tabHTML = ''; }
     var right = '<section class="nb-page nb-right"><header class="nb-ph"><div><h2 class="nb-title nb-dim">Handy</h2><span class="nb-date">' + (S.date === today ? 'Done today<span class="nb-qsub"> and quick add</span>' : 'Done on ' + esc(dayShort(S.date))) + '</span></div></header>' +
       '<div class="nb-body nb-side">' + sideH + '</div></section>';
     return whoTopHTML() +
@@ -4949,7 +4952,7 @@
       '<button type="button" class="chip" data-p="today" aria-pressed="' + (S.date === today) + '">Today</button>' +
       '<label class="visually-hidden" for="p-day">Pick a date</label><input id="p-day" type="date" class="p-dateinput" data-k="p-day" value="' + esc(S.date) + '">' +
       '<button type="button" class="chip" data-p="day" data-d="1" aria-label="Forward one day">&rsaquo;</button></div>' : '') +
-      badgeStrip() + '<div class="nb-wrap"><div class="nb">' + left + '<div class="nb-spine" aria-hidden="true"></div>' + right + '</div>' + tabHTML + '</div>' + pSheet;
+      badgeStrip() + (S.date === today ? psViewHTML() : '') + '<div class="nb-wrap"><div class="nb">' + left + '<div class="nb-spine" aria-hidden="true"></div>' + right + '</div>' + tabHTML + '</div>' + pSheet;
   }
   function ago(ms) {
     if (!ms) return 'never';
@@ -5288,6 +5291,113 @@
       }
     });
   }
+  /* Section standards are private, head-owned reference data (8 Nov 2026). The module loads only for Add,
+     Before service or the management Prep room. No startup read, listener or saved private browser copy. */
+  var psLoading = null, psError = false, psView = 'work';
+  function psModule() { return window.LK_PREP_STANDARDS && window.LK_PREP_STANDARDS.API === 1 ? window.LK_PREP_STANDARDS : null; }
+  function psCanRead() { return kitchenAccess() && S.configState === 'ok' && S.configFull; }
+  function psCanEdit() { var p = me(); return !!(psCanRead() && canW() && p && p.id === S.config.headId); }
+  function psBusy() { var p = psModule(); return !!(p && p.busy()); }
+  function psSectionId(name) {
+    var key = String(name || '').trim().toLowerCase(), found = kitSecs().filter(function (s) { return s.name.trim().toLowerCase() === key; });
+    return key && found.length === 1 ? found[0].id : '';
+  }
+  function psInputSection() { return psSectionId(S.section || (S.secTyped ? '' : mySec())); }
+  function psDefaultSection() { return psSectionId(S.tab) || psSectionId(mySec()) || ''; }
+  function psCanAdd() { return psCanRead() && can('add') && S.date === dayNow(); }
+  function psLoad() {
+    if (!psCanRead() || psLoading || psError || psModule()) return;
+    psLoading = window.LK_APP.load('js/prep-standards.js?v=1').then(function () {
+      if (!psModule()) throw { code: 'workspace-version' };
+      psLoading = null; if (psCanRead()) draw();
+    }).catch(function () { psLoading = null; psError = true; if (psCanRead()) draw(); });
+  }
+  function psWaitHTML() {
+    psLoad();
+    return psError ? '<p class="p-err" role="status">Could not load prep standards. Your ordinary prep list still works. <button type="button" class="p-link" data-p="ps-load">Try again</button></p>' : inkWait('Loading prep standards...', 'prep');
+  }
+  function psRead(sectionId, options) {
+    if (!psCanRead() || !kitSecs().some(function (s) { return s.id === sectionId; })) return Promise.reject({ code: 'permission-denied' });
+    options = options || {};
+    var identity = stableIdentity(), f = fb.fs, after = options.after || '';
+    if (after && !/^[A-Za-z0-9_-]{1,80}$/.test(after)) return Promise.reject({ code: 'invalid-argument' });
+    var constraints = [f.where('sectionId', '==', sectionId)];
+    if (options.audience !== 'manage') constraints.push(f.where('archived', '==', false));
+    constraints.push(f.orderBy(f.documentId()));
+    if (after) constraints.push(f.startAfter(after));
+    constraints.push(f.limit(101));
+    // On first use, Refresh or stale reopening. A page reads at most 101 records (100 plus a sentinel),
+    // at least one for empty. Staff guidance waits for a complete active list; management pages explicitly.
+    // Typing/filtering use memory. Equality filters and document-ID ordering use Firestore's existing indexes.
+    return f.getDocsFromServer(f.query.apply(null, [colRef('prepStandards')].concat(constraints))).then(function (sn) {
+      if (!psCanRead() || stableIdentity() !== identity) throw { code: 'cancelled' };
+      var docs = sn.docs.slice(0, 100);
+      return { items: docs.map(function (d) { return Object.assign({}, d.data(), { id: d.id }); }),
+        next: sn.docs.length > 100 ? docs[docs.length - 1].id : '' };
+    });
+  }
+  function psSave(record) {
+    if (!psCanEdit() || !record || !kitSecs().some(function (s) { return s.id === record.sectionId; })) return Promise.reject({ code: 'permission-denied' });
+    var context = writeContext(), f = fb.fs, id = record.id;
+    if (id && !/^[A-Za-z0-9_-]{1,80}$/.test(id)) return Promise.reject({ code: 'invalid-argument' });
+    var ref = id ? docRef('prepStandards', id) : f.doc(colRef('prepStandards'));
+    var data = { sectionId: record.sectionId, name: record.name, aliases: record.aliases, minimum: record.minimum,
+      unit: record.unit, instruction: record.instruction, recipe: record.recipe, archived: record.archived,
+      v: record.v, at: now(), by: me().id };
+    // The rules require v1 on create and previous v+1 on update. A competing save is refused, never overwritten.
+    // W retains the original recorder, pending-write guard and same-person lock recovery.
+    return W([['set', ref, data]], context).then(function () { return Object.assign({}, data, { id: ref.id }); });
+  }
+  function psPick(item) {
+    var sec = kitSecs().filter(function (s) { return s.id === item.sectionId; })[0];
+    if (!psCanAdd() || !sec) return false;
+    S.text = item.name; S.pickedText = item.name; S.section = sec.name; S.secTyped = true;
+    // Matching never copies the minimum or changes the person's combined quantity and unit text.
+    draw(); focusK('p-qty'); return true;
+  }
+  function psAdd(item) {
+    var sec = kitSecs().filter(function (s) { return s.id === item.sectionId; })[0];
+    if (!psCanAdd() || !sec) return false;
+    if (S.text.trim() || S.qty.trim()) { wSheetOpen('plog'); toast('Finish or clear the current prep line before adding ' + item.name + '.'); return false; }
+    S.text = item.name; S.pickedText = item.name; S.section = sec.name; S.secTyped = true; S.qty = '';
+    psView = 'work'; wSheetOpen('plog'); focusK('p-qty'); return true;
+  }
+  function psOpenWork(item) {
+    var sec = kitSecs().filter(function (s) { return s.id === item.sectionId; })[0];
+    if (!sec) return [];
+    function key(v) { return String(v || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+    var names = [item.name].concat(item.aliases || []).map(key);
+    return S.items.filter(function (x) { return !x.deleted && !x.done && !x.fn &&
+      (x.station === sec.name || (x.also || []).indexOf(sec.name) >= 0) && names.indexOf(key(x.text)) >= 0; });
+  }
+  function psAdapter() {
+    return { canRead: psCanRead, canEdit: psCanEdit, canAdd: psCanAdd, identity: stableIdentity, workLock: workLock,
+      sections: kitSecs, defaultSection: psDefaultSection, recipes: function () { return D.recipes.filter(function (r) { return r.id && r.name; }); },
+      read: psRead, save: psSave, draw: draw, refreshHint: psHintPaint, listHTML: lvHTML,
+      now: now, day: dayNow, clock: function (ms) { return T.day(ms) + ' ' + T.clock(ms); }, esc: esc, inkWait: inkWait,
+      saveButton: svButton, saveStart: svStart, saveDone: svDone, saveFail: svFail, saveLine: svLine,
+      saveStop: svStop, saveHeld: svHeld, arm: arm, armed: armed, btnPatch: btnPatch, errMsg: errMsg,
+      pick: psPick, add: psAdd, openWork: psOpenWork };
+  }
+  function psPanelHTML() { var p = psModule(); return !psCanRead() ? '' : p ? p.render(psAdapter()) : psWaitHTML(); }
+  function psHintHTML() {
+    if (!S.pLog || !psCanRead()) return '';
+    var p = psModule(); return p ? p.hint(psAdapter(), psInputSection(), S.text) : psWaitHTML();
+  }
+  function psHintPaint() { var box = document.getElementById('ps-hint'); if (box && psCanRead()) box.innerHTML = psHintHTML(); }
+  function psReferenceHTML() {
+    var p = psModule();
+    return '<section class="nb-page nb-left ps-reference-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Before service</h2><span class="nb-date">The head chef\'s section standards</span></div></header><div class="nb-body">' + (p ? p.reference(psAdapter(), psDefaultSection()) : psWaitHTML()) + '</div></section>';
+  }
+  function psViewHTML() {
+    return '<div class="chips ps-viewbar" role="group" aria-label="Prep view"><button type="button" class="chip" data-p="ps-view" data-v="work" aria-pressed="' + (psView === 'work') + '">Work</button><button type="button" class="chip" data-p="ps-view" data-v="reference" aria-pressed="' + (psView === 'reference') + '">Before service</button></div>';
+  }
+  function psEventTarget(el) { return !!(el && el.closest('#ps-hint, .ps-manager, .ps-reference') && psCanRead()); }
+  document.addEventListener('click', function (e) { var el = e.target.closest('[data-ps]'), p = psModule(); if (p && psEventTarget(el)) { e.preventDefault(); p.click(el); } });
+  function psInputEvent(e) { var p = psModule(); if (p && e.target.matches('[data-ps-field]') && psEventTarget(e.target)) p.input(e.target); }
+  document.addEventListener('input', psInputEvent);
+  document.addEventListener('change', psInputEvent);
+
   /* Admin spelling repairs use the sources already loaded by Insights/Team. Shared protection rides on config's
      existing listener; private history is a bounded, on-demand query and is never requested by staff devices. */
   var proofLoading = null, proofError = false, proofRepairStamp = {};
@@ -5583,11 +5693,11 @@
     if (at === 'mail' && !mlOwner()) at = S.atab = 'notes';
     // Review desk groups the two queues; saved records and reports remain separate. Existing page ids still work.
     var navBusy = intelligenceBusy(), mlN = mlInfo().n, ag = adminGroupOf(at), agTabs = ag[2].filter(function (t) { return t !== 'overview' && (t !== 'mail' || mlOwner()); });
-    // The four rooms (4 Nov 2026, design B, docs/admin-pages-options/brief.md): a rail on a laptop and one row of four on
+    // The shared rooms (4 Nov 2026 design B, plus Prep on 8 Nov): a rail on a laptop and one row on
     // a phone, with the room's pages as tabs beside its title. Page ids are the same as before the rooms.
     // Redesign step 8 (8 Nov 2026, admin B): on a laptop the rail is dark and starts with Find (/), then the Inbox with its
     // count and the Dashboard, one tap from any room; the rooms follow. On a phone Find sits in the page heading and the
-    // four rooms stay one row. Drawn after the page, so the Inbox count is the one the page just drew (no read of its own).
+    // rooms stay one row. Drawn after the page, so the Inbox count is the one the page just drew (no read of its own).
     function railHTML() {
       var m = dashModule(), n = intelligenceAllowed() && m && m.count ? m.count() : null;
       var quick = intelligenceAllowed() ? '<div class="a-quick-list">' + [['inbox', 'Inbox'], ['dashboard', 'Dashboard']].map(function (q) {
@@ -5604,7 +5714,7 @@
     if (at === 'notes') loadNotes();
     if (at === 'minutes') loadMinutes();
     if (at === 'guides') loadGuides();
-    var pane = at === 'dashboard' || at === 'inbox' ? dashHTML(at) : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'kitchen-home' ? kitchenHomeHTML(d, saveBlock) : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
+    var pane = at === 'prep-standards' ? psPanelHTML() : at === 'dashboard' || at === 'inbox' ? dashHTML(at) : INTELLIGENCE_PAGES.indexOf(at) >= 0 ? intelligenceHTML(at) : at === 'proofreader' ? proofHTML() : at === 'suppliers' ? supplierAdminHTML() : at === 'cutoffs' ? cutAdminHTML() : at === 'kitchen-home' ? kitchenHomeHTML(d, saveBlock) : at === 'mail' ? mailAdminHTML() : at === 'guides' ? guidesAdminHTML() : at === 'minutes' ? minAdminHTML() : at === 'insights' ? insightsHTML() : at === 'team' ? (teamHTML() + statsHTML('people')) : at === 'waste' ? wasteStatsHTML() : at === 'transfers' ? xferStatsHTML() : at === 'learning' ? (listTimesHTML() + learnedHTML() + statsHTML('sections')) : at === 'notes' ? notesEditorHTML() + pingSoundHTML() : at === 'people' && owner && S.personId ? personPageHTML(d, S.personId, saveBlock) : at === 'people' ? (
       '<section class="set-block"><span class="label">People</span><details class="a-how"><summary>How roles and ticks work</summary><p class="hint">Pick a role to set the usual permissions (Sous chef can also add and remove people from the prep book itself), then adjust the ticks for one person if you need to. Shift pings are written by you and the sous chefs. Create/edit functions lets that person enter and change function bookings (Functions coordinator ticks it for you); only your save here gives it or takes it away, and nothing else comes with it. Reset PIN lets that person choose a new one: do it with them there, as whoever signs in with that name next sets the PIN. Removing someone from the list keeps their name on old lines, and their PIN stops working for anything. Head chef is for your own name: it gets the kitchen and sous chef pages, and a sous chef cannot change or remove it. Function editing still has its own tick.</p></details>' +
       (headIdOf(d.people) ? '' : '<p class="hint a-nohead" role="note">No one is marked Head chef yet. Set your own name to Head chef and save, so your PIN has full rights on the kitchen devices.</p>') +
       '<p class="hint">Tick Create/edit functions beside a person, then save. Their kitchen role stays the same.</p>' + peopleListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + saveBlock
@@ -5629,12 +5739,13 @@
     ['today', 'Today', ['dashboard', 'todo', 'notes', 'mail']],
     ['reports', 'Reports', ['prep-history', 'order-history']],
     ['team', 'Team', ['plan', 'people', 'minutes']],
-    ['kitchen', 'Kitchen', ['kitchen-home', 'recipes', 'suppliers', 'functions', 'deliveries', 'guides']]
+    ['kitchen', 'Kitchen', ['kitchen-home', 'recipes', 'suppliers', 'functions', 'deliveries', 'guides']],
+    ['prep', 'Prep', ['prep-standards']]
   ];
   var C_NAMES = { dashboard: 'Dashboard', todo: 'Chef to-do', notes: 'Shift pings', mail: 'Kitchen mail',
     'prep-history': 'Prep history', 'order-history': 'Order history', plan: "Today's team", people: 'Manage staff',
     minutes: 'Meeting minutes', 'kitchen-home': 'Overview', recipes: 'Recipes & drawings', suppliers: 'Supplier order',
-    functions: 'Functions', deliveries: 'Delivery received', guides: 'Guides' };
+    functions: 'Functions', deliveries: 'Delivery received', guides: 'Guides', 'prep-standards': 'Section standards' };
   function chefAllowed() {
     var p = me(), c = S.config || {};
     return !!(kitchenAccess() && S.configState === 'ok' && S.configFull && p &&
@@ -5741,6 +5852,7 @@
     var nav = '<nav class="a-tabs" aria-label="' + group[1] + ' pages">' + tabs.map(function (t) { return '<button type="button" class="a-tab" data-p="c-tab" data-t="' + t + '" aria-pressed="' + (at === t) + '">' + C_NAMES[t] + '</button>'; }).join('') + '</nav><nav class="a-onpage" aria-label="On this page" hidden></nav>';
     var pane;
     if (at === 'dashboard') pane = chefDashboardHTML();
+    else if (at === 'prep-standards') pane = psPanelHTML();
     else if (at === 'todo') pane = todoPageHTML();
     else if (at === 'plan') pane = teamPageHTML();
     else if (at === 'notes') { loadNotes(); pane = notesEditorHTML(); }
@@ -5751,7 +5863,7 @@
     else pane = chefKitchenHTML(at);
     pane = pane.replace(/ id="rtitle"/g, '');
     var bar = '<div class="p-bar"><span><strong>' + title + '</strong> · ' + esc(whoName()) + '</span><span class="p-links">' + (adminTabs() ? '<a class="p-link" href="#/admin">Admin panel</a>' : '') + '</span></div>';
-    return panelShellHTML(bar, rail, find('a-find-head') + '<p class="ad-eyebrow">' + title + '</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + group[1] + '</h2><p class="ad-intro">' + ({today:'Run the shift with the team.',reports:'Read the prep and order records for a day.',team:'Plan the team and look after the people.',kitchen:'The recipe book and the kitchen tools.'})[group[0]] + '</p>', nav, pane, 'chef-panel');
+    return panelShellHTML(bar, rail, find('a-find-head') + '<p class="ad-eyebrow">' + title + '</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + group[1] + '</h2><p class="ad-intro">' + ({today:'Run the shift with the team.',reports:'Read the prep and order records for a day.',team:'Plan the team and look after the people.',kitchen:'The recipe book and the kitchen tools.',prep:'The prep each section should have ready before service.'})[group[0]] + '</p>', nav, pane, 'chef-panel');
   }
   /* the same Remove button on the admin People tab and the sous chef's staff list, with a second tap to be sure */
   /* Head chef decision D6 (20 Oct 2026): someone who leaves is taken off the list, not deleted, so their name stays on
@@ -5817,7 +5929,7 @@
     return '<section class="set-block"><h2 class="p-h">Suppliers &amp; pars</h2><p>Current pars, manual items and the original supplier records are kept in the catalogue.</p>' +
       (supplierEdit() ? '<div class="btn-row"><a class="btn dark" href="#/suppliers/manage">Manage catalogue</a><a class="btn" href="#/suppliers">Supplier order</a></div>' : '<p class="hint">Only the head chef changes suppliers and pars. Sous chefs can use <a href="#/suppliers">Supplier order</a>.</p>') + '</section>';
   }
-  var A_TAB_NAMES = { 'kitchen-home': 'Overview', inbox: 'Inbox', dashboard: 'Dashboard', overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
+  var A_TAB_NAMES = { 'prep-standards': 'Section standards', 'kitchen-home': 'Overview', inbox: 'Inbox', dashboard: 'Dashboard', overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
   /* The admin page the panel opens on: the Inbox on a first visit (redesign step 8, 8 Nov 2026; until then the
      Dashboard: both read the same nightly record), then the last one used. After an update nobody asked
      for (the idle update or the 04:00 refresh, flagged by js/upkeep.js in lk.upd.auto for this tab only) a report page
@@ -5831,8 +5943,8 @@
     lsSet('lk.prep.atab', 'inbox');   // the page on screen, so a reload by hand stays on it
     return 'inbox';
   }
-  var A_GROUPS = [['today', 'Today', ['inbox', 'dashboard', 'overview', 'references', 'training', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people', 'training-records']], ['kitchen', 'Kitchen', ['kitchen-home', 'cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']]];
-  var A_GROUP_NOTES = { today: 'What needs you, and how the kitchen is going.', reports: 'Read the recorded activity and follow it back to its source.', team: 'Who is in the kitchen, what each person may do, and their assessments.', kitchen: 'How the kitchen is set up, its records, the backup and the PIN.' };
+  var A_GROUPS = [['today', 'Today', ['inbox', 'dashboard', 'overview', 'references', 'training', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people', 'training-records']], ['kitchen', 'Kitchen', ['kitchen-home', 'cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']], ['prep', 'Prep', ['prep-standards']]];
+  var A_GROUP_NOTES = { prep: 'The prep each section should have ready before service.', today: 'What needs you, and how the kitchen is going.', reports: 'Read the recorded activity and follow it back to its source.', team: 'Who is in the kitchen, what each person may do, and their assessments.', kitchen: 'How the kitchen is set up, its records, the backup and the PIN.' };
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
      and the chart headings in it), so a long page is one tap from any part. Built from the page after each draw, so a
@@ -10940,6 +11052,8 @@
     var el = e.target.closest('[data-p]');
     if (!el || !S.root || !S.root.contains(el)) return;
     var a = el.getAttribute('data-p'), id = el.getAttribute('data-id'), i = +el.getAttribute('data-i'), dt = el.getAttribute('data-d');
+    if (a === 'ps-load') { psError = false; psLoad(); draw(); return; }
+    if (a === 'ps-view' && S.name === 'prep' && psCanRead() && S.date === dayNow()) { psView = el.getAttribute('data-v') === 'reference' ? 'reference' : 'work'; draw(); focusSel('#rtitle'); return; }
     if (a === 'device-request') { window.LK_DEVICE.request(); return; }
     if (a === 'owner-head') { bootstrapHead(id); return; }
     if (a === 'owner-create') { var input = S.root.querySelector('#owner-name'); bootstrapHead('', input && input.value); return; }
@@ -11331,7 +11445,7 @@
       return;
     }
     if (k === 'pf2') { var p2 = S.pf2.length; S.pf2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf2; pinCells(el); if (p2 < 4 && S.pf2.length === 4 && /^\d{4}$/.test(S.pf1)) submitPin(); return; }
-    if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var suggestionBox = S.root.querySelector('#p-sugg'); if (suggestionBox) suggestionBox.innerHTML = suggestHTML(); var qs = S.root.querySelector('#p-qsugg'); if (qs) qs.innerHTML = qtyChipsHTML(); return; }
+    if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var suggestionBox = S.root.querySelector('#p-sugg'); if (suggestionBox) suggestionBox.innerHTML = suggestHTML(); var qs = S.root.querySelector('#p-qsugg'); if (qs) qs.innerHTML = qtyChipsHTML(); psHintPaint(); return; }
     if (k === 'o-text') { S.otext = el.value; var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); oAutoQty(); return; }
     if (k === 'o-qty') { if (S.oqtyAuto && S.oqtyAuto !== el.value) sg('ordfill', 'e'); S.oqty = el.value; S.oqtyAuto = ''; var ou2 = S.root.querySelector('#o-units'); if (ou2) ou2.innerHTML = unitChipsHTML('o', S.oqty); return; }
     if (k === 'g-q') { S.gq = el.value; var gl = S.root.querySelector('#g-list'); if (gl) gl.innerHTML = gListHTML(); var gWrap = el.closest('.g-qwrap'); if (gWrap) gWrap.classList.toggle('has-q', !!S.gq); return; }
@@ -11350,7 +11464,7 @@
     // the admin panel's Daily reviews form and the wastage page each keep their own (rvTyped())
     if (k === 'w-ra' || k === 'w-rc') { if (el.closest('.a-rvform')) { if (k === 'w-ra') S.wrA = el.value; else S.wrC = el.value; } else if (k === 'w-ra') S.wpA = el.value; else S.wpC = el.value; saveSync(); return; }
     if (k === 'p-qty') { S.qty = el.value; var qs2 = S.root.querySelector('#p-qsugg'); if (qs2) qs2.innerHTML = qtyChipsHTML(); var pu = S.root.querySelector('#p-units'); if (pu) pu.innerHTML = unitChipsHTML('p', S.qty); return; }
-    if (k === 'p-section') { S.section = el.value; S.secTyped = !!el.value.trim(); return; }
+    if (k === 'p-section') { S.section = el.value; S.secTyped = !!el.value.trim(); psHintPaint(); return; }
     if (k === 'p-rs') { S.recipeSearch = el.value; S.recipeOpen = true; draw(); return; }
     var a = el.getAttribute && el.getAttribute('data-a');
     if (!a || !S.draft) return;
@@ -12828,6 +12942,7 @@
     if (a === 'pt-cancel' && ptPop) { ptClose();return true; }
     if (a === 'proofreader-back') return !!(proofVisible() && proofModule().back());
     if (a === 'intelligence-back') return !!(intelligenceVisible() && window.LK_INTELLIGENCE.back && window.LK_INTELLIGENCE.back());
+    if (a === 'ps-work') { psView = 'work'; draw(); focusSel('#rtitle'); return true; }
     if (a === 'recipe-close') { S.recipeOpen = false; S.recipeSearch = ''; S.recipeAll = false; draw(); focusSel('.p-pickbtn'); return true; }
     if (a === 'notes-close') { S.notesOpen = false; draw(); return true; }
     if (a === 'n-cancel') { if (nfDirty() && !arm('n-cancel')) return true; S.nf = nfNew(); S.nOpen = false; S.nMsg = ''; draw(); return true; }
@@ -12865,11 +12980,12 @@
       if (S.root.querySelector('.p-staff-page')) return pick('staff-close', 'Back to prep list');
       if (S.recipeOpen) return pick('recipe-close', 'Back to prep list');
       if (S.pLog) return pick('p-log-close', 'Back to prep list');
+      if (psView === 'reference') return pick('ps-work', 'Back to prep list');
     }
     return null;
   }
   function localBackBusy() {
-    return !!(S.root && document.body.contains(S.root) && (S.busy || S.nSaving || S.mSaving || pt && pt.busy || S.gf && (S.gf.busy || S.gf.saving) || intelligenceBusy()));
+    return !!(S.root && document.body.contains(S.root) && (S.busy || S.nSaving || S.mSaving || pt && pt.busy || S.gf && (S.gf.busy || S.gf.saving) || psBusy() || intelligenceBusy()));
   }
   /* Something not saved on this device apart from a change waiting to send (LK_PREP.unsaved() is this or a write
      waiting): words typed here (typedHere(): a line half typed, an admin draft, a review, the drinks run), a sheet or
@@ -12888,7 +13004,7 @@
      (LK_UPDATE.letGo() in js/upkeep.js). iPhone Safari never asks, and a phone that drops the tab in the background
      does not either. */
   function typedHere() {
-    return !!(proofModule() && proofModule().dirty()) || !!(window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.dirty()) || draftsDirty() || !!mlf.text.trim() || tdDirty() || dkDirty() || rvTyped(true) || rvTyped(false) ||
+    return !!(psModule() && psModule().unsaved()) || !!(proofModule() && proofModule().dirty()) || !!(window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.dirty()) || draftsDirty() || !!mlf.text.trim() || tdDirty() || dkDirty() || rvTyped(true) || rvTyped(false) ||
       !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim() || !!(S.xf.basket || []).length);
   }
   function dirtyForUpdate() {

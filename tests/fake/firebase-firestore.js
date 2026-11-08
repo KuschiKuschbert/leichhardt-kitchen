@@ -125,7 +125,7 @@ export function where(f, op, v) { return { k: 'where', f, op, v }; }
 export function documentId() { return '__name__'; }
 export function orderBy(f, dir) { return { k: 'order', f, dir: dir || 'asc' }; }
 export function limit(n) { return { k: 'limit', n }; }
-export function startAfter(sn) { return { k: 'after', id: sn.id }; }
+export function startAfter(sn) { return { k: 'after', id: typeof sn === 'string' ? sn : sn.id, byName: typeof sn === 'string' }; }
 export function query(col, ...c) { return { type: 'query', path: col.path, group: col.group, c, appName: appOf(col) }; }
 export function serverTimestamp() { return { __st: 1 }; }
 export function increment(n) { return { __inc: n }; }
@@ -156,8 +156,8 @@ function listCol(path, c, group, appName = '[DEFAULT]') {
       docs = docs.filter(d => { const id = group ? key(d.ref.path) : d.id; return x.op === 'in' ? v.indexOf(id) >= 0 : x.op === '>=' ? id >= v : x.op === '<=' ? id <= v : x.op === '<' ? id < v : x.op === '>' ? id > v : id === v; }); return;
     }
     if (x.k === 'where') docs = docs.filter(d => { const v = (d.data() || {})[x.f]; if (x.op === 'in') return x.v.indexOf(v) >= 0; return x.op === '==' ? v === x.v : x.op === '>=' ? v >= x.v : x.op === '<' ? v < x.v : x.op === '<=' ? v <= x.v : x.op === '>' ? v > x.v : true; });
-    if (x.k === 'order') docs.sort((a, b) => { const A = a.data()[x.f], B = b.data()[x.f]; return (A > B ? 1 : A < B ? -1 : 0) * (x.dir === 'desc' ? -1 : 1); });
-    if (x.k === 'after') { const i = docs.findIndex(d => d.id === x.id); docs = i < 0 ? [] : docs.slice(i + 1); }
+    if (x.k === 'order') docs.sort((a, b) => { const A = x.f === '__name__' ? a.id : a.data()[x.f], B = x.f === '__name__' ? b.id : b.data()[x.f]; return (A > B ? 1 : A < B ? -1 : 0) * (x.dir === 'desc' ? -1 : 1); });
+    if (x.k === 'after') { if (x.byName) { const order = (c || []).find(y => y.k === 'order' && y.f === '__name__'); docs = docs.filter(d => order && order.dir === 'desc' ? d.id < x.id : d.id > x.id); } else { const i = docs.findIndex(d => d.id === x.id); docs = i < 0 ? [] : docs.slice(i + 1); } }
     if (x.k === 'limit') docs = docs.slice(0, x.n);
   });
   return { docs, empty: !docs.length, size: docs.length, metadata: { fromCache: false, hasPendingWrites: docs.some(d => d.metadata.hasPendingWrites) }, forEach: f => docs.forEach(f) };
@@ -214,7 +214,7 @@ function isToday(day) {
 }
 // the operational records (kitchenRead() in the rules): a live PIN session for someone who is not functions only
 const KITCHEN_COLS = ['config', 'days', 'orders', 'waste', 'summary', 'misses', 'views', 'notes', 'guides', 'drinks', 'shifts', 'team', 'activity', 'sections',
-  'learned', 'ordlearned', 'learnlog', 'minutes', 'mailstat', 'transfers', 'transferOpen', 'digest'];
+  'learned', 'ordlearned', 'learnlog', 'minutes', 'mailstat', 'transfers', 'transferOpen', 'digest', 'prepStandards'];
 /* The read rules by collection, before the record-by-record ones in readRefused() and rulesDenied(): true when the real
    rules refuse this phone the record (list false) or the query (list true). Everything here is open to the head chef's
    Google account, apart from the records nobody reads (pushes, PIN tries, the old proofs). */
@@ -607,6 +607,26 @@ function commitOps(ops) {
     return false;
   });
   if (capabilityRefused) return Promise.reject({ code: 'permission-denied' });
+
+  // Section standards use the same strict shape and revision contract as the real rules, including for the owner.
+  // A head session may edit; the sous panel's visibility does not grant that authority.
+  const badPrepStandard = ops.some(o => {
+    const path = key(o.ref.path);
+    if (!/^kitchens\/[^/]+\/prepStandards\/[^/]+$/.test(path)) return false;
+    if (o.kind === 'delete') return true;
+    const old = store[path], next = after(o), config = cfgOf(o.ref), by = kitchenReader(o.ref);
+    const id = value => typeof value === 'string' && /^[a-zA-Z0-9_-]{1,80}$/.test(value);
+    const text = (value, max) => typeof value === 'string' && value.length > 0 && value.length <= max && /\S/.test(value);
+    return !by || !(isAdmin(o.ref) || by === config.headId) || next.by !== by ||
+      !id(o.ref.path.at(-1)) || !exactKeys(next, ['sectionId', 'name', 'aliases', 'minimum', 'unit', 'instruction', 'recipe', 'archived', 'v', 'at', 'by']) ||
+      !id(next.sectionId) || !text(next.name, 160) || !Array.isArray(next.aliases) || next.aliases.length > 12 || next.aliases.some(value => !text(value, 160)) ||
+      !(next.minimum === null || Number.isFinite(next.minimum) && next.minimum >= 0 && next.minimum <= 1000000) ||
+      !text(next.unit, 40) || typeof next.instruction !== 'string' || next.instruction.length > 500 ||
+      typeof next.recipe !== 'string' || !(next.recipe === '' || /^[a-zA-Z0-9_-]{1,160}$/.test(next.recipe)) ||
+      typeof next.archived !== 'boolean' || !Number.isInteger(next.v) || next.v <= 0 || next.v !== (old ? old.v + 1 : 1) ||
+      !!old && next.sectionId !== old.sectionId || !Number.isFinite(next.at) || next.at < 0 || next.at > requestNow() + 300000;
+  });
+  if (badPrepStandard) return Promise.reject({ code: 'permission-denied' });
 
   // Shared prep attributes reported work separately from the PIN-session recorder. Match the prep-only rules;
   // preparedAt ties the report to this tick so an old client's retained fields never credit its later re-tick.

@@ -67,6 +67,8 @@ const cfg = await K.collection('config').doc('main').get(); reads++;
 out.config = cfg.exists ? plain(cfg.data()) : null;
 // Nightly only: one query per collection, including every immutable proofreader event (one read per event).
 for (const name of ['activity', 'sections', 'learned', 'ordlearned', 'learnlog', 'summary', 'analysis', 'analysisDaily', 'references', 'training', 'proofHistory', 'dashwatch', 'misses', 'views', 'guides', 'mail', 'mailstat', 'drinks', 'shifts', 'daily', 'todos', 'team', 'cutdone', 'transferOpen']) { out[name] = await all(name); reads += out[name].length; }
+// All prep standards, including archived records. Always current, independent of the dated window and reuse.
+out.prepStandards = await all('prepStandards'); reads += Math.max(1, out.prepStandards.length);
 // One day range query, only the backup window. No separate read for each delivery day.
 out.deliveries = grab(await K.collection('deliveries').where('day', '>=', shift(today, -(DAYS - 1))).where('day', '<=', today).get());
 reads += Math.max(1, out.deliveries.length);

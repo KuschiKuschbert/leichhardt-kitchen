@@ -57,13 +57,14 @@ PBKDF2 derives the 32-byte key from the UTF-8 passphrase and random salt. The co
 
 ## Included data and omissions
 
-The exporter remains `scripts/nightly-backup.mjs`; its JSON shape is unchanged.
+The exporter is `scripts/nightly-backup.mjs`. Prep standards add a `prepStandards` array to its included-data JSON; earlier archives do not contain that catalogue.
 
 | Included section | Scope |
 | --- | --- |
 | `config` | `config/main`, including people, canonical permission ids and settings. |
 | `days`, `orders`, `waste`, `wasteReviews`, `transfers`, `deliveries` | The selected window, normally 45 Queensland calendar days, with original document ids, values and attribution. |
 | `activity`, `sections`, `learned`, `ordlearned`, `learnlog`, `summary`, `analysis`, `analysisDaily`, `references`, `training`, `proofHistory`, `dashwatch`, `misses`, `views` | Included activity, analysis, source links, assessment and correction records, and the admin Dashboard's watch list. |
+| `prepStandards` | Every active and archived prep standard, with section identity, aliases, minimum, unit, instructions, recipe link, author and version. Always read fresh, regardless of the dated window or reuse. |
 | `guides`, `mail`, `mailstat`, `drinks`, `shifts`, `daily`, `todos`, `team`, `cutdone`, `transferOpen` | Included team records, guide words/small pictures and outstanding-transfer index. |
 | `notes`, `directnotes`, `minutes`, `book`, `recipes`, `drawings`, `drawtpl`, `drawlib`, `suppliers`, `supplierlinks`, `functions`, `fncontact`, `fnsent` | Current included documents. Booking contacts remain private inside the encrypted archive. |
 | `referencesHist`, `trainingHist`, `notesSeen`, `directnotesSeen`, `minutesHist`, `minutesSigns`, `recipesHist`, `drawingsHist`, `supplierOrders`, `supplierAudit`, `functionsHist` | Included history, acknowledgements, sign-offs, catalogue audit and order subcollections, retaining parent and record ids. |
@@ -80,7 +81,7 @@ Older dated records outside the selected window need earlier archives or a scope
 
 `scripts/backup-crypto-check.mjs` tests the actual workflow encryption/decryption/comparison command, fresh salts/nonces, correct and wrong keys, version/parameter changes, ciphertext/tag changes, truncation, invalid JSON, no-overwrite/private outputs, key/log handling, explicit legacy interoperability including short keys, forced round-trip mismatch and cleanup after failure.
 
-`scripts/backup-recovery-check.mjs` accepts no input archive or destination arguments. It requires a literal `127.0.0.1` or `[::1]` Firestore emulator address and an explicit `demo-` project. It generates only synthetic data under isolated source and target kitchen paths. It runs the actual exporter, encrypts/decrypts it, validates every current included section, restores those included records in one atomic synthetic batch, compares every document and re-exports for equality. It checks zero/null/negative temperatures, recorder versus preparer, original quantities, canonical action-id arrays, current and historical booking effects, history and version fields, and confirms omitted authority/pages remain absent. Both test paths and local files are cleaned afterwards. This proves the stated included-data path, not production restore readiness.
+`scripts/backup-recovery-check.mjs` accepts no input archive or destination arguments. It requires a literal `127.0.0.1` or `[::1]` Firestore emulator address and an explicit `demo-` project. It generates only synthetic data under isolated source and target kitchen paths. It runs the actual exporter, encrypts/decrypts it, validates every current included section, restores those included records in one atomic synthetic batch, compares every document and re-exports for equality. It checks zero/null/negative temperatures, recorder versus preparer, original quantities, canonical action-id arrays, current and historical booking effects, full active and archived prep standards with zero and unset minima, history and version fields, and confirms omitted authority/pages remain absent. Both test paths and local files are cleaned afterwards. This proves the stated included-data path, not production restore readiness.
 
 Run the local checks after installing the existing `scripts` and `tests/rules` tooling:
 

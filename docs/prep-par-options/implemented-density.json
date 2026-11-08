@@ -1,0 +1,32 @@
+[
+  {
+    "who": "ann",
+    "fixture": "tests/prep-lines.test.js 14 synthetic tasks",
+    "fonts": "actual Barlow/Caveat",
+    "current": {
+      "visible": 5,
+      "overflow": 0,
+      "viewHeight": 44
+    },
+    "withoutLocalViewChoice": {
+      "visible": 6,
+      "overflow": 0,
+      "viewHeight": 0
+    }
+  },
+  {
+    "who": "sam",
+    "fixture": "tests/prep-lines.test.js 14 synthetic tasks",
+    "fonts": "actual Barlow/Caveat",
+    "current": {
+      "visible": 4,
+      "overflow": 0,
+      "viewHeight": 44
+    },
+    "withoutLocalViewChoice": {
+      "visible": 5,
+      "overflow": 0,
+      "viewHeight": 0
+    }
+  }
+]

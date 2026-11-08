@@ -4,6 +4,10 @@ On 5 November 2026 the database refused every read from 13:00: the free plan's 5
 
 How it was checked. Source review of every Firestore call. The server jobs' own GitHub logs for 4 and 5 November. Page costs measured with the test stand-in, which bills reads the way Firestore does (`tests/fake`), on a month of made-up data the size of this kitchen's (50 prep lines, 20 order lines and 8 wastage lines a day). Nothing was read from the real database, and the Firebase console's usage graph was not seen: the hour-by-hour split below is an estimate. The real rules also read about 4 records (session, PIN, device grant, settings) for each query or live list they let through; the stand-in does not bill those, so real costs are a little higher than measured.
 
+## Prep standards addition, 8 November 2026
+
+[Section prep standards](prep-standards.md) adds no startup read, listener or polling. On first use, Refresh, a new day or reopening after 30 minutes away, staff load the selected section’s active catalogue to completion, up to 1,000 items. Management explicitly loads 100 records per page including archives. Each query returns at most 101 records, with the extra record detecting continuation; empty queries cost at least one read. Typing and search reuse memory. Each acknowledged edit writes one record. Nightly/manual backup and kitchen-PIN copy include every current and archived standard; they are permanent configuration, not dated records eligible for backup-cache reuse. These are source-derived costs, not measured live usage.
+
 ## Where 50,000 reads a day go
 
 | Source | Reads a day now | Notes |

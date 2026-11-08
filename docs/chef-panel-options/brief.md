@@ -4,6 +4,8 @@ Requested 8 November 2026. **Chosen 8 November 2026: a dedicated Head chef / Sou
 
 ## Chosen implementation
 
+The subsequently approved [prep standards feature](../prep-standards.md) adds a fifth shared room, **Prep**, for head-chef editing and sous-chef reference. The original panel verification below records its four-room baseline.
+
 The real admin is rendered by adminHTML() in js/prep.js. Its four rooms, laptop rail, phone tabs, Find, On this page and content pane use the existing ad-* and a-* patterns. Both panels now call panelShellHTML() for that same markup.
 
 The chef hat adds Head chef panel or Sous chef panel at #/chef. A current personal chef PIN session opens it. Canonical headId/sousIds determine access; an editable role label, remembered Google or a typed email does not. The existing direct service links remain.
