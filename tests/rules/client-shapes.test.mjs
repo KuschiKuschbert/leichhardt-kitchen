@@ -164,7 +164,7 @@ const seed = {
 };
 for (const id of IDS) seed['pinset/' + id] = { at: 1 };
 // every sign-in but the Google account alone has a running PIN session on its own phone (the tablet's is Bo's)
-for (const r of PINS) seed['sessions/' + UID[r]] = dailySession(WHO[r],{at:NOW,mode:r==='ownkit'?'shared':'personal'});
+for (const r of PINS) seed['sessions/' + UID[r]] = dailySession(WHO[r],{at:NOW,mode:r==='ownkit'||r==='tab'?'shared':'personal'});
 await put(seed);
 for(const r of GOOGLE) await seedOwnerDevice(env,{uid:UID[r],headId:'kit',at:NOW,mode:r==='ownkit'?'shared':'personal'});
 
@@ -745,6 +745,40 @@ row('js/prep.js proofWord(): protected word config and private audit in one W() 
   prep: r => put({ 'config/main': CFG, ['proofHistory/proof-word-' + r]: null }), after: () => put({ 'config/main': CFG }),
   run: (db, w, r) => W(r, [['set', 'config/main', { proofWords: ['brie'], proofV: 1, proofEvent: 'proof-word-' + r }, true],
     ['set', 'proofHistory/proof-word-' + r, { kind: 'word', action: 'keep', word: 'brie', v: 1, at: NOW }]]) });
+
+/* ---------- cleaning: on-open server reads and versioned W() writes ---------- */
+const CLEAN_OPEN = 253402178400000;
+const cleanTask = (id, x = {}) => ({ root: id, prev: '', next: '', text: 'Test shelf clean', area: 'Shelves', section: 'larder', sectionName: 'Larder',
+  shared: false, dows: [0, 1, 2, 3, 4, 5, 6], guide: '', from: MIDNIGHT, until: CLEAN_OPEN, at: Date.now(), by: 'sam', ...x });
+const cleanDone = (id, who, name, x = {}) => ({ day: TODAY, task: id, version: 1, done: true, doneAt: Date.now(), doneById: who,
+  doneBy: name, workerId: who, worker: name, by: who, ...x });
+row('js/prep.js cleaningLoad(): current task revisions, bounded once-on-open query', { ok: KITCHEN, asks: KITCHEN,
+  run: db => getDocsFromServer(query(C(db, 'cleaningTasks'), where('until', '>', MIDNIGHT), limit(501))) });
+row('js/prep.js cleaningLoad(): current day completions, bounded once-on-open query', { ok: KITCHEN, asks: CREW,
+  run: db => getDocsFromServer(query(C(db, 'cleaningDone'), where('day', '==', TODAY), limit(2001))) });
+row('js/prep.js cleaningLoad(): chef weekly completion range, one bounded server query', { ok: CHEFS, asks: CHEFS,
+  run: db => getDocsFromServer(query(C(db, 'cleaningDone'), where('day', '>=', PAST), where('day', '<=', TMW), limit(2001))) });
+row('js/prep.js cleaningSave(): retry reads the generated revision from the server after a lost acknowledgement', { ok: KITCHEN, asks: CHEFS,
+  prep: r => put({ ['cleaningTasks/clean-save-retry-' + r]: cleanTask('clean-save-retry-' + r) }),
+  run: (db, w, r) => getDocFromServer(D(db, 'cleaningTasks/clean-save-retry-' + r)) });
+row('js/prep.js cleaningSave(): chef creates a schedule starting today', { ok: CHEFS, asks: CHEFS,
+  run: (db, w, r) => W(r, [['set', 'cleaningTasks/clean-new-' + r, cleanTask('clean-new-' + r, { by: w })]]) });
+row('js/prep.js cleaningSave(): chef replaces a schedule tomorrow in one batch', { ok: CHEFS, asks: CHEFS,
+  prep: r => put({ ['cleaningTasks/clean-old-' + r]: cleanTask('clean-old-' + r), ['cleaningTasks/clean-next-' + r]: null }),
+  run: (db, w, r) => W(r, [['upd', 'cleaningTasks/clean-old-' + r, { until: MIDNIGHT + DAY, next: 'clean-next-' + r }],
+    ['set', 'cleaningTasks/clean-next-' + r, cleanTask('clean-old-' + r, { prev: 'clean-old-' + r, from: MIDNIGHT + DAY, by: w })]]) });
+row('js/prep.js cleaningArchive(): chef archives a schedule from tomorrow', { ok: CHEFS, asks: CHEFS,
+  prep: r => put({ ['cleaningTasks/clean-archive-' + r]: cleanTask('clean-archive-' + r) }),
+  run: (db, w, r) => W(r, [['upd', 'cleaningTasks/clean-archive-' + r, { until: MIDNIGHT + DAY, next: '' }]]) });
+row('js/prep.js cleaningTick(): tick an occurrence with recorder and worker', { ok: TICKS, asks: TICKS,
+  prep: r => put({ ['cleaningTasks/clean-tick-' + r]: cleanTask('clean-tick-' + r), [`cleaningDone/${TODAY}_clean-tick-${r}`]: null }),
+  run: (db, w, r) => W(r, [['set', `cleaningDone/${TODAY}_clean-tick-${r}`, cleanDone('clean-tick-' + r, w, NAME[r])]]) });
+row('js/prep.js cleaningTick(): shared screen reports another active worker', { ok: ['ownkit', 'tab'], asks: ['ownkit', 'tab'],
+  prep: r => put({ ['cleaningTasks/clean-worker-' + r]: cleanTask('clean-worker-' + r), [`cleaningDone/${TODAY}_clean-worker-${r}`]: null }),
+  run: (db, w, r) => W(r, [['set', `cleaningDone/${TODAY}_clean-worker-${r}`, cleanDone('clean-worker-' + r, w, NAME[r], { workerId: 'vic', worker: 'Vic' })]]) });
+row('js/prep.js cleaningUndo(): recorder Undo preserves the cycle audit and advances version', { ok: TICKS, asks: TICKS,
+  prep: (r, w) => put({ ['cleaningTasks/clean-undo-' + r]: cleanTask('clean-undo-' + r), [`cleaningDone/${TODAY}_clean-undo-${r}`]: cleanDone('clean-undo-' + r, w, NAME[r]) }),
+  run: (db, w, r) => W(r, [['upd', `cleaningDone/${TODAY}_clean-undo-${r}`, { done: false, version: 2 }]]) });
 
 /* ---------- a person's PIN reset while their book is open (r2-1-2) ----------
    The owner's Reset PIN deletes pinset/<id>; the person's running config/main listener is refused at once, which is

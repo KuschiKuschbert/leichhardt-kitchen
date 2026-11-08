@@ -57,12 +57,13 @@ PBKDF2 derives the 32-byte key from the UTF-8 passphrase and random salt. The co
 
 ## Included data and omissions
 
-The exporter remains `scripts/nightly-backup.mjs`. The cooling implementation adds the explicit `coolingCurrent` section; older archives may not contain it.
+The exporter remains `scripts/nightly-backup.mjs`. Cleaning adds two top-level arrays, `cleaningTasks` and `cleaningDone`, on 8 November 2026. Cooling adds the explicit `coolingCurrent` section. Older archives may not contain these sections.
 
 | Included section | Scope |
 | --- | --- |
 | `config` | `config/main`, including people, canonical permission ids and settings. |
 | `days`, `orders`, `waste`, `wasteReviews`, `transfers`, `deliveries` | The selected window, normally 45 Queensland calendar days, with original document ids, values and attribution. |
+| `cleaningTasks`, `cleaningDone` | Every immutable cleaning schedule revision, including closed and archived revisions; completion and Undo records within the selected day window. Original task ids, revision links, version, worker, recorder and time are preserved. The manual Backup button includes both whole collections. |
 | `activity`, `sections`, `learned`, `ordlearned`, `learnlog`, `summary`, `analysis`, `analysisDaily`, `references`, `training`, `proofHistory`, `dashwatch`, `misses`, `views` | Included activity, analysis, source links, assessment and correction records, and the admin Dashboard's watch list. |
 | `guides`, `mail`, `mailstat`, `drinks`, `shifts`, `daily`, `todos`, `team`, `cutdone`, `transferOpen` | Included team records, guide words/small pictures and outstanding-transfer index. |
 | `notes`, `directnotes`, `minutes`, `book`, `recipes`, `drawings`, `drawtpl`, `drawlib`, `suppliers`, `supplierlinks`, `functions`, `fncontact`, `fnsent` | Current included documents. Booking contacts remain private inside the encrypted archive. |
@@ -84,6 +85,8 @@ Older dated records outside the selected window need earlier archives or a scope
 `scripts/backup-crypto-check.mjs` tests the actual workflow encryption/decryption/comparison command, fresh salts/nonces, correct and wrong keys, version/parameter changes, ciphertext/tag changes, truncation, invalid JSON, no-overwrite/private outputs, key/log handling, explicit legacy interoperability including short keys, forced round-trip mismatch and cleanup after failure.
 
 `scripts/backup-recovery-check.mjs` accepts no input archive or destination arguments. It requires a literal `127.0.0.1` or `[::1]` Firestore emulator address and an explicit `demo-` project. It generates only synthetic data under isolated source and target kitchen paths. It runs the actual exporter, encrypts/decrypts it, validates every current included section, restores those included records in one atomic synthetic batch, compares every document and re-exports for equality. It checks zero/null/negative temperatures, recorder versus preparer, original quantities, canonical action-id arrays, current and historical booking effects, history and version fields, an older current cooling run with fractional-millisecond starts, an unstarted second stage, and an absent cooling state. It confirms omitted authority, pages and unrelated cooling documents remain absent. Both test paths and local files are cleaned afterwards. This proves the stated included-data path, not production restore readiness.
+
+The cleaning checks preserve old, current and archived schedule revisions and their links, a cleaner who differs from the recorder, the saved time, and the version and stamp retained by Undo. They exclude completion records before and after the selected window. A restore must keep those revision ids intact so each included completion still names its original task.
 
 Run the local checks after installing the existing `scripts` and `tests/rules` tooling:
 

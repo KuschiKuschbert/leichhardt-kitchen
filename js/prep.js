@@ -1524,6 +1524,7 @@
      form, which the page closing after the sign-out kept as a draft again for the next person) */
   function leave() {
     ptClose(true, true);
+    cleaningAttempt = null;
     S.privacyLocked = false; S.unlocking = false; S.lockRecorder = ''; S.lockHasDraft = false; S.lockIdentity = ''; S.workNotice = ''; S.grantExp = 0;
     S.ctab = 'dashboard'; S.cgLast = {}; S.cDate = ''; chefHistoryClear(); fdLast = []; fdClose(true, true);
     accessEpoch++; digestMem = null;   // the day digests read for the person before
@@ -1538,7 +1539,7 @@
     S.pastBusy = S.minsBusy = S.viewBusy = S.missBusy = S.useBusy = false; S.pastPart = null; S.ordStats = null; S.views = S.misses = null; S.viewErr = S.missErr = S.useErr = S.wReviewErr = false; S.wReview = null; S.wReviewFor = S.wNoteFor = '';
     svReset(); S.items = []; S.ordLines = []; S.ordAll = []; S.wLines = []; S.xLines = []; S.notes = null; S.notesBusy = false; S.nSaving = false; S.notesFor = ''; S.nPast = null; S.nPastOpen = false; S.nSeen = null; S.nPrivateError = ''; S.mins = null; S.guides = null; S.activity = []; S.actState = ''; S.hist = {}; S.stats = null;
     ['lk.fn', 'lk.mail.sent', 'lk.drinks', 'lk.guides', 'lk.notes', 'lk.minutes'].forEach(function (k) { lsSet(k, ''); });
- if (window.LK_INTELLIGENCE) window.LK_INTELLIGENCE.reset(); if (window.LK_PROOFREADER) window.LK_PROOFREADER.reset(); proofRepairStamp = {}; if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_SUP) window.LK_SUP.reset(true); if (supplierService) supplierService.reset();
+ if (window.LK_INTELLIGENCE) window.LK_INTELLIGENCE.reset(); if (window.LK_PROOFREADER) window.LK_PROOFREADER.reset(); proofRepairStamp = {}; if (window.LK_DELIVERY) window.LK_DELIVERY.reset(); if (window.LK_CLEANING) window.LK_CLEANING.reset(); if (window.LK_SUP) window.LK_SUP.reset(true); if (supplierService) supplierService.reset();
     // an editor an older copy of its file has no drop(): it closes as before
     if (window.LK_MG && window.LK_MG.drop) window.LK_MG.drop(); if (window.LK_FE && window.LK_FE.drop) window.LK_FE.drop();
     if (window.LK_UX) window.LK_UX.close();
@@ -1771,6 +1772,109 @@
       // the shared CSV boundary (docs/report-exports.md) for the admin's delivery history (3 Nov 2026)
       csv: downloadCSV
     };
+  }
+  /* Cleaning (8 Nov 2026): two bounded server queries only when the lazy page opens or Refresh is tapped.
+     Immutable task revisions retain each day's expected jobs. W() owns pending writes and recorder identity. */
+  var CLEAN_OPEN = 253402178400000, cleaningAttempt = null;
+  function cleaningOK() { return kitchenAccess(); }
+  function cleaningChef() { return chefAllowed(); }
+  function cleaningPermissionsReady() { return S.configState === 'ok' && !!S.configFull; }
+  function cleaningTickOK() { return cleaningOK() && canW() && can('tick'); }
+  function cleaningError(code) { return { code: code }; }
+  function cleaningDate(day) { return typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day) && T.day(T.at(day)) === day; }
+  function cleaningDue(task, day) { var at = T.at(day); return task && task.from <= at && task.until > at && Array.isArray(task.dows) && task.dows.indexOf(T.dow(at)) >= 0; }
+  function cleaningContext() { return supplierContext() + '|' + cleaningChef() + '|' + can('tick'); }
+  function cleaningLoad(from, to) {
+    if (!cleaningPermissionsReady()) return Promise.reject(cleaningError('unavailable'));
+    if (!cleaningOK() || !cleaningDate(from) || !cleaningDate(to) || to < from || T.at(to) - T.at(from) > 6 * 86400000 || (!cleaningChef() && (from !== dayNow() || to !== from))) return Promise.reject(cleaningError('permission-denied'));
+    var context = cleaningContext(), today = dayNow();
+    return sdk().then(function () {
+      if (!cleaningOK() || context !== cleaningContext() || today !== dayNow()) throw cleaningError('cancelled');
+      var f = fb.fs, q = cleaningChef() ? [f.where('day', '>=', from), f.where('day', '<=', to)] : [f.where('day', '==', today)];
+      return Promise.all([
+        f.getDocsFromServer(f.query(colRef('cleaningTasks'), f.where('until', '>', T.at(from)), f.limit(501))),
+        f.getDocsFromServer(f.query.apply(null, [colRef('cleaningDone')].concat(q, [f.limit(2001)])))
+      ]);
+    }).then(function (sn) {
+      if (!cleaningOK() || context !== cleaningContext() || today !== dayNow()) throw cleaningError('cancelled');
+      if (sn.some(function (s) { return s.metadata && s.metadata.fromCache; })) throw cleaningError('unavailable');
+      if (sn[0].docs.length > 500 || sn[1].docs.length > 2000) throw cleaningError('too-many');
+      function rows(s) { return s.docs.map(function (d) { return Object.assign({}, d.data(), { id: d.id }); }); }
+      return { tasks: rows(sn[0]), done: rows(sn[1]), readAt: now(), from: from, to: to };
+    });
+  }
+  function cleaningDraft(d) {
+    d = d || {};
+    var text = typeof d.text === 'string' ? d.text.trim() : '', area = typeof d.area === 'string' ? d.area.trim() : '',
+      section = typeof d.section === 'string' ? d.section : '', guide = typeof d.guide === 'string' ? d.guide : '',
+      sec = kitSecs().filter(function (s) { return s.id === section; })[0], days = d.dows;
+    if (!text || text.length > 160 || !area || area.length > 80 || section.length > 80 || guide.length > 80 || typeof d.shared !== 'boolean' ||
+      (!d.shared && !sec) || (d.shared && section) || !Array.isArray(days) || !days.length || days.length > 7 || days.some(function (x, i) { return typeof x !== 'number' || x % 1 || x < 0 || x > 6 || days.indexOf(x) !== i; })) throw cleaningError('invalid-argument');
+    return { text: text, area: area, section: d.shared ? '' : section, sectionName: d.shared ? '' : String(sec.name), shared: d.shared, dows: days.slice().sort(), guide: guide };
+  }
+  function cleaningSave(draft, old) {
+    if (!cleaningChef() || !canW()) return Promise.reject(cleaningError('permission-denied'));
+    var data;
+    try { data = cleaningDraft(draft); } catch (e) { return Promise.reject(e); }
+    var context = writeContext(), access = cleaningContext(), identity = stableIdentity(), today = dayNow(), signature = JSON.stringify([data, old && old.id || '']);
+    // A lost acknowledgement must not make a second job. A retry checks the exact generated revision first;
+    // failed reads preserve the attempt. No extra read is needed for an ordinary successful save.
+    return sdk().then(function () {
+      var prior = cleaningAttempt;
+      if (!prior || prior.identity !== identity) { cleaningAttempt = null; return null; }
+      return fb.fs.getDocFromServer(docRef('cleaningTasks', prior.task.id)).then(function (sn) {
+        if (!cleaningChef() || access !== cleaningContext() || today !== dayNow()) throw cleaningError('cancelled');
+        if (sn.metadata && sn.metadata.fromCache) throw cleaningError('unavailable');
+        if (!sn.exists()) { cleaningAttempt = null; return null; }
+        var saved = Object.assign({}, sn.data(), { id: sn.id });
+        // This revision may have been closed by another chef after the uncertain save. Reconcile its identity
+        // without permitting another create; the normal stale-revision guard still protects a further edit.
+        if (saved.root !== prior.task.root || saved.prev !== prior.task.prev || saved.at !== prior.task.at) throw { code: 'stale', message: 'This task changed on another device. Refresh before editing it.' };
+        cleaningAttempt = null;
+        return { task: saved, closed: prior.closed, recovered: prior.signature !== signature };
+      });
+    }).then(function (kept) {
+      if (kept) return kept;
+      if (!cleaningChef() || access !== cleaningContext() || today !== dayNow()) throw cleaningError('cancelled');
+      if (old && (!/^[a-zA-Z0-9_-]{1,80}$/.test(old.id) || old.until !== CLEAN_OPEN || old.from > T.at(shift(today, 1)))) throw cleaningError('stale');
+      var ref = fb.fs.doc(colRef('cleaningTasks')), from = T.at(old ? shift(today, 1) : today), ops = [], closed = null;
+      data = Object.assign(data, { root: old ? old.root : ref.id, prev: old ? old.id : '', next: '', from: from, until: CLEAN_OPEN, at: now(), by: context.by });
+      if (old) { closed = Object.assign({}, old, { until: from, next: ref.id, by: context.by }); ops.push(['upd', docRef('cleaningTasks', old.id), { until: from, next: ref.id }]); }
+      ops.push(['set', ref, data]);
+      var task = Object.assign({}, data, { id: ref.id });
+      return W(ops, context).then(function () { return { task: task, closed: closed }; }, function (error) {
+        if (identity === stableIdentity()) cleaningAttempt = { identity: identity, signature: signature, task: task, closed: closed }; throw error;
+      });
+    });
+  }
+  function cleaningArchive(task) {
+    if (!cleaningChef() || !canW()) return Promise.reject(cleaningError('permission-denied'));
+    if (!task || !/^[a-zA-Z0-9_-]{1,80}$/.test(task.id) || task.until !== CLEAN_OPEN || task.from > T.at(shift(dayNow(), 1))) return Promise.reject(cleaningError('stale'));
+    var context = writeContext(), until = T.at(shift(dayNow(), 1));
+    return W([['upd', docRef('cleaningTasks', task.id), { until: until, next: '' }]], context).then(function () { return Object.assign({}, task, { until: until, next: '', by: context.by }); });
+  }
+  function cleaningTick(task, day, current, workerId) {
+    if (!cleaningTickOK() || day !== dayNow() || !cleaningDate(day) || !task || !/^[a-zA-Z0-9_-]{1,80}$/.test(task.id) || !cleaningDue(task, day)) return Promise.reject(cleaningError('permission-denied'));
+    var worker = ptPerson(workerId), recorder = me(), id = day + '_' + task.id;
+    if (!worker || (!shared() && workerId !== S.who) || !recorder) return Promise.reject(cleaningError('permission-denied'));
+    if (current && (current.id !== id || current.task !== task.id || current.day !== day || current.done || !Number.isInteger(current.version))) return Promise.reject(cleaningError('stale'));
+    var context = writeContext(), record = { day: day, task: task.id, version: current ? current.version + 1 : 1, done: true, doneAt: now(), doneById: context.by, doneBy: recorder.name, workerId: worker.id, worker: worker.name, by: context.by };
+    return W([['set', docRef('cleaningDone', id), record]], context).then(function () { return Object.assign({}, record, { id: id }); });
+  }
+  function cleaningCanUndo(record) { return !!(cleaningTickOK() && record && record.done && record.day === dayNow() && record.doneById === S.who && now() >= record.doneAt && now() - record.doneAt < 120000); }
+  function cleaningUndo(record) {
+    if (!cleaningCanUndo(record) || record.id !== record.day + '_' + record.task || !Number.isInteger(record.version)) return Promise.reject(cleaningError('permission-denied'));
+    var context = writeContext(), data = { done: false, version: record.version + 1 };
+    return W([['upd', docRef('cleaningDone', record.id), data]], context).then(function () { return Object.assign({}, record, data, { by: context.by }); });
+  }
+  function cleaningApi() {
+    return { allowed: cleaningOK, chef: cleaningChef, permissionsReady: cleaningPermissionsReady, canTick: cleaningTickOK, identity: stableIdentity, context: cleaningContext,
+      shared: shared, workers: function () { return ptPeople().map(function (p) { return { id: p.id, name: p.name }; }); }, recent: hereGet,
+      sections: function () { return kitSecs().map(function (s) { return { id: s.id, name: s.name }; }); },
+      guides: function () { return featOn('guides') ? gLive().map(function (g) { return { id: g.id, title: g.title }; }) : []; }, loadGuides: loadGuides,
+      box: function (done) { return done ? TICK : BOX; }, sheetBusy: function () { return sheetOpen() || ksWait || ovBack || dkFirstUp(); }, sheetNext: sheetNext,
+      discardAttempt: function () { cleaningAttempt = null; },
+      load: cleaningLoad, saveTask: cleaningSave, archiveTask: cleaningArchive, tick: cleaningTick, undo: cleaningUndo, canUndo: cleaningCanUndo };
   }
   /* Supplier workspace (24 Oct 2026). This bridge shares the kitchen's sign-in, writer, clock and pending-write
      handling. Its separate Lite client has no offline catalogue cache. Nothing here reads supplier data on start. */
@@ -2805,6 +2909,8 @@
       .then(function () { return all('mail'); }).then(function (r) { out.mail = r; return all('mailstat'); }).then(function (r) { out.mailstat = r; })
       .then(function () { return all('drinks'); }).then(function (r) { out.drinks = r; })
       .then(function () { return all('todos'); }).then(function (r) { out.todos = r; })
+      .then(function () { return all('cleaningTasks'); }).then(function (r) { out.cleaningTasks = r; })
+      .then(function () { return all('cleaningDone'); }).then(function (r) { out.cleaningDone = r; })
       .then(function () { return all('team'); }).then(function (r) { out.team = r; })
       .then(function () { return all('cutdone'); }).then(function (r) { out.cutdone = r; })
       .then(function () { part = 'deliveries'; return f.getDocs(f.query(colRef('deliveries'), f.where('day', '>=', shift(dayNow(), -399)), f.where('day', '<=', dayNow()))).then(grab); }).then(function (r) { out.deliveries = r; })
@@ -2944,7 +3050,12 @@
     }).then(function (sn) {
       got(); if (!sn.exists()) throw { code: 'permission-denied' }; config = sn.data(); n++;
     })
-      .then(readRoster).then(function () { return readCol('pinset'); }).then(function () { return readCol('staffpins'); }).then(function () { return readCol('activity'); }).then(function () { return readCol('sections'); })
+      .then(function () {
+        // Immutable cleaning history needs a source-bound copy procedure. Refuse before any destination write.
+        return Promise.all(['cleaningTasks', 'cleaningDone'].map(function (name) {
+          return f.getDocs(f.query(oc(name), f.limit(1))).then(function (sn) { got(sn); if (sn.docs.length) throw { code: 'cleaning-copy' }; });
+        }));
+      }).then(readRoster).then(function () { return readCol('pinset'); }).then(function () { return readCol('staffpins'); }).then(function () { return readCol('activity'); }).then(function () { return readCol('sections'); })
       .then(function () { return readCol('learned'); }).then(function () { return readCol('ordlearned'); }).then(function () { return readCol('learnlog'); }).then(function () { return readCol('summary'); }).then(function () { return readCol('analysis'); }).then(function () { return readCol('analysisDaily'); }).then(function () { return readCol('proofHistory'); }).then(function () { return readCol('dashwatch'); }).then(function () { return readCol('references'); }).then(function () { return readSub('references', 'hist'); }).then(function () { return readCol('training'); }).then(function () { return readSub('training', 'hist'); }).then(function () { return readCol('daily'); }).then(function () { return readCol('misses'); }).then(function () { return readCol('views'); })
       .then(function () { return readCol('notes'); }).then(function () { return readCol('directnotes'); }).then(function () { return readSub('directnotes', 'seen', true); }).then(function () { return readCol('minutes'); }).then(function () { return readSub('minutes', 'hist'); })
       .then(function () { return readSub('minutes', 'signs', true); }).then(function () { return readSub('notes', 'seen', true); })
@@ -3011,6 +3122,7 @@
       }).catch(function (e) {
         S.moving = false;
         if (e && e.code === 'cooling-active') { S.moveMsg = errMsg('Finish the current Operandio batch before changing the kitchen PIN. Nothing was copied.'); draw(); return; }
+        if (e && e.code === 'cleaning-copy') { S.moveMsg = errMsg('Not moved. Cleaning history needs a reviewed copy procedure before changing the kitchen PIN. Nothing was written and the current PIN keeps working.'); draw(); return; }
         if (e && e.code === 'too-big') { var c = { at: now(), n: n, reads: reads, why: e.why }; lsSet('lk.move.big', JSON.stringify(c)); S.moveMsg = errMsg(moveBigText(c)); draw(); return; }
         S.moveMsg = errMsg(e && e.code === 'permission-denied' ? 'The rules do not allow the new PIN yet. Nothing was changed on the old PIN.' : 'Stopped part way. Nothing was changed on the old PIN, so it is safe to try again.'); draw();
       });
@@ -4438,7 +4550,7 @@
   var AI_ON = '<svg class="nb-ai" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6 8-6s7.2 2 8 6"/></svg>';
   var TICK = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M5 14 L11 20 L22 5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', transfers: 'Open the transfer list', minutes: 'Open the minutes', guides: 'Open the guides', mail: 'Open kitchen mail', drinks: 'Open the drinks run', admin: 'Open the admin panel' }[S.name] || 'Open the prep list'; }
+  function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', transfers: 'Open the transfer list', minutes: 'Open the minutes', guides: 'Open the guides', cleaning: 'Open the cleaning list', mail: 'Open kitchen mail', drinks: 'Open the drinks run', admin: 'Open the admin panel' }[S.name] || 'Open the prep list'; }
   function gateHTML() {
     return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">' + (S.name === 'admin' ? 'The admin panel needs the kitchen PIN on this device once, then the head chef\'s Google sign-in.' : 'Enter the kitchen PIN to open the prep list, orders, wastage, transfers, minutes and guides. This device remembers it.') + '</p>' +
       '<div class="field"><label class="label" for="p-pin">PIN</label>' + pinField('p-pin', 'p-pin', S.pinInput, true) + '</div>' +
@@ -6072,7 +6184,7 @@
   }
   /* While connecting, show the page that is opening (not a generic prep book card), so nothing flashes. */
   // the pages other scripts draw are named too: before the kitchen's settings are in, they show this card (27 Oct 2026)
-  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', transfers: 'Transfers', admin: 'Admin panel', chef: 'Chef panel', minutes: 'Meeting minutes', guides: 'Guides', mail: 'Kitchen mail', drinks: 'Drinks run', todo: 'Chef to-do',
+  var PAGE_NAME = { prep: 'Prep list', orders: 'Order list', waste: 'Wastage', transfers: 'Transfers', admin: 'Admin panel', chef: 'Chef panel', minutes: 'Meeting minutes', guides: 'Guides', cleaning: 'Cleaning', mail: 'Kitchen mail', drinks: 'Drinks run', todo: 'Chef to-do',
     fn: 'Functions', functions: 'Manage functions', deliveries: 'Delivery received', suppliers: 'Supplier order', manage: 'Manage Recipes & Drawings' };
   function loadingHTML() {
     var t = esc(PAGE_NAME[S.name] || 'Prep book');
@@ -12894,7 +13006,7 @@
      Recipes, Manage functions, Supplier order). The Add a line sheets on Prep and Orders open with nothing typed in
      them are not unsaved work (their words are in typedHere()), so it does not hold back the 04:00 refresh or a repair reload. */
   function unsavedHere() {
-    return !!(workLock() && S.lockHasDraft) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere() || !!S.sheet || !!S.wLog || !!S.xLog || !!S.recipeOpen || !!ptPop;
+    return !!(workLock() && S.lockHasDraft) || !!(window.LK_CLEANING && window.LK_CLEANING.dirty()) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere() || !!S.sheet || !!S.wLog || !!S.xLog || !!S.recipeOpen || !!ptPop;
   }
   /* Words typed on the pages this file draws and not saved yet: half a prep, order, wastage or transfer line (the venue
      and person stay after Log it on purpose, so they do not count), kitchen mail, a to-do job, a review, the drinks run,
@@ -12909,7 +13021,7 @@
       !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim() || !!(S.xf.basket || []).length);
   }
   function dirtyForUpdate() {
-    return !!(workLock() && S.lockHasDraft) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere();
+    return !!(workLock() && S.lockHasDraft) || !!(window.LK_CLEANING && window.LK_CLEANING.dirty()) || !!(window.LK_DELIVERY && window.LK_DELIVERY.dirty()) || !!(window.LK_MG && window.LK_MG.dirty()) || !!(window.LK_FE && window.LK_FE.dirty()) || !!(window.LK_SUP && window.LK_SUP.dirty()) || typedHere();
   }
   function canChangeDevice() {
     return deviceReady() && canW() && !!me() && (shared() ? whoHead() : deviceOwner() === S.who);
@@ -13069,7 +13181,7 @@
     bookState: bookState,
     fnOK: fnOK, fnCancelOK: fnCancelOK, toast: toast, btnPatch: btnPatch,
     fnState: fnState,
-    todoOK: todoOK,
+    todoOK: todoOK, cleaningOK: cleaningOK, cleaning: cleaningApi,
     // Today's team (7 Nov 2026): the chef chip in the top bar and its icon for the chef hat tile (js/app.js)
     teamOK: teamOK, teamChip: teamChipHTML, teamIcon: tmIcon,
     book: bookApi,

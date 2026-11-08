@@ -1,0 +1,19 @@
+{
+  "fonts": {
+    "barlow": true,
+    "caveat": true
+  },
+  "width": 390,
+  "height": 844,
+  "rows": 6,
+  "nav": [
+    {
+      "text": "Guides",
+      "visible": false
+    },
+    {
+      "text": "GUIDES",
+      "visible": true
+    }
+  ]
+}

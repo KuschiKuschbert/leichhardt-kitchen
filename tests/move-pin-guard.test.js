@@ -119,6 +119,23 @@ async function admin(b, o) {
   ok(p.errors.length === 0, 'finished batch: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // 8. Cleaning revisions and sign-offs cannot be copied through the old generic PIN mover. Either collection
+  // must stop the operation before it creates destination records, even when the book fits comfortably in the caps.
+  const cleaning = [
+    ['cleaningTasks', 'handles', { root: 'handles', prev: '', next: '', text: 'Wipe coldroom handles', area: 'Coldroom', section: '', sectionName: '', shared: true, dows: [0, 1, 2, 3, 4, 5, 6], guide: '', from: Date.parse(day(1) + 'T00:00:00+10:00'), until: 253402178400000, at: L.NOW - 86400000, by: 'sam' }],
+    ['cleaningDone', day(0) + '_handles', { day: day(0), task: 'handles', version: 1, done: true, doneAt: L.NOW - 60000, doneById: 'ann', doneBy: 'Ann', workerId: 'ann', worker: 'Ann', by: 'ann' }]
+  ];
+  for (const [collection, id, record] of cleaning) {
+    const path = fsKey([collection, id]);
+    p = await admin(b, { extra: Object.assign({}, extra, { [path]: record }) });
+    msg = await move(p); s = await store(p);
+    ok(/^Not moved\. Cleaning history needs a reviewed copy procedure/.test(msg), collection + ': PIN move explains why cleaning records need a separate copy procedure');
+    ok(onNew(s).length === 0 && JSON.stringify(s[path]) === JSON.stringify(record), collection + ': no destination record is written and the original cleaning record is unchanged');
+    ok(await p.evaluate(() => LK_PREP.state.pin === localStorage.getItem('lk.prep.pin')) && await p.evaluate(() => LK_PREP.state.pin) === L.PIN, collection + ': the current PIN keeps working');
+    ok(!p.errors.length, collection + ': no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

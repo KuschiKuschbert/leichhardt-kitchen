@@ -214,7 +214,7 @@ function isToday(day) {
 }
 // the operational records (kitchenRead() in the rules): a live PIN session for someone who is not functions only
 const KITCHEN_COLS = ['config', 'days', 'orders', 'waste', 'summary', 'misses', 'views', 'notes', 'guides', 'drinks', 'shifts', 'team', 'activity', 'sections',
-  'learned', 'ordlearned', 'learnlog', 'minutes', 'mailstat', 'transfers', 'transferOpen', 'digest'];
+  'learned', 'ordlearned', 'learnlog', 'minutes', 'mailstat', 'transfers', 'transferOpen', 'digest', 'cleaningTasks'];
 const coolingCollection = ref => ref.path[0] === 'kitchens' && ref.path[2] === 'cooling';
 /* The read rules by collection, before the record-by-record ones in readRefused() and rulesDenied(): true when the real
    rules refuse this phone the record (list false) or the query (list true). Everything here is open to the head chef's
@@ -241,6 +241,12 @@ function colRefused(ref, list) {
     if (!sessionReader(ref)) return true;
     if (list) return !(ref.c || []).some(x => x.k === 'where' && x.f === 'day' && x.op === '==' && isToday(x.v));
     return store[k] !== undefined && !isToday(store[k].day);   // a new receipt's id may be checked before it is written
+  }
+  if (c === 'cleaningDone') {
+    if (!kitchenReader(ref)) return true;
+    if (chefReader(ref)) return false;
+    const today = new Date(requestNow() + 36000000).toISOString().slice(0, 10);
+    return list ? !asks(ref, 'day', '==', today) : store[k] !== undefined && store[k].day !== today;
   }
   if (KITCHEN_COLS.indexOf(c) < 0 || (c === 'config' && rel[1] !== 'main')) return false;
   if (!kitchenReader(ref)) return true;
@@ -650,6 +656,63 @@ function commitOps(ops) {
     return !(preparedEmpty(next) || worker || inert);
   });
   if (badPrepared) return Promise.reject({ code: 'permission-denied' });
+  // Cleaning uses immutable schedule revisions and versioned ticks. Mirror the real rules, including the
+  // atomic successor link, daily scope, canonical Tick capability and shared-device reported worker.
+  const cleanOps = ops.filter(o => /^kitchens\/[^/]+\/(cleaningTasks|cleaningDone)\/[^/]+$/.test(key(o.ref.path)));
+  if (cleanOps.length) {
+    const openUntil = 253402178400000, today = requestNow() - (requestNow() + 36000000) % 86400000;
+    const identifier = value => typeof value === 'string' && /^[a-zA-Z0-9_-]{1,80}$/.test(value);
+    const bounded = (value, size) => typeof value === 'string' && value.length <= size;
+    const name = value => bounded(value, 80) && value.length > 0 && /[^ ]/.test(value);
+    const midnight = value => Number.isInteger(value) && value >= 0 && (value + 36000000) % 86400000 === 0;
+    const recent = value => Number.isFinite(value) && value >= requestNow() - 60000 && value <= requestNow() + 60000;
+    const dayStart = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? Date.parse(value + 'T00:00:00Z') - 36000000 : NaN;
+    const pathAfter = path => {
+      const op = ops.find(value => key(value.ref.path) === path);
+      return op ? op.kind === 'delete' ? null : after(op) : store[path];
+    };
+    const taskShape = d => exactKeys(d, ['root', 'prev', 'next', 'text', 'area', 'section', 'sectionName', 'shared', 'dows', 'guide', 'from', 'until', 'at', 'by']) &&
+      identifier(d.root) && (d.prev === '' || identifier(d.prev)) && (d.next === '' || identifier(d.next)) &&
+      bounded(d.text, 160) && d.text.length > 0 && /[^ ]/.test(d.text) && name(d.area) &&
+      bounded(d.section, 80) && bounded(d.sectionName, 80) && typeof d.shared === 'boolean' && bounded(d.guide, 80) &&
+      Array.isArray(d.dows) && d.dows.length > 0 && d.dows.length <= 7 && new Set(d.dows).size === d.dows.length &&
+      d.dows.every(value => Number.isInteger(value) && value >= 0 && value <= 6) &&
+      midnight(d.from) && midnight(d.until) && d.until >= d.from && Number.isFinite(d.at);
+    const invalid = cleanOps.some(o => {
+      const path = key(o.ref.path), old = store[path], d = after(o), c = cfgOf(o.ref), id = o.ref.path.at(-1);
+      const root = rootOf(o), taskPath = tid => root + '/cleaningTasks/' + tid;
+      if (o.kind === 'delete' || !actor || d.by !== actor || (c.fnOnlyIds || []).includes(actor)) return true;
+      if (o.ref.path[2] === 'cleaningTasks') {
+        if (!chef(c) || !identifier(id) || !taskShape(d)) return true;
+        if (!old) {
+          if (d.next !== '' || d.until !== openUntil || !recent(d.at)) return true;
+          if (d.prev === '') return d.root !== id || d.from !== today;
+          const prev = store[taskPath(d.prev)], closed = pathAfter(taskPath(d.prev));
+          return d.prev === id || !prev || prev.root !== d.root || prev.until !== openUntil || prev.from > d.from ||
+            d.from !== today + 86400000 || !closed || closed.until !== d.from || closed.next !== id;
+        }
+        if (old.until !== openUntil || d.until !== today + 86400000 || d.until < d.from ||
+          fieldsChanged(old, d).some(field => !['until', 'by', 'next'].includes(field))) return true;
+        if (d.next === '') return false;
+        const next = pathAfter(taskPath(d.next));
+        return d.next === id || !!store[taskPath(d.next)] || !next || next.prev !== id || next.root !== d.root || next.from !== d.until;
+      }
+      if (!hasCap(c, 'tick') || !exactKeys(d, ['day', 'task', 'version', 'done', 'doneAt', 'doneById', 'doneBy', 'workerId', 'worker', 'by']) ||
+        dayStart(d.day) !== today || !identifier(d.task) || id !== d.day + '_' + d.task || !Number.isInteger(d.version) || d.version < 1 ||
+        typeof d.done !== 'boolean' || !Number.isFinite(d.doneAt) || d.doneAt <= 0 || !identifier(d.doneById) || !name(d.doneBy) ||
+        !identifier(d.workerId) || !name(d.worker)) return true;
+      const task = store[taskPath(d.task)], weekday = ((today + 36000000) / 86400000 + 4) % 7;
+      if (!task || task.from > today || task.until <= today || !task.dows.includes(weekday)) return true;
+      const tick = () => d.done && recent(d.doneAt) && d.doneById === d.by && (c.staffIds || []).includes(d.workerId) &&
+        !(c.fnOnlyIds || []).includes(d.workerId) && (sessNow.mode === 'shared' || d.workerId === d.by);
+      if (!old) return d.version !== 1 || !tick();
+      const changed = fieldsChanged(old, d);
+      if (!changed.length) return false;
+      if (d.task !== old.task || d.day !== old.day || d.version !== old.version + 1 || d.done === old.done) return true;
+      return d.done ? !tick() : old.doneById !== d.by || requestNow() - old.doneAt >= 120000 || changed.some(field => !['done', 'version', 'by'].includes(field));
+    });
+    if (invalid) return Promise.reject({ code: 'permission-denied' });
+  }
   // Manual proofreader repairs (2026-11): private immutable events accompany changes to existing source wording
   // or protected words. Copied new records may retain proof fields before their history copies arrive.
   const sameProof = (a, b) => a === b || !!a && !!b && typeof a === 'object' && typeof b === 'object' &&

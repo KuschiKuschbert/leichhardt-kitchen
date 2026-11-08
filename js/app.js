@@ -313,15 +313,18 @@
     waste: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 18h44"/><path d="M25 18v-6h14v6"/><path d="M15 18l3 38h28l3-38"/><path d="M27 28v18M37 28v18"/></svg>',
     // two arrows, one each way: stock that goes out to the other venues and comes in from them
     transfers: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 22h40"/><path d="M42 14l8 8-8 8"/><path d="M54 42H14"/><path d="M22 34l-8 8 8 8"/></svg>',
+    cleaning: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M24 28h18l6 28H18zM28 28V16h10v12M28 16V9h17M38 9v7h8"/><path d="m25 42 5 5 10-11M50 22v8M46 26h8"/></svg>',
     guides: '<svg width="26" height="26" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M32 16c-6-4-14-6-24-6v38c10 0 18 2 24 6 6-4 14-6 24-6V10c-10 0-18 2-24 6z"/><path d="M32 16v38"/><path d="M14 21c4 0 8 1 12 3M14 31c4 0 8 1 12 3M38 24c4-2 8-3 12-3M38 34c4-2 8-3 12-3"/></svg>'
   };
-  var NAV = [['recipes', 'Recipes', '#/recipes'], ['prep', 'Prep', '#/prep'], ['orders', 'Orders', '#/orders'], ['waste', 'Wastage', '#/waste'], ['transfers', 'Transfers', '#/transfers'], ['guides', 'Guides', '#/guides']];
+  var NAV = [['recipes', 'Recipes', '#/recipes'], ['prep', 'Prep', '#/prep'], ['orders', 'Orders', '#/orders'], ['waste', 'Wastage', '#/waste'], ['transfers', 'Transfers', '#/transfers'], ['cleaning', 'Cleaning', '#/cleaning']];
   /* The head chef can hold Guides back from staff for now (People tab in the admin panel); js/prep.js knows who is on this phone */
   function featOn(k) { return !window.LK_PREP || !window.LK_PREP.featOn || window.LK_PREP.featOn(k); }
-  function navList() { return NAV.filter(function (t) { if (window.LK_PREP && (!window.LK_PREP.privateAccess() || window.LK_PREP.functionOnly())) return t[0] === 'recipes'; return t[0] !== 'guides' || featOn('guides'); }); }
+  function cleaningOK() { return !!(window.LK_PREP && window.LK_PREP.cleaningOK && window.LK_PREP.cleaningOK()); }
+  function guidesOK() { return !!(window.LK_PREP && window.LK_PREP.kitchenAccess() && featOn('guides')); }
+  function navList() { return NAV.filter(function (t) { if (window.LK_PREP && (!window.LK_PREP.privateAccess() || window.LK_PREP.functionOnly())) return t[0] === 'recipes'; return t[0] !== 'cleaning' || cleaningOK(); }); }
   function navActive() {
     var n = parseRoute().name;
-    return n === 'landing' ? 'home' : (n === 'home' || n === 'recipe') ? 'recipes' : n === 'prep' ? 'prep' : n === 'orders' ? 'orders' : n === 'waste' ? 'waste' : n === 'transfers' ? 'transfers' : n === 'guides' ? 'guides' : '';
+    return n === 'landing' ? 'home' : (n === 'home' || n === 'recipe') ? 'recipes' : n === 'prep' ? 'prep' : n === 'orders' ? 'orders' : n === 'waste' ? 'waste' : n === 'transfers' ? 'transfers' : n === 'cleaning' ? 'cleaning' : '';
   }
   function pillNav() {
     var a = navActive();
@@ -432,6 +435,12 @@
     if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
     return '<a class="wm-a wm-tile wm-delivery" href="#/deliveries" data-who="go"' + (parseRoute().name === 'deliveries' ? ' aria-current="page"' : '') + '>' + ICON.temp + '<span><b>Delivery received</b></span></a>';
   }
+  function cleaningItem() {
+    return cleaningOK() ? '<a class="wm-a wm-tile" href="#/cleaning" data-who="go"' + (parseRoute().name === 'cleaning' ? ' aria-current="page"' : '') + '>' + NAV_ICON.cleaning + '<span><b>Kitchen cleaning</b></span></a>' : '';
+  }
+  function guidesItem() {
+    return guidesOK() ? '<a class="wm-a wm-tile" href="#/guides" data-who="go"' + (parseRoute().name === 'guides' ? ' aria-current="page"' : '') + '>' + NAV_ICON.guides + '<span><b>Guides</b></span></a>' : '';
+  }
   function supplierOK() { return !!(window.LK_PREP && window.LK_PREP.supplier && window.LK_PREP.supplier().read()); }
   // the no-signal sentence while the kitchen's settings are not loaded and there is no signal (js/prep.js), otherwise ''
   function offline() { return window.LK_PREP && window.LK_PREP.offline ? window.LK_PREP.offline() : ''; }
@@ -454,7 +463,7 @@
      comes up from the bottom as a sheet, in thumb reach; from 720 px it is a panel under the hat. A person card on top
      (name, role, and Sign out, which hands the phone over the way "Not you?" on the page did), then since 8 Nov 2026
      (redesign step 7) a list in two groups, Every day and More, one row each with its small line on the right, and
-     Settings last. A sous chef's whole menu fits a 390 by 844 phone with no scroll. A
+     Settings last. The sheet scrolls within the screen when a person's links need more room. A
      row's small line only says what the book already knows (minutes to sign, today's section, Sign in with Google);
      nothing is read to fill it. Every tappable item is still a .wm-a (the Tab trap and L.chefItems() read them). */
   function whoMenuOpen(btn) {
@@ -478,14 +487,14 @@
         // people as the tiles had; only the order and the look changed.
         grid('Every day', [
           m.sec ? tile('data-who="sec" data-v="section"', ICON.spot, 'My section', '<small>' + esc(m.sec) + '</small>') : '',
-          m.fn ? fnItem() : fnViewItem(), deliveryItem(), supplierOK() ? supplierItem() : '',
+          m.fn ? fnItem() : fnViewItem(), deliveryItem(), cleaningItem(), supplierOK() ? supplierItem() : '',
           m.team ? teamItem(m.teamUnset) : '',
           m.head || fnOnly ? '' : tile('href="#/mail" data-who="go"', ICON.mail, 'Kitchen mail'),
           m.chef ? tile('data-who="open" data-v="pings"', ICON.bell, 'Shift pings') : ''
         ]) +
         grid('More', [
           m.panel ? tile('href="#/chef" data-who="go"', ICON.chef, m.head ? 'Head chef panel' : 'Sous chef panel') : '',
-          adm,
+          adm, guidesItem(),
           // a small line only while minutes wait to be signed (23 Oct 2026)
           m.minutes ? tile('href="#/minutes" data-who="go"', ICON.doc, 'Meeting minutes', m.toSign ? '<small class="wm-due">' + m.toSign + ' to sign</small>' : '') : '',
           fnOnly ? '' : tile('href="#/drinks" data-who="go"', ICON.cup, 'Drinks run'),
@@ -497,9 +506,10 @@
       // Sign in, which would forget them (28 Oct 2026)
       body = (offline() ? '<p class="wm-h">' + esc(offline()) + '</p>' : '<p class="wm-h">Nobody signed in on this phone</p>' +
         '<a class="wm-a wm-in" href="#/prep" data-who="signin">' + ICON.chef + '<span><b>Sign in</b></span></a>') +
-        grid('', [adm, deliveryItem(), bookEdit() ? manageItem() : '', todoOK() ? todoItem() : '', window.LK_PREP && window.LK_PREP.teamOK && window.LK_PREP.teamOK() ? teamItem(false) : '', supplierOK() ? supplierItem() : '', fnOK() ? fnItem() : '']) + set;
+        grid('Every day', [deliveryItem(), cleaningItem(), window.LK_PREP && window.LK_PREP.teamOK && window.LK_PREP.teamOK() ? teamItem(false) : '', supplierOK() ? supplierItem() : '', fnOK() ? fnItem() : '']) +
+        grid('More', [adm, guidesItem(), bookEdit() ? manageItem() : '', todoOK() ? todoItem() : '']) + set;
     }
-    el.innerHTML = '<div class="wm-bg" data-who="close"></div><nav class="wm" aria-label="' + (n ? esc(n) : 'Menu') + '" style="top:' + Math.round(r.bottom + 8) + 'px;right:' + Math.max(8, Math.round(window.innerWidth - r.right)) + 'px"><span class="wm-grip" aria-hidden="true"></span>' + body + '</nav>';
+    el.innerHTML = '<div class="wm-bg" data-who="close"></div><nav class="wm" aria-label="' + (n ? esc(n) : 'Menu') + '" style="--wm-top:' + Math.round(r.bottom + 8) + 'px;top:var(--wm-top);right:' + Math.max(8, Math.round(window.innerWidth - r.right)) + 'px"><span class="wm-grip" aria-hidden="true"></span>' + body + '</nav>';
     document.body.appendChild(el); wmenu = el;
     btn.setAttribute('aria-expanded', 'true');
     // focus starts on the first tile, not on Sign out, so a stray Enter never hands the phone over
@@ -575,7 +585,7 @@
     return '<div class="wall-mn">' + (window.LK_PREP && window.LK_PREP.minNudge ? window.LK_PREP.minNudge() : '') + '</div>';
   }
   /* Under the top bar, the recipe pages get their own tools row: how many recipes, and the Pass / Tiles switch. */
-  var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste'], ['05', 'Transfers', '#/transfers', 'transfers', 'What other venues took from us, and what we took from them'], ['06', 'Guides', '#/guides', 'guides', 'How to work the equipment, clean it and find things']];
+  var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste'], ['05', 'Transfers', '#/transfers', 'transfers', 'What other venues took from us, and what we took from them'], ['06', 'Cleaning', '#/cleaning', 'cleaning', 'The kitchen cleaning jobs for today and the week']];
   /* Home (redesign step 2, 8 Nov 2026, head chef; docs/whole-app-redesign-options/brief.md): on the kraft board, the day as
      the heading, then the dark Now and next board and Prep by section (js/prep.js fills and repaints them), then Coming
      up (the celebrations' line from js/seasonal/ and the functions of the next days). The six dockets went: the tab bar on
@@ -597,8 +607,8 @@
     return '<div class="wall">' + topBar() + fnBand() +
       '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' + minCard() + (window.LK_FN && window.LK_FN.checkSlot ? window.LK_FN.checkSlot() : '') + (window.LK_FN ? window.LK_FN.landSlot() : '') + installCard() +
       // with no signal before the kitchen's settings are in: the no-signal sentence, not Kitchen sign in (28 Oct 2026)
-      (window.LK_PREP && window.LK_PREP.functionOnly() ? '<p><a class="btn dark" href="#/functions">Manage functions</a></p>' : offline() ? '<p class="hint" role="status">' + esc(offline()) + '</p>' : window.LK_PREP && !window.LK_PREP.privateAccess() ? '<p><a class="btn" href="#/prep">Kitchen sign in</a></p>' : '') + '<div class="dockets kb-home">' + DOCKETS.filter(function (d) { if (window.LK_PREP && (!window.LK_PREP.privateAccess() || window.LK_PREP.functionOnly())) return d[3] === 'recipes'; return d[3] !== 'guides' || featOn('guides'); }).map(function (d) {
-        // Transfers and Guides are the long ones under the other four (a docket with a line under its name)
+      (window.LK_PREP && window.LK_PREP.functionOnly() ? '<p><a class="btn dark" href="#/functions">Manage functions</a></p>' : offline() ? '<p class="hint" role="status">' + esc(offline()) + '</p>' : window.LK_PREP && !window.LK_PREP.privateAccess() ? '<p><a class="btn" href="#/prep">Kitchen sign in</a></p>' : '') + '<div class="dockets kb-home">' + DOCKETS.filter(function (d) { if (window.LK_PREP && (!window.LK_PREP.privateAccess() || window.LK_PREP.functionOnly())) return d[3] === 'recipes'; return d[3] !== 'cleaning' || cleaningOK(); }).map(function (d) {
+        // Transfers and Cleaning are the long ones under the other four (a docket with a line under its name)
         return '<a class="docket' + (d[4] ? ' dk-wide' : '') + '" href="' + d[2] + '"><span class="dk-pin" aria-hidden="true"></span><span class="dk-top"><span class="dk-name">' + d[1] + '</span><span class="dk-no">No. ' + d[0] + '</span></span>' +
           (d[4] ? '<span class="dk-sub">' + esc(d[4]) + '</span>' : '') +
           '<span class="dk-icon">' + NAV_ICON[d[3]].replace(/width="26" height="26"/, 'width="72" height="72"') + '</span><span class="dk-go">Open</span></a>';
@@ -1115,6 +1125,28 @@
     });
   }
   document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-delivery-retry]')) mountDeliveries(); });
+  var cleaningLoad = null;
+  function viewCleaning() { return '<div class="page"><main id="main"><div id="cleaning-root"></div></main>' + footer() + '</div>'; }
+  function mountCleaning() {
+    var root = document.getElementById('cleaning-root'); if (!root) return;
+    if (!window.LK_PREP || !window.LK_PREP.cleaningOK) {
+      root.innerHTML = mgNote('Reload the book', 'Kitchen cleaning needs the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>'); return;
+    }
+    if (!cleaningOK()) return;
+    if (window.LK_CLEANING) {
+      if (window.LK_CLEANING.api === 1) window.LK_CLEANING.mount(root);
+      else root.innerHTML = mgNote('Reload the book', 'Kitchen cleaning needs the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>');
+      return;
+    }
+    root.innerHTML = mgNote('Kitchen cleaning', 'Opening kitchen cleaning...', ' ', 'prep');
+    if (!cleaningLoad) cleaningLoad = mgScript('js/cleaning.js?v=1').then(function () {
+      if (!window.LK_CLEANING) throw new Error('Kitchen cleaning did not load');
+    }).catch(function (e) { cleaningLoad = null; throw e; });
+    cleaningLoad.then(function () { if (parseRoute().name === 'cleaning') mountCleaning(); }, function () {
+      if (parseRoute().name === 'cleaning' && root.isConnected) root.innerHTML = mgNote('Could not open kitchen cleaning', 'Check the connection and try again.', '<button type="button" class="btn dark" data-cleaning-retry>Try again</button>');
+    });
+  }
+  document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('[data-cleaning-retry]')) mountCleaning(); });
   var SUP_API = 9, supLoad = null;
   function viewSuppliers() { return '<div class="page sup-page"><main id="main"><div id="supplier-root"></div></main>' + footer() + '</div>'; }
   function mountSuppliers(route) {
@@ -1389,6 +1421,7 @@
     }
     if (parts[0] === 'deliveries') return { name: 'deliveries', stack: [] };
     if (parts[0] === 'cooling') return { name: 'prep', stack: [], cooling: true };
+    if (parts[0] === 'cleaning') return { name: 'cleaning', stack: [] };
     if (parts[0] === 'settings') return { name: 'settings', stack: [] };
     if (parts[0] === 'prep' || parts[0] === 'admin' || parts[0] === 'chef' || parts[0] === 'orders' || parts[0] === 'waste' || parts[0] === 'transfers' || parts[0] === 'minutes' || parts[0] === 'mail' || parts[0] === 'drinks' || parts[0] === 'todo' || parts[0] === 'team') return { name: parts[0], stack: [] };
     if (parts[0] === 'guides') return { name: 'guides', stack: [], gid: parts[1] || '' };
@@ -1444,13 +1477,13 @@
     return '#/';
   }
   function backTitle(hash) {
-    var r = parseRoute(hash), names = { landing: 'Kitchen Book', home: 'recipes', prep: 'prep list', orders: 'order list', waste: 'wastage', transfers: 'transfers', minutes: 'meeting minutes', mail: 'kitchen mail', drinks: 'drinks run', todo: 'Chef to-do', admin: 'admin panel', chef: 'chef panel', settings: 'Settings', guides: 'guides', fn: 'functions', functions: 'Manage functions', manage: 'Manage recipes', suppliers: 'Supplier order', deliveries: 'Delivery received' };
+    var r = parseRoute(hash), names = { landing: 'Kitchen Book', home: 'recipes', prep: 'prep list', orders: 'order list', waste: 'wastage', transfers: 'transfers', minutes: 'meeting minutes', mail: 'kitchen mail', drinks: 'drinks run', todo: 'Chef to-do', admin: 'admin panel', chef: 'chef panel', settings: 'Settings', guides: 'guides', fn: 'functions', functions: 'Manage functions', manage: 'Manage recipes', suppliers: 'Supplier order', deliveries: 'Delivery received', cleaning: 'kitchen cleaning' };
     if (r.name === 'recipe') return 'recipe';
     return names[r.name] || 'Kitchen Book';
   }
   function localBack() {
     var r = parseRoute();
-    return r.name === 'suppliers' ? window.LK_SUP : r.name === 'manage' ? window.LK_MG : r.name === 'functions' ? window.LK_FE : PREP_PAGES[r.name] ? window.LK_PREP : null;
+    return r.name === 'suppliers' ? window.LK_SUP : r.name === 'manage' ? window.LK_MG : r.name === 'functions' ? window.LK_FE : r.name === 'cleaning' ? window.LK_CLEANING : PREP_PAGES[r.name] ? window.LK_PREP : null;
   }
   function backInfo() {
     var local = localBack(), label = local && local.backLabel && local.backLabel(), here = navPages[navHere], prev = here && navPages[here.prev], to = prev ? prev.hash : backFallback(parseRoute());
@@ -1561,6 +1594,7 @@
     else if (route.name === 'manage') html = viewManage();
     else if (route.name === 'suppliers') html = viewSuppliers();
     else if (route.name === 'deliveries') html = viewDeliveries();
+    else if (route.name === 'cleaning') html = viewCleaning();
     else if (route.name === 'fn') html = viewFn(route);
     else if (route.name === 'functions') html = viewFunctions();
     else if (view === 'pass') html = viewPass(route);
@@ -1584,6 +1618,7 @@
     fitPins();
     if (!locked && route.name === 'manage') mountManage(route); else if (window.LK_MG) window.LK_MG.unmount();
     if (!locked && route.name === 'deliveries') mountDeliveries(); else if (window.LK_DELIVERY) window.LK_DELIVERY.unmount();
+    if (!locked && route.name === 'cleaning') mountCleaning(); else if (window.LK_CLEANING) window.LK_CLEANING.unmount();
     if (!locked && route.name === 'suppliers') mountSuppliers(route); else if (window.LK_SUP) window.LK_SUP.unmount();
     if (!locked && route.name === 'functions') mountFunctions(route); else if (window.LK_FE) window.LK_FE.unmount();
     if ((locked || PREP_PAGES[route.name]) && window.LK_PREP) window.LK_PREP.mount(route.name, document.getElementById('prep-root'), route.gid);
@@ -1591,7 +1626,7 @@
     else if (window.LK_PREP && window.LK_PREP.warm && !warmed) { warmed = true; setTimeout(function () { window.LK_PREP.warm(); }, 900); }
     backSync();
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
-    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'transfers' ? 'Transfers · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'team' ? 'Today\'s team · ' : route.name === 'suppliers' ? 'Supplier order · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : route.name === 'chef' ? 'Chef panel · ' : '')) + 'Leichhardt Kitchen Book';
+    document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'transfers' ? 'Transfers · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'team' ? 'Today\'s team · ' : route.name === 'suppliers' ? 'Supplier order · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'cleaning' ? 'Kitchen cleaning · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : route.name === 'chef' ? 'Chef panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
     if (changed && route.name === 'recipe') noteView(route.stack[route.stack.length - 1]);
     // opening the recipes checks for the head chef's recipe changes when the last check is 30 minutes old (one read)
