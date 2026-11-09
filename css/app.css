@@ -4602,6 +4602,17 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .hm-full-team .hm-team::before { display: none; }
 .hm > #hm-board { grid-column: 1; grid-row: auto; }
 .hm-board[hidden] { display: none; }
+/* Current kitchen work uses warm amber; the personal day keeps its charcoal board. */
+.is-home #hm-board {
+  --bar: var(--hit);
+  --bar-text: var(--ink);
+  --bar-accent: var(--small-ink);
+  border-inline-start: 4px solid var(--accent-ink);
+}
+.is-home #hm-board .hm-bh { border-bottom-color: var(--edge); }
+.is-home #hm-board .hm-bt { color: var(--small-ink); }
+.is-home #hm-board .hm-rows li + li { border-top-color: var(--edge); }
+.is-home #hm-board .hm-s, .is-home #hm-board .hm-none { color: var(--muted); }
 @media (min-width: 720px) {
   .hm-staff-first { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 2rem; }
   .hm-day-row { min-height: 78px; }
