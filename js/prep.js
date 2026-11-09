@@ -10748,11 +10748,11 @@
     if (!supplierRead() || !cutHas()) return;
     var k = supplierContext() + '|' + dayNow();
     if (supCat.key === k) return;
-    supCat = { key: k, list: null, state: 'loading' };
+    var pending = { key: k, list: null, state: 'loading' }; supCat = pending;
     supplierTools().then(function (st) { return st.loadSuppliers(); }).then(function (list) {
-      if (supCat.key !== k) return;
+      if (supCat !== pending) return;
       supCat.list = list || []; supCat.state = 'ok'; if (S.name === 'orders') draw();
-    }, function () { if (supCat.key === k) { supCat.state = 'error'; if (S.name === 'orders') draw(); } });
+    }, function () { if (supCat === pending) { supCat.state = 'error'; if (S.name === 'orders') draw(); } });
   }
   // grouped only when a catalogue supplier is linked to one of the cut-offs shown: with none, every request would sit
   // under No supplier yet, so the plain list stays

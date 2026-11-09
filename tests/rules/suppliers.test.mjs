@@ -180,6 +180,7 @@ await env.withSecurityRulesDisabled(async ctx => {
   const db = ctx.firestore();
   await setDoc(doc(db, K + 'suppliers/' + SPLIT_SOURCE), splitOriginal);
   await setDoc(doc(db, K + 'suppliers/' + SPLIT_SOURCE + '/orders/before-split'), splitOrder);
+  await setDoc(doc(db, K + 'suppliers/atomic-split-source'), splitOriginal);
 });
 function splitWrite(db, options = {}) {
   const sourceId = options.sourceId || SPLIT_SOURCE, targetId = options.targetId || SPLIT_TARGET;
@@ -195,6 +196,8 @@ function splitWrite(db, options = {}) {
   b.set(doc(db, K + 'suppliers/' + targetId), targetNext);
   if (!options.noTargetAudit) b.set(doc(db, K + 'suppliers/' + targetId + '/audit/1'), {
     v: 1, itemId: '', action: 'split-supplier', before: { sourceSid: sourceId }, after: targetNext, at: targetNext.at, by: targetNext.by });
+  if (options.oldSourceOrder) b.set(doc(db, K + 'suppliers/' + sourceId + '/orders/batched-old-order'), {
+    ...splitOrder, sid: sourceId, v: currentSource.v, supplierName: currentSource.name, at: SPLIT_AT - 1, by: options.by || 'head' });
   return b.commit();
 }
 await ok(splitWrite(sous, { by: 'sous' }), false, 'sous cannot split a supplier or set lineage');
@@ -206,6 +209,7 @@ await ok(splitWrite(head, { noSourceAudit: true }), false, 'source catalogue mus
 await ok(splitWrite(head, { noTargetAudit: true }), false, 'new target must have its paired split audit');
 await ok(splitWrite(head, { sourcePatch: { at: SPLIT_AT + 1 } }), false, 'source and target split timestamps must match');
 await ok(splitWrite(head, { targetPatch: { historyBefore: SPLIT_AT - 1 } }), false, 'new lineage cutoff must equal its atomic split timestamp');
+await ok(splitWrite(head, { sourceId: 'atomic-split-source', targetId: 'atomic-split-target', oldSourceOrder: true }), false, 'split cannot batch a backdated source order against the pre-split catalogue');
 await ok(Promise.resolve().then(async () => {
   if ((await snap(head, 'suppliers/' + SPLIT_SOURCE)).data().v !== 1 || (await snap(head, 'suppliers/' + SPLIT_TARGET)).exists()) throw Error('A refused split saved a partial catalogue');
 }), true, 'refused split attempts leave both catalogues unchanged');

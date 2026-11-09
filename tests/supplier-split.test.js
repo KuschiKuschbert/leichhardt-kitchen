@@ -122,6 +122,44 @@ async function refusal(page, value) {
   ok(await page.evaluate(() => window.__ordersCacheMarker === true && window.__fake.bill.filter(entry => entry.kind === 'lite-query' && /\/suppliers$/.test(entry.path)).length === 0), 'recording an order keeps the refreshed Orders catalogue cache and adds no catalogue query');
   await page.context().close();
 
+  // Hold the first Orders catalogue response while the same person splits it and obtains a newer response.
+  const raceLite = require('node:fs').readFileSync(require.resolve('./fake/firebase-firestore-lite.js'), 'utf8').replace(
+    "export { liteGetDoc as getDoc, liteGetDocs as getDocs } from './firebase-firestore.js';",
+    `export { liteGetDoc as getDoc } from './firebase-firestore.js';
+import { liteGetDocs } from './firebase-firestore.js';
+export async function getDocs(ref) {
+  const snapshot = await liteGetDocs(ref);
+  if (ref.path[ref.path.length - 1] !== 'suppliers' || window.__oldCatalogueCaptured) return snapshot;
+  const frozen = { ...snapshot, docs: snapshot.docs.map(doc => { const value = doc.data(); return { ...doc, data: () => JSON.parse(JSON.stringify(value)) }; }) };
+  window.__oldCatalogueCaptured = true;
+  const capturedAt = performance.now();
+  window.__oldCatalogueHadTarget = frozen.docs.some(doc => doc.id === '${TARGET}');
+  await new Promise(resolve => { window.__releaseOldCatalogue = resolve; });
+  window.__oldCatalogueHeldMs = performance.now() - capturedAt;
+  window.__oldCatalogueDelivered = true;
+  return frozen;
+}`);
+  page = await L.open(browser, '#/orders', { who: 'bo', extra: groupedFixture, wait: 100, fakeSDK: { 'firebase-firestore-lite.js': raceLite } });
+  await L.waitFor(page, () => !!window.__releaseOldCatalogue, null, 5000);
+  await page.evaluate(source => { window.__ordersRaceMarker = true; location.hash = '#/suppliers/' + source; }, SOURCE);
+  await L.waitFor(page, () => !!document.querySelector('input[data-sf="qty"]'), null, 5000);
+  await splitDirect(page);
+  await page.evaluate(() => { location.hash = '#/orders'; });
+  await L.waitFor(page, name => Array.from(document.querySelectorAll('.o-sups .o-sup')).some(group => /Northside Test Seafood/.test(group.querySelector('.cut-n')?.textContent || '') && Array.from(group.querySelectorAll('.nb-t')).some(line => line.textContent.includes(name))), caseName, 5000);
+  await page.evaluate(() => { window.__releaseOldCatalogue(); });
+  await L.waitFor(page, () => window.__oldCatalogueDelivered === true, null, 2000);
+  await L.settle(page, 300);
+  const afterOldResponse = await page.evaluate(name => ({
+    samePage: window.__ordersRaceMarker === true,
+    oldWasPreSplit: window.__oldCatalogueHadTarget === false,
+    oldDelivered: window.__oldCatalogueDelivered === true,
+    beforeReadTimeout: window.__oldCatalogueHeldMs < 6000,
+    targetHasMoved: Array.from(document.querySelectorAll('.o-sups .o-sup')).some(group => /Northside Test Seafood/.test(group.querySelector('.cut-n')?.textContent || '') && Array.from(group.querySelectorAll('.nb-t')).some(line => line.textContent.includes(name))),
+    originalHasMoved: Array.from(document.querySelectorAll('.o-sups .o-sup')).some(group => /Northside Test Foods/.test(group.querySelector('.cut-n')?.textContent || '') && Array.from(group.querySelectorAll('.nb-t')).some(line => line.textContent.includes(name)))
+  }), caseName);
+  ok(afterOldResponse.samePage && afterOldResponse.oldWasPreSplit && afterOldResponse.oldDelivered && afterOldResponse.beforeReadTimeout && afterOldResponse.targetHasMoved && !afterOldResponse.originalHasMoved, 'a delayed pre-split Orders catalogue response cannot overwrite the fresh same-person grouping');
+  await page.context().close();
+
   for (const supplied of ['', 'unconfigured-reminder']) {
     const matching = fixture(), incoming = payload();
     incoming.suppliers[1].cutoffId = supplied;

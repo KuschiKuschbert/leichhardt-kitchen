@@ -1576,7 +1576,7 @@ service cloud.firestore {
     }
     function supOrderCurrent(sid) {
       let d = request.resource.data;
-      let c = get(supDoc(sid)).data;
+      let c = getAfter(supDoc(sid)).data;
       return d.v == c.v && d.at > c.at && d.supplierName == c.name && (d.cutoffId == '' || d.cutoffId == c.cutoffId);
     }
     function supOrderPair(sid, id) {

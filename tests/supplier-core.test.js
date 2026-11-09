@@ -83,6 +83,12 @@ test('catalogue import rejects commercial fields, unsupported formats and duplic
   const second = Object.assign(supplier(Array.from({ length: 300 }, (_, i) => item({ id: 'b-' + i }))), { id: 's-other' });
   throws('items', () => C.validateCatalogue({ version: 1, suppliers: [first, second] }));
 });
+test('catalogue import rejects overflowing JSON numbers before applying defaults', () => {
+  const overflow = JSON.parse('1e400');
+  for (const entry of [supplier([item({ factor: overflow })]), { ...supplier(), v: overflow }, { ...supplier(), at: overflow }]) {
+    assert.throws(() => C.validateCatalogue({ version: 1, suppliers: [entry] }));
+  }
+});
 test('a snapshot retains exact current quantities, pars and source after later catalogue edits', () => {
   const entry = item(), suggestion = { reason: 'From previous order' }, values = { 'i-test': '2 Kilos' }, stocks = { 'i-test': '3 kg' };
   const snapshot = C.snapshotLines([entry], values, stocks, { 'i-test': suggestion });

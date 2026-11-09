@@ -135,7 +135,7 @@
         result.lines = result.lines.filter(function (line) { return ids.has(line.itemId); });
         return result;
       });
-      // Keep an empty latest projection: Not ordered must never pull a quantity from an older combined order.
+      // Keep an empty latest batch for suggestions and reuse. Each item's last purchase is indexed separately by the UI.
       return { rows: rows, cursor: next('parent', parent.cursor), more: parent.more };
     }
     // One small occurrence document on selection or review. No history scan is used to decide a reminder's state.

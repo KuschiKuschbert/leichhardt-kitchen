@@ -57,7 +57,7 @@ async function visibility(p) {
     await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"]'), null, 5000);
     ok(await p.$eval(qty('t-stock'), e => e.value) === '7 kg' && await p.$eval(stock('t-stock'), e => e.value) === '3 kg', width + ': typed quantity and stock count survive the reorder');
     ok(await p.$eval(qty('t-stock'), e => e.placeholder) === '2 kg' && /2 kg/.test(await L.txt(p, '[data-item="t-stock"] .su-last')), width + ': previous amount still belongs to the same stable item');
-    ok(/Not ordered/.test(await L.txt(p, '[data-item="t-zero"] .su-last')), width + ': omitted item does not inherit another row\'s last quantity');
+    ok(/2 bags/.test(await L.txt(p, '[data-item="t-zero"] .su-last')) && !!(await p.$('[data-item="t-zero"] .su-last time')), width + ': an item omitted from the latest batch keeps its own earlier purchase and date after reordering');
     ok((await p.$$eval('.su-row', rows => rows.map(e => e.dataset.item))).join() === catalogue.items.map(i => i.id).join(), width + ': actual supplier sheet follows saved array sequence');
     ok(!(await L.overflow(p)) && p.errors.length === 0, width + ': reordered order sheet fits without page errors');
     if (width === 390) {

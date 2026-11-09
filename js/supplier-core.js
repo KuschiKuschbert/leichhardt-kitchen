@@ -160,7 +160,8 @@
     var seen = Object.create(null), count = 0, splitCount = 0;
     var suppliers = value.suppliers.map(function (s) {
       if (!plain(s)) fail('shape', 'supplier', 'Use an object for supplier.');
-      var source = copy(s); delete source.splitFrom;
+      var source = Object.create(null);
+      Object.keys(s).forEach(function (key) { if (key !== 'splitFrom') source[key] = s[key]; });
       var out = cleanSupplier(source); count += out.items.length;
       if (own(s, 'splitFrom')) {
         out.splitFrom = id(s.splitFrom, 'splitFrom'); splitCount++;
