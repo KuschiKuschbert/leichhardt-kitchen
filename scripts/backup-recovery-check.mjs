@@ -37,7 +37,7 @@ const ARRAY_COLLECTIONS = ['activity', 'sections', 'prepStandards', 'learned', '
   'deliveries', 'cleaningTasks', 'cleaningDone', 'cleaningActions', 'notes', 'directnotes', 'minutes', 'book', 'recipes', 'drawings', 'drawtpl', 'drawlib', 'suppliers', 'supplierlinks', 'functions', 'fncontact', 'fnsent'];
 const HISTORIES = { referencesHist: ['references', 'hist'], trainingHist: ['training', 'hist'], notesSeen: ['notes', 'seen'], directnotesSeen: ['directnotes', 'seen'], minutesHist: ['minutes', 'hist'], minutesSigns: ['minutes', 'signs'], recipesHist: ['recipes', 'hist'], drawingsHist: ['drawings', 'hist'], supplierOrders: ['suppliers', 'orders'], supplierAudit: ['suppliers', 'audit'], functionsHist: ['functions', 'hist'] };
 const DATED = { days: ['days', 'items'], orders: ['orders', 'lines'], waste: ['waste', 'lines'], transfers: ['transfers', 'lines'] };
-const EXPECTED_FIELDS = ['exportedAt', 'by', 'config', 'pins', 'wasteReviews', 'coolingCurrent', ...ARRAY_COLLECTIONS, ...Object.keys(HISTORIES), ...Object.keys(DATED)].sort();
+const EXPECTED_FIELDS = ['exportedAt', 'by', 'config', 'pins', 'wasteReviews', 'coolingCurrent', 'coolingRecorded', ...ARRAY_COLLECTIONS, ...Object.keys(HISTORIES), ...Object.keys(DATED)].sort();
 const identities = Object.fromEntries(ARRAY_COLLECTIONS.map(name => [name, name + '-sample']));
 Object.assign(identities, { activity: 'cook-a', drinks: 'cook-a', book: 'index', references: 'ref-a', training: 'training-a', notes: 'note-a', directnotes: 'direct-a', minutes: 'meeting-a', recipes: 'recipe-a', drawings: 'drawing-a', suppliers: 'supplier-a', functions: 'function-a' });
 identities.cleaningDone = day(2) + '_' + identities.cleaningTasks + '__daily';
@@ -87,6 +87,12 @@ function flatten(archive) {
     for (const field of ['firstAt', 'secondAt']) if (current[field] !== 0) current[field] = new Timestamp(current[field].seconds, current[field].nanoseconds);
     record(['cooling', 'current'], current, rows);
   }
+  if (archive.coolingRecorded !== null) {
+    assert(Cooling.parseRecorded(archive.coolingRecorded), 'The included recording confirmation must retain valid timestamps and actors.');
+    const recorded = { ...archive.coolingRecorded };
+    for (const field of ['firstAt', 'secondAt']) if (recorded[field] !== 0) recorded[field] = new Timestamp(recorded[field].seconds, recorded[field].nanoseconds);
+    record(['cooling', 'recorded'], recorded, rows);
+  }
   for (const [field, [collection, sub]] of Object.entries(HISTORIES)) for (const [id, records] of Object.entries(archive[field])) list(records, [collection, id, sub]);
   for (const [field, [collection, sub]] of Object.entries(DATED)) for (const [date, records] of Object.entries(archive[field])) list(records, [collection, date, sub]);
   for (const [date, review] of Object.entries(archive.wasteReviews)) record(['waste', date], review, rows);
@@ -124,6 +130,10 @@ try {
   const oldCooling = { v: 1, run: 'cooling-current-older', rev: 2, firstAt: firstStart, firstBy: 'cook-a',
     secondAt: new Timestamp(firstStart.seconds + 7200 + 600, 789012000), secondBy: 'worker-a', by: 'worker-a' };
   await put(source, 'cooling/current', oldCooling);
+  const oldRecorded = { v: 1, run: oldCooling.run,
+    firstAt: new Timestamp(firstStart.seconds + 7200 + 30, 234567000), firstBy: 'worker-a',
+    secondAt: new Timestamp(oldCooling.secondAt.seconds + 14400 + 30, 890123000), secondBy: 'cook-a', by: 'cook-a' };
+  await put(source, 'cooling/recorded', oldRecorded);
   await put(source, 'cooling/unrelated', { excluded: 'synthetic-excluded-cooling-document' });
   await put(source, 'deliveries/delivery-null', { day: day(1), chilled: null, frozen: 0, receivedById: 'worker-a', by: 'cook-a', receivedAt: at - 86400000, recordedAt: at });
   await put(source, 'deliveries/outside-window', { day: day(4), chilled: 1, frozen: -19, receivedById: 'cook-a', by: 'cook-a' });
@@ -162,7 +172,10 @@ try {
   const archivedCooling = { ...oldCooling, firstAt: { seconds: oldCooling.firstAt.seconds, nanoseconds: oldCooling.firstAt.nanoseconds },
     secondAt: { seconds: oldCooling.secondAt.seconds, nanoseconds: oldCooling.secondAt.nanoseconds } };
   assert.deepEqual(original.coolingCurrent, archivedCooling, 'The named current cooling record retains exact Timestamp components outside the date window.');
-  assert(!JSON.stringify(original).includes('synthetic-excluded-cooling'), 'The exporter reads only the named current cooling document.');
+  const archivedRecorded = { ...oldRecorded, firstAt: { seconds: oldRecorded.firstAt.seconds, nanoseconds: oldRecorded.firstAt.nanoseconds },
+    secondAt: { seconds: oldRecorded.secondAt.seconds, nanoseconds: oldRecorded.secondAt.nanoseconds } };
+  assert.deepEqual(original.coolingRecorded, archivedRecorded, 'Recording confirmations retain their exact run, actors and Timestamp components outside the date window.');
+  assert(!JSON.stringify(original).includes('synthetic-excluded-cooling'), 'The exporter reads only the two named cooling documents.');
   assert.equal(original.cleaningTasks.length, 3, 'Every cleaning revision survives, including archived schedules older than the selected window.');
   assert.equal(original.cleaningDone.length, 2, 'Only cleaning completion records inside the selected window are included.');
   assert(original.cleaningDone.every(x => x.day >= day(2) && x.day <= day(0)));
@@ -185,6 +198,7 @@ try {
   assert.equal((await restored.listCollections()).length, 0, 'No target document is written before validation completes.');
   const invalid = { ...recovered, unexpectedSection: [] }; assert.throws(() => flatten(invalid));
   assert.throws(() => flatten({ ...recovered, coolingCurrent: { ...archivedCooling, firstAt: oldCooling.firstAt.toMillis() } }), 'Numeric starts cannot be restored as canonical cooling timestamps.');
+  assert.throws(() => flatten({ ...recovered, coolingRecorded: { ...archivedRecorded, firstAt: oldRecorded.firstAt.toMillis() } }), 'Numeric confirmation times cannot be restored as canonical cooling timestamps.');
   assert.equal((await restored.listCollections()).length, 0, 'Unknown sections fail before any target write.');
   const batch = db.batch();
   for (const [path, data] of rows) batch.set(document(restored, path), data);
@@ -200,15 +214,24 @@ try {
   assert.equal((await restored.collection('config').doc('admins').get()).exists, false);
   assert.equal((await restored.collection('cooling').doc('unrelated').get()).exists, false);
   assert.deepEqual((await restored.collection('cooling').doc('current').get()).data(), oldCooling);
+  assert.deepEqual((await restored.collection('cooling').doc('recorded').get()).data(), oldRecorded);
   assert.equal(Cooling.phase(Cooling.parse((await restored.collection('cooling').doc('current').get()).data()), at), 'second_due', 'Recovery preserves elapsed deadlines instead of restarting timers.');
   const firstOnly = { ...archivedCooling, rev: 1, secondAt: 0, secondBy: '', by: 'cook-a' };
   const firstOnlyRow = flatten({ ...recovered, coolingCurrent: firstOnly }).find(([path]) => path.join('/') === 'cooling/current');
   assert(firstOnlyRow[1].firstAt.isEqual(oldCooling.firstAt)); assert.equal(firstOnlyRow[1].secondAt, 0);
   assert.equal(Cooling.phase(Cooling.parse(firstOnlyRow[1]), at), 'first_due', 'Restoring an elapsed first stage does not start the second.');
+  const firstRecordedOnly = { ...archivedRecorded, secondAt: 0, secondBy: '', by: 'worker-a' };
+  const recordedOnlyRow = flatten({ ...recovered, coolingRecorded: firstRecordedOnly }).find(([path]) => path.join('/') === 'cooling/recorded');
+  assert(recordedOnlyRow[1].firstAt.isEqual(oldRecorded.firstAt)); assert.equal(recordedOnlyRow[1].secondAt, 0);
+  const previousRecorded = { ...archivedRecorded, run: 'cooling-previous-run' };
+  assert.equal(flatten({ ...recovered, coolingRecorded: previousRecorded }).find(([path]) => path.join('/') === 'cooling/recorded')[1].run, previousRecorded.run,
+    'A previous batch confirmation is preserved independently and cannot be mistaken for the current batch.');
   // A kitchen with no cooling data still has an explicit null current, without invented state.
   await document(restored, 'cooling/current').delete();
+  await document(restored, 'cooling/recorded').delete();
   const absentCooling = exportFile(restoredPin, join(folder, 'without-cooling.json'));
   assert.equal(absentCooling.coolingCurrent, null);
+  assert.equal(absentCooling.coolingRecorded, null);
   assert.equal((await restored.collection('guides').doc(identities.guides).collection('pages').get()).size, 0);
   assert.equal((await restored.collection('pinset').doc('cook-a').get()).data().at, undefined);
   console.log('Backup recovery: local demo guards, authenticated export and ' + recordCount + ' included documents round-tripped with identities, prep standards, temperatures, history and versions. Intentional omissions remain explicit.');

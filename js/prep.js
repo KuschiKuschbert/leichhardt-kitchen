@@ -177,7 +177,7 @@
     section: '', text: '', qty: '', recipeSearch: '', recipeOpen: false, recipeAll: false, tab: '',
     authed: false, tok: '', pinStep: '', pinOff: false, pinData: null, pf1: '', pf2: '', pinMsg: '',
     sections: [], activity: [], hideDone: false, rolledFor: '', learned: [], pickedText: '', staffOpen: false, exporting: '', moving: false, moveMsg: '', newPin: '', atab: startTab(), ordDate: dayNow(), ordLines: [], ordState: 'idle', otext: '', oqty: '', oneed: '', ordAll: [], ordAllAt: 0, ordBusy: false, osugg: [],
-    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, oLog: false, oDoneOpen: false, startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
+    retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, oLog: false, oDoneOpen: false, oCutOpen: false, startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
     adminsFor: '', adminsOff: null, level: '', stats: null, statsRange: 30, week: null, weekAt: 0, weekBusy: false,
@@ -2077,9 +2077,7 @@
         }));
       },
       changed: function (hint) {
-        // Catalogue saves invalidate today's in-memory grouping. The next Orders draw reads it once; recording an
-        // order only repaints its reminder and does not read the catalogue again.
-        if (hint && hint.catalogue) supCat = { key: '', list: null, state: 'idle' };
+        // Supplier changes repaint reminders. Orders does not read or group by the catalogue.
         cutPaint(); try { window.dispatchEvent(new Event('lk-supplier')); } catch (e) {}
       },
       completeReminder: function (key) { return cutOrdered(key, true); },
@@ -3021,8 +3019,9 @@
     var today = dayNow(), dates = [], k;
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
     f.getDoc(cfgDoc()).then(function (sn) { out.config = sn.exists() ? sn.data() : null; })
-      // One named canonical read for this manual backup: the current shared timer and its server start times.
+      // Two named canonical reads on this manual backup: the shared timer and staff declarations with exact times.
       .then(function () { part = 'cooling current'; return f.getDocFromServer(docRef('cooling', 'current')).then(function (sn) { out.coolingCurrent = sn.exists() ? sn.data() : null; }, function (e) { if (e && e.code === 'permission-denied') { left.push('cooling current'); return; } throw e; }); })
+      .then(function () { part = 'cooling recorded'; return f.getDocFromServer(docRef('cooling', 'recorded')).then(function (sn) { out.coolingRecorded = sn.exists() ? sn.data() : null; }, function (e) { if (e && e.code === 'permission-denied') { left.push('cooling recorded'); return; } throw e; }); })
       .then(function () { return all('activity'); }).then(function (r) { out.activity = r; })
       .then(function () { return all('sections'); }).then(function (r) { out.sections = r; })
       .then(function () { return all('learned'); }).then(function (r) { out.learned = r; })
@@ -6576,6 +6575,7 @@
     if (ptPop) ptDraw();
     rendering = false;
     bandSync();
+    if (S.name === 'orders') cutPaint();
     tmPaint();
     window.dispatchEvent(new Event('lk-back'));
   }
@@ -6665,7 +6665,7 @@
       if (!jobs.length) { S.ordRolling = false; lsSet('lk.ord.rolled', today); return; }
       return Wall(jobs).then(function () {
         S.ordRolling = false; lsSet('lk.ord.rolled', today); ordReload();
-        if (S.name === 'orders') toast(jobs.length + (jobs.length === 1 ? ' line' : ' lines') + ' not ordered yet rolled over from ' + dayName(src.date).toLowerCase());
+        if (S.name === 'orders' && canBrowse()) toast(jobs.length + (jobs.length === 1 ? ' line' : ' lines') + ' not ordered yet rolled over from ' + dayName(src.date).toLowerCase());
       });
     }).catch(function () { S.ordRolling = false; retryLater('ordroll'); });
   }
@@ -6818,12 +6818,12 @@
     var canTick = canBrowse() && !x.deleted, keep = lineMenuOk(x, x.date);
     // an ordered line keeps the ⋯'s room with nothing in it, so ticking Ordered moves no row
     var held = '<span class="nb-more nb-more-held' + (keep ? ' nb-more-fix' : '') + '" aria-hidden="true"></span>';
-    var by = x.ordered && x.orderedBy ? 'Ordered by ' + esc(x.orderedBy) + (x.orderedAt ? ' ' + clock(x.orderedAt) : '') : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : x.addedBy ? esc(x.addedBy) + (x.addedAt ? ' ' + clock(x.addedAt) : '') : '');
+    var by = x.ordered && x.orderedBy ? 'Ordered by ' + esc(x.orderedBy) + (x.orderedAt ? ' ' + clock(x.orderedAt) : '') : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : x.addedBy ? esc(x.addedBy) + (canBrowse() && x.addedAt ? ' ' + clock(x.addedAt) : '') : '');
     return '<li class="nb-row' + (x.ordered ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '">' +
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc('Ordered: ' + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
       '<span class="nb-main"><span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + needTag(x) +
       // Not sent on the words' line, before Used in (a line of its own, .o-used), so its room never adds a line
-      (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + justStamp(x.id) + recipeChips(x) + '</span>' +
+      (canBrowse() && rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + justStamp(x.id) + recipeChips(x) + '</span>' +
       metaHTML([], by) + '</span>' +
       (canBrowse() && can('del') ? (x.deleted || !x.ordered ? moreBtn(x, keep) : held) : keep ? (x.ordered ? held : moreBtn(x, true)) : '') +
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
@@ -6883,32 +6883,13 @@
     if (!list.length) return '';
     return '<div class="w-often"><span class="nb-ql">Usually ordered on a ' + esc(dname) + ' or often. Tap to add</span><div class="chiprow">' + list.map(function (e, i) { return '<button type="button" class="chip sq" data-p="oreg" data-i="' + i + '">' + esc(e.text) + (e.q ? ' <span class="nb-uq">' + esc(e.q) + '</span>' : '') + '</button>'; }).join('') + '</div></div>';
   }
-  /* Lines still not ordered after more than 3 days sit together at the top of today's list, under the day they were
-     first written, with one line on what to do. The block is the first thing under the add box, so there is no separate
-     nudge card any more (23 Oct 2026), and its rows leave out their own "Since" badge: the day heading says it. */
-  var ORD_LATE = 3;
-  function ordWait(x, today) { return Math.round((parseYmd(today) - parseYmd(x.since || x.date)) / 86400000); }
-  function ordOverdueHTML(list, today) {
-    if (!list.length) return '';
-    var by = {}, days = [];
-    list.forEach(function (x) { var d = x.since || x.date; if (!by[d]) { by[d] = []; days.push(d); } by[d].push(x); });
-    days.sort();
-    return '<div class="o-od" id="o-overdue"><h3 class="nb-sh">Waiting more than ' + ORD_LATE + ' days (' + list.length + ')</h3>' +
-      '<p class="hint o-od-tip">' + (canBrowse() ? 'Order them today, or remove what is not needed any more.' : 'Tell the head chef or a sous chef.') + '</p>' + days.map(function (d) {
-      var n = ordWait(by[d][0], today);
-      return '<h4 class="o-od-h">Written ' + esc(dayShort(d)) + ', ' + n + ' days ago</h4><ul class="nb-rows">' + by[d].map(ordRow).join('') + '</ul>';
-    }).join('') + '</div>';
-  }
   function ordersHTML() {
     // loadLearned: the order rollover and Closing soon need when tomorrow's list is written (summary/learned, once a day)
     if (can('add')) { loadOrdHist(); loadWSum(); loadOrdLearned(); loadLearned(); }
-    // one list (3 Nov 2026, work pages redesign A): today, then what is waiting from earlier days; By day and Everything
-    // to order went, chefs pick another day with the date chip
+    // Staff see all requests without waiting-age labels. Chefs retain age context and can pick another day.
     var br = canBrowse(), today = dayNow(), onToday = S.ordDate === today;
     if (!br && S.ordDate !== today) { S.ordDate = today; watchOrders(); }
     if (S.ordDate === today && S.ordState === 'ok') ordRoll();
-    if (br && onToday) supCatLoad();
-    var grouped = br && onToday && supGrouped();
     var live = (S.ordLines || []).filter(function (x) { return !x.deleted; });
     var nOrd = live.filter(function (x) { return x.ordered; }).length;
     /* on today's list, a line that was ticked as ordered stays for 10 minutes (so a mis-tap can be undone), then leaves the list. Other days show everything. */
@@ -6923,15 +6904,12 @@
       '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" enterkeyhint="done" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
       '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' + justHTML('o') +
       '<div class="w-pick nb-units" id="o-units">' + unitChipsHTML('o', S.oqty) + '</div>' + needChipsHTML() + '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintFull()) + '</p>' + oRegsHTML() + '</form>' : '';
-    var overdue = onToday ? shown.filter(function (x) { return !x.ordered && ordWait(x, today) > ORD_LATE; }) : [];
-    if (overdue.length) shown = shown.filter(function (x) { return overdue.indexOf(x) < 0; });
-    // waiting from earlier days: today's lines that rolled over (the ones more than 3 days old in their own block, as
-    // before); what was written today comes first
-    var earlier = onToday ? shown.filter(function (x) { return rolledN(x) > 0 && !x.ordered; }) : [];
-    var own = shown.filter(function (x) { return earlier.indexOf(x) < 0; }), byAdded = function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); };
-    var waitHTML = overdue.length || earlier.length ? '<div class="o-wait"><h3 class="nb-sh o-wait-h">Waiting from earlier days (' + (overdue.length + earlier.length) + ')</h3>' +
-      ordOverdueHTML(overdue, today) + (earlier.length ? '<ul class="nb-rows">' + earlier.slice().sort(byAdded).map(ordRow).join('') + '</ul>' : '') + '</div>' : '';
-    var moved = live.filter(function (x) { return shown.indexOf(x) < 0 && overdue.indexOf(x) < 0; }).sort(function (a, b) { return (b.orderedAt || 0) - (a.orderedAt || 0); });
+    var byAdded = function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); };
+    // Chef requests stay together: Out first, then oldest source day, then creation time. Completion is deliberately
+    // absent from this sort, so the existing ten-minute Undo hold keeps a ticked row under the finger. Staff use entry order.
+    var requestOrder = function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') ||
+      String(a.since || a.date).localeCompare(String(b.since || b.date)) || byAdded(a, b); };
+    var moved = live.filter(function (x) { return shown.indexOf(x) < 0; }).sort(function (a, b) { return (b.orderedAt || 0) - (a.orderedAt || 0); });
     var removedO = (S.ordLines || []).filter(function (x) { return x.deleted; });
     var removedBox = removedO.length && canBrowse() && can('del') ? '<button type="button" class="nb-link" data-p="oremoved">' + (S.oShowRemoved ? 'Hide' : 'Show') + ' removed (' + removedO.length + ')</button>' +
       (S.oShowRemoved ? '<ul class="nb-rows">' + removedO.map(ordRow).join('') + '</ul>' : '') : '';
@@ -6944,17 +6922,17 @@
     var offO = S.ordState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var body =
       (S.ordState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' :
-        offO + (grouped ? supGroupsHTML(own, function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') || byAdded(a, b); }, live.filter(function (x) { return earlier.indexOf(x) < 0 && overdue.indexOf(x) < 0; })) : own.length ? '<ul class="nb-rows">' + own.slice().sort(br && onToday ? function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') || byAdded(a, b); } : byAdded).map(ordRow).join('') + '</ul>' : (waitHTML || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))) + waitHTML);
+        offO + (shown.length ? '<ul class="nb-rows' + (br && onToday ? ' o-requests' : '') + '">' + shown.slice().sort(br && onToday ? requestOrder : byAdded).map(ordRow).join('') + '</ul>' : (offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))));
     return whoTopHTML() + tabs +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Order list</h2><span class="nb-date">' + esc(longDate(S.ordDate)) + '</span></div>' +
       (S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') +
-      (add ? dockBtn('nb-addline', 'o-write', 'Add to the order') : '') + '</header>' +
-      (onToday && !grouped ? cutOrdHTML() : '') +
+      (add ? dockBtn('nb-addline', 'o-write', 'Add request') : '') + '</header>' +
+      (onToday ? cutOrdHTML() : '') +
       (can('add') || S.ordDate !== today ? '' : '<p class="hint o-ro">You can read the order list but not write in it.</p>') +
       closeoutHTML(null, S.ordDate) +
       '<div class="o-cols"><div class="nb-body o-main">' + body + removedBox + '</div>' + (orderedBox ? '<div class="o-ordered">' + orderedBox + '</div>' : '') + '</div></section>' +
       // the add form as a sheet (3 Nov 2026), like Add a line on the prep list
-      (add && S.oLog ? '<div class="sheet-bg" data-p="o-log-close"></div><div class="sheet o-sheet" role="dialog" aria-modal="true" aria-labelledby="o-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="o-log-h">Add to the order list</h3>' + add +
+      (add && S.oLog ? '<div class="sheet-bg" data-p="o-log-close"></div><div class="sheet o-sheet" role="dialog" aria-modal="true" aria-labelledby="o-log-h"><div class="sheet-grip" aria-hidden="true"></div><h3 id="o-log-h">Add request</h3>' + add +
         (canBrowse() ? '' : '<p class="hint nb-who">Only the head chef or a sous chef ticks a line as ordered or removes it. Wrote the wrong thing? Undo it straight away, or ask them.</p>') + '<button type="button" class="btn sheet-x" data-p="o-log-close">Close</button></div>' : '');
   }
 
@@ -10502,7 +10480,7 @@
       });
       cutSeen = seen; cutState = k === 'wait' ? 'offline' : 'ok';
       cutShow();
-    }, function () { if (cutSub) cutSub(); cutSub = null; cutErr = { key: cutSubKey + '|' + cutReader(), at: Date.now() }; cutSubKey = ''; });
+    }, function () { if (cutSub) cutSub(); cutSub = null; cutErr = { key: cutSubKey + '|' + cutReader(), at: Date.now() }; cutSubKey = ''; cutState = 'error'; cutShow(); });
   }
   // the shared ticks changed on this phone: the bar, the tick lists and the card in Supplier order (lk-cut) follow
   function cutShow() { cutPaint(); if (S.name === 'orders' || todoHere()) draw(); try { window.dispatchEvent(new Event('lk-cut')); } catch (e) {} }
@@ -10539,7 +10517,7 @@
           cutShow();
         }
         throw e;
-      }).finally(function () { if (cutWrites[key] === write) delete cutWrites[key]; });
+      }).finally(function () { if (cutWrites[key] === write) { delete cutWrites[key]; if (context === supplierContext()) cutOrdPaint(); } });
     }
     // Keep the initiating writer if a PIN session is still opening. No supplier catalogue read is needed.
     return sessP ? track(Promise.resolve(sessP).then(save, save)) : save();
@@ -10552,7 +10530,7 @@
     return c ? c.s.name + ' ' + hhmm(c.at) : '';
   }
   function cutBandHTML() {
-    if (!cutWho()) return '';
+    if (location.hash.split('?')[0] === '#/orders' && S.ordDate === dayNow() || !cutWho()) return '';
     var m = T.mins(), done = cutDone(), xs = cutOn(0).concat(cutOn(1)).filter(function (c) { return cutOnNow(c, m) && !done[c.key]; });
     if (!xs.length) return '';
     return '<div class="cut-top"><h2 class="cut-h">Order cut-off' + (xs.length > 1 ? 's' : '') + '</h2><a class="cut-go" href="#/orders">Order list</a></div>' +
@@ -10564,7 +10542,7 @@
   }
   // js/app.js draws the empty slot under the top bar (and the Functions band); this fills it and keeps it right as time passes
   function cutPaint() {
-    cutWatch(); pushKeep(); homePaint();
+    cutWatch(); pushKeep(); homePaint(); cutOrdPaint();
     var el = document.getElementById('cut-band');
     if (!el) return;
     var h = cutBandHTML();
@@ -10819,103 +10797,90 @@
   window.addEventListener('lk-cfg', function () { cutWatch(); cutPaint(); });
   window.addEventListener('lk-clock', cutPaint);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') cutPaint(); });
-  /* Supplier orders: the tick list on the order list and on Chef to-do, for the head chef and sous chefs. Today's
-     cut-offs, and tomorrow's whose reminder has already started (an early one, the night before), soonest first. Each
-     row is a tick box: ordered (by whom, when), the time left, or Closed and not ticked. */
-  // today's cut-offs, and tomorrow's whose reminder has started, soonest first: the tick list's rows and the supplier groups
+  /* Supplier confirmations: today's cut-offs and active tomorrow reminders. Orders has named actions inside its
+     disclosure; Chef to-do stays read-only. Both retain attribution, absolute dates and unconfirmed deadlines. */
+  // Today's cut-offs, and tomorrow's whose reminder has started, soonest first.
   function cutRowsNow() { var m = T.mins(); return cutToday().concat(cutOn(1).filter(function (c) { return cutOnNow(c, m); })); }
   /* Tomorrow, heads-up (5 Nov 2026, the head chef's supplier patterns): tomorrow's cut-offs for a delivery 2 or more days
      after them ("Wednesday's order by Friday 16:00"), all the day before, until their own reminder starts. A row has
      Ordered already instead of a tick box, so nobody ticks it to mean "seen": it is only for an order placed early, and
      writes tomorrow's tick (cutdone/<tomorrow>_<id>), which the listener already reads, with the same Undo. No reads. */
   function cutAhead() { var m = T.mins(); return cutOn(1).filter(function (c) { return !cutOnNow(c, m) && CUT.headsAt(c) !== null; }); }
-  function cutRowsHTML(ro) {
-    var xs = cutRowsNow(), ah = cutAheadHTML(ro);
+  function cutRowsHTML(ro, named) {
+    var xs = cutRowsNow(), ah = cutAheadHTML(ro, named);
     if (!xs.length && !ah) return '<p class="hint">No cut-offs today.</p>';
-    return (cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '') + (xs.length ? '<ul class="cut-tl">' + xs.map(function (c) { return cutRowHTML(c, ro); }).join('') + '</ul>' : '<p class="hint">No cut-offs today.</p>') + ah;
+    return (cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '') + (xs.length ? '<ul class="cut-tl">' + xs.map(function (c) { return cutRowHTML(c, ro, named); }).join('') + '</ul>' : '<p class="hint">No cut-offs today.</p>') + ah;
   }
-  // the heads-up block, under today's tick list and under the supplier groups: '' when there is none
-  function cutAheadHTML(ro) {
+  // The heads-up block under today's confirmations: '' when there is none.
+  function cutAheadHTML(ro, named) {
     var ah = cutAhead();
     if (!ah.length) return '';
-    return '<h4 class="cut-ah">Tomorrow, heads-up</h4>' + (ro ? '' : '<p class="hint cut-how">Ordered already is only for an order placed early. It stops tomorrow\'s reminder.</p>') + '<ul class="cut-hl">' + ah.map(function (c) { return cutAheadRow(c, ro); }).join('') + '</ul>';
+    return '<h4 class="cut-ah">Tomorrow, heads-up</h4>' + (ro || named ? '' : '<p class="hint cut-how">Ordered already is only for an order placed early. It stops tomorrow\'s reminder.</p>') + '<ul class="cut-hl">' + ah.map(function (c) { return cutAheadRow(c, ro, named); }).join('') + '</ul>';
   }
-  function cutAheadRow(c, ro) {
-    if (cutDone()[c.key]) return cutRowHTML(c, ro);   // ordered early: an ordinary ticked row, which can be taken off again
+  function cutAheadRow(c, ro, named) {
+    if (named) return cutRowHTML(c, ro, true, true);
+    if (cutDone()[c.key]) return cutRowHTML(c, ro, named);   // ordered early: an ordinary ticked row, which can be taken off again
     return '<li class="cut-o is-ahead"><a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">by tomorrow ' + hhmm(c.t) + ' ' + esc(cutDel(c)) + '</span>' +
       (ro ? '<span class="cut-st">Tomorrow</span>' : '<button type="button" class="btn cut-early" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="false" aria-label="' + esc('Ordered already from ' + c.s.name + ', for tomorrow\'s cut-off') + '"' + (cutCanTick() ? '' : ' disabled') + '>Ordered already</button>') + '</li>';
   }
-  // more: a few words after the time, from the caller (the supplier groups add how many of its lines are ordered)
-  function cutRowHTML(c, ro, more) {
+  // Named actions on Orders distinguish an externally placed order from ticking one request.
+  function cutRowHTML(c, ro, named, ahead) {
     var m = T.mins(), done = cutDone();
     var d = done[c.key], past = c.at <= m, who = d ? cutByName(d) : '';
     var st = d ? 'Ordered' + (who ? ' by ' + who : '') + (d.at ? ', ' + clock(d.at) : '') : past ? 'Closed, not ticked' : cutIn(c.at - m);
     var cls = d ? 'is-done' : past ? 'is-past' : c.at - m <= CUT_SOON ? 'is-soon' : '';
+    if (named) {
+      var pending = !!cutWrites[c.key], known = cutState === 'ok';
+      st = pending ? 'Not sent' : d ? st : !known ? 'Confirmation not checked' : past ? 'Closed, not confirmed' : ahead ? 'For tomorrow' : st;
+      return '<li class="cut-o o-cut-row ' + (pending ? 'is-pending' : cls) + '"><a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a>' +
+        '<span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span>' +
+        '<button type="button" class="cut-box o-cut-action" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Undo order placed for ' : 'Order placed for ') + c.s.name + (c.at >= 1440 ? ', for tomorrow' : '')) + '"' + (cutCanTick() ? '' : ' disabled') + '>' + (d ? 'Undo' : 'Order placed' + (ahead ? ' for tomorrow' : '')) + '</button></li>';
+    }
     return '<li class="cut-o ' + cls + '">' + (ro ? '<span class="cut-box cut-mark" aria-hidden="true">' + (d ? '&#10003;' : '') + '</span>' : '<button type="button" class="cut-box" data-p="cut-tick" data-id="' + esc(c.key) + '" aria-pressed="' + !!d + '" aria-label="' + esc((d ? 'Ordered from ' : 'Tick when ordered from ') + c.s.name) + '"' + (cutCanTick() ? '' : ' disabled') + '><span aria-hidden="true">' + (d ? '&#10003;' : '') + '</span></button>') +
-      '<a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + (more ? '<span class="o-sgs"> · ' + esc(more) + '</span>' : '') + '</span><span class="cut-st">' + esc(st) + '</span></li>';
+      '<a class="cut-n" href="#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day) + '">' + esc(c.s.name) + '</a><span class="cut-t">by ' + (c.at >= 1440 ? 'tomorrow ' : '') + hhmm(c.at % 1440) + ' ' + esc(cutDel(c)) + '</span><span class="cut-st">' + esc(st) + '</span></li>';
+  }
+  /* Orders C (9 Nov 2026): one compact disclosure, separate from the staff requests. Reuse the existing cut-off
+     listener and clock; no catalogue, extra reads or saved disclosure state. Never open it on a live update. */
+  function cutOrdSummaryHTML() {
+    var xs = cutRowsNow().concat(cutAhead()).sort(function (a, b) { return a.at - b.at; });
+    var done = cutDone(), pending = xs.filter(function (c) { return !!cutWrites[c.key]; }).length;
+    var due = xs.filter(function (c) { return !done[c.key]; }), late = due.filter(function (c) { return c.at <= T.mins(); }).length;
+    var next = due[0], title = 'Supplier cut-offs', detail = '', detailHTML = '';
+    if (pending) detail = 'Not sent. Waiting for confirmation.';
+    else if (cutState === 'error') detail = 'Could not check confirmations.';
+    else if (cutState === 'offline') detail = 'No signal. Status not checked.';
+    else if (cutState !== 'ok') detail = 'Checking confirmations...';
+    else if (next) {
+      title = due.length + ' cut-off' + (due.length === 1 ? '' : 's') + (late ? ' · ' + late + ' overdue' : ' due');
+      detail = (next.at >= 1440 ? 'tomorrow ' : '') + 'by ' + hhmm(next.at % 1440);
+      detailHTML = '<span class="o-cut-name" title="' + esc(next.s.name) + '">' + esc(next.s.name) + '</span><span class="o-cut-at"> · ' + esc(detail) + '</span>';
+    } else detail = xs.length ? 'All supplier orders placed' : 'No cut-offs today';
+    return '<span class="o-cut-copy"><strong>' + esc(title) + '</strong><span class="o-cut-detail' + (detailHTML ? ' has-deadline' : '') + '">' + (detailHTML || esc(detail)) + '</span></span>' +
+      '<span class="o-cut-cue"><span class="o-cut-view">View</span><span class="o-cut-hide">Hide</span><span class="o-cut-chevron" aria-hidden="true"></span></span>';
+  }
+  function cutOrdBodyHTML() {
+    var warning = cutState === 'error' ? '<p class="p-err" role="status">Could not check supplier confirmations. Known cut-offs are shown below.</p>' :
+      cutState === 'loading' ? '<p class="hint" role="status">Checking supplier confirmations...</p>' : '';
+    return warning + '<p class="hint cut-how">Confirm only after placing the order in your ordering system, by phone or email. Requests stay on the list until you tick them.</p>' + cutRowsHTML(false, true) + pushHTML();
   }
   function cutOrdHTML() {
     if (!cutHas()) return '';
     cutWatch(); pushKeep();
-    return '<section class="cut-today" aria-label="Supplier orders"><h3 class="nb-sh">Supplier orders today</h3><p class="hint cut-how">Tick each supplier once the order is in, by phone, email or its site. This is the one place to tick it: every chef sees it, and its reminder and pushes stop.</p>' + cutRowsHTML() + pushHTML() + '</section>';
+    return '<details class="cut-today o-cut-fold" aria-label="Supplier cut-offs"' + (S.oCutOpen ? ' open' : '') + '><summary data-p="o-cut-toggle">' + cutOrdSummaryHTML() + '</summary><div class="o-cut-body">' + cutOrdBodyHTML() + '</div></details>';
   }
-  /* Supplier groups (5 Nov 2026, head chef, round 2 of the work pages redesign, as drawn in B): on today's order list the
-     head chef and sous chefs see the requests under each supplier's cut-off, its tick, time left and state as the
-     heading, then Open the supplier's order and Delivery received (Delivery arrived until 8 Nov 2026); what the catalogue cannot match goes under No supplier
-     yet. A request matches a catalogue item by its exact name or a confirmed alias only (LK_SUP_CORE.matchRequests), and
-     goes under the first cut-off it matches. Staff never see suppliers: their list is as before, and so is a chef's on
-     another day, while the catalogue is not read, or when no catalogue supplier is linked to today's cut-offs. The
-     tick never waits for the catalogue: the plain list and the groups both tick through cutConfirm().
-     Read: the supplier catalogue, one read per supplier (at least one), when a chef opens today's order list, then kept
-     in memory only for that person and kitchen day (never on the phone: goods are private). A failed read keeps the plain
-     list; Refresh on the supplier page reads it again there. */
-  var supCat = { key: '', list: null, state: 'idle' };
-  function supCatLoad() {
-    if (!supplierRead() || !cutHas()) return;
-    var k = supplierContext() + '|' + dayNow();
-    if (supCat.key === k) return;
-    var pending = { key: k, list: null, state: 'loading' }; supCat = pending;
-    supplierTools().then(function (st) { return st.loadSuppliers(); }).then(function (list) {
-      if (supCat !== pending) return;
-      supCat.list = list || []; supCat.state = 'ok'; if (S.name === 'orders') draw();
-    }, function () { if (supCat === pending) { supCat.state = 'error'; if (S.name === 'orders') draw(); } });
-  }
-  // grouped only when a catalogue supplier is linked to one of the cut-offs shown: with none, every request would sit
-  // under No supplier yet, so the plain list stays
-  function supGrouped() {
-    if (supCat.state !== 'ok' || !supCat.list || supCat.key !== supplierContext() + '|' + dayNow() || !window.LK_SUP_CORE || !cutHas()) return false;
-    var ids = cutRowsNow().map(function (c) { return c.s.id; });
-    return supCat.list.some(function (x) { return ids.indexOf(x.cutoffId) >= 0; });
-  }
-  /* Redesign step 3 (8 Nov 2026, head chef; Flighty, as drawn in every-page.html e-orders): what no supplier names comes
-     first, under No supplier yet (ordered by hand); then each supplier under its cut-off row, its tick (the one place to
-     tick it), the time left and how many of its lines are ordered. The count is of all today's lines it names, the ones
-     ticked more than 10 minutes ago in Ordered today too. No reads: the catalogue is the one already in memory. */
-  function supGroupsHTML(lines, order, all) {
-    cutWatch(); pushKeep();
-    var C = window.LK_SUP_CORE, rest = (all || lines).slice(), shown = {};
-    lines.forEach(function (x) { shown[x.id] = 1; });
-    var groups = cutRowsNow().map(function (c) {
-      var sups = supCat.list.filter(function (x) { return x.cutoffId === c.s.id; }), items = [];
-      sups.forEach(function (x) { items = items.concat(x.items || []); });
-      var hit = {};
-      C.matchRequests(items, rest.map(function (x) { return { id: x.id, text: x.text }; })).matches.forEach(function (m) { m.requestIds.forEach(function (id) { hit[id] = 1; }); });
-      var mine = rest.filter(function (x) { return hit[x.id]; });
-      rest = rest.filter(function (x) { return !hit[x.id]; });
-      return { c: c, all: mine, lines: mine.filter(function (x) { return shown[x.id]; }), linked: sups.length };
-    });
-    var left = rest.filter(function (x) { return shown[x.id]; });
-    var rows = function (l) { return '<ul class="nb-rows">' + l.slice().sort(order).map(ordRow).join('') + '</ul>'; };
-    var count = function (l) { return l.filter(function (x) { return x.ordered; }).length + ' of ' + l.length + ' ordered'; };
-    return '<section class="cut-today o-sups" aria-label="Supplier orders">' +
-      (cutState === 'offline' ? '<p class="hint cut-note" role="status">' + CUT_OFF + '</p>' : '') +
-      (left.length ? '<div class="o-sup o-sup-none"><div class="o-sgh"><h3 class="nb-sh">No supplier yet</h3><span class="o-sgs">Order by hand · ' + esc(count(rest)) + '</span></div>' + rows(left) + '</div>' : '') +
-      '<p class="hint cut-how">Tick a supplier once its order is in, by phone, email or its site. Every chef sees it, and its reminder stops.</p>' +
-      groups.map(function (g) {
-        var c = g.c, to = '#/suppliers/cutoff/' + encodeURIComponent(c.s.id) + '/' + encodeURIComponent(c.day);
-        return '<div class="o-sup"><ul class="cut-tl">' + cutRowHTML(c, false, g.all.length ? count(g.all) : '') + '</ul>' + (g.lines.length ? rows(g.lines) : '<p class="hint o-sup-empty">Nothing asked for from ' + esc(c.s.name) + ' yet.</p>') +
-          '<p class="o-sup-acts">' + (g.linked === 1 ? '<a class="chip" href="' + to + '">Open ' + esc(c.s.name) + ' order</a>' : '') + '<a class="chip" href="#/deliveries">Delivery received</a></p></div>';
-      }).join('') + cutAheadHTML() + pushHTML() + '</section>';
+  // Clock/status paints only replace changed deadline content, preserving the disclosure and request rows.
+  function cutOrdPaint() {
+    var fold = document.querySelector('.o-cut-fold'); if (!fold) return;
+    var summary = fold.querySelector('summary'), body = fold.querySelector('.o-cut-body');
+    var sh = cutOrdSummaryHTML(), bh = cutOrdBodyHTML();
+    if (summary.lkH !== sh) { summary.innerHTML = sh; summary.lkH = sh; }
+    if (body.lkH !== bh) {
+      var active = document.activeElement, inside = active && body.contains(active);
+      var sel = inside && active.hasAttribute('data-p') ? guestSel(active) : '', href = inside && active.getAttribute('href');
+      body.innerHTML = bh; body.lkH = bh;
+      var back = sel ? body.querySelector(sel) : href ? Array.prototype.find.call(body.querySelectorAll('a[href]'), function (a) { return a.getAttribute('href') === href; }) : null;
+      if (back) back.focus({ preventScroll: true });
+    }
   }
   // the same list at the top of Chef to-do, to see, not tick (5 Nov 2026: ticked on the order list only)
   function cutTodoHTML() {
@@ -11430,6 +11395,7 @@
     if (localReturn(a)) return;
     if (a.indexOf('lv-') === 0) { lvClick(a, el); return; }
     if (a.indexOf('dk-') === 0) { dkClick(a, el); return; }
+    if (a === 'o-cut-toggle') { e.preventDefault(); var fold = el.closest('details'); if (fold) { fold.open = !fold.open; S.oCutOpen = fold.open; } return; }
     if (a === 'cut-tick') { var ck = el.getAttribute('data-id') || ''; if (el.getAttribute('aria-pressed') !== 'true') cutConfirm(ck); else cutOrdered(ck, false).catch(function (er) { failed(er); }); return; }
     if (a === 'cut-push-on') { pushOn(); return; }
     if (a === 'cut-push-off') { pushOff(); return; }
@@ -13746,7 +13712,7 @@
     if ((typedHere() || coolingBusy()) && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { e.preventDefault(); e.returnValue = ''; }
   });
   window.addEventListener('storage', function (e) { if (((e.key === 'lk.prep.who' || e.key === 'lk.prep.sess') && !e.newValue || e.key === 'lk.auth.lock') && (S.authed || S.user)) signOutPerson(true, true); });
-  /* Operandio: one canonical live record while authorised, one read on subscribe and one per shared change.
+  /* Operandio: two bounded live records while authorised, two reads on subscribe and one per shared change.
      Countdown and on-screen alert ticks never read or write Firestore. */
   var coolingController = null, coolingTickTimer = null, coolingRouteWant = false, coolingRouteHandled = '', coolingPaintTimer = null;
   function coolingEligible() { return !!(fb && kitchenAccess() && canW() && me()); }
@@ -13756,7 +13722,7 @@
       pinAt: S.sessPinAt, mode: deviceMode(), canRead: coolingEligible(), context: context };
   }
   function coolingRef(path, session) {
-    if (path !== 'cooling/current') throw new Error('Invalid cooling path');
+    if (path !== 'cooling/current' && path !== 'cooling/recorded') throw new Error('Invalid cooling path');
     return fb.fs.doc.apply(null, [fb.db, 'kitchens', session.pin].concat(path.split('/')));
   }
   function coolingSnapshot(sn) {
@@ -13773,13 +13739,40 @@
   }
   function coolingWrite(kind, path, data, session) {
     if ((kind !== 'set' && kind !== 'update') || !coolingSessionCurrent(session)) return Promise.reject({ code: 'cancelled', definite: true });
-    // W retains the original recorder across a lock. The rules arbitrate simultaneous starts using the revision
-    // and server timestamp; an uncertain acknowledgement must never submit another start.
+    // W retains the original recorder across a lock. Rules arbitrate starts and immutable stage confirmations;
+    // an uncertain acknowledgement must never submit the action again.
     return W([[kind === 'update' ? 'upd' : 'set', coolingRef(path, session), data]], session.context);
   }
-  // Personal dismissal markers only, no timer times, names or content. Bound to this kitchen/device/person and capped
-  // by the controller; a different run ID never inherits an old dismissal. No reads or writes to other people's alerts.
-  function coolingSeenKey(session) { return 'lk.cooling.seen.' + session.pin + '.' + session.uid + '.' + session.by; }
+  // Presented event IDs only, no names, timer content or completion claims. Device-scoped so a shared screen
+  // stays quiet after handover/reload. A new run/stage has a new ID; keep only the latest 64 markers.
+  function coolingSeenKey(session) { return 'lk.cooling.seen.' + session.pin + '.' + session.uid; }
+  function coolingReadSeen(session) {
+    var seen = Object.create(null), key = coolingSeenKey(session), migrated = false;
+    // Retain former personal dismissals during the upgrade. These IDs are not evidence of recording in Operandio.
+    var keys = [key];
+    try { Object.keys(LS || {}).forEach(function (savedKey) { if (savedKey.indexOf(key + '.') === 0) keys.push(savedKey); }); } catch (e) {}
+    keys.forEach(function (savedKey) {
+      try {
+        var saved = JSON.parse(lsGet(savedKey) || '{}');
+        if (saved && typeof saved === 'object') Object.keys(saved).forEach(function (id) {
+          if (/^[A-Za-z0-9_-]{16,80}_[12]$/.test(id) && saved[id] === true) {
+            if (savedKey !== key && !seen[id]) migrated = true;
+            seen[id] = true;
+          }
+        });
+      } catch (e) {}
+    });
+    var ids = Object.keys(seen); ids.slice(0, Math.max(0, ids.length - 64)).forEach(function (id) { delete seen[id]; });
+    // Save an inherited dismissal even when it suppresses the popup, before the next person uses this device.
+    if (migrated) lsSet(key, JSON.stringify(seen));
+    return seen;
+  }
+  function coolingWriteSeen(session, value) {
+    var merged = Object.assign(coolingReadSeen(session), value), bounded = Object.create(null);
+    Object.keys(merged).filter(function (id) { return /^[A-Za-z0-9_-]{16,80}_[12]$/.test(id) && merged[id] === true; })
+      .slice(-64).forEach(function (id) { bounded[id] = true; });
+    lsSet(coolingSeenKey(session), JSON.stringify(bounded));
+  }
   function coolingChanged() {
     if (coolingPaintTimer) return;
     coolingPaintTimer = setTimeout(function () { coolingPaintTimer = null; try { window.dispatchEvent(new Event('lk-cooling')); } catch (e) {} }, 0);
@@ -13794,9 +13787,8 @@
     if (coolingController || !window.LK_COOLING_APP || !window.LK_COOLING_UI) return coolingController;
     coolingController = window.LK_COOLING_APP.create({ session: coolingSession, now: now, watch: coolingWatch, write: coolingWrite,
       timestamp: function () { return fb.fs.serverTimestamp(); }, changed: coolingChanged, chime: coolingChime, stopChime: coolingStopChime,
-      readSeen: function (session) { try { return JSON.parse(lsGet(coolingSeenKey(session)) || '{}'); } catch (e) { return {}; } },
-      writeSeen: function (session, seen) { lsSet(coolingSeenKey(session), JSON.stringify(seen)); },
-      uiHooks: { esc: esc, clock: T.clock,
+      readSeen: coolingReadSeen, writeSeen: coolingWriteSeen,
+      uiHooks: { esc: esc, clock: T.clock, personName: mnName,
         canOpen: function () { return coolingEligible() && !namesUp() && !sheetBusy(); },
         opened: function (kind, closeFromBack) { ovPush('cooling', closeFromBack); },
         closed: function (kind, noBack) { if (kind === 'ping') coolingStopChime(); ovDone('cooling', noBack); setTimeout(sheetNext, 0); },
@@ -13824,6 +13816,9 @@
   window.addEventListener('lk-clock', coolingTick);
   window.addEventListener('lk-access', coolingSync);
   window.addEventListener('online', function () { if (coolingController) coolingController.retryRead(); });
+  window.addEventListener('storage', function (e) {
+    if (coolingController && coolingEligible() && e.key === coolingSeenKey(coolingSession())) coolingController.refreshSeen();
+  });
   window.addEventListener('hashchange', function () { if (location.hash !== '#/cooling') { coolingRouteWant = false; coolingRouteHandled = ''; } });
   document.addEventListener('visibilitychange', function () { if (!document.hidden) { coolingSync(); coolingTick(); } });
 

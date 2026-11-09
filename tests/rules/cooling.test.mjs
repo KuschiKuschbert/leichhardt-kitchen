@@ -19,6 +19,12 @@ const complete = (extra = {}) => waiting({ rev: 2, firstAt: Timestamp.fromMillis
   secondAt: Timestamp.fromMillis(DAY_START - 14400000 - 1000), secondBy: 'sous', by: 'sous', ...extra });
 const first = (by, extra = {}) => waiting({ firstAt: serverTimestamp(), firstBy: by, by, ...extra });
 const second = (by, extra = {}) => ({ rev: 2, secondAt: serverTimestamp(), secondBy: by, by, ...extra });
+const recorded = (by, stage = 1, extra = {}) => ({ v: 1, run: runId,
+  firstAt: stage === 1 ? serverTimestamp() : 0, firstBy: stage === 1 ? by : '',
+  secondAt: stage === 2 ? serverTimestamp() : 0, secondBy: stage === 2 ? by : '', by, ...extra });
+const recordStage = (by, stage, extra = {}) => ({ run: runId,
+  [stage === 1 ? 'firstAt' : 'secondAt']: serverTimestamp(), [stage === 1 ? 'firstBy' : 'secondBy']: by, by, ...extra });
+const RD = d => D(d, 'cooling/recorded');
 async function put(path, value) { await env.withSecurityRulesDisabled(c => value === null ? deleteDoc(doc(c.firestore(), K + path)) : setDoc(doc(c.firestore(), K + path), value)); }
 const db = uid => anonContext(env, uid).firestore(), D = (d, path = 'cooling/current') => doc(d, K + path);
 // Pin request.time only in these source variations, like function-midnight.test.mjs. Normal cases use the real emulator clock.
@@ -142,6 +148,79 @@ try {
     const value = (await getDoc(D(staff))).data();
     check(value.rev === (stage === 'first' ? 1 : stage === 'second' ? 2 : 3), stage + ' racing clients cannot advance twice');
   }
+  // Shared declarations are a separate bounded document. The timer and old client schema stay untouched.
+  for (const role of kitchenRoles) {
+    const d = db(role), by = roles[role];
+    await put('cooling/current', complete()); await put('cooling/recorded', null);
+    await pass(role + ' reads absent shared confirmations', getDoc(RD(d)));
+    await pass(role + ' confirms the due first stage', setDoc(RD(d), recorded(by)));
+    const one = (await getDoc(RD(d))).data();
+    check(one.firstAt instanceof Timestamp && one.firstBy === by && one.secondAt === 0 && one.by === by, role + ' first confirmation uses server time and recorder');
+    await deny(role + ' cannot rewrite a confirmed first stage', updateDoc(RD(d), recordStage(by, 1)));
+    await deny(role + ' cannot delete shared confirmations', deleteDoc(RD(d)));
+    await pass(role + ' confirms second stage without changing first', updateDoc(RD(d), recordStage(by, 2)));
+    const both = (await getDoc(RD(d))).data();
+    check(both.firstAt.isEqual(one.firstAt) && both.firstBy === one.firstBy && both.secondAt instanceof Timestamp && both.secondBy === by, role + ' first declaration stays exact');
+    await deny(role + ' cannot rewrite a confirmed second stage', updateDoc(RD(d), recordStage(by, 2)));
+    check((await getDoc(D(d))).data().rev === 2, role + ' confirmations never change timer revision');
+    await put('cooling/recorded', null);
+    await pass(role + ' may confirm second stage first', setDoc(RD(d), recorded(by, 2)));
+    await pass(role + ' may then confirm the unrecorded first stage', updateDoc(RD(d), recordStage(by, 1)));
+  }
+  for (const [label, d, by] of invalid) {
+    await put('cooling/current', complete()); await put('cooling/recorded', null);
+    await deny(label + ' cannot read absent declarations', getDoc(RD(d)));
+    await deny(label + ' cannot confirm a stage', setDoc(RD(d), recorded(by)));
+    await put('cooling/recorded', recorded('staff', 1, { firstAt: Timestamp.fromMillis(NOW - 1000) }));
+    await deny(label + ' cannot read saved declarations', getDoc(RD(d)));
+    await deny(label + ' cannot confirm another stage', updateDoc(RD(d), recordStage(by, 2)));
+  }
+  await put('cooling/current', complete()); await put('cooling/recorded', null);
+  for (const [label, patch] of [
+    ['forged writer', { by: 'head' }], ['forged first recorder', { firstBy: 'head' }],
+    ['chosen first time', { firstAt: Timestamp.fromMillis(NOW) }], ['numeric first time', { firstAt: NOW }],
+    ['different run', { run: 'other-1234567890123456' }], ['missing run', { run: '' }], ['extra field', { completed: true }],
+    ['wrong version', { v: 2 }], ['empty recorder', { firstBy: '' }], ['both stages at once', { secondAt: serverTimestamp(), secondBy: 'staff' }],
+    ['unconfirmed actor', { secondBy: 'staff' }], ['no stage confirmed', { firstAt: 0, firstBy: '' }]
+  ]) await deny('confirmation refuses ' + label, setDoc(RD(staff), recorded('staff', 1, patch)));
+  for (const field of Object.keys(recorded('staff'))) {
+    const value = recorded('staff'); delete value[field];
+    await deny('confirmation requires ' + field, setDoc(RD(staff), value));
+  }
+  await put('cooling/current', null);
+  await deny('no timer cannot be confirmed', setDoc(RD(staff), recorded('staff')));
+  await put('cooling/current', waiting({ firstAt: Timestamp.fromMillis(NOW - 7200000 + 60000) }));
+  await deny('first confirmation cannot precede server deadline', setDoc(RD(staff), recorded('staff')));
+  await put('cooling/current', waiting());
+  await deny('second confirmation requires its timer to have started', setDoc(RD(staff), recorded('staff', 2)));
+  await put('cooling/current', complete({ secondAt: Timestamp.fromMillis(NOW - 14400000 + 60000) }));
+  await deny('second confirmation cannot precede server deadline', setDoc(RD(staff), recorded('staff', 2)));
+  await put('cooling/current', complete());
+  await pass('staff creates confirmation before another writer', setDoc(RD(staff), recorded('staff')));
+  const prior = (await getDoc(RD(staff))).data();
+  await deny('different writer cannot erase first declaration', setDoc(RD(db('view')), recorded('view', 2)));
+  await deny('different writer cannot reattribute first declaration', updateDoc(RD(db('view')), recordStage('view', 2, { firstBy: 'view' })));
+  await deny('different writer cannot replace first timestamp', updateDoc(RD(db('view')), recordStage('view', 2, { firstAt: serverTimestamp() })));
+  await pass('different writer confirms second while preserving first', updateDoc(RD(db('view')), recordStage('view', 2)));
+  const crossWriter = (await getDoc(RD(staff))).data();
+  check(crossWriter.firstAt.isEqual(prior.firstAt) && crossWriter.firstBy === 'staff' && crossWriter.secondBy === 'view' && crossWriter.by === 'view', 'second writer retains first recorder');
+  for (const stage of [1, 2]) {
+    await put('cooling/recorded', null);
+    const outcomes = await Promise.allSettled(['staff', 'view'].map(by => setDoc(RD(db(by)), recorded(by, stage))));
+    check(outcomes.filter(x => x.status === 'fulfilled').length === 1, 'simultaneous same-stage confirmation has one immutable winner');
+  }
+  await put('cooling/recorded', null);
+  const competing = await Promise.allSettled([setDoc(RD(staff), recorded('staff')), setDoc(RD(db('view')), recorded('view', 2))]);
+  check(competing.filter(x => x.status === 'fulfilled').length === 1, 'simultaneous different-stage creates cannot erase each other');
+  const missingStage = competing[0].status === 'fulfilled' ? 2 : 1;
+  await pass('explicit retry can add the other stage without overwriting winner', updateDoc(RD(staff), recordStage('staff', missingStage)));
+  const nextRun = 'next-1234567890123456';
+  await put('cooling/current', waiting({ run: nextRun, rev: 3 }));
+  await deny('late previous-run confirmation cannot affect current batch', updateDoc(RD(staff), recordStage('staff', 1)));
+  await pass('due new run replaces the old declaration pair', setDoc(RD(staff), recorded('staff', 1, { run: nextRun })));
+  const replaced = (await getDoc(RD(staff))).data();
+  check(replaced.run === nextRun && replaced.secondAt === 0 && replaced.secondBy === '', 'new run never inherits an older second confirmation');
+  await deny('old batch cannot overwrite a replacement declaration', setDoc(RD(staff), recorded('staff')));
   await put('cooling/current', waiting());
   await put('pinset/staff', { at: 2 });
   await deny('PIN reset revokes reads', getDoc(D(staff)));

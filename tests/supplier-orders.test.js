@@ -21,6 +21,8 @@ const CUTS = [
 const CD = sid => fsKey(['cutdone', today + '_' + sid]);
 const tickOf = (sid, by, at) => ({ [CD(sid)]: { day: today, sid, on: true, at, by } });
 const extra = x => Object.assign({ [CFG]: { people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, cutoffs: CUTS } }, x || {});
+async function openCuts(p) { await L.waitFor(p, () => !!document.querySelector('.o-cut-fold'), null, 10000); if (!(await p.$eval('.o-cut-fold', e => e.open))) { await p.click('.o-cut-fold > summary'); await L.settle(p, 200); } }
+const pending = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li:not(.is-done):not(.is-past) .cut-n')].map(e => e.textContent));
 const band = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cut-n')].map(e => e.textContent));
 const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].map(e => ({ n: e.querySelector('.cut-n').textContent, on: e.querySelector('.cut-box').getAttribute('aria-pressed') === 'true', st: e.querySelector('.cut-st').textContent })));
 
@@ -31,30 +33,33 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   // Sam ticks PFD off on the order list
   p = await L.open(b, '#/orders', { who: 'sam', extra: extra(), wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.cut-tl .cut-box'), null, 10000);
+  await openCuts(p);
   r = await rows(p);
-  ok(r.map(x => x.n).join() === 'Chicken,PFD,Veg' && r[0].st === 'Closed, not ticked' && r[1].st === 'in 1 h' && !r.some(x => x.on), 'order list: Supplier orders today, soonest first, nothing ticked (' + JSON.stringify(r) + ')');
-  ok(/Supplier orders today/.test(await txt(p, '.cut-today')), 'order list: the list is called Supplier orders today');
-  ok((await band(p)).join() === 'PFD,Veg', 'bar: PFD and Veg before they are ticked');
+  ok(r.map(x => x.n).join() === 'Chicken,PFD,Veg' && r[0].st === 'Closed, not confirmed' && r[1].st === 'in 1 h' && !r.some(x => x.on), 'order list: Supplier orders today, soonest first, nothing ticked (' + JSON.stringify(r) + ')');
+  ok(/3 cut-offs · 1 overdue/.test(await txt(p, '.o-cut-fold > summary')), 'the summary retains all three outstanding cut-offs and the overdue count');
+  ok((await pending(p)).join() === 'PFD,Veg' && !(await p.$('#cut-band:not([hidden])')), 'Orders: PFD and Veg are due, with no duplicate reminder bar');
   ok(await p.$eval('.cut-box', e => e.getBoundingClientRect().width >= 44 && e.getBoundingClientRect().height >= 44), 'the tick boxes are big enough to tap');
+  await openCuts(p);
   await p.click('.cut-tl li:nth-child(2) .cut-box');
   await L.waitFor(p, () => { const e = document.querySelector('.cut-tl li:nth-child(2) .cut-box'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
   s = await store(p);
   ok(s[CD('pfd')] && s[CD('pfd')].on === true && s[CD('pfd')].by === 'sam' && s[CD('pfd')].sid === 'pfd' && s[CD('pfd')].day === today && typeof s[CD('pfd')].at === 'number', 'tick: saved for every chef, as Sam (' + JSON.stringify(s[CD('pfd')]) + ')');
   r = await rows(p);
   ok(/^Ordered by Sam, \d\d:\d\d$/.test(r[1].st), 'tick: the row says who ordered and when (' + r[1].st + ')');
-  await L.waitFor(p, () => [...document.querySelectorAll('#cut-band .cut-n')].map(e => e.textContent).join() === 'Veg', null, 10000);
-  ok(true, 'tick: PFD leaves the bar');
+  await L.waitFor(p, () => [...document.querySelectorAll('.cut-tl li:not(.is-done):not(.is-past) .cut-n')].map(e => e.textContent).join() === 'Veg', null, 10000);
+  ok(true, 'tick: PFD leaves the pending cut-offs');
   // ticking the closed one still records it
   await p.click('.cut-tl li:nth-child(1) .cut-box');
   await L.waitFor(p, () => { const e = document.querySelector('.cut-tl li:nth-child(1) .cut-box'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
   ok(true, 'tick: a closed cut-off can still be ticked off');
   // a mis-tap: untick PFD
+  await openCuts(p);
   await p.click('.cut-tl li:nth-child(2) .cut-box');
   await L.waitFor(p, () => { const e = document.querySelector('.cut-tl li:nth-child(2) .cut-box'); return e && e.getAttribute('aria-pressed') === 'false'; }, null, 10000);
   s = await store(p);
   ok(s[CD('pfd')].on === false && s[CD('chk')].on === true, 'untick: PFD\'s tick is taken off, Chicken stays');
-  await L.waitFor(p, () => [...document.querySelectorAll('#cut-band .cut-n')].map(e => e.textContent).join() === 'PFD,Veg', null, 10000);
-  ok(true, 'untick: PFD is back on the bar');
+  await L.waitFor(p, () => [...document.querySelectorAll('.cut-tl li:not(.is-done):not(.is-past) .cut-n')].map(e => e.textContent).join() === 'PFD,Veg', null, 10000);
+  ok(true, 'untick: PFD is pending again');
   // a mis-tap: tick and untick Veg straight after each other; the untick wins, in the order tapped (review, 24 Oct 2026)
   await p.evaluate(() => { const b = document.querySelector('.cut-tl li:nth-child(3) .cut-box'); b.click(); document.querySelector('.cut-tl li:nth-child(3) .cut-box').click(); });
   await L.settle(p, 800);
@@ -63,8 +68,8 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   // another chef's phone ticks Veg: this phone follows straight away (the live listener)
   await p.evaluate(([k, day]) => { window.__fake.write(k, { day, sid: 'veg', on: true, at: Date.now(), by: 'sam' }); }, [CD('veg'), today]);
   await L.waitFor(p, () => { const e = document.querySelector('.cut-tl li:nth-child(3) .cut-box'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
-  await L.waitFor(p, () => [...document.querySelectorAll('#cut-band .cut-n')].map(e => e.textContent).join() === 'PFD', null, 10000);
-  ok(true, 'another phone ticks Veg: the list and the bar follow at once');
+  await L.waitFor(p, () => [...document.querySelectorAll('.cut-tl li:not(.is-done):not(.is-past) .cut-n')].map(e => e.textContent).join() === 'PFD', null, 10000);
+  ok(true, 'another phone ticks Veg: the list follows at once');
   const tickReads = await p.evaluate(() => window.__fake.bill.filter(x => /\/cutdone$/.test(x.path)));
   ok(tickReads.filter(x => x.kind === 'listen').length === 1, 'reads: one listener on today\'s and tomorrow\'s ticks (' + JSON.stringify(tickReads.map(x => x.kind + ' ' + x.n)) + ')');
   ok(!(await L.overflow(p)), 'order list: fits a phone');
@@ -90,7 +95,8 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   // a laptop: the tick list on one line each
   p = await L.open(b, '#/orders', { who: 'sam', extra: extra(), wait: 1500, width: 1280, height: 900 });
   await L.waitFor(p, () => !!document.querySelector('.cut-tl .cut-box'), null, 10000);
-  ok(!(await L.overflow(p)), 'order list at 1280 px: no sideways scroll');
+  await openCuts(p);
+  ok(!(await L.overflow(p)), 'order list at 1280 px: no sideways scroll with cut-offs open');
   await p.context().close();
 
   // staff: nothing shown, nothing read
@@ -103,6 +109,7 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   // The head chef's remembered Google account and daily PIN: the order list ticks as the head chef.
   p = await L.open(b, '#/orders', { admin: true, who: '', extra: extra(), wait: 2000 });
   await L.waitFor(p, () => !!document.querySelector('.cut-tl .cut-box:not([disabled])'), null, 10000);
+  await openCuts(p);
   await p.click('.cut-tl li:nth-child(2) .cut-box');
   await L.waitFor(p, () => { const e = document.querySelector('.cut-tl li:nth-child(2) .cut-box'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
   s = await store(p);
@@ -120,9 +127,11 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   ok(!(await p.$('#cut-band button')), 'Google account, landing page: the bar has no tick');
   await p.evaluate(() => { location.hash = '#/orders'; });
   await L.waitFor(p, () => !!document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="veg|"]:not([disabled])'), null, 10000);
+  await openCuts(p);
   await p.click('.cut-tl [data-p="cut-tick"][data-id^="veg|"]');
-  await L.waitFor(p, () => { const e = document.getElementById('cut-band'); return e && e.hidden; }, null, 10000);
-  ok(true, 'Google account: Veg ticked on the order list clears the bar at once');
+  await L.waitFor(p, () => document.querySelector('.cut-tl [data-id^="veg|"]')?.getAttribute('aria-pressed') === 'true', null, 10000);
+  await p.evaluate(() => { location.hash = '#/recipes'; }); await L.settle(p, 300);
+  ok(!(await p.$('#cut-band:not([hidden])')), 'Google account: Veg ticked on the order list clears the bar on other pages');
   await p.context().close();
 
   // an all-day cut-off at 01:00 tomorrow is pushed from 22:00 tonight (4 hours before), so it shows on the list from
@@ -133,6 +142,7 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   await L.waitFor(p, () => !!document.querySelector('.cut-tl .cut-box'), null, 10000);
   r = await rows(p);
   ok(r.length === 1 && r[0].n === 'Night Bakery' && r[0].st === 'in 2 h 30 min' && /by tomorrow 01:00/.test(await txt(p, '.cut-tl li')), 'all day, 01:00 tomorrow: on the tick list at 22:30 the night before (' + JSON.stringify(r) + ')');
+  await openCuts(p);
   await p.click('.cut-tl .cut-box');
   await L.waitFor(p, () => { const e = document.querySelector('.cut-tl .cut-box'); return e && e.getAttribute('aria-pressed') === 'true'; }, null, 10000);
   s = await store(p);
@@ -161,4 +171,4 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
 
   await b.close();
   L.report(R);
-})();
+})().catch(e => { console.error(e); process.exit(1); });

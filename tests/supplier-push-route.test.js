@@ -39,6 +39,11 @@ async function noSheet(p, label) {
   ok((await historyReads(p)).length === 0, label + ': no other supplier\'s order history is read');
 }
 
+async function openCutoffs(p) {
+  await L.waitFor(p, () => !!document.querySelector('.o-cut-fold > summary'), null, 10000);
+  if (!(await p.$eval('.o-cut-fold', e => e.open))) await p.click('.o-cut-fold > summary');
+}
+
 (async () => {
   await event('push', { data: { json: () => ({ data: { title: 'Order now', sid: 'northside', day: '2026-10-24', url: 'https://bad.test' } }) } });
   ok(shown[0].options.data.sid === 'northside', 'push retains only the safe supplier context');
@@ -67,10 +72,11 @@ async function noSheet(p, label) {
   ok(!(await p.$(cardDone)) && tickHere.test(text), 'unlinked route: the card has no tick and says to tick it on the order list');
   await p.click('#supplier-root .su-cut-card a[href="#/orders"]');
   await L.waitFor(p, () => !!document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="veg|"]'), null, 10000);
+  await openCutoffs(p);
   await p.click('.cut-tl [data-p="cut-tick"][data-id^="veg|"]'); await saved(p, true);
   const d = (await p.evaluate(() => window.__fake.dump()))[veg];
   ok(d.by === 'sam' && d.day === F.today && d.sid === 'veg' && Object.keys(d).sort().join() === 'at,by,day,on,sid', 'unlinked: the order-list tick saves only the existing completion tick for this cut-off and chef');
-  await L.waitFor(p, () => !document.querySelector('#cut-band a.cut-n[href*="/veg/"]'), null, 10000);
+  await L.waitFor(p, () => !!document.querySelector('.cut-tl .is-done a.cut-n[href*="/veg/"]'), null, 10000);
   await p.goBack(); await opens(p);
   await L.waitFor(p, () => /Order done\./.test(document.querySelector('#supplier-root').textContent), null, 10000);
   ok(true, 'unlinked: back on the card, it shows the order as done');
@@ -96,7 +102,8 @@ async function noSheet(p, label) {
   // The tick list's name link for a cut-off whose reminder has not started (20:00, reminder from 16:00): the card, and its tick on the list still saves.
   p = await L.open(b, '#/orders', { who: 'sam', extra: withVeg(20 * 60), wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.cut-tl a.cut-n[href*="/veg/"]'), null, 10000);
-  ok(!(await p.$('#cut-band a.cut-n[href*="/veg/"]')), 'later cut-off: no reminder on the bar yet');
+  ok(!(await p.$('#cut-band a.cut-n[href*="/veg/"]')), 'Orders keeps the later cut-off in its disclosure, without a duplicate bar');
+  await openCutoffs(p);
   await p.click('.cut-tl a.cut-n[href*="/veg/"]');
   await opens(p);
   ok(!!(await p.$(card)), 'tick list link: an unlinked cut-off opens the card');
@@ -104,6 +111,7 @@ async function noSheet(p, label) {
   ok(!(await p.$(cardDone)) && tickHere.test(await rootText(p)), 'later cut-off: the card has no tick and points to the order list');
   await p.goBack();
   await L.waitFor(p, () => !!document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="veg|"]'), null, 10000);
+  await openCutoffs(p);
   await p.click('.cut-tl [data-p="cut-tick"][data-id^="veg|"]'); await saved(p, true);
   ok((await p.evaluate(() => window.__fake.dump()))[veg].by === 'sam', 'later cut-off: the order-list tick saves before the reminder starts');
   ok(p.errors.length === 0, 'tick list link: no page errors ' + p.errors.join(' | '));

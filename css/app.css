@@ -1331,7 +1331,7 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .o-ordered { background: var(--surface-paper); }
 @media (min-width: 1000px) {
   .o-page { max-width: 72rem; }
-  .o-page .o-cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 2.5rem; align-items: start; }
+  .o-page .o-cols:has(> .o-ordered) { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 2.5rem; align-items: start; }
   .o-page .o-ordered { padding-top: 0.2rem; }
   .o-page .o-ordered .nb-sh { margin-top: 0.9rem; }
   .o-page .o-add .nb-add-row { flex-wrap: nowrap; }
@@ -1562,13 +1562,6 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .jump-at { height: 0; }
 @media (max-width: 599px) { .find-bar { margin: 0 -1rem; padding: 0.6rem 1rem 0.7rem; } }
 
-/* order list: lines waiting more than 3 days, grouped by the day they were first written */
-.o-od { border-left: 4px solid var(--accent); padding-left: 0.6rem; margin: 0 0 1rem; }
-.o-od-h { margin: 0.6rem 0 0.2rem; font-size: 0.875rem; font-weight: 700; color: var(--muted); }
-.o-od-tip { margin: 0 0 0.2rem; font-size: 0.9375rem; }
-/* the day heading above already says since when, so the row's own Since badge is left out here */
-.o-od .nb-roll { display: none; }
-
 /* ---------- guides (#/guides, the admin Guides tab, and the guides box on recipe cards) ---------- */
 /* the fifth and sixth dockets (Transfers, Guides) are the long ones under the other four */
 .dk-sub { display: none; }
@@ -1750,6 +1743,8 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .wm-me-n b { font: 700 1.3rem/1.1 var(--display); overflow-wrap: anywhere; }
 .wm-me-n small { color: var(--muted); font-size: 0.8125rem; }
 .wm .wm-out { margin: 0 0 2px; border: 1.5px solid var(--ink); border-radius: var(--r-act); }
+.wm .wm-out > span { min-width: 0; }
+.wm .wm-out b { overflow-wrap: anywhere; }
 /* the hat as a list since 8 Nov 2026 (redesign step 7, docs/whole-app-redesign-options/brief.md): Every day, then More,
    one 46 px row each (icon, words, the small line on the right in orange when it needs doing, a chevron), Settings last */
 .wm-grid { display: flex; flex-direction: column; }
@@ -1768,6 +1763,7 @@ button.wm-a.wm-tile { text-align: left; }
    (phones and tablets; from 1100 to 1399 px the top bar has no room, from 1400 px every name shows as before) */
 .wtop-av { position: absolute; right: -5px; bottom: -5px; min-width: 19px; height: 19px; padding: 0 3px; border: 2px solid var(--bar); border-radius: 10px; background: var(--bar-text); color: var(--bar); font: 700 0.6875rem/15px var(--display); text-align: center; }
 .wtop-who[aria-expanded="true"] .wtop-av { background: #fff; color: var(--accent-ink); }
+.wtop-who-n { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 1099px) {
   .wtop-btn.wtop-who.is-shared { width: auto; max-width: 9.5rem; padding: 0 0.75rem 0 0.5rem; gap: 0.35rem; border-radius: 999px; }
   .wtop-who.is-shared .wtop-lbl { display: inline; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
@@ -2434,12 +2430,6 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .cut-box { width: 44px; height: 44px; padding: 0; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: #fff; font-size: 1.4rem; font-weight: 700; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .cut-box[aria-pressed="true"] { background: var(--done); border-color: var(--done); }
 .cut-box:disabled { opacity: 0.5; cursor: default; }
-/* Supplier groups on today's order list for chefs (5 Nov 2026, round 2): each cut-off's tick row heads its requests */
-.o-sups .o-sup { margin: 0.4rem 0 1rem; }
-.o-sup > .cut-tl { margin-bottom: 0.15rem; }
-.o-sup-acts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.45rem 0 0; }
-.o-sup-empty { margin: 0.25rem 0 0; }
-.o-sup-none { border-top: 1.5px solid var(--rule); padding-top: 0.5rem; }
 /* Chef to-do shows the supplier orders without a tick (ticked on the order list only, 5 Nov 2026): the same box, not a button */
 .cut-mark { width: 30px; height: 30px; margin: 7px; border-width: 1.5px; font-size: 1rem; cursor: default; }
 .cut-o.is-done .cut-mark { background: var(--done); border-color: var(--done); }
@@ -2805,6 +2795,12 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
   .wtop-start .wtop-brand { flex: 0 0 44px; min-height: 44px; }
   .wtop-brand .rb-text { display: none; }
   .wtop-brand .rb-mark { width: 44px; height: 39px; }
+  /* A shared screen's compact name yields to the logo, Back and 44 px controls, including enlarged text. */
+  .wtop:has(.wtop-who.is-shared) .wtop-start { flex: none; }
+  .wtop:has(.wtop-who.is-shared) .wtop-icons { flex: 0 1 auto; min-width: 0; }
+  .wtop:has(.wtop-who.is-shared) .wtop-icons > .wtop-btn:not(.wtop-who) { flex: none; }
+  .wtop .wtop-who.is-shared { flex: 0 1 auto; min-width: 44px; }
+  .wtop .wtop-who.is-shared > svg { flex: none; }
 }
 @media (min-width: 720px) { .wtop.has-back .rb-mark { display: none; } }
 @media (min-width: 720px) and (max-width: 899px) { .wtop-start { flex: none; } }
@@ -3716,8 +3712,6 @@ button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; curs
 .nb-nav.o-nav .chip { min-width: 0; padding: 0 0.85rem; font-size: 0.875rem; }
 .o-nav .o-deliv { display: inline-flex; align-items: center; color: var(--ink); text-decoration: none; }
 .o-ro { padding: 0 12px; }
-.o-wait { margin-top: 0.6rem; }
-.o-wait-h { margin-top: 0.4rem; }
 .o-done summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; list-style: none; }
 .o-done summary::-webkit-details-marker { display: none; }
 .o-done summary::after { content: ''; width: 8px; height: 8px; margin-left: 10px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }
@@ -3873,6 +3867,12 @@ html.tm-open, html.tm-open body { overflow: hidden; }
    The day as the heading, the dark board with only what is still to come, then paper cards: Prep by section and Coming up.
    Each card hangs from a pin like the dockets did. */
 .wall-h.hm-day { font-size: 2.6rem; line-height: 1; }
+.wall-h.hm-welcome { overflow-wrap: anywhere; }
+/* Keep complete long display names in the chosen heading, scaling with the person's text setting. */
+@media (max-width: 767px) {
+  .wall-h.hm-welcome.hm-welcome-long { font-size: 1.5rem; line-height: 1.1; }
+  .wall-h.hm-welcome.hm-welcome-compact { font-size: 1.2rem; }
+}
 .is-home .wall-date { margin-bottom: 1rem; }
 .hm { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.1rem; align-items: start; }
 .hm-board, .hm-paper { position: relative; border-radius: 12px; }
@@ -3940,23 +3940,6 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 
 /* ---------- Redesign step 3 (8 Nov 2026, head chef): Orders, the supplier order, Delivery received and the cut-off bar.
    docs/whole-app-redesign-options/brief.md (Build, step 3), every-page.html (e-orders, e-supplier, e-delivery). ---------- */
-/* Orders for a chef: each supplier's cut-off row heads its group like a departure board (Flighty): the name small and
-   spaced, when it closes and how many are ordered under it, the time left large on the right, a ruled line below */
-.o-sups .o-sup { margin: 0.2rem 0 1.1rem; }
-.o-sup > .cut-tl li.cut-o { padding: 0.5rem 0 0.45rem; border-bottom: 1.5px solid var(--ink); }
-.o-sup .cut-o .cut-n { font: 700 0.85rem/1.25 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--small-ink); }
-.o-sup .cut-o .cut-t { margin-top: 2px; font-size: 0.85rem; color: var(--muted); }
-.o-sup .cut-o .cut-st { font: 700 1.35rem/1.1 var(--display); color: var(--ink); }
-.o-sup .cut-o.is-soon .cut-st { color: var(--tag); }
-.o-sup .cut-o.is-done .cut-st, .o-sup .cut-o.is-past .cut-st { font: 600 0.9rem/1.25 var(--body); }
-.o-sup .cut-o.is-done .cut-st { color: var(--done-ink); }
-.o-sup .cut-o.is-past .cut-st { color: var(--faint); }
-.o-sgs { white-space: nowrap; }
-.o-sgh { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.1rem 0.75rem; padding: 0.5rem 0 0.4rem; border-bottom: 1.5px solid var(--ink); }
-.o-sgh .nb-sh { margin: 0; }
-.o-sgh .o-sgs { font-size: 0.85rem; color: var(--muted); }
-.o-sup-none { border-top: 0; padding-top: 0; }
-.o-sups > .cut-how { margin: 0.2rem 0 0.1rem; font-size: 0.85rem; }
 /* the cut-off reminder bar in the board's look (step 2's Now and next): dark, the time left as a pill, hot in the last hour.
    Same words, same times, same people, still no tick */
 .cut-band { background: var(--bar); border-bottom: 0; color: var(--bar-text); box-shadow: inset 0 -3px 0 var(--accent-ink); }
@@ -4595,7 +4578,7 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 /* ---------- Gap fix: polish (8 Nov 2026) ---------- */
 /* the audit's small gaps against the chosen drawings (docs/whole-app-redesign-options/every-page.html) */
 /* Orders: a link pill centres its words (they sat at the top edge of the 44 px pill) */
-.o-sup-acts .chip, .chip.o-deliv { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.chip.o-deliv { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 /* Add a line: the small heading over your usual lines */
 .nb-sgh { margin: 0.4rem 0 0.1rem; font: 700 0.72rem/1.2 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-ink); }
 /* Guides step by step: Back and Next stay at the bottom of the screen above the tab bar on a phone, within thumb reach,
@@ -5215,3 +5198,34 @@ html:has(.tm-focus-page) {
   html:has(.tm-focus-page) { scroll-padding-bottom: 0; }
   .tm-notebook.tm-focus-page .tm-focus-save, .tm-focus-page .tm-focus-grid > .tm-detail-workbench { position: static; box-shadow: none; }
 }
+
+/* Orders C: compact cut-off disclosure, separate from the shared requests. Existing work cover and paper stay. */
+.o-cut-fold { margin: 0 0 .5rem; border-bottom: 1px solid var(--line); }
+.o-cut-fold > summary { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-height: 68px; padding: .5rem .75rem; box-sizing: border-box; cursor: pointer; list-style: none; background: var(--surface-reference); }
+.o-cut-fold > summary::-webkit-details-marker { display: none; }
+.o-cut-copy { min-width: 0; display: grid; gap: .15rem; }
+.o-cut-copy strong { font: 600 .875rem/1.3 var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.o-cut-detail { font: .875rem/1.3 var(--body); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.o-cut-cue { display: flex; align-items: center; gap: .6rem; flex-shrink: 0; font-size: .875rem; font-weight: 600; }
+.o-cut-fold .o-cut-hide { display: none; }
+.o-cut-fold[open] .o-cut-view { display: none; }
+.o-cut-fold[open] .o-cut-hide { display: inline; }
+.o-cut-chevron { width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); margin: -4px 2px 0 0; }
+.o-cut-fold[open] .o-cut-chevron { transform: rotate(-135deg); margin-top: 4px; }
+.o-cut-body { padding: .6rem .75rem; }
+.o-cut-body .cut-how { font-size: .875rem; }
+.o-cut-body li.o-cut-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n box" "t box" "st box"; gap: 0 .75rem; padding: .4rem 0; }
+.o-cut-row .cut-n { min-height: 44px; display: flex; align-items: center; overflow-wrap: anywhere; }
+.o-cut-row .cut-t { font-size: .875rem; overflow-wrap: anywhere; }
+.o-cut-row .cut-st { max-width: none; text-align: left; font-size: .875rem; line-height: 1.35; min-height: 2.7em; }
+.o-cut-row .o-cut-action { width: 7rem; min-height: 44px; height: auto; padding: .45rem .5rem; color: var(--ink); font: 600 .875rem/1.25 var(--body); background: var(--surface-paper); }
+.o-cut-row .o-cut-action[aria-pressed="true"] { color: var(--done-ink); background: var(--surface-paper); border-color: var(--done-ink); }
+.o-cut-row.is-pending .o-cut-action { border-color: var(--faint); color: var(--ink); }
+.o-cut-row.is-pending .cut-st { color: var(--small-ink); }
+.o-cut-row.is-soon .cut-st { color: var(--small-ink); }
+
+.o-cut-detail.has-deadline { display: flex; min-width: 0; }
+.o-cut-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.o-cut-at { flex-shrink: 0; white-space: pre; }
+
+.o-requests .nb-roll { display: inline-block; white-space: nowrap; }

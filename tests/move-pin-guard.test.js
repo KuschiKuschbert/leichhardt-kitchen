@@ -28,8 +28,14 @@ async function move(p) {
 const reads = p => p.evaluate(() => window.__fake.bill.reduce((t, x) => t + x.n, 0));
 async function admin(b, o) {
   const p = await L.open(b, '#/admin', Object.assign({ admin: true, wait: 1800, extra }, o || {}));
-  for (let stage = 0; stage < 2; stage++) {
-    if (await p.$('.cooling-wrap [data-cooling="got"]')) { await p.click('.cooling-wrap [data-cooling="got"]'); await L.settle(p, 400); }
+  const cooling = o && o.extra && o.extra[fsKey(['cooling', 'current'])];
+  // Leave each due check outstanding while clearing its popup, so the PIN-move guard still sees the original run.
+  for (const [hours, started] of [[2, cooling && cooling.firstAt], [4, cooling && cooling.secondAt]]) {
+    if (!started || started.__fakeTimestamp + hours * 3600000 > L.NOW) continue;
+    const message = 'Operandio batch cooling time ' + hours + ' hours is done.';
+    await L.waitFor(p, message => !!Array.from(document.querySelectorAll('.cooling-ping h3')).find(el => el.textContent === message), message);
+    await p.locator('.cooling-ping').getByRole('button', { name: 'Not yet', exact: true }).click();
+    await L.waitFor(p, message => !Array.from(document.querySelectorAll('.cooling-ping h3')).some(el => el.textContent === message), message);
   }
   await L.adminTab(p, 'tools'); await L.settle(p, 200);
   return p;

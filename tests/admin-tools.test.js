@@ -70,8 +70,9 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.context().close();
 
   // Backup: one JSON file with notes and who has seen them, minutes with earlier versions and sign-offs, and order learning
-  const coolingCurrent = { v: 1, run: 'backup-cooling-run-01', rev: 1, firstAt: { __fakeTimestamp: L.NOW }, firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' };
-  const coolingBackup = { ...extra, [fsKey(['cooling', 'current'])]: coolingCurrent };
+  const coolingCurrent = { v: 1, run: 'backup-cooling-run-01', rev: 1, firstAt: { __fakeTimestamp: L.NOW - 3 * 3600000 }, firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' };
+  const coolingRecorded = { v: 1, run: coolingCurrent.run, firstAt: { __fakeTimestamp: L.NOW - 1000.125 }, firstBy: 'bo', secondAt: 0, secondBy: '', by: 'bo' };
+  const coolingBackup = { ...extra, [fsKey(['cooling', 'current'])]: coolingCurrent, [fsKey(['cooling', 'recorded'])]: coolingRecorded };
   p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra: coolingBackup });
   await L.adminTab(p, 'tools');
   await L.settle(p, 200);
@@ -81,7 +82,9 @@ const store = page => page.evaluate(() => window.__fake.dump());
   const chunks = []; for await (const c of await file.createReadStream()) chunks.push(c);
   const bk = JSON.parse(Buffer.concat(chunks).toString('utf8'));
   ok(JSON.stringify(bk.coolingCurrent) === JSON.stringify(coolingCurrent), 'backup: the canonical cooling run retains its identity and server start times exactly');
+  ok(JSON.stringify(bk.coolingRecorded) === JSON.stringify(coolingRecorded), 'backup: recording confirmation retains its run, different recorder, exact timestamp and unconfirmed second stage');
   ok((await p.evaluate(() => window.__fake.reads)).includes(fsKey(['cooling', 'current'])), 'backup: the current shared timer is read by its fixed document path');
+  ok((await p.evaluate(() => window.__fake.reads)).includes(fsKey(['cooling', 'recorded'])), 'backup: recording confirmations are read by their fixed document path');
   ok(/^leichhardt-prep-backup-\d{4}-\d{2}-\d{2}\.json$/.test(file.suggestedFilename()), 'backup: a dated JSON file (' + file.suggestedFilename() + ')');
   ok(bk.references[0].v === 2 && bk.referencesHist['ai-test'][0].v === 1 && bk.training[0].status === 'in-training' && bk.trainingHist['ai-test'][0].v === 1 && bk.analysisDaily[0].day === today, 'backup: analysis, references, training and histories preserved');
   ok(bk.notes.length === 1 && bk.notes[0].id === 'n1' && bk.notes[0].text === 'Fryer oil change', 'backup: shift pings included');
@@ -102,7 +105,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.context().close();
 
   // a part the published rules do not allow yet (summary, 22 Oct 2026) is left out and named, not the end of the backup
-  p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra, denyReads: '/summary$' });
+  p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra, denyReads: '/summary$|/cooling/recorded$' });
   await L.adminTab(p, 'tools');
   await L.settle(p, 200);
   const dl2 = p.waitForEvent('download', { timeout: 15000 }).catch(() => null);
@@ -111,7 +114,10 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(!!file2, 'backup with a refused part: the file still downloads');
   await L.waitFor(p, () => /Backup saved/.test(window.LK_PREP.state.toast || ''), null, 5000).catch(() => {});
   const msg2 = await p.evaluate(() => window.LK_PREP.state.toast || '');
-  ok(/Left out, the rules do not allow it yet: summary\./.test(msg2), 'backup with a refused part: the message names it (' + msg2.slice(-70) + ')');
+  ok(/Left out, the rules do not allow it yet: cooling recorded, summary\./.test(msg2), 'backup with refused parts: the message names cooling recorded and summary (' + msg2.slice(-100) + ')');
+  const missingChunks = []; for await (const c of await file2.createReadStream()) missingChunks.push(c);
+  const missingBackup = JSON.parse(Buffer.concat(missingChunks).toString('utf8'));
+  ok(!Object.hasOwn(missingBackup, 'coolingRecorded'), 'backup: a refused confirmation read is omitted, never represented as confirmed empty');
   ok(p.errors.length === 0, 'backup with a refused part: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -122,6 +128,9 @@ const store = page => page.evaluate(() => window.__fake.dump());
   const dl3 = p.waitForEvent('download', { timeout: 15000 }).catch(() => null);
   await p.click('[data-p="export"]');
   const file3 = await dl3;
+  const emptyChunks = []; for await (const c of await file3.createReadStream()) emptyChunks.push(c);
+  const emptyCooling = JSON.parse(Buffer.concat(emptyChunks).toString('utf8'));
+  ok(emptyCooling.coolingCurrent === null && emptyCooling.coolingRecorded === null, 'backup: absent timer and confirmation documents are explicit nulls');
   await L.waitFor(p, () => /Backup saved/.test(window.LK_PREP.state.toast || ''), null, 5000).catch(() => {});
   const msg3 = await p.evaluate(() => window.LK_PREP.state.toast || '');
   ok(!!file3 && /Left out, the rules do not allow it yet: transfers\./.test(msg3), 'backup with transfers refused: the file downloads and the message names them (' + msg3.slice(-60) + ')');
@@ -171,4 +180,4 @@ const store = page => page.evaluate(() => window.__fake.dump());
 
   await b.close();
   L.report(R);
-})();
+})().catch(error => { console.error(error); process.exit(1); });

@@ -660,6 +660,26 @@ row('js/prep.js coolingWrite(): new batch after four-hour stage through W()', { 
   run: (db, w, r) => W(r, [['set', 'cooling/current', coolRun({ run: 'next-1234567890123456', rev: 3,
     firstAt: serverTimestamp(), firstBy: w, by: w })]]) });
 
+const coolRecorded = (extra = {}) => ({ v: 1, run: 'run-1234567890123456', firstAt: 0, firstBy: '', secondAt: 0, secondBy: '', by: 'ann', ...extra });
+const coolCompleted = () => coolRun({ rev: 2, firstAt: Timestamp.fromMillis(NOW - 21600000 - 1000),
+  secondAt: Timestamp.fromMillis(NOW - 14400000 - 1000), secondBy: 'sam', by: 'sam' });
+row('js/prep.js coolingWatch(): shared Operandio declaration listener', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/recorded': coolRecorded({ firstAt: Timestamp.fromMillis(NOW - 1000), firstBy: 'ann' }) }),
+  run: db => listen(D(db, 'cooling/recorded')) });
+for (const stage of [1, 2]) {
+  const at = stage === 1 ? 'firstAt' : 'secondAt', by = stage === 1 ? 'firstBy' : 'secondBy';
+  const otherAt = stage === 1 ? 'secondAt' : 'firstAt', otherBy = stage === 1 ? 'secondBy' : 'firstBy';
+  row('js/prep.js coolingWrite(): create stage ' + stage + ' Operandio declaration through W()', { ok: KITCHEN, asks: KITCHEN,
+    prep: () => put({ 'cooling/current': coolCompleted(), 'cooling/recorded': null }),
+    run: (db, w, r) => W(r, [['set', 'cooling/recorded', coolRecorded({ [at]: serverTimestamp(), [by]: w, by: w })]]) });
+  row('js/prep.js coolingWrite(): add stage ' + stage + ' while preserving the other declaration', { ok: KITCHEN, asks: KITCHEN,
+    prep: () => put({ 'cooling/current': coolCompleted(), 'cooling/recorded': coolRecorded({ [otherAt]: Timestamp.fromMillis(NOW - 1000), [otherBy]: 'ann' }) }),
+    run: (db, w, r) => W(r, [['upd', 'cooling/recorded', { run: 'run-1234567890123456', [at]: serverTimestamp(), [by]: w }]]) });
+  row('js/prep.js coolingWrite(): replace earlier run declaration at stage ' + stage, { ok: KITCHEN, asks: KITCHEN,
+    prep: () => put({ 'cooling/current': coolCompleted(), 'cooling/recorded': coolRecorded({ run: 'previous-1234567890123456', firstAt: Timestamp.fromMillis(NOW - 1000), firstBy: 'ann' }) }),
+    run: (db, w, r) => W(r, [['set', 'cooling/recorded', coolRecorded({ [at]: serverTimestamp(), [by]: w, by: w })]]) });
+}
+
 // functions
 const FN = r => 'fn-' + r;
 async function fnState(r, w, cancelled) {

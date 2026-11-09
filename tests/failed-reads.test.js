@@ -52,7 +52,7 @@ async function fits(p, what, back) {
   await p.evaluate(() => { window.__fake.failReads = null; });
   await p.clock.fastForward('06:00');
   await go(p, '#/prep'); await go(p, '#/orders');
-  ok(await shows(p, '.o-wait', /Cream/), 'orders: after the wait it reads again and Cream shows under Waiting from earlier days');
+  ok(await shows(p, '.o-main', /Cream/), 'orders: after the wait it reads again and Cream returns to the shared request list');
   ok(!!(await cached(p, 'lk.ord.hist')), 'orders: and the order history is kept once every day came in');
   ok(p.errors.length === 0, 'orders: no page errors ' + p.errors.join(' | '));
   await p.context().close();

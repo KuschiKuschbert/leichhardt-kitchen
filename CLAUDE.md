@@ -20,6 +20,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Any screen piece: a page card, chips and pickers, Save, a sheet, a top bar chip, a list header line, a fold, an admin block, a chef hat tile | `docs/design-patterns.md`: use one, or add the new one there and its names to `tests/design-patterns.test.js` |
 | Home, list rows, the chef hat, the function page or the admin panel (the chosen whole-book redesign) | `docs/whole-app-redesign-options/brief.md` (Chosen, Build) and its `every-page.html` |
 | Staff-first Home: personal shift, break/return, scheduled coworkers and full-team disclosure | `docs/home-staff-first.md` |
+| Named staff welcome, current identity and personalisation audit | `docs/staff-personalisation-options/brief.md` (chosen A, long-name treatment and implementation checks) |
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over anything older in this file) |
 | Device choice, Google, daily PIN unlock, Update, Settings | `docs/device-sessions.md` (replaces earlier session wording), `docs/settings-options/brief.md` |
 | Staff Add/Tick/Delete and capability lists | `docs/staff-capabilities.md` |
@@ -36,6 +37,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Admin: analysis, proofreader, dashboard, pages, look | `docs/admin-intelligence.md`, `docs/proofreader-admin.md`, `docs/admin-dashboard-options/brief.md`, `docs/admin-pages-options/brief.md`, `docs/admin-design-options/brief.md`, `docs/admin-flow-spec.md` |
 | Head chef / sous chef panel, chosen dedicated admin-style panel | `docs/chef-panel-options/brief.md` (Chosen implementation, permissions, reads and verification) |
 | Prep, Orders, Wastage, Transfers and the chef hat; who did a Prep line on a shared screen | `docs/work-pages-design-options/brief.md`, `docs/shared-prep-attribution.md` |
+| Orders as a shared request list with compact supplier cut-offs (chosen C) | `docs/order-list-options/brief.md` |
 | Head-set section minimums, Prep room, smart matching and Before service | `docs/prep-standards.md`, `docs/prep-par-options/brief.md` |
 | Today's team and its chosen notebook, council and build record | `docs/todays-team-options/brief.md`, `docs/team-notebook-options/brief.md` (Chosen, Build, council), `docs/prep-book.md` (Today's team) |
 | Planning staff sections ahead, dated drafts, week picker and read costs | `docs/team-week-options/brief.md` (chosen A, implementation and verification) |
@@ -50,7 +52,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Wastage history and CSV reports | `docs/wastage-history.md`, `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |
 | Functions: cancel, Undo, delete, print | `docs/function-cancellation.md`, `docs/function-printing.md` |
-| Operandio cooling: B desktop pill, fixed mobile ring, manual 2-hour/4-hour stages, completion lockout until next midnight, three-chime alerts | `docs/operandio-cooling.md`, `docs/operandio-cooling-options/brief.md` |
+| Operandio cooling: manual stages, shared recording confirmation, quiet device reminders and next-midnight restart | `docs/operandio-cooling.md`, `docs/operandio-cooling-options/brief.md` |
 | Operandio clock motion: chosen B desktop pill and fixed mobile ring, implementation and release checks | `docs/operandio-clock-motion-options/brief.md` |
 | Pings: who gets them, the sound | `docs/ping-recipients.md`, `docs/ping-sound.md` |
 | Back arrow and page trail | `docs/navigation.md` |

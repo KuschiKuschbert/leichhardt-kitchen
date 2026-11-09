@@ -11,18 +11,19 @@ const writes = p => p.evaluate(k => window.__fake.writes.flat().filter(o => o.pa
 async function open(b) {
   const p = await L.open(b, '#/orders', { who: 'sam', extra: F.fixture(), wait: 1500 });
   await L.waitFor(p, () => { const t = document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="northside|"]:not([disabled])'); return !!t && t.getAttribute('aria-pressed') === 'false'; }, null, 10000);
+  await p.click('.o-cut-fold > summary');
   return p;
 }
-async function replace(p, by) {
+async function replace(p, by, pending) {
   const newer = await p.evaluate(([k, by]) => {
     const d = Object.assign({}, window.__fake.dump()[k], { by, at: window.__fake.dump()[k].at + 120000 });
     window.__fake.write(k, d);
     return d;
   }, [completion, by]);
-  await L.waitFor(p, ([k, name]) => {
+  await L.waitFor(p, ([k, name, pending]) => {
     const row = document.querySelector('.cut-tl .cut-st'), d = window.__fake.dump()[k];
-    return row && row.textContent.includes('Ordered by ' + name) && row.textContent.includes(window.LK_TIME.clock(d.at));
-  }, [completion, by === 'sam' ? 'Sam' : 'Bo'], 10000);
+    return row && (pending ? /Not sent/.test(row.textContent) : row.textContent.includes('Ordered by ' + name) && row.textContent.includes(window.LK_TIME.clock(d.at)));
+  }, [completion, by === 'sam' ? 'Sam' : 'Bo', !!pending], 10000);
   return newer;
 }
 
@@ -34,10 +35,10 @@ async function replace(p, by) {
     await p.evaluate(() => { window.__fake.mode = 'hold'; });
     await p.click(button);
     await L.waitFor(p, k => !!window.__fake.dump()[k], completion, 10000);
-    const newer = await replace(p, by);
+    const newer = await replace(p, by, true);
     await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
     await L.waitFor(p, () => !window.LK_PREP.unsaved(), null, 10000);
-    await L.settle(p, 300);
+    await L.waitFor(p, name => (document.querySelector('.cut-tl .cut-st')?.textContent || '').includes('Ordered by ' + name), by === 'sam' ? 'Sam' : 'Bo', 10000);
     ok(await undo(p).count() === 0, by + ': a delayed original save offers no Undo for a newer completion');
     ok(!/order done\. No quantities recorded\./.test(await p.textContent('body')), by + ': a delayed original save does not claim the newer completion');
     ok(JSON.stringify(await record(p)) === JSON.stringify(newer) && (await writes(p)).length === 1, by + ': the later completion and its attribution are preserved');
@@ -52,7 +53,7 @@ async function replace(p, by) {
     await undo(p).click();
     await L.settle(p, 300);
     ok(JSON.stringify(await record(p)) === JSON.stringify(after), by + ': old Undo does not uncheck a newer completion');
-    ok((await writes(p)).length === 1 && await p.$eval(button, e => e.getAttribute('aria-pressed')) === 'true' && !(await p.$('#cut-band a.cut-n[href*="/northside/"]')), by + ': old Undo writes nothing and keeps the reminder completed');
+    ok((await writes(p)).length === 1 && await p.$eval(button, e => e.getAttribute('aria-pressed')) === 'true' && !(await p.$('.o-cut-fold .cut-o:not(.is-done) a.cut-n[href*="/northside/"]')), by + ': old Undo writes nothing and keeps the reminder completed');
     ok(p.errors.length === 0, by + ': stale Undo has no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }

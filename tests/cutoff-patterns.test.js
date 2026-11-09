@@ -21,6 +21,11 @@ const COAST = { id: 'coast', name: 'Coast ' + P, days: [{ d: 1, pre: 1, at: 840 
 const PFD = { id: 'pfd', name: 'PFD', dd: [1, 2, 3, 4, 5, 6], at: 840, pre: 1, lead: 240 };
 const bad = p => p.evaluate(() => ({ i: document.querySelectorAll('#pwn').length, img: document.querySelectorAll('img[src="x"]').length, attr: document.querySelectorAll('[data-pwn]').length, run: !!window.__pwn }));
 
+async function openCutoffs(p) {
+  await L.waitFor(p, () => !!document.querySelector('.o-cut-fold > summary'), null, 10000);
+  if (!(await p.$eval('.o-cut-fold', e => e.open))) await p.click('.o-cut-fold > summary');
+}
+
 (async () => {
   // ---------- the shared maths, in node (the phones and the push job run the same file) ----------
   ok(CUT.v === 2 && CUT.MAX_PRE === 14, 'js/cutoffs.js is version 2 and keeps the 14-day range');
@@ -118,9 +123,11 @@ const bad = p => p.evaluate(() => ({ i: document.querySelectorAll('#pwn').length
   // ---------- Sam, a sous chef, on Thursday 12:30: PFD closes today; Coast's Wednesday order closes tomorrow ----------
   p = await L.open(b, '#/orders', { who: 'sam', extra: withCuts([COAST, PFD]), clock: THU, wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.cut-hl [data-p="cut-tick"]'), null, 10000);
-  ok(/PFD\s*by 14:00 in 1 h 30 min for Fri 6 Nov/.test(await txt(p, '#cut-band')) && !/Coast/.test(await txt(p, '#cut-band')), 'the bar: PFD for Fri 6 Nov, and nothing about tomorrow over the page');
+  ok(!(await p.$('#cut-band:not([hidden])')), 'Orders has no duplicate cut-off bar');
+  await openCutoffs(p);
+  ok(/PFD/.test(await txt(p, '.cut-tl')) && /by 14:00 for Fri 6 Nov/.test(await txt(p, '.cut-tl')), 'the expanded cut-offs keep PFD and its delivery date');
   ok((await p.$$('.cut-tl li')).length === 1 && /Tomorrow, heads-up/i.test(await txt(p, '.cut-today')), 'the tick list keeps today; tomorrow has its own heads-up list');
-  ok(/by tomorrow 16:00 for Wed 11 Nov/.test(await txt(p, '.cut-hl li')) && await txt(p, '.cut-hl [data-p="cut-tick"]') === 'Ordered already' && !(await p.$('.cut-hl .cut-box')), 'heads-up: when it closes, for which delivery, and Ordered already, not a tick box');
+  ok(/by tomorrow 16:00 for Wed 11 Nov/.test(await txt(p, '.cut-hl li')) && await txt(p, '.cut-hl [data-p="cut-tick"]') === 'Order placed for tomorrow', 'heads-up: when it closes, for which delivery, and an explicit Order placed for tomorrow action');
   const r0 = await bad(p);
   ok(!r0.i && !r0.img && !r0.attr && !r0.run, 'a supplier name with markup shows as words on the heads-up (' + JSON.stringify(r0) + ')');
   ok(!(await L.overflow(p)) && !p.errors.length, 'heads-up fits the phone, no page errors ' + p.errors.join(' | '));
@@ -129,7 +136,7 @@ const bad = p => p.evaluate(() => ({ i: document.querySelectorAll('#pwn').length
   await L.waitFor(p, () => !!document.querySelector('.cut-hl .cut-box[aria-pressed="true"]'), null, 10000);
   s = (await dump(p))[fsKey(['cutdone', '2026-11-06_coast'])];
   ok(s.day === '2026-11-06' && s.sid === 'coast' && s.by === 'sam' && /Ordered by Sam/.test(await txt(p, '.cut-hl li')), "Ordered already writes tomorrow's tick, by Sam, and the row shows it");
-  ok(!(await p.$('.cut-hl .cut-early')), 'once ordered, the row is an ordinary ticked row that can be taken off again');
+  ok(await txt(p, '.cut-hl [data-p="cut-tick"]') === 'Undo', 'once ordered, the row offers Undo for that confirmation');
   await p.context().close();
 
   // Friday 12:30: the ordered one gets no bar; on a fresh book without the tick, Coast is on the bar with its date

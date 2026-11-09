@@ -1,0 +1,773 @@
+{
+  "source": "29258e6",
+  "method": "Chromium runtime with synthetic Firebase fixtures; proposals applied to transient DOM only; genuine Barlow and Caveat fonts from Google Fonts. Long-name fixture is 40 characters. Enlarged text uses the existing xlarge setting (125%).",
+  "limits": "Preview layout evidence only. No production authentication, role enforcement, save/recovery or screen-reader verification. Home proposals do not touch work pages.",
+  "records": [
+    {
+      "concept": "baseline",
+      "width": 390,
+      "scenario": "usual name",
+      "header": {
+        "top": 88,
+        "height": 41.59,
+        "bottom": 129.59
+      },
+      "ownDay": {
+        "top": 168.78,
+        "height": 202.13,
+        "bottom": 370.91
+      },
+      "team": {
+        "top": 388.5,
+        "height": 262.3,
+        "bottom": 650.8
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Ann",
+      "fontLoaded": true,
+      "fullTeamOpensInOneTap": true,
+      "errors": []
+    },
+    {
+      "concept": "a",
+      "width": 390,
+      "scenario": "usual name",
+      "header": {
+        "top": 88,
+        "height": 41.59,
+        "bottom": 129.59
+      },
+      "ownDay": {
+        "top": 168.78,
+        "height": 202.13,
+        "bottom": 370.91
+      },
+      "team": {
+        "top": 388.5,
+        "height": 262.3,
+        "bottom": 650.8
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Ann",
+      "fontLoaded": true,
+      "fullTeamOpensInOneTap": true,
+      "errors": []
+    },
+    {
+      "concept": "b",
+      "width": 390,
+      "scenario": "usual name",
+      "header": {
+        "top": 88,
+        "height": 22.39,
+        "bottom": 110.39
+      },
+      "ownDay": {
+        "top": 126.39,
+        "height": 235.41,
+        "bottom": 361.8
+      },
+      "team": {
+        "top": 379.39,
+        "height": 262.3,
+        "bottom": 641.69
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Ann",
+      "fontLoaded": true,
+      "fullTeamOpensInOneTap": true,
+      "errors": []
+    },
+    {
+      "concept": "c",
+      "width": 390,
+      "scenario": "usual name",
+      "header": {
+        "top": 88,
+        "height": 41.59,
+        "bottom": 129.59
+      },
+      "ownDay": {
+        "top": 168.78,
+        "height": 202.13,
+        "bottom": 370.91
+      },
+      "team": {
+        "top": 388.5,
+        "height": 262.3,
+        "bottom": 650.8
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Ann",
+      "fontLoaded": true,
+      "fullTeamOpensInOneTap": true,
+      "errors": []
+    },
+    {
+      "concept": "baseline",
+      "width": 768,
+      "scenario": "usual name",
+      "header": {
+        "top": 180,
+        "height": 54.41,
+        "bottom": 234.41
+      },
+      "ownDay": {
+        "top": 273.59,
+        "height": 218.13,
+        "bottom": 491.72
+      },
+      "team": {
+        "top": 273.59,
+        "height": 271.95,
+        "bottom": 545.55
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Ann",
+      "fontLoaded": true,
+      "fullTeamOpensInOneTap": true,
+      "errors": []
+    },
+    {
+      "concept": "a",
+      "width": 768,
+      "scenario": "usual name",
+      "header": {
+        "top": 180,
+        "height": 54.41,
+        "bottom": 234.41
+      },
+      "ownDay": {
+        "top": 273.59,
+        "height": 218.13,
+        "bottom": 491.72
+      },
+      "team": {
+        "top": 273.59,
+        "height": 271.95,
+        "bottom": 545.55
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Ann",
+      "fontLoaded": true,
+      "fullTeamOpensInOneTap": true,
+      "errors": []
+    },
+    {
+      "concept": "b",
+      "width": 768,
+      "scenario": "usual name",
+      "header": {
+        "top": 180,
+        "height": 22.39,
+        "bottom": 202.39
+      },
+      "ownDay": {
+        "top": 218.39,
+        "height": 251.41,
+        "bottom": 469.8
+      },
+      "team": {
+        "top": 218.39,
+        "height": 271.95,
+        "bottom": 490.34
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Ann",
+      "fontLoaded": true,
+      "fullTeamOpensInOneTap": true,
+      "errors": []
+    },
+    {
+      "concept": "c",
+      "width": 768,
+      "scenario": "usual name",
+      "header": {
+        "top": 180,
+        "height": 54.41,
+        "bottom": 234.41
+      },
+      "ownDay": {
+        "top": 273.59,
+        "height": 218.13,
+        "bottom": 491.72
+      },
+      "team": {
+        "top": 273.59,
+        "height": 271.95,
+        "bottom": 545.55
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Ann",
+      "fontLoaded": true,
+      "fullTeamOpensInOneTap": true,
+      "errors": []
+    },
+    {
+      "concept": "baseline",
+      "width": 1280,
+      "scenario": "usual name",
+      "header": {
+        "top": 164,
+        "height": 48,
+        "bottom": 212
+      },
+      "ownDay": {
+        "top": 251.19,
+        "height": 218.13,
+        "bottom": 469.31
+      },
+      "team": {
+        "top": 251.19,
+        "height": 271.95,
+        "bottom": 523.14
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Ann",
+      "fontLoaded": true,
+      "fullTeamOpensInOneTap": true,
+      "errors": []
+    },
+    {
+      "concept": "a",
+      "width": 1280,
+      "scenario": "usual name",
+      "header": {
+        "top": 164,
+        "height": 48,
+        "bottom": 212
+      },
+      "ownDay": {
+        "top": 251.19,
+        "height": 218.13,
+        "bottom": 469.31
+      },
+      "team": {
+        "top": 251.19,
+        "height": 271.95,
+        "bottom": 523.14
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Ann",
+      "fontLoaded": true,
+      "fullTeamOpensInOneTap": true,
+      "errors": []
+    },
+    {
+      "concept": "b",
+      "width": 1280,
+      "scenario": "usual name",
+      "header": {
+        "top": 164,
+        "height": 22.39,
+        "bottom": 186.39
+      },
+      "ownDay": {
+        "top": 202.39,
+        "height": 251.41,
+        "bottom": 453.8
+      },
+      "team": {
+        "top": 202.39,
+        "height": 271.95,
+        "bottom": 474.34
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Ann",
+      "fontLoaded": true,
+      "fullTeamOpensInOneTap": true,
+      "errors": []
+    },
+    {
+      "concept": "c",
+      "width": 1280,
+      "scenario": "usual name",
+      "header": {
+        "top": 164,
+        "height": 48,
+        "bottom": 212
+      },
+      "ownDay": {
+        "top": 251.19,
+        "height": 218.13,
+        "bottom": 469.31
+      },
+      "team": {
+        "top": 251.19,
+        "height": 271.95,
+        "bottom": 523.14
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Ann",
+      "fontLoaded": true,
+      "fullTeamOpensInOneTap": true,
+      "errors": []
+    },
+    {
+      "concept": "a",
+      "width": 390,
+      "scenario": "long",
+      "header": {
+        "top": 88,
+        "height": 124.78,
+        "bottom": 212.78
+      },
+      "ownDay": {
+        "top": 251.97,
+        "height": 202.13,
+        "bottom": 454.09
+      },
+      "team": {
+        "top": 471.69,
+        "height": 262.3,
+        "bottom": 733.98
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "fontLoaded": true,
+      "errors": []
+    },
+    {
+      "concept": "b",
+      "width": 390,
+      "scenario": "long",
+      "header": {
+        "top": 88,
+        "height": 22.39,
+        "bottom": 110.39
+      },
+      "ownDay": {
+        "top": 126.39,
+        "height": 305.78,
+        "bottom": 432.17
+      },
+      "team": {
+        "top": 449.77,
+        "height": 262.3,
+        "bottom": 712.06
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "fontLoaded": true,
+      "errors": []
+    },
+    {
+      "concept": "c",
+      "width": 390,
+      "scenario": "long",
+      "header": {
+        "top": 88,
+        "height": 41.59,
+        "bottom": 129.59
+      },
+      "ownDay": {
+        "top": 191.97,
+        "height": 202.13,
+        "bottom": 394.09
+      },
+      "team": {
+        "top": 411.69,
+        "height": 262.3,
+        "bottom": 673.98
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "fontLoaded": true,
+      "errors": []
+    },
+    {
+      "concept": "a",
+      "width": 390,
+      "scenario": "unicode",
+      "header": {
+        "top": 88,
+        "height": 41.59,
+        "bottom": 129.59
+      },
+      "ownDay": {
+        "top": 168.78,
+        "height": 202.13,
+        "bottom": 370.91
+      },
+      "team": {
+        "top": 388.5,
+        "height": 262.3,
+        "bottom": 650.8
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "अदिति शर्मा",
+      "fontLoaded": true,
+      "errors": []
+    },
+    {
+      "concept": "b",
+      "width": 390,
+      "scenario": "unicode",
+      "header": {
+        "top": 88,
+        "height": 22.39,
+        "bottom": 110.39
+      },
+      "ownDay": {
+        "top": 126.39,
+        "height": 235.41,
+        "bottom": 361.8
+      },
+      "team": {
+        "top": 379.39,
+        "height": 262.3,
+        "bottom": 641.69
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "अदिति शर्मा",
+      "fontLoaded": true,
+      "errors": []
+    },
+    {
+      "concept": "c",
+      "width": 390,
+      "scenario": "unicode",
+      "header": {
+        "top": 88,
+        "height": 41.59,
+        "bottom": 129.59
+      },
+      "ownDay": {
+        "top": 168.78,
+        "height": 202.13,
+        "bottom": 370.91
+      },
+      "team": {
+        "top": 388.5,
+        "height": 262.3,
+        "bottom": 650.8
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "अदिति शर्मा",
+      "fontLoaded": true,
+      "errors": []
+    },
+    {
+      "concept": "baseline",
+      "width": 390,
+      "scenario": "large-text",
+      "header": {
+        "top": 94,
+        "height": 52,
+        "bottom": 146
+      },
+      "ownDay": {
+        "top": 195,
+        "height": 217.23,
+        "bottom": 412.23
+      },
+      "team": {
+        "top": 434.23,
+        "height": 338.31,
+        "bottom": 772.55
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Ann",
+      "fontLoaded": true,
+      "errors": []
+    },
+    {
+      "concept": "a",
+      "width": 390,
+      "scenario": "large-text",
+      "header": {
+        "top": 94,
+        "height": 52,
+        "bottom": 146
+      },
+      "ownDay": {
+        "top": 195,
+        "height": 217.23,
+        "bottom": 412.23
+      },
+      "team": {
+        "top": 434.23,
+        "height": 338.31,
+        "bottom": 772.55
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Ann",
+      "fontLoaded": true,
+      "errors": []
+    },
+    {
+      "concept": "b",
+      "width": 390,
+      "scenario": "large-text",
+      "header": {
+        "top": 94,
+        "height": 28,
+        "bottom": 122
+      },
+      "ownDay": {
+        "top": 142,
+        "height": 258.84,
+        "bottom": 400.84
+      },
+      "team": {
+        "top": 422.84,
+        "height": 338.31,
+        "bottom": 761.16
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Ann",
+      "fontLoaded": true,
+      "errors": []
+    },
+    {
+      "concept": "c",
+      "width": 390,
+      "scenario": "large-text",
+      "header": {
+        "top": 94,
+        "height": 52,
+        "bottom": 146
+      },
+      "ownDay": {
+        "top": 195,
+        "height": 217.23,
+        "bottom": 412.23
+      },
+      "team": {
+        "top": 434.23,
+        "height": 338.31,
+        "bottom": 772.55
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Ann",
+      "fontLoaded": true,
+      "errors": []
+    },
+    {
+      "concept": "baseline",
+      "width": 390,
+      "scenario": "long-large-text",
+      "header": {
+        "top": 94,
+        "height": 52,
+        "bottom": 146
+      },
+      "ownDay": {
+        "top": 195,
+        "height": 217.23,
+        "bottom": 412.23
+      },
+      "team": {
+        "top": 434.23,
+        "height": 338.31,
+        "bottom": 772.55
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": true,
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "fontLoaded": true,
+      "errors": []
+    },
+    {
+      "concept": "a",
+      "width": 390,
+      "scenario": "long-large-text",
+      "header": {
+        "top": 94,
+        "height": 260,
+        "bottom": 354
+      },
+      "ownDay": {
+        "top": 403,
+        "height": 217.23,
+        "bottom": 620.23
+      },
+      "team": {
+        "top": 642.23,
+        "height": 338.31,
+        "bottom": 980.55
+      },
+      "visibleCoworkers": 1,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": false,
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "fontLoaded": true,
+      "errors": []
+    },
+    {
+      "concept": "b",
+      "width": 390,
+      "scenario": "long-large-text",
+      "header": {
+        "top": 94,
+        "height": 28,
+        "bottom": 122
+      },
+      "ownDay": {
+        "top": 142,
+        "height": 434.84,
+        "bottom": 576.84
+      },
+      "team": {
+        "top": 598.84,
+        "height": 338.31,
+        "bottom": 937.16
+      },
+      "visibleCoworkers": 1,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": false,
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "fontLoaded": true,
+      "errors": []
+    },
+    {
+      "concept": "c",
+      "width": 390,
+      "scenario": "long-large-text",
+      "header": {
+        "top": 94,
+        "height": 52,
+        "bottom": 146
+      },
+      "ownDay": {
+        "top": 253,
+        "height": 217.23,
+        "bottom": 470.23
+      },
+      "team": {
+        "top": 492.23,
+        "height": 338.31,
+        "bottom": 830.55
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "overflow": false,
+      "fullTeamAvailable": true,
+      "fullTeamVisible": false,
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "fontLoaded": true,
+      "errors": []
+    }
+  ]
+}
