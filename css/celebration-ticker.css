@@ -3,6 +3,14 @@
 .kb-season-note.kb-season-with-ticker{margin:8px 0 12px;transform:none;--kb-festive-outline:var(--bar-text);--kb-festive-ink:var(--bar-text);--kb-festive-paper:var(--bar);--kb-festive-beige:var(--steel-dark)}
 .kb-season-note.kb-season-with-ticker::before{display:none}
 .kb-season-work.kb-season-with-ticker{margin:8px 0 12px;font-size:1rem}
+/* Desktop Home uses the available width instead of stacking a narrow festival card. */
+@media(min-width:1100px){
+  .wall-main>.kb-season-note.kb-season-with-ticker{display:grid;grid-template-columns:minmax(16rem,.8fr) minmax(0,2.2fr);align-items:center;gap:1rem;width:100%;max-width:none;padding:10px 12px}
+  .wall-main>.kb-season-note.kb-season-with-ticker>.kb-season-heading{grid-template-columns:44px minmax(0,1fr);gap:0 8px;margin:0}
+  .wall-main>.kb-season-note.kb-season-with-ticker>.kb-season-heading>.kb-season-note-art{grid-row:1 / span 2}
+  .wall-main>.kb-season-note.kb-season-with-ticker>.kb-season-heading>h3,.wall-main>.kb-season-note.kb-season-with-ticker>.kb-season-heading>.kb-season-language-slot{grid-column:2}
+  .wall-main>.kb-season-note.kb-season-with-ticker>.kb-season-heading>.kb-season-language-slot{inline-size:auto;text-align:left}
+}
 .kb-season-heading{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:8px;margin:0 0 6px;min-width:0}
 .kb-season-heading .kb-season-note-art,.kb-season-heading .kb-season-work-art{display:block;width:44px;flex:0 0 44px;background:none}
 .kb-season-heading .kb-season-note-art>svg,.kb-season-heading .kb-season-work-art>svg{display:block;width:44px;height:44px}

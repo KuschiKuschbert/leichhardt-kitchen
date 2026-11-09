@@ -45,3 +45,18 @@ The regression check records physical card alignment, quiet-day packing, visible
 
 
 Local evidence: the new desktop contract failed 25 of 45 checks on the original `7586670` layout. The final expanded suite passes 63/63, including cut-offs only, functions only, paired upcoming groups and empty states. Staff-first Home (82/82), work board (58/58), staff roster (24/24) and design-pattern checks also passed. At 1280 px, quiet Prep moves from x≈718, width≈494 to x=68, width=1144; busy top/work cards share x=68/652 and width=560. Eight real-font quiet/busy staff/chef captures at 1280/1440 have no errors or overflow. Phone 390 px and tablet 768 px captures are byte-identical before and after. The header retains its existing size and controls.
+
+
+## Work colour and celebration strip, 9 November 2026
+
+The owner requested a different colour for Now and next and a celebration that spans desktop width to take less height. This is a small visual refinement of the current Home, with no new controls, data reads or workflow. Quick council check: simplify using the existing palette and available space. Staff context remains zero taps and full-team detail one tap.
+
+Now and next uses the existing warm `--hit` surface, dark `--ink` text and orange `--small-ink` labels/urgent badges, with an orange edge. Your day retains charcoal. Secondary text, separators and focus outlines adapt to the light surface; reminders retain their words and times.
+
+From 1100 px, the existing celebration note spans the Home content width, with its icon/title/language beside the complete explanation. No text is truncated. Six language sizing copies, cycling, reduced motion and the calendar remain unchanged. Phone/tablet celebration layout and work-page explanation dialogs retain their current arrangement.
+
+Actual runtime example images use synthetic records and a transient Diwali test fixture: [desktop](home-staff-first/colour-celebration-desktop.png), [phone](home-staff-first/colour-celebration-phone.png), [before](home-staff-first/colour-celebration-before.png). At 1280/1440 px, this note grows from 760 to 1144 px wide and drops from 120 to 70 px tall. At 390/768 px, its dimensions remain 358×168 / 672×120. Baseline screenshots use the prior Home styles at1392565; the implementation starts from37aba0f, retaining the newer mouse-close controls.
+
+Focused contrast, responsive and seasonal behaviour checks, plus release/live evidence, are recorded in this change's pull request. Revert the two stylesheet changes to restore the earlier presentation; no saved data changes are needed.
+
+Local verification: the new colour/banner suite passes 117/117 and failed 21/117 on the earlier Home. Existing desktop 63/63, staff-first 82/82 and seasonal suites also pass. Checks cover all six language strings, stable uncut sizing, three desktop widths, normal/hot/focus contrast, keyboard menu access and preserved Home order. Release CI and deployed results are recorded in the pull request.
