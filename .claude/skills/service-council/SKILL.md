@@ -84,10 +84,19 @@ For each relevant principle, record the concrete benefit, evidence and trade-off
 
 Only after Build or Build smaller, for a change people will see. Three designs by default; use the head chef's requested number when specified.
 
-1. **Draw the requested number of really different designs**, not shades of one. The default three are one that changes the least, one that rethinks the flow, and one that removes the most. Build them as previews under `docs/<name>-options/`, like `docs/admin-pages-options/`, never on the live book. Screenshots at 390 px for service pages, 1280 px for admin, 768 px when the tablet matters.
-2. **Write the brief** in `docs/<name>-options/brief.md`: for each design, its pros and cons, and a table with the taps for the main task, lines visible at 390 px, navigation levels, build size (pull requests), relearning, new reads or rules, and risk. Include Contract fit, the reference-principle comparison and their evidence as described above.
+1. **Draw three structurally different, credible designs A, B and C** unless the head chef asks for another number. The default directions are one that changes the least, one that rethinks the flow, and one that removes the most friction. Each pair must differ in at least two meaningful ways: layout, information hierarchy, task sequence, navigation or interaction/disclosure. Name each design's central idea and walk through the same main task. Colour, font, spacing or corner changes alone do not count. Keep the approved visual system and required capabilities; do not make a weak option just to favour another. If constraints prevent credible alternatives, state the limitation rather than relabelling cosmetic variants. Build previews under `docs/<name>-options/`, never on the live book. Screenshots at 390 px for service pages, 1280 px for admin, 768 px when the tablet matters.
+2. **Write the brief** in `docs/<name>-options/brief.md`: for each design, its pros and cons, and a table with the taps for the main task, lines visible at 390 px, navigation levels, build size (pull requests), relearning, new reads or rules, and risk. Compare the same task, roles, representative synthetic data, long content, viewports and relevant states. State omissions and capability trade-offs explicitly. Add a short differences table showing how A, B and C differ structurally. Include Contract fit, the reference-principle comparison and their evidence as described above.
 3. **Score all designs with the same council plus the kitchen screen designer** (six fresh agents, briefs in [reviewers.md](reviewers.md)). Each sees every design, the same current-contract evidence packet and the service rules, not your favourite. Explain how contract fit, the relevant principles and evidence affect the ranking. If using numeric scores, state the scale and reproduce the reviewers' scores without inventing missing ones.
-4. **Recommend one, or a mix** ("B with A's tabs"), and say why in three lines, naming the useful principles kept and any tempting idea rejected. State unresolved contract failures, evidence gaps and any proposed departure needing the head chef's choice. The head chef chooses. Record the choice at the top of `docs/head-chef-decisions.md` and in the brief's "chosen" section, then build it in small steps.
+4. **Explicitly consider a mix of all three**, using the process below. Every reviewer names useful or rejected parts from A, B and C, ties them to the relevant seven-app principles, and says whether a blend could beat their preferred single design. The lead reconciles these independent answers after the original rankings.
+5. **Make one clear recommendation**, a named design or an exact mix. Lead with "Recommend B" or "Recommend B's main flow + A's quick entry + C's detail view", then explain why it beats the alternatives, which app principles help and the main downside. State unresolved contract failures, evidence gaps, disagreement and any proposed departure needing the head chef's choice. Do not leave the head chef with an unranked menu or only "your call". The head chef still chooses. Record the choice at the top of `docs/head-chef-decisions.md` and in the brief's "chosen" section, then build it in small steps.
+
+### Compare a mix
+
+For three options, assess **A + B + C** explicitly even if the final recommendation is one design or a two-way mix. With another requested count, consider contributions from every option. Record a compact table: source design and part, take or reject with reason, useful app principle, kitchen benefit, interaction conflict or extra cost, and evidence. Do not force a contribution from every design if it creates clutter, duplicate controls, incompatible save steps or extra taps. Explain why a pure or two-way option beats the all-three blend when that is the conclusion.
+
+A recommended mix needs **one coherent combined preview** before the head chef chooses. Keep the original designs and their rankings beside it. Measure the mix's own taps, visible lines and affected states; apply the same contract and reference checks, including colour rules. Do not average or copy component scores, claim inherited agreement, or call a montage a tested workflow. Mark missing evidence Not evidenced.
+
+Label the combined proposal's review status. A lead synthesis is not automatically a council-endorsed design. If the blend introduces a flow or risk not covered by the original reviews, get a focused follow-up from the relevant existing reviewers on the combined preview and evidence. Record their actual findings and remaining disagreement. This completes round 2; it does not add a new full council round or rerun round 1.
 
 ## What the head chef sees
 
@@ -100,12 +109,14 @@ Taps to add a prep line: 3 before, 2 after. Lines on a 390 px phone: 11 before, 
 Skeptic disagreed: the ⋯ sheet already shows who wrote the line.
 Reference fit: Things keeps today's work visible; drag-only ordering rejected for wet hands. Evidence and comparison in the brief.
 Contract fit: sources, colour/state checks, evidence and unresolved items in the brief.
+Recommendation: one named design or an exact mix, why it wins and its main downside.
+Mix considered: A + B + C contributions, rejected parts and combined-preview review status in the brief.
 Brief: docs/<name>-options/brief.md (design B chosen, 5 Nov 2026)
 ```
 
 Or `Verdict: Not needed (bug fix)`. The **Council check** (`.github/workflows/council-check.yml`, `scripts/council-check.mjs`) turns red on a ready pull request that changes the app without a `Verdict:` line. It is not a required check and never stops a merge.
 
-In the chat, before building: the verdict, the one-line reason, the taps and lines before and after, and the question for the head chef.
+In the chat, before building: the verdict, reason and relevant evidence, including taps and lines before and after. When round 2 runs, also show the three distinct designs (or requested count), the clear recommendation, the all-three mix conclusion (or all supplied options), and the question for the head chef. Show the combined preview when recommending a mix. Small changes keep the quick check.
 
 ## Keep it honest and cheap
 
