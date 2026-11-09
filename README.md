@@ -4,7 +4,7 @@
 
 # Leichhardt Kitchen Book
 
-Supplier sheets can follow updated order templates while keeping previous quantities attached to the same items. The existing **Import catalogue** screen accepts a private order-only JSON file, previews the matched sequence and applies it after review. Item IDs, pars, original records and order history stay unchanged. Existing items absent from the template stay at the end; missing or ambiguous matches stop the update. [Contract and checks](docs/supplier-workspace.md#template-order-updates-9-november-2026).
+Supplier sheets can follow updated order templates while keeping previous quantities attached to the same items. Re-import the updated private catalogue through **Import catalogue**: existing IDs follow the file's sequence, new items are added once and other saved items stay at the end. Current pars, original records and history remain intact. The review shows the file sequence; a smaller order-only format is also supported. [Contract and checks](docs/supplier-workspace.md#template-order-updates-9-november-2026).
 
 Sheets and modals can be closed by swiping their grip or title down, or dragging it with a mouse. Normal scrolling and fields keep their own gestures. Swiping uses the existing Cancel action, retaining add-form drafts and leaving pings unread. [Behaviour and checks](docs/adaptive-controls.md#swipe-to-close-9-november-2026).
 

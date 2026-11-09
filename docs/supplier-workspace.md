@@ -4,7 +4,13 @@ Status: implemented. Approved by the head chef on 24 October 2026 after the work
 
 ## Template order updates, 9 November 2026
 
-The owner supplied revised order templates and asked for the catalogue sequence to follow them while preserving previous quantities. **Import catalogue** now also accepts a private order-only JSON file. It reviews matched suppliers and their full proposed item sequence before **Apply template order**. This uses the existing file picker and review step, with no new service-page control.
+The owner supplied revised order templates and the original catalogue import, and asked for an updated version of that same catalogue file. **Import catalogue** now follows the item ID sequence in the existing `{version: 1, suppliers: [...]}` format. Existing items use their current live records, new IDs are added in their file positions, and other saved items retain their relative order at the end. Re-importing the same file creates no duplicate items. The review shows each supplier's file sequence and its existing reminder mapping. No extra service-page control or import step is added.
+
+The catalogue file does not contain previous orders. Quantities remain linked through stable item IDs in immutable history. An old file's par, unit, alias or other mutable detail never overwrites a newer live value for an existing ID. Original names and source records still have to match. The transaction validates canonical records but writes the exact raw existing item maps, including legacy unit spellings and omitted optional fields. It retains the live supplier name, allows the reviewed reminder link and appends the existing full catalogue audit. New supplier imports still work. A direct import save that tries to disguise an edit to an existing item is refused.
+
+Every source row and supplier plan is checked before the first write. An unreadable live supplier blocks the import, rather than being treated as a missing supplier. An item ID already owned by another live supplier cannot be introduced into a different supplier. The existing per-supplier revision transaction stops a later concurrent change; partial-save reporting and explicit retry remain. An unchanged catalogue saves nothing. This adds no reads, schema fields or rules to the existing catalogue import.
+
+The optional private order-only file remains supported. It reviews matched suppliers and their full proposed item sequence before **Apply template order**.
 
 The private format is `{version: 1, kind: 'supplier-template-order', templates: [{file, items: [{name, pack}]}]}`. The names and packs describe template rows, never replacement catalogue records. Keep actual files and supplier goods outside this public repository.
 
@@ -22,7 +28,9 @@ Action feedback: Apply immediately says Saving and disables itself. An acknowled
 
 Local verification includes 24 pure core checks (six new checks failed before implementation), existing supplier module/quantity/row/unreadable checks, and 61 focused import checks at 390, 768 and 1280 px. The browser regression caught three raw-item preservation failures from a legacy unit spelling; the reorder transaction now retains the exact raw item maps while validating canonical equality, and the checks pass. The production catalogue cannot be accessed in this session, so actual live matching and application of the private update remain a signed-in chef action after the code ships. Do not describe the kitchen's catalogue as already reordered.
 
-Delivery revisions: `js/suppliers.js?v=19`, `js/supplier-core.js?v=5`, `js/supplier-store.js?v=4`. Existing public API numbers stay compatible; the workspace additionally checks the template-order capability before reading the catalogue. Rollback reverts the client support; an already saved sequence and its audit remain valid to older clients.
+The full-catalogue regression covers file order, new item positions, retained extras, exact raw item preservation, stale uploaded pars, current drafts, previous quantities, immutable history, retry, reminder mapping, new suppliers, source protection and unreadable records. On the old importer, 12 of its 42 checks failed; the revised importer passes all 42.
+
+Delivery revisions: `js/suppliers.js?v=20`, `js/supplier-core.js?v=5`, `js/supplier-store.js?v=5`. Existing public API numbers stay compatible; the workspace checks the template-order and full-catalogue sequence capabilities before reading the catalogue. Rollback reverts the client support; an already saved sequence and its audit remain valid to older clients.
 
 ## Outcome
 

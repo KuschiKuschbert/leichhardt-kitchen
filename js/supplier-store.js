@@ -126,17 +126,19 @@
         var sr = ref(c, ['suppliers', sid]), snapshot = await tx.get(sr), rawOld = data(snapshot), old = catalogueData(snapshot), oldV = old ? old.v : 0;
         if (oldV !== expectedV) throw error('stale', 'The catalogue changed on another device. Refresh it before saving.', { current: old });
         var clean = cleanSupplier(sid, old, patch), at = B.now(), next = { name: clean.name, cutoffId: clean.cutoffId, v: oldV + 1, items: clean.items, at: at, by: by };
-        if (m.action === 'reorder') {
-          if (!old || clean.name !== old.name || clean.cutoffId !== old.cutoffId || clean.items.length !== old.items.length) throw error('invalid', 'A template order can only change the item sequence, not supplier details or catalogue items.');
+        var sequenceOnly = m.action === 'reorder', preserveItems = sequenceOnly || (m.action === 'import' && !!old);
+        if (sequenceOnly && (!old || clean.name !== old.name || clean.cutoffId !== old.cutoffId || clean.items.length !== old.items.length)) throw error('invalid', 'A template order can only change the item sequence, not supplier details or catalogue items.');
+        if (preserveItems) {
+          if (clean.name !== old.name) throw error('invalid', 'A catalogue import keeps the saved supplier name. Change it in Supplier settings.');
           var canonicalItems = new Map(old.items.map(function (entry) { return [entry.id, entry]; })), rawItems = new Map(rawOld.items.map(function (entry) { return [entry.id, entry]; }));
           clean.items.forEach(function (entry) {
-            if (!canonicalItems.has(entry.id) || JSON.stringify(entry) !== JSON.stringify(canonicalItems.get(entry.id))) throw error('invalid', 'A template order cannot change the saved details for ' + entry.name + '. Refresh and check the catalogue before saving.');
+            if ((sequenceOnly && !canonicalItems.has(entry.id)) || (canonicalItems.has(entry.id) && JSON.stringify(entry) !== JSON.stringify(canonicalItems.get(entry.id)))) throw error('invalid', 'An import cannot change the saved details for ' + entry.name + '. Refresh and check the catalogue before saving.');
           });
-          // Validation uses canonical units, but a sequence change keeps even legacy spelling and omitted item fields.
-          next.name = rawOld.name; next.cutoffId = rawOld.cutoffId;
-          next.items = clean.items.map(function (entry) { return copy(rawItems.get(entry.id)); });
+          // Validation uses canonical units, but importing a sequence keeps legacy spelling and omitted saved fields.
+          next.name = rawOld.name; next.cutoffId = sequenceOnly ? rawOld.cutoffId : clean.cutoffId;
+          next.items = clean.items.map(function (entry) { return copy(rawItems.has(entry.id) ? rawItems.get(entry.id) : entry); });
         }
-        var itemId = m.action === 'reorder' ? '' : typeof m.itemId === 'string' ? m.itemId : '', before = old ? withoutId(m.action === 'reorder' ? rawOld : old) : null, after = copy(next);
+        var itemId = preserveItems ? '' : typeof m.itemId === 'string' ? m.itemId : '', before = old ? withoutId(preserveItems ? rawOld : old) : null, after = copy(next);
         if (itemId) {
           before = old ? (old.items || []).filter(function (x) { return x.id === itemId; })[0] || null : null;
           after = next.items.filter(function (x) { return x.id === itemId; })[0] || null;
@@ -150,20 +152,21 @@
     async function importCatalogue(payload, mapping) {
       var validated = core().validateCatalogue(payload), maps = mapping || {}, list = validated.suppliers;
       var importContext = (await access(true)).ctx;
-      var existing = await loadSuppliers(), byId = new Map(existing.map(function (s) { return [s.id, s]; })), plans = [];
+      var existing = await loadSuppliers(), byId = new Map(existing.map(function (s) { return [s.id, s]; })), owners = new Map(), plans = [];
       check(importContext, true);
+      if (existing.bad && existing.bad.length) throw error('invalid', 'Some supplier records could not be read. Resolve them before importing the catalogue. Nothing was changed.');
+      existing.forEach(function (s) { s.items.forEach(function (entry) { if (!owners.has(entry.id)) owners.set(entry.id, s.id); }); });
       list.forEach(function (s) {
         var old = byId.get(s.id), cid = Object.prototype.hasOwnProperty.call(maps, s.id) ? maps[s.id] : (old ? old.cutoffId : s.cutoffId);
-        var items = s.items;
-        if (old) {
-          var existingItems = new Map((old.items || []).map(function (i) { return [i.id, i]; }));
-          items = copy(old.items || []);
-          s.items.forEach(function (i) {
-            var before = existingItems.get(i.id);
-            if (before) core().cleanItem(i, before);
-            else items.push(i);
-          });
-        }
+        var existingItems = new Map((old ? old.items : []).map(function (i) { return [i.id, i]; })), included = new Set();
+        // Incoming IDs set the sequence. Keep live details for known IDs and retain unlisted live items at the end.
+        var items = s.items.map(function (entry) {
+          var before = existingItems.get(entry.id); included.add(entry.id);
+          if (before) { core().cleanItem(entry, before); return copy(before); }
+          if (owners.has(entry.id)) throw error('invalid', 'The item ' + entry.name + ' already belongs to another supplier. Keep its saved supplier and item ID.');
+          owners.set(entry.id, s.id); return copy(entry);
+        });
+        if (old) old.items.forEach(function (entry) { if (!included.has(entry.id)) items.push(copy(entry)); });
         var patch = { name: old ? old.name : s.name, cutoffId: cid || '', items: items };
         cleanSupplier(s.id, old, patch);
         var unchanged = old && old.name === patch.name && old.cutoffId === patch.cutoffId && JSON.stringify(old.items) === JSON.stringify(patch.items);
@@ -293,5 +296,5 @@
       audit: function (sid, n, cursor) { return page(sid, 'audit', n, cursor); }, saveCatalogue: saveCatalogue, importCatalogue: importCatalogue, applyTemplateOrder: applyTemplateOrder,
       record: record, link: link, exportAll: exportAll, copyTo: copyTo, reset: function () { generation++; } };
   }
-  window.LK_SUP_STORE = { API: API, templateOrder: 1, create: create };
+  window.LK_SUP_STORE = { API: API, templateOrder: 1, catalogueOrder: 1, create: create };
 })();
