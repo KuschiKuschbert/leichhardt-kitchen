@@ -1,0 +1,5439 @@
+{
+  "kind": "Actual application with isolated review-only injections; synthetic Firebase fixture. Not delivered app behavior.",
+  "date": "2026-11-09T17:04:40.940Z",
+  "viewports": [
+    [
+      390,
+      844
+    ],
+    [
+      768,
+      1024
+    ],
+    [
+      1280,
+      900
+    ]
+  ],
+  "screens": [
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "scrollWidth": 390,
+      "detail": null,
+      "sprite": {
+        "x": 310,
+        "y": 76,
+        "width": 64,
+        "height": 85.328125,
+        "bottom": 161.328125
+      },
+      "controls": [],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "A",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": false,
+        "player": {
+          "id": "welcome",
+          "frame": 0,
+          "playing": true,
+          "ready": true,
+          "failed": false,
+          "settled": false,
+          "loading": false,
+          "scheduled": true,
+          "visible": true,
+          "atlasLoaded": true
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp"
+        ]
+      },
+      "file": "evidence/a-home-390.png",
+      "note": "Top of actual Home; arrival greeting in existing spare heading space.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 2251,
+      "scrollWidth": 390,
+      "detail": {
+        "x": 16,
+        "y": 566.71875,
+        "width": 358,
+        "height": 50,
+        "bottom": 616.71875
+      },
+      "sprite": null,
+      "controls": [
+        {
+          "text": "Kitchen mascot \u00b7 Burger",
+          "x": 16,
+          "y": 567.71875,
+          "width": 358,
+          "height": 48,
+          "bottom": 615.71875,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "B",
+        "route": "#/r/smash",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": false,
+        "player": null,
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png"
+        ]
+      },
+      "file": "evidence/b-smash-closed-390.png",
+      "note": "Scrolled to the end, below every existing recipe element.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 2607,
+      "scrollWidth": 390,
+      "detail": {
+        "x": 16,
+        "y": 210.71875,
+        "width": 358,
+        "height": 405.03125,
+        "bottom": 615.75
+      },
+      "sprite": {
+        "x": 147,
+        "y": 354.75,
+        "width": 96,
+        "height": 128,
+        "bottom": 482.75
+      },
+      "controls": [
+        {
+          "text": "Kitchen mascot \u00b7 Burger",
+          "x": 16,
+          "y": 211.71875,
+          "width": 358,
+          "height": 48,
+          "bottom": 259.71875,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "text": "Play",
+          "x": 54,
+          "y": 494.75,
+          "width": 94,
+          "height": 44,
+          "bottom": 538.75,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(194, 69, 26)"
+        },
+        {
+          "text": "Replay",
+          "x": 156,
+          "y": 494.75,
+          "width": 94,
+          "height": 44,
+          "bottom": 538.75,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "text": "Ready",
+          "x": 28,
+          "y": 554.75,
+          "width": 65.984375,
+          "height": 44,
+          "bottom": 598.75,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Smash",
+          "x": 99.984375,
+          "y": 554.75,
+          "width": 69.71875,
+          "height": 44,
+          "bottom": 598.75,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Flip",
+          "x": 175.703125,
+          "y": 553.75,
+          "width": 50.6875,
+          "height": 44,
+          "bottom": 597.75,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Build",
+          "x": 232.390625,
+          "y": 554.75,
+          "width": 58.90625,
+          "height": 44,
+          "bottom": 598.75,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Serve",
+          "x": 297.296875,
+          "y": 554.75,
+          "width": 63.609375,
+          "height": 44,
+          "bottom": 598.75,
+          "color": "rgb(251, 248, 241)",
+          "background": "rgb(184, 63, 21)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "B",
+        "route": "#/r/smash",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": true,
+        "player": {
+          "id": "burger",
+          "frame": 0,
+          "playing": false,
+          "ready": true,
+          "failed": false,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png"
+        ]
+      },
+      "file": "evidence/b-smash-open-390.png",
+      "note": "Opened optional Burger disclosure; recipe content remains above, unmodified.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 1716,
+      "scrollWidth": 486,
+      "detail": {
+        "x": 16,
+        "y": 210.734375,
+        "width": 358,
+        "height": 405.03125,
+        "bottom": 615.765625
+      },
+      "sprite": {
+        "x": 147,
+        "y": 354.765625,
+        "width": 96,
+        "height": 128,
+        "bottom": 482.765625
+      },
+      "controls": [
+        {
+          "text": "Kitchen mascot \u00b7 House-smoked",
+          "x": 16,
+          "y": 211.734375,
+          "width": 358,
+          "height": 48,
+          "bottom": 259.734375,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "text": "Play",
+          "x": 54,
+          "y": 494.765625,
+          "width": 94,
+          "height": 44,
+          "bottom": 538.765625,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(194, 69, 26)"
+        },
+        {
+          "text": "Replay",
+          "x": 156,
+          "y": 494.765625,
+          "width": 94,
+          "height": 44,
+          "bottom": 538.765625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "text": "At the smoker",
+          "x": 28,
+          "y": 554.765625,
+          "width": 113.84375,
+          "height": 44,
+          "bottom": 598.765625,
+          "color": "rgb(251, 248, 241)",
+          "background": "rgb(184, 63, 21)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "B",
+        "route": "#/r/brisket",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": true,
+        "player": {
+          "id": "smoker",
+          "frame": 0,
+          "playing": false,
+          "ready": true,
+          "failed": false,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/smash-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/smash-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/smoker-still.png"
+        ]
+      },
+      "file": "evidence/b-brisket-open-390.png",
+      "note": "Opened optional House-smoked disclosure after all current recipe content; offset smoker only.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 328,
+      "scrollWidth": 390,
+      "detail": {
+        "x": 16,
+        "y": 615.109375,
+        "width": 358,
+        "height": 50,
+        "bottom": 665.109375
+      },
+      "sprite": null,
+      "controls": [
+        {
+          "text": "Meet our kitchen mascot",
+          "x": 16,
+          "y": 616.109375,
+          "width": 358,
+          "height": 48,
+          "bottom": 664.109375,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "C",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": false,
+        "player": null,
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/smash-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/smash-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/smoker-still.png"
+        ]
+      },
+      "file": "evidence/c-home-closed-390.png",
+      "note": "Scrolled past all work cards and Coming up to the closed mascot collection.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 773,
+      "scrollWidth": 390,
+      "detail": {
+        "x": 16,
+        "y": 170.109375,
+        "width": 358,
+        "height": 505.03125,
+        "bottom": 675.140625
+      },
+      "sprite": {
+        "x": 147,
+        "y": 314.140625,
+        "width": 96,
+        "height": 128,
+        "bottom": 442.140625
+      },
+      "controls": [
+        {
+          "text": "Meet our kitchen mascot",
+          "x": 16,
+          "y": 171.109375,
+          "width": 358,
+          "height": 48,
+          "bottom": 219.109375,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "text": "Play",
+          "x": 54,
+          "y": 454.140625,
+          "width": 94,
+          "height": 44,
+          "bottom": 498.140625,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(194, 69, 26)"
+        },
+        {
+          "text": "Replay",
+          "x": 156,
+          "y": 454.140625,
+          "width": 94,
+          "height": 44,
+          "bottom": 498.140625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "text": "Idle",
+          "x": 28,
+          "y": 514.140625,
+          "width": 50.421875,
+          "height": 44,
+          "bottom": 558.140625,
+          "color": "rgb(251, 248, 241)",
+          "background": "rgb(184, 63, 21)"
+        },
+        {
+          "text": "Welcome",
+          "x": 84.421875,
+          "y": 514.140625,
+          "width": 84.6875,
+          "height": 44,
+          "bottom": 558.140625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Look around",
+          "x": 175.109375,
+          "y": 514.140625,
+          "width": 104.859375,
+          "height": 44,
+          "bottom": 558.140625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Recipe reading",
+          "x": 28,
+          "y": 564.140625,
+          "width": 119.921875,
+          "height": 44,
+          "bottom": 608.140625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Ready",
+          "x": 153.921875,
+          "y": 564.140625,
+          "width": 65.984375,
+          "height": 44,
+          "bottom": 608.140625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Smash",
+          "x": 225.90625,
+          "y": 564.140625,
+          "width": 69.71875,
+          "height": 44,
+          "bottom": 608.140625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Flip",
+          "x": 301.625,
+          "y": 564.140625,
+          "width": 50.6875,
+          "height": 44,
+          "bottom": 608.140625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Build",
+          "x": 28,
+          "y": 614.140625,
+          "width": 58.90625,
+          "height": 44,
+          "bottom": 658.140625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Serve",
+          "x": 92.90625,
+          "y": 614.140625,
+          "width": 63.609375,
+          "height": 44,
+          "bottom": 658.140625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Walk",
+          "x": 162.515625,
+          "y": 613.140625,
+          "width": 57.5,
+          "height": 44,
+          "bottom": 657.140625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "At the smoker",
+          "x": 226.015625,
+          "y": 614.140625,
+          "width": 113.84375,
+          "height": 44,
+          "bottom": 658.140625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "C",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": true,
+        "player": {
+          "id": "idle",
+          "frame": 0,
+          "playing": false,
+          "ready": true,
+          "failed": false,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/smash-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/smash-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/smoker-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/idle-still.png"
+        ]
+      },
+      "file": "evidence/c-home-open-390.png",
+      "note": "Scrolled past all work and Coming up; the optional collection is open.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "scrollY": 0,
+      "scrollWidth": 768,
+      "detail": null,
+      "sprite": {
+        "x": 656,
+        "y": 168,
+        "width": 64,
+        "height": 85.328125,
+        "bottom": 253.328125
+      },
+      "controls": [],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "A",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": false,
+        "player": {
+          "id": "welcome",
+          "frame": 0,
+          "playing": true,
+          "ready": true,
+          "failed": false,
+          "settled": false,
+          "loading": false,
+          "scheduled": true,
+          "visible": true,
+          "atlasLoaded": true
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp"
+        ]
+      },
+      "file": "evidence/a-home-768.png",
+      "note": "Top of actual Home; arrival greeting in existing spare heading space.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "scrollY": 1946,
+      "scrollWidth": 768,
+      "detail": {
+        "x": 20,
+        "y": 843.6875,
+        "width": 728,
+        "height": 50,
+        "bottom": 893.6875
+      },
+      "sprite": null,
+      "controls": [
+        {
+          "text": "Kitchen mascot \u00b7 Burger",
+          "x": 20,
+          "y": 844.6875,
+          "width": 728,
+          "height": 48,
+          "bottom": 892.6875,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "B",
+        "route": "#/r/smash",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": false,
+        "player": null,
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png"
+        ]
+      },
+      "file": "evidence/b-smash-closed-768.png",
+      "note": "Scrolled to the end, below every existing recipe element.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "scrollY": 2341,
+      "scrollWidth": 768,
+      "detail": {
+        "x": 20,
+        "y": 448.6875,
+        "width": 728,
+        "height": 445.03125,
+        "bottom": 893.71875
+      },
+      "sprite": {
+        "x": 312,
+        "y": 568.71875,
+        "width": 144,
+        "height": 192,
+        "bottom": 760.71875
+      },
+      "controls": [
+        {
+          "text": "Kitchen mascot \u00b7 Burger",
+          "x": 20,
+          "y": 449.6875,
+          "width": 728,
+          "height": 48,
+          "bottom": 497.6875,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "text": "Play",
+          "x": 243,
+          "y": 772.71875,
+          "width": 94,
+          "height": 44,
+          "bottom": 816.71875,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(194, 69, 26)"
+        },
+        {
+          "text": "Replay",
+          "x": 345,
+          "y": 772.71875,
+          "width": 94,
+          "height": 44,
+          "bottom": 816.71875,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "text": "Ready",
+          "x": 34,
+          "y": 832.71875,
+          "width": 65.984375,
+          "height": 44,
+          "bottom": 876.71875,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Smash",
+          "x": 106.984375,
+          "y": 832.71875,
+          "width": 69.71875,
+          "height": 44,
+          "bottom": 876.71875,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Flip",
+          "x": 183.703125,
+          "y": 832.71875,
+          "width": 50.6875,
+          "height": 44,
+          "bottom": 876.71875,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Build",
+          "x": 241.390625,
+          "y": 832.71875,
+          "width": 58.90625,
+          "height": 44,
+          "bottom": 876.71875,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Serve",
+          "x": 307.296875,
+          "y": 832.71875,
+          "width": 63.609375,
+          "height": 44,
+          "bottom": 876.71875,
+          "color": "rgb(251, 248, 241)",
+          "background": "rgb(184, 63, 21)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "B",
+        "route": "#/r/smash",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": true,
+        "player": {
+          "id": "burger",
+          "frame": 0,
+          "playing": false,
+          "ready": true,
+          "failed": false,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png"
+        ]
+      },
+      "file": "evidence/b-smash-open-768.png",
+      "note": "Opened optional Burger disclosure; recipe content remains above, unmodified.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "scrollY": 1584,
+      "scrollWidth": 768,
+      "detail": {
+        "x": 20,
+        "y": 448.84375,
+        "width": 728,
+        "height": 445.03125,
+        "bottom": 893.875
+      },
+      "sprite": {
+        "x": 312,
+        "y": 568.875,
+        "width": 144,
+        "height": 192,
+        "bottom": 760.875
+      },
+      "controls": [
+        {
+          "text": "Kitchen mascot \u00b7 House-smoked",
+          "x": 20,
+          "y": 449.84375,
+          "width": 728,
+          "height": 48,
+          "bottom": 497.84375,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "text": "Play",
+          "x": 243,
+          "y": 772.875,
+          "width": 94,
+          "height": 44,
+          "bottom": 816.875,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(194, 69, 26)"
+        },
+        {
+          "text": "Replay",
+          "x": 345,
+          "y": 772.875,
+          "width": 94,
+          "height": 44,
+          "bottom": 816.875,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "text": "At the smoker",
+          "x": 34,
+          "y": 832.875,
+          "width": 113.84375,
+          "height": 44,
+          "bottom": 876.875,
+          "color": "rgb(251, 248, 241)",
+          "background": "rgb(184, 63, 21)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "B",
+        "route": "#/r/brisket",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": true,
+        "player": {
+          "id": "smoker",
+          "frame": 0,
+          "playing": false,
+          "ready": true,
+          "failed": false,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/smoker-still.png"
+        ]
+      },
+      "file": "evidence/b-brisket-open-768.png",
+      "note": "Opened optional House-smoked disclosure after all current recipe content; offset smoker only.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "scrollY": 1,
+      "scrollWidth": 768,
+      "detail": {
+        "x": 48,
+        "y": 708.421875,
+        "width": 672,
+        "height": 50,
+        "bottom": 758.421875
+      },
+      "sprite": null,
+      "controls": [
+        {
+          "text": "Meet our kitchen mascot",
+          "x": 48,
+          "y": 709.421875,
+          "width": 672,
+          "height": 48,
+          "bottom": 757.421875,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "C",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": false,
+        "player": null,
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/smoker-still.png"
+        ]
+      },
+      "file": "evidence/c-home-closed-768.png",
+      "note": "Scrolled past all work cards and Coming up to the closed mascot collection.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "scrollY": 281,
+      "scrollWidth": 768,
+      "detail": {
+        "x": 48,
+        "y": 428.421875,
+        "width": 672,
+        "height": 496.03125,
+        "bottom": 924.453125
+      },
+      "sprite": {
+        "x": 312,
+        "y": 548.453125,
+        "width": 144,
+        "height": 192,
+        "bottom": 740.453125
+      },
+      "controls": [
+        {
+          "text": "Meet our kitchen mascot",
+          "x": 48,
+          "y": 429.421875,
+          "width": 672,
+          "height": 48,
+          "bottom": 477.421875,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "text": "Play",
+          "x": 243,
+          "y": 752.453125,
+          "width": 94,
+          "height": 44,
+          "bottom": 796.453125,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(194, 69, 26)"
+        },
+        {
+          "text": "Replay",
+          "x": 345,
+          "y": 752.453125,
+          "width": 94,
+          "height": 44,
+          "bottom": 796.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "text": "Idle",
+          "x": 62,
+          "y": 812.453125,
+          "width": 50.421875,
+          "height": 44,
+          "bottom": 856.453125,
+          "color": "rgb(251, 248, 241)",
+          "background": "rgb(184, 63, 21)"
+        },
+        {
+          "text": "Welcome",
+          "x": 119.421875,
+          "y": 812.453125,
+          "width": 84.6875,
+          "height": 44,
+          "bottom": 856.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Look around",
+          "x": 211.109375,
+          "y": 812.453125,
+          "width": 104.859375,
+          "height": 44,
+          "bottom": 856.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Recipe reading",
+          "x": 322.96875,
+          "y": 812.453125,
+          "width": 119.921875,
+          "height": 44,
+          "bottom": 856.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Ready",
+          "x": 449.890625,
+          "y": 812.453125,
+          "width": 65.984375,
+          "height": 44,
+          "bottom": 856.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Smash",
+          "x": 522.875,
+          "y": 812.453125,
+          "width": 69.71875,
+          "height": 44,
+          "bottom": 856.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Flip",
+          "x": 599.59375,
+          "y": 812.453125,
+          "width": 50.6875,
+          "height": 44,
+          "bottom": 856.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Build",
+          "x": 62,
+          "y": 863.453125,
+          "width": 58.90625,
+          "height": 44,
+          "bottom": 907.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Serve",
+          "x": 127.90625,
+          "y": 863.453125,
+          "width": 63.609375,
+          "height": 44,
+          "bottom": 907.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Walk",
+          "x": 198.515625,
+          "y": 863.453125,
+          "width": 57.5,
+          "height": 44,
+          "bottom": 907.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "At the smoker",
+          "x": 263.015625,
+          "y": 863.453125,
+          "width": 113.84375,
+          "height": 44,
+          "bottom": 907.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "C",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": true,
+        "player": {
+          "id": "idle",
+          "frame": 0,
+          "playing": false,
+          "ready": true,
+          "failed": false,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/smoker-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/idle-still.png"
+        ]
+      },
+      "file": "evidence/c-home-open-768.png",
+      "note": "Scrolled past all work and Coming up; the optional collection is open.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "scrollY": 0,
+      "scrollWidth": 1280,
+      "detail": null,
+      "sprite": {
+        "x": 1148,
+        "y": 152,
+        "width": 64,
+        "height": 85.328125,
+        "bottom": 237.328125
+      },
+      "controls": [],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "A",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": false,
+        "player": {
+          "id": "welcome",
+          "frame": 0,
+          "playing": true,
+          "ready": true,
+          "failed": false,
+          "settled": false,
+          "loading": false,
+          "scheduled": true,
+          "visible": true,
+          "atlasLoaded": true
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp"
+        ]
+      },
+      "file": "evidence/a-home-1280.png",
+      "note": "Top of actual Home; arrival greeting in existing spare heading space.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "scrollY": 1421,
+      "scrollWidth": 1280,
+      "detail": {
+        "x": 40,
+        "y": 720.40625,
+        "width": 1200,
+        "height": 50,
+        "bottom": 770.40625
+      },
+      "sprite": null,
+      "controls": [
+        {
+          "text": "Kitchen mascot \u00b7 Burger",
+          "x": 40,
+          "y": 721.40625,
+          "width": 1200,
+          "height": 48,
+          "bottom": 769.40625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "B",
+        "route": "#/r/smash",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": false,
+        "player": null,
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png"
+        ]
+      },
+      "file": "evidence/b-smash-closed-1280.png",
+      "note": "Scrolled to the end, below every existing recipe element.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "scrollY": 1817,
+      "scrollWidth": 1280,
+      "detail": {
+        "x": 40,
+        "y": 324.40625,
+        "width": 1200,
+        "height": 445.03125,
+        "bottom": 769.4375
+      },
+      "sprite": {
+        "x": 568,
+        "y": 444.4375,
+        "width": 144,
+        "height": 192,
+        "bottom": 636.4375
+      },
+      "controls": [
+        {
+          "text": "Kitchen mascot \u00b7 Burger",
+          "x": 40,
+          "y": 325.40625,
+          "width": 1200,
+          "height": 48,
+          "bottom": 373.40625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "text": "Play",
+          "x": 499,
+          "y": 648.4375,
+          "width": 94,
+          "height": 44,
+          "bottom": 692.4375,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(194, 69, 26)"
+        },
+        {
+          "text": "Replay",
+          "x": 601,
+          "y": 648.4375,
+          "width": 94,
+          "height": 44,
+          "bottom": 692.4375,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "text": "Ready",
+          "x": 54,
+          "y": 708.4375,
+          "width": 65.984375,
+          "height": 44,
+          "bottom": 752.4375,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Smash",
+          "x": 126.984375,
+          "y": 708.4375,
+          "width": 69.71875,
+          "height": 44,
+          "bottom": 752.4375,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Flip",
+          "x": 203.703125,
+          "y": 708.4375,
+          "width": 50.6875,
+          "height": 44,
+          "bottom": 752.4375,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Build",
+          "x": 261.390625,
+          "y": 708.4375,
+          "width": 58.90625,
+          "height": 44,
+          "bottom": 752.4375,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Serve",
+          "x": 327.296875,
+          "y": 708.4375,
+          "width": 63.609375,
+          "height": 44,
+          "bottom": 752.4375,
+          "color": "rgb(251, 248, 241)",
+          "background": "rgb(184, 63, 21)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "B",
+        "route": "#/r/smash",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": true,
+        "player": {
+          "id": "burger",
+          "frame": 0,
+          "playing": false,
+          "ready": true,
+          "failed": false,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png"
+        ]
+      },
+      "file": "evidence/b-smash-open-1280.png",
+      "note": "Opened optional Burger disclosure; recipe content remains above, unmodified.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "scrollY": 828,
+      "scrollWidth": 1280,
+      "detail": {
+        "x": 40,
+        "y": 324.609375,
+        "width": 1200,
+        "height": 445.03125,
+        "bottom": 769.640625
+      },
+      "sprite": {
+        "x": 568,
+        "y": 444.640625,
+        "width": 144,
+        "height": 192,
+        "bottom": 636.640625
+      },
+      "controls": [
+        {
+          "text": "Kitchen mascot \u00b7 House-smoked",
+          "x": 40,
+          "y": 325.609375,
+          "width": 1200,
+          "height": 48,
+          "bottom": 373.609375,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "text": "Play",
+          "x": 499,
+          "y": 648.640625,
+          "width": 94,
+          "height": 44,
+          "bottom": 692.640625,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(194, 69, 26)"
+        },
+        {
+          "text": "Replay",
+          "x": 601,
+          "y": 648.640625,
+          "width": 94,
+          "height": 44,
+          "bottom": 692.640625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "text": "At the smoker",
+          "x": 54,
+          "y": 708.640625,
+          "width": 113.84375,
+          "height": 44,
+          "bottom": 752.640625,
+          "color": "rgb(251, 248, 241)",
+          "background": "rgb(184, 63, 21)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "B",
+        "route": "#/r/brisket",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": true,
+        "player": {
+          "id": "smoker",
+          "frame": 0,
+          "playing": false,
+          "ready": true,
+          "failed": false,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/smoker-still.png"
+        ]
+      },
+      "file": "evidence/b-brisket-open-1280.png",
+      "note": "Opened optional House-smoked disclosure after all current recipe content; offset smoker only.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "scrollY": 1,
+      "scrollWidth": 1280,
+      "detail": {
+        "x": 68,
+        "y": 692.421875,
+        "width": 1144,
+        "height": 50,
+        "bottom": 742.421875
+      },
+      "sprite": null,
+      "controls": [
+        {
+          "text": "Meet our kitchen mascot",
+          "x": 68,
+          "y": 693.421875,
+          "width": 1144,
+          "height": 48,
+          "bottom": 741.421875,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "C",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": false,
+        "player": null,
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/smoker-still.png"
+        ]
+      },
+      "file": "evidence/c-home-closed-1280.png",
+      "note": "Scrolled past all work cards and Coming up to the closed mascot collection.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "scrollY": 338,
+      "scrollWidth": 1280,
+      "detail": {
+        "x": 68,
+        "y": 355.421875,
+        "width": 1144,
+        "height": 445.03125,
+        "bottom": 800.453125
+      },
+      "sprite": {
+        "x": 568,
+        "y": 475.453125,
+        "width": 144,
+        "height": 192,
+        "bottom": 667.453125
+      },
+      "controls": [
+        {
+          "text": "Meet our kitchen mascot",
+          "x": 68,
+          "y": 356.421875,
+          "width": 1144,
+          "height": 48,
+          "bottom": 404.421875,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "text": "Play",
+          "x": 499,
+          "y": 679.453125,
+          "width": 94,
+          "height": 44,
+          "bottom": 723.453125,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(194, 69, 26)"
+        },
+        {
+          "text": "Replay",
+          "x": 601,
+          "y": 678.453125,
+          "width": 94,
+          "height": 44,
+          "bottom": 722.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "text": "Idle",
+          "x": 82,
+          "y": 739.453125,
+          "width": 50.421875,
+          "height": 44,
+          "bottom": 783.453125,
+          "color": "rgb(251, 248, 241)",
+          "background": "rgb(184, 63, 21)"
+        },
+        {
+          "text": "Welcome",
+          "x": 139.421875,
+          "y": 739.453125,
+          "width": 84.6875,
+          "height": 44,
+          "bottom": 783.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Look around",
+          "x": 231.109375,
+          "y": 739.453125,
+          "width": 104.859375,
+          "height": 44,
+          "bottom": 783.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Recipe reading",
+          "x": 342.96875,
+          "y": 739.453125,
+          "width": 119.921875,
+          "height": 44,
+          "bottom": 783.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Ready",
+          "x": 469.890625,
+          "y": 739.453125,
+          "width": 65.984375,
+          "height": 44,
+          "bottom": 783.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Smash",
+          "x": 542.875,
+          "y": 739.453125,
+          "width": 69.71875,
+          "height": 44,
+          "bottom": 783.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Flip",
+          "x": 619.59375,
+          "y": 739.453125,
+          "width": 50.6875,
+          "height": 44,
+          "bottom": 783.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Build",
+          "x": 677.28125,
+          "y": 739.453125,
+          "width": 58.90625,
+          "height": 44,
+          "bottom": 783.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Serve",
+          "x": 743.1875,
+          "y": 739.453125,
+          "width": 63.609375,
+          "height": 44,
+          "bottom": 783.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Walk",
+          "x": 813.796875,
+          "y": 739.453125,
+          "width": 57.5,
+          "height": 44,
+          "bottom": 783.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "At the smoker",
+          "x": 878.296875,
+          "y": 739.453125,
+          "width": 113.84375,
+          "height": 44,
+          "bottom": 783.453125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "C",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": true,
+        "player": {
+          "id": "idle",
+          "frame": 0,
+          "playing": false,
+          "ready": true,
+          "failed": false,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/smoker-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/idle-still.png"
+        ]
+      },
+      "file": "evidence/c-home-open-1280.png",
+      "note": "Scrolled past all work and Coming up; the optional collection is open.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "scrollWidth": 390,
+      "detail": null,
+      "sprite": {
+        "x": 310,
+        "y": 76,
+        "width": 64,
+        "height": 85.328125,
+        "bottom": 161.328125
+      },
+      "controls": [],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "A",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": false,
+        "player": {
+          "id": "welcome",
+          "frame": 0,
+          "playing": false,
+          "ready": true,
+          "failed": false,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png"
+        ]
+      },
+      "file": "evidence/a-reduced-motion-390.png",
+      "note": "Native prefers-reduced-motion: reduce.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "scrollWidth": 390,
+      "detail": null,
+      "sprite": null,
+      "controls": [],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "A",
+        "route": "#/",
+        "mounted": false,
+        "omitted": "no-spare-heading-space",
+        "welcomed": false,
+        "open": false,
+        "player": null,
+        "assets": []
+      },
+      "file": "evidence/a-long-name-390.png",
+      "note": "Synthetic 40-character staff name; original full name retained. The independent a-edge-verification.json covers an exact 40-character name.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "scrollWidth": 390,
+      "detail": null,
+      "sprite": null,
+      "controls": [],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "A",
+        "route": "#/",
+        "mounted": false,
+        "omitted": "no-spare-heading-space",
+        "welcomed": false,
+        "open": false,
+        "player": null,
+        "assets": []
+      },
+      "file": "evidence/a-long-name-text120-390.png",
+      "note": "Synthetic 40-character staff name; original full name retained. The independent a-edge-verification.json covers an exact 40-character name.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "scrollWidth": 390,
+      "detail": null,
+      "sprite": {
+        "x": 310,
+        "y": 76,
+        "width": 64,
+        "height": 85.328125,
+        "bottom": 161.328125
+      },
+      "controls": [],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "A",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": true,
+        "open": false,
+        "player": {
+          "id": "welcome",
+          "frame": 0,
+          "playing": true,
+          "ready": true,
+          "failed": false,
+          "settled": false,
+          "loading": false,
+          "scheduled": true,
+          "visible": true,
+          "atlasLoaded": true
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp"
+        ]
+      },
+      "file": "evidence/a-seasonal-390.png",
+      "note": "Existing Diwali configuration with the measured Home mascot slot.",
+      "browserErrors": [],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": []
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "scrollWidth": 390,
+      "detail": null,
+      "sprite": {
+        "x": 310,
+        "y": 76,
+        "width": 64,
+        "height": 85.328125,
+        "bottom": 161.328125
+      },
+      "controls": [],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "A",
+        "route": "#/",
+        "mounted": true,
+        "omitted": "artwork-unavailable",
+        "welcomed": true,
+        "open": false,
+        "player": {
+          "id": "welcome",
+          "frame": 0,
+          "playing": false,
+          "ready": false,
+          "failed": true,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json"
+        ]
+      },
+      "file": "evidence/a-blocked-art-390.png",
+      "note": "All optional mascot media requests deliberately blocked; settled error state.",
+      "browserErrors": [
+        "console: Failed to load resource: net::ERR_FAILED",
+        "console: Failed to load resource: net::ERR_FAILED"
+      ],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": [
+        "console: Failed to load resource: net::ERR_FAILED",
+        "console: Failed to load resource: net::ERR_FAILED"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 2541,
+      "scrollWidth": 390,
+      "detail": {
+        "x": 16,
+        "y": 276.71875,
+        "width": 358,
+        "height": 339.40625,
+        "bottom": 616.125
+      },
+      "sprite": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "bottom": 0
+      },
+      "controls": [
+        {
+          "text": "Kitchen mascot \u00b7 Burger",
+          "x": 16,
+          "y": 277.71875,
+          "width": 358,
+          "height": 48,
+          "bottom": 325.71875,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "text": "Try again",
+          "x": 48.484375,
+          "y": 495.125,
+          "width": 105.015625,
+          "height": 44,
+          "bottom": 539.125,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(185, 179, 168)"
+        },
+        {
+          "text": "Replay",
+          "x": 161.5,
+          "y": 495.125,
+          "width": 94,
+          "height": 44,
+          "bottom": 539.125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "text": "Ready",
+          "x": 28,
+          "y": 555.125,
+          "width": 65.984375,
+          "height": 44,
+          "bottom": 599.125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Smash",
+          "x": 99.984375,
+          "y": 555.125,
+          "width": 69.71875,
+          "height": 44,
+          "bottom": 599.125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Flip",
+          "x": 175.703125,
+          "y": 554.125,
+          "width": 50.6875,
+          "height": 44,
+          "bottom": 598.125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Build",
+          "x": 232.390625,
+          "y": 555.125,
+          "width": 58.90625,
+          "height": 44,
+          "bottom": 599.125,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Serve",
+          "x": 297.296875,
+          "y": 555.125,
+          "width": 63.609375,
+          "height": 44,
+          "bottom": 599.125,
+          "color": "rgb(251, 248, 241)",
+          "background": "rgb(184, 63, 21)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "B",
+        "route": "#/r/smash",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": false,
+        "open": true,
+        "player": {
+          "id": "burger",
+          "frame": 0,
+          "playing": false,
+          "ready": false,
+          "failed": true,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json"
+        ]
+      },
+      "file": "evidence/b-blocked-art-390.png",
+      "note": "All optional mascot media requests deliberately blocked; settled error state.",
+      "browserErrors": [
+        "console: Failed to load resource: net::ERR_FAILED",
+        "console: Failed to load resource: net::ERR_FAILED"
+      ],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": [
+        "console: Failed to load resource: net::ERR_FAILED",
+        "console: Failed to load resource: net::ERR_FAILED"
+      ]
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 717,
+      "scrollWidth": 390,
+      "detail": {
+        "x": 16,
+        "y": 226.109375,
+        "width": 358,
+        "height": 439.40625,
+        "bottom": 665.515625
+      },
+      "sprite": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "bottom": 0
+      },
+      "controls": [
+        {
+          "text": "Meet our kitchen mascot",
+          "x": 16,
+          "y": 227.109375,
+          "width": 358,
+          "height": 48,
+          "bottom": 275.109375,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgba(0, 0, 0, 0)"
+        },
+        {
+          "text": "Try again",
+          "x": 48.484375,
+          "y": 444.2281188964844,
+          "width": 105.015625,
+          "height": 44,
+          "bottom": 488.2281188964844,
+          "color": "rgb(255, 255, 255)",
+          "background": "rgb(140, 136, 129)"
+        },
+        {
+          "text": "Replay",
+          "x": 161.5,
+          "y": 444.515625,
+          "width": 94,
+          "height": 44,
+          "bottom": 488.515625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(255, 255, 255)"
+        },
+        {
+          "text": "Idle",
+          "x": 28,
+          "y": 504.515625,
+          "width": 50.421875,
+          "height": 44,
+          "bottom": 548.515625,
+          "color": "rgb(251, 248, 241)",
+          "background": "rgb(184, 63, 21)"
+        },
+        {
+          "text": "Welcome",
+          "x": 84.421875,
+          "y": 504.515625,
+          "width": 84.6875,
+          "height": 44,
+          "bottom": 548.515625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Look around",
+          "x": 175.109375,
+          "y": 504.515625,
+          "width": 104.859375,
+          "height": 44,
+          "bottom": 548.515625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Recipe reading",
+          "x": 28,
+          "y": 554.515625,
+          "width": 119.921875,
+          "height": 44,
+          "bottom": 598.515625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Ready",
+          "x": 153.921875,
+          "y": 554.515625,
+          "width": 65.984375,
+          "height": 44,
+          "bottom": 598.515625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Smash",
+          "x": 225.90625,
+          "y": 554.515625,
+          "width": 69.71875,
+          "height": 44,
+          "bottom": 598.515625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Flip",
+          "x": 301.625,
+          "y": 554.515625,
+          "width": 50.6875,
+          "height": 44,
+          "bottom": 598.515625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Build",
+          "x": 28,
+          "y": 604.515625,
+          "width": 58.90625,
+          "height": 44,
+          "bottom": 648.515625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Serve",
+          "x": 92.90625,
+          "y": 604.515625,
+          "width": 63.609375,
+          "height": 44,
+          "bottom": 648.515625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "Walk",
+          "x": 162.515625,
+          "y": 603.931640625,
+          "width": 57.5,
+          "height": 44,
+          "bottom": 647.931640625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        },
+        {
+          "text": "At the smoker",
+          "x": 226.015625,
+          "y": 604.515625,
+          "width": 113.84375,
+          "height": 44,
+          "bottom": 648.515625,
+          "color": "rgb(28, 29, 31)",
+          "background": "rgb(251, 248, 241)"
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        }
+      ],
+      "state": {
+        "option": "C",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": false,
+        "open": true,
+        "player": {
+          "id": "idle",
+          "frame": 0,
+          "playing": false,
+          "ready": false,
+          "failed": true,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/idle-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json"
+        ]
+      },
+      "file": "evidence/c-blocked-art-390.png",
+      "note": "All optional mascot media requests deliberately blocked; settled error state.",
+      "browserErrors": [
+        "console: Failed to load resource: net::ERR_FAILED",
+        "console: Failed to load resource: net::ERR_FAILED"
+      ],
+      "javascriptExceptions": [],
+      "expectedBlockedResourceErrors": [
+        "console: Failed to load resource: net::ERR_FAILED",
+        "console: Failed to load resource: net::ERR_FAILED"
+      ]
+    }
+  ],
+  "geometry": [
+    {
+      "label": "A Home",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 390,
+      "scrollWidthAfter": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Smash closed",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 390,
+      "scrollWidthAfter": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Smash open",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 390,
+      "scrollWidthAfter": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Brisket closed",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 486,
+      "scrollWidthAfter": 486,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Brisket open",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 486,
+      "scrollWidthAfter": 486,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "C Home closed",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 390,
+      "scrollWidthAfter": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "C Home open",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 390,
+      "scrollWidthAfter": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "A Home",
+      "width": 768,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 768,
+      "scrollWidthAfter": 768,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Smash closed",
+      "width": 768,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 768,
+      "scrollWidthAfter": 768,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Smash open",
+      "width": 768,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 768,
+      "scrollWidthAfter": 768,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Brisket closed",
+      "width": 768,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 768,
+      "scrollWidthAfter": 768,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Brisket open",
+      "width": 768,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 768,
+      "scrollWidthAfter": 768,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "C Home closed",
+      "width": 768,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 768,
+      "scrollWidthAfter": 768,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "C Home open",
+      "width": 768,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 768,
+      "scrollWidthAfter": 768,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "A Home",
+      "width": 1280,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 1280,
+      "scrollWidthAfter": 1280,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Smash closed",
+      "width": 1280,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 1280,
+      "scrollWidthAfter": 1280,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Smash open",
+      "width": 1280,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 1280,
+      "scrollWidthAfter": 1280,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Brisket closed",
+      "width": 1280,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 1280,
+      "scrollWidthAfter": 1280,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Brisket open",
+      "width": 1280,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 1280,
+      "scrollWidthAfter": 1280,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "C Home closed",
+      "width": 1280,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 1280,
+      "scrollWidthAfter": 1280,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "C Home open",
+      "width": 1280,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 1280,
+      "scrollWidthAfter": 1280,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "A long name text 1",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 390,
+      "scrollWidthAfter": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "A long name text 1.2",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 390,
+      "scrollWidthAfter": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "A Diwali coexistence",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 390,
+      "scrollWidthAfter": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "A blocked artwork",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 390,
+      "scrollWidthAfter": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B blocked artwork",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 390,
+      "scrollWidthAfter": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "C blocked artwork",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidthBefore": 390,
+      "scrollWidthAfter": 390,
+      "extraFirestoreCalls": 0
+    }
+  ],
+  "checks": [
+    {
+      "name": "A Home 390 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "A Home 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "a-home 390 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "a-home 390 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "A 390 stops after 2700ms",
+      "pass": true,
+      "state": {
+        "id": "welcome",
+        "frame": 0,
+        "playing": false,
+        "ready": true,
+        "failed": false,
+        "settled": true,
+        "loading": false,
+        "scheduled": false,
+        "visible": true,
+        "atlasLoaded": true
+      }
+    },
+    {
+      "name": "A 390 return Home stays still",
+      "pass": true,
+      "state": {
+        "id": "welcome",
+        "frame": 0,
+        "playing": false,
+        "ready": true,
+        "failed": false,
+        "settled": false,
+        "loading": false,
+        "scheduled": false,
+        "visible": true,
+        "atlasLoaded": false
+      }
+    },
+    {
+      "name": "B Smash closed 390 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "B Smash closed 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "B 390 closed loads no media",
+      "pass": true
+    },
+    {
+      "name": "b-smash-closed 390 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "b-smash-closed 390 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "B 390 open remains still without atlas",
+      "pass": true
+    },
+    {
+      "name": "b-smash-open 390 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "b-smash-open 390 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "B Smash open 390 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "B Smash open 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "B 390 rendered contrast",
+      "pass": true,
+      "ratios": [
+        {
+          "text": "Kitchen mascot \u00b7 Burger",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            242,
+            239,
+            232
+          ],
+          "contrast": 14.69
+        },
+        {
+          "text": "Just for fun. The recipe above is the cooking guide.",
+          "foreground": "rgb(85, 88, 94)",
+          "background": [
+            242,
+            239,
+            232
+          ],
+          "contrast": 6.21
+        },
+        {
+          "text": "Play",
+          "foreground": "rgb(255, 255, 255)",
+          "background": [
+            194,
+            69,
+            26
+          ],
+          "contrast": 5.05
+        },
+        {
+          "text": "Replay",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            255,
+            255,
+            255
+          ],
+          "contrast": 16.87
+        },
+        {
+          "text": "Paused",
+          "foreground": "rgb(85, 88, 94)",
+          "background": [
+            242,
+            239,
+            232
+          ],
+          "contrast": 6.21
+        },
+        {
+          "text": "Ready",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            251,
+            248,
+            241
+          ],
+          "contrast": 15.9
+        },
+        {
+          "text": "Smash",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            251,
+            248,
+            241
+          ],
+          "contrast": 15.9
+        },
+        {
+          "text": "Flip",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            251,
+            248,
+            241
+          ],
+          "contrast": 15.9
+        },
+        {
+          "text": "Build",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            251,
+            248,
+            241
+          ],
+          "contrast": 15.9
+        },
+        {
+          "text": "Serve",
+          "foreground": "rgb(251, 248, 241)",
+          "background": [
+            184,
+            63,
+            21
+          ],
+          "contrast": 5.27
+        }
+      ],
+      "focus": {
+        "text": "Play",
+        "outline": "rgb(28, 29, 31)",
+        "style": "solid",
+        "width": "3px"
+      }
+    },
+    {
+      "name": "B manual Pause holds frame",
+      "pass": true
+    },
+    {
+      "name": "B one-shot Smash settles",
+      "pass": true
+    },
+    {
+      "name": "B Replay restarts settled action",
+      "pass": true
+    },
+    {
+      "name": "B offscreen has no scheduled frames",
+      "pass": true
+    },
+    {
+      "name": "B hidden pauses",
+      "pass": true
+    },
+    {
+      "name": "B Brisket closed 390 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "B Brisket closed 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "b-brisket-open 390 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "b-brisket-open 390 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "B Brisket open 390 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "B Brisket open 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "C Home closed 390 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "C Home closed 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "C 390 closed loads no media",
+      "pass": true
+    },
+    {
+      "name": "c-home-closed 390 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "c-home-closed 390 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "c-home-open 390 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "c-home-open 390 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "C Home open 390 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "C Home open 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "C exposes all eleven independent actions",
+      "pass": true,
+      "ids": [
+        "idle",
+        "welcome",
+        "look-around",
+        "recipe-reading",
+        "ready-to-cook",
+        "smash",
+        "flip",
+        "build",
+        "burger",
+        "walk",
+        "smoker"
+      ]
+    },
+    {
+      "name": "C idle selection stays still",
+      "pass": true
+    },
+    {
+      "name": "C idle atlas loads",
+      "pass": true
+    },
+    {
+      "name": "C welcome selection stays still",
+      "pass": true
+    },
+    {
+      "name": "C welcome atlas loads",
+      "pass": true
+    },
+    {
+      "name": "C look-around selection stays still",
+      "pass": true
+    },
+    {
+      "name": "C look-around atlas loads",
+      "pass": true
+    },
+    {
+      "name": "C recipe-reading selection stays still",
+      "pass": true
+    },
+    {
+      "name": "C recipe-reading atlas loads",
+      "pass": true
+    },
+    {
+      "name": "C ready-to-cook selection stays still",
+      "pass": true
+    },
+    {
+      "name": "C ready-to-cook atlas loads",
+      "pass": true
+    },
+    {
+      "name": "C smash selection stays still",
+      "pass": true
+    },
+    {
+      "name": "C smash atlas loads",
+      "pass": true
+    },
+    {
+      "name": "C flip selection stays still",
+      "pass": true
+    },
+    {
+      "name": "C flip atlas loads",
+      "pass": true
+    },
+    {
+      "name": "C build selection stays still",
+      "pass": true
+    },
+    {
+      "name": "C build atlas loads",
+      "pass": true
+    },
+    {
+      "name": "C burger selection stays still",
+      "pass": true
+    },
+    {
+      "name": "C burger atlas loads",
+      "pass": true
+    },
+    {
+      "name": "C walk selection stays still",
+      "pass": true
+    },
+    {
+      "name": "C walk atlas loads",
+      "pass": true
+    },
+    {
+      "name": "C smoker selection stays still",
+      "pass": true
+    },
+    {
+      "name": "C smoker atlas loads",
+      "pass": true
+    },
+    {
+      "name": "C closing pauses playback",
+      "pass": true
+    },
+    {
+      "name": "A Prep retains four visible rows",
+      "pass": true,
+      "rows": 4
+    },
+    {
+      "name": "B Prep retains four visible rows",
+      "pass": true,
+      "rows": 4
+    },
+    {
+      "name": "C Prep retains four visible rows",
+      "pass": true,
+      "rows": 4
+    },
+    {
+      "name": "A Home 768 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "A Home 768 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "a-home 768 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "a-home 768 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "A 768 stops after 2700ms",
+      "pass": true,
+      "state": {
+        "id": "welcome",
+        "frame": 0,
+        "playing": false,
+        "ready": true,
+        "failed": false,
+        "settled": true,
+        "loading": false,
+        "scheduled": false,
+        "visible": true,
+        "atlasLoaded": true
+      }
+    },
+    {
+      "name": "A 768 return Home stays still",
+      "pass": true,
+      "state": {
+        "id": "welcome",
+        "frame": 0,
+        "playing": false,
+        "ready": true,
+        "failed": false,
+        "settled": false,
+        "loading": false,
+        "scheduled": false,
+        "visible": true,
+        "atlasLoaded": false
+      }
+    },
+    {
+      "name": "B Smash closed 768 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "B Smash closed 768 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "B 768 closed loads no media",
+      "pass": true
+    },
+    {
+      "name": "b-smash-closed 768 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "b-smash-closed 768 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "B 768 open remains still without atlas",
+      "pass": true
+    },
+    {
+      "name": "b-smash-open 768 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "b-smash-open 768 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "B Smash open 768 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "B Smash open 768 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "B 768 rendered contrast",
+      "pass": true,
+      "ratios": [
+        {
+          "text": "Kitchen mascot \u00b7 Burger",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            242,
+            239,
+            232
+          ],
+          "contrast": 14.69
+        },
+        {
+          "text": "Just for fun. The recipe above is the cooking guide.",
+          "foreground": "rgb(85, 88, 94)",
+          "background": [
+            242,
+            239,
+            232
+          ],
+          "contrast": 6.21
+        },
+        {
+          "text": "Play",
+          "foreground": "rgb(255, 255, 255)",
+          "background": [
+            194,
+            69,
+            26
+          ],
+          "contrast": 5.05
+        },
+        {
+          "text": "Replay",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            255,
+            255,
+            255
+          ],
+          "contrast": 16.87
+        },
+        {
+          "text": "Paused",
+          "foreground": "rgb(85, 88, 94)",
+          "background": [
+            242,
+            239,
+            232
+          ],
+          "contrast": 6.21
+        },
+        {
+          "text": "Ready",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            251,
+            248,
+            241
+          ],
+          "contrast": 15.9
+        },
+        {
+          "text": "Smash",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            251,
+            248,
+            241
+          ],
+          "contrast": 15.9
+        },
+        {
+          "text": "Flip",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            251,
+            248,
+            241
+          ],
+          "contrast": 15.9
+        },
+        {
+          "text": "Build",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            251,
+            248,
+            241
+          ],
+          "contrast": 15.9
+        },
+        {
+          "text": "Serve",
+          "foreground": "rgb(251, 248, 241)",
+          "background": [
+            184,
+            63,
+            21
+          ],
+          "contrast": 5.27
+        }
+      ],
+      "focus": {
+        "text": "Play",
+        "outline": "rgb(28, 29, 31)",
+        "style": "solid",
+        "width": "3px"
+      }
+    },
+    {
+      "name": "B Brisket closed 768 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "B Brisket closed 768 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "b-brisket-open 768 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "b-brisket-open 768 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "B Brisket open 768 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "B Brisket open 768 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "C Home closed 768 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "C Home closed 768 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "C 768 closed loads no media",
+      "pass": true
+    },
+    {
+      "name": "c-home-closed 768 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "c-home-closed 768 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "c-home-open 768 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "c-home-open 768 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "C Home open 768 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "C Home open 768 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "A Home 1280 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "A Home 1280 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "a-home 1280 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "a-home 1280 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "A 1280 stops after 2700ms",
+      "pass": true,
+      "state": {
+        "id": "welcome",
+        "frame": 0,
+        "playing": false,
+        "ready": true,
+        "failed": false,
+        "settled": true,
+        "loading": false,
+        "scheduled": false,
+        "visible": true,
+        "atlasLoaded": true
+      }
+    },
+    {
+      "name": "A 1280 return Home stays still",
+      "pass": true,
+      "state": {
+        "id": "welcome",
+        "frame": 0,
+        "playing": false,
+        "ready": true,
+        "failed": false,
+        "settled": false,
+        "loading": false,
+        "scheduled": false,
+        "visible": true,
+        "atlasLoaded": false
+      }
+    },
+    {
+      "name": "B Smash closed 1280 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "B Smash closed 1280 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "B 1280 closed loads no media",
+      "pass": true
+    },
+    {
+      "name": "b-smash-closed 1280 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "b-smash-closed 1280 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "B 1280 open remains still without atlas",
+      "pass": true
+    },
+    {
+      "name": "b-smash-open 1280 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "b-smash-open 1280 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "B Smash open 1280 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "B Smash open 1280 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "B 1280 rendered contrast",
+      "pass": true,
+      "ratios": [
+        {
+          "text": "Kitchen mascot \u00b7 Burger",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            242,
+            239,
+            232
+          ],
+          "contrast": 14.69
+        },
+        {
+          "text": "Just for fun. The recipe above is the cooking guide.",
+          "foreground": "rgb(85, 88, 94)",
+          "background": [
+            242,
+            239,
+            232
+          ],
+          "contrast": 6.21
+        },
+        {
+          "text": "Play",
+          "foreground": "rgb(255, 255, 255)",
+          "background": [
+            194,
+            69,
+            26
+          ],
+          "contrast": 5.05
+        },
+        {
+          "text": "Replay",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            255,
+            255,
+            255
+          ],
+          "contrast": 16.87
+        },
+        {
+          "text": "Paused",
+          "foreground": "rgb(85, 88, 94)",
+          "background": [
+            242,
+            239,
+            232
+          ],
+          "contrast": 6.21
+        },
+        {
+          "text": "Ready",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            251,
+            248,
+            241
+          ],
+          "contrast": 15.9
+        },
+        {
+          "text": "Smash",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            251,
+            248,
+            241
+          ],
+          "contrast": 15.9
+        },
+        {
+          "text": "Flip",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            251,
+            248,
+            241
+          ],
+          "contrast": 15.9
+        },
+        {
+          "text": "Build",
+          "foreground": "rgb(28, 29, 31)",
+          "background": [
+            251,
+            248,
+            241
+          ],
+          "contrast": 15.9
+        },
+        {
+          "text": "Serve",
+          "foreground": "rgb(251, 248, 241)",
+          "background": [
+            184,
+            63,
+            21
+          ],
+          "contrast": 5.27
+        }
+      ],
+      "focus": {
+        "text": "Play",
+        "outline": "rgb(28, 29, 31)",
+        "style": "solid",
+        "width": "3px"
+      }
+    },
+    {
+      "name": "B Brisket closed 1280 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "B Brisket closed 1280 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "b-brisket-open 1280 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "b-brisket-open 1280 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "B Brisket open 1280 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "B Brisket open 1280 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "C Home closed 1280 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "C Home closed 1280 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "C 1280 closed loads no media",
+      "pass": true
+    },
+    {
+      "name": "c-home-closed 1280 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "c-home-closed 1280 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "c-home-open 1280 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "c-home-open 1280 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "C Home open 1280 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "C Home open 1280 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "A reduced-motion uses still only",
+      "pass": true
+    },
+    {
+      "name": "a-reduced-motion 390 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "a-reduced-motion 390 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "A long name text 1 390 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "A long name text 1 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "A long name text 1 omitted safely",
+      "pass": true,
+      "state": {
+        "option": "A",
+        "route": "#/",
+        "mounted": false,
+        "omitted": "no-spare-heading-space",
+        "welcomed": false,
+        "open": false,
+        "player": null,
+        "assets": []
+      }
+    },
+    {
+      "name": "a-long-name 390 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "a-long-name 390 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "A long name text 1.2 390 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "A long name text 1.2 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "A long name text 1.2 omitted safely",
+      "pass": true,
+      "state": {
+        "option": "A",
+        "route": "#/",
+        "mounted": false,
+        "omitted": "no-spare-heading-space",
+        "welcomed": false,
+        "open": false,
+        "player": null,
+        "assets": []
+      }
+    },
+    {
+      "name": "a-long-name-text120 390 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "a-long-name-text120 390 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "A Diwali coexistence 390 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "A Diwali coexistence 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "A seasonal coexistence",
+      "pass": true,
+      "config": {
+        "upcoming": [
+          {
+            "id": "au-christmas-eve",
+            "label": "Christmas Eve",
+            "day": "2026-12-24",
+            "away": 44,
+            "when": "Thu 24 Dec",
+            "date": "Thu 24 Dec"
+          },
+          {
+            "id": "au-christmas-day",
+            "label": "Christmas Day",
+            "day": "2026-12-25",
+            "away": 45,
+            "when": "Fri 25 Dec",
+            "date": "Fri 25 Dec"
+          },
+          {
+            "id": "au-boxing-day",
+            "label": "Boxing Day",
+            "day": "2026-12-26",
+            "away": 46,
+            "when": "Sat 26 Dec",
+            "date": "Sat 26 Dec"
+          },
+          {
+            "id": "au-new-years-eve",
+            "label": "New Year\u2019s Eve",
+            "day": "2026-12-31",
+            "away": 51,
+            "when": "Thu 31 Dec",
+            "date": "Thu 31 Dec"
+          },
+          {
+            "id": "au-new-years-day",
+            "label": "New Year\u2019s Day",
+            "day": "2027-01-01",
+            "away": 52,
+            "when": "Fri 1 Jan",
+            "date": "Fri 1 Jan"
+          }
+        ],
+        "preferences": {
+          "selection": "off",
+          "motion": "gentle",
+          "density": "festive"
+        },
+        "themeId": "in-diwali",
+        "day": "2026-11-10",
+        "celebration": {
+          "themeId": "in-diwali",
+          "gated": false,
+          "surface": "home",
+          "aboutOpen": false,
+          "handoffCount": 0,
+          "handoffActive": false,
+          "route": "#/"
+        },
+        "motion": {
+          "state": "running",
+          "effect": "glow",
+          "label": "Stationary diyas breathe warmly while diya flames and light motes rise",
+          "animationCount": 19,
+          "intensity": "festive",
+          "replayRevision": 0,
+          "surface": "home",
+          "scope": "page",
+          "ambientPreset": "diya-lights",
+          "ambientLabel": "Stationary diyas breathe warmly while diya flames and light motes rise",
+          "quiet": false,
+          "phase": "arrival",
+          "ambientCount": 18,
+          "hangCount": 2,
+          "ambientAnimationCount": 18,
+          "edgePreset": null,
+          "edgeMotif": null
+        },
+        "ticker": {
+          "state": "waiting-fonts",
+          "themeId": "in-diwali",
+          "locale": "en",
+          "index": 0,
+          "surface": "home",
+          "cycleCount": 0,
+          "automaticCycleCount": 0,
+          "revision": 1,
+          "dwellMs": 8328,
+          "remainingMs": 8328,
+          "timerCount": 0,
+          "frameCount": 0,
+          "activeInstances": 1,
+          "transitioning": false,
+          "fontsReady": false,
+          "reservedHeight": 96,
+          "availableLocales": [
+            "en",
+            "fil",
+            "ban",
+            "ne",
+            "hi",
+            "de"
+          ],
+          "pinnedLocale": null,
+          "configDwellMs": null,
+          "transitionMs": 520
+        }
+      },
+      "status": {
+        "upcoming": [
+          {
+            "id": "au-christmas-eve",
+            "label": "Christmas Eve",
+            "day": "2026-12-24",
+            "away": 44,
+            "when": "Thu 24 Dec",
+            "date": "Thu 24 Dec"
+          },
+          {
+            "id": "au-christmas-day",
+            "label": "Christmas Day",
+            "day": "2026-12-25",
+            "away": 45,
+            "when": "Fri 25 Dec",
+            "date": "Fri 25 Dec"
+          },
+          {
+            "id": "au-boxing-day",
+            "label": "Boxing Day",
+            "day": "2026-12-26",
+            "away": 46,
+            "when": "Sat 26 Dec",
+            "date": "Sat 26 Dec"
+          },
+          {
+            "id": "au-new-years-eve",
+            "label": "New Year\u2019s Eve",
+            "day": "2026-12-31",
+            "away": 51,
+            "when": "Thu 31 Dec",
+            "date": "Thu 31 Dec"
+          },
+          {
+            "id": "au-new-years-day",
+            "label": "New Year\u2019s Day",
+            "day": "2027-01-01",
+            "away": 52,
+            "when": "Fri 1 Jan",
+            "date": "Fri 1 Jan"
+          }
+        ],
+        "preferences": {
+          "selection": "off",
+          "motion": "gentle",
+          "density": "festive"
+        },
+        "themeId": "in-diwali",
+        "day": "2026-11-10",
+        "celebration": {
+          "themeId": "in-diwali",
+          "gated": false,
+          "surface": "home",
+          "aboutOpen": false,
+          "handoffCount": 0,
+          "handoffActive": false,
+          "route": "#/"
+        },
+        "motion": {
+          "state": "running",
+          "effect": "glow",
+          "label": "Stationary diyas breathe warmly while diya flames and light motes rise",
+          "animationCount": 19,
+          "intensity": "festive",
+          "replayRevision": 0,
+          "surface": "home",
+          "scope": "page",
+          "ambientPreset": "diya-lights",
+          "ambientLabel": "Stationary diyas breathe warmly while diya flames and light motes rise",
+          "quiet": false,
+          "phase": "arrival",
+          "ambientCount": 18,
+          "hangCount": 2,
+          "ambientAnimationCount": 18,
+          "edgePreset": null,
+          "edgeMotif": null
+        },
+        "ticker": {
+          "state": "running",
+          "themeId": "in-diwali",
+          "locale": "en",
+          "index": 0,
+          "surface": "home",
+          "cycleCount": 0,
+          "automaticCycleCount": 0,
+          "revision": 1,
+          "dwellMs": 8328,
+          "remainingMs": 7616,
+          "timerCount": 1,
+          "frameCount": 0,
+          "activeInstances": 1,
+          "transitioning": false,
+          "fontsReady": true,
+          "reservedHeight": 96,
+          "availableLocales": [
+            "en",
+            "fil",
+            "ban",
+            "ne",
+            "hi",
+            "de"
+          ],
+          "pinnedLocale": null,
+          "configDwellMs": null,
+          "transitionMs": 520
+        }
+      },
+      "hanging": 2
+    },
+    {
+      "name": "a-seasonal 390 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "a-seasonal 390 no JS errors",
+      "pass": true
+    },
+    {
+      "name": "A blocked artwork leaves page usable",
+      "pass": true,
+      "state": {
+        "option": "A",
+        "route": "#/",
+        "mounted": true,
+        "omitted": "artwork-unavailable",
+        "welcomed": true,
+        "open": false,
+        "player": {
+          "id": "welcome",
+          "frame": 0,
+          "playing": false,
+          "ready": false,
+          "failed": true,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json"
+        ]
+      }
+    },
+    {
+      "name": "a-blocked-art 390 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "A blocked artwork 390 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "A blocked artwork 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "B blocked artwork leaves page usable",
+      "pass": true,
+      "state": {
+        "option": "B",
+        "route": "#/r/smash",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": false,
+        "open": true,
+        "player": {
+          "id": "burger",
+          "frame": 0,
+          "playing": false,
+          "ready": false,
+          "failed": true,
+          "settled": false,
+          "loading": true,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json"
+        ]
+      }
+    },
+    {
+      "name": "b-blocked-art 390 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "B blocked artwork 390 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "B blocked artwork 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "C blocked artwork leaves page usable",
+      "pass": true,
+      "state": {
+        "option": "C",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": false,
+        "open": true,
+        "player": {
+          "id": "idle",
+          "frame": 0,
+          "playing": false,
+          "ready": false,
+          "failed": true,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/idle-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json"
+        ]
+      }
+    },
+    {
+      "name": "c-blocked-art 390 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "C blocked artwork 390 preserves existing geometry",
+      "pass": true
+    },
+    {
+      "name": "C blocked artwork 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "B 390 keyboard focus ring",
+      "pass": true,
+      "focuses": [
+        {
+          "text": "Kitchen mascot \u00b7 Burger",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Play",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Replay",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Ready",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Smash",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Flip",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Build",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Serve",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        }
+      ],
+      "contrastAgainstReference": 14.69
+    },
+    {
+      "name": "B 768 keyboard focus ring",
+      "pass": true,
+      "focuses": [
+        {
+          "text": "Kitchen mascot \u00b7 Burger",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Play",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Replay",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Ready",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Smash",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Flip",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Build",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Serve",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        }
+      ],
+      "contrastAgainstReference": 14.69
+    },
+    {
+      "name": "B 1280 keyboard focus ring",
+      "pass": true,
+      "focuses": [
+        {
+          "text": "Kitchen mascot \u00b7 Burger",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Play",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Replay",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Ready",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Smash",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Flip",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Build",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        },
+        {
+          "text": "Serve",
+          "visible": true,
+          "color": "rgb(28, 29, 31)",
+          "width": "3px",
+          "style": "solid"
+        }
+      ],
+      "contrastAgainstReference": 14.69
+    },
+    {
+      "name": "a-blocked-art 390 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "a-blocked-art 390 no JS exceptions",
+      "pass": true
+    },
+    {
+      "name": "b-blocked-art 390 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "b-blocked-art 390 no JS exceptions",
+      "pass": true
+    },
+    {
+      "name": "B failure keeps Try again usable",
+      "pass": true,
+      "state": {
+        "option": "B",
+        "route": "#/r/smash",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": false,
+        "open": true,
+        "player": {
+          "id": "burger",
+          "frame": 0,
+          "playing": false,
+          "ready": false,
+          "failed": true,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json"
+        ]
+      }
+    },
+    {
+      "name": "B Try again recovers after artwork becomes available",
+      "pass": true,
+      "state": {
+        "option": "B",
+        "route": "#/r/smash",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": false,
+        "open": true,
+        "player": {
+          "id": "burger",
+          "frame": 0,
+          "playing": true,
+          "ready": true,
+          "failed": false,
+          "settled": false,
+          "loading": false,
+          "scheduled": true,
+          "visible": true,
+          "atlasLoaded": true
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp"
+        ]
+      }
+    },
+    {
+      "name": "c-blocked-art 390 visible controls at least 44px",
+      "pass": true
+    },
+    {
+      "name": "c-blocked-art 390 no JS exceptions",
+      "pass": true
+    },
+    {
+      "name": "C failure keeps Try again usable",
+      "pass": true,
+      "state": {
+        "option": "C",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": false,
+        "open": true,
+        "player": {
+          "id": "idle",
+          "frame": 0,
+          "playing": false,
+          "ready": false,
+          "failed": true,
+          "settled": false,
+          "loading": false,
+          "scheduled": false,
+          "visible": true,
+          "atlasLoaded": false
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/idle-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json"
+        ]
+      }
+    },
+    {
+      "name": "C Try again recovers after artwork becomes available",
+      "pass": true,
+      "state": {
+        "option": "C",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "welcomed": false,
+        "open": true,
+        "player": {
+          "id": "idle",
+          "frame": 0,
+          "playing": true,
+          "ready": true,
+          "failed": false,
+          "settled": false,
+          "loading": false,
+          "scheduled": true,
+          "visible": true,
+          "atlasLoaded": true
+        },
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/idle-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/idle-sheet-compact.webp"
+        ]
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "option": "A",
+      "width": 390,
+      "task": "Home to Smash Burger",
+      "taps": 3,
+      "textEntry": "smash",
+      "result": "Smash Burger"
+    },
+    {
+      "option": "A",
+      "width": 390,
+      "task": "Jump to ingredients",
+      "taps": 1,
+      "y": 118
+    },
+    {
+      "option": "A",
+      "width": 390,
+      "task": "Open Add a line",
+      "taps": 1,
+      "dialogVisible": true,
+      "focusedField": "p-text"
+    },
+    {
+      "option": "A",
+      "width": 390,
+      "task": "Tick existing Prep row",
+      "taps": 1,
+      "result": "1 of 6 done"
+    },
+    {
+      "option": "B",
+      "width": 390,
+      "task": "Home to Smash Burger",
+      "taps": 3,
+      "textEntry": "smash",
+      "result": "Smash Burger"
+    },
+    {
+      "option": "B",
+      "width": 390,
+      "task": "Jump to ingredients",
+      "taps": 1,
+      "y": 118
+    },
+    {
+      "option": "B",
+      "width": 390,
+      "task": "Open Add a line",
+      "taps": 1,
+      "dialogVisible": true,
+      "focusedField": "p-text"
+    },
+    {
+      "option": "B",
+      "width": 390,
+      "task": "Tick existing Prep row",
+      "taps": 1,
+      "result": "1 of 6 done"
+    },
+    {
+      "option": "C",
+      "width": 390,
+      "task": "Home to Smash Burger",
+      "taps": 3,
+      "textEntry": "smash",
+      "result": "Smash Burger"
+    },
+    {
+      "option": "C",
+      "width": 390,
+      "task": "Jump to ingredients",
+      "taps": 1,
+      "y": 118
+    },
+    {
+      "option": "C",
+      "width": 390,
+      "task": "Open Add a line",
+      "taps": 1,
+      "dialogVisible": true,
+      "focusedField": "p-text"
+    },
+    {
+      "option": "C",
+      "width": 390,
+      "task": "Tick existing Prep row",
+      "taps": 1,
+      "result": "1 of 6 done"
+    },
+    {
+      "option": "A",
+      "width": 768,
+      "task": "Home to Smash Burger",
+      "taps": 3,
+      "textEntry": "smash",
+      "result": "Smash Burger"
+    },
+    {
+      "option": "A",
+      "width": 768,
+      "task": "Jump to ingredients",
+      "taps": 1,
+      "y": 119
+    },
+    {
+      "option": "B",
+      "width": 768,
+      "task": "Home to Smash Burger",
+      "taps": 3,
+      "textEntry": "smash",
+      "result": "Smash Burger"
+    },
+    {
+      "option": "B",
+      "width": 768,
+      "task": "Jump to ingredients",
+      "taps": 1,
+      "y": 119
+    },
+    {
+      "option": "C",
+      "width": 768,
+      "task": "Home to Smash Burger",
+      "taps": 3,
+      "textEntry": "smash",
+      "result": "Smash Burger"
+    },
+    {
+      "option": "C",
+      "width": 768,
+      "task": "Jump to ingredients",
+      "taps": 1,
+      "y": 119
+    },
+    {
+      "option": "A",
+      "width": 1280,
+      "task": "Home to Smash Burger",
+      "taps": 3,
+      "textEntry": "smash",
+      "result": "Smash Burger"
+    },
+    {
+      "option": "B",
+      "width": 1280,
+      "task": "Home to Smash Burger",
+      "taps": 3,
+      "textEntry": "smash",
+      "result": "Smash Burger"
+    },
+    {
+      "option": "C",
+      "width": 1280,
+      "task": "Home to Smash Burger",
+      "taps": 3,
+      "textEntry": "smash",
+      "result": "Smash Burger"
+    }
+  ],
+  "limitations": [
+    "Existing Brisket 390px overflow is 96px in the baseline; untouched.",
+    "Tab visibility test dispatches the native event with a test-owned document.hidden getter; real scrolling exercises IntersectionObserver.",
+    "No staff usability study or production/offline deployment claim.",
+    "B/C intentionally push the global footer down. Geometry checks cover existing task content above the added disclosure."
+  ],
+  "motion": {
+    "file": "evidence/a-home-motion.mp4",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "kind": "Actual rendered app screenshots from synthetic fixture, encoded as a video; no artwork edits. Browser clock stepped at manifest durations.",
+    "playbackMs": 2700,
+    "settledHoldMs": 1000,
+    "capturedFrames": [
+      {
+        "id": "welcome",
+        "frame": 0,
+        "playing": true,
+        "ready": true,
+        "failed": false,
+        "settled": false,
+        "loading": false,
+        "scheduled": true,
+        "visible": true,
+        "atlasLoaded": true
+      },
+      {
+        "id": "welcome",
+        "frame": 1,
+        "playing": true,
+        "ready": true,
+        "failed": false,
+        "settled": false,
+        "loading": false,
+        "scheduled": true,
+        "visible": true,
+        "atlasLoaded": true
+      },
+      {
+        "id": "welcome",
+        "frame": 2,
+        "playing": true,
+        "ready": true,
+        "failed": false,
+        "settled": false,
+        "loading": false,
+        "scheduled": true,
+        "visible": true,
+        "atlasLoaded": true
+      },
+      {
+        "id": "welcome",
+        "frame": 3,
+        "playing": true,
+        "ready": true,
+        "failed": false,
+        "settled": false,
+        "loading": false,
+        "scheduled": true,
+        "visible": true,
+        "atlasLoaded": true
+      },
+      {
+        "id": "welcome",
+        "frame": 4,
+        "playing": true,
+        "ready": true,
+        "failed": false,
+        "settled": false,
+        "loading": false,
+        "scheduled": true,
+        "visible": true,
+        "atlasLoaded": true
+      },
+      {
+        "id": "welcome",
+        "frame": 5,
+        "playing": true,
+        "ready": true,
+        "failed": false,
+        "settled": false,
+        "loading": false,
+        "scheduled": true,
+        "visible": true,
+        "atlasLoaded": true
+      },
+      {
+        "id": "welcome",
+        "frame": 6,
+        "playing": true,
+        "ready": true,
+        "failed": false,
+        "settled": false,
+        "loading": false,
+        "scheduled": true,
+        "visible": true,
+        "atlasLoaded": true
+      },
+      {
+        "id": "welcome",
+        "frame": 7,
+        "playing": true,
+        "ready": true,
+        "failed": false,
+        "settled": false,
+        "loading": false,
+        "scheduled": true,
+        "visible": true,
+        "atlasLoaded": true
+      },
+      {
+        "id": "welcome",
+        "frame": 0,
+        "playing": false,
+        "ready": true,
+        "failed": false,
+        "settled": true,
+        "loading": false,
+        "scheduled": false,
+        "visible": true,
+        "atlasLoaded": true
+      }
+    ],
+    "encoding": "H264, 50fps with duplicated still frames; video is for visual review, not an app asset."
+  },
+  "reproduction": "capture.mjs reproduces the three-width fixtures, geometry, controls, task paths and lifecycle/error checks. The motion clip was captured separately by stepping the browser clock at the recorded frame durations. Independent A edge cases are in evidence/a-edge-verification.json.",
+  "unexercised": [
+    "Real mobile device battery/CPU use and live-service usability.",
+    "Real browser background-tab lifecycle on mobile; hidden state was simulated, offscreen scrolling was real.",
+    "Production saved-shell/service-worker integration and offline updates; no app integration was performed."
+  ]
+}

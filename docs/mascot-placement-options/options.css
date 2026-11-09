@@ -1,0 +1,27 @@
+.placement-options { background: var(--surface-paper); color: var(--ink); }
+.options-header, .options-main { width: min(1500px, 100%); margin: auto; padding: 32px; }
+.options-header { padding-top: 48px; padding-bottom: 16px; }
+.options-header > a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink); }
+.options-header .eyebrow { margin: 24px 0 12px; white-space: normal; }
+.options-header h1 { font: 700 clamp(2.4rem, 5vw, 4.8rem)/1 var(--display); max-width: 900px; margin: 0 0 20px; }
+.options-header > p:last-child { max-width: 760px; font-size: 1.1rem; line-height: 1.5; }
+.options-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
+.options-toolbar p { font-size: 0.9rem; max-width: 420px; }
+.placement-options .chips { flex-wrap: wrap; }
+.placement-options .chip { min-height: 44px; transition-property: scale, translate, box-shadow; }
+.options-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; align-items: start; }
+.options-grid article { min-width: 0; }
+.option-label { font: 700 0.85rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; border-top: 3px solid var(--ink); padding-top: 16px; }
+.options-grid h2, .options-notes h2 { font: 700 2rem/1.1 var(--display); margin: 12px 0; }
+.options-grid article > p { line-height: 1.5; margin: 0 0 16px; }
+.option-scenes { margin-bottom: 12px; }
+.capture { display: block; width: 100%; max-width: 390px; margin: 16px auto; border: 1px solid var(--faint); background: var(--bg); }
+.capture img { display: block; width: 100%; height: auto; }
+.options-grid .capture-note { font-size: 0.9rem; }
+.motion-link { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; }
+.options-notes { margin-top: 36px; border-top: 1px solid var(--line); padding-top: 16px; max-width: 950px; }
+.options-notes p { line-height: 1.6; margin: 14px 0; }
+.placement-options a { color: var(--ink); }
+.placement-options :focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
+@media (max-width: 1000px) { .options-grid { grid-template-columns: 1fr; } .options-grid article { border-bottom: 1px solid var(--line); padding-bottom: 24px; } .options-grid article > p { max-width: 760px; } }
+@media (max-width: 500px) { .options-header, .options-main { padding: 20px 16px; } .options-toolbar { align-items: flex-start; } }

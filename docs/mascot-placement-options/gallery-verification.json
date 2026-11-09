@@ -1,0 +1,208 @@
+{
+  "kind": "Isolated screenshot-navigation gallery smoke check",
+  "checks": [
+    {
+      "width": 390,
+      "captureWidth": 390,
+      "images": [
+        {
+          "src": "evidence/a-home-390.png",
+          "naturalWidth": 390
+        },
+        {
+          "src": "evidence/b-smash-open-390.png",
+          "naturalWidth": 390
+        },
+        {
+          "src": "evidence/c-home-open-390.png",
+          "naturalWidth": 390
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "captureWidth": 768,
+      "images": [
+        {
+          "src": "evidence/a-home-768.png",
+          "naturalWidth": 768
+        },
+        {
+          "src": "evidence/b-smash-open-768.png",
+          "naturalWidth": 768
+        },
+        {
+          "src": "evidence/c-home-open-768.png",
+          "naturalWidth": 768
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "captureWidth": 1280,
+      "images": [
+        {
+          "src": "evidence/a-home-1280.png",
+          "naturalWidth": 1280
+        },
+        {
+          "src": "evidence/b-smash-open-1280.png",
+          "naturalWidth": 1280
+        },
+        {
+          "src": "evidence/c-home-open-1280.png",
+          "naturalWidth": 1280
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "captureWidth": 390,
+      "images": [
+        {
+          "src": "evidence/a-home-390.png",
+          "naturalWidth": 390
+        },
+        {
+          "src": "evidence/b-smash-open-390.png",
+          "naturalWidth": 390
+        },
+        {
+          "src": "evidence/c-home-open-390.png",
+          "naturalWidth": 390
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "captureWidth": 768,
+      "images": [
+        {
+          "src": "evidence/a-home-768.png",
+          "naturalWidth": 768
+        },
+        {
+          "src": "evidence/b-smash-open-768.png",
+          "naturalWidth": 768
+        },
+        {
+          "src": "evidence/c-home-open-768.png",
+          "naturalWidth": 768
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "captureWidth": 1280,
+      "images": [
+        {
+          "src": "evidence/a-home-1280.png",
+          "naturalWidth": 1280
+        },
+        {
+          "src": "evidence/b-smash-open-1280.png",
+          "naturalWidth": 1280
+        },
+        {
+          "src": "evidence/c-home-open-1280.png",
+          "naturalWidth": 1280
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "captureWidth": 390,
+      "images": [
+        {
+          "src": "evidence/a-home-390.png",
+          "naturalWidth": 390
+        },
+        {
+          "src": "evidence/b-smash-open-390.png",
+          "naturalWidth": 390
+        },
+        {
+          "src": "evidence/c-home-open-390.png",
+          "naturalWidth": 390
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "captureWidth": 768,
+      "images": [
+        {
+          "src": "evidence/a-home-768.png",
+          "naturalWidth": 768
+        },
+        {
+          "src": "evidence/b-smash-open-768.png",
+          "naturalWidth": 768
+        },
+        {
+          "src": "evidence/c-home-open-768.png",
+          "naturalWidth": 768
+        }
+      ],
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "captureWidth": 1280,
+      "images": [
+        {
+          "src": "evidence/a-home-1280.png",
+          "naturalWidth": 1280
+        },
+        {
+          "src": "evidence/b-smash-open-1280.png",
+          "naturalWidth": 1280
+        },
+        {
+          "src": "evidence/c-home-open-1280.png",
+          "naturalWidth": 1280
+        }
+      ],
+      "overflow": false
+    }
+  ],
+  "screens": [
+    {
+      "width": 390,
+      "errors": [],
+      "minimumControlHeight": 44,
+      "fonts": [
+        "Barlow",
+        "Barlow",
+        "Barlow Condensed"
+      ]
+    },
+    {
+      "width": 768,
+      "errors": [],
+      "minimumControlHeight": 44,
+      "fonts": [
+        "Barlow",
+        "Barlow",
+        "Barlow Condensed"
+      ]
+    },
+    {
+      "width": 1280,
+      "errors": [],
+      "minimumControlHeight": 44,
+      "fonts": [
+        "Barlow",
+        "Barlow",
+        "Barlow Condensed"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A place for the kitchen mascot · Design options</title>
+  <link rel="stylesheet" href="../../css/app.css">
+  <link rel="stylesheet" href="../kitchen-mascot/fonts.css">
+  <link rel="stylesheet" href="options.css">
+  <script src="options.js" defer></script>
+</head>
+<body class="placement-options">
+<header class="options-header">
+  <a href="../kitchen-mascot/index.html">← Animation collection</a>
+  <p class="eyebrow">Leichhardt Kitchen Book · Design study</p>
+  <h1>A little character.<br>The kitchen work comes first.</h1>
+  <p>Three places for our bandana-wearing kitchen mascot, shown inside the actual app with synthetic staff and service records. These are previews. Nothing here changes the live book.</p>
+</header>
+<main class="options-main">
+  <div class="options-toolbar">
+    <div class="chips" role="group" aria-label="Captured viewport width">
+      <button class="chip" aria-pressed="true" data-width="390">Phone · 390</button>
+      <button class="chip" aria-pressed="false" data-width="768">Tablet · 768</button>
+      <button class="chip" aria-pressed="false" data-width="1280">Laptop · 1280</button>
+    </div>
+    <p>Captured app layouts. Select an image to inspect it at full resolution.</p>
+  </div>
+  <section class="options-grid" aria-label="Three placement designs">
+    <article>
+      <div class="option-label">A · Arrival</div>
+      <h2>A wave at the top</h2>
+      <p>A small welcome beside the existing greeting, once per page session, then a still. Names and work cards keep their space.</p>
+      <a class="capture" data-capture="a-home" href="evidence/a-home-390.png"><img src="evidence/a-home-390.png" alt="Option A, mascot beside the actual Home welcome at 390 pixels" width="390" height="844"></a>
+      <p class="capture-note">Home at the top. No extra button or task step. The mascot is omitted when the full name and date need the room.</p>
+      <a class="motion-link" href="evidence/a-home-motion.mp4">Watch the greeting · 3.7 seconds</a>
+    </article>
+    <article>
+      <div class="option-label">B · Food context</div>
+      <h2>A moment with the menu</h2>
+      <p>A closed mascot fold after the complete recipe. Open it to play burger actions or the offset-smoker scene. The cooking guide stays separate.</p>
+      <div class="chips option-scenes" role="group" aria-label="Option B example">
+        <button class="chip" aria-pressed="true" data-scene="b-smash-open">Burger · open</button>
+        <button class="chip" aria-pressed="false" data-scene="b-brisket-open">Smoker · open</button>
+        <button class="chip" aria-pressed="false" data-scene="b-smash-closed">Closed</button>
+      </div>
+      <a class="capture" data-capture="b-smash-open" href="evidence/b-smash-open-390.png"><img src="evidence/b-smash-open-390.png" alt="Option B, optional mascot illustration at the end of the burger recipe" width="390" height="844"></a>
+      <p class="capture-note">Scrolled to the recipe's end. No automatic cooking animation. This is character artwork, not a demonstration of the recipe.</p>
+    </article>
+    <article>
+      <div class="option-label">C · Optional collection</div>
+      <h2>Meet the kitchen mascot</h2>
+      <p>A single closed fold below Home's work and Coming up. Open it to explore all eleven animations at your own pace.</p>
+      <div class="chips option-scenes" role="group" aria-label="Option C example">
+        <button class="chip" aria-pressed="true" data-scene="c-home-open">Open collection</button>
+        <button class="chip" aria-pressed="false" data-scene="c-home-closed">Closed</button>
+      </div>
+      <a class="capture" data-capture="c-home-open" href="evidence/c-home-open-390.png"><img src="evidence/c-home-open-390.png" alt="Option C, optional animation collection below existing Home content" width="390" height="844"></a>
+      <p class="capture-note">Scrolled past the work. All actions are available, with an extra disclosure and playback controls to maintain.</p>
+    </article>
+  </section>
+  <section class="options-notes">
+    <h2>Shared ground rules</h2>
+    <p>The pixel art and navy bandana stay intact. The existing app type and paper surfaces stay. No mascot appears over a service list, replaces a plating drawing, or signals Saved, food safety or a running cook.</p>
+    <p>Reduced motion starts still. Playback pauses when hidden or offscreen. Artwork loads only where it is used; missing artwork must leave kitchen tasks usable. The full collection does not need to ship in the app's startup cache.</p>
+    <p><a href="brief.md">Decision brief and council review</a> · <a href="baseline/README.md">Measured app baseline</a> · <a href="preview-verification.json">Preview measurements</a></p>
+  </section>
+</main>
+</body>
+</html>

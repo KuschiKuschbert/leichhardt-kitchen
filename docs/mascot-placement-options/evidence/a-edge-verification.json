@@ -1,0 +1,1763 @@
+{
+  "evidence": "Isolated preview injection into actual application using tests/lib.js synthetic Firebase. No production data. No application files changed.",
+  "viewports": [
+    {
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "date": "2026-11-09T17:05:45.272Z",
+  "cases": [
+    {
+      "id": "normal",
+      "before": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 41.59
+          },
+          ".wall-date": {
+            "x": 16,
+            "y": 129.59,
+            "width": 358,
+            "height": 23.19
+          },
+          "#hm-day": {
+            "x": 16,
+            "y": 168.78,
+            "width": 358,
+            "height": 202.13
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 32,
+            "y": 209.52,
+            "width": 326,
+            "height": 70
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 32,
+            "y": 279.52,
+            "width": 326,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 16,
+            "y": 388.5,
+            "width": 358,
+            "height": 206.19
+          },
+          "#hm-board": {
+            "x": 16,
+            "y": 612.28,
+            "width": 358,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 16,
+            "y": 743,
+            "width": 358,
+            "height": 180.92
+          },
+          "#hm-full-team": {
+            "x": 32,
+            "y": 537.89,
+            "width": 326,
+            "height": 44
+          }
+        },
+        "title": "Welcome, Ann",
+        "textSize": "normal",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "off",
+        "privateAccess": true,
+        "state": null,
+        "visibleArt": false,
+        "artBox": null
+      },
+      "after": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 41.59
+          },
+          ".wall-date": {
+            "x": 16,
+            "y": 129.59,
+            "width": 358,
+            "height": 23.19
+          },
+          "#hm-day": {
+            "x": 16,
+            "y": 168.78,
+            "width": 358,
+            "height": 202.13
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 32,
+            "y": 209.52,
+            "width": 326,
+            "height": 70
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 32,
+            "y": 279.52,
+            "width": 326,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 16,
+            "y": 388.5,
+            "width": 358,
+            "height": 206.19
+          },
+          "#hm-board": {
+            "x": 16,
+            "y": 612.28,
+            "width": 358,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 16,
+            "y": 743,
+            "width": 358,
+            "height": 180.92
+          },
+          "#hm-full-team": {
+            "x": 32,
+            "y": 537.89,
+            "width": 326,
+            "height": 44
+          }
+        },
+        "title": "Welcome, Ann",
+        "textSize": "normal",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "off",
+        "privateAccess": true,
+        "state": {
+          "option": "A",
+          "route": "#/",
+          "mounted": true,
+          "omitted": null,
+          "welcomed": true,
+          "open": false,
+          "player": {
+            "id": "welcome",
+            "frame": 0,
+            "playing": true,
+            "ready": true,
+            "failed": false,
+            "settled": false,
+            "loading": false,
+            "scheduled": true,
+            "visible": true,
+            "atlasLoaded": true
+          },
+          "assets": [
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-still.png",
+            "http://localhost:8765/docs/kitchen-mascot/assets/manifest.json",
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp"
+          ]
+        },
+        "visibleArt": true,
+        "artBox": {
+          "x": 310,
+          "y": 76,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "geometryDifferences": [],
+      "readDelta": 0,
+      "writeDelta": 0,
+      "overflow": false,
+      "afterOnce": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 41.59
+          },
+          ".wall-date": {
+            "x": 16,
+            "y": 129.59,
+            "width": 358,
+            "height": 23.19
+          },
+          "#hm-day": {
+            "x": 16,
+            "y": 168.78,
+            "width": 358,
+            "height": 202.13
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 32,
+            "y": 209.52,
+            "width": 326,
+            "height": 70
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 32,
+            "y": 279.52,
+            "width": 326,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 16,
+            "y": 388.5,
+            "width": 358,
+            "height": 206.19
+          },
+          "#hm-board": {
+            "x": 16,
+            "y": 612.28,
+            "width": 358,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 16,
+            "y": 743,
+            "width": 358,
+            "height": 180.92
+          },
+          "#hm-full-team": {
+            "x": 32,
+            "y": 537.89,
+            "width": 326,
+            "height": 44
+          }
+        },
+        "title": "Welcome, Ann",
+        "textSize": "normal",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "off",
+        "privateAccess": true,
+        "state": {
+          "option": "A",
+          "route": "#/",
+          "mounted": true,
+          "omitted": null,
+          "welcomed": true,
+          "open": false,
+          "player": {
+            "id": "welcome",
+            "frame": 0,
+            "playing": false,
+            "ready": true,
+            "failed": false,
+            "settled": true,
+            "loading": false,
+            "scheduled": false,
+            "visible": true,
+            "atlasLoaded": true
+          },
+          "assets": [
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-still.png",
+            "http://localhost:8765/docs/kitchen-mascot/assets/manifest.json",
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp"
+          ]
+        },
+        "visibleArt": true,
+        "artBox": {
+          "x": 310,
+          "y": 76,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "returnHome": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 41.59
+          },
+          ".wall-date": {
+            "x": 16,
+            "y": 129.59,
+            "width": 358,
+            "height": 23.19
+          },
+          "#hm-day": {
+            "x": 16,
+            "y": 168.78,
+            "width": 358,
+            "height": 202.13
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 32,
+            "y": 209.52,
+            "width": 326,
+            "height": 70
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 32,
+            "y": 279.52,
+            "width": 326,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 16,
+            "y": 388.5,
+            "width": 358,
+            "height": 206.19
+          },
+          "#hm-board": {
+            "x": 16,
+            "y": 612.28,
+            "width": 358,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 16,
+            "y": 743,
+            "width": 358,
+            "height": 180.92
+          },
+          "#hm-full-team": {
+            "x": 32,
+            "y": 537.89,
+            "width": 326,
+            "height": 44
+          }
+        },
+        "title": "Welcome, Ann",
+        "textSize": "normal",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "off",
+        "privateAccess": true,
+        "state": {
+          "option": "A",
+          "route": "#/",
+          "mounted": true,
+          "omitted": null,
+          "welcomed": true,
+          "open": false,
+          "player": {
+            "id": "welcome",
+            "frame": 0,
+            "playing": false,
+            "ready": true,
+            "failed": false,
+            "settled": false,
+            "loading": false,
+            "scheduled": false,
+            "visible": true,
+            "atlasLoaded": false
+          },
+          "assets": [
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-still.png",
+            "http://localhost:8765/docs/kitchen-mascot/assets/manifest.json",
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-still.png"
+          ]
+        },
+        "visibleArt": true,
+        "artBox": {
+          "x": 310,
+          "y": 76,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "returnHomeLater": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 41.59
+          },
+          ".wall-date": {
+            "x": 16,
+            "y": 129.59,
+            "width": 358,
+            "height": 23.19
+          },
+          "#hm-day": {
+            "x": 16,
+            "y": 168.78,
+            "width": 358,
+            "height": 202.13
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 32,
+            "y": 209.52,
+            "width": 326,
+            "height": 70
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 32,
+            "y": 279.52,
+            "width": 326,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 16,
+            "y": 388.5,
+            "width": 358,
+            "height": 206.19
+          },
+          "#hm-board": {
+            "x": 16,
+            "y": 612.28,
+            "width": 358,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 16,
+            "y": 743,
+            "width": 358,
+            "height": 180.92
+          },
+          "#hm-full-team": {
+            "x": 32,
+            "y": 537.89,
+            "width": 326,
+            "height": 44
+          }
+        },
+        "title": "Welcome, Ann",
+        "textSize": "normal",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "off",
+        "privateAccess": true,
+        "state": {
+          "option": "A",
+          "route": "#/",
+          "mounted": true,
+          "omitted": null,
+          "welcomed": true,
+          "open": false,
+          "player": {
+            "id": "welcome",
+            "frame": 0,
+            "playing": false,
+            "ready": true,
+            "failed": false,
+            "settled": false,
+            "loading": false,
+            "scheduled": false,
+            "visible": true,
+            "atlasLoaded": false
+          },
+          "assets": [
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-still.png",
+            "http://localhost:8765/docs/kitchen-mascot/assets/manifest.json",
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp",
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-still.png"
+          ]
+        },
+        "visibleArt": true,
+        "artBox": {
+          "x": 310,
+          "y": 76,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "screenshot": "a-edge-normal.png",
+      "browserErrors": []
+    },
+    {
+      "id": "long-name",
+      "before": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 63.33
+          },
+          ".wall-date": {
+            "x": 16,
+            "y": 151.33,
+            "width": 358,
+            "height": 23.19
+          },
+          "#hm-day": {
+            "x": 16,
+            "y": 190.52,
+            "width": 358,
+            "height": 202.13
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 32,
+            "y": 231.25,
+            "width": 326,
+            "height": 70
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 32,
+            "y": 301.25,
+            "width": 326,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 16,
+            "y": 410.23,
+            "width": 358,
+            "height": 206.19
+          },
+          "#hm-board": {
+            "x": 16,
+            "y": 634.02,
+            "width": 358,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 16,
+            "y": 764.73,
+            "width": 358,
+            "height": 180.92
+          },
+          "#hm-full-team": {
+            "x": 32,
+            "y": 559.63,
+            "width": 326,
+            "height": 44
+          }
+        },
+        "title": "Welcome, WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+        "textSize": "normal",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "off",
+        "privateAccess": true,
+        "state": null,
+        "visibleArt": false,
+        "artBox": null
+      },
+      "after": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 63.33
+          },
+          ".wall-date": {
+            "x": 16,
+            "y": 151.33,
+            "width": 358,
+            "height": 23.19
+          },
+          "#hm-day": {
+            "x": 16,
+            "y": 190.52,
+            "width": 358,
+            "height": 202.13
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 32,
+            "y": 231.25,
+            "width": 326,
+            "height": 70
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 32,
+            "y": 301.25,
+            "width": 326,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 16,
+            "y": 410.23,
+            "width": 358,
+            "height": 206.19
+          },
+          "#hm-board": {
+            "x": 16,
+            "y": 634.02,
+            "width": 358,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 16,
+            "y": 764.73,
+            "width": 358,
+            "height": 180.92
+          },
+          "#hm-full-team": {
+            "x": 32,
+            "y": 559.63,
+            "width": 326,
+            "height": 44
+          }
+        },
+        "title": "Welcome, WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+        "textSize": "normal",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "off",
+        "privateAccess": true,
+        "state": {
+          "option": "A",
+          "route": "#/",
+          "mounted": false,
+          "omitted": "no-spare-heading-space",
+          "welcomed": false,
+          "open": false,
+          "player": null,
+          "assets": []
+        },
+        "visibleArt": false,
+        "artBox": null
+      },
+      "geometryDifferences": [],
+      "readDelta": 0,
+      "writeDelta": 0,
+      "overflow": false,
+      "screenshot": "a-edge-long-name.png",
+      "browserErrors": []
+    },
+    {
+      "id": "extra-large",
+      "before": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 20,
+            "y": 94,
+            "width": 350,
+            "height": 52
+          },
+          ".wall-date": {
+            "x": 20,
+            "y": 146,
+            "width": 350,
+            "height": 29
+          },
+          "#hm-day": {
+            "x": 20,
+            "y": 195,
+            "width": 350,
+            "height": 217.23
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 40,
+            "y": 245.19,
+            "width": 310,
+            "height": 74.05
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 40,
+            "y": 319.23,
+            "width": 310,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 20,
+            "y": 434.23,
+            "width": 350,
+            "height": 268.38
+          },
+          "#hm-board": {
+            "x": 20,
+            "y": 724.61,
+            "width": 350,
+            "height": 138.47
+          },
+          "#hm-prep": {
+            "x": 20,
+            "y": 885.08,
+            "width": 350,
+            "height": 193.19
+          },
+          "#hm-full-team": {
+            "x": 40,
+            "y": 642.61,
+            "width": 310,
+            "height": 44
+          }
+        },
+        "title": "Welcome, Ann",
+        "textSize": "xlarge",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "off",
+        "privateAccess": true,
+        "state": null,
+        "visibleArt": false,
+        "artBox": null
+      },
+      "after": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 20,
+            "y": 94,
+            "width": 350,
+            "height": 52
+          },
+          ".wall-date": {
+            "x": 20,
+            "y": 146,
+            "width": 350,
+            "height": 29
+          },
+          "#hm-day": {
+            "x": 20,
+            "y": 195,
+            "width": 350,
+            "height": 217.23
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 40,
+            "y": 245.19,
+            "width": 310,
+            "height": 74.05
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 40,
+            "y": 319.23,
+            "width": 310,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 20,
+            "y": 434.23,
+            "width": 350,
+            "height": 268.38
+          },
+          "#hm-board": {
+            "x": 20,
+            "y": 724.61,
+            "width": 350,
+            "height": 138.47
+          },
+          "#hm-prep": {
+            "x": 20,
+            "y": 885.08,
+            "width": 350,
+            "height": 193.19
+          },
+          "#hm-full-team": {
+            "x": 40,
+            "y": 642.61,
+            "width": 310,
+            "height": 44
+          }
+        },
+        "title": "Welcome, Ann",
+        "textSize": "xlarge",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "off",
+        "privateAccess": true,
+        "state": {
+          "option": "A",
+          "route": "#/",
+          "mounted": true,
+          "omitted": null,
+          "welcomed": true,
+          "open": false,
+          "player": {
+            "id": "welcome",
+            "frame": 0,
+            "playing": true,
+            "ready": true,
+            "failed": false,
+            "settled": false,
+            "loading": false,
+            "scheduled": true,
+            "visible": true,
+            "atlasLoaded": true
+          },
+          "assets": [
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-still.png",
+            "http://localhost:8765/docs/kitchen-mascot/assets/manifest.json",
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp"
+          ]
+        },
+        "visibleArt": true,
+        "artBox": {
+          "x": 306,
+          "y": 82,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "geometryDifferences": [],
+      "readDelta": 0,
+      "writeDelta": 0,
+      "overflow": false,
+      "screenshot": "a-edge-extra-large.png",
+      "browserErrors": []
+    },
+    {
+      "id": "long-name-extra-large",
+      "before": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 20,
+            "y": 94,
+            "width": 350,
+            "height": 79.17
+          },
+          ".wall-date": {
+            "x": 20,
+            "y": 173.17,
+            "width": 350,
+            "height": 29
+          },
+          "#hm-day": {
+            "x": 20,
+            "y": 222.17,
+            "width": 350,
+            "height": 217.23
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 40,
+            "y": 272.36,
+            "width": 310,
+            "height": 74.05
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 40,
+            "y": 346.41,
+            "width": 310,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 20,
+            "y": 461.41,
+            "width": 350,
+            "height": 268.38
+          },
+          "#hm-board": {
+            "x": 20,
+            "y": 751.78,
+            "width": 350,
+            "height": 138.47
+          },
+          "#hm-prep": {
+            "x": 20,
+            "y": 912.25,
+            "width": 350,
+            "height": 193.19
+          },
+          "#hm-full-team": {
+            "x": 40,
+            "y": 669.78,
+            "width": 310,
+            "height": 44
+          }
+        },
+        "title": "Welcome, WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+        "textSize": "xlarge",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "off",
+        "privateAccess": true,
+        "state": null,
+        "visibleArt": false,
+        "artBox": null
+      },
+      "after": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 20,
+            "y": 94,
+            "width": 350,
+            "height": 79.17
+          },
+          ".wall-date": {
+            "x": 20,
+            "y": 173.17,
+            "width": 350,
+            "height": 29
+          },
+          "#hm-day": {
+            "x": 20,
+            "y": 222.17,
+            "width": 350,
+            "height": 217.23
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 40,
+            "y": 272.36,
+            "width": 310,
+            "height": 74.05
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 40,
+            "y": 346.41,
+            "width": 310,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 20,
+            "y": 461.41,
+            "width": 350,
+            "height": 268.38
+          },
+          "#hm-board": {
+            "x": 20,
+            "y": 751.78,
+            "width": 350,
+            "height": 138.47
+          },
+          "#hm-prep": {
+            "x": 20,
+            "y": 912.25,
+            "width": 350,
+            "height": 193.19
+          },
+          "#hm-full-team": {
+            "x": 40,
+            "y": 669.78,
+            "width": 310,
+            "height": 44
+          }
+        },
+        "title": "Welcome, WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+        "textSize": "xlarge",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "off",
+        "privateAccess": true,
+        "state": {
+          "option": "A",
+          "route": "#/",
+          "mounted": false,
+          "omitted": "no-spare-heading-space",
+          "welcomed": false,
+          "open": false,
+          "player": null,
+          "assets": []
+        },
+        "visibleArt": false,
+        "artBox": null
+      },
+      "geometryDifferences": [],
+      "readDelta": 0,
+      "writeDelta": 0,
+      "overflow": false,
+      "screenshot": "a-edge-long-name-extra-large.png",
+      "browserErrors": []
+    },
+    {
+      "id": "celebration",
+      "before": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 41.59
+          },
+          ".wall-date": {
+            "x": 16,
+            "y": 129.59,
+            "width": 358,
+            "height": 23.19
+          },
+          "#hm-day": {
+            "x": 16,
+            "y": 329.56,
+            "width": 358,
+            "height": 202.13
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 32,
+            "y": 370.3,
+            "width": 326,
+            "height": 70
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 32,
+            "y": 440.3,
+            "width": 326,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 16,
+            "y": 549.28,
+            "width": 358,
+            "height": 206.19
+          },
+          "#hm-board": {
+            "x": 16,
+            "y": 773.06,
+            "width": 358,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 16,
+            "y": 903.78,
+            "width": 358,
+            "height": 180.92
+          },
+          "#hm-full-team": {
+            "x": 32,
+            "y": 698.67,
+            "width": 326,
+            "height": 44
+          }
+        },
+        "title": "Welcome, Ann",
+        "textSize": "normal",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "au-christmas-day",
+        "privateAccess": true,
+        "state": null,
+        "visibleArt": false,
+        "artBox": null
+      },
+      "after": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 41.59
+          },
+          ".wall-date": {
+            "x": 16,
+            "y": 129.59,
+            "width": 358,
+            "height": 23.19
+          },
+          "#hm-day": {
+            "x": 16,
+            "y": 329.56,
+            "width": 358,
+            "height": 202.13
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 32,
+            "y": 370.3,
+            "width": 326,
+            "height": 70
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 32,
+            "y": 440.3,
+            "width": 326,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 16,
+            "y": 549.28,
+            "width": 358,
+            "height": 206.19
+          },
+          "#hm-board": {
+            "x": 16,
+            "y": 773.06,
+            "width": 358,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 16,
+            "y": 903.78,
+            "width": 358,
+            "height": 180.92
+          },
+          "#hm-full-team": {
+            "x": 32,
+            "y": 698.67,
+            "width": 326,
+            "height": 44
+          }
+        },
+        "title": "Welcome, Ann",
+        "textSize": "normal",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "au-christmas-day",
+        "privateAccess": true,
+        "state": {
+          "option": "A",
+          "route": "#/",
+          "mounted": true,
+          "omitted": null,
+          "welcomed": true,
+          "open": false,
+          "player": {
+            "id": "welcome",
+            "frame": 0,
+            "playing": true,
+            "ready": true,
+            "failed": false,
+            "settled": false,
+            "loading": false,
+            "scheduled": true,
+            "visible": true,
+            "atlasLoaded": true
+          },
+          "assets": [
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-still.png",
+            "http://localhost:8765/docs/kitchen-mascot/assets/manifest.json",
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-sheet-compact.webp"
+          ]
+        },
+        "visibleArt": true,
+        "artBox": {
+          "x": 310,
+          "y": 76,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "geometryDifferences": [],
+      "readDelta": 0,
+      "writeDelta": 0,
+      "overflow": false,
+      "screenshot": "a-edge-celebration.png",
+      "browserErrors": []
+    },
+    {
+      "id": "locked",
+      "before": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 51.03
+          },
+          ".wall-date": {
+            "x": 16,
+            "y": 139.03,
+            "width": 358,
+            "height": 23.19
+          }
+        },
+        "title": "Pick a docket",
+        "textSize": "normal",
+        "fixtureReads": 2,
+        "fixtureWrites": 0,
+        "activeTheme": "off",
+        "privateAccess": false,
+        "state": null,
+        "visibleArt": false,
+        "artBox": null
+      },
+      "after": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 51.03
+          },
+          ".wall-date": {
+            "x": 16,
+            "y": 139.03,
+            "width": 358,
+            "height": 23.19
+          }
+        },
+        "title": "Pick a docket",
+        "textSize": "normal",
+        "fixtureReads": 2,
+        "fixtureWrites": 0,
+        "activeTheme": "off",
+        "privateAccess": false,
+        "state": {
+          "option": "A",
+          "route": "#/",
+          "mounted": false,
+          "omitted": "no-personal-home",
+          "welcomed": false,
+          "open": false,
+          "player": null,
+          "assets": []
+        },
+        "visibleArt": false,
+        "artBox": null
+      },
+      "geometryDifferences": [],
+      "readDelta": 0,
+      "writeDelta": 0,
+      "overflow": false,
+      "screenshot": "a-edge-locked.png",
+      "browserErrors": []
+    },
+    {
+      "id": "reduced-motion",
+      "before": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 41.59
+          },
+          ".wall-date": {
+            "x": 16,
+            "y": 129.59,
+            "width": 358,
+            "height": 23.19
+          },
+          "#hm-day": {
+            "x": 16,
+            "y": 168.78,
+            "width": 358,
+            "height": 202.13
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 32,
+            "y": 209.52,
+            "width": 326,
+            "height": 70
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 32,
+            "y": 279.52,
+            "width": 326,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 16,
+            "y": 388.5,
+            "width": 358,
+            "height": 206.19
+          },
+          "#hm-board": {
+            "x": 16,
+            "y": 612.28,
+            "width": 358,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 16,
+            "y": 743,
+            "width": 358,
+            "height": 180.92
+          },
+          "#hm-full-team": {
+            "x": 32,
+            "y": 537.89,
+            "width": 326,
+            "height": 44
+          }
+        },
+        "title": "Welcome, Ann",
+        "textSize": "normal",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "off",
+        "privateAccess": true,
+        "state": null,
+        "visibleArt": false,
+        "artBox": null
+      },
+      "after": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 41.59
+          },
+          ".wall-date": {
+            "x": 16,
+            "y": 129.59,
+            "width": 358,
+            "height": 23.19
+          },
+          "#hm-day": {
+            "x": 16,
+            "y": 168.78,
+            "width": 358,
+            "height": 202.13
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 32,
+            "y": 209.52,
+            "width": 326,
+            "height": 70
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 32,
+            "y": 279.52,
+            "width": 326,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 16,
+            "y": 388.5,
+            "width": 358,
+            "height": 206.19
+          },
+          "#hm-board": {
+            "x": 16,
+            "y": 612.28,
+            "width": 358,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 16,
+            "y": 743,
+            "width": 358,
+            "height": 180.92
+          },
+          "#hm-full-team": {
+            "x": 32,
+            "y": 537.89,
+            "width": 326,
+            "height": 44
+          }
+        },
+        "title": "Welcome, Ann",
+        "textSize": "normal",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "off",
+        "privateAccess": true,
+        "state": {
+          "option": "A",
+          "route": "#/",
+          "mounted": true,
+          "omitted": null,
+          "welcomed": true,
+          "open": false,
+          "player": {
+            "id": "welcome",
+            "frame": 0,
+            "playing": false,
+            "ready": true,
+            "failed": false,
+            "settled": false,
+            "loading": false,
+            "scheduled": false,
+            "visible": true,
+            "atlasLoaded": false
+          },
+          "assets": [
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-still.png"
+          ]
+        },
+        "visibleArt": true,
+        "artBox": {
+          "x": 310,
+          "y": 76,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "geometryDifferences": [],
+      "readDelta": 0,
+      "writeDelta": 0,
+      "overflow": false,
+      "later": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 41.59
+          },
+          ".wall-date": {
+            "x": 16,
+            "y": 129.59,
+            "width": 358,
+            "height": 23.19
+          },
+          "#hm-day": {
+            "x": 16,
+            "y": 168.78,
+            "width": 358,
+            "height": 202.13
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 32,
+            "y": 209.52,
+            "width": 326,
+            "height": 70
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 32,
+            "y": 279.52,
+            "width": 326,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 16,
+            "y": 388.5,
+            "width": 358,
+            "height": 206.19
+          },
+          "#hm-board": {
+            "x": 16,
+            "y": 612.28,
+            "width": 358,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 16,
+            "y": 743,
+            "width": 358,
+            "height": 180.92
+          },
+          "#hm-full-team": {
+            "x": 32,
+            "y": 537.89,
+            "width": 326,
+            "height": 44
+          }
+        },
+        "title": "Welcome, Ann",
+        "textSize": "normal",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "off",
+        "privateAccess": true,
+        "state": {
+          "option": "A",
+          "route": "#/",
+          "mounted": true,
+          "omitted": null,
+          "welcomed": true,
+          "open": false,
+          "player": {
+            "id": "welcome",
+            "frame": 0,
+            "playing": false,
+            "ready": true,
+            "failed": false,
+            "settled": false,
+            "loading": false,
+            "scheduled": false,
+            "visible": true,
+            "atlasLoaded": false
+          },
+          "assets": [
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-still.png"
+          ]
+        },
+        "visibleArt": true,
+        "artBox": {
+          "x": 310,
+          "y": 76,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "screenshot": "a-edge-reduced-motion.png",
+      "browserErrors": []
+    },
+    {
+      "id": "blocked-art",
+      "before": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 41.59
+          },
+          ".wall-date": {
+            "x": 16,
+            "y": 129.59,
+            "width": 358,
+            "height": 23.19
+          },
+          "#hm-day": {
+            "x": 16,
+            "y": 168.78,
+            "width": 358,
+            "height": 202.13
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 32,
+            "y": 209.52,
+            "width": 326,
+            "height": 70
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 32,
+            "y": 279.52,
+            "width": 326,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 16,
+            "y": 388.5,
+            "width": 358,
+            "height": 206.19
+          },
+          "#hm-board": {
+            "x": 16,
+            "y": 612.28,
+            "width": 358,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 16,
+            "y": 743,
+            "width": 358,
+            "height": 180.92
+          },
+          "#hm-full-team": {
+            "x": 32,
+            "y": 537.89,
+            "width": 326,
+            "height": 44
+          }
+        },
+        "title": "Welcome, Ann",
+        "textSize": "normal",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "off",
+        "privateAccess": true,
+        "state": null,
+        "visibleArt": false,
+        "artBox": null
+      },
+      "after": {
+        "rects": {
+          ".wtop": {
+            "x": 0,
+            "y": 0,
+            "width": 390,
+            "height": 64
+          },
+          "#rtitle": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 41.59
+          },
+          ".wall-date": {
+            "x": 16,
+            "y": 129.59,
+            "width": 358,
+            "height": 23.19
+          },
+          "#hm-day": {
+            "x": 16,
+            "y": 168.78,
+            "width": 358,
+            "height": 202.13
+          },
+          "[data-hm-priority=\"section\"]": {
+            "x": 32,
+            "y": 209.52,
+            "width": 326,
+            "height": 70
+          },
+          "[data-hm-priority=\"break\"]": {
+            "x": 32,
+            "y": 279.52,
+            "width": 326,
+            "height": 85
+          },
+          "#hm-with": {
+            "x": 16,
+            "y": 388.5,
+            "width": 358,
+            "height": 206.19
+          },
+          "#hm-board": {
+            "x": 16,
+            "y": 612.28,
+            "width": 358,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 16,
+            "y": 743,
+            "width": 358,
+            "height": 180.92
+          },
+          "#hm-full-team": {
+            "x": 32,
+            "y": 537.89,
+            "width": 326,
+            "height": 44
+          }
+        },
+        "title": "Welcome, Ann",
+        "textSize": "normal",
+        "fixtureReads": 11,
+        "fixtureWrites": 2,
+        "activeTheme": "off",
+        "privateAccess": true,
+        "state": {
+          "option": "A",
+          "route": "#/",
+          "mounted": true,
+          "omitted": "artwork-unavailable",
+          "welcomed": true,
+          "open": false,
+          "player": {
+            "id": "welcome",
+            "frame": 0,
+            "playing": false,
+            "ready": false,
+            "failed": true,
+            "settled": false,
+            "loading": false,
+            "scheduled": false,
+            "visible": true,
+            "atlasLoaded": false
+          },
+          "assets": [
+            "http://localhost:8765/docs/kitchen-mascot/assets/welcome-still.png",
+            "http://localhost:8765/docs/kitchen-mascot/assets/manifest.json"
+          ]
+        },
+        "visibleArt": false,
+        "artBox": null
+      },
+      "geometryDifferences": [],
+      "readDelta": 0,
+      "writeDelta": 0,
+      "overflow": false,
+      "screenshot": "a-edge-blocked-art.png",
+      "browserErrors": [
+        "console: Failed to load resource: net::ERR_FAILED",
+        "console: Failed to load resource: net::ERR_FAILED"
+      ]
+    }
+  ],
+  "limits": [
+    "No native offline cache, service worker or saved-shell generation verified.",
+    "These checks cover preview candidate A only, not shipped application behaviour."
+  ],
+  "summary": {
+    "cases": 8,
+    "geometryChanges": 0,
+    "additionalFixtureReads": 0,
+    "additionalFixtureWrites": 0,
+    "horizontalOverflowCases": 0,
+    "omittedBeforeAssetRequests": [
+      "long-name",
+      "long-name-extra-large",
+      "locked"
+    ],
+    "onceAndReturn": "Normal welcome settles on frame 0. Returning from Recipes to Home in the same page session remains still with no atlas loaded or timer scheduled.",
+    "reducedMotion": "Frame 0 poster only, no atlas loaded and no timer after 3 seconds.",
+    "blockedArtwork": "Decorative content omitted with no geometry change. Two expected failed-resource console messages from deliberate network abort; no JavaScript exception.",
+    "scope": "Preview candidate A, actual app shell, synthetic staff data, 390 x 844."
+  }
+}

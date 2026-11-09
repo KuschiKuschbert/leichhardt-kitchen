@@ -1,0 +1,29 @@
+/* Isolated proposal styling. Loaded only by the review capture harness. */
+.mp-heading-anchor { position: relative; }
+.mp-greeting { position: absolute; right: 0; top: 0; pointer-events: none; display: block; }
+.mp-greeting canvas { display: block; width: 48px; height: 64px; image-rendering: pixelated; }
+.mp-greeting.mp-roomy canvas { width: 64px; height: 85.333333px; }
+.mp-detail { margin: 1.2rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--surface-reference); color: var(--ink); border-radius: var(--r-act); }
+.mp-detail > summary { min-height: 48px; padding: 12px 14px; font: 600 1rem/1.5 var(--body); cursor: pointer; }
+.mp-detail > summary:focus-visible, .mp-detail button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.mp-content { padding: 0 14px 16px; }
+.mp-note { margin: 0 0 12px; font: 400 1rem/1.5 var(--body); color: var(--muted); }
+.mp-player { display: grid; justify-items: center; gap: 12px; }
+.mp-player canvas { display: block; width: 144px; height: 192px; image-rendering: pixelated; }
+.mp-player canvas[hidden] { display: none; }
+.mp-error { margin: 8px 0; font-size: 1rem; color: var(--muted); }
+.mp-error[hidden] { display: none; }
+.mp-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; align-items: center; }
+.mp-controls .btn { min-width: 94px; min-height: 44px; }
+.mp-state { font: 400 .875rem/1.5 var(--body); color: var(--muted); min-width: 78px; }
+.mp-choices { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 16px; justify-content: flex-start; }
+.mp-choices .chip { min-height: 44px; padding: 9px 13px; color: var(--ink); background: var(--surface-paper); border: 1px solid var(--faint); font: 600 .875rem/1.5 var(--body); border-radius: var(--r-pick); cursor: pointer; }
+/* Switch selected text and fill together; retain the app's scale and shadow feedback. */
+.mp-choices .chip { transition-property: scale, translate, box-shadow; }
+.mp-choices .chip[aria-pressed="true"] { background: var(--small-ink); color: var(--bar-text); border-color: var(--small-ink); }
+.mp-selection-title { margin: 2px 0 12px; font: 700 1.2rem/1.2 var(--display); }
+@media (max-width: 600px) {
+  .mp-player canvas { width: 96px; height: 128px; }
+  .mp-content { padding-left: 12px; padding-right: 12px; }
+  .mp-choices { gap: 6px; }
+}
