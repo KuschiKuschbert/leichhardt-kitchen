@@ -1956,7 +1956,12 @@
           });
         }));
       },
-      changed: function () { cutPaint(); try { window.dispatchEvent(new Event('lk-supplier')); } catch (e) {} },
+      changed: function (hint) {
+        // Catalogue saves invalidate today's in-memory grouping. The next Orders draw reads it once; recording an
+        // order only repaints its reminder and does not read the catalogue again.
+        if (hint && hint.catalogue) supCat = { key: '', list: null, state: 'idle' };
+        cutPaint(); try { window.dispatchEvent(new Event('lk-supplier')); } catch (e) {}
+      },
       completeReminder: function (key) { return cutOrdered(key, true); },
       openCutoffs: function () { if (!supplierEdit()) return false; S.atab = 'cutoffs'; lsSet('lk.prep.atab', 'cutoffs'); if (location.hash === '#/admin') draw(); else location.hash = '#/admin'; return true; },
       say: liveSay
@@ -1966,9 +1971,9 @@
   function supplierTools() {
     if (!supplierToolsPromise) supplierToolsPromise = Promise.resolve().then(function () {
       if (!window.LK_APP || !window.LK_APP.load) throw { code: 'unavailable' };
-      return window.LK_SUP_CORE && window.LK_SUP_CORE.API === 4 ? null : window.LK_APP.load('js/supplier-core.js?v=4');
-    }).then(function () { return window.LK_SUP_STORE && window.LK_SUP_STORE.API === 2 ? null : window.LK_APP.load('js/supplier-store.js?v=3'); }).then(function () {
-      if (!window.LK_SUP_CORE || window.LK_SUP_CORE.API !== 4 || !window.LK_SUP_STORE || window.LK_SUP_STORE.API !== 2) throw { code: 'version' };
+      return window.LK_SUP_CORE && window.LK_SUP_CORE.API === 5 ? null : window.LK_APP.load('js/supplier-core.js?v=6');
+    }).then(function () { return window.LK_SUP_STORE && window.LK_SUP_STORE.API === 3 ? null : window.LK_APP.load('js/supplier-store.js?v=6'); }).then(function () {
+      if (!window.LK_SUP_CORE || window.LK_SUP_CORE.API !== 5 || !window.LK_SUP_STORE || window.LK_SUP_STORE.API !== 3) throw { code: 'version' };
       supplierService = window.LK_SUP_STORE.create(supplierApi()); return supplierService;
     }).catch(function (e) { supplierToolsPromise = null; throw e; });
     return supplierToolsPromise;
@@ -10743,11 +10748,11 @@
     if (!supplierRead() || !cutHas()) return;
     var k = supplierContext() + '|' + dayNow();
     if (supCat.key === k) return;
-    supCat = { key: k, list: null, state: 'loading' };
+    var pending = { key: k, list: null, state: 'loading' }; supCat = pending;
     supplierTools().then(function (st) { return st.loadSuppliers(); }).then(function (list) {
-      if (supCat.key !== k) return;
+      if (supCat !== pending) return;
       supCat.list = list || []; supCat.state = 'ok'; if (S.name === 'orders') draw();
-    }, function () { if (supCat.key === k) { supCat.state = 'error'; if (S.name === 'orders') draw(); } });
+    }, function () { if (supCat === pending) { supCat.state = 'error'; if (S.name === 'orders') draw(); } });
   }
   // grouped only when a catalogue supplier is linked to one of the cut-offs shown: with none, every request would sit
   // under No supplier yet, so the plain list stays

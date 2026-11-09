@@ -3,8 +3,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 (async () => {
-  const now = Date.parse('2026-11-08T00:00:00Z'), root = 'kitchens/000000', realNow = Date.now;
-  Date.now = () => now;
+  let tick = Date.parse('2026-11-08T00:00:00Z');
+  const root = 'kitchens/000000', realNow = Date.now;
+  Date.now = () => tick;
   let user = null, checks = 0;
   global.localStorage = { getItem: () => null, setItem: () => {} };
   global.window = { __fakeAuthUser: () => user, addEventListener: () => {} };
@@ -16,21 +17,22 @@ const path = require('node:path');
   const deny = async (promise, label) => { await assert.rejects(promise, e => e.code === 'permission-denied', label); checks++; };
   const check = (value, label) => { assert.ok(value, label); checks++; };
   const config = { headId: 'head', staffIds: ['head', 'sous', 'staff', 'view', 'fn'], sousIds: ['head', 'sous'], fnOnlyIds: ['fn'], addIds: [], tickIds: [], delIds: [] };
-  const session = (by, mode = 'personal', at = now - 1000) => ({ v: 2, by, mode, pinAt: 1,
+  const session = (by, mode = 'personal', at = tick - 1000) => ({ v: 2, by, mode, pinAt: 1,
     issuedAt: f.Timestamp.fromMillis(at), at: f.Timestamp.fromMillis(at), exp: Math.floor((at + 21600000) / 86400000) * 86400000 + 64800000 });
   function sign(role) {
     const by = ['owner', 'head'].includes(role) ? 'head' : role === 'shared' ? 'staff' : role;
     user = role === 'public' ? null : { uid: 'device-' + role, isAnonymous: role !== 'google', emailVerified: true, email: 'headchef@test.local' };
     if (user) {
       write('sessions/' + user.uid, role === 'locked' || role === 'google' ? null : session(by, role === 'shared' ? 'shared' : 'personal'));
-      if (role === 'expired') write('sessions/' + user.uid, session('staff', 'personal', now - 86400000));
+      if (role === 'expired') write('sessions/' + user.uid, session('staff', 'personal', tick - 86400000));
       if (role === 'owner') write('adminDevices/' + user.uid, { ...session('head'), googleUid: 'google-owner' });
     }
     return by;
   }
   const current = (extra = {}) => ({ v: 1, run: 'run-1234567890123456', rev: 1,
-    firstAt: f.Timestamp.fromMillis(now - 7200000 - 1), firstBy: 'staff', secondAt: 0, secondBy: '', by: 'staff', ...extra });
-  const complete = () => current({ rev: 2, firstAt: f.Timestamp.fromMillis(now - 21600000 - 1), secondAt: f.Timestamp.fromMillis(now - 14400000 - 1), secondBy: 'sous', by: 'sous' });
+    firstAt: f.Timestamp.fromMillis(tick - 7200000 - 1), firstBy: 'staff', secondAt: 0, secondBy: '', by: 'staff', ...extra });
+  const complete = (due = Math.floor((tick + 36000000) / 86400000) * 86400000 - 36000000 - 1) => current({ rev: 2,
+    firstAt: f.Timestamp.fromMillis(due - 21600000), secondAt: f.Timestamp.fromMillis(due - 14400000), secondBy: 'sous', by: 'sous' });
   const first = (by, extra = {}) => current({ firstAt: f.serverTimestamp(), firstBy: by, by, ...extra });
   const second = (by, extra = {}) => ({ rev: 2, secondAt: f.serverTimestamp(), secondBy: by, by, ...extra });
   write('config/main', config);
@@ -39,7 +41,7 @@ const path = require('node:path');
     const by = sign(role); write('cooling/current', null);
     await allow(f.getDoc(D()), role + ' reads absent shared state');
     await allow(f.setDoc(D(), first(by)), role + ' starts without Add or Tick');
-    check(window.__fake.dump()[root + '/cooling/current'].firstAt.toMillis() === now, 'first start gets server time');
+    check(window.__fake.dump()[root + '/cooling/current'].firstAt.toMillis() === tick, 'first start gets server time');
     await deny(f.updateDoc(D(), second(by)), role + ' cannot skip two hours');
     await deny(f.setDoc(D(), first(by, { run: 'other-1234567890123456', rev: 2 })), role + ' cannot restart unfinished first stage');
     await deny(f.deleteDoc(D()), role + ' cannot delete timer');
@@ -49,11 +51,13 @@ const path = require('node:path');
     write('cooling/current', current());
     await allow(f.updateDoc(D(), second(by)), role + ' starts four hours manually');
     const value = window.__fake.dump()[root + '/cooling/current'];
-    check(value.firstAt.isEqual(current().firstAt) && value.firstBy === 'staff' && value.secondAt.toMillis() === now && value.secondBy === by, role + ' preserves first-stage identity');
+    check(value.firstAt.isEqual(current().firstAt) && value.firstBy === 'staff' && value.secondAt.toMillis() === tick && value.secondBy === by, role + ' preserves first-stage identity');
     await deny(f.updateDoc(D(), second(by, { rev: 3 })), role + ' cannot restart second stage');
     await deny(f.setDoc(D(), first(by, { run: 'other-1234567890123456', rev: 3 })), role + ' cannot skip four hours');
+    write('cooling/current', complete(tick - 1));
+    await deny(f.setDoc(D(), first(by, { run: 'other-1234567890123456', rev: 3 })), role + ' cannot restart on the completion day');
     write('cooling/current', complete());
-    await allow(f.setDoc(D(), first(by, { run: 'other-1234567890123456', rev: 3 })), role + ' starts a new batch after four hours');
+    await allow(f.setDoc(D(), first(by, { run: 'other-1234567890123456', rev: 3 })), role + ' starts a new batch the day after four hours');
   }
   for (const role of ['public', 'google', 'locked', 'expired', 'removed', 'fn']) {
     const by = sign(role); write('cooling/current', null);
@@ -69,8 +73,8 @@ const path = require('node:path');
   await deny(f.getDocs(f.collectionGroup(db, 'cooling')), 'admin cannot list the cooling collection group');
   sign('view'); write('cooling/current', null);
   for (const [label, change] of Object.entries({ by: { by: 'staff' }, recorder: { firstBy: 'staff' },
-    clock: { firstAt: f.Timestamp.fromMillis(now - 1) }, numeric: { firstAt: now }, duration: { duration: 7200000 },
-    deadline: { firstDue: now + 7200000 }, skipped: { secondAt: f.serverTimestamp(), secondBy: 'view' },
+    clock: { firstAt: f.Timestamp.fromMillis(tick - 1) }, numeric: { firstAt: tick }, duration: { duration: 7200000 },
+    deadline: { firstDue: tick + 7200000 }, skipped: { secondAt: f.serverTimestamp(), secondBy: 'view' },
     revision: { rev: 2 }, fractional: { rev: 1.5 }, run: { run: 'bad/run' }, version: { v: 2 } })) {
     await deny(f.setDoc(D(), first('view', change)), 'first start rejects forged ' + label);
   }
@@ -80,18 +84,29 @@ const path = require('node:path');
   }
   write('cooling/current', current());
   for (const [label, change] of Object.entries({ by: { by: 'staff' }, recorder: { secondBy: 'staff' },
-    clock: { secondAt: f.Timestamp.fromMillis(now - 1) }, numeric: { secondAt: now }, stale: { rev: 1 }, skipped: { rev: 3 },
-    first: { firstAt: f.Timestamp.fromMillis(now - 7200001 - 1) }, firstBy: { firstBy: 'view' }, run: { run: 'other-1234567890123456' } })) {
+    clock: { secondAt: f.Timestamp.fromMillis(tick - 1) }, numeric: { secondAt: tick }, stale: { rev: 1 }, skipped: { rev: 3 },
+    first: { firstAt: f.Timestamp.fromMillis(tick - 7200001 - 1) }, firstBy: { firstBy: 'view' }, run: { run: 'other-1234567890123456' } })) {
     await deny(f.updateDoc(D(), second('view', change)), 'second stage rejects forged ' + label);
   }
-  write('cooling/current', current({ firstAt: f.Timestamp.fromMillis(now - 7200000 + 1) }));
+  write('cooling/current', current({ firstAt: f.Timestamp.fromMillis(tick - 7200000 + 1) }));
   await deny(f.updateDoc(D(), second('view')), 'second stage cannot start one millisecond early');
-  write('cooling/current', current({ firstAt: f.Timestamp.fromMillis(now - 7200000) }));
+  write('cooling/current', current({ firstAt: f.Timestamp.fromMillis(tick - 7200000) }));
   await allow(f.updateDoc(D(), second('view')), 'second stage may start exactly at two hours');
-  write('cooling/current', { ...complete(), secondAt: f.Timestamp.fromMillis(now - 14400000 + 1) });
+  write('cooling/current', { ...complete(), secondAt: f.Timestamp.fromMillis(tick - 14400000 + 1) });
   await deny(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 3 })), 'new batch cannot start one millisecond early');
-  write('cooling/current', { ...complete(), secondAt: f.Timestamp.fromMillis(now - 14400000) });
-  await allow(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 3 })), 'new batch may start exactly at four hours');
+  write('cooling/current', { ...complete(), secondAt: f.Timestamp.fromMillis(tick - 14400000) });
+  await deny(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 3 })), 'new batch remains disabled exactly at four hours');
+  const midnight = Date.parse('2026-11-08T14:00:00Z'), ended = complete(midnight - 1800000);
+  tick = midnight - 1; sign('view'); write('cooling/current', ended);
+  await deny(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 3 })), 'one millisecond before Queensland midnight is still locked');
+  tick = midnight; sign('view');
+  await allow(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 3 })), "Queensland midnight unlocks the preceding day's completed batch");
+  write('cooling/current', complete(midnight));
+  await deny(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 3 })), 'a four-hour deadline exactly at midnight locks for that whole new day');
+  write('cooling/current', complete(midnight + 1));
+  await deny(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 3 })), 'cross-midnight four-hour stage cannot restart while running');
+  tick = midnight + 86400000; sign('view');
+  await allow(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 3 })), 'a cross-midnight completion unlocks on the following midnight');
   for (const stage of ['first', 'second', 'new']) {
     write('cooling/current', stage === 'first' ? null : stage === 'second' ? current() : complete());
     const results = await Promise.allSettled([1, 2].map(i => stage === 'second' ? f.updateDoc(D(), second('view')) :

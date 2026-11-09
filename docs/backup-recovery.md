@@ -59,6 +59,8 @@ PBKDF2 derives the 32-byte key from the UTF-8 passphrase and random salt. The co
 
 The exporter is `scripts/nightly-backup.mjs`. On 8 November 2026, cleaning adds the top-level arrays `cleaningTasks` and `cleaningDone`, prep standards add `prepStandards`, and cooling adds the explicit `coolingCurrent` section. Older archives may not contain these sections.
 
+Supplier splits (9 November 2026) add an optional immutable `historyFrom`/`historyBefore` pair to a destination supplier, inside the existing `suppliers` section. Manual Backup, nightly export and kitchen-PIN copy retain these raw fields, stable supplier/item IDs, archived original item maps and original order/audit subcollections. Restore both original and destination records with their exact lineage timestamp; do not flatten inherited history into new orders or generate a fresh boundary. The owner-copy rules preserve exact restoration without requiring parent-first catalogue creation. A usable restored split requires the split-capable client and published rules as well as the included original history. Older archives without lineage remain valid ordinary catalogues.
+
 | Included section | Scope |
 | --- | --- |
 | `config` | `config/main`, including people, canonical permission ids and settings. |

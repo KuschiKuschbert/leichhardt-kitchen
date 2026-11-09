@@ -14,11 +14,39 @@ const config = { people: [], headId: 'head', sousIds: ['head', 'sous'], staffIds
 const sessions = Object.fromEntries(Object.entries(roles).map(([uid, by]) => [uid, dailySession(by, { at: NOW, mode: uid === 'tablet' ? 'shared' : 'personal' })]));
 const runId = 'run-1234567890123456';
 const waiting = (extra = {}) => ({ v: 1, run: runId, rev: 1, firstAt: Timestamp.fromMillis(NOW - 7200000 - 1000), firstBy: 'staff', secondAt: 0, secondBy: '', by: 'staff', ...extra });
-const complete = (extra = {}) => waiting({ rev: 2, firstAt: Timestamp.fromMillis(NOW - 21600000 - 1000), secondAt: Timestamp.fromMillis(NOW - 14400000 - 1000), secondBy: 'sous', by: 'sous', ...extra });
+const DAY_START = Math.floor((NOW + 36000000) / 86400000) * 86400000 - 36000000;
+const complete = (extra = {}) => waiting({ rev: 2, firstAt: Timestamp.fromMillis(DAY_START - 21600000 - 1000),
+  secondAt: Timestamp.fromMillis(DAY_START - 14400000 - 1000), secondBy: 'sous', by: 'sous', ...extra });
 const first = (by, extra = {}) => waiting({ firstAt: serverTimestamp(), firstBy: by, by, ...extra });
 const second = (by, extra = {}) => ({ rev: 2, secondAt: serverTimestamp(), secondBy: by, by, ...extra });
 async function put(path, value) { await env.withSecurityRulesDisabled(c => value === null ? deleteDoc(doc(c.firestore(), K + path)) : setDoc(doc(c.firestore(), K + path), value)); }
 const db = uid => anonContext(env, uid).firestore(), D = (d, path = 'cooling/current') => doc(d, K + path);
+// Pin request.time only in these source variations, like function-midnight.test.mjs. Normal cases use the real emulator clock.
+async function midnightChecks() {
+  const midnight = Date.parse('2026-01-02T14:00:00Z');
+  for (const pinned of [midnight - 1, midnight, midnight + 86400000]) {
+    const boundaryRules = rules.replaceAll('request.time', 'timestamp.value("' + new Date(pinned).toISOString() + '")');
+    const boundary = await initializeTestEnvironment({ projectId: 'demo-cooling-midnight', firestore: { rules: boundaryRules } });
+    const session = dailySession('view', { at: pinned - 60000 }), d = anonContext(boundary, 'view').firestore();
+    const putBoundary = async (values) => boundary.withSecurityRulesDisabled(async c => {
+      const store = c.firestore();
+      for (const [path, value] of Object.entries(values)) await setDoc(doc(store, K + path), value);
+    });
+    try {
+      await boundary.clearFirestore();
+      await putBoundary({ 'config/main': config, 'pinset/view': { at: 1 }, 'sessions/view': session });
+      for (const due of [Timestamp.fromMillis(midnight - 1800000), new Timestamp(midnight / 1000 - 1, 999999000), Timestamp.fromMillis(midnight), Timestamp.fromMillis(midnight + 3600000)]) {
+        const dueMillis = due.toMillis(), secondAt = new Timestamp(due.seconds - 14400, due.nanoseconds);
+        await putBoundary({ 'cooling/current': complete({ firstAt: Timestamp.fromMillis(dueMillis - 21600000), secondAt }) });
+        const next = first('view', { run: 'next-1234567890123456', rev: 3, firstAt: Timestamp.fromMillis(pinned) });
+        // The first two deadlines belong to the previous calendar day; the other two require another midnight.
+        const unlocked = pinned >= (dueMillis < midnight ? midnight : midnight + 86400000);
+        if (unlocked) await pass('pinned midnight unlocks a completed prior-day deadline', setDoc(D(d), next));
+        else await deny('pinned clock keeps completion-day and unfinished deadlines locked', setDoc(D(d), next));
+      }
+    } finally { await boundary.cleanup(); }
+  }
+}
 let n = 0;
 async function pass(label, operation) { await assertSucceeds(operation); n++; }
 async function deny(label, operation) { await assertFails(operation); n++; }
@@ -51,8 +79,10 @@ try {
     check(next.secondAt instanceof Timestamp && next.secondBy === by && next.firstAt.isEqual(waiting().firstAt) && next.firstBy === 'staff' && next.rev === 2, role + ' keeps exact first-stage identity');
     await deny(role + ' cannot retick second stage', updateDoc(D(d), second(by, { rev: 3 })));
     await deny(role + ' cannot begin new batch while four hours run', setDoc(D(d), first(by, { run: 'new-1234567890123456', rev: 3 })));
+    await put('cooling/current', complete({ secondAt: Timestamp.fromMillis(NOW - 14400000 - 1000) }));
+    await deny(role + ' cannot restart on the four-hour completion day', setDoc(D(d), first(by, { run: 'new-1234567890123456', rev: 3 })));
     await put('cooling/current', complete());
-    await pass(role + ' can start a distinct batch after both stages', setDoc(D(d), first(by, { run: 'new-1234567890123456', rev: 3 })));
+    await pass(role + ' can start a distinct batch the following day', setDoc(D(d), first(by, { run: 'new-1234567890123456', rev: 3 })));
   }
   const invalid = [
     ['public', env.unauthenticatedContext().firestore(), 'staff'], ['no PIN', db('missing'), 'staff'],
@@ -120,5 +150,6 @@ try {
   await put('config/main', { ...config, staffIds: config.staffIds.filter(id => id !== 'staff') });
   await deny('canonical removal revokes reads', getDoc(D(staff)));
   await deny('canonical removal revokes stage starts', updateDoc(D(staff), second('staff')));
+  await midnightChecks();
   console.log(n + ' Operandio open-app cooling rules checks passed.');
 } finally { await env.cleanup(); }

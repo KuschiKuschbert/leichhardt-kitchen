@@ -308,6 +308,8 @@ row('js/prep.js psSave(): update an item with the next revision through W()', { 
   prep: () => put({ 'prepStandards/edit': prepStandard() }),
   run: (db, w, r) => W(r, [['set', 'prepStandards/edit', prepStandard({ v: 2, minimum: 0, archived: true, by: w })]]) });
 row('js/supplier-store.js: a supplier\'s orders (suppliers/<id>/orders, the last 21)', { ok: CHEFS, asks: CHEFS, run: db => getDocs(query(C(db, 'suppliers/s1/orders'), orderBy('at', 'desc'), limit(21))) });
+row('js/supplier-store.js: inherited split history before its fixed cutoff (parent orders, bounded 21)', { ok: CHEFS, asks: CHEFS,
+  run: db => getDocs(query(C(db, 'suppliers/s1/orders'), where('at', '<=', NOW), orderBy('at', 'desc'), limit(21))) });
 row('js/supplier-store.js: a cut-off\'s link (supplierlinks/<day>_<cut-off>)', { ok: CHEFS, asks: CHEFS, run: db => getDoc(D(db, `supplierlinks/${TODAY}_northside`)) });
 // the admin Backup (exportAll(), the Google device only): one row per list that has a rule of its own, so a rule
 // loosened for one of them shows on its own row. The lists every kitchen phone reads are rows above.
@@ -636,8 +638,8 @@ row('js/prep.js coolingWrite(): four-hour second stage through W()', { ok: KITCH
   prep: () => put({ 'cooling/current': coolRun() }),
   run: (db, w, r) => W(r, [['upd', 'cooling/current', { rev: 2, secondAt: serverTimestamp(), secondBy: w }]]) });
 row('js/prep.js coolingWrite(): new batch after four-hour stage through W()', { ok: KITCHEN, asks: KITCHEN,
-  prep: () => put({ 'cooling/current': coolRun({ rev: 2, firstAt: Timestamp.fromMillis(NOW - 21600000 - 1000),
-    secondAt: Timestamp.fromMillis(NOW - 14400000 - 1000), secondBy: 'sam', by: 'sam' }) }),
+  prep: () => put({ 'cooling/current': coolRun({ rev: 2, firstAt: Timestamp.fromMillis(NOW - 21600000 - 86400000),
+    secondAt: Timestamp.fromMillis(NOW - 14400000 - 86400000), secondBy: 'sam', by: 'sam' }) }),
   run: (db, w, r) => W(r, [['set', 'cooling/current', coolRun({ run: 'next-1234567890123456', rev: 3,
     firstAt: serverTimestamp(), firstBy: w, by: w })]]) });
 
