@@ -4,6 +4,8 @@
 
 # Leichhardt Kitchen Book
 
+Supplier order shows each item's **last ordered quantity and date** in the existing Last order column. It checks recent saved orders and keeps an item's own last purchase when the latest supplier order omitted it. Older orders extends the check through Order history; unchecked earlier history is labelled clearly. [Behaviour and read costs](docs/supplier-workspace.md#each-items-last-order-9-november-2026).
+
 Sheets and modals can be closed by swiping their grip or title down, or dragging it with a mouse. Normal scrolling and fields keep their own gestures. Swiping uses the existing Cancel action, retaining add-form drafts and leaving pings unread. [Behaviour and checks](docs/adaptive-controls.md#swipe-to-close-9-november-2026).
 
 Mouse and trackpad users also get a small **×** in sheet and modal headers where a close control was missing. It uses the same Cancel action, with a keyboard label and a 44 px target. Touch layout stays the same.
