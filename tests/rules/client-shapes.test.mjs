@@ -308,6 +308,8 @@ row('js/prep.js psSave(): update an item with the next revision through W()', { 
   prep: () => put({ 'prepStandards/edit': prepStandard() }),
   run: (db, w, r) => W(r, [['set', 'prepStandards/edit', prepStandard({ v: 2, minimum: 0, archived: true, by: w })]]) });
 row('js/supplier-store.js: a supplier\'s orders (suppliers/<id>/orders, the last 21)', { ok: CHEFS, asks: CHEFS, run: db => getDocs(query(C(db, 'suppliers/s1/orders'), orderBy('at', 'desc'), limit(21))) });
+row('js/supplier-store.js: inherited split history before its fixed cutoff (parent orders, bounded 21)', { ok: CHEFS, asks: CHEFS,
+  run: db => getDocs(query(C(db, 'suppliers/s1/orders'), where('at', '<=', NOW), orderBy('at', 'desc'), limit(21))) });
 row('js/supplier-store.js: a cut-off\'s link (supplierlinks/<day>_<cut-off>)', { ok: CHEFS, asks: CHEFS, run: db => getDoc(D(db, `supplierlinks/${TODAY}_northside`)) });
 // the admin Backup (exportAll(), the Google device only): one row per list that has a rule of its own, so a rule
 // loosened for one of them shows on its own row. The lists every kitchen phone reads are rows above.

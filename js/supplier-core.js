@@ -131,7 +131,7 @@
     return out;
   }
   function cleanSupplier(value, previous) {
-    keys(value, ['id', 'name', 'cutoffId', 'v', 'items', 'at', 'by'], 'supplier');
+    keys(value, ['id', 'name', 'cutoffId', 'v', 'items', 'at', 'by', 'historyFrom', 'historyBefore'], 'supplier');
     if (!Array.isArray(value.items) || value.items.length > MAX_ITEMS) fail('items', 'items', 'Use no more than ' + MAX_ITEMS + ' items per supplier.');
     var seen = Object.create(null), old = Object.create(null);
     if (previous) (previous.items || []).forEach(function (x) { old[x.id] = x; });
@@ -141,8 +141,15 @@
       seen[item.id] = true; return item;
     }), at: value.at == null ? 0 : value.at, by: text(value.by, 80, 'by') };
     if (typeof out.at !== 'number' || !isFinite(out.at) || out.at < 0) fail('number', 'at', 'Check the saved time.');
+    if (own(value, 'historyFrom') || own(value, 'historyBefore')) {
+      if (!own(value, 'historyFrom') || !own(value, 'historyBefore')) fail('history', 'historyFrom', 'Keep the supplier history link and its time together.');
+      out.historyFrom = id(value.historyFrom, 'historyFrom');
+      out.historyBefore = value.historyBefore;
+      if (out.historyFrom === out.id || typeof out.historyBefore !== 'number' || !isFinite(out.historyBefore) || out.historyBefore <= 0 || out.historyBefore >= 9007199254740991 || out.historyBefore > out.at) fail('history', 'historyBefore', 'Use the original supplier history link and split time.');
+    }
     if (previous) {
       if (out.id !== previous.id) fail('immutable', 'supplier.id', 'Keep the saved supplier ID.');
+      if (out.historyFrom !== previous.historyFrom || out.historyBefore !== previous.historyBefore) fail('immutable', 'historyFrom', 'Keep the original supplier history link and split time.');
       Object.keys(old).forEach(function (key) { if (!own(seen, key)) fail('archive', 'items', 'Archive a saved item instead of removing it.'); });
     }
     return out;
@@ -150,9 +157,16 @@
   function validateCatalogue(value) {
     keys(value, ['version', 'suppliers'], 'catalogue');
     if (value.version !== 1 || !Array.isArray(value.suppliers) || value.suppliers.length > 50) fail('version', 'catalogue', 'Use supplier catalogue version 1.');
-    var seen = Object.create(null), count = 0;
+    var seen = Object.create(null), count = 0, splitCount = 0;
     var suppliers = value.suppliers.map(function (s) {
-      var out = cleanSupplier(s); count += out.items.length;
+      if (!plain(s)) fail('shape', 'supplier', 'Use an object for supplier.');
+      var source = Object.create(null);
+      Object.keys(s).forEach(function (key) { if (key !== 'splitFrom') source[key] = s[key]; });
+      var out = cleanSupplier(source); count += out.items.length;
+      if (own(s, 'splitFrom')) {
+        out.splitFrom = id(s.splitFrom, 'splitFrom'); splitCount++;
+        if (out.splitFrom === out.id || splitCount > 1) fail('split', 'splitFrom', 'Split one existing supplier into a separate new supplier at a time.');
+      }
       if (own(seen, out.id)) fail('duplicate', 'supplier.id', 'Each supplier needs its own ID.');
       seen[out.id] = true; return out;
     });
@@ -160,6 +174,83 @@
     return { version: 1, suppliers: suppliers };
   }
   function normaliseName(v) { return String(v == null ? '' : v).trim().toLowerCase().replace(/\s+/g, ' '); }
+  // A private order-only file contains names and packs, never replacement catalogue items or quantities.
+  function validateTemplateOrder(value) {
+    keys(value, ['version', 'kind', 'templates'], 'template order');
+    if (value.version !== 1 || value.kind !== 'supplier-template-order') fail('version', 'template order', 'Use supplier template order version 1.');
+    if (!Array.isArray(value.templates) || !value.templates.length || value.templates.length > 50) fail('items', 'templates', 'Use between 1 and 50 order templates.');
+    var seen = Object.create(null), count = 0;
+    var templates = value.templates.map(function (entry) {
+      keys(entry, ['file', 'items'], 'template');
+      var file = text(entry.file, 180, 'template.file', true), key = normaliseName(file);
+      if (own(seen, key)) fail('duplicate', 'template.file', 'The template ' + file + ' appears more than once.');
+      seen[key] = true;
+      if (!Array.isArray(entry.items) || !entry.items.length || entry.items.length > MAX_ITEMS) fail('items', 'template.items', 'Use between 1 and ' + MAX_ITEMS + ' rows in ' + file + '.');
+      var items = entry.items.map(function (row) {
+        keys(row, ['name', 'pack'], 'template row');
+        return { name: text(row.name, 180, 'template.name', true), pack: text(row.pack, 120, 'template.pack') };
+      });
+      count += items.length;
+      return { file: file, items: items };
+    });
+    if (count > MAX_ITEMS) fail('items', 'templates', 'Use no more than ' + MAX_ITEMS + ' rows in one template order file.');
+    return { version: 1, kind: 'supplier-template-order', templates: templates };
+  }
+  /* Match complete original names, preserving punctuation. A matching source file breaks a name tie; a complete
+     pack breaks a remaining tie. Unique names still match renamed templates and an edited current pack. Never
+     change an item's ID, original source, current details or archived state to make it fit the new order. */
+  function planTemplateOrder(value, suppliers) {
+    var payload = validateTemplateOrder(value), byId = Object.create(null), names = Object.create(null), plans = [], selected = Object.create(null), total = 0;
+    if (!Array.isArray(suppliers) || suppliers.length > 50) fail('items', 'suppliers', 'Read the current supplier catalogue before matching templates.');
+    suppliers.forEach(function (value) {
+      var checked = cleanSupplier(value), saved = copy(value);
+      if (own(byId, checked.id)) fail('duplicate', 'supplier.id', 'Each supplier needs its own ID.');
+      byId[checked.id] = { supplier: saved, plan: null };
+      saved.items.forEach(function (entry) {
+        if (entry.manual || !entry.source || !entry.source.name) return;
+        var key = normaliseName(entry.source.name);
+        if (!own(names, key)) names[key] = [];
+        names[key].push({ sid: saved.id, item: entry });
+      });
+    });
+    Object.keys(names).forEach(function (key) {
+      names[key] = names[key].filter(function (origin, index, candidates) {
+        // A split retains an archived source copy. The direct child's current copy owns that stable ID,
+        // including when the child later archives it; unrelated archived duplicates remain ambiguous.
+        return !origin.item.archived || !candidates.some(function (candidate) {
+          return candidate.sid !== origin.sid && candidate.item.id === origin.item.id
+            && byId[candidate.sid].supplier.historyFrom === origin.sid;
+        });
+      });
+    });
+    payload.templates.forEach(function (template) {
+      template.items.forEach(function (row, rowIndex) {
+        total++;
+        var candidates = names[normaliseName(row.name)] || [], label = template.file + ', row ' + (rowIndex + 1) + ': ' + row.name;
+        if (!candidates.length) fail('template-missing', 'templates', label + ' is missing from the current catalogue. Check this row before changing the order.');
+        if (candidates.length > 1) {
+          var sameFile = candidates.filter(function (candidate) { return normaliseName(candidate.item.source.file) === normaliseName(template.file); });
+          if (sameFile.length) candidates = sameFile;
+        }
+        if (candidates.length > 1 && normaliseName(row.pack)) candidates = candidates.filter(function (candidate) { return normaliseName(candidate.item.pack) === normaliseName(row.pack); });
+        if (candidates.length !== 1) fail('template-ambiguous', 'templates', label + ' does not identify one saved item. Check its source file and pack before changing the order.');
+        var match = candidates[0], key = match.sid + '/' + match.item.id, current = byId[match.sid];
+        if (own(selected, key)) fail('duplicate', 'templates', label + ' selects an item already included in this template order.');
+        selected[key] = true;
+        if (!current.plan) {
+          current.plan = { id: current.supplier.id, v: current.supplier.v, name: current.supplier.name, items: [], matched: 0, retained: 0, changed: false };
+          plans.push(current.plan);
+        }
+        current.plan.items.push(match.item); current.plan.matched++;
+      });
+    });
+    plans.forEach(function (plan) {
+      var current = byId[plan.id].supplier;
+      current.items.forEach(function (entry) { if (!own(selected, plan.id + '/' + entry.id)) { plan.items.push(entry); plan.retained++; } });
+      plan.changed = current.items.some(function (entry, index) { return entry.id !== plan.items[index].id; });
+    });
+    return { plans: plans, matched: total, total: total };
+  }
   function duplicateItems(items, candidate) {
     var name = normaliseName(candidate.name);
     return (items || []).filter(function (x) { return !x.archived && x.id !== candidate.id && normaliseName(x.name) === name; });
@@ -236,5 +327,5 @@
     if (!old && !changes.length) changes.push({ itemId: '', action: 'add_supplier', before: null, after: { name: next.name, cutoffId: next.cutoffId } });
     return changes;
   }
-  return { API: 4, MAX_ITEMS: MAX_ITEMS, MAX_ORDER_LINES: MAX_ORDER_LINES, cleanPar: cleanPar, normaliseUnit: normaliseUnit, parseQuantity: parseQuantity, parseStock: parseStock, convert: convert, cleanItem: cleanItem, cleanSupplier: cleanSupplier, validateCatalogue: validateCatalogue, normaliseName: normaliseName, duplicateItems: duplicateItems, matchRequests: matchRequests, snapshotLines: snapshotLines, suggestQuantity: suggestQuantity, catalogueDiff: catalogueDiff };
+  return { API: 5, MAX_ITEMS: MAX_ITEMS, MAX_ORDER_LINES: MAX_ORDER_LINES, cleanPar: cleanPar, normaliseUnit: normaliseUnit, parseQuantity: parseQuantity, parseStock: parseStock, convert: convert, cleanItem: cleanItem, cleanSupplier: cleanSupplier, validateCatalogue: validateCatalogue, validateTemplateOrder: validateTemplateOrder, planTemplateOrder: planTemplateOrder, normaliseName: normaliseName, duplicateItems: duplicateItems, matchRequests: matchRequests, snapshotLines: snapshotLines, suggestQuantity: suggestQuantity, catalogueDiff: catalogueDiff };
 });
