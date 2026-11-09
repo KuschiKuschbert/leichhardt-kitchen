@@ -1,6 +1,6 @@
 # Cleaning schedule and checks
 
-9 November 2026. Status: implemented and locally verified; production release pending. This extends the approved C daily notebook and A chef week review. The requested integration uses the existing application design. It introduces no page, tab, top-bar button or service-page popup.
+9 November 2026. Status: implemented and locally verified; the owner authorised release. [PR #637](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/637) records current CI, rules publication, deployment and live verification. This extends the approved C daily notebook and A chef week review. The requested integration uses the existing application design. It introduces no page, tab, top-bar button or service-page popup.
 
 ## Outcome
 
@@ -139,4 +139,4 @@ After reconciling the current team and supplier changes, all six focused Cleanin
 
 Independent read-only review found no remaining material authorisation or audit bypass. Task ordering is a clear working sequence with per-task checks; it is not a global cross-task lock that could prevent an earlier after-service floor clean.
 
-The code is prepared on a feature branch for a draft pull request. No production rules were dispatched, no live task programme was imported and the team release switch was not enabled. The compatible additive rules must be published before the client is released; required CI and production verification remain distinct release steps.
+At implementation handoff, no production rules had been dispatched, no live task programme had been imported and the team release switch had not been enabled. The owner subsequently requested release. The compatible additive rules must be published before the client is released; required CI and production verification remain distinct release steps, with evidence recorded in PR #637. Schedule import, Pass-checker selection and the verified owner's team switch remain explicit setup actions.
