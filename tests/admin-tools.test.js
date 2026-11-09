@@ -70,7 +70,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.context().close();
 
   // Backup: one JSON file with notes and who has seen them, minutes with earlier versions and sign-offs, and order learning
-  const coolingCurrent = { v: 1, run: 'backup-cooling-run-01', rev: 1, firstAt: { __fakeTimestamp: L.NOW - 3 * 3600000 }, firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' };
+  const coolingCurrent = { v: 1, run: 'backup-cooling-run-01', rev: 1, windowAt: L.NOW - 4 * 3600000, firstAt: { __fakeTimestamp: L.NOW - 3 * 3600000 }, firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' };
   const coolingRecorded = { v: 1, run: coolingCurrent.run, firstAt: { __fakeTimestamp: L.NOW - 1000.125 }, firstBy: 'bo', secondAt: 0, secondBy: '', by: 'bo' };
   const coolingBackup = { ...extra, [fsKey(['cooling', 'current'])]: coolingCurrent, [fsKey(['cooling', 'recorded'])]: coolingRecorded };
   p = await L.open(b, '#/admin', { admin: true, wait: 1800, extra: coolingBackup });
@@ -81,7 +81,7 @@ const store = page => page.evaluate(() => window.__fake.dump());
   const file = await dl;
   const chunks = []; for await (const c of await file.createReadStream()) chunks.push(c);
   const bk = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-  ok(JSON.stringify(bk.coolingCurrent) === JSON.stringify(coolingCurrent), 'backup: the canonical cooling run retains its identity and server start times exactly');
+  ok(JSON.stringify(bk.coolingCurrent) === JSON.stringify(coolingCurrent), 'backup: the canonical cooling run retains its identity, daily-window stamp and server start times exactly');
   ok(JSON.stringify(bk.coolingRecorded) === JSON.stringify(coolingRecorded), 'backup: recording confirmation retains its run, different recorder, exact timestamp and unconfirmed second stage');
   ok((await p.evaluate(() => window.__fake.reads)).includes(fsKey(['cooling', 'current'])), 'backup: the current shared timer is read by its fixed document path');
   ok((await p.evaluate(() => window.__fake.reads)).includes(fsKey(['cooling', 'recorded'])), 'backup: recording confirmations are read by their fixed document path');

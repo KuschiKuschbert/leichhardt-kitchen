@@ -85,6 +85,7 @@ html.cooling-open, html.cooling-open body { overflow: hidden; }
 .cooling-clock .cooling-clock-control:focus-visible { outline: 2px solid var(--bar-accent); outline-offset: 3px; }
 .cooling-clock .cooling-clock-control:disabled { opacity: 1; cursor: wait; }
 .cooling-clock .cooling-clock-status { cursor: default; }
+.cooling-clock[data-clock-state="off_hours"] .cooling-clock-control { background: var(--bar); border-color: var(--bar-text); color: var(--bar-text); }
 .cooling-clock-face { flex: 0 0 40px; position: relative; display: grid; place-items: center; width: 40px; height: 40px; }
 .cooling-clock-drawing { width: 22px; height: 22px; display: grid; place-items: center; }
 .cooling-clock-drawing svg { width: 22px; height: 22px; }

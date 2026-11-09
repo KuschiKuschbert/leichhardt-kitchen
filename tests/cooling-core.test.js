@@ -20,6 +20,62 @@ function second(changes) {
   return record(Object.assign({ rev: 2, secondAt: stamp(start), secondBy: 'example-chef', by: 'example-chef' }, changes));
 }
 try {
+  check('21:00 expires an unfinished batch and suppresses its reminders', () => {
+    const cutoff = Date.parse('2026-11-08T21:00:00+10:00'), run = C.parse(record());
+    assert.equal(C.alert(run, cutoff, {}), null);
+    assert.equal(C.phase(run, cutoff), 'off_hours');
+  });
+  check('the fixed Queensland window opens at 10:00 and closes at 21:00 on every date', () => {
+    const open = Date.parse('2026-11-08T10:00:00+10:00'), close = open + 11 * 3600000, day = 86400000;
+    for (const offset of [-day, 0, day, 31 * day]) {
+      const opensAt = open + offset, closesAt = close + offset;
+      for (const at of [opensAt - 1, opensAt, closesAt - 1, closesAt]) {
+        const value = C.windowAt(at);
+        assert.deepEqual(value, { open: at >= opensAt && at < closesAt, opensAt, closesAt, nextOpenAt: at < closesAt ? opensAt : opensAt + day });
+        assert.equal(C.phase(null, at), value.open ? 'idle' : 'off_hours');
+        assert.equal(C.allowed(null, 1, at), value.open); assert.equal(C.allowed(null, 2, at), false);
+      }
+    }
+    for (const at of [NaN, Infinity, null, '123', 0, -1, Number.MAX_SAFE_INTEGER]) assert.equal(C.windowAt(at), null);
+  });
+  check('only a batch activated inside today’s window is active and eligible for its next stage', () => {
+    const open = Date.parse('2026-11-08T10:00:00+10:00'), close = open + 11 * 3600000;
+    for (const firstAt of [open - 86400000, open - 1, close, close + 1]) {
+      const run = C.parse(record({ firstAt: stamp(firstAt) }));
+      assert.equal(C.active(run, open), false); assert.equal(C.phase(run, open), 'idle');
+      assert.equal(C.allowed(run, 1, open), true); assert.equal(C.allowed(run, 2, open), false);
+      assert.equal(C.alert(run, close - 1, {}), null); assert.equal(C.remaining(run, 1, open), null);
+    }
+    const run = C.parse(record({ firstAt: stamp(open) }));
+    assert.equal(C.active(run, open), true); assert.equal(C.phase(run, open), 'first');
+    assert.equal(C.active(run, close - 1), true); assert.equal(C.allowed(run, 2, close - 1), true);
+    assert.equal(C.active(run, close), false); assert.equal(C.phase(run, close), 'off_hours');
+    assert.equal(C.remaining(run, 1, close), null); assert.equal(C.alert(run, close, {}), null);
+    assert.equal(C.phase(run, open + 86400000), 'idle'); assert.equal(C.allowed(run, 1, open + 86400000), true);
+    assert.equal(C.alert(run, open + 86400000, {}), null);
+  });
+  check('late first and second deadlines do not spill past the daily cutoff', () => {
+    const close = Date.parse('2026-11-08T21:00:00+10:00');
+    const first = C.parse(record({ firstAt: stamp(close - 1) }));
+    assert.equal(C.phase(first, close - 1), 'first'); assert.equal(C.remaining(first, 1, close - 1), FIRST);
+    assert.equal(C.phase(first, close), 'off_hours'); assert.equal(C.remaining(first, 1, close), null);
+    const next = C.parse(second({ firstAt: stamp(close - 3 * 3600000), secondAt: stamp(close - 3600000) }));
+    assert.equal(C.phase(next, close - 1), 'second'); assert.equal(C.alert(next, close - 1, { [runId + '_1']: true }), null);
+    assert.equal(C.phase(next, next.secondDue), 'off_hours'); assert.equal(C.alert(next, next.secondDue, {}), null);
+    assert.equal(C.phase(next, C.windowAt(close).nextOpenAt), 'idle');
+    assert.equal(C.expected(next).expectedRev, 2); assert.equal(next.secondDue, close + 3 * 3600000);
+  });
+  check('fractional timestamp rounding cannot move a batch into or out of the daily window', () => {
+    const open = Date.parse('2026-11-08T10:00:00+10:00'), close = open + 11 * 3600000;
+    const before = boundary => ({ seconds: boundary / 1000 - 1, nanoseconds: 999999999 });
+    const early = C.parse(record({ firstAt: before(open) }));
+    assert.equal(early.firstAt, open); assert.equal(C.active(early, open), false);
+    assert.equal(C.phase(early, open), 'idle'); assert.equal(C.allowed(early, 1, open), true);
+    const late = C.parse(record({ firstAt: before(close) }));
+    assert.equal(late.firstAt, close); assert.equal(late.firstDue, close + FIRST);
+    assert.equal(C.active(late, close - 1), true); assert.equal(C.phase(late, close - 1), 'first');
+    assert.equal(C.active(late, close), false); assert.equal(C.phase(late, close), 'off_hours');
+  });
   check('shared recorded stages suppress their alert for every device', () => {
     const run = C.parse(second());
     const recorded = C.parseRecorded({ v: 1, run: runId, firstAt: stamp(run.firstDue), firstBy: 'other-cook', secondAt: 0, secondBy: '', by: 'other-cook' });
@@ -63,7 +119,7 @@ try {
   });
   check('parsing copies only canonical fields and derives fixed deadlines from Timestamp components', () => {
     const raw = record({ extra: '<script>ignore()</script>', firstDue: 1, schedule: { first: 'queued' } }), parsed = C.parse(raw);
-    assert.deepEqual(parsed, { id: runId, rev: 1, firstAt: T, firstDue: T + FIRST, firstBy: 'example-cook',
+    assert.deepEqual(parsed, { id: runId, rev: 1, firstAt: T, firstAtFloor: T, firstDue: T + FIRST, firstBy: 'example-cook',
       secondAt: 0, secondDue: 0, restartAt: 0, secondBy: '', by: 'example-cook' });
     raw.firstAt.seconds = 0; raw.firstBy = 'different-cook';
     assert.equal(parsed.firstAt, T); assert.equal(parsed.firstDue, T + FIRST); assert.equal(parsed.firstBy, 'example-cook');
@@ -106,7 +162,7 @@ try {
     assert.equal(C.allowed(null, 2, T), false); assert.equal(C.phase(run, T), 'first');
     assert.equal(C.phase(run, T + FIRST - 1), 'first'); assert.equal(C.allowed(run, 2, T + FIRST - 1), false);
     assert.equal(C.phase(run, T + FIRST), 'first_due'); assert.equal(C.allowed(run, 2, T + FIRST), true);
-    assert.equal(C.phase(run, T + FIRST + SECOND + 86400000), 'first_due');
+    assert.equal(C.phase(run, T + FIRST + SECOND + 86400000), 'idle');
     assert.equal(C.remaining(run, 2, T + FIRST + SECOND), null);
     assert.equal(C.allowed(run, 1, T + FIRST + SECOND), false);
   });
@@ -118,7 +174,7 @@ try {
     assert.equal(C.phase(run, run.secondDue - 1), 'second'); assert.equal(C.phase(run, run.secondDue), 'second_due');
     assert.equal(C.allowed(run, 2, run.secondDue), false); assert.equal(C.allowed(run, 1, run.secondDue), false);
   });
-  check('a completed batch stays locked until the next Queensland calendar day', () => {
+  check('legacy restart timestamps remain readable but new starts wait for the next 10:00 window', () => {
     const midnight = Date.parse('2026-11-10T00:00:00+10:00');
     for (const due of [midnight - 1, midnight, midnight + 1, midnight + 23 * 3600000]) {
       const unlock = due < midnight ? midnight : midnight + 86400000;
@@ -126,15 +182,18 @@ try {
       assert.equal(run.restartAt, unlock);
       assert.equal(C.allowed(run, 1, due), false);
       assert.equal(C.allowed(run, 1, unlock - 1), false);
-      assert.equal(C.allowed(run, 1, unlock), true);
-      assert.equal(C.phase(run, unlock), 'second_due');
+      assert.equal(C.allowed(run, 1, unlock), false);
+      assert.equal(C.phase(run, unlock), 'off_hours');
+      assert.equal(C.allowed(run, 1, unlock + 10 * 3600000), true);
+      assert.equal(C.phase(run, unlock + 10 * 3600000), 'idle');
       assert.equal(C.allowed(run, 2, unlock), false);
     }
     // A raw deadline just before midnight rounds up for display, but still belongs to the earlier day.
     const precise = C.parse(second({ firstAt: stamp(midnight - FIRST - SECOND - 1000),
       secondAt: { seconds: (midnight - SECOND) / 1000 - 1, nanoseconds: 999999999 } }));
     assert.equal(precise.secondDue, midnight); assert.equal(precise.restartAt, midnight);
-    assert.equal(C.allowed(precise, 1, midnight), true);
+    assert.equal(C.allowed(precise, 1, midnight), false);
+    assert.equal(C.allowed(precise, 1, midnight + 10 * 3600000), true);
   });
   check('clock correction never changes accepted state or extends its fixed duration', () => {
     const first = C.parse(record()), next = C.parse(second());

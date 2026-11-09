@@ -1,0 +1,286 @@
+{
+  "commit": "29258e6420714209616fdcd1fe3ff2c2dfec0299",
+  "clock": "10 November 2026 14:00 Australia/Brisbane",
+  "counting": "Each visible button/checkbox/disclosure tap is one. Opening a picker and choosing its option is two. Scrolling and typing excluded. Section options fewer than twelve need no search. Every Save acknowledgement checked in fake Firebase.",
+  "tasks": [
+    {
+      "name": "Correct a section on the visible service and Save",
+      "taps": 3,
+      "steps": [
+        "Open Ann section",
+        "Choose grill for Ann section",
+        "Save selected date"
+      ],
+      "initialWrites": 2,
+      "initialReads": 13,
+      "beforeSaveWrites": 2,
+      "saved": {
+        "by": "sam",
+        "day": "2026-11-10",
+        "on": [
+          {
+            "id": "ann",
+            "sh": "dinner",
+            "sec": "larder"
+          },
+          {
+            "id": "ann",
+            "sh": "lunch",
+            "sec": "grill"
+          },
+          {
+            "id": "bo",
+            "sh": "lunch",
+            "sec": "larder"
+          },
+          {
+            "id": "cam",
+            "sh": "lunch",
+            "sec": "grill"
+          },
+          {
+            "id": "cam",
+            "sh": "smoker",
+            "sec": "grill"
+          },
+          {
+            "id": "dee",
+            "sh": "lunch",
+            "sec": "pans"
+          },
+          {
+            "id": "eli",
+            "sh": "lunch",
+            "sec": "larder"
+          },
+          {
+            "id": "fin",
+            "sh": "lunch",
+            "sec": "grill"
+          },
+          {
+            "id": "gia",
+            "sh": "dinner",
+            "sec": "pans"
+          },
+          {
+            "id": "sam",
+            "sh": "dinner",
+            "sec": "grill"
+          },
+          {
+            "id": "sam",
+            "sh": "lunch",
+            "sec": "grill"
+          }
+        ],
+        "br": [
+          {
+            "id": "bo",
+            "sh": "lunch",
+            "at": 750,
+            "len": 150
+          },
+          {
+            "id": "ann",
+            "sh": "lunch",
+            "at": 825,
+            "len": 45
+          },
+          {
+            "id": "ann",
+            "sh": "dinner",
+            "at": 1140,
+            "len": 30
+          }
+        ],
+        "v": 2,
+        "at": 1794279600000,
+        "upd": 1794283202092
+      },
+      "browserErrors": [],
+      "finalReads": 13,
+      "finalWrites": 3
+    },
+    {
+      "name": "Correct another service section and Save",
+      "taps": 4,
+      "steps": [
+        "Switch global service to Dinner",
+        "Open Ann Dinner section",
+        "Choose pans for Ann Dinner section",
+        "Save selected date"
+      ],
+      "initialWrites": 2,
+      "initialReads": 13,
+      "lunchPreserved": true,
+      "dinnerChanged": true,
+      "browserErrors": [],
+      "finalReads": 13,
+      "finalWrites": 3
+    },
+    {
+      "name": "Add two more staff to Lunch and Dinner and Save, before section corrections",
+      "taps": 6,
+      "steps": [
+        "Open Add staff to this day",
+        "Tick jo",
+        "Tick kai",
+        "Tick Dinner in addition to preselected Lunch",
+        "Add selected staff",
+        "Save selected date"
+      ],
+      "initialWrites": 2,
+      "initialReads": 13,
+      "pendingStatus": "Saved 13:00 · Sam · Staff selection waiting for Add",
+      "beforeSaveWrites": 2,
+      "savedMembership": [
+        {
+          "id": "jo",
+          "sh": "dinner",
+          "sec": ""
+        },
+        {
+          "id": "jo",
+          "sh": "lunch",
+          "sec": ""
+        },
+        {
+          "id": "kai",
+          "sh": "dinner",
+          "sec": ""
+        },
+        {
+          "id": "kai",
+          "sh": "lunch",
+          "sec": ""
+        }
+      ],
+      "browserErrors": [],
+      "finalReads": 13,
+      "finalWrites": 3
+    },
+    {
+      "name": "Correct an existing break and Save",
+      "taps": 4,
+      "steps": [
+        "Open Ann Edit breaks",
+        "Open Ann break time",
+        "Choose 855 for Ann break time",
+        "Save selected date"
+      ],
+      "initialWrites": 2,
+      "initialReads": 13,
+      "draftVersusSaved": {
+        "savedRecordUnchanged": true,
+        "savedBoardUnchanged": true,
+        "boardText": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30",
+        "rowText": "Ann\nBreak 14:15 to 15:00\nSection\nPans ▾\nEdit breaks\n✓\nOn Lunch\nUntick to remove this shift and its breaks.\n\nHead chef. Also on Dinner: Larder\n\nBreak 1\nBreak 14:15 ▾\nLength\n45 min ▾\n+ Break",
+        "status": "Unsaved changes"
+      },
+      "browserErrors": [],
+      "finalReads": 13,
+      "finalWrites": 3
+    },
+    {
+      "name": "Spread 30-minute breaks every 15 minutes using current 12:00/one-at-a-time defaults and Save",
+      "taps": 5,
+      "steps": [
+        "Open Copy a day or spread breaks",
+        "Open start spacing",
+        "Choose 15 for start spacing",
+        "Spread them",
+        "Save selected date"
+      ],
+      "initialWrites": 2,
+      "initialReads": 13,
+      "breakLength": "30",
+      "startTime": "720",
+      "groupMode": "1",
+      "beforeSaveWrites": 2,
+      "mealStarts": [
+        {
+          "id": "ann",
+          "at": 720,
+          "len": 30
+        },
+        {
+          "id": "sam",
+          "at": 735,
+          "len": 30
+        },
+        {
+          "id": "bo",
+          "at": 750,
+          "len": 30
+        },
+        {
+          "id": "cam",
+          "at": 765,
+          "len": 30
+        },
+        {
+          "id": "dee",
+          "at": 780,
+          "len": 30
+        },
+        {
+          "id": "eli",
+          "at": 795,
+          "len": 30
+        },
+        {
+          "id": "fin",
+          "at": 810,
+          "len": 30
+        }
+      ],
+      "splitRetained": true,
+      "otherServiceBreakRetained": true,
+      "samePersonMealSplitOverlap": true,
+      "browserErrors": [],
+      "finalReads": 13,
+      "finalWrites": 3
+    },
+    {
+      "name": "Switch to another day in the loaded week",
+      "taps": 1,
+      "steps": [
+        "Choose Wednesday 11 November"
+      ],
+      "initialWrites": 2,
+      "initialReads": 13,
+      "visiblePeople": [
+        "jo",
+        "kai"
+      ],
+      "browserErrors": [],
+      "finalReads": 13,
+      "finalWrites": 2
+    },
+    {
+      "name": "Switch the global service",
+      "taps": 1,
+      "steps": [
+        "Choose Dinner"
+      ],
+      "initialWrites": 2,
+      "initialReads": 13,
+      "visiblePeople": [
+        "ann",
+        "sam",
+        "bo",
+        "cam",
+        "dee",
+        "eli",
+        "fin",
+        "gia"
+      ],
+      "annSection": "larder",
+      "otherServiceRowsStillShown": true,
+      "browserErrors": [],
+      "finalReads": 13,
+      "finalWrites": 2
+    }
+  ]
+}

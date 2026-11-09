@@ -1,0 +1,19 @@
+{
+  "label": "Break 1 for Ann: Break 14:15",
+  "box": {
+    "top": 827.875,
+    "bottom": 871.875
+  },
+  "dock": {
+    "top": 701.65625,
+    "bottom": 776
+  },
+  "nav": {
+    "top": 776,
+    "bottom": 844
+  },
+  "scrollY": 0,
+  "pointerCentre": false,
+  "fullyVisible": false,
+  "provenance": "Intermediate synthetic implementation before focused scroll repair; not an immutable committed baseline."
+}

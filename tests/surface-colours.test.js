@@ -161,10 +161,10 @@ async function visit(p, route, selector) {
     }
 
     await visit(p, '#/team', '.tm-nhead'); await L.waitFor(p, () => !!document.querySelector('.tm-away-row'));
-    reading = await facts(p, ['.tm-nhead', '.tm-work', '.tm-extra', '.tm-away.hm-board'], ['.tm-nbook']);
+    reading = await facts(p, ['.tm-nhead', '.tm-focus-roster', '.tm-extra', '.tm-away.hm-board'], ['.tm-nbook']);
     checkSurface(reading, '.tm-nhead', '--surface-people', width + ' Team cover');
-    checkSurface(reading, '.tm-work', '--surface-paper', width + ' Team planner');
-    // C places the reference folds below the full-width worksheet at every size.
+    checkSurface(reading, '.tm-focus-roster', '--surface-paper', width + ' Team roster writing page');
+    // C uses a display-contents work wrapper; measure the actual writing surface and retained reference folds.
     checkSurface(reading, '.tm-extra', '--surface-paper', width + ' Team supporting reference');
     checkSurface(reading, '.tm-away.hm-board', '--bar', width + ' live break board');
     checkText(reading, width + ' Team header, small clock/date, draft controls and saved break board');

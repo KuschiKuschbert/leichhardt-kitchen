@@ -1,4 +1,4 @@
-// Shift-tab display order must not change the configured defaults or the shared day draft.
+// Row service display order must not change configured defaults or the shared day draft.
 const L = require('./lib');
 const { R, ok } = L.results();
 const key = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -19,7 +19,8 @@ const config = {
 };
 const plan = { day, on: [{ id: 'ann', sh: 'dinner', sec: 'pans' }, { id: 'ann', sh: 'lunch', sec: 'grill' }],
   br: [{ id: 'ann', sh: 'lunch', at: 840, len: 30 }], v: 1, at: L.NOW, upd: L.NOW, by: 'sam' };
-const press = async (p, selector) => { await L.tap(p, selector); await L.settle(p, 150); };
+const rowService = 'select[data-k="tm-row-sh:ann"]';
+const service = (p, id) => L.pick(p, rowService, id);
 const state = p => p.evaluate(([configKey, teamKey]) => ({
   reads: window.__fake.reads.filter(k => /\/(team|teamsum|config)\//.test(k)).length,
   writes: window.__fake.writes.length,
@@ -30,30 +31,30 @@ const state = p => p.evaluate(([configKey, teamKey]) => ({
 (async () => {
   const browser = await L.start();
   const p = await L.open(browser, '#/team', { who: 'sam', extra: { [CFG]: config, [TEAM]: plan }, wait: 1200 });
-  await L.waitFor(p, () => document.querySelectorAll('.tm-tabs [data-p="tm-sh"]').length === 4, null, 6000);
+  await L.waitFor(p, () => !!document.querySelector('select[data-k="tm-row-sh:ann"]'), null, 6000);
   const before = await state(p);
-  ok(await p.$eval('.tm-tabs [aria-pressed="true"]', e => e.dataset.v) === 'dinner', 'tab display: the configured Dinner default remains selected even though Lunch is displayed first');
+  ok(await p.$eval(rowService, e => e.value) === 'dinner', 'row service: the configured Dinner default remains selected even though Lunch is displayed first');
 
   for (const width of [390, 768, 1280]) {
     await p.setViewportSize({ width, height: 844 }); await L.settle(p, 150);
-    const order = await p.$$eval('.tm-tabs [data-p="tm-sh"]', all => all.map(e => e.dataset.v));
+    const order = await p.$eval(rowService, e => [...e.options].map(o => o.value));
     ok(JSON.stringify(order) === JSON.stringify(['lunch', 'dinner', 'smoker', 'prep']), width + ': Lunch and Dinner prefixes sort first regardless of case; other shifts retain configured order');
-    ok(!(await L.overflow(p)), width + ': reordered shift tabs do not cause sideways page scroll');
+    ok(!(await L.overflow(p)), width + ': ordered row services do not cause sideways page scroll');
   }
 
   await L.pick(p, 'select[data-k="tm-sec:ann"]', 'grill');
-  await press(p, '.tm-tabs [data-v="lunch"]');
+  await service(p, 'lunch');
   await L.pick(p, 'select[data-k="tm-sec:ann"]', 'pans');
-  await press(p, '.tm-tabs [data-v="dinner"]');
-  ok(await p.$eval('.tm-tabs [aria-pressed="true"]', e => e.dataset.v) === 'dinner' && await p.$eval('select[data-k="tm-sec:ann"]', e => e.value) === 'grill', 'tab switching: Dinner stays selected with its own unsaved Grill assignment');
-  await press(p, '.tm-tabs [data-v="lunch"]');
+  await service(p, 'dinner');
+  ok(await p.$eval(rowService, e => e.value) === 'dinner' && await p.$eval('select[data-k="tm-sec:ann"]', e => e.value) === 'grill', 'row service switching: Dinner stays selected with its own unsaved Grill assignment');
+  await service(p, 'lunch');
   ok(await p.$eval('select[data-k="tm-sec:ann"]', e => e.value) === 'pans', 'shared draft: Lunch retains its separate unsaved Pans assignment');
   const after = await state(p);
   ok(JSON.stringify(after.shifts) === JSON.stringify(shifts), 'display order: the saved shift configuration remains unchanged');
   ok(JSON.stringify(after.team) === JSON.stringify(before.team) && after.writes === before.writes, 'draft switching: the saved day and write count remain unchanged until Save');
-  ok(after.reads === before.reads, 'tab switching and resizing: the existing loaded plan is reused without reads');
+  ok(after.reads === before.reads, 'row service switching and resizing: the existing loaded plan is reused without reads');
   ok(await p.$$eval('[data-p="tm-save"]', all => all.length) === 1 && await p.$eval('[data-p="tm-save"]', e => !e.disabled), 'shared draft: one enabled Save covers both shift edits');
-  ok(p.errors.length === 0, 'shift-tab display: no browser errors ' + p.errors.join(' | '));
+  ok(p.errors.length === 0, 'row service display: no browser errors ' + p.errors.join(' | '));
   await p.context().close(); await browser.close();
   L.report(R);
 })().catch(e => { console.log(R.join('\n')); console.error(e); process.exit(1); });

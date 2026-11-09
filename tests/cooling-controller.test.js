@@ -2,7 +2,7 @@
 const assert = require('node:assert/strict');
 const C = require('../js/cooling-core');
 const app = require('../js/cooling');
-const AT = 1800000000000, HOUR = 3600000, RUN = 'batch_00000000001';
+const AT = Date.parse('2027-01-15T12:00:00+10:00'), HOUR = 3600000, RUN = 'batch_00000000001';
 function stamp(ms) { return { seconds: Math.floor(ms / 1000), nanoseconds: (ms % 1000) * 1000000 }; }
 function deferred() { let resolve, reject; const promise = new Promise((a, b) => { resolve = a; reject = b; }); return { promise, resolve, reject }; }
 async function settle() { for (let i = 0; i < 8; i++) await Promise.resolve(); }
@@ -44,6 +44,7 @@ function harness(options = {}) {
     recorded(data, meta) { watchers.filter(w => w.active && w.path === 'cooling/recorded').forEach(w => w.next(snap(data, meta))); },
     fail(error = { code: 'unavailable' }, path = 'cooling/current') { watchers.filter(w => w.active && w.path === path).forEach(w => w.failed(error)); },
     close() { uiOpen = ''; },
+    isOpen: () => !!uiOpen,
     got() { hooks.onAcknowledge(uiHours, uiRun); this.close(); },
     model: () => models.at(-1),
     async ready(data = null, recorded = null) { controller.sync(); this.emit(data); this.recorded(recorded); await settle(); },
@@ -54,6 +55,10 @@ function harness(options = {}) {
 let count = 0;
 async function test(name, body) { await body(); count++; console.log('ok ' + name); }
 (async () => {
+  await test('a screen waking at 21:00 hides the old run without a reset write', async () => {
+    const h = harness(); h.clock(Date.parse('2027-01-15T21:00:00+10:00')); await h.ready(record());
+    assert.equal(h.model().run, null); assert.equal(h.pings.length, 0); assert.equal(h.writes.length, 0);
+  });
   await test('automatic presentation persists on this device before any dismissal', async () => {
     const h = harness(); await h.ready(record()); h.clock(AT + 2 * HOUR); h.controller.tick();
     assert.equal(h.pings.length, 1); assert.equal(h.seenWrites.length, 1);
@@ -87,8 +92,8 @@ async function test(name, body) { await body(); count++; console.log('ok ' + nam
     const h = harness(); await h.ready(); assert.equal(h.controller.start(2), true); assert.equal(h.model().pending, 2); assert.equal(h.controller.start(2), false); await settle();
     assert.equal(h.writes.length, 1); const write = h.writes[0];
     assert.equal(write.kind, 'set'); assert.equal(write.path, 'cooling/current');
-    assert.deepEqual(Object.keys(write.data).sort(), ['v', 'run', 'rev', 'firstAt', 'firstBy', 'secondAt', 'secondBy'].sort());
-    assert.deepEqual(write.data.firstAt, { serverTimestamp: true }); assert.equal(write.data.firstBy, 'ann'); assert.equal(write.data.rev, 1); assert.equal(write.data.secondAt, 0);
+    assert.deepEqual(Object.keys(write.data).sort(), ['v', 'run', 'rev', 'windowAt', 'firstAt', 'firstBy', 'secondAt', 'secondBy'].sort());
+    assert.deepEqual(write.data.firstAt, { serverTimestamp: true }); assert.equal(write.data.firstBy, 'ann'); assert.equal(write.data.rev, 1); assert.equal(write.data.secondAt, 0); assert.equal(write.data.windowAt, C.windowAt(AT).opensAt);
     h.emit(record({ run: write.data.run })); assert.equal(h.model().run, null); assert.equal(h.model().pending, 2); assert.equal(h.controller.isBusy(), true);
     await h.ack(); assert.equal(h.controller.isBusy(), false); assert.equal(h.model().run.id, write.data.run); assert.equal(h.model().pending, 0); assert.equal(h.watchers.length, 2);
   });
@@ -107,16 +112,16 @@ async function test(name, body) { await body(); count++; console.log('ok ' + nam
     const later = AT + 2 * HOUR + 600000; h.emit(second({ secondAt: stamp(later) }));
     assert.equal(h.controller.isBusy(), false); assert.equal(h.model().run.secondAt, later); assert.equal(h.model().run.secondDue, later + 4 * HOUR);
   });
-  await test('another batch requires both stages finished and increments the shared revision', async () => {
+  await test('the next daily window permits another batch and increments the shared revision', async () => {
     const h = harness(); h.clock(AT + 3 * HOUR); await h.ready(second()); assert.equal(h.controller.start(2), false);
-    const unlock = C.parse(second()).restartAt; h.clock(unlock); assert.equal(h.controller.start(2), true); await settle(); const write = h.writes[0];
+    const unlock = C.windowAt(AT + 86400000).opensAt; h.clock(unlock); assert.equal(h.controller.start(2), true); await settle(); const write = h.writes[0];
     assert.equal(write.kind, 'set'); assert.equal(write.data.rev, 3); assert.notEqual(write.data.run, RUN);
     assert.equal(write.data.secondAt, 0); assert.equal(write.data.secondBy, '');
     h.emit(record({ run: write.data.run, rev: 3, firstAt: stamp(unlock) })); await h.ack();
     assert.equal(h.model().run.rev, 3); assert.equal(h.model().run.firstDue, unlock + 2 * HOUR);
   });
-  await test('completion, refresh and direct calls stay locked until midnight without extra reads or writes', async () => {
-    const due = Date.parse('2026-11-09T18:00:00+10:00'), unlock = Date.parse('2026-11-10T00:00:00+10:00');
+  await test('completion, refresh and direct calls stay locked until next 10:00 without extra reads or writes', async () => {
+    const due = Date.parse('2026-11-09T18:00:00+10:00'), unlock = Date.parse('2026-11-10T10:00:00+10:00');
     const complete = second({ firstAt: stamp(due - 6 * HOUR), secondAt: stamp(due - 4 * HOUR) });
     for (const at of [due, unlock - 1]) {
       const h = harness(); h.clock(at); await h.ready(complete);
@@ -353,6 +358,104 @@ async function test(name, body) { await body(); count++; console.log('ok ' + nam
     assert.equal(h.controller.confirm(2, RUN), false); assert.equal(h.controller.isBusy(), false); assert.match(h.model().confirmError.message, /Couldn’t save/);
     const other = harness(); other.clock(AT + 2 * HOUR); await other.ready(record()); other.controller.confirm(2, RUN); other.controller.dispose(); await settle();
     assert.equal(other.writes.length, 0); assert(other.watchers.every(w => !w.active));
+  });
+  await test('21:00 closes an outstanding ping and stops its remaining chimes without a write', async () => {
+    const close = Date.parse('2027-01-15T21:00:00+10:00'), h = harness();
+    h.clock(close - 1); await h.ready(record()); assert.equal(h.pings.length, 1); assert.equal(h.isOpen(), true);
+    const reads = h.watchers.length, writes = h.writes.length, stops = h.soundStops.length;
+    h.clock(close); h.controller.tick();
+    assert.equal(h.model().window.open, false); assert.equal(h.model().run, null); assert.equal(h.model().rawRun.id, RUN);
+    assert.equal(h.isOpen(), false); assert.equal(h.soundStops.length, stops + 1); assert.equal(h.pings.length, 1);
+    assert.equal(h.controller.open(), false); assert.equal(h.controller.start(2), false); assert.equal(h.controller.start(4), false);
+    assert.equal(h.controller.confirm(2, RUN), false); assert.equal(h.writes.length, writes); assert.equal(h.watchers.length, reads);
+    h.controller.tick(); assert.equal(h.soundStops.length, stops + 1);
+  });
+  await test('10:00 returns to idle after an unfinished previous day without automatic activation', async () => {
+    const open = Date.parse('2027-01-16T10:00:00+10:00'), h = harness();
+    h.clock(open - 1); await h.ready(record()); assert.equal(h.model().run, null); assert.equal(h.model().window.open, false); assert.equal(h.pings.length, 0);
+    const reads = h.watchers.length; h.clock(open); h.controller.tick();
+    assert.equal(h.model().window.open, true); assert.equal(h.model().run, null); assert.equal(h.model().rawRun.rev, 1);
+    assert.equal(h.writes.length, 0); assert.equal(h.watchers.length, reads); assert.equal(h.controller.confirm(2, RUN), false);
+    assert.equal(h.controller.start(4), false); assert.equal(h.controller.start(2), true); await settle();
+    assert.equal(h.writes.length, 1); assert.equal(h.writes[0].data.rev, 2); assert.equal(h.writes[0].data.secondAt, 0);
+    const id = h.writes[0].data.run; h.emit(record({ run: id, rev: 2, firstAt: stamp(open) })); await h.ack();
+    assert.equal(h.model().run.id, id); assert.equal(h.model().run.firstDue, open + 2 * HOUR); assert.equal(h.pings.length, 0);
+  });
+  await test('a screen sleeping across cutoff and the next opening cannot resume yesterday’s ping', async () => {
+    const h = harness(); h.clock(AT + 2 * HOUR); await h.ready(record()); assert.equal(h.isOpen(), true);
+    const count = h.pings.length, stops = h.soundStops.length;
+    h.clock(Date.parse('2027-01-16T12:00:00+10:00')); h.controller.tick();
+    assert.equal(h.model().window.open, true); assert.equal(h.model().run, null); assert.equal(h.isOpen(), false);
+    assert.equal(h.soundStops.length, stops + 1); assert.equal(h.pings.length, count); assert.equal(h.writes.length, 0);
+    const fresh = harness(); fresh.clock(Date.parse('2027-01-16T12:00:00+10:00')); await fresh.ready(record());
+    assert.equal(fresh.model().run, null); assert.equal(fresh.pings.length, 0); assert.equal(fresh.writes.length, 0);
+  });
+  await test('cutoff between a tap and its deferred submission sends neither start nor confirmation', async () => {
+    const close = Date.parse('2027-01-15T21:00:00+10:00');
+    for (const action of ['first', 'second', 'confirm']) {
+      const h = harness(); h.clock(close - 1); await h.ready(action === 'first' ? null : record());
+      const accepted = action === 'confirm' ? h.controller.confirm(2, RUN) : h.controller.start(action === 'first' ? 2 : 4);
+      assert.equal(accepted, true); h.clock(close); h.controller.tick(); await settle();
+      assert.equal(h.writes.length, 0); assert.equal(h.controller.isBusy(), false); assert.equal(h.model().run, null);
+      assert.equal(h.model().window.open, false); assert.equal(h.isOpen(), false);
+      h.clock(close + 13 * HOUR); h.controller.tick();
+      assert.equal(h.model().window.open, true); assert.equal(h.model().actionError, null); assert.equal(h.model().confirmError, null);
+    }
+  });
+  await test('a submission cannot jump the night and start tomorrow from yesterday’s tap', async () => {
+    const close = Date.parse('2027-01-15T21:00:00+10:00'), h = harness();
+    h.clock(close - 1); await h.ready(); h.controller.start(2);
+    h.clock(close + 13 * HOUR); h.controller.tick(); await settle();
+    assert.equal(h.writes.length, 0); assert.equal(h.controller.isBusy(), false); assert.equal(h.model().run, null);
+  });
+  await test('a submitted first start carries its original daily window through a late acknowledgement', async () => {
+    const close = Date.parse('2027-01-15T21:00:00+10:00'), h = harness();
+    h.clock(close - 1); await h.ready(); h.controller.start(2); await settle();
+    const write = h.writes[0], originalWindow = close - 11 * HOUR;
+    assert.equal(write.data.windowAt, originalWindow);
+    h.clock(close + 13 * HOUR); h.controller.tick();
+    assert.notEqual(write.data.windowAt, h.model().window.opensAt); assert.equal(h.controller.isBusy(), true);
+    assert.equal(h.controller.start(2), false); assert.equal(h.writes.length, 1);
+    await h.reject('permission-denied'); assert.equal(h.controller.isBusy(), false);
+    assert.equal(h.controller.start(2), true); await settle();
+    assert.equal(h.writes[1].data.windowAt, h.model().window.opensAt); assert.notEqual(h.writes[1].data.run, write.data.run);
+  });
+  await test('accepted starts remain protected across cutoff until acknowledgement reconciles the raw record', async () => {
+    const close = Date.parse('2027-01-15T21:00:00+10:00'), h = harness();
+    h.clock(close - 1); await h.ready(); h.controller.start(2); await settle(); const id = h.writes[0].data.run;
+    h.clock(close); h.controller.tick(); assert.equal(h.model().run, null); assert.equal(h.controller.isBusy(), true);
+    assert.equal(h.controller.pendingWork().person, 'ann');
+    h.emit(record({ run: id, firstAt: stamp(close - 1) })); assert.equal(h.controller.isBusy(), true);
+    await h.ack(); assert.equal(h.controller.isBusy(), false); assert.equal(h.model().run, null); assert.equal(h.model().rawRun.id, id);
+    assert.equal(h.pings.length, 0); assert.equal(h.writes.length, 1);
+  });
+  await test('an uncertain first start survives cutoff and same-person unlock without replay', async () => {
+    const close = Date.parse('2027-01-15T21:00:00+10:00'), open = close + 13 * HOUR, h = harness();
+    h.clock(close - 1); await h.ready(); h.controller.start(2); await settle(); const id = h.writes[0].data.run; await h.reject('unavailable');
+    h.clock(close); h.controller.tick(); assert.equal(h.controller.isBusy(), true); assert.equal(h.model().run, null);
+    h.user(null); h.controller.sync(); h.clock(open);
+    h.user({ uid: 'device-a', by: 'bo', pin: '000000', issuedAt: open, canRead: true }); h.controller.sync(); assert.equal(h.model().available, false);
+    h.user({ uid: 'device-a', by: 'ann', pin: '000000', issuedAt: open, canRead: true }); h.controller.sync(); h.emit(null); h.recorded(null);
+    assert.equal(h.controller.isBusy(), true); assert.equal(h.controller.start(2), false); assert.equal(h.writes.length, 1);
+    h.emit(record({ run: id, firstAt: stamp(close - 1) }));
+    assert.equal(h.controller.isBusy(), false); assert.equal(h.model().run, null); assert.equal(h.model().rawRun.id, id);
+    assert.equal(h.pings.length, 0); assert.equal(h.writes.length, 1);
+  });
+  await test('an unresolved second start can finish after cutoff without reviving its countdown or ping', async () => {
+    const close = Date.parse('2027-01-15T21:00:00+10:00'), h = harness();
+    h.clock(close - 1); await h.ready(record()); h.controller.start(4); await settle(); await h.reject('unavailable');
+    h.clock(close); h.controller.tick(); assert.equal(h.controller.isBusy(), true); assert.equal(h.model().run, null);
+    h.emit(second({ secondAt: stamp(close - 1) })); assert.equal(h.controller.isBusy(), false); assert.equal(h.model().run, null);
+    assert.equal(h.model().rawRun.secondAt, close - 1); assert.equal(h.writes.length, 1);
+  });
+  await test('unknown confirmation survives cutoff and clears only after its saved declaration arrives', async () => {
+    const close = Date.parse('2027-01-15T21:00:00+10:00'), h = harness();
+    h.clock(close - 1); await h.ready(record()); h.controller.confirm(2, RUN); await settle(); await h.reject('unavailable');
+    h.clock(close); h.controller.tick(); assert.equal(h.controller.isBusy(), true); assert.equal(h.model().run, null); assert.equal(h.isOpen(), false);
+    h.clock(close + 13 * HOUR); h.controller.tick(); assert.equal(h.controller.isBusy(), true); assert.equal(h.controller.start(2), false);
+    h.recorded(declaration({ firstAt: stamp(close - 1) }));
+    assert.equal(h.controller.isBusy(), false); assert.equal(h.model().run, null); assert.equal(h.model().recorded, null); assert.equal(h.writes.length, 1);
+    assert.equal(h.controller.start(2), true);
   });
   console.log(count + ' controller checks passed');
 })().catch(error => { console.error('FAIL cooling controller', error); process.exit(1); });

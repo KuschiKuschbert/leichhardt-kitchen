@@ -126,8 +126,8 @@ try {
     await put(source, name + '/' + identities[name], data);
   }
   for (const { id, ...data } of prepStandards) await put(source, 'prepStandards/' + id, data);
-  const firstStart = new Timestamp(Math.floor((at - 4 * 86400000) / 1000), 123456000);
-  const oldCooling = { v: 1, run: 'cooling-current-older', rev: 2, firstAt: firstStart, firstBy: 'cook-a',
+  const firstStart = new Timestamp((dayAt(4) + 10.5 * 3600000) / 1000, 123456000);
+  const oldCooling = { v: 1, run: 'cooling-current-older', rev: 2, windowAt: dayAt(4) + 10 * 3600000, firstAt: firstStart, firstBy: 'cook-a',
     secondAt: new Timestamp(firstStart.seconds + 7200 + 600, 789012000), secondBy: 'worker-a', by: 'worker-a' };
   await put(source, 'cooling/current', oldCooling);
   const oldRecorded = { v: 1, run: oldCooling.run,
@@ -171,7 +171,7 @@ try {
   assert.equal(original.deliveries.length, 2); assert(!original.deliveries.some(x => x.id === 'outside-window'));
   const archivedCooling = { ...oldCooling, firstAt: { seconds: oldCooling.firstAt.seconds, nanoseconds: oldCooling.firstAt.nanoseconds },
     secondAt: { seconds: oldCooling.secondAt.seconds, nanoseconds: oldCooling.secondAt.nanoseconds } };
-  assert.deepEqual(original.coolingCurrent, archivedCooling, 'The named current cooling record retains exact Timestamp components outside the date window.');
+  assert.deepEqual(original.coolingCurrent, archivedCooling, 'The named current cooling record retains its exact daily-window stamp and Timestamp components outside the date window.');
   const archivedRecorded = { ...oldRecorded, firstAt: { seconds: oldRecorded.firstAt.seconds, nanoseconds: oldRecorded.firstAt.nanoseconds },
     secondAt: { seconds: oldRecorded.secondAt.seconds, nanoseconds: oldRecorded.secondAt.nanoseconds } };
   assert.deepEqual(original.coolingRecorded, archivedRecorded, 'Recording confirmations retain their exact run, actors and Timestamp components outside the date window.');
@@ -215,11 +215,19 @@ try {
   assert.equal((await restored.collection('cooling').doc('unrelated').get()).exists, false);
   assert.deepEqual((await restored.collection('cooling').doc('current').get()).data(), oldCooling);
   assert.deepEqual((await restored.collection('cooling').doc('recorded').get()).data(), oldRecorded);
-  assert.equal(Cooling.phase(Cooling.parse((await restored.collection('cooling').doc('current').get()).data()), at), 'second_due', 'Recovery preserves elapsed deadlines instead of restarting timers.');
+  const restoredCooling = Cooling.parse((await restored.collection('cooling').doc('current').get()).data());
+  assert.equal(Cooling.phase(restoredCooling, restoredCooling.secondDue + 1), 'second_due', 'Recovery preserves the elapsed deadline within the original daily window.');
+  assert.equal(Cooling.phase(restoredCooling, at), Cooling.windowAt(at).open ? 'idle' : 'off_hours', 'An expired restored batch cannot revive a timer.');
+  assert.equal(Cooling.alert(restoredCooling, at, {}, null), null, 'An expired restored batch cannot revive a ping even without a matching recording confirmation.');
+  const tomorrowOpen = Cooling.windowAt(at).opensAt + 86400000;
+  assert.equal(Cooling.phase(restoredCooling, tomorrowOpen), 'idle', 'The next 10:00 remains idle after restoring an older batch.');
   const firstOnly = { ...archivedCooling, rev: 1, secondAt: 0, secondBy: '', by: 'cook-a' };
   const firstOnlyRow = flatten({ ...recovered, coolingCurrent: firstOnly }).find(([path]) => path.join('/') === 'cooling/current');
   assert(firstOnlyRow[1].firstAt.isEqual(oldCooling.firstAt)); assert.equal(firstOnlyRow[1].secondAt, 0);
-  assert.equal(Cooling.phase(Cooling.parse(firstOnlyRow[1]), at), 'first_due', 'Restoring an elapsed first stage does not start the second.');
+  assert.equal(Cooling.phase(Cooling.parse(firstOnlyRow[1]), at), Cooling.windowAt(at).open ? 'idle' : 'off_hours', 'Restoring an expired first stage does not revive it or start the second.');
+  const legacyCooling = { ...archivedCooling }; delete legacyCooling.windowAt;
+  const legacyCoolingRow = flatten({ ...recovered, coolingCurrent: legacyCooling }).find(([path]) => path.join('/') === 'cooling/current');
+  assert(!Object.hasOwn(legacyCoolingRow[1], 'windowAt') && legacyCoolingRow[1].firstAt.isEqual(oldCooling.firstAt), 'Legacy cooling records remain restorable without inventing a daily-window stamp.');
   const firstRecordedOnly = { ...archivedRecorded, secondAt: 0, secondBy: '', by: 'worker-a' };
   const recordedOnlyRow = flatten({ ...recovered, coolingRecorded: firstRecordedOnly }).find(([path]) => path.join('/') === 'cooling/recorded');
   assert(recordedOnlyRow[1].firstAt.isEqual(oldRecorded.firstAt)); assert.equal(recordedOnlyRow[1].secondAt, 0);

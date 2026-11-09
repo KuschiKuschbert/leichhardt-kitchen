@@ -1,8 +1,10 @@
 # Team sections a week ahead
 
+Current navigation extension, 10 November 2026: the head chef chose [C, Roster and focus](../team-page-options/brief.md). The full Monday-to-Sunday picker now belongs behind a named selected-date disclosure, with Today and previous/next week retained. Independent drafts, read status, explicit dated Save, past read-only behaviour, bounded reads and current-day staff authority in this note remain unchanged. The implementation record distinguishes preview and actual-app geometry.
+
 9 November 2026. **A chosen by the head chef, implemented and locally verified. CI and release pending.**
 
-Current layout follow-up, 9 November 2026: the head chef switched the management tidy-up from A, Quiet notebook, to [C, Person worksheet](../team-tidy-options/brief.md#current-choice-c-person-worksheet). Each row has its own section picker, break summary and labelled details. This changes the allocation layout while preserving this brief's chosen A week strip, independent date drafts and dated Save contracts.
+Previous layout follow-up, 9 November 2026: the head chef switched the management tidy-up from A, Quiet notebook, to [C, Person worksheet](../team-tidy-options/brief.md#current-choice-c-person-worksheet). Each row has its own section picker, break summary and labelled details. This changes the allocation layout while preserving this brief's chosen A week strip, independent date drafts and dated Save contracts.
 
 The head chef asks to let head and sous chefs allocate sections for staff a week ahead, with a day picker to move backwards and forwards. This follows the existing roster notebook, rather than replacing the kitchen's payroll roster. [Initial proposal](proposal.md).
 

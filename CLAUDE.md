@@ -41,7 +41,8 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Head-set section minimums, Prep room, smart matching and Before service | `docs/prep-standards.md`, `docs/prep-par-options/brief.md` |
 | Today's team and its chosen notebook, council and build record | `docs/todays-team-options/brief.md`, `docs/team-notebook-options/brief.md` (Chosen, Build, council), `docs/prep-book.md` (Today's team) |
 | Planning staff sections ahead, dated drafts, week picker and read costs | `docs/team-week-options/brief.md` (chosen A, implementation and verification) |
-| Today's team person worksheet, single roster and per-person details | `docs/team-tidy-options/brief.md` (current choice C, historical A checks and current verification) |
+| Earlier Today's team worksheet and selected-day filtering | `docs/team-tidy-options/brief.md` (9 November C, retained behaviour and historical verification) |
+| Today's team: row service/section, focused details and reachable Save | `docs/team-page-options/brief.md` (C chosen 10 November), `docs/team-page-options/implementation.md` |
 | Cleaning page, ordered pack down, repeat schedule, checks, Pass verification and team release | `docs/cleaning-schedule.md`, `docs/cleaning-options/brief.md` (chosen C + A), `docs/cleaning-options/implementation.md`, `docs/cleaning-options/release-toggle.md`; keep unbranded templates in `js/cleaning-schedule.js`, separate from history; anchored intervals must agree in client and rules |
 | Compact Cleaning management, chosen M1 groups and responsive repeat-task editor | `docs/cleaning-chef-options/implementation.md` (contract and current verification), `docs/cleaning-chef-options/brief.md` (designs and council) |
 | Chef to-do notebook layout | `docs/chef-todo-options/brief.md` (Chosen, implementation contract) |
@@ -51,7 +52,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Wastage history and CSV reports | `docs/wastage-history.md`, `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |
 | Functions: cancel, Undo, delete, print | `docs/function-cancellation.md`, `docs/function-printing.md` |
-| Operandio cooling: manual stages, shared recording confirmation, quiet device reminders and next-midnight restart | `docs/operandio-cooling.md`, `docs/operandio-cooling-options/brief.md` |
+| Operandio cooling: manual stages, shared confirmation, quiet reminders and 10:00–21:00 Queensland window with nightly expiry | `docs/operandio-cooling.md`, `docs/operandio-cooling-options/brief.md` |
 | Operandio clock motion: chosen B desktop pill and fixed mobile ring, implementation and release checks | `docs/operandio-clock-motion-options/brief.md` |
 | Pings: who gets them, the sound | `docs/ping-recipients.md`, `docs/ping-sound.md` |
 | Back arrow and page trail | `docs/navigation.md` |

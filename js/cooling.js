@@ -12,7 +12,7 @@
     var currentRead = false, stale = false, error = '', actionError = null;
     var run = null, pending = null, currentWatch = null, notified = '';
     var recorded = null, recordedRead = false, recordedStale = false, recordedError = '', recordedWatch = null;
-    var confirming = null, confirmError = null;
+    var confirming = null, confirmError = null, actionDay = 0, confirmDay = 0, displayWindow = null;
     var seen = Object.create(null), presented = Object.create(null), presentationOwner = '';
     var hooks = Object.assign({}, H.uiHooks || {});
     hooks.onStart = start;
@@ -47,26 +47,36 @@
     }
     function stopCurrent() { if (currentWatch) currentWatch(); currentWatch = null; }
     function stopRecorded() { if (recordedWatch) recordedWatch(); recordedWatch = null; }
-    function recordedVerified() { return !recorded || !run || recorded.id !== run.id || C.recordedFor(run, recorded); }
+    function recordedVerified() { return !recorded || !C.active(run, H.now()) || recorded.id !== run.id || C.recordedFor(run, recorded); }
     function model() {
       var available = !!session, ownPending = pending && ownerOf(pending.session) === ownerKey,
         ownConfirm = confirming && ownerOf(confirming.session) === ownerKey, at = H.now();
       // A local Firestore estimate or an early canonical callback cannot confirm an unresolved write.
-      var shown = ownPending ? pending.before : run;
+      var shown = ownPending ? pending.before : run, window = C.windowAt(at), active = C.active(shown, at);
       return { available: available, ready: available && currentRead && clockOK(at), stale: stale,
         error: error || (ownPending && pending.unknown ? 'The Operandio start result is unknown. Keep this tab open and try checking again.' : ''),
-        pending: ownPending ? pending.hours : 0, actionError: actionError, run: available ? shown : null, now: at,
-        recorded: available ? recorded : null, recordedReady: available && recordedRead && !recordedStale && !recordedError && recordedVerified(),
+        pending: ownPending ? pending.hours : 0, actionError: window && window.open && actionDay === window.opensAt ? actionError : null,
+        run: available && active ? shown : null, rawRun: available ? run : null, window: window, now: at,
+        recorded: available && active ? recorded : null, recordedReady: available && recordedRead && !recordedStale && !recordedError && recordedVerified(),
         recordedStale: recordedStale, recordedError: recordedError || (!recordedVerified() ? 'Couldn’t verify the Operandio confirmation. Try checking again.' : '') ||
           (ownConfirm && confirming.unknown ? 'The Operandio confirmation result is unknown. Keep this tab open and try checking again.' : ''),
-        confirmPending: ownConfirm ? confirming.hours : 0, confirmError: confirmError };
+        confirmPending: ownConfirm ? confirming.hours : 0, confirmError: window && window.open && confirmDay === window.opensAt ? confirmError : null };
     }
     function paint() {
       if (disposed) return;
-      var next = model(); ui.render(next);
+      var next = model(), window = next.window;
+      // Cutoff and a sleeping screen's next-day wake close the old surface, but keep unresolved writes protected.
+      if (next.available && window) {
+        var expired = displayWindow && (displayWindow.opensAt !== window.opensAt || displayWindow.open && !window.open);
+        if (expired || !window.open && ui.isOpen()) {
+          ui.close(true); if (H.stopChime) H.stopChime();
+        }
+        displayWindow = window;
+      } else displayWindow = null;
+      ui.render(next);
       var signature = JSON.stringify([next.available, next.ready, next.stale, next.error, next.pending,
         next.actionError, run && run.id, run && run.rev, run && C.phase(run, next.now), C.allowed(run, 1, next.now), !!pending,
-        next.recorded, next.recordedReady, next.recordedError, next.confirmPending, next.confirmError]);
+        next.recorded, next.recordedReady, next.recordedError, next.confirmPending, next.confirmError, window && window.open, window && window.opensAt]);
       if (signature !== notified) { notified = signature; if (H.changed) H.changed(); }
     }
     function readFailure() { return 'Couldn’t read Operandio timers. Check the connection and try again.'; }
@@ -82,7 +92,7 @@
       if (!value || value.id !== work.id || value.rev < work.revision) return false;
       if (work.stage === 1) return value.firstBy === work.session.by;
       var before = work.before;
-      return !!before && value.firstAt === before.firstAt && value.firstDue === before.firstDue &&
+      return !!before && value.firstAt === before.firstAt && value.firstAtFloor === before.firstAtFloor && value.firstDue === before.firstDue &&
         value.firstBy === before.firstBy && !!value.secondAt && value.secondBy === work.session.by;
     }
     function resolvePending() {
@@ -107,7 +117,7 @@
       if (!run) return true;
       if (!next || next.rev < run.rev) return false;
       if (next.id !== run.id) return next.rev > run.rev;
-      return next.firstAt === run.firstAt && next.firstDue === run.firstDue && next.firstBy === run.firstBy &&
+      return next.firstAt === run.firstAt && next.firstAtFloor === run.firstAtFloor && next.firstDue === run.firstDue && next.firstBy === run.firstBy &&
         (!run.secondAt || next.secondAt === run.secondAt && next.secondDue === run.secondDue && next.restartAt === run.restartAt && next.secondBy === run.secondBy) &&
         (next.rev !== run.rev || next.secondAt === run.secondAt && next.secondDue === run.secondDue && next.restartAt === run.restartAt && next.secondBy === run.secondBy);
     }
@@ -125,7 +135,7 @@
     }
     function watchCurrent(atEpoch) {
       if (!sameAuthority(atEpoch) || currentWatch) return;
-      // Only today's shared live timer, including an unfinished run crossing midnight. No collection or request reads.
+      // One current raw timer remains subscribed for safe reconciliation after its daily display window ends.
       var unsubscribe = subscribe('cooling/current', function (snap) {
         if (!sameAuthority(atEpoch)) return;
         if (!serverSnapshot(snap)) { stale = true; paint(); return; }
@@ -203,6 +213,7 @@
       sync();
       if (disposed || !session || !sameAuthority(epoch) || pending || confirming) return false;
       var stage = hours === 2 ? 1 : hours === 4 ? 2 : 0, at = H.now();
+      var window = C.windowAt(at); actionDay = window ? window.opensAt : 0;
       if (!currentRead || stale || error || !clockOK(at) || !stage || !C.allowed(run, stage, at)) {
         actionError = { stage: hours, message: 'Check the current Operandio timer before starting it.' }; paint(); return false;
       }
@@ -210,14 +221,19 @@
       try {
         if (stage === 1) id = H.requestId ? H.requestId() : root.crypto.randomUUID();
         if (!C.id(id) || !expected || !Number.isSafeInteger(expected.expectedRev + 1)) throw new Error('Invalid cooling start');
-        data = stage === 1 ? { v: 1, run: id, rev: expected.expectedRev + 1, firstAt: H.timestamp(), firstBy: session.by, secondAt: 0, secondBy: '' } :
+        // Bind queued first starts to the day the person tapped. A delayed serverTimestamp cannot activate tomorrow.
+        data = stage === 1 ? { v: 1, run: id, rev: expected.expectedRev + 1, windowAt: window.opensAt,
+          firstAt: H.timestamp(), firstBy: session.by, secondAt: 0, secondBy: '' } :
           { rev: expected.expectedRev + 1, secondAt: H.timestamp(), secondBy: session.by };
       } catch (failure) { actionError = { stage: hours, message: startFailure(hours) }; paint(); return false; }
       var work = { id: id, hours: hours, stage: stage, session: Object.assign({}, session), expectedRun: expected.expectedRun,
-        expectedRev: expected.expectedRev, revision: expected.expectedRev + 1, before: run, writing: true, submitted: false, acked: false, unknown: false, observed: false };
+        expectedRev: expected.expectedRev, revision: expected.expectedRev + 1, before: run, opensAt: window.opensAt,
+        writing: true, submitted: false, acked: false, unknown: false, observed: false };
       pending = work; actionError = null; paint();
       Promise.resolve().then(function () {
         if (disposed || keyOf(H.session()) !== keyOf(work.session)) throw { code: 'cancelled', definite: true };
+        var submitWindow = C.windowAt(H.now());
+        if (!submitWindow || !submitWindow.open || submitWindow.opensAt !== work.opensAt || !C.allowed(work.before, stage, H.now())) throw { code: 'cancelled', definite: true };
         work.submitted = true;
         return H.write(stage === 1 ? 'set' : 'update', 'cooling/current', data, work.session);
       }).then(function () {
@@ -271,8 +287,9 @@
       sync();
       if (disposed || !session || !sameAuthority(epoch) || pending || confirming) return false;
       var field = hours === 2 ? 'first' : hours === 4 ? 'second' : '', at = H.now();
+      var window = C.windowAt(at); confirmDay = window ? window.opensAt : 0;
       if (!field || !C.id(runId) || !run || run.id !== runId || !currentRead || stale || error || !clockOK(at) ||
-          !recordedRead || recordedStale || recordedError || !recordedVerified() || !run[field + 'Due'] || at < run[field + 'Due']) {
+          !C.active(run, at) || !recordedRead || recordedStale || recordedError || !recordedVerified() || !run[field + 'Due'] || at < run[field + 'Due']) {
         confirmError = { stage: hours, message: 'Check the current Operandio stage and connection before confirming it.' }; paint(); return false;
       }
       if (recorded && recorded.id === runId && recorded[field + 'At']) { confirmError = null; paint(); return false; }
@@ -281,11 +298,13 @@
         data = same ? { run: runId } : { v: 1, run: runId, firstAt: 0, firstBy: '', secondAt: 0, secondBy: '' };
         data[field + 'At'] = H.timestamp(); data[field + 'By'] = session.by;
       } catch (failure) { confirmError = { stage: hours, message: confirmationFailure(hours) }; paint(); return false; }
-      var work = { id: runId, hours: hours, due: run[field + 'Due'], session: Object.assign({}, session),
+      var work = { id: runId, hours: hours, due: run[field + 'Due'], opensAt: window.opensAt, session: Object.assign({}, session),
         writing: true, submitted: false, acked: false, unknown: false, observed: false };
       confirming = work; confirmError = null; paint();
       Promise.resolve().then(function () {
         if (disposed || keyOf(H.session()) !== keyOf(work.session)) throw { code: 'cancelled', definite: true };
+        var submitWindow = C.windowAt(H.now());
+        if (!submitWindow || !submitWindow.open || submitWindow.opensAt !== work.opensAt || !C.active(run, H.now()) || run.id !== work.id) throw { code: 'cancelled', definite: true };
         work.submitted = true;
         return H.write(same ? 'update' : 'set', 'cooling/recorded', data, work.session);
       }).then(function () {
@@ -318,7 +337,7 @@
       error = ''; stale = true; recordedError = ''; recordedStale = true; stopCurrent(); stopRecorded(); paint(); watchCurrent(epoch); watchRecorded(epoch);
     }
     function tick() { sync(); if (!session || disposed) return false; paint(); return maybeAlert(); }
-    function open(anchor) { sync(); if (!session || disposed) return false; paint(); return ui.open(anchor); }
+    function open(anchor) { sync(); if (!session || disposed) return false; paint(); var window = C.windowAt(H.now()); return !!(window && window.open) && ui.open(anchor); }
     function pendingWork() {
       var work = pending || confirming;
       return work ? { uid: work.session.uid, by: work.session.by, person: work.session.by, pin: work.session.pin,

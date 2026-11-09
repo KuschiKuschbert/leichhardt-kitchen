@@ -1,6 +1,8 @@
 # Quieter Today's team management
 
-9 November 2026. **Current choice: C, Person worksheet, replacing the head chef's earlier A choice. C was released in [PR #639](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/639); hosted checks and release for the later selected-day refinement are tracked in its pull request.** The empty-break-board change and the existing weekly planner remain. A's earlier implementation measurements and checks below are historical evidence for that delivery, not proof of C.
+Current extension, 10 November 2026: the owner chose [C, Roster and focus](../team-page-options/brief.md) from a new three-design review. That choice supersedes the permanent week/global service arrangement below; this note retains the earlier worksheet, selected-day and quick-Add behaviour and its historical evidence. [Current implementation contract](../team-page-options/implementation.md).
+
+9 November 2026. **Earlier choice: C, Person worksheet, replacing the head chef's earlier A choice. C was released in [PR #639](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/639); hosted checks and release for the later selected-day refinement are tracked in its pull request.** The empty-break-board change and the existing weekly planner remain. A's earlier implementation measurements and checks below are historical evidence for that delivery, not proof of C.
 
 The head chef asks to tidy the noisy Today's team page for admin, head and sous chefs. [Proposal](proposal.md). Keep the notebook, week planning and the existing service/access/data contracts. Do not replace them with a second roster.
 
