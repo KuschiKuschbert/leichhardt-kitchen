@@ -2858,6 +2858,10 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-par small { display: block; font-size: 0.75rem; margin-top: 0.3rem; color: var(--muted); }
 .su-last > b { font-weight: 600; }
 .su-last > time { display: block; margin-top: 0.3rem; font-size: 0.75rem; color: var(--muted); }
+.su-last[data-order-kind] > .su-last-kind { color: var(--ink); font-weight: 600; }
+.su-last-wide { color: var(--ink); }
+.su-last-dow { display: none; }
+@media (max-width: 719px) { .su-last-wide { display: none; } .su-last-dow { display: inline; } }
 .su-qty { min-width: 0; }
 .su-qty > .hint { display: block; margin-top: 0.25rem; overflow-wrap: anywhere; }
 .su-entry-error { display: block; margin-top: 0.25rem; color: var(--small-ink); font-size: 0.875rem; overflow-wrap: anywhere; }

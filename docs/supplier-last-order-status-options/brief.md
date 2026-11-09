@@ -1,6 +1,6 @@
 # When an item's last purchase was an earlier order
 
-9 November 2026. Brainstorm and service council only. No application change or design choice is authorised by this brief.
+9 November 2026. **A, Label the reference, selected by the head chef** ("okay lets go a"). The council and comparison below record the decision. Implementation is now authorised.
 
 ## Proposal for round 1
 
@@ -105,7 +105,19 @@ These are role-based judgements. No claim is made about actual staff speed, orde
 
 ## Chosen
 
-Pending the head chef's choice. This request authorises brainstorming and council review only. No application source, production data or live page has changed.
+The head chef selected **A** on 9 November 2026: "okay lets go a". Implement it in the existing reference cell. Keep quantity/date visible, preserve the current draft hint and ordering flow, and retain the existing unknown-history wording.
+
+The phone uses Latest order / Earlier order in the current label position. Tablet and desktop use Latest / Earlier beside the compact date under the quantity, with the full date, time and membership meaning in the title. Dark ink makes the known status readable without warning colours. Compare immutable IDs from the current supplier's loaded history, including inherited split history; no added query, rule or stored field.
+
+The lazy supplier UI advances from revision 22 to 23 while retaining its current API and the split-aware core/store. The implementation, verification and release are recorded in the pull request.
+
+## Implementation evidence
+
+The actual implementation was measured against the previous source with identical synthetic supplier records and the project test fonts. Every fixture row retains its height at 320 px Extra large, 390 px normal/Extra large, 768 px and 1280 px. At 390 px the earlier row remains 234.97 px (388.94 px with Extra large); at 768 px it remains 150.30 px, and the initial complete-row count remains one. No horizontal overflow or browser errors. [Measurements](implementation-measurements.json), [implemented phone](implemented-390.png), [implemented desktop](implemented-1280.png).
+
+Computed known-status text contrast is 16.87:1 against the white paper token; date text is 7.13:1. Both exceed the AA text-contrast threshold. This is a contrast check, not a claim that screenshots establish full WCAG compliance.
+
+The focused status file passes 43 checks, including same-day order IDs, old-year dates, long units, normal/enlarged widths, history selection, acknowledgement transitions and old-order replay after a failed newest-page read. All 22 supplier, design-pattern and read-budget files pass. Split-history coverage explicitly checks Earlier when a latest inherited batch omits the item. All records are synthetic; production purchasing records were not read or changed. CI and deployment remain recorded in the release pull request.
 
 ## Acceptance boundaries for any implementation
 
@@ -114,4 +126,4 @@ Pending the head chef's choice. This request authorises brainstorming and counci
 - Keep the previous quantity and date attached to the same stable product ID, including after catalogue reordering and additional orders.
 - Keep number-only and explicit-unit snapshots unchanged. No automatic draft values, new records, listeners, history scans or new permissions.
 - Check pending reads, retry gaps, acknowledgement races and the saved lazy-module update. Measure normal and enlarged text at 390 px and the tablet/desktop equivalents.
-- The design choice is pending. The head chef decides after the scored comparison.
+- Design A is selected. B and C remain alternatives for the decision record.

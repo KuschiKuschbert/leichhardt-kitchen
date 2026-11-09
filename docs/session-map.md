@@ -1,8 +1,8 @@
 # Session map: which note to read, and every file
 
-## Supplier earlier-order indication designs, 9 November 2026
+## Supplier Latest/Earlier purchase labels, 9 November 2026
 
-The head chef requested brainstorming and council review of how to distinguish an item's earlier purchase from the latest supplier order. [The brief](supplier-last-order-status-options/brief.md) records five Build smaller verdicts, three visual directions and six independent rankings. A is recommended, with no extra reads, taps or measured row height. [The gallery](supplier-last-order-status-options/index.html) contains phone/tablet/desktop previews. Choice pending; application source and the live page are unchanged.
+The head chef selected A, Label the reference, after the [council and three visual directions](supplier-last-order-status-options/brief.md#chosen). Latest order / Earlier order uses loaded order IDs, keeps quantity/date visible and adds no read, tap or measured row height. `js/suppliers.js?v=23`, its loader in `js/app.js`, `css/app.css` and the focused `tests/supplier-order-status.test.js` implement and check the labels. Unknown history remains neutral, including old-record replay after a failed read. [Actual measurements and screenshots](supplier-last-order-status-options/brief.md#implementation-evidence).
 
 ## Each supplier item's last order, 9 November 2026
 
