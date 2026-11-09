@@ -1,0 +1,140 @@
+{
+  "note": "Actual implementation versus pre-change source using the same synthetic fixture and project click-test font stand-ins. Contrast ratios use the computed text colour on the white paper token.",
+  "comparisons": [
+    {
+      "width": 320,
+      "text": "xlarge",
+      "before": {
+        "t-stock": 388.94,
+        "t-zero": 388.94,
+        "t-unset": 388.94,
+        "t-case": 416.13,
+        "t-long": 579.25,
+        "t-safe": 416.13
+      },
+      "after": {
+        "t-stock": 388.94,
+        "t-zero": 388.94,
+        "t-unset": 388.94,
+        "t-case": 416.13,
+        "t-long": 579.25,
+        "t-safe": 416.13
+      },
+      "sameHeights": true,
+      "fullRowsBefore": 0,
+      "fullRowsAfter": 0,
+      "overflow": false,
+      "errors": [],
+      "statusContrast": 16.87,
+      "dateContrast": 7.13
+    },
+    {
+      "width": 390,
+      "text": "normal",
+      "before": {
+        "t-stock": 234.97,
+        "t-zero": 234.97,
+        "t-unset": 249.23,
+        "t-case": 234.97,
+        "t-long": 321.97,
+        "t-safe": 256.72
+      },
+      "after": {
+        "t-stock": 234.97,
+        "t-zero": 234.97,
+        "t-unset": 249.23,
+        "t-case": 234.97,
+        "t-long": 321.97,
+        "t-safe": 256.72
+      },
+      "sameHeights": true,
+      "fullRowsBefore": 0,
+      "fullRowsAfter": 0,
+      "overflow": false,
+      "errors": [],
+      "statusContrast": 16.87,
+      "dateContrast": 7.13
+    },
+    {
+      "width": 390,
+      "text": "xlarge",
+      "before": {
+        "t-stock": 388.94,
+        "t-zero": 388.94,
+        "t-unset": 388.94,
+        "t-case": 388.94,
+        "t-long": 524.88,
+        "t-safe": 416.13
+      },
+      "after": {
+        "t-stock": 388.94,
+        "t-zero": 388.94,
+        "t-unset": 388.94,
+        "t-case": 388.94,
+        "t-long": 524.88,
+        "t-safe": 416.13
+      },
+      "sameHeights": true,
+      "fullRowsBefore": 0,
+      "fullRowsAfter": 0,
+      "overflow": false,
+      "errors": [],
+      "statusContrast": 16.87,
+      "dateContrast": 7.13
+    },
+    {
+      "width": 768,
+      "text": "normal",
+      "before": {
+        "t-stock": 147.39,
+        "t-zero": 150.3,
+        "t-unset": 172.05,
+        "t-case": 150.3,
+        "t-long": 276.22,
+        "t-safe": 150.3
+      },
+      "after": {
+        "t-stock": 147.39,
+        "t-zero": 150.3,
+        "t-unset": 172.05,
+        "t-case": 150.3,
+        "t-long": 276.22,
+        "t-safe": 150.3
+      },
+      "sameHeights": true,
+      "fullRowsBefore": 1,
+      "fullRowsAfter": 1,
+      "overflow": false,
+      "errors": [],
+      "statusContrast": 16.87,
+      "dateContrast": 7.13
+    },
+    {
+      "width": 1280,
+      "text": "normal",
+      "before": {
+        "t-stock": 150.59,
+        "t-zero": 150.59,
+        "t-unset": 150.59,
+        "t-case": 150.59,
+        "t-long": 170.67,
+        "t-safe": 150.59
+      },
+      "after": {
+        "t-stock": 150.59,
+        "t-zero": 150.59,
+        "t-unset": 150.59,
+        "t-case": 150.59,
+        "t-long": 170.67,
+        "t-safe": 150.59
+      },
+      "sameHeights": true,
+      "fullRowsBefore": 0,
+      "fullRowsAfter": 0,
+      "overflow": false,
+      "errors": [],
+      "statusContrast": 16.87,
+      "dateContrast": 7.13
+    }
+  ]
+}

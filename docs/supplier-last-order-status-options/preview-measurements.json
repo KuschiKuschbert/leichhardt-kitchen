@@ -1,0 +1,293 @@
+{
+  "note": "Visual DOM prototypes on synthetic click-test data. Fonts are the project test stand-ins. No source or production data changed.",
+  "measurements": [
+    {
+      "concept": "base",
+      "width": 390,
+      "text": "xlarge",
+      "rows": {
+        "t-stock": 388.94,
+        "t-zero": 388.94,
+        "t-unset": 388.94,
+        "t-case": 388.94,
+        "t-long": 388.94,
+        "t-safe": 388.94
+      },
+      "firstQuantityBottom": 982.73,
+      "reviewBarTop": 699.88,
+      "fullRowsInitial": 0,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "concept": "base",
+      "width": 390,
+      "text": "normal",
+      "rows": {
+        "t-stock": 234.97,
+        "t-zero": 234.97,
+        "t-unset": 249.23,
+        "t-case": 234.97,
+        "t-long": 234.97,
+        "t-safe": 234.97
+      },
+      "firstQuantityBottom": 632.23,
+      "reviewBarTop": 708.63,
+      "fullRowsInitial": 0,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "concept": "base",
+      "width": 768,
+      "text": "normal",
+      "rows": {
+        "t-stock": 147.39,
+        "t-zero": 150.3,
+        "t-unset": 172.05,
+        "t-case": 150.3,
+        "t-long": 150.3,
+        "t-safe": 150.3
+      },
+      "firstQuantityBottom": 679.86,
+      "reviewBarTop": 776.63,
+      "fullRowsInitial": 1,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "concept": "base",
+      "width": 1280,
+      "text": "normal",
+      "rows": {
+        "t-stock": 150.59,
+        "t-zero": 150.59,
+        "t-unset": 150.59,
+        "t-case": 150.59,
+        "t-long": 150.59,
+        "t-safe": 150.59
+      },
+      "firstQuantityBottom": 1011.8,
+      "reviewBarTop": 832.63,
+      "fullRowsInitial": 0,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "concept": "a",
+      "width": 390,
+      "text": "xlarge",
+      "rows": {
+        "t-stock": 388.94,
+        "t-zero": 388.94,
+        "t-unset": 388.94,
+        "t-case": 388.94,
+        "t-long": 388.94,
+        "t-safe": 388.94
+      },
+      "firstQuantityBottom": 982.73,
+      "reviewBarTop": 699.88,
+      "fullRowsInitial": 0,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "concept": "a",
+      "width": 390,
+      "text": "normal",
+      "rows": {
+        "t-stock": 234.97,
+        "t-zero": 234.97,
+        "t-unset": 249.23,
+        "t-case": 234.97,
+        "t-long": 234.97,
+        "t-safe": 234.97
+      },
+      "firstQuantityBottom": 632.23,
+      "reviewBarTop": 708.63,
+      "fullRowsInitial": 0,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "concept": "a",
+      "width": 768,
+      "text": "normal",
+      "rows": {
+        "t-stock": 147.39,
+        "t-zero": 150.3,
+        "t-unset": 172.05,
+        "t-case": 150.3,
+        "t-long": 150.3,
+        "t-safe": 150.3
+      },
+      "firstQuantityBottom": 679.86,
+      "reviewBarTop": 776.63,
+      "fullRowsInitial": 1,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "concept": "a",
+      "width": 1280,
+      "text": "normal",
+      "rows": {
+        "t-stock": 150.59,
+        "t-zero": 150.59,
+        "t-unset": 150.59,
+        "t-case": 150.59,
+        "t-long": 150.59,
+        "t-safe": 150.59
+      },
+      "firstQuantityBottom": 1011.8,
+      "reviewBarTop": 832.63,
+      "fullRowsInitial": 0,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "concept": "b",
+      "width": 390,
+      "text": "xlarge",
+      "rows": {
+        "t-stock": 388.94,
+        "t-zero": 388.94,
+        "t-unset": 388.94,
+        "t-case": 388.94,
+        "t-long": 388.94,
+        "t-safe": 388.94
+      },
+      "firstQuantityBottom": 982.73,
+      "reviewBarTop": 699.88,
+      "fullRowsInitial": 0,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "concept": "b",
+      "width": 390,
+      "text": "normal",
+      "rows": {
+        "t-stock": 234.97,
+        "t-zero": 234.97,
+        "t-unset": 249.23,
+        "t-case": 234.97,
+        "t-long": 234.97,
+        "t-safe": 234.97
+      },
+      "firstQuantityBottom": 632.23,
+      "reviewBarTop": 708.63,
+      "fullRowsInitial": 0,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "concept": "b",
+      "width": 768,
+      "text": "normal",
+      "rows": {
+        "t-stock": 158.3,
+        "t-zero": 214.83,
+        "t-unset": 197.44,
+        "t-case": 158.3,
+        "t-long": 197.44,
+        "t-safe": 197.44
+      },
+      "firstQuantityBottom": 679.86,
+      "reviewBarTop": 776.63,
+      "fullRowsInitial": 0,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "concept": "b",
+      "width": 1280,
+      "text": "normal",
+      "rows": {
+        "t-stock": 161.5,
+        "t-zero": 178.89,
+        "t-unset": 161.5,
+        "t-case": 161.5,
+        "t-long": 161.5,
+        "t-safe": 161.5
+      },
+      "firstQuantityBottom": 1011.8,
+      "reviewBarTop": 832.63,
+      "fullRowsInitial": 0,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "concept": "c",
+      "width": 390,
+      "text": "xlarge",
+      "rows": {
+        "t-stock": 388.94,
+        "t-zero": 388.94,
+        "t-unset": 388.94,
+        "t-case": 388.94,
+        "t-long": 388.94,
+        "t-safe": 388.94
+      },
+      "firstQuantityBottom": 982.73,
+      "reviewBarTop": 699.88,
+      "fullRowsInitial": 0,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "concept": "c",
+      "width": 390,
+      "text": "normal",
+      "rows": {
+        "t-stock": 234.97,
+        "t-zero": 234.97,
+        "t-unset": 249.23,
+        "t-case": 234.97,
+        "t-long": 234.97,
+        "t-safe": 234.97
+      },
+      "firstQuantityBottom": 632.23,
+      "reviewBarTop": 708.63,
+      "fullRowsInitial": 0,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "concept": "c",
+      "width": 768,
+      "text": "normal",
+      "rows": {
+        "t-stock": 158.3,
+        "t-zero": 214.83,
+        "t-unset": 197.44,
+        "t-case": 158.3,
+        "t-long": 197.44,
+        "t-safe": 197.44
+      },
+      "firstQuantityBottom": 679.86,
+      "reviewBarTop": 776.63,
+      "fullRowsInitial": 0,
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "concept": "c",
+      "width": 1280,
+      "text": "normal",
+      "rows": {
+        "t-stock": 161.5,
+        "t-zero": 178.89,
+        "t-unset": 161.5,
+        "t-case": 161.5,
+        "t-long": 161.5,
+        "t-safe": 161.5
+      },
+      "firstQuantityBottom": 1011.8,
+      "reviewBarTop": 832.63,
+      "fullRowsInitial": 0,
+      "overflow": false,
+      "errors": []
+    }
+  ]
+}
