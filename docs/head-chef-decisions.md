@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **9 November 2026, desktop Home cleanup.** The owner requested a less cluttered desktop Home after the staff-first release. Refine the existing layout with matching columns and spacing, compact quiet-day prep and upcoming items below current work. Preserve section, break and coworkers first, the native fonts/header and the existing phone/tablet layout. [Contract and comparisons](home-staff-first.md#desktop-spacing-and-alignment-9-november-2026).
+
 - **9 November 2026, staff-first Home approved for release.** After checking the preferred preview against the latest pushes, the owner said "lets go implement and send live". Show section and shift, full break and return, then visible scheduled coworkers before kitchen work. Keep the current clock, logo, navigation and native fonts. Retain the full saved roster and Your day. [Contract and verification](home-staff-first.md).
 
 - **9 November 2026, swipe to close existing sheets and modals.** The owner said the sheets and modals were hard to dismiss and asked for swiping, then explicitly requested "Bring it live now". A downward drag from the existing grip or title closes through Cancel/backdrop, with the same draft, unread and pending-save rules. Keep normal body scrolling and the existing close controls. No new screen or step. [Behaviour and checks](adaptive-controls.md#swipe-to-close-9-november-2026).
