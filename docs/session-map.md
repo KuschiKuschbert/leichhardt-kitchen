@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Kitchen mascot on Home, 9 November 2026
+
+The owner chose a per-person shuffled daily action of all 11 mascot actions, design A (plays once, then the Welcome pose) at the right end of the Welcome row, and a tap that replays today's action. `js/mascot.js` (lazy, `LK_MASCOT.api` 1, loaded by `mascotSync()` in `js/app.js`), `art/mascot/` (11 compact sprite sheets and 11 stills, loaded with `?v=1` so `sw.js` never keeps them), `LK_PREP.whoId()`, `.mascot` and `.mascot-host` in `css/app.css`, `tests/mascot.test.js` (69 checks). No reads, writes or rules. [Feature note](kitchen-mascot.md). The artwork, both council rounds and the placement mock are in pull request #654.
+
 ## Per-person service and section review, 10 November 2026
 
 The head chef requested both service/shift and section pickers beside each selected person and then chose **C, Roster and focus**, saying "okay lets go with c". [The feature review](team-page-options/brief.md) preserves frozen source `29258e6`, original current-contract packets, Build smaller (5 of 5) and six independent design rankings: C first four times and A twice, scores C 16, A 14, B 6. The exact original C flow is chosen, with dissent and the rejected all-three blend retained. [The implementation contract](team-page-options/implementation.md) covers row view state versus membership, responsive break details, disclosed week, reachable dated Save, saved-today authority and preservation of full production defaults/references. New A/B/C labels are separate from the 9 November worksheet. Implemented-app evidence must retain its own source, shell, forms, font conditions and actual task/row measurements; preview checks do not establish production recovery, permissions or rollover.

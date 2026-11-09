@@ -1223,6 +1223,16 @@
     });
   }
   function redrawManage() { if (parseRoute().name === 'manage') mountManage(parseRoute()); }
+  /* The kitchen mascot (owner, 9 Nov 2026; docs/kitchen-mascot.md): Home only, for a named person. js/mascot.js loads
+     on the first such Home view (about 11 KB, once); its art loads per day and is never kept in the saved shell.
+     No reads. A failed download leaves Home as it is and tries again on the next Home view. */
+  var mascotLoad = null;
+  function mascotSync() {
+    var P = window.LK_PREP, id = P && P.whoId ? P.whoId() : '';
+    if (parseRoute().name !== 'landing' || !id) { if (window.LK_MASCOT) window.LK_MASCOT.unmount(); return; }
+    if (window.LK_MASCOT) { if (window.LK_MASCOT.api === 1) window.LK_MASCOT.mount(app, { id: id }); return; }
+    if (!mascotLoad) mascotLoad = mgScript('js/mascot.js?v=1').then(function () { mascotSync(); }, function () { mascotLoad = null; });
+  }
   /* Private tools load only on their page. A failed download leaves a Retry action.
      Protected data is fetched only after the current sign-in has been checked. */
   var deliveryLoad = null;
@@ -1746,6 +1756,7 @@
     // On any other page, connect to the prep book in the background so Prep, Orders and Wastage open straight away.
     else if (window.LK_PREP && window.LK_PREP.warm && !warmed) { warmed = true; setTimeout(function () { window.LK_PREP.warm(); }, 900); }
     backSync();
+    mascotSync();
     var r = route.stack.length ? byId[route.stack[route.stack.length - 1]] : null;
     document.title = (r ? r.name + ' · ' : (route.name === 'settings' ? 'Settings · ' : route.name === 'prep' ? 'Prep list · ' : route.name === 'orders' ? 'Order list · ' : route.name === 'waste' ? 'Wastage · ' : route.name === 'transfers' ? 'Transfers · ' : route.name === 'minutes' ? 'Meeting minutes · ' : route.name === 'mail' ? 'Kitchen mail · ' : route.name === 'drinks' ? 'Drinks run · ' : route.name === 'todo' ? 'Chef to-do · ' : route.name === 'team' ? 'Today\'s team · ' : route.name === 'suppliers' ? 'Supplier order · ' : route.name === 'manage' ? 'Manage Recipes & Drawings · ' : route.name === 'fn' ? 'Functions · ' : route.name === 'functions' ? 'Manage functions · ' : route.name === 'cleaning' ? 'Kitchen cleaning · ' : route.name === 'guides' ? 'Guides · ' : route.name === 'landing' ? '' : route.name === 'home' ? 'Recipes · ' : route.name === 'admin' ? 'Admin panel · ' : route.name === 'chef' ? 'Chef panel · ' : '')) + 'Leichhardt Kitchen Book';
     var prevRoute = lastRoute; lastRoute = route.name;
@@ -2093,7 +2104,7 @@
     whoMenuClose(false, true); editSlotRedraw(); redrawManage();
     var ic = app.querySelector('.wtop-icons'); if (ic) { ic.outerHTML = topIcons(); paintCooling(); }
     var el = app.querySelector('.wtop-who'); if (el) el.outerHTML = whoMark(!!(e.detail && e.detail.signedIn));
-    homeWelcomePaint();
+    homeWelcomePaint(); mascotSync();
   });
   // Reuse the calendar's settled state for clock corrections, midnight and the device's On/Off choice.
   document.addEventListener('kb-seasonal-state', homeWelcomePaint);
@@ -2109,7 +2120,7 @@
   });
   // the kitchen settings were read (who is Head chef): the head chef's link on a card and the manage page follow
   window.addEventListener('lk-cfg', function () {
-    whoNamePaint(); homeWelcomePaint();
+    whoNamePaint(); homeWelcomePaint(); mascotSync();
     editSlotRedraw(); if (parseRoute().name === 'manage' && !(window.LK_MG && window.LK_MG.open())) redrawManage(); feRedraw();
     // Private settings can arrive after the sign-in roster without changing lk.feat's remembered values.
     // Recheck Cleaning then as well; a missing setting never publishes it from the saved flag.

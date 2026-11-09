@@ -13941,6 +13941,8 @@
     ownerHere: ownerHere,
     whoName: whoName,
     homeGreet: homeGreet,
+    // The signed-in person's staff id, only while their name shows (the kitchen mascot keeps one shuffled set per person).
+    whoId: function () { return whoName() ? S.who : ''; },
     // the no-signal sentence while the kitchen's settings are not loaded and there is no signal, otherwise '' (js/app.js)
     offline: function () { return offWait() ? OFF_KITCHEN : ''; },
     // Sign in from the chef hat with nobody signed in: "Who are you?" on the prep list, then back to the page it came from.
