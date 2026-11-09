@@ -169,7 +169,7 @@ async function visit(p, route, selector) {
     checkSurface(reading, '.tm-away.hm-board', '--bar', width + ' live break board');
     checkText(reading, width + ' Team header, small clock/date, draft controls and saved break board');
 
-    await visit(p, '#/', '#hm-with'); await L.waitFor(p, () => !!document.querySelector('.hm-coworkers li') && !!document.querySelector('.hm-sec'));
+    await visit(p, '#/', '#hm-with'); await L.waitFor(p, () => !!document.querySelector('#hm-with-body .hm-tp') && !!document.querySelector('.hm-sec'));
     reading = await facts(p, ['#hm-with', '#hm-prep', '#hm-day'], ['#hm-with', '#hm-prep', '#hm-day']);
     checkSurface(reading, '#hm-with', '--surface-people', width + ' Home coworkers');
     checkSurface(reading, '#hm-prep', '--surface-work', width + ' Home Prep');

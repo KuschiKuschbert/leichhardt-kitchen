@@ -15,11 +15,12 @@ const config = x => Object.assign({ people, staffIds: people.map(p => p.id), sou
 const plan = x => Object.assign({ day: today, on: [{ id: 'ann', sh: 'lunch', sec: 'larder' }, { id: 'ann', sh: 'dinner', sec: 'grill' }, { id: 'sam', sh: 'dinner', sec: '' }],
   br: [{ id: 'ann', sh: 'lunch', at: 870, len: 30 }], v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam' }, x || {});
 const fixture = (p, c) => Object.assign({ [CFG]: config(c) }, p === null ? {} : { [TEAM]: p || plan() });
-const text = async p => { const detail = p.locator('#hm-full-team'); if (await detail.count() && !(await detail.evaluate(e => e.open))) { if (await p.locator('dialog[open]').count()) { await p.keyboard.press('Escape'); await L.settle(p, 100); } await p.click('#hm-full-team > summary'); } return (await txt(p, '#hm-team')) || ''; };
-const ready = p => L.waitFor(p, () => !!document.querySelector('#hm-team .hm-tp'), null, 6000).catch(() => {});
+// the whole day is in the card when it holds the whole day (no fold, 10 Nov 2026), otherwise one tap away in the fold
+const text = async p => { const detail = p.locator('#hm-full-team'); if (!(await detail.count()) || !(await detail.isVisible())) return (await txt(p, '#hm-with-body')) || ''; if (!(await detail.evaluate(e => e.open))) { if (await p.locator('dialog[open]').count()) { await p.keyboard.press('Escape'); await L.settle(p, 100); } await p.click('#hm-full-team > summary'); } return (await txt(p, '#hm-team')) || ''; };
+const ready = p => L.waitFor(p, () => !!document.querySelector('#hm-with .hm-tp'), null, 6000).catch(() => {});
 const teamReads = p => p.evaluate(() => __fake.reads.filter(k => /\/team\//.test(k)).length);
 const noFalseZero = t => !/Nobody|No one|No staff|No people/i.test(t);
-const noRows = p => p.$$eval('#hm-team .hm-tp', l => l.length === 0);
+const noRows = p => p.$$eval('#hm-with .hm-tp', l => l.length === 0);
 
 (async () => {
   const b = await L.start();
@@ -27,14 +28,14 @@ const noRows = p => p.$$eval('#hm-team .hm-tp', l => l.length === 0);
   await ready(p);
   const all = await text(p);
   ok(/Ann/.test(all) && /Sam/.test(all) && /Larder/.test(all) && /Grill/.test(all) && /Lunch 10:00 to 15:00/.test(all) && /Dinner 16:00 to 22:00/.test(all), 'staff without their own allocation still see everyone and every saved shift, section and hours (' + all + ')');
-  ok(!(await p.$('.wtop .tm-slot .tm-chip')) && !(await p.$('#hm-team a[href="#/team"], #hm-team button, #hm-team input, #hm-team select')), 'staff without an allocation have no own-day chip or roster editing controls');
+  ok(!(await p.$('.wtop .tm-slot .tm-chip')) && !(await p.$('#hm-with a[href="#/team"], #hm-with button, #hm-with input, #hm-with select')), 'staff without an allocation have no own-day chip or roster editing controls');
   ok(await teamReads(p) === 1 && await p.evaluate(() => __fake.bill.filter(x => /\/team\//.test(x.path) && /listen/.test(x.kind)).length) === 0, 'staff roster uses the existing single team read and has no team listener');
   ok(await p.evaluate(() => __fake.writes.flat().filter(x => /\/team\//.test(x.path)).length === 0), 'reading the roster writes no team record');
 
   // A saved update arrives by the kitchen's existing config stamp, with one read and no new listener.
   const changed = plan({ v: 2, upd: L.NOW + 60000, on: [{ id: 'ann', sh: 'dinner', sec: 'grill' }] });
   await p.evaluate(([k, d, cf, t]) => { __fake.write(k, d); const c = __fake.dump()[cf]; __fake.write(cf, Object.assign({}, c, { pastEdit: Object.assign({}, c.pastEdit || {}, { t }) })); }, [TEAM, changed, CFG, L.NOW + 60000]);
-  await L.waitFor(p, () => document.querySelectorAll('#hm-team .hm-tp').length === 1, null, 6000).catch(() => {});
+  await L.waitFor(p, () => document.querySelectorAll('#hm-with-body .hm-tp').length === 1, null, 6000).catch(() => {});
   const saved = await text(p);
   ok(/Ann/.test(saved) && /Dinner 16:00 to 22:00/.test(saved) && !/Sam|Lunch/.test(saved), 'the roster follows the newly saved plan, removing old allocations (' + saved + ')');
   ok(await teamReads(p) === 2, 'a saved team stamp adds exactly the existing one team read');
