@@ -14,7 +14,7 @@ function named(name, fnOnly) {
 const title = p => txt(p, '#rtitle');
 async function namedWelcome(p, name) {
   const heading = await title(p);
-  return !!(await p.$('#rtitle.hm-welcome')) && ['Welcome', 'Hello', 'Hi there', 'G’day'].some(prefix => heading === prefix + ', ' + name);
+  return !!(await p.$('#rtitle.hm-welcome')) && ['Welcome', 'Hello', 'Hi there', 'G’day', 'Morning', 'Good morning', 'Afternoon', 'Good afternoon', 'Evening', 'Good evening', 'Late one', 'Good to see you', 'Welcome in', 'Enjoy your break', 'Have a good break', 'Welcome back', 'Back at it', 'Last stretch', 'Nearly there', 'Thanks for today', 'Good work today'].some(prefix => heading === prefix + ', ' + name);
 }
 async function neutralWelcome(p) {
   const heading = await title(p);

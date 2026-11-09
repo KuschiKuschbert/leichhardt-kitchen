@@ -3,7 +3,7 @@ const L = require('./lib');
 const { R, ok } = L.results();
 const key = (...parts) => ['kitchens', L.PIN, ...parts].join('/');
 const CFG = key('config', 'main'), ROSTER = key('login', 'roster');
-const GENERIC = ['Welcome', 'Hello', 'Hi there', 'G’day'];
+const GENERIC = ['Welcome', 'Hello', 'Hi there', 'G’day', 'Morning', 'Good morning', 'Afternoon', 'Good afternoon', 'Evening', 'Good evening', 'Late one'];
 const LONG = 'Alexandria Catherine Montgomery-Smythe J';
 const title = p => L.txt(p, '#rtitle');
 const generic = (words, name = 'Ann') => GENERIC.some(prefix => words === prefix + ', ' + name);
@@ -45,9 +45,12 @@ async function rename(p, name) {
 
   for (const example of [
     { prefix: 'Welcome', init: zero },
-    { prefix: 'Hello', init: () => { Math.random = () => 0.3; } },
-    { prefix: 'Hi there', init: () => { Math.random = () => 0.6; } },
-    { prefix: 'G’day', init: () => { Math.random = () => 0.99; } }
+    // At the test kitchen's 14:00 the pool is the four ordinary words and the two afternoon ones.
+    { prefix: 'Hello', init: () => { Math.random = () => 0.2; } },
+    { prefix: 'Hi there', init: () => { Math.random = () => 0.4; } },
+    { prefix: 'G’day', init: () => { Math.random = () => 0.55; } },
+    { prefix: 'Afternoon', init: () => { Math.random = () => 0.7; } },
+    { prefix: 'Good afternoon', init: () => { Math.random = () => 0.99; } }
   ]) await step('ordinary random choice ' + example.prefix, async () => {
     await open({ init: example.init });
     ok(await title(p) === example.prefix + ', Ann', 'fresh Home can choose ' + example.prefix + ' with the complete name (' + await title(p) + ')');
@@ -139,6 +142,69 @@ async function rename(p, name) {
     const date = await L.txt(p, '.wall-date');
     ok(date.includes('Friday') && date.includes('25 December'), 'the existing calendar check updates the Functions-only date while celebrations are off (' + date + ')');
     ok(generic(await title(p)) && await title(p) !== before, 'the new kitchen day chooses a fresh ordinary welcome without a board repaint');
+  });
+
+
+  // Time of day (owner, 10 Nov 2026): Queensland hours, whatever the phone's own timezone.
+  for (const [at, prefix] of [['08:00', 'Morning'], ['14:00', 'Afternoon'], ['19:00', 'Evening'], ['23:00', 'Late one'], ['03:30', 'Late one']]) await step('time of day ' + at, async () => {
+    await open({ clock: Date.parse('2026-11-10T' + at + ':00+10:00'), tz: 'America/Los_Angeles', init: () => { Math.random = () => 0.7; } });
+    ok(await title(p) === prefix + ', Ann', at + ' Queensland time can say ' + prefix + ' (' + await title(p) + ')');
+  });
+  await step('the hour turns on Home', async () => {
+    await open({ clock: Date.parse('2026-11-10T11:59:20+10:00'), init: () => { Math.random = () => 0.7; } });
+    ok(await title(p) === 'Morning, Ann', 'before noon the morning words are in the pool');
+    const readCount = await reads(p);
+    await p.clock.runFor(61000);
+    await L.waitFor(p, () => /^(Afternoon|Good afternoon|Welcome|Hello|Hi there|G’day), Ann$/.test(document.querySelector('#rtitle').textContent), null, 6000);
+    ok(await title(p) === 'Afternoon, Ann', 'noon swaps a morning welcome for an afternoon one without another visit (' + await title(p) + ')');
+    ok(await reads(p) === readCount, 'the hour change adds no database reads');
+  });
+
+  // Shift-aware (owner, 10 Nov 2026): the person's own moment in the saved plan, at the test kitchen's 14:00.
+  const day = L.ymd(new Date(L.NOW));
+  const plan = (shifts, br = []) => {
+    const cfg = L.seed()[CFG];
+    cfg.kitSecs = [{ id: 'larder', name: 'Larder' }];
+    cfg.kitShifts = shifts.map(([id, from, to]) => ({ id, name: id[0].toUpperCase() + id.slice(1), from, to }));
+    return { [CFG]: cfg, [key('team', day)]: { day, on: shifts.map(([id]) => ({ id: 'ann', sh: id, sec: 'larder' })).concat([{ id: 'sam', sh: shifts[0][0], sec: 'larder' }]),
+      br: br.map(([sh, at, len]) => ({ id: 'ann', sh, at, len })), v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam' } };
+  };
+  for (const c of [
+    { label: 'before the shift', extra: plan([['dinner', 900, 1260]]), words: ['Good to see you', 'Welcome in'] },
+    { label: 'on a break', extra: plan([['day', 600, 1260]], [['day', 810, 60]]), words: ['Enjoy your break', 'Have a good break'] },
+    { label: 'just back from a break', extra: plan([['day', 600, 1260]], [['day', 780, 45]]), words: ['Welcome back', 'Back at it'] },
+    { label: 'the last hour', extra: plan([['lunch', 600, 900]]), words: ['Last stretch', 'Nearly there'] },
+    { label: 'after the shift', extra: plan([['early', 360, 780]]), words: ['Thanks for today', 'Good work today'] },
+    { label: 'the middle of the shift', extra: plan([['day', 600, 1260]], [['day', 720, 30]]), words: GENERIC.slice(0, 4).concat(['Afternoon', 'Good afternoon']) },
+    { label: 'a double, between lunch and dinner', extra: plan([['lunch', 600, 840], ['dinner', 900, 1260]]), words: GENERIC.slice(0, 4).concat(['Afternoon', 'Good afternoon']) }
+  ]) await step('shift-aware ' + c.label, async () => {
+    const before = c.words.slice(0, 1);
+    await open({ extra: c.extra });
+    await L.waitFor(p, words => words.some(w => document.querySelector('#rtitle').textContent === w + ', Ann'), c.words, 6000);
+    const words = await title(p), readCount = await reads(p);
+    ok(c.words.some(w => words === w + ', Ann'), c.label + ': says ' + words);
+    await p.evaluate(() => window.dispatchEvent(new Event('lk-cfg'))); await L.settle(p, 300);
+    ok(await title(p) === words && await reads(p) === readCount, c.label + ': repaint keeps the words and reads nothing (' + before + ')');
+  });
+  await step('shift-aware on a celebration day', async () => {
+    await open({ extra: plan([['lunch', 600, 900]]) });
+    await theme(p, 'np-tihar');
+    ok(['Happy Tihar, Ann', 'Tihar wishes, Ann'].includes(await title(p)), 'a celebration wins over the last hour of the shift');
+  });
+  await step('a break starts while Home is open', async () => {
+    await open({ clock: Date.parse(day + 'T13:59:20+10:00'), extra: plan([['day', 600, 1260]], [['day', 840, 30]]) });
+    ok(generic(await title(p)), 'before the break the ordinary words show (' + await title(p) + ')');
+    const readCount = await reads(p);
+    await p.clock.runFor(61000);
+    await L.waitFor(p, () => /break, Ann$/.test(document.querySelector('#rtitle').textContent), null, 6000);
+    ok(['Enjoy your break, Ann', 'Have a good break, Ann'].includes(await title(p)), 'the break start changes the welcome on the open Home');
+    ok(await reads(p) === readCount, 'following the break adds no database reads');
+  });
+  await step('a plan the book cannot trust', async () => {
+    const extra = plan([['lunch', 600, 900]]); extra[key('team', day)].br = [{ id: 'ann', sh: 'lunch', at: 830, len: 17 }];
+    await open({ extra });
+    await L.settle(p, 600);
+    ok(generic(await title(p)), 'a break the book cannot check gives ordinary words, not a shift moment (' + await title(p) + ')');
   });
 
   for (const width of [390, 768, 1280]) await step('long seasonal welcome ' + width, async () => {

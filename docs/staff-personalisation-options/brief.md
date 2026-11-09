@@ -222,3 +222,31 @@ Focused checks pass for personalisation, Home board, layout, read budget, season
 The new randomiser suite passes **45/45** and covers all four ordinary choices; stable repaint/rename; nonrepeating return; zero DOM changes after 20 repeated seasonal events; no extra database reads; real Queensland Diwali-to-Tihar midnight on a foreign-timezone phone; Christmas, Off, Still, reduced motion and quiet occasions; clock fallback/recovery after authentication; and full long names at all three widths. Its Functions-only midnight greeting check failed before the day-signature repair; the date also remained on the previous day with celebrations Off. Including the kitchen day in the existing seasonal refresh signature repairs that case without another timer. The corrected-day fixture calls the existing refresh directly; it does not claim a separate wall-clock overnight run.
 
 JavaScript syntax and whitespace checks pass. Release CI and deployment state belong to the pull request; these are synthetic local browser checks, not production-session, emulator or real-device validation.
+
+## Shift and time of day welcomes, 10 November 2026
+
+The owner asked to improve the varied welcome before the next personalisation step, and picked two of four offered upgrades: **time of day** and **shift-aware**. Team languages and more festival words were not chosen.
+
+**Verdict: Build smaller (quick check).** Only the words in the existing heading change: no new control, popup, line, read or step. Taps: checking your own section, break and coworkers stays at zero, full team and Prep at one. Lines on a 390 px phone: unchanged. The longest new opener (16 characters, "Enjoy your break", "Thanks for today") is shorter than the longest already measured ("May the fourth be with you", 26), and the existing compact classes count the whole heading. References: Headspace (short, calm words that fit the moment), Flighty (time and status read at a glance). Contract fit: one greeting, the full stored name, no first-name guess, neutral when locked or public.
+
+### Behaviour
+
+- Order: a celebration day's wishes first, then the person's own shift moment, then the ordinary words with the time of day.
+- **Time of day** (Queensland clock): 04:00 to 11:59 adds Morning and Good morning, 12:00 to 16:59 Afternoon and Good afternoon, 17:00 to 21:59 Evening and Good evening, 22:00 to 03:59 Late one and Good evening. They join Welcome, Hello, Hi there and G’day.
+- **Shift-aware**, from the saved plan Home already holds (`LK_PREP.homeGreet()` in `js/prep.js`): before the first shift "Good to see you" or "Welcome in"; on a break "Enjoy your break" or "Have a good break"; up to 30 minutes after a break "Welcome back" or "Back at it"; the last hour of the last shift "Last stretch" or "Nearly there"; after it "Thanks for today" or "Good work today". In the middle of a shift, or between a double's two shifts, the ordinary words show.
+- No shift words when the plan is loading, failed, stale, unset, or holds a break the book cannot check, or when the shift has no hours. Ordinary words show instead.
+- The words change only when the moment or the hour changes. `homePaint()` already runs on every draw and the 30 second tick; it sends `lk-greet` only when the moment or hour moves, and only while the named heading is on screen. Repaints, renames and seasonal events keep the words.
+
+### Try to break it
+
+- Plan arrives after Home opens: the first words are ordinary, then the shift moment's words once. Accepted: one change, right after load.
+- A break that the book cannot check (`uncheckedBr`) never claims "Welcome back".
+- The minute a break starts with Home open: the welcome follows on the next 30 second tick. Tested.
+- Off or reflective days, Still, reduced motion, rename, lock and handover keep the rules above (existing checks still pass).
+- Untested risk: a shift that crosses midnight has no shift words (only `from < to` shifts count), so it falls back to ordinary words.
+
+### Verification
+
+`tests/home-welcome-randomiser.test.js`: **92 of 92** pass. The new checks cover five Queensland times on a Los Angeles phone, the hour turning on an open Home, all five shift moments, the middle of a shift, a double's gap, a celebration over the last hour, a break starting with Home open, an untrusted break, and no extra reads. On #656's code **18 of 86 failed**. Personalisation, welcome layout (68), Home board, Home rota, staff Home, read budget, design patterns and seasonal files also pass (11 files). The older checks now accept every new opener and compare layout with the same opener for every name. Synthetic local browser checks only.
+
+Rollback: revert the pull request. No saved data or rules change.

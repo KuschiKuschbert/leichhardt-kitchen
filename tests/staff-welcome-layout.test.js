@@ -37,7 +37,7 @@ const homeGeometry = p => p.evaluate(() => {
   const hb = h.getBoundingClientRect(), text = [...range.getClientRects()];
   // Caveat's font box extends vertically beyond its line box even for the unchanged short heading.
   // Check actual horizontal text bounds and that overflow is not clipped, rather than asserting font metrics.
-  return { heading: h.textContent, named: h.classList.contains('hm-welcome'), nameFits: text.every(r => r.left >= hb.left - 1 && r.right <= hb.right + 1) && getComputedStyle(h).overflowY === 'visible',
+  return { heading: h.textContent, prefix: h.textContent.slice(0, h.textContent.indexOf(', ')), named: h.classList.contains('hm-welcome'), nameFits: text.every(r => r.left >= hb.left - 1 && r.right <= hb.right + 1) && getComputedStyle(h).overflowY === 'visible',
     own: b(own), team: b(team), visible: [...document.querySelectorAll('#hm-with-body .hm-tp')].filter(e => e.getBoundingClientRect().bottom <= limit + 0.5).length,
     fullTeam: document.querySelector('#hm-full-team > summary').getBoundingClientRect().bottom <= limit + 0.5,
     section: document.querySelector('[data-hm-priority="section"]').textContent,
@@ -62,7 +62,7 @@ const homeGeometry = p => p.evaluate(() => {
     }
     await L.settle(p, 250);
     const g = await homeGeometry(p);
-    ok(g.named && g.heading === 'Welcome, ' + name && g.nameFits, 'real fonts: complete display name stays inside its heading (' + name + ')');
+    ok(g.named && g.heading === g.prefix + ', ' + name && g.nameFits, 'real fonts: complete display name stays inside its heading (' + name + ')');
     ok(g.visible === 3 && g.fullTeam, 'real fonts: three scheduled coworkers and full-team control remain above the phone tabs (' + JSON.stringify(g) + ')');
     ok(!g.overflow && /Larder/.test(g.section), 'real fonts: personal section remains visible without sideways scroll');
     if (name === 'Ann') short = g;
@@ -72,7 +72,7 @@ const homeGeometry = p => p.evaluate(() => {
   for (const name of [LONG, 'अदिति शर्मा', '李明', 'W'.repeat(40)]) await step('fallback ' + name, async () => {
     await open(name, { settings: { text: 'xlarge' } });
     const g = await homeGeometry(p);
-    ok(g.named && g.heading === 'Welcome, ' + name && g.nameFits && !g.overflow, 'fallback: full name is readable and wraps without horizontal clipping (' + name + ')');
+    ok(g.named && g.heading === g.prefix + ', ' + name && g.nameFits && !g.overflow, 'fallback: full name is readable and wraps without horizontal clipping (' + name + ')');
     ok(/Larder/.test(g.section), 'fallback: the personal section remains available');
     if (name === LONG) ok(g.visible === 3, 'fallback: the representative 40-character name preserves three visible coworkers at enlarged text');
   });

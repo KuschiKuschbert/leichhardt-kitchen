@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **10 November 2026, the welcome follows the time of day and your shift.** The owner asked to improve the varied welcome first, then do the mascot. From four upgrades they chose time of day and shift-aware ("Good morning", "Enjoy your break", "Last stretch", "Thanks for today"). Celebration wishes still come first. Team languages and more festival words were not chosen. [Behaviour and checks](staff-personalisation-options/brief.md#shift-and-time-of-day-welcomes-10-november-2026).
+
 - **10 November 2026, vary the personalised welcome and combine it with celebrations.** The owner asked for a randomiser for different welcomes after the personalisation release. Keep the chosen Home heading and full staff name, vary its short opening words, and draw seasonal wishes from the existing calendar celebration. No new controls or service steps. [Behaviour, quick check and verification](staff-personalisation-options/brief.md#varied-welcomes-10-november-2026).
 
 - **10 November 2026, the first sign-in of the day opens Home.** The owner said "close #599 and rebuild the first sign-in part fresh". The first personal PIN of a person's day (from 04:00) opens Home; later PINs keep the page. Work to finish, a waiting tap, Functions-only accounts and a new starter's drink question keep their page. The owner then said "Keep Admin on its page for the head chef": the head chef unlocking on Admin stays on Admin. #599's shift rows are dropped: staff-first Home already shows them. `docs/home-staff-first.md`.

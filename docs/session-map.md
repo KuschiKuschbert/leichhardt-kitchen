@@ -14,7 +14,7 @@ The owner approved the audit’s recommendation and live implementation: one exp
 
 ## Varied Home welcomes, 10 November 2026
 
-`js/app.js` extends the chosen named welcome with short random phrases and authored wishes for the active celebratory calendar occasion. Keep the phrase through paints and renames, change on Home re-entry/day/identity/occasion, avoid the previous phrase, and retain neutral locked/public headings. Existing compact sizing counts the complete heading. No saved name/history, network read, timer, new asset or rule. The [feature record](staff-personalisation-options/brief.md#varied-welcomes-10-november-2026) owns the quick check, failure scenarios and verification; `tests/home-welcome-randomiser.test.js` covers the new behaviour.
+`js/app.js` extends the chosen named welcome with short random phrases and authored wishes for the active celebratory calendar occasion. Keep the phrase through paints and renames, change on Home re-entry/day/identity/occasion, avoid the previous phrase, and retain neutral locked/public headings. Existing compact sizing counts the complete heading. No saved name/history, network read, timer, new asset or rule. The [feature record](staff-personalisation-options/brief.md#varied-welcomes-10-november-2026) owns the quick check, failure scenarios and verification; `tests/home-welcome-randomiser.test.js` covers the new behaviour. Since 10 Nov 2026 it also adds Queensland time of day words and the person's shift moment from the held plan (`LK_PREP.homeGreet()`, `lk-greet`) ([record](staff-personalisation-options/brief.md#shift-and-time-of-day-welcomes-10-november-2026)).
 
 ## Staff welcome A and personalisation audit, 9 to 10 November 2026
 

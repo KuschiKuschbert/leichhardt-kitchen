@@ -628,6 +628,15 @@
   // Chosen welcome A (10 Nov 2026): the complete authenticated staff name, with the kitchen date below.
   // Only presentation of the held identity; public and locked visitors retain their neutral heading.
   var HOME_WELCOMES = ['Welcome', 'Hello', 'Hi there', 'G’day'];
+  // Time of day in Queensland joins the ordinary words (owner, 10 Nov 2026). 04:00 starts the kitchen day.
+  var HOME_TIME_WELCOMES = { morning: ['Morning', 'Good morning'], afternoon: ['Afternoon', 'Good afternoon'], evening: ['Evening', 'Good evening'], late: ['Late one', 'Good evening'] };
+  function homeWelcomePeriod() {
+    var h = window.LK_TIME.hour(window.LK_TIME.now());
+    return h >= 4 && h < 12 ? 'morning' : h >= 12 && h < 17 ? 'afternoon' : h >= 17 && h < 22 ? 'evening' : 'late';
+  }
+  // The person's own shift from the saved plan Home already holds (LK_PREP.homeGreet(), no read). Wins over time of day.
+  var HOME_SHIFT_WELCOMES = { before: ['Good to see you', 'Welcome in'], 'break': ['Enjoy your break', 'Have a good break'],
+    back: ['Welcome back', 'Back at it'], last: ['Last stretch', 'Nearly there'], done: ['Thanks for today', 'Good work today'] };
   // Short, authored wishes use the same occasion as the existing calendar decoration. No staff background is inferred.
   var HOME_OCCASION_WELCOMES = {
     'au-new-years-eve': ['New Year wishes', 'Warm wishes'], 'au-new-years-day': ['Happy New Year', 'New Year wishes'],
@@ -658,10 +667,14 @@
     var P = window.LK_PREP, bridge = window.KB_THEME_BRIDGE && window.KB_THEME_BRIDGE.status();
     var themeId = window.LK_TIME.ready() && bridge && !bridge.gated ? bridge.themeId : '';
     var theme = (window.KB_COMPLETE_ART || []).find(function (item) { return item.id === themeId; });
-    var prefixes = theme && theme.classification === 'celebratory' && HOME_OCCASION_WELCOMES[themeId] || HOME_WELCOMES;
-    var key = (P && P.identity ? P.identity() : n) + '|' + window.LK_TIME.day() + '|' + (themeId || 'off');
+    // Celebration first, then the person's shift, then the ordinary words with the time of day.
+    var party = theme && theme.classification === 'celebratory' && HOME_OCCASION_WELCOMES[themeId];
+    var shift = !party && P && P.homeGreet ? P.homeGreet() : '', period = party || HOME_SHIFT_WELCOMES[shift] ? '' : homeWelcomePeriod();
+    var prefixes = party || HOME_SHIFT_WELCOMES[shift] || HOME_WELCOMES.concat(HOME_TIME_WELCOMES[period]);
+    var key = (P && P.identity ? P.identity() : n) + '|' + window.LK_TIME.day() + '|' + (themeId || 'off') + '|' + (shift || period);
     if (key !== homeWelcomeKey) {
       var choices = prefixes.filter(function (prefix) { return prefix !== homeWelcomePrefix; });
+      if (!choices.length) choices = prefixes;
       homeWelcomePrefix = choices[Math.floor(Math.random() * choices.length)];
       homeWelcomeKey = key;
     }
@@ -2084,6 +2097,8 @@
   });
   // Reuse the calendar's settled state for clock corrections, midnight and the device's On/Off choice.
   document.addEventListener('kb-seasonal-state', homeWelcomePaint);
+  // js/prep.js says when the person's shift moment or the hour changes (homePaint(), on its 30 second tick).
+  window.addEventListener('lk-greet', homeWelcomePaint);
   // "Skip to content" must not change the address: #main is not a page, so the router would open the landing page
   document.addEventListener('click', function (e) {
     var sk = e.target.closest && e.target.closest('a.skip');
