@@ -1,0 +1,465 @@
+{
+  "environment": {
+    "kind": "Isolated, in-memory, synthetic prototypes",
+    "reproduction": "Install existing test dependencies with cd tests && npm ci; from the repository root run node docs/team-page-options/verify-previews.cjs --ready. TEAM_PREVIEW_PLAYWRIGHT may point to an existing playwright-core installation; TEAM_PREVIEW_ROOT and TEAM_PREVIEW_PORT are optional overrides.",
+    "viewportHeight": 844,
+    "fonts": "Original local Barlow, Barlow Condensed and Caveat faces",
+    "taskCount": "Native picker open + option choice count as two tap-equivalent actions; scroll and typing excluded. Save includes acknowledgement.",
+    "prototypeHashes": {
+      "preview.js": "3787bb9bf36a49e24fc67a6835d0b6e6856275ee65c6157d3eebbf20ea398690",
+      "preview.css": "b6cb4700a3fb420fc504a48dfb57219666e1f8cad9badf78159f99a91fc98625",
+      "preview.html": "be9cdbb0fe8c741c7715926f3bed8c78c0fc0acb197c796c3411e2b32074fc59"
+    }
+  },
+  "measurements": [],
+  "tasks": [],
+  "stateChecks": [],
+  "adversarial": [
+    {
+      "name": "B/team/401: largest-text visible stage labels fit actual buttons",
+      "pass": false,
+      "detail": [
+        {
+          "stage": "assignments",
+          "label": "Assignments",
+          "fontSize": "20px",
+          "button": {
+            "left": 33,
+            "top": 530.078125,
+            "width": 106.328125,
+            "height": 78,
+            "right": 139.328125,
+            "bottom": 608.078125
+          },
+          "ink": {
+            "left": 40,
+            "top": 571.078125,
+            "width": 114.984375,
+            "height": 24,
+            "right": 154.984375,
+            "bottom": 595.078125
+          },
+          "widthExcess": 8.65625,
+          "spill": {
+            "left": 0,
+            "right": 15.65625,
+            "top": 0,
+            "bottom": 0
+          },
+          "contained": false
+        }
+      ]
+    },
+    {
+      "name": "B/chef/401: largest-text visible stage labels fit actual buttons",
+      "pass": false,
+      "detail": [
+        {
+          "stage": "assignments",
+          "label": "Assignments",
+          "fontSize": "20px",
+          "button": {
+            "left": 33,
+            "top": 634.46875,
+            "width": 106.328125,
+            "height": 78,
+            "right": 139.328125,
+            "bottom": 712.46875
+          },
+          "ink": {
+            "left": 40,
+            "top": 675.46875,
+            "width": 114.984375,
+            "height": 24,
+            "right": 154.984375,
+            "bottom": 699.46875
+          },
+          "widthExcess": 8.65625,
+          "spill": {
+            "left": 0,
+            "right": 15.65625,
+            "top": 0,
+            "bottom": 0
+          },
+          "contained": false
+        }
+      ]
+    },
+    {
+      "name": "All captures used one unchanged prototype source set",
+      "pass": true
+    }
+  ],
+  "limitations": [
+    "No production records, Firebase persistence, server permissions, device locks, handover or reload recovery are tested.",
+    "Browser checks and role-based design review do not establish actual kitchen task frequency or staff usability."
+  ],
+  "stageBoundaries": [
+    {
+      "frame": "team",
+      "width": 401,
+      "stageLabels": [
+        {
+          "stage": "assignments",
+          "label": "1",
+          "fontSize": "16.6667px",
+          "button": {
+            "left": 33,
+            "top": 530.078125,
+            "width": 106.328125,
+            "height": 78,
+            "right": 139.328125,
+            "bottom": 608.078125
+          },
+          "ink": {
+            "left": 83.21875,
+            "top": 546.078125,
+            "width": 5.890625,
+            "height": 20,
+            "right": 89.109375,
+            "bottom": 566.078125
+          },
+          "widthExcess": 0,
+          "spill": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0
+          },
+          "contained": true
+        },
+        {
+          "stage": "assignments",
+          "label": "Assignments",
+          "fontSize": "20px",
+          "button": {
+            "left": 33,
+            "top": 530.078125,
+            "width": 106.328125,
+            "height": 78,
+            "right": 139.328125,
+            "bottom": 608.078125
+          },
+          "ink": {
+            "left": 40,
+            "top": 571.078125,
+            "width": 114.984375,
+            "height": 24,
+            "right": 154.984375,
+            "bottom": 595.078125
+          },
+          "widthExcess": 8.65625,
+          "spill": {
+            "left": 0,
+            "right": 15.65625,
+            "top": 0,
+            "bottom": 0
+          },
+          "contained": false
+        },
+        {
+          "stage": "breaks",
+          "label": "2",
+          "fontSize": "16.6667px",
+          "button": {
+            "left": 147.328125,
+            "top": 530.078125,
+            "width": 106.328125,
+            "height": 78,
+            "right": 253.65625,
+            "bottom": 608.078125
+          },
+          "ink": {
+            "left": 163.359375,
+            "top": 560.078125,
+            "width": 9.1875,
+            "height": 20,
+            "right": 172.546875,
+            "bottom": 580.078125
+          },
+          "widthExcess": 0,
+          "spill": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0
+          },
+          "contained": true
+        },
+        {
+          "stage": "breaks",
+          "label": "Breaks",
+          "fontSize": "20px",
+          "button": {
+            "left": 147.328125,
+            "top": 530.078125,
+            "width": 106.328125,
+            "height": 78,
+            "right": 253.65625,
+            "bottom": 608.078125
+          },
+          "ink": {
+            "left": 176.546875,
+            "top": 557.078125,
+            "width": 61.0625,
+            "height": 24,
+            "right": 237.609375,
+            "bottom": 581.078125
+          },
+          "widthExcess": 0,
+          "spill": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0
+          },
+          "contained": true
+        },
+        {
+          "stage": "review",
+          "label": "3",
+          "fontSize": "16.6667px",
+          "button": {
+            "left": 261.65625,
+            "top": 530.078125,
+            "width": 106.34375,
+            "height": 78,
+            "right": 368,
+            "bottom": 608.078125
+          },
+          "ink": {
+            "left": 276.734375,
+            "top": 560.078125,
+            "width": 8.859375,
+            "height": 20,
+            "right": 285.59375,
+            "bottom": 580.078125
+          },
+          "widthExcess": 0,
+          "spill": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0
+          },
+          "contained": true
+        },
+        {
+          "stage": "review",
+          "label": "Review",
+          "fontSize": "20px",
+          "button": {
+            "left": 261.65625,
+            "top": 530.078125,
+            "width": 106.34375,
+            "height": 78,
+            "right": 368,
+            "bottom": 608.078125
+          },
+          "ink": {
+            "left": 289.59375,
+            "top": 557.078125,
+            "width": 63.3125,
+            "height": 24,
+            "right": 352.90625,
+            "bottom": 581.078125
+          },
+          "widthExcess": 0,
+          "spill": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0
+          },
+          "contained": true
+        }
+      ],
+      "firstRowTop": 685.078125,
+      "completeInitialRows": 0,
+      "errors": []
+    },
+    {
+      "frame": "chef",
+      "width": 401,
+      "stageLabels": [
+        {
+          "stage": "assignments",
+          "label": "1",
+          "fontSize": "16.6667px",
+          "button": {
+            "left": 33,
+            "top": 634.46875,
+            "width": 106.328125,
+            "height": 78,
+            "right": 139.328125,
+            "bottom": 712.46875
+          },
+          "ink": {
+            "left": 83.21875,
+            "top": 650.46875,
+            "width": 5.890625,
+            "height": 20,
+            "right": 89.109375,
+            "bottom": 670.46875
+          },
+          "widthExcess": 0,
+          "spill": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0
+          },
+          "contained": true
+        },
+        {
+          "stage": "assignments",
+          "label": "Assignments",
+          "fontSize": "20px",
+          "button": {
+            "left": 33,
+            "top": 634.46875,
+            "width": 106.328125,
+            "height": 78,
+            "right": 139.328125,
+            "bottom": 712.46875
+          },
+          "ink": {
+            "left": 40,
+            "top": 675.46875,
+            "width": 114.984375,
+            "height": 24,
+            "right": 154.984375,
+            "bottom": 699.46875
+          },
+          "widthExcess": 8.65625,
+          "spill": {
+            "left": 0,
+            "right": 15.65625,
+            "top": 0,
+            "bottom": 0
+          },
+          "contained": false
+        },
+        {
+          "stage": "breaks",
+          "label": "2",
+          "fontSize": "16.6667px",
+          "button": {
+            "left": 147.328125,
+            "top": 634.46875,
+            "width": 106.328125,
+            "height": 78,
+            "right": 253.65625,
+            "bottom": 712.46875
+          },
+          "ink": {
+            "left": 163.359375,
+            "top": 664.46875,
+            "width": 9.1875,
+            "height": 20,
+            "right": 172.546875,
+            "bottom": 684.46875
+          },
+          "widthExcess": 0,
+          "spill": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0
+          },
+          "contained": true
+        },
+        {
+          "stage": "breaks",
+          "label": "Breaks",
+          "fontSize": "20px",
+          "button": {
+            "left": 147.328125,
+            "top": 634.46875,
+            "width": 106.328125,
+            "height": 78,
+            "right": 253.65625,
+            "bottom": 712.46875
+          },
+          "ink": {
+            "left": 176.546875,
+            "top": 661.46875,
+            "width": 61.0625,
+            "height": 24,
+            "right": 237.609375,
+            "bottom": 685.46875
+          },
+          "widthExcess": 0,
+          "spill": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0
+          },
+          "contained": true
+        },
+        {
+          "stage": "review",
+          "label": "3",
+          "fontSize": "16.6667px",
+          "button": {
+            "left": 261.65625,
+            "top": 634.46875,
+            "width": 106.34375,
+            "height": 78,
+            "right": 368,
+            "bottom": 712.46875
+          },
+          "ink": {
+            "left": 276.734375,
+            "top": 664.46875,
+            "width": 8.859375,
+            "height": 20,
+            "right": 285.59375,
+            "bottom": 684.46875
+          },
+          "widthExcess": 0,
+          "spill": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0
+          },
+          "contained": true
+        },
+        {
+          "stage": "review",
+          "label": "Review",
+          "fontSize": "20px",
+          "button": {
+            "left": 261.65625,
+            "top": 634.46875,
+            "width": 106.34375,
+            "height": 78,
+            "right": 368,
+            "bottom": 712.46875
+          },
+          "ink": {
+            "left": 289.59375,
+            "top": 661.46875,
+            "width": 63.3125,
+            "height": 24,
+            "right": 352.90625,
+            "bottom": 685.46875
+          },
+          "widthExcess": 0,
+          "spill": {
+            "left": 0,
+            "right": 0,
+            "top": 0,
+            "bottom": 0
+          },
+          "contained": true
+        }
+      ],
+      "firstRowTop": 789.46875,
+      "completeInitialRows": 0,
+      "errors": []
+    }
+  ]
+}

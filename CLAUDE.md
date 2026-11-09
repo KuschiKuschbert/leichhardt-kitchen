@@ -40,6 +40,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Today's team and its chosen notebook, council and build record | `docs/todays-team-options/brief.md`, `docs/team-notebook-options/brief.md` (Chosen, Build, council), `docs/prep-book.md` (Today's team) |
 | Planning staff sections ahead, dated drafts, week picker and read costs | `docs/team-week-options/brief.md` (chosen A, implementation and verification) |
 | Today's team person worksheet, single roster and per-person details | `docs/team-tidy-options/brief.md` (current choice C, historical A checks and current verification) |
+| Pending review: service and section together on each team row | `docs/team-page-options/brief.md` (three isolated previews; no new layout chosen) |
 | Cleaning page, ordered pack down, repeat schedule, checks, Pass verification and team release | `docs/cleaning-schedule.md`, `docs/cleaning-options/brief.md` (chosen C + A), `docs/cleaning-options/implementation.md`, `docs/cleaning-options/release-toggle.md`; keep unbranded templates in `js/cleaning-schedule.js`, separate from history; anchored intervals must agree in client and rules |
 | Compact Cleaning management, chosen M1 groups and responsive repeat-task editor | `docs/cleaning-chef-options/implementation.md` (contract and current verification), `docs/cleaning-chef-options/brief.md` (designs and council) |
 | Chef to-do notebook layout | `docs/chef-todo-options/brief.md` (Chosen, implementation contract) |

@@ -1,0 +1,731 @@
+{
+  "environment": {
+    "kind": "Isolated, in-memory, synthetic prototypes",
+    "reproduction": "Install existing test dependencies with cd tests && npm ci; from the repository root run node docs/team-page-options/verify-previews.cjs --ready. TEAM_PREVIEW_PLAYWRIGHT may point to an existing playwright-core installation; TEAM_PREVIEW_ROOT and TEAM_PREVIEW_PORT are optional overrides.",
+    "viewportHeight": 844,
+    "fonts": "Original local Barlow, Barlow Condensed and Caveat faces",
+    "taskCount": "Native picker open + option choice count as two tap-equivalent actions; scroll and typing excluded. Save includes acknowledgement.",
+    "prototypeHashes": {
+      "preview.js": "3787bb9bf36a49e24fc67a6835d0b6e6856275ee65c6157d3eebbf20ea398690",
+      "preview.css": "b7ea5d5473721f1cd6d97e72d2c86c8f38d601e9927a750b4f2a86f450cfff03",
+      "preview.html": "be9cdbb0fe8c741c7715926f3bed8c78c0fc0acb197c796c3411e2b32074fc59"
+    }
+  },
+  "measurements": [],
+  "tasks": [],
+  "stateChecks": [],
+  "adversarial": [
+    {
+      "name": "b/390/stage: new-context boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "stage",
+        "label": "3 Review",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          184,
+          63,
+          21,
+          1
+        ],
+        "border": "rgb(184, 63, 21)",
+        "borderWidth": "1px",
+        "boundaryContrast": 5.265825534421191,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "b/390/save: new-context boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "save",
+        "label": "Save Tuesday 10 November",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          28,
+          29,
+          31,
+          1
+        ],
+        "border": "rgb(28, 29, 31)",
+        "borderWidth": "1px",
+        "boundaryContrast": 15.90398420546879,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "b/390: new-context controls have no browser errors",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "b/768/stage: new-context boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "stage",
+        "label": "3 Review",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          184,
+          63,
+          21,
+          1
+        ],
+        "border": "rgb(184, 63, 21)",
+        "borderWidth": "1px",
+        "boundaryContrast": 5.265825534421191,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "b/768/save: new-context boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "save",
+        "label": "Save Tuesday 10 November",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          28,
+          29,
+          31,
+          1
+        ],
+        "border": "rgb(28, 29, 31)",
+        "borderWidth": "1px",
+        "boundaryContrast": 15.90398420546879,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "b/768: new-context controls have no browser errors",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "b/1280/stage: new-context boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "stage",
+        "label": "3 Review",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          184,
+          63,
+          21,
+          1
+        ],
+        "border": "rgb(184, 63, 21)",
+        "borderWidth": "1px",
+        "boundaryContrast": 5.265825534421191,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "b/1280/save: new-context boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "save",
+        "label": "Save Tuesday 10 November",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          28,
+          29,
+          31,
+          1
+        ],
+        "border": "rgb(28, 29, 31)",
+        "borderWidth": "1px",
+        "boundaryContrast": 15.90398420546879,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "b/1280: new-context controls have no browser errors",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "c/390/toggle-dates: new-context boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "toggle-dates",
+        "label": "Choose date · Tue, 10 Nov",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          255,
+          255,
+          255,
+          1
+        ],
+        "border": "rgb(107, 112, 119)",
+        "borderWidth": "1px",
+        "boundaryContrast": 4.703728547805816,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "c/390/save: new-context boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "save",
+        "label": "Save Tuesday 10 November",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          28,
+          29,
+          31,
+          1
+        ],
+        "border": "rgb(28, 29, 31)",
+        "borderWidth": "1px",
+        "boundaryContrast": 15.90398420546879,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "c/390: new-context controls have no browser errors",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "c/768/toggle-dates: new-context boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "toggle-dates",
+        "label": "Choose date · Tue, 10 Nov",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          255,
+          255,
+          255,
+          1
+        ],
+        "border": "rgb(107, 112, 119)",
+        "borderWidth": "1px",
+        "boundaryContrast": 4.703728547805816,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "c/768/save: new-context boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "save",
+        "label": "Save Tuesday 10 November",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          28,
+          29,
+          31,
+          1
+        ],
+        "border": "rgb(28, 29, 31)",
+        "borderWidth": "1px",
+        "boundaryContrast": 15.90398420546879,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "c/768: new-context controls have no browser errors",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "c/1280/toggle-dates: new-context boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "toggle-dates",
+        "label": "Choose date · Tue, 10 Nov",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          255,
+          255,
+          255,
+          1
+        ],
+        "border": "rgb(107, 112, 119)",
+        "borderWidth": "1px",
+        "boundaryContrast": 4.703728547805816,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "c/1280/save: new-context boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "save",
+        "label": "Save Tuesday 10 November",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          28,
+          29,
+          31,
+          1
+        ],
+        "border": "rgb(28, 29, 31)",
+        "borderWidth": "1px",
+        "boundaryContrast": 15.90398420546879,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "c/1280: new-context controls have no browser errors",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "All captures used one unchanged prototype source set",
+      "pass": true
+    }
+  ],
+  "limitations": [
+    "No production records, Firebase persistence, server permissions, device locks, handover or reload recovery are tested.",
+    "Browser checks and role-based design review do not establish actual kitchen task frequency or staff usability."
+  ],
+  "focusControls": [
+    {
+      "design": "b",
+      "width": 390,
+      "action": "stage",
+      "label": "3 Review",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        184,
+        63,
+        21,
+        1
+      ],
+      "border": "rgb(184, 63, 21)",
+      "borderWidth": "1px",
+      "boundaryContrast": 5.265825534421191,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "b",
+      "width": 390,
+      "action": "save",
+      "label": "Save Tuesday 10 November",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        28,
+        29,
+        31,
+        1
+      ],
+      "border": "rgb(28, 29, 31)",
+      "borderWidth": "1px",
+      "boundaryContrast": 15.90398420546879,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "b",
+      "width": 768,
+      "action": "stage",
+      "label": "3 Review",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        184,
+        63,
+        21,
+        1
+      ],
+      "border": "rgb(184, 63, 21)",
+      "borderWidth": "1px",
+      "boundaryContrast": 5.265825534421191,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "b",
+      "width": 768,
+      "action": "save",
+      "label": "Save Tuesday 10 November",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        28,
+        29,
+        31,
+        1
+      ],
+      "border": "rgb(28, 29, 31)",
+      "borderWidth": "1px",
+      "boundaryContrast": 15.90398420546879,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "b",
+      "width": 1280,
+      "action": "stage",
+      "label": "3 Review",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        184,
+        63,
+        21,
+        1
+      ],
+      "border": "rgb(184, 63, 21)",
+      "borderWidth": "1px",
+      "boundaryContrast": 5.265825534421191,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "b",
+      "width": 1280,
+      "action": "save",
+      "label": "Save Tuesday 10 November",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        28,
+        29,
+        31,
+        1
+      ],
+      "border": "rgb(28, 29, 31)",
+      "borderWidth": "1px",
+      "boundaryContrast": 15.90398420546879,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "c",
+      "width": 390,
+      "action": "toggle-dates",
+      "label": "Choose date · Tue, 10 Nov",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        255,
+        255,
+        255,
+        1
+      ],
+      "border": "rgb(107, 112, 119)",
+      "borderWidth": "1px",
+      "boundaryContrast": 4.703728547805816,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "c",
+      "width": 390,
+      "action": "save",
+      "label": "Save Tuesday 10 November",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        28,
+        29,
+        31,
+        1
+      ],
+      "border": "rgb(28, 29, 31)",
+      "borderWidth": "1px",
+      "boundaryContrast": 15.90398420546879,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "c",
+      "width": 768,
+      "action": "toggle-dates",
+      "label": "Choose date · Tue, 10 Nov",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        255,
+        255,
+        255,
+        1
+      ],
+      "border": "rgb(107, 112, 119)",
+      "borderWidth": "1px",
+      "boundaryContrast": 4.703728547805816,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "c",
+      "width": 768,
+      "action": "save",
+      "label": "Save Tuesday 10 November",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        28,
+        29,
+        31,
+        1
+      ],
+      "border": "rgb(28, 29, 31)",
+      "borderWidth": "1px",
+      "boundaryContrast": 15.90398420546879,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "c",
+      "width": 1280,
+      "action": "toggle-dates",
+      "label": "Choose date · Tue, 10 Nov",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        255,
+        255,
+        255,
+        1
+      ],
+      "border": "rgb(107, 112, 119)",
+      "borderWidth": "1px",
+      "boundaryContrast": 4.703728547805816,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "c",
+      "width": 1280,
+      "action": "save",
+      "label": "Save Tuesday 10 November",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        28,
+        29,
+        31,
+        1
+      ],
+      "border": "rgb(28, 29, 31)",
+      "borderWidth": "1px",
+      "boundaryContrast": 15.90398420546879,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Today's team council preview</title>
+  <link rel="stylesheet" href="preview.css">
+</head>
+<body>
+  <a class="skip" href="#preview-root">Skip to the team</a>
+  <header class="app-header">
+    <div class="brand"><span class="wordmark">KB</span><div><strong>Kitchen Book</strong><small id="preview-label">Council preview · fictional staff</small></div></div>
+    <nav class="desktop-nav" aria-label="Existing app navigation, illustration only"><span>Recipes</span><span>Prep</span><span>Orders</span><span>Wastage</span><span>Transfers</span><span>Cleaning</span></nav>
+    <div class="header-context">Chef view</div>
+  </header>
+  <div class="page-frame">
+    <aside class="chef-sidebar" aria-label="Existing chef navigation, illustration only"><strong>Chef panel</strong><span>Today</span><span>Reports</span><span class="current">Team</span><span>Kitchen</span><span>Prep</span></aside>
+    <main>
+      <div class="chef-context"><div><span>Chef panel</span><strong>Team</strong></div><nav aria-label="Existing Team views, illustration only"><span class="current">Today's team</span><span>Manage staff</span><span>Meeting minutes</span></nav></div>
+      <div id="preview-root"></div>
+      <aside id="simulation-tools" class="simulation-tools" aria-label="Council preview controls">
+        <h2>Isolated council preview</h2>
+        <p>Fictional staff and in-memory data. Save simulates an acknowledgement. This page has no connection to the live Kitchen Book.</p>
+        <nav class="prototype-links" aria-label="Compare designs"><a href="?design=A">A · Open worksheet</a><a href="?design=B">B · Plan in stages</a><a href="?design=C">C · Roster and focus</a></nav>
+        <div class="simulation-fields">
+          <label>Frame<select id="frame-control"><option value="team">Direct Team</option><option value="chef">Chef panel</option></select></label>
+          <label>Text<select id="text-control"><option value="normal">Normal</option><option value="xlarge">Largest</option></select></label>
+          <label>Save response<select id="save-mode"><option value="ok">Acknowledged</option><option value="hold">Held pending</option><option value="fail">Failed</option><option value="conflict">Newer version</option></select></label>
+          <button id="release-save">Release held Save</button>
+          <label>Day state<select id="day-state"><option value="normal">Saved day</option><option value="empty">Confirmed empty</option><option value="loading">Checking</option><option value="failed-read">Unavailable</option><option value="past">Read-only past day</option></select></label>
+          <button id="reset-preview">Reset fictional data</button>
+        </div>
+        <p>Role enforcement, device locks, reload recovery and real server conflicts are not demonstrated by this preview.</p>
+      </aside>
+    </main>
+  </div>
+  <nav class="phone-nav" aria-label="Existing app navigation, illustration only"><span>Recipes</span><span>Prep</span><span>Orders</span><span>Wastage</span><span>Transfers</span><span>Cleaning</span></nav>
+  <script src="preview.js"></script>
+  <script>
+    const query = new URLSearchParams(location.search);
+    const design = ['A', 'B', 'C'].includes(query.get('design')) ? query.get('design') : 'A';
+    const frame = query.get('frame') === 'chef' ? 'chef' : 'team';
+    document.body.dataset.frame = frame;
+    document.body.dataset.design = design;
+    if (query.get('text') === 'xlarge') document.documentElement.dataset.text = 'xlarge';
+    document.getElementById('preview-label').textContent = 'Council preview ' + design + ' · fictional staff';
+    document.getElementById('frame-control').value = frame;
+    document.getElementById('text-control').value = query.get('text') || 'normal';
+    function navigateSetting(key, value) { query.set(key, value); location.search = query.toString(); }
+    document.getElementById('frame-control').onchange = e => navigateSetting('frame', e.target.value);
+    document.getElementById('text-control').onchange = e => navigateSetting('text', e.target.value);
+    document.getElementById('save-mode').onchange = e => window.preview.setSaveMode(e.target.value);
+    document.getElementById('day-state').onchange = e => window.preview.setScenario(e.target.value);
+    document.getElementById('release-save').onclick = () => window.preview.releaseSave();
+    document.getElementById('reset-preview').onclick = () => window.preview.reset();
+  </script>
+</body>
+</html>

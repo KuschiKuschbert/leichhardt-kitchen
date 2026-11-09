@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Per-person service and section review, 10 November 2026
+
+The head chef requested both service/shift and section pickers beside each selected person and asked the council whether another Today's team improvement is worthwhile. [The feature review](team-page-options/brief.md) freezes released source `29258e6`, records current-app synthetic measurements, the same current-contract packet and five independent Round 1 verdicts: Build smaller, 5 of 5. Three isolated interactive designs compare an open worksheet, planning stages and roster with focused details. Six fresh Round 2 reviewers rank C first four times and A twice, scores C 16, A 14, B 6. The brief recommends original C, records dissent and rejects an all-three mix with explicit contributions/costs. Synthetic browser evidence distinguishes Preview from delivered-app density and records both C keyboard-focus and B stage-label repairs. They retain the approved surface/status meanings and required planner capabilities; production recovery/access/time guarantees remain implementation checks. The new A/B/C labels are separate from the released C worksheet. No new layout is chosen; application code, roles, rules, production data and the live planner remain unchanged.
+
 ## Council design references, 9 November 2026
 
 The head chef requested the seven-app recommendations as standing council guidance. The [service council](../.claude/skills/service-council/SKILL.md#design-references) owns the principles, evidence questions and comparison format. Its reviewer briefs pass them to every reviewer in both rounds; small changes use a short reference-fit note. Whole-app audits share the criteria through section 5 of their brief. Current contracts and approved designs win. `CLAUDE.md`, the README and the pull request template point sessions to this guidance; the advisory Council check remains unchanged.

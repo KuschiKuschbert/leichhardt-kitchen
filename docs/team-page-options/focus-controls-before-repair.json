@@ -1,0 +1,66 @@
+{
+  "environment": {
+    "note": "Archived execution summary before the CSS scroll-padding repair. Detailed final control samples are in focus-controls.json.",
+    "prototypeHashes": {
+      "preview.js": "3787bb9bf36a49e24fc67a6835d0b6e6856275ee65c6157d3eebbf20ea398690",
+      "preview.css": "580414f0a0f84a3cf207bdf2d266530fc1e865900a99532ca8024fe6b88c91f4",
+      "preview.html": "be9cdbb0fe8c741c7715926f3bed8c78c0fc0acb197c796c3411e2b32074fc59"
+    }
+  },
+  "scenes": 0,
+  "checks": 34,
+  "failures": [
+    {
+      "name": "C/xlarge/last service: keyboard reaches an unobscured control",
+      "pass": false,
+      "detail": {
+        "action": "service",
+        "top": 775.40625,
+        "bottom": 819.40625,
+        "saveTop": 665.5,
+        "navTop": 776,
+        "hit": false,
+        "focusVisible": true
+      }
+    },
+    {
+      "name": "C/xlarge/last section: keyboard reaches an unobscured control",
+      "pass": false,
+      "detail": {
+        "action": "section",
+        "top": 775.40625,
+        "bottom": 819.40625,
+        "saveTop": 665.5,
+        "navTop": 776,
+        "hit": false,
+        "focusVisible": true
+      }
+    },
+    {
+      "name": "C/long/last service: keyboard reaches an unobscured control",
+      "pass": false,
+      "detail": {
+        "action": "service",
+        "top": 727.03125,
+        "bottom": 771.03125,
+        "saveTop": 665.5,
+        "navTop": 776,
+        "hit": false,
+        "focusVisible": true
+      }
+    },
+    {
+      "name": "C/long/last section: keyboard reaches an unobscured control",
+      "pass": false,
+      "detail": {
+        "action": "section",
+        "top": 727.03125,
+        "bottom": 771.03125,
+        "saveTop": 665.5,
+        "navTop": 776,
+        "hit": false,
+        "focusVisible": true
+      }
+    }
+  ]
+}
