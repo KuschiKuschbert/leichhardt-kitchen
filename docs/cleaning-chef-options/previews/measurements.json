@@ -1,0 +1,638 @@
+{
+  "source": "Standalone concepts, 51 public template drafts, fictional progress, native fonts",
+  "screenshotFrame": "frame=1 removes design-lab controls and keeps Design preview / not live in the product frame",
+  "checks": [
+    {
+      "name": "a/390 no page overflow",
+      "pass": true
+    },
+    {
+      "name": "a/390 targets 44 px",
+      "pass": true
+    },
+    {
+      "name": "a/390 51 distinct templates",
+      "pass": true
+    },
+    {
+      "name": "a/390 floor remains one task",
+      "pass": true
+    },
+    {
+      "name": "a/390 ordered Pans first six",
+      "pass": true
+    },
+    {
+      "name": "a/390 ordered Pans final four",
+      "pass": true
+    },
+    {
+      "name": "a/390 checks kept across groups",
+      "pass": true
+    },
+    {
+      "name": "a/390 search spans all groups",
+      "pass": true
+    },
+    {
+      "name": "a/390 schedule excludes daily list",
+      "pass": true
+    },
+    {
+      "name": "a/390 Add is reachable",
+      "pass": true
+    },
+    {
+      "name": "a/390 Add opens one form",
+      "pass": true
+    },
+    {
+      "name": "a/390 future view cannot record",
+      "pass": true
+    },
+    {
+      "name": "a/390 no browser errors",
+      "pass": true
+    },
+    {
+      "name": "a/768 no page overflow",
+      "pass": true
+    },
+    {
+      "name": "a/768 targets 44 px",
+      "pass": true
+    },
+    {
+      "name": "a/768 51 distinct templates",
+      "pass": true
+    },
+    {
+      "name": "a/768 floor remains one task",
+      "pass": true
+    },
+    {
+      "name": "a/768 ordered Pans first six",
+      "pass": true
+    },
+    {
+      "name": "a/768 ordered Pans final four",
+      "pass": true
+    },
+    {
+      "name": "a/768 checks kept across groups",
+      "pass": true
+    },
+    {
+      "name": "a/768 search spans all groups",
+      "pass": true
+    },
+    {
+      "name": "a/768 schedule excludes daily list",
+      "pass": true
+    },
+    {
+      "name": "a/768 Add is reachable",
+      "pass": true
+    },
+    {
+      "name": "a/768 Add opens one form",
+      "pass": true
+    },
+    {
+      "name": "a/768 future view cannot record",
+      "pass": true
+    },
+    {
+      "name": "a/768 no browser errors",
+      "pass": true
+    },
+    {
+      "name": "a/1280 no page overflow",
+      "pass": true
+    },
+    {
+      "name": "a/1280 targets 44 px",
+      "pass": true
+    },
+    {
+      "name": "a/1280 51 distinct templates",
+      "pass": true
+    },
+    {
+      "name": "a/1280 floor remains one task",
+      "pass": true
+    },
+    {
+      "name": "a/1280 ordered Pans first six",
+      "pass": true
+    },
+    {
+      "name": "a/1280 ordered Pans final four",
+      "pass": true
+    },
+    {
+      "name": "a/1280 checks kept across groups",
+      "pass": true
+    },
+    {
+      "name": "a/1280 search spans all groups",
+      "pass": true
+    },
+    {
+      "name": "a/1280 schedule excludes daily list",
+      "pass": true
+    },
+    {
+      "name": "a/1280 Add is reachable",
+      "pass": true
+    },
+    {
+      "name": "a/1280 Add opens one form",
+      "pass": true
+    },
+    {
+      "name": "a/1280 future view cannot record",
+      "pass": true
+    },
+    {
+      "name": "a/1280 no browser errors",
+      "pass": true
+    },
+    {
+      "name": "b/390 no page overflow",
+      "pass": true
+    },
+    {
+      "name": "b/390 targets 44 px",
+      "pass": true
+    },
+    {
+      "name": "b/390 51 distinct templates",
+      "pass": true
+    },
+    {
+      "name": "b/390 floor remains one task",
+      "pass": true
+    },
+    {
+      "name": "b/390 ordered Pans first six",
+      "pass": true
+    },
+    {
+      "name": "b/390 ordered Pans final four",
+      "pass": true
+    },
+    {
+      "name": "b/390 checks kept across groups",
+      "pass": true
+    },
+    {
+      "name": "b/390 search spans all groups",
+      "pass": true
+    },
+    {
+      "name": "b/390 schedule excludes daily list",
+      "pass": true
+    },
+    {
+      "name": "b/390 Add is reachable",
+      "pass": true
+    },
+    {
+      "name": "b/390 Add opens one form",
+      "pass": true
+    },
+    {
+      "name": "b/390 future view cannot record",
+      "pass": true
+    },
+    {
+      "name": "b/390 no browser errors",
+      "pass": true
+    },
+    {
+      "name": "b/768 no page overflow",
+      "pass": true
+    },
+    {
+      "name": "b/768 targets 44 px",
+      "pass": true
+    },
+    {
+      "name": "b/768 51 distinct templates",
+      "pass": true
+    },
+    {
+      "name": "b/768 floor remains one task",
+      "pass": true
+    },
+    {
+      "name": "b/768 ordered Pans first six",
+      "pass": true
+    },
+    {
+      "name": "b/768 ordered Pans final four",
+      "pass": true
+    },
+    {
+      "name": "b/768 checks kept across groups",
+      "pass": true
+    },
+    {
+      "name": "b/768 search spans all groups",
+      "pass": true
+    },
+    {
+      "name": "b/768 schedule excludes daily list",
+      "pass": true
+    },
+    {
+      "name": "b/768 Add is reachable",
+      "pass": true
+    },
+    {
+      "name": "b/768 Add opens one form",
+      "pass": true
+    },
+    {
+      "name": "b/768 future view cannot record",
+      "pass": true
+    },
+    {
+      "name": "b/768 no browser errors",
+      "pass": true
+    },
+    {
+      "name": "b/1280 no page overflow",
+      "pass": true
+    },
+    {
+      "name": "b/1280 targets 44 px",
+      "pass": true
+    },
+    {
+      "name": "b/1280 51 distinct templates",
+      "pass": true
+    },
+    {
+      "name": "b/1280 floor remains one task",
+      "pass": true
+    },
+    {
+      "name": "b/1280 ordered Pans first six",
+      "pass": true
+    },
+    {
+      "name": "b/1280 ordered Pans final four",
+      "pass": true
+    },
+    {
+      "name": "b/1280 checks kept across groups",
+      "pass": true
+    },
+    {
+      "name": "b/1280 search spans all groups",
+      "pass": true
+    },
+    {
+      "name": "b/1280 schedule excludes daily list",
+      "pass": true
+    },
+    {
+      "name": "b/1280 Add is reachable",
+      "pass": true
+    },
+    {
+      "name": "b/1280 Add opens one form",
+      "pass": true
+    },
+    {
+      "name": "b/1280 future view cannot record",
+      "pass": true
+    },
+    {
+      "name": "b/1280 no browser errors",
+      "pass": true
+    },
+    {
+      "name": "c/390 no page overflow",
+      "pass": true
+    },
+    {
+      "name": "c/390 targets 44 px",
+      "pass": true
+    },
+    {
+      "name": "c/390 51 distinct templates",
+      "pass": true
+    },
+    {
+      "name": "c/390 floor remains one task",
+      "pass": true
+    },
+    {
+      "name": "c/390 ordered Pans first six",
+      "pass": true
+    },
+    {
+      "name": "c/390 ordered Pans final four",
+      "pass": true
+    },
+    {
+      "name": "c/390 checks kept across groups",
+      "pass": true
+    },
+    {
+      "name": "c/390 search spans all groups",
+      "pass": true
+    },
+    {
+      "name": "c/390 schedule excludes daily list",
+      "pass": true
+    },
+    {
+      "name": "c/390 Add is reachable",
+      "pass": true
+    },
+    {
+      "name": "c/390 Add opens one form",
+      "pass": true
+    },
+    {
+      "name": "c/390 future view cannot record",
+      "pass": true
+    },
+    {
+      "name": "c/390 no browser errors",
+      "pass": true
+    },
+    {
+      "name": "c/768 no page overflow",
+      "pass": true
+    },
+    {
+      "name": "c/768 targets 44 px",
+      "pass": true
+    },
+    {
+      "name": "c/768 51 distinct templates",
+      "pass": true
+    },
+    {
+      "name": "c/768 floor remains one task",
+      "pass": true
+    },
+    {
+      "name": "c/768 ordered Pans first six",
+      "pass": true
+    },
+    {
+      "name": "c/768 ordered Pans final four",
+      "pass": true
+    },
+    {
+      "name": "c/768 checks kept across groups",
+      "pass": true
+    },
+    {
+      "name": "c/768 search spans all groups",
+      "pass": true
+    },
+    {
+      "name": "c/768 schedule excludes daily list",
+      "pass": true
+    },
+    {
+      "name": "c/768 Add is reachable",
+      "pass": true
+    },
+    {
+      "name": "c/768 Add opens one form",
+      "pass": true
+    },
+    {
+      "name": "c/768 future view cannot record",
+      "pass": true
+    },
+    {
+      "name": "c/768 no browser errors",
+      "pass": true
+    },
+    {
+      "name": "c/1280 no page overflow",
+      "pass": true
+    },
+    {
+      "name": "c/1280 targets 44 px",
+      "pass": true
+    },
+    {
+      "name": "c/1280 51 distinct templates",
+      "pass": true
+    },
+    {
+      "name": "c/1280 floor remains one task",
+      "pass": true
+    },
+    {
+      "name": "c/1280 ordered Pans first six",
+      "pass": true
+    },
+    {
+      "name": "c/1280 ordered Pans final four",
+      "pass": true
+    },
+    {
+      "name": "c/1280 checks kept across groups",
+      "pass": true
+    },
+    {
+      "name": "c/1280 search spans all groups",
+      "pass": true
+    },
+    {
+      "name": "c/1280 schedule excludes daily list",
+      "pass": true
+    },
+    {
+      "name": "c/1280 Add is reachable",
+      "pass": true
+    },
+    {
+      "name": "c/1280 Add opens one form",
+      "pass": true
+    },
+    {
+      "name": "c/1280 future view cannot record",
+      "pass": true
+    },
+    {
+      "name": "c/1280 no browser errors",
+      "pass": true
+    }
+  ],
+  "measurements": [
+    {
+      "design": "a",
+      "width": 390,
+      "docWidth": 390,
+      "height": 936,
+      "frameHeight": 900,
+      "fullTaskRows": 0,
+      "fullGroupSummaries": 5,
+      "smallTargets": [],
+      "taskRowsInDOM": 0,
+      "groupTitles": [
+        "General cleaning",
+        "Hot larder",
+        "Grill",
+        "Pans",
+        "Final floor clean"
+      ]
+    },
+    {
+      "design": "a",
+      "width": 768,
+      "docWidth": 768,
+      "height": 934,
+      "frameHeight": 898,
+      "fullTaskRows": 0,
+      "fullGroupSummaries": 5,
+      "smallTargets": [],
+      "taskRowsInDOM": 0,
+      "groupTitles": [
+        "General cleaning",
+        "Hot larder",
+        "Grill",
+        "Pans",
+        "Final floor clean"
+      ]
+    },
+    {
+      "design": "a",
+      "width": 1280,
+      "docWidth": 1280,
+      "height": 934,
+      "frameHeight": 898,
+      "fullTaskRows": 0,
+      "fullGroupSummaries": 5,
+      "smallTargets": [],
+      "taskRowsInDOM": 0,
+      "groupTitles": [
+        "General cleaning",
+        "Hot larder",
+        "Grill",
+        "Pans",
+        "Final floor clean"
+      ]
+    },
+    {
+      "design": "b",
+      "width": 390,
+      "docWidth": 390,
+      "height": 1217,
+      "frameHeight": 1181,
+      "fullTaskRows": 1,
+      "fullGroupSummaries": 5,
+      "smallTargets": [],
+      "taskRowsInDOM": 5,
+      "groupTitles": [
+        "General cleaning",
+        "Hot larder",
+        "Grill",
+        "Pans",
+        "Final floor clean"
+      ]
+    },
+    {
+      "design": "b",
+      "width": 768,
+      "docWidth": 768,
+      "height": 1419,
+      "frameHeight": 1383,
+      "fullTaskRows": 4,
+      "fullGroupSummaries": 5,
+      "smallTargets": [],
+      "taskRowsInDOM": 5,
+      "groupTitles": [
+        "General cleaning",
+        "Hot larder",
+        "Grill",
+        "Pans",
+        "Final floor clean"
+      ]
+    },
+    {
+      "design": "b",
+      "width": 1280,
+      "docWidth": 1280,
+      "height": 999,
+      "frameHeight": 963,
+      "fullTaskRows": 4,
+      "fullGroupSummaries": 5,
+      "smallTargets": [],
+      "taskRowsInDOM": 5,
+      "groupTitles": [
+        "General cleaning",
+        "Hot larder",
+        "Grill",
+        "Pans",
+        "Final floor clean"
+      ]
+    },
+    {
+      "design": "c",
+      "width": 390,
+      "docWidth": 390,
+      "height": 1341,
+      "frameHeight": 1305,
+      "fullTaskRows": 0,
+      "fullGroupSummaries": 5,
+      "smallTargets": [],
+      "taskRowsInDOM": 5,
+      "groupTitles": [
+        "General cleaning",
+        "Hot larder",
+        "Grill",
+        "Pans",
+        "Final floor clean"
+      ]
+    },
+    {
+      "design": "c",
+      "width": 768,
+      "docWidth": 768,
+      "height": 1380,
+      "frameHeight": 1344,
+      "fullTaskRows": 0,
+      "fullGroupSummaries": 0,
+      "smallTargets": [],
+      "taskRowsInDOM": 5,
+      "groupTitles": [
+        "General cleaning",
+        "Hot larder",
+        "Grill",
+        "Pans",
+        "Final floor clean"
+      ]
+    },
+    {
+      "design": "c",
+      "width": 1280,
+      "docWidth": 1280,
+      "height": 1380,
+      "frameHeight": 1344,
+      "fullTaskRows": 0,
+      "fullGroupSummaries": 0,
+      "smallTargets": [],
+      "taskRowsInDOM": 5,
+      "groupTitles": [
+        "General cleaning",
+        "Hot larder",
+        "Grill",
+        "Pans",
+        "Final floor clean"
+      ]
+    }
+  ]
+}

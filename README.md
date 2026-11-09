@@ -54,6 +54,8 @@ The [today's team designs](docs/todays-team-options/brief.md) (7 November 2026) 
 
 The [design and behaviour patterns](docs/design-patterns.md) (8 November 2026) list the pieces every screen is built from: the look, a page card, chips and pickers, Save, sheets, the top bar chips, list header lines, folds, admin blocks and chef hat tiles, each with its class and helper names. A new screen uses one or adds its own there; `tests/design-patterns.test.js` fails when a name on that page is gone from the code, or when a file declares one top-level name twice.
 
+The [compact Cleaning management exploration](docs/cleaning-chef-options/brief.md) compares three ways to shorten the list for admin, head and sous chefs: grouped notebook, task workspace and week board. It contains interactive previews and measured phone, tablet and desktop evidence. A, Grouped notebook, is recommended; no option has been chosen or applied to the app.
+
 ## Smoker batch cards (30 October 2026)
 
 Carolina Gold BBQ Sauce, House BBQ Sauce, Alabama White Sauce and Cornbread have batch cards and matching pan drawings. Cornbread and Alabama White link from the ingredients and drawing pins on both smoked boards. The supplied cards have no methods. The head chef instructed us to omit the pecan and unnamed ingredient entries. The drawings reuse existing sauce pans and the library's exact cornbread piece. House BBQ is not substituted for double-smoked BBQ without confirmation. See [smoker batch cards](docs/smoker-batches.md) for the source questions, saved-book overlay limitation and controlled-clock release verification.

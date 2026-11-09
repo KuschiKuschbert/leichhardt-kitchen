@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Compact Cleaning management designs, 9 November 2026
+
+The owner requested three alternatives to the endless list for admin, head chef and sous chefs. `docs/cleaning-chef-options/` contains the actual-app 51-template baseline, three isolated interactive concepts, phone/tablet/desktop screenshots and measurements. Round 1: Build smaller, five of five. Round 2: A first for six of six, A 18, B 12, C 6. A uses grouped notebook folds, B a task workspace, C a weekly group board. **No layout chosen yet and no application change.** Keep the existing schedule, checks, roles, event coverage, drafts and records authoritative. [Brief and recommendation](cleaning-chef-options/brief.md).
+
 ## Cleaning schedule and checks, 9 November 2026
 
 The owner requested the supplied unbranded 26-task programme and then the ordered 25-step Hot larder, Grill and Pans pack down in the existing Cleaning page. Keep the chosen C daily notebook + A chef week review. [The current contract](cleaning-schedule.md) covers explicit imports, Sunday deep cleaning, two-day drip trays anchored to 9 November 2026, immutable plans, per-event checks, Pass mapping, blocked states, audit snapshots and the temperature reminder. `js/cleaning-schedule.js` is a lazy runtime dependency, never a startup or saved-shell file.
