@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **10 November 2026, the mascot stays visible when the welcome fills its corner.** The varied welcome often reaches the mascot's corner on a phone, and it was left out. The owner said "I still want it to be visible when it has to move". From three mocked spots (keep the corner, on the Your day card, in the top bar) they took the recommendation: it stands on the Your day card, left of the clock, and nothing moves; with no card, the heading and date make room. [Kitchen mascot](kitchen-mascot.md).
+
 - **10 November 2026, the welcome follows the time of day and your shift.** The owner asked to improve the varied welcome first, then do the mascot. From four upgrades they chose time of day and shift-aware ("Good morning", "Enjoy your break", "Last stretch", "Thanks for today"). Celebration wishes still come first. Team languages and more festival words were not chosen. [Behaviour and checks](staff-personalisation-options/brief.md#shift-and-time-of-day-welcomes-10-november-2026).
 
 - **10 November 2026, vary the personalised welcome and combine it with celebrations.** The owner asked for a randomiser for different welcomes after the personalisation release. Keep the chosen Home heading and full staff name, vary its short opening words, and draw seasonal wishes from the existing calendar celebration. No new controls or service steps. [Behaviour, quick check and verification](staff-personalisation-options/brief.md#varied-welcomes-10-november-2026).

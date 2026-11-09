@@ -2107,7 +2107,7 @@
     homeWelcomePaint(); mascotSync();
   });
   // Reuse the calendar's settled state for clock corrections, midnight and the device's On/Off choice.
-  document.addEventListener('kb-seasonal-state', homeWelcomePaint);
+  document.addEventListener('kb-seasonal-state', function () { homeWelcomePaint(); mascotSync(); });
   // js/prep.js says when the person's shift moment or the hour changes (homePaint(), on its 30 second tick).
   // New words can reach the mascot's corner: let it check its place again (it steps aside when it would touch them).
   window.addEventListener('lk-greet', function () { homeWelcomePaint(); mascotSync(); });
