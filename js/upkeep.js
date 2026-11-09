@@ -410,8 +410,10 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
       e.stopPropagation();
       if (e.key === 'Escape') { e.preventDefault(); finish(false); return; }
       if (e.key === 'Tab') {
-        if (e.shiftKey && document.activeElement === keep) { e.preventDefault(); discard.focus(); }
-        else if (!e.shiftKey && document.activeElement === discard) { e.preventDefault(); keep.focus(); }
+        var controls = Array.prototype.filter.call(dialog.querySelectorAll('button'), function (el) { return !el.disabled && el.getClientRects().length; });
+        var first = controls[0], last = controls[controls.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
       }
     });
     document.body.appendChild(dialog); dialog.showModal();

@@ -551,7 +551,8 @@
     if (!wmenu) return;
     if (e.key === 'Escape') { e.preventDefault(); whoMenuClose(true); return; }
     if (e.key === 'Tab') {
-      var f = wmenu.querySelectorAll('.wm-a'), first = f[0], last = f[f.length - 1];
+      var f = Array.prototype.filter.call(wmenu.querySelectorAll('.wm-a, .ux-modal-close'), function (el) { return !el.disabled && el.getClientRects().length; }), first = f[0], last = f[f.length - 1];
+      if (!f.length) return;
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }

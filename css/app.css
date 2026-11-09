@@ -1028,6 +1028,19 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .ux-swipe-handle { touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
 .ux-swipe-dragging { transition: none; }
 .ux-swipe-dragging .ux-swipe-handle { cursor: grabbing; }
+.ux-modal-close { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .ux-swipe .ux-modal-head { position: relative; padding-right: 60px; }
+  .ux-swipe .ux-picker-head.ux-modal-head { padding-right: 1.2rem; }
+  .ux-modal-title { padding-right: 52px; min-height: 44px; box-sizing: border-box; display: flex; align-items: center; }
+  .ux-modal-close { display: inline-flex; align-items: center; justify-content: center; position: absolute; right: 8px; top: 4px; width: 44px; height: 44px; padding: 0; border: 0; border-radius: var(--r-act); background: transparent; color: inherit; font: 400 1.375rem/1 var(--body); cursor: pointer; }
+  .sheet > .ux-modal-close { top: 25px; }
+  .mlp > .ux-modal-close { top: 18px; }
+  .ux-modal-close:hover { background: color-mix(in srgb, currentColor 10%, transparent); }
+  .ux-modal-close:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .ux-modal-close:disabled { opacity: 0.4; cursor: default; }
+  .nt.nt-board .nt-head.ux-modal-head { padding-right: 60px; }
+}
 @media (prefers-reduced-motion: reduce) { .ux-swipe { transition: none; } }
 .sheet h3 { margin: 0 0 6px; font: 700 1.35rem var(--display); }
 .sheet-list { display: flex; flex-direction: column; }

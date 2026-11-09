@@ -50,6 +50,23 @@
       else if (viewer) { var close = panel.querySelector('[data-gz="close"]'); if (close) close.click(); }
       else if (backdrop.isConnected) backdrop.click();
     });
+    // The same Cancel path is visible to mouse and keyboard users. Keep existing header controls single.
+    if (!panel.querySelector('.ux-picker-close, .fn-close, .cooling-close, .gz-x')) {
+      var header = panel.querySelector('.nt-head, .wm-me, .ux-picker-head, .mlp-h, :scope > h3, :scope > .wm-h');
+      if (header) {
+        var closeButton = panel.querySelector('.ux-modal-close');
+        header.classList.add(header.matches('h2, h3, p') ? 'ux-modal-title' : 'ux-modal-head');
+        if (!closeButton) {
+          closeButton = node('button', 'ux-modal-close', '×'); closeButton.type = 'button'; closeButton.setAttribute('aria-label', 'Close dialog');
+          closeButton.addEventListener('click', function (e) {
+            e.preventDefault(); e.stopPropagation();
+            if (panel.getAttribute('aria-busy') !== 'true' && !panel.inert) { var dismiss = swipePanels.get(panel); if (dismiss) dismiss(); }
+          });
+          (header.matches('h2, h3, p') ? panel : header).appendChild(closeButton);
+        }
+        var busy = panel.getAttribute('aria-busy') === 'true'; if (closeButton.disabled !== busy) closeButton.disabled = busy;
+      }
+    }
     slice(panel.querySelectorAll('.sheet-grip, :scope > h3, .nt-grip, .nt-head, .wm-grip, .wm-me, :scope > .wm-h:first-of-type, .cooling-head, .fn-grip, .fn-sheet-top, .mlp-eb, .mlp-h, .ux-picker-grip, .ux-picker-head h2, .gz-bar')).forEach(function (handle) {
       handle.classList.add('ux-swipe-handle');
     });
@@ -616,11 +633,12 @@
       if (r.type === 'attributes') {
         var source = r.target._uxUpdate ? r.target : r.target.closest('.ux-choice-source'); if (source && source._uxUpdate) source._uxUpdate();
         if (r.attributeName === 'data-text') scheduleChoices();
+        if (r.attributeName === 'aria-busy' && r.target.classList.contains('ux-swipe')) schedule();
       }
     });
     pruneChoices();
     if (added) schedule();
-  }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'aria-pressed', 'aria-checked', 'data-text'] });
+  }).observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['disabled', 'aria-pressed', 'aria-checked', 'aria-busy', 'data-text'] });
   document.addEventListener('focusin', function (event) { if (event.target._uxInlineChoice) lastTrigger = event.target; else if (!event.target.closest('.ux-picker, .ux-picker-trigger')) lastTrigger = null; });
   window.addEventListener('resize', scheduleChoices);
   if (document.fonts) { document.fonts.ready.then(scheduleChoices); document.fonts.addEventListener('loadingdone', scheduleChoices); }

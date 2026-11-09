@@ -4,6 +4,10 @@ Moved from `CLAUDE.md` on 8 November 2026, word for word, so the file every sess
 
 When a note or a file is added: its full row goes here, and one short row (what it covers, where it is) goes in `CLAUDE.md`. When the two disagree, the note itself wins, then `CLAUDE.md`.
 
+## Sheet and modal close button, 9 November 2026
+
+The owner requested a small × on bottom sheets and modals for non-touch screens. The shared `SwipeDismiss()` helper in `js/controls.js` adds a missing header close using the original cancellation callback. `css/app.css` controls pointer/hover visibility and title spacing; `js/app.js` and `js/upkeep.js` keep the visible control in their keyboard loops. [Contract and verification](adaptive-controls.md#swipe-to-close-9-november-2026); `tests/modal-close.test.js`, `tests/update-confirmation.test.js` and existing overlay/swipe checks. No reads, rules, stored fields or saved-shell manifest changes.
+
 ## Swipe to close, 9 November 2026
 
 The owner requested swiping to dismiss the existing sheets and modals. The small-change quick check retains the same layout, visible rows and service taps. `js/controls.js` shares header/grip drag handling and routes dismissal through the original backdrop/Cancel action; `css/app.css` adds pointer feedback and reduced-motion support. [Contract, council and verification](adaptive-controls.md#swipe-to-close-9-november-2026), [shared pattern](design-patterns.md#over-the-page); `tests/swipe-dismiss.test.js`, `tests/adaptive-controls.test.js`, `tests/overlays-back.test.js`. No new reads, rules or saved data.
