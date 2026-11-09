@@ -60,3 +60,24 @@ Actual runtime example images use synthetic records and a transient Diwali test 
 Focused contrast, responsive and seasonal behaviour checks, plus release/live evidence, are recorded in this change's pull request. Revert the two stylesheet changes to restore the earlier presentation; no saved data changes are needed.
 
 Local verification: the new colour/banner suite passes 117/117 and failed 21/117 on the earlier Home. Existing desktop 63/63, staff-first 82/82 and seasonal suites also pass. Checks cover all six language strings, stable uncut sizing, three desktop widths, normal/hot/focus contrast, keyboard menu access and preserved Home order. Release CI and deployed results are recorded in the pull request.
+
+
+## Team and prep card colours, 9 November 2026
+
+The owner asked for On with you and Prep by section to be colour coded differently from the rest. Both cards are used when scanning Home during the shift. Their matching pale paper previously made their purpose harder to pick out beside the newly amber work board.
+
+**Verdict: Build (quick check).** This is a small colour refinement of two existing cards, using the native palette and fonts. On with you uses the sage `--done-tint` surface and a `--done-ink` title/inset edge; Prep by section mixes existing steel with paper and uses dark titles with a slate inset edge. Your day stays charcoal, Now and next amber and Coming up plain paper. No new card, control, navigation step or read is introduced.
+
+The scheduled-team wording stays visible; colour is not a claim that someone is physically present or that a roster is complete. The expanded full-team list remains part of its parent card. Prep's orange and green progress bars retain their existing meaning. Body and secondary text remain dark, and Prep receives a dark keyboard focus outline with sufficient contrast against steel. Fonts, spacing, pins, targets and responsive layout are unchanged.
+
+Checking the current team takes zero taps, expanding the full roster one tap, and opening a prep section one tap, before and after. The inset edges do not consume content width. Runtime captures and measured geometry use synthetic people and work, with the app's existing fonts, at phone, tablet and desktop sizes. Verification results are recorded below and in the release PR.
+
+Only Home's stylesheet and documentation change. There are no JavaScript, Firestore, role, rollout, saved-data or read-budget changes. Revert the CSS change to restore the paper backgrounds; data needs no rollback.
+
+
+Measured against `877e946` with synthetic records: all card rectangles, font metrics, tap targets and visible row counts stay identical at 390, 768 and 1280 px, plus enlarged phone text and the expanded team. At 390 × 844, all three example coworkers remain visible; the team card stays 358 × 262.30 px and Prep by section 358 × 180.92 px. The separate Prep fixture keeps five complete rows above Add at y=716 px, before and after. There is no horizontal overflow.
+
+Rendered contrast is 5.20:1 for the sage heading and 6.38:1 for its secondary text; the steel heading/count is 13.01:1 and secondary text 5.50:1. Keyboard outlines are 5.20:1 on the team card and 13.01:1 on Prep. The five focused Home/layout/colour/design-pattern suites passed. These are focused visual and interaction checks, not a full accessibility audit. Final release checks belong to the PR.
+
+
+[Desktop before](home-staff-first/card-colours/before-1280.png), [desktop after](home-staff-first/card-colours/after-1280.png), [phone](home-staff-first/card-colours/after-390.png), [lower phone cards](home-staff-first/card-colours/after-390-lower.png), [tablet](home-staff-first/card-colours/after-768.png) and [all measurements](home-staff-first/card-colours/measurements.json) record 91 passing capture checks. Settled full-team hover text is 13.68:1. The inherited wrap of a long section label at extra-large phone text is identical before and after, with no clipped text.
