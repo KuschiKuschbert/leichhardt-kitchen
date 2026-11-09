@@ -4,6 +4,10 @@
 
 # Leichhardt Kitchen Book
 
+Operational colour meanings are shared across the book after the 9 November council review: orange for actions and attention, green for completed or assigned states, and red for failures, cancellation and destructive actions. Existing words, ticks and ownership badges keep each state clear; claimed Prep work stays readable. Artwork, allergens, wastage reasons, charts and the approved Home card colours retain their own meanings. [Inventory, council and checks](docs/colour-coding.md).
+
+The owner approved shared surface colours across books, blocks and banners: coloured covers, headers and spines with warm paper inside; steel for work, including Orders; sage for people; charcoal for live boards; quiet ivory for reference and forms. Amber remains attention or pending work, with green and red local to their stated outcomes. Layouts, controls and data behaviour stay intact. [Selected hybrid, council and release evidence](docs/surface-colours.md).
+
 Dismissible sheets and modals share the picker frame: warm paper, a named 44 px close × on touch and mouse, swipe from the header/grip, bottom sheets below 768 px and centred modals above. Closing keeps existing drafts and leaves pings unread; Save and Got it remain separate. Mandatory sign-in stays in place. [Contract and comparisons](docs/adaptive-controls.md#shared-modal-frame-9-november-2026).
 
 Head and sous chefs can plan staff sections ahead in **Today's team** (9 November 2026, chosen A). The notebook has a Monday to Sunday picker, previous/next week and Today, written day status, separate drafts and a Save naming the selected date. Future planning keeps staff's live day and break board on today. Past dates are read-only here. The [council, three designs and verification](docs/team-week-options/brief.md) record the choice and measured phone-space cost.
