@@ -1,0 +1,10 @@
+body { margin:0; background:var(--bg); color:var(--ink); }
+.pp-compare { padding:28px 30px 18px; width:1290px; margin:0 auto; box-sizing:border-box; }
+.pp-eyebrow { margin:0 0 10px;font:700 13px var(--display);letter-spacing:.13em;text-transform:uppercase;color:var(--small-ink); }
+.pp-compare h1 { margin:0 0 8px;font:700 38px/1.1 var(--display); }
+.pp-sub { font:400 17px/1.3 var(--body);margin:0 0 24px; }
+.pp-phones { display:grid;grid-template-columns:repeat(3,390px);gap:30px; }
+.pp-phones h2 { margin:0 0 5px;font:700 24px/1.2 var(--display); }
+.pp-phones p { margin:0 0 14px;font:400 16px/1.3 var(--body); }
+.pp-phones img { display:block;border:1px solid var(--line);box-sizing:border-box; }
+.pp-foot { margin:18px 0 0;font:400 14px var(--body);color:var(--muted); }

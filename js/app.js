@@ -388,17 +388,47 @@
      check waiting): then the no-signal sentence in place of Sign in, which would forget the person or the head chef mark.
      Each item is one line (shortened 22 Oct 2026); a second line shows only when it changes: today's section, Sign in
      with Google, and Sign out's "Not saved yet" (or "Not sent yet"). js/prep.js says when the person changes (lk-who). */
-  // the first letter of a name, for the disc on the hat and the menu's person card (a letter, never a symbol or space)
-  function initial(n) { var m = String(n || '').trim().match(/[A-Za-z0-9\u00C0-\u024F]/); return m ? m[0].toUpperCase() : '?'; }
+  // One initial policy for the hat, menu and Settings, including names outside the Latin alphabet.
+  var initialSegmenter = window.Intl && Intl.Segmenter ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
+  function initial(n) {
+    var text = String(n || '').trim(), m;
+    if (initialSegmenter) {
+      var part = Array.from(initialSegmenter.segment(text)).find(function (x) { return /[\p{L}\p{N}]/u.test(x.segment); });
+      return part ? part.segment.toUpperCase() : '?';
+    }
+    m = text.match(/[\p{L}\p{N}]\p{M}*/u); return m ? m[0].toUpperCase() : '?';
+  }
   function whoMark(flip) {
     var n = window.LK_PREP && window.LK_PREP.whoName ? window.LK_PREP.whoName() : '';
     var rn = parseRoute().name, here = rn === 'settings' || rn === 'admin' ? ' aria-current="page"' : '';
     // open kitchen mail shows as a count on the hat, as it did on the Admin key
     var ml = mailOpen(), mt = ml ? ', ' + ml + ' open kitchen mail' : '';
     // who is signed in shows on the hat itself (3 Nov 2026, the Writing as row went): their initial in a small disc, and on
-    // a shared screen their first name next to it, so the next cook sees at a glance whose phone it is
+    // a shared screen their display name next to it, with the complete name in the menu and accessible label
     var sh = n && window.LK_DEVICE && window.LK_DEVICE.mode() === 'shared' ? ' is-shared' : '';
-    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + sh + (n && flip ? ' flip' : '') + '" data-who="menu" aria-haspopup="true" aria-expanded="' + !!wmenu + '"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + (n ? '<span class="wtop-av" aria-hidden="true">' + esc(initial(n)) + '</span>' : '') + '<span class="wtop-lbl wtop-who-n">' + esc(n.split(' ')[0]) + '</span>' + mailBadge(ml) + '</button>';
+    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + sh + (n && flip ? ' flip' : '') + '" data-who="menu" aria-haspopup="true" aria-expanded="' + !!wmenu + '"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + (n ? '<span class="wtop-av" aria-hidden="true">' + esc(initial(n)) + '</span>' : '') + '<span class="wtop-lbl wtop-who-n">' + esc(n) + '</span>' + mailBadge(ml) + '</button>';
+  }
+  // A roster rename patches current identity in place. Keep the open menu, focused control and draft warnings.
+  // Reuses the existing config event and held roster: no reads, listeners or separate profile cache.
+  function whoNamePaint() {
+    var P = window.LK_PREP, n = P && P.whoName ? P.whoName() : '', el = app.querySelector('.wtop-who');
+    if (el) {
+      var ml = mailOpen(), mt = ml ? ', ' + ml + ' open kitchen mail' : '';
+      el.setAttribute('title', (n ? 'Signed in as ' + n : 'Menu and Settings') + mt);
+      el.setAttribute('aria-label', (n ? 'Signed in as ' + n + ', menu and Settings' : 'Menu and Settings') + mt);
+      el.classList.toggle('on', !!n);
+      el.classList.toggle('is-shared', !!(n && window.LK_DEVICE && window.LK_DEVICE.mode() === 'shared'));
+      var label = el.querySelector('.wtop-who-n'), avatar = el.querySelector('.wtop-av');
+      if (label) label.textContent = n;
+      if (avatar) { if (n) avatar.textContent = initial(n); else avatar.remove(); }
+    }
+    if (!wmenu) return;
+    if (!n) { whoMenuClose(false, true); return; }
+    var name = wmenu.querySelector('.wm-me-n b'), mark = wmenu.querySelector('.wm-av'), out = wmenu.querySelector('.wm-out b'), nav = wmenu.querySelector('.wm');
+    if (name) name.textContent = n;
+    if (mark) mark.textContent = initial(n);
+    if (out) out.textContent = 'Not ' + n + '? Sign out';
+    if (nav) nav.setAttribute('aria-label', n);
   }
   /* Manage Recipes & Drawings (21 Oct 2026): the head chef only (js/prep.js bookEdit: their PIN as Head chef, or their
      Google device with nobody else signed in). Everyone else reads the recipes as before. */
@@ -483,7 +513,7 @@
           (m.day || []).map(function (l) { return '<small class="wm-day">' + esc(l) + '</small>'; }).join('') + '</span></div>' +
         // the empty line is where the first tap says "Not saved yet", or "Not sent yet" when only a change waits to send
         // (the click handler below)
-        '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Not ' + esc(n.split(' ')[0]) + '? Sign out</b><small aria-live="polite"></small></span></button>' +
+        '<button type="button" class="wm-a wm-out" data-who="out">' + ICON.exit + '<span><b>Not ' + esc(n) + '? Sign out</b><small aria-live="polite"></small></span></button>' +
         // a list since 8 Nov 2026 (redesign step 7): the jobs of every day first, then the rest. The same items for the same
         // people as the tiles had; only the order and the look changed.
         grid('Every day', [
@@ -589,6 +619,25 @@
   }
   /* Under the top bar, the recipe pages get their own tools row: how many recipes, and the Pass / Tiles switch. */
   var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste'], ['05', 'Transfers', '#/transfers', 'transfers', 'What other venues took from us, and what we took from them'], ['06', 'Cleaning', '#/cleaning', 'cleaning', 'The kitchen cleaning jobs for today and the week']];
+  // Chosen welcome A (10 Nov 2026): the complete authenticated staff name, with the kitchen date below.
+  // Only presentation of the held identity; public and locked visitors retain their neutral heading.
+  function homeHeading(dt, board) {
+    var P = window.LK_PREP, n = P && P.whoName ? P.whoName() : '';
+    var words = n ? 'Welcome, ' + n : board ? dt.toLocaleDateString('en-AU', { weekday: 'long' }) : 'Pick a docket';
+    var date = dt.toLocaleDateString('en-AU', { weekday: n || !board ? 'long' : undefined, day: 'numeric', month: 'long' });
+    return '<h2 class="wall-h' + (board ? ' hm-day' : '') + (n ? ' hm-welcome' : '') + (n && Array.from(n).length > 12 ? ' hm-welcome-long' : '') + (n && Array.from(n).length > 28 ? ' hm-welcome-compact' : '') + '" id="rtitle" tabindex="-1" data-home-heading="' + (board ? 'board' : 'dockets') + '">' + esc(words) + '</h2><p class="wall-date"><span data-home-date>' + esc(date) + '</span>' + (board ? ' · <span id="hm-time">' + esc(window.LK_TIME.clock(window.LK_TIME.now())) + '</span>' : '') + '</p>';
+  }
+  function homeWelcomePaint() {
+    if (parseRoute().name !== 'landing') return;
+    var h = app.querySelector('[data-home-heading]'), date = app.querySelector('[data-home-date]');
+    if (!h || !date) return;
+    var P = window.LK_PREP, n = P && P.whoName ? P.whoName() : '', board = h.getAttribute('data-home-heading') === 'board';
+    var parts = window.LK_TIME.day().split('-'), dt = new Date(+parts[0], +parts[1] - 1, +parts[2], 12);
+    h.textContent = n ? 'Welcome, ' + n : board ? dt.toLocaleDateString('en-AU', { weekday: 'long' }) : 'Pick a docket';
+    h.classList.toggle('hm-welcome', !!n); h.classList.toggle('hm-welcome-long', !!n && Array.from(n).length > 12);
+    h.classList.toggle('hm-welcome-compact', !!n && Array.from(n).length > 28);
+    date.textContent = dt.toLocaleDateString('en-AU', { weekday: n || !board ? 'long' : undefined, day: 'numeric', month: 'long' });
+  }
   /* Home (redesign step 2, 8 Nov 2026, head chef; docs/whole-app-redesign-options/brief.md): on the kraft board, the day as
      the heading, then personal section/shift and break/return, scheduled coworkers, work and Prep by section
      (js/prep.js fills and repaints them), then Coming up (celebrations and the next functions). The six dockets went: the tab bar on
@@ -596,19 +645,19 @@
      here the board shows what they hold. Signed out and Functions only keep the dockets as before. The day is the
      kitchen's (LK_TIME), never the phone's own date. */
   function homeBoard(dt) {
-    var P = window.LK_PREP, T = window.LK_TIME;
+    var P = window.LK_PREP;
     return '<div class="wall is-home">' + topBar() +
-      '<main id="main" class="wall-main"><h2 class="wall-h hm-day" id="rtitle" tabindex="-1">' + esc(dt.toLocaleDateString('en-AU', { weekday: 'long' })) + '</h2><p class="wall-date">' + esc(dt.toLocaleDateString('en-AU', { day: 'numeric', month: 'long' })) + ' · <span id="hm-time">' + esc(T.clock(T.now())) + '</span></p>' +
+      '<main id="main" class="wall-main">' + homeHeading(dt, true) +
       minCard() + (window.LK_FN && window.LK_FN.checkSlot ? window.LK_FN.checkSlot() : '') +
       // kb-home: where the celebrations hang their note (before it) and their Coming up line (in its slot)
       '<div class="hm kb-home">' + P.homeSlot() + '<section class="hm-paper hm-up" aria-labelledby="hm-up-h"><div class="hm-ph"><h3 class="hm-pt" id="hm-up-h">Coming up</h3></div><div class="hm-kb" data-kb-coming-slot></div>' + (P.homeCutSlot ? P.homeCutSlot() : '') + (window.LK_FN ? window.LK_FN.landSlot(true) : '') + '</section></div>' +
       installCard() + '<p class="wall-foot">Cook as written. Check with the head chef or sous chef before changing anything.</p></main>' + tabBar() + '</div>';
   }
   function viewLanding() {
-    var d = window.LK_TIME.day().split('-'), dt = new Date(+d[0], d[1] - 1, +d[2], 12), today = dt.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
+    var d = window.LK_TIME.day().split('-'), dt = new Date(+d[0], d[1] - 1, +d[2], 12);
     if (window.LK_PREP && window.LK_PREP.homeOn && window.LK_PREP.homeOn()) return homeBoard(dt);
     return '<div class="wall">' + topBar() + fnBand() +
-      '<main id="main" class="wall-main"><h2 class="wall-h" id="rtitle" tabindex="-1">Pick a docket</h2><p class="wall-date">' + esc(today) + '</p>' + minCard() + (window.LK_FN && window.LK_FN.checkSlot ? window.LK_FN.checkSlot() : '') + (window.LK_FN ? window.LK_FN.landSlot() : '') + installCard() +
+      '<main id="main" class="wall-main">' + homeHeading(dt, false) + minCard() + (window.LK_FN && window.LK_FN.checkSlot ? window.LK_FN.checkSlot() : '') + (window.LK_FN ? window.LK_FN.landSlot() : '') + installCard() +
       // with no signal before the kitchen's settings are in: the no-signal sentence, not Kitchen sign in (28 Oct 2026)
       (window.LK_PREP && window.LK_PREP.functionOnly() ? '<p><a class="btn dark" href="#/functions">Manage functions</a></p>' : offline() ? '<p class="hint" role="status">' + esc(offline()) + '</p>' : window.LK_PREP && !window.LK_PREP.privateAccess() ? '<p><a class="btn" href="#/prep">Kitchen sign in</a></p>' : '') + '<div class="dockets kb-home">' + DOCKETS.filter(function (d) { if (window.LK_PREP && (!window.LK_PREP.privateAccess() || window.LK_PREP.functionOnly())) return d[3] === 'recipes'; return d[3] !== 'cleaning' || cleaningOK(); }).map(function (d) {
         // Transfers and Cleaning are the long ones under the other four (a docket with a line under its name)
@@ -1302,7 +1351,7 @@
         dev + (off ? '' : '<div class="btn-row"><button type="button" class="btn dark" data-who="signin">Sign in</button></div>') + '</section>';
     }
     var m = P.chefMenu ? P.chefMenu() : {}, role = P.whoRole ? P.whoRole() : '', sec = m.sec && m.sec !== 'Pick one for today' ? m.sec : '';
-    return '<section class="st-you" aria-label="You"><div class="st-you-top"><span class="st-ring" aria-hidden="true">' + esc((Array.from(n.trim())[0] || '?').toUpperCase()) + '</span><div><p class="st-name">' + esc(n) + '</p><p class="st-role">' + esc([role, sec ? sec + ' today' : ''].filter(Boolean).join(' · ')) + '</p></div></div>' +
+    return '<section class="st-you" aria-label="You"><div class="st-you-top"><span class="st-ring" aria-hidden="true">' + esc(initial(n)) + '</span><div><p class="st-name">' + esc(n) + '</p><p class="st-role">' + esc([role, sec ? sec + ' today' : ''].filter(Boolean).join(' · ')) + '</p></div></div>' +
       dev + '<div class="btn-row"><button type="button" class="btn st-out" data-who="out"><span><b>Sign out</b></span><small aria-live="polite"></small></button></div></section>';
   }
   // what the Settings page shows that other phones or the kitchen settings can change: it is drawn again only when this changes
@@ -1957,6 +2006,7 @@
   });
   window.addEventListener('lk-device', function () {
     if (window.LK_DEVICE) settings.shared = window.LK_DEVICE.mode() === 'shared';
+    whoNamePaint();
     if (parseRoute().name === 'settings') render();
   });
   // js/prep.js signed a person in or out: redraw the chef mark in the top bar. On a sign-in just made (not a phone that
@@ -1978,6 +2028,7 @@
     whoMenuClose(false, true); editSlotRedraw(); redrawManage();
     var ic = app.querySelector('.wtop-icons'); if (ic) { ic.outerHTML = topIcons(); paintCooling(); }
     var el = app.querySelector('.wtop-who'); if (el) el.outerHTML = whoMark(!!(e.detail && e.detail.signedIn));
+    homeWelcomePaint();
   });
   // "Skip to content" must not change the address: #main is not a page, so the router would open the landing page
   document.addEventListener('click', function (e) {
@@ -1989,6 +2040,7 @@
   });
   // the kitchen settings were read (who is Head chef): the head chef's link on a card and the manage page follow
   window.addEventListener('lk-cfg', function () {
+    whoNamePaint(); homeWelcomePaint();
     editSlotRedraw(); if (parseRoute().name === 'manage' && !(window.LK_MG && window.LK_MG.open())) redrawManage(); feRedraw();
     // Private settings can arrive after the sign-in roster without changing lk.feat's remembered values.
     // Recheck Cleaning then as well; a missing setting never publishes it from the saved flag.

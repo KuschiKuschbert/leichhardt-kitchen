@@ -108,7 +108,7 @@ const caps = p => p.evaluate(() => [...document.querySelectorAll('.st-caps li')]
   p = await L.open(b, '#/settings', { who: 'ann', extra: named, wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.st-you .st-name'));
   ok(await L.txt(p, '.st-you .st-name') === trap && await p.$('.st-you img') === null && !(await p.evaluate(() => window.__bad)), 'a name with markup shows as words on the card');
-  ok(await L.txt(p, '.st-you .st-ring') === '<', 'and its first letter as a letter');
+  ok(await L.txt(p, '.st-you .st-ring') === 'I' && await L.txt(p, '.wtop-av') === 'I', 'Settings and the hat use the first letter, skipping markup punctuation');
   await p.context().close();
 
   // A computer: group names in a left column, and the QR code to open the book on a phone

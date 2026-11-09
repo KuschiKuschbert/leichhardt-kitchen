@@ -53,9 +53,10 @@ async function hangClear(p) {
   // Anchored ornaments must not sit on the Home heading or the date (they used to float over both).
   return p.evaluate(() => {
     const items = [...document.querySelectorAll('#app .wall-main > .kb-hang .kb-hang-item')];
+    const visible = items.filter(i => i.getClientRects().length);
     const text = [...document.querySelectorAll('#app .wall-h,#app .wall-date')].map(n => { const r = document.createRange(); r.selectNodeContents(n); return r.getBoundingClientRect(); });
-    const hit = items.some(i => { const a = i.getBoundingClientRect(); return text.some(b => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top); });
-    return { count: items.length, hit };
+    const hit = visible.some(i => { const a = i.getBoundingClientRect(); return text.some(b => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top); });
+    return { count: items.length, visible: visible.length, named: Boolean(document.querySelector('.hm-welcome')), hit };
   });
 }
 
@@ -109,7 +110,8 @@ async function cpuPerSecond(p, ms = 2000) {
       for (const id of ['in-diwali', 'np-tihar', 'ph-lunar-new-year', 'bali-galungan']) {
         await theme(p, id);
         const hang = await hangClear(p);
-        ok(hang.count > 0 && !hang.hit, width + ' ' + id + ': its ornaments hang beside the heading, clear of the words');
+        ok(hang.count > 0 && !hang.hit && (hang.named ? hang.visible === 0 : hang.visible > 0), width + ' ' + id + ': ' +
+          (hang.named ? 'named Home keeps anchored ornaments out of the welcome and date area' : 'neutral Home keeps visible ornaments clear of the heading and date'));
       }
     }
     await p.setViewportSize({ width: 390, height: 844 });

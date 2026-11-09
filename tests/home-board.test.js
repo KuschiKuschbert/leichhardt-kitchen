@@ -1,5 +1,5 @@
 // Home's now and next board (redesign step 2, 8 Nov 2026, head chef; docs/whole-app-redesign-options/brief.md, Build
-// step 2). On the kraft board: the day as the heading, the dark board with only what is still to come (your section and
+// step 2). On the kraft board: the named welcome (10 Nov 2026), the dark board with only what is still to come (your section and
 // its lines left, your break, the order cut-offs a chef gets the bar for, today's functions and their next round, new
 // pings), each a tap to where it is done; Prep by section with a bar each; Coming up with the functions of the next days.
 // The function band and the cut-off bar leave Home and stay on the other pages. Signed out keeps the Recipes docket.
@@ -52,10 +52,11 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
   const b = await L.start();
   let p, rows;
 
-  // Sam, a sous chef: the day as the heading, the board with the cut-off, the function's next round and the ping, soonest first
+  // Sam, a sous chef: a named welcome, the board with the cut-off, the function's next round and the ping, soonest first
   p = await L.open(b, '#/', { who: 'sam', extra: full(), wait: 1800 });
   await L.waitFor(p, () => document.querySelectorAll('#hm-board .hm-a').length >= 3, null, 8000).catch(() => {});
-  ok(await txt(p, '#rtitle') === new Date(L.NOW).toLocaleDateString('en-AU', { weekday: 'long', timeZone: 'Australia/Brisbane' }) && /^\d{1,2} [A-Z][a-z]+ · 14:00$/.test(await txt(p, '.wall-date') || ''), 'the day as the heading, the date and the time under it (' + await txt(p, '.wall-date') + ')');
+  const date = new Date(L.NOW).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Australia/Brisbane' });
+  ok(await txt(p, '#rtitle') === 'Welcome, Sam' && await txt(p, '.wall-date') === date + ' · 14:00', 'the named welcome keeps the kitchen weekday, date and time beneath it (' + await txt(p, '.wall-date') + ')');
   ok(!(await p.$('.dockets')) && !(await p.$('#fn-band')) && !(await p.$('#cut-band')), 'no dockets on Home, and the function band and the cut-off bar are off it');
   rows = await board(p);
   const fnRow = rows.find(r => r.fn === 'open'), cut = rows.find(r => /order closes$/.test(r.t)), ping = rows.find(r => r.note === 'open');

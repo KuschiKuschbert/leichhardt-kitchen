@@ -20,6 +20,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Any screen piece: a page card, chips and pickers, Save, a sheet, a top bar chip, a list header line, a fold, an admin block, a chef hat tile | `docs/design-patterns.md`: use one, or add the new one there and its names to `tests/design-patterns.test.js` |
 | Home, list rows, the chef hat, the function page or the admin panel (the chosen whole-book redesign) | `docs/whole-app-redesign-options/brief.md` (Chosen, Build) and its `every-page.html` |
 | Staff-first Home: personal shift, break/return, scheduled coworkers and full-team disclosure | `docs/home-staff-first.md` |
+| Named staff welcome, current identity and personalisation audit | `docs/staff-personalisation-options/brief.md` (chosen A, long-name treatment and implementation checks) |
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over anything older in this file) |
 | Device choice, Google, daily PIN unlock, Update, Settings | `docs/device-sessions.md` (replaces earlier session wording), `docs/settings-options/brief.md` |
 | Staff Add/Tick/Delete and capability lists | `docs/staff-capabilities.md` |

@@ -1743,6 +1743,8 @@ button.wm-a { width: 100%; border: 0; background: none; font: inherit; text-alig
 .wm-me-n b { font: 700 1.3rem/1.1 var(--display); overflow-wrap: anywhere; }
 .wm-me-n small { color: var(--muted); font-size: 0.8125rem; }
 .wm .wm-out { margin: 0 0 2px; border: 1.5px solid var(--ink); border-radius: var(--r-act); }
+.wm .wm-out > span { min-width: 0; }
+.wm .wm-out b { overflow-wrap: anywhere; }
 /* the hat as a list since 8 Nov 2026 (redesign step 7, docs/whole-app-redesign-options/brief.md): Every day, then More,
    one 46 px row each (icon, words, the small line on the right in orange when it needs doing, a chevron), Settings last */
 .wm-grid { display: flex; flex-direction: column; }
@@ -1761,6 +1763,7 @@ button.wm-a.wm-tile { text-align: left; }
    (phones and tablets; from 1100 to 1399 px the top bar has no room, from 1400 px every name shows as before) */
 .wtop-av { position: absolute; right: -5px; bottom: -5px; min-width: 19px; height: 19px; padding: 0 3px; border: 2px solid var(--bar); border-radius: 10px; background: var(--bar-text); color: var(--bar); font: 700 0.6875rem/15px var(--display); text-align: center; }
 .wtop-who[aria-expanded="true"] .wtop-av { background: #fff; color: var(--accent-ink); }
+.wtop-who-n { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 1099px) {
   .wtop-btn.wtop-who.is-shared { width: auto; max-width: 9.5rem; padding: 0 0.75rem 0 0.5rem; gap: 0.35rem; border-radius: 999px; }
   .wtop-who.is-shared .wtop-lbl { display: inline; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }
@@ -2792,6 +2795,12 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
   .wtop-start .wtop-brand { flex: 0 0 44px; min-height: 44px; }
   .wtop-brand .rb-text { display: none; }
   .wtop-brand .rb-mark { width: 44px; height: 39px; }
+  /* A shared screen's compact name yields to the logo, Back and 44 px controls, including enlarged text. */
+  .wtop:has(.wtop-who.is-shared) .wtop-start { flex: none; }
+  .wtop:has(.wtop-who.is-shared) .wtop-icons { flex: 0 1 auto; min-width: 0; }
+  .wtop:has(.wtop-who.is-shared) .wtop-icons > .wtop-btn:not(.wtop-who) { flex: none; }
+  .wtop .wtop-who.is-shared { flex: 0 1 auto; min-width: 44px; }
+  .wtop .wtop-who.is-shared > svg { flex: none; }
 }
 @media (min-width: 720px) { .wtop.has-back .rb-mark { display: none; } }
 @media (min-width: 720px) and (max-width: 899px) { .wtop-start { flex: none; } }
@@ -3858,6 +3867,12 @@ html.tm-open, html.tm-open body { overflow: hidden; }
    The day as the heading, the dark board with only what is still to come, then paper cards: Prep by section and Coming up.
    Each card hangs from a pin like the dockets did. */
 .wall-h.hm-day { font-size: 2.6rem; line-height: 1; }
+.wall-h.hm-welcome { overflow-wrap: anywhere; }
+/* Keep complete long display names in the chosen heading, scaling with the person's text setting. */
+@media (max-width: 767px) {
+  .wall-h.hm-welcome.hm-welcome-long { font-size: 1.5rem; line-height: 1.1; }
+  .wall-h.hm-welcome.hm-welcome-compact { font-size: 1.2rem; }
+}
 .is-home .wall-date { margin-bottom: 1rem; }
 .hm { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.1rem; align-items: start; }
 .hm-board, .hm-paper { position: relative; border-radius: 12px; }
