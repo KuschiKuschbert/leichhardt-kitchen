@@ -1,0 +1,457 @@
+{
+  "source": "M1 standalone in-memory preview, 51 public templates, fictional progress, native fonts, 844 px high",
+  "checks": [
+    {
+      "name": "Today fits width 390",
+      "pass": true
+    },
+    {
+      "name": "390 Today A groups",
+      "pass": true
+    },
+    {
+      "name": "390 shared first",
+      "pass": true
+    },
+    {
+      "name": "390 Week retains A, no matrix",
+      "pass": true
+    },
+    {
+      "name": "Week fits width 390",
+      "pass": true
+    },
+    {
+      "name": "390 future due not today completion",
+      "pass": true
+    },
+    {
+      "name": "390 checks remain inline",
+      "pass": true
+    },
+    {
+      "name": "Repeat tasks fits width 390",
+      "pass": true
+    },
+    {
+      "name": "390 exactly one editor",
+      "pass": true
+    },
+    {
+      "name": "390 correct setup layout",
+      "pass": true
+    },
+    {
+      "name": "390 Add fits content",
+      "pass": true
+    },
+    {
+      "name": "390 no B rail or task page",
+      "pass": true
+    },
+    {
+      "name": "390 daily content replaced",
+      "pass": true
+    },
+    {
+      "name": "390 unchanged Save disabled",
+      "pass": true
+    },
+    {
+      "name": "390 changed Save enabled",
+      "pass": true
+    },
+    {
+      "name": "390 resized layout matches width",
+      "pass": true
+    },
+    {
+      "name": "390 resize keeps one editor",
+      "pass": true
+    },
+    {
+      "name": "390 resize keeps draft",
+      "pass": true
+    },
+    {
+      "name": "Resized editor fits width 1280",
+      "pass": true
+    },
+    {
+      "name": "390 mode roundtrip keeps draft",
+      "pass": true
+    },
+    {
+      "name": "390 search all groups",
+      "pass": true
+    },
+    {
+      "name": "390 searched task editor stays on rendered page",
+      "pass": true
+    },
+    {
+      "name": "390 Add one form",
+      "pass": true
+    },
+    {
+      "name": "New editor fits width 390",
+      "pass": true
+    },
+    {
+      "name": "390 no browser errors",
+      "pass": true
+    },
+    {
+      "name": "Today fits width 768",
+      "pass": true
+    },
+    {
+      "name": "768 Today A groups",
+      "pass": true
+    },
+    {
+      "name": "768 shared first",
+      "pass": true
+    },
+    {
+      "name": "768 Week retains A, no matrix",
+      "pass": true
+    },
+    {
+      "name": "Week fits width 768",
+      "pass": true
+    },
+    {
+      "name": "768 future due not today completion",
+      "pass": true
+    },
+    {
+      "name": "768 checks remain inline",
+      "pass": true
+    },
+    {
+      "name": "Repeat tasks fits width 768",
+      "pass": true
+    },
+    {
+      "name": "768 exactly one editor",
+      "pass": true
+    },
+    {
+      "name": "768 correct setup layout",
+      "pass": true
+    },
+    {
+      "name": "768 Add fits content",
+      "pass": true
+    },
+    {
+      "name": "768 no B rail or task page",
+      "pass": true
+    },
+    {
+      "name": "768 daily content replaced",
+      "pass": true
+    },
+    {
+      "name": "768 unchanged Save disabled",
+      "pass": true
+    },
+    {
+      "name": "768 changed Save enabled",
+      "pass": true
+    },
+    {
+      "name": "768 resized layout matches width",
+      "pass": true
+    },
+    {
+      "name": "768 resize keeps one editor",
+      "pass": true
+    },
+    {
+      "name": "768 resize keeps draft",
+      "pass": true
+    },
+    {
+      "name": "Resized editor fits width 1280",
+      "pass": true
+    },
+    {
+      "name": "768 mode roundtrip keeps draft",
+      "pass": true
+    },
+    {
+      "name": "768 search all groups",
+      "pass": true
+    },
+    {
+      "name": "768 searched task editor stays on rendered page",
+      "pass": true
+    },
+    {
+      "name": "768 Add one form",
+      "pass": true
+    },
+    {
+      "name": "New editor fits width 768",
+      "pass": true
+    },
+    {
+      "name": "768 no browser errors",
+      "pass": true
+    },
+    {
+      "name": "Today fits width 1280",
+      "pass": true
+    },
+    {
+      "name": "1280 Today A groups",
+      "pass": true
+    },
+    {
+      "name": "1280 shared first",
+      "pass": true
+    },
+    {
+      "name": "1280 Week retains A, no matrix",
+      "pass": true
+    },
+    {
+      "name": "Week fits width 1280",
+      "pass": true
+    },
+    {
+      "name": "1280 future due not today completion",
+      "pass": true
+    },
+    {
+      "name": "1280 checks remain inline",
+      "pass": true
+    },
+    {
+      "name": "Repeat tasks fits width 1280",
+      "pass": true
+    },
+    {
+      "name": "1280 exactly one editor",
+      "pass": true
+    },
+    {
+      "name": "1280 correct setup layout",
+      "pass": true
+    },
+    {
+      "name": "1280 Add fits content",
+      "pass": true
+    },
+    {
+      "name": "1280 no B rail or task page",
+      "pass": true
+    },
+    {
+      "name": "1280 daily content replaced",
+      "pass": true
+    },
+    {
+      "name": "1280 unchanged Save disabled",
+      "pass": true
+    },
+    {
+      "name": "1280 changed Save enabled",
+      "pass": true
+    },
+    {
+      "name": "1280 resized layout matches width",
+      "pass": true
+    },
+    {
+      "name": "1280 resize keeps one editor",
+      "pass": true
+    },
+    {
+      "name": "1280 resize keeps draft",
+      "pass": true
+    },
+    {
+      "name": "Resized editor fits width 390",
+      "pass": true
+    },
+    {
+      "name": "1280 mode roundtrip keeps draft",
+      "pass": true
+    },
+    {
+      "name": "1280 search all groups",
+      "pass": true
+    },
+    {
+      "name": "1280 searched task editor stays on rendered page",
+      "pass": true
+    },
+    {
+      "name": "1280 Add one form",
+      "pass": true
+    },
+    {
+      "name": "New editor fits width 1280",
+      "pass": true
+    },
+    {
+      "name": "1280 no browser errors",
+      "pass": true
+    }
+  ],
+  "measurements": [
+    {
+      "stage": "Today",
+      "width": 390,
+      "docWidth": 390,
+      "height": 936,
+      "forms": 0,
+      "adjacent": false,
+      "fullTasks": 0,
+      "fullGroups": 5
+    },
+    {
+      "stage": "Week",
+      "width": 390,
+      "docWidth": 390,
+      "height": 1049,
+      "forms": 0,
+      "adjacent": false,
+      "fullTasks": 0,
+      "fullGroups": 4
+    },
+    {
+      "stage": "Repeat tasks",
+      "width": 390,
+      "docWidth": 390,
+      "height": 1640,
+      "forms": 1,
+      "adjacent": false,
+      "fullTasks": 3,
+      "fullGroups": 0
+    },
+    {
+      "stage": "Resized editor",
+      "width": 1280,
+      "docWidth": 1280,
+      "height": 1085,
+      "forms": 1,
+      "adjacent": true,
+      "fullTasks": 5,
+      "fullGroups": 0
+    },
+    {
+      "stage": "New editor",
+      "width": 390,
+      "docWidth": 390,
+      "height": 1237,
+      "forms": 1,
+      "adjacent": false,
+      "fullTasks": 1,
+      "fullGroups": 0
+    },
+    {
+      "stage": "Today",
+      "width": 768,
+      "docWidth": 768,
+      "height": 934,
+      "forms": 0,
+      "adjacent": false,
+      "fullTasks": 0,
+      "fullGroups": 5
+    },
+    {
+      "stage": "Week",
+      "width": 768,
+      "docWidth": 768,
+      "height": 1050,
+      "forms": 0,
+      "adjacent": false,
+      "fullTasks": 0,
+      "fullGroups": 4
+    },
+    {
+      "stage": "Repeat tasks",
+      "width": 768,
+      "docWidth": 768,
+      "height": 1432,
+      "forms": 1,
+      "adjacent": false,
+      "fullTasks": 3,
+      "fullGroups": 0
+    },
+    {
+      "stage": "Resized editor",
+      "width": 1280,
+      "docWidth": 1280,
+      "height": 1085,
+      "forms": 1,
+      "adjacent": true,
+      "fullTasks": 5,
+      "fullGroups": 0
+    },
+    {
+      "stage": "New editor",
+      "width": 768,
+      "docWidth": 768,
+      "height": 1155,
+      "forms": 1,
+      "adjacent": false,
+      "fullTasks": 1,
+      "fullGroups": 0
+    },
+    {
+      "stage": "Today",
+      "width": 1280,
+      "docWidth": 1280,
+      "height": 934,
+      "forms": 0,
+      "adjacent": false,
+      "fullTasks": 0,
+      "fullGroups": 5
+    },
+    {
+      "stage": "Week",
+      "width": 1280,
+      "docWidth": 1280,
+      "height": 1050,
+      "forms": 0,
+      "adjacent": false,
+      "fullTasks": 0,
+      "fullGroups": 4
+    },
+    {
+      "stage": "Repeat tasks",
+      "width": 1280,
+      "docWidth": 1280,
+      "height": 1085,
+      "forms": 1,
+      "adjacent": true,
+      "fullTasks": 5,
+      "fullGroups": 0
+    },
+    {
+      "stage": "Resized editor",
+      "width": 390,
+      "docWidth": 390,
+      "height": 1640,
+      "forms": 1,
+      "adjacent": false,
+      "fullTasks": 3,
+      "fullGroups": 0
+    },
+    {
+      "stage": "New editor",
+      "width": 1280,
+      "docWidth": 1280,
+      "height": 1085,
+      "forms": 1,
+      "adjacent": true,
+      "fullTasks": 1,
+      "fullGroups": 0
+    }
+  ]
+}
