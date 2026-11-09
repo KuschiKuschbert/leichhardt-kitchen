@@ -2,7 +2,7 @@
 const L = require('./lib');
 const { R, ok } = L.results();
 const firstAt = L.NOW, firstDue = firstAt + 2 * 3600000;
-const restartAt = firstAt + 10 * 3600000; // 00:00 Queensland after this fixture's 20:10 completion.
+const restartAt = firstAt + 20 * 3600000; // 10:00 Queensland after this fixture's 20:10 completion.
 const run = { restartAt, id: 'batch-a', firstAt, firstDue, secondAt: 0, secondDue: 0 };
 async function fixture(browser, width, textSize) {
   const context = await browser.newContext({ viewport: { width: width || 390, height: 844 }, serviceWorkers: 'block' });
@@ -12,7 +12,7 @@ async function fixture(browser, width, textSize) {
   await p.evaluate(({ stamp, textSize }) => {
     document.documentElement.dataset.text = textSize || 'normal';
     window.__blocked = false; window.__calls = []; window.__acks = []; window.__confirms = []; window.__readRetries = 0; window.__names = {}; window.__closed = []; window.__opens = [];
-    window.__model = { available: true, ready: true, stale: false, error: '', pending: 0, actionError: null, recorded: null, recordedReady: true, recordedStale: false, recordedError: '', confirmPending: 0, confirmError: null, run: null, now: stamp };
+    window.__model = { available: true, ready: true, stale: false, error: '', pending: 0, actionError: null, window: { open: true }, recorded: null, recordedReady: true, recordedStale: false, recordedError: '', confirmPending: 0, confirmError: null, run: null, now: stamp };
     window.__ui = LK_COOLING_UI.mount({
       esc: value => { const e = document.createElement('span'); e.textContent = String(value); return e.innerHTML; },
       clock: value => new Date(value + 10 * 3600000).toISOString().slice(11, 16),
@@ -82,6 +82,36 @@ async function shape(p) {
         ok(p.errors.length === 0, width + ' ' + textSize + ': no browser errors');
       } finally { await p.context().close(); }
     }
+    const overnight = await fixture(b, 1280);
+    try {
+      await render(overnight, { run, now: firstDue }); await overnight.evaluate(() => __ui.ping(2));
+      await render(overnight, { window: { open: false, nextOpenAt: firstAt + 20 * 3600000 }, run: null, rawRun: run, now: firstAt + 7 * 3600000 });
+      ok(await overnight.locator('.cooling-clock').getAttribute('data-clock-state') === 'off_hours', 'Daily-window regression: 21:00 changes the visible clock to its overnight state');
+      ok(await overnight.locator('.cooling-clock-status').isVisible() && await overnight.locator('button[data-cooling="clock"]').isHidden(), 'Daily-window regression: overnight clock is a non-interactive status');
+      ok(await overnight.locator('.cooling-wrap').count() === 0, 'Daily-window regression: 21:00 closes an outstanding cooling ping');
+      ok(await overnight.locator('.cooling-clock-status').getAttribute('aria-disabled') === 'true' && /10:00 Queensland/.test(await overnight.locator('.cooling-clock-status').getAttribute('aria-label')), 'Overnight status names its next opening without becoming an action');
+      await overnight.locator('.cooling-clock-status').click();
+      await overnight.locator('.cooling-clock-status').focus(); await overnight.keyboard.press('Enter'); await overnight.keyboard.press('Space');
+      await overnight.locator('button[data-cooling="clock"]').evaluate(el => el.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+      const opens = await overnight.evaluate(() => [__ui.open(), __ui.ping(2)]);
+      ok(opens.every(value => value === false) && (await overnight.evaluate(() => __calls.length + __confirms.length)) === 0 && !await overnight.locator('.cooling-wrap').count(), 'Mouse, keyboard, synthetic click and public overlay calls cannot use the overnight clock');
+      await render(overnight, { pending: 2, confirmPending: 4, error: 'Checking an unsent write' });
+      ok(await overnight.locator('.cooling-clock').getAttribute('data-clock-state') === 'off_hours' && !await overnight.locator('.cooling-wrap').count(), 'Unresolved writes keep their model while the overnight UI remains closed');
+      await render(overnight, { pending: 0, confirmPending: 0, error: '', window: { open: true }, now: firstAt + 20 * 3600000 });
+      ok(await overnight.locator('.cooling-clock').getAttribute('data-clock-state') === 'idle' && !await overnight.locator('.cooling-wrap').count() && await overnight.evaluate(() => __calls.length === 0), 'At 10:00 yesterday’s raw record becomes an idle clock without a start or popup');
+      await overnight.locator('button[data-cooling="clock"]').click();
+      ok(await overnight.locator('.cooling-clock').getAttribute('data-clock-state') === 'armed', 'The reopened clock still needs its normal first manual tap');
+      await render(overnight, { window: { open: false }, now: firstAt + 31 * 3600000 });
+      await render(overnight, { window: { open: true }, now: firstAt + 44 * 3600000 });
+      ok(await overnight.locator('.cooling-clock').getAttribute('data-clock-state') === 'idle', 'A daily cutoff clears an armed Start instead of carrying it into the next morning');
+      await overnight.evaluate(() => __ui.open());
+      await render(overnight, { window: { open: false }, now: firstAt + 55 * 3600000 });
+      ok(!await overnight.locator('.cooling-wrap').count(), 'The daily cutoff also closes timer details');
+      const nightContrast = await contrast(overnight, '.cooling-clock-status');
+      ok(nightContrast.ratio >= 4.5, 'Overnight label retains readable contrast ' + nightContrast.ratio.toFixed(2) + ':1');
+      ok(!overnight.errors.length, 'Daily-window UI has no browser errors');
+
+    } finally { await overnight.context().close(); }
     const confirmation = await fixture(b);
     try {
       await render(confirmation, { run, now: firstDue }); await confirmation.evaluate(() => __ui.ping(2));
@@ -206,9 +236,9 @@ async function shape(p) {
       await p.locator('.cooling-new button').evaluate(el => el.dispatchEvent(new MouseEvent('click', { bubbles: true })));
       ok((await p.evaluate(() => window.__calls)).length === callsBefore, 'A synthetic disabled-button tap cannot start another batch');
       await render(p, { now: restartAt - 1 });
-      ok(await p.locator('.cooling-new button').isDisabled(), 'The final millisecond before midnight stays locked');
+      ok(await p.locator('.cooling-new button').isDisabled(), 'The final millisecond before 10:00 stays locked');
       await render(p, { now: restartAt });
-      ok(await p.locator('.cooling-new button').isEnabled(), 'The open details menu becomes available at midnight without a read or reload');
+      ok(await p.locator('.cooling-new button').isEnabled(), 'The open details menu becomes available at 10:00 without a read or reload');
       await p.locator('.cooling-new button').click();
       ok((await p.evaluate(() => window.__calls)).at(-1) === 2 && await p.locator('.cooling-new [aria-busy]').count() === 1, 'Start another batch explicitly requests a new two-hour stage while preserving the old completed record');
       await p.keyboard.press('Escape');

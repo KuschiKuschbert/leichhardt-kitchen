@@ -2,7 +2,9 @@
 
 ## Chosen
 
-The owner's later 9 November request adds a [daily lockout](../operandio-cooling.md#daily-lockout-9-november-2026): final Done is read-only until the midnight after the four-hour deadline. This supersedes the immediate new-batch action described in the original implementation record below.
+The owner’s 10 November [daily window](../operandio-cooling.md#daily-window-10-november-2026) supersedes the earlier midnight lockout: one batch runs between 10:00 and 21:00 Queensland time, then expires even if unfinished. The clock stays visible, neutral and inert overnight, with **Back at 10:00** on desktop and equivalent accessible wording on the fixed mobile ring. At 10:00 it returns to idle and unarmed until a fresh manual start; old pings do not revive. The existing desktop expansion and fixed mobile ring remain the chosen presentation.
+
+Shared recording confirmation, also approved on 10 November, replaces personal **Got it**. **I’ve recorded this in Operandio** clears the corresponding active-stage reminder for everyone only after the server accepts it; **Not yet** leaves a quiet outstanding check on the existing clock until daily expiry. Confirmations remain separate from manual starts. Expiry never claims an external entry was recorded. The current feature note owns the quick service check, 21:00/10:00 boundary coverage and implemented-app measurements; all preview and 9 November measurements below are historical evidence.
 
 **Chosen: B on desktop, fixed filling ring on mobile.** On 9 November the owner said "yeah lets go with b", then "implement and bring live", and requested three loud chimes. The mobile ring remains fixed at 44px in every state. Four hours always waits for a separate tap after two hours. This branch implements that choice using the existing shared timer, not the accelerated preview clock.
 
@@ -10,7 +12,7 @@ The original three desktop designs remain below as the decision record. The prot
 
 Open [the interactive comparison](index.html). Tick Preview chime, then Play animation to hear the existing soft chime. Manual tapping also works. A full automated demo takes 18 seconds, with simulated taps; the manual preview waits for the explicit next tap before starting four hours. All time is synthetic. No preview reads or writes kitchen data.
 
-Desktop keeps clock → Start → two-hour countdown → green Done / Start 4 h → explicit tap → four-hour countdown → final Done. Mobile keeps a fixed circle: clock → orange play icon → filling ring → green tick and chime → explicit tap → four-hour filling ring → final green tick. The first tap arms Start; the second starts two hours. A running mobile clock is a read-only status and never expands. After two hours, four hours waits indefinitely for an explicit tap. The production implementation keeps the existing named Operandio completion ping.
+The original preview sequence is clock → Start → two-hour countdown → green Done / Start 4 h → explicit tap → four-hour countdown → final Done. Mobile keeps a fixed circle: clock → orange play icon → filling ring → green tick and chime → explicit tap → four-hour filling ring → final green tick. The first tap arms Start; the second starts two hours. A running mobile clock remains a read-only status unless an active recording check needs review, and never expands. In the current implementation, the separate four-hour Start must occur before 21:00 and any remaining stage expires at that boundary. The named Operandio ping uses the current shared-confirmation contract above.
 
 ## Three desktop designs, shared mobile ring
 
@@ -66,7 +68,7 @@ All six flagged the small next-action caption beneath Done. The desktop previews
 - Original behaviour checks: 87 passed for the first set of studies. The current mobile refinement passes 108 focused checks, including fixed 44px geometry, read-only running, explicit manual next-stage start, reduced motion and no browser errors. An extra simulated hour after the first manual timer finishes leaves it waiting at done1. All nine mobile states are pixel-identical across A, B and C.
 - The hidden button and status retain matching geometry so changing to final Done animates smoothly while the hidden element stays invisible and unavailable to pointer/focus interaction.
 - Three desktop browser recordings and the revised shared mobile recording show the full sequence. The same mobile recording is supplied in all three pairs, matching their verified identical rendering. A portable comparison embeds all six previews and local assets. Its 30 browser checks cover frame APIs, responsive modes, tabs, Play, Reset, chime and full-size previews. Google web fonts remain a network dependency; the font stack supplies a fallback.
-- This is presentation verification. Shared-device notifications, permission enforcement, network loss, saved deadlines, reopening and personal Got it remain the existing live timer's responsibility. A chosen implementation must reuse that controller and preserve those behaviours, including Start another batch and existing pings.
+- This was presentation verification. Shared-device notifications, permission enforcement, network loss, saved deadlines, reopening and personal Got it belonged to the existing controller at the time. The subsequent shared-confirmation and daily-window contracts above now govern pings and new-batch availability.
 - Those checks describe the design previews. The approved implementation below changes the production presentation and cooling sound while preserving the existing timer controller, saved shell membership and rules.
 
 ## Source
@@ -76,7 +78,7 @@ All six flagged the small next-action caption beneath Done. The desktop previews
 
 ## Approved implementation, 9 November 2026
 
-The production clock uses the existing authoritative model and start hooks. Header inserts mount the clock once, then patch its control in place through arming, pending and confirmation. Desktop uses B's filled face and one gentle settle from 1280px; narrower windows use the fixed perimeter ring. This production breakpoint supersedes the preview's 1100px threshold: with Today's team and all six page tabs present, the earlier threshold wrapped the tabs at 1200px. The final 44px ring or 152px pill keeps the full header in place. The existing details route, personal pings, permissions, recovery and new-batch action remain.
+The 9 November production clock used the existing authoritative model and start hooks. Header inserts mount the clock once, then patch its control in place through arming, pending and confirmation. Desktop uses B's filled face and one gentle settle from 1280px; narrower windows use the fixed perimeter ring. This production breakpoint supersedes the preview's 1100px threshold: with Today's team and all six page tabs present, the earlier threshold wrapped the tabs at 1200px. The final 44px ring or 152px pill keeps the full header in place. That release preserved the existing details route, personal pings, permissions, recovery and new-batch action; the current confirmation and daily-window contracts subsequently refined their availability.
 
 `LK_CHIME.playCooling()` schedules three stronger soft chimes through the existing limiter. `stopCooling()` cancels any remaining or delayed notes. The cooling adapter honours sound Off and stops the sequence when the ping closes or the session changes; the sound module also cancels on hiding or leaving the page. Ordinary ping sounds stay unchanged. No new reads, listeners, fields, permissions, external assets or services.
 

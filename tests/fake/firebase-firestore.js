@@ -453,6 +453,10 @@ function finishOps(ops) {
 }
 const exactKeys = (value, names) => value && Object.keys(value).length === names.length && names.every(name => Object.hasOwn(value, name));
 const freshStamp = value => !!(value && value.__st) || stampMillis(value) === requestNow();
+const coolingOpening = stamp => Math.floor((stamp + 36000000) / 86400000) * 86400000;
+const coolingOpen = stamp => stamp >= coolingOpening(stamp) && stamp < coolingOpening(stamp) + 39600000;
+// Compare whole seconds at the exact opening boundary; converting toMillis can round the final nanosecond.
+const coolingToday = (at, stamp) => at instanceof Timestamp && at.seconds >= coolingOpening(stamp) / 1000 && at.seconds < (coolingOpening(stamp) + 39600000) / 1000;
 // Match coolingRecordedNext: each server-timed declaration is immutable and belongs to the current run.
 function coolingRecordedRefused(o, stamp, by, old) {
   if (!by || o.kind === 'delete') return true;
@@ -462,7 +466,7 @@ function coolingRecordedRefused(o, stamp, by, old) {
   const pair = (at, who) => at === 0 && who === '' || at instanceof Timestamp && actor(who);
   if (!exactKeys(d, ['v', 'run', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by']) || d.v !== 1 ||
     typeof d.run !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(d.run) || d.by !== by ||
-    !pair(d.firstAt, d.firstBy) || !pair(d.secondAt, d.secondBy) || !timer || d.run !== timer.run) return true;
+    !pair(d.firstAt, d.firstBy) || !pair(d.secondAt, d.secondBy) || !timer || !coolingToday(timer.firstAt, stamp) || d.run !== timer.run) return true;
   const prior = old && old.run === d.run ? old : { firstAt: 0, firstBy: '', secondAt: 0, secondBy: '' };
   const equal = (a, b) => a instanceof Timestamp ? a.isEqual(b) : a === b;
   const first = prior.firstAt === 0 && prior.firstBy === '' && stampMillis(d.firstAt) === stamp && d.firstBy === by &&
@@ -474,21 +478,23 @@ function coolingRecordedRefused(o, stamp, by, old) {
 // Match coolingOk/coolingNext: no role can choose a start time, skip a stage or overwrite a newer revision.
 function coolingWriteRefused(o, stamp) {
   if (!coolingCollection(o.ref)) return false;
+  if (!coolingOpen(stamp)) return true;
   const rel = o.ref.path.slice(2), by = kitchenReader(o.ref), old = store[key(o.ref.path)];
   if (rel.length === 2 && rel[1] === 'recorded') return coolingRecordedRefused(o, stamp, by, old);
   if (rel.length !== 2 || rel[1] !== 'current' || !by || o.kind === 'delete') return true;
   const base = o.kind === 'set' && !o.merge ? {} : old || {}, d = resolveVal(o.data, base, stamp);
-  if (!exactKeys(d, ['v', 'run', 'rev', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by']) ||
+  const hasWindow = Object.hasOwn(d, 'windowAt');
+  if (!exactKeys(d, ['v', 'run', 'rev', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by'].concat(hasWindow ? ['windowAt'] : [])) ||
+    hasWindow && (!Number.isInteger(d.windowAt) || d.windowAt < 0 || d.windowAt % 86400000 !== 0) ||
     d.v !== 1 || typeof d.run !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(d.run) || !Number.isInteger(d.rev) || d.rev < 1 ||
     d.by !== by || !(d.firstAt instanceof Timestamp) || typeof d.firstBy !== 'string' || !d.firstBy.length || d.firstBy.length > 80 ||
     !(d.secondAt === 0 || d.secondAt instanceof Timestamp) || typeof d.secondBy !== 'string' || d.secondBy.length > 80) return true;
-  const first = stampMillis(d.firstAt) === stamp && d.firstBy === by && d.secondAt === 0 && d.secondBy === '';
+  const first = d.windowAt === coolingOpening(stamp) && stampMillis(d.firstAt) === stamp && d.firstBy === by && d.secondAt === 0 && d.secondBy === '';
   if (!old) return o.kind !== 'set' || d.rev !== 1 || !first;
   if (d.rev !== old.rev + 1) return true;
-  const second = d.run === old.run && d.firstAt.isEqual(old.firstAt) && d.firstBy === old.firstBy && old.secondAt === 0 && old.secondBy === '' &&
+  const second = coolingToday(old.firstAt, stamp) && hasWindow === Object.hasOwn(old, 'windowAt') && d.windowAt === old.windowAt && d.run === old.run && d.firstAt.isEqual(old.firstAt) && d.firstBy === old.firstBy && old.secondAt === 0 && old.secondBy === '' &&
     stamp >= stampMillis(old.firstAt) + 7200000 && stampMillis(d.secondAt) === stamp && d.secondBy === by;
-  const next = d.run !== old.run && old.secondAt instanceof Timestamp && stamp >= stampMillis(old.secondAt) + 14400000 &&
-    Math.floor((stamp + 36000000) / 86400000) > Math.floor((old.secondAt.seconds + 50400) / 86400) && first;
+  const next = d.run !== old.run && old.firstAt instanceof Timestamp && old.firstAt.seconds < coolingOpening(stamp) / 1000 && first;
   return !(second || next);
 }
 function controlWrite(ops) {

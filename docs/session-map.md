@@ -1,8 +1,12 @@
 # Session map: which note to read, and every file
 
+## Operandio daily window, 10 November 2026
+
+The owner approved expiry at 21:00 Queensland even for an unfinished batch, a visible inert overnight clock and unarmed idle at 10:00 until a fresh manual Start. One batch per window retains separate manual stages and shared recording confirmations; expiry stops pings/chimes without claiming external work was recorded. `js/cooling-core.js` derives the window and active run, `js/cooling.js` retains the canonical raw run for revision checks, and the existing UI preserves the B desktop pill and fixed mobile ring with neutral **Back at 10:00** status. `js/prep.js` lets logically expired retained records pass the existing Move PIN check. The timer adds one immutable `windowAt` stamp on new starts so a queued old start cannot become tomorrow’s batch; legacy records remain readable. The mixed `firestore.rules` tighten operating hours and permit replacing an unfinished prior-window batch. Publish rules before the client; older clients need **Update**. No reset write, job, additional subscription or query. The raw timer and confirmation records remain available to existing backup/recovery. [Contract, quick check and current validation](operandio-cooling.md#daily-window-10-november-2026).
+
 ## Operandio shared confirmation, 10 November 2026
 
-The owner approved the audit’s recommendation and live implementation: one explicit staff declaration clears each stage’s reminder for the kitchen, while **Not yet** leaves a quiet check on the existing clock. The same stage presents once per device across page changes, reloads and logins. `js/cooling-core.js`, `js/cooling.js` and the existing UI handle independent confirmation states and accepted-write feedback; `js/prep.js` supplies the second named subscription, write authority, local presentation storage and browser export. `firestore.rules` and the stand-in protect the new bounded `cooling/recorded` record without changing `cooling/current`; publish these additive rules before the client. `scripts/nightly-backup.mjs` and `scripts/backup-recovery-check.mjs` preserve exact confirmation timestamps and actors. The extra live document costs one read on subscription and each accepted confirmation; ticks do no database work. [Contract, quick check and validation](operandio-cooling.md#shared-confirmation-10-november-2026).
+The owner approved the audit’s recommendation and live implementation: one explicit staff declaration clears each stage’s reminder for the kitchen, while **Not yet** leaves a quiet check on the existing clock. The same stage presents once per device across page changes, reloads and logins. `js/cooling-core.js`, `js/cooling.js` and the existing UI handle independent confirmation states and accepted-write feedback; `js/prep.js` supplies the second named subscription, write authority, local presentation storage and browser export. This earlier release added the bounded `cooling/recorded` record without changing `cooling/current`, publishing its additive rules before the client. `scripts/nightly-backup.mjs` and `scripts/backup-recovery-check.mjs` preserve exact confirmation timestamps and actors. The extra live document costs one read on subscription and each accepted confirmation; ticks do no database work. The later daily window above bounds outstanding checks and adds a stamp to new timer records. [Decision, quick check and validation](operandio-cooling.md#shared-confirmation-10-november-2026).
 
 ## Staff welcome A and personalisation audit, 9 to 10 November 2026
 
@@ -68,7 +72,7 @@ When a note or a file is added: its full row goes here, and one short row (what 
 
 ## Operandio daily lockout, 9 November 2026
 
-The owner requested disabling the timer after the second deadline until the following Queensland midnight. `js/cooling-core.js` derives the day gate from the exact server timestamp; `js/cooling.js` guards direct calls and `js/cooling-ui.js` shows completion as read-only, returning to ready at midnight without a reset write. The stricter `firestore.rules` and matching stand-in enforce the same date gate. Focused cooling and real emulator regressions include roles, refreshes, two screens, exact midnight and cross-midnight deadlines. [Contract, small-change council and checks](operandio-cooling.md#daily-lockout-9-november-2026). Publish rules after the compatible client; no new stored fields or reads.
+Historical release, superseded by the 10 November daily window above. The owner originally requested disabling the timer after the second deadline until the following Queensland midnight. The core, controller, UI, rules and matching stand-in enforced that date gate without a reset write. Its checks covered roles, refreshes, two screens, exact midnight and cross-midnight deadlines. [Historical contract, quick check and checks](operandio-cooling.md#daily-lockout-9-november-2026). Its client-before-rules release order no longer applies: publish the current daily-window rules before the client.
 
 ## Sheet and modal close button, 9 November 2026
 
@@ -95,8 +99,8 @@ The head chef approved the compact 248 by 155 px clock dropdown, everyone with k
 | `js/cooling-core.js`, `js/cooling.js`, `js/cooling-ui.js`, `css/cooling.css` | Shell: timing contract, shared subscription, direct writes and compact UI. Core/controller/UI/access/integration tests are `tests/cooling*.test.js`. |
 | `js/prep.js`, `js/app.js` | Existing session/write/overlay adapters, top chip and guarded route. |
 | `sw.js`, `index.html`, `js/upkeep.js` | Saved shell membership. Existing supplier push handling is unchanged. |
-| `firestore.rules`, `tests/rules/cooling.test.mjs` | Strict additive canonical stage transitions. Publish reviewed rules before dependent client. |
-| `scripts/nightly-backup.mjs`, `scripts/backup-recovery-check.mjs` | Current run and precise start-time recovery. Move PIN waits for an unfinished batch. |
+| `firestore.rules`, `tests/rules/cooling.test.mjs` | Strict stage, confirmation and daily-window transitions, including the immutable stamp on new starts. Publish reviewed rules before dependent client. |
+| `scripts/nightly-backup.mjs`, `scripts/backup-recovery-check.mjs` | Current run, recording declarations, daily-window stamp and precise start-time recovery. Move PIN waits for an active unfinished batch; expired raw records do not block it. |
 
 ## Which note to read before you change it
 

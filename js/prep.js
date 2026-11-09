@@ -3175,7 +3175,9 @@
         got(); guard();
         if (sn.exists()) {
           var run = window.LK_COOLING && window.LK_COOLING.parse(sn.data());
-          if (!run || window.LK_COOLING.phase(run, now()) !== 'second_due') throw { code: 'cooling-active' };
+          var phase = run && window.LK_COOLING.phase(run, now());
+          // Expired batches stay at the old address without blocking the next kitchen's idle timer.
+          if (['idle', 'off_hours', 'second_due'].indexOf(phase) < 0) throw { code: 'cooling-active' };
         }
       });
     }

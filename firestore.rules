@@ -1318,10 +1318,16 @@ service cloud.firestore {
     }
     // Shared Operandio timing uses server timestamps and a revision compare-and-set. Every current kitchen PIN,
     // including View only, can start a stage; this grants no ordinary Prep capability or shift-ping permission.
+    // Queensland has no daylight-saving shift: today's UTC midnight is its 10:00 opening.
+    // Compare timestamps directly so the 21:00 close is exclusive down to the nanosecond.
+    function coolingOpens() { return (request.time + duration.value(10, 'h')).date(); }
+    function coolingOpen() { return request.time >= coolingOpens() && request.time < coolingOpens() + duration.value(11, 'h'); }
+    function coolingToday(at) { return at is timestamp && at >= coolingOpens() && at < coolingOpens() + duration.value(11, 'h'); }
     function coolingOk() {
       let d = request.resource.data;
       return d.keys().hasAll(['v', 'run', 'rev', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by'])
-        && d.keys().hasOnly(['v', 'run', 'rev', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by'])
+        && d.keys().hasOnly(['v', 'run', 'rev', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by', 'windowAt'])
+        && (!d.keys().hasAny(['windowAt']) || (d.windowAt is int && d.windowAt >= 0 && d.windowAt % 86400000 == 0))
         && d.v == 1 && d.run is string && d.run.matches('[a-zA-Z0-9_-]{16,80}')
         && d.rev is int && d.rev >= 1
         && d.firstAt is timestamp && d.firstBy is string && d.firstBy.size() > 0 && d.firstBy.size() <= 80
@@ -1329,23 +1335,23 @@ service cloud.firestore {
     }
     function coolingFirst() {
       let d = request.resource.data;
-      return d.firstAt == request.time && d.firstBy == d.by && d.secondAt == 0 && d.secondBy == '';
+      return d.windowAt == coolingOpens().toMillis()
+        && d.firstAt == request.time && d.firstBy == d.by && d.secondAt == 0 && d.secondBy == '';
     }
     function coolingNext() {
       let d = request.resource.data;
       let old = resource.data;
       return d.rev == old.rev + 1 && (
         (d.run == old.run && d.firstAt == old.firstAt && d.firstBy == old.firstBy
-          && old.firstAt is timestamp && old.secondAt == 0 && old.secondBy == ''
+          && d.keys().hasAny(['windowAt']) == old.keys().hasAny(['windowAt']) && d.get('windowAt', 0) == old.get('windowAt', 0)
+          && coolingToday(old.firstAt) && old.secondAt == 0 && old.secondBy == ''
           && request.time >= old.firstAt + duration.value(2, 'h')
           && d.secondAt == request.time && d.secondBy == d.by)
-        || (d.run != old.run && old.secondAt is timestamp
-          && request.time >= old.secondAt + duration.value(4, 'h')
-          // Queensland midnight after the four-hour deadline, including a deadline that crosses midnight.
-          && (request.time + duration.value(10, 'h')).date() > (old.secondAt + duration.value(14, 'h')).date()
+        || (d.run != old.run && old.firstAt is timestamp && old.firstAt < coolingOpens()
           && coolingFirst()));
     }
-    // Shared declarations leave the timer's v1 writer contract intact for saved older clients.
+    // First starts carry their intended daily window, so an overnight queued write cannot begin tomorrow.
+    // Legacy records without windowAt may finish today's stages; declarations keep the same v1 contract.
     // One canonical timer lookup per confirmation proves the exact run and elapsed stage.
     function coolingRecordedOk() {
       let d = request.resource.data;
@@ -1369,17 +1375,17 @@ service cloud.firestore {
       let timer = get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/cooling/current).data;
       let prior = resource == null || resource.data.run != d.run
         ? {'firstAt': 0, 'firstBy': '', 'secondAt': 0, 'secondBy': ''} : resource.data;
-      return d.run == timer.run && coolingRecordedStep(prior, timer);
+      return coolingToday(timer.firstAt) && d.run == timer.run && coolingRecordedStep(prior, timer);
     }
     match /kitchens/KITCHEN_PIN/cooling/{id} {
       allow get: if id in ['current', 'recorded'] && kitchenRead();
       allow list, delete: if false;
       allow create: if id == 'current' && staff() && request.resource.data.by in cfg().get('staffIds', [])
-        && coolingOk() && request.resource.data.rev == 1 && coolingFirst();
+        && coolingOpen() && coolingOk() && request.resource.data.rev == 1 && coolingFirst();
       allow update: if id == 'current' && staff() && request.resource.data.by in cfg().get('staffIds', [])
-        && coolingOk() && coolingNext();
+        && coolingOpen() && coolingOk() && coolingNext();
       allow create, update: if id == 'recorded' && staff() && request.resource.data.by in cfg().get('staffIds', [])
-        && coolingRecordedOk() && coolingRecordedNext();
+        && coolingOpen() && coolingRecordedOk() && coolingRecordedNext();
     }
 
     // Cleaning (8 Nov 2026): immutable schedule revisions retain missed occurrences after an edit or archive.
