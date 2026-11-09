@@ -33,6 +33,8 @@ const titleCut = p => p.evaluate(() => { const b = document.querySelector('.wtop
 // Empty days start with the inline staff chooser; later membership stays in the person's details.
 const onShift = async (p, id) => {
   if (!await p.locator('details.tm-person-details[data-id="' + id + '"]').count()) {
+    const chooser = p.locator('details.tm-quick-add');
+    if (await chooser.count() && !await chooser.evaluate(e => e.open)) await chooser.locator(':scope > summary').click();
     await p.locator('input[data-k="tm-quick-person:' + id + '"]').check();
     await tap(p, '[data-p="tm-quick-add"]'); await L.settle(p, 200); await details(p, id); return true;
   }
