@@ -1,6 +1,6 @@
 {
   "kind": "Preview: placement mock in the actual Home page, synthetic data, resting Welcome still only.",
-  "date": "2026-11-09T19:35:45.027Z",
+  "date": "2026-11-09T19:39:45.456Z",
   "shots": [
     {
       "file": "placements/corner-390.png",
@@ -183,6 +183,22 @@
       "errors": []
     },
     {
+      "file": "placements/corner-christmas-arrival-390.png",
+      "kind": "corner",
+      "width": 390,
+      "festive": true,
+      "arrival": true,
+      "motion": {
+        "state": "running",
+        "phase": "arrival",
+        "effect": "snow",
+        "ambientCount": 40,
+        "hangCount": 0
+      },
+      "flakesOverMascot": 3,
+      "errors": []
+    },
+    {
       "file": "placements/name-christmas-390.png",
       "kind": "name",
       "width": 390,
@@ -198,6 +214,22 @@
         }
       },
       "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/name-christmas-arrival-390.png",
+      "kind": "name",
+      "width": 390,
+      "festive": true,
+      "arrival": true,
+      "motion": {
+        "state": "running",
+        "phase": "arrival",
+        "effect": "snow",
+        "ambientCount": 40,
+        "hangCount": 0
+      },
+      "flakesOverMascot": 0,
       "errors": []
     },
     {
@@ -237,6 +269,22 @@
       "errors": []
     },
     {
+      "file": "placements/corner-christmas-arrival-768.png",
+      "kind": "corner",
+      "width": 768,
+      "festive": true,
+      "arrival": true,
+      "motion": {
+        "state": "running",
+        "phase": "arrival",
+        "effect": "snow",
+        "ambientCount": 40,
+        "hangCount": 0
+      },
+      "flakesOverMascot": 4,
+      "errors": []
+    },
+    {
       "file": "placements/name-christmas-768.png",
       "kind": "name",
       "width": 768,
@@ -252,6 +300,22 @@
         }
       },
       "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/name-christmas-arrival-768.png",
+      "kind": "name",
+      "width": 768,
+      "festive": true,
+      "arrival": true,
+      "motion": {
+        "state": "running",
+        "phase": "arrival",
+        "effect": "snow",
+        "ambientCount": 40,
+        "hangCount": 0
+      },
+      "flakesOverMascot": 1,
       "errors": []
     },
     {
@@ -291,6 +355,22 @@
       "errors": []
     },
     {
+      "file": "placements/corner-christmas-arrival-1280.png",
+      "kind": "corner",
+      "width": 1280,
+      "festive": true,
+      "arrival": true,
+      "motion": {
+        "state": "running",
+        "phase": "arrival",
+        "effect": "snow",
+        "ambientCount": 40,
+        "hangCount": 0
+      },
+      "flakesOverMascot": 3,
+      "errors": []
+    },
+    {
       "file": "placements/name-christmas-1280.png",
       "kind": "name",
       "width": 1280,
@@ -306,6 +386,22 @@
         }
       },
       "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/name-christmas-arrival-1280.png",
+      "kind": "name",
+      "width": 1280,
+      "festive": true,
+      "arrival": true,
+      "motion": {
+        "state": "running",
+        "phase": "arrival",
+        "effect": "snow",
+        "ambientCount": 40,
+        "hangCount": 0
+      },
+      "flakesOverMascot": 0,
       "errors": []
     },
     {
@@ -471,6 +567,38 @@
     {
       "name": "end-christmas-1280 no sideways scroll",
       "pass": true
+    }
+  ],
+  "ambient": [
+    {
+      "width": 390,
+      "rest": {
+        "state": "running",
+        "phase": "rest",
+        "effect": "snow",
+        "ambientCount": 4,
+        "hangCount": 0
+      }
+    },
+    {
+      "width": 768,
+      "rest": {
+        "state": "running",
+        "phase": "rest",
+        "effect": "snow",
+        "ambientCount": 4,
+        "hangCount": 0
+      }
+    },
+    {
+      "width": 1280,
+      "rest": {
+        "state": "running",
+        "phase": "rest",
+        "effect": "snow",
+        "ambientCount": 4,
+        "hangCount": 0
+      }
     }
   ]
 }

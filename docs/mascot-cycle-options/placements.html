@@ -29,7 +29,8 @@
   <p class="note">Preview, 9 November 2026. The real Home page with synthetic staff (Ann, Lunch on Larder) and the test stand-in for Firebase, at phone 390 px, tablet 768 px and laptop 1280 px. The mascot shows its resting Welcome pose; on the first Home view of the day it would play today's action once in the same spot. No Home card moves in any of them. The live book is unchanged.</p>
   <div class="bar" role="group" aria-label="Celebration">
     <button type="button" data-festive="" aria-pressed="true">Normal day</button>
-    <button type="button" data-festive="-christmas" aria-pressed="false">With Christmas Day</button>
+    <button type="button" data-festive="-christmas-arrival" aria-pressed="false">Christmas, snow arriving</button>
+    <button type="button" data-festive="-christmas" aria-pressed="false">Christmas, at rest</button>
   </div>
 
   <h2>1. Heading corner</h2>
@@ -46,9 +47,11 @@
 
   <h2>What the celebration shows</h2>
   <ul>
-    <li>On a named Home the celebration keeps its ornaments out of the heading area (the welcome rule), so none of the three spots touches celebration art.</li>
+    <li>Christmas brings snow. On the first Home view of the day about 40 small flakes fall for about 4 seconds, mostly down the left and right edges, then a few slow flakes stay. That first view is also when the mascot plays today's action, so the two arrive together.</li>
+    <li>The heading corner sits in the right-hand snow lane: 3 or 4 flakes pass it during the arrival at every width. Beside the name stays almost clear (0 on phone and laptop, 1 on tablet). The flakes fall behind the page's words and the mascot.</li>
+    <li>On a named Home the celebration keeps its hanging and standing ornaments out of the heading area (the welcome rule), so no ornament touches any spot.</li>
     <li>Christmas adds its chalkboard card under the date. Placements 1 and 2 stay above it; placement 3 moves down with the page.</li>
-    <li>Captured with reduced motion, so moving celebration pieces are still in the images.</li>
+    <li>Snow arriving is a single frame, part way through the fall. End of Home has no arrival image: you would be at the top of the page while the snow falls.</li>
   </ul>
   <p class="note">Measurements and checks: <code>placements-verification.json</code>. Capture: <code>capture-placements.mjs</code>. <a href="index.html">The three behaviour designs</a> · <a href="brief.md">Brief</a>.</p>
 </main>
@@ -60,8 +63,8 @@
       const kind = row.dataset.kind;
       row.replaceChildren(...widths.map(([w, label]) => {
         const f = document.createElement('figure'), img = document.createElement('img'), c = document.createElement('figcaption');
-        img.src = 'placements/' + kind + festive + '-' + w + '.png'; img.loading = 'lazy';
-        img.alt = names[kind] + ', ' + label.toLowerCase() + ' ' + w + ' px' + (festive ? ', Christmas Day' : '');
+        const f2 = kind === 'end' && festive === '-christmas-arrival' ? '-christmas' : festive; img.src = 'placements/' + kind + f2 + '-' + w + '.png'; img.loading = 'lazy';
+        img.alt = names[kind] + ', ' + label.toLowerCase() + ' ' + w + ' px' + (festive ? ', Christmas Day' + (festive.includes('arrival') ? ' with snow falling' : '') : '');
         c.textContent = label + ', ' + w + ' px' + (kind === 'end' ? ', scrolled to the end' : '');
         f.append(img, c); return f;
       }));

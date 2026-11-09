@@ -26,7 +26,7 @@ async function main() {
       const p = await L.open(b, '#/', { who: 'ann', extra: fixture, width, height, wait: 1200 });
       await p.evaluate(() => document.fonts.ready);
       await L.waitFor(p, () => /Larder/.test(document.querySelector('#hm-day')?.textContent || ''), null, 6000);
-      if (festive) { await p.emulateMedia({ reducedMotion: 'reduce' }); await p.evaluate(() => window.KB_SEASONAL?.configure({ selection: 'au-christmas-day' })); await L.settle(p, 900); }
+      const arrive = async () => { await p.evaluate(() => { try { localStorage.removeItem('lk.seasonal.arrival'); } catch (_) {} window.KB_SEASONAL?.configure({ selection: 'au-christmas-day' }); }); }; const motion = () => p.evaluate(() => { const m = window.KB_SEASONAL?.status?.().motion; return m && { state: m.state, phase: m.phase, effect: m.effect, ambientCount: m.ambientCount, hangCount: m.hangCount }; }); if (festive) { await arrive(); await p.clock.runFor(6000); await L.settle(p, 800); result.ambient = result.ambient || []; result.ambient.push({ width, rest: await motion() }); }
       await p.addScriptTag({ url: BASE + 'docs/mascot-cycle-options/placements.js' });
       const geo = () => p.evaluate(() => ['#rtitle', '.wall-date', '#hm-day', '#hm-with', '#hm-board'].map(s => { const r = document.querySelector(s)?.getBoundingClientRect(); return r ? [s, Math.round(r.x), Math.round(r.y + scrollY), Math.round(r.width), Math.round(r.height)] : [s]; }));
       const before = JSON.stringify(await geo());
@@ -35,16 +35,17 @@ async function main() {
         const tag = `${kind}${festive ? '-christmas' : ''}-${width}`;
         result.checks.push({ name: `${tag} keeps every Home rectangle`, pass: JSON.stringify(await geo()) === before });
         const sw = await p.evaluate(() => document.documentElement.scrollWidth); result.checks.push({ name: `${tag} no sideways scroll`, pass: sw <= width });
-        const hang = await p.evaluate(() => { const m = document.querySelector('.mc-place')?.getBoundingClientRect(); if (!m) return []; return [...document.querySelectorAll('.kb-hang-item')].filter(e => { const r = e.getBoundingClientRect(); return r.width && r.left < m.right && r.right > m.left && r.top < m.bottom && r.bottom > m.top; }).map(e => e.dataset.hangMotif); });
+        const hang = await p.evaluate(() => { const m = document.querySelector('.mc-place')?.getBoundingClientRect(); if (!m) return []; return [...document.querySelectorAll('.kb-hang-item,.kb-ambient-particle,.kb-ambient-horizon')].filter(e => { const r = e.getBoundingClientRect(); return r.width && r.left < m.right && r.right > m.left && r.top < m.bottom && r.bottom > m.top; }).map(e => e.dataset.hangMotif || e.className); });
         if (kind === 'end') { await p.evaluate(() => scrollTo(0, document.documentElement.scrollHeight)); } else await p.evaluate(() => scrollTo(0, 0));
         await L.settle(p, 300);
         await p.screenshot({ path: path.join(OUT, tag + '.png') });
         result.shots.push({ file: `placements/${tag}.png`, kind, width, festive, state: s, overlapsOrnaments: hang, errors: p.errors.filter(e => !e.startsWith('console:')) });
+        if (festive && kind !== 'end') { await p.evaluate(() => window.KB_EFFECTS.replay()); await p.clock.runFor(200); await new Promise(r => setTimeout(r, 1700)); const m = await motion(); let flakes = 0; for (let i = 0; i < 12; i++) { flakes = Math.max(flakes, await p.evaluate(() => { const r = document.querySelector('.mc-place')?.getBoundingClientRect(); return [...document.querySelectorAll('.kb-ambient-particle')].filter(e => { const q = e.getBoundingClientRect(); return r && q.width && q.left < r.right + 8 && q.right > r.left - 8 && q.top < r.bottom && q.bottom > r.top; }).length; })); if (i === 0) await p.screenshot({ path: path.join(OUT, tag.replace('christmas', 'christmas-arrival') + '.png') }); await new Promise(r => setTimeout(r, 200)); } const unused = await p.evaluate(() => { const r = document.querySelector('.mc-place')?.getBoundingClientRect(); return [...document.querySelectorAll('.kb-ambient-particle')].filter(e => { const q = e.getBoundingClientRect(); return r && q.width && q.left < r.right && q.right > r.left && q.top < r.bottom && q.bottom > r.top; }).length; }); result.shots.push({ file: `placements/${tag.replace('christmas', 'christmas-arrival')}.png`, kind, width, festive, arrival: true, motion: m, flakesOverMascot: flakes, errors: p.errors.filter(e => !e.startsWith('console:')) }); await p.clock.runFor(6000); await L.settle(p, 300); }
         await p.evaluate(() => LK_MASCOT_PLACE.remove()); await p.evaluate(() => scrollTo(0, 0));
       }
       await p.context().close();
     }
   } finally { await b.close(); fs.writeFileSync(path.join(DIR, 'placements-verification.json'), JSON.stringify(result, null, 2) + '\n'); }
-  console.log(JSON.stringify({ shots: result.shots.map(s => [s.file, s.state.mounted, s.state.why, s.overlapsOrnaments.join('|'), s.errors.length]), failed: result.checks.filter(c => !c.pass).map(c => c.name) }, null, 1));
+  console.log(JSON.stringify({ ambient: result.ambient, shots: result.shots.map(s => [s.file, s.state?.mounted, s.motion?.phase, s.motion?.ambientCount, s.flakesOverMascot, (s.overlapsOrnaments || []).length, s.errors.length]), failed: result.checks.filter(c => !c.pass).map(c => c.name) }, null, 1));
 }
 main().catch(e => { console.error(e); process.exit(1); });
