@@ -1,6 +1,6 @@
 # Cleaning schedule and checks
 
-9 November 2026. Status: implementation in progress. This extends the approved C daily notebook and A chef week review. The requested integration uses the existing application design. It introduces no page, tab, top-bar button or service-page popup.
+9 November 2026. Status: implemented and locally verified; production release pending. This extends the approved C daily notebook and A chef week review. The requested integration uses the existing application design. It introduces no page, tab, top-bar button or service-page popup.
 
 ## Outcome
 
@@ -132,3 +132,9 @@ Rules expand the accepted enhanced schema and add immutable action writes while 
 Browser verification passes: the new cleaning-schedule suite has 110 assertions, existing Cleaning 114, team release 94, navigation 26 and safe text 64. Read budget, roles, private access, context teardown, typed-work retention and device lock/recovery checks also pass. Six initial navigation load timeouts passed their single serial retry. A prior-date unsaved-check regression fails against the earlier module and passes with the fix; no past write is used to resolve it. The final schedule suite passed again after client recurrence was delegated to the shared bridge.
 
 Database verification and production publication are recorded separately below. Local tests do not imply that the feature or its rules are live.
+
+The complete 18-file Firestore/Auth emulator suite passed. Cleaning passed 738 real-rule checks. The actual client matrix passed 255 call shapes, 2,295 calls across nine sign-ins. The maximum supported 12-check plan with mapped verification and anchored recurrence passed create, revision and archive checks. Multiline methods/review and invalid-type rejection also passed. The synthetic backup recovery round trip preserved all 68 included documents, including an enhanced occurrence and its exact immutable action snapshot. Syntax and whitespace checks passed.
+
+Independent read-only review found no remaining material authorisation or audit bypass. Task ordering is a clear working sequence with per-task checks; it is not a global cross-task lock that could prevent an earlier after-service floor clean.
+
+The code is prepared on a feature branch for a draft pull request. No production rules were dispatched, no live task programme was imported and the team release switch was not enabled. The compatible additive rules must be published before the client is released; required CI and production verification remain distinct release steps.

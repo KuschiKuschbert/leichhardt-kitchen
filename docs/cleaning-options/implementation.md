@@ -41,6 +41,12 @@ The focused cleaning browser suite passed 112 checks, including lost acknowledge
 
 The initial page release added rules for new collections and published them before the client: [Publish rules, run 42471882907](https://github.com/KuschiKuschbert/leichhardt-kitchen/actions/runs/42471882907) passed on implementation commit `fff3121`, including compilation/publication, canonical foundation verification and the live Lock probe. [PR #609](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/609) tracks the full required CI result and normal release queue. The follow-up admin switch tightens existing access, so its rules publish after the compatible client as described in the release-switch contract.
 
+## Schedule and pack-down extension, 9 November 2026
+
+The [current feature contract](../cleaning-schedule.md) records the unbranded 26-task schedule and ordered 25-step Hot larder, Grill and Pans pack down, required checks, explicit service/prep/use records, blocked reasons, mapped Pass checks, anchored two-day drip trays and immutable actions. It supersedes the initial single-daily-occurrence scope while retaining the chosen layout, current clock, role boundaries and release switch.
+
+Local verification passed: 110 schedule browser assertions plus the existing Cleaning, release, navigation, safe-text, read-budget, role/private-access and device recovery checks; the complete 18-file real Firestore/Auth suite, including 738 Cleaning checks and 2,295 client-shape calls across nine identities; and the 68-document authenticated backup round trip. Native-font phone measurements retain seven complete rows and one-tap routine completion. See [the actual phone pack down](schedule/native-packdown-390.png), [expanded checks](schedule/native-packdown-checks-390.png) and [measurements](schedule/native-font-measurements.json). These are synthetic browser/emulator results, not a live deployment claim. Publish the additive rules before releasing the compatible client; no live schedule or release flag was changed here.
+
 ## Rollback
 
 Use a normal PR for a compatible client correction. Keep the saved cleaning records, immutable history, admin release flag and matching server gate. A client rollback does not erase data and must continue to honour the release switch.
