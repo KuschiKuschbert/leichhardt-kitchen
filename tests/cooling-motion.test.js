@@ -3,10 +3,13 @@ const L = require('./lib');
 const { R, ok } = L.results();
 const CURRENT = ['kitchens', L.PIN, 'cooling', 'current'].join('/'), HOUR = 3600000;
 const CONFIG = ['kitchens', L.PIN, 'config', 'main'].join('/'), DAY = L.ymd(new Date(L.NOW));
+const TOMORROW = L.ymd(new Date(L.NOW + 24 * HOUR));
 // Keep the real fourth header control present through both stages, with Cleaning's sixth page tab enabled.
 const team = {
   [CONFIG]: { ...L.seed()[CONFIG], staffIds: ['sam', 'ann', 'bo'], kitSecs: [{ id: 'larder', name: 'Larder', off: false }], kitShifts: [{ id: 'day', name: 'Day', from: 600, to: 1320, off: false }] },
-  [['kitchens', L.PIN, 'team', DAY].join('/')]: { day: DAY, v: 1, by: 'sam', at: L.NOW - HOUR, upd: L.NOW - HOUR, on: [{ id: 'ann', sh: 'day', sec: 'larder' }], br: [] }
+  [['kitchens', L.PIN, 'team', DAY].join('/')]: { day: DAY, v: 1, by: 'sam', at: L.NOW - HOUR, upd: L.NOW - HOUR, on: [{ id: 'ann', sh: 'day', sec: 'larder' }], br: [] },
+  // The midnight journey already has tomorrow's section, so its ordinary daily picker cannot cover Start.
+  [['kitchens', L.PIN, 'shifts', TOMORROW + '_ann'].join('/')]: { day: TOMORROW, sec: 'larder', name: 'Larder', at: L.NOW + 10 * HOUR, auto: false, sh: 'day' }
 };
 const millis = value => value && (value.__fakeTimestamp != null ? value.__fakeTimestamp : value.seconds * 1000 + (value.nanoseconds || 0) / 1000000);
 const saved = p => p.evaluate(path => __fake.dump()[path], CURRENT);
@@ -120,6 +123,18 @@ function controlsFit(a, width) {
       await L.waitFor(p, () => !!document.querySelector('.cooling-ping'));
       ok(await p.evaluate(() => __coolingSounds === 2), width + ': second completion invokes one further three-chime sequence');
       await p.getByRole('button', { name: 'Got it', exact: true }).click();
+      ok(await p.locator('button[data-cooling="clock"]:visible').count() === 0 && /disabled until tomorrow/.test(await p.locator('.cooling-clock-status').getAttribute('aria-label')), width + ': completed clock is read-only and explains tomorrow’s reset');
+      drawn = await shape(p);
+      ok(sameLayout(baseline, drawn) && controlsFit(drawn, width), width + ': the completed lockout keeps the same prep rows and header positions');
+      await p.locator('.cooling-clock-status').click();
+      ok((await writes(p)).length === 2 && (await saved(p)).run === first.run, width + ': tapping the completed clock cannot arm or write a fresh batch');
+      const unlock = L.NOW + 10 * HOUR; // Fixture starts at 14:00 Queensland; this is the following midnight.
+      await p.clock.pauseAt(unlock - 1);
+      await p.evaluate(() => window.dispatchEvent(new Event('lk-clock')));
+      ok(await p.locator('button[data-cooling="clock"]:visible').count() === 0, width + ': timer stays disabled until the last millisecond of the day');
+      await advance(p, unlock); await phase(p, 'idle');
+      ok((await writes(p)).length === 2, width + ': midnight restores the idle clock without starting a batch or writing a reset');
+      await p.clock.resume();
       await clockTap(p); await phase(p, 'armed');
       ok((await writes(p)).length === 2 && (await saved(p)).run === first.run, width + ': first new-batch tap arms without changing the completed record');
       await clockTap(p); await phase(p, 'first');

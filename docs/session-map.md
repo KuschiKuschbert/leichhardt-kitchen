@@ -4,6 +4,10 @@ Moved from `CLAUDE.md` on 8 November 2026, word for word, so the file every sess
 
 When a note or a file is added: its full row goes here, and one short row (what it covers, where it is) goes in `CLAUDE.md`. When the two disagree, the note itself wins, then `CLAUDE.md`.
 
+## Operandio daily lockout, 9 November 2026
+
+The owner requested disabling the timer after the second deadline until the following Queensland midnight. `js/cooling-core.js` derives the day gate from the exact server timestamp; `js/cooling.js` guards direct calls and `js/cooling-ui.js` shows completion as read-only, returning to ready at midnight without a reset write. The stricter `firestore.rules` and matching stand-in enforce the same date gate. Focused cooling and real emulator regressions include roles, refreshes, two screens, exact midnight and cross-midnight deadlines. [Contract, small-change council and checks](operandio-cooling.md#daily-lockout-9-november-2026). Publish rules after the compatible client; no new stored fields or reads.
+
 ## Sheet and modal close button, 9 November 2026
 
 The owner requested a small × on bottom sheets and modals for non-touch screens. The shared `SwipeDismiss()` helper in `js/controls.js` adds a missing header close using the original cancellation callback. `css/app.css` controls pointer/hover visibility and title spacing; `js/app.js` and `js/upkeep.js` keep the visible control in their keyboard loops. [Contract and verification](adaptive-controls.md#swipe-to-close-9-november-2026); `tests/modal-close.test.js`, `tests/update-confirmation.test.js` and existing overlay/swipe checks. No reads, rules, stored fields or saved-shell manifest changes.

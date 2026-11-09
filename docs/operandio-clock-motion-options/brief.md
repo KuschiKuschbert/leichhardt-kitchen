@@ -2,6 +2,8 @@
 
 ## Chosen
 
+The owner's later 9 November request adds a [daily lockout](../operandio-cooling.md#daily-lockout-9-november-2026): final Done is read-only until the midnight after the four-hour deadline. This supersedes the immediate new-batch action described in the original implementation record below.
+
 **Chosen: B on desktop, fixed filling ring on mobile.** On 9 November the owner said "yeah lets go with b", then "implement and bring live", and requested three loud chimes. The mobile ring remains fixed at 44px in every state. Four hours always waits for a separate tap after two hours. This branch implements that choice using the existing shared timer, not the accelerated preview clock.
 
 The original three desktop designs remain below as the decision record. The prototype comparison uses synthetic time and single preview chimes; production uses the saved server deadlines and three stronger chimes. Implementation verification and release status are recorded at the end of this brief.

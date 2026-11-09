@@ -105,6 +105,14 @@ for (const [id, pin] of [['vic', '4444'], ['fay', '5151']]) {
         await L.waitFor(p, () => !!document.querySelector('.cooling-ping')); await L.waitFor(other, () => !!document.querySelector('.cooling-ping'));
         ok(await p.getByText('Operandio batch cooling time 4 hours is done.', { exact: true }).isVisible() && await other.getByText('Operandio batch cooling time 4 hours is done.', { exact: true }).isVisible(), 'Both open devices receive the exact four-hour screen ping');
         ok((await writes(p)).length === 0 && (await writes(other)).length === 0 && (await saved(p)).rev === 2, 'Refresh and deadline ticks never create timer writes');
+        for (const screen of [p, other]) {
+          await screen.getByRole('button', { name: 'Got it', exact: true }).click();
+          await clockOpen(screen);
+          ok(await screen.locator('.cooling-new button').isDisabled(), 'Each signed-in device refuses another batch on the completion day');
+          await screen.keyboard.press('Escape');
+        }
+        await other.reload(); await clockOpen(other);
+        ok(await other.locator('.cooling-new button').isDisabled() && (await saved(other)).rev === 2, 'Reloading keeps the shared completed timer locked for the day');
         ok(!other.errors.length, 'Second device: no browser errors ' + other.errors.join(' | '));
       } finally { await other.context().close(); }
     });
