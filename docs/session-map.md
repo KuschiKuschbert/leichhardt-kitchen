@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Supplier Latest/Earlier purchase labels, 9 November 2026
+
+The head chef selected A, Label the reference, after the [council and three visual directions](supplier-last-order-status-options/brief.md#chosen). Latest order / Earlier order uses loaded order IDs, keeps quantity/date visible and adds no read, tap or measured row height. `js/suppliers.js?v=23`, its loader in `js/app.js`, `css/app.css` and the focused `tests/supplier-order-status.test.js` implement and check the labels. Unknown history remains neutral, including old-record replay after a failed read. [Actual measurements and screenshots](supplier-last-order-status-options/brief.md#implementation-evidence).
+
 ## Planning staff sections ahead, 9 November 2026
 
 The head chef requested dated section planning a week ahead, reviewed three isolated previews, then chose A, a week strip in Today's team, and authorised coding. Round 1: Build smaller, 5 of 5. Round 2: A first for 6 of 6. `js/prep.js` and `css/app.css` extend the roster notebook with Monday to Sunday, previous/next week, Today, written day status and dated Save. Each date retains its own memory-only draft and version, separate from today's live record. Future saves do not invalidate today's staff view; older dates are read-only. The week query is bounded, with no listener. `tests/team-week.test.js`, existing team/Home/device/read-budget checks, the design registry and the real-emulator client shape matrix cover the changed contracts. `docs/team-week-options/` retains the proposal, previews, council, actual-app screenshots, density measurements and release status. [Feature record](team-week-options/brief.md).

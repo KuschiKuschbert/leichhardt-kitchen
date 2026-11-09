@@ -14,6 +14,7 @@ const js = jsFiles.map(read).join('\n');
 
 // the names docs/design-patterns.md uses, by section
 const CLASSES = [
+  'su-last-kind', 'su-last-wide', 'su-last-dow',
   'cooling-clock', 'cooling-clock-status', 'cooling-chip', 'cooling-menu', 'cooling-row', 'cooling-start', 'cooling-status', 'cooling-error',
   'ux-swipe', 'ux-swipe-handle', 'ux-swipe-dragging',
   'ux-modal-close', 'ux-modal-head', 'ux-modal-title',
