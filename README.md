@@ -4,6 +4,8 @@
 
 # Leichhardt Kitchen Book
 
+The [staff personalisation audit and three welcome designs](docs/staff-personalisation-options/brief.md) compare a named Home heading, a welcome inside Your day and a quiet greeting beside the date. The audit identifies existing personal context across the app, two reproduced name-consistency issues and selective additions such as the sender beside Kitchen mail. [Preview comparison](docs/staff-personalisation-options/index.html). These are proposals with synthetic examples, not an implemented or selected design.
+
 Operational colour meanings are shared across the book after the 9 November council review: orange for actions and attention, green for completed or assigned states, and red for failures, cancellation and destructive actions. Existing words, ticks and ownership badges keep each state clear; claimed Prep work stays readable. Artwork, allergens, wastage reasons, charts and the approved Home card colours retain their own meanings. [Inventory, council and checks](docs/colour-coding.md).
 
 The owner approved shared surface colours across books, blocks and banners: coloured covers, headers and spines with warm paper inside; steel for work, including Orders; sage for people; charcoal for live boards; quiet ivory for reference and forms. Amber remains attention or pending work, with green and red local to their stated outcomes. Layouts, controls and data behaviour stay intact. [Selected hybrid, council and release evidence](docs/surface-colours.md).

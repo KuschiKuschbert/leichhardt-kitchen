@@ -1,0 +1,39 @@
+{
+  "source": "29258e6",
+  "kind": "Synthetic browser probe, no production data",
+  "results": [
+    {
+      "case": "rename while menu open on Prep",
+      "before": {
+        "name": "Ann",
+        "hat": "Signed in as Ann, menu and Settings",
+        "menu": "ASigned in as AnnStaff×Not Ann? Sign outEvery dayFunctionsDelivery receivedKitchen cleaningKitchen mailMoreGuidesDrinks runSettings",
+        "initial": "A"
+      },
+      "after": {
+        "name": "Ana María",
+        "hat": "Signed in as Ann, menu and Settings",
+        "menu": "ASigned in as AnnStaff×Not Ann? Sign outEvery dayFunctionsDelivery receivedKitchen cleaningKitchen mailMoreGuidesDrinks runSettings",
+        "initial": "A"
+      }
+    },
+    {
+      "case": "menu reopened after rename",
+      "after": {
+        "name": "Ana María",
+        "hat": "Signed in as Ann, menu and Settings",
+        "menu": "ASigned in as Ana MaríaStaff×Not Ana? Sign outEvery dayFunctionsDelivery receivedKitchen cleaningKitchen mailMoreGuidesDrinks runSettings",
+        "initial": "A"
+      }
+    },
+    {
+      "case": "non-Latin name",
+      "data": {
+        "name": "李明",
+        "hatInitial": "?",
+        "settings": "SettingsDone李李明StaffMy own device. No idle lock. Unlock with your PIN after 04:00 each day. Your Google sign-in stays remembered.Sign outYouFollows you to any phone you sign in on.What you can doStaff"
+      },
+      "errors": []
+    }
+  ]
+}

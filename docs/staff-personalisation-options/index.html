@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en-AU">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A welcome that belongs in the Kitchen Book</title>
+<link rel="icon" href="../../icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../../css/app.css">
+<link rel="stylesheet" href="gallery.css">
+<body>
+<main class="pp-gallery">
+  <p class="pp-kicker">Kitchen Book · Design review · 9 November 2026</p>
+  <h1>A welcome that feels like your kitchen.</h1>
+  <p class="pp-intro">Three ways to recognise the person signing in, while keeping their section, break and team first. These are proposed layouts captured in the actual app with fictional people. Nothing here changes the live book.</p>
+  <div class="pp-controls" aria-label="Preview options">
+    <div class="pp-size" role="group" aria-label="Screen width">
+      <button type="button" data-width="390" aria-pressed="true">Phone · 390</button>
+      <button type="button" data-width="768" aria-pressed="false">Tablet · 768</button>
+      <button type="button" data-width="1280" aria-pressed="false">Desktop · 1280</button>
+    </div>
+    <a href="brief.md">Read the full audit</a>
+  </div>
+  <div class="pp-grid">
+    <article class="pp-option" id="baseline">
+      <div class="pp-copy"><p class="pp-letter">Current app</p><h2>The day leads</h2><p>The weekday is the heading. Staff already see their own section, break and scheduled coworkers.</p></div>
+      <a class="pp-shot" href="previews/baseline-390.png" data-concept="baseline"><img src="previews/baseline-390.png" alt="Current Home: Monday heading above Your day and On with you" width="390" height="844"></a>
+      <div class="pp-note">The missing piece is an explicit welcome using the staff name. Identity is already available in the chef hat and menu.</div>
+    </article>
+    <article class="pp-option" id="a">
+      <div class="pp-copy"><p class="pp-letter">A · Named welcome</p><h2>Welcome, Ann</h2><p>Put the name in the existing handwritten heading. Keep the full day and date just below.</p></div>
+      <a class="pp-shot" href="previews/a-390.png" data-concept="a"><img src="previews/a-390.png" alt="Option A: Welcome, Ann as the main Home heading" width="390" height="844"></a>
+      <div class="pp-note"><strong>Warmest, clearest welcome.</strong> Keeps the current board and card order. A long name needs more heading space.</div>
+    </article>
+    <article class="pp-option" id="b">
+      <div class="pp-copy"><p class="pp-letter">B · Welcome on your board</p><h2>Your work starts here</h2><p>Use a compact date above the cards. Put the greeting on the charcoal board with the person's section and break.</p></div>
+      <a class="pp-shot" href="previews/b-390.png" data-concept="b"><img src="previews/b-390.png" alt="Option B: Welcome, Ann inside the personal charcoal board" width="390" height="844"></a>
+      <div class="pp-note"><strong>Connects identity to the shift.</strong> Brings useful cards higher. Your day becomes a smaller label, and the board has to hold a longer name.</div>
+    </article>
+    <article class="pp-option" id="c">
+      <div class="pp-copy"><p class="pp-letter">C · Quiet recognition</p><h2>Keep the day in front</h2><p>Retain the weekday heading. Put a small named welcome in the date line below, leaving the personal board as it is.</p></div>
+      <a class="pp-shot" href="previews/c-390.png" data-concept="c"><img src="previews/c-390.png" alt="Option C: Monday stays prominent with Welcome, Ann in the date line below" width="390" height="844"></a>
+      <div class="pp-note"><strong>Most restrained.</strong> Very little relearning. The welcome is easier to miss, and long names make the date line wrap.</div>
+    </article>
+  </div>
+  <section class="pp-extra">
+    <h2>Names should stay whole.</h2>
+    <p>Use the name saved in the staff roster. Do not guess a first name by splitting at a space. These phone captures check a long multiword name and a name in Devanagari.</p>
+    <div class="pp-edge-links">
+      <a href="previews/a-long-390.png">A · Long name</a><a href="previews/b-long-390.png">B · Long name</a><a href="previews/c-long-390.png">C · Long name</a>
+      <a href="previews/a-unicode-390.png">A · Devanagari</a><a href="previews/b-unicode-390.png">B · Devanagari</a><a href="previews/c-unicode-390.png">C · Devanagari</a>
+    </div>
+    <p><a href="previews/a-large-text-390.png">A · Enlarged text</a> · <a href="previews/a-long-large-text-390.png">A · Long name and enlarged text</a> · <a href="previews/b-long-large-text-390.png">B · Long name and enlarged text</a> · <a href="previews/c-long-large-text-390.png">C · Long name and enlarged text</a></p>
+    <p class="pp-limit">The images show the proposed presentation. Authentication, account switching, stale names, role access and save acknowledgements need implementation checks. The measured layouts are in <a href="measurements.json">measurements.json</a>.</p>
+  </section>
+</main>
+<script src="gallery.js"></script>
+</body>
+</html>

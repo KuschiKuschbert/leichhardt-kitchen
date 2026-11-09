@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Staff welcome and personalisation audit, 9 November 2026
+
+The [bounded whole-app personalisation audit](staff-personalisation-options/brief.md) records existing identity context, source evidence, independent role-based review, reproduced rename/initial inconsistencies, and three isolated Home proposals. The [comparison](staff-personalisation-options/index.html), runtime captures and measurements use synthetic staff data. No production app, permission, rule or saved-data change; the owner has not selected a design. Coordinate first-daily Home routing with PR #599 and later Orders ideas with #642. The brief owns scope, evidence limits and implementation acceptance.
+
 ## Council design references, 9 November 2026
 
 The head chef requested the seven-app recommendations as standing council guidance. The [service council](../.claude/skills/service-council/SKILL.md#design-references) owns the principles, evidence questions and comparison format. Its reviewer briefs pass them to every reviewer in both rounds; small changes use a short reference-fit note. Whole-app audits share the criteria through section 5 of their brief. Current contracts and approved designs win. `CLAUDE.md`, the README and the pull request template point sessions to this guidance; the advisory Council check remains unchanged.

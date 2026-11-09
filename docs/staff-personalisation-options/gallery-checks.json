@@ -1,0 +1,76 @@
+{
+  "method": "Local Chromium gallery clicks and phone reflow; contact sheet is a browser screenshot of comparison.html, not image editing.",
+  "results": [
+    {
+      "width": "768",
+      "selected": true,
+      "allImagesMatch": true,
+      "imagesLoaded": true,
+      "overflow": false
+    },
+    {
+      "width": "1280",
+      "selected": true,
+      "allImagesMatch": true,
+      "imagesLoaded": true,
+      "overflow": false
+    },
+    {
+      "width": "390",
+      "selected": true,
+      "allImagesMatch": true,
+      "imagesLoaded": true,
+      "overflow": false
+    },
+    {
+      "scenario": "gallery phone reflow",
+      "overflow": false
+    },
+    {
+      "scenario": "index.html local assets",
+      "allLocalAssetsExist": true,
+      "paths": [
+        "../../icon.svg",
+        "../../css/app.css",
+        "gallery.css",
+        "brief.md",
+        "previews/baseline-390.png",
+        "previews/baseline-390.png",
+        "previews/a-390.png",
+        "previews/a-390.png",
+        "previews/b-390.png",
+        "previews/b-390.png",
+        "previews/c-390.png",
+        "previews/c-390.png",
+        "previews/a-long-390.png",
+        "previews/b-long-390.png",
+        "previews/c-long-390.png",
+        "previews/a-unicode-390.png",
+        "previews/b-unicode-390.png",
+        "previews/c-unicode-390.png",
+        "previews/a-large-text-390.png",
+        "previews/a-long-large-text-390.png",
+        "previews/b-long-large-text-390.png",
+        "previews/c-long-large-text-390.png",
+        "measurements.json",
+        "gallery.js"
+      ]
+    },
+    {
+      "scenario": "comparison.html local assets",
+      "allLocalAssetsExist": true,
+      "paths": [
+        "../../icon.svg",
+        "../../css/app.css",
+        "comparison.css",
+        "previews/a-390.png",
+        "previews/b-390.png",
+        "previews/c-390.png"
+      ]
+    },
+    {
+      "scenario": "browser errors",
+      "errors": []
+    }
+  ]
+}
