@@ -10,13 +10,51 @@ The search wrapper grows to fill a row (`flex: 1 1 10rem`). Inside a standard `.
 
 The app stays dependency-free. Existing form controls remain the value and validation source. Shared DOM components enhance new and redrawn controls. Existing save handlers, permissions and reads remain authoritative.
 
+## Shared modal frame (9 November 2026)
+
+Chosen by the owner after the modal audit: reuse the existing shared picker's warm-paper frame, title styling, spacing, rounded corners and close × across existing dismissible overlays. No alternative visual direction is needed: the owner explicitly approved this existing pattern and said to implement it.
+
+`ModalFrame()` and `SwipeDismiss()` in `js/controls.js` enhance existing markup, including redraws. A phone below 768 px gets a bottom sheet; at 768 px and above it becomes a centred modal. All have one named close × with a 44 px target, on touch as well as mouse. Larger document content retains a wider frame. Cooling details and the chef menu use the compact width. The occasion explanation gains the same frame and swipe support. Its language and Home controls remain available.
+
+Existing fields stay in their feature's DOM. Simple headings gain a shared sticky header so the × stays in view while the form scrolls. The ×, downward grip/header gesture, backdrop, Escape and Back follow cancellation, not Save, Confirm or Got it. Prep, Orders, Wastage and Transfers keep their existing memory drafts. Pings remain unread. Pending attribution saves retain their busy guard. Uncommitted picker choices are cancelled without submitting. The native device-choice backdrop now uses its existing cancel handler. Mandatory kitchen/PIN/name screens remain non-dismissible. Existing footer text actions remain for clarity.
+
+The chef menu and occasion explanation now use the existing overlay-history helper, returning focus after dismissal and retaining the destination when a link navigates. Occasion explanations wait behind other sheets, and automatic sheets wait behind native dialogs. Guide pages keep their existing zoom, page turning, pinch and history; their wider modal has a matching dim backdrop removed on close or route changes. Native confirmation Tab loops include the ×. Reduced motion disables the shared entrance/return motion.
+
+### Coverage
+
+| Existing family | Covered screens |
+| --- | --- |
+| `.sheet` | Prep/Orders add forms, Wastage log/review/older reason sheet, Transfers, Prep/Cleaning worker attribution, line menu/change amount/move section, Find and On this page |
+| `.nt` | Shift pings, minutes, previews, Your day and cooling alerts |
+| `.wm` | Signed-in and signed-out chef menu |
+| `dialog.ux-picker` | Shared choices, section/recipe pickers, device choice, device-change confirmation and unsaved-update confirmation |
+| `.cooling-menu`, `.fn-sheet`, `.mlp` | Timer details, function details and kitchen-mail reminder |
+| `.gz-wrap` | Guide document pages, including page redraws and Full size |
+| `dialog.kb-occasion-panel` | Seasonal occasion explanation |
+
+PIN, kitchen access and name screens are deliberately outside this dismissible-overlay list. Native operating-system share/install prompts are controlled by the browser.
+
+### Council quick check and service impact
+
+Verdict: Build smaller. This is the owner's approved reuse of an existing frame on existing overlays, with no new page, popup, service step or capability removal. Product: an obvious exit on every device. Usability: a consistent title, grip and ×, with text footer actions retained. Engineering: one enhancement and frame rather than rewriting each form. This is a proportional role-based quick check, not independent reviewers or staff research. The owner's explicit choice settles the direction.
+
+Add a prep line remains one tap from its tab; Tick remains one tap; opening Recipes remains one tap. Closing remains one tap or one gesture. Underlying list layout is unchanged: the synthetic 390 x 844 fixture has six fully visible Prep lines and a 90.27 px header before and after. The modal header reserves room for the × and can reduce content shown inside the open sheet, in exchange for a predictable visible exit. It takes no list lines away when closed. No reads, writes, rules, saved fields, dependencies or lazy-module API numbers change.
+
+### Verification and comparison
+
+`tests/modal-frame.test.js` checks the real Prep, Orders, Wastage and Transfers forms and chef menu at 390, 768 and 1280 px. Before implementation, 27 of its original 70 checks failed. With the shared frame, all 110 checks pass, including touch targets, responsive placement, cancellation without writes and draft retention. `tests/modal-close.test.js` retains keyboard, busy guard, unread-ping and nested-picker checks with the newly approved touch-visible ×. `tests/modal-overlays.test.js` covers native device backdrop cancellation, cooling, menu Back, occasion swipe/Back, guide redraws and backdrop cleanup. The existing swipe checks cover cancelled/short/multitouch gestures, native scrolling, nested cancellation and drafts. Full-suite results and release state are recorded in the pull request; local/mock evidence does not establish a production-device check.
+
+| Before, 390 px | Shared frame, 390 px |
+| --- | --- |
+| ![Previous Prep sheet](images/shared-modal-before-390.png) | ![Shared Prep sheet](images/shared-modal-after-390.png) |
+
+[Tablet comparison](images/shared-modal-after-768.png), [desktop comparison](images/shared-modal-after-1280.png), [chef menu](images/shared-modal-menu-390.png). Baseline commit: `72d36a0`, local tag `modal-frame-baseline-2026-11-09`. Rollback: revert the shared frame change; no data migration or rule publication is involved.
+
 ## Swipe to close (9 November 2026)
 
-The owner also requested a small × in bottom-sheet and modal headers for non-touch screens. The shared helper adds `.ux-modal-close` only where a header has no existing close control. It appears for a fine pointer with hover, has a 44 px target and a Close dialog label, and invokes the same original Cancel/backdrop callback as swiping. It sits outside the labelled heading so the dialog name stays unchanged. Existing picker, cooling, function and guide close controls remain single. Chef-menu and update-confirmation keyboard loops include the visible button; it is disabled while a worker save is busy. Touch layout is unchanged.
+The first header × rollout was fine-pointer only. The owner's subsequent request to make every modal and bottom sheet look and behave the same supersedes that visibility rule. See the shared frame below. The earlier release's checks and measurements remain historical evidence, not the current touch contract.
 
-Quick check: Build smaller. This exposes an existing dismissal action with the owner's chosen ×, without adding a workflow or service step. The dedicated modal-close checks fail 18 of 33 assertions on the previous source and pass all 33 with the change. They cover fine-pointer windows at 390/768/1280 px, keyboard dismissal, busy guards, retained drafts and history, unread pings, existing controls and coarse-pointer hiding. At 390 px with touch, the sheet keeps its 428.17 px height, 358 px title width and 26 px title height. Release and live results are recorded in the PR. No reads, writes, rules or saved data change.
-
-The owner requested swipe dismissal for existing bottom sheets and modals. `SwipeDismiss()` in `js/controls.js` enhances the current sheet, pings/day, chef menu, cooling menu/alert, function, mail and native picker/dialog headings and grips. The full-page guide viewer supports dragging its toolbar; its page keeps pinch and horizontal page turning. These are existing overlays with existing close controls, not new screens.
+The owner requested swipe dismissal for existing bottom sheets and modals. `SwipeDismiss()` in `js/controls.js` enhances the current sheet, pings/day, chef menu, cooling menu/alert, function, mail and native picker/dialog headings and grips. The guide document viewer supports dragging its toolbar; its page keeps pinch and horizontal page turning. These are existing overlays with existing close controls, not new screens.
 
 Drag down 72 px, or flick at least 32 px at 0.5 px/ms, from a grip or heading. The panel follows the pointer. Short, sideways, upward, cancelled and multi-touch gestures return it to its resting position. Only the grip/title handles take the gesture; lists, options, form fields and other page content retain native interaction. Touch, pen and mouse use the same helper. Reduced motion removes the return transition. An accidental click after dragging is consumed; the next deliberate tap still works.
 

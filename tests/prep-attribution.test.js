@@ -94,7 +94,7 @@ async function open(b, options = {}) {
     if (!shape) return;
     ok(/Who did this\?/.test(shape.text) && /Slice onions/.test(shape.text) && /2 tubs/.test(shape.text), width + ': dialog identifies the exact task and amount');
     ok(shape.left >= -1 && shape.right <= width + 1 && shape.targets.every(h => h >= 44), width + ': dialog fits and choices retain 44 px targets');
-    ok(width < 720 ? Math.abs(shape.bottom - shape.vh) <= 1 : shape.width <= 422 && shape.top > 0 && shape.bottom < shape.vh && Math.abs((shape.left + shape.right) / 2 - width / 2) <= 1,
+    ok(width < 768 ? Math.abs(shape.bottom - shape.vh) <= 1 : shape.width <= 608 && shape.top > 0 && shape.bottom < shape.vh && Math.abs((shape.left + shape.right) / 2 - width / 2) <= 1 && Math.abs((shape.top + shape.bottom) / 2 - shape.vh / 2) <= 1,
       width + ': phone bottom sheet or centred tablet/desktop dialog');
     const during = await p.evaluate(() => ({ rows: [...document.querySelectorAll('.nb-left .nb-row')].map(e => e.id), second: document.querySelector('#nbr-i2').getBoundingClientRect().top + scrollY }));
     ok(JSON.stringify(before.rows) === JSON.stringify(during.rows) && Math.abs(before.second - during.second) <= 1, width + ': opening attribution neither inserts nor shifts prep tasks');

@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Shared modal frame, 9 November 2026
+
+The owner approved the existing picker frame across all dismissible sheets: touch-visible ×, matching title/spacing/corners, swipe cancellation and one 768 px responsive breakpoint. `js/controls.js`, `css/app.css`, menu history in `js/app.js`, native-dialog queue recognition in `js/prep.js` and occasion history in `js/seasonal/theme-bridge.js`. Real forms, native dialogs, guide pages, cooling and gestures are covered by modal-frame, modal-overlays, modal-close, swipe-dismiss, cooling, seasonal and the full Click tests. No reads, saved fields or rules change. [Contract, quick check and comparisons](adaptive-controls.md#shared-modal-frame-9-november-2026).
+
 ## Each supplier item's last order, 9 November 2026
 
 The existing supplier row shows its last recorded quantity and Queensland date, including purchases omitted from the newest supplier order. One bounded history page on selection, explicit Older orders coverage and no new saved fields for this reference. Split entries retain their separate immutable history link and can use the bounded original-history fallback. `js/suppliers.js?v=22`, `css/app.css`, the lazy URL in `js/app.js`; `tests/supplier-last-ordered.test.js`, supplier workspace, quantities and module versions. [Contract, quick council and verification](supplier-workspace.md#each-items-last-order-9-november-2026).

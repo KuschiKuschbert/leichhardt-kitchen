@@ -53,28 +53,28 @@ async function closePrep(p) {
   })));
   await L.pLog(p);
   await p.fill('#p-text', 'Zest limes');
-  await swipe(p, '.p-sheet > h3', 0, 15);
+  await swipe(p, '.p-sheet h3', 0, 15);
   ok(!!(await p.$('.p-sheet')), 'phone: a short header movement keeps the sheet open');
-  await swipe(p, '.p-sheet > h3', 100, 10);
+  await swipe(p, '.p-sheet h3', 100, 10);
   ok(!!(await p.$('.p-sheet')), 'phone: a horizontal header swipe keeps the sheet open');
-  await swipe(p, '.p-sheet > h3', 0, -80);
+  await swipe(p, '.p-sheet h3', 0, -80);
   ok(!!(await p.$('.p-sheet')), 'phone: an upward header swipe keeps the sheet open');
-  await swipe(p, '.p-sheet > h3', 0, 100, { multitouch: true });
+  await swipe(p, '.p-sheet h3', 0, 100, { multitouch: true });
   ok(!!(await p.$('.p-sheet')), 'phone: adding a second finger cancels swipe dismissal');
   await p.locator('.p-sheet').evaluate(el => el.setAttribute('aria-busy', 'true'));
-  await swipe(p, '.p-sheet > h3');
+  await swipe(p, '.p-sheet h3');
   ok(!!(await p.$('.p-sheet')), 'phone: a busy sheet keeps its existing pending-work guard');
   await p.locator('.p-sheet').evaluate(el => el.removeAttribute('aria-busy'));
   const atRest = await p.locator('.p-sheet').boundingBox();
   let duringDrag;
-  await swipe(p, '.p-sheet > h3', 0, 100, { cancel: true, inspect: async () => { duringDrag = await p.locator('.p-sheet').boundingBox(); } });
+  await swipe(p, '.p-sheet h3', 0, 100, { cancel: true, inspect: async () => { duringDrag = await p.locator('.p-sheet').boundingBox(); } });
   const afterCancel = await p.locator('.p-sheet').boundingBox();
   ok(duringDrag.y > atRest.y + 80, 'phone: the sheet follows the finger during a downward drag');
   ok(Math.abs(afterCancel.y - atRest.y) < 1, 'phone: a cancelled drag snaps back to the original position');
   ok(!!(await p.$('.p-sheet')), 'phone: a cancelled touch returns the sheet without dismissing');
   await swipe(p, '#p-text', 0, 100);
   ok(!!(await p.$('.p-sheet')) && await p.inputValue('#p-text') === 'Zest limes', 'phone: dragging a form field preserves the sheet and typed words');
-  await swipe(p, '.p-sheet > h3');
+  await swipe(p, '.p-sheet h3');
   ok(!(await p.$('.p-sheet')), 'phone: a real downward touch swipe on the title dismisses Add to prep');
   ok(await p.evaluate(() => location.hash) === '#/prep', 'phone: swipe closes the overlay without navigating away');
   if (await p.$('.p-sheet')) await closePrep(p);
@@ -98,7 +98,7 @@ async function closePrep(p) {
   if (await p.$('.ux-picker')) { await p.keyboard.press('Escape'); await L.settle(p, 200); }
   await closePrep(p);
   await p.click('#nbr-i1 .nb-more'); await L.settle(p, 200);
-  await swipe(p, '#lm-sheet .sheet > h3');
+  await swipe(p, '#lm-sheet .sheet h3');
   ok(!(await p.$('#lm-sheet')) && !!(await p.$('#nbr-i1')), 'phone: swiping the line menu cancels it without removing the line');
   if (await p.$('#lm-sheet')) { await p.keyboard.press('Escape'); await L.settle(p, 200); }
   await picker(p, false, true);
@@ -116,7 +116,7 @@ async function closePrep(p) {
 
   p = await L.open(b, '#/orders', { touch: true, wait: 1500 });
   await L.oLog(p); await p.fill('#o-text', 'Lemons');
-  await swipe(p, '.o-sheet > h3');
+  await swipe(p, '.o-sheet h3');
   ok(!(await p.$('.o-sheet')), 'orders: a downward title swipe closes Add to the order list');
   if (await p.$('.o-sheet')) { await p.keyboard.press('Escape'); await L.settle(p, 200); }
   await L.oLog(p);
@@ -137,7 +137,7 @@ async function closePrep(p) {
   for (const width of [768, 1280]) {
     p = await L.open(b, '#/prep', { width, height: 1000, touch: width === 768, wait: 1500 });
     await L.pLog(p);
-    await swipe(p, '.p-sheet > h3', 0, 110, { mouse: width === 1280 });
+    await swipe(p, '.p-sheet h3', 0, 110, { mouse: width === 1280 });
     ok(!(await p.$('.p-sheet')), width + ': dragging the modal title down dismisses it');
     if (await p.$('.p-sheet')) await closePrep(p);
     await picker(p, true); await p.locator('.ux-picker-option').nth(1).click();
