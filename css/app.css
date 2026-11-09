@@ -4472,19 +4472,18 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .tm-notebook .tm-tick { border-color: var(--faint); }
 .tm-notebook .tm-tick[aria-pressed="true"] { background: var(--done-ink); border-color: var(--done-ink); color: var(--paper); }
 .tm-notebook .tm-away-row { background: var(--hit); }
-/* Today's saved breaks use Home's pinned warm work board. */
+/* Today's saved breaks stand out on Home's pinned charcoal board. */
 .tm-notebook .tm-away.hm-board {
-  --bar: var(--hit);
-  --bar-text: var(--ink);
-  --bar-accent: var(--small-ink);
   padding: .9rem 1rem .4rem;
   border: 0;
   border-inline-start: 4px solid var(--accent-ink);
 }
-.tm-notebook .tm-away.hm-board .tm-away-title { font: 700 .8rem/1.2 var(--display); letter-spacing: .16em; text-transform: uppercase; }
+.tm-notebook .tm-away.hm-board .tm-away-title { color: var(--bar-text); font: 700 .8rem/1.2 var(--display); letter-spacing: .16em; text-transform: uppercase; }
 .tm-notebook .tm-away.hm-board .tm-away-source { margin-top: .4rem; }
-.tm-notebook .tm-away.hm-board .tm-away-row { padding-block: .45rem; border-top-color: var(--edge); background: none; }
-.tm-notebook .tm-away.hm-board .tm-away-back { font: 700 1.125rem/1.2 var(--display); }
+.tm-notebook .tm-away.hm-board .tm-away-source, .tm-notebook .tm-away.hm-board .tm-away-kind { color: color-mix(in srgb, var(--bar-text) 75%, transparent); }
+.tm-notebook .tm-away.hm-board .tm-away-row { padding-block: .45rem; border-top-color: color-mix(in srgb, var(--bar-text) 14%, transparent); background: none; }
+.tm-notebook .tm-away.hm-board .tm-away-back { color: var(--bar-accent); font: 700 1.125rem/1.2 var(--display); }
+.tm-notebook .tm-away.hm-board .tm-away-warn { color: var(--bar-accent); }
 .tm-notebook .tm-away.hm-board .tm-away-row.is-conflict .tm-away-back { font: 600 .875rem/1.35 var(--body); }
 /* Manage staff (Linear lists): a row each with the initial, the name, and the role with what they may do */
 .st-row { flex-direction: row !important; align-items: flex-start; gap: 12px !important; }
