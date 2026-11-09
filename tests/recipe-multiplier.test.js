@@ -132,6 +132,10 @@ async function coldRecipeChecks(b) {
   if (await choice.count() && await choice.isVisible()) await choice.click();
   await p.fill('#pf1', '2222');
   await L.waitFor(p, () => LK_PREP.bookEdit() && LK_PREP.state.who === 'ann', null, 8000);
+  // nothing was typed in the editor, so the first PIN of the new day opens Home (10 Nov 2026); then back to the recipe
+  await L.settle(p, 300);
+  ok(await p.evaluate(() => location.hash === '#/') && !!(await p.$('#hm-board')), 'a fresh PIN with no unfinished editor opens Home');
+  await p.evaluate(() => { location.hash = '#/manage/r/multiply-test'; }); await L.settle(p, 300);
   await p.clock.fastForward(61000);
   await p.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
   const unlocked = await L.waitFor(p, () => document.querySelector('#mg-name')?.value === 'Multiplier test').catch(() => false);

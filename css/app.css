@@ -854,7 +854,7 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 @keyframes who-flip {
   0% { transform: perspective(240px) rotateY(0deg) scale(0.4); opacity: 0; }
   25% { opacity: 1; }
-  65% { transform: perspective(240px) rotateY(720deg) scale(1.3); }
+  65% { transform: perspective(240px) rotateY(720deg) scale(1.1); }   /* 1.1, not 1.3: a long name on a shared phone stays on screen (10 Nov 2026) */
   82% { transform: perspective(240px) rotateY(720deg) scale(0.92); }
   100% { transform: perspective(240px) rotateY(720deg) scale(1); }
 }

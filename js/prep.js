@@ -1313,6 +1313,8 @@
   }
   function signedIn(id, hash) {
     if (!deviceReady() || !window.LK_DEVICE.verify(id)) { S.authed = false; S.pinMsg = 'This personal device is assigned to another person. Change it in Settings first.'; draw(); return; }
+    // asked before the PIN screen's state is cleared: unsent work, a waiting tap and the drink question keep their page
+    var toHome = homeNext(id) && S.drinkAsk !== 'first';
     setTimeout(dailyFlush, 3000);   // yesterday's counts, once someone is signed in (W writes as them)
     S.privacyLocked = false; S.unlocking = false; S.lockHasDraft = false; S.lockIdentity = ''; S.lockRecorder = ''; S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
     lsSet('lk.prep.tok', ''); lsSet('lk.prep.seen', String(Date.now())); lsSet('lk.prep.day', dayNow()); lastAct = Date.now(); startIdle();
@@ -1322,6 +1324,9 @@
     // chef hat (back) is a real start
     S.guestIn = !!(pend && !pend.back);
     lsSet('lk.prep.guest', S.guestIn ? id + ':' + dayNow() : '');   // kept for a reload; out of date for another person or day
+    // The first PIN of the person's day opens Home (10 Nov 2026, docs/home-staff-first.md); later PINs keep the page.
+    homeLoginKeep(id, S.sessExp);
+    if (toHome) { pend = null; location.hash = '#/'; }
     recoverWrites(id); loadAdmins(); accessChanged(); draw(); whoSync(true);
     if (pend) guestReplay(pend);
     dkCheck(); ksCheck(); noteMaybePop();
@@ -1329,6 +1334,20 @@
   /* Who signed in on this device today, newest first: "Who are you?" lists them first (lk.prep.here). */
   function hereGet() { try { var h = JSON.parse(lsGet('lk.prep.here') || 'null'); return h && h.d === dayNow() ? h.ids : []; } catch (e) { return []; } }
   function hereAdd(id) { var ids = hereGet().filter(function (x) { return x !== id; }); ids.unshift(id); lsSet('lk.prep.here', JSON.stringify({ d: dayNow(), ids: ids.slice(0, 12) })); }
+  /* Home on the first sign-in of the day (10 Nov 2026, docs/home-staff-first.md). lk.prep.home.<person> keeps the end of
+     the day the person last signed in on this device: their session's expiry, the next 04:00 Queensland. Out of date at
+     that 04:00, so the next PIN opens Home again. It survives sign-out and reload, and it is a screen hint only: it grants
+     nothing and saves nothing on the server. */
+  function homeLoginSeen(id) { return !!id && Number(lsGet('lk.prep.home.' + id)) === nextUnlock(now()); }
+  function homeLoginKeep(id, exp) { if (id && exp > now()) lsSet('lk.prep.home.' + id, String(exp)); }
+  // Home first, unless the person has work to finish here: kept or unsent work, a tap waiting on a shared screen (not the
+  // chef hat's Sign in, which only came back), a Functions-only account, which stays on its functions, or the head chef
+  // unlocking on Admin, which keeps Admin (owner, 10 Nov 2026).
+  function homeNext(id) {
+    var c = S.config || {};
+    return !!id && !homeLoginSeen(id) && (c.fnOnlyIds || []).indexOf(id) < 0 && !(S.name === 'admin' && id === c.headId) &&
+      !dirtyForUpdate() && !sendingNow() && (!S.pending || !!S.pending.back);
+  }
   /* ---------- a shared kitchen device with nobody signed in (20 Oct 2026) ----------
      After the 10 minute lock, the prep list, orders and wastage still show. A tap that writes (tick, add, urgent, order,
      log waste) asks "Who are you?" first, then does that same thing once the PIN is right, so nobody taps twice. What was
@@ -1464,6 +1483,7 @@
     }
     if (S.user && S.who !== (S.config || {}).headId) { var previous = S.who; dropGoogle().then(function () { pickName(previous); accessChanged(); }); return; }
     var sv = savedSession(), hasSess = sv && sv.by === S.who && sv.exp > now() && sv.exp === nextUnlock(sv.issuedAt) && sv.issuedAt < now() + 60000 && sv.uid === S.uid && sv.mode === deviceMode() && (deviceMode() !== 'personal' || deviceOwner() === S.who);
+    if (hasSess) homeLoginKeep(S.who, sv.exp);
     // a shared device handing over when it opens (a new kitchen day, or its idle time passed with the tab closed) takes
     // what the last person left on it, like Sign out (29 Oct 2026: their recipe, drawing and function drafts stayed for
     // the next person). A personal phone keeps its own drafts: the same person types their PIN again.
@@ -4688,6 +4708,9 @@
   var TICK = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M5 14 L11 20 L22 5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', transfers: 'Open the transfer list', minutes: 'Open the minutes', guides: 'Open the guides', cleaning: 'Open the cleaning list', mail: 'Open kitchen mail', drinks: 'Open the drinks run', admin: 'Open the admin panel' }[S.name] || 'Open the prep list'; }
+  // The personal PIN button names where the tap goes (docs/action-feedback.md): kept work, Home on the first sign-in of
+  // the day (homeNext), or this page
+  function pinGoLabel() { return blockedRecorder() ? 'Resume your work' : homeNext(S.who) ? 'Open Home' : openLabel(); }
   function gateHTML() {
     return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">' + (S.name === 'admin' ? 'The admin panel needs the kitchen PIN on this device once, then the head chef\'s Google sign-in.' : 'Enter the kitchen PIN to open the prep list, orders, wastage, transfers, minutes and guides. This device remembers it.') + '</p>' +
       '<div class="field"><label class="label" for="p-pin">PIN</label>' + pinField('p-pin', 'p-pin', S.pinInput, true) + '</div>' +
@@ -4704,7 +4727,7 @@
     here.forEach(function (id) { var p = list.filter(function (x) { return x.id === id; })[0]; if (p) first.push(p); });
     list.forEach(function (p) { if (first.indexOf(p) < 0) rest.push(p); });
     function names(l) { return '<div class="p-names">' + l.map(function (p) { return '<button type="button" class="chip p-name" data-p="who" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>'; }).join('') + '</div>'; }
-    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2>' + workNoticeHTML(true) + '<p class="hint">' + (S.pending && S.pending.back ? 'Pick your name and type your PIN. Then the book goes back to where you were.' : S.pending ? 'Pick your name and type your PIN. Then it is done for you.' : 'Pick your name. The first time, you choose your own 4-digit PIN to go with it.') + '</p>' +
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2>' + workNoticeHTML(true) + '<p class="hint">' + (S.pending && S.pending.back ? 'Pick your name and type your PIN. Your first sign-in of the day opens Home. After that, the book goes back to where you were.' : S.pending ? 'Pick your name and type your PIN. Then it is done for you.' : 'Pick your name. The first time, you choose your own 4-digit PIN to go with it.') + '</p>' +
       (!list.length ? '<p class="p-err">No names are set up yet. The head chef adds them in the admin panel.</p>' :
         first.length ? '<p class="nb-ql p-here">Here today</p>' + names(first) + (rest.length ? '<p class="nb-ql p-here">Everyone</p>' + names(rest) : '') : names(list)) +
       (S.picking && shared() ? '<div class="btn-row"><button type="button" class="btn" data-p="who-back">Back to the list</button></div>' : '') + '</section>';
@@ -4723,7 +4746,7 @@
       (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label>' + pinField('pf2', 'pf2', S.pf2, true) + '</div>' : '') +
       // a wait or a PIN just saved is a status, not an error (LF-06)
       (S.pinMsg ? S.pinMsg === 'Checking your PIN...' ? inkWait(S.pinMsg, 'chef') : S.pinMsg === PIN_AGAIN ? msgHTML(S.pinMsg) : '<p class="p-err" role="alert">' + esc(S.pinMsg) + '</p>' : '') +
-      '<div class="btn-row"><button type="submit" class="btn dark">' + (setting ? 'Save my PIN' : openLabel()) + '</button><button type="button" class="btn" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Not me') + '</button></div></form>';
+      '<div class="btn-row"><button type="submit" class="btn dark">' + (setting ? 'Save my PIN' : pinGoLabel()) + '</button><button type="button" class="btn" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Not me') + '</button></div></form>';
   }
 
   var BOX = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><rect x="2.5" y="2.5" width="21" height="21" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';

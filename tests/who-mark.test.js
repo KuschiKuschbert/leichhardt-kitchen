@@ -21,14 +21,15 @@ const mark = p => p.evaluate(() => { const e = document.querySelector('.wtop-who
   await p.click('.wm a[href="#/settings"]'); await L.settle(p, 400);
   ok(await p.evaluate(() => location.hash) === '#/settings' && !(await p.$('.wm')), 'recipes: Settings opens from the menu and the menu closes');
   ok(await p.evaluate(() => document.querySelector('.wtop-who').getAttribute('aria-current')) === 'page', 'settings: the chef mark is marked as the current page');
-  // Sign in from the hat: "Who are you?", the PIN, then back to the page it came from
+  // Sign in from the hat: "Who are you?", the PIN, then Home, as it is Ann's first PIN of the day (10 Nov 2026). A later
+  // Sign in from the hat goes back to the page it came from (tests/login-home.test.js)
   await p.evaluate(() => { location.hash = '#/r/laksa'; }); await L.settle(p, 400);
   await L.tap(p, '.wtop-who'); await L.settle(p, 200);
   await p.click('.wm [data-who="signin"]'); await L.settle(p, 800);
-  ok(await p.evaluate(() => location.hash) === '#/prep' && /Who are you\?/.test(await txt(p, '#prep-root') || '') && /goes back to where you were/.test(await txt(p, '#prep-root') || ''), 'sign in from the hat: "Who are you?" on the prep list, saying it goes back');
+  ok(await p.evaluate(() => location.hash) === '#/prep' && /Who are you\?/.test(await txt(p, '#prep-root') || '') && /first sign-in of the day opens Home\. After that, the book goes back to where you were/.test(await txt(p, '#prep-root') || ''), 'sign in from the hat: "Who are you?" on the prep list, saying where it goes');
   await p.click('.p-name[data-id="ann"]'); await L.settle(p, 500);
   await p.type('#pf1', '2222'); await L.settle(p, 1200);
-  ok(await p.evaluate(() => location.hash) === '#/r/laksa', 'sign in from the hat: back on the recipe after the PIN (' + await p.evaluate(() => location.hash) + ')');
+  ok(await p.evaluate(() => location.hash) === '#/', 'sign in from the hat: the first PIN of the day opens Home (' + await p.evaluate(() => location.hash) + ')');
   ok((await mark(p)) === 'on:Signed in as Ann:', 'sign in from the hat: the mark has her name (' + await mark(p) + ')');
   ok(p.errors.length === 0, 'sign in from the hat: no page errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -73,7 +74,7 @@ const mark = p => p.evaluate(() => { const e = document.querySelector('.wtop-who
     ok(/Who are you\?/.test(await txt(p, '#prep-root') || '') && (await mark(p)) === 'on:Menu and Settings:', pg + ': Sign out asks who is writing and takes the name off the mark');
     await p.click('.p-name[data-id="ann"]'); await L.settle(p, 500);
     await p.type('#pf1', '2222'); await L.settle(p, 900);
-    ok(await p.evaluate(() => location.hash) === '#/' + pg && await L.whoIs(p) === 'Ann', pg + ': Ann signs in and stays on the page');
+    ok(await p.evaluate(() => location.hash) === '#/' && await L.whoIs(p) === 'Ann', pg + ': Ann signs in, and her first PIN of the day opens Home');
     ok(p.errors.length === 0, pg + ' sign out: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
