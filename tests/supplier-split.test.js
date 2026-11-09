@@ -268,10 +268,10 @@ async function refusal(page, value) {
   emptyLatest[sourceKey + '/orders/latest-dry-only'] = { ...originalOrder, at: L.NOW - 10000, lines: [{ itemId: dry.id, name: dry.name, pack: dry.pack, qty: '9', amount: 9, unit: '', par: dry.par, parUnit: dry.parUnit, source: dry.source, suggestion: '', stock: '' }] };
   page = await open(browser, 390, emptyLatest);
   await importThroughUI(page); await action(page, 'order-mode'); await selectSupplier(page, TARGET);
-  await L.waitFor(page, () => /Not ordered/.test(document.querySelector('[data-item="t-stock"] .su-last')?.textContent || ''), null, 10000);
+  await L.waitFor(page, () => /2 kg/.test(document.querySelector('[data-item="t-stock"] .su-last')?.textContent || ''), null, 10000);
   const empty = await page.evaluate(async target => (await window.LK_SUP_STORE.create(window.LK_PREP.supplier()).history(target, 1)).rows, TARGET);
   ok(empty[0]?.sourceOrderId === 'latest-dry-only' && empty[0]?.lines.length === 0, 'an original latest order without moved items stays an empty projection rather than pulling older quantities forward');
-  ok(await page.$eval(qty('t-stock'), element => element.placeholder) === 'e.g. 2' && /Not ordered/.test(await L.txt(page, '[data-item="t-stock"] .su-last')), 'the separate sheet preserves Not ordered for an item omitted from the original latest order');
+  ok(await page.$eval(qty('t-stock'), element => element.placeholder) === '2 kg' && !!(await page.$('[data-item="t-stock"] .su-last time')), 'the separate sheet shows the item\'s earlier recorded purchase and date without treating it as part of the latest batch');
   await action(page, 'history');
   await L.waitFor(page, () => !!document.querySelector('.su-history-dates'), null, 5000);
   ok(!(await page.$('[data-su="reuse"]:not([disabled])')), 'an empty inherited projection cannot offer a live reuse-quantities action');

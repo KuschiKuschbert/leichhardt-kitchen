@@ -6,6 +6,8 @@
 
 Supplier sheets can follow updated order templates while keeping previous quantities attached to the same items. Re-import the updated private catalogue through **Import catalogue**: existing IDs follow the file's sequence, new items are added once and other saved items stay at the end. PFD Dry Goods and PFD Seafood can be separated for their different delivery schedules: Dry Goods keeps its existing reminder and Seafood links to the Seafood reminder already in the book. The split keeps previous quantities through the original immutable order history. Current pars, original records and drafts remain intact. The review shows the file sequence and reminder links; a smaller order-only format is also supported. [Contract and checks](docs/supplier-workspace.md#template-order-updates-9-november-2026).
 
+Supplier order shows each item's **last ordered quantity and date** in the existing Last order column. It checks recent saved orders and keeps an item's own last purchase when the latest supplier order omitted it. Older orders extends the check through Order history; unchecked earlier history is labelled clearly. [Behaviour and read costs](docs/supplier-workspace.md#each-items-last-order-9-november-2026).
+
 Sheets and modals can be closed by swiping their grip or title down, or dragging it with a mouse. Normal scrolling and fields keep their own gestures. Swiping uses the existing Cancel action, retaining add-form drafts and leaving pings unread. [Behaviour and checks](docs/adaptive-controls.md#swipe-to-close-9-november-2026).
 
 Mouse and trackpad users also get a small **×** in sheet and modal headers where a close control was missing. It uses the same Cancel action, with a keyboard label and a 44 px target. Touch layout stays the same.

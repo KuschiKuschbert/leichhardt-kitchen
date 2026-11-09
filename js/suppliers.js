@@ -1,6 +1,6 @@
 /* Supplier order: a private, lazy-loaded chef workspace. Catalogue data, history and drafts stay in memory.
-   Catalogue reads run on entry and Refresh. One latest order is read when a supplier opens; history and audit
-   read at most 20 records on a tap. No polling, per-item reads, public goods file or second persistent cache. */
+   Catalogue reads run on entry and Refresh. A supplier opens with 20 recent orders (at most 21 reads including
+   lookahead); older history and audit load on a tap. No polling, per-item reads or persistent private cache. */
 (function () {
   'use strict';
   var API = 10, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
@@ -62,9 +62,17 @@
   function dirty() { return formDirty() || hasDraft() || !!M.importing || M.saving; }
   function items(all) { var s = supplier(); return s ? s.items.filter(function (i) { return all || !i.archived; }) : []; }
   function item(id) { return items(true).filter(function (i) { return i.id === id; })[0] || null; }
-  function hist(sid) { sid = sid || M.sid; return M.history[sid] || (M.history[sid] = { rows: null, busy: false, err: '', more: false, cursor: null, full: false }); }
+  function hist(sid) { sid = sid || M.sid; return M.history[sid] || (M.history[sid] = { rows: null, byItem: Object.create(null), busy: false, err: '', more: false, cursor: null, full: false }); }
   function latest() { var h = hist(); return h.rows && h.rows[0] || null; }
-  function lastLine(id) { var order = latest(); return order ? order.lines.filter(function (l) { return l.itemId === id; })[0] || null : null; }
+  // Stable item IDs keep pack variants apart. Build once per history change, never scan orders for every row or key.
+  function indexHistory(h) {
+    h.rows = (h.rows || []).sort(function (a, b) { return b.at - a.at; });
+    h.byItem = Object.create(null);
+    (h.rows || []).forEach(function (order) { order.lines.forEach(function (line) {
+      var prior = h.byItem[line.itemId];
+      if (!prior || order.at > prior.order.at) h.byItem[line.itemId] = { order: order, line: line };
+    }); });
+  }
   function dateText(ms) {
     if (typeof ms !== 'number' || !isFinite(ms)) return 'Time unavailable';
     return new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Brisbane', weekday: 'long', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ms)) + ' AEST';
@@ -190,13 +198,16 @@
   }
   function loadHistory(full, more) {
     if (!M.sid || !store || !canRead()) return Promise.resolve();
-    var sid = M.sid, h = hist(sid), g = generation;
+    var sid = M.sid, h = hist(sid), g = generation, before = h.rows;
     if (h.busy || (!more && h.rows && (!full || h.full))) return Promise.resolve();
     h.busy = true; h.err = ''; draw();
-    return store.history(sid, full ? 20 : 1, more ? h.cursor : null).then(function (r) {
+    // One bounded query on supplier selection or Refresh, reused when History opens. Older orders load only on tap.
+    // Costs at most 21 order reads, including the extra record used to detect another page; no per-item reads.
+    return store.history(sid, 20, more ? h.cursor : null).then(function (r) {
       if (g !== generation || !canRead()) return;
-      h.rows = more ? (h.rows || []).concat(r.rows).filter(function (o, i, a) { return a.findIndex(function (v) { return v.id === o.id; }) === i; }) : r.rows;
-      h.cursor = r.cursor; h.more = r.more; h.full = full || h.full; h.busy = false; draw();
+      // A record acknowledged while this query was in flight must survive its older response.
+      h.rows = more || h.rows !== before ? (h.rows || []).concat(r.rows).filter(function (o, i, a) { return a.findIndex(function (v) { return v.id === o.id; }) === i; }) : r.rows;
+      h.cursor = r.cursor; h.more = r.more; h.full = true; h.busy = false; indexHistory(h); draw();
     }, function (e) { if (g === generation) { h.busy = false; h.err = errorText(e); draw(); } });
   }
   function loadRequests() {
@@ -253,7 +264,7 @@
     var h = hist(), o = latest();
     if (h.busy && !h.rows) return loading('Reading the latest supplier order...', 'orders');
     if (h.err) return '<p class="su-error">' + esc(h.err) + ' ' + smallButton('history-retry', 'Try again') + '</p>';
-    return '<div class="su-latest"><b>' + (o ? 'Last order: ' + esc(dateText(o.at)) : 'No order recorded for this supplier yet') + '</b><span class="hint">' + (o ? o.lines.length + ' items. The Last order column refers to this one order.' : 'Last order quantities appear after an order is recorded here.') + '</span></div>';
+    return '<div class="su-latest"><b>' + (o ? 'Last order: ' + esc(dateText(o.at)) : 'No order recorded for this supplier yet') + '</b><span class="hint">' + (o ? o.lines.length + ' items. Each row shows when that item was last ordered in the loaded history.' : 'Last order quantities appear after an order is recorded here.') + '</span></div>';
   }
   function matchInfo() { try { return C.matchRequests(items(), M.requests || []); } catch (e) { return { matches: [], unmatched: [] }; } }
   function validationAttrs(field, id) {
@@ -292,6 +303,11 @@
   }
   function itemCount(n) { return n + (n === 1 ? ' item' : ' items'); }
   function quantityText(q) { return !q.unit ? q.amount + ' (unit not set)' : q.qty; }
+  function lastOrderHTML(found, h) {
+    if (!found) return esc(!h.rows ? h.busy ? 'Loading' : 'Not read' : !h.full ? 'Not read' : h.more ? 'Earlier orders not checked' : 'No order yet');
+    var at = found.order.at, label = shortDate(at) + (T.day(at).slice(0, 4) !== day().slice(0, 4) ? ' ' + T.day(at).slice(0, 4) : '');
+    return '<b>' + esc(quantityText(found.line)) + '</b><time datetime="' + esc(new Date(at).toISOString()) + '" title="' + esc(dateText(at)) + '">' + esc(label) + '</time>';
+  }
   function orderUnitHint(i, d) { var unit = entryUnit('qty', i, d); return unit ? 'Order unit: ' + unit : String(d.qty[i.id] || '').trim() ? 'Unit not set' : 'Unit optional'; }
   /* Design A, step 2 (head chef, 3 Nov 2026): On hand sits on the row next to To order, and a counted top-up to par
      shows as a Use chip on its own row (the same Apply as the Suggestions panel; nothing fills by itself). */
@@ -310,11 +326,11 @@
      2026, head chef: "the usual amount as a hint"; every-page.html e-supplier). A hint is never a value: nothing is
      ordered until a number is typed, + is tapped or Use is taken. With no last order it says e.g. 2, as before. */
   function rowHTML(i) {
-    var d = draft(), l = lastLine(i.id), h = hist(), source = i.source || {}, match = matchInfo().matches.filter(function (m) { return m.itemId === i.id; })[0], top = topUp(i, d);
+    var d = draft(), h = hist(), found = h.rows && h.byItem[i.id], l = found && found.line, source = i.source || {}, match = matchInfo().matches.filter(function (m) { return m.itemId === i.id; })[0], top = topUp(i, d);
     var stockUnit = entryUnit('stock', i, d), qtyInput = '<input class="search" data-sf="qty" data-i="' + esc(i.id) + '" aria-label="To order: ' + esc(i.name) + '" placeholder="' + esc(l ? quantityText(l) : 'e.g. 2') + '" value="' + esc(d.qty[i.id] || '') + '" maxlength="40"' + validationAttrs('qty', i.id) + '>';
     return '<div class="su-row" data-item="' + esc(i.id) + '"><details class="su-item"' + (M.openItems[i.id] ? ' open' : '') + '><summary><b>' + esc(i.name) + '</b><span class="hint">Pack: ' + esc(i.pack || 'Not set') + ' · Details</span>' + (match ? '<span class="su-request">Staff asked for this</span>' : '') + '</summary><div class="su-item-more"><dl><dt>Source</dt><dd>' + (i.manual ? 'Added manually' : esc(source.file) + ' · page ' + esc(source.page)) + '</dd><dt>Original PDF par</dt><dd>' + esc(i.manual ? 'Not applicable' : source.par === '' ? 'Not set' : source.par) + '</dd><dt>Par unit</dt><dd>' + esc(i.parUnit || 'Unconfirmed') + '</dd><dt>Order unit</dt><dd>' + esc(i.orderUnit || 'Unconfirmed') + '</dd></dl>' +
       '<p class="hint">Only compatible confirmed units or a verified pack conversion can produce a top-up.</p>' + (match ? '<p class="hint">Matched by the exact item name or an explicit alias. Check the staff order list before deciding the quantity.</p>' : '') + '</div></details>' +
-      '<div class="su-par"><span class="su-mobile-label">Par</span><b>' + esc(currentPar(i)) + '</b><small>' + esc(i.parUnit || 'To confirm') + '</small></div><div class="su-last"><span class="su-mobile-label">Last order</span>' + esc(l ? quantityText(l) : !h.rows ? 'Loading' : latest() ? 'Not ordered' : 'No order yet') + '</div>' +
+      '<div class="su-par"><span class="su-mobile-label">Par</span><b>' + esc(currentPar(i)) + '</b><small>' + esc(i.parUnit || 'To confirm') + '</small></div><div class="su-last"><span class="su-mobile-label">Last order</span>' + lastOrderHTML(found, h) + '</div>' +
       '<label class="su-qty"><span class="su-mobile-label">To order</span>' + stepper(i, d, qtyInput) + '<small class="hint">' + esc(orderUnitHint(i, d)) + '</small>' + entryError('qty', i) + '</label>' +
       '<div class="su-count"><label class="su-onhand"><span>On hand' + (stockUnit ? ' (' + esc(stockUnit) + ')' : String(d.stock[i.id] || '').trim() ? ' (unit not set)' : '') + '</span><input class="search" data-sf="stock" data-i="' + esc(i.id) + '" aria-label="Stock count: ' + esc(i.name) + '" placeholder="e.g. 4" value="' + esc(d.stock[i.id] || '') + '" maxlength="40"' + validationAttrs('stock', i.id) + '></label>' +
       (top ? '<button type="button" class="su-use" data-su="apply" data-i="' + esc(i.id) + '" title="' + esc(top.reason) + '" aria-label="Use top-up ' + esc(quantityText(top)) + ' for ' + esc(i.name) + '">Top up ' + esc(quantityText(top)) + ' · Use</button>' : '') + entryError('stock', i) + '</div></div>';
@@ -366,7 +382,7 @@
   }
   function historyHTML() {
     var h = hist(), rows = h.rows || [], selected = rows.filter(function (o) { return o.id === M.historyId; })[0] || rows[0];
-    var body = ''; if (h.busy) body += loading('Reading order history...', 'orders', h.rows ? 0 : 3);
+    var body = '<p class="hint">Last order on each item shows its latest recorded quantity and date in the loaded history.' + (h.more ? ' Choose Older orders to check items marked Earlier orders not checked.' : '') + '</p>'; if (h.busy) body += loading('Reading order history...', 'orders', h.rows ? 0 : 3);
     if (h.err) body += '<p class="su-error">' + esc(h.err) + ' ' + smallButton('history-retry', 'Try again') + '</p>';
     if (selected) {
       body += field('historyQ', 'Find an order', M.historyQ, { type: 'search', placeholder: 'Date or item name' }) + '<div class="su-history-dates">' + rows.filter(function (o) { return (dateText(o.at) + ' ' + o.lines.map(function (l) { return l.name; }).join(' ')).toLowerCase().indexOf(M.historyQ.toLowerCase()) >= 0; }).map(function (o) { return '<button type="button" class="chip" data-su="history-order" data-id="' + esc(o.id) + '" aria-pressed="' + (o.id === selected.id) + '">' + esc(dateText(o.at)) + '</button>'; }).join('') + '</div><h4>' + esc(dateText(selected.at)) + '</h4><p class="hint">' + selected.lines.length + ' items · Recorded by ' + esc(B().name(selected.by) || 'Chef') + '</p>' + (selected.inheritedFrom ? '<p class="hint">From the original ' + esc(selected.supplierName) + ' order, before these suppliers were separated. Only this supplier\'s items are shown.</p>' : '') + (selected.lines.length ? linesHTML(selected.lines) : '<p class="hint">No items for this supplier in that order.</p>') + '<div class="btn-row">' + button('reuse', 'Use quantities again', ' data-id="' + esc(selected.id) + '"' + (selected.lines.length ? '' : ' disabled')) + button('copy-history', 'Copy this order', ' data-id="' + esc(selected.id) + '"' + (selected.lines.length ? '' : ' disabled')) + '</div>';
@@ -645,11 +661,11 @@
     var r = M.review, g = generation; M.saving = true; M.err = ''; draw();
     store.record(r.sid, r.catalogueV, r.id, r.lines, r.occurrence ? { day: r.occurrence.day, cutoffId: r.occurrence.cutoffId } : null, r.linkV, r.additional, r.occurrence && r.occurrence.deliveryDay || '').then(function (result) {
       if (g !== generation) return;
-      var h = hist(r.sid); h.rows = [result.order].concat((h.rows || []).filter(function (o) { return o.id !== result.order.id; }));
+      var h = hist(r.sid); h.rows = [result.order].concat((h.rows || []).filter(function (o) { return o.id !== result.order.id; })); indexHistory(h);
       delete M.drafts[r.sid]; M.review = null; M.saving = false; M.additional = ''; M.historyId = result.order.id; M.msg = result.replayed ? 'This order was already recorded. No duplicate was made.' : 'Order recorded. Nothing was sent to the supplier.'; draw();
       // a new view: start at its top, where the message says it was recorded (5 Nov 2026, docs/action-feedback.md)
       focusTask();
-    }, function (e) { if (g === generation) { M.saving = false; if (e.code === 'uncertain') r.uncertain = true; if (e.code === 'stale' || e.code === 'concurrent') r.uncertain = false; if (e.code === 'recorded') { r.recorded = true; r.uncertain = false; if (e.prior) { var h = hist(r.sid); h.rows = [e.prior].concat((h.rows || []).filter(function (o) { return o.id !== e.prior.id; })); } } M.err = errorText(e); draw(); } });
+    }, function (e) { if (g === generation) { M.saving = false; if (e.code === 'uncertain') r.uncertain = true; if (e.code === 'stale' || e.code === 'concurrent') r.uncertain = false; if (e.code === 'recorded') { r.recorded = true; r.uncertain = false; if (e.prior) { var h = hist(r.sid); h.rows = [e.prior].concat((h.rows || []).filter(function (o) { return o.id !== e.prior.id; })); indexHistory(h); } } M.err = errorText(e); draw(); } });
   }
   function openEditor(id) {
     if (!canEdit() || !leaveForm('edit:' + id)) return;
@@ -899,7 +915,7 @@
     if (cmd === 'share-review' && M.review) shareOrder(M.review.lines, M.review.supplierName);
     if (cmd === 'history') { M.historyOpen = !M.historyOpen; draw(); if (M.historyOpen) loadHistory(true, false); }
     if (cmd === 'history-close') closeHistory();
-    if (cmd === 'history-retry') { hist().rows = null; loadHistory(M.historyOpen, false); }
+    if (cmd === 'history-retry') { var retryHistory = hist(); retryHistory.rows = null; retryHistory.byItem = Object.create(null); retryHistory.full = false; retryHistory.more = false; retryHistory.cursor = null; loadHistory(M.historyOpen, false); }
     if (cmd === 'history-more') loadHistory(true, true);
     if (cmd === 'history-order') { M.historyId = el.getAttribute('data-id'); draw(); }
     if (cmd === 'reuse') reuseOrder(el.getAttribute('data-id'), false); if (cmd === 'reuse-confirm') reuseOrder(el.getAttribute('data-id'), true); if (cmd === 'reuse-cancel') { M.reuse = ''; draw(); }

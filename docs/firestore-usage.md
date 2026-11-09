@@ -18,6 +18,8 @@ After an acknowledged catalogue change, Orders discards its in-memory catalogue 
 
 ## Where 50,000 reads a day go
 
+Supplier last-order references (9 November 2026): selecting or refreshing a supplier reads its latest 20 saved orders in one query, at most 21 order reads with lookahead, replacing the previous latest-only query of at most 2. Opening Order history reuses that page. Each Older orders tap reads at most 21 more, with no automatic scan or per-item query. Typing and recording reuse the in-memory reference; record transactions retain their existing reads and writes. No new listener or persistent private cache. [Contract and checks](supplier-workspace.md#each-items-last-order-9-november-2026).
+
 | Source | Reads a day now | Notes |
 | --- | --- | --- |
 | Phones, tablets and laptops | about 44,000 by 13:00 on 5 Nov | See the next table. |

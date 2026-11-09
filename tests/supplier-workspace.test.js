@@ -27,8 +27,8 @@ async function clearForm(p, par) { await p.fill('[data-sf="par"]', par); await a
   ok(!!(await p.$('[data-su="manage"]')), 'head chef: Manage catalogue is available');
   const previousWeekday = new Intl.DateTimeFormat('en-AU', { weekday: 'long', timeZone: 'Australia/Brisbane' }).format(new Date(L.NOW - 2 * 86400000));
   ok((await txt(p, '.su-latest')).includes(previousWeekday), 'last order: its actual Queensland weekday is visible');
-  ok(/Not ordered/.test(body), 'last order: a product omitted from that supplier order is labelled Not ordered');
-  ok(/Not ordered/.test(await txt(p, '[data-item="t-zero"] .su-last')), 'last supplier order never pulls forward an older purchase of an omitted item');
+  ok(/No order yet/.test(body), 'last order: an item absent from the complete history has no order yet');
+  ok(/2 bags/.test(await txt(p, '[data-item="t-zero"] .su-last')), 'last order: an item omitted from the newest supplier order shows its own latest purchase');
   ok(await p.$eval(qtySel('t-stock'), e => e.value) === '', 'last order quantities do not silently fill the new draft');
   await action(p, 'history');
   await L.waitFor(p, () => !!document.querySelector('[data-su="history-order"][data-id="older"]'), null, 5000);
