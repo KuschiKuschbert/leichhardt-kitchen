@@ -114,6 +114,8 @@ The final focused rerun passed Colour semantics, Status contrast (including seco
 
 The branch was reconciled with supplier update `9129700`. Its Latest/Earlier order labels keep their neutral informational treatment. The combined source then passed six focused files: supplier purchase status, supplier module version, split history, colour semantics, status contrast and design patterns. The shared-file merge preserved both decision records and the supplier's new styles.
 
+The branch was then reconciled with main `d8e20d7` after the shared modal frame, dated Team planner and supplier catalogue updates. README, the decision log and the pattern guard retain both sets of additions. The original status CSS changes remain intact; app JavaScript, Firestore rules, the service worker and startup index match that main revision. All 11 focused files passed: colour semantics, status contrast, Prep ownership, design patterns, modal frame, modal overlays, modal close, swipe dismissal, Team week planning, Team notebook and Today's team. The 26 changed JavaScript files parse and whitespace checks pass. Today's team also passed with the existing verified-font replay, so its Barlow top-bar measurements ran without the environment's font-loading skip. No assertion was relaxed and the whole suite was not repeated; required CI remains the release gate for the combined commit.
+
 ## Release and rollback
 
 Ship as one focused, reversible visual change under the existing branch, PR and saved-shell rules. Keep the operational code, state timing and Firestore rules unchanged. Stop release for unreadable labels, a missed pending/error state, a category recoloured as a verdict, changed list geometry or a failed critical journey.

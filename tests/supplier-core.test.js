@@ -1,6 +1,6 @@
 // Pure supplier contracts, with made-up catalogue items only. No Firebase or real supplier data.
 const assert = require('assert');
-const C = require('../js/supplier-core.js');
+const C = require(process.env.SUPPLIER_CORE_FILE || '../js/supplier-core.js');
 const results = [];
 function test(name, run) { try { run(); results.push('PASS ' + name); } catch (e) { results.push('FAIL ' + name + ': ' + e.message); } }
 function item(overrides) { return Object.assign({ id: 'i-test', name: 'Test stock', pack: '5 kg bag', group: 'Dry goods', category: 'Dry store', par: '10', parUnit: 'kg', orderUnit: 'kg', factor: 1, aliases: ['Test request'], archived: false, manual: true, source: { file: '', page: 0, row: 0, name: '', par: '' } }, overrides || {}); }
@@ -287,7 +287,7 @@ test('split supplier history metadata round-trips without adding fields to ordin
   assert.deepStrictEqual(C.cleanSupplier(ordinary), ordinary);
   const split = { ...supplier(), id: 'split-test', at: 20, historyFrom: 's-test', historyBefore: 10 };
   assert.deepStrictEqual(C.cleanSupplier(split), split);
-  assert.strictEqual(C.API, 5);
+  assert.strictEqual(C.API, 6);
 });
 test('split history requires a complete finite pair for another same-kitchen supplier', () => {
   const base = { ...supplier(), id: 'split-test', at: 20 };
@@ -320,6 +320,126 @@ test('a catalogue can request one explicit source split without treating it as s
   throws('split', () => C.validateCatalogue({ version: 1, suppliers: [target, { ...target, id: 'another-target' }] }));
   assert.throws(() => C.validateCatalogue({ version: 1, suppliers: [{ ...target, splitFrom: '../outside' }] }));
   assert.throws(() => C.validateCatalogue({ version: 1, suppliers: [{ ...target, unexpected: true }] }));
+});
+test('mapped history retains exact parent and destination IDs as an isolated optional map', () => {
+  const target = { ...supplier([item(), item({ id: 'constructor', archived: true }), item({ id: 'hasOwnProperty' })]), id: 'split-test', at: 20, historyFrom: 's-test', historyBefore: 10, historyItems: { 'parent-test': 'i-test', constructor: 'constructor', hasOwnProperty: 'hasOwnProperty' } };
+  const checked = C.cleanSupplier(target);
+  assert.deepStrictEqual(checked, target);
+  checked.historyItems['parent-test'] = 'constructor';
+  assert.strictEqual(target.historyItems['parent-test'], 'i-test');
+  assert.deepStrictEqual(C.validateCatalogue({ version: 1, suppliers: [target] }).suppliers[0], target);
+  const legacy = { ...target }; delete legacy.historyItems;
+  assert.deepStrictEqual(C.cleanSupplier(legacy), legacy, 'legacy lineage never acquires an implicit map');
+});
+test('mapped history requires lineage and a nonempty plain map of existing unique target IDs', () => {
+  const target = { ...supplier([item(), item({ id: 'other' })]), id: 'split-test', at: 20, historyFrom: 's-test', historyBefore: 10, historyItems: { 'parent-test': 'i-test' } };
+  assert.deepStrictEqual(C.cleanSupplier(target).historyItems, target.historyItems);
+  for (const historyItems of [null, [], 'parent-test', new Date(), Object.create({ inherited: 'i-test' }), {}, { '../parent': 'i-test' }, { 'parent-test': '../item' }, { 'parent-test': 'missing' }, { one: 'i-test', two: 'i-test' }]) {
+    assert.throws(() => C.cleanSupplier({ ...target, historyItems }));
+  }
+  for (const omitted of [['historyFrom'], ['historyBefore'], ['historyFrom', 'historyBefore']]) {
+    const bad = { ...target }; omitted.forEach(key => delete bad[key]);
+    throws('history', () => C.cleanSupplier(bad));
+  }
+  const plainMap = Object.create(null); plainMap['parent-test'] = 'i-test';
+  assert.deepStrictEqual(C.cleanSupplier({ ...target, historyItems: plainMap }).historyItems, target.historyItems);
+});
+test('mapped history accepts the complete 600-item boundary and refuses any extra mapping', () => {
+  const items = Array.from({ length: 600 }, (_, index) => item({ id: 'target-' + index }));
+  const historyItems = Object.fromEntries(items.map((entry, index) => ['parent-' + index, entry.id]));
+  const target = { ...supplier(items), id: 'split-test', at: 20, historyFrom: 's-test', historyBefore: 10, historyItems };
+  assert.strictEqual(Object.keys(C.cleanSupplier(target).historyItems).length, 600);
+  throws('history', () => C.cleanSupplier({ ...target, historyItems: { ...historyItems, extra: 'target-0' } }));
+});
+test('ordinary edits freeze mapping keys and values while allowing equivalent key order', () => {
+  const before = { ...supplier([item(), item({ id: 'other' })]), id: 'split-test', at: 20, historyFrom: 's-test', historyBefore: 10, historyItems: { first: 'i-test', second: 'other' } };
+  const after = { ...before, at: 30, historyItems: { second: 'other', first: 'i-test' }, items: [{ ...before.items[0], par: '21' }, before.items[1]] };
+  assert.strictEqual(C.cleanSupplier(after, before).items[0].par, '21');
+  const legacy = { ...before }; delete legacy.historyItems;
+  for (const changed of [{ ...before, historyItems: { first: 'other', second: 'i-test' } }, { ...before, historyItems: { first: 'i-test' } }, { ...before, historyItems: { replacement: 'i-test', second: 'other' } }, legacy]) {
+    throws('immutable', () => C.cleanSupplier(changed, before));
+  }
+  throws('immutable', () => C.cleanSupplier(before, legacy));
+});
+test('template order follows explicit history mappings to different destination item IDs', () => {
+  const origin = imported('parent-moved', 'TEST MOVED', 'shared.pdf', { archived: true });
+  const source = supplier([origin]);
+  for (const archived of [false, true]) {
+    const moved = { ...origin, id: 'saved-seafood', archived, par: '27' };
+    const target = { ...supplier([imported('extra', 'TEST EXTRA', 'shared.pdf'), moved]), id: 'split-target', at: 20, historyFrom: source.id, historyBefore: 10, historyItems: { 'parent-moved': moved.id } };
+    const before = JSON.stringify([source, target]);
+    const result = C.planTemplateOrder(templateOrder([template('shared.pdf', ['TEST MOVED'])]), [source, target]);
+    assert.deepStrictEqual(result.plans.map(plan => [plan.id, plan.items.map(entry => entry.id)]), [['split-target', ['saved-seafood', 'extra']]]);
+    assert.deepStrictEqual(result.plans[0].items[0], moved);
+    assert.strictEqual(JSON.stringify([source, target]), before);
+  }
+});
+test('mapped template history never falls back to matching IDs or suppresses unrelated duplicate names', () => {
+  const origin = imported('moved', 'TEST MOVED', 'shared.pdf', { archived: true });
+  const source = supplier([origin]), payload = templateOrder([template('shared.pdf', ['TEST MOVED'])]);
+  const target = { ...supplier([{ ...origin, archived: false }]), id: 'split-target', at: 20, historyFrom: source.id, historyBefore: 10, historyItems: { 'different-parent': 'moved' } };
+  throws('template-ambiguous', () => C.planTemplateOrder(payload, [source, target]));
+  const mapped = { ...target, items: [{ ...origin, id: 'saved-item', archived: false }], historyItems: { moved: 'saved-item' } };
+  const unrelated = { ...supplier([{ ...origin, id: 'unrelated-item', archived: false }]), id: 'unrelated-supplier' };
+  throws('template-ambiguous', () => C.planTemplateOrder(payload, [source, mapped, unrelated]));
+  throws('template-ambiguous', () => C.planTemplateOrder(payload, [{ ...source, items: [{ ...origin, archived: false }] }, mapped]));
+  throws('duplicate', () => C.planTemplateOrder(templateOrder([template('shared.pdf', ['TEST MOVED', 'TEST MOVED'])]), [source, mapped]));
+  throws('template-missing', () => C.planTemplateOrder(templateOrder([template('shared.pdf', ['TEST MOVE'])]), [source, mapped]));
+});
+function splitCatalogue(overrides) {
+  return { version: 1, suppliers: [supplier(), { ...supplier([item({ id: 'incoming-item' })]), id: 'incoming-seafood', name: 'Seafood test', cutoffId: 'seafood-cut', splitFrom: 's-test', ...overrides }] };
+}
+function savedSeafood(overrides) { return { ...supplier([item({ id: 'saved-item' })]), id: 'saved-seafood', name: '  SEAFOOD   test ', cutoffId: 'seafood-cut', ...overrides }; }
+test('destination resolution reuses only an exact unique normalised split name and only rebinds its supplier ID', () => {
+  const payload = splitCatalogue(), existing = [supplier(), savedSeafood()];
+  const before = JSON.stringify({ payload, existing }), expected = C.validateCatalogue(payload);
+  expected.suppliers[1].id = 'saved-seafood';
+  const result = C.resolveCatalogueDestinations(payload, existing);
+  assert.deepStrictEqual(result, { payload: expected, reuses: [{ incomingId: 'incoming-seafood', id: 'saved-seafood', name: '  SEAFOOD   test ' }] });
+  assert.strictEqual(JSON.stringify({ payload, existing }), before);
+  assert.strictEqual(result.payload.suppliers[1].items[0].id, 'incoming-item', 'item IDs are left for the split planner');
+  result.payload.suppliers[1].items[0].source.name = 'Changed clone';
+  assert.strictEqual(payload.suppliers[1].items[0].source.name, '');
+});
+test('a saved destination ID takes precedence over names and stale incoming reminder links', () => {
+  const payload = splitCatalogue({ id: 'saved-seafood', cutoffId: 'old-cut' });
+  const existing = [supplier(), savedSeafood({ name: 'Renamed live seafood' }), savedSeafood({ id: 'other-seafood', name: 'Seafood test' }), savedSeafood({ id: 'third-seafood', name: 'Seafood test' })];
+  assert.deepStrictEqual(C.resolveCatalogueDestinations(payload, existing), { payload: C.validateCatalogue(payload), reuses: [] });
+});
+test('ordinary suppliers and similar split names retain their incoming IDs', () => {
+  const existing = [supplier(), savedSeafood()];
+  const ordinary = splitCatalogue(); delete ordinary.suppliers[1].splitFrom;
+  assert.deepStrictEqual(C.resolveCatalogueDestinations(ordinary, existing), { payload: C.validateCatalogue(ordinary), reuses: [] });
+  for (const name of ['Seafood tests', 'Seafood-test', 'Sea food test']) {
+    const payload = splitCatalogue({ name });
+    assert.deepStrictEqual(C.resolveCatalogueDestinations(payload, existing), { payload: C.validateCatalogue(payload), reuses: [] });
+  }
+});
+test('destination resolution refuses ambiguous exact names even when a reminder could break the tie', () => {
+  const existing = [supplier(), savedSeafood(), savedSeafood({ id: 'other-seafood', cutoffId: 'other-cut' })];
+  throws('supplier-ambiguous', () => C.resolveCatalogueDestinations(splitCatalogue(), existing));
+});
+test('a name-based destination reuse refuses an explicit conflicting reminder but permits a blank one', () => {
+  const existing = [supplier(), savedSeafood()];
+  throws('cutoff-conflict', () => C.resolveCatalogueDestinations(splitCatalogue({ cutoffId: 'different-cut' }), existing));
+  throws('cutoff-conflict', () => C.resolveCatalogueDestinations(splitCatalogue(), [supplier(), savedSeafood({ cutoffId: '' })]));
+  const payload = splitCatalogue({ cutoffId: '' });
+  const result = C.resolveCatalogueDestinations(payload, existing);
+  assert.strictEqual(result.payload.suppliers[1].id, 'saved-seafood');
+  assert.strictEqual(result.payload.suppliers[1].cutoffId, '', 'resolver changes only the supplier ID');
+});
+test('destination rebinding revalidates IDs to refuse self-splits and duplicate incoming destinations', () => {
+  throws('split', () => C.resolveCatalogueDestinations(splitCatalogue({ name: 'Test supplier', cutoffId: '' }), [supplier()]));
+  const duplicate = splitCatalogue(); duplicate.suppliers.push(savedSeafood());
+  throws('duplicate', () => C.resolveCatalogueDestinations(duplicate, [supplier(), savedSeafood()]));
+});
+test('destination resolution validates every existing supplier before matching', () => {
+  const payload = splitCatalogue();
+  throws('duplicate', () => C.resolveCatalogueDestinations(payload, [savedSeafood(), savedSeafood()]));
+  throws('field', () => C.resolveCatalogueDestinations(payload, [savedSeafood({ price: 4 })]));
+  throws('items', () => C.resolveCatalogueDestinations(payload, null));
+  throws('items', () => C.resolveCatalogueDestinations(payload, Array.from({ length: 51 }, (_, index) => savedSeafood({ id: 's-' + index }))));
+  throws('field', () => C.resolveCatalogueDestinations({ ...payload, unsupported: true }, []));
 });
 results.forEach(r => console.log(r));
 const failed = results.filter(r => r.startsWith('FAIL')).length;

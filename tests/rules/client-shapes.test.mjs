@@ -61,6 +61,8 @@ await env.clearFirestore();
 const NOW = Date.now(), MIN = 60000, DAY = 86400000;
 const kday = ms => new Date(ms + 10 * 3600000).toISOString().slice(0, 10);
 const TODAY = kday(NOW), YDAY = kday(NOW - DAY), TMW = kday(NOW + DAY), PAST = kday(NOW - 5 * DAY);
+const TEAM_WEEK_START = kday(NOW - ((new Date(TODAY + 'T12:00:00+10:00').getUTCDay() + 6) % 7) * DAY);
+const TEAM_WEEK_END = kday(Date.parse(TEAM_WEEK_START + 'T12:00:00+10:00') + 6 * DAY);
 const MIDNIGHT = Date.parse(TODAY + 'T00:00:00Z') - 10 * 3600000, T0 = Date.parse(TODAY + 'T08:00:00Z');
 
 const P = (id, name, role, x) => Object.assign({ id, name, role, add: true, tick: true, del: role !== 'staff', ping: false, fn: false, active: true }, x || {});
@@ -121,6 +123,13 @@ const drawing = (rid, v) => ({ rid, slot: 'plate', name: 'Plate', vb: '-110 -110
 const mins = x => Object.assign({ no: 1, v: 1, status: 'published', pubAt: NOW - DAY, date: YDAY, start: '14:00', loc: 'Kitchen', guests: '', chair: 'sam', taker: 'sam', next: '',
   decisions: 'Label every tub', menu: '', safety: '', dates: '', other: '', att: [{ id: 'ann', st: 'present' }], acts: [], removed: false, at: 1, upd: 1, by: '' }, x || {});
 const ping = x => Object.assign({ text: 'Fish delivery 10:00', tag: 'delivery', start: TODAY, until: TODAY, dows: [], tm: null, removed: false, upd: NOW, at: NOW, author: 'sam', by: 'sam' }, x || {});
+const SUP_GOODS = ['stock', 'case', 'zero', 'dry', 'other'].map((name, index) => ({ id: 'parent-' + name, name: 'TEST ' + name.toUpperCase(),
+  pack: '1 kg bag', group: 'Test goods', category: 'TEST CATEGORY', par: '0', parUnit: '', orderUnit: 'bag', factor: 0,
+  aliases: [], archived: index < 3, manual: false, source: { file: 'test-client-shapes.pdf', page: 1, row: index + 1, name: 'TEST ' + name.toUpperCase(), par: '0' } }));
+const SUP_SEAFOOD = SUP_GOODS.slice(0, 3).map((item, index) => ({ ...item, id: index < 2 ? item.id.replace('parent-', 'seafood-') : item.id, archived: false }));
+const supOrder = (sid, supplierName, item, v, time) => ({ sid, supplierName, v, at: time, day: TODAY, deliveryDay: TMW,
+  cutoffDay: '', cutoffId: '', by: 'sam', lines: [{ itemId: item.id, name: item.name, pack: item.pack, qty: '2 bags', amount: 2,
+    unit: 'bag', par: item.par, parUnit: '', source: item.source, suggestion: '', stock: '' }] });
 
 const seed = {
   'config/main': CFG, 'login/roster': ROSTER, 'config/admins': { x: 1 },
@@ -146,7 +155,12 @@ const seed = {
   'todos/td1': { text: 'Call the fridge tech', st: 'open', due: '', for: '', from: 'sam', at: NOW, doneAt: 0, doneBy: '', upd: NOW, by: 'sam' },
   'todos/td0': { text: 'Fixed the dishwasher', st: 'done', due: '', for: '', from: 'sam', at: NOW - DAY, doneAt: NOW - DAY, doneBy: 'sam', upd: NOW - DAY, by: 'sam' },
   [`cutdone/${TODAY}_northside`]: { day: TODAY, sid: 'northside', on: true, at: NOW, by: 'sam' },
-  'suppliers/s1': { name: 'Northside Test Foods', cutoffId: 'northside', v: 1, items: [], at: 1, by: 'kit' },
+  'suppliers/s1': { name: 'Northside Test Foods', cutoffId: 'northside', v: 2, items: SUP_GOODS, at: NOW, by: 'kit' },
+  'suppliers/s2': { name: 'Northside Test Seafood', cutoffId: 'seafood', v: 5, items: SUP_SEAFOOD, at: NOW, by: 'kit',
+    historyFrom: 's1', historyBefore: NOW, historyItems: Object.fromEntries(SUP_GOODS.slice(0, 3).map((item, index) => [item.id, SUP_SEAFOOD[index].id])) },
+  // The destination's own earlier order and the parent's same-named order keep their existing query shapes.
+  'suppliers/s1/orders/previous': supOrder('s1', 'Northside Test Foods', SUP_GOODS[0], 1, NOW - 60000),
+  'suppliers/s2/orders/previous': supOrder('s2', 'Northside Test Seafood', SUP_SEAFOOD[0], 4, NOW - 30000),
   [`supplierlinks/${TODAY}_northside`]: { sid: 's1', cutoffId: 'northside', day: TODAY, v: 1, orderId: 'o1', at: 1, by: 'sam' },
   'drinks/ann': { by: 'ann', kind: 'flat', at: 1 }, [`shifts/${TODAY}_ann`]: { by: 'ann', day: TODAY, sec: 'larder', name: 'Larder', auto: false, at: 1 },
   'activity/ann': { name: 'Ann', visits: 1, by: 'ann' }, 'sections/larder': { name: 'Larder', uses: 1, by: 'ann' },
@@ -283,6 +297,9 @@ row('js/prep.js dkLoad(): who was in today (the activity list)', { ok: KITCHEN, 
 row('js/prep.js ksCheck(): my section today (shifts/<today>_<me>)', { ok: KITCHEN, asks: ['ann', 'lou', 'tab'], run: (db, w, r) => getDoc(D(db, `shifts/${TODAY}_${ownId(r, w)}`)) });
 row('js/prep.js loadShifts() (admin People, Manage staff): 14 days of sections', { ok: KITCHEN, asks: CHEFS, run: db => getDocs(query(C(db, 'shifts'), where('day', '>=', kday(NOW - 13 * DAY)))) });
 row('js/prep.js teamLoad(): today\'s team (team/<today>), for the chip, Your day and the prep list line', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, `team/${TODAY}`)) });
+row('js/prep.js tmPlanLoad(): one bounded Monday to Sunday team query for the chef planner', { ok: KITCHEN, asks: CHEFS,
+  prep: () => put({ [`team/${TODAY}`]: { day: TODAY, on: [{ id: 'ann', sh: 'lunch', sec: 'larder' }], br: [], v: 1, at: NOW, upd: NOW, by: 'sam' } }),
+  run: db => getDocsFromServer(query(C(db, 'team'), where('day', '>=', TEAM_WEEK_START), where('day', '<=', TEAM_WEEK_END), limit(8))) });
 row('js/prep.js teamLast(): the same day last week, for Use it on the chef\'s page', { ok: KITCHEN, asks: CHEFS, run: db => getDoc(D(db, `team/${kday(NOW - 7 * DAY)}`)) });
 row('js/prep.js tsumLoad() and the admin Training: the nightly training numbers (teamsum/main)', { ok: CHEFS, asks: CHEFS, run: db => getDoc(D(db, 'teamsum/main')) });
 row('js/prep.js mlStatLoad(): what happened to a mail I sent (mailstat/<id>)', { ok: KITCHEN, asks: MAIL, run: db => getDoc(D(db, 'mailstat/x1')) });
@@ -307,7 +324,7 @@ row('js/prep.js psSave(): create a head-owned minimum through W()', { ok: ['owne
 row('js/prep.js psSave(): update an item with the next revision through W()', { ok: ['owner', 'ownkit', 'kit'], asks: ['owner', 'ownkit', 'kit'],
   prep: () => put({ 'prepStandards/edit': prepStandard() }),
   run: (db, w, r) => W(r, [['set', 'prepStandards/edit', prepStandard({ v: 2, minimum: 0, archived: true, by: w })]]) });
-row('js/supplier-store.js: a supplier\'s orders (suppliers/<id>/orders, the last 21)', { ok: CHEFS, asks: CHEFS, run: db => getDocs(query(C(db, 'suppliers/s1/orders'), orderBy('at', 'desc'), limit(21))) });
+row('js/supplier-store.js: a supplier\'s own orders, including before lineage attachment (the last 21)', { ok: CHEFS, asks: CHEFS, run: db => getDocs(query(C(db, 'suppliers/s2/orders'), orderBy('at', 'desc'), limit(21))) });
 row('js/supplier-store.js: inherited split history before its fixed cutoff (parent orders, bounded 21)', { ok: CHEFS, asks: CHEFS,
   run: db => getDocs(query(C(db, 'suppliers/s1/orders'), where('at', '<=', NOW), orderBy('at', 'desc'), limit(21))) });
 row('js/supplier-store.js: a cut-off\'s link (supplierlinks/<day>_<cut-off>)', { ok: CHEFS, asks: CHEFS, run: db => getDoc(D(db, `supplierlinks/${TODAY}_northside`)) });

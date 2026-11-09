@@ -1,4 +1,4 @@
-// Desktop header X controls reuse Cancel, preserving drafts, history and unread pings.
+// Shared header X controls reuse Cancel, preserving drafts, history and unread pings.
 const L = require('./lib');
 const { R, ok } = L.results();
 const key = (...parts) => ['kitchens', L.PIN, ...parts].join('/');
@@ -51,7 +51,7 @@ async function escape(p) { await p.keyboard.press('Escape'); await L.settle(p, 2
   await p.evaluate(() => LK_UX.AdaptivePicker({ label: 'Modal choices', trigger: document.querySelector('#p-text'), multiple: true, value: ['one'],
     items: [{ value: 'one', label: 'First choice' }, { value: 'two', label: 'Second choice' }], onChange: () => { window.modalChoiceCommitted = true; } }));
   await L.settle(p, 250);
-  ok(await p.locator('.ux-picker .ux-picker-close').count() === 1 && await p.locator('.ux-picker .ux-modal-close').count() === 0, 'native picker: its existing X is retained with no duplicate control');
+  ok(await p.locator('.ux-picker .ux-picker-close').count() === 1 && await p.locator('.ux-picker button.ux-modal-close').count() === 1, 'native picker: its existing X is retained with no duplicate control');
   await p.locator('.ux-picker-option').nth(1).click();
   await p.locator('.ux-picker-close').click(); await L.settle(p, 300);
   ok(!(await p.$('.ux-picker')) && !!(await p.$('.p-sheet')) && await p.inputValue('#p-text') === 'Keep this prep draft' && await p.evaluate(() => !window.modalChoiceCommitted), 'native picker: closing cancels its uncommitted choices and preserves the parent draft');
@@ -77,7 +77,7 @@ async function escape(p) { await p.keyboard.press('Escape'); await L.settle(p, 2
   if (await p.$('#lk-device-choice')) await escape(p);
   await p.evaluate(() => LK_PREP.coolingOpen(document.querySelector('.cooling-chip')));
   await L.waitFor(p, () => !!document.querySelector('.cooling-menu'));
-  ok(await p.locator('.cooling-menu .cooling-close').count() === 1 && await p.locator('.cooling-menu .ux-modal-close').count() === 0, 'cooling dialog: its existing close button remains without a duplicate X');
+  ok(await p.locator('.cooling-menu .cooling-close').count() === 1 && await p.locator('.cooling-menu button.ux-modal-close').count() === 1, 'cooling dialog: its existing close button remains without a duplicate X');
   await p.locator('.cooling-close').click(); await L.settle(p, 200);
   ok(p.errors.length === 0, 'menus and nested dialogs: no browser errors ' + p.errors.join('|'));
   await p.context().close();
@@ -95,7 +95,7 @@ async function escape(p) { await p.keyboard.press('Escape'); await L.settle(p, 2
     const sheet = document.querySelector('.p-sheet').getBoundingClientRect(), title = document.querySelector('.p-sheet h3').getBoundingClientRect();
     return { sheetWidth: sheet.width, sheetHeight: sheet.height, titleWidth: title.width, titleHeight: title.height };
   })));
-  ok(await p.evaluate(() => !matchMedia('(hover: hover) and (pointer: fine)').matches && [...document.querySelectorAll('.ux-modal-close')].every(el => !el.getClientRects().length)), 'touch screen: the new header X stays hidden');
+  ok(await p.evaluate(() => !matchMedia('(hover: hover) and (pointer: fine)').matches && [...document.querySelectorAll('.ux-modal-close')].every(el => el.getBoundingClientRect().width >= 44)), 'touch screen: the shared header X stays visible at 44 px');
   await escape(p);
   ok(!(await p.$('.p-sheet')) && !(await L.overflow(p)) && p.errors.length === 0, 'touch screen: the existing close path still works with no overflow or browser errors');
   await p.context().close();

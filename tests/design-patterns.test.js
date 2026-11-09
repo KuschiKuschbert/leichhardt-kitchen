@@ -17,7 +17,7 @@ const CLASSES = [
   'su-last-kind', 'su-last-wide', 'su-last-dow',
   'cooling-clock', 'cooling-clock-status', 'cooling-chip', 'cooling-menu', 'cooling-row', 'cooling-start', 'cooling-status', 'cooling-error',
   'ux-swipe', 'ux-swipe-handle', 'ux-swipe-dragging',
-  'ux-modal-close', 'ux-modal-head', 'ux-modal-title',
+  'ux-modal', 'ux-modal-close', 'ux-modal-head', 'ux-modal-title', 'ux-modal-grip', 'ux-modal-shade',
   'nb-prog', 'p-card', 'p-h', 'hint', 'btn-row', 'btn', 'dark', 'p-link', 'p-err', 'chip', 'ux-picker', 'hm-team-staff', 'hm-staff-first', 'hm-coworkers',
   'nt-wrap', 'nt-bg', 'nt', 'nt-grip', 'nt-in', 'nt-head', 'nt-eb', 'nt-h', 'nt-date', 'nt-body', 'nt-foot', 'nt-got',
   'tm-chip', 'wtop-icons', 'is-due', 'nb-pw', 'nb-tmset', 'nb-tmday', 'tm-fold', 'nb-ai', 'nb-aw', 'nb-onslot', 'nb-hbar', 'wb-list', 'nb-sgr', 'nb-sgadd', 'o-sgh', 'o-sgs', 'dl-at', 'dl-dot', 'dl-rb', 'hm-board', 'hm-a', 'hm-paper', 'hm-sec', 'w-secs', 'tr-card', 'tr-cv', 'tr-ret', 'fn-c0', 'fn-cnext', 'fn-end', 'fn-quiet', 'fn-svc-board', 'fn-svc-cd', 'fn-svc-diet', 'jumps', 'ch-grid', 'ch-line', 'find-i',
@@ -27,13 +27,14 @@ const CLASSES = [
   'nt-dot', 'nt-meta', 'nt-at', 'g-mode', 'g-bar', 'tm-tl', 'tm-tlbar', 'dr-run', 'dr-oh', 'st-av', 'st-can', 'todo-more',
   'todo-notebook', 'todo-book', 'todo-bookhead', 'todo-spine', 'todo-work', 'todo-formtitle', 'todo-status', 'todo-privacy',
   'tm-notebook', 'tm-nbook', 'tm-nhead', 'tm-nspine', 'tm-work', 'tm-viewbar', 'tm-shift-scroll', 'tm-person-pick', 'tm-dayperson', 'tm-away-slot',
+  'tm-weeknav', 'tm-daypick',
   'cln-page', 'cln-book', 'cln-row', 'cln-matrix', 'cln-day-pick', 'cln-form',
   'dr-notebook', 'dr-book', 'dr-bookhead', 'dr-usual', 'dr-work', 'dr-spine', 'dr-people'
 ];
 const TOKENS = ['--ink', '--paper', '--bg', '--muted', '--faint', '--line', '--accent', '--accent-ink', '--tag', '--done', '--done-ink',
   '--bar', '--bar-text', '--display', '--body', '--r-act', '--r-pick', '--small-ink', '--hit',
   '--bad-ink', '--bad-tint', '--bad-on-dark', '--done-on-dark'];
-const HELPERS = ['tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'SwipeDismiss', 'enhance',
+const HELPERS = ['tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'SwipeDismiss', 'ModalFrame', 'enhance',
   'svButton', 'svStart', 'svDone', 'svFail', 'svLine', 'errMsg', 'failed', 'toast', 'slipName', 'arm', 'armed', 'W', 'canW',
   'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'tmAwayHTML', 'tmNextHTML', 'tmAwayPaint', 'dkRunHTML', 'dkTeamHTML', 'dkFormHTML', 'panelShellHTML', 'psPanelHTML', 'psHintHTML', 'psReferenceHTML', 'psRolloutHTML'];
 const GLOBALS = ['ICON', 'LK_UX', 'LK_PREP_STANDARDS'];

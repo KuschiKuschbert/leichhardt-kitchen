@@ -70,3 +70,11 @@ Quick service check: Build. The explicit owner request prevents accidental reuse
 Checks cover same-day refusal, the final millisecond before midnight, exact-midnight availability, deadlines crossing midnight, nanosecond rounding, direct controller calls, synthetic clicks, open-menu recovery, refreshing and two signed-in screens. Real rules tests cover all kitchen roles, competing starts and exact request-time boundaries. Publish the stricter same-schema rules after the client; roll back the client independently while retaining the server's day gate.
 
 Local verification passed all seven focused cooling test files, including real Barlow geometry through the managed CA trust, plus 212 cooling emulator checks, 222 private-access checks and 2,187 client calls across nine sign-ins. The old core and stand-in allow the new same-day restart regression; the changed versions refuse it. Full CI, Pages, post-Pages rule publication with its Lock probe and live checks follow the normal release queue.
+
+### Midnight test readiness (9 November 2026)
+
+The midnight motion test used to tap Start as soon as the clock became idle. The separate next-day section read can still be pending then, so the existing sheet guard correctly ignores the tap. This reproduced on unchanged application commit `72d36a0`: three clock-state cases failed while the diagnostic showed `sectionWait: true`, no open overlay and an eligible signed-in person. A repeat on the modal candidate failed a different width.
+
+The test now waits for Ann's seeded tomorrow section to be present in the same local section record that the read updates, then makes its existing Start taps. It retains the section guard, midnight boundary, write counts, manual starts and every previous assertion. No application behaviour, data, reads or rules change. This is a test-only fix with no service council required.
+
+Verification: the unchanged application with the readiness wait passes all 135 cooling-motion assertions at 390, 768, 1200 and 1280 px. The original baseline failed 3 of 126 executed assertions before the wait.

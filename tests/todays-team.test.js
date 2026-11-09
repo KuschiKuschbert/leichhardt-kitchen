@@ -18,6 +18,7 @@ const people = [
 const SECS = [{ id: 'grill', name: 'Grill', off: false }, { id: 'pans', name: 'Pans', off: false }, { id: 'larder', name: 'Larder', off: false }];
 const SHIFTS = [{ id: 'lunch', name: 'Lunch', from: 600, to: 900, off: false }, { id: 'dinner', name: 'Dinner', from: 960, to: 1320, off: false }];
 const cfg = x => ({ [CFG]: Object.assign({ people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, prepStandardsEnabled: true, kitSecs: SECS, kitShifts: SHIFTS }, x || {}) });
+const dayTitle = new Date(today + 'T12:00:00+10:00').toLocaleDateString('en-AU', { timeZone: 'Australia/Brisbane', weekday: 'long', day: 'numeric', month: 'long' });
 const store = p => p.evaluate(() => window.__fake.dump());
 // a picker on the page: the shared controls dress each select up, so set the select and send its change like a tap would
 const pick = (p, k, v) => p.evaluate(([k, v]) => { const s = document.querySelector('select[data-k="' + k + '"]'); if (!s) return false; s.value = String(v); s.dispatchEvent(new Event('change', { bubbles: true })); return true; }, [k, v]);
@@ -95,7 +96,7 @@ const withoutViewChoice = async p => {
   ok(br === JSON.stringify([{ id: 'sam', sh: 'lunch', at: 720, len: 30 }, { id: 'ann', sh: 'lunch', at: 750, len: 30 }, { id: 'bo', sh: 'lunch', at: 780, len: 30 }]), 'save: the breaks Spread them set (' + br + ')');
   ok(typeof (s[CFG].pastEdit || {}).t === 'number', 'save: the team stamp tells the other phones');
   await L.settle(p, 1500);
-  ok(/Today's team saved at \d\d:\d\d: 3 people on/.test(await txt(p, '.tm-save') || ''), 'save: the page says it is saved, with how many on (' + (await txt(p, '.tm-save')) + ')');
+  ok((await txt(p, '.tm-save') || '').includes('Team for ' + dayTitle + ' saved at ') && /\d\d:\d\d: 3 people on/.test(await txt(p, '.tm-save') || ''), 'save: the page names the saved date and how many on (' + (await txt(p, '.tm-save')) + ')');
   c = await chip(p);
   ok(!!c && !c.due, 'chip: plain once today\'s team is saved');
   await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 800);
@@ -109,7 +110,7 @@ const withoutViewChoice = async p => {
   await tap(p, '[data-p="tm-sh"][data-v="lunch"]'); await L.settle(p, 200);
   await onShift(p, 'bo');
   await tap(p, '[data-p="tm-save"]'); await L.settle(p, 1500);
-  ok(/Not saved: Sam saved today's team at \d\d:\d\d\. Your changes are still here/.test(await txt(p, '.tm-save') || ''), 'conflict: a save over a newer one is refused and says so (' + (await txt(p, '.tm-save')) + ')');
+  ok((await txt(p, '.tm-save') || '').includes('Not saved: Sam saved the team for ' + dayTitle + ' at ') && /\d\d:\d\d\. Your changes are still here/.test(await txt(p, '.tm-save') || ''), 'conflict: a save over a newer one names its date and keeps the draft (' + (await txt(p, '.tm-save')) + ')');
   ok((await store(p))[TEAM].v === 2, 'conflict: the newer save stays as it is');
   await tap(p, '[data-p="tm-refresh"]'); await L.settle(p, 200);
   ok(!!(await p.$('.tm-page')), 'conflict: Refresh asks a second tap first (the changes would go)');
@@ -131,8 +132,8 @@ const withoutViewChoice = async p => {
   await p.context().close();
 
   // no signal: the record cannot be read, so the page and the chip never say "not set yet"
-  p = await L.open(b, '#/team', { who: 'sam', extra: cfg(), failReads: '/team/', wait: 1800 });
-  ok(/Could not load today's team/.test(await txt(p, '.tm-page') || ''), 'no signal: the page says it could not load, not "not set yet"');
+  p = await L.open(b, '#/team', { who: 'sam', extra: cfg(), failReads: '/team(?:/|$)', wait: 1800 });
+  ok((await txt(p, '.tm-page') || '').includes('Could not load the team for ' + dayTitle) && !/Not set yet/.test(await txt(p, '.tm-page') || ''), 'no signal: the page says which date could not load, not "not set yet"');
   const tries = await p.evaluate(() => window.__fake.reads.filter(r => /\/team\//.test(r)).length);
   await L.settle(p, 1500); await tap(p, '[data-p="tm-on"]'); await L.settle(p, 500);
   ok(await p.evaluate(() => window.__fake.reads.filter(r => /\/team\//.test(r)).length) === tries && tries <= 2, 'no signal: it does not read again by itself before 5 minutes (' + tries + ' tries)');
