@@ -65,6 +65,8 @@ Separate existing failures from new regressions. Record environment failures wit
 
 ## 5. Run an independent, critical council
 
+For usability and design recommendations, give each reviewer the service council's [Current design contracts](../.claude/skills/service-council/SKILL.md#current-design-contracts), relevant source excerpts and evidence, and [Design references](../.claude/skills/service-council/SKILL.md#design-references). Include the shared surface and operational colour rules for visual work. Record Contract fit, missing evidence, benefits, rejected ideas and trade-offs in the design comparison. Current contracts and approved choices win over app inspiration or preference scores; identify proposed departures explicitly. Keep the audit's reviewer structure and priority for security, data loss and service blockers.
+
 Use separate reviewers where available. Each reviews evidence independently before a lead reconciles recommendations. If independent agents or real users are unavailable, state that the review is role-based analysis. Do not present invented staff research or staged agreement as evidence.
 
 | Perspective | Required challenge |
@@ -100,9 +102,9 @@ Keep one managed sheet at a time using existing modal helpers. Preserve backdrop
 
 ## 7. Design before implementing layout changes
 
-For each justified substantial redesign, first show the current screen and measured problem. Present exactly three meaningfully different alternatives for the affected surface, next to the current baseline. Vary hierarchy, layout or interaction, not just colours. Reuse approved global direction; do not reopen completed design choices without evidence.
+For each justified substantial redesign, first show the current screen and measured problem. Present three structurally different alternatives for the affected surface, next to the current baseline, unless the head chef requests another number. Each pair differs in at least two meaningful aspects of layout, hierarchy, task sequence, navigation or interaction/disclosure. Explain each design's central idea and use the same task, roles, representative data and required capabilities. Cosmetic variants do not count. Reuse approved global direction; do not reopen completed design choices without evidence.
 
-Make the alternatives concrete with isolated working previews or annotated mockups using synthetic data and the real visual system. Show phone, tablet/kitchen-screen and desktop states, including long content and relevant loading, empty, error, disabled and unsaved states. Compare task steps, visible information, important action access, feature parity, accessibility and tradeoffs. Recommend one option with reasons.
+Make the alternatives concrete with isolated working previews or annotated mockups using synthetic data and the real visual system. Show phone, tablet/kitchen-screen and desktop states, including long content and relevant loading, empty, error, disabled and unsaved states. Compare task steps, visible information, important action access, feature parity, accessibility and tradeoffs. Have reviewers rank the original designs independently, then explicitly assess a mix of A + B + C through the relevant seven-app principles. Follow the service council's [Compare a mix](../.claude/skills/service-council/SKILL.md#compare-a-mix) process: explain contributions and rejections, show a coherent combined preview with its own evidence when recommending a mix, and state its review status without inheriting component scores or agreement. Recommend one named option or exact mix, why it beats the alternatives, its main downside and unresolved issues. Keep the audit's reviewer structure.
 
 Obtain approval before implementing the design-dependent changes or removing capabilities. Record the selected option and acceptance criteria in the existing design records. Continue independent authorised work that does not presume that choice. Do not create a production integration or write real kitchen data from a prototype.
 

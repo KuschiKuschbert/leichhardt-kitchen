@@ -17,6 +17,22 @@
 
 Verify the full 51-template fixture, all original Cleaning behaviours and role/release gates at 390, 768 and 1280 px. Cover ordered pages, shared global search, selected-date summaries, one editor across resizing, dirty field and check retention, validation/failure/uncertain saves, import idempotence, history read-only, update/session work guards, safe text and existing read budgets. Measure actual rendered rows and taps with native fonts; keep schematic measurements separate.
 
+## Current design-contract fit
+
+The council guidance was updated on main while this already-approved implementation was being tested. The independent votes remain as recorded; this implementation mapping does not invent a new review or reopen the owner's M1 choice. Sources are the current shared surfaces, operational colours, design patterns, action feedback and loading/motion notes in the reading map.
+
+| Reference principle | Applied or rejected in M1 |
+| --- | --- |
+| Linear | Keep one page frame, existing view controls and clear action names; no second navigation system. |
+| Things 3 | Separate Today, day-based Week review and occasional Repeat tasks setup. |
+| Airbnb | Keep area, ownership, method, checks and state together; reject decorative cards and photos. |
+| Todoist | Put Add and search before the list; retain real editable fields and required inputs without guessed defaults. |
+| Flighty | Use the loaded date and actual records for status; reject new polling and fabricated service coverage. |
+| Duolingo | Reuse immediate pending feedback and server-confirmed Saved; no reward or false completion state. |
+| Headspace | Use named Open tasks, Back to Today and explicit state words, with the existing readable type and large targets. |
+
+M1 keeps steel work covers, quiet writing paper and the existing local attention/success/failure meanings. The merged surface-colour suite measures effective text contrast at 4.5:1 for normal text or 3:1 for large text, plus the setup return control's visible keyboard outline at 3:1. It passes on Cleaning's ordinary cover/content and Repeat tasks view at all three widths. Existing Save/Not sent/Saved/failure behaviour is exercised by focused and shared state tests. This is not a full contrast audit of every recording state or a full accessibility certification; those remain outside the evidence claimed here.
+
 ## Actual-app verification
 
 All seven focused files pass: Cleaning, schedule/checks, team release, navigation, safe text, design-pattern registry and the new chef-layout suite. The new suite passes **101 assertions**, including all 51 current templates, ordered Pans pages, global multiword search, date-specific summaries, one editor across resizing, dirty fields/checks retained through navigation, mixed blocked/awaiting states, keyboard paging, hidden-work return links and no new navigation reads. Existing Cleaning checks also pass for failed rereads, direct-submit protection, uncertain acknowledgements, immutable revisions and both privacy locks.
@@ -42,6 +58,12 @@ Desktop Today is 987 px; Repeat tasks is 1,468 px without an editor and 2,072 px
 The staff layout comparison switches only the CSS on the same staff DOM: six width/text snapshots retain all **858** measured header, task and control rectangles and document dimensions, with all 47 due task rows. Staff recording is also covered by the original behaviour suites. The new CSS is scoped to the chef page.
 
 These are local synthetic Firebase, browser and source-review results. They do not prove production saves, real-device legibility or full screen-reader/contrast conformance. No production programme was imported or enabled. The original baseline is retained at commit `2cb62ba`, tag `cleaning-chef-baseline-2026-11-09`, and the earlier native-font baseline images.
+
+## Integration with current main
+
+Main advanced to `2841d4d` during verification with the person worksheet/quick-add Team change and updated council guidance. An actual PR conflict was resolved once by retaining both decision histories, session-map entries and design-pattern registrations. Independent source review confirms M1 runtime/CSS are unchanged by the merge and the Team implementation matches main.
+
+The combined run covered the seven focused files plus Team notebook, Team quick-add, Team week, shared surfaces/contrast, roles, page roles, private access and read budget. The surface test was adapted to open the new General group and assert the named Back to Today action. One schedule assertion failed in the initial parallel integration run; that file passed its isolated retry. Both schedule and updated surface suites then passed together serially. The other combined files passed. The required hosted CI remains the final shared gate; the first schedule failure is not hidden as an uninterrupted pass.
 
 ## Release and rollback
 

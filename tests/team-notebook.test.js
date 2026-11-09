@@ -1,4 +1,4 @@
-// Refined A: section-first shifts share one draft and Save. The away panel always describes the saved plan.
+// Person worksheet: per-person section picks share one dated draft and Save. The away panel always describes the saved plan.
 // Access, Use it and every old break/batch control are covered by todays-team.test.js.
 const L = require('./lib');
 const fs = require('fs'), path = require('path');
@@ -25,9 +25,8 @@ const boardShown = p => p.$eval('.tm-away', e => !e.hidden && getComputedStyle(e
 const rows = p => p.$$eval('.tm-away-row', all => all.map(e => ({ name: (e.querySelector('.tm-away-name') || {}).textContent || '', text: e.textContent.trim() })));
 const press = async (p, s) => { const found = await tap(p, s); await L.settle(p, 150); return found; };
 const shift = (p, id) => press(p, '[data-p="tm-sh"][data-v="' + id + '"]');
-const section = (p, id) => press(p, '[data-p="tm-section"][data-v="' + id + '"]');
-const assign = (p, id) => press(p, '[data-p="tm-assign"][data-id="' + id + '"]');
-const pick = async (p, k, v) => { await details(p, k.split(':')[1]); await L.pick(p, 'select[data-k="' + k + '"]', String(v)); return true; };
+const assign = (p, id, sec) => L.pick(p, 'select[data-k="tm-sec:' + id + '"]', sec);
+const pick = async (p, k, v) => { if (!k.startsWith('tm-sec:')) await details(p, k.split(':')[1]); await L.pick(p, 'select[data-k="' + k + '"]', String(v)); return true; };
 async function ready(p) { await L.waitFor(p, () => !!document.querySelector('.tm-page.tm-notebook .tm-nbook .tm-work [data-p="tm-whole"]'), null, 6000); }
 async function details(p, id) {
   const folds = p.locator('details.tm-person-details' + (id ? '[data-id="' + id + '"]' : ''));
@@ -57,18 +56,17 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   });
   ok(boardStyle.charcoal && boardStyle.edge >= 4 && boardStyle.radius >= 12 && boardStyle.pin, 'break board: the saved breaks use Home\'s pinned charcoal board with its orange edge');
   ok(await p.$$eval('.tm-next-row', all => all.length) > 0 && await p.$$eval('.tm-next-row', all => all.length) <= 3, 'next breaks: a compact list uses the loaded saved schedule');
-  await section(p, 'grill');
-  ok(/Move to Grill/.test(await txt(p, '[data-p="tm-assign"][data-id="sam"]') || ''), 'assignment: Sam on another section gets an explicit Move to Grill action');
-  await assign(p, 'sam');
+  ok(await p.$eval('select[data-k="tm-sec:sam"]', e => e.value) === 'larder' && !await p.$('[data-p="tm-section"], [data-p="tm-assign"]'), 'assignment: Sam has an explicit current section picker without a global assignment mode');
+  await assign(p, 'sam', 'grill');
   await details(p);
   ok(await p.$eval('select[data-k="tm-sec:sam"]', e => e.value) === 'grill', 'assignment: choosing Grill deliberately overrides Sam\'s usual Pans');
-  ok(/Clear section/.test(await txt(p, '[data-p="tm-assign"][data-id="sam"]') || ''), 'assignment: Sam already on the chosen section gets an explicit Clear section action');
-  await assign(p, 'sam'); await details(p);
+  ok(await p.$eval('select[data-k="tm-sec:sam"]', e => [...e.options].some(o => o.value === '' && o.textContent === 'Sous chef')), 'assignment: the chef role remains an explicit no-section choice');
+  await assign(p, 'sam', ''); await details(p);
   ok(await p.$eval('select[data-k="tm-sec:sam"]', e => e.value) === '' && await p.$eval('[data-p="tm-on"][data-id="sam"]', e => e.getAttribute('aria-pressed')) === 'true' && await p.$eval('select[data-k="tm-at:sam:0"]', e => e.value) === '870', 'Clear section: Sam stays on Lunch and keeps his break');
-  await assign(p, 'sam');
+  await assign(p, 'sam', 'grill');
   await shift(p, 'dinner');
-  ok(!(await p.$('[data-p="tm-section"][aria-pressed="true"]')), 'shift switch: a section choice does not silently carry into Dinner');
-  await section(p, 'pans'); await assign(p, 'sam');
+  ok(await p.$eval('select[data-k="tm-sec:sam"]', e => e.value) === 'grill', 'shift switch: Dinner displays its own section without carrying a selected assignment mode');
+  await assign(p, 'sam', 'pans');
   await press(p, '.tm-work [data-p="tm-whole"]');
   const whole = await txt(p, '.tm-work') || '';
   const samDay = await p.$$eval('.tm-dayperson', all => (all.find(e => /Sam/.test(e.textContent)) || {}).textContent || '');
@@ -156,7 +154,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   await refresh(p, plan({ v: 4, on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }], br: [{ id: 'ann', sh: 'lunch', at: 825, len: 40 }] }));
   ok(/Some times could not be checked/.test(await away(p) || '') && !/Nobody scheduled away/.test(await away(p) || ''), 'malformed saved break: a discarded current-member interval warns instead of claiming zero');
   ok(await boardShown(p), 'malformed saved break: an unknown current status keeps its warning board visible');
-  await section(p, 'pans'); await assign(p, 'ann'); await press(p, '[data-p="tm-save"]');
+  await assign(p, 'ann', 'pans'); await press(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 5, TEAM, 6000);
   ok(!Object.hasOwn(await saved(p), 'uncheckedBr'), 'saved format: defensive warning metadata stays in memory and never changes the team document');
   ok(p.errors.length === 0, 'defensive intervals: no page errors ' + p.errors.join(' | '));
@@ -208,7 +206,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
     const m = await p.evaluate(() => {
       const strip = document.querySelector('.tm-shift-scroll'), tabs = strip && strip.querySelector(':scope > .tm-tabs[data-adaptive="keep"]');
       const whole = document.querySelector('.tm-work > * [data-p="tm-whole"], .tm-work > [data-p="tm-whole"]');
-      const targets = [...document.querySelectorAll('.tm-work button[data-p="tm-whole"], .tm-tabs [data-p="tm-sh"], [data-p="tm-section"], [data-p="tm-assign"], details.tm-person-details > summary, [data-p="tm-save"]')].filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect(); return { action: e.dataset.p || 'details', width: r.width, height: r.height }; });
+      const targets = [...document.querySelectorAll('.tm-work button[data-p="tm-whole"], .tm-tabs [data-p="tm-sh"], .tm-person-section .ux-picker-trigger, details.tm-person-details > summary, [data-p="tm-save"]')].filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect(); return { action: e.dataset.p || 'details', width: r.width, height: r.height }; });
       if (strip) strip.scrollLeft = strip.scrollWidth;
       return { tabs: tabs ? [...tabs.querySelectorAll('[data-p="tm-sh"]')].map(e => e.dataset.v) : [], scrolls: !!strip && strip.scrollWidth > strip.clientWidth && strip.scrollLeft > 0, whole: !!whole && (!strip || !strip.contains(whole)), small: targets.filter(r => r.width < 43.5 || r.height < 43.5), saves: document.querySelectorAll('[data-p="tm-save"]').length };
     });

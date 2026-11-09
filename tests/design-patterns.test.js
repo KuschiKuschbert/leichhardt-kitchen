@@ -26,11 +26,13 @@ const CLASSES = [
   'ad-admin', 'ad-layout', 'a-nav', 'ad-main', 'ad-heading', 'a-tabs', 'a-pane',
   'nt-dot', 'nt-meta', 'nt-at', 'g-mode', 'g-bar', 'tm-tl', 'tm-tlbar', 'dr-run', 'dr-oh', 'st-av', 'st-can', 'todo-more',
   'todo-notebook', 'todo-book', 'todo-bookhead', 'todo-spine', 'todo-work', 'todo-formtitle', 'todo-status', 'todo-privacy',
-  'tm-notebook', 'tm-nbook', 'tm-nhead', 'tm-nspine', 'tm-work', 'tm-viewbar', 'tm-shift-scroll', 'tm-person-pick', 'tm-dayperson', 'tm-away-slot',
+  'tm-notebook', 'tm-nbook', 'tm-nhead', 'tm-nspine', 'tm-work', 'tm-viewbar', 'tm-shift-scroll', 'tm-dayperson', 'tm-away-slot',
   'tm-weeknav', 'tm-daypick',
   'tm-person-row', 'tm-person-details', 'tm-planstate', 'tm-next-overview',
-  'cln-chef-page', 'cln-fold', 'cln-fold-toggle', 'cln-repeat-browser', 'cln-repeat-layout', 'cln-template-summary', 'cln-editor',
+
+'tm-worksheet', 'tm-worksheet-head', 'tm-person-head', 'tm-person-section', 'tm-quick-add', 'tm-quick-people', 'tm-quick-services',
   'cln-page', 'cln-book', 'cln-row', 'cln-matrix', 'cln-day-pick', 'cln-form', 'cln-detail', 'cln-task-detail', 'cln-occurrence', 'cln-checks', 'cln-import', 'cln-packdown', 'cln-packdown-title', 'cln-temperature',
+  'cln-chef-page', 'cln-fold', 'cln-fold-toggle', 'cln-repeat-browser', 'cln-repeat-layout', 'cln-template-summary', 'cln-editor',
   'dr-notebook', 'dr-book', 'dr-bookhead', 'dr-usual', 'dr-work', 'dr-spine', 'dr-people'
 ];
 const TOKENS = ['--ink', '--paper', '--bg', '--muted', '--faint', '--line', '--accent', '--accent-ink', '--tag', '--done', '--done-ink',

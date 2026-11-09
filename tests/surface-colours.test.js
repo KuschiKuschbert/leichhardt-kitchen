@@ -133,7 +133,7 @@ async function visit(p, route, selector) {
       { name: 'Drinks', route: '#/drinks', root: '.dr-book', head: '.dr-bookhead', body: '.dr-work', extra: ['.dr-usual', '.dr-people'] }
     ]) {
       await visit(p, page.route, page.head);
-      if (page.name === 'Cleaning') await L.waitFor(p, () => !!document.querySelector('.cln-row'));
+      if (page.name === 'Cleaning') { await L.waitFor(p, () => !!document.querySelector('[data-cln="group"][data-group="general"]')); await p.locator('[data-cln="group"][data-group="general"]').click(); await L.waitFor(p, () => !!document.querySelector('.cln-row')); }
       if (page.name === 'Chef to-do') await L.waitFor(p, () => !!document.querySelector('.todo-row'));
       if (page.name === 'Drinks') await L.waitFor(p, () => !!document.querySelector('.dr-order'));
       if (page.name === 'Orders') await L.waitFor(p, () => !!document.querySelector('.o-ordered'));
@@ -153,19 +153,19 @@ async function visit(p, route, selector) {
         const outline = (await facts(p, [], [], [close])).outlines[close];
         if (outline && (!minimumContrast.outline || outline.ratio < minimumContrast.outline.ratio)) minimumContrast.outline = { label: width + ' Cleaning setup Close', ...outline };
         await p.locator(close).click();
-        ok(outline && outline.keyboard && outline.width >= 2 && outline.style !== 'none' && outline.ratio >= 3 && outline.name === 'Close' && outline.action === 'hide-setup' &&
-          !await p.locator('.cln-plan').count() && await p.locator('.cln-book').isVisible() && await p.evaluate(() => location.hash === '#/cleaning'),
-        width + ': keyboard Close outline contrasts with the steel cover at 3:1, and Close still hides only repeat-task setup (' + (outline ? outline.ratio.toFixed(3) : 'missing') + ')');
+        ok(outline && outline.keyboard && outline.width >= 2 && outline.style !== 'none' && outline.ratio >= 3 && outline.name === 'Back to Today' && outline.action === 'hide-setup' &&
+          !await p.locator('.cln-plan').count() && await p.locator('.cln-book').isVisible() && await p.locator('.cln-page[data-cln-view="today"]').count() === 1 && await p.evaluate(() => location.hash === '#/cleaning'),
+        width + ': keyboard Back to Today outline contrasts with the steel cover at 3:1 and returns to grouped daily work (' + (outline ? outline.ratio.toFixed(3) : 'missing') + ')');
       }
       ok(!await L.overflow(p), width + ' ' + page.name + ': surface treatment adds no sideways scroll');
     }
 
     await visit(p, '#/team', '.tm-nhead'); await L.waitFor(p, () => !!document.querySelector('.tm-away-row'));
-    reading = await facts(p, ['.tm-nhead', '.tm-work', '.tm-nright', '.tm-away.hm-board'], ['.tm-nbook']);
+    reading = await facts(p, ['.tm-nhead', '.tm-work', '.tm-extra', '.tm-away.hm-board'], ['.tm-nbook']);
     checkSurface(reading, '.tm-nhead', '--surface-people', width + ' Team cover');
     checkSurface(reading, '.tm-work', '--surface-paper', width + ' Team planner');
-    // This wrapper is display:contents below desktop; its visible children's text is still measured at every size.
-    if (width >= 1100) checkSurface(reading, '.tm-nright', '--surface-paper', width + ' Team supporting page');
+    // C places the reference folds below the full-width worksheet at every size.
+    checkSurface(reading, '.tm-extra', '--surface-paper', width + ' Team supporting reference');
     checkSurface(reading, '.tm-away.hm-board', '--bar', width + ' live break board');
     checkText(reading, width + ' Team header, small clock/date, draft controls and saved break board');
 
