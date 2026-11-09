@@ -8049,7 +8049,7 @@
   // back on the screen: a sheet whose pings ran out while the screen was off goes before anyone sees it
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && /^\d{4,6}$/.test(S.pin) && fb) { noteRefresh(); noteBell(); loadNotes(); noteMaybePop(); rxSync(); } });
   window.addEventListener('lk-clock', function () {
-    if (teamHere() && tm.day === dayNow() && (!tmf || tmf.day === dayNow())) { tmAwayPaint(); return; }
+    if (teamHere() && tm.day === dayNow() && (!tmPlan.day || tmPlan.epoch === accessEpoch)) { tmAwayPaint(); return; }
     draw();
   });
   document.addEventListener('click', function (e) {
@@ -12349,10 +12349,12 @@
   var tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }, tmOwn = 0;
   /* the chef's page: tmf the plan as changed (null until the record is read), tmSnap the plan as read, tmSh the shift
      shown, tmMsg the line under Save, tmShowOff the people not on the shift shown, tmSp the Spread them choices */
-  var tmf = null, tmSnap = '', tmSh = '', tmMsg = '', tmLastBusy = false, tmShowOff = false, tmSp = { from: null, len: null, mode: null }, tmIconN = 0;
+  var tmf = null, tmSnap = '', tmSh = '', tmMsg = '', tmLastBusy = false, tmLastJob = null, tmShowOff = false, tmSp = { from: null, len: null, mode: null }, tmIconN = 0;
   // View choices are memory-only. Whole day is never a stored shift or a second draft.
   var tmWhole = false, tmSec = '', tmFind = '', tmAssignMsg = '';
   var tmUi = { shifts: 0, sections: 0, details: true, batch: false, overview: false };
+  // Planner records and drafts stay in memory, separate from today's live tm record. A handover clears them.
+  var tmPlan = { day: '', owner: '', epoch: -1, days: {}, weeks: {} };
   function tmMin(v) { return typeof v === 'number' && isFinite(v) && v >= 0 && v < 1440 ? Math.round(v) : null; }
   function tmHHMM(m) { return pad(Math.floor(m / 60)) + ':' + pad(m % 60); }
   function tmStr(v, n) { return typeof v === 'string' && v.length <= n ? v : null; }
@@ -12403,14 +12405,14 @@
   function tmNeedPin() { return teamOK() && !tmCanRead() && !sessP; }
   function tmMe() { var p = me(); return p ? p.id : ((S.config && S.config.headId) || ''); }
   // the next person on the phone starts with nothing of the last chef's
-  function tmReset() { if (tmPop) { tmPop.remove(); tmPop = null; tmPrev = null; } tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1 }; tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }; tmf = null; tmSnap = ''; tmSh = ''; tmMsg = ''; tmShowOff = false; tmWhole = false; tmSec = ''; tmFind = ''; tmAssignMsg = ''; tmUi = { shifts: 0, sections: 0, details: true, batch: false, overview: false }; svStop('t'); }
+  function tmReset() { if (tmPop) { tmPop.remove(); tmPop = null; tmPrev = null; } tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1 }; tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }; tmf = null; tmSnap = ''; tmLastBusy = false; tmLastJob = null; tmPlan = { day: '', owner: '', epoch: -1, days: {}, weeks: {} }; tmSh = ''; tmMsg = ''; tmShowOff = false; tmWhole = false; tmSec = ''; tmFind = ''; tmAssignMsg = ''; tmUi = { shifts: 0, sections: 0, details: true, batch: false, overview: false }; svStop('t'); }
   /* today's team: one read (team/<today>) the first time a chef's page or top bar needs it each kitchen day, when the
      page opens (unless read in the last minute), on Refresh and once for each team stamp another phone writes
      (pastCheck()). A failed read, and a "no record" that came from the memory copy with no signal, is never "not set
      yet": the chip and the page say it could not be checked, and it tries again after 5 minutes. */
   function teamLoad(maxAge) {
     var day = dayNow();
-    if (tm.day !== day || tm.epoch !== accessEpoch) { tm = { day: day, rec: null, st: '', at: 0, retry: 0, epoch: accessEpoch, stamp: 0 }; if (tmf && tmf.day !== day) { tmf = null; tmSnap = ''; tmSec = ''; tmFind = ''; tmAssignMsg = ''; } }
+    if (tm.day !== day || tm.epoch !== accessEpoch) tm = { day: day, rec: null, st: '', at: 0, retry: 0, epoch: accessEpoch, stamp: 0 };
     if (!tmCanRead() || tm.st === 'busy') return;
     // after a failed read: 5 minutes before the next, whoever asks (a draw asks often), unless Refresh or Try again
     if (tm.st === 'err' && maxAge !== 0 && Date.now() < tm.retry) return;
@@ -12423,8 +12425,8 @@
       var checked = sn.exists() ? teamClean(sn.data(), day) : null;
       if (sn.exists() && !checked) throw { code: 'data-loss' };
       tm.rec = checked; tm.st = 'ok'; tm.at = Date.now(); tm.stamp = stamp;
-      // the page's plan follows the record until the chef changes something
-      if (!tmDirty()) tmFrom(tm.rec);
+      // Only the planner's today entry follows a live read. A future selection never becomes today's plan.
+      if (tmPlan.day && teamOK()) tmPlanReceive(day, checked, tm.at);
       // the first read of the day that has me on it only notes what it says (tmSeen): a later change shows as changed
       var p = me(); if (p && tmMy(p.id).length && !tmSeen(p.id)) tmSeenSet(p.id);
       // a section the plan sets may answer Your section today (ksOpen() waits for this read)
@@ -12438,12 +12440,11 @@
     if (tm.day === dayNow() && tm.st === 'ok' && ts > tm.stamp && ts !== tmOwn) teamLoad(0);
   }
   /* the plan being changed: on[person][shift] = section id ('' for none), br: [{ id, sh, at, len }] */
-  function tmFrom(rec) {
+  function tmFrom(rec, day) {
     var on = {}, br = [];
     (rec ? rec.on : []).forEach(function (o) { (on[o.id] = on[o.id] || {})[o.sh] = o.sec; });
     (rec ? rec.br : []).forEach(function (b) { br.push({ id: b.id, sh: b.sh, at: b.at, len: b.len }); });
-    tmf = { day: dayNow(), base: rec ? rec.v : 0, at: rec ? rec.at : 0, on: on, br: br };
-    tmSnap = tmSig(tmf); tmAssignMsg = '';
+    return { day: day, base: rec ? rec.v : 0, at: rec ? rec.at : 0, on: on, br: br };
   }
   // the plan as saved: sorted, so the same plan always reads the same; a break of someone not on that shift goes
   function tmOut(f) {
@@ -12456,6 +12457,109 @@
   }
   function tmSig(f) { return f ? JSON.stringify(tmOut(f)) : ''; }
   function tmDirty() { return !!tmf && tmSig(tmf) !== tmSnap; }
+  function tmPlanDay() { return tmPlan.day || dayNow(); }
+  function tmPlanDate(day) { return parseYmd(day).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' }); }
+  function tmPlanWeek(day) { return shift(day, -((parseYmd(day).getDay() + 6) % 7)); }
+  function tmPlanEntry(day) { return tmPlan.days[day] || (tmPlan.days[day] = { day: day, rec: null, st: '', f: null, snap: '', msg: '', view: null }); }
+  function tmPlanDirty(e) { return !!(e && e.f && tmSig(e.f) !== e.snap); }
+  function tmAnyDirty() {
+    if (tmDirty()) return true;
+    return Object.keys(tmPlan.days).some(function (day) { return tmPlanDirty(tmPlan.days[day]); });
+  }
+  function tmPlanKeep() {
+    if (!tmPlan.day || !tmf || tmf.day !== tmPlan.day) return;
+    var e = tmPlanEntry(tmPlan.day);
+    e.f = tmf; e.snap = tmSnap; e.msg = tmMsg; e.assign = tmAssignMsg;
+    e.view = { sh: tmSh, whole: tmWhole, sec: tmSec, find: tmFind, off: tmShowOff, sp: tmSp, ui: tmUi };
+  }
+  function tmPlanActivate() {
+    var e = tmPlanEntry(tmPlanDay()), v = e.view || {};
+    tmf = e.f; tmSnap = e.snap; tmMsg = e.msg || ''; tmAssignMsg = e.assign || '';
+    tmSh = v.sh || ''; tmWhole = !!v.whole; tmSec = v.sec || ''; tmFind = v.find || ''; tmShowOff = !!v.off;
+    tmSp = v.sp || { from: null, len: null, mode: null };
+    tmUi = v.ui || { shifts: 0, sections: 0, details: true, batch: false, overview: false };
+  }
+  function tmPlanInit() {
+    var owner = stableIdentity();
+    if (tmPlan.owner && tmPlan.owner !== owner) tmReset();
+    if (!tmPlan.day) { tmPlan.day = dayNow(); tmPlan.owner = owner; }
+    if (tmPlan.epoch !== accessEpoch) {
+      // Daily/shared privacy locks retain the original person's drafts; only read authority becomes stale.
+      tmPlanKeep(); tmPlan.epoch = accessEpoch; tmPlan.weeks = {};
+      Object.keys(tmPlan.days).forEach(function (day) { tmPlan.days[day].st = ''; });
+    }
+    if (tm.day === dayNow() && tm.epoch === accessEpoch && tm.st === 'ok') {
+      var liveEntry = tmPlanEntry(dayNow());
+      if ((!liveEntry.checkedAt || tm.at > liveEntry.checkedAt) && !(tm.rec && liveEntry.rec && tm.rec.v < liveEntry.rec.v)) tmPlanReceive(dayNow(), tm.rec, tm.at);
+    }
+    tmPlanActivate();
+  }
+  function tmPlanReceive(day, rec, checkedAt) {
+    if (day === tmPlan.day) tmPlanKeep();
+    var e = tmPlanEntry(day);
+    if (rec && e.rec && rec.v < e.rec.v) return;
+    e.rec = rec; e.st = 'ok'; e.checkedAt = checkedAt || Date.now();
+    if (!tmPlanDirty(e)) { e.f = tmFrom(rec, day); e.snap = tmSig(e.f); }
+    if (day === tmPlan.day) { tmf = e.f; tmSnap = e.snap; }
+  }
+  /* On planner open, an explicit week change or Refresh: one bounded server query for seven dated plans,
+     costing up to seven document reads (one for an empty week). Reused in memory while this view is current.
+     No listener, polling, per-day read loop or persistent private copy. Cache answers never establish an empty day. */
+  function tmPlanLoad(force) {
+    if (!teamOK() || !tmCanRead()) return;
+    tmPlanInit();
+    var start = tmPlanWeek(tmPlanDay()), cached = tmPlan.weeks[start];
+    if (cached && cached.st === 'busy') return;
+    if (cached && !force && (cached.st === 'ok' || cached.st === 'err' && Date.now() < cached.retry)) return;
+    var mine = tmPlan, epoch = accessEpoch, started = Date.now(), read = tmPlan.weeks[start] = { st: 'busy', retry: 0 }, f = fb.fs;
+    f.getDocsFromServer(f.query(colRef('team'), f.where('day', '>=', start), f.where('day', '<=', shift(start, 6)), f.limit(8))).then(function (sn) {
+      if (tmPlan !== mine || accessEpoch !== epoch || tmPlan.weeks[start] !== read) return;
+      if (cacheOnly(sn)) throw { code: 'unavailable' };
+      var found = {};
+      sn.docs.forEach(function (doc) {
+        var rec = teamClean(doc.data(), doc.id);
+        if (!rec || doc.id < start || doc.id > shift(start, 6)) throw { code: 'data-loss' };
+        found[doc.id] = rec;
+      });
+      if (sn.docs.length > 7) throw { code: 'data-loss' };
+      for (var n = 0; n < 7; n++) {
+        var day = shift(start, n), savedEntry = tmPlanEntry(day), rec = found[day] || null;
+        // A late week read cannot undo a newer acknowledged save or a newer read of this date.
+        if (savedEntry.checkedAt > started && (!rec || savedEntry.rec && rec.v < savedEntry.rec.v)) continue;
+        tmPlanReceive(day, rec);
+        if (day === dayNow() && (tm.day !== day || (rec ? !tm.rec || rec.v >= tm.rec.v : tm.at <= started))) {
+          tm = { day: day, rec: rec, st: 'ok', at: Date.now(), retry: 0, epoch: epoch, stamp: pastStamp('t') };
+        }
+      }
+      read.st = 'ok';
+      // A week answer can settle the first current-day read too; retain the usual seen/default and sheet queue hooks.
+      var person = me();
+      if (person && tmMy(person.id).length && !tmSeen(person.id)) tmSeenSet(person.id);
+      if (person && ksPicks(person) && !ksGet(person.id)) tmSecAuto(person);
+      draw(); tmPaint(); ksTeamIn();
+    }).catch(function () {
+      if (tmPlan !== mine || accessEpoch !== epoch || tmPlan.weeks[start] !== read) return;
+      read.st = 'err'; read.retry = Date.now() + TM_RETRY;
+      for (var n = 0; n < 7; n++) tmPlanEntry(shift(start, n)).st = 'err';
+      draw();
+    });
+  }
+  function tmPlanSelect(day) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || ymd(parseYmd(day)) !== day || svOf('t') === 'busy' || tmLastBusy) return;
+    tmPlanKeep(); svStop('t'); tmPlan.day = day; tmPlanActivate(); tmPlanLoad(); draw();
+  }
+  function tmPlanEditable() { return !!(teamOK() && tmf && tmf.day === tmPlanDay() && tmf.day >= dayNow() && tmPlanEntry(tmf.day).st === 'ok'); }
+  function tmWeekHTML() {
+    var day = tmPlanDay(), start = tmPlanWeek(day), busy = svOf('t') === 'busy' || tmLastBusy, dis = busy ? ' disabled' : '';
+    var smallDate = function (date) { return parseYmd(date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }); };
+    var days = [];
+    for (var n = 0; n < 7; n++) {
+      var d = shift(start, n), e = tmPlanEntry(d), status = tmPlanDirty(e) || d === day && tmDirty() ? 'Draft' : e.st === 'ok' ? e.rec ? 'Saved' : 'Not set' : e.st === 'err' ? 'Retry' : 'Checking';
+      var weekday = parseYmd(d).toLocaleDateString('en-AU', { weekday: 'short' });
+      days.push('<button type="button" class="tm-daypick' + (d === dayNow() ? ' is-today' : '') + '" data-p="tm-day" data-day="' + d + '" data-d="' + d + '" aria-pressed="' + (d === day) + '" aria-label="' + esc(tmPlanDate(d) + (d === dayNow() ? ', today' : '') + ', ' + status) + '"' + dis + '><span>' + esc(weekday) + '</span><b>' + parseYmd(d).getDate() + '</b><small>' + status + '</small></button>');
+    }
+    return '<nav class="tm-weeknav" aria-label="Team planning dates"><div class="tm-weekbar"><button type="button" class="chip" data-p="tm-week-prev" aria-label="Previous week"' + dis + '>‹</button><span>' + esc(smallDate(start) + ' to ' + smallDate(shift(start, 6))) + '</span><button type="button" class="chip" data-p="tm-week-next" aria-label="Next week"' + dis + '>›</button><button type="button" class="chip" data-p="tm-today"' + dis + '>Today</button></div><div class="tm-weekscroll"><div class="tm-weekdays">' + days.join('') + '</div></div></nav>';
+  }
   function tmShift(id) { return kitShifts().filter(function (s) { return s.id === id; })[0] || null; }
   function tmShNow() { var l = kitShifts(); return tmShift(tmSh) ? tmSh : (l[0] ? l[0].id : ''); }
   // the people who can be put on a shift: everyone on the staff list but functions only, chefs first, then by name
@@ -12489,7 +12593,7 @@
     // a cook's usual section on this weekday's shift and what they are In training on (step 4, the nightly teamsum)
     var u = tmUsual(p.id, s.id), learn = tmLearning(p.id);
     var sub = [chef ? (p.role === 'head' ? 'Head chef' : 'Sous chef') : '', others.length ? 'Also on ' + others.join(', ') : '',
-      u ? 'Usually ' + tmSecName(u.sec) + ', ' + u.n + ' of the last ' + u.of + ' ' + tmWeekday(dayNow()) + 's' : '', learn.length ? 'In training: ' + learn.join(', ') : ''].filter(Boolean).join('. ');
+      u ? 'Usually ' + tmSecName(u.sec) + ', ' + u.n + ' of the last ' + u.of + ' ' + tmWeekday(tmPlanDay()) + 's' : '', learn.length ? 'In training: ' + learn.join(', ') : ''].filter(Boolean).join('. ');
     var picks = '';
     if (on) {
       // the head chef and the sous chefs too (head chef, 7 Nov 2026): no section means their role
@@ -12507,12 +12611,21 @@
   }
   // Keep horizontal choices and native folds steady across a draft redraw. No saved copies or reads.
   function tmKeepView() {
+    tmPlanKeep();
     if (!S.root || !S.root.querySelector('.tm-notebook')) return;
     [['.tm-shift-scroll', 'shifts'], ['.tm-section-choices', 'sections']].forEach(function (x) { var el = S.root.querySelector(x[0]); if (el) tmUi[x[1]] = el.scrollLeft; });
     [['.tm-details', 'details'], ['.tm-batch', 'batch'], ['.tm-saved-overview', 'overview']].forEach(function (x) { var el = S.root.querySelector(x[0]); if (el) tmUi[x[1]] = el.open; });
   }
   function tmRestoreView() {
-    if (!S.root || !S.root.querySelector('.tm-notebook')) return;
+    if (!S.root) return;
+    var weekScroll = S.root.querySelector('.tm-weekscroll');
+    if (weekScroll) {
+      var fade = function () { weekScroll.classList.toggle('has-more', weekScroll.scrollLeft + weekScroll.clientWidth < weekScroll.scrollWidth - 1); };
+      weekScroll.onscroll = fade; fade();
+      var chosenDay = weekScroll.querySelector('[aria-pressed="true"]');
+      if (chosenDay) { var clip = weekScroll.getBoundingClientRect(), chosenBox = chosenDay.getBoundingClientRect(); if (chosenBox.right > clip.right) weekScroll.scrollLeft += chosenBox.right - clip.right; else if (chosenBox.left < clip.left) weekScroll.scrollLeft -= clip.left - chosenBox.left; }
+    }
+    if (!S.root.querySelector('.tm-notebook')) return;
     [['.tm-shift-scroll', 'shifts'], ['.tm-section-choices', 'sections']].forEach(function (x) { var el = S.root.querySelector(x[0]); if (el) el.scrollLeft = tmUi[x[1]]; });
     [['.tm-details', 'details'], ['.tm-batch', 'batch'], ['.tm-saved-overview', 'overview']].forEach(function (x) { var el = S.root.querySelector(x[0]); if (el) el.open = tmUi[x[1]]; });
     var strip = S.root.querySelector('.tm-shift-scroll'), selected = strip && strip.querySelector('[data-p="tm-sh"][aria-pressed="true"]');
@@ -12566,15 +12679,18 @@
       (body || '<p class="hint">Nobody is on the plan yet. Choose a shift, then a section and person.</p>') + '</section>';
   }
   function teamPageHTML() {
-    teamLoad(); tsLoad();
-    var day = dayNow(), shs = kitShifts(), date = parseYmd(day).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
-    var top = '<section class="p-card tm-page"><h2 class="p-h" id="rtitle" tabindex="-1">Today\'s team</h2>';
-    var stampLine = tm.rec ? ' Set by ' + esc(tm.rec.by ? mnName(tm.rec.by) : 'the head chef') + ' at ' + esc(clock(tm.rec.upd)) + '.' : tm.st === 'ok' ? ' Not set yet.' : '';
-    var lead = '<p class="hint">' + esc(date) + '.' + stampLine + (tm.st === 'ok' || tm.st === 'err' ? ' <button type="button" class="p-link" data-p="tm-refresh">' + (tm.st === 'err' ? 'Try again' : 'Refresh') + '</button>' : '') + '</p>';
+    teamLoad(); tmPlanLoad(); tsLoad();
+    var day = tmPlanDay(), pe = tmPlanEntry(day), rec = pe.rec, shs = kitShifts(), date = tmPlanDate(day), isToday = day === dayNow();
+    var pageTitle = isToday ? 'Today\'s team' : 'Team plan';
+    var top = '<section class="p-card tm-page"><h2 class="p-h" id="rtitle" tabindex="-1">' + pageTitle + '</h2>';
+    var stampLine = rec ? ' Set by ' + esc(rec.by ? mnName(rec.by) : 'the head chef') + ' at ' + esc(clock(rec.upd)) + '.' : pe.st === 'ok' ? ' Not set yet.' : '';
+    var checkedLine = !isToday && pe.checkedAt ? ' Last checked ' + clock(now() - Math.max(0, Date.now() - pe.checkedAt)) + '.' : '';
+    var lead = '<p class="hint">' + esc(date) + '.' + stampLine + esc(checkedLine) + (pe.st === 'ok' || pe.st === 'err' ? ' <button type="button" class="p-link" data-p="tm-refresh">' + (pe.st === 'err' ? 'Try again' : 'Refresh') + '</button>' : '') + '</p>';
     if (tmNeedPin()) return top + '<p class="hint">Type your PIN again to see today\'s team.</p><div class="btn-row"><button type="button" class="btn dark" data-p="tm-pin">Type my PIN</button></div></section>';
-    if (!tmf) return top + lead + (tm.st === 'err' ? '<p class="p-err">Could not load today\'s team. Check the signal.</p><div class="btn-row"><button type="button" class="btn" data-p="tm-refresh">Try again</button></div>' : '<p class="hint">' + inkLabel('Loading...', 'chef') + '</p>') + '</section>';
-    if (!shs.length) return top + lead + '<p class="hint">No shifts are set up yet. ' + (adminTabs() ? 'Add them in the admin panel, Kitchen, Shifts: Lunch, Dinner, Smoker or any other.' : 'Ask the head chef to set them up in the admin panel.') + '</p>' +
+    if (!tmf || pe.st !== 'ok') return top + tmWeekHTML() + lead + (pe.st === 'err' ? '<p class="p-err">Could not load the team for ' + esc(date) + '. Check the signal.</p><div class="btn-row"><button type="button" class="btn" data-p="tm-refresh">Try again</button></div>' : '<p class="hint">' + inkLabel('Loading...', 'chef') + '</p>') + '</section>';
+    if (!shs.length) return top + tmWeekHTML() + lead + '<p class="hint">No shifts are set up yet. ' + (adminTabs() ? 'Add them in the admin panel, Kitchen, Shifts: Lunch, Dinner, Smoker or any other.' : 'Ask the head chef to set them up in the admin panel.') + '</p>' +
       (adminTabs() ? '<div class="btn-row"><button type="button" class="btn dark" data-p="tm-setup">Set up the shifts</button></div>' : '') + '</section>';
+    if (day < dayNow()) return top + tmWeekHTML() + lead + '<p class="hint">Past day, read-only.' + (tmDirty() ? ' Unsaved changes are retained on this device. Refresh asks before discarding them.' : '') + '</p>' + (rec ? tmTimelineHTML(rec) || '<p class="hint">The saved plan has nobody assigned.</p>' : '<p class="hint">No team saved for this day.</p>') + '</section>';
     var s = tmShift(tmShNow()), ps = tmPeople(), onL = ps.filter(function (p) { return tmOnShift(p.id, s.id); }), offL = ps.filter(function (p) { return !tmOnShift(p.id, s.id); });
     var nobody = !Object.keys(tmf.on).length;
     var use = nobody ? '<div class="tm-same"><span><b>Same as last ' + esc(tmWeekday(day)) + '?</b><br>Fills in who was on, their shifts, sections and breaks, for you to check.</span><button type="button" class="btn dark" data-p="tm-use"' + (tmLastBusy ? ' disabled aria-busy="true">Reading...' : '>Use it') + '</button></div>' : '';
@@ -12587,18 +12703,17 @@
       (offL.length ? (tmShowOff || !onL.length ? '<ul class="tm-list">' + offL.map(function (p) { return tmRow(p, s); }).join('') + '</ul>' + (onL.length ? '<button type="button" class="tm-fold" data-p="tm-showoff" aria-expanded="true">Hide the people not on ' + esc(s.name) + '</button>' : '')
         : '<button type="button" class="tm-fold" data-p="tm-showoff" aria-expanded="false">Not on ' + esc(s.name) + ': ' + esc(offL.map(function (p) { return p.name; }).join(', ')) + '. Show</button>') : '');
     var dirty = tmDirty(), busy = svOf('t') === 'busy';
-    var save = '<div class="tm-save">' + svButton({ k: 't', p: 'tm-save', idle: 'Save today\'s team', off: !dirty, busy: busy }) + svLine('t', busy, tmMsg || tmAssignMsg) + '</div>';
-    var glance = tm.rec && tm.day === day ? tmTimelineHTML(tm.rec) : '';
+    var save = '<div class="tm-save">' + svButton({ k: 't', p: 'tm-save', idle: 'Save ' + date, off: !dirty, busy: busy }) + svLine('t', busy, tmMsg || tmAssignMsg) + '</div>';
+    var glance = rec ? tmTimelineHTML(rec) : '';
+    var summary = isToday ? '<aside class="tm-away hm-board" aria-label="On break now"><div class="tm-away-slot">' + tmAwayHTML() + '</div></aside><aside class="tm-extra"><div class="tm-next-slot">' + tmNextHTML() + '</div>' + (glance ? '<details class="tm-saved-overview"><summary>Saved shift overview</summary>' + glance + '</details>' : '') + '</aside>' : '<aside class="tm-extra tm-plan-summary"><h3>Plan for ' + esc(date) + '</h3><p class="hint">Planning ahead. Today\'s live team stays unchanged.</p>' + (glance || '<p class="hint">No team saved for this day yet.</p>') + '</aside>';
     var editor = tmWhole ? tmWholeHTML() : tmAssignHTML(s) + '<details class="tm-details" open><summary>Breaks and fine adjustments</summary>' +
       '<p class="hint">Tick to put someone on ' + esc(s.name) + '. Untick to remove them and this shift\'s breaks.</p>' + list + '</details>' +
       (spread ? '<details class="tm-batch"><summary>Set breaks in one go</summary>' + spread + '</details>' : '');
-    return '<section class="tm-page tm-notebook" aria-labelledby="rtitle">' + lead.replace('class="hint"', 'class="tm-stamp hint"') +
-      '<div class="tm-nbook"><div class="tm-nleft"><header class="tm-nhead"><div><h2 class="p-h" id="rtitle" tabindex="-1">Today\'s team</h2><p>' + esc(date) + '</p></div><div><b class="tm-nclock">' + esc(T.clock(now())) + '</b><small>Queensland time</small></div></header>' +
-      '<div class="tm-work">' + use + tmTabsHTML(shs, ps) + '<p class="tm-draftstate" role="status">' + (dirty ? 'Draft, not saved. One Save covers the whole day.' : tm.st === 'err' ? 'Could not check the saved plan. Changes are kept until Save.' : tm.rec ? 'Plan saved. Changes across shifts are saved together.' : 'No team saved yet. Choose shifts, assign people, then Save.') + '</p>' +
+    return '<section class="tm-page tm-notebook' + (isToday ? '' : ' tm-planning') + '" aria-labelledby="rtitle">' + lead.replace('class="hint"', 'class="tm-stamp hint"') +
+      '<div class="tm-nbook"><div class="tm-nleft"><header class="tm-nhead"><div><h2 class="p-h" id="rtitle" tabindex="-1">' + pageTitle + '</h2><p>' + esc(date) + '</p></div><div><b class="tm-nclock">' + esc(T.clock(now())) + '</b><small>Queensland time</small></div></header>' +
+      tmWeekHTML() + '<div class="tm-work">' + use + tmTabsHTML(shs, ps) + '<p class="tm-draftstate" role="status">' + (dirty ? 'Draft, not saved. One Save covers the whole day.' : pe.st === 'err' ? 'Could not check the saved plan. Changes are kept until Save.' : rec ? 'Plan saved. Changes across shifts are saved together.' : 'No team saved yet. Choose shifts, assign people, then Save.') + '</p>' +
       '<div class="tm-editor">' + editor + '</div>' + save + '</div></div><div class="tm-nspine" aria-hidden="true"></div><div class="tm-nright">' +
-      '<aside class="tm-away hm-board" aria-label="On break now"><div class="tm-away-slot">' + tmAwayHTML() + '</div></aside>' +
-      '<aside class="tm-extra"><div class="tm-next-slot">' + tmNextHTML() + '</div>' +
-      (glance ? '<details class="tm-saved-overview"><summary>' + (tm.st === 'err' ? 'Last saved shift overview' : 'Saved shift overview') + '</summary>' + glance + '</details>' : '') + '</aside></div></div></section>';
+      summary + '</div></div></section>';
   }
   /* Today at a glance (8 Nov 2026, redesign step 7, Flighty's timeline): the saved plan grouped by section, each row with
      the hours and the breaks in words and a bar for the day (the break in orange, a split as a gap). From the record
@@ -12630,7 +12745,8 @@
         return '<div class="tm-tlr"><span class="tm-tln"><b>' + esc(mnName(o.id)) + '</b><small>' + words + '</small></span>' + bar + '</div>';
       }).join('');
     }).join('');
-    return '<section class="tm-tl" aria-label="Today at a glance"><h3 class="tm-tlh">Today at a glance</h3>' + (ticks ? '<div class="tm-tlx" aria-hidden="true"><span></span><span class="tm-tlt">' + ticks + '</span></div>' : '') + out + '</section>';
+    var title = rec.day === dayNow() ? 'Today at a glance' : 'Saved shifts for ' + tmPlanDate(rec.day);
+    return '<section class="tm-tl" aria-label="' + esc(title) + '"><h3 class="tm-tlh">' + esc(title) + '</h3>' + (ticks ? '<div class="tm-tlx" aria-hidden="true"><span></span><span class="tm-tlt">' + ticks + '</span></div>' : '') + out + '</section>';
   }
   function teamNoHTML() {
     return '<section class="p-card tm-page"><h2 class="p-h" id="rtitle" tabindex="-1">Today\'s team</h2><p class="hint">The head chef and the sous chefs set today\'s team.</p>' +
@@ -12641,16 +12757,26 @@
     var id = el.getAttribute('data-id') || '', v = el.getAttribute('data-v') || '';
     if (a === 'tm-pin') { if (S.who) pickName(S.who); return; }
     if (a === 'tm-setup') { adminOpen('kitchen-home:shifts'); return; }
-    // Refresh reads it again; with changes not saved it asks a second tap first, as they are dropped
-    if (a === 'tm-refresh') { if (tmDirty() && !arm('tm-refresh')) return; tmf = null; tmSnap = ''; tmClearMsg(); teamLoad(0); draw(); return; }
-    if (!teamOK() || !tmf || svOf('t') === 'busy') return;
+    if (!teamOK() || svOf('t') === 'busy' || tmLastBusy) return;
+    if (a === 'tm-day') { tmPlanSelect(el.getAttribute('data-day') || ''); return; }
+    if (a === 'tm-week-prev' || a === 'tm-week-next') { tmPlanSelect(shift(tmPlanDay(), a === 'tm-week-prev' ? -7 : 7)); return; }
+    if (a === 'tm-today') { tmPlanSelect(dayNow()); return; }
+    // Refresh discards only this date's draft, after a second tap. Other dates' drafts survive the week query.
+    if (a === 'tm-refresh') {
+      if (tmDirty() && !arm('tm-refresh')) return;
+      var entry = tmPlanEntry(tmPlanDay()); entry.f = null; entry.snap = ''; entry.msg = ''; entry.assign = ''; entry.st = '';
+      tmf = null; tmSnap = ''; tmClearMsg();
+      if (tmPlanDay() === dayNow()) teamLoad(0);
+      tmPlanLoad(true); draw(); return;
+    }
+    if (!tmPlanEditable()) return;
     var sh = tmShNow(), s = tmShift(sh);
     if (a === 'tm-whole') { tmWhole = true; draw(); return; }
     if (a === 'tm-sh') { if (tmShift(v)) { if (tmShNow() !== v) { tmSec = ''; tmFind = ''; } tmSh = v; tmWhole = false; tmAssignMsg = ''; tmShowOff = false; tmSp.from = null; tmSp.len = null; tmSp.mode = null; } draw(); return; }
     if (a === 'tm-section') { if (!tmWhole && kitSecs().some(function (x) { return x.id === v; })) { tmSec = v; tmAssignMsg = ''; draw(); } return; }
     if (a === 'tm-assign') {
       var chosen = kitSecs().filter(function (x) { return x.id === tmSec; })[0], person = tmPeople().filter(function (p) { return p.id === id; })[0];
-      if (tmWhole || !s || !chosen || !person || tmf.day !== dayNow()) return;
+      if (tmWhole || !s || !chosen || !person || !tmPlanEditable()) return;
       var prior = tmOnShift(id, sh) ? tmf.on[id][sh] : null, clear = prior === chosen.id;
       (tmf.on[id] = tmf.on[id] || {})[sh] = clear ? '' : chosen.id;
       tmClearMsg();
@@ -12684,7 +12810,7 @@
   }
   // a picker changed on the chef's page (the Spread them choices need no redraw, but for the length)
   function teamField(k, el) {
-    if (!tmf || svOf('t') === 'busy') return;
+    if (!tmPlanEditable() || svOf('t') === 'busy') return;
     if (k === 'tm-q') return;
     var p = k.split(':'), sh = tmShNow(), id = p[1], v = el.value;
     if (p[0] === 'tm-spfrom') { tmSp.from = tmMin(+v); return; }
@@ -12705,6 +12831,7 @@
      each as long as picked. Splits replace the shift's splits and shorter breaks its shorter breaks, so a long shift
      takes both: the splits, then the meal breaks. Nobody gets more than three. Nothing is saved until Save. */
   function tmSpread() {
+    if (!tmPlanEditable() || svOf('t') === 'busy') return;
     var sh = tmShNow(), s = tmShift(sh); if (!s) return;
     var from = tmSpFrom(s), len = tmSpLen(s), split = tmIsSplit(len), mode = tmSpMode(s), per = mode === '0' ? 0 : +mode || 1;
     var ids = tmPeople().filter(function (p) { return tmOnShift(p.id, sh); }).map(function (p) { return p.id; });
@@ -12717,51 +12844,94 @@
   /* Use it: the same day last week, filled in for the chef to check (never saved by itself). On a tap: one read. People
      no longer on the staff list and shifts taken off are left out. */
   function tmUseLast() {
-    if (tmLastBusy) return;
-    var day = shift(dayNow(), -7), wd = tmWeekday(day);
+    if (tmLastBusy || !tmPlanEditable() || Object.keys(tmf.on).length) return;
+    var destination = tmf, day = shift(destination.day, -7), wd = tmWeekday(day), epoch = accessEpoch, identity = stableIdentity();
+    var job = tmLastJob = {};
     tmLastBusy = true; tmClearMsg(); draw();
-    fb.fs.getDoc(docRef('team', day)).then(function (sn) {
+    fb.fs.getDocFromServer(docRef('team', day)).then(function (sn) {
+      if (tmLastJob !== job) return;
       tmLastBusy = false;
-      if (!sn.exists() && cacheOnly(sn)) throw { code: 'unavailable' };
+      if (accessEpoch !== epoch || identity !== stableIdentity() || tmf !== destination) { tmLastJob = null; return; }
+      if (cacheOnly(sn)) throw { code: 'unavailable' };
       var rec = sn.exists() ? teamClean(sn.data(), day) : null, ids = {}, shs = {};
+      if (sn.exists() && !rec) throw { code: 'data-loss' };
       tmPeople().forEach(function (p) { ids[p.id] = 1; }); kitShifts().forEach(function (x) { shs[x.id] = 1; });
       var on = rec ? rec.on.filter(function (o) { return ids[o.id] && shs[o.sh]; }) : [];
-      if (!tmf || !on.length) { tmMsg = 'No team was saved last ' + wd + '.'; draw(); return; }
-      tmf.on = {}; on.forEach(function (o) { (tmf.on[o.id] = tmf.on[o.id] || {})[o.sh] = kitSecs().some(function (x) { return x.id === o.sec; }) ? o.sec : ''; });
-      tmf.br = rec.br.filter(function (b) { return tmOnShift(b.id, b.sh); }).map(function (b) { return { id: b.id, sh: b.sh, at: b.at, len: b.len }; });
-      var n = Object.keys(tmf.on).length;
-      tmMsg = 'Filled in from last ' + wd + ': ' + n + (n === 1 ? ' person' : ' people') + '. Check each shift, then Save.'; draw();
-    }).catch(function () { tmLastBusy = false; tmMsg = errMsg('Could not read last ' + wd + '\'s team. Check the signal.'); draw(); });
+      if (!on.length) { tmLastJob = null; tmMsg = 'No team was saved last ' + wd + '.'; draw(); return; }
+      destination.on = {}; on.forEach(function (o) { (destination.on[o.id] = destination.on[o.id] || {})[o.sh] = kitSecs().some(function (x) { return x.id === o.sec; }) ? o.sec : ''; });
+      destination.br = rec.br.filter(function (b) { return destination.on[b.id] && destination.on[b.id][b.sh] !== undefined; }).map(function (b) { return { id: b.id, sh: b.sh, at: b.at, len: b.len }; });
+      var n = Object.keys(destination.on).length;
+      tmLastJob = null;
+      tmMsg = 'Filled in from last ' + wd + ': ' + n + (n === 1 ? ' person' : ' people') + '. Check each shift, then Save ' + tmPlanDate(destination.day) + '.'; draw();
+    }).catch(function () {
+      if (tmLastJob !== job) return;
+      tmLastBusy = false; tmLastJob = null;
+      if (accessEpoch !== epoch || identity !== stableIdentity() || tmf !== destination) return;
+      tmMsg = errMsg('Could not read last ' + wd + '\'s team. Check the signal.'); draw();
+    });
   }
   /* Save: the plan with the next version, and the team stamp for the other phones, in one batch. Refused when another
      chef saved since this page read it: the page says so and keeps the changes, and Refresh reads theirs. */
   function teamSave() {
-    if (!teamOK() || !tmf || svOf('t') === 'busy') return;
-    if (!tmDirty()) { draw(); return; }   // nothing to save: the button is off, and this refuses too
-    if (tmf.day !== dayNow()) { tmMsg = errMsg('A new day started. Tap Refresh to set today\'s team.'); draw(); return; }
-    var keep = tmf, out = tmOut(tmf), t = now(), v = tmf.base + 1;
-    var d = { day: tmf.day, on: out.on, br: out.br, v: v, at: tmf.base ? tmf.at : t, upd: t };
-    var people_ = {}; out.on.forEach(function (o) { people_[o.id] = 1; });
-    svStart('t'); tmMsg = ''; tmAssignMsg = ''; tmOwn = t; draw();
-    W([['set', docRef('team', d.day), d], ['set', cfgDoc(), { pastEdit: { t: t } }, true]]).then(function () {
-      tm.rec = teamClean(Object.assign({ by: tmMe() }, d), d.day); tm.st = 'ok'; tm.at = Date.now(); tm.stamp = t;
-      if (tmf === keep) { tmf.base = v; tmf.at = d.at; tmSnap = tmSig(tmf); }
+    if (!tmPlanEditable() || svOf('t') === 'busy') return;
+    if (!tmDirty()) { draw(); return; }
+    var keep = tmf, mine = tmPlan, entry = tmPlanEntry(keep.day), identity = stableIdentity(), out = tmOut(keep), t = now(), v = keep.base + 1;
+    var d = { day: keep.day, on: out.on, br: out.br, v: v, at: keep.base ? keep.at : t, upd: t };
+    var people_ = {}, current = d.day === dayNow(), ops = [['set', docRef('team', d.day), d]];
+    out.on.forEach(function (o) { people_[o.id] = 1; });
+    // Only a save for today invalidates today's live record on staff phones. Future planning adds no staff reads.
+    if (current) { ops.push(['set', cfgDoc(), { pastEdit: { t: t } }, true]); tmOwn = t; }
+    svStart('t'); tmMsg = ''; tmAssignMsg = ''; draw();
+    W(ops).then(function () {
+      if (tmPlan !== mine || identity !== stableIdentity()) return;
+      var clean = teamClean(Object.assign({ by: tmMe() }, d), d.day);
+      entry.rec = clean; entry.st = 'ok'; entry.checkedAt = Date.now();
+      keep.base = v; keep.at = d.at; entry.snap = tmSig(keep);
+      if (tmf === keep) tmSnap = entry.snap;
+      if (d.day === dayNow()) {
+        tm = { day: d.day, rec: clean, st: 'ok', at: Date.now(), retry: 0, epoch: accessEpoch, stamp: current ? t : pastStamp('t') };
+      }
       var n = Object.keys(people_).length;
-      svDone('t', tmf === keep, function () { tmMsg = 'Today\'s team saved at ' + clock(t) + ': ' + n + (n === 1 ? ' person' : ' people') + ' on.'; });
-      draw(); tmPaint();
-    }, function (e) {
-      svFail('t', tmf === keep, true);
-      if (e && e.code === 'permission-denied' && tmCanRead()) {
-        // someone saved since this page read it, or this phone's PIN session went: read the record to tell which
-        fb.fs.getDocFromServer(docRef('team', d.day)).then(function (sn) {
-          var x = sn.exists() ? teamClean(sn.data(), d.day) : null;
-          if (x && x.v >= v) tmMsg = errMsg('Not saved: ' + (x.by ? mnName(x.by) : 'another chef') + ' saved today\'s team at ' + clock(x.upd) + '. Your changes are still here. Tap Refresh to start from theirs.');
-          else { tmMsg = errMsg('Not saved. Check your PIN and the signal, then try again.'); failed(e); }
-          draw();
-        }, function () { tmMsg = errMsg('Not saved. Check the signal, then try again.'); draw(); });
+      var finish = function (noticeFailed) {
+        if (tmPlan !== mine || identity !== stableIdentity()) return;
+        entry.msg = 'Team for ' + tmPlanDate(d.day) + ' saved at ' + clock(t) + ': ' + n + (n === 1 ? ' person' : ' people') + ' on.' + (noticeFailed ? ' Other screens may need to reopen the book to see it.' : '');
+        if (tmf === keep) tmMsg = entry.msg;
+        svDone('t', tmf === keep, function () {}); draw(); tmPaint();
+      };
+      if (!current && d.day === dayNow()) {
+        // One bounded follow-up write only when a future save was acknowledged after midnight. Staff may already
+        // have read this newly current day as unset. A notification failure cannot undo the confirmed plan save.
+        var stampAt = now(); tmOwn = stampAt;
+        W([['set', cfgDoc(), { pastEdit: { t: stampAt } }, true]]).then(function () {
+          if (tmPlan !== mine || identity !== stableIdentity()) return;
+          if (tm.day === d.day) tm.stamp = stampAt;
+          finish(false);
+        }, function () { finish(true); });
         return;
       }
-      tmMsg = errMsg('Not saved. Check the signal, then try again.'); failed(e); draw();
+      finish(false);
+    }, function (e) {
+      if (tmPlan !== mine || identity !== stableIdentity()) return;
+      svFail('t', tmf === keep, true);
+      if (e && e.code === 'permission-denied' && tmCanRead()) {
+        // One named read only after a refused save distinguishes a newer version from a lost session.
+        var epoch = accessEpoch;
+        fb.fs.getDocFromServer(docRef('team', d.day)).then(function (sn) {
+          if (tmPlan !== mine || identity !== stableIdentity() || accessEpoch !== epoch) return;
+          var x = sn.exists() ? teamClean(sn.data(), d.day) : null;
+          if (x && x.v >= v) entry.msg = errMsg('Not saved: ' + (x.by ? mnName(x.by) : 'another chef') + ' saved the team for ' + tmPlanDate(d.day) + ' at ' + clock(x.upd) + '. Your changes are still here. Tap Refresh to start from theirs.');
+          else { entry.msg = errMsg('Not saved for ' + tmPlanDate(d.day) + '. Check your PIN and the signal, then try again.'); failed(e); }
+          if (tmf === keep) tmMsg = entry.msg;
+          draw();
+        }, function () {
+          if (tmPlan !== mine || identity !== stableIdentity() || accessEpoch !== epoch) return;
+          entry.msg = errMsg('Not saved for ' + tmPlanDate(d.day) + '. Check the signal, then try again.'); if (tmf === keep) tmMsg = entry.msg; draw();
+        });
+        return;
+      }
+      entry.msg = errMsg('Not saved for ' + tmPlanDate(d.day) + '. Check the signal, then try again.');
+      if (tmf === keep) tmMsg = entry.msg;
+      failed(e); draw();
     });
   }
   /* The chef chip in the top bar (round, the bell's size): filled until today's team is saved. No words: words in it
@@ -13141,7 +13311,7 @@
   }
   // a cook's usual section on today's weekday and this shift, while that section is still on the list
   function tmUsual(id, sh) {
-    var r = tsum.rec, u = r && r.usual[T.dow() + '|' + sh], v = u && u[id];
+    var r = tsum.rec, u = r && r.usual[parseYmd(tmPlanDay()).getDay() + '|' + sh], v = u && u[id];
     return v && kitSecs().some(function (x) { return x.id === v.sec; }) ? v : null;
   }
   function tmLearning(id) { var r = tsum.rec; return r && r.learn[id] ? r.learn[id] : []; }
@@ -13249,7 +13419,7 @@
      (LK_UPDATE.letGo() in js/upkeep.js). iPhone Safari never asks, and a phone that drops the tab in the background
      does not either. */
   function typedHere() {
-    return !!(psModule() && psModule().unsaved()) || !!(proofModule() && proofModule().dirty()) || !!(window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.dirty()) || draftsDirty() || !!mlf.text.trim() || tdDirty() || dkDirty() || rvTyped(true) || rvTyped(false) ||
+    return !!(psModule() && psModule().unsaved()) || !!(proofModule() && proofModule().dirty()) || !!(window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.dirty()) || draftsDirty() || !!mlf.text.trim() || tdDirty() || tmAnyDirty() || dkDirty() || rvTyped(true) || rvTyped(false) ||
       !!(S.text.trim() || S.qty.trim() || S.otext.trim() || S.oqty.trim() || S.wf.text.trim() || String(S.wf.amt).trim() || S.wf.act.trim() || S.xf.text.trim() || String(S.xf.amt).trim() || S.xf.note.trim() || !!(S.xf.basket || []).length);
   }
   function dirtyForUpdate() {
