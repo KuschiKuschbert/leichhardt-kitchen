@@ -1,6 +1,6 @@
 # Today's team: service and section on each row
 
-10 November 2026, Queensland. **Council review in progress. No new design is chosen.** The released design remains C from `docs/team-tidy-options/brief.md`; the A/B/C names below belong to this new review.
+10 November 2026, Queensland. **Chosen: C, Roster and focus. Implemented and locally verified; hosted checks and release pending.** The owner said "okay lets go with c" after seeing the recommendation and three concrete previews. The A/B/C names below belong to this new review, separate from the earlier C person worksheet. [Implementation contract and evidence](implementation.md). Original Preview figures below retain their own source and limits.
 
 The head chef clarified that each selected person should have **service/shift and section pickers together**. The present page already has the section picker; its service context is global. [The proposal](proposal.md), [shared current-contract packet](review-packet.md) and [actual current-page baseline](baseline.md) establish the scope and evidence limits.
 
@@ -151,6 +151,6 @@ Both focused reviewers keep their original rankings. The designer separately mea
 
 Its main downside is reduced visibility of the week: another date takes two actions instead of one, and neighbouring dated drafts are disclosed. The Save area also costs reading space, particularly at largest text, where no option fits a complete initial person. Another-service section corrections take five actions versus four today. These costs are not hidden behind a claim of general speed or labour savings.
 
-The owner has chosen the two row controls, not this review's A, B or C. The live page remains unchanged by this draft review. The service-council rule says, “The council advises and the head chef decides” and requires showing the designs and recommendation before building the chosen design. Application implementation and release follow the owner's concrete design choice.
+The owner chose **C, Roster and focus**, on 10 November 2026 and authorised implementation. Keep this exact flow with its checked keyboard repair, disclosed week and explicit membership actions. The other designs and original rankings remain historical comparison evidence. The current build and delivery state are recorded in [implementation.md](implementation.md); Preview measurements above are not silently relabelled as delivered results.
 
 After choice, reuse the authoritative team renderer, per-date draft/version/Save helpers, shared picker frame, canonical access and bounded week query. Retain production references and time-boundary/recovery guarantees. Recheck the complete implemented page at 390/768/1280, actual fonts plus relevant fallback/large/long cases, and compare it with the chosen preview. Run the focused team, acknowledgement/conflict, device/recovery and relevant emulator access/version checks. Fix or return material departures to the owner before readiness. No new full council round is required for routine implementation verification.

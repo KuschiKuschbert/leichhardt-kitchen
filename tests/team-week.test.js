@@ -26,12 +26,16 @@ const fixture = () => Object.assign({ [CFG]: { people, staffIds: ['sam', 'ann', 
 const fullDate = d => new Date(d + 'T12:00:00+10:00').toLocaleDateString('en-AU', { timeZone: 'Australia/Brisbane', weekday: 'long', day: 'numeric', month: 'long' });
 const click = async (p, s) => { const found = await tap(p, s); await L.settle(p, 120); return found; };
 const read = (p, d) => p.evaluate(k => window.__fake.dump()[k], key(['team', d]));
-const assignment = (p, person, sh, sec) => click(p, '[data-p="tm-sh"][data-v="' + sh + '"]').then(() => L.pick(p, 'select[data-k="tm-sec:' + person + '"]', sec));
+const service = async (p, person, sh) => { if (await p.locator('[data-p="tm-whole"]').getAttribute('aria-pressed') === 'true') await click(p, '[data-p="tm-whole"]'); await L.pick(p, 'select[data-k="tm-row-sh:' + person + '"]', sh); };
+const assignment = async (p, person, sh, sec) => { await service(p, person, sh); await L.pick(p, 'select[data-k="tm-sec:' + person + '"]', sec); };
 const rowSection = (p, id) => p.$eval('select[data-k="tm-sec:' + id + '"]', e => e.value);
 const savedSection = (rec, id, sh) => (rec.on.find(x => x.id === id && x.sh === sh) || {}).sec;
 const selected = p => p.$eval('[data-p="tm-day"][aria-pressed="true"]', e => e.getAttribute('data-day'));
 async function ready(p) { await L.waitFor(p, () => !!document.querySelector('.tm-weeknav') && !!document.querySelector('.tm-work [data-p="tm-whole"]'), null, 7000); }
+async function dates(p) { if (!await p.locator('.tm-weeknav').isVisible()) await click(p, '[data-p="tm-date-toggle"]'); }
+async function details(p, id) { if (!await p.locator('.tm-detail-workbench[data-id="' + id + '"]').count()) await click(p, '[data-p="tm-focus"][data-id="' + id + '"]'); }
 async function goDate(p, d, edit = true) {
+  await dates(p);
   for (let tries = 0; tries < 12; tries++) {
     const ds = await p.$$eval('[data-p="tm-day"]', all => all.map(e => e.getAttribute('data-day')).sort());
     if (ds.includes(d)) { await click(p, '[data-p="tm-day"][data-day="' + d + '"]'); break; }
@@ -57,12 +61,13 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   const browser = await L.start();
   let p = await L.open(browser, '#/team', { who: 'sam', extra: fixture(), fakeSDK: { 'firebase-firestore.js': sdk }, wait: 1000 });
   await ready(p);
-  const originalToday = await read(p, today), originalCfg = await p.evaluate(k => window.__fake.dump()[k], CFG);
+  const originalToday = await read(p, today), originalCfg = await p.evaluate(k => window.__fake.dump()[k], CFG), originalAway = await txt(p, '.tm-away-slot');
   ok(await selected(p) === today, 'opening: Today is selected and the week has seven date buttons');
   ok(await p.$$eval('[data-p="tm-day"]', es => es.length) === 7 && /On break now/.test(await txt(p, '.tm-away-slot') || ''), 'opening: seven days share the notebook and today keeps the saved break board');
   await goDate(p, tomorrow);
   ok((await txt(p, '.tm-page') || '').includes(fullDate(tomorrow)) && (await txt(p, '[data-p="tm-save"]') || '').includes(fullDate(tomorrow)), 'future date: editor and Save identify the full selected date');
-  ok(!/On break now|Nobody scheduled away/.test(await txt(p, '.tm-away-slot') || ''), 'future date: a future plan is never presented as current break status');
+  ok(await txt(p, '.tm-away-slot') === originalAway, 'future date: the current break board retains today\'s acknowledged plan independently of the future editor');
+  await details(p, 'sam');
   ok(/Usually Larder/.test(await txt(p, '.tm-work') || '') && !/Usually Grill/.test(await txt(p, '.tm-work') || ''), 'usual sections: future hints use the selected weekday rather than today');
   await assignment(p, 'ann', 'lunch', 'grill');
   await assignment(p, 'ann', 'dinner', 'larder');
@@ -79,9 +84,9 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   ok((await txt(p, '.tm-save') || '').includes(fullDate(tomorrow)) && /saved/i.test(await txt(p, '.tm-save') || ''), 'Save acknowledgement names the future date after the server answers');
   ok(JSON.stringify(await read(p, today)) === JSON.stringify(originalToday) && await p.evaluate(([k, value]) => window.__fake.dump()[k].pastEdit.t === value, [CFG, originalCfg.pastEdit.t]), 'isolation: saving a future date preserves today and its live-team stamp');
   await goDate(p, later);
-  await click(p, '[data-p="tm-sh"][data-v="lunch"]');
+  await service(p, 'bo', 'lunch');
   ok(await rowSection(p, 'bo') === 'pans' && !await p.$eval('[data-p="tm-save"]', e => e.disabled), 'drafts: saving tomorrow does not discard the other date\'s unsaved section');
-  await click(p, '[data-p="tm-today"]');
+  await click(p, '.tm-date-controls [data-p="tm-today"]');
   await ready(p);
   ok(await selected(p) === today && /Ann|14:30/.test(await txt(p, '.tm-away-slot') || ''), 'Today returns directly to the unchanged live saved plan');
   ok(await p.evaluate(() => window.LK_PREP.unsaved() && window.LK_PREP.dirtyForUpdate()), 'protected work: a hidden future-date draft still blocks reload and destructive Update');
@@ -166,7 +171,7 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   // A scheduled lock hides all dates, then restores the original chef's hidden-date draft with the same PIN.
   p = await L.open(browser, '#/team', { who: 'sam', extra: fixture(), deviceMode: 'shared', touch: true, wait: 900 }); await ready(p);
   await goDate(p, tomorrow); await assignment(p, 'ann', 'lunch', 'grill');
-  await click(p, '[data-p="tm-today"]'); await ready(p);
+  await click(p, '.tm-date-controls [data-p="tm-today"]'); await ready(p);
   await p.clock.runFor(11 * 60000); await L.settle(p, 250);
   ok(await p.evaluate(() => !LK_PREP.privateAccess() && LK_PREP.dirtyForUpdate()) && !(await p.$('.tm-weeknav')) && !!(await p.$('#pf1')), 'privacy lock: hidden future work stays protected while all planning dates disappear');
   const sameChef = p.locator('.p-name[data-id="sam"]');
@@ -192,7 +197,7 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   await L.waitFor(p, k => window.__fake.dump()[k].v === 2, key(['team', tomorrow]), 6000);
   ok(savedSection(await read(p, tomorrow), 'ann', 'lunch') === 'grill' && JSON.stringify(await read(p, today)) === JSON.stringify(plan(today)), 'midnight Save: the new live date receives the draft and the previous day remains unchanged');
   ok(await p.evaluate(k => window.__fake.dump()[k].pastEdit.t > 10, CFG), 'midnight Save: a plan that is now today uses the normal live-team invalidation stamp');
-  await click(p, '[data-p="tm-today"]'); await ready(p);
+  await click(p, '.tm-date-controls [data-p="tm-today"]'); await ready(p);
   ok(await selected(p) === tomorrow && (await txt(p, '[data-p="tm-save"]') || '').includes(fullDate(tomorrow)) && /On break now/.test(await txt(p, '.tm-away-slot') || ''), 'midnight Today: navigation and the live break board now refer to the new Queensland date');
   ok(p.errors.length === 0, 'midnight: no browser errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -201,6 +206,7 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   p = await L.open(browser, '#/team', { who: 'sam', extra: fixture(), fakeSDK: { 'firebase-firestore.js': heldWeekSDK }, wait: 900 }); await ready(p);
   await L.waitFor(p, () => typeof window.__fake.releaseInitialWeek === 'function', null, 6000);
   await assignment(p, 'ann', 'lunch', 'pans');
+  await details(p, 'ann');
   await p.evaluate(() => {
     const field = document.querySelector('select[data-k="tm-at:ann:0"]');
     field.value = '870'; field.dispatchEvent(new Event('change', { bubbles: true }));
@@ -231,13 +237,19 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
 
   for (const width of [390, 768, 1280]) {
     p = await L.open(browser, '#/team', { who: 'sam', extra: fixture(), width, wait: 900 }); await ready(p); await goDate(p, tomorrow);
+    await dates(p);
     ok(!(await L.overflow(p)), width + ' px: dated planner has no sideways page scroll');
     const controls = await p.$$eval('.tm-weeknav button', es => es.map(e => ({ label: e.getAttribute('aria-label') || e.textContent, width: e.getBoundingClientRect().width, height: e.getBoundingClientRect().height })));
-    ok(controls.length >= 10 && controls.every(x => x.width >= 43.9 && x.height >= 43.9), width + ' px: day and week controls retain 44 px targets ' + JSON.stringify(controls.filter(x => x.width < 43.9 || x.height < 43.9)));
+    ok(controls.length >= 10 && controls.every(x => x.width >= 43.9 && x.height >= 43.9), width + ' px: revealed day and week controls retain 44 px targets ' + JSON.stringify(controls.filter(x => x.width < 43.9 || x.height < 43.9)));
     const keyboardDay = await p.$$eval('[data-p="tm-day"]', es => es[3].getAttribute('data-day'));
     await p.focus('[data-p="tm-day"][data-day="' + keyboardDay + '"]'); await p.keyboard.press('Enter'); await L.settle(p, 120);
-    ok(await selected(p) === keyboardDay && await p.evaluate(d => document.activeElement.getAttribute('data-day') === d, keyboardDay) && p.errors.length === 0, width + ' px: keyboard day selection retains focus on the chosen date without browser errors');
+    ok(await selected(p) === keyboardDay && await p.evaluate(([d, label]) => {
+      const active = document.activeElement;
+      const namedDate = active.matches('[data-p="tm-day"][aria-pressed="true"]') && active.getAttribute('data-day') === d || active.matches('[data-p="tm-date-toggle"]') && active.textContent.includes(label);
+      return namedDate && !!active.getClientRects().length && getComputedStyle(active).visibility !== 'hidden';
+    }, [keyboardDay, fullDate(keyboardDay)]) && p.errors.length === 0, width + ' px: keyboard day selection retains visible focus naming the chosen date without browser errors');
     if (width === 390) {
+      await dates(p);
       await p.evaluate(() => { document.documentElement.dataset.text = 'xlarge'; });
       ok(!(await L.overflow(p)) && await p.$$eval('.tm-weeknav button', es => es.every(e => e.getBoundingClientRect().width >= 43.9 && e.getBoundingClientRect().height >= 43.9)), 'largest text on 390 px: date targets remain 44 px without sideways page scroll');
     }

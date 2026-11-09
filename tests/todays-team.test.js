@@ -20,24 +20,24 @@ const SHIFTS = [{ id: 'lunch', name: 'Lunch', from: 600, to: 900, off: false }, 
 const cfg = x => ({ [CFG]: Object.assign({ people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, prepStandardsEnabled: true, kitSecs: SECS, kitShifts: SHIFTS }, x || {}) });
 const dayTitle = new Date(today + 'T12:00:00+10:00').toLocaleDateString('en-AU', { timeZone: 'Australia/Brisbane', weekday: 'long', day: 'numeric', month: 'long' });
 const store = p => p.evaluate(() => window.__fake.dump());
-// Open the person's labelled disclosure and use the same visible picker as a chef.
+// Open the person's named workbench and use the same visible picker as a chef.
 async function details(p, id) {
-  const d = p.locator('details.tm-person-details[data-id="' + id + '"]');
-  if (!await d.evaluate(e => e.open)) await d.locator(':scope > summary').click();
+  if (!await p.locator('.tm-detail-workbench[data-id="' + id + '"]').count()) await p.locator('[data-p="tm-focus"][data-id="' + id + '"]').click();
   await L.settle(p, 120);
 }
 async function tools(p) { const d = p.locator('details.tm-batch'); if (!await d.evaluate(e => e.open)) await d.locator(':scope > summary').click(); await L.settle(p, 120); }
-const pick = async (p, k, v) => { if (k.includes(':') && !k.startsWith('tm-sec:')) await details(p, k.split(':')[1]); else if (!k.includes(':')) await tools(p); await L.pick(p, 'select[data-k="' + k + '"]', String(v)); return true; };
+const pick = async (p, k, v) => { if (k.includes(':') && !k.startsWith('tm-sec:') && !k.startsWith('tm-row-sh:')) await details(p, k.split(':')[1]); else if (!k.includes(':')) await tools(p); await L.pick(p, 'select[data-k="' + k + '"]', String(v)); return true; };
 const chip = p => p.evaluate(() => { const c = document.querySelector('.wtop .tm-slot .tm-chip'); return c ? { due: c.classList.contains('is-due'), label: c.getAttribute('aria-label'), href: c.getAttribute('href') } : null; });
 const titleCut = p => p.evaluate(() => { const b = document.querySelector('.wtop-brand b'), i = document.querySelector('.wtop-icons'); return !b || b.scrollWidth > b.clientWidth + 1 || b.getBoundingClientRect().right > i.getBoundingClientRect().left + 1; });
 // Empty days start with the inline staff chooser; later membership stays in the person's details.
-const onShift = async (p, id) => {
-  if (!await p.locator('details.tm-person-details[data-id="' + id + '"]').count()) {
-    const chooser = p.locator('details.tm-quick-add');
-    if (await chooser.count() && !await chooser.evaluate(e => e.open)) await chooser.locator(':scope > summary').click();
+const onShift = async (p, id, sh) => {
+  if (!await p.locator('.tm-person-row[data-id="' + id + '"]').count()) {
+    if (!await p.locator('.tm-quick-add').isVisible()) await p.locator('.tm-focus-toolbar [data-p="tm-add-staff"]').click();
+    if (sh) for (const choice of await p.locator('input[data-k^="tm-quick-shift:"]').all()) await choice.setChecked(await choice.getAttribute('data-k') === 'tm-quick-shift:' + sh);
     await p.locator('input[data-k="tm-quick-person:' + id + '"]').check();
     await tap(p, '[data-p="tm-quick-add"]'); await L.settle(p, 200); await details(p, id); return true;
   }
+  if (sh) await pick(p, 'tm-row-sh:' + id, sh);
   await details(p, id); const done = await tap(p, '[data-p="tm-on"][data-id="' + id + '"]'); await L.settle(p, 200); return done;
 };
 const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.nb-addline').getBoundingClientRect().top; return [...document.querySelectorAll('[id^="nbr-"]')].filter(e => { const q = e.getBoundingClientRect(); return q.top >= 0 && q.bottom <= bar; }).length; });
@@ -80,13 +80,13 @@ const withoutViewChoice = async p => {
   await p.click('.wtop .tm-slot .tm-chip'); await L.settle(p, 900);
   ok(/#\/team$/.test(p.url()) && /Today's team/.test(await txt(p, '#rtitle') || ''), 'page: the chip opens Today\'s team');
   ok(/No team saved yet/.test(await txt(p, '.tm-draftstate') || '') && !!(await p.$('[data-p="tm-use"]')), 'page: not set yet, and Same as last Saturday? Use it is offered');
-  ok(await p.$eval('[data-p="tm-sh"][data-v="lunch"]', e => e.getAttribute('aria-pressed')) === 'true', 'page: Lunch is the shift shown first');
+  ok(await p.locator('input[data-k="tm-quick-shift:lunch"]').isChecked(), 'page: Lunch is the explicit initial service choice');
   ok(await p.$eval('[data-p="tm-save"]', e => e.disabled), 'page: Save is off while nothing changed');
   await onShift(p, 'ann');
   ok(await pick(p, 'tm-sec:ann', 'grill'), 'page: Ann on Lunch gets a section picker');
   ok(await onShift(p, 'sam'), 'page: Sam is ticked onto Lunch');
   ok(await p.$eval('select[data-k="tm-sec:sam"]', e => e.value === '' && [...e.options].some(o => o.value === '' && o.textContent === 'Sous chef')), 'page: a sous chef has a section picker too, starting on their role');
-  await tap(p, '[data-p="tm-addbr"][data-id="ann"]'); await L.settle(p, 200);
+  await details(p, 'ann'); await tap(p, '[data-p="tm-addbr"][data-id="ann"]'); await L.settle(p, 200);
   ok(await pick(p, 'tm-at:ann:0', 870) && await pick(p, 'tm-len:ann:0', 45), 'page: Ann gets a break at 14:30 for 45 minutes');
   await L.settle(p, 150);
   ok((await p.$eval('[data-p="tm-save"]', e => e.disabled)) === false, 'page: Save is on once something changed');
@@ -96,11 +96,10 @@ const withoutViewChoice = async p => {
   await pick(p, 'tm-spfrom', 720); await L.settle(p, 100);
   await tap(p, '[data-p="tm-spread"]'); await L.settle(p, 200);
   ok(/3 breaks from 12:00/.test(await txt(p, '.tm-save') || ''), 'page: Spread them sets 3 breaks from 12:00, one at a time (' + (await txt(p, '.tm-save')) + ')');
-  await tap(p, '[data-p="tm-sh"][data-v="dinner"]'); await L.settle(p, 200);
-  await onShift(p, 'ann');
+  await onShift(p, 'ann', 'dinner');
   ok(await p.$eval('select[data-k="tm-sec:ann"]', e => e.value) === 'grill', 'page: Ann on Dinner starts with her Lunch section');
   await pick(p, 'tm-sec:ann', 'pans'); await L.settle(p, 150);
-  ok(/Also on Lunch: Grill/.test(await txt(p, '.tm-people') || ''), 'page: Ann\'s row says she is also on Lunch, on Grill');
+  ok(/Also on Lunch: Grill/.test(await txt(p, '.tm-detail-workbench') || ''), 'page: Ann\'s workbench says she is also on Lunch, on Grill');
   await tap(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => !!window.__fake.dump()[k], TEAM, 8000);
   s = await store(p);
@@ -121,8 +120,7 @@ const withoutViewChoice = async p => {
 
   // another chef saves meanwhile: this page's save is refused and says so, the changes stay, Refresh reads theirs
   await p.evaluate(([k, d]) => window.__fake.write(k, d), [TEAM, Object.assign({}, t, { v: 2, upd: t.upd + 60000, by: 'sam', on: t.on.slice(0, 2) })]);
-  await tap(p, '[data-p="tm-sh"][data-v="lunch"]'); await L.settle(p, 200);
-  await onShift(p, 'bo');
+  await onShift(p, 'bo', 'lunch');
   await tap(p, '[data-p="tm-save"]'); await L.settle(p, 1500);
   ok((await txt(p, '.tm-save') || '').includes('Not saved: Sam saved the team for ' + dayTitle + ' at ') && /\d\d:\d\d\. Your changes are still here/.test(await txt(p, '.tm-save') || ''), 'conflict: a save over a newer one names its date and keeps the draft (' + (await txt(p, '.tm-save')) + ')');
   ok((await store(p))[TEAM].v === 2, 'conflict: the newer save stays as it is');
@@ -257,7 +255,9 @@ const withoutViewChoice = async p => {
   await pick(p, 'tm-spfrom', 1080); await pick(p, 'tm-splen', 30); await pick(p, 'tm-spmode', '2'); await L.settle(p, 100);
   await tap(p, '[data-p="tm-spread"]'); await L.settle(p, 200);
   ok(/3 breaks from 18:00, two per group, starting every 30 min/.test(await txt(p, '.tm-save') || ''), 'split: then the meal breaks, two at a time, keeping the splits (' + (await txt(p, '.tm-save')) + ')');
-  ok(await p.$$eval('[data-p="tm-addbr"]', e => e.length) === 3, 'split: a third break can still be added');
+  let thirdBreaks = 0;
+  for (const id of ['ann', 'bo', 'sam']) { await details(p, id); thirdBreaks += await p.locator('[data-p="tm-addbr"][data-id="' + id + '"]').count(); }
+  ok(thirdBreaks === 3, 'split: every person can still add a third break through their workbench');
   await tap(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => !!window.__fake.dump()[k], TEAM, 8000);
   s = (await store(p))[TEAM];
@@ -298,8 +298,8 @@ const withoutViewChoice = async p => {
   p = await L.open(b, '#/team', { who: 'sam', extra: withSum(), wait: 1800 });
   ok(await onShift(p, 'ann'), 'usual: Ann is ticked onto Lunch');
   ok(await p.$eval('select[data-k="tm-sec:ann"]', e => e.value) === 'grill', 'usual: she starts on her usual section, Grill');
-  const annRow = await p.evaluate(() => { const x = document.querySelector('[data-p="tm-on"][data-id="ann"]'); return x ? x.closest('.tm-person-row').textContent : ''; });
-  ok(annRow.includes('Usually Grill, 6 of the last 8 ' + wdName + 's') && annRow.includes('In training: Pans'), 'usual: her row says her usual section and what she is in training on (' + annRow + ')');
+  const annRow = await txt(p, '.tm-detail-workbench') || '';
+  ok(annRow.includes('Usually Grill, 6 of the last 8 ' + wdName + 's') && annRow.includes('In training: Pans'), 'usual: her workbench says her usual section and what she is in training on (' + annRow + ')');
   await onShift(p, 'bo');
   ok(await p.$eval('select[data-k="tm-sec:bo"]', e => e.value) === '', 'usual: a section taken off the list is not filled in');
   ok(await p.evaluate(() => window.__fake.reads.filter(r => /\/teamsum\//.test(r)).length) === 1, 'usual: the numbers are read once');
