@@ -7,6 +7,7 @@
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   let state = { theme: null, mode: 'still', density: 'festive', upcoming: [], dayCount: null }, frame = 0, publishFrame = 0;
   let surface = 'work', route = location.hash || '#/', aboutOpen = false, panel = null, panelTheme = null;
+  let aboutHistory = null;
   let handoffCount = 0, handoffTimer = 0, handoffTarget = null, handoffPending = false;
   const esc = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   function art(source, theme, className) {
@@ -44,13 +45,14 @@
     if (publishFrame) return;
     publishFrame = requestAnimationFrame(() => { publishFrame = 0; publish(); });
   }
-  function closeAbout(restoreFocus = false) {
+  function closeAbout(restoreFocus = false, fromHistory = false) {
     const trigger = aboutButton();
     aboutOpen = false;
     // An explanation exists only while requested, so closing it releases its scheduler.
     if (panel && window.KB_CELEBRATION_TICKER?.status().surface === 'work') KB_CELEBRATION_TICKER.clear();
     if (panel?.open) panel.close();
     panel?.remove(); panel = null; panelTheme = null;
+    const finish = aboutHistory; aboutHistory = null; finish?.(fromHistory || (location.hash || '#/') !== route);
     trigger?.setAttribute('aria-expanded', 'false');
     if (restoreFocus && trigger?.isConnected) trigger.focus({ preventScroll: true });
     publishSoon();
@@ -62,7 +64,7 @@
     panel.style.setProperty('--kb-about-top', top + 'px');
   }
   function openAbout() {
-    if (!state.theme || surface !== 'work' || gated() || document.querySelector('dialog[open],.overlay,.who-menu')) return;
+    if (!state.theme || surface !== 'work' || gated() || document.querySelector('dialog[open],.overlay,.who-menu,.wm-wrap,.nt-wrap,.mlp-wrap,.cooling-wrap,.fn-pop,.sheet-bg,.gz-wrap')) return;
     if (panel?.isConnected && panelTheme !== state.theme.id) closeAbout(false);
     aboutOpen = true;
     if (!panel?.isConnected) {
@@ -80,6 +82,7 @@
       });
       document.body.append(panel); panelTheme = state.theme.id;
       panel.showModal();
+      if (window.LK_PREP?.pickerOverlay) aboutHistory = LK_PREP.pickerOverlay(() => closeAbout(true, true));
     }
     aboutButton()?.setAttribute('aria-expanded', 'true');
     KB_CELEBRATION_TICKER.mount(panel.querySelector('[data-kb-ticker]'), state.theme, { mode: state.mode, surface: 'work', languageHost: panel.querySelector('[data-kb-language]') });

@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Shared modal frame, 9 November 2026
+
+The owner approved the existing picker frame across all dismissible sheets: touch-visible ×, matching title/spacing/corners, swipe cancellation and one 768 px responsive breakpoint. `js/controls.js`, `css/app.css`, menu history in `js/app.js`, native-dialog queue recognition in `js/prep.js` and occasion history in `js/seasonal/theme-bridge.js`. Real forms, native dialogs, guide pages, cooling and gestures are covered by modal-frame, modal-overlays, modal-close, swipe-dismiss, cooling, seasonal and the full Click tests. No reads, saved fields or rules change. [Contract, quick check and comparisons](adaptive-controls.md#shared-modal-frame-9-november-2026).
+
 ## Supplier Latest/Earlier purchase labels, 9 November 2026
 
 The head chef selected A, Label the reference, after the [council and three visual directions](supplier-last-order-status-options/brief.md#chosen). Latest order / Earlier order uses loaded order IDs, keeps quantity/date visible and adds no read, tap or measured row height. `js/suppliers.js?v=23`, its loader in `js/app.js`, `css/app.css` and the focused `tests/supplier-order-status.test.js` implement and check the labels. Unknown history remains neutral, including old-record replay after a failed read. [Actual measurements and screenshots](supplier-last-order-status-options/brief.md#implementation-evidence).
@@ -18,7 +22,7 @@ The owner requested disabling the timer after the second deadline until the foll
 
 ## Sheet and modal close button, 9 November 2026
 
-The owner requested a small × on bottom sheets and modals for non-touch screens. The shared `SwipeDismiss()` helper in `js/controls.js` adds a missing header close using the original cancellation callback. `css/app.css` controls pointer/hover visibility and title spacing; `js/app.js` and `js/upkeep.js` keep the visible control in their keyboard loops. [Contract and verification](adaptive-controls.md#swipe-to-close-9-november-2026); `tests/modal-close.test.js`, `tests/update-confirmation.test.js` and existing overlay/swipe checks. No reads, rules, stored fields or saved-shell manifest changes.
+Historical rollout, superseded by the shared modal frame above. The owner initially requested a small × on bottom sheets and modals for non-touch screens. The shared `SwipeDismiss()` helper in `js/controls.js` adds a missing header close using the original cancellation callback. `css/app.css` controls pointer/hover visibility and title spacing; `js/app.js` and `js/upkeep.js` keep the visible control in their keyboard loops. [Contract and verification](adaptive-controls.md#swipe-to-close-9-november-2026); `tests/modal-close.test.js`, `tests/update-confirmation.test.js` and existing overlay/swipe checks. No reads, rules, stored fields or saved-shell manifest changes.
 
 ## Swipe to close, 9 November 2026
 
