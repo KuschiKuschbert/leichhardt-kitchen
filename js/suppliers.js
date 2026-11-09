@@ -3,7 +3,7 @@
    lookahead); older history and audit load on a tap. No polling, per-item reads or persistent private cache. */
 (function () {
   'use strict';
-  var API = 10, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
+  var API = 11, A = window.LK_APP, P = window.LK_PREP, T = window.LK_TIME, esc = A.esc;
   var C, store, loadingCode = null, contextKey = '', identityKey = '', lockedIdentity = '', generation = 0;
   var M = blank();
   // Optional in lazy files: an older saved shell keeps its existing text feedback.
@@ -15,7 +15,7 @@
       sidebar: !collapsed, q: '', group: '', filter: '', infoOpen: null, requestsWant: false, page: 0, drafts: Object.create(null), history: Object.create(null),
       audit: Object.create(null), historyOpen: false, historyId: '', historyQ: '', smart: false, requests: null,
       requestsBusy: false, requestsError: '', requestsDay: '', cutQ: '', ed: null, supplierEd: null, review: null, additional: '',
-      archive: '', reuse: '', importing: null, importPlan: null, importMap: Object.create(null), importQ: '',
+      archive: '', reuse: '', importing: null, importPlan: null, importReuses: [], importMap: Object.create(null), importQ: '',
       includeArchived: false, auditOpen: false, armedLeave: '', saving: false };
   }
   function B() { return P.supplier(); }
@@ -145,35 +145,43 @@
     (suppliers || []).some(function (s) {
       var from = s.splitFrom || s.historyFrom, source = from && M.drafts[from], target = M.drafts[s.id];
       if (!source || !target) return false;
-      return s.items.some(function (i) {
-        var sourceHas = String(source.qty[i.id] || '').trim() || String(source.stock[i.id] || '').trim();
-        var targetHas = String(target.qty[i.id] || '').trim() || String(target.stock[i.id] || '').trim();
+      return splitDraftItems(s).some(function (i) {
+        var sourceHas = String(source.qty[i.from] || '').trim() || String(source.stock[i.from] || '').trim();
+        var targetHas = String(target.qty[i.to] || '').trim() || String(target.stock[i.to] || '').trim();
         if (!sourceHas || !targetHas) return false;
         conflict = 'Both supplier drafts have amounts for ' + i.name + '. Check ' + s.name + ' before continuing. Clear its amounts to keep the original draft amounts.'; return true;
       });
     });
     return conflict;
   }
-  // A confirmed split moves this tab's unsaved fields with their item IDs. Other supplier drafts keep their IDs.
+  function splitDraftItems(s) {
+    if (!s.historyItems) return s.items.map(function (i) { return { from: i.id, to: i.id, name: i.name }; });
+    var existing = (M.suppliers || []).filter(function (current) { return current.id === s.id; })[0];
+    return Object.keys(s.historyItems).map(function (id) {
+      var to = s.historyItems[id], i = s.items.concat(existing ? existing.items : []).filter(function (entry) { return entry.id === to || entry.id === id; })[0];
+      return { from: id, to: to, name: i ? i.name : id };
+    });
+  }
+  // A confirmed split moves this tab's fields through the saved item map. Other supplier drafts keep their IDs.
   function moveSplitDrafts(suppliers) {
     var conflict = splitDraftConflict(suppliers); if (conflict) return conflict;
     (suppliers || []).forEach(function (s) {
       var source = s.historyFrom && M.drafts[s.historyFrom]; if (!source) return;
-      s.items.forEach(function (i) {
-        if (!String(source.qty[i.id] || '').trim() && !String(source.stock[i.id] || '').trim()) return;
+      splitDraftItems(s).forEach(function (i) {
         var target = draft(s.id), pairs = [[source.qty, target.qty], [source.stock, target.stock], [source.units.qty, target.units.qty], [source.units.stock, target.units.stock], [source.suggestions, target.suggestions], [source.dismissed, target.dismissed]];
-        pairs.forEach(function (pair) { if (Object.prototype.hasOwnProperty.call(pair[0], i.id)) { pair[1][i.id] = pair[0][i.id]; delete pair[0][i.id]; } });
+        var sourceHas = String(source.qty[i.from] || '').trim() || String(source.stock[i.from] || '').trim(), targetHas = String(target.qty[i.to] || '').trim() || String(target.stock[i.to] || '').trim();
+        pairs.forEach(function (pair) { if (Object.prototype.hasOwnProperty.call(pair[0], i.from)) { if (sourceHas || !targetHas) pair[1][i.to] = pair[0][i.from]; delete pair[0][i.from]; } });
       });
     });
     return '';
   }
   function deps() {
-    function coreReady() { return window.LK_SUP_CORE && window.LK_SUP_CORE.API === 5 && typeof window.LK_SUP_CORE.planTemplateOrder === 'function'; }
-    function storeReady() { return window.LK_SUP_STORE && window.LK_SUP_STORE.API === 3 && window.LK_SUP_STORE.templateOrder === 1 && window.LK_SUP_STORE.catalogueOrder === 1 && window.LK_SUP_STORE.splitCatalogue === 1; }
+    function coreReady() { return window.LK_SUP_CORE && window.LK_SUP_CORE.API === 6 && typeof window.LK_SUP_CORE.planTemplateOrder === 'function' && typeof window.LK_SUP_CORE.resolveCatalogueDestinations === 'function'; }
+    function storeReady() { return window.LK_SUP_STORE && window.LK_SUP_STORE.API === 4 && window.LK_SUP_STORE.templateOrder === 1 && window.LK_SUP_STORE.catalogueOrder === 1 && window.LK_SUP_STORE.splitCatalogue === 1; }
     if (coreReady() && storeReady()) return Promise.resolve();
     if (!loadingCode) loadingCode = Promise.all([
-      coreReady() ? null : A.load('js/supplier-core.js?v=6'),
-      storeReady() ? null : A.load('js/supplier-store.js?v=6')
+      coreReady() ? null : A.load('js/supplier-core.js?v=7'),
+      storeReady() ? null : A.load('js/supplier-store.js?v=7')
     ]).then(function () {
       if (!coreReady() || !storeReady()) throw { code: 'version' };
     }).catch(function (e) { loadingCode = null; throw e; });
@@ -240,9 +248,9 @@
   }
   function supplierSelect() { return '<label class="field su-mobile-pick"><span class="label">Supplier</span><select class="search" data-sf="supplier">' + (M.suppliers || []).map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === M.sid ? ' selected' : '') + '>' + esc(s.name + (todayCut(s) ? ' · ' + todayCut(s) : '')) + '</option>'; }).join('') + '</select></label>'; }
   function statusHTML() {
-    var task = activeTask(), note = M.armedLeave && (task === 'editor' || task === 'supplier' || task === 'import'), msg = M.armedLeave && !note ? '' : M.msgAt === 'history' && M.historyOpen ? '' : M.msg;
+    var task = activeTask(), note = M.armedLeave && (task === 'editor' || task === 'supplier' || task === 'import'), msg = M.armedLeave && !note ? '' : (M.msgAt === 'history' && M.historyOpen || M.msgAt === 'import' && task === 'catalogue') ? '' : M.msg;
     var pending = M.review && task !== 'review' && (M.saving || M.review.uncertain) ? '<p id="su-recording-status" class="su-status" role="status">Recording for ' + esc(M.review.supplierName) + (M.saving ? ' is still in progress. ' : ' needs confirmation. ') + '<a href="#/suppliers/' + encodeURIComponent(M.review.sid) + '" data-su-recovery>Return to review</a>' + (M.saving ? ' to check its outcome.' : ' to retry safely.') + '</p>' : '';
-    return (M.err ? '<div id="su-order-error" class="su-error" role="alert">' + esc(M.err) + (M.validation || pending ? '' : '<div class="btn-row">' + (M.err === LINKED_ERR ? button('additional', 'Additional order') : button('retry', 'Try again')) + '</div>') + '</div>' : '') + pending + (msg ? '<p class="su-status' + (note ? ' su-leave-note' : '') + '"' + (note ? ' id="su-leave-note"' : '') + ' role="status">' + esc(msg) + '</p>' : '') + (navigator.onLine === false ? '<p class="su-error" role="status">No signal. Supplier reads and saves need a connection. Do not close a draft you still need.</p>' : '');
+    return (M.err ? '<div id="su-order-error" class="su-error" role="alert" tabindex="-1">' + esc(M.err) + (M.validation || pending ? '' : '<div class="btn-row">' + (M.err === LINKED_ERR ? button('additional', 'Additional order') : button('retry', 'Try again')) + '</div>') + '</div>' : '') + pending + (msg ? '<p class="su-status' + (note ? ' su-leave-note' : '') + '"' + (note ? ' id="su-leave-note"' : '') + ' role="status">' + esc(msg) + '</p>' : '') + (navigator.onLine === false ? '<p class="su-error" role="status">No signal. Supplier reads and saves need a connection. Do not close a draft you still need.</p>' : '');
   }
   function headerHTML() {
     return '<div class="su-head"><div><span class="eyebrow">Chef tools</span><h2 id="rtitle" tabindex="-1">' + (M.mode === 'manage' ? 'Suppliers &amp; pars' : 'Supplier order') + '</h2><p class="hint">' + (M.mode === 'manage' ? 'Current pars and manual items. Original PDF records and past orders stay unchanged.' : 'Choose a supplier, check its last order and build the next one.') + '</p></div><div class="btn-row">' + button('refresh', M.busy ? inkLabel('Refreshing...', 'orders') : 'Refresh', M.busy ? ' disabled' : '') + '</div></div>' +
@@ -503,7 +511,7 @@
     if (task === 'supplier') return supplierEditorHTML();
     if (task === 'import') return importHTML();
     var list = filterItems(true); M.page = Math.max(0, Math.min(M.page, Math.ceil(list.length / 20) - 1));
-    return '<p class="hint su-breadcrumb">Content / Suppliers &amp; pars</p><div class="su-manage-links"><div class="btn-row">' + button('import', 'Import catalogue') + smallButton('supplier-settings', 'Supplier settings') + '</div><button type="button" class="p-x" data-su="cutoff-settings">Order cut-offs in Admin settings</button></div>' + toolbarHTML() + '<div class="su-catalogue-options"><span class="hint">' + esc(supplier().name) + ' · revision ' + supplier().v + '</span><label><input type="checkbox" data-sf="includeArchived"' + (M.includeArchived ? ' checked' : '') + '> Include archived</label></div>' + (M.archive ? archiveHTML() : '') + '<div class="su-catalogue-head">' + catalogueHeading('name', 'Item / source') + catalogueHeading('par', 'Current par') + catalogueHeading('source', 'PDF par') + '<span></span></div>' + list.slice(M.page * 20, M.page * 20 + 20).map(function (i) { return '<div class="su-catalogue-row' + (i.archived ? ' is-archived' : '') + '"><div><b>' + esc(i.name) + '</b>' + (M.stamp && M.stamp.id === i.id ? '<span class="lk-stamp">' + esc(M.stamp.word) + ' ' + esc(M.stamp.at) + '</span>' : '') + '<span class="hint">Pack: ' + esc(i.pack || 'Not set') + ' · ' + (i.manual ? 'Manual item' : esc(i.source.file) + ' · page ' + esc(i.source.page)) + (i.archived ? ' · Archived' : '') + '</span></div><div><span class="su-mobile-label">Current par</span><b>' + esc(currentPar(i)) + '</b></div><div><span class="su-mobile-label">PDF par</span>' + esc(i.manual ? 'Manual' : i.source.par === '' ? 'Not set' : i.source.par) + '</div><div class="btn-row">' + button('edit', i.manual ? 'Edit item' : 'Edit par', ' data-i="' + esc(i.id) + '"') + (i.archived ? smallButton('restore', 'Restore', ' data-i="' + esc(i.id) + '"') : '') + '</div></div>'; }).join('') + (!list.length ? '<p class="empty">No items match.</p>' : '') + pager(list) + auditHTML();
+    return '<p class="hint su-breadcrumb">Content / Suppliers &amp; pars</p><div class="su-manage-links"><div class="btn-row">' + button('import', 'Import catalogue') + smallButton('supplier-settings', 'Supplier settings') + '</div><button type="button" class="p-x" data-su="cutoff-settings">Order cut-offs in Admin settings</button></div>' + (M.msg && M.msgAt === 'import' ? '<p id="su-import-status" class="su-status" role="status">' + esc(M.msg) + '</p>' : '') + toolbarHTML() + '<div class="su-catalogue-options"><span class="hint">' + esc(supplier().name) + ' · revision ' + supplier().v + '</span><label><input type="checkbox" data-sf="includeArchived"' + (M.includeArchived ? ' checked' : '') + '> Include archived</label></div>' + (M.archive ? archiveHTML() : '') + '<div class="su-catalogue-head">' + catalogueHeading('name', 'Item / source') + catalogueHeading('par', 'Current par') + catalogueHeading('source', 'PDF par') + '<span></span></div>' + list.slice(M.page * 20, M.page * 20 + 20).map(function (i) { return '<div class="su-catalogue-row' + (i.archived ? ' is-archived' : '') + '"><div><b>' + esc(i.name) + '</b>' + (M.stamp && M.stamp.id === i.id ? '<span class="lk-stamp">' + esc(M.stamp.word) + ' ' + esc(M.stamp.at) + '</span>' : '') + '<span class="hint">Pack: ' + esc(i.pack || 'Not set') + ' · ' + (i.manual ? 'Manual item' : esc(i.source.file) + ' · page ' + esc(i.source.page)) + (i.archived ? ' · Archived' : '') + '</span></div><div><span class="su-mobile-label">Current par</span><b>' + esc(currentPar(i)) + '</b></div><div><span class="su-mobile-label">PDF par</span>' + esc(i.manual ? 'Manual' : i.source.par === '' ? 'Not set' : i.source.par) + '</div><div class="btn-row">' + button('edit', i.manual ? 'Edit item' : 'Edit par', ' data-i="' + esc(i.id) + '"') + (i.archived ? smallButton('restore', 'Restore', ' data-i="' + esc(i.id) + '"') : '') + '</div></div>'; }).join('') + (!list.length ? '<p class="empty">No items match.</p>' : '') + pager(list) + auditHTML();
   }
   function supplierEditorHTML() {
     var e = M.supplierEd, cuts = B().cuts();
@@ -520,8 +528,9 @@
       var selected = M.importMap[s.id] || '', options = cuts.slice(), keep = cuts.filter(function (c) { return c.id === selected; })[0];
       if (keep && !options.some(function (c) { return c.id === selected; })) options.push(keep);
       var origin = s.splitFrom && (M.suppliers || []).filter(function (x) { return x.id === s.splitFrom; })[0];
-      var split = s.splitFrom ? '<p class="hint">Separate from ' + esc(origin ? origin.name : s.splitFrom) + '. Items keep their IDs and previous quantities. Original entries are archived under the old supplier and its orders stay unchanged. Choose this supplier\'s own reminder below.</p>' : '';
-      return '<div class="su-import-row"><b>' + esc(s.name) + '</b><span class="hint">' + s.items.length + ' items</span>' + split + sequenceHTML(s.items, 'View file sequence') + '<label class="field"><span class="label">Existing reminder</span><select class="search" data-sf="import-cutoff" data-sid="' + esc(s.id) + '"><option value="">No reminder linked</option>' + options.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === selected ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label></div>';
+      var split = s.splitFrom ? '<p class="hint">Separate from ' + esc(origin ? origin.name : s.splitFrom) + '. Saved item IDs and previous quantities are kept. Original entries are archived under the old supplier and its orders stay unchanged. Choose this supplier\'s own reminder below.</p>' : '';
+      var reuse = (M.importReuses || []).filter(function (x) { return x.id === s.id; })[0], reused = reuse ? '<p class="hint">Use the existing ' + esc(reuse.name) + ' catalogue. Its current items, pars and previous orders are kept.</p>' : '';
+      return '<div class="su-import-row"><b>' + esc(reuse ? reuse.name : s.name) + '</b><span class="hint">' + s.items.length + ' items</span>' + split + reused + sequenceHTML(s.items, 'View file sequence') + '<label class="field"><span class="label">Existing reminder</span><select class="search" data-sf="import-cutoff" data-sid="' + esc(s.id) + '"><option value="">No reminder linked</option>' + options.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === selected ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select></label></div>';
     }).join('');
     return '<section class="su-editor"><h2 id="rtitle" tabindex="-1">Review catalogue import</h2>' + statusHTML() + '<p>' + M.importing.suppliers.length + ' suppliers · ' + n + ' items. Check each existing reminder link before importing.</p>' + (splitting ? '<p class="hint">The separated suppliers can use different delivery dates and order cut-offs. Delivery days stay in Order cut-offs.</p>' : '') + rows + '<p class="hint">Existing items follow this file\'s sequence. Current pars and previous quantities stay with their saved items. Any existing items absent from the file stay at the end.</p><div class="btn-row">' + button('import-apply', M.saving ? inkLabel('Importing...') : 'Import catalogue', M.saving ? ' disabled aria-busy="true"' : '', true) + '</div></section>';
   }
@@ -744,15 +753,17 @@
   }
   function importFile(file) {
     if (!canEdit() || !file) return;
-    if (file.size > 3000000) { message('This catalogue file is too large. Use a JSON catalogue under 3 MB.'); return; }
+    if (file.size > 3000000) { M.err = 'This catalogue file is too large. Use a JSON catalogue under 3 MB.'; M.msg = ''; draw(); focusBack('#su-order-error'); return; }
     var g = generation;
     file.text().then(function (text) {
       if (g !== generation || !canEdit()) return;
       var value = JSON.parse(text), reorder = value && value.kind === 'supplier-template-order';
       if (reorder && M.unread.length) throw { message: 'Some supplier records could not be read. Resolve them before matching template items. No sequence was changed.' };
       var payload = reorder ? C.validateTemplateOrder(value) : C.validateCatalogue(value);
+      var resolved = reorder ? null : C.resolveCatalogueDestinations(payload, M.suppliers || []);
+      if (resolved) payload = resolved.payload;
       var plan = reorder ? C.planTemplateOrder(payload, M.suppliers || []) : null;
-      M.importing = payload; M.importPlan = plan; M.importMap = Object.create(null);
+      M.importing = payload; M.importPlan = plan; M.importReuses = resolved ? resolved.reuses : []; M.importMap = Object.create(null);
       if (!reorder) payload.suppliers.forEach(function (s) {
         var current = (M.suppliers || []).filter(function (x) { return x.id === s.id; })[0], cut = current ? current.cutoffId : s.cutoffId, cuts = B().cuts();
         if (!current && !cuts.some(function (c) { return c.id === cut; })) {
@@ -764,7 +775,7 @@
         M.importMap[s.id] = cuts.some(function (c) { return c.id === cut; }) ? cut : '';
       });
       M.mode = 'manage'; M.err = ''; M.msg = ''; M.ed = null; draw(); focusTask();
-    }).catch(function (e) { if (g === generation) { M.err = e.message || 'Could not read this catalogue. Use the checked JSON import file.'; draw(); } });
+    }).catch(function (e) { if (g === generation) { M.err = e.message || 'Could not read this catalogue. Use the checked JSON import file.'; draw(); focusBack('#su-order-error'); } });
   }
   function applyTemplateImport() {
     var plan = M.importPlan;
@@ -778,50 +789,71 @@
       result.saved.forEach(function (s) { delete M.audit[s.id]; });
       M.importing = null; M.importPlan = null; M.saving = false;
       M.msg = 'Template order saved for ' + plan.plans.map(function (s) { return s.name; }).join(', ') + '. Previous quantities and pars are unchanged.';
+      M.msgAt = 'import';
       draw(); focusBack('[data-su="import"]');
     }, function (e) {
       if (g !== generation) return;
       M.saving = false; M.err = errorText(e); M.importPlan = null;
       if (e.saved && e.saved.length) { e.saved.forEach(rememberSupplier); M.msg = e.saved.length + ' supplier sequences saved before the update stopped. Review the remaining changes before retrying.'; }
-      draw();
+      draw(); focusBack('#su-order-error');
       // A failed or concurrent apply refreshes the review only. One catalogue query, no history reads or automatic writes.
       store.loadSuppliers().then(function (list) {
         if (g !== generation || M.importing !== payload) return;
+        var keepErrorFocus = M.root && document.activeElement === M.root.querySelector('#su-order-error');
         M.suppliers = list; M.unread = list.bad || [];
         try { M.importPlan = C.planTemplateOrder(payload, list); } catch (x) { M.err = x.message; }
-        draw();
-      }, function () { if (g === generation) draw(); });
+        draw(); if (keepErrorFocus) focusBack('#su-order-error');
+      }, function () { if (g === generation && M.importing === payload) { var keepErrorFocus = M.root && document.activeElement === M.root.querySelector('#su-order-error'); draw(); if (keepErrorFocus) focusBack('#su-order-error'); } });
     });
   }
   function applyImport() {
     if (!M.importing || M.saving || !canEdit()) return;
     if (M.importing.kind === 'supplier-template-order') { applyTemplateImport(); return; }
-    var draftConflict = splitDraftConflict(M.importing.suppliers); if (draftConflict) { M.err = draftConflict; draw(); return; }
+    var draftSuppliers = M.importing.suppliers;
+    try {
+      var split = store.previewSplit(M.importing, M.suppliers || []);
+      if (split) draftSuppliers = draftSuppliers.map(function (s) { return s.id === split.targetId ? Object.assign({}, s, { historyItems: split.historyItems }) : s; });
+    } catch (e) { M.err = errorText(e); M.msg = ''; draw(); focusBack('#su-order-error'); return; }
+    var draftConflict = splitDraftConflict(draftSuppliers); if (draftConflict) { M.err = draftConflict; M.msg = ''; draw(); focusBack('#su-order-error'); return; }
     var used = Object.create(null), imported = M.importing.suppliers.map(function (s) { return s.id; }), conflict = false;
     (M.suppliers || []).filter(function (s) { return imported.indexOf(s.id) < 0; }).forEach(function (s) { if (s.cutoffId) used[s.cutoffId] = s.id; });
     M.importing.suppliers.forEach(function (s) { var cid = M.importMap[s.id]; if (cid && used[cid] && used[cid] !== s.id) conflict = true; if (cid) used[cid] = s.id; });
-    if (conflict) { message('Each order reminder can link to only one catalogue supplier. Check the selected links before importing.'); return; }
+    if (conflict) { M.err = 'Each order reminder can link to only one catalogue supplier. Check the selected links before importing.'; M.msg = ''; draw(); focusBack('#su-order-error'); return; }
+    var versions = Object.create(null); (M.suppliers || []).forEach(function (s) { versions[s.id] = s.v; });
+    function changed(suppliers) { return suppliers.filter(function (s) { return versions[s.id] !== s.v; }); }
+    function summary(suppliers) {
+      var count = suppliers.reduce(function (n, s) { return n + s.items.filter(function (i) { return !i.archived; }).length; }, 0);
+      var split = payload.suppliers.filter(function (s) { return !!s.splitFrom; })[0], named = suppliers;
+      if (suppliers.length > 3) named = split ? suppliers.filter(function (s) { return s.id === split.id || s.id === split.splitFrom; }) : [];
+      if (!named.length) return suppliers.length + ' suppliers (' + count + ' active items)';
+      return named.map(function (s) { var n = s.items.filter(function (i) { return !i.archived; }).length; return s.name + ' (' + n + ' active ' + (n === 1 ? 'item' : 'items') + ')'; }).join(', ') + (named.length < suppliers.length ? ' and ' + (suppliers.length - named.length) + ' other suppliers' : '');
+    }
     M.saving = true; M.err = ''; M.msg = ''; M.armedLeave = ''; draw(); var payload = M.importing, map = clone(M.importMap), g = generation;
     store.importCatalogue(payload, map).then(function (saved) {
       if (g !== generation) return;
+      var updated = changed(saved);
       saved.forEach(rememberSupplier); var movedConflict = moveSplitDrafts(saved);
       saved.forEach(function (s) { if (s.historyFrom) delete M.history[s.id]; });
       M.importing = null; M.saving = false; if (!supplier()) M.sid = saved.length ? saved[0].id : '';
-      M.msg = 'Catalogue sequence saved. Previous quantities and current pars are unchanged.';
+      M.msg = updated.length ? 'Catalogue saved for ' + summary(updated) + '. Previous quantities and current pars are unchanged.' : 'Catalogue already up to date. No changes were needed. Previous quantities and current pars are unchanged.';
+      M.msgAt = 'import';
       if (movedConflict) M.err = movedConflict;
-      draw(); if (M.sid) loadHistory(false, false);
+      draw(); focusBack('[data-su="import"]'); if (M.sid) loadHistory(false, false);
     }, function (e) {
       if (g !== generation) return;
       M.saving = false; M.err = errorText(e);
       if (e.saved && e.saved.length) {
+        var updated = changed(e.saved);
         e.saved.forEach(rememberSupplier); var movedConflict = moveSplitDrafts(e.saved); if (movedConflict) M.err = movedConflict;
-        M.msg = e.saved.length + ' suppliers were saved before the import stopped. The remaining import is kept. Check the connection, then retry.';
-        draw(); store.loadSuppliers().then(function (list) {
-          if (g !== generation) return;
-          M.suppliers = list.sort(function (a, b) { return a.name.localeCompare(b.name); });
-          var refreshedConflict = moveSplitDrafts(list); if (refreshedConflict) M.err = refreshedConflict; draw();
-        }, function () { if (g === generation) draw(); });
-      } else draw();
+        M.msg = (updated.length ? 'Saved ' + summary(updated) + ' before the import stopped. ' : '') + 'Your import file and reminder links are kept. Check the error, then retry.';
+        M.msgAt = '';
+        draw(); focusBack('#su-order-error'); store.loadSuppliers().then(function (list) {
+          if (g !== generation || M.importing !== payload) return;
+          var keepErrorFocus = M.root && document.activeElement === M.root.querySelector('#su-order-error');
+          M.suppliers = list.sort(function (a, b) { return a.name.localeCompare(b.name); }); M.unread = list.bad || [];
+          var refreshedConflict = moveSplitDrafts(list); if (refreshedConflict) M.err = refreshedConflict; draw(); if (keepErrorFocus) focusBack('#su-order-error');
+        }, function () { if (g === generation && M.importing === payload) { var keepErrorFocus = M.root && document.activeElement === M.root.querySelector('#su-order-error'); draw(); if (keepErrorFocus) focusBack('#su-order-error'); } });
+      } else { draw(); focusBack('#su-order-error'); }
     });
   }
   function invalidateContext() {
