@@ -233,6 +233,33 @@ test('file provenance and pack variants resolve exact duplicates without guessin
   throws('template-ambiguous', () => C.planTemplateOrder(templateOrder([template('renamed.pdf', [{ name: 'TEST SAME', pack: '2 kg' }])]), [supplier([one, two, { ...two, id: 'three' }])]));
   throws('template-ambiguous', () => C.planTemplateOrder(templateOrder([template('first.pdf', ['TEST SAME'])]), [supplier([one]), { ...supplier([{ ...one, id: 'different' }]), id: 'other' }]));
 });
+test('template order selects a split destination over its archived original even when both are archived', () => {
+  const original = imported('moved', 'TEST MOVED', 'shared.pdf', { archived: true });
+  const source = supplier([original]);
+  for (const archived of [false, true]) {
+    const current = { ...original, archived, par: '23' };
+    const target = { ...supplier([imported('extra', 'TEST EXTRA', 'shared.pdf'), current]), id: 'split-target', at: 20, historyFrom: source.id, historyBefore: 20 };
+    const before = JSON.stringify([source, target]);
+    const result = C.planTemplateOrder(templateOrder([template('shared.pdf', ['TEST MOVED'])]), [source, target]);
+    assert.deepStrictEqual(result.plans.map(plan => plan.id), [target.id]);
+    assert.deepStrictEqual(result.plans[0].items.map(entry => entry.id), ['moved', 'extra']);
+    assert.deepStrictEqual(result.plans[0].items[0], current);
+    assert.strictEqual(result.plans[0].changed, true);
+    assert.strictEqual(JSON.stringify([source, target]), before);
+  }
+});
+test('template order never suppresses unrelated duplicates or an active origin on lineage alone', () => {
+  const original = imported('moved', 'TEST MOVED', 'shared.pdf', { archived: true });
+  const source = supplier([original]);
+  const target = { ...supplier([{ ...original, archived: false }]), id: 'split-target', at: 20, historyFrom: source.id, historyBefore: 20 };
+  const payload = templateOrder([template('shared.pdf', ['TEST MOVED'])]);
+  const unrelated = { ...supplier([{ ...original, archived: false }]), id: 'unrelated' };
+  throws('template-ambiguous', () => C.planTemplateOrder(payload, [source, unrelated]));
+  throws('template-ambiguous', () => C.planTemplateOrder(payload, [source, { ...target, historyFrom: 'different-parent' }]));
+  throws('template-ambiguous', () => C.planTemplateOrder(payload, [source, { ...target, items: [{ ...target.items[0], id: 'different-item' }] }]));
+  throws('template-ambiguous', () => C.planTemplateOrder(payload, [{ ...source, items: [{ ...original, archived: false }] }, target]));
+  throws('template-ambiguous', () => C.planTemplateOrder(payload, [source, target, unrelated]));
+});
 test('repeated template rows cannot select the same item twice or discard catalogue records', () => {
   const saved = supplier([imported('one', 'TEST ONE', 'example.pdf'), imported('two', 'TEST TWO', 'example.pdf')]);
   throws('duplicate', () => C.planTemplateOrder(templateOrder([template('one.pdf', ['TEST ONE']), template('two.pdf', ['TEST ONE'])]), [saved]));
@@ -248,6 +275,45 @@ test('reordering keeps previous quantities attached to stable IDs and leaves his
   const reused = C.snapshotLines(plan.items, Object.fromEntries(previous.lines.map(line => [line.itemId, line.qty])));
   assert.deepStrictEqual(reused.map(line => [line.itemId, line.qty]), [['second', '7 kg'], ['first', '2 kg']]);
   assert.strictEqual(JSON.stringify(previous), frozen);
+});
+test('split supplier history metadata round-trips without adding fields to ordinary suppliers', () => {
+  const ordinary = supplier();
+  assert.deepStrictEqual(C.cleanSupplier(ordinary), ordinary);
+  const split = { ...supplier(), id: 'split-test', at: 20, historyFrom: 's-test', historyBefore: 10 };
+  assert.deepStrictEqual(C.cleanSupplier(split), split);
+  assert.strictEqual(C.API, 5);
+});
+test('split history requires a complete finite pair for another same-kitchen supplier', () => {
+  const base = { ...supplier(), id: 'split-test', at: 20 };
+  for (const bad of [
+    { historyFrom: 's-test' }, { historyBefore: 10 }, { historyFrom: '', historyBefore: 10 },
+    { historyFrom: 'split-test', historyBefore: 10 }, { historyFrom: 'other/path', historyBefore: 10 },
+    { historyFrom: 's-test', historyBefore: 0 }, { historyFrom: 's-test', historyBefore: -1 },
+    { historyFrom: 's-test', historyBefore: 21 }, { historyFrom: 's-test', historyBefore: Infinity },
+    { historyFrom: 's-test', historyBefore: NaN }, { historyFrom: 's-test', historyBefore: '10' }
+  ]) assert.throws(() => C.cleanSupplier({ ...base, ...bad }));
+  assert.throws(() => C.cleanSupplier({ ...base, at: 1e16, historyFrom: 's-test', historyBefore: 1e16 }));
+  assert.strictEqual(C.cleanSupplier({ ...base, historyFrom: 's-test', historyBefore: 20 }).historyBefore, 20);
+});
+test('ordinary catalogue edits cannot erase, change or introduce a history origin', () => {
+  const before = { ...supplier(), id: 'split-test', at: 20, historyFrom: 's-test', historyBefore: 10 };
+  const changedPar = { ...before, at: 30, items: [{ ...before.items[0], par: '21' }] };
+  assert.strictEqual(C.cleanSupplier(changedPar, before).items[0].par, '21');
+  for (const after of [
+    { ...before, historyFrom: 'other' }, { ...before, historyBefore: 11 },
+    (() => { const v = { ...before }; delete v.historyFrom; delete v.historyBefore; return v; })()
+  ]) throws('immutable', () => C.cleanSupplier(after, before));
+  throws('immutable', () => C.cleanSupplier(before, { ...supplier(), id: 'split-test', at: 20 }));
+});
+test('a catalogue can request one explicit source split without treating it as stored metadata', () => {
+  const source = supplier(), target = { ...supplier(), id: 'split-test', name: 'Separate test group', splitFrom: source.id };
+  const parsed = C.validateCatalogue({ version: 1, suppliers: [source, target] });
+  assert.strictEqual(parsed.suppliers[1].splitFrom, source.id);
+  assert.ok(!Object.prototype.hasOwnProperty.call(parsed.suppliers[1], 'historyFrom'));
+  throws('split', () => C.validateCatalogue({ version: 1, suppliers: [{ ...target, splitFrom: target.id }] }));
+  throws('split', () => C.validateCatalogue({ version: 1, suppliers: [target, { ...target, id: 'another-target' }] }));
+  assert.throws(() => C.validateCatalogue({ version: 1, suppliers: [{ ...target, splitFrom: '../outside' }] }));
+  assert.throws(() => C.validateCatalogue({ version: 1, suppliers: [{ ...target, unexpected: true }] }));
 });
 results.forEach(r => console.log(r));
 const failed = results.filter(r => r.startsWith('FAIL')).length;

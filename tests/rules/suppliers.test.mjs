@@ -7,6 +7,7 @@ import * as lite from 'firebase/firestore/lite';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import assert from 'node:assert/strict';
 import supplierCore from '../../js/supplier-core.js';
 import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtures.mjs';
 
@@ -20,8 +21,8 @@ const source = { file: 'test-source.pdf', page: 1, row: 1, name: 'TEST BAG ITEM 
 const item = { id: 'test-bag', name: source.name, pack: '5 kg bag', group: 'Test goods', category: 'TEST CATEGORY', par: '0', parUnit: '', orderUnit: 'bag', factor: 0, aliases: [], archived: false, manual: false, source };
 const catalogue = x => Object.assign({ name: 'Test vendor', cutoffId: CUT, v: 1, items: [item], at: 1, by: 'owner' }, x || {});
 const line = x => Object.assign({ itemId: item.id, name: item.name, pack: item.pack, qty: '2 bags', amount: 2, unit: 'bag', par: '0', parUnit: '', source, suggestion: '', stock: '' }, x || {});
-const order = x => Object.assign({ sid: SID, supplierName: 'Test vendor', v: 1, at: 10, day: DAY, deliveryDay: '2026-10-26', cutoffDay: '', cutoffId: '', by: 'sous', lines: [line()] }, x || {});
-const existing = order({ by: 'owner' });
+const order = x => Object.assign({ sid: SID, supplierName: 'Test vendor', v: 1, at: 30, day: DAY, deliveryDay: '2026-10-26', cutoffDay: '', cutoffId: '', by: 'sous', lines: [line()] }, x || {});
+const existing = order({ by: 'owner', at: 10 });
 const sessionAt = Date.now();
 await env.withSecurityRulesDisabled(async ctx => {
   const db = ctx.firestore();
@@ -92,6 +93,7 @@ await ok(saveCatalogue(head, catalogue({ v: 2, at: 20, by: 'head' }), { at: 21 }
 await ok(saveCatalogue(head, catalogue({ v: 2, at: 20, by: 'head' }), { by: 'sous' }), false, 'mismatched audit actor refused');
 await ok(saveCatalogue(head, catalogue({ v: 2, at: 20, by: 'head', items: [{ ...item, par: '' }, { ...item, id: 'zero', par: '0' }] })), true, 'head saves blank and zero pars with paired audit');
 const saved = (await snap(head, 'suppliers/' + SID)).data();
+for (const timestamp of [20, 19]) await ok(saveCatalogue(head, { ...saved, v: 3, at: timestamp, by: 'head' }), false, 'catalogue revision cannot reuse or regress its previous timestamp (' + timestamp + ')');
 await ok(Promise.resolve().then(() => { if (saved.items[0].par !== '' || saved.items[1].par !== '0') throw Error('Par distinction lost'); }), true, 'blank par and zero survive round trip distinctly');
 await ok(setDoc(doc(head, K + 'suppliers/' + SID + '/audit/2'), { v: 2, itemId: '', action: 'Rewrite', before: null, after: null, at: 20, by: 'head' }), false, 'an earlier audit cannot be rewritten');
 await ok(setDoc(doc(head, K + 'suppliers/' + SID + '/audit/3'), { v: 3, itemId: '', action: 'Standalone', before: null, after: null, at: 30, by: 'head' }), false, 'standalone head audit without next catalogue revision refused');
@@ -107,6 +109,7 @@ for (const [patch, label] of [
 ]) await ok(setDoc(doc(owner, K + 'suppliers/invalid-catalogue'), catalogue(patch)), false, label + ' refused even for owner');
 
 // Chef orders use the catalogue revision reviewed, and linked completion is one atomic save.
+for (const timestamp of [20, 19]) await ok(setDoc(doc(sous, K + 'suppliers/' + SID + '/orders/catalogue-time-' + timestamp), order({ v: 2, at: timestamp })), false, 'new order must be later than the current catalogue timestamp (' + timestamp + ')');
 await ok(setDoc(doc(sous, K + 'suppliers/' + SID + '/orders/unlinked-sous'), order({ v: 2 })), true, 'sous records order without a configured reminder occurrence');
 await ok(setDoc(doc(head, K + 'suppliers/' + SID + '/orders/unlinked-head'), order({ v: 2, by: 'head' })), true, 'head records order without a reminder');
 await ok(setDoc(doc(staff, K + 'suppliers/' + SID + '/orders/forged'), order({ v: 2, by: 'sous' })), false, 'staff cannot save as sous chef');
@@ -165,6 +168,104 @@ for (const [p, label] of [
   ['suppliers/' + SID + '/orders/ordered-first', 'history'], ['supplierlinks/' + DAY + '_' + CUT, 'occurrence']
 ]) await ok(deleteDoc(doc(owner, K + p)), false, 'no hard deletion of ' + label);
 await ok(getDocs(collection(anon, K + 'suppliers/' + SID + '/unlisted')), false, 'no broad nested collection read is introduced');
+
+// Split suppliers keep the original order history and add immutable same-kitchen lineage.
+const SPLIT_SOURCE = 'split-source', SPLIT_TARGET = 'split-target', SPLIT_AT = 120;
+const splitMoved = { ...item, id: 'split-moved', name: 'TEST SPLIT MOVED ITEM', source: { ...source, name: 'TEST SPLIT MOVED ITEM' } };
+const splitKept = { ...item, id: 'split-kept', name: 'TEST SPLIT KEPT ITEM', source: { ...source, name: 'TEST SPLIT KEPT ITEM', row: 2 } };
+const splitOriginal = catalogue({ name: 'Test combined supplier', cutoffId: '', items: [splitMoved, splitKept] });
+const splitOrder = order({ sid: SPLIT_SOURCE, supplierName: splitOriginal.name, at: 100,
+  lines: [line({ itemId: splitMoved.id, name: splitMoved.name, source: splitMoved.source })] });
+await env.withSecurityRulesDisabled(async ctx => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, K + 'suppliers/' + SPLIT_SOURCE), splitOriginal);
+  await setDoc(doc(db, K + 'suppliers/' + SPLIT_SOURCE + '/orders/before-split'), splitOrder);
+});
+function splitWrite(db, options = {}) {
+  const sourceId = options.sourceId || SPLIT_SOURCE, targetId = options.targetId || SPLIT_TARGET;
+  const currentSource = options.currentSource || splitOriginal;
+  const sourceNext = { ...currentSource, name: 'Test separate source', v: currentSource.v + 1, at: SPLIT_AT, by: options.by || 'head',
+    items: currentSource.items.map(entry => entry.id === splitMoved.id ? { ...entry, archived: true } : entry), ...(options.sourcePatch || {}) };
+  const targetNext = catalogue({ name: 'Test separate target', cutoffId: 'separate-cutoff', items: [splitMoved], at: SPLIT_AT, by: options.by || 'head',
+    historyFrom: sourceId, historyBefore: SPLIT_AT, ...(options.targetPatch || {}) });
+  const b = writeBatch(db);
+  if (!options.noSource) b.set(doc(db, K + 'suppliers/' + sourceId), sourceNext);
+  if (!options.noSourceAudit) b.set(doc(db, K + 'suppliers/' + sourceId + '/audit/' + sourceNext.v), {
+    v: sourceNext.v, itemId: '', action: 'split-source', before: currentSource, after: sourceNext, at: sourceNext.at, by: sourceNext.by });
+  b.set(doc(db, K + 'suppliers/' + targetId), targetNext);
+  if (!options.noTargetAudit) b.set(doc(db, K + 'suppliers/' + targetId + '/audit/1'), {
+    v: 1, itemId: '', action: 'split-supplier', before: { sourceSid: sourceId }, after: targetNext, at: targetNext.at, by: targetNext.by });
+  return b.commit();
+}
+await ok(splitWrite(sous, { by: 'sous' }), false, 'sous cannot split a supplier or set lineage');
+await ok(splitWrite(staff, { by: 'head' }), false, 'staff cannot forge a head-chef split');
+await ok(splitWrite(phone('function-phone'), { by: 'function' }), false, 'function-only session cannot split a supplier');
+await ok(splitWrite(anon), false, 'signed-out device cannot split a supplier');
+await ok(splitWrite(head, { noSource: true, noSourceAudit: true }), false, 'head cannot create lineage without the parent catalogue update');
+await ok(splitWrite(head, { noSourceAudit: true }), false, 'source catalogue must have its paired split audit');
+await ok(splitWrite(head, { noTargetAudit: true }), false, 'new target must have its paired split audit');
+await ok(splitWrite(head, { sourcePatch: { at: SPLIT_AT + 1 } }), false, 'source and target split timestamps must match');
+await ok(splitWrite(head, { targetPatch: { historyBefore: SPLIT_AT - 1 } }), false, 'new lineage cutoff must equal its atomic split timestamp');
+await ok(Promise.resolve().then(async () => {
+  if ((await snap(head, 'suppliers/' + SPLIT_SOURCE)).data().v !== 1 || (await snap(head, 'suppliers/' + SPLIT_TARGET)).exists()) throw Error('A refused split saved a partial catalogue');
+}), true, 'refused split attempts leave both catalogues unchanged');
+for (const [patch, label] of [
+  [{ historyFrom: SPLIT_SOURCE }, 'missing lineage timestamp'],
+  [{ historyBefore: SPLIT_AT }, 'missing lineage supplier'],
+  [{ historyFrom: 'invalid/path', historyBefore: SPLIT_AT }, 'foreign lineage path'],
+  [{ historyFrom: 'invalid-lineage', historyBefore: SPLIT_AT }, 'self-referential lineage'],
+  [{ historyFrom: SPLIT_SOURCE, historyBefore: 0 }, 'zero lineage timestamp'],
+  [{ historyFrom: SPLIT_SOURCE, historyBefore: -1 }, 'negative lineage timestamp'],
+  [{ historyFrom: SPLIT_SOURCE, historyBefore: '120' }, 'text lineage timestamp'],
+  [{ historyFrom: SPLIT_SOURCE, historyBefore: SPLIT_AT + 1 }, 'future lineage timestamp'],
+  [{ historyFrom: '', historyBefore: SPLIT_AT }, 'empty lineage supplier']
+]) await ok(setDoc(doc(owner, K + 'suppliers/invalid-lineage'), catalogue({ at: SPLIT_AT, ...patch })), false, label + ' refused even for owner');
+await ok(splitWrite(head), true, 'head atomically archives source references and creates target with both audits');
+const splitSaved = (await snap(head, 'suppliers/' + SPLIT_TARGET)).data();
+await ok(Promise.resolve().then(async () => {
+  const sourceAfter = (await snap(head, 'suppliers/' + SPLIT_SOURCE)).data();
+  if (!sourceAfter.items.find(entry => entry.id === splitMoved.id)?.archived || splitSaved.items[0].id !== splitMoved.id || splitSaved.historyFrom !== SPLIT_SOURCE || splitSaved.historyBefore !== SPLIT_AT) throw Error('Split identity or lineage changed');
+  assert.deepEqual((await snap(head, 'suppliers/' + SPLIT_SOURCE + '/orders/before-split')).data(), splitOrder, 'Original history was rewritten');
+}), true, 'split retains item identity, archived source and immutable original quantities');
+await ok(snap(sous, 'suppliers/' + SPLIT_TARGET), true, 'sous can read the new supplier lineage');
+await ok(getDocs(query(collection(sous, K + 'suppliers/' + SPLIT_SOURCE + '/orders'), orderBy('at', 'desc'), limit(20))), true, 'sous keeps bounded access to original split history');
+await ok(snap(staff, 'suppliers/' + SPLIT_TARGET), false, 'new lineage does not expose supplier data to staff');
+await ok(snap(phone('function-phone'), 'suppliers/' + SPLIT_TARGET), false, 'new lineage does not expose supplier data to function-only accounts');
+await ok(saveCatalogue(head, { ...splitSaved, v: 2, at: 130, by: 'head', items: [{ ...splitMoved, par: '3' }] }, {}, SPLIT_TARGET), true, 'head can change a par while retaining immutable lineage');
+const splitEdited = (await snap(head, 'suppliers/' + SPLIT_TARGET)).data();
+await ok(setDoc(doc(sous, K + 'suppliers/' + SPLIT_SOURCE + '/orders/source-at-split'), order({ sid: SPLIT_SOURCE, supplierName: 'Test separate source', v: 2, at: SPLIT_AT,
+  lines: [line({ itemId: splitKept.id, name: splitKept.name, source: splitKept.source })] })), false, 'post-split source order cannot be backdated to the inherited history cutoff');
+for (const timestamp of [SPLIT_AT, splitEdited.at]) await ok(setDoc(doc(sous, K + 'suppliers/' + SPLIT_TARGET + '/orders/target-time-' + timestamp), order({ sid: SPLIT_TARGET, supplierName: splitEdited.name, v: splitEdited.v, at: timestamp,
+  lines: [line({ itemId: splitMoved.id, name: splitMoved.name, source: splitMoved.source })] })), false, 'target order cannot use the split cutoff or its current catalogue timestamp (' + timestamp + ')');
+await ok(setDoc(doc(sous, K + 'suppliers/' + SPLIT_TARGET + '/orders/after-current-catalogue'), order({ sid: SPLIT_TARGET, supplierName: splitEdited.name, v: splitEdited.v, at: splitEdited.at + 1,
+  lines: [line({ itemId: splitMoved.id, name: splitMoved.name, source: splitMoved.source })] })), true, 'new target order after its current catalogue timestamp succeeds');
+await ok(setDoc(doc(owner, K + 'suppliers/' + SPLIT_SOURCE + '/orders/restored-old-source'), splitOrder), true, 'owner may restore an exact old source order before the split cutoff');
+await ok(setDoc(doc(owner, K + 'suppliers/' + SPLIT_TARGET + '/orders/restored-old-target'), { ...splitOrder, sid: SPLIT_TARGET, supplierName: splitSaved.name, at: 110 }), true, 'owner may restore an exact old target snapshot before the split cutoff');
+for (const [patch, label] of [
+  [{ historyFrom: SID }, 'change source supplier'],
+  [{ historyBefore: SPLIT_AT - 1 }, 'move history cutoff'],
+  [{ historyFrom: undefined, historyBefore: undefined }, 'erase lineage pair']
+]) {
+  const value = { ...splitEdited, v: 3, at: 140, by: 'head', ...patch };
+  for (const field of ['historyFrom', 'historyBefore']) if (value[field] === undefined) delete value[field];
+  await ok(saveCatalogue(head, value, {}, SPLIT_TARGET), false, 'head cannot ' + label + ' after split');
+  await ok(saveCatalogue(owner, { ...value, by: 'owner' }, {}, SPLIT_TARGET), false, 'owner cannot ' + label + ' after split');
+}
+await ok(saveCatalogue(owner, { ...splitOriginal, v: 3, at: 150, historyFrom: SID, historyBefore: 140 }, {}, SPLIT_SOURCE), false, 'existing supplier cannot acquire fabricated lineage in a later update');
+await ok(splitWrite(head, { sourceId: SPLIT_TARGET, targetId: 'split-chain', currentSource: splitEdited,
+  sourcePatch: { at: 160 }, targetPatch: { at: 160, historyBefore: 160 } }), false, 'head cannot create chained split ancestry');
+await ok(setDoc(doc(owner, K + 'suppliers/restored-split'), splitEdited), true, 'owner PIN migration can copy exact lineage without a new parent split');
+await ok(setDoc(doc(owner, K + 'suppliers/restored-split'), splitEdited), true, 'repeating the same lineage copy is harmless');
+await ok(Promise.resolve().then(async () => {
+  const copied = (await snap(owner, 'suppliers/restored-split')).data();
+  assert.deepEqual(copied, splitEdited, 'Copied lineage changed');
+}), true, 'lineage and historical cutoff survive the owner copy exactly');
+const restoredBeforeParent = { ...splitEdited, historyFrom: 'not-yet-restored-parent' };
+await ok(setDoc(doc(owner, K + 'suppliers/restored-before-parent'), restoredBeforeParent), true, 'owner backup restore can copy lineage before its parent catalogue is restored');
+await ok(Promise.resolve().then(async () => {
+  assert.equal((await snap(owner, 'suppliers/not-yet-restored-parent')).exists(), false, 'Restore parent unexpectedly exists');
+  assert.deepEqual((await snap(owner, 'suppliers/restored-before-parent')).data(), restoredBeforeParent, 'Early restore changed the raw lineage');
+}), true, 'early owner restore retains exact lineage without requiring the parent yet');
 
 // Use the real pinned Lite SDK, not the click-test stand-in. Auth belongs to one FirebaseApp and both Firestore
 // clients obtain the same real emulator sign-in through its auth-internal provider. No per-client mock token is used.

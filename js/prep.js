@@ -1956,7 +1956,12 @@
           });
         }));
       },
-      changed: function () { cutPaint(); try { window.dispatchEvent(new Event('lk-supplier')); } catch (e) {} },
+      changed: function (hint) {
+        // Catalogue saves invalidate today's in-memory grouping. The next Orders draw reads it once; recording an
+        // order only repaints its reminder and does not read the catalogue again.
+        if (hint && hint.catalogue) supCat = { key: '', list: null, state: 'idle' };
+        cutPaint(); try { window.dispatchEvent(new Event('lk-supplier')); } catch (e) {}
+      },
       completeReminder: function (key) { return cutOrdered(key, true); },
       openCutoffs: function () { if (!supplierEdit()) return false; S.atab = 'cutoffs'; lsSet('lk.prep.atab', 'cutoffs'); if (location.hash === '#/admin') draw(); else location.hash = '#/admin'; return true; },
       say: liveSay
@@ -1966,9 +1971,9 @@
   function supplierTools() {
     if (!supplierToolsPromise) supplierToolsPromise = Promise.resolve().then(function () {
       if (!window.LK_APP || !window.LK_APP.load) throw { code: 'unavailable' };
-      return window.LK_SUP_CORE && window.LK_SUP_CORE.API === 4 ? null : window.LK_APP.load('js/supplier-core.js?v=5');
-    }).then(function () { return window.LK_SUP_STORE && window.LK_SUP_STORE.API === 2 ? null : window.LK_APP.load('js/supplier-store.js?v=5'); }).then(function () {
-      if (!window.LK_SUP_CORE || window.LK_SUP_CORE.API !== 4 || !window.LK_SUP_STORE || window.LK_SUP_STORE.API !== 2) throw { code: 'version' };
+      return window.LK_SUP_CORE && window.LK_SUP_CORE.API === 5 ? null : window.LK_APP.load('js/supplier-core.js?v=6');
+    }).then(function () { return window.LK_SUP_STORE && window.LK_SUP_STORE.API === 3 ? null : window.LK_APP.load('js/supplier-store.js?v=6'); }).then(function () {
+      if (!window.LK_SUP_CORE || window.LK_SUP_CORE.API !== 5 || !window.LK_SUP_STORE || window.LK_SUP_STORE.API !== 3) throw { code: 'version' };
       supplierService = window.LK_SUP_STORE.create(supplierApi()); return supplierService;
     }).catch(function (e) { supplierToolsPromise = null; throw e; });
     return supplierToolsPromise;
