@@ -1,6 +1,6 @@
 # Cleaning implementation
 
-8 November 2026. The head chef approved C's grouped daily list with A's chef week review after the [three designs and council](brief.md), and asked to match the existing app's style and fonts exactly.
+8 November 2026, original layout record. The staff daily list and recording foundation remain. On 9 November the owner selected [M1 compact chef management](../cleaning-chef-options/implementation.md), replacing the chef matrix with grouped day review and a responsive Repeat tasks editor. The original C + A design and its verification below are historical evidence.
 
 ## Behaviour and design
 

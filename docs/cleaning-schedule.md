@@ -1,6 +1,6 @@
 # Cleaning schedule and checks
 
-9 November 2026. Status: implemented and locally verified; the owner authorised release. [PR #637](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/637) records current CI, rules publication, deployment and live verification. This extends the approved C daily notebook and A chef week review. The requested integration uses the existing application design. It introduces no page, tab, top-bar button or service-page popup.
+9 November 2026. Status: implemented and locally verified; the owner authorised release. [PR #637](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/637) records current CI, rules publication, deployment and live verification. The data and staff daily notebook contracts remain authoritative. Chef management now follows the chosen [M1 grouped review and responsive editor](cleaning-chef-options/implementation.md). The requested integration uses the existing application design. It introduces no page, tab, top-bar button or service-page popup.
 
 ## Outcome
 

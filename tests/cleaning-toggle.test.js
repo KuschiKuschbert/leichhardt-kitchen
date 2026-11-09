@@ -32,7 +32,11 @@ async function open(b, route = '#/', options = {}) {
   }, ...options });
 }
 async function route(p, hash) { await p.evaluate(h => { location.hash = h; }, hash); await L.settle(p, 400); }
-async function loaded(p) { await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 2 && !document.querySelector('.cln-loading')); }
+async function loaded(p) {
+  await L.waitFor(p, () => !document.querySelector('.cln-loading') && !!document.querySelector('.cln-body'));
+  if (await p.locator('[data-cln="group"][data-group="general"][aria-expanded="false"]').count()) await p.click('[data-cln="group"][data-group="general"]');
+  await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 2);
+}
 async function remoteFlag(p, flag) {
   await p.evaluate(({ key, flag }) => { const c = __fake.dump()[key]; __fake.write(key, { ...c, staffSee: { ...c.staffSee, cleaning: flag } }); }, { key: CFG, flag });
   await L.settle(p, 350);
@@ -88,7 +92,7 @@ async function save(p) {
     await p.click('[data-cln="tick"][data-id="coldroom"]');
     await L.waitFor(p, k => !!__fake.dump()[k] && !LK_PREP.unsent(), key('cleaningDone', TODAY + '_coldroom'));
     ok((await records(p))[key('cleaningDone', TODAY + '_coldroom')].doneById === who, who + ': setup access also permits a recorded practice tick while off');
-    await p.click('[data-cln="setup"]'); await p.click('[data-cln="add"]');
+    await p.locator('[data-cln="setup"]').first().click(); await p.click('[data-cln="add"]');
     ok(await shown(p, '#cln-form'), who + ': repeat-task form is available before release');
     ok(!(await shown(p, FLAG)) && (await config(p)).staffSee.cleaning === false, who + ': setup does not release Cleaning to the team');
     await route(p, '#/admin');
