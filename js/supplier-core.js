@@ -177,8 +177,12 @@
     var suppliers = value.suppliers.map(function (s) {
       if (!plain(s)) fail('shape', 'supplier', 'Use an object for supplier.');
       var source = Object.create(null);
-      Object.keys(s).forEach(function (key) { if (key !== 'splitFrom') source[key] = s[key]; });
+      Object.keys(s).forEach(function (key) { if (key !== 'splitFrom' && key !== 'replaceItems') source[key] = s[key]; });
       var out = cleanSupplier(source); count += out.items.length;
+      if (own(s, 'replaceItems')) {
+        if (typeof s.replaceItems !== 'boolean') fail('shape', 'replaceItems', 'Choose whether this file replaces the current item list.');
+        out.replaceItems = s.replaceItems;
+      }
       if (own(s, 'splitFrom')) {
         out.splitFrom = id(s.splitFrom, 'splitFrom'); splitCount++;
         if (out.splitFrom === out.id || splitCount > 1) fail('split', 'splitFrom', 'Split one existing supplier into a separate new supplier at a time.');
@@ -367,5 +371,5 @@
     if (!old && !changes.length) changes.push({ itemId: '', action: 'add_supplier', before: null, after: { name: next.name, cutoffId: next.cutoffId } });
     return changes;
   }
-  return { API: 6, MAX_ITEMS: MAX_ITEMS, MAX_ORDER_LINES: MAX_ORDER_LINES, cleanPar: cleanPar, normaliseUnit: normaliseUnit, parseQuantity: parseQuantity, parseStock: parseStock, convert: convert, cleanItem: cleanItem, cleanSupplier: cleanSupplier, validateCatalogue: validateCatalogue, resolveCatalogueDestinations: resolveCatalogueDestinations, validateTemplateOrder: validateTemplateOrder, planTemplateOrder: planTemplateOrder, normaliseName: normaliseName, duplicateItems: duplicateItems, matchRequests: matchRequests, snapshotLines: snapshotLines, suggestQuantity: suggestQuantity, catalogueDiff: catalogueDiff };
+  return { API: 7, MAX_ITEMS: MAX_ITEMS, MAX_ORDER_LINES: MAX_ORDER_LINES, cleanPar: cleanPar, normaliseUnit: normaliseUnit, parseQuantity: parseQuantity, parseStock: parseStock, convert: convert, cleanItem: cleanItem, cleanSupplier: cleanSupplier, validateCatalogue: validateCatalogue, resolveCatalogueDestinations: resolveCatalogueDestinations, validateTemplateOrder: validateTemplateOrder, planTemplateOrder: planTemplateOrder, normaliseName: normaliseName, duplicateItems: duplicateItems, matchRequests: matchRequests, snapshotLines: snapshotLines, suggestQuantity: suggestQuantity, catalogueDiff: catalogueDiff };
 });

@@ -3,8 +3,14 @@
    The page owns the returned data in memory and drops it when the person, kitchen or account changes. */
 (function () {
   'use strict';
-  var API = 4, SDK = 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-lite.js', READ_MS = 8000, SAVE_MS = 20000;
+  var API = 5, SDK = 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-lite.js', READ_MS = 8000, SAVE_MS = 20000;
   function copy(v) { return v == null ? v : JSON.parse(JSON.stringify(v)); }
+  // Keep a legacy omitted false flag omitted unless the replacement changes its archive state.
+  function archiveCopy(value, archived) {
+    var out = copy(value);
+    if (typeof archived === 'boolean' && !!out.archived !== archived) out.archived = archived;
+    return out;
+  }
   function own(value, key) { return Object.prototype.hasOwnProperty.call(value, key); }
   function error(code, message, extra) { var e = new Error(message); e.code = code; if (extra) Object.keys(extra).forEach(function (k) { e[k] = extra[k]; }); return e; }
   function idOk(v, n) { return typeof v === 'string' && new RegExp('^[a-z0-9][a-z0-9_-]{0,' + ((n || 80) - 1) + '}$', 'i').test(v); }
@@ -258,17 +264,18 @@
         var clean = cleanSupplier(sid, old, patch), at = Math.max(B.now(), old ? old.at + 1 : 0), next = { name: clean.name, cutoffId: clean.cutoffId, v: oldV + 1, items: clean.items, at: at, by: by };
         if (old && old.historyFrom) { next.historyFrom = old.historyFrom; next.historyBefore = old.historyBefore; }
         if (old && own(old, 'historyItems')) next.historyItems = copy(old.historyItems);
-        var sequenceOnly = m.action === 'reorder', preserveItems = sequenceOnly || (m.action === 'import' && !!old);
+        var sequenceOnly = m.action === 'reorder', replacing = m.action === 'replace-import', preserveItems = sequenceOnly || ((m.action === 'import' || replacing) && !!old);
         if (sequenceOnly && (!old || clean.name !== old.name || clean.cutoffId !== old.cutoffId || clean.items.length !== old.items.length)) throw error('invalid', 'A template order can only change the item sequence, not supplier details or catalogue items.');
         if (preserveItems) {
           if (clean.name !== old.name) throw error('invalid', 'A catalogue import keeps the saved supplier name. Change it in Supplier settings.');
           var canonicalItems = new Map(old.items.map(function (entry) { return [entry.id, entry]; })), rawItems = new Map(rawOld.items.map(function (entry) { return [entry.id, entry]; }));
           clean.items.forEach(function (entry) {
-            if ((sequenceOnly && !canonicalItems.has(entry.id)) || (canonicalItems.has(entry.id) && JSON.stringify(entry) !== JSON.stringify(canonicalItems.get(entry.id)))) throw error('invalid', 'An import cannot change the saved details for ' + entry.name + '. Refresh and check the catalogue before saving.');
+            var before = canonicalItems.get(entry.id), expected = before && archiveCopy(before, replacing ? entry.archived : undefined);
+            if ((sequenceOnly && !before) || (before && JSON.stringify(entry) !== JSON.stringify(expected))) throw error('invalid', 'An import cannot change the saved details for ' + entry.name + '. Refresh and check the catalogue before saving.');
           });
           // Validation uses canonical units, but importing a sequence keeps legacy spelling and omitted saved fields.
           next.name = rawOld.name; next.cutoffId = sequenceOnly ? rawOld.cutoffId : clean.cutoffId;
-          next.items = clean.items.map(function (entry) { return copy(rawItems.has(entry.id) ? rawItems.get(entry.id) : entry); });
+          next.items = clean.items.map(function (entry) { return archiveCopy(rawItems.has(entry.id) ? rawItems.get(entry.id) : entry, replacing ? entry.archived : undefined); });
         }
         var itemId = preserveItems ? '' : typeof m.itemId === 'string' ? m.itemId : '', before = old ? withoutId(preserveItems ? rawOld : old) : null, after = copy(next);
         if (itemId) {
@@ -300,12 +307,13 @@
         var movedIds = new Set(moved), parentByTarget = new Map(moved.map(function (parentId) { return [historyItems[parentId], parentId]; }));
         sourceClean.items.forEach(function (entry) {
           if (!sourceItems.has(entry.id)) return;
-          var expected = copy(sourceItems.get(entry.id)); if (movedIds.has(entry.id)) expected.archived = true;
+          var expected = archiveCopy(sourceItems.get(entry.id), sourcePlan.replaceItems ? entry.archived : undefined); if (movedIds.has(entry.id)) expected.archived = true;
           if (JSON.stringify(entry) !== JSON.stringify(expected)) throw error('invalid', 'The split cannot overwrite current source item details. Refresh before retrying.');
         });
         targetClean.items.forEach(function (entry) {
           var before = targetItems.get(entry.id);
           if (!before && parentByTarget.has(entry.id)) { before = copy(sourceItems.get(parentByTarget.get(entry.id))); before.id = entry.id; }
+          if (before && targetPlan.replaceItems) before = archiveCopy(before, entry.archived);
           if (before && JSON.stringify(entry) !== JSON.stringify(before)) throw error('invalid', 'The split cannot overwrite current item details. Refresh before retrying.');
         });
         var sourceChanged = source.name !== sourceClean.name || source.cutoffId !== sourceClean.cutoffId || JSON.stringify(source.items) !== JSON.stringify(sourceClean.items);
@@ -313,12 +321,12 @@
         if (!sourceChanged && !targetChanged) return [sourceRaw, targetRaw];
         var at = Math.max(B.now(), source.at + 1, target ? target.at + 1 : 0, parentOrderAt || 0), nextSource = { name: sourceClean.name, cutoffId: sourceClean.cutoffId, v: source.v + 1, items: sourceClean.items.map(function (entry) {
           if (!sourceRawItems.has(entry.id)) return copy(entry);
-          var value = copy(sourceRawItems.get(entry.id)); if (movedIds.has(entry.id)) value.archived = true; return value;
+          var value = archiveCopy(sourceRawItems.get(entry.id), sourcePlan.replaceItems ? entry.archived : undefined); if (movedIds.has(entry.id)) value.archived = true; return value;
         }), at: at, by: by };
         var nextTarget = { name: target ? targetRaw.name : targetClean.name, cutoffId: targetClean.cutoffId, v: target ? target.v + 1 : 1,
           items: targetClean.items.map(function (entry) {
-            if (targetRawItems.has(entry.id)) return copy(targetRawItems.get(entry.id));
-            if (parentByTarget.has(entry.id)) { var value = copy(sourceRawItems.get(parentByTarget.get(entry.id))); value.id = entry.id; return value; }
+            if (targetRawItems.has(entry.id)) return archiveCopy(targetRawItems.get(entry.id), targetPlan.replaceItems ? entry.archived : undefined);
+            if (parentByTarget.has(entry.id)) { var value = archiveCopy(sourceRawItems.get(parentByTarget.get(entry.id)), targetPlan.replaceItems ? entry.archived : undefined); value.id = entry.id; return value; }
             return copy(entry);
           }),
           at: at, by: by, historyFrom: source.id, historyBefore: firstAttachment ? at : target.historyBefore };
@@ -336,13 +344,23 @@
       }, true).then(function (saved) { saved.forEach(remember); return saved; });
     }
     // Import is a deliberate chef action. Validate every supplier and split before the first write.
-    async function importCatalogue(payload, mapping) {
+    async function importCatalogue(payload, mapping, expectedVersions) {
       var validated = core().validateCatalogue(payload), maps = Object.assign({}, mapping || {});
       var importContext = (await access(true)).ctx;
       var existing = await loadSuppliers(), byId = new Map(existing.map(function (s) { return [s.id, s]; })), owners = new Map(), plans = [];
       check(importContext, true);
       if (existing.bad && existing.bad.length) throw error('invalid', 'Some supplier records could not be read. Resolve them before importing the catalogue. Nothing was changed.');
       var resolved = core().resolveCatalogueDestinations(validated, existing), list = resolved.payload.suppliers;
+      // The review already has every catalogue version. Compare replacement targets in this existing read before any writes.
+      if (expectedVersions != null && list.some(function (s) { return s.replaceItems; })) {
+        if (typeof expectedVersions !== 'object' || Array.isArray(expectedVersions)) throw error('invalid', 'Review the current catalogue before replacing its item list.');
+        list.forEach(function (s) {
+          if (!s.replaceItems) return;
+          var expected = own(expectedVersions, s.id) ? expectedVersions[s.id] : 0, current = byId.get(s.id);
+          if (!Number.isInteger(expected) || expected < 0) throw error('invalid', 'Review the current catalogue before replacing its item list.');
+          if ((current ? current.v : 0) !== expected) throw error('stale', 'The catalogue changed after this replacement was reviewed. Refresh and review it again before importing.');
+        });
+      }
       resolved.reuses.forEach(function (reuse) { if (!own(maps, reuse.id) && own(maps, reuse.incomingId)) maps[reuse.id] = maps[reuse.incomingId]; });
       existing.forEach(function (s) { s.items.forEach(function (entry) { if (!owners.has(entry.id)) owners.set(entry.id, new Set()); owners.get(entry.id).add(s.id); }); });
       var split = previewSplit(resolved.payload, existing);
@@ -362,13 +380,13 @@
           var before = existingItems.get(itemId);
           if (fromParent) {
             var original = parentItems.get(entry.id); core().cleanItem(entry, original);
-            var selected = copy(before || original); selected.id = itemId; return selected;
+            var selected = archiveCopy(before || original, s.replaceItems ? entry.archived : undefined); selected.id = itemId; return selected;
           }
-          if (before) { core().cleanItem(entry, before); return copy(before); }
+          if (before) { core().cleanItem(entry, before); return archiveCopy(before, s.replaceItems ? entry.archived : undefined); }
           if (owners.has(entry.id)) throw error('invalid', 'The item ' + entry.name + ' already belongs to another supplier. Keep its saved supplier and item ID.');
           owners.set(entry.id, new Set([s.id])); return copy(entry);
         });
-        if (old) old.items.forEach(function (entry) { if (!included.has(entry.id)) items.push(copy(entry)); });
+        if (old) old.items.forEach(function (entry) { if (!included.has(entry.id)) items.push(archiveCopy(entry, s.replaceItems ? true : undefined)); });
         if (splitSource && s.id === splitSource.id) {
           var ids = new Set(moved); items.forEach(function (entry) { if (ids.has(entry.id)) entry.archived = true; });
         }
@@ -376,7 +394,7 @@
         var patch = { name: firstSplitSource ? s.name : old ? old.name : s.name, cutoffId: cid || '', items: items };
         cleanSupplier(s.id, old, patch);
         var unchanged = old && old.name === patch.name && old.cutoffId === patch.cutoffId && JSON.stringify(old.items) === JSON.stringify(patch.items);
-        plans.push({ id: s.id, v: old ? old.v : 0, patch: patch, unchanged: unchanged ? copy(old) : null });
+        plans.push({ id: s.id, v: old ? old.v : 0, patch: patch, replaceItems: s.replaceItems === true, unchanged: unchanged ? copy(old) : null });
       });
       var sourcePlan = splitSource ? plans.filter(function (p) { return p.id === splitSource.id; })[0] : null;
       var targetPlan = splitTarget ? plans.filter(function (p) { return p.id === splitTarget.id; })[0] : null;
@@ -396,7 +414,7 @@
             continue;
           }
           if (p.unchanged) { saved.push(p.unchanged); continue; }
-          saved.push(await saveCatalogue(p.id, p.v, p.patch, { action: 'import' })); check(importContext, true);
+          saved.push(await saveCatalogue(p.id, p.v, p.patch, { action: p.replaceItems ? 'replace-import' : 'import' })); check(importContext, true);
         }
       } catch (e) { e.saved = saved; throw e; }
       return saved;
