@@ -2856,6 +2856,8 @@ html[data-text="xlarge"] .dk-name { white-space: normal; }
 .su-item dd, .su-source dd { margin: 0; overflow-wrap: anywhere; }
 .su-par, .su-last { padding-top: 0.65rem; overflow-wrap: anywhere; }
 .su-par small { display: block; font-size: 0.75rem; margin-top: 0.3rem; color: var(--muted); }
+.su-last > b { font-weight: 600; }
+.su-last > time { display: block; margin-top: 0.3rem; font-size: 0.75rem; color: var(--muted); }
 .su-qty { min-width: 0; }
 .su-qty > .hint { display: block; margin-top: 0.25rem; overflow-wrap: anywhere; }
 .su-entry-error { display: block; margin-top: 0.25rem; color: var(--small-ink); font-size: 0.875rem; overflow-wrap: anywhere; }
@@ -4470,6 +4472,19 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .tm-notebook .tm-tick { border-color: var(--faint); }
 .tm-notebook .tm-tick[aria-pressed="true"] { background: var(--done-ink); border-color: var(--done-ink); color: var(--paper); }
 .tm-notebook .tm-away-row { background: var(--hit); }
+/* Today's saved breaks stand out on Home's pinned charcoal board. */
+.tm-notebook .tm-away.hm-board {
+  padding: .9rem 1rem .4rem;
+  border: 0;
+  border-inline-start: 4px solid var(--accent-ink);
+}
+.tm-notebook .tm-away.hm-board .tm-away-title { color: var(--bar-text); font: 700 .8rem/1.2 var(--display); letter-spacing: .16em; text-transform: uppercase; }
+.tm-notebook .tm-away.hm-board .tm-away-source { margin-top: .4rem; }
+.tm-notebook .tm-away.hm-board .tm-away-source, .tm-notebook .tm-away.hm-board .tm-away-kind { color: color-mix(in srgb, var(--bar-text) 75%, transparent); }
+.tm-notebook .tm-away.hm-board .tm-away-row { padding-block: .45rem; border-top-color: color-mix(in srgb, var(--bar-text) 14%, transparent); background: none; }
+.tm-notebook .tm-away.hm-board .tm-away-back { color: var(--bar-accent); font: 700 1.125rem/1.2 var(--display); }
+.tm-notebook .tm-away.hm-board .tm-away-warn { color: var(--bar-accent); }
+.tm-notebook .tm-away.hm-board .tm-away-row.is-conflict .tm-away-back { font: 600 .875rem/1.35 var(--body); }
 /* Manage staff (Linear lists): a row each with the initial, the name, and the role with what they may do */
 .st-row { flex-direction: row !important; align-items: flex-start; gap: 12px !important; }
 .st-av { flex: none; display: grid; place-items: center; width: 36px; height: 36px; margin-top: 4px; border-radius: 50%; background: var(--accent-ink); color: #fff; font: 700 1rem/1 var(--display); }
@@ -4613,6 +4628,20 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .is-home #hm-board .hm-bt { color: var(--small-ink); }
 .is-home #hm-board .hm-rows li + li { border-top-color: var(--edge); }
 .is-home #hm-board .hm-s, .is-home #hm-board .hm-none { color: var(--muted); }
+/* Home's team and prep cards keep their paper shape, with a distinct palette cue for each job. */
+.is-home #hm-with {
+  background: var(--done-tint);
+  box-shadow: inset 4px 0 0 var(--done-ink), 0 4px 0 rgba(28, 29, 31, 0.14);
+}
+.is-home #hm-with .hm-pt { color: var(--done-ink); }
+.is-home #hm-with .hm-full-team > summary:focus-visible { outline-color: var(--done-ink); }
+.is-home #hm-prep {
+  background: var(--steel);
+  background: color-mix(in srgb, var(--steel) 65%, var(--paper));
+  box-shadow: inset 4px 0 0 var(--muted), 0 4px 0 rgba(28, 29, 31, 0.14);
+}
+.is-home #hm-prep :is(.hm-pt, .hm-pc) { color: var(--ink); }
+.is-home #hm-prep :is(.hm-sec, .hm-go):focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
 @media (min-width: 720px) {
   .hm-staff-first { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 2rem; }
   .hm-day-row { min-height: 78px; }

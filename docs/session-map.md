@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Each supplier item's last order, 9 November 2026
+
+The existing supplier row shows its last recorded quantity and Queensland date, including purchases omitted from the newest supplier order. One bounded history page on selection, explicit Older orders coverage and no new saved fields. `js/suppliers.js?v=21`, `css/app.css`, the lazy URL in `js/app.js`; `tests/supplier-last-ordered.test.js`, supplier workspace, quantities and module versions. [Contract, quick council and verification](supplier-workspace.md#each-items-last-order-9-november-2026).
+
 Moved from `CLAUDE.md` on 8 November 2026, word for word, so the file every session loads keeps one short row per note and a short list of files. This page keeps the full rows: the dates, the chosen designs, the tests and the notes for each file. Search it for the note or file name you need (Grep), then read that row.
 
 When a note or a file is added: its full row goes here, and one short row (what it covers, where it is) goes in `CLAUDE.md`. When the two disagree, the note itself wins, then `CLAUDE.md`.
