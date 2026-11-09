@@ -1,0 +1,125 @@
+{
+  "kind": "Preview placement mock (placements.js), real Home, synthetic names. This mock does not check text overlap; see the note on the 40-character phone case.",
+  "rows": [
+    {
+      "width": 390,
+      "staffName": "Ann",
+      "chars": 3,
+      "headingLines": 1,
+      "headingCorner": "shown 64px",
+      "besideTheName": "shown 64px"
+    },
+    {
+      "width": 390,
+      "staffName": "Mohammed Ali",
+      "chars": 12,
+      "headingLines": 1,
+      "headingCorner": "shown 64px",
+      "besideTheName": "left out: no room after the name"
+    },
+    {
+      "width": 390,
+      "staffName": "Charlotte Nguyen",
+      "chars": 16,
+      "headingLines": 1,
+      "headingCorner": "shown 48px",
+      "besideTheName": "shown 48px"
+    },
+    {
+      "width": 390,
+      "staffName": "Maria Fernanda Santos",
+      "chars": 21,
+      "headingLines": 1,
+      "headingCorner": "shown 48px",
+      "besideTheName": "shown 48px"
+    },
+    {
+      "width": 390,
+      "staffName": "Alexandria Catherine Montgomery Williams",
+      "chars": 40,
+      "headingLines": 1,
+      "headingCorner": "shown 48px",
+      "besideTheName": "left out: no room after the name"
+    },
+    {
+      "width": 768,
+      "staffName": "Ann",
+      "chars": 3,
+      "headingLines": 1,
+      "headingCorner": "shown 64px",
+      "besideTheName": "shown 64px"
+    },
+    {
+      "width": 768,
+      "staffName": "Mohammed Ali",
+      "chars": 12,
+      "headingLines": 1,
+      "headingCorner": "shown 64px",
+      "besideTheName": "shown 64px"
+    },
+    {
+      "width": 768,
+      "staffName": "Charlotte Nguyen",
+      "chars": 16,
+      "headingLines": 1,
+      "headingCorner": "shown 64px",
+      "besideTheName": "shown 64px"
+    },
+    {
+      "width": 768,
+      "staffName": "Maria Fernanda Santos",
+      "chars": 21,
+      "headingLines": 1,
+      "headingCorner": "shown 64px",
+      "besideTheName": "left out: no room after the name"
+    },
+    {
+      "width": 768,
+      "staffName": "Alexandria Catherine Montgomery Williams",
+      "chars": 40,
+      "headingLines": 2,
+      "headingCorner": "shown 96px",
+      "besideTheName": "left out: no room after the name"
+    },
+    {
+      "width": 1280,
+      "staffName": "Ann",
+      "chars": 3,
+      "headingLines": 1,
+      "headingCorner": "shown 64px",
+      "besideTheName": "shown 64px"
+    },
+    {
+      "width": 1280,
+      "staffName": "Mohammed Ali",
+      "chars": 12,
+      "headingLines": 1,
+      "headingCorner": "shown 64px",
+      "besideTheName": "shown 64px"
+    },
+    {
+      "width": 1280,
+      "staffName": "Charlotte Nguyen",
+      "chars": 16,
+      "headingLines": 1,
+      "headingCorner": "shown 64px",
+      "besideTheName": "shown 64px"
+    },
+    {
+      "width": 1280,
+      "staffName": "Maria Fernanda Santos",
+      "chars": 21,
+      "headingLines": 1,
+      "headingCorner": "shown 64px",
+      "besideTheName": "shown 64px"
+    },
+    {
+      "width": 1280,
+      "staffName": "Alexandria Catherine Montgomery Williams",
+      "chars": 40,
+      "headingLines": 1,
+      "headingCorner": "shown 64px",
+      "besideTheName": "shown 64px"
+    }
+  ]
+}

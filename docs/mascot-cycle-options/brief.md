@@ -1,6 +1,6 @@
 # Cycling the kitchen mascot through its actions
 
-9 November 2026, Queensland. **Round 1 verdict: Build smaller, 5 of 5. Owner chose a per-person shuffled set of all 11 actions, one a day (see Owner direction). Round 2: all six reviewers recommend A. Owner choice pending.** No app code has changed. [Proposal](proposal.md). Evidence reused from the [placement study](../mascot-placement-options/brief.md) (source `e6cbd61`, app files match `main` `7f85629`). This is role-based council analysis, not research with real staff. All measurements below are **Preview** from the placement study; nothing is measured in the implemented app.
+9 November 2026, Queensland. **Round 1 verdict: Build smaller, 5 of 5. Owner chose a per-person shuffled set of all 11 actions, one a day (see Owner direction). Round 2: all six reviewers recommend A. Owner chose A in the heading corner (see Chosen).** No app code has changed. [Proposal](proposal.md). Evidence reused from the [placement study](../mascot-placement-options/brief.md) (source `e6cbd61`, app files match `main` `7f85629`). This is role-based council analysis, not research with real staff. All measurements below are **Preview** from the placement study; nothing is measured in the implemented app.
 
 ## The idea
 
@@ -171,4 +171,10 @@ The owner asked to see different spots at every size before choosing, plus a cel
 
 **Before release** (implementation, not this preview): key by staff id; use `LK_TIME.day()` and the seasonal stamp pattern; keep mascot files out of `SHELL` and out of, or bounded in, the `sw.js` runtime cache; client tests for one play a day, return at rest, next day's action, hidden first view, refused storage, missing art, sign-ins on one shared tablet and Queensland midnight; complete-app long-name and enlarged-text geometry.
 
-**Chosen:** per-person shuffled daily action, all 11, kept per device (9 November 2026). Design: pending owner choice after round 2 (recommend A).
+## Chosen, 9 November 2026
+
+The owner: "I think a would work best, even with long names". **Design A in the heading corner**: on the first Home view of the kitchen day where it can play, the person's next shuffled action (all 11, no repeat until all have played, kept per device) plays once at the right end of the "Welcome" heading row, then the mascot rests on the neutral Welcome pose. No control, hidden from screen readers, no Home rectangle moved.
+
+Long names (`long-names.json`, placement mock, real Home): the corner shows the mascot at every tested length (3 to 40 characters) on tablet and laptop, and up to 21 characters on a phone at 48 px. A 40-character name on a phone reaches the corner; the full name wins and the mascot is left out that day, as `candidate.js` already does (`corner-long-40-390.png` shows the mock without that guard, covering the end of the name). Christmas snow passes the corner during the arrival, behind the mascot.
+
+Next: implementation in its own pull request from the latest `main`, with the "Before release" list above.
