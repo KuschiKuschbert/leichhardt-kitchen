@@ -41,6 +41,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Planning staff sections ahead, dated drafts, week picker and read costs | `docs/team-week-options/brief.md` (chosen A, implementation and verification) |
 | Today's team person worksheet, single roster and per-person details | `docs/team-tidy-options/brief.md` (current choice C, historical A checks and current verification) |
 | Cleaning page, ordered pack down, repeat schedule, checks, Pass verification and team release | `docs/cleaning-schedule.md`, `docs/cleaning-options/brief.md` (chosen C + A), `docs/cleaning-options/implementation.md`, `docs/cleaning-options/release-toggle.md`; keep unbranded templates in `js/cleaning-schedule.js`, separate from history; anchored intervals must agree in client and rules |
+| Compact Cleaning management, chosen M1 groups and responsive repeat-task editor | `docs/cleaning-chef-options/implementation.md` (contract and current verification), `docs/cleaning-chef-options/brief.md` (designs and council) |
 | Chef to-do notebook layout | `docs/chef-todo-options/brief.md` (Chosen, implementation contract) |
 | Drinks run notebook style | `docs/drinks-notebook.md`, `docs/code-contracts.md` (Drinks run) |
 | Recipe amounts, the recipe and drawing editor, the drawing studio, smoker batches | `docs/recipe-multiplier.md`, `docs/recipe-editor-options/brief.md`, `docs/studio-options/brief.md`, `docs/smoker-batches.md` |
@@ -232,11 +233,11 @@ These hold for every file, old and new. When you touch code that breaks one, bri
 
 **Screens**
 - Build from the patterns in `docs/design-patterns.md`. A new one goes there in the same pull request, with its names in `tests/design-patterns.test.js`, and a new look is the head chef's call.
-- Every popup or sheet dims the page behind it, closes on the backdrop, Cancel and Escape, and is appended to `document.body`.
+- Dismissible popups and sheets follow the shared frame and cancellation contract in `docs/adaptive-controls.md` (Shared modal frame). Mandatory kitchen/PIN/name screens stay non-dismissible, and pending-save guards remain authoritative.
 - A choice of more than about 12 things gets a type-to-find box with the likely few first, not a long dropdown.
 - A row that scrolls sideways fades at its edge so people can see there is more.
 - Group with space and headings first. Approved book covers, headers, spines and existing purpose cards may use the shared surfaces in `docs/surface-colours.md`; writing pages stay quiet and stronger state fills identify attention or a named outcome. Do not box every group. A long list of rows may alternate a light tint to keep the eye on its row (Settings, head chef 5 Nov 2026), counted from the rows on screen.
-- Pages work at 390, 768 and 1280 px with no sideways scroll (the click tests check it).
+- Pages work at 390, 768 and 1280 px with no sideways scroll (the click tests check it). Verify delivered layout claims in the full app with its actual shell, fonts, representative data and complete forms; keep preview measurements separate.
 
 **Loading**
 - The book's start loads only what the landing page and the prep pages need. Anything big that only one page uses is loaded by that page (the loader `mountManage()` uses), and stays in `SHELL` if the book needs it with no signal.

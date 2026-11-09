@@ -72,7 +72,7 @@ const spreadPlan = () => ({ day: today,
   ok(await p.evaluate(() => LK_PREP.unsaved() && LK_PREP.dirtyForUpdate()), 'chooser protection: unsent staff choices count as work before the roster is changed');
   await click(p, '[data-p="tm-quick-add"]');
   ok(!await p.locator('details.tm-quick-add').evaluate(e => e.open) && await p.locator('[data-k^="tm-quick-person:"]:checked').count() === 0, 'Add: the chooser collapses and clears only its completed selection');
-  ok(await p.locator('select' + field('tm-sec:ann')).inputValue() === '' && await p.locator('select' + field('tm-sec:bo')).inputValue() === '' && await p.locator('select' + field('tm-sec:sam')).inputValue() === '__off', 'Add: only the chosen people join the current service, ready for their own section choices');
+  ok(await p.locator('select' + field('tm-sec:ann')).inputValue() === '' && await p.locator('select' + field('tm-sec:bo')).inputValue() === '' && !await p.locator('select' + field('tm-sec:sam')).count() && await p.locator(personCheck('sam')).count() === 1, 'Add: only chosen people enter the worksheet; other staff stay available in the chooser');
   ok(!await saveOff(p) && !await read(p) && await readCount(p) === initialReads, 'Add is a local draft change with no database read or premature save');
   await click(p, '[data-p="tm-sh"][data-v="dinner"]');
   ok(await p.locator('select' + field('tm-sec:ann')).inputValue() === '' && await p.locator('select' + field('tm-sec:bo')).inputValue() === '', 'multi-service add: both selected staff also join Dinner without an invented section or break');
