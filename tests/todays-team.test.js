@@ -27,11 +27,17 @@ async function details(p, id) {
   await L.settle(p, 120);
 }
 async function tools(p) { const d = p.locator('details.tm-batch'); if (!await d.evaluate(e => e.open)) await d.locator(':scope > summary').click(); await L.settle(p, 120); }
-const pick = async (p, k, v) => { if (k.includes(':')) await details(p, k.split(':')[1]); else await tools(p); await L.pick(p, 'select[data-k="' + k + '"]', String(v)); return true; };
+const pick = async (p, k, v) => { if (k.includes(':') && !k.startsWith('tm-sec:')) await details(p, k.split(':')[1]); else if (!k.includes(':')) await tools(p); await L.pick(p, 'select[data-k="' + k + '"]', String(v)); return true; };
 const chip = p => p.evaluate(() => { const c = document.querySelector('.wtop .tm-slot .tm-chip'); return c ? { due: c.classList.contains('is-due'), label: c.getAttribute('aria-label'), href: c.getAttribute('href') } : null; });
 const titleCut = p => p.evaluate(() => { const b = document.querySelector('.wtop-brand b'), i = document.querySelector('.wtop-icons'); return !b || b.scrollWidth > b.clientWidth + 1 || b.getBoundingClientRect().right > i.getBoundingClientRect().left + 1; });
-// Attendance is inside that person's Edit breaks disclosure.
-const onShift = async (p, id) => { await details(p, id); const done = await tap(p, '[data-p="tm-on"][data-id="' + id + '"]'); await L.settle(p, 200); return done; };
+// Empty days start with the inline staff chooser; later membership stays in the person's details.
+const onShift = async (p, id) => {
+  if (!await p.locator('details.tm-person-details[data-id="' + id + '"]').count()) {
+    await p.locator('input[data-k="tm-quick-person:' + id + '"]').check();
+    await tap(p, '[data-p="tm-quick-add"]'); await L.settle(p, 200); await details(p, id); return true;
+  }
+  await details(p, id); const done = await tap(p, '[data-p="tm-on"][data-id="' + id + '"]'); await L.settle(p, 200); return done;
+};
 const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.nb-addline').getBoundingClientRect().top; return [...document.querySelectorAll('[id^="nbr-"]')].filter(e => { const q = e.getBoundingClientRect(); return q.top >= 0 && q.bottom <= bar; }).length; });
 // Measure the approved local view choice separately from the unchanged team header and work rows.
 const withoutViewChoice = async p => {
@@ -77,7 +83,7 @@ const withoutViewChoice = async p => {
   await onShift(p, 'ann');
   ok(await pick(p, 'tm-sec:ann', 'grill'), 'page: Ann on Lunch gets a section picker');
   ok(await onShift(p, 'sam'), 'page: Sam is ticked onto Lunch');
-  ok(await p.$eval('select[data-k="tm-sec:sam"]', e => e.value === '' && e.options[0].textContent === 'Sous chef'), 'page: a sous chef has a section picker too, starting on their role');
+  ok(await p.$eval('select[data-k="tm-sec:sam"]', e => e.value === '' && [...e.options].some(o => o.value === '' && o.textContent === 'Sous chef')), 'page: a sous chef has a section picker too, starting on their role');
   await tap(p, '[data-p="tm-addbr"][data-id="ann"]'); await L.settle(p, 200);
   ok(await pick(p, 'tm-at:ann:0', 870) && await pick(p, 'tm-len:ann:0', 45), 'page: Ann gets a break at 14:30 for 45 minutes');
   await L.settle(p, 150);
@@ -248,7 +254,7 @@ const withoutViewChoice = async p => {
   ok(/3 splits from 14:30, all together/.test(await txt(p, '.tm-save') || ''), 'split: Spread them, all together (' + (await txt(p, '.tm-save')) + ')');
   await pick(p, 'tm-spfrom', 1080); await pick(p, 'tm-splen', 30); await pick(p, 'tm-spmode', '2'); await L.settle(p, 100);
   await tap(p, '[data-p="tm-spread"]'); await L.settle(p, 200);
-  ok(/3 breaks from 18:00, two at a time/.test(await txt(p, '.tm-save') || ''), 'split: then the meal breaks, two at a time, keeping the splits (' + (await txt(p, '.tm-save')) + ')');
+  ok(/3 breaks from 18:00, two per group, starting every 30 min/.test(await txt(p, '.tm-save') || ''), 'split: then the meal breaks, two at a time, keeping the splits (' + (await txt(p, '.tm-save')) + ')');
   ok(await p.$$eval('[data-p="tm-addbr"]', e => e.length) === 3, 'split: a third break can still be added');
   await tap(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => !!window.__fake.dump()[k], TEAM, 8000);

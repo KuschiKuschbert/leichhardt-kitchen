@@ -1,0 +1,3880 @@
+{
+  "baselineCommit": "2cb62ba",
+  "fixture": "Eight fictional people, Lunch and Dinner, two active saved breaks at 14:00 Queensland time; Firebase stand-in only.",
+  "fonts": "All five existing app font faces fetched with verified TLS and replayed from local data URLs.",
+  "limits": "Browser stand-in evidence; no live Firebase or production record verification.",
+  "before": [
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "contentBottom": 776
+      },
+      "firstPersonTop": 706.125,
+      "saveTop": 1390.921875,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 8,
+      "globalSectionControls": 11,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "before",
+      "route": "team",
+      "width": 390,
+      "size": "normal",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "contentBottom": 776
+      },
+      "firstPersonTop": 876.109375,
+      "saveTop": 1754.109375,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 8,
+      "globalSectionControls": 11,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "before",
+      "route": "team",
+      "width": 390,
+      "size": "xlarge",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 768,
+        "height": 844,
+        "contentBottom": 844
+      },
+      "firstPersonTop": 698.65625,
+      "saveTop": 1383.453125,
+      "completeInitialPeople": 1,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 8,
+      "globalSectionControls": 11,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "before",
+      "route": "team",
+      "width": 768,
+      "size": "normal",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 768,
+        "height": 844,
+        "contentBottom": 844
+      },
+      "firstPersonTop": 817.1875,
+      "saveTop": 1671.5625,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 8,
+      "globalSectionControls": 11,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "before",
+      "route": "team",
+      "width": 768,
+      "size": "xlarge",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 1280,
+        "height": 844,
+        "contentBottom": 844
+      },
+      "firstPersonTop": 528.734375,
+      "saveTop": 1213.53125,
+      "completeInitialPeople": 3,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 8,
+      "globalSectionControls": 11,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "before",
+      "route": "team",
+      "width": 1280,
+      "size": "normal",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 1280,
+        "height": 844,
+        "contentBottom": 844
+      },
+      "firstPersonTop": 607.25,
+      "saveTop": 1461.625,
+      "completeInitialPeople": 2,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 8,
+      "globalSectionControls": 11,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "before",
+      "route": "team",
+      "width": 1280,
+      "size": "xlarge",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "contentBottom": 776
+      },
+      "firstPersonTop": 982.859375,
+      "saveTop": 1667.65625,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 8,
+      "globalSectionControls": 11,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "before",
+      "route": "chef",
+      "width": 390,
+      "size": "normal",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "contentBottom": 776
+      },
+      "firstPersonTop": 1200.796875,
+      "saveTop": 2078.796875,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 8,
+      "globalSectionControls": 11,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "before",
+      "route": "chef",
+      "width": 390,
+      "size": "xlarge",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 768,
+        "height": 844,
+        "contentBottom": 844
+      },
+      "firstPersonTop": 1042.15625,
+      "saveTop": 1726.953125,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 8,
+      "globalSectionControls": 11,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "before",
+      "route": "chef",
+      "width": 768,
+      "size": "normal",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 768,
+        "height": 844,
+        "contentBottom": 844
+      },
+      "firstPersonTop": 1227.3125,
+      "saveTop": 2081.6875,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 8,
+      "globalSectionControls": 11,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "before",
+      "route": "chef",
+      "width": 768,
+      "size": "xlarge",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 1280,
+        "height": 844,
+        "contentBottom": 844
+      },
+      "firstPersonTop": 817.796875,
+      "saveTop": 1502.59375,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 8,
+      "globalSectionControls": 11,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "before",
+      "route": "chef",
+      "width": 1280,
+      "size": "normal",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 1280,
+        "height": 844,
+        "contentBottom": 844
+      },
+      "firstPersonTop": 982.15625,
+      "saveTop": 1836.53125,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 8,
+      "globalSectionControls": 11,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "before",
+      "route": "chef",
+      "width": 1280,
+      "size": "xlarge",
+      "errors": []
+    }
+  ],
+  "after": [
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "contentBottom": 776
+      },
+      "firstPersonTop": 654.078125,
+      "saveTop": 1366.296875,
+      "completeInitialPeople": 1,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 0,
+      "globalSectionControls": 0,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "after",
+      "route": "team",
+      "width": 390,
+      "size": "normal",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "contentBottom": 776
+      },
+      "firstPersonTop": 817.109375,
+      "saveTop": 1736.421875,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 0,
+      "globalSectionControls": 0,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "after",
+      "route": "team",
+      "width": 390,
+      "size": "xlarge",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 768,
+        "height": 844,
+        "contentBottom": 844
+      },
+      "firstPersonTop": 646.609375,
+      "saveTop": 1353.390625,
+      "completeInitialPeople": 2,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 0,
+      "globalSectionControls": 0,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "after",
+      "route": "team",
+      "width": 768,
+      "size": "normal",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 768,
+        "height": 844,
+        "contentBottom": 844
+      },
+      "firstPersonTop": 760,
+      "saveTop": 1481.875,
+      "completeInitialPeople": 1,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 0,
+      "globalSectionControls": 0,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "after",
+      "route": "team",
+      "width": 768,
+      "size": "xlarge",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 1280,
+        "height": 844,
+        "contentBottom": 844
+      },
+      "firstPersonTop": 654.609375,
+      "saveTop": 1361.390625,
+      "completeInitialPeople": 2,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 0,
+      "globalSectionControls": 0,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "after",
+      "route": "team",
+      "width": 1280,
+      "size": "normal",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 1280,
+        "height": 844,
+        "contentBottom": 844
+      },
+      "firstPersonTop": 772,
+      "saveTop": 1493.875,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 0,
+      "globalSectionControls": 0,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "after",
+      "route": "team",
+      "width": 1280,
+      "size": "xlarge",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "contentBottom": 776
+      },
+      "firstPersonTop": 930.8125,
+      "saveTop": 1643.03125,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 0,
+      "globalSectionControls": 0,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "after",
+      "route": "chef",
+      "width": 390,
+      "size": "normal",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "contentBottom": 776
+      },
+      "firstPersonTop": 1141.796875,
+      "saveTop": 2061.109375,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 0,
+      "globalSectionControls": 0,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "after",
+      "route": "chef",
+      "width": 390,
+      "size": "xlarge",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 768,
+        "height": 844,
+        "contentBottom": 844
+      },
+      "firstPersonTop": 990.109375,
+      "saveTop": 1696.890625,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 0,
+      "globalSectionControls": 0,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "after",
+      "route": "chef",
+      "width": 768,
+      "size": "normal",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 768,
+        "height": 844,
+        "contentBottom": 844
+      },
+      "firstPersonTop": 1170.125,
+      "saveTop": 1892,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 0,
+      "globalSectionControls": 0,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "after",
+      "route": "chef",
+      "width": 768,
+      "size": "xlarge",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 1280,
+        "height": 844,
+        "contentBottom": 844
+      },
+      "firstPersonTop": 943.671875,
+      "saveTop": 1650.453125,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 0,
+      "globalSectionControls": 0,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "after",
+      "route": "chef",
+      "width": 1280,
+      "size": "normal",
+      "errors": []
+    },
+    {
+      "overflow": false,
+      "viewport": {
+        "width": 1280,
+        "height": 844,
+        "contentBottom": 844
+      },
+      "firstPersonTop": 1110.28125,
+      "saveTop": 1832.15625,
+      "completeInitialPeople": 0,
+      "totalRows": 8,
+      "uniqueIds": 8,
+      "oldFullDetails": 0,
+      "sectionPickers": 8,
+      "visibleSectionPickers": 0,
+      "sectionPickersInsideDetails": 0,
+      "globalSectionControls": 0,
+      "smallControls": [],
+      "readCount": 13,
+      "teamReadCount": 3,
+      "bill": [
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/login/roster",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/book/index",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/team/2026-11-09",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/cooling/current",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/fnsent",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/functions",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/config/main",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/sections",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/summary/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/notes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/directnotes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/minutes",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/guides",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/drinks/sam",
+          "n": 1
+        },
+        {
+          "kind": "listen",
+          "path": "kitchens/000000/days/2026-11-09/items",
+          "n": 6
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/learned",
+          "n": 1
+        },
+        {
+          "kind": "query",
+          "path": "kitchens/000000/team",
+          "n": 2
+        },
+        {
+          "kind": "get",
+          "path": "kitchens/000000/teamsum/main",
+          "n": 1
+        }
+      ],
+      "fonts": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "phase": "after",
+      "route": "chef",
+      "width": 1280,
+      "size": "xlarge",
+      "errors": []
+    }
+  ],
+  "supplemental": [
+    {
+      "scene": "quick-add",
+      "headerStatus": "Saved 13:00 · Sam · Staff selection waiting for Add\n\nRefresh",
+      "overflow": false,
+      "selectedPeople": 3,
+      "selectedServices": 2,
+      "smallLabels": [],
+      "writes": 2,
+      "dirtyForUpdate": true,
+      "writesBefore": 2,
+      "writesAdded": 0,
+      "errors": []
+    },
+    {
+      "scene": "break-start-spacing",
+      "viewport": {
+        "width": 390,
+        "height": 1200
+      },
+      "overflow": false,
+      "breakLength": "30",
+      "startSpacing": "15",
+      "smallControls": [],
+      "writes": 2,
+      "writesBefore": 2,
+      "writesAdded": 0,
+      "errors": []
+    }
+  ]
+}
