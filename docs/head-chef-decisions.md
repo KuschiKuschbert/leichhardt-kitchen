@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **9 November 2026, label each supplier purchase as Latest or Earlier.** The head chef selected design A after the council and three previews: "okay lets go a". Keep the quantity and date in place and distinguish its saved order from the supplier's latest recorded order by immutable ID, including same-day orders and inherited split history. Preserve unchecked history, empty drafts and the existing ordering steps. [Chosen design and verification](supplier-last-order-status-options/brief.md#chosen).
+
 - **9 November 2026, Operandio waits until tomorrow after completion.** The owner requested disabling the timer after its four-hour stage runs out until the next day. Keep the completed clock read-only until 00:00 Queensland time after that second deadline, including across refreshes and phones. Then restore the existing explicit new-batch Start. This supersedes immediate new-batch support in the earlier motion release. [Current contract and checks](operandio-cooling.md#daily-lockout-9-november-2026).
 
 - **9 November 2026, a break board on Today's team.** The owner requested a board like the homepage for staff on break now. After requesting Home's board pattern, the owner chose charcoal with the heading On break now and Until beside each return time. Retain names, split labels and saved-plan authority. The owner also clarified that only the shift tabs should show Lunch first, then Dinner; keep other configured shifts in their saved order. [Contract and checks](team-notebook-options/brief.md#break-board-9-november-2026).

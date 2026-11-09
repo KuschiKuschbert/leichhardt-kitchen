@@ -41,7 +41,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Chef to-do notebook layout | `docs/chef-todo-options/brief.md` (Chosen, implementation contract) |
 | Drinks run notebook style | `docs/drinks-notebook.md`, `docs/code-contracts.md` (Drinks run) |
 | Recipe amounts, the recipe and drawing editor, the drawing studio, smoker batches | `docs/recipe-multiplier.md`, `docs/recipe-editor-options/brief.md`, `docs/studio-options/brief.md`, `docs/smoker-batches.md` |
-| Suppliers, order cut-offs, the supplier order and Delivery received | `docs/supplier-workspace.md`, `docs/cutoff-options/brief.md`, `docs/receiving-design-options/brief.md`, `docs/delivery-received.md` |
+| Suppliers, order cut-offs, the supplier order and Delivery received | `docs/supplier-workspace.md`, `docs/cutoff-options/brief.md`, `docs/receiving-design-options/brief.md`, `docs/delivery-received.md`; chosen Latest/Earlier purchase labels: `docs/supplier-last-order-status-options/brief.md` |
 | Wastage history and CSV reports | `docs/wastage-history.md`, `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |
 | Functions: cancel, Undo, delete, print | `docs/function-cancellation.md`, `docs/function-printing.md` |
