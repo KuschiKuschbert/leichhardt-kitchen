@@ -1,6 +1,6 @@
 # Cycling the kitchen mascot through its actions
 
-9 November 2026, Queensland. **Round 1 verdict: Build smaller, 5 of 5. Owner decision pending.** No app code has changed. [Proposal](proposal.md). Evidence reused from the [placement study](../mascot-placement-options/brief.md) (source `e6cbd61`, app files match `main` `7f85629`). This is role-based council analysis, not research with real staff. All measurements below are **Preview** from the placement study; nothing is measured in the implemented app.
+9 November 2026, Queensland. **Round 1 verdict: Build smaller, 5 of 5. Owner chose a per-person shuffled set of all 11 actions, one a day (see Owner direction). Round 2 pending.** No app code has changed. [Proposal](proposal.md). Evidence reused from the [placement study](../mascot-placement-options/brief.md) (source `e6cbd61`, app files match `main` `7f85629`). This is role-based council analysis, not research with real staff. All measurements below are **Preview** from the placement study; nothing is measured in the implemented app.
 
 ## The idea
 
@@ -48,8 +48,21 @@ The owner wants the mascot to cycle through all eleven actions, so the whole lib
 
 ## Recommendation for the owner
 
-**Build smaller: the narrowed form 3,** one allowed action per kitchen day on the first Home view, then a still, in A's spot. It brings the library into the app over the week without breaking the Home motion contract, needs one atlas a day and reuses A's player and guards. Main downside: it is still decoration with no kitchen task, and the new starter and head chef reviewers would rather keep the cycle inside a collection (form 4) or in the gallery. Forms 1 and 2 are not recommended.
+**Build smaller: the narrowed form 3** (round 1 recommendation, before the owner's direction below), one allowed action per kitchen day on the first Home view, then a still, in A's spot. It brings the library into the app over the week without breaking the Home motion contract, needs one atlas a day and reuses A's player and guards. Main downside: it is still decoration with no kitchen task, and the new starter and head chef reviewers would rather keep the cycle inside a collection (form 4) or in the gallery. Forms 1 and 2 are not recommended.
 
 Next, if the owner agrees: round 2 with three structurally different designs of the chosen form, previews under this folder and the six-reviewer scoring.
 
-**Chosen: pending owner selection.**
+## Owner direction, 9 November 2026
+
+The owner refined the recommendation: "can we have a random action come up for each staff member at everyday but we have to cycle through all available animations before we can repeat the animations again?" Then chose **all 11 actions** and **kept on each phone**.
+
+- **Rule.** On the first Home view of the kitchen day, the signed-in person sees one action from their own shuffled set, played once, then a still. Returning to Home the same day opens at rest. When all 11 have played for that person, the set reshuffles; the first draw of a new set is never the last action of the old one, so no action shows two days running.
+- **Storage.** One small record per person on the device (`lk.*`): the remaining set and the kitchen day it last played. Out of date: never, except the day stamp gates replay. No Firestore reads, writes, listeners or rules. A person on their phone and the shared tablet keeps two sets, so an action can repeat across devices. Random draws use a seeded shuffle, not `Math.random` in a way that tests cannot pin.
+- **Kitchen day** follows the book's clock (`dayNow()`, Queensland, the same day boundary as the seasonal arrival), never `new Date()`.
+- **Departure from the council.** Serve, Ready to cook, Look around and Recipe reading stay in the set by the owner's choice. The status-like risk stays open for round 2. Smallest mitigation to design and test: after any action the mascot settles on the neutral Welcome or Idle still, so a status-like pose is never what sits beside the board all shift.
+- **Retained from round 1.** A's spot and guards (omitted for long names, locked Home, missing art; still under reduced motion and Still celebrations), one atlas per day, no atlas in `SHELL`, and the break-it checks above.
+- **Size.** Eleven kitchen days for a full round per person.
+
+**Next:** round 2, three structurally different designs of this rule, previews in this folder and the six-reviewer scoring.
+
+**Chosen:** per-person shuffled daily action, all 11, kept per device (9 November 2026). Design pending round 2.

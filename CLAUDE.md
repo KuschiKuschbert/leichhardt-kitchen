@@ -33,7 +33,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Loading, saving, progress and motion | `docs/loading-motion.md` (current), `docs/loading-feedback-options/brief.md` |
 | Kitchen mascot artwork and standalone animation previews | `docs/kitchen-mascot/brief.md` (assets only; no live placement) |
 | Kitchen mascot placement proposals | `docs/mascot-placement-options/brief.md` (actual-app previews, council and pending owner choice; no live placement) |
-| Cycling the kitchen mascot through its actions | `docs/mascot-cycle-options/brief.md` (round 1 and pending owner choice; no live placement) |
+| Cycling the kitchen mascot through its actions | `docs/mascot-cycle-options/brief.md` (round 1, owner chose a per-person daily shuffle of all 11; round 2 pending; no live placement) |
 | Shared controls, search and tables | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
 | A whole-app audit | `docs/whole-app-audit.md`, `docs/ux-council-audit.md`, `docs/whole-app-inventory.md` |
 | Shared surface and operational colours, banners and category exceptions | `docs/surface-colours.md` (chosen hybrid), `docs/colour-coding.md`, `docs/design-patterns.md` |
