@@ -20,7 +20,7 @@ html.cooling-open, html.cooling-open body { overflow: hidden; }
 .cooling-status { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
 .cooling-status .lk-stamp { margin: 0; padding: 0 4px; min-height: 20px; font-size: .75rem; letter-spacing: 0; text-transform: none; }
 .cooling-done { color: var(--done-ink); font-size: .8125rem; font-weight: 700; }
-.cooling-error { padding: 0 2px 6px; font-size: .875rem; line-height: 1.25; }
+.cooling-error { padding: 0 2px 6px; color: var(--bad-ink); font-size: .875rem; line-height: 1.25; }
 .cooling-read { border-top: 1px solid var(--line); padding: 8px 2px 4px; font-size: .875rem; line-height: 1.3; }
 .cooling-read p { margin: 0; }
 .cooling-read .btn { margin-top: 6px; min-height: 44px; }
@@ -92,7 +92,7 @@ html.cooling-open, html.cooling-open body { overflow: hidden; }
 .cooling-clock-copy small { font: 600 11px/1.15 var(--body); }
 .cooling-clock[data-clock-state="done1"] .cooling-clock-copy small { font-size: 13px; font-weight: 700; }
 .cooling-clock:is([data-clock-state="armed"],[data-clock-state="pending"]) .cooling-clock-control { background: var(--accent-ink); border-color: var(--accent-ink); }
-.cooling-clock[data-clock-state="error"] .cooling-clock-control { background: var(--tag); border-color: var(--tag); }
+.cooling-clock[data-clock-state="error"] .cooling-clock-control { background: var(--bad-ink); border-color: var(--bad-ink); }
 .cooling-clock:is([data-clock-state="first"],[data-clock-state="second"]) .cooling-clock-control { border-color: transparent; }
 .cooling-clock:is([data-clock-state="first"],[data-clock-state="second"]) .cooling-clock-stage,
 .cooling-clock:is([data-clock-state="first"],[data-clock-state="second"]) .cooling-clock-track,

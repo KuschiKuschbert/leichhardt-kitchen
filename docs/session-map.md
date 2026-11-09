@@ -4,6 +4,10 @@
 
 The owner requested the supplied unbranded 26-task programme and then the ordered 25-step Hot larder, Grill and Pans pack down in the existing Cleaning page. Keep the chosen C daily notebook + A chef week review. [The current contract](cleaning-schedule.md) covers explicit imports, Sunday deep cleaning, two-day drip trays anchored to 9 November 2026, immutable plans, per-event checks, Pass mapping, blocked states, audit snapshots and the temperature reminder. `js/cleaning-schedule.js` is a lazy runtime dependency, never a startup or saved-shell file.
 
+## Shared book, block and banner surfaces, 9 November 2026
+
+After the three actual-app colour previews, the owner approved B's book structure with A's purpose meanings and C's restraint, implemented in the existing colour-consistency PR #632. `docs/surface-colours.md` records the chosen contract, original council scores and new-starter dissent. `css/app.css` owns shared work, people, paper and reference tokens; work books including Orders use steel, people use sage, interiors stay warm paper, current live boards stay charcoal, and amber/green/red retain local operational meaning. `docs/design-patterns.md` defines the bounded surface exception to the attention-fill rule; `docs/colour-coding.md` retains the earlier status audit and tests. No new controls, geometry, reads, rules or saved fields. The 42 matched screenshot pairs across 14 scenes and three widths retain all 2,202 measured boxes; no overflow or browser errors. The new surface test passes 172 assertions and 12 focused test files pass. Screenshots, measurement summary and broader gate/release references are in the feature note.
+
 ## Grill and Pans prep minimums, 9 November 2026
 
 The owner supplied both station sheets and asked to use them in the existing prep feature. `scripts/import-prep-standards.mjs` performs a bounded transactional, create-only setup with dry-run, exact section resolution and conflict refusal. `scripts/prep-import-crypto.mjs` keeps operational source data encrypted outside the application assets; `.github/workflows/prep-minimums.yml` uses existing server secrets and removes temporary plaintext. Synthetic transaction and tamper checks are in `tests/prep-standards-import.test.js` and `tests/prep-import-crypto.test.js`. Source preparation, stand-in UI checks and production setup evidence are recorded separately. No app layout, daily work, permissions, rule or rollout change. [Contract](prep-standards.md#grill-and-pans-setup-9-november-2026).
@@ -41,6 +45,10 @@ The owner requested disabling the timer after the second deadline until the foll
 ## Sheet and modal close button, 9 November 2026
 
 Historical rollout, superseded by the shared modal frame above. The owner initially requested a small × on bottom sheets and modals for non-touch screens. The shared `SwipeDismiss()` helper in `js/controls.js` adds a missing header close using the original cancellation callback. `css/app.css` controls pointer/hover visibility and title spacing; `js/app.js` and `js/upkeep.js` keep the visible control in their keyboard loops. [Contract and verification](adaptive-controls.md#swipe-to-close-9-november-2026); `tests/modal-close.test.js`, `tests/update-confirmation.test.js` and existing overlay/swipe checks. No reads, rules, stored fields or saved-shell manifest changes.
+
+## Colour meanings, 9 November 2026
+
+The owner requested a whole-app audit and authorised the council to decide whether consistent coding should be applied. Five independent role reviewers recommended a bounded operational-colour pass. `docs/colour-coding.md` records the route-family inventory, decision, exceptions and verification. `css/app.css` owns shared light/dark failure and success tokens; `css/cooling.css` uses the shared failure treatment. `docs/design-patterns.md` defines their use. `tests/colour-semantics.test.js` verifies actual state contrast, semantic consistency and readable claimed Prep work; `tests/prep-on-it.test.js` retains takeover/tick behaviour, and `tests/design-patterns.test.js` guards the documented tokens. No data, permissions, listeners, shell membership or service steps change.
 
 ## Swipe to close, 9 November 2026
 

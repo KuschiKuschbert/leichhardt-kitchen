@@ -45,6 +45,11 @@ async function pair(p, selector, outline) {
     await p.focus('.mg-errs a'); await p.keyboard.press('Tab'); await p.keyboard.press('Shift+Tab');
     const focus = await pair(p, '.mg-errs a', true);
     ok(focus.ratio >= 3 && focus.outline !== 'none' && focus.width >= 2, width + ': keyboard correction link has a contrasting visible focus ring (' + focus.ratio.toFixed(3) + ')');
+    // The same error surface also holds secondary buttons when another device saves the recipe.
+    await p.evaluate(() => { const button = document.createElement('button'); button.className = 'btn contrast-conflict'; button.textContent = 'Keep editing'; document.querySelector('.mg-ed .warn').appendChild(button); });
+    await p.focus('.contrast-conflict'); await p.keyboard.press('Tab'); await p.keyboard.press('Shift+Tab');
+    const conflictFocus = await pair(p, '.contrast-conflict', true);
+    ok(conflictFocus.ratio >= 3 && conflictFocus.outline !== 'none' && conflictFocus.width >= 2, width + ': secondary error-panel button has a contrasting outer focus ring (' + conflictFocus.ratio.toFixed(3) + ')');
     ok(!p.errors.length && !await L.overflow(p), width + ': validation warning retains layout without browser errors');
     await p.context().close();
 
