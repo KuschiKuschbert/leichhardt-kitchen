@@ -69,6 +69,8 @@ For usability and design recommendations, give each reviewer the service council
 
 Use separate reviewers where available. Each reviews evidence independently before a lead reconciles recommendations. If independent agents or real users are unavailable, state that the review is role-based analysis. Do not present invented staff research or staged agreement as evidence.
 
+Assign the service council's [Try to break it](../.claude/skills/service-council/SKILL.md#try-to-break-it) duty to an existing quality or security reviewer, supported by architecture/performance for recovery. Do not add a reviewer or full round. Challenge the most consequential applicable confusing, repeated, failed, interrupted, wrong-role and conflicting-state paths in isolated synthetic fixtures. Distinguish reproduced failures, bounded checks and untested risks; record repairs and unresolved verification in the existing finding register. Include new risks from combined designs. Keep security evidence private and do not treat a review as authority to disrupt production.
+
 | Perspective | Required challenge |
 | --- | --- |
 | Kitchen operations and product | What task does this solve during service? Who needs it, how often, and what fails if it disappears? |
