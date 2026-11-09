@@ -4,6 +4,10 @@
 
 The owner requested the supplied unbranded 26-task programme and then the ordered 25-step Hot larder, Grill and Pans pack down in the existing Cleaning page. Keep the chosen C daily notebook + A chef week review. [The current contract](cleaning-schedule.md) covers explicit imports, Sunday deep cleaning, two-day drip trays anchored to 9 November 2026, immutable plans, per-event checks, Pass mapping, blocked states, audit snapshots and the temperature reminder. `js/cleaning-schedule.js` is a lazy runtime dependency, never a startup or saved-shell file.
 
+## Grill and Pans prep minimums, 9 November 2026
+
+The owner supplied both station sheets and asked to use them in the existing prep feature. `scripts/import-prep-standards.mjs` performs a bounded transactional, create-only setup with dry-run, exact section resolution and conflict refusal. `scripts/prep-import-crypto.mjs` keeps operational source data encrypted outside the application assets; `.github/workflows/prep-minimums.yml` uses existing server secrets and removes temporary plaintext. Synthetic transaction and tamper checks are in `tests/prep-standards-import.test.js` and `tests/prep-import-crypto.test.js`. Source preparation, stand-in UI checks and production setup evidence are recorded separately. No app layout, daily work, permissions, rule or rollout change. [Contract](prep-standards.md#grill-and-pans-setup-9-november-2026).
+
 ## Shared modal frame, 9 November 2026
 
 The owner approved the existing picker frame across all dismissible sheets: touch-visible ×, matching title/spacing/corners, swipe cancellation and one 768 px responsive breakpoint. `js/controls.js`, `css/app.css`, menu history in `js/app.js`, native-dialog queue recognition in `js/prep.js` and occasion history in `js/seasonal/theme-bridge.js`. Real forms, native dialogs, guide pages, cooling and gestures are covered by modal-frame, modal-overlays, modal-close, swipe-dismiss, cooling, seasonal and the full Click tests. No reads, saved fields or rules change. [Contract, quick check and comparisons](adaptive-controls.md#shared-modal-frame-9-november-2026).
