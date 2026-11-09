@@ -4595,6 +4595,22 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
   .hm-day-break { min-height: 92px; }
   .hm-coworkers > li { padding: 0.55rem 0; }
 }
+/* Desktop Home: align both tiers and let hidden work release its space. The staff-first order stays intact. */
+@media (min-width: 1100px) {
+  .is-home .wall-main { padding-top: 2rem; }
+  .is-home .wall-h.hm-day { font-size: 3rem; }
+  .is-home .hm, .is-home .hm-staff-first { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+  .is-home .hm > #hm-board, .is-home .hm > #hm-prep { grid-column: auto; grid-row: auto; }
+  .is-home .hm > .hm-up { grid-column: 1 / -1; grid-row: auto; }
+  .is-home .hm > #hm-board[hidden] + #hm-prep { grid-column: 1 / -1; }
+  .is-home .hm > #hm-board[hidden] + #hm-prep .hm-secs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.25rem 1.5rem; }
+  .is-home .hm > .hm-up:has([data-kb-coming], #hm-cuts:not([hidden]), #fn-land:not([hidden])) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1.5rem; }
+  .is-home .hm-up > .hm-ph, .is-home .hm-up > .hm-kb { grid-column: 1 / -1; }
+  .is-home .hm-up > .hm-kb:empty { display: none; }
+  .is-home .hm-up > #hm-cuts[hidden] + #fn-land { grid-column: 1 / -1; }
+  .is-home .hm-up:has(> #fn-land[hidden]) > #hm-cuts { grid-column: 1 / -1; }
+  .is-home .hm-up > #hm-cuts:not([hidden]) + #fn-land:not([hidden]) { padding-top: 0; border-top: 0; }
+}
 /* ---------- Gap fix: prep lines (8 Nov 2026) ----------
    The redesign promised 6 prep lines on a 390 px phone (brief, round 1: "aim for 6 lines visible at 390 px"); step 1 gave 3.
    On a phone at the usual text size the line words are a little smaller and the rows tighter, the box keeps its 44 px tap
