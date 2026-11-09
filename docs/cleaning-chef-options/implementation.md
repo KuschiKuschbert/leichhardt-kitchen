@@ -61,7 +61,7 @@ These are local synthetic Firebase, browser and source-review results. They do n
 
 ## Integration with current main
 
-Main advanced to `2841d4d` during verification with the person worksheet/quick-add Team change and updated council guidance. An actual PR conflict was resolved once by retaining both decision histories, session-map entries and design-pattern registrations. Independent source review confirms M1 runtime/CSS are unchanged by the merge and the Team implementation matches main.
+Main advanced to `2841d4d` during verification with the person worksheet/quick-add Team change and updated council guidance. An actual PR conflict was resolved once by retaining both decision histories, session-map entries and design-pattern registrations. Independent source review confirms M1 runtime/CSS are unchanged by the merge and the Team implementation matches main. A subsequent documentation-only Skeptic-guidance update at `1b87f40` was also integrated; all upstream notes and the Cleaning record are retained, with no runtime change.
 
 The combined run covered the seven focused files plus Team notebook, Team quick-add, Team week, shared surfaces/contrast, roles, page roles, private access and read budget. The surface test was adapted to open the new General group and assert the named Back to Today action. One schedule assertion failed in the initial parallel integration run; that file passed its isolated retry. Both schedule and updated surface suites then passed together serially. The other combined files passed. The required hosted CI remains the final shared gate; the first schedule failure is not hidden as an uninterrupted pass.
 

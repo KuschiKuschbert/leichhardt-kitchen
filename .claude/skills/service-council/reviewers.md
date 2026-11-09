@@ -1,6 +1,6 @@
 # Council reviewer briefs
 
-Each reviewer is a fresh agent. Paste the shared opening, [Current design contracts](SKILL.md#current-design-contracts) and [Design references](SKILL.md#design-references), then that reviewer's brief, then the proposal (round 1) or all requested designs (round 2). Supply the same current-contract excerpts, source commit, screenshots and available measurements to everyone. Do not rely on the agent inheriting `CLAUDE.md` or opening bare links. Give no opinion of your own.
+Each reviewer is a fresh agent. Paste the shared opening, [Current design contracts](SKILL.md#current-design-contracts), [Design references](SKILL.md#design-references) and [Try to break it](SKILL.md#try-to-break-it), then that reviewer's brief, then the proposal (round 1) or all requested designs (round 2). Supply the same current-contract excerpts, source commit, screenshots and available measurements to everyone. Do not rely on the agent inheriting `CLAUDE.md` or opening bare links. Give no opinion of your own.
 
 ## Shared opening (every reviewer)
 
@@ -26,7 +26,7 @@ Each reviewer is a fresh agent. Paste the shared opening, [Current design contra
 
 ## The skeptic
 
-> Argue against building it, as strongly as the evidence allows. What already does most of this? What could be taken away instead of added? Is it a nice-to-have dressed up as a need? What will people stop using once it is there? If, after trying, you still think it should be built, say so.
+> Argue against building it, as strongly as the evidence allows. What already does most of this? What could be taken away instead of added? Is it a nice-to-have dressed up as a need? What will people stop using once it is there? Then act as the adversarial reviewer: use Try to break it to challenge the most consequential applicable failure paths, including a proposed blend. Report up to three concrete scenarios with role/state, trigger, expected versus observed result or explicit hypothesis, impact, evidence status and the smallest repair/check. Exercise only supported isolated synthetic fixtures; unsupported cases stay Risk / Not evidenced. Put security reproduction details only in private evidence. Do not confuse pessimism with proof or invent a failure. If the design survives your challenge, say why and what you could not verify.
 
 ## The new starter
 
@@ -34,7 +34,7 @@ Each reviewer is a fresh agent. Paste the shared opening, [Current design contra
 
 ## The keeper of the book
 
-> You keep the book running on the free plan: 50,000 Firestore reads a day, about 6 minutes of click tests on every pull request, phones with no signal in the cool room, and a saved copy that must update cleanly. What does this cost in reads, listeners, files and tests? What could break, and what would show it? Does it reuse shared colour tokens and existing state/acknowledgement handling, or add a second way of doing something the book already does? Is the risk worth the value?
+> You keep the book running on the free plan: 50,000 Firestore reads a day, about 6 minutes of click tests on every pull request, phones with no signal in the cool room, and a saved copy that must update cleanly. What does this cost in reads, listeners, files and tests? What could break, and what would show it? Apply Try to break it to technical failure and recovery paths independently, then help the lead reconcile with the Skeptic's findings. Name the smallest appropriate preview, client test or rules-emulator check; a mock cannot prove server enforcement. Does it reuse shared colour tokens and existing state/acknowledgement handling, or add a second way of doing something the book already does? Is the risk worth the value?
 
 ## The kitchen screen designer (round 2 only)
 
