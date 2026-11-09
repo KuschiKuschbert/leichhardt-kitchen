@@ -1,0 +1,79 @@
+# One-time, head-requested catalogue setup. The app already reads these private standards.
+# Importing never changes saved standards, staff permissions, daily prep or the rollout switch.
+name: Set up Grill and Pans minimums
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Preview the supplied minimums, or create missing standards
+        type: choice
+        required: true
+        default: preview
+        options: [public-key, preview, apply]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prep-minimums-setup
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: scripts/package-lock.json
+      - name: Check the importer before any kitchen access
+        run: |
+          node tests/prep-import-crypto.test.js
+          node tests/prep-standards-import.test.js
+      - name: Recipient public key for the protected import
+        if: hashFiles('scripts/prep-minimums-grill-pans.json.enc') == '' || inputs.mode == 'public-key'
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+        run: node scripts/prep-import-crypto.mjs public-key
+      - name: Install existing server dependencies
+        if: hashFiles('scripts/prep-minimums-grill-pans.json.enc') != '' && inputs.mode != 'public-key'
+        working-directory: scripts
+        run: npm ci --no-audit --no-fund
+      - name: Preview the complete import
+        if: hashFiles('scripts/prep-minimums-grill-pans.json.enc') != '' && inputs.mode != 'public-key'
+        working-directory: scripts
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+        run: |
+          node prep-import-crypto.mjs decrypt prep-minimums-grill-pans.json.enc "$RUNNER_TEMP/prep-minimums.json"
+          node import-prep-standards.mjs "$RUNNER_TEMP/prep-minimums.json" --dry-run
+      - name: Create the supplied standards
+        if: hashFiles('scripts/prep-minimums-grill-pans.json.enc') != '' && inputs.mode == 'apply'
+        working-directory: scripts
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+        run: node import-prep-standards.mjs "$RUNNER_TEMP/prep-minimums.json" --apply
+      - name: Verify the saved catalogue with a fresh read
+        if: hashFiles('scripts/prep-minimums-grill-pans.json.enc') != '' && inputs.mode == 'apply'
+        working-directory: scripts
+        env:
+          FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
+          KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
+        run: |
+          node import-prep-standards.mjs "$RUNNER_TEMP/prep-minimums.json" --dry-run > "$RUNNER_TEMP/prep-verification.json"
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const input = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/prep-minimums.json', 'utf8'));
+          const result = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/prep-verification.json', 'utf8'));
+          if (result.created !== 0 || result.planned !== 0 || result.existing !== input.length) throw new Error('Saved prep standards did not pass the complete fresh-read check.');
+          console.log('Verified ' + result.existing + ' saved standards with a fresh server read.');
+          NODE
+      - name: Remove the temporary plaintext
+        if: always()
+        run: rm -f -- "$RUNNER_TEMP/prep-minimums.json" "$RUNNER_TEMP/prep-verification.json"
