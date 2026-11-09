@@ -1,0 +1,3127 @@
+{
+  "method": "Synthetic runtime comparison before the anchored-ornament repair. Current app and baseline app were served on local ports 8784 and 8785. Baseline server overrides only app.js and app.css with commit 9ab1910. Named Ann, medium and long40 cases use locally supplied official fonts and 125% text; suite and signed-out cases use the harness fallback fonts. No UI layout DOM edits. The suite fixture defaults to signed-in Sam.",
+  "baselineCommit": "9ab1910",
+  "baselineHashes": {
+    "js/app.js": "c6858096078242d2883d7e52c36fe75ff19f7a25e7906a89b9917e7c539b4f2a",
+    "css/app.css": "2f006ed5a16bac407111275ea51d1de05fae94c5f48229420d02057ce1ad83cc",
+    "css/seasonal-effects.css": "e48d04a336aa8ec457a85afa5dfd93e57abef5e9757d0b1d5cf3cd8f6881ac97",
+    "js/seasonal/theme-effects.js": "50b27fedd24d48ca94496ff706c562a37caf1ce163c68f6d4e61684cf1e968b8"
+  },
+  "beforeRepairHashes": {
+    "js/app.js": "990b9533b5eb995a49fce3be85a14caf0892689b88994f5e0d80fd339c3629e5",
+    "css/app.css": "03dd538c38e162db61c97862c394a824961a800e11ae11456c7a307d8c93ce8f",
+    "css/seasonal-effects.css": "e48d04a336aa8ec457a85afa5dfd93e57abef5e9757d0b1d5cf3cd8f6881ac97",
+    "js/seasonal/theme-effects.js": "50b27fedd24d48ca94496ff706c562a37caf1ce163c68f6d4e61684cf1e968b8"
+  },
+  "limits": "Temporary probe sampled the two-frame handoff for four ornament families at 390 px. Motion rectangles vary slightly with sampling. Only recorded geometry supports this comparison; it is not a broad seasonal audit.",
+  "records": [
+    {
+      "version": "current",
+      "scenario": "suite",
+      "id": "in-diwali",
+      "heading": "Welcome, Sam",
+      "name": "Sam",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Welcome, Sam",
+          "rect": {
+            "left": 16,
+            "right": 277.0625,
+            "top": 85,
+            "bottom": 131,
+            "width": 261.0625,
+            "height": 46
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 277.0625,
+              "top": 85,
+              "bottom": 131,
+              "width": 261.0625,
+              "height": 46
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 3 November · 14:00",
+          "rect": {
+            "left": 16,
+            "right": 236.53125,
+            "top": 129.59375,
+            "bottom": 151.59375,
+            "width": 220.53125,
+            "height": 22
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 182.46875,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 166.46875,
+              "height": 22
+            },
+            {
+              "left": 16,
+              "right": 182.46875,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 166.46875,
+              "height": 22
+            },
+            {
+              "left": 182.46875,
+              "right": 195.359375,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 12.890625,
+              "height": 22
+            },
+            {
+              "left": 195.359375,
+              "right": 236.53125,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 41.171875,
+              "height": 22
+            },
+            {
+              "left": 195.359375,
+              "right": 236.53125,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 41.171875,
+              "height": 22
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 338.3315124511719,
+            "right": 380.3866882324219,
+            "top": 104.17349243164062,
+            "bottom": 153.87216186523438,
+            "width": 42.05517578125,
+            "height": 49.69866943359375
+          }
+        },
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 283.7515563964844,
+            "right": 326.9933166503906,
+            "top": 103.72515106201172,
+            "bottom": 154.39109802246094,
+            "width": 43.24176025390625,
+            "height": 50.66594696044922
+          }
+        }
+      ],
+      "hit": [],
+      "own": {
+        "left": 16,
+        "right": 374,
+        "top": 348.78125,
+        "bottom": 558.546875,
+        "width": 358,
+        "height": 209.765625
+      }
+    },
+    {
+      "version": "current",
+      "scenario": "suite",
+      "id": "np-tihar",
+      "heading": "Welcome, Sam",
+      "name": "Sam",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Welcome, Sam",
+          "rect": {
+            "left": 16,
+            "right": 277.0625,
+            "top": 85,
+            "bottom": 131,
+            "width": 261.0625,
+            "height": 46
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 277.0625,
+              "top": 85,
+              "bottom": 131,
+              "width": 261.0625,
+              "height": 46
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 3 November · 14:00",
+          "rect": {
+            "left": 16,
+            "right": 236.53125,
+            "top": 129.59375,
+            "bottom": 151.59375,
+            "width": 220.53125,
+            "height": 22
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 182.46875,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 166.46875,
+              "height": 22
+            },
+            {
+              "left": 16,
+              "right": 182.46875,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 166.46875,
+              "height": 22
+            },
+            {
+              "left": 182.46875,
+              "right": 195.359375,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 12.890625,
+              "height": 22
+            },
+            {
+              "left": 195.359375,
+              "right": 236.53125,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 41.171875,
+              "height": 22
+            },
+            {
+              "left": 195.359375,
+              "right": 236.53125,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 41.171875,
+              "height": 22
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "marigold-string",
+          "rect": {
+            "left": 336.2383117675781,
+            "right": 378.2934875488281,
+            "top": 63.12782669067383,
+            "bottom": 112.82650756835938,
+            "width": 42.05517578125,
+            "height": 49.69868087768555
+          }
+        },
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 283.7515563964844,
+            "right": 326.9933166503906,
+            "top": 103.72515106201172,
+            "bottom": 154.39109802246094,
+            "width": 43.24176025390625,
+            "height": 50.66594696044922
+          }
+        },
+        {
+          "motif": "marigold-string",
+          "rect": {
+            "left": 229.13780212402344,
+            "right": 271.6392822265625,
+            "top": 62.93403244018555,
+            "bottom": 112.99774169921875,
+            "width": 42.50148010253906,
+            "height": 50.0637092590332
+          }
+        }
+      ],
+      "hit": [
+        [
+          "marigold-string",
+          "Welcome, Sam"
+        ]
+      ],
+      "own": {
+        "left": 16,
+        "right": 374,
+        "top": 348.78125,
+        "bottom": 558.546875,
+        "width": 358,
+        "height": 209.765625
+      }
+    },
+    {
+      "version": "current",
+      "scenario": "suite",
+      "id": "ph-lunar-new-year",
+      "heading": "Welcome, Sam",
+      "name": "Sam",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Welcome, Sam",
+          "rect": {
+            "left": 16,
+            "right": 277.0625,
+            "top": 85,
+            "bottom": 131,
+            "width": 261.0625,
+            "height": 46
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 277.0625,
+              "top": 85,
+              "bottom": 131,
+              "width": 261.0625,
+              "height": 46
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 3 November · 14:00",
+          "rect": {
+            "left": 16,
+            "right": 236.53125,
+            "top": 129.59375,
+            "bottom": 151.59375,
+            "width": 220.53125,
+            "height": 22
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 182.46875,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 166.46875,
+              "height": 22
+            },
+            {
+              "left": 16,
+              "right": 182.46875,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 166.46875,
+              "height": 22
+            },
+            {
+              "left": 182.46875,
+              "right": 195.359375,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 12.890625,
+              "height": 22
+            },
+            {
+              "left": 195.359375,
+              "right": 236.53125,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 41.171875,
+              "height": 22
+            },
+            {
+              "left": 195.359375,
+              "right": 236.53125,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 41.171875,
+              "height": 22
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "lantern",
+          "rect": {
+            "left": 336.2076416015625,
+            "right": 378.29290771484375,
+            "top": 63.11481475830078,
+            "bottom": 112.83815002441406,
+            "width": 42.08526611328125,
+            "height": 49.72333526611328
+          }
+        },
+        {
+          "motif": "lantern",
+          "rect": {
+            "left": 280.41180419921875,
+            "right": 323.6546630859375,
+            "top": 62.60842514038086,
+            "bottom": 113.2752456665039,
+            "width": 43.24285888671875,
+            "height": 50.66682052612305
+          }
+        }
+      ],
+      "hit": [],
+      "own": {
+        "left": 16,
+        "right": 374,
+        "top": 348.78125,
+        "bottom": 558.546875,
+        "width": 358,
+        "height": 209.765625
+      }
+    },
+    {
+      "version": "current",
+      "scenario": "suite",
+      "id": "bali-galungan",
+      "heading": "Welcome, Sam",
+      "name": "Sam",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Welcome, Sam",
+          "rect": {
+            "left": 16,
+            "right": 277.0625,
+            "top": 85,
+            "bottom": 131,
+            "width": 261.0625,
+            "height": 46
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 277.0625,
+              "top": 85,
+              "bottom": 131,
+              "width": 261.0625,
+              "height": 46
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 3 November · 14:00",
+          "rect": {
+            "left": 16,
+            "right": 236.53125,
+            "top": 129.59375,
+            "bottom": 151.59375,
+            "width": 220.53125,
+            "height": 22
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 182.46875,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 166.46875,
+              "height": 22
+            },
+            {
+              "left": 16,
+              "right": 182.46875,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 166.46875,
+              "height": 22
+            },
+            {
+              "left": 182.46875,
+              "right": 195.359375,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 12.890625,
+              "height": 22
+            },
+            {
+              "left": 195.359375,
+              "right": 236.53125,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 41.171875,
+              "height": 22
+            },
+            {
+              "left": 195.359375,
+              "right": 236.53125,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 41.171875,
+              "height": 22
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "penjor",
+          "rect": {
+            "left": 338.3326721191406,
+            "right": 380.44732666015625,
+            "top": 104.15048217773438,
+            "bottom": 153.89791870117188,
+            "width": 42.114654541015625,
+            "height": 49.7474365234375
+          }
+        },
+        {
+          "motif": "penjor",
+          "rect": {
+            "left": 283.7516174316406,
+            "right": 326.9954833984375,
+            "top": 103.72438049316406,
+            "bottom": 154.39202880859375,
+            "width": 43.243865966796875,
+            "height": 50.66764831542969
+          }
+        }
+      ],
+      "hit": [],
+      "own": {
+        "left": 16,
+        "right": 374,
+        "top": 348.78125,
+        "bottom": 558.546875,
+        "width": 358,
+        "height": 209.765625
+      }
+    },
+    {
+      "version": "current",
+      "scenario": "signedout",
+      "id": "in-diwali",
+      "heading": "Pick a docket",
+      "name": "",
+      "dockets": true,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Pick a docket",
+          "rect": {
+            "left": 16,
+            "right": 217.34375,
+            "top": 94,
+            "bottom": 133,
+            "width": 201.34375,
+            "height": 39
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 217.34375,
+              "top": 94,
+              "bottom": 133,
+              "width": 201.34375,
+              "height": 39
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November",
+          "rect": {
+            "left": 16,
+            "right": 191.625,
+            "top": 139.03125,
+            "bottom": 161.03125,
+            "width": 175.625,
+            "height": 22
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 191.625,
+              "top": 139.03125,
+              "bottom": 161.03125,
+              "width": 175.625,
+              "height": 22
+            },
+            {
+              "left": 16,
+              "right": 191.625,
+              "top": 139.03125,
+              "bottom": 161.03125,
+              "width": 175.625,
+              "height": 22
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 338.3315124511719,
+            "right": 380.38653564453125,
+            "top": 113.17354583740234,
+            "bottom": 162.87210083007812,
+            "width": 42.055023193359375,
+            "height": 49.69855499267578
+          }
+        },
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 283.7515563964844,
+            "right": 326.9933166503906,
+            "top": 112.72515869140625,
+            "bottom": 163.39109802246094,
+            "width": 43.24176025390625,
+            "height": 50.66593933105469
+          }
+        }
+      ],
+      "hit": [],
+      "own": null
+    },
+    {
+      "version": "current",
+      "scenario": "signedout",
+      "id": "np-tihar",
+      "heading": "Pick a docket",
+      "name": "",
+      "dockets": true,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Pick a docket",
+          "rect": {
+            "left": 16,
+            "right": 217.34375,
+            "top": 94,
+            "bottom": 133,
+            "width": 201.34375,
+            "height": 39
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 217.34375,
+              "top": 94,
+              "bottom": 133,
+              "width": 201.34375,
+              "height": 39
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November",
+          "rect": {
+            "left": 16,
+            "right": 191.625,
+            "top": 139.03125,
+            "bottom": 161.03125,
+            "width": 175.625,
+            "height": 22
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 191.625,
+              "top": 139.03125,
+              "bottom": 161.03125,
+              "width": 175.625,
+              "height": 22
+            },
+            {
+              "left": 16,
+              "right": 191.625,
+              "top": 139.03125,
+              "bottom": 161.03125,
+              "width": 175.625,
+              "height": 22
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "marigold-string",
+          "rect": {
+            "left": 336.2698059082031,
+            "right": 378.2940673828125,
+            "top": 63.14118957519531,
+            "bottom": 112.81453704833984,
+            "width": 42.024261474609375,
+            "height": 49.67334747314453
+          }
+        },
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 283.75152587890625,
+            "right": 326.99212646484375,
+            "top": 112.72557830810547,
+            "bottom": 163.39059448242188,
+            "width": 43.2406005859375,
+            "height": 50.665016174316406
+          }
+        },
+        {
+          "motif": "marigold-string",
+          "rect": {
+            "left": 229.1373291015625,
+            "right": 271.6186218261719,
+            "top": 62.94282913208008,
+            "bottom": 112.99006652832031,
+            "width": 42.481292724609375,
+            "height": 50.047237396240234
+          }
+        }
+      ],
+      "hit": [],
+      "own": null
+    },
+    {
+      "version": "current",
+      "scenario": "signedout",
+      "id": "ph-lunar-new-year",
+      "heading": "Pick a docket",
+      "name": "",
+      "dockets": true,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Pick a docket",
+          "rect": {
+            "left": 16,
+            "right": 217.34375,
+            "top": 94,
+            "bottom": 133,
+            "width": 201.34375,
+            "height": 39
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 217.34375,
+              "top": 94,
+              "bottom": 133,
+              "width": 201.34375,
+              "height": 39
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November",
+          "rect": {
+            "left": 16,
+            "right": 191.625,
+            "top": 139.03125,
+            "bottom": 161.03125,
+            "width": 175.625,
+            "height": 22
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 191.625,
+              "top": 139.03125,
+              "bottom": 161.03125,
+              "width": 175.625,
+              "height": 22
+            },
+            {
+              "left": 16,
+              "right": 191.625,
+              "top": 139.03125,
+              "bottom": 161.03125,
+              "width": 175.625,
+              "height": 22
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "lantern",
+          "rect": {
+            "left": 336.207763671875,
+            "right": 378.29290771484375,
+            "top": 63.1148567199707,
+            "bottom": 112.8381118774414,
+            "width": 42.08514404296875,
+            "height": 49.7232551574707
+          }
+        },
+        {
+          "motif": "lantern",
+          "rect": {
+            "left": 280.41180419921875,
+            "right": 323.6546630859375,
+            "top": 62.60842514038086,
+            "bottom": 113.2752456665039,
+            "width": 43.24285888671875,
+            "height": 50.66682052612305
+          }
+        }
+      ],
+      "hit": [],
+      "own": null
+    },
+    {
+      "version": "current",
+      "scenario": "signedout",
+      "id": "bali-galungan",
+      "heading": "Pick a docket",
+      "name": "",
+      "dockets": true,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Pick a docket",
+          "rect": {
+            "left": 16,
+            "right": 217.34375,
+            "top": 94,
+            "bottom": 133,
+            "width": 201.34375,
+            "height": 39
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 217.34375,
+              "top": 94,
+              "bottom": 133,
+              "width": 201.34375,
+              "height": 39
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November",
+          "rect": {
+            "left": 16,
+            "right": 191.625,
+            "top": 139.03125,
+            "bottom": 161.03125,
+            "width": 175.625,
+            "height": 22
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 191.625,
+              "top": 139.03125,
+              "bottom": 161.03125,
+              "width": 175.625,
+              "height": 22
+            },
+            {
+              "left": 16,
+              "right": 191.625,
+              "top": 139.03125,
+              "bottom": 161.03125,
+              "width": 175.625,
+              "height": 22
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "penjor",
+          "rect": {
+            "left": 338.33209228515625,
+            "right": 380.4172668457031,
+            "top": 113.16188049316406,
+            "bottom": 162.88514709472656,
+            "width": 42.085174560546875,
+            "height": 49.7232666015625
+          }
+        },
+        {
+          "motif": "penjor",
+          "rect": {
+            "left": 283.7515869140625,
+            "right": 326.99444580078125,
+            "top": 112.7247543334961,
+            "bottom": 163.39157104492188,
+            "width": 43.24285888671875,
+            "height": 50.66681671142578
+          }
+        }
+      ],
+      "hit": [],
+      "own": null
+    },
+    {
+      "version": "current",
+      "scenario": "ann",
+      "id": "in-diwali",
+      "heading": "Welcome, Ann",
+      "name": "Ann",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Welcome, Ann",
+          "rect": {
+            "left": 20,
+            "right": 266.28125,
+            "top": 87,
+            "bottom": 153,
+            "width": 246.28125,
+            "height": 66
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 266.28125,
+              "top": 87,
+              "bottom": 153,
+              "width": 246.28125,
+              "height": 66
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November · 14:00",
+          "rect": {
+            "left": 20,
+            "right": 271.09375,
+            "top": 148,
+            "bottom": 172,
+            "width": 251.09375,
+            "height": 24
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 148,
+              "bottom": 172,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 148,
+              "bottom": 172,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 209.96875,
+              "right": 222.5,
+              "top": 148,
+              "bottom": 172,
+              "width": 12.53125,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 148,
+              "bottom": 172,
+              "width": 48.59375,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 148,
+              "bottom": 172,
+              "width": 48.59375,
+              "height": 24
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 338.3315124511719,
+            "right": 380.38665771484375,
+            "top": 126.17350769042969,
+            "bottom": 175.87216186523438,
+            "width": 42.055145263671875,
+            "height": 49.69865417480469
+          }
+        },
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 283.7515563964844,
+            "right": 326.9933166503906,
+            "top": 125.72515106201172,
+            "bottom": 176.39109802246094,
+            "width": 43.24176025390625,
+            "height": 50.66594696044922
+          }
+        }
+      ],
+      "hit": [],
+      "own": {
+        "left": 20,
+        "right": 370,
+        "top": 440,
+        "bottom": 671.078125,
+        "width": 350,
+        "height": 231.078125
+      }
+    },
+    {
+      "version": "current",
+      "scenario": "ann",
+      "id": "np-tihar",
+      "heading": "Welcome, Ann",
+      "name": "Ann",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Welcome, Ann",
+          "rect": {
+            "left": 20,
+            "right": 266.28125,
+            "top": 87,
+            "bottom": 153,
+            "width": 246.28125,
+            "height": 66
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 266.28125,
+              "top": 87,
+              "bottom": 153,
+              "width": 246.28125,
+              "height": 66
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November · 14:00",
+          "rect": {
+            "left": 20,
+            "right": 271.09375,
+            "top": 148,
+            "bottom": 172,
+            "width": 251.09375,
+            "height": 24
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 148,
+              "bottom": 172,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 148,
+              "bottom": 172,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 209.96875,
+              "right": 222.5,
+              "top": 148,
+              "bottom": 172,
+              "width": 12.53125,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 148,
+              "bottom": 172,
+              "width": 48.59375,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 148,
+              "bottom": 172,
+              "width": 48.59375,
+              "height": 24
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "marigold-string",
+          "rect": {
+            "left": 336.17755126953125,
+            "right": 378.2923278808594,
+            "top": 63.10203552246094,
+            "bottom": 112.84956359863281,
+            "width": 42.114776611328125,
+            "height": 49.747528076171875
+          }
+        },
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 283.7516174316406,
+            "right": 326.9954833984375,
+            "top": 125.72438049316406,
+            "bottom": 176.39202880859375,
+            "width": 43.243865966796875,
+            "height": 50.66764831542969
+          }
+        },
+        {
+          "motif": "marigold-string",
+          "rect": {
+            "left": 229.1387176513672,
+            "right": 271.67913818359375,
+            "top": 62.91704177856445,
+            "bottom": 113.01254272460938,
+            "width": 42.54042053222656,
+            "height": 50.09550094604492
+          }
+        }
+      ],
+      "hit": [
+        [
+          "marigold-string",
+          "Welcome, Ann"
+        ]
+      ],
+      "own": {
+        "left": 20,
+        "right": 370,
+        "top": 429,
+        "bottom": 660.078125,
+        "width": 350,
+        "height": 231.078125
+      }
+    },
+    {
+      "version": "current",
+      "scenario": "ann",
+      "id": "ph-lunar-new-year",
+      "heading": "Welcome, Ann",
+      "name": "Ann",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Welcome, Ann",
+          "rect": {
+            "left": 20,
+            "right": 266.28125,
+            "top": 87,
+            "bottom": 153,
+            "width": 246.28125,
+            "height": 66
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 266.28125,
+              "top": 87,
+              "bottom": 153,
+              "width": 246.28125,
+              "height": 66
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November · 14:00",
+          "rect": {
+            "left": 20,
+            "right": 271.09375,
+            "top": 148,
+            "bottom": 172,
+            "width": 251.09375,
+            "height": 24
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 148,
+              "bottom": 172,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 148,
+              "bottom": 172,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 209.96875,
+              "right": 222.5,
+              "top": 148,
+              "bottom": 172,
+              "width": 12.53125,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 148,
+              "bottom": 172,
+              "width": 48.59375,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 148,
+              "bottom": 172,
+              "width": 48.59375,
+              "height": 24
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "lantern",
+          "rect": {
+            "left": 336.2076416015625,
+            "right": 378.29290771484375,
+            "top": 63.11480712890625,
+            "bottom": 112.8381576538086,
+            "width": 42.08526611328125,
+            "height": 49.723350524902344
+          }
+        },
+        {
+          "motif": "lantern",
+          "rect": {
+            "left": 280.41180419921875,
+            "right": 323.6546630859375,
+            "top": 62.60842514038086,
+            "bottom": 113.2752456665039,
+            "width": 43.24285888671875,
+            "height": 50.66682052612305
+          }
+        }
+      ],
+      "hit": [],
+      "own": {
+        "left": 20,
+        "right": 370,
+        "top": 440,
+        "bottom": 671.078125,
+        "width": 350,
+        "height": 231.078125
+      }
+    },
+    {
+      "version": "current",
+      "scenario": "ann",
+      "id": "bali-galungan",
+      "heading": "Welcome, Ann",
+      "name": "Ann",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Welcome, Ann",
+          "rect": {
+            "left": 20,
+            "right": 266.28125,
+            "top": 87,
+            "bottom": 153,
+            "width": 246.28125,
+            "height": 66
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 266.28125,
+              "top": 87,
+              "bottom": 153,
+              "width": 246.28125,
+              "height": 66
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November · 14:00",
+          "rect": {
+            "left": 20,
+            "right": 271.09375,
+            "top": 148,
+            "bottom": 172,
+            "width": 251.09375,
+            "height": 24
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 148,
+              "bottom": 172,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 148,
+              "bottom": 172,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 209.96875,
+              "right": 222.5,
+              "top": 148,
+              "bottom": 172,
+              "width": 12.53125,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 148,
+              "bottom": 172,
+              "width": 48.59375,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 148,
+              "bottom": 172,
+              "width": 48.59375,
+              "height": 24
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "penjor",
+          "rect": {
+            "left": 338.3315124511719,
+            "right": 380.3866882324219,
+            "top": 126.17349243164062,
+            "bottom": 175.87216186523438,
+            "width": 42.05517578125,
+            "height": 49.69866943359375
+          }
+        },
+        {
+          "motif": "penjor",
+          "rect": {
+            "left": 283.7515563964844,
+            "right": 326.9933166503906,
+            "top": 125.72515106201172,
+            "bottom": 176.39109802246094,
+            "width": 43.24176025390625,
+            "height": 50.66594696044922
+          }
+        }
+      ],
+      "hit": [],
+      "own": {
+        "left": 20,
+        "right": 370,
+        "top": 429,
+        "bottom": 660.078125,
+        "width": 350,
+        "height": 231.078125
+      }
+    },
+    {
+      "version": "current",
+      "scenario": "long40",
+      "id": "in-diwali",
+      "heading": "Welcome, Alexandria Catherine Montgomery-Smythe J",
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Welcome, Alexandria Catherine Montgomery-Smythe J",
+          "rect": {
+            "left": 20,
+            "right": 273.734375,
+            "top": 92,
+            "bottom": 148.390625,
+            "width": 253.734375,
+            "height": 56.390625
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 273.734375,
+              "top": 92,
+              "bottom": 122,
+              "width": 253.734375,
+              "height": 30
+            },
+            {
+              "left": 20,
+              "right": 203.296875,
+              "top": 118.390625,
+              "bottom": 148.390625,
+              "width": 183.296875,
+              "height": 30
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November · 14:00",
+          "rect": {
+            "left": 20,
+            "right": 271.09375,
+            "top": 148.78125,
+            "bottom": 172.78125,
+            "width": 251.09375,
+            "height": 24
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 209.96875,
+              "right": 222.5,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 12.53125,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 48.59375,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 48.59375,
+              "height": 24
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 338.3315124511719,
+            "right": 380.38671875,
+            "top": 127.17347717285156,
+            "bottom": 176.8721923828125,
+            "width": 42.055206298828125,
+            "height": 49.69871520996094
+          }
+        },
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 283.7515563964844,
+            "right": 326.9933166503906,
+            "top": 126.72515106201172,
+            "bottom": 177.39109802246094,
+            "width": 43.24176025390625,
+            "height": 50.66594696044922
+          }
+        }
+      ],
+      "hit": [],
+      "own": {
+        "left": 20,
+        "right": 370,
+        "top": 440.78125,
+        "bottom": 671.859375,
+        "width": 350,
+        "height": 231.078125
+      }
+    },
+    {
+      "version": "current",
+      "scenario": "long40",
+      "id": "np-tihar",
+      "heading": "Welcome, Alexandria Catherine Montgomery-Smythe J",
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Welcome, Alexandria Catherine Montgomery-Smythe J",
+          "rect": {
+            "left": 20,
+            "right": 273.734375,
+            "top": 92,
+            "bottom": 148.390625,
+            "width": 253.734375,
+            "height": 56.390625
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 273.734375,
+              "top": 92,
+              "bottom": 122,
+              "width": 253.734375,
+              "height": 30
+            },
+            {
+              "left": 20,
+              "right": 203.296875,
+              "top": 118.390625,
+              "bottom": 148.390625,
+              "width": 183.296875,
+              "height": 30
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November · 14:00",
+          "rect": {
+            "left": 20,
+            "right": 271.09375,
+            "top": 148.78125,
+            "bottom": 172.78125,
+            "width": 251.09375,
+            "height": 24
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 209.96875,
+              "right": 222.5,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 12.53125,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 48.59375,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 48.59375,
+              "height": 24
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "marigold-string",
+          "rect": {
+            "left": 336.23822021484375,
+            "right": 378.29345703125,
+            "top": 63.12778854370117,
+            "bottom": 112.82654571533203,
+            "width": 42.05523681640625,
+            "height": 49.69875717163086
+          }
+        },
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 283.7515563964844,
+            "right": 326.9933166503906,
+            "top": 126.72515106201172,
+            "bottom": 177.39109802246094,
+            "width": 43.24176025390625,
+            "height": 50.66594696044922
+          }
+        },
+        {
+          "motif": "marigold-string",
+          "rect": {
+            "left": 229.13780212402344,
+            "right": 271.63934326171875,
+            "top": 62.93400573730469,
+            "bottom": 112.99776458740234,
+            "width": 42.50154113769531,
+            "height": 50.063758850097656
+          }
+        }
+      ],
+      "hit": [
+        [
+          "marigold-string",
+          "Welcome, Alexandria Catherine Montgomery-Smythe J"
+        ]
+      ],
+      "own": {
+        "left": 20,
+        "right": 370,
+        "top": 429.78125,
+        "bottom": 660.859375,
+        "width": 350,
+        "height": 231.078125
+      }
+    },
+    {
+      "version": "current",
+      "scenario": "long40",
+      "id": "ph-lunar-new-year",
+      "heading": "Welcome, Alexandria Catherine Montgomery-Smythe J",
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Welcome, Alexandria Catherine Montgomery-Smythe J",
+          "rect": {
+            "left": 20,
+            "right": 273.734375,
+            "top": 92,
+            "bottom": 148.390625,
+            "width": 253.734375,
+            "height": 56.390625
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 273.734375,
+              "top": 92,
+              "bottom": 122,
+              "width": 253.734375,
+              "height": 30
+            },
+            {
+              "left": 20,
+              "right": 203.296875,
+              "top": 118.390625,
+              "bottom": 148.390625,
+              "width": 183.296875,
+              "height": 30
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November · 14:00",
+          "rect": {
+            "left": 20,
+            "right": 271.09375,
+            "top": 148.78125,
+            "bottom": 172.78125,
+            "width": 251.09375,
+            "height": 24
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 209.96875,
+              "right": 222.5,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 12.53125,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 48.59375,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 48.59375,
+              "height": 24
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "lantern",
+          "rect": {
+            "left": 336.23834228515625,
+            "right": 378.2934875488281,
+            "top": 63.12783432006836,
+            "bottom": 112.82650756835938,
+            "width": 42.055145263671875,
+            "height": 49.698673248291016
+          }
+        },
+        {
+          "motif": "lantern",
+          "rect": {
+            "left": 280.4129333496094,
+            "right": 323.6546936035156,
+            "top": 62.60890197753906,
+            "bottom": 113.27484893798828,
+            "width": 43.24176025390625,
+            "height": 50.66594696044922
+          }
+        }
+      ],
+      "hit": [],
+      "own": {
+        "left": 20,
+        "right": 370,
+        "top": 440.78125,
+        "bottom": 671.859375,
+        "width": 350,
+        "height": 231.078125
+      }
+    },
+    {
+      "version": "current",
+      "scenario": "long40",
+      "id": "bali-galungan",
+      "heading": "Welcome, Alexandria Catherine Montgomery-Smythe J",
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Welcome, Alexandria Catherine Montgomery-Smythe J",
+          "rect": {
+            "left": 20,
+            "right": 273.734375,
+            "top": 92,
+            "bottom": 148.390625,
+            "width": 253.734375,
+            "height": 56.390625
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 273.734375,
+              "top": 92,
+              "bottom": 122,
+              "width": 253.734375,
+              "height": 30
+            },
+            {
+              "left": 20,
+              "right": 203.296875,
+              "top": 118.390625,
+              "bottom": 148.390625,
+              "width": 183.296875,
+              "height": 30
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November · 14:00",
+          "rect": {
+            "left": 20,
+            "right": 271.09375,
+            "top": 148.78125,
+            "bottom": 172.78125,
+            "width": 251.09375,
+            "height": 24
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 209.96875,
+              "right": 222.5,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 12.53125,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 48.59375,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 148.78125,
+              "bottom": 172.78125,
+              "width": 48.59375,
+              "height": 24
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "penjor",
+          "rect": {
+            "left": 338.33209228515625,
+            "right": 380.41741943359375,
+            "top": 127.16181945800781,
+            "bottom": 176.88522338867188,
+            "width": 42.0853271484375,
+            "height": 49.72340393066406
+          }
+        },
+        {
+          "motif": "penjor",
+          "rect": {
+            "left": 283.7515869140625,
+            "right": 326.99444580078125,
+            "top": 126.7247543334961,
+            "bottom": 177.39157104492188,
+            "width": 43.24285888671875,
+            "height": 50.66681671142578
+          }
+        }
+      ],
+      "hit": [],
+      "own": {
+        "left": 20,
+        "right": 370,
+        "top": 429.78125,
+        "bottom": 660.859375,
+        "width": 350,
+        "height": 231.078125
+      }
+    },
+    {
+      "version": "current",
+      "scenario": "medium",
+      "id": "in-diwali",
+      "heading": "Welcome, Ana María O’Neill",
+      "name": "Ana María O’Neill",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Welcome, Ana María O’Neill",
+          "rect": {
+            "left": 20,
+            "right": 304.28125,
+            "top": 91,
+            "bottom": 129,
+            "width": 284.28125,
+            "height": 38
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 304.28125,
+              "top": 91,
+              "bottom": 129,
+              "width": 284.28125,
+              "height": 38
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November · 14:00",
+          "rect": {
+            "left": 20,
+            "right": 271.09375,
+            "top": 129,
+            "bottom": 153,
+            "width": 251.09375,
+            "height": 24
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 129,
+              "bottom": 153,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 129,
+              "bottom": 153,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 209.96875,
+              "right": 222.5,
+              "top": 129,
+              "bottom": 153,
+              "width": 12.53125,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 129,
+              "bottom": 153,
+              "width": 48.59375,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 129,
+              "bottom": 153,
+              "width": 48.59375,
+              "height": 24
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 338.3326721191406,
+            "right": 380.4473876953125,
+            "top": 107.15045928955078,
+            "bottom": 156.89794921875,
+            "width": 42.114715576171875,
+            "height": 49.74748992919922
+          }
+        },
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 283.7516174316406,
+            "right": 326.9954833984375,
+            "top": 106.72438049316406,
+            "bottom": 157.39202880859375,
+            "width": 43.243865966796875,
+            "height": 50.66764831542969
+          }
+        }
+      ],
+      "hit": [
+        [
+          "diya",
+          "Welcome, Ana María O’Neill"
+        ]
+      ],
+      "own": {
+        "left": 20,
+        "right": 370,
+        "top": 421,
+        "bottom": 652.078125,
+        "width": 350,
+        "height": 231.078125
+      }
+    },
+    {
+      "version": "current",
+      "scenario": "medium",
+      "id": "np-tihar",
+      "heading": "Welcome, Ana María O’Neill",
+      "name": "Ana María O’Neill",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Welcome, Ana María O’Neill",
+          "rect": {
+            "left": 20,
+            "right": 304.28125,
+            "top": 91,
+            "bottom": 129,
+            "width": 284.28125,
+            "height": 38
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 304.28125,
+              "top": 91,
+              "bottom": 129,
+              "width": 284.28125,
+              "height": 38
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November · 14:00",
+          "rect": {
+            "left": 20,
+            "right": 271.09375,
+            "top": 129,
+            "bottom": 153,
+            "width": 251.09375,
+            "height": 24
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 129,
+              "bottom": 153,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 129,
+              "bottom": 153,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 209.96875,
+              "right": 222.5,
+              "top": 129,
+              "bottom": 153,
+              "width": 12.53125,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 129,
+              "bottom": 153,
+              "width": 48.59375,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 129,
+              "bottom": 153,
+              "width": 48.59375,
+              "height": 24
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "marigold-string",
+          "rect": {
+            "left": 336.2075500488281,
+            "right": 378.29290771484375,
+            "top": 63.114768981933594,
+            "bottom": 112.83819580078125,
+            "width": 42.085357666015625,
+            "height": 49.723426818847656
+          }
+        },
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 283.7515869140625,
+            "right": 326.99444580078125,
+            "top": 106.7247543334961,
+            "bottom": 157.39157104492188,
+            "width": 43.24285888671875,
+            "height": 50.66681671142578
+          }
+        },
+        {
+          "motif": "marigold-string",
+          "rect": {
+            "left": 229.1382598876953,
+            "right": 271.6594543457031,
+            "top": 62.92543029785156,
+            "bottom": 113.00523376464844,
+            "width": 42.52119445800781,
+            "height": 50.079803466796875
+          }
+        }
+      ],
+      "hit": [
+        [
+          "diya",
+          "Welcome, Ana María O’Neill"
+        ],
+        [
+          "marigold-string",
+          "Welcome, Ana María O’Neill"
+        ]
+      ],
+      "own": {
+        "left": 20,
+        "right": 370,
+        "top": 410,
+        "bottom": 641.078125,
+        "width": 350,
+        "height": 231.078125
+      }
+    },
+    {
+      "version": "current",
+      "scenario": "medium",
+      "id": "ph-lunar-new-year",
+      "heading": "Welcome, Ana María O’Neill",
+      "name": "Ana María O’Neill",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Welcome, Ana María O’Neill",
+          "rect": {
+            "left": 20,
+            "right": 304.28125,
+            "top": 91,
+            "bottom": 129,
+            "width": 284.28125,
+            "height": 38
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 304.28125,
+              "top": 91,
+              "bottom": 129,
+              "width": 284.28125,
+              "height": 38
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November · 14:00",
+          "rect": {
+            "left": 20,
+            "right": 271.09375,
+            "top": 129,
+            "bottom": 153,
+            "width": 251.09375,
+            "height": 24
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 129,
+              "bottom": 153,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 129,
+              "bottom": 153,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 209.96875,
+              "right": 222.5,
+              "top": 129,
+              "bottom": 153,
+              "width": 12.53125,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 129,
+              "bottom": 153,
+              "width": 48.59375,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 129,
+              "bottom": 153,
+              "width": 48.59375,
+              "height": 24
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "lantern",
+          "rect": {
+            "left": 336.20770263671875,
+            "right": 378.29290771484375,
+            "top": 63.11483383178711,
+            "bottom": 112.838134765625,
+            "width": 42.085205078125,
+            "height": 49.72330093383789
+          }
+        },
+        {
+          "motif": "lantern",
+          "rect": {
+            "left": 280.41180419921875,
+            "right": 323.6546630859375,
+            "top": 62.60842514038086,
+            "bottom": 113.2752456665039,
+            "width": 43.24285888671875,
+            "height": 50.66682052612305
+          }
+        }
+      ],
+      "hit": [
+        [
+          "lantern",
+          "Welcome, Ana María O’Neill"
+        ]
+      ],
+      "own": {
+        "left": 20,
+        "right": 370,
+        "top": 421,
+        "bottom": 652.078125,
+        "width": 350,
+        "height": 231.078125
+      }
+    },
+    {
+      "version": "current",
+      "scenario": "medium",
+      "id": "bali-galungan",
+      "heading": "Welcome, Ana María O’Neill",
+      "name": "Ana María O’Neill",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Welcome, Ana María O’Neill",
+          "rect": {
+            "left": 20,
+            "right": 304.28125,
+            "top": 91,
+            "bottom": 129,
+            "width": 284.28125,
+            "height": 38
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 304.28125,
+              "top": 91,
+              "bottom": 129,
+              "width": 284.28125,
+              "height": 38
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November · 14:00",
+          "rect": {
+            "left": 20,
+            "right": 271.09375,
+            "top": 129,
+            "bottom": 153,
+            "width": 251.09375,
+            "height": 24
+          },
+          "lines": [
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 129,
+              "bottom": 153,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 20,
+              "right": 209.96875,
+              "top": 129,
+              "bottom": 153,
+              "width": 189.96875,
+              "height": 24
+            },
+            {
+              "left": 209.96875,
+              "right": 222.5,
+              "top": 129,
+              "bottom": 153,
+              "width": 12.53125,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 129,
+              "bottom": 153,
+              "width": 48.59375,
+              "height": 24
+            },
+            {
+              "left": 222.5,
+              "right": 271.09375,
+              "top": 129,
+              "bottom": 153,
+              "width": 48.59375,
+              "height": 24
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "penjor",
+          "rect": {
+            "left": 338.3315124511719,
+            "right": 380.3866882324219,
+            "top": 107.17349243164062,
+            "bottom": 156.87216186523438,
+            "width": 42.05517578125,
+            "height": 49.69866943359375
+          }
+        },
+        {
+          "motif": "penjor",
+          "rect": {
+            "left": 283.7515563964844,
+            "right": 326.9933166503906,
+            "top": 106.72515106201172,
+            "bottom": 157.39109802246094,
+            "width": 43.24176025390625,
+            "height": 50.66594696044922
+          }
+        }
+      ],
+      "hit": [
+        [
+          "penjor",
+          "Welcome, Ana María O’Neill"
+        ]
+      ],
+      "own": {
+        "left": 20,
+        "right": 370,
+        "top": 410,
+        "bottom": 641.078125,
+        "width": 350,
+        "height": 231.078125
+      }
+    },
+    {
+      "version": "baseline",
+      "scenario": "suite",
+      "id": "in-diwali",
+      "heading": "Tuesday",
+      "name": "Sam",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Tuesday",
+          "rect": {
+            "left": 16,
+            "right": 162.4375,
+            "top": 85,
+            "bottom": 131,
+            "width": 146.4375,
+            "height": 46
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 162.4375,
+              "top": 85,
+              "bottom": 131,
+              "width": 146.4375,
+              "height": 46
+            }
+          ]
+        },
+        {
+          "text": "3 November · 14:00",
+          "rect": {
+            "left": 16,
+            "right": 167.078125,
+            "top": 129.59375,
+            "bottom": 151.59375,
+            "width": 151.078125,
+            "height": 22
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 125.90625,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 109.90625,
+              "height": 22
+            },
+            {
+              "left": 125.90625,
+              "right": 167.078125,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 41.171875,
+              "height": 22
+            },
+            {
+              "left": 125.90625,
+              "right": 167.078125,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 41.171875,
+              "height": 22
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 338.3315124511719,
+            "right": 380.38665771484375,
+            "top": 104.17349243164062,
+            "bottom": 153.87216186523438,
+            "width": 42.055145263671875,
+            "height": 49.69866943359375
+          }
+        },
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 283.7515563964844,
+            "right": 326.9933166503906,
+            "top": 103.72515106201172,
+            "bottom": 154.39109802246094,
+            "width": 43.24176025390625,
+            "height": 50.66594696044922
+          }
+        }
+      ],
+      "hit": [],
+      "own": {
+        "left": 16,
+        "right": 374,
+        "top": 348.78125,
+        "bottom": 558.546875,
+        "width": 358,
+        "height": 209.765625
+      }
+    },
+    {
+      "version": "baseline",
+      "scenario": "suite",
+      "id": "np-tihar",
+      "heading": "Tuesday",
+      "name": "Sam",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Tuesday",
+          "rect": {
+            "left": 16,
+            "right": 162.4375,
+            "top": 85,
+            "bottom": 131,
+            "width": 146.4375,
+            "height": 46
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 162.4375,
+              "top": 85,
+              "bottom": 131,
+              "width": 146.4375,
+              "height": 46
+            }
+          ]
+        },
+        {
+          "text": "3 November · 14:00",
+          "rect": {
+            "left": 16,
+            "right": 167.078125,
+            "top": 129.59375,
+            "bottom": 151.59375,
+            "width": 151.078125,
+            "height": 22
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 125.90625,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 109.90625,
+              "height": 22
+            },
+            {
+              "left": 125.90625,
+              "right": 167.078125,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 41.171875,
+              "height": 22
+            },
+            {
+              "left": 125.90625,
+              "right": 167.078125,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 41.171875,
+              "height": 22
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "marigold-string",
+          "rect": {
+            "left": 336.2383117675781,
+            "right": 378.2934875488281,
+            "top": 63.12783432006836,
+            "bottom": 112.82650756835938,
+            "width": 42.05517578125,
+            "height": 49.698673248291016
+          }
+        },
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 283.7515563964844,
+            "right": 326.9933166503906,
+            "top": 103.72515106201172,
+            "bottom": 154.39109802246094,
+            "width": 43.24176025390625,
+            "height": 50.66594696044922
+          }
+        },
+        {
+          "motif": "marigold-string",
+          "rect": {
+            "left": 229.13780212402344,
+            "right": 271.6392517089844,
+            "top": 62.93403625488281,
+            "bottom": 112.99774169921875,
+            "width": 42.50144958496094,
+            "height": 50.06370544433594
+          }
+        }
+      ],
+      "hit": [],
+      "own": {
+        "left": 16,
+        "right": 374,
+        "top": 348.78125,
+        "bottom": 558.546875,
+        "width": 358,
+        "height": 209.765625
+      }
+    },
+    {
+      "version": "baseline",
+      "scenario": "suite",
+      "id": "ph-lunar-new-year",
+      "heading": "Tuesday",
+      "name": "Sam",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Tuesday",
+          "rect": {
+            "left": 16,
+            "right": 162.4375,
+            "top": 85,
+            "bottom": 131,
+            "width": 146.4375,
+            "height": 46
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 162.4375,
+              "top": 85,
+              "bottom": 131,
+              "width": 146.4375,
+              "height": 46
+            }
+          ]
+        },
+        {
+          "text": "3 November · 14:00",
+          "rect": {
+            "left": 16,
+            "right": 167.078125,
+            "top": 129.59375,
+            "bottom": 151.59375,
+            "width": 151.078125,
+            "height": 22
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 125.90625,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 109.90625,
+              "height": 22
+            },
+            {
+              "left": 125.90625,
+              "right": 167.078125,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 41.171875,
+              "height": 22
+            },
+            {
+              "left": 125.90625,
+              "right": 167.078125,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 41.171875,
+              "height": 22
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "lantern",
+          "rect": {
+            "left": 336.2383117675781,
+            "right": 378.2934875488281,
+            "top": 63.127830505371094,
+            "bottom": 112.82650756835938,
+            "width": 42.05517578125,
+            "height": 49.69867706298828
+          }
+        },
+        {
+          "motif": "lantern",
+          "rect": {
+            "left": 280.4129333496094,
+            "right": 323.6546936035156,
+            "top": 62.60890197753906,
+            "bottom": 113.27484893798828,
+            "width": 43.24176025390625,
+            "height": 50.66594696044922
+          }
+        }
+      ],
+      "hit": [],
+      "own": {
+        "left": 16,
+        "right": 374,
+        "top": 348.78125,
+        "bottom": 558.546875,
+        "width": 358,
+        "height": 209.765625
+      }
+    },
+    {
+      "version": "baseline",
+      "scenario": "suite",
+      "id": "bali-galungan",
+      "heading": "Tuesday",
+      "name": "Sam",
+      "dockets": false,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Tuesday",
+          "rect": {
+            "left": 16,
+            "right": 162.4375,
+            "top": 85,
+            "bottom": 131,
+            "width": 146.4375,
+            "height": 46
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 162.4375,
+              "top": 85,
+              "bottom": 131,
+              "width": 146.4375,
+              "height": 46
+            }
+          ]
+        },
+        {
+          "text": "3 November · 14:00",
+          "rect": {
+            "left": 16,
+            "right": 167.078125,
+            "top": 129.59375,
+            "bottom": 151.59375,
+            "width": 151.078125,
+            "height": 22
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 125.90625,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 109.90625,
+              "height": 22
+            },
+            {
+              "left": 125.90625,
+              "right": 167.078125,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 41.171875,
+              "height": 22
+            },
+            {
+              "left": 125.90625,
+              "right": 167.078125,
+              "top": 129.59375,
+              "bottom": 151.59375,
+              "width": 41.171875,
+              "height": 22
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "penjor",
+          "rect": {
+            "left": 338.33209228515625,
+            "right": 380.4174499511719,
+            "top": 104.16181182861328,
+            "bottom": 153.88522338867188,
+            "width": 42.085357666015625,
+            "height": 49.723411560058594
+          }
+        },
+        {
+          "motif": "penjor",
+          "rect": {
+            "left": 283.7515869140625,
+            "right": 326.99444580078125,
+            "top": 103.7247543334961,
+            "bottom": 154.39157104492188,
+            "width": 43.24285888671875,
+            "height": 50.66681671142578
+          }
+        }
+      ],
+      "hit": [],
+      "own": {
+        "left": 16,
+        "right": 374,
+        "top": 348.78125,
+        "bottom": 558.546875,
+        "width": 358,
+        "height": 209.765625
+      }
+    },
+    {
+      "version": "baseline",
+      "scenario": "signedout",
+      "id": "in-diwali",
+      "heading": "Pick a docket",
+      "name": "",
+      "dockets": true,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Pick a docket",
+          "rect": {
+            "left": 16,
+            "right": 217.34375,
+            "top": 94,
+            "bottom": 133,
+            "width": 201.34375,
+            "height": 39
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 217.34375,
+              "top": 94,
+              "bottom": 133,
+              "width": 201.34375,
+              "height": 39
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November",
+          "rect": {
+            "left": 16,
+            "right": 191.625,
+            "top": 139.03125,
+            "bottom": 161.03125,
+            "width": 175.625,
+            "height": 22
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 191.625,
+              "top": 139.03125,
+              "bottom": 161.03125,
+              "width": 175.625,
+              "height": 22
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 338.33209228515625,
+            "right": 380.41729736328125,
+            "top": 113.16187286376953,
+            "bottom": 162.88516235351562,
+            "width": 42.085205078125,
+            "height": 49.723289489746094
+          }
+        },
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 283.7515869140625,
+            "right": 326.99444580078125,
+            "top": 112.7247543334961,
+            "bottom": 163.39157104492188,
+            "width": 43.24285888671875,
+            "height": 50.66681671142578
+          }
+        }
+      ],
+      "hit": [],
+      "own": null
+    },
+    {
+      "version": "baseline",
+      "scenario": "signedout",
+      "id": "np-tihar",
+      "heading": "Pick a docket",
+      "name": "",
+      "dockets": true,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Pick a docket",
+          "rect": {
+            "left": 16,
+            "right": 217.34375,
+            "top": 94,
+            "bottom": 133,
+            "width": 201.34375,
+            "height": 39
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 217.34375,
+              "top": 94,
+              "bottom": 133,
+              "width": 201.34375,
+              "height": 39
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November",
+          "rect": {
+            "left": 16,
+            "right": 191.625,
+            "top": 139.03125,
+            "bottom": 161.03125,
+            "width": 175.625,
+            "height": 22
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 191.625,
+              "top": 139.03125,
+              "bottom": 161.03125,
+              "width": 175.625,
+              "height": 22
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "marigold-string",
+          "rect": {
+            "left": 336.2698059082031,
+            "right": 378.2940673828125,
+            "top": 63.14118957519531,
+            "bottom": 112.81453704833984,
+            "width": 42.024261474609375,
+            "height": 49.67334747314453
+          }
+        },
+        {
+          "motif": "diya",
+          "rect": {
+            "left": 283.75152587890625,
+            "right": 326.99212646484375,
+            "top": 112.72557830810547,
+            "bottom": 163.39059448242188,
+            "width": 43.2406005859375,
+            "height": 50.665016174316406
+          }
+        },
+        {
+          "motif": "marigold-string",
+          "rect": {
+            "left": 229.1373291015625,
+            "right": 271.6186218261719,
+            "top": 62.94282913208008,
+            "bottom": 112.99006652832031,
+            "width": 42.481292724609375,
+            "height": 50.047237396240234
+          }
+        }
+      ],
+      "hit": [],
+      "own": null
+    },
+    {
+      "version": "baseline",
+      "scenario": "signedout",
+      "id": "ph-lunar-new-year",
+      "heading": "Pick a docket",
+      "name": "",
+      "dockets": true,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Pick a docket",
+          "rect": {
+            "left": 16,
+            "right": 217.34375,
+            "top": 94,
+            "bottom": 133,
+            "width": 201.34375,
+            "height": 39
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 217.34375,
+              "top": 94,
+              "bottom": 133,
+              "width": 201.34375,
+              "height": 39
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November",
+          "rect": {
+            "left": 16,
+            "right": 191.625,
+            "top": 139.03125,
+            "bottom": 161.03125,
+            "width": 175.625,
+            "height": 22
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 191.625,
+              "top": 139.03125,
+              "bottom": 161.03125,
+              "width": 175.625,
+              "height": 22
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "lantern",
+          "rect": {
+            "left": 336.207763671875,
+            "right": 378.29290771484375,
+            "top": 63.11486053466797,
+            "bottom": 112.83810424804688,
+            "width": 42.08514404296875,
+            "height": 49.723243713378906
+          }
+        },
+        {
+          "motif": "lantern",
+          "rect": {
+            "left": 280.41180419921875,
+            "right": 323.6546630859375,
+            "top": 62.60842514038086,
+            "bottom": 113.2752456665039,
+            "width": 43.24285888671875,
+            "height": 50.66682052612305
+          }
+        }
+      ],
+      "hit": [],
+      "own": null
+    },
+    {
+      "version": "baseline",
+      "scenario": "signedout",
+      "id": "bali-galungan",
+      "heading": "Pick a docket",
+      "name": "",
+      "dockets": true,
+      "phase": "arrival",
+      "texts": [
+        {
+          "text": "Pick a docket",
+          "rect": {
+            "left": 16,
+            "right": 217.34375,
+            "top": 94,
+            "bottom": 133,
+            "width": 201.34375,
+            "height": 39
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 217.34375,
+              "top": 94,
+              "bottom": 133,
+              "width": 201.34375,
+              "height": 39
+            }
+          ]
+        },
+        {
+          "text": "Tuesday 10 November",
+          "rect": {
+            "left": 16,
+            "right": 191.625,
+            "top": 139.03125,
+            "bottom": 161.03125,
+            "width": 175.625,
+            "height": 22
+          },
+          "lines": [
+            {
+              "left": 16,
+              "right": 191.625,
+              "top": 139.03125,
+              "bottom": 161.03125,
+              "width": 175.625,
+              "height": 22
+            }
+          ]
+        }
+      ],
+      "hangs": [
+        {
+          "motif": "penjor",
+          "rect": {
+            "left": 338.33209228515625,
+            "right": 380.41748046875,
+            "top": 113.16179656982422,
+            "bottom": 162.88525390625,
+            "width": 42.08538818359375,
+            "height": 49.72345733642578
+          }
+        },
+        {
+          "motif": "penjor",
+          "rect": {
+            "left": 283.7515869140625,
+            "right": 326.99444580078125,
+            "top": 112.72474670410156,
+            "bottom": 163.39157104492188,
+            "width": 43.24285888671875,
+            "height": 50.66682434082031
+          }
+        }
+      ],
+      "hit": [],
+      "own": null
+    }
+  ]
+}

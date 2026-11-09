@@ -1,14 +1,14 @@
 # Staff welcome and personalisation audit
 
-9 November 2026. Source baseline: `29258e6`. **Audit and design proposals only. No application change or production-data write.**
+Audit and previews: 9 November 2026, source baseline `29258e6`. **A selected, implemented and verified locally on 10 November 2026. CI, merge and deployment are separate release gates; this is not a claim that the live app has changed.** No production-data write.
 
 ## Recommendation and decision
 
 Add one named welcome on Home, make the existing staff identity consistent everywhere, and add names where they help someone understand responsibility. Keep the app's current staff-first Home, notebook style and service controls.
 
-**Recommended starting point: A, Welcome at the top.** It most directly answers the request while preserving the existing personal-day and team cards. This recommendation has a measured limitation: a 40-character name with enlarged text pushes more of the team below the first screen. A compact full-name treatment needs design verification before claiming unchanged density for that case. C preserves more team visibility at that extreme; B offers only a modest space saving with an ordinary name. The [visual comparison](index.html) shows the current screen and all three proposals with synthetic people and shifts.
+**Selected direction: A, Welcome at the top.** It most directly answers the request while preserving the existing personal-day and team cards. The original A preview had a measured limitation: a 40-character name with enlarged text pushed more of the team below the first screen. The implementation uses a compact full-name treatment on phones; the [focused implementation review](implementation/visual-review.md) now supports refined A after measuring the representative long-name and enlarged-text cases. C preserved more team visibility in the original extreme; B offered only a modest space saving with an ordinary name. The [visual comparison](index.html) retains the baseline and all three historical proposals with synthetic people and shifts.
 
-**Chosen:** awaiting the owner's design choice. No option is implemented in the application.
+**Chosen, 10 November 2026:** the owner selected A: "okay lets do a then if the council is sure about that". The council supported a smaller personalisation change but did not unanimously prefer A: two source reviewers preferred A, two preferred B, and the visual reviewer preferred C for long-name density. The chosen implementation keeps that dissent on record and addresses the long-name condition through focused validation. It includes the Home greeting and consistent current identity, not the later mail or filter ideas.
 
 Use **Welcome, [staff display name]**. This works for first and returning visits without inventing first-visit history. A time-based greeting is possible using the existing Queensland clock, but is not needed for the first version. Use the complete stored display name; do not assume the first word is the person's preferred name.
 
@@ -96,7 +96,7 @@ Chromium, 390 × 844, genuine Barlow/Caveat fonts, synthetic saved shift and thr
 
 All three ordinary-name proposals retain the full-team disclosure above the tab bar. At 40 characters plus enlarged text, the current disclosure remains above the bar; all three proposals require scrolling to it. Names are neither clipped nor truncated, and text-size preferences are retained. All measured captures have no horizontal overflow or browser error. This is an explicit design trade-off, not an accessibility certification or a claim that all layouts have equal density. See [measurements](measurements.json) and [visual review](design-review.md).
 
-## Independent council
+## Independent council, original design review
 
 This follows the whole-app audit's independent perspectives in section 5, not a claim of research with kitchen staff or a completed six-person implementation certification. Four source reviewers and one visual reviewer review the evidence; the lead reconciles findings and runs browser checks. The source reviewers independently returned **Build smaller**: welcome plus coherent identity and selective useful context.
 
@@ -110,7 +110,7 @@ Scores below are expert design judgements, not measured user outcomes. Source re
 | Communication and quality | 4.5 | 4 | 3.5 | A |
 | Visual design and accessibility, after captures | 4 | 3.5 | 4.5 | C, for long-name/enlarged-text density |
 
-The genuine disagreement is prominence versus integration and edge-case density. Operations/identity prefer placing the name beside the shift; usability/communications prefer an explicit welcome in the current heading. The visual reviewer prefers C after measuring the longest supported name with enlarged text. The lead recommends A as the warmer direction because it satisfies the requested welcome with fewer changes to approved Home and works without depending on a personal shift card, subject to the long-name limitation above. If retaining all three coworkers on the first screen in that extreme case is decisive, choose C. The [independent visual review](design-review.md) retains that disagreement and its evidence.
+The genuine disagreement was prominence versus integration and edge-case density. Operations/identity preferred placing the name beside the shift; usability/communications preferred an explicit welcome in the current heading. The visual reviewer preferred C after measuring the longest supported name with enlarged text. The lead recommended A as the warmer direction because it satisfies the requested welcome with fewer changes to approved Home and works without depending on a personal shift card, subject to the long-name limitation above. C was the alternative if retaining all three coworkers on the first screen in that extreme case was decisive. The owner subsequently selected A with the long-name validation condition retained. The [independent visual review](design-review.md) remains the original disagreement and evidence.
 
 ### Considered mix of all three
 
@@ -136,11 +136,11 @@ Todoist's known defaults already operate in Prep/Wastage and should be preserved
 - **Continuity:** use full staff display name from existing session state. A saved roster is a plan, not evidence of attendance or a confirmed current shift. No new query, polling, timer or private cache.
 - **Failure states:** greeting depends on verified identity, not a successful team-plan read. Loading, unallocated, failed plan and no remaining breaks must remain distinct. B must not lose the greeting or Your day semantics when plan content changes.
 - **Leading reproduced issues:** stale hat/open-menu name after a roster rename; non-Latin initials disagree across surfaces. These are personalisation consistency defects, not claims of an access breach.
-- **Leading untested implementation risk:** handover or a late response briefly shows the previous person's welcome. Verify identity, Home, menu, mail sender and draft ownership together before release.
+- **Leading implementation risk identified at review:** handover or a late response briefly shows the previous person's welcome. Verify current identity and draft ownership together before release. The selected unit does not add mail sender text.
 - **Space risk:** long names or enlarged text move operational details lower. Capture actual fonts and fallback behaviour; wrap rather than clip a person's name.
 - **Evidence limits:** static/DOM design previews do not prove production lifecycle updates, keyboard behaviour, assistive technology, save recovery or role enforcement. Those remain implementation acceptance checks.
 
-## Identity and copy contract for implementation
+## Identity and copy contract
 
 1. Source the display name from the authenticated personal staff identity through `LK_PREP.whoName()`. Compare stable IDs for You, Your and ownership.
 2. Keep the complete stored display name. Use one shared Unicode-aware initial policy; no automatic first-word assumption. A new editable preferred-name field is optional future scope.
@@ -151,7 +151,29 @@ Todoist's known defaults already operate in Prep/Wastage and should be preserved
 7. Personalise helpfully once: Welcome, Your day, On with you, Your usual, For you, Sending as. Keep shared page titles stable.
 8. Use escaping/text rendering for all staff names. Preserve role limits, feature switches and the existing read budget.
 
-## Verification and release boundary
+## Implementation, 10 November 2026
+
+The selected source change is limited to `js/app.js`, `css/app.css` and a scoped decoration rule in `css/seasonal-effects.css`. `homeHeading()` replaces Home's weekday hero with **Welcome, [full staff display name]** and places the Queensland weekday and date underneath. The existing clock stays on the staff board. Functions-only Home gets the same named heading within its existing destinations. Public and locked states keep a neutral heading. The current personal-day, break, team and work cards, their order and role boundaries stay intact.
+
+`homeWelcomePaint()` and `whoNamePaint()` reuse the existing identity, device and configuration events. A roster rename updates the greeting, hat and open menu without replacing the menu or losing its focused control and draft warning. Settings and the hat/menu use one Unicode-aware initial helper, including accented and non-Latin names. Greeting and identity-sensitive menu wording use the complete stored display name, not a guessed first name. The compact hat retains its existing responsive space limits, with the full name in its accessible label and menu.
+
+Long names wrap rather than clip. Below 768 px, `.hm-welcome-long` uses `1.5rem` above 12 name characters and `.hm-welcome-compact` uses `1.2rem` above 28. Relative sizing preserves the app's text-size preference. This is the focused refinement of A required by the original preview evidence; implemented-app captures cover the real shell, supported name limit, enlarged text and fallback fonts. The historical comparison above describes the original previews, not the completed implementation.
+
+This unit changes no login routing. PR #599 remains a separate first-daily-sign-in-to-Home proposal; opening the welcome page and returning to retained work follow the current app's routes. Kitchen mail sender wording, new personal filters and the optional ideas in the audit are not included. There is no new work-list banner, popup, navigation control, Firestore read, listener, timer, cache, schema or rule. No stored staff name or historical attribution is rewritten.
+
+The full regression exposed a seasonal interaction: Tihar's third hanging ornament overlapped **Welcome, Sam** at 390 px, while the unchanged weekday baseline passed. A medium name at 125% text also intersected the other checked ornament families. Named Home therefore omits the anchored ornaments beside the heading, retaining the celebration note and background ambience. The scoped CSS reacts to renames without a new layout handler and changes no heading or card geometry. Neutral Home keeps its ornaments. This is an explicit decorative trade-off for a complete readable name, separate from the original no-theme previews.
+
+### Implemented-app verification
+
+- `tests/staff-personalisation.test.js`: **63/63 checks passed**. The first 55 checks reproduced 20 failures on the unchanged application. Added unbroken 40-character name checks exposed four internal menu/Sign out overflows before the wrapping fix; all 63 pass afterwards. Coverage includes verified identity, neutral public/Google-only states, Functions-only access, live rename without lost focus or extra reads (10 before and after), Unicode initials, literal HTML-like names, daily lock/unlock and shared-device handover. Historical author snapshots remain unchanged.
+- `tests/staff-welcome-layout.test.js`: **68/68 checks passed with the real fonts**, including the added seasonal coverage. Two of the first 46 checks failed before lowering the medium-name threshold and repairing the shared-phone header: the full-team control fell below the viewport at 125% text, and the shared identity pill overlapped the logo. Both now pass, along with the added 1440 px check, four seasonal ornament families, live rename during a celebration, Still and neutral Home. Prep row and Add positions are unchanged between short and long names.
+- **34 actual-app scenarios and 35 screenshots**, including the opened full-team disclosure, have no browser errors, horizontal overflow or visible ornament collisions. With official fonts on an ordinary 390 × 844 Home at 125% text, the ordinary-name team card ends at 772.55 px and the representative 40-character case at 773.33 px: a 0.78 px difference. Both show three complete coworkers and the full-team control above the tab bar. The full-team action remains one tap. Fallback fonts and unusually wide repeated glyphs can still require scrolling; complete names remain readable. An existing celebration explanation takes its own space above the cards, so this ordinary-Home density result is not a claim about celebration pages.
+- [Implemented-app measurements](implementation/measurements.json) record exact source hashes, synthetic fixtures and font status. The [focused visual review](implementation/visual-review.md) supports refined A while retaining the original council's disagreement. See the [ordinary phone](implementation/ordinary-390.png), [long name at enlarged text](implementation/long-large-390.png) and [shared phone](implementation/shared-long-large-390.png).
+- Full application regression: **295 files, 35.2 minutes, 291 initially passed**. The four reported files were Home board, Settings, seasonal and cooling motion. Home and Settings still expected the old weekday heading and punctuation initial; updated assertions enforce the approved full-name/date and shared letter-initial contract, and both reruns passed. The reproduced seasonal overlap was repaired; all **178 seasonal checks passed** in the final isolated run. An intermediate busy parallel rerun exceeded two animation CPU limits; the isolated run passed without changing those limits. Seasonal shell and Home colour/celebration also passed after the repair. Both new personalisation files passed within the full run.
+- The unchanged cooling-motion test hit four Google Fonts certificate errors in this environment, also reproduced against baseline assets. Its 128 other assertions passed. Supplying the same official font faces locally to the unchanged test, without bypassing TLS or suppressing errors, passed all **135/135**, including three additional real-font navigation checks. The unmodified retry's environmental failure is not represented as an ordinary green run.
+- JavaScript syntax, the design-pattern registry, capture source hashes and `git diff --check` passed. No production session, emulator, real-device or screen-reader validation is claimed. The earlier [identity observations](identity-observations.json) remain the baseline reproduction record, separate from these implementation results.
+
+## Baseline verification and release boundary
 
 Fresh baseline checks on `29258e6`:
 
@@ -160,10 +182,10 @@ Fresh baseline checks on `29258e6`:
 - Synthetic Chromium Settings probe reproduced `?` in the hat versus 李 in Settings for 李明; no browser error.
 - Source review covers the complete personalisation matrix above. Emulator, production staff sign-in, real devices and screen readers were not exercised. No production behavioural claim is made.
 
-The [identity observations](identity-observations.json) are synthetic and safe to inspect. The visual comparison records its own screenshots, measurements, fonts and limitations.
+The [identity observations](identity-observations.json) are historical synthetic baseline failures, not observations of the selected implementation. The visual comparison records its own screenshots, measurements, fonts and limitations.
 
-After selection, test first daily sign-in versus later unlock and retained-work recovery; staff, lead, view-only, Functions-only, chef, admin, public and locked states; two successive shared-screen users; live rename; missing/failed identity and plan data; 40-character, multiword, duplicate, accented and non-Latin names; HTML-like name escaping; long names at enlarged text; 390/768/1280 layout and fallback fonts; unchanged work-list rows, actions and read budget. Use the existing identity, Home, menu, Settings, role, safe-text and device-recovery suites.
+Implementation acceptance covers current sign-in and unlock routes and retained-work recovery; staff, lead, view-only, Functions-only, chef, admin, public and locked states; two successive shared-screen users; live rename; missing/failed identity and plan data; 40-character, multiword, duplicate, accented and non-Latin names; HTML-like name escaping; long names at enlarged text; 390/768/1280 layout and fallback fonts; unchanged work-list rows, actions and read budget. Use the focused personalisation suite and existing identity, Home, menu, Settings, role, safe-text and device-recovery checks as applicable. First-daily routing changes remain separate from this presentation change.
 
-Publish the selected change as a small reversible application PR after the design choice. A greeting and coherent current-name rendering require no schema or rules migration. Reverting the application PR restores presentation without changing saved kitchen records. Keep the current identity/access/draft contracts during rollback.
+Publish the selected change as a small reversible application PR after final verification. A greeting and coherent current-name rendering require no schema or rules migration. Reverting the application PR restores presentation without changing saved kitchen records. Keep the current identity/access/draft contracts during rollback.
 
-This documentation PR is a draft design handoff. It neither deploys a welcome nor fixes the two reproduced identity issues.
+The initial draft was an audit and design handoff. The selected implementation is now verified locally; CI, queue state, merge and deployed-client evidence remain separate release states. No live deployment is asserted here.

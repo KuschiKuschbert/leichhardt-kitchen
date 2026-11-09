@@ -14,6 +14,7 @@ const js = jsFiles.map(read).join('\n');
 
 // the names docs/design-patterns.md uses, by section
 const CLASSES = [
+  'hm-welcome', 'hm-welcome-long', 'hm-welcome-compact',
   'su-last-kind', 'su-last-wide', 'su-last-dow',
   'cooling-clock', 'cooling-clock-status', 'cooling-chip', 'cooling-menu', 'cooling-row', 'cooling-start', 'cooling-status', 'cooling-error',
   'ux-swipe', 'ux-swipe-handle', 'ux-swipe-dragging',
@@ -39,7 +40,7 @@ const TOKENS = ['--ink', '--paper', '--bg', '--muted', '--faint', '--line', '--a
   '--bar', '--bar-text', '--display', '--body', '--r-act', '--r-pick', '--small-ink', '--hit',
   '--bad-ink', '--bad-tint', '--bad-on-dark', '--done-on-dark',
   '--surface-work', '--surface-work-edge', '--surface-people', '--surface-people-edge', '--surface-paper', '--surface-reference'];
-const HELPERS = ['tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'SwipeDismiss', 'ModalFrame', 'enhance',
+const HELPERS = ['homeHeading', 'homeWelcomePaint', 'whoNamePaint', 'tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'SwipeDismiss', 'ModalFrame', 'enhance',
   'svButton', 'svStart', 'svDone', 'svFail', 'svLine', 'errMsg', 'failed', 'toast', 'slipName', 'arm', 'armed', 'W', 'canW',
   'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'tmAwayHTML', 'tmNextHTML', 'tmAwayPaint', 'tmAwayHidden', 'dkRunHTML', 'dkTeamHTML', 'dkFormHTML', 'panelShellHTML', 'psPanelHTML', 'psHintHTML', 'psReferenceHTML', 'psRolloutHTML'];
 const GLOBALS = ['ICON', 'LK_UX', 'LK_PREP_STANDARDS'];

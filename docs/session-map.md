@@ -1,8 +1,8 @@
 # Session map: which note to read, and every file
 
-## Staff welcome and personalisation audit, 9 November 2026
+## Staff welcome A and personalisation audit, 9 to 10 November 2026
 
-The [bounded whole-app personalisation audit](staff-personalisation-options/brief.md) records existing identity context, source evidence, independent role-based review, reproduced rename/initial inconsistencies, and three isolated Home proposals. The [comparison](staff-personalisation-options/index.html), runtime captures and measurements use synthetic staff data. No production app, permission, rule or saved-data change; the owner has not selected a design. Coordinate first-daily Home routing with PR #599 and later Orders ideas with #642. The brief owns scope, evidence limits and implementation acceptance.
+The [bounded whole-app personalisation audit](staff-personalisation-options/brief.md) records existing identity context, source evidence, independent role-based review and the reproduced rename/initial inconsistencies. On 10 November the owner chose A, Welcome at the top. `js/app.js` adds the full-roster-name Home heading and weekday/date, repaints current identity after a rename, and shares one Unicode-aware initial helper across the hat, menu and Settings. `css/app.css` wraps names and uses smaller relative type for long phone headings. The original council split between A/B, with the visual reviewer preferring C; preserve that dissent and distinguish the [historical previews](staff-personalisation-options/index.html) from final implementation measurements. `tests/staff-personalisation.test.js` covers the focused identity and greeting contract; the brief owns final checks and release status. No new read, rule, saved-data or permission change. First-daily Home routing in PR #599, Kitchen mail sender wording and later Orders filters remain separate scope.
 
 ## Working guidance reconciliation, 10 November 2026
 
