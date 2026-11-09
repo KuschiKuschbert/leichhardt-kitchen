@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Kitchen mascot animation studies, 10 November 2026
+
+The owner selected the Smashed Burger star robot with its navy bandana, requested hotel research and two animations, and confirmed the on-site offset smoker. `docs/kitchen-mascot/` contains Burger's up and At the smoker, sixteen poses across two clips, full PNG masters, compact lossless WebP atlases, timed manifests, animated WebP/GIF exports, still fallbacks and a repeatable export script. The isolated preview reuses the app's CSS, supports reduced motion and pauses hidden/offscreen playback. [Research, asset contract and limits](kitchen-mascot/brief.md). This is an artwork preview, with no live-app placement, operational reads, saved fields or shell changes. Preview measurements and checks are distinct from implemented-app evidence.
+
 ## Operandio shared confirmation, 10 November 2026
 
 The owner approved the audit’s recommendation and live implementation: one explicit staff declaration clears each stage’s reminder for the kitchen, while **Not yet** leaves a quiet check on the existing clock. The same stage presents once per device across page changes, reloads and logins. `js/cooling-core.js`, `js/cooling.js` and the existing UI handle independent confirmation states and accepted-write feedback; `js/prep.js` supplies the second named subscription, write authority, local presentation storage and browser export. `firestore.rules` and the stand-in protect the new bounded `cooling/recorded` record without changing `cooling/current`; publish these additive rules before the client. `scripts/nightly-backup.mjs` and `scripts/backup-recovery-check.mjs` preserve exact confirmation timestamps and actors. The extra live document costs one read on subscription and each accepted confirmation; ticks do no database work. [Contract, quick check and validation](operandio-cooling.md#shared-confirmation-10-november-2026).

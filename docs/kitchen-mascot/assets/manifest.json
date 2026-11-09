@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "clips": {
+    "burger": {
+      "title": "Burger's up",
+      "sheet": "burger-sheet-compact.webp",
+      "master": "burger-sheet.png",
+      "poster": "burger-still.png",
+      "columns": 4,
+      "rows": 2,
+      "durations": [1000, 140, 180, 260, 420, 300, 180, 700],
+      "posterFrame": 0
+    },
+    "smoker": {
+      "title": "At the smoker",
+      "sheet": "smoker-sheet-compact.webp",
+      "master": "smoker-sheet.png",
+      "poster": "smoker-still.png",
+      "columns": 4,
+      "rows": 2,
+      "durations": [1000, 250, 250, 400, 500, 300, 250, 850],
+      "posterFrame": 0
+    }
+  }
+}

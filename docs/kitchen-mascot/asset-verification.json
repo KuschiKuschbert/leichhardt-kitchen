@@ -1,0 +1,29 @@
+{
+  "method": "Decode animated WebP with coalescing, compare every full RGBA frame against compact atlas using ImageMagick AE, verify durations against manifest.",
+  "results": [
+    {
+      "id": "burger",
+      "frames": 8,
+      "transparent": true,
+      "decodedWebpMatchesAtlas": true,
+      "timingMatches": true,
+      "durationMs": 3180,
+      "atlasBytes": 291720,
+      "webpBytes": 291816,
+      "gifBytes": 127053,
+      "errors": []
+    },
+    {
+      "id": "smoker",
+      "frames": 8,
+      "transparent": true,
+      "decodedWebpMatchesAtlas": true,
+      "timingMatches": true,
+      "durationMs": 3800,
+      "atlasBytes": 321094,
+      "webpBytes": 321928,
+      "gifBytes": 149431,
+      "errors": []
+    }
+  ]
+}

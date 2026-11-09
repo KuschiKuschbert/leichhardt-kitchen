@@ -1,0 +1,75 @@
+/* Isolated artwork preview. The live app supplies its existing colour tokens. */
+.km-preview { background: var(--bg); padding: 0; }
+.km-preview button, .km-preview a { -webkit-tap-highlight-color: transparent; }
+.km-preview button { font-family: var(--body); cursor: pointer; }
+.km-preview button:focus-visible, .km-preview a:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 4px; }
+.km-preview button:disabled { cursor: default; opacity: .55; }
+.km-masthead { background: var(--bar); color: var(--bar-text); border-bottom: 4px solid var(--accent); }
+.km-masthead-inner { max-width: 1120px; margin: 0 auto; padding: 23px 32px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.km-brand { color: inherit; text-decoration: none; display: grid; gap: 1px; line-height: 1; }
+.km-brand span { font: 700 27px/1 var(--display); letter-spacing: .055em; }
+.km-brand small { font: 500 10px/1.5 var(--body); letter-spacing: .22em; }
+.km-location { font: 600 11px/1.4 var(--body); letter-spacing: .13em; }
+.km-main { max-width: 1120px; padding: 0 32px; margin: 0 auto; }
+.km-intro { padding: 57px 0 37px; max-width: 790px; }
+.km-eyebrow { color: var(--small-ink); font: 700 11px/1.4 var(--body); letter-spacing: .17em; margin: 0 0 12px; }
+.km-intro h1 { font: 700 clamp(36px, 5vw, 60px)/1.05 var(--display); letter-spacing: -.02em; margin: 0 0 18px; }
+.km-lead { font: 400 clamp(17px, 2vw, 20px)/1.5 var(--body); margin: 0; max-width: 680px; }
+.km-intro-note { color: var(--muted); font-size: 14px; margin: 12px 0 0; }
+.km-tools { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding: 18px 0; border-top: 1px solid var(--line); }
+.km-choice { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.km-choice-label { font-size: 12px; color: var(--muted); margin-right: 7px; }
+.km-choice button { border: 1px solid var(--edge); border-radius: var(--r-pick); min-height: 44px; background: transparent; color: var(--ink); font-size: 12px; font-weight: 600; padding: 10px 15px; }
+.km-choice button[aria-pressed="true"] { background: var(--bar); border-color: var(--bar); color: var(--bar-text); }
+.km-studies { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.km-study { min-width: 0; border: 1px solid var(--surface-work-edge); background: var(--surface-paper); box-shadow: 0 4px 0 var(--beige); border-radius: 3px; overflow: hidden; }
+.km-study-heading { display: flex; align-items: center; gap: 12px; padding: 13px 22px; background: var(--surface-work); border-bottom: 1px solid var(--surface-work-edge); font: 600 11px/1.3 var(--body); letter-spacing: .13em; }
+.km-number { font: 700 20px/1 var(--display); color: var(--muted); letter-spacing: 0; }
+.km-stage { height: 322px; padding: 12px; display: flex; justify-content: center; align-items: center; overflow: hidden; background: var(--surface-paper); position: relative; }
+.km-studies[data-size="large"] .km-stage { height: 560px; }
+.km-studies[data-surface="charcoal"] .km-stage { background: var(--bar); color: var(--bar-text); }
+.km-canvas { image-rendering: pixelated; image-rendering: crisp-edges; flex: 0 0 auto; object-fit: contain; }
+.km-canvas[hidden], .km-image-error[hidden] { display: none; }
+.km-image-error { padding: 20px; max-width: 270px; text-align: center; font-size: 15px; }
+.km-study-body { border-top: 1px solid var(--line); padding: 22px; }
+.km-study h2 { font: 700 30px/1.1 var(--display); margin: 0 0 8px; }
+.km-study-body > p { font-size: 14px; line-height: 1.5; color: var(--muted); margin: 0; }
+.km-playback { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 21px; }
+.km-playback button { min-width: 75px; min-height: 44px; border-radius: var(--r-act); padding: 10px 15px; font-size: 13px; font-weight: 600; }
+.km-play { background: var(--bar); color: var(--bar-text); border: 1px solid var(--bar); }
+.km-replay { background: transparent; color: var(--ink); border: 1px solid var(--faint); }
+.km-status { font-size: 11px; color: var(--muted); margin-left: auto; text-align: right; }
+.km-motion-note { margin: 23px 0 0; color: var(--muted); font-size: 12px; }
+.km-direction { display: grid; grid-template-columns: 1fr 1.1fr; gap: 48px; border-top: 1px solid var(--line); margin-top: 47px; padding: 34px 0; }
+.km-direction h2 { font: 600 29px/1.13 var(--display); margin: 0; }
+.km-direction > p { font-size: 14px; line-height: 1.7; margin: 0; color: var(--muted); }
+.km-footer { border-top: 1px solid var(--line); padding: 22px 0 32px; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.km-footer p { margin: 0 0 6px; }
+.km-footer a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+@media (max-width: 939px) {
+  .km-studies[data-size="large"] .km-stage { height: 322px; }
+}
+@media (max-width: 700px) {
+  .km-masthead-inner { padding: 20px 20px; gap: 16px; }
+  .km-brand span { font-size: 23px; }
+  .km-location { font-size: 9px; max-width: 100px; text-align: right; }
+  .km-main { padding: 0 20px; }
+  .km-intro { padding: 36px 0 28px; }
+  .km-intro h1 { max-width: 350px; }
+  .km-studies { grid-template-columns: 1fr; gap: 25px; }
+  .km-tools { align-items: start; gap: 12px; }
+  .km-choice-label { width: 100%; margin: 0 0 2px; }
+  .km-tools > .km-choice:last-child { padding-top: 21px; }
+  .km-choice button { padding: 8px 12px; }
+  .km-stage, .km-studies[data-size="large"] .km-stage { height: 300px; }
+  .km-study-heading { padding: 12px 18px; }
+  .km-study-body { padding: 20px 18px; }
+  .km-direction { grid-template-columns: 1fr; gap: 18px; margin-top: 34px; padding: 28px 0; }
+  .km-direction h2 br { display: none; }
+  .km-direction h2 { max-width: 300px; }
+}
+@media (max-width: 380px) {
+  .km-main { padding: 0 14px; }
+  .km-tools > .km-choice:last-child { padding-top: 0; }
+  .km-status { flex-basis: 100%; text-align: left; margin: 3px 0 0; }
+}

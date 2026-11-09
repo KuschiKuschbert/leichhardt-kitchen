@@ -4,6 +4,8 @@
 
 # Leichhardt Kitchen Book
 
+Two [kitchen mascot animation studies](docs/kitchen-mascot/index.html) bring the owner's Smashed Burger character to life: **Burger's up** and **At the smoker**, both retaining the navy bandana. The [research and asset pack](docs/kitchen-mascot/brief.md) connect the character to the hotel's country hospitality, burgers and house-smoking. These are standalone previews and reusable artwork; no mascot is placed in the live app by this change.
+
 On 10 November 2026 the owner selected **A, Welcome at the top** from the [staff personalisation audit](docs/staff-personalisation-options/brief.md). The source implementation welcomes signed-in staff on Home with their full roster name, with the weekday and date beneath it, while retaining the current day, break and team cards. Long names use compact relative type on phones. Roster renames update current identity across Home, the hat and its open menu, and one initial helper supports accented and non-Latin names in the hat, menu and Settings. Login routing and other personalisation ideas remain separate. [Original designs](docs/staff-personalisation-options/index.html) retain the council's differing preferences; the [implementation record](docs/staff-personalisation-options/brief.md#implementation-10-november-2026) distinguishes final verification and release from the source change.
 
 Orders uses **C, the compact cut-off fold**, chosen on 9 November 2026. Staff add requests with **Add request**. Chefs see one flat list with Out items first, then older requests, while **View / Hide** opens supplier cut-offs in place. Supplier preparation and ordering through the external system remain separate. [Council, chosen design and verification](docs/order-list-options/brief.md).
