@@ -249,6 +249,14 @@ Tests for each step: a new `tests/todays-team.test.js` (the chef's page, the chi
 
 **Verification:** the updated Home checks fail four roster assertions on the old code and pass all 51 with the change. Focused staff roster and regression checks are recorded in the pull request. Phone before/after screenshots were inspected locally; only synthetic names and times were used. CI and the normal release queue remain the delivery gate.
 
+## Fallback font layout, 10 November 2026
+
+CI's wider DejaVu Sans fallback exposed two existing layout faults while checking the top bar tilt repair. On a 390 px staff phone, the day summary widened the done-count column and wrapped the header from 90.27 px to 157.69 px. The summary now takes the count column's width and ellipsises there, retaining the full accessible name and Your day action. On a 320 px phone with Extra large text, the hidden width-reserving Save label forced the full date onto one line and overflowed the notebook. It now wraps like the visible label, keeping the full date inside the button.
+
+Synthetic wider-font captures: [staff header before](../images/team-fallback-layout/staff-header-before.png), [after](../images/team-fallback-layout/staff-header-after.png); [dated Save before](../images/team-fallback-layout/dated-save-before.png), [after](../images/team-fallback-layout/dated-save-after.png).
+
+Both faults reproduced before the tilt change. The focused regressions explicitly use the wider fallback font; the Save check selects Wednesday through the real date controls, so the long weekday is tested regardless of the current day. Both new checks fail on the original styles. There are no changed taps, saves, reads, rules or stored fields. This is a repair of the existing layout contract.
+
 ## Files
 
 - `brief.md` this brief; `index.html` the comparison page.
