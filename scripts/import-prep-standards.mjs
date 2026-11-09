@@ -86,6 +86,10 @@ export async function importPrepStandards(db, pin, input, options = {}) {
       if (matches.length !== 1 || matches[0].archived || !isDeepStrictEqual(core(matches[0]), core(row))) refuse('saved-conflict');
       existing++;
     }
+    for (const sectionId of sectionIds) {
+      const active = saved.filter(row => row.sectionId === sectionId && !row.archived).length;
+      if (active + missing.filter(row => row.sectionId === sectionId).length > 1000) refuse('active-limit');
+    }
     const at = configSnap.readTime && configSnap.readTime.toMillis();
     if (!Number.isSafeInteger(at) || at <= 0) refuse('server-clock');
     if (!dryRun) {

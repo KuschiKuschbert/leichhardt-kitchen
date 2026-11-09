@@ -42,7 +42,7 @@ jobs:
       - name: Check the importer before any kitchen access
         run: |
           node tests/prep-import-crypto.test.js
-          if [ -f tests/prep-standards-import.test.js ]; then node tests/prep-standards-import.test.js; fi
+          node tests/prep-standards-import.test.js
       - name: Recipient public key for the protected import
         if: hashFiles('scripts/prep-minimums-grill-pans.json.enc') == '' || inputs.mode == 'public-key'
         env:
@@ -74,7 +74,15 @@ jobs:
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
-        run: node import-prep-standards.mjs "$RUNNER_TEMP/prep-minimums.json" --dry-run
+        run: |
+          node import-prep-standards.mjs "$RUNNER_TEMP/prep-minimums.json" --dry-run > "$RUNNER_TEMP/prep-verification.json"
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const input = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/prep-minimums.json', 'utf8'));
+          const result = JSON.parse(readFileSync(process.env.RUNNER_TEMP + '/prep-verification.json', 'utf8'));
+          if (result.created !== 0 || result.planned !== 0 || result.existing !== input.length) throw new Error('Saved prep standards did not pass the complete fresh-read check.');
+          console.log('Verified ' + result.existing + ' saved standards with a fresh server read.');
+          NODE
       - name: Remove the temporary plaintext
         if: always()
-        run: rm -f -- "$RUNNER_TEMP/prep-minimums.json"
+        run: rm -f -- "$RUNNER_TEMP/prep-minimums.json" "$RUNNER_TEMP/prep-verification.json"

@@ -180,6 +180,17 @@ async function refused(importer, fixture, input, code, options) {
     for (let i = 0; i < 2001; i++) patch[BASE + '/prepStandards/old-' + i] = stored(row({ name: 'Existing ' + i }));
     await refused(importPrepStandards, database(patch), [row()], 'catalogue-limit', { dryRun: false });
   });
+  await test('the import cannot push a section past the staff reference limit', async () => {
+    const patch = {};
+    for (let i = 0; i < 1000; i++) patch[BASE + '/prepStandards/old-' + i] = stored(row({ name: 'Existing ' + i }));
+    await refused(importPrepStandards, database(patch), [row()], 'active-limit', { dryRun: false });
+  });
+  await test('the last supported active item can be added without counting archived history', async () => {
+    const patch = {};
+    for (let i = 0; i < 1100; i++) patch[BASE + '/prepStandards/old-' + i] = stored(row({ name: 'Existing ' + i }), { archived: i >= 999 });
+    const fixture = database(patch);
+    assert.deepEqual(await importPrepStandards(fixture.db, PIN, [row()], { dryRun: false }), { created: 1, existing: 0, planned: 1 });
+  });
   await test('a missing server clock cannot fall back to device time', async () => {
     await refused(importPrepStandards, database({}, { clock: false }), [row()], 'server-clock', { dryRun: false });
   });
