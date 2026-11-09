@@ -1,6 +1,6 @@
 # Quieter Today's team management
 
-9 November 2026. **Design review. No tidy-up layout chosen or implemented.** The separately authorised empty-break-board change is implemented and tested.
+9 November 2026. **A, Quiet notebook, chosen by the head chef, implemented and locally verified. CI and release pending.** The empty-break-board change is retained in this work.
 
 The head chef asks to tidy the noisy Today's team page for admin, head and sous chefs. [Proposal](proposal.md). Keep the notebook, week planning and the existing service/access/data contracts. Do not replace them with a second roster.
 
@@ -97,7 +97,7 @@ Six fresh reviewers saw all three concepts, their phone/desktop screenshots, exp
 
 Recommendation: **A, with clear labels from C and section counts from B in the existing chips.** Replace bare disclosure arrows with a labelled Edit breaks or Details action. Keep break summaries legible and saved live status clearly separate from changed draft rows. Put Save after the one main roster and secondary copy/break tools below it. Preserve deliberate disclosure/focus state and measure the result inside the real management frame.
 
-All reviewers noted the extra disclosure tap for breaks and copy, and that the schematic counts are not production proof. No concept is selected until the head chef chooses.
+All reviewers noted the extra disclosure tap for breaks and copy, and that the schematic counts are not production proof. The head chef subsequently chose A below.
 
 ## Acceptance contract for the chosen implementation
 
@@ -112,4 +112,25 @@ All reviewers noted the extra disclosure tap for breaks and copy, and that the s
 
 ## Chosen and build
 
-Awaiting the head chef's layout choice. The On break now hide refinement has passed its independent 76-check notebook run; the broader tidy-up has no application implementation or release claim yet.
+The head chef chose **A: Quiet notebook, one list (recommended)** in chat on 9 November 2026. Implement the shared section-first notebook with one person list, visible current section/break summaries, labelled per-person Edit breaks disclosures, section counts, a compact selected-date/status header, the compact saved break board and one dated Save before secondary tools. Preserve all existing data, role, clock and recovery contracts. Do not maintain the three preview editors in the app.
+
+The implementation reuses `teamPageHTML()` for direct and management-panel entry points. Each `.tm-person-row` contains the existing assignment control and a labelled native `.tm-person-details` fold; `tmRow()` supplies the original controls inside it. Per-person folds are independent by date and shift. Section counts and row summaries come from the selected draft. The compact header names the date and saved/dirty/failed state. One dated Save follows the roster; Copy a day or spread breaks, Next planned breaks and Saved shift overview are named folds. Future saved overviews are also folded. The active break board still reads the saved current-day record.
+
+## Implemented measurements and checks
+
+These are measurements of the real shared planner in its actual outer frame, not the sketches above. The fixture matches the baseline: eight fictional people, two shifts, two active breaks, 14:00 kitchen time, original fonts and an 844 px-high viewport. See [measurements](implemented-measurements.json), [direct phone](implemented-team-390.png), [direct desktop](implemented-team-1280.png), [chef phone](implemented-chef-390.png) and [chef desktop](implemented-chef-1280.png).
+
+| Real app view | First person before | First person after | Complete initial rows before / after | Separate fine-adjustment rows before / after |
+| --- | --- | --- | --- | --- |
+| Direct, 390 px | 822 px | 706 px | 0 / 0 | 8 / 0 |
+| Direct, 1280 px | 688 px | 529 px | 1 / 2 | 8 / 0 |
+| Chef panel, 390 px | 1099 px | 983 px | 0 / 0 | 8 / 0 |
+| Chef panel, 1280 px | 977 px | 818 px | 0 / 0 | 8 / 0 |
+
+The phone's live break board and the management panel's existing navigation still occupy space. With eight people, Save requires scrolling: 1403 px from the viewport top in the direct phone view and 1680 px in the embedded view. The production result does not reach the schematic preview's three initially visible phone rows. Its benefit is one roster and less repeated instruction/reference content, with the first person 116 px higher on phones and 159 px higher on desktops. Confirmed-empty board measurements above describe that independent hide change, not an active-break scenario.
+
+All twelve real route/width/text captures (direct and embedded, 390/768/1280 px, normal/largest text) had eight unique person rows, no duplicate fine-adjustment roster, no browser errors, no horizontal overflow and no visible planner button/summary under 44 px. At largest text the interface grows vertically. The new browser suite separately checks head and sous chefs in both routes plus verified-admin entry, all three widths and both text sizes.
+
+Section/person/Save remains three taps; another person in the same selected section adds one. A break correction now takes Edit breaks, picker, choice and Save, four taps versus the earlier three. Empty-day copy now takes the named tools fold, Use last weekday and Save, three versus two. Counts exclude scrolling and typing. Membership removal, every configured shift, three breaks, long splits, length choices, usual-section/training hints, Whole day and all Spread settings retain their existing controls and data helpers.
+
+Local focused checks passed: `team-quiet.test.js` **87**, `team-notebook.test.js` **76**, `todays-team.test.js` **121** and `team-week.test.js` **65**, 349 checks total. They exercise real visible disclosures/picker overlays, independent date/shift drafts and fold state, section counts, shift removal preserving other shifts, keyboard and Save focus, exact DOM retention during clock paints, conflicts/recovery, saved-versus-draft break visibility, read counts and role gates. The old hide source failed four visibility assertions before implementation. Six integration files also passed without retries: chef panel, shift-tab ordering, read budget, Home board, staff-first Home and desktop Home. Independent source review found no state, focus, permission or data-model blockers. JavaScript syntax and design-pattern registry checks pass. PR [#635](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/635) carries this work; hosted verification is pending.

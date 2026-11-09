@@ -1,5 +1,7 @@
 # Today's team: chosen roster notebook
 
+Current management layout, 9 November 2026: the head chef chose [A, Quiet notebook, one list](../team-tidy-options/brief.md). It replaces the duplicate fine-adjustment roster with per-person Edit breaks disclosures, puts Save before secondary tools and folds saved references. The date/shift model and current saved break board remain authoritative. The original layout descriptions and measurements below are historical; the new brief records the implemented result separately.
+
 ## Hide a confirmed empty board, 9 November 2026
 
 The head chef asked to hide On break now when nobody is on a break. **Verdict: Build smaller, quick check.** This removes an empty status panel without adding a control, step or read. The whole aside hides only when the saved current-day read is ready, no current meal break or split remains, and no interval is invalid. Loading, unset, stale, wrong-day, uncertain clock, failed reads and malformed data keep their status visible. The DOM remains available so the existing clock/focus paints can show the board at the first break start and hide it at the final return. Drafts never decide visibility. The existing `.hm-board[hidden]` style collapses the space; no new CSS is needed.

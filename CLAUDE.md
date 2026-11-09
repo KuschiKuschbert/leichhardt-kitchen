@@ -38,7 +38,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Head-set section minimums, Prep room, smart matching and Before service | `docs/prep-standards.md`, `docs/prep-par-options/brief.md` |
 | Today's team and its chosen notebook, council and build record | `docs/todays-team-options/brief.md`, `docs/team-notebook-options/brief.md` (Chosen, Build, council), `docs/prep-book.md` (Today's team) |
 | Planning staff sections ahead, dated drafts, week picker and read costs | `docs/team-week-options/brief.md` (chosen A, implementation and verification) |
-| Quieter Today's team management, layout council and previews | `docs/team-tidy-options/brief.md` (layout choice pending) |
+| Quieter Today's team management, single roster and per-person details | `docs/team-tidy-options/brief.md` (chosen A, implementation and checks) |
 | Cleaning page, Guides navigation move and council | `docs/cleaning-options/brief.md` (chosen C + A), `docs/cleaning-options/implementation.md`, `docs/cleaning-options/release-toggle.md` |
 | Chef to-do notebook layout | `docs/chef-todo-options/brief.md` (Chosen, implementation contract) |
 | Drinks run notebook style | `docs/drinks-notebook.md`, `docs/code-contracts.md` (Drinks run) |

@@ -121,7 +121,7 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   const emptyFuture = fixture(); emptyFuture[key(['team', nextWeek])] = undefined;
   p = await L.open(browser, '#/team', { who: 'sam', extra: emptyFuture, wait: 900 }); await ready(p); await goDate(p, nextWeek);
   ok(!!(await p.$('[data-p="tm-use"]')), 'copy: an empty selected future day offers Same as last weekday');
-  await click(p, '[data-p="tm-use"]');
+  await p.locator('details.tm-batch > summary').click(); await click(p, '[data-p="tm-use"]');
   await L.waitFor(p, () => !!document.querySelector('[data-p="tm-assign"][data-id="ann"]'), null, 6000);
   ok(/Grill/.test(await txt(p, '[data-p="tm-assign"][data-id="ann"]') || '') && !await p.$eval('[data-p="tm-save"]', e => e.disabled), 'copy: next week copies today\'s dated plan into an unsaved draft');
   ok(!await read(p, nextWeek) && JSON.stringify(await read(p, today)) === JSON.stringify(plan(today)), 'copy: neither source nor destination is saved automatically');

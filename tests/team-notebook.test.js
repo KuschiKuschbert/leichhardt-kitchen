@@ -27,9 +27,13 @@ const press = async (p, s) => { const found = await tap(p, s); await L.settle(p,
 const shift = (p, id) => press(p, '[data-p="tm-sh"][data-v="' + id + '"]');
 const section = (p, id) => press(p, '[data-p="tm-section"][data-v="' + id + '"]');
 const assign = (p, id) => press(p, '[data-p="tm-assign"][data-id="' + id + '"]');
-const pick = (p, k, v) => p.evaluate(([k, v]) => { const e = document.querySelector('select[data-k="' + k + '"]'); if (!e) return false; e.value = String(v); e.dispatchEvent(new Event('change', { bubbles: true })); return true; }, [k, v]);
+const pick = async (p, k, v) => { await details(p, k.split(':')[1]); await L.pick(p, 'select[data-k="' + k + '"]', String(v)); return true; };
 async function ready(p) { await L.waitFor(p, () => !!document.querySelector('.tm-page.tm-notebook .tm-nbook .tm-work [data-p="tm-whole"]'), null, 6000); }
-async function details(p) { await p.evaluate(() => { const d = document.querySelector('details.tm-details'); if (d) d.open = true; }); await L.settle(p, 120); }
+async function details(p, id) {
+  const folds = p.locator('details.tm-person-details' + (id ? '[data-id="' + id + '"]' : ''));
+  for (let i = 0; i < await folds.count(); i++) if (!await folds.nth(i).evaluate(e => e.open)) await folds.nth(i).locator(':scope > summary').click();
+  await L.settle(p, 120);
+}
 async function refresh(p, rec) {
   if (rec !== undefined) await p.evaluate(([k, v]) => window.__fake.write(k, v), [TEAM, rec]);
   await press(p, '[data-p="tm-refresh"]');
@@ -68,7 +72,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   await press(p, '.tm-work [data-p="tm-whole"]');
   const whole = await txt(p, '.tm-work') || '';
   const samDay = await p.$$eval('.tm-dayperson', all => (all.find(e => /Sam/.test(e.textContent)) || {}).textContent || '');
-  ok(/Draft, not saved/.test(whole) && /Lunch/.test(samDay) && /Grill/.test(samDay) && /Dinner/.test(samDay) && /Pans/.test(samDay), 'Whole day: the same draft shows Lunch Grill Sam and Dinner Pans Sam');
+  ok(/Unsaved changes/.test(await txt(p, '.tm-draftstate') || '') && /Lunch/.test(samDay) && /Grill/.test(samDay) && /Dinner/.test(samDay) && /Pans/.test(samDay), 'Whole day: the same draft shows Lunch Grill Sam and Dinner Pans Sam');
   ok(/14:30/.test(samDay) && /19:00/.test(samDay) && /21:30/.test(samDay) && /[Ss]plit/.test(samDay), 'Whole day: Sam\'s meal break, split and return time remain in the draft');
   ok(await p.$$eval('[data-p="tm-save"]', all => all.length) === 1 && (await saved(p)).v === 1 && await away(p) === initialAway, 'draft: one Save, no automatic write, and the saved away panel stays unchanged');
   ok(await readCount(p) === before, 'reads: section, person, shift and Whole day selection reuse the loaded plan and training data');
@@ -204,7 +208,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
     const m = await p.evaluate(() => {
       const strip = document.querySelector('.tm-shift-scroll'), tabs = strip && strip.querySelector(':scope > .tm-tabs[data-adaptive="keep"]');
       const whole = document.querySelector('.tm-work > * [data-p="tm-whole"], .tm-work > [data-p="tm-whole"]');
-      const targets = [...document.querySelectorAll('.tm-work button[data-p="tm-whole"], .tm-tabs [data-p="tm-sh"], [data-p="tm-section"], [data-p="tm-assign"], details.tm-details > summary, [data-p="tm-save"]')].filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect(); return { action: e.dataset.p || 'details', width: r.width, height: r.height }; });
+      const targets = [...document.querySelectorAll('.tm-work button[data-p="tm-whole"], .tm-tabs [data-p="tm-sh"], [data-p="tm-section"], [data-p="tm-assign"], details.tm-person-details > summary, [data-p="tm-save"]')].filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect(); return { action: e.dataset.p || 'details', width: r.width, height: r.height }; });
       if (strip) strip.scrollLeft = strip.scrollWidth;
       return { tabs: tabs ? [...tabs.querySelectorAll('[data-p="tm-sh"]')].map(e => e.dataset.v) : [], scrolls: !!strip && strip.scrollWidth > strip.clientWidth && strip.scrollLeft > 0, whole: !!whole && (!strip || !strip.contains(whole)), small: targets.filter(r => r.width < 43.5 || r.height < 43.5), saves: document.querySelectorAll('[data-p="tm-save"]').length };
     });

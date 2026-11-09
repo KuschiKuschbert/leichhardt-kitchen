@@ -16,7 +16,7 @@ The head chef requested dated section planning a week ahead, reviewed three isol
 
 ## Quieter team management review, 9 November 2026
 
-The head chef also asked to tidy the noisy planner across the existing management entry points. Round 1: Build smaller, 5 of 5. [Three isolated interactive previews](team-tidy-options/index.html) compare a quiet section-first notebook, a section board and a person worksheet. The brief separates actual baseline and schematic preview measurements, preserves the weekly/date/access/draft contracts and records the council and selection. No tidy-up layout is selected or implemented yet. This is separate from the authorised empty-board behaviour above. [Design record](team-tidy-options/brief.md).
+The head chef also asked to tidy the noisy planner across the existing management entry points, then chose A, Quiet notebook, one list, on 9 November 2026. Round 1: Build smaller, 5 of 5. Round 2: A first for 5 of 6, scores A 16, C 13, B 7; the new starter preferred C. [Three isolated interactive previews](team-tidy-options/index.html) retain the comparison. The chosen shared notebook keeps section-first assignment, one person list with labelled per-person details, visible summaries, compact date/status, section counts and a single dated Save before secondary tools. Existing weekly/date/access/draft contracts remain. The brief separates actual baseline and schematic preview measurements and records implementation and release evidence. [Feature record](team-tidy-options/brief.md).
 
 ## Each supplier item's last order, 9 November 2026
 
