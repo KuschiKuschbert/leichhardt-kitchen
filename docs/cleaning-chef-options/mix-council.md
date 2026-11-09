@@ -42,7 +42,7 @@ Defer C's weekly board unless actual week review shows that A's day/group browsi
 
 The proposed mix leaves A's daily taps unchanged: open group, disclose task, K required-check taps, Record. For Clean impingers, K=2, so five taps from a closed Hot larder group versus four for the current visible task, excluding scrolling. A later six-row page adds one. Shared devices retain the existing worker choice.
 
-All mixes retain A's initial phone overview of five groups and zero complete task rows in the original schematic frame. No hybrid density, editing-speed improvement, recovery behaviour or read budget was measured. These counts describe A's source preview and the written composition; they are not new mix measurements.
+At council review, all mixes retained A's initial phone overview of five groups and zero complete task rows in the original schematic frame. No hybrid density, editing-speed improvement, recovery behaviour or read budget had been measured. The owner subsequently asked to see M1: [the concrete preview and local measurements](mix-preview.md) now illustrate it, without changing these votes or establishing real application recovery or speed.
 
 Keep one source of task, completion and editor state. Preserve unsent work across group changes, dates, resizing, device locks and application updates. Reuse loaded tasks; read the existing bounded week range only on Week entry. No polling, extra listener, duplicate editor/save route, new permission or persistent private cache is proposed.
 

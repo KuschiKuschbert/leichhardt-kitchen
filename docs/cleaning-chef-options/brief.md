@@ -110,6 +110,8 @@ There was no ranking disagreement. The refinement priorities differ: the head ch
 
 The owner requested a fresh mix council. Six new reviewers compared A with B's setup editor, A with C's Week view, and the full A+B+C composition. Scores were **17, 13 and 6** respectively. Five preferred the A+B setup mix; the head-chef reviewer preferred A+C Week. **All six still recommend plain A for the first build.** The best later mix borrows B's adjacent list/editor only for desktop Repeat tasks, with one inline form on phones. Defer C until weekly review earns the extra date and coverage state. [Full votes, sketches, disagreement and recommendation](mix-council.md).
 
+The subsequent request to see that mix is illustrated in [a concrete M1 preview](mix-preview.md), with an [interactive version](mix.html), [visual overview](previews/mix-presentation.png) and [self-contained download](cleaning-mix.html). Its 75 local checks pass at phone, tablet and desktop sizes; the original 117 checks also pass after the shared preview changes. This is a reviewable illustration, not a chosen application implementation.
+
 ## Chosen
 
 Awaiting the owner's choice. No application source, navigation, completion model, permissions, saved records or team release switch changed. Any chosen implementation must extend `js/cleaning.js` and the existing shared `css/app.css`, with focused Cleaning, navigation, release-switch, draft/session and read-budget checks. Update the design-pattern registry only for the actual chosen pattern.
