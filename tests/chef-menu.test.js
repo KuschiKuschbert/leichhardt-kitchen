@@ -217,6 +217,9 @@ const signedIn = p => p.evaluate(() => !!(window.LK_PREP && window.LK_PREP.whoNa
   ok(!(await signedIn(p)) && /Who are you\?/.test(await txt(p, '#prep-root') || ''), 'Not you?: the second tap asks who is writing');
   await p.click('.p-name[data-id="bo"]'); await L.settle(p, 300);
   await p.keyboard.type('3333'); await L.settle(p, 900);
+  // the first PIN of a person's day opens Home (10 Nov 2026, docs/home-staff-first.md)
+  ok(await p.evaluate(() => location.hash) === '#/' && !!(await p.$('#hm-board')), 'Not you?: Bo\'s first PIN of the day opens Home');
+  await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 600);
   ok(await L.whoIs(p) === 'Bo' && await p.inputValue('#p-text') === '', 'Not you?: Bo signs in and the previous person typed line is cleared');
   ok(p.errors.length === 0, 'Not you?: no page errors ' + p.errors.join(' | '));
   await p.context().close();

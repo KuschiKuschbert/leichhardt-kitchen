@@ -1341,9 +1341,12 @@
   function homeLoginSeen(id) { return !!id && Number(lsGet('lk.prep.home.' + id)) === nextUnlock(now()); }
   function homeLoginKeep(id, exp) { if (id && exp > now()) lsSet('lk.prep.home.' + id, String(exp)); }
   // Home first, unless the person has work to finish here: kept or unsent work, a tap waiting on a shared screen (not the
-  // chef hat's Sign in, which only came back), or a Functions-only account, which stays on its functions.
+  // chef hat's Sign in, which only came back), a Functions-only account, which stays on its functions, or the head chef
+  // unlocking on Admin, which keeps Admin (owner, 10 Nov 2026).
   function homeNext(id) {
-    return !!id && !homeLoginSeen(id) && ((S.config || {}).fnOnlyIds || []).indexOf(id) < 0 && !dirtyForUpdate() && !sendingNow() && (!S.pending || !!S.pending.back);
+    var c = S.config || {};
+    return !!id && !homeLoginSeen(id) && (c.fnOnlyIds || []).indexOf(id) < 0 && !(S.name === 'admin' && id === c.headId) &&
+      !dirtyForUpdate() && !sendingNow() && (!S.pending || !!S.pending.back);
   }
   /* ---------- a shared kitchen device with nobody signed in (20 Oct 2026) ----------
      After the 10 minute lock, the prep list, orders and wastage still show. A tap that writes (tick, add, urgent, order,
