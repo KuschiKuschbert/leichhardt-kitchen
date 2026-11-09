@@ -17,6 +17,12 @@ The actual phone notebook during startup and recipe editor during a held save, u
 - Guide preparation counts completed pages. Guide saving counts acknowledged page writes, any old-page cleanup and the final guide record. It cannot reach completion while the final record is still pending. Unknown totals show a named wait without a percentage.
 - Landing dockets have one small entrance per page session. Reduced motion removes tracing, entrances and progress transitions. A known browser offline event immediately stops active decorative traces, without triggering reads or retries. Pending operations keep their busy markup even when drawn offline, so the same icon resumes on reconnection (4 Nov 2026, replaces #462). Settled errors and offline results remain still.
 
+## Top bar feedback, 9 November 2026
+
+Today's team and the active Operandio clock use the existing icon tilt on mouse hover and held presses. Their targets stay in place at their existing size. Both the chef link and staff button clear touch feedback on release, cancellation or a drag away. Only the timer's clock drawing moves; its progress ring, countdown, disabled button and read-only finished status stay still. Reduced motion removes the tilt and compression. This repairs missing coverage in the shared control styles and pointer handler, without changing timer actions or team navigation.
+
+Synthetic browser captures: [team hover](images/topbar-feedback/team-hover.png), [timer hover](images/topbar-feedback/timer-hover.png). The regression checks mouse and touch input, fixed targets, reduced motion, pending writes and the read-only countdown. It fails 14 of 36 checks on the original source and passes all 36 with the fix.
+
 ## Implementation boundaries
 
 `js/motion.js` exposes escaped `icon`, `label`, `status`, `skeleton` and `progress` markup. It owns no requests, timers, observers, storage or save state. `js/boot.js` maintains a presentation-only offline class. Existing code decides when each wait starts and ends.

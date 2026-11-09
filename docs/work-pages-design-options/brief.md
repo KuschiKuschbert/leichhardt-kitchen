@@ -4,6 +4,10 @@ Requested 3 November 2026. The head chef asked for two designs and improvement i
 
 `options.html` in this folder is the working comparison: today's phone screen next to Option A and Option B for each page, what each removes and adds, its cost, and the recommendation. Open it in a browser. All names and amounts are the click tests' synthetic data. Nothing in it saves.
 
+## Current Orders choice, 9 November 2026
+
+The owner selected [C, one shared request list with a compact cut-off fold](../order-list-options/brief.md#chosen-c). It replaces the chef supplier grouping from R2 below, keeps staff's existing list and the independent supplier-confirmation path, and removes the Orders catalogue read. The earlier comparisons remain historical evidence.
+
 ## What repeats today
 
 Measured on 3 November 2026 at commit `87b378d`, 390 by 844 px, a sous chef signed in, the test stand-in for Firebase.
@@ -66,7 +70,7 @@ The four pieces of B left for later, one pull request each, smallest first. The 
 | Step | What | Pull request | State |
 | --- | --- | --- | --- |
 | R1 | Low and Out on order requests, Out first for chefs | #536 | No rules change: the order line rules already take the field (a client shapes row proves it) |
-| R2 | Supplier groups on Orders for chefs; a supplier's order ticked only there | #538 (ticks), #543 (groups) | Pick supplier, remembered, still to come (R2c, a new record and rules) |
+| R2 | Supplier confirmation on Orders | #538 (ticks), #543 (former groups) | Confirmation retained. Groups replaced by chosen C on 9 Nov 2026; no Pick supplier step is part of the shared request list. See the current Orders choice above. |
 | R3 | I'm on it: its own On it button; the box ticks in one tap | #541, then this pull request | #541 stamped on the first tap and ticked on the second; the head chef moved it to its own button the same evening (one tap = done stays). No rules change |
 | R4 | Wall board for all Prep accounts on personal or shared devices (expanded 8 Nov 2026), with existing line permissions | this pull request | Client only: no reads, rules or saved data change. Built on R3's ticks |
 

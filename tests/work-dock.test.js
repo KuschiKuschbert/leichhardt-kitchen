@@ -1,7 +1,7 @@
 // The add button on the four work pages, as drawn in the agreed design (docs/work-pages-design-options/options.html,
 // Option A, 3 Nov 2026): one full-width bar with a plus, docked right above the tab bar on a phone, the list scrolling
 // above it and never hidden under it; in the page header on wider screens, with the count beside it. Wastage's
-// end-of-day review is one button at the foot of the entries. Delivery arrived on Orders reads as an ordinary chip.
+// end-of-day review is one button at the foot of the entries. Delivery received on Orders reads as an ordinary chip.
 const L = require('./lib');
 const { R, ok } = L.results();
 const root = 'kitchens/' + L.PIN + '/', today = L.ymd(new Date(L.NOW));
@@ -10,7 +10,7 @@ const extra = {};
   extra[root + 'waste/' + today + '/lines/' + id] = { text: t, amount: a, unit: u, reason: r, action: '', station: s, addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - (30 - k) * 60000, deleted: false };
 });
 extra[root + 'transfers/' + today + '/lines/t1'] = { dir: 'out', venue: 'Riviera', person: 'Jess', text: 'Brioche buns', amount: 2, unit: 'packs', note: '', addedBy: 'Bo', addedById: 'bo', addedAt: L.NOW - 1800000, deleted: false, by: 'bo' };
-const PAGES = [['#/prep', '.nb-addline', 'Add a line'], ['#/orders', '.nb-addline', 'Add to the order'], ['#/waste', '.w-logbtn', 'Log waste'], ['#/transfers', '.tr-logbtn', 'Log a transfer']];
+const PAGES = [['#/prep', '.nb-addline', 'Add a line'], ['#/orders', '.nb-addline', 'Add request'], ['#/waste', '.w-logbtn', 'Log waste'], ['#/transfers', '.tr-logbtn', 'Log a transfer']];
 (async () => {
   const b = await L.start();
   for (const [w, h] of [[390, 844], [768, 1024], [1280, 900]]) {
@@ -32,7 +32,7 @@ const PAGES = [['#/prep', '.nb-addline', 'Add a line'], ['#/orders', '.nb-addlin
         ok(await p.evaluate(() => { const rows = document.querySelectorAll('.nb-rows .nb-row'), rv = document.querySelector('.w-rvbtn'); return !!rv && rows.length > 0 && rv.getBoundingClientRect().top >= rows[rows.length - 1].getBoundingClientRect().bottom - 1; }), tag + 'the end-of-day review is at the foot of the entries');
       }
       if (hash === '#/orders') {
-        ok(await p.evaluate(() => { const d = document.querySelector('.o-deliv'); if (!d) return false; const fs = parseFloat(getComputedStyle(d).fontSize); return fs <= 16 && d.scrollWidth <= d.clientWidth + 1 && d.scrollHeight <= d.clientHeight + 1; }), tag + 'Delivery arrived reads as an ordinary chip, its words inside it');
+        ok(await p.evaluate(() => { const d = document.querySelector('.o-deliv'); if (!d) return false; const fs = parseFloat(getComputedStyle(d).fontSize); return fs <= 16 && d.scrollWidth <= d.clientWidth + 1 && d.scrollHeight <= d.clientHeight + 1; }), tag + 'Delivery received reads as an ordinary chip, its words inside it');
       }
       ok(!(await L.overflow(p)) && p.errors.length === 0, tag + 'no sideways scroll, no page errors ' + p.errors.join(' | '));
       await p.context().close();

@@ -1,7 +1,7 @@
 // One supplier record the book cannot read (5 Nov 2026, the head chef's laptop: "Could not finish. Check the connection
 // and try again"). Every saved supplier is checked when Supplier order opens, and one that failed the check stopped the
 // whole page with the connection message, which Try again could never fix. Now the other suppliers open as usual and a
-// short card names the one that could not be read and the item, and the order list still groups by supplier.
+// short card names the one that could not be read and the item, and Orders keeps its independent request list.
 const L = require('./lib');
 const F = require('./supplier-fixtures');
 const { R, ok, } = L.results(), { txt } = L;
@@ -32,10 +32,11 @@ async function opened(p) {
     await p.context().close();
   }
 
-  // the order list still groups the requests by supplier with the unreadable record left out
+  // Orders does not read the supplier catalogue, so an unreadable record cannot affect requests or cut-offs.
   let p = await L.open(b, '#/orders', { who: 'sam', extra: broken(), wait: 1600 });
-  await L.waitFor(p, () => !!document.querySelector('.o-sups'), null, 10000).catch(() => {});
-  ok(!!(await p.$('.o-sups .o-sup .cut-tl')), 'the order list still groups by supplier');
+  await L.waitFor(p, () => !!document.querySelector('.o-cut-fold'), null, 10000);
+  ok(!(await p.$('.o-sups')) && !!(await p.$('.o-cut-fold .cut-tl')), 'Orders keeps cut-offs separate from requests');
+  ok(await p.evaluate(() => !(window.__fake.reads || []).some(k => /\/suppliers(?:\/|$)/.test(k))), 'Orders reads no supplier catalogue, including unreadable records');
   ok(p.errors.length === 0, 'order list: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

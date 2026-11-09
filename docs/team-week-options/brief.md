@@ -140,3 +140,11 @@ CI and live release remain pending. The normal release queue owns merging; no di
 | Assign or adjust a shift | Selected day's draft changes in place | Unsaved wording and enabled dated Save identify what remains to send | Existing Clear section, membership and break controls reverse unsaved choices. No live status changes before Save. |
 | Save a date | Existing button says Saving and date controls disable | After server acknowledgement, Saved and a dated message appear beside Save | Old unsaved words clear. Refusal stays visible and keeps the dated draft. A later deliberate edit and Save makes a correction; there is no new automatic Undo. |
 | Refresh | Existing discard confirmation applies if the selected day is dirty | The selected week's read state and dated saved plan update | A failed read keeps drafts and explains retry. Other dates' unsaved work is not discarded. |
+
+## Long date labels, 10 November 2026
+
+The change from 9 to 10 November exposed two existing layout defects with a wide fallback font. On a 390 px staff phone, the longer date made the entire day-line block wrap below the Prep title, adding 67.42 px and losing a visible row. The line now takes the width left by the date and retains its existing ellipsis, complete accessible label and Your day view. The done count still supplies its own minimum width on smaller phones.
+
+At 320 px and largest text, the hidden sizing copies of the dated Team Save label forced the page 2 to 25 px too wide. Those copies now wrap with the visible label. The selected date stays complete, and the button retains the same dimensions through Saving, listener acknowledgement, Saved and its return to idle. No reads, writes, permissions or date selection behaviour change.
+
+Synthetic browser regressions use fixed 10/11 November and 30 September dates with DejaVu Sans. Before the CSS fix, `team-header-dates.test.js` failed 4 of 22 checks and `team-save-dates.test.js` failed 6 of 27; after it, all 49 pass. Header checks preserve every row's position and the previous five-row baseline at 390 px when the separate view choice is hidden. Save checks preserve the full date, 44 px target and server-acknowledgement semantics. These are full-app stand-in checks, not production data or live verification.

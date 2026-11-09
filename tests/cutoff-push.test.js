@@ -26,6 +26,11 @@ const init = perm => () => {
 };
 const withPerm = perm => '(' + init.toString().replace('PERM', JSON.stringify(perm)) + ')()()';
 
+async function openCutoffs(p) {
+  await L.waitFor(p, () => !!document.querySelector('.o-cut-fold > summary'), null, 10000);
+  if (!(await p.$eval('.o-cut-fold', e => e.open))) await p.click('.o-cut-fold > summary');
+}
+
 (async () => {
   const b = await L.start();
   let p, s;
@@ -34,6 +39,7 @@ const withPerm = perm => '(' + init.toString().replace('PERM', JSON.stringify(pe
   p = await L.open(b, '#/orders', { who: 'sam', extra, wait: 1500, init: withPerm('granted') });
   await L.waitFor(p, () => !!document.querySelector('[data-p="cut-push-on"]'), null, 10000);
   ok(/even with the book closed/.test(await txt(p, '.cut-push')), 'sous chef: the order list offers pushes');
+  if (await p.$('.o-cut-fold')) await openCutoffs(p);
   await p.click('[data-p="cut-push-on"]');
   await L.waitFor(p, () => !!document.querySelector('[data-p="cut-push-off"]'), null, 10000);
   s = await store(p);
@@ -72,6 +78,7 @@ const withPerm = perm => '(' + init.toString().replace('PERM', JSON.stringify(pe
   // the phone says no
   p = await L.open(b, '#/orders', { who: 'sam', extra, wait: 1500, init: withPerm('denied') });
   await L.waitFor(p, () => !!document.querySelector('[data-p="cut-push-on"]'), null, 10000);
+  if (await p.$('.o-cut-fold')) await openCutoffs(p);
   await p.click('[data-p="cut-push-on"]');
   await L.waitFor(p, () => /said no/.test((document.querySelector('.cut-push-msg') || {}).textContent || ''), null, 10000);
   s = await store(p);
@@ -82,6 +89,7 @@ const withPerm = perm => '(' + init.toString().replace('PERM', JSON.stringify(pe
   p = await L.open(b, '#/orders', { who: 'sam', extra, wait: 1500, init: withPerm('granted'), ua: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1' });
   await L.waitFor(p, () => !!document.querySelector('.cut-push'), null, 10000);
   ok(/home screen/.test(await txt(p, '.cut-push')), 'iPhone: it says to add the book to the home screen first');
+  if (await p.$('.o-cut-fold')) await openCutoffs(p);
   await p.click('[data-p="cut-push-on"]'); await L.settle(p, 500);
   s = await store(p);
   ok(pushes(s).length === 0 && await p.evaluate(() => !window.__pushGot), 'iPhone: nothing is asked or saved from Safari');
@@ -97,6 +105,7 @@ const withPerm = perm => '(' + init.toString().replace('PERM', JSON.stringify(pe
   p = await L.open(b, '#/admin', { admin: true, who: '', extra, wait: 2000, init: withPerm('granted') });
   await L.adminTab(p, 'cutoffs');
   await L.waitFor(p, () => !!document.querySelector('[data-p="cut-push-on"]'), null, 10000);
+  if (await p.$('.o-cut-fold')) await openCutoffs(p);
   await p.click('[data-p="cut-push-on"]');
   await L.waitFor(p, () => !!document.querySelector('[data-p="cut-push-off"]'), null, 10000);
   s = await store(p);
