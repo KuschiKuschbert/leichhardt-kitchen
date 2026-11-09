@@ -3,15 +3,6 @@
 name: Set up Grill and Pans minimums
 
 on:
-  push:
-    branches: [feat/grill-pans-minimums, main]
-    paths:
-      - scripts/prep-minimums-grill-pans.json.enc
-      - scripts/import-prep-standards.mjs
-      - scripts/prep-import-crypto.mjs
-      - tests/prep-standards-import.test.js
-      - tests/prep-import-crypto.test.js
-      - .github/workflows/prep-minimums.yml
   workflow_dispatch:
     inputs:
       mode:
@@ -62,14 +53,14 @@ jobs:
           node prep-import-crypto.mjs decrypt prep-minimums-grill-pans.json.enc "$RUNNER_TEMP/prep-minimums.json"
           node import-prep-standards.mjs "$RUNNER_TEMP/prep-minimums.json" --dry-run
       - name: Create the supplied standards
-        if: hashFiles('scripts/prep-minimums-grill-pans.json.enc') != '' && (github.event_name == 'push' || inputs.mode == 'apply')
+        if: hashFiles('scripts/prep-minimums-grill-pans.json.enc') != '' && inputs.mode == 'apply'
         working-directory: scripts
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
           KITCHEN_PIN: ${{ secrets.KITCHEN_PIN }}
         run: node import-prep-standards.mjs "$RUNNER_TEMP/prep-minimums.json" --apply
       - name: Verify the saved catalogue with a fresh read
-        if: hashFiles('scripts/prep-minimums-grill-pans.json.enc') != '' && (github.event_name == 'push' || inputs.mode == 'apply')
+        if: hashFiles('scripts/prep-minimums-grill-pans.json.enc') != '' && inputs.mode == 'apply'
         working-directory: scripts
         env:
           FIREBASE_SA: ${{ secrets.FIREBASE_SA }}
