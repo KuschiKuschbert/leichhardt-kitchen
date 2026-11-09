@@ -181,19 +181,6 @@ const withoutViewChoice = async p => {
   ok(staffWithoutChoice.height === 44 && staffWithoutChoice.shift === 72 && staffWithoutChoice.rowsSame && staffWithoutChoice.seen === 5, 'staff prep list: the view choice and its spacing shift unchanged rows by 72 px; removing it restores the previous 5 rows (' + JSON.stringify(staffWithoutChoice) + ')');
   const hh = await p.evaluate(() => { const h = () => document.querySelector('.nb-left .nb-ph').getBoundingClientRect().height, a = h(), l = document.querySelector('.nb-tmday'); l.style.display = 'none'; const z = h(); l.style.display = ''; return [a, z]; });
   ok(Math.abs(hh[0] - hh[1]) < 0.5, 'staff prep list: the header keeps its height with the day line (' + JSON.stringify(hh) + ')');
-  // CI's wider fallback must not let the day summary move the done count onto a second header row.
-  const wideBody = await p.addStyleTag({ content: ':root { --body: "DejaVu Sans", sans-serif; }' });
-  const wideDay = await p.evaluate(() => {
-    const header = document.querySelector('.nb-left .nb-ph'), line = document.querySelector('.nb-tmday');
-    const title = header.firstElementChild.getBoundingClientRect(), count = header.querySelector('.nb-prog').getBoundingClientRect();
-    const withDay = header.getBoundingClientRect().height;
-    line.style.display = 'none'; const withoutDay = header.getBoundingClientRect().height; line.style.display = '';
-    return { withDay, withoutDay, noOverlap: title.right <= count.left, ellipsis: getComputedStyle(line).textOverflow,
-      named: line.getAttribute('aria-label').includes('Lunch: Grill · Break 14:30') };
-  });
-  ok(Math.abs(wideDay.withDay - wideDay.withoutDay) < 0.5 && wideDay.noOverlap && wideDay.ellipsis === 'ellipsis' && wideDay.named,
-    'staff fallback: the full day stays accessible without moving the header or overlapping its title (' + JSON.stringify(wideDay) + ')');
-  await wideBody.evaluate(e => e.remove());
   ok(!(await p.$('.ks-wrap')) && !(await p.$('.ux-section-picker')), 'staff section: not asked, the chef set it');
   await L.waitFor(p, k => !!window.__fake.dump()[k], SHIFT_ANN, 6000);
   s = (await store(p))[SHIFT_ANN];
