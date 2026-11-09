@@ -20,6 +20,37 @@ function second(changes) {
   return record(Object.assign({ rev: 2, secondAt: stamp(start), secondBy: 'example-chef', by: 'example-chef' }, changes));
 }
 try {
+  check('shared recorded stages suppress their alert for every device', () => {
+    const run = C.parse(second());
+    const recorded = C.parseRecorded({ v: 1, run: runId, firstAt: stamp(run.firstDue), firstBy: 'other-cook', secondAt: 0, secondBy: '', by: 'other-cook' });
+    assert.equal(C.alert(run, run.secondAt, {}, recorded), null);
+    assert.equal(C.alert(run, run.secondDue, {}, recorded).stage, 2);
+  });
+  check('shared declarations validate paired timestamps and actors independently from timer starts', () => {
+    const raw = { v: 1, run: runId, firstAt: stamp(T + FIRST), firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' };
+    assert.deepEqual(C.parseRecorded(raw), { id: runId, firstAt: T + FIRST, firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' });
+    const secondOnly = { ...raw, firstAt: 0, firstBy: '', secondAt: stamp(T + FIRST + SECOND), secondBy: 'bo', by: 'bo' };
+    assert.equal(C.parseRecorded(secondOnly).secondBy, 'bo');
+    const both = C.parseRecorded({ ...raw, secondAt: stamp(T + FIRST + SECOND), secondBy: 'bo', by: 'bo', html: '<script>ignored</script>' });
+    assert.equal(both.firstBy, 'ann'); assert.equal(both.secondBy, 'bo'); assert.equal(Object.hasOwn(both, 'html'), false);
+    for (const bad of [null, [], {}, { ...raw, v: 2 }, { ...raw, run: 'bad' }, { ...raw, firstAt: T + FIRST },
+      { ...raw, firstAt: stamp(0) }, { ...raw, firstBy: '' }, { ...raw, firstAt: 0 }, { ...raw, secondBy: 'bo' },
+      { ...raw, secondAt: stamp(T) }, { ...raw, by: 'neither' }, { ...raw, by: '' }, { ...raw, firstAt: 0, firstBy: '' },
+      { ...raw, firstAt: { seconds: 1, nanoseconds: -1 } }, { ...raw, firstBy: ' ann ' }]) assert.equal(C.parseRecorded(bad), null);
+  });
+  check('only matching due declarations suppress a stage and the next batch remains independent', () => {
+    const run = C.parse(second());
+    const first = C.parseRecorded({ v: 1, run: runId, firstAt: stamp(run.firstDue), firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' });
+    assert.equal(C.recordedFor(run, first), true);
+    assert.equal(C.recordedFor(run, { ...first, id: otherId }), false);
+    assert.equal(C.recordedFor(run, { ...first, firstAt: run.firstDue - 1 }), false);
+    assert.equal(C.alert(run, run.secondDue, {}, { ...first, id: otherId }).stage, 1);
+    assert.equal(C.alert(run, run.secondDue, {}, { ...first, firstAt: run.firstDue - 1 }).stage, 1);
+    const both = { ...first, secondAt: run.secondDue, secondBy: 'bo', by: 'bo' };
+    assert.equal(C.alert(run, run.secondDue + 86400000, {}, both), null);
+    assert.equal(C.alert(C.parse(second({ run: otherId })), run.secondDue, {}, both).stage, 1);
+    assert.equal(C.recordedFor(C.parse(record()), both), false);
+  });
   check('the browser and node expose the same pure API without clock or DOM access', () => {
     const sandbox = { window: {} };
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../js/cooling-core.js'), 'utf8'), sandbox);

@@ -1,5 +1,9 @@
 # Firestore reads and writes: audit, 5 November 2026
 
+## Operandio shared confirmation, 10 November 2026
+
+[Operandio cooling](operandio-cooling.md#shared-confirmation-10-november-2026) retains the named `cooling/current` live timer and adds one named `cooling/recorded` subscription for the current kitchen’s recording confirmations. Each authorised app pays one additional document read on subscription and on each accepted confirmation, including Firestore’s ordinary reconnect behaviour. There is no collection scan, per-person query, deadline polling or per-tick database work. Confirmation is one write; its server rules also read the current timer to enforce the exact run and elapsed stage, alongside existing session/config checks. Local presentation markers contain bounded event IDs, scoped to the device, and incur no database work. Browser/nightly export now reads both named documents, one extra read per export, independently of the dated backup window. The separate confirmation record leaves older timer clients compatible while they update. These are source-derived costs, not measured live usage.
+
 ## Cleaning schedule extension, 9 November 2026
 
 The chosen [M1 chef layout](cleaning-chef-options/implementation.md) adds no query, listener, persistent private cache or schema. Groups, six-row pages and global search use the loaded tasks. Repeat tasks reuses the loaded range, including existing post-save refreshes. Explicit import results identify their today-only range so returning to Week reloads the correct bounded week. Named same-range work-return actions do not schedule an extra refresh during a pending write.

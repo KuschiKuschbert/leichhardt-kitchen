@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Operandio shared confirmation, 10 November 2026
+
+The owner approved the audit’s recommendation and live implementation: one explicit staff declaration clears each stage’s reminder for the kitchen, while **Not yet** leaves a quiet check on the existing clock. The same stage presents once per device across page changes, reloads and logins. `js/cooling-core.js`, `js/cooling.js` and the existing UI handle independent confirmation states and accepted-write feedback; `js/prep.js` supplies the second named subscription, write authority, local presentation storage and browser export. `firestore.rules` and the stand-in protect the new bounded `cooling/recorded` record without changing `cooling/current`; publish these additive rules before the client. `scripts/nightly-backup.mjs` and `scripts/backup-recovery-check.mjs` preserve exact confirmation timestamps and actors. The extra live document costs one read on subscription and each accepted confirmation; ticks do no database work. [Contract, quick check and validation](operandio-cooling.md#shared-confirmation-10-november-2026).
+
 ## Working guidance reconciliation, 10 November 2026
 
 The head chef approved reconciling the 7 to 9 November work: `CLAUDE.md` now follows the [shared modal cancellation contract](adaptive-controls.md#shared-modal-frame-9-november-2026), retaining mandatory gates and pending-save guards. The [council](../.claude/skills/service-council/SKILL.md#try-to-break-it) explicitly checks relevant calendar/deadline/recurrence boundaries and required-record readiness separately from 04:00 unlock. [Current design contracts](../.claude/skills/service-council/SKILL.md#current-design-contracts) separate Preview from Implemented app measurements and require complete-shell/full-form validation before layout readiness. Redesign and notebook summaries below distinguish delivered work from historical proposals and dated verification.

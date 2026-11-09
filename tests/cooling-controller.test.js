@@ -8,11 +8,12 @@ function deferred() { let resolve, reject; const promise = new Promise((a, b) =>
 async function settle() { for (let i = 0; i < 8; i++) await Promise.resolve(); }
 function record(patch = {}) { return Object.assign({ v: 1, run: RUN, rev: 1, firstAt: stamp(AT), firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' }, patch); }
 function second(patch = {}) { return record(Object.assign({ rev: 2, secondAt: stamp(AT + 2 * HOUR), secondBy: 'ann' }, patch)); }
+function declaration(patch = {}) { return Object.assign({ v: 1, run: RUN, firstAt: stamp(AT + 2 * HOUR), firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' }, patch); }
 function snap(data, meta = {}) { return Object.assign({ exists: data !== null, data, fromCache: false, hasPendingWrites: false }, meta); }
 function harness(options = {}) {
   let user = options.signedOut ? null : { uid: 'device-a', by: 'ann', pin: '000000', issuedAt: 1000, canRead: true };
   let clock = AT, nextId = 0, canOpen = true, uiOpen = '', uiRun = '', uiHours = 0, hooks;
-  const reads = [], writes = [], watchers = [], models = [], pings = [], seenWrites = [], chimes = [], soundStops = [], storage = new Map();
+  const reads = [], writes = [], watchers = [], models = [], pings = [], seenWrites = [], chimes = [], soundStops = [], storage = options.storage || new Map();
   const state = { synchronousWatchError: false };
   const host = {
     core: C, session: () => user, now: () => clock, timestamp: () => ({ serverTimestamp: true }),
@@ -20,8 +21,8 @@ function harness(options = {}) {
     get(path) { reads.push(path); throw new Error('The cooling controller must not issue a document read'); },
     watch(path, next, failed, session) { const item = { path, next, failed, session, active: true }; watchers.push(item); if (state.synchronousWatchError) failed({ code: 'unavailable' }); return () => { item.active = false; }; },
     write(kind, path, data, session) { const wait = deferred(); writes.push({ kind, path, data, session, wait }); return wait.promise; },
-    readSeen(session) { return storage.get(session.by) || {}; },
-    writeSeen(session, value) { seenWrites.push({ session, value }); storage.set(session.by, value); },
+    readSeen(session) { return storage.get(session.uid + '|' + session.pin) || {}; },
+    writeSeen(session, value) { seenWrites.push({ session, value }); storage.set(session.uid + '|' + session.pin, value); },
     uiHooks: { canOpen: () => canOpen }, chime: value => chimes.push(value), stopChime: () => soundStops.push(true),
     mountUI(callbacks) {
       hooks = callbacks;
@@ -39,12 +40,13 @@ function harness(options = {}) {
   const controller = app.create(host);
   return { controller, host, reads, writes, watchers, models, pings, seenWrites, chimes, soundStops, storage, state,
     user: value => { user = value; }, currentUser: () => user, clock: value => { clock = value; }, allow: value => { canOpen = value; },
-    emit(data, meta) { watchers.filter(w => w.active).forEach(w => w.next(snap(data, meta))); },
-    fail(error = { code: 'unavailable' }) { watchers.filter(w => w.active).forEach(w => w.failed(error)); },
+    emit(data, meta) { watchers.filter(w => w.active && w.path === 'cooling/current').forEach(w => w.next(snap(data, meta))); },
+    recorded(data, meta) { watchers.filter(w => w.active && w.path === 'cooling/recorded').forEach(w => w.next(snap(data, meta))); },
+    fail(error = { code: 'unavailable' }, path = 'cooling/current') { watchers.filter(w => w.active && w.path === path).forEach(w => w.failed(error)); },
     close() { uiOpen = ''; },
     got() { hooks.onAcknowledge(uiHours, uiRun); this.close(); },
     model: () => models.at(-1),
-    async ready(data = null) { controller.sync(); this.emit(data); await settle(); },
+    async ready(data = null, recorded = null) { controller.sync(); this.emit(data); this.recorded(recorded); await settle(); },
     async ack(index = writes.length - 1) { writes[index].wait.resolve(); await settle(); return writes[index]; },
     async reject(code, index = writes.length - 1) { writes[index].wait.reject({ code }); await settle(); return writes[index]; }
   };
@@ -52,14 +54,19 @@ function harness(options = {}) {
 let count = 0;
 async function test(name, body) { await body(); count++; console.log('ok ' + name); }
 (async () => {
+  await test('automatic presentation persists on this device before any dismissal', async () => {
+    const h = harness(); await h.ready(record()); h.clock(AT + 2 * HOUR); h.controller.tick();
+    assert.equal(h.pings.length, 1); assert.equal(h.seenWrites.length, 1);
+    assert.equal(h.seenWrites[0].value[RUN + '_1'], true); assert.equal(h.writes.length, 0);
+  });
   await test('signed-out devices have no cooling reads, listener, writes or chip', async () => {
     const h = harness({ signedOut: true }); h.controller.sync(); h.controller.tick(); assert.equal(h.controller.start(2), false);
     assert.equal(h.reads.length, 0); assert.equal(h.watchers.length, 0); assert.equal(h.controller.chipHTML(), ''); assert.equal(h.model().available, false);
   });
-  await test('one canonical listener and no document reads; clock ticks never poll', async () => {
+  await test('two bounded live documents and no document reads; clock ticks never poll', async () => {
     const h = harness(); await h.ready(); assert.equal(h.model().ready, true);
     for (let i = 0; i < 120; i++) { h.clock(AT + i * 1000); h.controller.tick(); }
-    assert.equal(h.reads.length, 0); assert.deepEqual(h.watchers.map(w => w.path), ['cooling/current']); assert.equal(h.writes.length, 0);
+    assert.equal(h.reads.length, 0); assert.deepEqual(h.watchers.map(w => w.path), ['cooling/current', 'cooling/recorded']); assert.equal(h.writes.length, 0);
   });
   await test('locking or replacing the session stops any remaining cooling chimes', async () => {
     const h = harness(); await h.ready(record()); h.soundStops.length = 0;
@@ -83,7 +90,7 @@ async function test(name, body) { await body(); count++; console.log('ok ' + nam
     assert.deepEqual(Object.keys(write.data).sort(), ['v', 'run', 'rev', 'firstAt', 'firstBy', 'secondAt', 'secondBy'].sort());
     assert.deepEqual(write.data.firstAt, { serverTimestamp: true }); assert.equal(write.data.firstBy, 'ann'); assert.equal(write.data.rev, 1); assert.equal(write.data.secondAt, 0);
     h.emit(record({ run: write.data.run })); assert.equal(h.model().run, null); assert.equal(h.model().pending, 2); assert.equal(h.controller.isBusy(), true);
-    await h.ack(); assert.equal(h.controller.isBusy(), false); assert.equal(h.model().run.id, write.data.run); assert.equal(h.model().pending, 0); assert.equal(h.watchers.length, 1);
+    await h.ack(); assert.equal(h.controller.isBusy(), false); assert.equal(h.model().run.id, write.data.run); assert.equal(h.model().pending, 0); assert.equal(h.watchers.length, 2);
   });
   await test('W acknowledgement alone and cached estimates cannot confirm a start', async () => {
     const h = harness(); await h.ready(); h.controller.start(2); await settle(); const write = await h.ack();
@@ -137,7 +144,7 @@ async function test(name, body) { await body(); count++; console.log('ok ' + nam
   await test('lost first-stage acknowledgement recovers from its unique canonical run without replay', async () => {
     const h = harness(); await h.ready(); h.controller.start(2); await settle(); const write = await h.reject('unavailable');
     assert.equal(h.controller.isBusy(), true); assert.match(h.model().error, /unknown/); assert.equal(h.controller.start(2), false);
-    h.controller.retryRead(); assert.equal(h.watchers.filter(w => w.active).length, 1);
+    h.controller.retryRead(); assert.equal(h.watchers.filter(w => w.active).length, 2);
     h.emit(record({ run: write.data.run })); assert.equal(h.controller.isBusy(), false); assert.equal(h.writes.length, 1); assert.equal(h.reads.length, 0); assert.equal(h.model().error, '');
   });
   await test('lost second-stage acknowledgement recovers a matching transition and reports an exact competing winner', async () => {
@@ -168,7 +175,7 @@ async function test(name, body) { await body(); count++; console.log('ok ' + nam
     h.user(null); h.controller.sync(); assert.equal(h.model().available, false); assert.equal(h.model().run, null);
     assert.equal(h.controller.pendingWork().person, 'ann'); assert.equal(h.controller.isBusy(), true); assert(h.watchers.every(w => !w.active));
     oldWatch.next(snap(record({ run: write.data.run }))); await h.ack(); assert.equal(h.model().available, false); assert.equal(h.controller.isBusy(), true);
-    h.user({ uid: 'device-a', by: 'bo', pin: '000000', issuedAt: 2000, canRead: true }); h.controller.sync(); assert.equal(h.model().available, false); assert.equal(h.watchers.length, 1);
+    h.user({ uid: 'device-a', by: 'bo', pin: '000000', issuedAt: 2000, canRead: true }); h.controller.sync(); assert.equal(h.model().available, false); assert.equal(h.watchers.length, 2);
     h.user({ uid: 'device-a', by: 'ann', pin: '000000', issuedAt: 3000, canRead: true }); h.controller.sync(); h.emit(record({ run: write.data.run }));
     assert.equal(h.controller.isBusy(), false); assert.equal(h.writes.length, 1); assert.equal(write.session.issuedAt, 1000); assert.equal(h.model().run.id, write.data.run);
   });
@@ -193,7 +200,7 @@ async function test(name, body) { await body(); count++; console.log('ok ' + nam
   await test('listener failure and cached reconnect are explicit and never become empty state', async () => {
     const h = harness(); await h.ready(record()); h.fail(); assert.equal(h.model().stale, true); assert.match(h.model().error, /read/);
     h.controller.retryRead(); assert.equal(h.model().stale, true); h.emit(null, { fromCache: true }); assert.equal(h.model().run.id, RUN);
-    h.emit(record()); assert.equal(h.model().stale, false); assert.equal(h.model().error, ''); assert.equal(h.reads.length, 0); assert.equal(h.watchers.filter(w => w.active).length, 1);
+    h.emit(record()); assert.equal(h.model().stale, false); assert.equal(h.model().error, ''); assert.equal(h.reads.length, 0); assert.equal(h.watchers.filter(w => w.active).length, 2);
     const syncFailure = harness(); syncFailure.state.synchronousWatchError = true; syncFailure.controller.sync();
     assert.equal(syncFailure.model().stale, true); assert(syncFailure.watchers.every(w => !w.active));
   });
@@ -203,16 +210,16 @@ async function test(name, body) { await body(); count++; console.log('ok ' + nam
       assert.equal(h.model().ready, false); assert.equal(h.controller.start(data ? 4 : 2), false); assert.equal(h.writes.length, 0);
     }
   });
-  await test('blocked alerts queue once and Got it stores only this person’s event IDs', async () => {
+  await test('blocked alerts queue once and presentation IDs persist across people on the device', async () => {
     const h = harness(); h.allow(false); await h.ready(record()); h.clock(AT + 2 * HOUR); h.controller.tick(); assert.equal(h.pings.length, 0);
     h.allow(true); h.controller.tick(); assert.equal(h.pings.length, 1); assert.equal(h.chimes.length, 1); h.got(); h.controller.tick(); assert.equal(h.pings.length, 1);
     assert.deepEqual(Object.keys(h.seenWrites[0].value), [RUN + '_1']); assert.equal(h.seenWrites[0].session.by, 'ann'); assert.equal(h.writes.length, 0);
-    h.user({ uid: 'device-a', by: 'bo', pin: '000000', issuedAt: 2000, canRead: true }); h.controller.sync(); h.emit(record()); assert.equal(h.pings.length, 2);
+    h.user({ uid: 'device-a', by: 'bo', pin: '000000', issuedAt: 2000, canRead: true }); h.controller.sync(); h.emit(record()); h.recorded(null); assert.equal(h.pings.length, 1);
   });
   await test('closing a ping without Got it does not repeat on each clock tick', async () => {
     const h = harness(); await h.ready(record()); h.clock(AT + 2 * HOUR); h.controller.tick(); h.close();
     for (let i = 0; i < 10; i++) h.controller.tick();
-    assert.equal(h.pings.length, 1); assert.equal(h.seenWrites.length, 0);
+    assert.equal(h.pings.length, 1); assert.equal(h.seenWrites.length, 1);
   });
   await test('an old open ping cannot acknowledge a new batch', async () => {
     const h = harness(); await h.ready(record()); h.clock(AT + 2 * HOUR); h.controller.tick();
@@ -229,6 +236,123 @@ async function test(name, body) { await body(); count++; console.log('ok ' + nam
     assert.equal(h.controller.start(2), false); assert.equal(h.controller.isBusy(), false); assert.equal(h.writes.length, 0); assert.match(h.model().actionError.message, /Couldn’t start/);
     const disposed = harness(); await disposed.ready(); disposed.controller.start(2); disposed.controller.dispose(); await settle();
     assert.equal(disposed.writes.length, 0); assert(disposed.watchers.every(w => !w.active)); assert.equal(disposed.model().available, false);
+  });
+  await test('first popup waits for both fresh documents and never trusts cached absence', async () => {
+    const h = harness(); h.clock(AT + 2 * HOUR); h.controller.sync(); h.emit(record());
+    assert.equal(h.pings.length, 0); assert.equal(h.model().recordedReady, false); assert.equal(h.controller.confirm(2, RUN), false);
+    h.recorded(null, { fromCache: true }); assert.equal(h.pings.length, 0); assert.equal(h.model().recordedReady, false);
+    h.recorded(null, { hasPendingWrites: true }); assert.equal(h.pings.length, 0);
+    h.recorded(null); assert.equal(h.pings.length, 1); assert.equal(h.model().recordedReady, true); assert.equal(h.writes.length, 0);
+  });
+  await test('a fresh browser instance and another person on this device do not replay an already presented stage', async () => {
+    const h = harness(); h.clock(AT + 2 * HOUR); await h.ready(record()); assert.equal(h.pings.length, 1); h.close();
+    const reload = harness({ storage: h.storage }); reload.clock(AT + 2 * HOUR); await reload.ready(record()); assert.equal(reload.pings.length, 0);
+    reload.user({ ...reload.currentUser(), by: 'bo', issuedAt: 2000 }); reload.controller.sync(); reload.emit(record()); reload.recorded(null);
+    assert.equal(reload.pings.length, 0);
+    const otherDevice = harness(); otherDevice.clock(AT + 2 * HOUR); await otherDevice.ready(record()); assert.equal(otherDevice.pings.length, 1);
+    reload.emit(record({ run: 'batch_00000000002', rev: 3 })); assert.equal(reload.pings.length, 1);
+  });
+  await test('a storage event imports sibling-tab presentation IDs without database work', async () => {
+    const h = harness(); await h.ready(record()); h.storage.set('device-a|000000', { [RUN + '_1']: true });
+    h.controller.refreshSeen(); h.clock(AT + 2 * HOUR); h.controller.tick();
+    assert.equal(h.pings.length, 0); assert.equal(h.writes.length, 0); assert.equal(h.watchers.length, 2);
+  });
+  await test('saved confirmation prevents all devices from receiving that stage but not the next one', async () => {
+    const h = harness(); h.clock(AT + 2 * HOUR); await h.ready(second(), declaration()); assert.equal(h.pings.length, 0);
+    h.clock(AT + 6 * HOUR); h.controller.tick(); assert.equal(h.pings.length, 1); assert.equal(h.pings[0].hours, 4);
+    const other = harness(); other.clock(AT + 6 * HOUR); await other.ready(second(), declaration({ secondAt: stamp(AT + 6 * HOUR), secondBy: 'bo', by: 'bo' }));
+    assert.equal(other.pings.length, 0); assert.equal(other.writes.length, 0);
+  });
+  await test('confirmation uses a separate server-timestamped record and waits for its write acknowledgement', async () => {
+    const h = harness(); h.clock(AT + 2 * HOUR); await h.ready(record());
+    assert.equal(h.controller.confirm(2, RUN), true); assert.equal(h.model().confirmPending, 2); assert.equal(h.controller.isBusy(), true);
+    assert.equal(h.controller.confirm(2, RUN), false); assert.equal(h.controller.start(4), false); await settle();
+    assert.equal(h.writes.length, 1); const w = h.writes[0]; assert.equal(w.kind, 'set'); assert.equal(w.path, 'cooling/recorded');
+    assert.deepEqual(w.data, { v: 1, run: RUN, firstAt: { serverTimestamp: true }, firstBy: 'ann', secondAt: 0, secondBy: '' });
+    h.recorded(declaration()); assert.equal(h.model().confirmPending, 2); assert.equal(h.controller.isBusy(), true);
+    await h.ack(); assert.equal(h.model().confirmPending, 0); assert.equal(h.controller.isBusy(), false); assert.equal(h.model().run.rev, 1);
+    assert.equal(h.controller.start(4), true);
+  });
+  await test('confirmation promise alone or local estimates cannot claim shared completion', async () => {
+    const h = harness(); h.clock(AT + 2 * HOUR); await h.ready(record()); h.controller.confirm(2, RUN); await settle(); await h.ack();
+    assert.equal(h.model().confirmPending, 2); assert.equal(h.model().recorded, null);
+    h.recorded(declaration(), { fromCache: true }); assert.equal(h.model().confirmPending, 2); assert.equal(h.model().recorded, null);
+    h.recorded(declaration(), { hasPendingWrites: true }); assert.equal(h.model().confirmPending, 2);
+    h.recorded(declaration()); assert.equal(h.model().confirmPending, 0); assert.equal(h.model().recorded.firstBy, 'ann');
+  });
+  await test('second-stage confirmation updates only its own fields and may be recorded before the first declaration', async () => {
+    const h = harness(); h.clock(AT + 6 * HOUR); await h.ready(second(), declaration());
+    h.controller.confirm(4, RUN); await settle();
+    assert.equal(h.writes[0].kind, 'update'); assert.deepEqual(h.writes[0].data, { run: RUN, secondAt: { serverTimestamp: true }, secondBy: 'ann' });
+    await h.ack(); h.recorded(declaration({ secondAt: stamp(AT + 6 * HOUR), secondBy: 'ann' })); assert.equal(h.controller.isBusy(), false);
+    const other = harness(); other.clock(AT + 6 * HOUR); await other.ready(second()); other.controller.confirm(4, RUN); await settle();
+    assert.deepEqual(other.writes[0].data, { v: 1, run: RUN, firstAt: 0, firstBy: '', secondAt: { serverTimestamp: true }, secondBy: 'ann' });
+  });
+  await test('early, wrong-run, unsupported and already recorded confirmations do not write', async () => {
+    const h = harness(); await h.ready(record()); assert.equal(h.controller.confirm(2, RUN), false);
+    h.clock(AT + 2 * HOUR); assert.equal(h.controller.confirm(4, RUN), false); assert.equal(h.controller.confirm(2, 'batch_00000000002'), false);
+    assert.equal(h.controller.confirm(3, RUN), false); h.recorded(declaration()); assert.equal(h.controller.confirm(2, RUN), false);
+    assert.equal(h.writes.length, 0); assert.equal(h.controller.isBusy(), false);
+  });
+  await test('an existing earlier-run declaration is replaced without changing the timer', async () => {
+    const h = harness(); h.clock(AT + 2 * HOUR); await h.ready(record(), declaration({ run: 'batch_previous_01' }));
+    assert.equal(h.controller.confirm(2, RUN), true); await settle(); assert.equal(h.writes[0].kind, 'set'); assert.equal(h.writes[0].path, 'cooling/recorded');
+    assert.equal(h.writes[0].data.run, RUN); assert.equal(h.writes[0].data.secondAt, 0);
+    h.recorded(declaration()); await h.ack(); assert.equal(h.controller.isBusy(), false); assert.equal(h.model().run.rev, 1);
+  });
+  await test('a refused confirmation stays named until an explicit retry and never retries on ticks', async () => {
+    const h = harness(); h.clock(AT + 2 * HOUR); await h.ready(record()); h.controller.confirm(2, RUN); await settle(); await h.reject('permission-denied');
+    assert.equal(h.controller.isBusy(), false); assert.match(h.model().confirmError.message, /Couldn’t save the Operandio 2-hour confirmation/);
+    for (let i = 0; i < 10; i++) h.controller.tick(); assert.equal(h.writes.length, 1);
+    assert.equal(h.controller.confirm(2, RUN), true); assert.equal(h.model().confirmError, null); await settle(); assert.equal(h.writes.length, 2);
+  });
+  await test('another person winning the same confirmation settles a refused or uncertain request as shared completion', async () => {
+    for (const code of ['permission-denied', 'unavailable']) {
+      const h = harness(); h.clock(AT + 2 * HOUR); await h.ready(record()); h.controller.confirm(2, RUN); await settle();
+      h.recorded(declaration({ firstBy: 'bo', by: 'bo' })); assert.equal(h.model().confirmPending, 2); await h.reject(code);
+      assert.equal(h.controller.isBusy(), false); assert.equal(h.model().confirmError, null); assert.equal(h.model().recorded.firstBy, 'bo');
+      assert.equal(h.writes.length, 1);
+    }
+  });
+  await test('uncertain confirmation remains protected and is reconciled without replay', async () => {
+    const h = harness(); h.clock(AT + 2 * HOUR); await h.ready(record()); h.controller.confirm(2, RUN); await settle(); await h.reject('unavailable');
+    assert.equal(h.controller.isBusy(), true); assert.match(h.model().recordedError, /unknown/); assert.equal(h.controller.confirm(2, RUN), false);
+    h.controller.retryRead(); h.emit(record()); h.recorded(null); assert.equal(h.controller.isBusy(), true); assert.equal(h.writes.length, 1);
+    h.recorded(declaration()); assert.equal(h.controller.isBusy(), false); assert.equal(h.model().recordedError, '');
+    const replaced = harness(); replaced.clock(AT + 2 * HOUR); await replaced.ready(record()); replaced.controller.confirm(2, RUN); await settle(); await replaced.reject('unavailable');
+    replaced.emit(record({ run: 'batch_00000000002', rev: 3 })); assert.equal(replaced.controller.isBusy(), false);
+    assert.match(replaced.model().confirmError.message, /batch changed/); assert.equal(replaced.writes.length, 1);
+  });
+  await test('confirmation follows original-person lock recovery and cannot submit under another identity', async () => {
+    const h = harness(); h.clock(AT + 2 * HOUR); await h.ready(record()); h.controller.confirm(2, RUN); await settle(); const old = h.watchers.find(w => w.path === 'cooling/recorded');
+    h.user(null); h.controller.sync(); old.next(snap(declaration())); await h.ack(); assert.equal(h.model().available, false); assert.equal(h.controller.isBusy(), true);
+    assert.equal(h.controller.pendingWork().person, 'ann');
+    h.user({ uid: 'device-a', by: 'bo', pin: '000000', issuedAt: 2000, canRead: true }); h.controller.sync(); assert.equal(h.model().available, false);
+    h.user({ uid: 'device-a', by: 'ann', pin: '000000', issuedAt: 3000, canRead: true }); h.controller.sync(); h.emit(record()); h.recorded(declaration());
+    assert.equal(h.controller.isBusy(), false); assert.equal(h.writes[0].session.by, 'ann'); assert.equal(h.writes[0].session.issuedAt, 1000);
+    const before = harness(); before.clock(AT + 2 * HOUR); await before.ready(record()); before.controller.confirm(2, RUN); before.user(null); before.controller.sync(); await settle();
+    assert.equal(before.writes.length, 0); assert.equal(before.controller.isBusy(), false);
+  });
+  await test('confirmation read failure does not stop an existing timer start or pretend the missing declaration is empty', async () => {
+    const h = harness(); await h.ready(); h.fail({ code: 'unavailable' }, 'cooling/recorded');
+    assert.equal(h.model().recordedReady, false); assert.match(h.model().recordedError, /read/); assert.equal(h.controller.start(2), true);
+    const due = harness(); due.clock(AT + 2 * HOUR); due.controller.sync(); due.emit(record()); due.fail({ code: 'unavailable' }, 'cooling/recorded');
+    assert.equal(due.pings.length, 0); assert.equal(due.controller.confirm(2, RUN), false); assert.equal(due.writes.length, 0);
+    due.controller.retryRead(); due.emit(record()); due.recorded(declaration()); assert.equal(due.pings.length, 0); assert.equal(due.model().recordedReady, true);
+  });
+  await test('malformed, regressed or before-deadline declarations fail closed', async () => {
+    const h = harness(); h.clock(AT + 2 * HOUR); await h.ready(record(), declaration());
+    h.recorded(declaration({ firstAt: stamp(AT + 2 * HOUR + 1) })); assert.equal(h.model().recordedReady, false); assert.match(h.model().recordedError, /verify/);
+    assert.equal(h.model().recorded.firstAt, AT + 2 * HOUR); h.recorded(declaration()); assert.equal(h.model().recordedReady, true);
+    h.recorded(null); assert.equal(h.model().recordedReady, false);
+    const early = harness(); early.clock(AT + 2 * HOUR); await early.ready(record(), declaration({ firstAt: stamp(AT) }));
+    assert.equal(early.model().recordedReady, false); assert.equal(early.pings.length, 0); assert.equal(early.controller.confirm(2, RUN), false);
+  });
+  await test('confirmation construction failure and disposal leave no hidden pending write', async () => {
+    const h = harness(); h.clock(AT + 2 * HOUR); await h.ready(record()); h.host.timestamp = () => { throw new Error('SDK not ready'); };
+    assert.equal(h.controller.confirm(2, RUN), false); assert.equal(h.controller.isBusy(), false); assert.match(h.model().confirmError.message, /Couldn’t save/);
+    const other = harness(); other.clock(AT + 2 * HOUR); await other.ready(record()); other.controller.confirm(2, RUN); other.controller.dispose(); await settle();
+    assert.equal(other.writes.length, 0); assert(other.watchers.every(w => !w.active));
   });
   console.log(count + ' controller checks passed');
 })().catch(error => { console.error('FAIL cooling controller', error); process.exit(1); });

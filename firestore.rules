@@ -1345,13 +1345,41 @@ service cloud.firestore {
           && (request.time + duration.value(10, 'h')).date() > (old.secondAt + duration.value(14, 'h')).date()
           && coolingFirst()));
     }
+    // Shared declarations leave the timer's v1 writer contract intact for saved older clients.
+    // One canonical timer lookup per confirmation proves the exact run and elapsed stage.
+    function coolingRecordedOk() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['v', 'run', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by'])
+        && d.keys().hasOnly(['v', 'run', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by'])
+        && d.v == 1 && d.run is string && d.run.matches('[a-zA-Z0-9_-]{16,80}')
+        && ((d.firstAt == 0 && d.firstBy == '') || (d.firstAt is timestamp && d.firstBy is string && d.firstBy.size() > 0 && d.firstBy.size() <= 80))
+        && ((d.secondAt == 0 && d.secondBy == '') || (d.secondAt is timestamp && d.secondBy is string && d.secondBy.size() > 0 && d.secondBy.size() <= 80));
+    }
+    function coolingRecordedStep(old, timer) {
+      let d = request.resource.data;
+      return (old.firstAt == 0 && old.firstBy == '' && d.firstAt == request.time && d.firstBy == d.by
+          && d.secondAt == old.secondAt && d.secondBy == old.secondBy
+          && timer.firstAt is timestamp && request.time >= timer.firstAt + duration.value(2, 'h'))
+        || (old.secondAt == 0 && old.secondBy == '' && d.secondAt == request.time && d.secondBy == d.by
+          && d.firstAt == old.firstAt && d.firstBy == old.firstBy
+          && timer.secondAt is timestamp && request.time >= timer.secondAt + duration.value(4, 'h'));
+    }
+    function coolingRecordedNext() {
+      let d = request.resource.data;
+      let timer = get(/databases/$(database)/documents/kitchens/KITCHEN_PIN/cooling/current).data;
+      let prior = resource == null || resource.data.run != d.run
+        ? {'firstAt': 0, 'firstBy': '', 'secondAt': 0, 'secondBy': ''} : resource.data;
+      return d.run == timer.run && coolingRecordedStep(prior, timer);
+    }
     match /kitchens/KITCHEN_PIN/cooling/{id} {
-      allow get: if id == 'current' && kitchenRead();
+      allow get: if id in ['current', 'recorded'] && kitchenRead();
       allow list, delete: if false;
       allow create: if id == 'current' && staff() && request.resource.data.by in cfg().get('staffIds', [])
         && coolingOk() && request.resource.data.rev == 1 && coolingFirst();
       allow update: if id == 'current' && staff() && request.resource.data.by in cfg().get('staffIds', [])
         && coolingOk() && coolingNext();
+      allow create, update: if id == 'recorded' && staff() && request.resource.data.by in cfg().get('staffIds', [])
+        && coolingRecordedOk() && coolingRecordedNext();
     }
 
     // Cleaning (8 Nov 2026): immutable schedule revisions retain missed occurrences after an edit or archive.
