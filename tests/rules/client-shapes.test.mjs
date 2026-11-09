@@ -636,8 +636,8 @@ row('js/prep.js coolingWrite(): four-hour second stage through W()', { ok: KITCH
   prep: () => put({ 'cooling/current': coolRun() }),
   run: (db, w, r) => W(r, [['upd', 'cooling/current', { rev: 2, secondAt: serverTimestamp(), secondBy: w }]]) });
 row('js/prep.js coolingWrite(): new batch after four-hour stage through W()', { ok: KITCHEN, asks: KITCHEN,
-  prep: () => put({ 'cooling/current': coolRun({ rev: 2, firstAt: Timestamp.fromMillis(NOW - 21600000 - 1000),
-    secondAt: Timestamp.fromMillis(NOW - 14400000 - 1000), secondBy: 'sam', by: 'sam' }) }),
+  prep: () => put({ 'cooling/current': coolRun({ rev: 2, firstAt: Timestamp.fromMillis(NOW - 21600000 - 86400000),
+    secondAt: Timestamp.fromMillis(NOW - 14400000 - 86400000), secondBy: 'sam', by: 'sam' }) }),
   run: (db, w, r) => W(r, [['set', 'cooling/current', coolRun({ run: 'next-1234567890123456', rev: 3,
     firstAt: serverTimestamp(), firstBy: w, by: w })]]) });
 

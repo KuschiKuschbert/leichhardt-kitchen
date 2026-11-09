@@ -1340,7 +1340,10 @@ service cloud.firestore {
           && request.time >= old.firstAt + duration.value(2, 'h')
           && d.secondAt == request.time && d.secondBy == d.by)
         || (d.run != old.run && old.secondAt is timestamp
-          && request.time >= old.secondAt + duration.value(4, 'h') && coolingFirst()));
+          && request.time >= old.secondAt + duration.value(4, 'h')
+          // Queensland midnight after the four-hour deadline, including a deadline that crosses midnight.
+          && (request.time + duration.value(10, 'h')).date() > (old.secondAt + duration.value(14, 'h')).date()
+          && coolingFirst()));
     }
     match /kitchens/KITCHEN_PIN/cooling/{id} {
       allow get: if id == 'current' && kitchenRead();

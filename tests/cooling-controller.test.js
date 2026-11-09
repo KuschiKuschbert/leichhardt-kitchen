@@ -102,11 +102,24 @@ async function test(name, body) { await body(); count++; console.log('ok ' + nam
   });
   await test('another batch requires both stages finished and increments the shared revision', async () => {
     const h = harness(); h.clock(AT + 3 * HOUR); await h.ready(second()); assert.equal(h.controller.start(2), false);
-    h.clock(AT + 6 * HOUR); assert.equal(h.controller.start(2), true); await settle(); const write = h.writes[0];
+    const unlock = C.parse(second()).restartAt; h.clock(unlock); assert.equal(h.controller.start(2), true); await settle(); const write = h.writes[0];
     assert.equal(write.kind, 'set'); assert.equal(write.data.rev, 3); assert.notEqual(write.data.run, RUN);
     assert.equal(write.data.secondAt, 0); assert.equal(write.data.secondBy, '');
-    h.emit(record({ run: write.data.run, rev: 3, firstAt: stamp(AT + 6 * HOUR) })); await h.ack();
-    assert.equal(h.model().run.rev, 3); assert.equal(h.model().run.firstDue, AT + 8 * HOUR);
+    h.emit(record({ run: write.data.run, rev: 3, firstAt: stamp(unlock) })); await h.ack();
+    assert.equal(h.model().run.rev, 3); assert.equal(h.model().run.firstDue, unlock + 2 * HOUR);
+  });
+  await test('completion, refresh and direct calls stay locked until midnight without extra reads or writes', async () => {
+    const due = Date.parse('2026-11-09T18:00:00+10:00'), unlock = Date.parse('2026-11-10T00:00:00+10:00');
+    const complete = second({ firstAt: stamp(due - 6 * HOUR), secondAt: stamp(due - 4 * HOUR) });
+    for (const at of [due, unlock - 1]) {
+      const h = harness(); h.clock(at); await h.ready(complete);
+      assert.equal(h.controller.start(2), false); assert.equal(h.writes.length, 0); assert.equal(h.reads.length, 0);
+      h.controller.dispose();
+    }
+    const h = harness(); h.clock(unlock - 1); await h.ready(complete);
+    h.clock(unlock); h.controller.tick(); assert.equal(h.writes.length, 0);
+    assert.equal(h.controller.start(2), true); await settle();
+    assert.equal(h.writes.length, 1); assert.equal(h.writes[0].data.rev, 3);
   });
   await test('a simultaneous rejected start shows the shared winner and an explicit refusal', async () => {
     const h = harness(); await h.ready(); h.controller.start(2); await settle();

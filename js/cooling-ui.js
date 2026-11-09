@@ -15,12 +15,13 @@
     function finite(value) { return typeof value === 'number' && Number.isFinite(value) && value > 0; }
     function validRun(run) {
       return run && typeof run.id === 'string' && finite(run.firstAt) && finite(run.firstDue) && run.firstDue > run.firstAt &&
-        ((!run.secondAt && !run.secondDue) || finite(run.secondAt) && finite(run.secondDue) && run.secondAt >= run.firstDue && run.secondDue > run.secondAt);
+        ((!run.secondAt && !run.secondDue) || finite(run.secondAt) && finite(run.secondDue) && run.secondAt >= run.firstDue && run.secondDue > run.secondAt && finite(run.restartAt) && run.restartAt >= run.secondDue);
     }
     function state() {
       var run = validRun(model.run) ? model.run : null, bad = !!model.run && !run, clockOK = finite(model.now);
       return { run: run, ready: !!model.available && !!model.ready && !model.stale && !model.error && !bad && clockOK,
         bad: bad, firstDone: !!run && clockOK && model.now >= run.firstDue,
+        newBatchReady: !!run && !!run.restartAt && clockOK && model.now >= run.restartAt,
         secondDone: !!run && !!run.secondDue && clockOK && model.now >= run.secondDue };
     }
     function left(until) {
@@ -58,7 +59,7 @@
       else if (!s.ready) phase = model.error || s.bad ? 'error' : 'checking';
       else if (armed && armed === armKey(s)) phase = 'armed';
       else if (!run) phase = 'idle';
-      else if (s.secondDone) phase = 'done2';
+      else if (s.secondDone) phase = s.newBatchReady ? 'idle' : 'done2';
       else if (run.secondAt) phase = 'second';
       else if (s.firstDone) phase = 'done1';
       else phase = 'first';
@@ -67,10 +68,10 @@
       var seconds = running ? Math.max(0, Math.ceil((due - model.now) / 1000)) : 0;
       var countdown = Math.floor(seconds / 3600) + ':' + String(Math.floor(seconds % 3600 / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
       var primary = phase === 'idle' ? '' : phase === 'armed' ? 'Start' : phase === 'pending' ? 'Starting…' : phase === 'error' ? 'Check timer' : phase === 'checking' ? 'Check timer' : running ? countdown : 'Done';
-      var secondary = phase === 'done1' ? 'Start 4 h →' : phase === 'done2' ? 'Start new batch →' : phase === 'checking' ? model.stale ? 'Not connected' : 'Checking…' : phase === 'error' ? 'Operandio · details' : 'Operandio · ' + (phase === 'armed' ? 2 : hours) + ' h';
-      var label = phase === 'idle' ? 'Operandio cooling timer. Prepare 2-hour start' : phase === 'armed' ? (s.secondDone ? 'Start another Operandio batch, 2-hour timer' : 'Start Operandio 2-hour timer') : phase === 'pending' ? 'Starting Operandio ' + hours + '-hour timer. Waiting for confirmation.' : phase === 'done1' ? 'Operandio 2 hours done. Start 4-hour timer' : phase === 'done2' ? 'Operandio 2-hour and 4-hour stages done. Prepare a new batch' : running ? 'Operandio ' + hours + '-hour timer, ' + countdown + ' remaining' : model.actionError ? String(model.actionError.message || 'Couldn’t start Operandio. Check the timer.') : readStatus();
+      var secondary = phase === 'done1' ? 'Start 4 h →' : phase === 'done2' ? 'Tomorrow · 00:00' : phase === 'checking' ? model.stale ? 'Not connected' : 'Checking…' : phase === 'error' ? 'Operandio · details' : 'Operandio · ' + (phase === 'armed' ? 2 : hours) + ' h';
+      var label = phase === 'idle' ? 'Operandio cooling timer. Prepare 2-hour start' : phase === 'armed' ? (s.secondDone ? 'Start another Operandio batch, 2-hour timer' : 'Start Operandio 2-hour timer') : phase === 'pending' ? 'Starting Operandio ' + hours + '-hour timer. Waiting for confirmation.' : phase === 'done1' ? 'Operandio 2 hours done. Start 4-hour timer' : phase === 'done2' ? 'Operandio cooling finished. Timer disabled until tomorrow at 00:00 Queensland time.' : running ? 'Operandio ' + hours + '-hour timer, ' + countdown + ' remaining' : model.actionError ? String(model.actionError.message || 'Couldn’t start Operandio. Check the timer.') : readStatus();
       if (phase === 'pending' && model.error) label += ' ' + String(model.error);
-      return { phase: phase, hours: hours, running: running, progress: progress, primary: primary, secondary: secondary, label: label || 'Check Operandio timers' };
+      return { phase: phase, hours: hours, running: running, readOnly: running || phase === 'done2', progress: progress, primary: primary, secondary: secondary, label: label || 'Check Operandio timers' };
     }
     function sector(progress) {
       if (progress <= 0) return '';
@@ -85,7 +86,7 @@
         var button = chip.querySelector('button'), status = chip.querySelector('.cooling-clock-status');
         var focused = document.activeElement === button || document.activeElement === status || restore && document.activeElement === document.body;
         chip.hidden = !model.available; chip.dataset.clockState = c.phase;
-        button.hidden = c.running; status.hidden = !c.running; button.disabled = c.phase === 'pending';
+        button.hidden = c.readOnly; status.hidden = !c.readOnly; button.disabled = c.phase === 'pending';
         button.setAttribute('aria-busy', String(c.phase === 'pending'));
         button.setAttribute('aria-label', c.label); status.setAttribute('aria-label', c.label); button.title = c.label; status.title = c.label;
         if (c.phase === 'checking' || c.phase === 'error') { button.setAttribute('aria-haspopup', 'dialog'); button.setAttribute('aria-expanded', String(!!wrap)); }
@@ -95,7 +96,7 @@
           control.querySelector('.cooling-clock-ring').style.strokeDashoffset = String(100 * (1 - c.progress));
           control.querySelector('.cooling-clock-sector').setAttribute('d', sector(c.progress));
         });
-        if (focused && model.available && !wrap && !model.pending) (c.running ? status : button).focus({ preventScroll: true });
+        if (focused && model.available && !wrap && !model.pending) (c.readOnly ? status : button).focus({ preventScroll: true });
       });
       if (restore) clockFocus = false;
     }
@@ -153,7 +154,7 @@
       if (!s.secondDone) { if (footer) footer.remove(); return; }
       if (!footer) { footer = document.createElement('footer'); footer.className = 'cooling-new'; footer.innerHTML = '<div class="cooling-action"></div>'; host.appendChild(footer); }
       var error = model.pending !== 2 && model.actionError && model.actionError.stage === 2 ? String(model.actionError.message || '') : '';
-      actionButton(footer.querySelector('.cooling-action'), 2, s.ready, model.pending === 2, error, 'Start another batch');
+      actionButton(footer.querySelector('.cooling-action'), 2, s.ready && s.newBatchReady, model.pending === 2, error, s.newBatchReady ? 'Start another batch' : 'Available tomorrow');
       errorLine(footer, error);
     }
     function paintMenu() {
@@ -163,7 +164,7 @@
     }
     function paintPing() {
       var s = state(), run = pingRun, same = !!s.run && !!run && s.run.id === run.id, line = wrap.querySelector('.cooling-ping-time'), next = wrap.querySelector('.cooling-next');
-      text(line, run ? 'Time reached at ' + at(pingStage === 2 ? run.firstDue : run.secondDue) + '.' : 'The shared timer has changed. Open the clock for the current batch.');
+      text(line, run ? 'Time reached at ' + at(pingStage === 2 ? run.firstDue : run.secondDue) + '.' + (pingStage === 4 && same && !s.newBatchReady ? ' Timer available tomorrow at 00:00.' : '') : 'The shared timer has changed. Open the clock for the current batch.');
       if (pingStage === 2 && run) {
         next.hidden = false;
         var title = next.querySelector('b'), detail = next.querySelector('p'), host = next.querySelector('.cooling-action'), error = model.pending !== 4 && model.actionError && model.actionError.stage === 4 ? String(model.actionError.message || '') : '';
@@ -231,7 +232,7 @@
     }
     function start(hours) {
       var s = state();
-      if (model.pending || !s.ready || !(hours === 2 ? !s.run || s.secondDone : hours === 4 && s.firstDone && !s.run.secondAt)) return;
+      if (model.pending || !s.ready || !(hours === 2 ? !s.run || s.secondDone && s.newBatchReady : hours === 4 && s.firstDone && !s.run.secondAt)) return;
       var token = ++attempt;
       pendingFocus = hours; armed = ''; dismissedError = '';
       model = Object.assign({}, model, { pending: hours, actionError: null });
@@ -257,7 +258,7 @@
         event.preventDefault();
         if (!model.available || model.pending || wrap || H.canOpen && !H.canOpen('menu')) return;
         var c = clockState(), s = state();
-        if (c.running) return;
+        if (c.readOnly) return;
         if (c.phase === 'error' || c.phase === 'checking') { show('menu', 0, button); return; }
         if (c.phase === 'done1') { clockFocus = true; start(4); return; }
         if (c.phase === 'armed') { clockFocus = true; start(2); return; }
@@ -297,7 +298,7 @@
       if (!model.available || model.pending || model.actionError !== old.actionError || actionErrorKey(model) !== actionErrorKey(old)) dismissedError = '';
       var current = validRun(model.run) ? model.run : null;
       var s = state();
-      if (!s.ready || model.pending || headerError(s) || armed && (armed !== armKey(s) || s.run && !s.secondDone)) armed = '';
+      if (!s.ready || model.pending || headerError(s) || armed && (armed !== armKey(s) || s.run && !s.newBatchReady)) armed = '';
       if (pingRun && current && current.id === pingRun.id) pingRun = Object.assign({}, current);
       if (!model.available) { attempt++; model = { available: false }; armed = ''; clockFocus = false; close(); say(''); paintChip(); return; }
       if (model.actionError) say('');

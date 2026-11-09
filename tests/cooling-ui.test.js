@@ -2,7 +2,8 @@
 const L = require('./lib');
 const { R, ok } = L.results();
 const firstAt = L.NOW, firstDue = firstAt + 2 * 3600000;
-const run = { id: 'batch-a', firstAt, firstDue, secondAt: 0, secondDue: 0 };
+const restartAt = firstAt + 10 * 3600000; // 00:00 Queensland after this fixture's 20:10 completion.
+const run = { restartAt, id: 'batch-a', firstAt, firstDue, secondAt: 0, secondDue: 0 };
 async function fixture(browser, width, textSize) {
   const context = await browser.newContext({ viewport: { width: width || 390, height: 844 }, serviceWorkers: 'block' });
   const p = await context.newPage(); p.errors = []; p.on('pageerror', e => p.errors.push(String(e)));
@@ -107,9 +108,21 @@ async function shape(p) {
       ok((await p.evaluate(() => window.__acks)).at(-1).runId === run.id, 'Dismissing an old ping cannot acknowledge the new batch');
       await render(p, { run: next, now: next.secondDue }); await p.evaluate(() => window.__ui.ping(4));
       ok(await p.getByText('Operandio batch cooling time 4 hours is done.', { exact: true }).isVisible(), 'Second deadline uses the requested four-hour message');
+      await render(p, { run: { ...run, id: 'tomorrow-batch', firstAt: restartAt, firstDue: restartAt + 2 * 3600000 }, now: restartAt });
+      ok(!/available tomorrow/.test(await p.locator('.cooling-ping-time').textContent()), 'An old completion ping never borrows tomorrow’s new batch lockout message');
+      await render(p, { run: next, now: next.secondDue });
       await p.evaluate(() => window.__fromBack());
       ok((await p.evaluate(() => window.__closed)).at(-1).noBack === true && await p.locator('.cooling-wrap').count() === 0, 'The injected Back callback closes without another history Back');
       await p.evaluate(() => window.__ui.open(document.querySelector('.cooling-chip')));
+      ok(await p.locator('.cooling-new button').isDisabled() && await p.locator('.cooling-clock-status').isVisible(), 'Completed timer and new-batch action stay disabled for the rest of the day');
+      ok(/disabled until tomorrow/.test(await p.locator('.cooling-clock-status').getAttribute('aria-label')), 'The read-only clock explains when it is available');
+      const callsBefore = (await p.evaluate(() => window.__calls)).length;
+      await p.locator('.cooling-new button').evaluate(el => el.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+      ok((await p.evaluate(() => window.__calls)).length === callsBefore, 'A synthetic disabled-button tap cannot start another batch');
+      await render(p, { now: restartAt - 1 });
+      ok(await p.locator('.cooling-new button').isDisabled(), 'The final millisecond before midnight stays locked');
+      await render(p, { now: restartAt });
+      ok(await p.locator('.cooling-new button').isEnabled(), 'The open details menu becomes available at midnight without a read or reload');
       await p.locator('.cooling-new button').click();
       ok((await p.evaluate(() => window.__calls)).at(-1) === 2 && await p.locator('.cooling-new [aria-busy]').count() === 1, 'Start another batch explicitly requests a new two-hour stage while preserving the old completed record');
       await p.keyboard.press('Escape');
@@ -150,9 +163,12 @@ async function shape(p) {
         await p.click('[data-cooling="clock"]'); await p.keyboard.press('Escape');
         await render(p, { now: due });
         ok(await p.locator('.cooling-clock').getAttribute('data-clock-state') === (hours === 2 ? 'done1' : 'done2'), hours + 'h the retained read refusal does not mask the completed shared stage');
+        if (hours === 4) {
+          await render(p, { now: restartAt });
+        }
         await p.click('[data-cooling="clock"]');
         if (hours === 4) {
-          await render(p, { now: due + 1000 });
+          await render(p, { now: restartAt + 1000 });
           ok(await p.locator('.cooling-clock').getAttribute('data-clock-state') === 'armed' && (await p.evaluate(() => window.__calls)).length === 1, 'A retained read refusal does not cancel new-batch arming on the next clock render');
           if (await p.locator('.cooling-wrap').count()) await p.keyboard.press('Escape');
           await p.click('[data-cooling="clock"]');
