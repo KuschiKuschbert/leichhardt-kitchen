@@ -33,7 +33,7 @@
   "overflowPairs": 0,
   "browserErrorPairs": 0,
   "composite": "docs/surface-colours/selected-examples.png",
-  "compositeBytes": 625042,
+  "compositeBytes": 621434,
   "surfaceTest": {
     "assertions": 172,
     "passed": 172,
@@ -49,8 +49,33 @@
     "Closed disclosure content excluded by native checkVisibility, correcting initial hidden-box false positive.",
     "Todo and Functions recaptured after final corner and dietaries-label fixes.",
     "Visual inspection included selected composite, Home1280, Prep390, Orders390, Team390, Cleaning390, Functions390, recipe Pass390/Tiles390, To-do1280, Drinks1280, Admin1280 and shared Prep modal390.",
-    "After captures, only the focus-visible outline colour on steel headers changed. The separate real-control check verifies keyboard visibility and Close behaviour at all three widths; unfocused screenshot geometry is unchanged."
+    "After captures, only the focus-visible outline colour on steel headers changed. The separate real-control check verifies keyboard visibility and Close behaviour at all three widths; unfocused screenshot geometry is unchanged.",
+    "PR635 landed before release. Its current one-roster Team layout is preserved; three additional same-DOM colour comparisons against d4d383e retain all 111 measured boxes. The selected composite uses this newer Team screen."
   ],
   "capturedCSSSHA256": "1ed8c7adc1bcc4926ff47c14072ae5ae4eacbd3d1544005d8e1802608943ebe5",
-  "finalCSSSHA256": "4bf565041641230b5f23e909fa51e60aaadf3333bae4c6d751d9006cb4ff6734"
+  "finalCSSSHA256": "8a4680993e1d74ed7f8587e9b9b40b60b16f136e4f0a838cd6e5e196ca14ce9d",
+  "teamIntegration": {
+    "baseline": "d4d383e:css/app.css",
+    "sameDOM": true,
+    "fixtureOnly": true,
+    "actualFonts": true,
+    "previewCSS": false,
+    "scene": "team",
+    "widths": [
+      390,
+      768,
+      1280
+    ],
+    "pairs": 3,
+    "screenshots": 6,
+    "measuredBoxes": 111,
+    "geometryDifferencePairs": 0,
+    "overflowPairs": 0,
+    "browserErrorPairs": 0,
+    "notes": [
+      "Incoming PR635 Team layout retained for both sides.",
+      "Historical approved-summary.json and approved-measurements.json remain untouched.",
+      "Composite Team390 replaced with the new incoming layout after surface colours."
+    ]
+  }
 }

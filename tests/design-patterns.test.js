@@ -28,6 +28,7 @@ const CLASSES = [
   'todo-notebook', 'todo-book', 'todo-bookhead', 'todo-spine', 'todo-work', 'todo-formtitle', 'todo-status', 'todo-privacy',
   'tm-notebook', 'tm-nbook', 'tm-nhead', 'tm-nspine', 'tm-work', 'tm-viewbar', 'tm-shift-scroll', 'tm-person-pick', 'tm-dayperson', 'tm-away-slot',
   'tm-weeknav', 'tm-daypick',
+  'tm-person-row', 'tm-person-details', 'tm-planstate', 'tm-next-overview',
   'cln-page', 'cln-book', 'cln-row', 'cln-matrix', 'cln-day-pick', 'cln-form',
   'dr-notebook', 'dr-book', 'dr-bookhead', 'dr-usual', 'dr-work', 'dr-spine', 'dr-people'
 ];
@@ -37,7 +38,7 @@ const TOKENS = ['--ink', '--paper', '--bg', '--muted', '--faint', '--line', '--a
   '--surface-work', '--surface-work-edge', '--surface-people', '--surface-people-edge', '--surface-paper', '--surface-reference'];
 const HELPERS = ['tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'SwipeDismiss', 'ModalFrame', 'enhance',
   'svButton', 'svStart', 'svDone', 'svFail', 'svLine', 'errMsg', 'failed', 'toast', 'slipName', 'arm', 'armed', 'W', 'canW',
-  'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'tmAwayHTML', 'tmNextHTML', 'tmAwayPaint', 'dkRunHTML', 'dkTeamHTML', 'dkFormHTML', 'panelShellHTML', 'psPanelHTML', 'psHintHTML', 'psReferenceHTML', 'psRolloutHTML'];
+  'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'tmAwayHTML', 'tmNextHTML', 'tmAwayPaint', 'tmAwayHidden', 'dkRunHTML', 'dkTeamHTML', 'dkFormHTML', 'panelShellHTML', 'psPanelHTML', 'psHintHTML', 'psReferenceHTML', 'psRolloutHTML'];
 const GLOBALS = ['ICON', 'LK_UX', 'LK_PREP_STANDARDS'];
 
 const missing = [];

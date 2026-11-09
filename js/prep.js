@@ -11641,7 +11641,11 @@
     if (k === 'tm-q') {
       tmFind = String(el.value || '').slice(0, 100);
       var tmListEl = S.root.querySelector('.tm-people'), tmListShift = tmShift(tmShNow());
-      if (tmListEl && tmListShift) tmListEl.innerHTML = tmPersonListHTML(tmListShift);
+      if (tmListEl && tmListShift) {
+        tmKeepView(); tmListEl.innerHTML = tmPersonListHTML(tmListShift);
+        if (window.LK_UX) window.LK_UX.enhance(tmListEl);
+        tmRestoreView();
+      }
       return;
     }
     if (k && k.indexOf('wh-') === 0) {
@@ -12352,7 +12356,7 @@
   var tmf = null, tmSnap = '', tmSh = '', tmMsg = '', tmLastBusy = false, tmLastJob = null, tmShowOff = false, tmSp = { from: null, len: null, mode: null }, tmIconN = 0;
   // View choices are memory-only. Whole day is never a stored shift or a second draft.
   var tmWhole = false, tmSec = '', tmFind = '', tmAssignMsg = '';
-  var tmUi = { shifts: 0, sections: 0, details: true, batch: false, overview: false };
+  var tmUi = { shifts: 0, sections: 0, people: {}, batch: false, overview: false };
   // Planner records and drafts stay in memory, separate from today's live tm record. A handover clears them.
   var tmPlan = { day: '', owner: '', epoch: -1, days: {}, weeks: {} };
   function tmMin(v) { return typeof v === 'number' && isFinite(v) && v >= 0 && v < 1440 ? Math.round(v) : null; }
@@ -12405,7 +12409,7 @@
   function tmNeedPin() { return teamOK() && !tmCanRead() && !sessP; }
   function tmMe() { var p = me(); return p ? p.id : ((S.config && S.config.headId) || ''); }
   // the next person on the phone starts with nothing of the last chef's
-  function tmReset() { if (tmPop) { tmPop.remove(); tmPop = null; tmPrev = null; } tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1 }; tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }; tmf = null; tmSnap = ''; tmLastBusy = false; tmLastJob = null; tmPlan = { day: '', owner: '', epoch: -1, days: {}, weeks: {} }; tmSh = ''; tmMsg = ''; tmShowOff = false; tmWhole = false; tmSec = ''; tmFind = ''; tmAssignMsg = ''; tmUi = { shifts: 0, sections: 0, details: true, batch: false, overview: false }; svStop('t'); }
+  function tmReset() { if (tmPop) { tmPop.remove(); tmPop = null; tmPrev = null; } tsum = { day: '', rec: null, st: '', retry: 0, epoch: -1 }; tm = { day: '', rec: null, st: '', at: 0, retry: 0, epoch: -1, stamp: 0 }; tmf = null; tmSnap = ''; tmLastBusy = false; tmLastJob = null; tmPlan = { day: '', owner: '', epoch: -1, days: {}, weeks: {} }; tmSh = ''; tmMsg = ''; tmShowOff = false; tmWhole = false; tmSec = ''; tmFind = ''; tmAssignMsg = ''; tmUi = { shifts: 0, sections: 0, people: {}, batch: false, overview: false }; svStop('t'); }
   /* today's team: one read (team/<today>) the first time a chef's page or top bar needs it each kitchen day, when the
      page opens (unless read in the last minute), on Refresh and once for each team stamp another phone writes
      (pastCheck()). A failed read, and a "no record" that came from the memory copy with no signal, is never "not set
@@ -12477,7 +12481,7 @@
     tmf = e.f; tmSnap = e.snap; tmMsg = e.msg || ''; tmAssignMsg = e.assign || '';
     tmSh = v.sh || ''; tmWhole = !!v.whole; tmSec = v.sec || ''; tmFind = v.find || ''; tmShowOff = !!v.off;
     tmSp = v.sp || { from: null, len: null, mode: null };
-    tmUi = v.ui || { shifts: 0, sections: 0, details: true, batch: false, overview: false };
+    tmUi = v.ui || { shifts: 0, sections: 0, people: {}, batch: false, overview: false };
   }
   function tmPlanInit() {
     var owner = stableIdentity();
@@ -12546,7 +12550,7 @@
   }
   function tmPlanSelect(day) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || ymd(parseYmd(day)) !== day || svOf('t') === 'busy' || tmLastBusy) return;
-    tmPlanKeep(); svStop('t'); tmPlan.day = day; tmPlanActivate(); tmPlanLoad(); draw();
+    tmKeepView(); svStop('t'); tmPlan.day = day; tmPlanActivate(); tmPlanLoad(); draw();
   }
   function tmPlanEditable() { return !!(teamOK() && tmf && tmf.day === tmPlanDay() && tmf.day >= dayNow() && tmPlanEntry(tmf.day).st === 'ok'); }
   function tmWeekHTML() {
@@ -12606,15 +12610,22 @@
       });
       if (bs.length < TM_BREAKS) picks += '<button type="button" class="chip tm-addbr" data-p="tm-addbr" data-id="' + esc(p.id) + '">+ Break</button>';
     }
-    return '<li class="tm-row' + (on ? '' : ' is-off') + '"><button type="button" class="tm-tick" data-p="tm-on" data-id="' + esc(p.id) + '" aria-pressed="' + on + '" aria-label="' + esc(p.name + (on ? ' is on ' : ' is not on ') + s.name + '. Tap to change') + '">' + (on ? '✓' : '') + '</button>' +
-      '<span class="tm-name">' + esc(p.name) + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' + (picks ? '<span class="tm-picks">' + picks + '</span>' : '') + '</li>';
+    return '<div class="tm-person-fields"><div class="tm-membership"><button type="button" class="tm-tick" data-p="tm-on" data-id="' + esc(p.id) + '" aria-pressed="' + on + '" aria-label="' + esc(p.name + (on ? ' is on ' : ' is not on ') + s.name + '. Tap to change') + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>' + (on ? '✓' : '') + '</button>' +
+      '<span>On ' + esc(s.name) + '<small>' + (on ? 'Untick to remove this shift and its breaks.' : 'Tick to add this shift.') + '</small></span></div>' +
+      (sub ? '<p class="tm-person-hints">' + esc(sub) + '</p>' : '') + (picks ? '<div class="tm-picks">' + picks + '</div>' : '') + '</div>';
   }
   // Keep horizontal choices and native folds steady across a draft redraw. No saved copies or reads.
   function tmKeepView() {
     tmPlanKeep();
-    if (!S.root || !S.root.querySelector('.tm-notebook')) return;
-    [['.tm-shift-scroll', 'shifts'], ['.tm-section-choices', 'sections']].forEach(function (x) { var el = S.root.querySelector(x[0]); if (el) tmUi[x[1]] = el.scrollLeft; });
-    [['.tm-details', 'details'], ['.tm-batch', 'batch'], ['.tm-saved-overview', 'overview']].forEach(function (x) { var el = S.root.querySelector(x[0]); if (el) tmUi[x[1]] = el.open; });
+    var book = S.root && S.root.querySelector('.tm-notebook');
+    if (!book) return;
+    // The selected day/shift may already have changed before draw. Save the visible folds against their own date.
+    var day = book.getAttribute('data-day'), entry = tmPlan.days[day], ui = day === tmPlanDay() ? tmUi : entry && entry.view && entry.view.ui;
+    if (!ui) return;
+    [['.tm-shift-scroll', 'shifts'], ['.tm-section-choices', 'sections']].forEach(function (x) { var el = book.querySelector(x[0]); if (el) ui[x[1]] = el.scrollLeft; });
+    [['.tm-batch', 'batch'], ['.tm-saved-overview', 'overview'], ['.tm-next-overview', 'next']].forEach(function (x) { var el = book.querySelector(x[0]); if (el) ui[x[1]] = el.open; });
+    ui.people = ui.people || {};
+    Array.prototype.forEach.call(book.querySelectorAll('.tm-person-details'), function (el) { ui.people[el.getAttribute('data-sh') + '\n' + el.getAttribute('data-id')] = el.open; });
   }
   function tmRestoreView() {
     if (!S.root) return;
@@ -12627,7 +12638,8 @@
     }
     if (!S.root.querySelector('.tm-notebook')) return;
     [['.tm-shift-scroll', 'shifts'], ['.tm-section-choices', 'sections']].forEach(function (x) { var el = S.root.querySelector(x[0]); if (el) el.scrollLeft = tmUi[x[1]]; });
-    [['.tm-details', 'details'], ['.tm-batch', 'batch'], ['.tm-saved-overview', 'overview']].forEach(function (x) { var el = S.root.querySelector(x[0]); if (el) el.open = tmUi[x[1]]; });
+    [['.tm-batch', 'batch'], ['.tm-saved-overview', 'overview'], ['.tm-next-overview', 'next']].forEach(function (x) { var el = S.root.querySelector(x[0]); if (el) el.open = !!tmUi[x[1]]; });
+    Array.prototype.forEach.call(S.root.querySelectorAll('.tm-person-details'), function (el) { el.open = !!(tmUi.people && tmUi.people[el.getAttribute('data-sh') + '\n' + el.getAttribute('data-id')]); });
     var strip = S.root.querySelector('.tm-shift-scroll'), selected = strip && strip.querySelector('[data-p="tm-sh"][aria-pressed="true"]');
     if (selected) { var a = strip.getBoundingClientRect(), b = selected.getBoundingClientRect(); if (b.right > a.right) strip.scrollLeft += b.right - a.right + 8; else if (b.left < a.left) strip.scrollLeft -= a.left - b.left + 8; }
   }
@@ -12647,10 +12659,12 @@
     if (!list.length) return '<li class="hint">No people match. Change the search.</li>';
     return list.map(function (p) {
       var on = tmOnShift(p.id, s.id), current = on ? tmf.on[p.id][s.id] : '', same = !!sec && on && current === sec.id;
-      var action = !sec ? 'Choose a section' : same ? 'Clear section' : on && current ? 'Move to ' + sec.name : 'Assign to ' + sec.name;
+      var action = !sec ? '' : same ? 'Clear section' : on && current ? 'Move to ' + sec.name : 'Assign to ' + sec.name;
       var detail = on ? (tmSecName(current) || (chefP(p) ? p.role === 'head' ? 'Head chef' : 'Sous chef' : 'No section')) + ' · ' + s.name : 'Not on ' + s.name;
-      return '<li><button type="button" class="tm-person-pick" data-p="tm-assign" data-id="' + esc(p.id) + '" aria-pressed="' + same + '" aria-label="' + esc(action + ': ' + p.name + '. ' + detail) + '"' + (!sec || svOf('t') === 'busy' ? ' disabled' : '') + '>' +
-        '<span class="tm-person-name">' + esc(p.name) + '</span><span class="tm-person-action" title="' + esc(action) + '">' + esc(action) + '</span><small class="tm-person-detail" title="' + esc(detail) + '">' + esc(detail) + '</small></button></li>';
+      var breaks = on ? tmBreaks(p.id, s.id).map(function (b) { return (tmIsSplit(b.len) ? 'Split ' : 'Break ') + tmHHMM(b.at) + ' to ' + tmAwayTime(b.at + b.len); }).join(' · ') || 'Break not set' : '';
+      return '<li class="tm-person-row' + (on ? '' : ' is-off') + '" data-id="' + esc(p.id) + '"><button type="button" class="tm-person-pick" data-p="tm-assign" data-id="' + esc(p.id) + '" aria-pressed="' + same + '" aria-label="' + esc((action ? action + ': ' : '') + p.name + '. ' + detail + (breaks ? '. ' + breaks : '')) + '"' + (!sec || svOf('t') === 'busy' ? ' disabled' : '') + '>' +
+        '<span class="tm-person-name">' + esc(p.name) + '</span>' + (action ? '<span class="tm-person-action">' + esc(action) + '</span>' : '') + '<small class="tm-person-detail">' + esc(detail) + '</small>' + (breaks ? '<small class="tm-person-breaks">' + esc(breaks) + '</small>' : '') + '</button>' +
+        '<details class="tm-person-details" data-id="' + esc(p.id) + '" data-sh="' + esc(s.id) + '"><summary data-p="tm-person-details" data-id="' + esc(p.id) + '" data-v="' + esc(s.id) + '" data-d="' + esc(tmPlanDay()) + '" aria-label="' + esc('Edit breaks for ' + p.name + ' on ' + s.name) + '">Edit breaks</summary>' + tmRow(p, s) + '</details></li>';
     }).join('');
   }
   function tmAssignHTML(s) {
@@ -12658,9 +12672,9 @@
     if (!secs.some(function (x) { return x.id === tmSec; })) tmSec = '';
     var sectionName = tmSecName(tmSec);
     return '<div class="tm-section-choices chips scroll" role="group" aria-label="Assign to section" data-adaptive="keep">' + secs.map(function (x) {
-      return '<button type="button" class="chip" data-p="tm-section" data-v="' + esc(x.id) + '" aria-pressed="' + (x.id === tmSec) + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>' + esc(x.name) + '</button>';
-    }).join('') + '</div><div class="tm-assign-info"><strong>' + (sectionName ? 'Assigning to ' + esc(sectionName) + ' · ' + esc(s.name) : 'Choose a section for ' + esc(s.name)) + '</strong>' +
-      '<span>' + (sectionName ? 'Tap a person to assign or move them. Clear section keeps their breaks.' : secs.length ? 'Then tap the people working there.' : 'No kitchen sections set yet. Use the shift controls below.') + '</span></div>' +
+      var count = tmPeople().filter(function (p) { return tmOnShift(p.id, s.id) && tmf.on[p.id][s.id] === x.id; }).length;
+      return '<button type="button" class="chip" data-p="tm-section" data-v="' + esc(x.id) + '" aria-pressed="' + (x.id === tmSec) + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>' + esc(x.name) + ' <small>' + count + '</small></button>';
+    }).join('') + '</div><p class="tm-assign-info">' + (sectionName ? 'Tap people for ' + esc(sectionName) + '. Clear section keeps their breaks.' : secs.length ? 'Choose a section, then tap people to assign them.' : 'No kitchen sections set yet. Use Edit breaks to add people to this shift.') + '</p>' +
       '<label class="visually-hidden" for="tm-find">Find a person</label><input id="tm-find" type="search" class="search tm-find" data-k="tm-q" placeholder="Find a person" value="' + esc(tmFind) + '" autocomplete="off">' +
       '<ul class="tm-people" aria-label="Assign people to ' + esc(s.name) + '">' + tmPersonListHTML(s) + '</ul>';
   }
@@ -12681,8 +12695,9 @@
   function teamPageHTML() {
     teamLoad(); tmPlanLoad(); tsLoad();
     var day = tmPlanDay(), pe = tmPlanEntry(day), rec = pe.rec, shs = kitShifts(), date = tmPlanDate(day), isToday = day === dayNow();
-    var pageTitle = isToday ? 'Today\'s team' : 'Team plan';
-    var top = '<section class="p-card tm-page"><h2 class="p-h" id="rtitle" tabindex="-1">' + pageTitle + '</h2>';
+    var pageTitle = isToday ? 'Today\'s team' : 'Team plan', embedded = chefPage('plan');
+    var heading = embedded ? '<h3 class="p-h">' + esc(date) + '</h3>' : '<h2 class="p-h" id="rtitle" tabindex="-1"><span class="visually-hidden">' + pageTitle + ': </span>' + esc(date) + '</h2>';
+    var top = '<section class="p-card tm-page">' + (embedded ? '' : '<h2 class="p-h" id="rtitle" tabindex="-1">' + pageTitle + '</h2>');
     var stampLine = rec ? ' Set by ' + esc(rec.by ? mnName(rec.by) : 'the head chef') + ' at ' + esc(clock(rec.upd)) + '.' : pe.st === 'ok' ? ' Not set yet.' : '';
     var checkedLine = !isToday && pe.checkedAt ? ' Last checked ' + clock(now() - Math.max(0, Date.now() - pe.checkedAt)) + '.' : '';
     var lead = '<p class="hint">' + esc(date) + '.' + stampLine + esc(checkedLine) + (pe.st === 'ok' || pe.st === 'err' ? ' <button type="button" class="p-link" data-p="tm-refresh">' + (pe.st === 'err' ? 'Try again' : 'Refresh') + '</button>' : '') + '</p>';
@@ -12691,28 +12706,24 @@
     if (!shs.length) return top + tmWeekHTML() + lead + '<p class="hint">No shifts are set up yet. ' + (adminTabs() ? 'Add them in the admin panel, Kitchen, Shifts: Lunch, Dinner, Smoker or any other.' : 'Ask the head chef to set them up in the admin panel.') + '</p>' +
       (adminTabs() ? '<div class="btn-row"><button type="button" class="btn dark" data-p="tm-setup">Set up the shifts</button></div>' : '') + '</section>';
     if (day < dayNow()) return top + tmWeekHTML() + lead + '<p class="hint">Past day, read-only.' + (tmDirty() ? ' Unsaved changes are retained on this device. Refresh asks before discarding them.' : '') + '</p>' + (rec ? tmTimelineHTML(rec) || '<p class="hint">The saved plan has nobody assigned.</p>' : '<p class="hint">No team saved for this day.</p>') + '</section>';
-    var s = tmShift(tmShNow()), ps = tmPeople(), onL = ps.filter(function (p) { return tmOnShift(p.id, s.id); }), offL = ps.filter(function (p) { return !tmOnShift(p.id, s.id); });
+    var s = tmShift(tmShNow()), ps = tmPeople(), onL = ps.filter(function (p) { return tmOnShift(p.id, s.id); });
     var nobody = !Object.keys(tmf.on).length;
-    var use = nobody ? '<div class="tm-same"><span><b>Same as last ' + esc(tmWeekday(day)) + '?</b><br>Fills in who was on, their shifts, sections and breaks, for you to check.</span><button type="button" class="btn dark" data-p="tm-use"' + (tmLastBusy ? ' disabled aria-busy="true">Reading...' : '>Use it') + '</button></div>' : '';
-    var hours = s.from != null && s.to != null ? esc(s.name) + ' ' + tmHHMM(s.from) + ' to ' + tmHHMM(s.to) : esc(s.name);
+    var use = '<div class="tm-same"><span><b>Copy last ' + esc(tmWeekday(day)) + '</b><small>' + (nobody ? 'Fills this empty day with last week\'s shifts, sections and breaks. Check, then Save.' : 'Available when nobody is on this day\'s draft.') + '</small></span><button type="button" class="btn" data-p="tm-use"' + (tmLastBusy ? ' disabled aria-busy="true">Reading...' : (!nobody || svOf('t') === 'busy' ? ' disabled' : '') + '>Use last ' + esc(tmWeekday(day))) + '</button></div>';
     var spread = onL.length ? '<div class="tm-spread"><span>Breaks from</span>' + tmSel('tm-spfrom', 'Spread the breaks from', tmTimes(s, tmSpFrom(s)).map(function (m) { return [m, tmHHMM(m)]; }), tmSpFrom(s)) +
       tmSel('tm-spmode', 'How many at once', [['1', 'one at a time'], ['2', 'two at a time'], ['0', 'all together']], tmSpMode(s)) +
       tmSel('tm-splen', 'Each break', TM_LENS.map(function (l) { return [l, tmLenLabel(l)]; }), tmSpLen(s)) + '<button type="button" class="btn" data-p="tm-spread">Spread them</button></div>' : '';
-    var list = '<p class="tm-sum"><b>' + hours + '</b>: ' + (onL.length ? onL.length + ' on' : 'nobody on yet. Tick the people working it.') + '</p>' +
-      (onL.length ? '<ul class="tm-list">' + onL.map(function (p) { return tmRow(p, s); }).join('') + '</ul>' : '') +
-      (offL.length ? (tmShowOff || !onL.length ? '<ul class="tm-list">' + offL.map(function (p) { return tmRow(p, s); }).join('') + '</ul>' + (onL.length ? '<button type="button" class="tm-fold" data-p="tm-showoff" aria-expanded="true">Hide the people not on ' + esc(s.name) + '</button>' : '')
-        : '<button type="button" class="tm-fold" data-p="tm-showoff" aria-expanded="false">Not on ' + esc(s.name) + ': ' + esc(offL.map(function (p) { return p.name; }).join(', ')) + '. Show</button>') : '');
     var dirty = tmDirty(), busy = svOf('t') === 'busy';
     var save = '<div class="tm-save">' + svButton({ k: 't', p: 'tm-save', idle: 'Save ' + date, off: !dirty, busy: busy }) + svLine('t', busy, tmMsg || tmAssignMsg) + '</div>';
-    var glance = rec ? tmTimelineHTML(rec) : '';
-    var summary = isToday ? '<aside class="tm-away hm-board" aria-label="On break now"><div class="tm-away-slot">' + tmAwayHTML() + '</div></aside><aside class="tm-extra"><div class="tm-next-slot">' + tmNextHTML() + '</div>' + (glance ? '<details class="tm-saved-overview"><summary>Saved shift overview</summary>' + glance + '</details>' : '') + '</aside>' : '<aside class="tm-extra tm-plan-summary"><h3>Plan for ' + esc(date) + '</h3><p class="hint">Planning ahead. Today\'s live team stays unchanged.</p>' + (glance || '<p class="hint">No team saved for this day yet.</p>') + '</aside>';
-    var editor = tmWhole ? tmWholeHTML() : tmAssignHTML(s) + '<details class="tm-details" open><summary>Breaks and fine adjustments</summary>' +
-      '<p class="hint">Tick to put someone on ' + esc(s.name) + '. Untick to remove them and this shift\'s breaks.</p>' + list + '</details>' +
-      (spread ? '<details class="tm-batch"><summary>Set breaks in one go</summary>' + spread + '</details>' : '');
-    return '<section class="tm-page tm-notebook' + (isToday ? '' : ' tm-planning') + '" aria-labelledby="rtitle">' + lead.replace('class="hint"', 'class="tm-stamp hint"') +
-      '<div class="tm-nbook"><div class="tm-nleft"><header class="tm-nhead"><div><h2 class="p-h" id="rtitle" tabindex="-1">' + pageTitle + '</h2><p>' + esc(date) + '</p></div><div><b class="tm-nclock">' + esc(T.clock(now())) + '</b><small>Queensland time</small></div></header>' +
-      tmWeekHTML() + '<div class="tm-work">' + use + tmTabsHTML(shs, ps) + '<p class="tm-draftstate" role="status">' + (dirty ? 'Draft, not saved. One Save covers the whole day.' : pe.st === 'err' ? 'Could not check the saved plan. Changes are kept until Save.' : rec ? 'Plan saved. Changes across shifts are saved together.' : 'No team saved yet. Choose shifts, assign people, then Save.') + '</p>' +
-      '<div class="tm-editor">' + editor + '</div>' + save + '</div></div><div class="tm-nspine" aria-hidden="true"></div><div class="tm-nright">' +
+    var glance = rec ? tmTimelineHTML(rec) : '', away = isToday ? tmAwayData() : null;
+    var savedOverview = glance ? '<details class="tm-saved-overview"><summary data-p="tm-overview-toggle">Saved shift overview</summary>' + glance + '</details>' : '';
+    var summary = isToday ? '<aside class="tm-away hm-board" aria-label="On break now"' + (tmAwayHidden(away) ? ' hidden' : '') + '><div class="tm-away-slot">' + tmAwayHTML(away) + '</div></aside><aside class="tm-extra"><details class="tm-next-overview"><summary data-p="tm-next-toggle">Next planned breaks</summary><div class="tm-next-slot">' + tmNextHTML() + '</div></details>' + savedOverview + '</aside>' : '<aside class="tm-extra tm-plan-summary">' + (savedOverview || '<p class="hint">No saved shifts for this day yet.</p>') + '</aside>';
+    var editor = tmWhole ? tmWholeHTML() : tmAssignHTML(s);
+    var tools = '<details class="tm-batch"><summary data-p="tm-batch-toggle">Copy a day or spread breaks</summary>' + use + (!tmWhole ? spread : '<p class="hint">Choose a shift to spread its breaks.</p>') + '</details>';
+    var status = busy ? 'Saving...' : svOf('t') === 'fail' ? 'Not saved. Changes kept.' : dirty ? 'Unsaved changes' : rec ? 'Saved ' + clock(rec.upd) + (rec.by ? ' · ' + mnName(rec.by) : '') : 'No team saved yet';
+    return '<section class="tm-page tm-notebook' + (isToday ? '' : ' tm-planning') + '" data-day="' + esc(day) + '" aria-labelledby="rtitle">' +
+      '<div class="tm-nbook"><div class="tm-nleft"><header class="tm-nhead"><div>' + heading + '</div><div class="tm-planstate"><p class="tm-draftstate' + (dirty ? ' is-dirty' : '') + '" role="status">' + esc(status) + '</p><button type="button" class="p-link" data-p="tm-refresh"' + (busy || tmLastBusy ? ' disabled' : '') + ' title="' + esc(pe.checkedAt ? 'Last checked ' + clock(now() - Math.max(0, Date.now() - pe.checkedAt)) : 'Check the saved plan') + '">' + (armed('tm-refresh') ? 'Tap again to refresh' : 'Refresh') + '</button></div></header>' +
+      tmWeekHTML() + '<div class="tm-work">' + tmTabsHTML(shs, ps) +
+      '<div class="tm-editor">' + editor + '</div>' + save + tools + '</div></div><div class="tm-nspine" aria-hidden="true"></div><div class="tm-nright">' +
       summary + '</div></div></section>';
   }
   /* Today at a glance (8 Nov 2026, redesign step 7, Flighty's timeline): the saved plan grouped by section, each row with
@@ -13151,8 +13162,13 @@
     if (d.state === 'unset') return 'No saved plan for today. Save today\'s team to publish the planned breaks.';
     return 'Today\'s saved plan has not been checked. Current scheduled status is unknown.';
   }
-  function tmAwayHTML() {
-    var d = tmAwayData(), head = '<h3 class="tm-away-title">On break now</h3>' + tmAwaySource(d);
+  function tmAwayHidden(d) {
+    d = d || tmAwayData();
+    return d.state === 'ready' && !d.away.length && !d.invalid;
+  }
+  function tmAwayHTML(d) {
+    d = d || tmAwayData();
+    var head = '<div class="tm-away-head"><h3 class="tm-away-title">On break now</h3><span class="tm-nclock" aria-label="Queensland time">' + esc(tmHHMM(T.mins())) + '</span></div>' + tmAwaySource(d);
     if (d.state !== 'ready') return head + '<p class="' + (d.state === 'unset' || d.state === 'loading' || d.state === 'clock' ? 'tm-away-empty' : 'tm-away-warn') + '">' + esc(tmAwayState(d)) + '</p>';
     var rows = d.away.map(function (g) {
       var b = g.breaks[0];
@@ -13183,7 +13199,9 @@
       if (el.innerHTML !== check.innerHTML) el.innerHTML = html;
       el._tmStatusHTML = html;
     };
-    put('.tm-away-slot', tmAwayHTML()); put('.tm-next-slot', tmNextHTML());
+    var away = tmAwayData(), board = S.root.querySelector('.tm-away');
+    put('.tm-away-slot', tmAwayHTML(away)); put('.tm-next-slot', tmNextHTML());
+    if (board) board.hidden = tmAwayHidden(away);
     var el = S.root.querySelector('.tm-nclock'), text = tmHHMM(T.mins());
     if (el && el.textContent !== text) el.textContent = text;
   }
