@@ -3,7 +3,7 @@
 const L = require('./lib');
 const { R, ok } = L.results();
 const key = (...parts) => ['kitchens', L.PIN, ...parts].join('/');
-const CURRENT = key('cooling', 'current'), HOUR = 3600000;
+const CURRENT = key('cooling', 'current'), RECORDED = key('cooling', 'recorded'), HOUR = 3600000;
 const stamp = value => ({ __fakeTimestamp: value });
 const millis = value => value && (value.__fakeTimestamp != null ? value.__fakeTimestamp : value.seconds != null ? value.seconds * 1000 + (value.nanoseconds || 0) / 1000000 : NaN);
 const saved = p => p.evaluate(path => __fake.dump()[path], CURRENT);
@@ -52,7 +52,7 @@ for (const [id, pin] of [['vic', '4444'], ['fay', '5151']]) {
       await p.keyboard.press('Escape');
       ok(await p.locator('.wtop').evaluate(el => el.getBoundingClientRect().height) === before && await p.evaluate(() => !!document.activeElement.closest('.cooling-clock')), width + ': closing keeps header height and returns focus to the clock');
       const read = await p.evaluate(() => __fake.reads.concat(__fake.bill.map(x => x.path)).filter(path => /\/cooling\//.test(path)));
-      ok(read.length > 0 && read.every(path => path === CURRENT) && !(await p.evaluate(() => __fake.refused)).some(x => /\/cooling/.test(x.path)), width + ': cooling reads only the authorised canonical document');
+      ok(read.length > 0 && read.every(path => path === CURRENT || path === RECORDED) && !(await p.evaluate(() => __fake.refused)).some(x => /\/cooling/.test(x.path)), width + ': cooling reads only the authorised timer and shared confirmations');
     });
     await step('shared two-stage sequence', async () => {
       p = await L.open(b, '#/prep', { who: 'ann', deviceMode: 'personal', wait: 1200 }); await clockOpen(p); await ready(p);
@@ -81,11 +81,11 @@ for (const [id, pin] of [['vic', '4444'], ['fay', '5151']]) {
         await advanceTo(p, firstDue + 1000); await advanceTo(other, firstDue + 1000);
         await L.waitFor(p, () => !!document.querySelector('.cooling-ping')); await L.waitFor(other, () => !!document.querySelector('.cooling-ping'));
         ok(await p.getByText('Operandio batch cooling time 2 hours is done.', { exact: true }).isVisible() && await other.getByText('Operandio batch cooling time 2 hours is done.', { exact: true }).isVisible(), 'Both open, signed-in devices receive the exact two-hour screen ping');
-        const beforeGot = (await writes(p)).length;
-        await p.getByRole('button', { name: 'Got it', exact: true }).click();
-        const seen = await p.evaluate(k => JSON.parse(localStorage.getItem(k) || '{}'), 'lk.cooling.seen.' + L.PIN + '.anon-test.ann');
-        ok(seen[record.run + '_1'] === true && (await writes(p)).length === beforeGot && await other.locator('.cooling-ping').isVisible(), 'Ann’s Got it is personal, leaves Bo’s ping open and never starts four hours');
-        await other.getByRole('button', { name: 'Got it', exact: true }).click();
+        const beforeLater = (await writes(p)).length;
+        await p.getByRole('button', { name: 'Not yet', exact: true }).click();
+        const confirmation = await p.evaluate(path => __fake.dump()[path], RECORDED);
+        ok(!confirmation && (await writes(p)).length === beforeLater && await other.locator('.cooling-ping').isVisible(), 'Not yet closes this device without claiming completion or starting four hours');
+        await other.getByRole('button', { name: 'Not yet', exact: true }).click();
         await clockOpen(p); await ready(p, 4);
         await p.locator('[data-stage="4"]').click(); await L.waitFor(p, () => !!document.querySelector('[data-timer="4"] .lk-stamp'));
         const continued = await saved(p), secondAt = millis(continued.secondAt), secondDue = secondAt + 4 * HOUR;
@@ -106,7 +106,7 @@ for (const [id, pin] of [['vic', '4444'], ['fay', '5151']]) {
         ok(await p.getByText('Operandio batch cooling time 4 hours is done.', { exact: true }).isVisible() && await other.getByText('Operandio batch cooling time 4 hours is done.', { exact: true }).isVisible(), 'Both open devices receive the exact four-hour screen ping');
         ok((await writes(p)).length === 0 && (await writes(other)).length === 0 && (await saved(p)).rev === 2, 'Refresh and deadline ticks never create timer writes');
         for (const screen of [p, other]) {
-          await screen.getByRole('button', { name: 'Got it', exact: true }).click();
+          await screen.getByRole('button', { name: 'Not yet', exact: true }).click();
           await clockOpen(screen);
           ok(await screen.locator('.cooling-new button').isDisabled(), 'Each signed-in device refuses another batch on the completion day');
           await screen.keyboard.press('Escape');
@@ -164,7 +164,7 @@ for (const [id, pin] of [['vic', '4444'], ['fay', '5151']]) {
       await p.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
       await L.waitFor(p, () => !!document.querySelector('.nbell.has-new'));
       ok(await p.locator('.nt-wrap').count() === 1 && await p.locator('.cooling-ping').isVisible() && await p.locator('.nt-wrap:not(.cooling-wrap)').count() === 0, 'A normal shift ping becoming due waits behind the cooling alert instead of stacking a second sheet');
-      await p.locator('.cooling-ping [data-cooling="got"]').click();
+      await p.getByRole('button', { name: 'Not yet', exact: true }).click();
       await L.waitFor(p, () => !!document.querySelector('.nt-wrap:not(.cooling-wrap)'));
       ok(await p.locator('.nt-wrap').count() === 1 && await p.locator('.cooling-ping').count() === 0 && /use the rear door/.test(await p.locator('.nt-list').textContent()), 'Closing the cooling alert hands the screen to the queued shift ping');
     });

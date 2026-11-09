@@ -11,17 +11,19 @@ async function fixture(browser, width, textSize) {
   await p.goto(new URL('__cooling-ui-fixture', L.BASE).href);
   await p.evaluate(({ stamp, textSize }) => {
     document.documentElement.dataset.text = textSize || 'normal';
-    window.__blocked = false; window.__calls = []; window.__acks = []; window.__closed = []; window.__opens = [];
-    window.__model = { available: true, ready: true, stale: false, error: '', pending: 0, actionError: null, run: null, now: stamp };
+    window.__blocked = false; window.__calls = []; window.__acks = []; window.__confirms = []; window.__readRetries = 0; window.__names = {}; window.__closed = []; window.__opens = [];
+    window.__model = { available: true, ready: true, stale: false, error: '', pending: 0, actionError: null, recorded: null, recordedReady: true, recordedStale: false, recordedError: '', confirmPending: 0, confirmError: null, run: null, now: stamp };
     window.__ui = LK_COOLING_UI.mount({
       esc: value => { const e = document.createElement('span'); e.textContent = String(value); return e.innerHTML; },
       clock: value => new Date(value + 10 * 3600000).toISOString().slice(11, 16),
       canOpen: () => !window.__blocked,
+      personName: id => window.__names[id] || '',
       opened: (kind, fromBack) => { window.__opens.push(kind); window.__fromBack = fromBack; },
       closed: (kind, noBack, stage, runId) => window.__closed.push({ kind, noBack, stage, runId }),
       onStart: hours => { window.__calls.push(hours); window.__model.pending = hours; window.__ui.render(window.__model); },
       onAcknowledge: (stage, runId) => window.__acks.push({ stage, runId }),
-      onRetryRead: () => { window.__model.error = ''; window.__model.ready = false; window.__ui.render(window.__model); },
+      onConfirm: (stage, runId) => { window.__confirms.push({ stage, runId }); window.__model.confirmPending = stage; window.__ui.render(window.__model); return true; },
+      onRetryRead: () => { window.__readRetries++; window.__model.error = ''; window.__model.ready = false; window.__ui.render(window.__model); },
       trapTab: (e, box) => {
         const f = [...box.querySelectorAll('button:not(:disabled)')].filter(el => !!el.getClientRects().length);
         const first = f[0], last = f.at(-1), out = !box.contains(document.activeElement);
@@ -35,6 +37,23 @@ async function fixture(browser, width, textSize) {
 }
 async function render(p, patch) {
   await p.evaluate(patch => { Object.assign(window.__model, patch); window.__ui.render(window.__model); }, patch);
+}
+async function contrast(p, selector) {
+  return p.locator(selector).first().evaluate(el => {
+    const rgba = value => {
+      const channels = (value.match(/[\d.]+/g) || []).map(Number);
+      return [channels[0] || 0, channels[1] || 0, channels[2] || 0, channels.length > 3 ? channels[3] : 1];
+    };
+    const mix = (front, back) => front.slice(0, 3).map((v, i) => v * front[3] + back[i] * (1 - front[3])).concat([1]);
+    const chain = []; for (let node = el; node; node = node.parentElement) chain.unshift(node);
+    let background = [255, 255, 255, 1], opacity = 1;
+    for (const node of chain) { const style = getComputedStyle(node); opacity *= Number(style.opacity); background = mix(rgba(style.backgroundColor), background); }
+    const foreground = rgba(getComputedStyle(el).color); foreground[3] *= opacity;
+    const colour = mix(foreground, background);
+    const lum = value => value.slice(0, 3).map(v => { v /= 255; return v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }).reduce((sum, v, i) => sum + v * [.2126, .7152, .0722][i], 0);
+    const a = lum(colour), b = lum(background);
+    return { ratio: (Math.max(a, b) + .05) / (Math.min(a, b) + .05), colour: getComputedStyle(el).color };
+  });
 }
 async function shape(p) {
   return p.locator('.cooling-menu').evaluate(el => {
@@ -63,6 +82,72 @@ async function shape(p) {
         ok(p.errors.length === 0, width + ' ' + textSize + ': no browser errors');
       } finally { await p.context().close(); }
     }
+    const confirmation = await fixture(b);
+    try {
+      await render(confirmation, { run, now: firstDue }); await confirmation.evaluate(() => __ui.ping(2));
+      ok(await confirmation.getByRole('button', { name: 'I’ve recorded this in Operandio', exact: true }).count() === 1, 'Regression: due ping offers a shared Operandio confirmation');
+      ok(await confirmation.getByRole('button', { name: 'Not yet', exact: true }).count() === 1, 'Regression: due ping offers a quiet close without confirming');
+      ok(await confirmation.locator('.cooling-clock').getAttribute('data-clock-state') === 'record', 'Regression: pending external entry remains an attention state on the existing clock');
+      await L.settle(confirmation, 300); // Measure settled controls after the existing sheet entrance.
+      for (const selector of ['.cooling-confirm', '.cooling-record-note', '.cooling-later', '.cooling-clock button']) {
+        const measured = await contrast(confirmation, selector);
+        ok(measured.ratio >= 4.5, selector + ': ordinary rendered text contrast ' + measured.ratio.toFixed(2) + ':1');
+      }
+      await confirmation.getByRole('button', { name: 'I’ve recorded this in Operandio', exact: true }).focus();
+      ok(await confirmation.locator('.cooling-confirm').evaluate(el => { const css = getComputedStyle(el); return css.outlineStyle !== 'none' && parseFloat(css.outlineWidth) >= 2; }), 'Shared confirmation keeps a visible keyboard focus outline');
+      await render(confirmation, { confirmError: { stage: 2, message: 'Couldn’t save the Operandio 2-hour confirmation. Try again.' } });
+      const failureContrast = await contrast(confirmation, '.cooling-confirm-error .cooling-error');
+      ok(failureContrast.ratio >= 4.5 && await confirmation.locator('.cooling-confirm-error .cooling-error').evaluate(el => (() => { const sample = document.createElement('span'); sample.style.color = 'var(--bad-ink)'; document.body.appendChild(sample); const expected = getComputedStyle(sample).color; sample.remove(); return getComputedStyle(el).color === expected; })()), 'Ping failure uses shared red with rendered text contrast ' + failureContrast.ratio.toFixed(2) + ':1');
+      await render(confirmation, { confirmError: null });
+
+      await confirmation.getByRole('button', { name: 'Not yet', exact: true }).click();
+      ok((await confirmation.evaluate(() => __confirms)).length === 0 && !await confirmation.locator('.cooling-ping').count(), 'Not yet is cancellation and never records external completion');
+      await confirmation.locator('[data-cooling="clock"]').click();
+      ok(await confirmation.locator('.cooling-menu [data-confirm-stage="2"]').isVisible() && await confirmation.locator('.cooling-menu [data-stage="4"]').isEnabled(), 'The quiet clock exposes recording and a separate four-hour start');
+      await confirmation.locator('[data-confirm-stage="2"]').evaluate(el => { window.__confirmButton = el; });
+      await confirmation.locator('[data-confirm-stage="2"]').click();
+      ok(await confirmation.locator('[data-confirm-stage="2"]').getAttribute('aria-busy') === 'true' && await confirmation.locator('[data-confirm-stage="2"]').textContent() === 'Saving…', 'Confirmation answers immediately with Saving and waits for the server');
+      await confirmation.locator('[data-confirm-stage="2"]').evaluate(el => el.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+      ok((await confirmation.evaluate(() => __confirms)).length === 1 && await confirmation.evaluate(() => __confirmButton === document.querySelector('[data-confirm-stage="2"]')), 'Repeated confirmation preserves its target and sends once');
+      await render(confirmation, { recordedError: 'Couldn’t check the Operandio confirmation. Try again.' });
+      await confirmation.keyboard.press('Escape');
+      ok(await confirmation.locator('[data-cooling="clock"]').isEnabled() && await confirmation.locator('[data-cooling="clock"]').getAttribute('aria-busy') === 'true', 'An unresolved confirmation keeps an enabled busy details control after closing');
+      await confirmation.locator('[data-cooling="clock"]').click();
+      await confirmation.locator('.cooling-read button').click();
+      ok((await confirmation.evaluate(() => __confirms)).length === 1 && await confirmation.evaluate(() => __readRetries === 1), 'Reopening an unresolved confirmation permits read recovery without resending the write');
+      await render(confirmation, { ready: true, recordedError: '' });
+
+      await render(confirmation, { confirmPending: 0, confirmError: { stage: 2, message: 'Couldn’t save the Operandio 2-hour confirmation. Try again.' } });
+      ok(await confirmation.locator('.cooling-confirm-error [role="alert"]').isVisible() && await confirmation.getByRole('button', { name: 'Try again: recorded in Operandio', exact: true }).isEnabled(), 'Refused confirmation retains a named error and explicit retry');
+      await render(confirmation, { now: firstDue + 60000 });
+      ok(await confirmation.locator('.cooling-confirm-error [role="alert"]').isVisible(), 'Confirmation failure remains across clock paints');
+      await confirmation.getByRole('button', { name: 'Try again: recorded in Operandio', exact: true }).click();
+      await render(confirmation, { recorded: { id: run.id, firstAt: firstDue, firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' } });
+      ok(await confirmation.locator('[data-confirm-stage="2"]').getAttribute('aria-busy') === 'true' && await confirmation.locator('.cooling-record .lk-stamp').count() === 0, 'A record callback alone cannot confirm an unresolved write');
+      await render(confirmation, { confirmPending: 0, confirmError: null });
+      ok(await confirmation.locator('.cooling-record .lk-stamp').textContent() === 'Recorded 16:00' && await confirmation.locator('.cooling-clock').getAttribute('data-clock-state') === 'done1', 'Accepted confirmation leaves a recorded stamp and the separate next-stage action');
+      await confirmation.evaluate(() => { __names.ann = '<img src=x onerror=alert(1)>' + 'Long recorder name '.repeat(10); });
+      await render(confirmation, { now: firstDue + 120000 });
+      ok(await confirmation.locator('.cooling-record img').count() === 0 && (await confirmation.locator('.cooling-record .lk-stamp').textContent()).includes('<img src=x'), 'Recorder names stay escaped text in the confirmation stamp');
+      ok(await confirmation.locator('.cooling-record .lk-stamp').evaluate(el => el.scrollWidth <= el.clientWidth + 1), 'Long recorder names wrap within the existing details width');
+      await confirmation.evaluate(() => { __names = {}; });
+
+      await confirmation.keyboard.press('Escape');
+      const both = { ...run, secondAt: firstDue, secondDue: firstDue + 4 * 3600000 };
+      await render(confirmation, { run: both, now: both.secondDue }); await confirmation.evaluate(() => __ui.ping(4));
+      await render(confirmation, { recordedStale: true });
+      ok(await confirmation.locator('[data-confirm-stage="4"]').isDisabled() && await confirmation.getByText('Not connected. Reconnect to check Operandio confirmations.', { exact: true }).isVisible(), 'Offline confirmation cannot imply a saved entry');
+      await render(confirmation, { recordedStale: false, recorded: { id: run.id, firstAt: firstDue, firstBy: 'ann', secondAt: both.secondDue, secondBy: 'bo', by: 'bo' } });
+      ok(!await confirmation.locator('.cooling-ping').count() && await confirmation.locator('.visually-hidden').textContent() === 'Operandio 4-hour check confirmed. The reminder is cleared for everyone.', 'Another screen’s accepted confirmation closes the matching ping and announces the result');
+      await render(confirmation, { recorded: null }); await confirmation.evaluate(() => __ui.open());
+      ok(await confirmation.locator('[data-confirm-stage="2"]').count() === 1 && await confirmation.locator('[data-confirm-stage="4"]').count() === 1, 'Both overdue stages remain independently confirmable');
+      await render(confirmation, { recorded: { id: run.id, firstAt: 0, firstBy: '', secondAt: both.secondDue, secondBy: 'bo', by: 'bo' } });
+      ok(await confirmation.locator('[data-confirm-stage="2"]').isEnabled() && await confirmation.locator('[data-confirm-stage="4"]').count() === 0, 'Recording stage two never silently records stage one');
+      await render(confirmation, { recordedReady: false });
+      ok(await confirmation.locator('[data-confirm-stage="2"]').isDisabled(), 'Unknown confirmation state cannot enable a confirmation');
+      ok(!confirmation.errors.length, 'Shared confirmation UI has no browser errors');
+
+    } finally { await confirmation.context().close(); }
     const p = await fixture(b);
     try {
       await p.evaluate(() => { window.__blocked = true; }); await p.evaluate(() => window.__ui.open(document.querySelector('.cooling-chip')));
@@ -94,8 +179,8 @@ async function shape(p) {
       ok(await p.locator('.cooling-wrap').count() === 0 && await p.evaluate(() => !!document.activeElement.closest('.cooling-clock, .cooling-chip')), 'Escape closes and returns focus to the clock');
       await render(p, { now: firstDue }); await p.evaluate(() => window.__ui.ping(2));
       ok(await p.getByText('Operandio batch cooling time 2 hours is done.', { exact: true }).isVisible(), 'First deadline uses the requested shift-style message');
-      await p.getByRole('button', { name: 'Got it', exact: true }).click();
-      ok((await p.evaluate(() => window.__acks))[0].runId === run.id && (await p.evaluate(() => window.__calls)).length === 2, 'Got it acknowledges that run and does not start the next stage');
+      await p.getByRole('button', { name: 'Not yet', exact: true }).click();
+      ok((await p.evaluate(() => window.__confirms)).length === 0 && (await p.evaluate(() => window.__calls)).length === 2, 'Not yet closes without confirming or starting the next stage');
       await p.evaluate(() => window.__ui.ping(2));
       await p.getByRole('button', { name: 'Start Operandio 4-hour timer', exact: true }).click();
       ok((await p.evaluate(() => window.__calls)).at(-1) === 4 && await p.locator('.cooling-next [aria-busy]').count() === 1, 'The second stage needs its own explicit start and waits for acknowledgement');
@@ -104,8 +189,8 @@ async function shape(p) {
       ok(await p.locator('.cooling-next button').count() === 0 && await p.getByText('The next 4 hours are running.', { exact: true }).isVisible(), 'Another worker starting stage two removes the stale first-ping Start button');
       await render(p, { run: { ...run, id: 'batch-b', firstAt: next.secondDue + 1000, firstDue: next.secondDue + 2 * 3600000 + 1000 }, now: next.secondDue + 2000 });
       ok(await p.getByText('Another Operandio batch has started.', { exact: true }).isVisible() && await p.getByText('Time reached at 16:00.', { exact: true }).isVisible(), 'An old ping retains its own deadline when a new batch arrives');
-      await p.getByRole('button', { name: 'Got it', exact: true }).click();
-      ok((await p.evaluate(() => window.__acks)).at(-1).runId === run.id, 'Dismissing an old ping cannot acknowledge the new batch');
+      await p.getByRole('button', { name: 'Not yet', exact: true }).click();
+      ok((await p.evaluate(() => window.__confirms)).length === 0, 'Dismissing an old ping cannot confirm the new batch');
       await render(p, { run: next, now: next.secondDue }); await p.evaluate(() => window.__ui.ping(4));
       ok(await p.getByText('Operandio batch cooling time 4 hours is done.', { exact: true }).isVisible(), 'Second deadline uses the requested four-hour message');
       await render(p, { run: { ...run, id: 'tomorrow-batch', firstAt: restartAt, firstDue: restartAt + 2 * 3600000 }, now: restartAt });
@@ -113,6 +198,7 @@ async function shape(p) {
       await render(p, { run: next, now: next.secondDue });
       await p.evaluate(() => window.__fromBack());
       ok((await p.evaluate(() => window.__closed)).at(-1).noBack === true && await p.locator('.cooling-wrap').count() === 0, 'The injected Back callback closes without another history Back');
+      await render(p, { recorded: { id: run.id, firstAt: firstDue, firstBy: 'ann', secondAt: next.secondDue, secondBy: 'bo', by: 'bo' } });
       await p.evaluate(() => window.__ui.open(document.querySelector('.cooling-chip')));
       ok(await p.locator('.cooling-new button').isDisabled() && await p.locator('.cooling-clock-status').isVisible(), 'Completed timer and new-batch action stay disabled for the rest of the day');
       ok(/disabled until tomorrow/.test(await p.locator('.cooling-clock-status').getAttribute('aria-label')), 'The read-only clock explains when it is available');
@@ -145,12 +231,12 @@ async function shape(p) {
         if (hours === 2) {
           await p.click('[data-cooling="clock"]'); await p.click('[data-cooling="clock"]');
         } else {
-          await render(p, { run, now: firstDue }); await p.click('[data-cooling="clock"]');
+          await render(p, { run, now: firstDue, recorded: { id: run.id, firstAt: firstDue, firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' } }); await p.click('[data-cooling="clock"]');
         }
         const winner = hours === 2 ? { ...run, id: 'winning-first' } : { ...run, secondAt: firstDue + 1000, secondDue: firstDue + 4 * 3600000 + 1000 };
         const due = hours === 2 ? winner.firstDue : winner.secondDue;
         const refusal = { stage: hours, message: 'Your Operandio ' + hours + '-hour start was not saved. The shared timer changed. Check its current stage.' };
-        await render(p, { run: winner, now: hours === 2 ? firstAt + 1000 : winner.secondAt + 1000, pending: 0, actionError: refusal });
+        await render(p, { run: winner, now: hours === 2 ? firstAt + 1000 : winner.secondAt + 1000, pending: 0, actionError: refusal, recorded: hours === 4 ? { id: winner.id, firstAt: winner.firstDue, firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' } : null });
         ok(await p.locator('.cooling-menu .cooling-error').isVisible(), hours + 'h competing start immediately shows the named refusal beside the winning shared timer');
         await p.keyboard.press('Escape');
         ok(await p.locator('.cooling-clock').getAttribute('data-clock-state') === (hours === 2 ? 'first' : 'second') && await p.locator('.cooling-clock-status').isVisible(), hours + 'h read refusal no longer masks the winning canonical countdown');
@@ -161,7 +247,7 @@ async function shape(p) {
         await render(p, { actionError: { ...refusal } });
         ok(await p.locator('.cooling-clock').getAttribute('data-clock-state') === 'error', hours + 'h a fresh refusal with the same words is not silently treated as already read');
         await p.click('[data-cooling="clock"]'); await p.keyboard.press('Escape');
-        await render(p, { now: due });
+        await render(p, { now: due, recorded: { id: winner.id, firstAt: winner.firstDue, firstBy: 'ann', secondAt: hours === 4 ? winner.secondDue : 0, secondBy: hours === 4 ? 'bo' : '', by: 'ann' } });
         ok(await p.locator('.cooling-clock').getAttribute('data-clock-state') === (hours === 2 ? 'done1' : 'done2'), hours + 'h the retained read refusal does not mask the completed shared stage');
         if (hours === 4) {
           await render(p, { now: restartAt });

@@ -6,7 +6,7 @@
 //   answer, so it is not no signal: __fake.cold below is)
 //   __fake.deny = /regex/ refuses only the writes whose path matches
 //   __fake.failReads = /regex/ makes getDoc, getDocs and getDocFromServer fail (unavailable) for the paths that match, like a read lost to a bad signal
-//   __fake.denyReads = /regex/ makes getDocs refuse (permission-denied) the collections that match, like rules not published yet
+//   __fake.denyReads = /regex/ makes queries and explicit server reads refuse matching paths (permission-denied), like unpublished rules
 //   __fake.cold = /regex/ is no signal the way the book's memory cache answers it (26 Oct 2026, #387, memoryLocalCache), for
 //   the paths that match: a listener started then answers at once from an empty copy (only this page's own unsent
 //   writes), marked fromCache; getDocs answers the same way; getDoc, getDocFromServer and getDocsFromServer refuse
@@ -67,7 +67,9 @@ function ruleBill(kind, ref) {
   const k = key(ref.path);
   if (!/^kitchens\/[^/]+\//.test(k) || /^kitchens\/[^/]+\/login\/roster$/.test(k)) return;
   const u = authUser(ref); if (!u || !u.isAnonymous) return;
-  window.__fake.ruleBill.push({ kind, path: k, n: store[rootOfRef(ref) + '/sessions/' + authUid(ref)] ? 4 : 2 });
+  // A declaration write also checks the exact canonical cooling run and its server deadline.
+  const coolingLookup = kind === 'write' && /^kitchens\/[^/]+\/cooling\/recorded$/.test(k) ? 1 : 0;
+  window.__fake.ruleBill.push({ kind, path: k, n: (store[rootOfRef(ref) + '/sessions/' + authUid(ref)] ? 4 : 2) + coolingLookup });
 }
 window.__fake.readLog = [];
 window.__fake.refused = window.__fake.refused || [];
@@ -224,8 +226,8 @@ const coolingCollection = ref => ref.path[0] === 'kitchens' && ref.path[2] === '
 function colRefused(ref, list) {
   const rel = ref.path.slice(2), c = rel[0], k = key(ref.path);
   if (ref.path[0] !== 'kitchens' || ref.group) return false;
-  // A live kitchen session reads the one shared timer, including View only. Admin has no list exception.
-  if (coolingCollection(ref)) return list || rel.length !== 2 || rel[1] !== 'current' || !kitchenReader(ref);
+  // A live kitchen session reads the shared timer and declarations, including View only. No list exception.
+  if (coolingCollection(ref)) return list || rel.length !== 2 || !['current', 'recorded'].includes(rel[1]) || !kitchenReader(ref);
   if (c === 'adminDevices') return list || !(rawOwner(ref) || authUid(ref) && rel[1] === authUid(ref));
   if (c === 'sessions') return list || !authUid(ref) || rel[1] !== authUid(ref);
   if (c === 'push' || c === 'tries' || c === 'proofs') return true;
@@ -345,6 +347,7 @@ export function getDocFromServer(ref) {
   if (window.__fake.mode === 'hold' || window.__fake.mode === 'fail' || cold(ref) || readFails(ref)) return Promise.reject({ code: 'unavailable' });
   if (spent(ref)) return SPENT();
   if (readRefused(ref)) return refuse('server', ref);
+  if (denied(ref)) return Promise.reject({ code: 'permission-denied' });
   bill('server', k, 1); ruleBill('server', ref);
   if (sv && k in sv) { const v = sv[k]; return delay({ id: ref.path[ref.path.length - 1], ref, exists: () => v != null, data: () => (v == null ? undefined : clone(v)) }); }
   return delay(result(ref));
@@ -450,10 +453,29 @@ function finishOps(ops) {
 }
 const exactKeys = (value, names) => value && Object.keys(value).length === names.length && names.every(name => Object.hasOwn(value, name));
 const freshStamp = value => !!(value && value.__st) || stampMillis(value) === requestNow();
+// Match coolingRecordedNext: each server-timed declaration is immutable and belongs to the current run.
+function coolingRecordedRefused(o, stamp, by, old) {
+  if (!by || o.kind === 'delete') return true;
+  const base = o.kind === 'set' && !o.merge ? {} : old || {}, d = resolveVal(o.data, base, stamp);
+  const timer = store[key(o.ref.path.slice(0, 2).concat(['cooling', 'current']))];
+  const actor = value => typeof value === 'string' && value.length > 0 && value.length <= 80;
+  const pair = (at, who) => at === 0 && who === '' || at instanceof Timestamp && actor(who);
+  if (!exactKeys(d, ['v', 'run', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by']) || d.v !== 1 ||
+    typeof d.run !== 'string' || !/^[a-zA-Z0-9_-]{16,80}$/.test(d.run) || d.by !== by ||
+    !pair(d.firstAt, d.firstBy) || !pair(d.secondAt, d.secondBy) || !timer || d.run !== timer.run) return true;
+  const prior = old && old.run === d.run ? old : { firstAt: 0, firstBy: '', secondAt: 0, secondBy: '' };
+  const equal = (a, b) => a instanceof Timestamp ? a.isEqual(b) : a === b;
+  const first = prior.firstAt === 0 && prior.firstBy === '' && stampMillis(d.firstAt) === stamp && d.firstBy === by &&
+    equal(d.secondAt, prior.secondAt) && d.secondBy === prior.secondBy && timer.firstAt instanceof Timestamp && stamp >= stampMillis(timer.firstAt) + 7200000;
+  const second = prior.secondAt === 0 && prior.secondBy === '' && stampMillis(d.secondAt) === stamp && d.secondBy === by &&
+    equal(d.firstAt, prior.firstAt) && d.firstBy === prior.firstBy && timer.secondAt instanceof Timestamp && stamp >= stampMillis(timer.secondAt) + 14400000;
+  return !(first || second);
+}
 // Match coolingOk/coolingNext: no role can choose a start time, skip a stage or overwrite a newer revision.
 function coolingWriteRefused(o, stamp) {
   if (!coolingCollection(o.ref)) return false;
   const rel = o.ref.path.slice(2), by = kitchenReader(o.ref), old = store[key(o.ref.path)];
+  if (rel.length === 2 && rel[1] === 'recorded') return coolingRecordedRefused(o, stamp, by, old);
   if (rel.length !== 2 || rel[1] !== 'current' || !by || o.kind === 'delete') return true;
   const base = o.kind === 'set' && !o.merge ? {} : old || {}, d = resolveVal(o.data, base, stamp);
   if (!exactKeys(d, ['v', 'run', 'rev', 'firstAt', 'firstBy', 'secondAt', 'secondBy', 'by']) ||

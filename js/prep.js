@@ -3019,8 +3019,9 @@
     var today = dayNow(), dates = [], k;
     for (k = 0; k < 400; k++) dates.push(shift(today, -k));
     f.getDoc(cfgDoc()).then(function (sn) { out.config = sn.exists() ? sn.data() : null; })
-      // One named canonical read for this manual backup: the current shared timer and its server start times.
+      // Two named canonical reads on this manual backup: the shared timer and staff declarations with exact times.
       .then(function () { part = 'cooling current'; return f.getDocFromServer(docRef('cooling', 'current')).then(function (sn) { out.coolingCurrent = sn.exists() ? sn.data() : null; }, function (e) { if (e && e.code === 'permission-denied') { left.push('cooling current'); return; } throw e; }); })
+      .then(function () { part = 'cooling recorded'; return f.getDocFromServer(docRef('cooling', 'recorded')).then(function (sn) { out.coolingRecorded = sn.exists() ? sn.data() : null; }, function (e) { if (e && e.code === 'permission-denied') { left.push('cooling recorded'); return; } throw e; }); })
       .then(function () { return all('activity'); }).then(function (r) { out.activity = r; })
       .then(function () { return all('sections'); }).then(function (r) { out.sections = r; })
       .then(function () { return all('learned'); }).then(function (r) { out.learned = r; })
@@ -13586,7 +13587,7 @@
     if ((typedHere() || coolingBusy()) && !(window.LK_UPDATE && window.LK_UPDATE.letGo && window.LK_UPDATE.letGo())) { e.preventDefault(); e.returnValue = ''; }
   });
   window.addEventListener('storage', function (e) { if (((e.key === 'lk.prep.who' || e.key === 'lk.prep.sess') && !e.newValue || e.key === 'lk.auth.lock') && (S.authed || S.user)) signOutPerson(true, true); });
-  /* Operandio: one canonical live record while authorised, one read on subscribe and one per shared change.
+  /* Operandio: two bounded live records while authorised, two reads on subscribe and one per shared change.
      Countdown and on-screen alert ticks never read or write Firestore. */
   var coolingController = null, coolingTickTimer = null, coolingRouteWant = false, coolingRouteHandled = '', coolingPaintTimer = null;
   function coolingEligible() { return !!(fb && kitchenAccess() && canW() && me()); }
@@ -13596,7 +13597,7 @@
       pinAt: S.sessPinAt, mode: deviceMode(), canRead: coolingEligible(), context: context };
   }
   function coolingRef(path, session) {
-    if (path !== 'cooling/current') throw new Error('Invalid cooling path');
+    if (path !== 'cooling/current' && path !== 'cooling/recorded') throw new Error('Invalid cooling path');
     return fb.fs.doc.apply(null, [fb.db, 'kitchens', session.pin].concat(path.split('/')));
   }
   function coolingSnapshot(sn) {
@@ -13613,13 +13614,40 @@
   }
   function coolingWrite(kind, path, data, session) {
     if ((kind !== 'set' && kind !== 'update') || !coolingSessionCurrent(session)) return Promise.reject({ code: 'cancelled', definite: true });
-    // W retains the original recorder across a lock. The rules arbitrate simultaneous starts using the revision
-    // and server timestamp; an uncertain acknowledgement must never submit another start.
+    // W retains the original recorder across a lock. Rules arbitrate starts and immutable stage confirmations;
+    // an uncertain acknowledgement must never submit the action again.
     return W([[kind === 'update' ? 'upd' : 'set', coolingRef(path, session), data]], session.context);
   }
-  // Personal dismissal markers only, no timer times, names or content. Bound to this kitchen/device/person and capped
-  // by the controller; a different run ID never inherits an old dismissal. No reads or writes to other people's alerts.
-  function coolingSeenKey(session) { return 'lk.cooling.seen.' + session.pin + '.' + session.uid + '.' + session.by; }
+  // Presented event IDs only, no names, timer content or completion claims. Device-scoped so a shared screen
+  // stays quiet after handover/reload. A new run/stage has a new ID; keep only the latest 64 markers.
+  function coolingSeenKey(session) { return 'lk.cooling.seen.' + session.pin + '.' + session.uid; }
+  function coolingReadSeen(session) {
+    var seen = Object.create(null), key = coolingSeenKey(session), migrated = false;
+    // Retain former personal dismissals during the upgrade. These IDs are not evidence of recording in Operandio.
+    var keys = [key];
+    try { Object.keys(LS || {}).forEach(function (savedKey) { if (savedKey.indexOf(key + '.') === 0) keys.push(savedKey); }); } catch (e) {}
+    keys.forEach(function (savedKey) {
+      try {
+        var saved = JSON.parse(lsGet(savedKey) || '{}');
+        if (saved && typeof saved === 'object') Object.keys(saved).forEach(function (id) {
+          if (/^[A-Za-z0-9_-]{16,80}_[12]$/.test(id) && saved[id] === true) {
+            if (savedKey !== key && !seen[id]) migrated = true;
+            seen[id] = true;
+          }
+        });
+      } catch (e) {}
+    });
+    var ids = Object.keys(seen); ids.slice(0, Math.max(0, ids.length - 64)).forEach(function (id) { delete seen[id]; });
+    // Save an inherited dismissal even when it suppresses the popup, before the next person uses this device.
+    if (migrated) lsSet(key, JSON.stringify(seen));
+    return seen;
+  }
+  function coolingWriteSeen(session, value) {
+    var merged = Object.assign(coolingReadSeen(session), value), bounded = Object.create(null);
+    Object.keys(merged).filter(function (id) { return /^[A-Za-z0-9_-]{16,80}_[12]$/.test(id) && merged[id] === true; })
+      .slice(-64).forEach(function (id) { bounded[id] = true; });
+    lsSet(coolingSeenKey(session), JSON.stringify(bounded));
+  }
   function coolingChanged() {
     if (coolingPaintTimer) return;
     coolingPaintTimer = setTimeout(function () { coolingPaintTimer = null; try { window.dispatchEvent(new Event('lk-cooling')); } catch (e) {} }, 0);
@@ -13634,9 +13662,8 @@
     if (coolingController || !window.LK_COOLING_APP || !window.LK_COOLING_UI) return coolingController;
     coolingController = window.LK_COOLING_APP.create({ session: coolingSession, now: now, watch: coolingWatch, write: coolingWrite,
       timestamp: function () { return fb.fs.serverTimestamp(); }, changed: coolingChanged, chime: coolingChime, stopChime: coolingStopChime,
-      readSeen: function (session) { try { return JSON.parse(lsGet(coolingSeenKey(session)) || '{}'); } catch (e) { return {}; } },
-      writeSeen: function (session, seen) { lsSet(coolingSeenKey(session), JSON.stringify(seen)); },
-      uiHooks: { esc: esc, clock: T.clock,
+      readSeen: coolingReadSeen, writeSeen: coolingWriteSeen,
+      uiHooks: { esc: esc, clock: T.clock, personName: mnName,
         canOpen: function () { return coolingEligible() && !namesUp() && !sheetBusy(); },
         opened: function (kind, closeFromBack) { ovPush('cooling', closeFromBack); },
         closed: function (kind, noBack) { if (kind === 'ping') coolingStopChime(); ovDone('cooling', noBack); setTimeout(sheetNext, 0); },
@@ -13664,6 +13691,9 @@
   window.addEventListener('lk-clock', coolingTick);
   window.addEventListener('lk-access', coolingSync);
   window.addEventListener('online', function () { if (coolingController) coolingController.retryRead(); });
+  window.addEventListener('storage', function (e) {
+    if (coolingController && coolingEligible() && e.key === coolingSeenKey(coolingSession())) coolingController.refreshSeen();
+  });
   window.addEventListener('hashchange', function () { if (location.hash !== '#/cooling') { coolingRouteWant = false; coolingRouteHandled = ''; } });
   document.addEventListener('visibilitychange', function () { if (!document.hidden) { coolingSync(); coolingTick(); } });
 

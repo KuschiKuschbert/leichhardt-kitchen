@@ -30,6 +30,17 @@
       return (hours ? hours + ' h' + (rest ? ' ' : '') : '') + (rest ? rest + ' min' : '') + ' left';
     }
     function at(value) { return H.clock(value); }
+    function recordedAt(hours, runId) {
+      var value = model.recorded;
+      if (!model.recordedReady || model.recordedStale || model.recordedError || !value || value.id !== runId) return 0;
+      var stamp = hours === 2 ? value.firstAt : value.secondAt;
+      return finite(stamp) ? stamp : 0;
+    }
+    function outstanding(s) {
+      if (!s.run) return 0;
+      if (s.firstDone && !recordedAt(2, s.run.id)) return 2;
+      return s.secondDone && !recordedAt(4, s.run.id) ? 4 : 0;
+    }
     function rowState(hours) {
       var s = state(), run = s.run, first = hours === 2, started = run && (first ? run.firstAt : run.secondAt), due = run && (first ? run.firstDue : run.secondDue);
       var done = !!started && finite(model.now) && model.now >= due;
@@ -53,10 +64,13 @@
       return !!model.actionError && !(dismissedError === actionErrorKey(model) && s.ready && s.run);
     }
     function clockState() {
-      var s = state(), run = s.run, hours = model.pending || (run && run.secondAt ? 4 : 2), phase;
+      var s = state(), run = s.run, dueCheck = outstanding(s), hours = model.pending || model.confirmPending || dueCheck || (run && run.secondAt ? 4 : 2), phase;
       if (model.pending) phase = 'pending';
+      else if (model.confirmPending) phase = 'recording';
       else if (headerError(s)) phase = 'error';
       else if (!s.ready) phase = model.error || s.bad ? 'error' : 'checking';
+      else if (dueCheck && (!model.recordedReady || model.recordedStale || model.recordedError)) phase = model.recordedError ? 'error' : 'checking';
+      else if (dueCheck) phase = 'record';
       else if (armed && armed === armKey(s)) phase = 'armed';
       else if (!run) phase = 'idle';
       else if (s.secondDone) phase = s.newBatchReady ? 'idle' : 'done2';
@@ -67,9 +81,9 @@
       var progress = running ? Math.max(0, Math.min(1, (model.now - began) / (due - began))) : phase === 'done1' || phase === 'done2' ? 1 : 0;
       var seconds = running ? Math.max(0, Math.ceil((due - model.now) / 1000)) : 0;
       var countdown = Math.floor(seconds / 3600) + ':' + String(Math.floor(seconds % 3600 / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
-      var primary = phase === 'idle' ? '' : phase === 'armed' ? 'Start' : phase === 'pending' ? 'Starting…' : phase === 'error' ? 'Check timer' : phase === 'checking' ? 'Check timer' : running ? countdown : 'Done';
-      var secondary = phase === 'done1' ? 'Start 4 h →' : phase === 'done2' ? 'Tomorrow · 00:00' : phase === 'checking' ? model.stale ? 'Not connected' : 'Checking…' : phase === 'error' ? 'Operandio · details' : 'Operandio · ' + (phase === 'armed' ? 2 : hours) + ' h';
-      var label = phase === 'idle' ? 'Operandio cooling timer. Prepare 2-hour start' : phase === 'armed' ? (s.secondDone ? 'Start another Operandio batch, 2-hour timer' : 'Start Operandio 2-hour timer') : phase === 'pending' ? 'Starting Operandio ' + hours + '-hour timer. Waiting for confirmation.' : phase === 'done1' ? 'Operandio 2 hours done. Start 4-hour timer' : phase === 'done2' ? 'Operandio cooling finished. Timer disabled until tomorrow at 00:00 Queensland time.' : running ? 'Operandio ' + hours + '-hour timer, ' + countdown + ' remaining' : model.actionError ? String(model.actionError.message || 'Couldn’t start Operandio. Check the timer.') : readStatus();
+      var primary = phase === 'idle' ? '' : phase === 'armed' ? 'Start' : phase === 'pending' ? 'Starting…' : phase === 'recording' ? 'Saving…' : phase === 'record' ? 'Record ' + hours + ' h' : phase === 'error' ? 'Check timer' : phase === 'checking' ? 'Check timer' : running ? countdown : 'Done';
+      var secondary = phase === 'done1' ? 'Start 4 h →' : phase === 'done2' ? 'Tomorrow · 00:00' : phase === 'checking' ? model.stale || model.recordedStale ? 'Not connected' : 'Checking…' : phase === 'error' || phase === 'record' ? 'Operandio · details' : 'Operandio · ' + (phase === 'armed' ? 2 : hours) + ' h';
+      var label = phase === 'idle' ? 'Operandio cooling timer. Prepare 2-hour start' : phase === 'armed' ? (s.secondDone ? 'Start another Operandio batch, 2-hour timer' : 'Start Operandio 2-hour timer') : phase === 'pending' ? 'Starting Operandio ' + hours + '-hour timer. Waiting for confirmation.' : phase === 'recording' ? 'Saving Operandio ' + hours + '-hour confirmation.' : phase === 'record' ? 'Operandio ' + hours + '-hour check needs recording. Open timer details.' : phase === 'done1' ? 'Operandio 2 hours done. Start 4-hour timer' : phase === 'done2' ? 'Operandio cooling finished. Timer disabled until tomorrow at 00:00 Queensland time.' : running ? 'Operandio ' + hours + '-hour timer, ' + countdown + ' remaining' : model.actionError ? String(model.actionError.message || 'Couldn’t start Operandio. Check the timer.') : readStatus();
       if (phase === 'pending' && model.error) label += ' ' + String(model.error);
       return { phase: phase, hours: hours, running: running, readOnly: running || phase === 'done2', progress: progress, primary: primary, secondary: secondary, label: label || 'Check Operandio timers' };
     }
@@ -87,9 +101,9 @@
         var focused = document.activeElement === button || document.activeElement === status || restore && document.activeElement === document.body;
         chip.hidden = !model.available; chip.dataset.clockState = c.phase;
         button.hidden = c.readOnly; status.hidden = !c.readOnly; button.disabled = c.phase === 'pending';
-        button.setAttribute('aria-busy', String(c.phase === 'pending'));
+        button.setAttribute('aria-busy', String(c.phase === 'pending' || c.phase === 'recording'));
         button.setAttribute('aria-label', c.label); status.setAttribute('aria-label', c.label); button.title = c.label; status.title = c.label;
-        if (c.phase === 'checking' || c.phase === 'error') { button.setAttribute('aria-haspopup', 'dialog'); button.setAttribute('aria-expanded', String(!!wrap)); }
+        if (c.phase === 'checking' || c.phase === 'error' || c.phase === 'record' || c.phase === 'recording') { button.setAttribute('aria-haspopup', 'dialog'); button.setAttribute('aria-expanded', String(!!wrap)); }
         else { button.removeAttribute('aria-haspopup'); button.removeAttribute('aria-expanded'); }
         chip.querySelectorAll('.cooling-clock-control').forEach(function (control) {
           text(control.querySelector('strong'), c.primary); text(control.querySelector('small'), c.secondary); text(control.querySelector('.cooling-clock-stage'), c.hours + 'h');
@@ -101,7 +115,7 @@
       if (restore) clockFocus = false;
     }
     function errorLine(host, message) {
-      var line = host.querySelector('.cooling-error');
+      var line = host.querySelector(':scope > .cooling-error');
       if (!message) { if (line) line.remove(); return; }
       if (!line) { line = document.createElement('p'); line.className = 'p-err cooling-error'; line.setAttribute('role', 'alert'); host.appendChild(line); }
       text(line, message);
@@ -111,11 +125,42 @@
       if (!button) { host.innerHTML = '<button type="button" class="btn cooling-start"></button>'; button = host.firstElementChild; }
       button.classList.toggle('dark', !!ready || !!busy);
       button.setAttribute('data-cooling', 'start'); button.setAttribute('data-stage', String(hours));
-      button.disabled = !ready || !!model.pending;
+      button.disabled = !ready || !!model.pending || !!model.confirmPending;
       if (busy) button.setAttribute('aria-busy', 'true'); else button.removeAttribute('aria-busy');
       button.setAttribute('aria-label', (busy ? 'Starting' : error ? 'Try again: start' : 'Start') + ' Operandio ' + hours + '-hour timer');
       text(button, busy ? 'Starting…' : error ? 'Try again' : label || 'Start');
       return button;
+    }
+    function paintConfirmation(host, hours, source) {
+      if (!host) return;
+      var s = state(), same = !!source && !!s.run && source.id === s.run.id;
+      var due = source && (hours === 2 ? source.firstDue : source.secondDue), elapsed = finite(due) && finite(model.now) && model.now >= due;
+      host.hidden = !elapsed;
+      if (!elapsed) return;
+      var busy = model.confirmPending === hours, stamp = same && !busy ? recordedAt(hours, source.id) : 0;
+      if (stamp) {
+        var actor = hours === 2 ? model.recorded.firstBy : model.recorded.secondBy;
+        var person = H.personName && actor ? H.personName(actor) : '';
+        var recorded = '<span class="lk-stamp">Recorded ' + H.esc(at(stamp)) + (person ? ' · ' + H.esc(person) : '') + '</span>';
+        var focused = host.contains(document.activeElement);
+        if (host.innerHTML !== recorded) host.innerHTML = recorded;
+        if (focused) host.closest('.cooling-entry').focus({ preventScroll: true });
+        return;
+      }
+      var button = host.querySelector('.cooling-confirm');
+      if (!button) {
+        host.innerHTML = '<p class="cooling-record-note"></p><button type="button" class="btn dark cooling-confirm nt-got" data-cooling="confirm"></button><div class="cooling-confirm-error"></div>';
+        button = host.querySelector('button');
+      }
+      var error = !busy && model.confirmError && model.confirmError.stage === hours ? String(model.confirmError.message || '') : '';
+      var canConfirm = same && s.ready && model.recordedReady && !model.recordedStale && !model.recordedError;
+      text(host.querySelector('.cooling-record-note'), busy ? 'Waiting for confirmation. Keep this tab open.' : !same ? 'This batch has been replaced. Open the clock for the current batch.' : 'Record this check in Operandio, then confirm here.');
+      button.dataset.confirmStage = String(hours);
+      button.setAttribute('aria-describedby', kind === 'menu' ? 'cooling-label-' + hours + ' cooling-detail-' + hours : 'cooling-title');
+      button.disabled = !canConfirm || !!model.pending || !!model.confirmPending;
+      if (busy) button.setAttribute('aria-busy', 'true'); else button.removeAttribute('aria-busy');
+      text(button, busy ? 'Saving…' : error ? 'Try again: recorded in Operandio' : 'I’ve recorded this in Operandio');
+      errorLine(host.querySelector('.cooling-confirm-error'), error);
     }
     function paintRow(entry, hours) {
       var r = rowState(hours), action = entry.querySelector('.cooling-action'), focused = action.contains(document.activeElement) || pendingFocus === hours && !model.pending && document.activeElement === document.body;
@@ -131,6 +176,7 @@
       }
       if (pendingFocus === hours && !model.pending) pendingFocus = 0;
       errorLine(entry, r.error);
+      paintConfirmation(entry.querySelector('.cooling-record'), hours, state().run);
     }
     function readStatus() {
       var s = state();
@@ -138,10 +184,13 @@
       if (s.bad) return 'Couldn’t read Operandio timers. Try again.';
       if (model.stale) return 'Not connected. The last timer is shown. Reconnect before starting.';
       if (!model.ready || !finite(model.now)) return 'Checking Operandio timers…';
+      if (model.recordedError) return String(model.recordedError);
+      if (model.recordedStale) return 'Not connected. Reconnect to check Operandio confirmations.';
+      if (!model.recordedReady) return 'Checking Operandio confirmations…';
       return '';
     }
     function paintRead(host) {
-      var message = readStatus(), retry = !!model.error || state().bad, line = host.querySelector('.cooling-read');
+      var message = readStatus(), retry = !!model.error || !!model.recordedError || state().bad, line = host.querySelector('.cooling-read');
       if (!message) { if (line) line.remove(); return; }
       if (!line) { line = document.createElement('div'); line.className = 'cooling-read'; line.innerHTML = '<p></p>'; host.appendChild(line); }
       var p = line.querySelector('p'); p.className = retry ? 'p-err' : ''; p.setAttribute('role', retry ? 'alert' : 'status'); text(p, message);
@@ -164,6 +213,9 @@
     }
     function paintPing() {
       var s = state(), run = pingRun, same = !!s.run && !!run && s.run.id === run.id, line = wrap.querySelector('.cooling-ping-time'), next = wrap.querySelector('.cooling-next');
+      if (same && recordedAt(pingStage, run.id) && model.confirmPending !== pingStage) {
+        say('Operandio ' + pingStage + '-hour check confirmed. The reminder is cleared for everyone.'); close(); return;
+      }
       text(line, run ? 'Time reached at ' + at(pingStage === 2 ? run.firstDue : run.secondDue) + '.' + (pingStage === 4 && same && !s.newBatchReady ? ' Timer available tomorrow at 00:00.' : '') : 'The shared timer has changed. Open the clock for the current batch.');
       if (pingStage === 2 && run) {
         next.hidden = false;
@@ -183,6 +235,7 @@
           actionButton(host, 4, s.ready && s.firstDone, model.pending === 4, error, 'Start 4 hours'); errorLine(next, error);
         }
       } else next.hidden = true;
+      paintConfirmation(wrap.querySelector('.cooling-ping-record'), pingStage, run);
       paintRead(wrap.querySelector('.cooling-ping-read'));
     }
     function place() {
@@ -193,12 +246,12 @@
       menu.style.left = Math.max(8, Math.min(innerWidth - menu.offsetWidth - 8, rect.left + rect.width / 2 - menu.offsetWidth / 2)) + 'px';
     }
     function rowHTML(hours) {
-      return '<div class="cooling-entry" data-timer="' + hours + '" tabindex="-1"><div class="cooling-row"><span class="cooling-label"><b>' + hours + ' hours</b><small class="cooling-detail" id="cooling-detail-' + hours + '"></small></span><span class="cooling-action"></span></div></div>';
+      return '<div class="cooling-entry" data-timer="' + hours + '" tabindex="-1"><div class="cooling-row"><span class="cooling-label"><b id="cooling-label-' + hours + '">' + hours + ' hours</b><small class="cooling-detail" id="cooling-detail-' + hours + '"></small></span><span class="cooling-action"></span></div><div class="cooling-record" hidden></div></div>';
     }
     function show(nextKind, stage, anchor) {
       if (disposed || !model.available || wrap || H.canOpen && !H.canOpen(nextKind)) return false;
       if (nextKind === 'ping') {
-        var s = state(); if (!s.ready || (stage === 2 ? !s.firstDone : stage !== 4 || !s.secondDone)) return false;
+        var s = state(); if (!s.ready || !model.recordedReady || model.recordedStale || model.recordedError || recordedAt(stage, s.run && s.run.id) || (stage === 2 ? !s.firstDone : stage !== 4 || !s.secondDone)) return false;
       }
       armed = '';
       previous = anchor || document.querySelector('.cooling-clock-control:not([hidden])') || document.activeElement;
@@ -207,7 +260,7 @@
       if (nextKind === 'menu') {
         wrap.innerHTML = '<div class="wm-bg" data-cooling="close"></div><section class="cooling-menu" role="dialog" aria-modal="true" aria-labelledby="cooling-title" tabindex="-1"><header class="cooling-head"><h2 id="cooling-title">Operandio</h2><button type="button" class="btn cooling-close" data-cooling="close" aria-label="Close cooling timers">×</button></header>' + rowHTML(2) + rowHTML(4) + '<div class="cooling-read-slot"></div><div class="cooling-new-slot"></div></section>';
       } else {
-        wrap.innerHTML = '<div class="nt-bg" data-cooling="close"></div><section class="nt cooling-ping" role="dialog" aria-modal="true" aria-labelledby="cooling-title" tabindex="-1"><div class="nt-grip" aria-hidden="true"></div><div class="nt-in"><header class="nt-head"><span class="nt-eb">Cooling timer · everyone</span><h2 class="nt-h" id="cooling-title">' + (stage === 2 ? 'First 2 hours finished' : 'Next 4 hours finished') + '</h2></header><div class="nt-body"><h3>Operandio batch cooling time ' + stage + ' hours is done.</h3><p class="cooling-ping-time"></p><div class="cooling-next"><b></b><p></p><div class="cooling-action"></div></div><div class="cooling-ping-read"></div></div><footer class="nt-foot"><button type="button" class="btn nt-got" data-cooling="got">Got it</button><p>Closes this message for you only.</p></footer></div></section>';
+        wrap.innerHTML = '<div class="nt-bg" data-cooling="close"></div><section class="nt cooling-ping" role="dialog" aria-modal="true" aria-labelledby="cooling-title" tabindex="-1"><div class="nt-grip" aria-hidden="true"></div><div class="nt-in"><header class="nt-head"><span class="nt-eb">Cooling timer · everyone</span><h2 class="nt-h" id="cooling-title">' + (stage === 2 ? 'First 2 hours finished' : 'Next 4 hours finished') + '</h2></header><div class="nt-body"><h3>Operandio batch cooling time ' + stage + ' hours is done.</h3><p class="cooling-ping-time"></p><div class="cooling-next"><b></b><p></p><div class="cooling-action"></div></div><div class="cooling-ping-read"></div></div><footer class="nt-foot"><div class="cooling-record cooling-ping-record"></div><button type="button" class="btn cooling-later" data-cooling="close">Not yet</button><p>Confirmation clears this reminder for everyone.</p></footer></div></section>';
       }
       document.body.appendChild(wrap); document.documentElement.classList.add('cooling-open');
       if (kind === 'menu') paintMenu(); else paintPing();
@@ -232,7 +285,7 @@
     }
     function start(hours) {
       var s = state();
-      if (model.pending || !s.ready || !(hours === 2 ? !s.run || s.secondDone && s.newBatchReady : hours === 4 && s.firstDone && !s.run.secondAt)) return;
+      if (model.pending || model.confirmPending || !s.ready || !(hours === 2 ? !s.run || s.secondDone && s.newBatchReady : hours === 4 && s.firstDone && !s.run.secondAt)) return;
       var token = ++attempt;
       pendingFocus = hours; armed = ''; dismissedError = '';
       model = Object.assign({}, model, { pending: hours, actionError: null });
@@ -249,6 +302,21 @@
       try { var result = H.onStart && H.onStart(hours); if (result && result.catch) result.catch(failed); if (!H.onStart || result === false && !deferredModel) failed(); } catch (e) { failed(); }
       finally { startingCall = false; if (deferredModel) { var next = deferredModel; deferredModel = null; render(next); } }
     }
+    function confirm(hours) {
+      var s = state(), source = kind === 'ping' ? pingRun : s.run;
+      if (model.pending || model.confirmPending || !source || !s.run || source.id !== s.run.id || !s.ready || !model.recordedReady || model.recordedStale || model.recordedError || recordedAt(hours, source.id) || !(hours === 2 ? s.firstDone : hours === 4 && s.secondDone)) return;
+      var token = ++attempt;
+      model = Object.assign({}, model, { confirmPending: hours, confirmError: null });
+      if (kind === 'menu') paintMenu(); else paintPing();
+      paintChip(); say('Saving Operandio ' + hours + '-hour confirmation.');
+      function failed() {
+        if (disposed || token !== attempt || model.confirmPending !== hours) return;
+        render(Object.assign({}, model, { confirmPending: 0, confirmError: { stage: hours, message: 'Couldn’t save the Operandio ' + hours + '-hour confirmation. Try again.' } }));
+      }
+      startingCall = true; deferredModel = null;
+      try { var result = H.onConfirm && H.onConfirm(hours, source.id); if (result && result.catch) result.catch(failed); if (!H.onConfirm || result === false && !deferredModel) failed(); } catch (e) { failed(); }
+      finally { startingCall = false; if (deferredModel) { var next = deferredModel; deferredModel = null; render(next); } }
+    }
     function click(event) {
       if (disposed) return;
       if (armed && !event.target.closest('.cooling-clock')) { armed = ''; paintChip(); }
@@ -259,7 +327,7 @@
         if (!model.available || model.pending || wrap || H.canOpen && !H.canOpen('menu')) return;
         var c = clockState(), s = state();
         if (c.readOnly) return;
-        if (c.phase === 'error' || c.phase === 'checking') { show('menu', 0, button); return; }
+        if (c.phase === 'error' || c.phase === 'checking' || c.phase === 'record' || c.phase === 'recording') { show('menu', 0, button); return; }
         if (c.phase === 'done1') { clockFocus = true; start(4); return; }
         if (c.phase === 'armed') { clockFocus = true; start(2); return; }
         armed = armKey(s); paintChip(); say(s.secondDone ? 'Start another Operandio batch. Tap Start for 2 hours.' : 'Start Operandio 2-hour timer. Tap Start to confirm.');
@@ -269,7 +337,7 @@
       if (!wrap || !wrap.contains(button)) return;
       if (action === 'close') { close(); return; }
       if (action === 'start') { start(Number(button.getAttribute('data-stage'))); return; }
-      if (action === 'got') { if (H.onAcknowledge) H.onAcknowledge(pingStage, pingRun && pingRun.id); close(); return; }
+      if (action === 'confirm') { confirm(Number(button.getAttribute('data-confirm-stage'))); return; }
       if (action === 'retry' && H.onRetryRead) {
         button.disabled = true; text(button, 'Checking…');
         var line = button.closest('.cooling-read').querySelector('p'); line.className = ''; line.setAttribute('role', 'status'); text(line, 'Checking Operandio timers…');

@@ -7,7 +7,7 @@
   and sign-offs, what the prep and order lists have learned, the learning log, the chef to-do list, tallies, sections,
   empty searches, card opens, the guides' words and small pictures, the recipes the head chef changed or added in the
   book with their earlier versions, shared protected words and immutable proofreader history, canonical Operandio cooling
-  state, and who has set a PIN.
+  state and shared recording confirmations, and who has set a PIN.
   Cleaning includes every schedule revision, occurrence states and immutable actions within the selected day window.
   People's PIN fingerprints and the guides' page pictures are left out, like the button.
   The workflow then encrypts the file with the BACKUP_KEY secret and keeps it as a GitHub artifact for 90 days.
@@ -67,15 +67,16 @@ const out = { exportedAt: new Date(NOW).toISOString(), by: 'nightly backup', day
 let reads = 0;
 const cfg = await K.collection('config').doc('main').get(); reads++;
 out.config = cfg.exists ? plain(cfg.data()) : null;
-// Nightly cooling costs one named document read, including a missing record or a run older than the date window.
-// Preserve exact Timestamp components: restoring these starts must not reset a deadline or start another stage.
-const coolingCurrent = await K.collection('cooling').doc('current').get(); reads++;
-out.coolingCurrent = null;
-if (coolingCurrent.exists) {
-  const current = coolingCurrent.data();
-  out.coolingCurrent = plain(current);
+// Nightly cooling costs two named document reads, including missing records or runs older than the date window.
+// Preserve exact Timestamp components: recovery must retain deadlines and each staff recording confirmation.
+const coolingRecords = await db.getAll(K.collection('cooling').doc('current'), K.collection('cooling').doc('recorded')); reads += 2;
+for (const [index, section] of ['coolingCurrent', 'coolingRecorded'].entries()) {
+  out[section] = null;
+  if (!coolingRecords[index].exists) continue;
+  const current = coolingRecords[index].data();
+  out[section] = plain(current);
   for (const field of ['firstAt', 'secondAt']) if (current[field] && typeof current[field].toMillis === 'function') {
-    out.coolingCurrent[field] = { seconds: current[field].seconds, nanoseconds: current[field].nanoseconds };
+    out[section][field] = { seconds: current[field].seconds, nanoseconds: current[field].nanoseconds };
   }
 }
 // Nightly only: one query per collection, including every immutable proofreader event (one read per event).

@@ -41,6 +41,23 @@
       restartAt: secondAt ? (Math.floor(((record.secondAt.seconds * 1000) + SECOND + QUEENSLAND) / DAY) + 1) * DAY - QUEENSLAND : 0, secondBy: record.secondBy, by: record.by };
     return valid(run) ? run : null;
   }
+  // Shared declarations are separate from the timing record so an older timer can still read its v1 contract.
+  function parseRecorded(record) {
+    if (!record || typeof record !== 'object' || Array.isArray(record) || record.v !== 1 || !id(record.run) || !actor(record.by)) return null;
+    var out = { id: record.run, firstAt: 0, firstBy: '', secondAt: 0, secondBy: '', by: record.by };
+    for (var i = 0; i < 2; i++) {
+      var field = i ? 'second' : 'first', at = record[field + 'At'], by = record[field + 'By'];
+      if (at === 0 && by === '') continue;
+      if (!timestamp(at) || !actor(by) || !integer(milliseconds(at), 1)) return null;
+      out[field + 'At'] = milliseconds(at); out[field + 'By'] = by;
+    }
+    return (out.firstAt || out.secondAt) && (out.by === out.firstBy || out.by === out.secondBy) ? out : null;
+  }
+  function recordedFor(run, recorded) {
+    if (!recorded || !valid(run) || recorded.id !== run.id) return false;
+    return !!((!recorded.firstAt || integer(recorded.firstAt, run.firstDue) && actor(recorded.firstBy)) &&
+      (!recorded.secondAt || run.secondDue && integer(recorded.secondAt, run.secondDue) && actor(recorded.secondBy)));
+  }
   function phase(run, at) {
     if (!integer(at, 1)) return null;
     if (run === null) return 'idle';
@@ -66,12 +83,13 @@
     if (!map || typeof map !== 'object' || !Object.prototype.hasOwnProperty.call(map, key)) return false;
     return map[key] === true || integer(map[key], 1);
   }
-  // Acknowledgements are personal. Starting stage two does not acknowledge its predecessor for someone else.
-  function alert(run, at, seenMap) {
+  // Presentation is device-local; a saved declaration clears that stage for everyone.
+  function alert(run, at, seenMap, recorded) {
     if (!integer(at, 1) || !valid(run)) return null;
     for (var stage = 1; stage <= 2; stage++) {
       var due = stage === 1 ? run.firstDue : run.secondDue, key = run.id + '_' + stage;
-      if (due && at >= due && !seen(seenMap, key)) {
+      var done = recordedFor(run, recorded) && recorded[stage === 1 ? 'firstAt' : 'secondAt'];
+      if (due && at >= due && !done && !seen(seenMap, key)) {
         return { key: key, stage: stage, hours: stage === 1 ? 2 : 4, due: due, message: message(stage) };
       }
     }
@@ -85,7 +103,7 @@
     var value = expected(run);
     return !!value && value.expectedRun === expectedRun && value.expectedRev === expectedRev;
   }
-  var api = { parse: parse, id: id, phase: phase, allowed: allowed, duration: duration, remaining: remaining,
+  var api = { parse: parse, parseRecorded: parseRecorded, recordedFor: recordedFor, id: id, phase: phase, allowed: allowed, duration: duration, remaining: remaining,
     message: message, alert: alert, expected: expected, matches: matches };
   if (typeof module === 'object' && module.exports) { module.exports = api; return; }
   window.LK_COOLING = api;
