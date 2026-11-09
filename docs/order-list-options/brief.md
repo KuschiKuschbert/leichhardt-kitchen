@@ -94,7 +94,7 @@ Eight identical fictional requests, including all four items with recipe context
 
 B and C use 55.5 px less initial deadline space than today's banner, about 45% less, and eliminate the additional supplier group headings. A's one full block is taller than today's banner alone; its benefit is removing the second representation, not claiming that its block is smaller than the banner. The many-deadline example makes A's cost explicit.
 
-Staff have no deadline controls or chef ticks in any concept. The drawn staff view shows eight full fixture rows versus seven in the actual baseline; preserve the current staff renderer during implementation rather than promising this drawing's extra row. [Raw layout results](preview-measurements.json) · [Interaction checks](preview-interactions.json).
+Staff have no deadline controls or chef ticks in any concept. The drawn staff view showed eight full fixture rows versus seven in the actual baseline. At that review the staff renderer was to stay unchanged; the owner's 10 November follow-up above supersedes that instruction and records the implemented eight-row result. [Raw layout results](preview-measurements.json) · [Interaction checks](preview-interactions.json).
 
 ## Preserve in every implementation
 
@@ -154,7 +154,7 @@ Regression and independent source review cover separate item/supplier completion
 
 The first hosted run caught an outdated overdue-summary assertion and a confirmation-status wrap with a wider fallback font. The latter moved every request down by 20.3 px after acknowledgement. The expanded cut-off status now reserves two lines; the strengthened DejaVu Sans fixture reproduced 2 failures out of 34 on the old CSS and passes all 34 with the fix. All four focused files pass 120 assertions again, and the 15 actual-font captures were refreshed.
 
-Local implementation verification is complete. Hosted CI and the normal release queue still gate publication; no live deployment is claimed here.
+Local implementation verification is complete. Hosted CI and the normal release queue gate publication. Current hosted and live release evidence is recorded in [PR #642](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/642); the measurements above are local implementation evidence.
 
 ## Rollback
 
