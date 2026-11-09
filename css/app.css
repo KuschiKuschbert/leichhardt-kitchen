@@ -1901,6 +1901,15 @@ button.wm-a.wm-tile { text-align: left; }
 .p-toast-msg { flex: 1 1 auto; min-width: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; padding: 0.35rem 0; }
 .p-toasts .p-toast-btn { flex: none; min-height: 44px; min-width: 72px; padding: 0 1rem; border: 0; border-radius: var(--r-act); background: var(--ink); color: #fff; font-weight: 700; }
 .p-toasts .p-toast-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.p-toasts .p-toast-close { display: none; flex: none; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; border: 0; border-radius: var(--r-act); background: transparent; color: var(--muted); font: 400 1.375rem/1 var(--body); cursor: pointer; }
+.p-toasts .p-toast-close:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .p-toasts .p-toast-close { display: inline-flex; align-items: center; justify-content: center; }
+  .p-toasts .p-toast-close:hover { background: var(--hit); color: var(--ink); }
+  .p-toasts .p-toast.p-toast-old { gap: 0; max-width: calc(100% - 12px); }
+  .p-toasts .p-toast-old .p-toast-close { background: var(--paper); }
+  .p-toasts .p-toast-chip { flex: 0 1 auto; min-width: 0; }
+}
 .p-toasts .p-toast[style*="--toast-life"]::before { content: ""; position: absolute; left: 0; right: 0; top: -2.5px; height: 3px; background: var(--accent); transform-origin: 0 50%; animation: slip-time var(--toast-life) linear var(--toast-since, 0ms) forwards; }
 /* an error: #9B2716 is the red of the book's other error text (Delivery received), 8:1 with white */
 .p-toasts .p-toast.p-toast-bad { border-top-color: #9B2716; background: #FFF6F3; }

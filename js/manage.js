@@ -55,8 +55,10 @@
     B().say(msg);
     if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'p-toasts mg-toasts'; document.body.appendChild(toastEl); }
     toastEl.innerHTML = '<div class="p-toast' + (bad ? ' p-toast-bad' : ' p-toast-plain') + '" role="presentation"><span class="p-toast-msg">' + (confirmed ? inkLabel(msg, 'save', 'done') : esc(msg)) + '</span>' +
-      (bad ? '<button type="button" class="p-toast-btn" data-mg-ok="1">OK</button>' : '') + '</div>';
-    var ok = toastEl.querySelector('[data-mg-ok]'); if (ok) ok.addEventListener('click', function () { toastEl.innerHTML = ''; });
+      (bad ? '<button type="button" class="p-toast-btn" data-mg-ok="1">OK</button>' : '') + '<button type="button" class="p-toast-close" aria-label="Dismiss notification">×</button></div>';
+    var dismiss = function () { clearTimeout(toastTimer); toastEl.innerHTML = ''; };
+    var ok = toastEl.querySelector('[data-mg-ok]'); if (ok) ok.addEventListener('click', dismiss);
+    toastEl.querySelector('.p-toast-close').addEventListener('click', dismiss);
     clearTimeout(toastTimer); if (!bad) toastTimer = setTimeout(function () { if (toastEl) toastEl.innerHTML = ''; }, 4000);
   }
   function toastBadOff() { if (toastEl && toastEl.querySelector('.p-toast-bad')) toastEl.innerHTML = ''; }

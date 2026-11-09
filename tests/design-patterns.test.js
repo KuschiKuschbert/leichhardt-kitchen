@@ -16,6 +16,7 @@ const js = jsFiles.map(read).join('\n');
 const CLASSES = [
   'cooling-clock', 'cooling-clock-status', 'cooling-chip', 'cooling-menu', 'cooling-row', 'cooling-start', 'cooling-status', 'cooling-error',
   'ux-swipe', 'ux-swipe-handle', 'ux-swipe-dragging',
+  'p-toast-close',
   'nb-prog', 'p-card', 'p-h', 'hint', 'btn-row', 'btn', 'dark', 'p-link', 'p-err', 'chip', 'ux-picker', 'hm-team-staff', 'hm-staff-first', 'hm-coworkers',
   'nt-wrap', 'nt-bg', 'nt', 'nt-grip', 'nt-in', 'nt-head', 'nt-eb', 'nt-h', 'nt-date', 'nt-body', 'nt-foot', 'nt-got',
   'tm-chip', 'wtop-icons', 'is-due', 'nb-pw', 'nb-tmset', 'nb-tmday', 'tm-fold', 'nb-ai', 'nb-aw', 'nb-onslot', 'nb-hbar', 'wb-list', 'nb-sgr', 'nb-sgadd', 'o-sgh', 'o-sgs', 'dl-at', 'dl-dot', 'dl-rb', 'hm-board', 'hm-a', 'hm-paper', 'hm-sec', 'w-secs', 'tr-card', 'tr-cv', 'tr-ret', 'fn-c0', 'fn-cnext', 'fn-end', 'fn-quiet', 'fn-svc-board', 'fn-svc-cd', 'fn-svc-diet', 'jumps', 'ch-grid', 'ch-line', 'find-i',
@@ -30,7 +31,7 @@ const CLASSES = [
 ];
 const TOKENS = ['--ink', '--paper', '--bg', '--muted', '--faint', '--line', '--accent', '--accent-ink', '--tag', '--done', '--done-ink',
   '--bar', '--bar-text', '--display', '--body', '--r-act', '--r-pick', '--small-ink', '--hit'];
-const HELPERS = ['tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'SwipeDismiss', 'enhance',
+const HELPERS = ['tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'SwipeDismiss', 'toastCloseHTML', 'enhance',
   'svButton', 'svStart', 'svDone', 'svFail', 'svLine', 'errMsg', 'failed', 'toast', 'slipName', 'arm', 'armed', 'W', 'canW',
   'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'tmAwayHTML', 'tmNextHTML', 'tmAwayPaint', 'dkRunHTML', 'dkTeamHTML', 'dkFormHTML', 'panelShellHTML', 'psPanelHTML', 'psHintHTML', 'psReferenceHTML', 'psRolloutHTML'];
 const GLOBALS = ['ICON', 'LK_UX', 'LK_PREP_STANDARDS'];

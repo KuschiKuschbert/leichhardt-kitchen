@@ -41,6 +41,7 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 
 - **A form's Save:** `svButton()` draws it (off while nothing changed: `save()` refuses then too), `svStart()` when it goes, `svDone()` only when the server answers, `svFail()` on a refusal, `svLine()` for the line under it. Red failure words come from `errMsg()`; an unknown refusal goes through `failed()`.
 - **A tap on a list line** answers on the slip with the line's name and Undo: `toast()`, `slipName()`. Answer the six questions in `docs/action-feedback.md` for every new button.
+- **Closing a notification bar** uses `.p-toast-close`, a small × with a 44 px button target and an accessible Dismiss notification label. It shows for a fine pointer with hover and follows the existing dismiss action, keeping Undo as its separate button. `toastCloseHTML()` shares the work-page and fallback markup; editor slips use the same class and their own message cleanup. [Contract](action-feedback.md#closing-notification-bars-9-november-2026).
 - **Destroying something typed** asks a second tap in place: `arm()` and `armed()` turn the button into "Tap again to remove". No pop-up.
 - **Every write** goes through `W()`; ask `canW()` first.
 

@@ -4,6 +4,10 @@ Moved from `CLAUDE.md` on 8 November 2026, word for word, so the file every sess
 
 When a note or a file is added: its full row goes here, and one short row (what it covers, where it is) goes in `CLAUDE.md`. When the two disagree, the note itself wins, then `CLAUDE.md`.
 
+## Notification close button, 9 November 2026
+
+The owner requested a small × on the bottom message bar for non-touch screens. The existing slip gains a 44 px mouse/keyboard dismissal beside its original action; touch layout stays the same. `js/prep.js` owns work-page, earlier-Undo and fallback dismissal; `js/manage.js`, `js/draw.js` and `js/fnedit.js` clear their own editor slips; `css/app.css` uses pointer/hover capability. [Contract and quick check](action-feedback.md#closing-notification-bars-9-november-2026); `tests/toast-close.test.js` and the existing toast, Undo and editor checks. No reads, rules or saved data change.
+
 ## Swipe to close, 9 November 2026
 
 The owner requested swiping to dismiss the existing sheets and modals. The small-change quick check retains the same layout, visible rows and service taps. `js/controls.js` shares header/grip drag handling and routes dismissal through the original backdrop/Cancel action; `css/app.css` adds pointer feedback and reduced-motion support. [Contract, council and verification](adaptive-controls.md#swipe-to-close-9-november-2026), [shared pattern](design-patterns.md#over-the-page); `tests/swipe-dismiss.test.js`, `tests/adaptive-controls.test.js`, `tests/overlays-back.test.js`. No new reads, rules or saved data.

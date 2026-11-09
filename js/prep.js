@@ -855,8 +855,9 @@
     var bad = kind === 'bad', life = ms || (act ? 9000 : 3500);
     if (!plainEl || !document.body.contains(plainEl)) { plainEl = document.createElement('div'); plainEl.className = 'p-toasts'; document.body.appendChild(plainEl); }
     plainEl.innerHTML = '<div class="' + toastClass(act, bad, true) + '" role="presentation"' + toastClock(act, bad, life, 0) + '><span class="p-toast-msg">' + esc(msg) + '</span>' +
-      (act ? '<button type="button" class="p-toast-btn">' + esc(act.label) + '</button>' : '') + '</div>';
+      (act ? '<button type="button" class="p-toast-btn">' + esc(act.label) + '</button>' : '') + toastCloseHTML() + '</div>';
     if (act) plainEl.querySelector('button').addEventListener('click', function () { plainAway(); act.fn(); });
+    plainEl.querySelector('.p-toast-close').addEventListener('click', plainAway);
     clearTimeout(plainTimer); if (!bad) plainTimer = setTimeout(plainAway, life);
   }
   // the prep page's own toast takes the same spot, so a plain one still up goes first (it would cover the Undo)
@@ -888,14 +889,17 @@
   function toastChip(o) {
     return o.act.label === 'Undo' ? 'Undo ' + (/^[A-Z][a-z]/.test(o.msg) ? o.msg.charAt(0).toLowerCase() + o.msg.slice(1) : o.msg) : o.act.label + ': ' + o.msg;
   }
+  function toastCloseHTML(which) {
+    return '<button type="button" class="p-toast-close" data-p="toast-hide"' + (which === 'old' ? ' data-toast-close="old"' : '') + ' aria-label="' + (which === 'old' ? 'Dismiss earlier notification' : 'Dismiss notification') + '">×</button>';
+  }
   function toastHTML() {
     var o = S.toastOld;
     if (!S.toast && !o) return '';
     // the new toast comes first (screen readers and the tests meet it first); the stack shows the chip above it. The
     // older Undo keeps its own 6 seconds when a short toast after it goes first (4 Nov 2026, LF-02).
     return '<div class="p-toasts">' + (S.toast ? '<div class="' + toastClass(S.toastAct, S.toastBad, Date.now() - toastAt < 250) + '" data-toast="new" data-p="toast-hide"' + toastClock(S.toastAct, S.toastBad, S.toastLife, Date.now() - toastAt) + '><span class="p-toast-msg">' + esc(S.toast) + '</span>' +
-      (S.toastAct ? '<button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' : '') +
-      (o ? '<div class="p-toast p-toast-old" data-toast="old"><button type="button" class="p-toast-btn p-toast-chip" data-p="toast-old">' + esc(toastChip(o)) + '</button></div>' : '') + '</div>';
+      (S.toastAct ? '<button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + toastCloseHTML() + '</div>' : '') +
+      (o ? '<div class="p-toast p-toast-old" data-toast="old"><button type="button" class="p-toast-btn p-toast-chip" data-p="toast-old">' + esc(toastChip(o)) + '</button>' + toastCloseHTML('old') + '</div>' : '') + '</div>';
   }
   // which: 'old' the chip, 'new' only the newest toast (a scroll), 'all' both (a tap on the words or a swipe)
   function toastAway(which) {
@@ -11460,7 +11464,7 @@
     if (a === 'removed') { S.showRemoved = !S.showRemoved; draw(); return; }
     if (a === 'urgent') { toggleUrgent(id); return; }
     if ((a === 'toast-old' || a === 'toast-act' || a === 'toast-hide') && Date.now() - toastSwiped < 500) return;
-    if (a === 'toast-hide') { toastAway('all'); return; }
+    if (a === 'toast-hide') { toastAway(el.getAttribute('data-toast-close') === 'old' ? 'old' : 'all'); return; }
     // an Undo says what it undid (5 Nov 2026, docs/action-feedback.md), unless what it ran said so itself (Put back...)
     if (a === 'toast-old') { var to = S.toastOld; S.toastOld = null; clearTimeout(toastOldTimer); if (to && to.act && to.act.fn) { to.act.fn(); undoneSay(to.act, to.msg); } draw(); return; }
     if (a === 'just-undo') { justUndo(el.getAttribute('data-id')); return; }
