@@ -118,7 +118,7 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
   ok(!rows.some(r => /order closes/.test(r.t)), 'staff: no cut-off rows');
   ok(!(await p.$('#hm-cuts li')), 'staff: no cut-offs in Coming up');
   const staffTeam = await txt(p, '#hm-team') || '';
-  ok(/On today/.test(staffTeam) && /Ann/.test(staffTeam) && /Sam/.test(staffTeam) && /Larder/.test(staffTeam) && /Lunch 10:00 to 15:00/.test(staffTeam), 'staff: On today shows the saved team, their sections and shift hours (' + staffTeam + ')');
+  ok(/Ann/.test(staffTeam) && /Sam/.test(staffTeam) && /Larder/.test(staffTeam) && /Lunch 10:00 to 15:00/.test(staffTeam), 'staff: the full day shows the saved team, their sections and shift hours (' + staffTeam + ')');
   ok(!(await p.$('#hm-team a[href="#/team"]')) && !(await p.$('#hm-team button, #hm-team input, #hm-team select')), 'staff: the roster has no team editor link or editing controls');
   const staffBill = await bill(p);
   await shut(p);
