@@ -2,7 +2,9 @@
 
 Requested 7 November 2026 by the head chef: "Check them all out and grab benefits for us. Rewrite all design and function CLAUDE.md files necessary to achieve a beautiful merge of all those apps and create a new design for the whole app. Make up 3 different designs and give me your recommendations. I want to keep all the current functionality, but under a new scope using these apps as a role model. I want to maintain our colours and stuff, but I am open to a redesign where it makes sense. Show me designs." The seven apps: Linear, Things 3, Airbnb, Todoist, Flighty, Duolingo and Headspace.
 
-**Status: chosen by the head chef on 8 November 2026 (see Chosen); not built.** The build runs in eight grouped steps (see Build), each its own pull request, starting when the head chef says go.
+**Current status, reconciled 10 November 2026: all eight steps were built and merged on 8 November.** The final admin step shipped in [PR #596](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/596), followed by the screen-check repairs in [PR #598](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/598). That follow-up's [Pages deployment](https://github.com/KuschiKuschbert/leichhardt-kitchen/actions/runs/42424726796) and [Live click tests](https://github.com/KuschiKuschbert/leichhardt-kitchen/actions/runs/42424762703) passed at commit `613b3fc`. These are recorded workflow results, not a new staff/device study.
+
+The options and original drawings below remain the design history. Read Chosen and Build for the decisions and implemented differences, then the current feature notes in `CLAUDE.md` for later refinements. This redesign is no longer waiting for permission to start.
 
 Role-based analysis, not research with real staff: the eleven reviewers were fresh agents given the proposal, the screenshots and the briefs in `.claude/skills/service-council/reviewers.md`.
 
@@ -294,7 +296,7 @@ The head chef's answers, 8 November 2026:
 
 Also answered on 8 November: **the recipe card keeps every drawing** (the plate with its tappable pins, From the side, the build and pan views, How to cut); the redesign changes only the top of the card (`previews/today-recipe-side-390.png` shows today's Barramundi card, unchanged further down).
 
-**Not drawn yet** (each build step draws these first, at 390, 768 and 1280 px, and shows them before it merges): tablet and laptop for every page and the wall board with the new prep line (step 1); Orders as staff see it (step 3); B's People, Settings and report views (step 8). Unchanged by choice, so not redrawn: the recipe and drawing editor and studio, Settings, signing in, the PIN and device choice, printing, CSV, and the celebrations on work pages.
+**Original preview gaps, recorded before implementation on 8 November:** tablet and laptop for every page and the wall board with the new prep line (step 1); Orders as staff see it (step 3); B's People, Settings and report views (step 8). The plan was to draw each step at 390, 768 and 1280 px and show it before merging. This is the historical drawing snapshot, not a current list of unbuilt work; the Build record below describes what shipped. Unchanged by choice, so not redrawn: the recipe and drawing editor and studio, Settings, signing in, the PIN and device choice, printing, CSV, and the celebrations on work pages.
 
 **The three overlaps with the new home** (answered 8 November): **keep the start of shift sheet, the function band and the cut-off reminder bar, all three in the new style.** The sheet still comes once a day after the PIN (a cook who opens straight on Prep never sees Home). The function band stays off Home, where the board already shows the next round. The cut-off bar stays off Home and, since the C choice on 9 November, today's Orders, where the compact cut-off disclosure replaces it. The sheet is redrawn in step 2, the reminder bar in step 3, the band in step 5.
 
@@ -304,7 +306,7 @@ Earlier answers still standing: every feature and role kept (the coverage table 
 
 ## Build
 
-Eight steps, one pull request each, merged in the release windows, in this order (head chef, 8 November 2026). Each step first draws its screens at 390, 768 and 1280 px and shows them to the head chef, runs the service council's quick check, counts taps and lines before and after in the click tests, keeps `tests/read-budget.test.js` within budget, adds its patterns to `docs/design-patterns.md` and `tests/design-patterns.test.js`, and updates `README.md` and `docs/prep-book.md` for what the team sees.
+Original build plan (head chef, 8 November 2026): eight steps, one pull request each, in the order below. Each step was to draw its screens at 390, 768 and 1280 px and show them to the head chef, run the service council's quick check, count taps and lines before and after in the click tests, keep `tests/read-budget.test.js` within budget, add its patterns to `docs/design-patterns.md` and `tests/design-patterns.test.js`, and update `README.md` and `docs/prep-book.md`. The table records the completed implementation and its deliberate differences from the previews.
 
 | Step | What | Main files | State |
 | --- | --- | --- | --- |
