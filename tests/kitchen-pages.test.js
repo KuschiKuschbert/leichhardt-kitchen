@@ -100,11 +100,35 @@ const teamSeed = {
   // Today's team at a glance: the saved plan by section, hours and breaks in words, a bar; the plan to change below
   p = await L.open(b, '#/team', { who: 'sam', extra: teamSeed, wait: 1800 });
   await L.waitFor(p, () => !!document.querySelector('.tm-tl')).catch(() => {});
-  const tl = await p.evaluate(() => ({ secs: [...document.querySelectorAll('.tm-tls')].map(e => e.textContent), rows: [...document.querySelectorAll('.tm-tlr')].map(e => e.querySelector('.tm-tln').textContent), bars: [...document.querySelectorAll('.tm-tlbar i')].map(e => e.getAttribute('style')), editor: !!document.querySelector('[data-p="tm-on"]') }));
+  const tl = await p.evaluate(day => {
+    const picker = (row, key, value) => {
+      const field = row.querySelector('select[data-k="' + key + '"]'), trigger = field && field._uxTrigger;
+      return !!(field && field.value === value && field.dataset.day === day && !field.disabled &&
+        trigger && !trigger.disabled && trigger.getClientRects().length);
+    };
+    const expected = [['ann', 'lunch', 'grill'], ['bo', 'long', 'larder']];
+    return {
+      secs: [...document.querySelectorAll('.tm-tls')].map(e => e.textContent),
+      rows: [...document.querySelectorAll('.tm-tlr')].map(e => e.querySelector('.tm-tln').textContent),
+      bars: [...document.querySelectorAll('.tm-tlbar i')].map(e => e.getAttribute('style')),
+      editor: document.querySelectorAll('.tm-person-row').length === expected.length && expected.every(([id, service, section]) => {
+        const row = document.querySelector('.tm-person-row[data-id="' + id + '"]');
+        return row && picker(row, 'tm-row-sh:' + id, service) && picker(row, 'tm-sec:' + id, section);
+      })
+    };
+  }, today);
   ok(tl.secs.join(',') === 'Grill,Larder', 'team: grouped by section (' + tl.secs.join(', ') + ')');
   ok(tl.rows[0] === 'AnnLunch 10:00 to 15:00 · break 13:00' && tl.rows[1] === 'BoLong day 10:00 to 22:00 · split 14:30, back 17:30', 'team: hours and breaks in words (' + tl.rows.join(' | ') + ')');
   ok(tl.bars.length === 4 && tl.bars.every(s => /^left:\d+(\.\d)?%;width:\d+(\.\d)?%$/.test(s)), 'team: each bar a checked number (' + tl.bars.join(' | ') + ')');
-  ok(tl.editor, 'team: the plan to change is still on the page, no extra tap');
+  const beforeEdit = await p.evaluate(k => ({ saved: JSON.stringify(__fake.dump()[k]), writes: __fake.writes.length }), fsKey(['team', today]));
+  if (tl.editor) await L.pick(p, 'select[data-k="tm-sec:ann"]', 'larder');
+  const inlineEdit = await p.evaluate(k => {
+    const save = document.querySelector('[data-p="tm-save"]');
+    return { section: document.querySelector('select[data-k="tm-sec:ann"]')?.value,
+      canSave: !!save && !save.disabled, saved: JSON.stringify(__fake.dump()[k]), writes: __fake.writes.length };
+  }, fsKey(['team', today]));
+  ok(tl.editor && inlineEdit.section === 'larder' && inlineEdit.canSave && inlineEdit.saved === beforeEdit.saved && inlineEdit.writes === beforeEdit.writes,
+    'team: visible dated service/section pickers edit the draft directly, with no extra view tap or write before Save');
   for (const w of [390, 768, 1280]) { await p.setViewportSize({ width: w, height: 900 }); await L.settle(p, 200); ok(!(await L.overflow(p)), 'team ' + w + ' px: no sideways scroll'); }
   ok(p.errors.length === 0, 'team: no page errors ' + p.errors.join(' | '));
   await p.context().close();

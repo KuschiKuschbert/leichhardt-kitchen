@@ -24,13 +24,13 @@ const boardHidden = p => p.$eval('.tm-away', e => e.hidden && getComputedStyle(e
 const boardShown = p => p.$eval('.tm-away', e => !e.hidden && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0);
 const rows = p => p.$$eval('.tm-away-row', all => all.map(e => ({ name: (e.querySelector('.tm-away-name') || {}).textContent || '', text: e.textContent.trim() })));
 const press = async (p, s) => { const found = await tap(p, s); await L.settle(p, 150); return found; };
-const shift = (p, id) => press(p, '[data-p="tm-sh"][data-v="' + id + '"]');
+const shift = async (p, sh, id = 'sam') => { if (await p.locator('[data-p="tm-whole"]').getAttribute('aria-pressed') === 'true') await press(p, '[data-p="tm-whole"]'); await L.pick(p, 'select[data-k="tm-row-sh:' + id + '"]', sh); };
 const assign = (p, id, sec) => L.pick(p, 'select[data-k="tm-sec:' + id + '"]', sec);
 const pick = async (p, k, v) => { if (!k.startsWith('tm-sec:')) await details(p, k.split(':')[1]); await L.pick(p, 'select[data-k="' + k + '"]', String(v)); return true; };
 async function ready(p) { await L.waitFor(p, () => !!document.querySelector('.tm-page.tm-notebook .tm-nbook .tm-work [data-p="tm-whole"]'), null, 6000); }
 async function details(p, id) {
-  const folds = p.locator('details.tm-person-details' + (id ? '[data-id="' + id + '"]' : ''));
-  for (let i = 0; i < await folds.count(); i++) if (!await folds.nth(i).evaluate(e => e.open)) await folds.nth(i).locator(':scope > summary').click();
+  id = id || 'sam';
+  if (!await p.locator('.tm-detail-workbench[data-id="' + id + '"]').count()) await press(p, '[data-p="tm-focus"][data-id="' + id + '"]');
   await L.settle(p, 120);
 }
 async function refresh(p, rec) {
@@ -47,14 +47,14 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   const before = await readCount(p), initialAway = await away(p), initialBreaks = plan().br;
   const current = await rows(p);
   ok(current.length === 2 && current.some(r => r.name === 'Ann' && /14:30/.test(r.text)) && current.some(r => r.name === 'Bo' && /[Ss]plit/.test(r.text) && /15:00/.test(r.text)), 'saved status: a Lunch meal break and a Full day split both show with return times');
-  ok(/On break now/.test(initialAway) && /Until 14:30/.test(initialAway) && /All shifts/.test(initialAway) && /Saved plan/.test(initialAway), 'saved status: On break now shows Until, all shifts and Saved plan');
+  ok(/On break now/.test(initialAway) && /Until 14:30/.test(initialAway) && /All services/.test(initialAway) && /Saved plan/.test(initialAway), 'saved status: On break now shows Until, all services and Saved plan');
   const boardStyle = await p.$eval('.tm-away', e => {
     const s = getComputedStyle(e), pin = getComputedStyle(e, '::before'), probe = document.createElement('span');
     probe.style.background = 'var(--bar)'; document.body.appendChild(probe);
     const charcoal = getComputedStyle(probe).backgroundColor; probe.remove();
-    return { charcoal: s.backgroundColor === charcoal, edge: parseFloat(s.borderInlineStartWidth), radius: parseFloat(s.borderRadius), pin: pin.content !== 'none' && pin.content !== 'normal' };
+    return { charcoal: s.backgroundColor === charcoal, edge: parseFloat(s.borderInlineStartWidth), radius: parseFloat(s.borderRadius), compact: e.classList.contains('tm-live-strip'), pin: pin.display !== 'none' && pin.content !== 'none' && pin.content !== 'normal' };
   });
-  ok(boardStyle.charcoal && boardStyle.edge >= 4 && boardStyle.radius >= 12 && boardStyle.pin, 'break board: the saved breaks use Home\'s pinned charcoal board with its orange edge');
+  ok(boardStyle.charcoal && boardStyle.edge >= 4 && boardStyle.radius >= 8 && boardStyle.compact && !boardStyle.pin, 'break board: the saved breaks retain charcoal and their orange edge in the compact strip');
   ok(await p.$$eval('.tm-next-row', all => all.length) > 0 && await p.$$eval('.tm-next-row', all => all.length) <= 3, 'next breaks: a compact list uses the loaded saved schedule');
   ok(await p.$eval('select[data-k="tm-sec:sam"]', e => e.value) === 'larder' && !await p.$('[data-p="tm-section"], [data-p="tm-assign"]'), 'assignment: Sam has an explicit current section picker without a global assignment mode');
   await assign(p, 'sam', 'grill');
@@ -82,7 +82,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   ok(out.day === today && out.by === 'sam' && out.v === 2 && out.at === plan().at && typeof out.upd === 'number', 'Save: the existing versioned day record and original creation time are preserved');
 
   // An unsaved break move cannot change staff\'s published status, including when another chef wins the save.
-  await shift(p, 'lunch'); await details(p);
+  await shift(p, 'lunch', 'ann'); await details(p, 'ann');
   ok(await pick(p, 'tm-at:ann:0', 900), 'draft: Ann\'s break remains editable through the existing controls');
   await L.settle(p, 150);
   ok((await rows(p)).some(r => r.name === 'Ann'), 'draft break: Ann remains scheduled away according to the saved break');
@@ -204,18 +204,19 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
     await p.setViewportSize({ width, height: 844 });
     await p.evaluate(size => document.documentElement.setAttribute('data-text', size), text); await L.settle(p, 150);
     const m = await p.evaluate(() => {
-      const strip = document.querySelector('.tm-shift-scroll'), tabs = strip && strip.querySelector(':scope > .tm-tabs[data-adaptive="keep"]');
-      const whole = document.querySelector('.tm-work > * [data-p="tm-whole"], .tm-work > [data-p="tm-whole"]');
-      const targets = [...document.querySelectorAll('.tm-work button[data-p="tm-whole"], .tm-tabs [data-p="tm-sh"], .tm-person-section .ux-picker-trigger, details.tm-person-details > summary, [data-p="tm-save"]')].filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect(); return { action: e.dataset.p || 'details', width: r.width, height: r.height }; });
-      if (strip) strip.scrollLeft = strip.scrollWidth;
-      return { tabs: tabs ? [...tabs.querySelectorAll('[data-p="tm-sh"]')].map(e => e.dataset.v) : [], scrolls: !!strip && strip.scrollWidth > strip.clientWidth && strip.scrollLeft > 0, whole: !!whole && (!strip || !strip.contains(whole)), small: targets.filter(r => r.width < 43.5 || r.height < 43.5), saves: document.querySelectorAll('[data-p="tm-save"]').length };
+      const services = [...document.querySelectorAll('select[data-k^="tm-row-sh:"]')].map(e => [...e.options].map(o => o.value));
+      const whole = document.querySelector('.tm-work [data-p="tm-whole"]');
+      const targets = [...document.querySelectorAll('.tm-work button[data-p="tm-whole"], .tm-person-head .ux-picker-trigger, [data-p="tm-focus"], [data-p="tm-save"]')].filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect(); return { action: e.dataset.p || 'picker', width: r.width, height: r.height }; });
+      return { services, whole: !!whole, small: targets.filter(r => r.width < 43.5 || r.height < 43.5), saves: document.querySelectorAll('[data-p="tm-save"]').length };
     });
     const label = width + ' ' + text, over = await L.overflow(p);
-    ok(JSON.stringify(m.tabs) === JSON.stringify(manyShifts.map(s => s.id)) && m.scrolls && m.whole, label + ': every configured shift stays in the horizontal strip beside a pinned Whole day');
+    ok(m.services.length === 3 && m.services.every(ss => JSON.stringify(ss) === JSON.stringify(manyShifts.map(s => s.id))) && m.whole, label + ': every row offers every configured service and Whole day remains available');
     ok(!over && m.small.length === 0 && m.saves === 1, label + ': long names and three breaks fit the page, controls are 44 px and Save remains single (' + (over || JSON.stringify(m.small)) + ')');
   }
-  await p.focus('[data-p="tm-sh"][data-v="extra8"]'); await p.keyboard.press('Enter'); await L.settle(p, 150);
-  ok(await p.$eval('[data-p="tm-sh"][data-v="extra8"]', e => e.getAttribute('aria-pressed')) === 'true', 'keyboard: the last configured shift remains reachable in the scroll strip');
+  const lastServiceTrigger = 'select[data-k="tm-row-sh:sam"] + .ux-picker-trigger';
+  await p.focus(lastServiceTrigger); await p.keyboard.press('Enter'); await L.settle(p, 150);
+  await p.keyboard.press('ArrowDown'); await p.keyboard.press('End'); await p.keyboard.press('Enter'); await L.settle(p, 150);
+  ok(await p.$eval('select[data-k="tm-row-sh:sam"]', e => e.value) === 'extra8', 'keyboard: the row picker opens by keyboard and its last configured service remains reachable');
   ok(await readCount(p) === layoutReads && p.errors.length === 0, 'layout: resizing, largest text and keyboard shift changes reuse reads and raise no page errors ' + p.errors.join(' | '));
   await p.context().close();
   await b.close();

@@ -1,0 +1,5921 @@
+{
+  "environment": "Implemented real app, local Chromium, synthetic fake Firebase only. No actual staff records, production writes or live persistence claim.",
+  "baseline": "f15187dd8ccc1275fc268b8f30d09f54bc78114f",
+  "height": 844,
+  "fixtures": "Same eight selected plus two eligible people, three configured services, one Dinner-only person, a meal and split overlap, and two future people as Preview C.",
+  "counting": "Each button, checkbox or disclosure is one actual action. Shared picker open plus option is two. Scrolling and typing are excluded; Save includes acknowledgement.",
+  "scenes": [
+    {
+      "name": "implementation-baseline-team-390",
+      "frame": "team",
+      "width": 390,
+      "size": "normal",
+      "long": false,
+      "geometry": {
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "unobscuredBottom": 776
+        },
+        "firstPersonTop": 654.078125,
+        "firstPersonHeight": 79.71875,
+        "completeInitialPeople": 1,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 41.796875,
+            "y": 654.078125,
+            "width": 317.609375,
+            "height": 79.71875,
+            "right": 359.40625,
+            "bottom": 733.796875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 41.796875,
+            "y": 733.796875,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 810.796875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 41.796875,
+            "y": 810.796875,
+            "width": 317.609375,
+            "height": 79.71875,
+            "right": 359.40625,
+            "bottom": 890.515625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 41.796875,
+            "y": 890.515625,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 967.515625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 41.796875,
+            "y": 967.515625,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 1044.515625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 41.796875,
+            "y": 1044.515625,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 1121.515625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 41.796875,
+            "y": 1121.515625,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 1198.515625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 41.796875,
+            "y": 1198.515625,
+            "width": 317.609375,
+            "height": 77.75,
+            "right": 359.40625,
+            "bottom": 1276.265625,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 41.796875,
+          "y": 1379.234375,
+          "width": 305.609375,
+          "height": 45.96875,
+          "right": 347.40625,
+          "bottom": 1425.203125
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 776,
+          "width": 390,
+          "height": 68,
+          "right": 390,
+          "bottom": 844
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 100,
+        "minimum": 2.084,
+        "failures": [],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 4.5,
+            "size": 16,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-team-390-xlarge",
+      "frame": "team",
+      "width": 390,
+      "size": "xlarge",
+      "long": false,
+      "geometry": {
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "unobscuredBottom": 776
+        },
+        "firstPersonTop": 817.109375,
+        "firstPersonHeight": 121.359375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 52,
+            "y": 817.109375,
+            "width": 300,
+            "height": 121.359375,
+            "right": 352,
+            "bottom": 938.46875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 52,
+            "y": 938.46875,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1037.890625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 52,
+            "y": 1037.890625,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1137.3125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 52,
+            "y": 1137.3125,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1236.734375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 52,
+            "y": 1236.734375,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1336.15625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 52,
+            "y": 1336.15625,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1435.578125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 52,
+            "y": 1435.578125,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1535,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 52,
+            "y": 1535,
+            "width": 300,
+            "height": 142,
+            "right": 352,
+            "bottom": 1677,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 52,
+          "y": 1794,
+          "width": 285,
+          "height": 57,
+          "right": 337,
+          "bottom": 1851
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 776,
+          "width": 390,
+          "height": 68,
+          "right": 390,
+          "bottom": 844
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 100,
+        "minimum": 2.084,
+        "failures": [],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 3,
+            "size": 20,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-team-390-xlarge-long",
+      "frame": "team",
+      "width": 390,
+      "size": "xlarge",
+      "long": true,
+      "geometry": {
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "unobscuredBottom": 776
+        },
+        "firstPersonTop": 884.296875,
+        "firstPersonHeight": 284.09375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 52,
+            "y": 884.296875,
+            "width": 300,
+            "height": 284.09375,
+            "right": 352,
+            "bottom": 1168.390625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 52,
+            "y": 1168.390625,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1267.8125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 52,
+            "y": 1267.8125,
+            "width": 300,
+            "height": 233,
+            "right": 352,
+            "bottom": 1500.8125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 52,
+            "y": 1500.8125,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1600.234375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 52,
+            "y": 1600.234375,
+            "width": 300,
+            "height": 187.5,
+            "right": 352,
+            "bottom": 1787.734375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 52,
+            "y": 1787.734375,
+            "width": 300,
+            "height": 233,
+            "right": 352,
+            "bottom": 2020.734375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 52,
+            "y": 2020.734375,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 2120.15625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 52,
+            "y": 2120.15625,
+            "width": 300,
+            "height": 142,
+            "right": 352,
+            "bottom": 2262.15625,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 52,
+          "y": 2379.15625,
+          "width": 285,
+          "height": 57,
+          "right": 337,
+          "bottom": 2436.15625
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 776,
+          "width": 390,
+          "height": 68,
+          "right": 390,
+          "bottom": 844
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAlexandria Montgomery-Sutherland\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 100,
+        "minimum": 2.084,
+        "failures": [],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 3,
+            "size": 20,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-team-768",
+      "frame": "team",
+      "width": 768,
+      "size": "normal",
+      "long": false,
+      "geometry": {
+        "viewport": {
+          "width": 768,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 646.609375,
+        "firstPersonHeight": 77,
+        "completeInitialPeople": 2,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 45.796875,
+            "y": 646.609375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 723.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 45.796875,
+            "y": 723.609375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 800.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 45.796875,
+            "y": 800.609375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 877.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 45.796875,
+            "y": 877.609375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 954.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 45.796875,
+            "y": 954.609375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1031.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 45.796875,
+            "y": 1031.609375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1108.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 45.796875,
+            "y": 1108.609375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1185.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 45.796875,
+            "y": 1185.609375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1262.609375,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 45.796875,
+          "y": 1365.578125,
+          "width": 675.609375,
+          "height": 45.96875,
+          "right": 721.40625,
+          "bottom": 1411.546875
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 100,
+        "minimum": 2.084,
+        "failures": [],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 4.5,
+            "size": 16,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-team-768-xlarge",
+      "frame": "team",
+      "width": 768,
+      "size": "xlarge",
+      "long": false,
+      "geometry": {
+        "viewport": {
+          "width": 768,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 760,
+        "firstPersonHeight": 77.484375,
+        "completeInitialPeople": 1,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 57,
+            "y": 760,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 837.484375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 57,
+            "y": 837.484375,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 914.96875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 57,
+            "y": 914.96875,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 992.453125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 57,
+            "y": 992.453125,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1069.9375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 57,
+            "y": 1069.9375,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1147.421875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 57,
+            "y": 1147.421875,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1224.90625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 57,
+            "y": 1224.90625,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1302.390625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 57,
+            "y": 1302.390625,
+            "width": 668,
+            "height": 79.171875,
+            "right": 725,
+            "bottom": 1381.5625,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 57,
+          "y": 1498.5625,
+          "width": 653,
+          "height": 57,
+          "right": 710,
+          "bottom": 1555.5625
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 100,
+        "minimum": 2.084,
+        "failures": [],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 3,
+            "size": 20,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-team-768-xlarge-long",
+      "frame": "team",
+      "width": 768,
+      "size": "xlarge",
+      "long": true,
+      "geometry": {
+        "viewport": {
+          "width": 768,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 760,
+        "firstPersonHeight": 110.03125,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 57,
+            "y": 760,
+            "width": 668,
+            "height": 110.03125,
+            "right": 725,
+            "bottom": 870.03125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 57,
+            "y": 870.03125,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 947.515625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 57,
+            "y": 947.515625,
+            "width": 668,
+            "height": 96.5,
+            "right": 725,
+            "bottom": 1044.015625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 57,
+            "y": 1044.015625,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1121.5,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 57,
+            "y": 1121.5,
+            "width": 668,
+            "height": 96.5,
+            "right": 725,
+            "bottom": 1218,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 57,
+            "y": 1218,
+            "width": 668,
+            "height": 96.5,
+            "right": 725,
+            "bottom": 1314.5,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 57,
+            "y": 1314.5,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1391.984375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 57,
+            "y": 1391.984375,
+            "width": 668,
+            "height": 79.171875,
+            "right": 725,
+            "bottom": 1471.15625,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 57,
+          "y": 1588.15625,
+          "width": 653,
+          "height": 57,
+          "right": 710,
+          "bottom": 1645.15625
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAlexandria Montgomery-Sutherland\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 100,
+        "minimum": 2.084,
+        "failures": [],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 3,
+            "size": 20,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-team-1280",
+      "frame": "team",
+      "width": 1280,
+      "size": "normal",
+      "long": false,
+      "geometry": {
+        "viewport": {
+          "width": 1280,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 654.609375,
+        "firstPersonHeight": 77,
+        "completeInitialPeople": 2,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 75.390625,
+            "y": 654.609375,
+            "width": 960,
+            "height": 77,
+            "right": 1035.390625,
+            "bottom": 731.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 75.390625,
+            "y": 731.609375,
+            "width": 960,
+            "height": 77,
+            "right": 1035.390625,
+            "bottom": 808.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 75.390625,
+            "y": 808.609375,
+            "width": 960,
+            "height": 77,
+            "right": 1035.390625,
+            "bottom": 885.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 75.390625,
+            "y": 885.609375,
+            "width": 960,
+            "height": 77,
+            "right": 1035.390625,
+            "bottom": 962.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 75.390625,
+            "y": 962.609375,
+            "width": 960,
+            "height": 77,
+            "right": 1035.390625,
+            "bottom": 1039.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 75.390625,
+            "y": 1039.609375,
+            "width": 960,
+            "height": 77,
+            "right": 1035.390625,
+            "bottom": 1116.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 75.390625,
+            "y": 1116.609375,
+            "width": 960,
+            "height": 77,
+            "right": 1035.390625,
+            "bottom": 1193.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 75.390625,
+            "y": 1193.609375,
+            "width": 960,
+            "height": 77,
+            "right": 1035.390625,
+            "bottom": 1270.609375,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 75.390625,
+          "y": 1373.578125,
+          "width": 1131.609375,
+          "height": 45.96875,
+          "right": 1207,
+          "bottom": 1419.546875
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 103,
+        "minimum": 1,
+        "failures": [
+          {
+            "text": "Operandio · 2 h",
+            "ratio": 1,
+            "required": 4.5,
+            "size": 11,
+            "disabled": false
+          }
+        ],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 4.5,
+            "size": 16,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-team-1280-xlarge",
+      "frame": "team",
+      "width": 1280,
+      "size": "xlarge",
+      "long": false,
+      "geometry": {
+        "viewport": {
+          "width": 1280,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 772,
+        "firstPersonHeight": 77.484375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 89,
+            "y": 772,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 849.484375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 89,
+            "y": 849.484375,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 926.96875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 89,
+            "y": 926.96875,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1004.453125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 89,
+            "y": 1004.453125,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1081.9375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 89,
+            "y": 1081.9375,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1159.421875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 89,
+            "y": 1159.421875,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1236.90625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 89,
+            "y": 1236.90625,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1314.390625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 89,
+            "y": 1314.390625,
+            "width": 1120,
+            "height": 79.171875,
+            "right": 1209,
+            "bottom": 1393.5625,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 89,
+          "y": 1510.5625,
+          "width": 1105,
+          "height": 57,
+          "right": 1194,
+          "bottom": 1567.5625
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 103,
+        "minimum": 1,
+        "failures": [
+          {
+            "text": "Operandio · 2 h",
+            "ratio": 1,
+            "required": 4.5,
+            "size": 11,
+            "disabled": false
+          }
+        ],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 3,
+            "size": 20,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-team-1280-xlarge-long",
+      "frame": "team",
+      "width": 1280,
+      "size": "xlarge",
+      "long": true,
+      "geometry": {
+        "viewport": {
+          "width": 1280,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 772,
+        "firstPersonHeight": 77.484375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 89,
+            "y": 772,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 849.484375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 89,
+            "y": 849.484375,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 926.96875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 89,
+            "y": 926.96875,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1004.453125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 89,
+            "y": 1004.453125,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1081.9375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 89,
+            "y": 1081.9375,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1159.421875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 89,
+            "y": 1159.421875,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1236.90625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 89,
+            "y": 1236.90625,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1314.390625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 89,
+            "y": 1314.390625,
+            "width": 1120,
+            "height": 79.171875,
+            "right": 1209,
+            "bottom": 1393.5625,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 89,
+          "y": 1510.5625,
+          "width": 1105,
+          "height": 57,
+          "right": 1194,
+          "bottom": 1567.5625
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAlexandria Montgomery-Sutherland\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 103,
+        "minimum": 1,
+        "failures": [
+          {
+            "text": "Operandio · 2 h",
+            "ratio": 1,
+            "required": 4.5,
+            "size": 11,
+            "disabled": false
+          }
+        ],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 3,
+            "size": 20,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-chef-390",
+      "frame": "chef",
+      "width": 390,
+      "size": "normal",
+      "long": false,
+      "geometry": {
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "unobscuredBottom": 776
+        },
+        "firstPersonTop": 930.8125,
+        "firstPersonHeight": 79.71875,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 41.796875,
+            "y": 930.8125,
+            "width": 317.609375,
+            "height": 79.71875,
+            "right": 359.40625,
+            "bottom": 1010.53125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 41.796875,
+            "y": 1010.53125,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 1087.53125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 41.796875,
+            "y": 1087.53125,
+            "width": 317.609375,
+            "height": 79.71875,
+            "right": 359.40625,
+            "bottom": 1167.25,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 41.796875,
+            "y": 1167.25,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 1244.25,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 41.796875,
+            "y": 1244.25,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 1321.25,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 41.796875,
+            "y": 1321.25,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 1398.25,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 41.796875,
+            "y": 1398.25,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 1475.25,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 41.796875,
+            "y": 1475.25,
+            "width": 317.609375,
+            "height": 77.75,
+            "right": 359.40625,
+            "bottom": 1553,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 41.796875,
+          "y": 1655.96875,
+          "width": 305.609375,
+          "height": 44,
+          "right": 347.40625,
+          "bottom": 1699.96875
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 776,
+          "width": 390,
+          "height": 68,
+          "right": 390,
+          "bottom": 844
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 112,
+        "minimum": 2.084,
+        "failures": [],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 4.5,
+            "size": 16,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-chef-390-xlarge",
+      "frame": "chef",
+      "width": 390,
+      "size": "xlarge",
+      "long": false,
+      "geometry": {
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "unobscuredBottom": 776
+        },
+        "firstPersonTop": 1141.796875,
+        "firstPersonHeight": 121.359375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 52,
+            "y": 1141.796875,
+            "width": 300,
+            "height": 121.359375,
+            "right": 352,
+            "bottom": 1263.15625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 52,
+            "y": 1263.15625,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1362.578125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 52,
+            "y": 1362.578125,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1462,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 52,
+            "y": 1462,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1561.421875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 52,
+            "y": 1561.421875,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1660.84375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 52,
+            "y": 1660.84375,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1760.265625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 52,
+            "y": 1760.265625,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1859.6875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 52,
+            "y": 1859.6875,
+            "width": 300,
+            "height": 142,
+            "right": 352,
+            "bottom": 2001.6875,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 52,
+          "y": 2118.6875,
+          "width": 285,
+          "height": 54,
+          "right": 337,
+          "bottom": 2172.6875
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 776,
+          "width": 390,
+          "height": 68,
+          "right": 390,
+          "bottom": 844
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 112,
+        "minimum": 2.084,
+        "failures": [],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 3,
+            "size": 20,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-chef-390-xlarge-long",
+      "frame": "chef",
+      "width": 390,
+      "size": "xlarge",
+      "long": true,
+      "geometry": {
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "unobscuredBottom": 776
+        },
+        "firstPersonTop": 1208.984375,
+        "firstPersonHeight": 284.09375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 52,
+            "y": 1208.984375,
+            "width": 300,
+            "height": 284.09375,
+            "right": 352,
+            "bottom": 1493.078125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 52,
+            "y": 1493.078125,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1592.5,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 52,
+            "y": 1592.5,
+            "width": 300,
+            "height": 233,
+            "right": 352,
+            "bottom": 1825.5,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 52,
+            "y": 1825.5,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1924.921875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 52,
+            "y": 1924.921875,
+            "width": 300,
+            "height": 187.5,
+            "right": 352,
+            "bottom": 2112.421875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 52,
+            "y": 2112.421875,
+            "width": 300,
+            "height": 233,
+            "right": 352,
+            "bottom": 2345.421875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 52,
+            "y": 2345.421875,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 2444.84375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 52,
+            "y": 2444.84375,
+            "width": 300,
+            "height": 142,
+            "right": 352,
+            "bottom": 2586.84375,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 52,
+          "y": 2703.84375,
+          "width": 285,
+          "height": 54,
+          "right": 337,
+          "bottom": 2757.84375
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 776,
+          "width": 390,
+          "height": 68,
+          "right": 390,
+          "bottom": 844
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAlexandria Montgomery-Sutherland\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 112,
+        "minimum": 2.084,
+        "failures": [],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 3,
+            "size": 20,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-chef-768",
+      "frame": "chef",
+      "width": 768,
+      "size": "normal",
+      "long": false,
+      "geometry": {
+        "viewport": {
+          "width": 768,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 990.109375,
+        "firstPersonHeight": 77,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 45.796875,
+            "y": 990.109375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1067.109375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 45.796875,
+            "y": 1067.109375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1144.109375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 45.796875,
+            "y": 1144.109375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1221.109375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 45.796875,
+            "y": 1221.109375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1298.109375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 45.796875,
+            "y": 1298.109375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1375.109375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 45.796875,
+            "y": 1375.109375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1452.109375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 45.796875,
+            "y": 1452.109375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1529.109375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 45.796875,
+            "y": 1529.109375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1606.109375,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 45.796875,
+          "y": 1709.078125,
+          "width": 675.609375,
+          "height": 44,
+          "right": 721.40625,
+          "bottom": 1753.078125
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 113,
+        "minimum": 2.084,
+        "failures": [],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 4.5,
+            "size": 16,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-chef-768-xlarge",
+      "frame": "chef",
+      "width": 768,
+      "size": "xlarge",
+      "long": false,
+      "geometry": {
+        "viewport": {
+          "width": 768,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 1170.125,
+        "firstPersonHeight": 77.484375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 57,
+            "y": 1170.125,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1247.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 57,
+            "y": 1247.609375,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1325.09375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 57,
+            "y": 1325.09375,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1402.578125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 57,
+            "y": 1402.578125,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1480.0625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 57,
+            "y": 1480.0625,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1557.546875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 57,
+            "y": 1557.546875,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1635.03125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 57,
+            "y": 1635.03125,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1712.515625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 57,
+            "y": 1712.515625,
+            "width": 668,
+            "height": 79.171875,
+            "right": 725,
+            "bottom": 1791.6875,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 57,
+          "y": 1908.6875,
+          "width": 653,
+          "height": 54,
+          "right": 710,
+          "bottom": 1962.6875
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 113,
+        "minimum": 2.084,
+        "failures": [],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 3,
+            "size": 20,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-chef-768-xlarge-long",
+      "frame": "chef",
+      "width": 768,
+      "size": "xlarge",
+      "long": true,
+      "geometry": {
+        "viewport": {
+          "width": 768,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 1170.125,
+        "firstPersonHeight": 110.03125,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 57,
+            "y": 1170.125,
+            "width": 668,
+            "height": 110.03125,
+            "right": 725,
+            "bottom": 1280.15625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 57,
+            "y": 1280.15625,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1357.640625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 57,
+            "y": 1357.640625,
+            "width": 668,
+            "height": 96.5,
+            "right": 725,
+            "bottom": 1454.140625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 57,
+            "y": 1454.140625,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1531.625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 57,
+            "y": 1531.625,
+            "width": 668,
+            "height": 96.5,
+            "right": 725,
+            "bottom": 1628.125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 57,
+            "y": 1628.125,
+            "width": 668,
+            "height": 96.5,
+            "right": 725,
+            "bottom": 1724.625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 57,
+            "y": 1724.625,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1802.109375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 57,
+            "y": 1802.109375,
+            "width": 668,
+            "height": 79.171875,
+            "right": 725,
+            "bottom": 1881.28125,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 57,
+          "y": 1998.28125,
+          "width": 653,
+          "height": 54,
+          "right": 710,
+          "bottom": 2052.28125
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAlexandria Montgomery-Sutherland\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 113,
+        "minimum": 2.084,
+        "failures": [],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 3,
+            "size": 20,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-chef-1280",
+      "frame": "chef",
+      "width": 1280,
+      "size": "normal",
+      "long": false,
+      "geometry": {
+        "viewport": {
+          "width": 1280,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 943.671875,
+        "firstPersonHeight": 77,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 279.390625,
+            "y": 943.671875,
+            "width": 959.609375,
+            "height": 77,
+            "right": 1239,
+            "bottom": 1020.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 279.390625,
+            "y": 1020.671875,
+            "width": 959.609375,
+            "height": 77,
+            "right": 1239,
+            "bottom": 1097.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 279.390625,
+            "y": 1097.671875,
+            "width": 959.609375,
+            "height": 77,
+            "right": 1239,
+            "bottom": 1174.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 279.390625,
+            "y": 1174.671875,
+            "width": 959.609375,
+            "height": 77,
+            "right": 1239,
+            "bottom": 1251.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 279.390625,
+            "y": 1251.671875,
+            "width": 959.609375,
+            "height": 77,
+            "right": 1239,
+            "bottom": 1328.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 279.390625,
+            "y": 1328.671875,
+            "width": 959.609375,
+            "height": 77,
+            "right": 1239,
+            "bottom": 1405.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 279.390625,
+            "y": 1405.671875,
+            "width": 959.609375,
+            "height": 77,
+            "right": 1239,
+            "bottom": 1482.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 279.390625,
+            "y": 1482.671875,
+            "width": 959.609375,
+            "height": 77,
+            "right": 1239,
+            "bottom": 1559.671875,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 279.390625,
+          "y": 1662.640625,
+          "width": 947.609375,
+          "height": 44,
+          "right": 1227,
+          "bottom": 1706.640625
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 119,
+        "minimum": 1,
+        "failures": [
+          {
+            "text": "Operandio · 2 h",
+            "ratio": 1,
+            "required": 4.5,
+            "size": 11,
+            "disabled": false
+          }
+        ],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 4.5,
+            "size": 16,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-chef-1280-xlarge",
+      "frame": "chef",
+      "width": 1280,
+      "size": "xlarge",
+      "long": false,
+      "geometry": {
+        "viewport": {
+          "width": 1280,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 1110.28125,
+        "firstPersonHeight": 77.484375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 349,
+            "y": 1110.28125,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1187.765625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 349,
+            "y": 1187.765625,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1265.25,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 349,
+            "y": 1265.25,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1342.734375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 349,
+            "y": 1342.734375,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1420.21875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 349,
+            "y": 1420.21875,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1497.703125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 349,
+            "y": 1497.703125,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1575.1875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 349,
+            "y": 1575.1875,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1652.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 349,
+            "y": 1652.671875,
+            "width": 880,
+            "height": 79.171875,
+            "right": 1229,
+            "bottom": 1731.84375,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 349,
+          "y": 1848.84375,
+          "width": 865,
+          "height": 54,
+          "right": 1214,
+          "bottom": 1902.84375
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 119,
+        "minimum": 1,
+        "failures": [
+          {
+            "text": "Operandio · 2 h",
+            "ratio": 1,
+            "required": 4.5,
+            "size": 11,
+            "disabled": false
+          }
+        ],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 3,
+            "size": 20,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    },
+    {
+      "name": "implementation-baseline-chef-1280-xlarge-long",
+      "frame": "chef",
+      "width": 1280,
+      "size": "xlarge",
+      "long": true,
+      "geometry": {
+        "viewport": {
+          "width": 1280,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 1110.28125,
+        "firstPersonHeight": 77.484375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 349,
+            "y": 1110.28125,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1187.765625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 349,
+            "y": 1187.765625,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1265.25,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 349,
+            "y": 1265.25,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1342.734375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 349,
+            "y": 1342.734375,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1420.21875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 349,
+            "y": 1420.21875,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1497.703125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 349,
+            "y": 1497.703125,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1575.1875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 349,
+            "y": 1575.1875,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1652.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 349,
+            "y": 1652.671875,
+            "width": 880,
+            "height": 79.171875,
+            "right": 1229,
+            "bottom": 1731.84375,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 349,
+          "y": 1848.84375,
+          "width": 865,
+          "height": 54,
+          "right": 1214,
+          "bottom": 1902.84375
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAlexandria Montgomery-Sutherland\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "checked": 119,
+        "minimum": 1,
+        "failures": [
+          {
+            "text": "Operandio · 2 h",
+            "ratio": 1,
+            "required": 4.5,
+            "size": 11,
+            "disabled": false
+          }
+        ],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 3,
+            "size": 20,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split · Lunch",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break · Lunch",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "loaded": true
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "loaded": true
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "loaded": true
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "tasks": [],
+  "controls": [],
+  "occlusion": [],
+  "checks": [
+    {
+      "pass": true,
+      "name": "implementation-baseline-team-390: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "unobscuredBottom": 776
+        },
+        "firstPersonTop": 654.078125,
+        "firstPersonHeight": 79.71875,
+        "completeInitialPeople": 1,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 41.796875,
+            "y": 654.078125,
+            "width": 317.609375,
+            "height": 79.71875,
+            "right": 359.40625,
+            "bottom": 733.796875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 41.796875,
+            "y": 733.796875,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 810.796875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 41.796875,
+            "y": 810.796875,
+            "width": 317.609375,
+            "height": 79.71875,
+            "right": 359.40625,
+            "bottom": 890.515625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 41.796875,
+            "y": 890.515625,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 967.515625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 41.796875,
+            "y": 967.515625,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 1044.515625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 41.796875,
+            "y": 1044.515625,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 1121.515625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 41.796875,
+            "y": 1121.515625,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 1198.515625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 41.796875,
+            "y": 1198.515625,
+            "width": 317.609375,
+            "height": 77.75,
+            "right": 359.40625,
+            "bottom": 1276.265625,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 41.796875,
+          "y": 1379.234375,
+          "width": 305.609375,
+          "height": 45.96875,
+          "right": 347.40625,
+          "bottom": 1425.203125
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 776,
+          "width": 390,
+          "height": 68,
+          "right": 390,
+          "bottom": 844
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-team-390-xlarge: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "unobscuredBottom": 776
+        },
+        "firstPersonTop": 817.109375,
+        "firstPersonHeight": 121.359375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 52,
+            "y": 817.109375,
+            "width": 300,
+            "height": 121.359375,
+            "right": 352,
+            "bottom": 938.46875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 52,
+            "y": 938.46875,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1037.890625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 52,
+            "y": 1037.890625,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1137.3125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 52,
+            "y": 1137.3125,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1236.734375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 52,
+            "y": 1236.734375,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1336.15625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 52,
+            "y": 1336.15625,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1435.578125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 52,
+            "y": 1435.578125,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1535,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 52,
+            "y": 1535,
+            "width": 300,
+            "height": 142,
+            "right": 352,
+            "bottom": 1677,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 52,
+          "y": 1794,
+          "width": 285,
+          "height": 57,
+          "right": 337,
+          "bottom": 1851
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 776,
+          "width": 390,
+          "height": 68,
+          "right": 390,
+          "bottom": 844
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-team-390-xlarge-long: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "unobscuredBottom": 776
+        },
+        "firstPersonTop": 884.296875,
+        "firstPersonHeight": 284.09375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 52,
+            "y": 884.296875,
+            "width": 300,
+            "height": 284.09375,
+            "right": 352,
+            "bottom": 1168.390625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 52,
+            "y": 1168.390625,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1267.8125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 52,
+            "y": 1267.8125,
+            "width": 300,
+            "height": 233,
+            "right": 352,
+            "bottom": 1500.8125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 52,
+            "y": 1500.8125,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1600.234375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 52,
+            "y": 1600.234375,
+            "width": 300,
+            "height": 187.5,
+            "right": 352,
+            "bottom": 1787.734375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 52,
+            "y": 1787.734375,
+            "width": 300,
+            "height": 233,
+            "right": 352,
+            "bottom": 2020.734375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 52,
+            "y": 2020.734375,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 2120.15625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 52,
+            "y": 2120.15625,
+            "width": 300,
+            "height": 142,
+            "right": 352,
+            "bottom": 2262.15625,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 52,
+          "y": 2379.15625,
+          "width": 285,
+          "height": 57,
+          "right": 337,
+          "bottom": 2436.15625
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 776,
+          "width": 390,
+          "height": 68,
+          "right": 390,
+          "bottom": 844
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAlexandria Montgomery-Sutherland\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-team-768: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 768,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 646.609375,
+        "firstPersonHeight": 77,
+        "completeInitialPeople": 2,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 45.796875,
+            "y": 646.609375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 723.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 45.796875,
+            "y": 723.609375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 800.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 45.796875,
+            "y": 800.609375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 877.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 45.796875,
+            "y": 877.609375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 954.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 45.796875,
+            "y": 954.609375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1031.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 45.796875,
+            "y": 1031.609375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1108.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 45.796875,
+            "y": 1108.609375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1185.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 45.796875,
+            "y": 1185.609375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1262.609375,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 45.796875,
+          "y": 1365.578125,
+          "width": 675.609375,
+          "height": 45.96875,
+          "right": 721.40625,
+          "bottom": 1411.546875
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-team-768-xlarge: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 768,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 760,
+        "firstPersonHeight": 77.484375,
+        "completeInitialPeople": 1,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 57,
+            "y": 760,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 837.484375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 57,
+            "y": 837.484375,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 914.96875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 57,
+            "y": 914.96875,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 992.453125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 57,
+            "y": 992.453125,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1069.9375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 57,
+            "y": 1069.9375,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1147.421875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 57,
+            "y": 1147.421875,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1224.90625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 57,
+            "y": 1224.90625,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1302.390625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 57,
+            "y": 1302.390625,
+            "width": 668,
+            "height": 79.171875,
+            "right": 725,
+            "bottom": 1381.5625,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 57,
+          "y": 1498.5625,
+          "width": 653,
+          "height": 57,
+          "right": 710,
+          "bottom": 1555.5625
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-team-768-xlarge-long: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 768,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 760,
+        "firstPersonHeight": 110.03125,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 57,
+            "y": 760,
+            "width": 668,
+            "height": 110.03125,
+            "right": 725,
+            "bottom": 870.03125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 57,
+            "y": 870.03125,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 947.515625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 57,
+            "y": 947.515625,
+            "width": 668,
+            "height": 96.5,
+            "right": 725,
+            "bottom": 1044.015625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 57,
+            "y": 1044.015625,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1121.5,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 57,
+            "y": 1121.5,
+            "width": 668,
+            "height": 96.5,
+            "right": 725,
+            "bottom": 1218,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 57,
+            "y": 1218,
+            "width": 668,
+            "height": 96.5,
+            "right": 725,
+            "bottom": 1314.5,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 57,
+            "y": 1314.5,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1391.984375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 57,
+            "y": 1391.984375,
+            "width": 668,
+            "height": 79.171875,
+            "right": 725,
+            "bottom": 1471.15625,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 57,
+          "y": 1588.15625,
+          "width": 653,
+          "height": 57,
+          "right": 710,
+          "bottom": 1645.15625
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAlexandria Montgomery-Sutherland\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-team-1280: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 1280,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 654.609375,
+        "firstPersonHeight": 77,
+        "completeInitialPeople": 2,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 75.390625,
+            "y": 654.609375,
+            "width": 960,
+            "height": 77,
+            "right": 1035.390625,
+            "bottom": 731.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 75.390625,
+            "y": 731.609375,
+            "width": 960,
+            "height": 77,
+            "right": 1035.390625,
+            "bottom": 808.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 75.390625,
+            "y": 808.609375,
+            "width": 960,
+            "height": 77,
+            "right": 1035.390625,
+            "bottom": 885.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 75.390625,
+            "y": 885.609375,
+            "width": 960,
+            "height": 77,
+            "right": 1035.390625,
+            "bottom": 962.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 75.390625,
+            "y": 962.609375,
+            "width": 960,
+            "height": 77,
+            "right": 1035.390625,
+            "bottom": 1039.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 75.390625,
+            "y": 1039.609375,
+            "width": 960,
+            "height": 77,
+            "right": 1035.390625,
+            "bottom": 1116.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 75.390625,
+            "y": 1116.609375,
+            "width": 960,
+            "height": 77,
+            "right": 1035.390625,
+            "bottom": 1193.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 75.390625,
+            "y": 1193.609375,
+            "width": 960,
+            "height": 77,
+            "right": 1035.390625,
+            "bottom": 1270.609375,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 75.390625,
+          "y": 1373.578125,
+          "width": 1131.609375,
+          "height": 45.96875,
+          "right": 1207,
+          "bottom": 1419.546875
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-team-1280-xlarge: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 1280,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 772,
+        "firstPersonHeight": 77.484375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 89,
+            "y": 772,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 849.484375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 89,
+            "y": 849.484375,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 926.96875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 89,
+            "y": 926.96875,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1004.453125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 89,
+            "y": 1004.453125,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1081.9375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 89,
+            "y": 1081.9375,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1159.421875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 89,
+            "y": 1159.421875,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1236.90625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 89,
+            "y": 1236.90625,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1314.390625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 89,
+            "y": 1314.390625,
+            "width": 1120,
+            "height": 79.171875,
+            "right": 1209,
+            "bottom": 1393.5625,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 89,
+          "y": 1510.5625,
+          "width": 1105,
+          "height": 57,
+          "right": 1194,
+          "bottom": 1567.5625
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-team-1280-xlarge-long: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 1280,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 772,
+        "firstPersonHeight": 77.484375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 89,
+            "y": 772,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 849.484375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 89,
+            "y": 849.484375,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 926.96875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 89,
+            "y": 926.96875,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1004.453125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 89,
+            "y": 1004.453125,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1081.9375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 89,
+            "y": 1081.9375,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1159.421875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 89,
+            "y": 1159.421875,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1236.90625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 89,
+            "y": 1236.90625,
+            "width": 1120,
+            "height": 77.484375,
+            "right": 1209,
+            "bottom": 1314.390625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 89,
+            "y": 1314.390625,
+            "width": 1120,
+            "height": 79.171875,
+            "right": 1209,
+            "bottom": 1393.5625,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 89,
+          "y": 1510.5625,
+          "width": 1105,
+          "height": 57,
+          "right": 1194,
+          "bottom": 1567.5625
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAlexandria Montgomery-Sutherland\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-chef-390: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "unobscuredBottom": 776
+        },
+        "firstPersonTop": 930.8125,
+        "firstPersonHeight": 79.71875,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 41.796875,
+            "y": 930.8125,
+            "width": 317.609375,
+            "height": 79.71875,
+            "right": 359.40625,
+            "bottom": 1010.53125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 41.796875,
+            "y": 1010.53125,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 1087.53125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 41.796875,
+            "y": 1087.53125,
+            "width": 317.609375,
+            "height": 79.71875,
+            "right": 359.40625,
+            "bottom": 1167.25,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 41.796875,
+            "y": 1167.25,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 1244.25,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 41.796875,
+            "y": 1244.25,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 1321.25,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 41.796875,
+            "y": 1321.25,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 1398.25,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 41.796875,
+            "y": 1398.25,
+            "width": 317.609375,
+            "height": 77,
+            "right": 359.40625,
+            "bottom": 1475.25,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 41.796875,
+            "y": 1475.25,
+            "width": 317.609375,
+            "height": 77.75,
+            "right": 359.40625,
+            "bottom": 1553,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 41.796875,
+          "y": 1655.96875,
+          "width": 305.609375,
+          "height": 44,
+          "right": 347.40625,
+          "bottom": 1699.96875
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 776,
+          "width": 390,
+          "height": 68,
+          "right": 390,
+          "bottom": 844
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-chef-390-xlarge: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "unobscuredBottom": 776
+        },
+        "firstPersonTop": 1141.796875,
+        "firstPersonHeight": 121.359375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 52,
+            "y": 1141.796875,
+            "width": 300,
+            "height": 121.359375,
+            "right": 352,
+            "bottom": 1263.15625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 52,
+            "y": 1263.15625,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1362.578125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 52,
+            "y": 1362.578125,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1462,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 52,
+            "y": 1462,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1561.421875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 52,
+            "y": 1561.421875,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1660.84375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 52,
+            "y": 1660.84375,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1760.265625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 52,
+            "y": 1760.265625,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1859.6875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 52,
+            "y": 1859.6875,
+            "width": 300,
+            "height": 142,
+            "right": 352,
+            "bottom": 2001.6875,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 52,
+          "y": 2118.6875,
+          "width": 285,
+          "height": 54,
+          "right": 337,
+          "bottom": 2172.6875
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 776,
+          "width": 390,
+          "height": 68,
+          "right": 390,
+          "bottom": 844
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-chef-390-xlarge-long: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "unobscuredBottom": 776
+        },
+        "firstPersonTop": 1208.984375,
+        "firstPersonHeight": 284.09375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 52,
+            "y": 1208.984375,
+            "width": 300,
+            "height": 284.09375,
+            "right": 352,
+            "bottom": 1493.078125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 52,
+            "y": 1493.078125,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1592.5,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 52,
+            "y": 1592.5,
+            "width": 300,
+            "height": 233,
+            "right": 352,
+            "bottom": 1825.5,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 52,
+            "y": 1825.5,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 1924.921875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 52,
+            "y": 1924.921875,
+            "width": 300,
+            "height": 187.5,
+            "right": 352,
+            "bottom": 2112.421875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 52,
+            "y": 2112.421875,
+            "width": 300,
+            "height": 233,
+            "right": 352,
+            "bottom": 2345.421875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 52,
+            "y": 2345.421875,
+            "width": 300,
+            "height": 99.421875,
+            "right": 352,
+            "bottom": 2444.84375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 52,
+            "y": 2444.84375,
+            "width": 300,
+            "height": 142,
+            "right": 352,
+            "bottom": 2586.84375,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 52,
+          "y": 2703.84375,
+          "width": 285,
+          "height": 54,
+          "right": 337,
+          "bottom": 2757.84375
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 776,
+          "width": 390,
+          "height": 68,
+          "right": 390,
+          "bottom": 844
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAlexandria Montgomery-Sutherland\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-chef-768: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 768,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 990.109375,
+        "firstPersonHeight": 77,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 45.796875,
+            "y": 990.109375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1067.109375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 45.796875,
+            "y": 1067.109375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1144.109375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 45.796875,
+            "y": 1144.109375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1221.109375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 45.796875,
+            "y": 1221.109375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1298.109375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 45.796875,
+            "y": 1298.109375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1375.109375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 45.796875,
+            "y": 1375.109375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1452.109375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 45.796875,
+            "y": 1452.109375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1529.109375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 45.796875,
+            "y": 1529.109375,
+            "width": 687.609375,
+            "height": 77,
+            "right": 733.40625,
+            "bottom": 1606.109375,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 45.796875,
+          "y": 1709.078125,
+          "width": 675.609375,
+          "height": 44,
+          "right": 721.40625,
+          "bottom": 1753.078125
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-chef-768-xlarge: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 768,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 1170.125,
+        "firstPersonHeight": 77.484375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 57,
+            "y": 1170.125,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1247.609375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 57,
+            "y": 1247.609375,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1325.09375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 57,
+            "y": 1325.09375,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1402.578125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 57,
+            "y": 1402.578125,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1480.0625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 57,
+            "y": 1480.0625,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1557.546875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 57,
+            "y": 1557.546875,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1635.03125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 57,
+            "y": 1635.03125,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1712.515625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 57,
+            "y": 1712.515625,
+            "width": 668,
+            "height": 79.171875,
+            "right": 725,
+            "bottom": 1791.6875,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 57,
+          "y": 1908.6875,
+          "width": 653,
+          "height": 54,
+          "right": 710,
+          "bottom": 1962.6875
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-chef-768-xlarge-long: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 768,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 1170.125,
+        "firstPersonHeight": 110.03125,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 57,
+            "y": 1170.125,
+            "width": 668,
+            "height": 110.03125,
+            "right": 725,
+            "bottom": 1280.15625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 57,
+            "y": 1280.15625,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1357.640625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 57,
+            "y": 1357.640625,
+            "width": 668,
+            "height": 96.5,
+            "right": 725,
+            "bottom": 1454.140625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 57,
+            "y": 1454.140625,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1531.625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 57,
+            "y": 1531.625,
+            "width": 668,
+            "height": 96.5,
+            "right": 725,
+            "bottom": 1628.125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 57,
+            "y": 1628.125,
+            "width": 668,
+            "height": 96.5,
+            "right": 725,
+            "bottom": 1724.625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 57,
+            "y": 1724.625,
+            "width": 668,
+            "height": 77.484375,
+            "right": 725,
+            "bottom": 1802.109375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 57,
+            "y": 1802.109375,
+            "width": 668,
+            "height": 79.171875,
+            "right": 725,
+            "bottom": 1881.28125,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 57,
+          "y": 1998.28125,
+          "width": 653,
+          "height": 54,
+          "right": 710,
+          "bottom": 2052.28125
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAlexandria Montgomery-Sutherland\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-chef-1280: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 1280,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 943.671875,
+        "firstPersonHeight": 77,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 279.390625,
+            "y": 943.671875,
+            "width": 959.609375,
+            "height": 77,
+            "right": 1239,
+            "bottom": 1020.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 279.390625,
+            "y": 1020.671875,
+            "width": 959.609375,
+            "height": 77,
+            "right": 1239,
+            "bottom": 1097.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 279.390625,
+            "y": 1097.671875,
+            "width": 959.609375,
+            "height": 77,
+            "right": 1239,
+            "bottom": 1174.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 279.390625,
+            "y": 1174.671875,
+            "width": 959.609375,
+            "height": 77,
+            "right": 1239,
+            "bottom": 1251.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 279.390625,
+            "y": 1251.671875,
+            "width": 959.609375,
+            "height": 77,
+            "right": 1239,
+            "bottom": 1328.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 279.390625,
+            "y": 1328.671875,
+            "width": 959.609375,
+            "height": 77,
+            "right": 1239,
+            "bottom": 1405.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 279.390625,
+            "y": 1405.671875,
+            "width": 959.609375,
+            "height": 77,
+            "right": 1239,
+            "bottom": 1482.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 279.390625,
+            "y": 1482.671875,
+            "width": 959.609375,
+            "height": 77,
+            "right": 1239,
+            "bottom": 1559.671875,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 279.390625,
+          "y": 1662.640625,
+          "width": 947.609375,
+          "height": 44,
+          "right": 1227,
+          "bottom": 1706.640625
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-chef-1280-xlarge: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 1280,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 1110.28125,
+        "firstPersonHeight": 77.484375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 349,
+            "y": 1110.28125,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1187.765625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 349,
+            "y": 1187.765625,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1265.25,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 349,
+            "y": 1265.25,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1342.734375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 349,
+            "y": 1342.734375,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1420.21875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 349,
+            "y": 1420.21875,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1497.703125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 349,
+            "y": 1497.703125,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1575.1875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 349,
+            "y": 1575.1875,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1652.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 349,
+            "y": 1652.671875,
+            "width": 880,
+            "height": 79.171875,
+            "right": 1229,
+            "bottom": 1731.84375,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 349,
+          "y": 1848.84375,
+          "width": 865,
+          "height": 54,
+          "right": 1214,
+          "bottom": 1902.84375
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAnn\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    },
+    {
+      "pass": true,
+      "name": "implementation-baseline-chef-1280-xlarge-long: eight unique rows, no page overflow or browser errors",
+      "detail": {
+        "viewport": {
+          "width": 1280,
+          "height": 844,
+          "unobscuredBottom": 844
+        },
+        "firstPersonTop": 1110.28125,
+        "firstPersonHeight": 77.484375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 349,
+            "y": 1110.28125,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1187.765625,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 349,
+            "y": 1187.765625,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1265.25,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 349,
+            "y": 1265.25,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1342.734375,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 349,
+            "y": 1342.734375,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1420.21875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 349,
+            "y": 1420.21875,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1497.703125,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 349,
+            "y": 1497.703125,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1575.1875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 349,
+            "y": 1575.1875,
+            "width": 880,
+            "height": 77.484375,
+            "right": 1229,
+            "bottom": 1652.671875,
+            "service": false,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 349,
+            "y": 1652.671875,
+            "width": 880,
+            "height": 79.171875,
+            "right": 1229,
+            "bottom": 1731.84375,
+            "service": false,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 349,
+          "y": 1848.84375,
+          "width": 865,
+          "height": 54,
+          "right": 1214,
+          "bottom": 1902.84375
+        },
+        "saveArea": null,
+        "saveVisible": false,
+        "nav": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "right": 0,
+          "bottom": 0
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nAll shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00\n\nBo\nSplit · Lunch\nUntil 15:00\nAlexandria Montgomery-Sutherland\nMeal break · Lunch\nUntil 14:30"
+        },
+        "rowServiceCount": 0,
+        "globalServiceButtons": 3,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      }
+    }
+  ],
+  "sources": {
+    "js/prep.js": "8558f8e99070f01072930530217df236bba9f5e9bdec44fdd1f91592ed98bc0b",
+    "css/app.css": "208e609e327d9d81f724644eb62a7fd4b526a4a1c97d357f272ba4655b51e36d"
+  },
+  "summary": {
+    "checks": 18,
+    "passed": 18,
+    "failed": []
+  }
+}
