@@ -1,6 +1,6 @@
 // I'm on it (5 Nov 2026, head chef, round 2 of the work pages redesign; its own button since that evening): the tick
 // box stays one tap = done, as cooks have used it since 20 Oct. On it, a button on each open line of today's list,
-// stamps who is on it: on a phone the person signed in, and the line greys for everyone else; on your own line it
+// stamps who is on it: on a phone the person signed in, and a neutral badge names other cooks without fading work; on your own line it
 // takes you off, on someone else's it takes it over. On the shared kitchen device On it asks Who's on it?, and on a
 // stamped line takes the cook off; the tick asks Who did this? with the cook on it first. The tick clears the stamp.
 // Start here leaves out what someone else is on.
@@ -45,8 +45,8 @@ async function tap(p, sel) { await p.click(sel); await L.settle(p, 400); }
   d = await item(p, 'on1');
   ok(d.done === true && d.preparedById === 'ann' && d.doneById === 'ann' && d.onById === '' && d.onAt === 0, 'on it, then one tap on the box ticks it and clears the stamp (' + JSON.stringify({ done: d.done, prep: d.preparedById, on: d.onById }) + ')');
 
-  // Bo's line: greyed, his name on the button; On it takes it over, and the box still ticks it in one tap
-  ok(await p.$eval('#nbr-on2', e => e.classList.contains('is-on-other') && getComputedStyle(e).opacity < 1) && /Bo on it/.test(await txt(p, '#nbr-on2 .nb-on') || '') && /Bo ✓/.test(await txt(p, onBtn('on2')) || ''), 'someone else\'s stamp: greyed, Bo on it, Bo ✓ on the button');
+  // Bo's neutral badge and name identify ownership without fading work that Ann can still take over.
+  ok(await p.$eval('#nbr-on2', e => e.classList.contains('is-on-other') && getComputedStyle(e).opacity === '1') && /Bo on it/.test(await txt(p, '#nbr-on2 .nb-on') || '') && /Bo ✓/.test(await txt(p, onBtn('on2')) || ''), 'someone else\'s stamp: readable row, Bo on it, Bo ✓ on the button');
   ok(await p.getAttribute(onBtn('on2'), 'aria-label') === 'Take over Pick parsley from Bo' && await p.getAttribute(box('on2'), 'aria-label') === 'Tick Pick parsley, Bo on it', 'its button takes it over; its box still ticks');
   await tap(p, onBtn('on2'));
   d = await item(p, 'on2');

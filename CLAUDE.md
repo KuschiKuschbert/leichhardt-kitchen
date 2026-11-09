@@ -32,6 +32,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Loading, saving, progress and motion | `docs/loading-motion.md` (current), `docs/loading-feedback-options/brief.md` |
 | Shared controls, search and tables | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
 | A whole-app audit | `docs/whole-app-audit.md`, `docs/ux-council-audit.md`, `docs/whole-app-inventory.md` |
+| Shared operational colour meanings and content/category exceptions | `docs/colour-coding.md`, `docs/design-patterns.md` |
 | Admin: analysis, proofreader, dashboard, pages, look | `docs/admin-intelligence.md`, `docs/proofreader-admin.md`, `docs/admin-dashboard-options/brief.md`, `docs/admin-pages-options/brief.md`, `docs/admin-design-options/brief.md`, `docs/admin-flow-spec.md` |
 | Head chef / sous chef panel, chosen dedicated admin-style panel | `docs/chef-panel-options/brief.md` (Chosen implementation, permissions, reads and verification) |
 | Prep, Orders, Wastage, Transfers and the chef hat; who did a Prep line on a shared screen | `docs/work-pages-design-options/brief.md`, `docs/shared-prep-attribution.md` |

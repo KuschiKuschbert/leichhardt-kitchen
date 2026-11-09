@@ -4,6 +4,8 @@
 
 # Leichhardt Kitchen Book
 
+Operational colour meanings are shared across the book after the 9 November council review: orange for actions and attention, green for completed or assigned states, and red for failures, cancellation and destructive actions. Existing words, ticks and ownership badges keep each state clear; claimed Prep work stays readable. Artwork, allergens, wastage reasons, charts and the approved Home card colours retain their own meanings. [Inventory, council and checks](docs/colour-coding.md).
+
 Today's team shows current scheduled meal breaks and splits on a pinned charcoal board. On break now lists each name with Until and the return time. Shift tabs show Lunch first, then Dinner, followed by the other configured shifts. It follows the saved plan across all shifts and updates with the existing kitchen clock. [Break board](docs/team-notebook-options/brief.md#break-board-9-november-2026).
 
 Supplier sheets can follow updated order templates while keeping previous quantities attached to the same items. Re-import the updated private catalogue through **Import catalogue**: existing IDs follow the file's sequence, new items are added once and other saved items stay at the end. PFD Dry Goods and PFD Seafood can be separated for their different delivery schedules: Dry Goods keeps its existing reminder and Seafood links to the Seafood reminder already in the book. The split keeps previous quantities through the original immutable order history. Current pars, original records and drafts remain intact. The review shows the file sequence and reminder links; a smaller order-only format is also supported. [Contract and checks](docs/supplier-workspace.md#template-order-updates-9-november-2026).

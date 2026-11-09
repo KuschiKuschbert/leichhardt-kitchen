@@ -16,6 +16,10 @@ The owner requested disabling the timer after the second deadline until the foll
 
 The owner requested a small × on bottom sheets and modals for non-touch screens. The shared `SwipeDismiss()` helper in `js/controls.js` adds a missing header close using the original cancellation callback. `css/app.css` controls pointer/hover visibility and title spacing; `js/app.js` and `js/upkeep.js` keep the visible control in their keyboard loops. [Contract and verification](adaptive-controls.md#swipe-to-close-9-november-2026); `tests/modal-close.test.js`, `tests/update-confirmation.test.js` and existing overlay/swipe checks. No reads, rules, stored fields or saved-shell manifest changes.
 
+## Colour meanings, 9 November 2026
+
+The owner requested a whole-app audit and authorised the council to decide whether consistent coding should be applied. Five independent role reviewers recommended a bounded operational-colour pass. `docs/colour-coding.md` records the route-family inventory, decision, exceptions and verification. `css/app.css` owns shared light/dark failure and success tokens; `css/cooling.css` uses the shared failure treatment. `docs/design-patterns.md` defines their use. `tests/colour-semantics.test.js` verifies actual state contrast, semantic consistency and readable claimed Prep work; `tests/prep-on-it.test.js` retains takeover/tick behaviour, and `tests/design-patterns.test.js` guards the documented tokens. No data, permissions, listeners, shell membership or service steps change.
+
 ## Swipe to close, 9 November 2026
 
 The owner requested swiping to dismiss the existing sheets and modals. The small-change quick check retains the same layout, visible rows and service taps. `js/controls.js` shares header/grip drag handling and routes dismissal through the original backdrop/Cancel action; `css/app.css` adds pointer feedback and reduced-motion support. [Contract, council and verification](adaptive-controls.md#swipe-to-close-9-november-2026), [shared pattern](design-patterns.md#over-the-page); `tests/swipe-dismiss.test.js`, `tests/adaptive-controls.test.js`, `tests/overlays-back.test.js`. No new reads, rules or saved data.
