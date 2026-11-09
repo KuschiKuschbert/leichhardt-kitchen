@@ -1,5 +1,7 @@
 # Today's team: shifts, sections and breaks. Options
 
+Current extension, 9 November 2026: the head chef chose [A, a week strip in the existing notebook](../team-week-options/brief.md). Head and sous chefs can select and save future dates, with separate protected drafts and a bounded week read. Staff's live day remains today. The original 7 November council and build record below describe the first delivery.
+
 Requested 7 November 2026 by the head chef, in three messages:
 
 1. "In the morning when head chef or sous chef log in, allocate breaks for the people that are on during this day. Since we don't have a function yet to tell who's on, ask them in a picker who's working today and allocate set break times for them. On the staff end, once the break times have been allocated by head or sous chef, or admin, show them on their page when they are logged in what time they go on break and how long for. Come up with 3 designs that speak our design and functionality language and are not disturbing."

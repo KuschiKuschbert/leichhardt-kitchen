@@ -136,15 +136,18 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   ok(p.errors.length === 0, 'defensive intervals: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // Delay just the team read, using the existing Firebase stand-in, to distinguish loading, unset and failed reads.
-  const sdk = fs.readFileSync(path.join(__dirname, 'fake', 'firebase-firestore.js'), 'utf8').replace('export function getDoc(ref) {', 'export function getDoc(ref) { if (/\\/team\\//.test(key(ref.path)) && !window.__fake.allowTeamRead) return new Promise(resolve => { window.__fake.releaseTeamRead = () => { window.__fake.allowTeamRead = true; getDoc(ref).then(resolve); }; });');
+  // Hold both live-day and week reads: either successful server answer can now establish today's saved plan.
+  let sdk = fs.readFileSync(path.join(__dirname, 'fake', 'firebase-firestore.js'), 'utf8');
+  ['getDoc', 'getDocsFromServer'].forEach(fn => {
+    sdk = sdk.replace('export function ' + fn + '(ref) {', 'export function ' + fn + '(ref) { if (/\\/team(?:\\/|$)/.test(key(ref.path)) && !window.__fake.allowTeamRead) return new Promise(resolve => { (window.__fake.teamReleases = window.__fake.teamReleases || []).push(() => ' + fn + '(ref).then(resolve)); window.__fake.releaseTeamRead = () => { window.__fake.allowTeamRead = true; window.__fake.teamReleases.splice(0).forEach(release => release()); }; });');
+  });
   p = await L.open(b, '#/team', { who: 'sam', extra: fixture(null), fakeSDK: { 'firebase-firestore.js': sdk }, wait: 1000 });
   await L.waitFor(p, () => !!window.__fake && typeof window.__fake.releaseTeamRead === 'function', null, 6000);
   const loading = await away(p) || await txt(p, '.tm-page') || '';
   ok(/Checking|Loading/i.test(loading) && !/Nobody scheduled away|No saved plan/i.test(loading), 'loading: a pending plan read never becomes a false zero or an unset plan');
   await p.evaluate(() => window.__fake.releaseTeamRead()); await ready(p);
   ok(/No saved plan/i.test(await away(p) || '') && !/Nobody scheduled away/i.test(await away(p) || ''), 'unset: no saved plan is distinct from a checked empty schedule');
-  await p.evaluate(() => { window.__fake.failReads = /\/team\//; }); await refresh(p);
+  await p.evaluate(() => { window.__fake.failReads = /\/team(?:\/|$)/; }); await refresh(p);
   const errorState = await away(p) || await txt(p, '.tm-page') || '';
   ok(/Could not check|Could not load/i.test(errorState) && !/Nobody scheduled away/i.test(errorState), 'failed read: an unavailable plan is unknown, never Nobody scheduled away');
   ok(p.errors.length === 0, 'plan states: no page errors ' + p.errors.join(' | '));

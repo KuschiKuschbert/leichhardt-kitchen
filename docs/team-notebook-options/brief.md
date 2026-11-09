@@ -1,5 +1,7 @@
 # Today's team: chosen roster notebook
 
+Current extension, 9 November 2026: [A, weekly section planning](../team-week-options/brief.md), adds dates inside this notebook. Keep the chosen current-day break-board priority and section-first controls, while each date has its own draft and explicit Save. The new brief records the bounded week read, protected-work changes, actual density cost and verification; the notebook decision below remains its original design record.
+
 8 November 2026. Status: **refined A released and live-verified in PR601; colour refinement checked locally, awaiting CI and release**. The head chef requested two notebook-style concepts, matching the Chef to-do notebook, with who is on a break visible on Today's team. The explicit request for two supersedes the usual three concepts in the service council workflow. After clarifying section-first assignment, scrollable configured shifts and a Whole day review, the head chef said "yeah lets go then" and authorised going live when ready. The original design previews and council scores below remain historical evidence, not implementation measurements.
 
 Read first: `CLAUDE.md`, `.claude/skills/service-council/SKILL.md`, `docs/todays-team-options/brief.md`, `docs/prep-book.md` (Today's team), `docs/chef-todo-options/brief.md` and `docs/whole-app-redesign-options/brief.md` (Build, step 7). The earlier Today's team decision and the chosen Chef to-do layout remain their own records.

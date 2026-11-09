@@ -61,6 +61,8 @@ await env.clearFirestore();
 const NOW = Date.now(), MIN = 60000, DAY = 86400000;
 const kday = ms => new Date(ms + 10 * 3600000).toISOString().slice(0, 10);
 const TODAY = kday(NOW), YDAY = kday(NOW - DAY), TMW = kday(NOW + DAY), PAST = kday(NOW - 5 * DAY);
+const TEAM_WEEK_START = kday(NOW - ((new Date(TODAY + 'T12:00:00+10:00').getUTCDay() + 6) % 7) * DAY);
+const TEAM_WEEK_END = kday(Date.parse(TEAM_WEEK_START + 'T12:00:00+10:00') + 6 * DAY);
 const MIDNIGHT = Date.parse(TODAY + 'T00:00:00Z') - 10 * 3600000, T0 = Date.parse(TODAY + 'T08:00:00Z');
 
 const P = (id, name, role, x) => Object.assign({ id, name, role, add: true, tick: true, del: role !== 'staff', ping: false, fn: false, active: true }, x || {});
@@ -295,6 +297,9 @@ row('js/prep.js dkLoad(): who was in today (the activity list)', { ok: KITCHEN, 
 row('js/prep.js ksCheck(): my section today (shifts/<today>_<me>)', { ok: KITCHEN, asks: ['ann', 'lou', 'tab'], run: (db, w, r) => getDoc(D(db, `shifts/${TODAY}_${ownId(r, w)}`)) });
 row('js/prep.js loadShifts() (admin People, Manage staff): 14 days of sections', { ok: KITCHEN, asks: CHEFS, run: db => getDocs(query(C(db, 'shifts'), where('day', '>=', kday(NOW - 13 * DAY)))) });
 row('js/prep.js teamLoad(): today\'s team (team/<today>), for the chip, Your day and the prep list line', { ok: KITCHEN, asks: KITCHEN, run: db => getDoc(D(db, `team/${TODAY}`)) });
+row('js/prep.js tmPlanLoad(): one bounded Monday to Sunday team query for the chef planner', { ok: KITCHEN, asks: CHEFS,
+  prep: () => put({ [`team/${TODAY}`]: { day: TODAY, on: [{ id: 'ann', sh: 'lunch', sec: 'larder' }], br: [], v: 1, at: NOW, upd: NOW, by: 'sam' } }),
+  run: db => getDocsFromServer(query(C(db, 'team'), where('day', '>=', TEAM_WEEK_START), where('day', '<=', TEAM_WEEK_END), limit(8))) });
 row('js/prep.js teamLast(): the same day last week, for Use it on the chef\'s page', { ok: KITCHEN, asks: CHEFS, run: db => getDoc(D(db, `team/${kday(NOW - 7 * DAY)}`)) });
 row('js/prep.js tsumLoad() and the admin Training: the nightly training numbers (teamsum/main)', { ok: CHEFS, asks: CHEFS, run: db => getDoc(D(db, 'teamsum/main')) });
 row('js/prep.js mlStatLoad(): what happened to a mail I sent (mailstat/<id>)', { ok: KITCHEN, asks: MAIL, run: db => getDoc(D(db, 'mailstat/x1')) });

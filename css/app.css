@@ -4791,6 +4791,34 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
   .cln-due, .cln-not-due { color: var(--muted); }
   .cln-not-due { font-size: 1.5rem; }
 }
+/* Team planning A, 9 Nov 2026: a dated week on the existing roster notebook. */
+.tm-weeknav { min-width: 0; margin: .65rem 0; }
+.tm-notebook .tm-weeknav { grid-area: week; margin: .6rem .85rem .3rem 1.55rem; }
+.tm-weekbar { display: flex; align-items: center; gap: .3rem; margin-bottom: .35rem; }
+.tm-weekbar > span { flex: 1 1 auto; min-width: 0; text-align: center; font-size: .875rem; font-weight: 600; overflow-wrap: anywhere; }
+.tm-weekbar .chip { flex: 0 0 auto; min-width: 44px; min-height: 44px; padding: .4rem .65rem; }
+.tm-weekscroll { min-width: 0; overflow-x: auto; scrollbar-width: thin; }
+.tm-weekscroll.has-more { -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1rem), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 1rem), transparent); }
+.tm-weekdays { display: grid; grid-template-columns: repeat(7, minmax(44px, 1fr)); min-width: 320px; gap: 2px; }
+.tm-daypick { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .1rem; min-width: 0; min-height: 64px; padding: .35rem 0; border: 1px solid transparent; border-radius: var(--r-act); background: none; color: var(--ink); font: inherit; cursor: pointer; }
+.tm-daypick > span, .tm-daypick > small { max-width: 100%; font: 400 .75rem/1.2 var(--body); overflow-wrap: anywhere; }
+.tm-daypick > b { font: 700 1.25rem/1 var(--display); }
+.tm-daypick.is-today { border-color: var(--small-ink); }
+.tm-daypick[aria-pressed="true"] { border-color: var(--small-ink); background: var(--small-ink); color: var(--bar-text); }
+.tm-daypick:focus-visible, .tm-weekbar button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.tm-daypick:disabled, .tm-weekbar button:disabled { cursor: default; opacity: .65; }
+.tm-notebook .tm-nbook { grid-template-areas: 'head' 'week' 'away' 'work' 'extra'; }
+.tm-notebook.tm-planning .tm-nbook { grid-template-areas: 'head' 'week' 'work' 'extra'; }
+.tm-plan-summary > h3 { margin: .3rem 0 .6rem; color: var(--small-ink); font: 700 1.8rem/1.1 'Caveat', cursive; overflow-wrap: anywhere; }
+@media (min-width: 1100px) {
+  .tm-notebook .tm-weeknav { margin: .75rem 1.25rem .3rem 2.15rem; }
+  .tm-notebook .tm-nbook, .tm-notebook.tm-planning .tm-nbook { grid-template-areas: none; }
+}
+@media (max-width: 440px) {
+  .tm-notebook .tm-weeknav { margin-inline: .45rem 1.1rem; }
+  .tm-daypick { min-height: 64px; }
+}
+
 
 /* Shared modal frame, approved 9 November 2026. Fields and cancellation stay with their feature. */
 .ux-modal.ux-swipe {
