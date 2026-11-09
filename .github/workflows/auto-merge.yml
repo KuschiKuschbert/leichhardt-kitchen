@@ -55,6 +55,8 @@ permissions:
 # not wrap: 2230-2400 and 0000-0230.
 env:
   RELEASE_WINDOWS: '1500-1630 2230-2400 0000-0230'
+  # One-off owner request, 9 Nov 2026: keep releasing until 08:00 Queensland on 10 Nov. Full UTC date, end excluded.
+  RELEASE_UNTIL: '2026-11-09T22:00:00Z'
 
 # Three jobs (4 Nov 2026): a waiting run in a shared concurrency group is replaced by the next one, so one shared group
 # dropped the ready events of pull requests marked ready at the same moment. Each pull request now has its own group for
@@ -104,6 +106,12 @@ jobs:
           # in a release window now? NOW_HHMM stands in for the clock in tests/auto-merge-queue.test.js
           now=${NOW_HHMM:-$(TZ=Australia/Brisbane date +%H%M)}; open=false
           for w in $RELEASE_WINDOWS; do [ $((10#$now)) -ge $((10#${w%-*})) ] && [ $((10#$now)) -lt $((10#${w#*-})) ] && open=true; done
+          # A dated extension expires by itself. Reject relative/malformed dates; NOW_EPOCH stands in for UTC in tests.
+          if [[ "${RELEASE_UNTIL:-}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] &&
+             release_end=$(date -u -d "$RELEASE_UNTIL" +%s 2>/dev/null) &&
+             [ "${NOW_EPOCH:-$(date -u +%s)}" -lt "$release_end" ]; then
+            open=true; echo "Dated release extension: the window is open until $RELEASE_UNTIL."
+          fi
           # A Release now holds the window open for 30 minutes (6 Nov 2026): it lasted only its own run, so the run its
           # own update of a pull request started switched auto-merge off again. Its runs are found by name (run-name).
           released() { GH_TOKEN="$RUNS_TOKEN" gh api "repos/$REPO/actions/workflows/auto-merge.yml/runs?event=workflow_dispatch&per_page=20" \
@@ -171,6 +179,12 @@ jobs:
             d=$(( (10#${s:0:2} * 60 + 10#${s:2:2} - mins + 1440) % 1440 ))
             if [ "$best" -lt 0 ] || [ "$d" -lt "$best" ]; then best=$d; fi
           done
+          # Use the same dated extension as switch and queue, so a new waiting run moves on while it is open.
+          if [[ "${RELEASE_UNTIL:-}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] &&
+             release_end=$(date -u -d "$RELEASE_UNTIL" +%s 2>/dev/null) &&
+             [ "${NOW_EPOCH:-$(date -u +%s)}" -lt "$release_end" ]; then
+            open=true; echo "Dated release extension: the window is open until $RELEASE_UNTIL."
+          fi
           if [ "$open" = "true" ]; then echo "A release window is open now."; exit 0; fi
           secs=$((best * 60 + 60)); cap=20700
           if [ "$secs" -gt "$cap" ]; then
@@ -221,6 +235,12 @@ jobs:
           retry() { for i in 1 2 3; do "$@" && return 0; [ "$i" = 3 ] || sleep $((i * 10)); done; return 1; }   # as in switch
           now=${NOW_HHMM:-$(TZ=Australia/Brisbane date +%H%M)}; open=false
           for w in $RELEASE_WINDOWS; do [ $((10#$now)) -ge $((10#${w%-*})) ] && [ $((10#$now)) -lt $((10#${w#*-})) ] && open=true; done
+          # The same dated extension as switch: expire on the exact UTC deadline, without changing daily windows.
+          if [[ "${RELEASE_UNTIL:-}" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] &&
+             release_end=$(date -u -d "$RELEASE_UNTIL" +%s 2>/dev/null) &&
+             [ "${NOW_EPOCH:-$(date -u +%s)}" -lt "$release_end" ]; then
+            open=true; echo "Dated release extension: the window is open until $RELEASE_UNTIL."
+          fi
           # A Release now holds the window open for 30 minutes (6 Nov 2026), as in switch: it used to last only its own
           # run, so the next run (started by its own update of a pull request) closed the window again.
           released() { GH_TOKEN="$RUNS_TOKEN" gh api "repos/$REPO/actions/workflows/auto-merge.yml/runs?event=workflow_dispatch&per_page=20" \

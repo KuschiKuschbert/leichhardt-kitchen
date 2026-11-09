@@ -2014,11 +2014,13 @@ html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(
 :where(.wm-a, .a-tab, .seg-b, .vsw button, .p-x, .nb-x, summary):not(:disabled):not([aria-disabled="true"]) {
   transition: scale 0.18s ease-out, box-shadow 0.18s ease-out;
 }
-:where(.wtop-btn, .pnav a, .tabbar a):not(:disabled):not([aria-disabled="true"]) {
+:where(.wtop-btn, .tm-chip, .pnav a, .tabbar a):not(:disabled):not([aria-disabled="true"]) {
   scale: none;
   transition: box-shadow 0.18s ease-out;
 }
-:where(.wtop-btn, .tabbar a) > svg { transform-origin: 50% 65%; transition: rotate 0.18s ease-out, scale 0.18s ease-out; }
+/* The timer nests its clock drawing; its progress ring and read-only status stay still. */
+:where(.wtop-btn, .tm-chip, .tabbar a) > svg,
+:where(.cooling-chip) .cooling-clock-drawing > svg { transform-origin: 50% 65%; transition: rotate 0.18s ease-out, scale 0.18s ease-out; }
 .wtop-who[aria-expanded="true"] > svg { rotate: -8deg; }
 .wm-a > svg { transform-origin: 50% 65%; transition: translate 0.18s ease-out, rotate 0.18s ease-out, scale 0.18s ease-out; }
 @media (hover: hover) and (pointer: fine) {
@@ -2032,10 +2034,11 @@ html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(
   :where(.wm-a, .a-tab, .seg-b, .vsw button, .p-x, .nb-x, summary):not(:disabled):not([aria-disabled="true"]):hover {
     box-shadow: inset 0 0 0 100vmax rgb(226 96 42 / 0.09);
   }
-  :where(.wtop-btn, .pnav a, .tabbar a):not(:disabled):not([aria-disabled="true"]):hover {
+  :where(.wtop-btn, .tm-chip, .pnav a, .tabbar a):not(:disabled):not([aria-disabled="true"]):hover {
     box-shadow: inset 0 0 0 100vmax rgb(240 138 75 / 0.16);
   }
-  :where(.wtop-btn, .tabbar a):not(:disabled):not([aria-disabled="true"]):hover > svg { rotate: -8deg; }
+  :where(.wtop-btn, .tm-chip, .tabbar a):not(:disabled):not([aria-disabled="true"]):hover > svg,
+  :where(.cooling-chip):not(:disabled):not([aria-disabled="true"]):hover .cooling-clock-drawing > svg { rotate: -8deg; }
   .wm-a:not(:disabled):not([aria-disabled="true"]):hover > svg { translate: 2px 0; rotate: -8deg; }
 }
 :where(.btn, .nb-addbtn, .nb-btn, .chip, .nb-tab, .ux-picker-trigger, .ux-picker-option):not(:disabled):not([aria-disabled="true"]):active {
@@ -2046,11 +2049,12 @@ html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(
 :where(.wm-a, .a-tab, .seg-b, .vsw button, .p-x, .nb-x, summary):not(:disabled):not([aria-disabled="true"]):active {
   box-shadow: inset 0 0 0 100vmax rgb(226 96 42 / 0.15);
 }
-:where(.wtop-btn, .pnav a, .tabbar a):not(:disabled):not([aria-disabled="true"]):is(:active, .is-pressed) {
+:where(.wtop-btn, .tm-chip, .pnav a, .tabbar a):not(:disabled):not([aria-disabled="true"]):is(:active, .is-pressed) {
   scale: none;
   box-shadow: inset 0 0 0 100vmax rgb(240 138 75 / 0.25);
 }
-:where(.wtop-btn, .tabbar a):not(:disabled):not([aria-disabled="true"]):is(:active, .is-pressed) > svg { rotate: -12deg; scale: 0.94; transition-duration: 0.07s; }
+:where(.wtop-btn, .tm-chip, .tabbar a):not(:disabled):not([aria-disabled="true"]):is(:active, .is-pressed) > svg,
+:where(.cooling-chip):not(:disabled):not([aria-disabled="true"]):is(:active, .is-pressed) .cooling-clock-drawing > svg { rotate: -12deg; scale: 0.94; transition-duration: 0.07s; }
 .wm-a:focus-visible > svg { translate: 2px 0; }
 .wm-a:not(:disabled):not([aria-disabled="true"]):is(:active, .is-pressed) > svg { rotate: -12deg; scale: 0.94; transition-duration: 0.07s; }
 @media (prefers-reduced-motion: no-preference) {
@@ -2063,7 +2067,8 @@ html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(
 @media (prefers-reduced-motion: reduce) {
   :where(button:not(:disabled), a[href], summary):not([aria-disabled="true"]) { scale: none !important; translate: none !important; }
   :where(button:not(:disabled), a[href], summary):not([aria-disabled="true"]):active { opacity: 0.75; }
-  :where(.wtop-btn, .tabbar a, .wm-a) > svg { rotate: none !important; scale: none !important; translate: none !important; }
+  :where(.wtop-btn, .tm-chip, .tabbar a, .wm-a) > svg,
+  :where(.cooling-chip) .cooling-clock-drawing > svg { rotate: none !important; scale: none !important; translate: none !important; }
 }
 
 /* Manage Recipes & Drawings (#/manage, js/manage.js, 21 Oct 2026): the head chef's recipe list and recipe form. Classes
@@ -3750,8 +3755,9 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .tm-changed { color: var(--accent-ink); }
 /* the day line under a person's done count: in the date's line, so the header keeps its height (a long line ends in
    an ellipsis, the chip and Your day have it whole); orange with a dot once a chef changes it, until Your day is opened */
-.nb-ph .nb-pw.is-day { flex-direction: column; }
-.nb-tmday { display: block; max-width: min(16rem, 52vw); margin: 0.15rem 0 0; padding: 0; border: 0; background: none; font: 700 0.8125rem/1.3 var(--body); color: var(--ink); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.nb-ph .nb-pw.is-day { flex: 1; flex-direction: column; }
+/* Let the day line use the room left by the date; its full wording must not set the flex row's minimum width. */
+.nb-tmday { display: block; contain: inline-size; width: 100%; max-width: min(16rem, 52vw); margin: 0.15rem 0 0; padding: 0; border: 0; background: none; font: 700 0.8125rem/1.3 var(--body); color: var(--ink); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
 .nb-tmday.is-changed { color: var(--accent-ink); }
 .nb-tmday.is-changed::before { content: '\25CF'; margin-right: 0.3em; }
 .nb-tmday:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -4442,6 +4448,7 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .tm-notebook .tm-batch .tm-same { margin: 0 0 .6rem; padding: .35rem 0 .65rem; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; }
 .tm-notebook .tm-save { min-width: 0; margin-top: .8rem; padding-top: .7rem; border-top: 1px solid var(--ink); }
 .tm-notebook .tm-save .btn { flex: 1 1 12rem; min-height: 44px; max-width: 100%; padding: .65rem 1rem; white-space: normal; }
+.tm-notebook .tm-save .sv-btn::before, .tm-notebook .tm-save .sv-btn::after { white-space: normal; }
 .tm-notebook .tm-save .sv-line { min-width: 0; overflow-wrap: anywhere; }
 .tm-notebook .tm-day > h3 { margin: .25rem 0 .65rem; font: 700 2rem/1.05 'Caveat', cursive; }
 .tm-notebook .tm-dayperson { min-width: 0; padding: .55rem 0; border-bottom: 1px solid var(--line); }

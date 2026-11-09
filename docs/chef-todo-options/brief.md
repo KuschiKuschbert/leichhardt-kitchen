@@ -1,6 +1,8 @@
 # Chef to-do: two notebook designs
 
-8 November 2026. Status: **B, Open notebook, released and live-verified in PR600; colour refinement checked locally, awaiting CI and release**. The head chef explicitly requested two designs before coding, superseding the usual three in the service council and build-apps workflows. The choice changes presentation only: access, data and saved-shell contracts stay.
+Chosen 8 November 2026. **Current status, reconciled 10 November: B, Open notebook, and its original colour refinement are released.** The layout merged in [PR #600](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/600), followed by the colour refinement in [PR #602](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/602). The current [shared surface colours](../surface-colours.md) subsequently shipped in [PR #632](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/632). The head chef explicitly requested two designs before coding, superseding the usual three in the service council and build-apps workflows. The choice changes presentation only: access, data and saved-shell contracts stay.
+
+Recorded release evidence, checked on 10 November: #600's [Pages deployment](https://github.com/KuschiKuschbert/leichhardt-kitchen/actions/runs/42441474252) and [Live click tests](https://github.com/KuschiKuschbert/leichhardt-kitchen/actions/runs/42441511018) passed at `0ab8ce5`; #602's [Pages deployment](https://github.com/KuschiKuschbert/leichhardt-kitchen/actions/runs/42450058126) and [Live click tests](https://github.com/KuschiKuschbert/leichhardt-kitchen/actions/runs/42450092135) passed at `e501f3d`. The preview and local measurements below remain evidence of those original builds, not a new check of every later revision.
 
 Read first: `CLAUDE.md`, `docs/design-patterns.md`, `docs/code-contracts.md` (Chef to-do), `docs/whole-app-redesign-options/brief.md` (Chosen and Build, step 7). Existing state: one private shared list, one add form, shared search and filters through `lvHTML()`, due-first sort, lazy Done in the last 30 days.
 
@@ -33,7 +35,7 @@ Colour screenshot with synthetic data: [390 px phone](colour-390.png).
 
 The head chef chose **B, Open notebook**, on 8 November 2026. That choice settles the layout despite the council's recommendation of A. The chosen notebook puts jobs and their controls on the left, a single add or change editor on the right from 1100 px, and one flow below that width. No further layout choice is pending.
 
-The implementation is complete locally. Preview measurements are retained below as design history; the separate implementation validation records the built page. Pull request checks, release and live validation are still to come.
+The chosen layout is implemented and released in #600. Preview measurements remain design history; the separate local implementation validation records the original built page. The release evidence above replaces the earlier pending-release status.
 
 ## A: Single notebook sheet
 
@@ -98,4 +100,4 @@ At 390 px complete jobs are counted above the bottom navigation, which starts at
 
 Focused local browser checks passed: `todo.test.js`, `safe-text.test.js`, `design-patterns.test.js`, `supplier-reminder-done.test.js` and `supplier-orders.test.js`. The new `todo-notebook.test.js` passed 34 assertions for the responsive book, one form, draft retention through resizing and service redraws, long words and dates at the largest text size, 44 px row action targets, no sideways overflow or page errors, and no extra to-do read until Done opens. Additional largest-text checks passed at 320, 360, 1099, 1100, 1150 and 1280 px, with edit state and focus retained through reflow. Independent source and layout review found no issues.
 
-These are local checks with the Firebase stand-in, not live validation. Implementation is complete locally; pull request checks and release are pending. The choice is recorded in `docs/head-chef-decisions.md`, the reading maps, `README.md`, `docs/prep-book.md`, `docs/code-contracts.md` and `docs/design-patterns.md`.
+These are the original local checks with the Firebase stand-in, not live validation. The later merge, Pages deployment and Live click test results are recorded above. The choice is recorded in `docs/head-chef-decisions.md`, the reading maps, `README.md`, `docs/prep-book.md`, `docs/code-contracts.md` and `docs/design-patterns.md`.
