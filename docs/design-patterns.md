@@ -57,6 +57,8 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 
 ## Inside a list
 
+- **A supplier purchase reference** (A selected 9 November 2026) keeps the quantity and date in the existing `.su-last` cell. `.su-last-kind` replaces the phone label with Latest order or Earlier order; `.su-last-wide` uses Latest or Earlier beside the date on wider screens, and `.su-last-dow` preserves the phone weekday. Dark text and words communicate membership without a warning colour or new tap. Compare immutable saved order IDs, including split-history projections. Unchecked history keeps its separate words. [Decision and checks](supplier-last-order-status-options/brief.md#chosen).
+
 - **A line in a list's header** (Set today's team, a person's day under the done count) keeps the header's height, or a tick lands on the wrong row: wrap the count in `.nb-pw`, borrow the header's spare room (`.nb-tmset`) or the date's line (`.nb-tmday`, with an ellipsis when long), and measure the header with and without it in the test.
 - **A line's own buttons** say what they do in a word (Urgent, On it, Recipe, Remove), never a lone mark like !, and fill when on. On a phone, where they sit beside the words (redesign step 1, 8 Nov 2026), each is 44 px with a small drawing over its word (`.nb-ai` drawing, `.nb-aw` word). A ticked line keeps the room of the button it loses (`.nb-onslot`), so a tick never changes a row's height under the finger. The Start here number sits in the notebook margin on a phone, so the words keep their first line.
 - **A section heading's bar** (`.nb-hbar`) fills as its lines are ticked, drawn from the lines on the page with no read of its own.

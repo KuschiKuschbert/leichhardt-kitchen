@@ -1,8 +1,12 @@
 # Session map: which note to read, and every file
 
+## Supplier Latest/Earlier purchase labels, 9 November 2026
+
+The head chef selected A, Label the reference, after the [council and three visual directions](supplier-last-order-status-options/brief.md#chosen). Latest order / Earlier order uses loaded order IDs, keeps quantity/date visible and adds no read, tap or measured row height. `js/suppliers.js?v=24`, its loader in `js/app.js`, `css/app.css` and the focused `tests/supplier-order-status.test.js` implement and check the labels. Unknown history remains neutral, including old-record replay after a failed read. [Actual measurements and screenshots](supplier-last-order-status-options/brief.md#implementation-evidence).
+
 ## Each supplier item's last order, 9 November 2026
 
-The existing supplier row shows its last recorded quantity and Queensland date, including purchases omitted from the newest supplier order. One bounded history page on selection, explicit Older orders coverage and no new saved fields for this reference. Split entries merge their own and inherited history chronologically, at most 42 order reads for 20 returned rows. `js/suppliers.js?v=23`, `css/app.css`, the lazy URL in `js/app.js`; `tests/supplier-last-ordered.test.js`, supplier workspace, quantities and module versions. [Contract, quick council and verification](supplier-workspace.md#each-items-last-order-9-november-2026).
+The existing supplier row shows its last recorded quantity and Queensland date, including purchases omitted from the newest supplier order. One bounded history page on selection, explicit Older orders coverage and no new saved fields for this reference. Split entries merge their own and inherited history chronologically, at most 42 order reads for 20 returned rows. `js/suppliers.js?v=24`, `css/app.css`, the lazy URL in `js/app.js`; `tests/supplier-last-ordered.test.js`, supplier workspace, quantities and module versions. [Contract, quick council and verification](supplier-workspace.md#each-items-last-order-9-november-2026).
 
 Moved from `CLAUDE.md` on 8 November 2026, word for word, so the file every session loads keeps one short row per note and a short list of files. This page keeps the full rows: the dates, the chosen designs, the tests and the notes for each file. Search it for the note or file name you need (Grep), then read that row.
 
