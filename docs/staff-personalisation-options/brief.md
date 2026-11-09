@@ -148,7 +148,7 @@ Todoist's known defaults already operate in Prep/Wastage and should be preserved
 4. Rename propagation updates Home, hat, open menu and Settings coherently, without losing focus, scroll or typed work. Do not rewrite historical name snapshots.
 5. Signed in as, prepared by, cleaned by, received by and recorded by remain separate meanings. Picking a worker on shared Prep/Cleaning must not change the greeting's identity.
 6. Full names stay available in menu/Settings and accessible labels. Do not promise full visible name text at every breakpoint: the current compact hat intentionally uses an initial at some widths.
-7. Personalise helpfully once: Welcome, Your day, On with you, Your usual, For you, Sending as. Keep shared page titles stable.
+7. Personalise helpfully once: a varied Home welcome, Your day, On with you, Your usual, For you, Sending as. Keep shared page titles stable.
 8. Use escaping/text rendering for all staff names. Preserve role limits, feature switches and the existing read budget.
 
 ## Implementation, 10 November 2026
@@ -189,3 +189,36 @@ Implementation acceptance covers current sign-in and unlock routes and retained-
 Publish the selected change as a small reversible application PR after final verification. A greeting and coherent current-name rendering require no schema or rules migration. Reverting the application PR restores presentation without changing saved kitchen records. Keep the current identity/access/draft contracts during rollback.
 
 The initial draft was an audit and design handoff. The selected implementation is now verified locally; CI, queue state, merge and deployed-client evidence remain separate release states. No live deployment is asserted here.
+
+## Varied welcomes, 10 November 2026
+
+The owner asked to add a randomiser for different welcomes, combined with celebrations. This extends the chosen A heading. Its source baseline is `7f85629`; the earlier implementation and measurements above describe the original fixed welcome.
+
+**Verdict: Build smaller (quick check).** Vary the existing words without adding a setting, shuffle button, popup or step. This is a role-based self-review, not research with kitchen staff. Headspace's short calm labels and Linear's stable page frame apply. Decorative points, rewards and extra animations add no kitchen value. Staff context still takes zero taps; full team and Prep remain one tap away. No work-list markup changes. Full-app phone measurements are recorded below.
+
+### Behaviour and contract fit
+
+- Ordinary visits choose Welcome, Hello, Hi there or G’day. Celebratory days use a small authored set for the same active calendar occasion, such as Happy Tihar / Tihar wishes or Merry Christmas / Christmas wishes. No nationality, faith or parenthood is inferred. Unknown, reflective and civic occasions use ordinary wording.
+- Choose once per Home visit, verified identity, Queensland day and active occasion. Returning to Home chooses a different prefix from the previous one. Repaints, clock ticks, live roster renames, six-language explanation changes, Still and reduced motion retain the choice. A date or occasion change updates it through the existing seasonal state event.
+- The full name comes from the same verified identity helper and is escaped on initial render or assigned as text on repaint. Public, locked and signed-out views retain the neutral heading. Shared-screen sign-out and handover remain authoritative.
+- State lives only in this tab's memory. Only the previous public phrase is retained between visits. Reload starts a fresh random choice and can repeat the previous load; no staff identity or greeting history is persisted.
+- Phone sizing uses the existing relative compact classes based on the complete greeting, including the prefix, so a long occasion name cannot bypass the long-name treatment. The original Welcome thresholds are unchanged in effect (21/37 total characters, previously 12/28 name characters). Shorter prefixes retain at least the original name-based compact size. All names wrap without clipping. Colours, motion, navigation and the heading's keyboard focus contract remain the existing design.
+- No new Firestore reads, writes, listeners, rules, fields, timer, dependency, shell file or private cache. Existing celebration preference and calendar behaviour are reused. No new action means no save/retry/acknowledgement frame is needed.
+
+### Break-it checks
+
+The review prioritised long greetings at enlarged phone text; stale identity through rename/lock/handover; corrected Queensland midnight and clock readiness; Off/reflective days; and repeated seasonal events. The seasonal bridge observes child changes, so greeting/date text is assigned only when it changes, avoiding a repaint feedback loop. Verification uses the actual app and isolated synthetic Firebase records. Mocked checks do not establish live server or real-device behaviour.
+
+Revert this pull request to restore the fixed welcome. There is no saved-data migration or rollback.
+
+### Varied-welcome verification
+
+Implemented-app captures compare `7f85629` with this change using synthetic records and locally supplied official Barlow, Barlow Condensed and Caveat faces, with TLS verification retained. Eighteen Home cases cover 390, 768 and 1280 px: ordinary, calendar Tihar, and a 40-character name at 125% text with the longest authored prefix (a transient Star Wars test theme). The [measurements](random-welcomes/measurements.json) and [capture script](capture-welcomes.cjs) record the method and source hash. [Phone before](random-welcomes/before-tihar-390.png), [phone after](random-welcomes/after-tihar-390.png), [desktop](random-welcomes/after-tihar-1280.png) and [long enlarged phone](random-welcomes/after-long-large-390.png) show the actual app.
+
+At 390 px, the ordinary and Tihar headings remain 41.59 px high; the longest enlarged name remains 52.78 px, with identical personal-card positions and visible coworker counts before and after. No case clips or scrolls sideways. At 1280 px the longest enlarged seasonal heading wraps from 60 to 120 px, moving the cards down 60 px while retaining all three coworkers; this is measured, not claimed to be identical geometry. The existing festival explanation already requires more phone scrolling than ordinary Home. At 390 px the separate Prep fixture keeps six complete rows above Add at y=716 px, with identical row positions. Staff context takes zero taps, full team one and Prep one, before and after.
+
+Focused checks pass for personalisation, Home board, layout, read budget, seasonal behaviour, calendar, saved-shell membership and design patterns. The first layout run could not load Google Fonts because the browser rejected the environment certificate. Re-running with the same official fonts supplied locally passes all 68 layout checks; TLS verification was not disabled. This is a browser-environment limitation, not an application or font change.
+
+The new randomiser suite passes **45/45** and covers all four ordinary choices; stable repaint/rename; nonrepeating return; zero DOM changes after 20 repeated seasonal events; no extra database reads; real Queensland Diwali-to-Tihar midnight on a foreign-timezone phone; Christmas, Off, Still, reduced motion and quiet occasions; clock fallback/recovery after authentication; and full long names at all three widths. Its Functions-only midnight greeting check failed before the day-signature repair; the date also remained on the previous day with celebrations Off. Including the kitchen day in the existing seasonal refresh signature repairs that case without another timer. The corrected-day fixture calls the existing refresh directly; it does not claim a separate wall-clock overnight run.
+
+JavaScript syntax and whitespace checks pass. Release CI and deployment state belong to the pull request; these are synthetic local browser checks, not production-session, emulator or real-device validation.

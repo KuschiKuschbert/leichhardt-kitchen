@@ -56,7 +56,8 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
   p = await L.open(b, '#/', { who: 'sam', extra: full(), wait: 1800 });
   await L.waitFor(p, () => document.querySelectorAll('#hm-board .hm-a').length >= 3, null, 8000).catch(() => {});
   const date = new Date(L.NOW).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Australia/Brisbane' });
-  ok(await txt(p, '#rtitle') === 'Welcome, Sam' && await txt(p, '.wall-date') === date + ' · 14:00', 'the named welcome keeps the kitchen weekday, date and time beneath it (' + await txt(p, '.wall-date') + ')');
+  const welcome = await txt(p, '#rtitle');
+  ok(!!(await p.$('#rtitle.hm-welcome')) && ['Welcome', 'Hello', 'Hi there', 'G’day'].some(prefix => welcome === prefix + ', Sam') && await txt(p, '.wall-date') === date + ' · 14:00', 'the named welcome keeps the kitchen weekday, date and time beneath it (' + await txt(p, '.wall-date') + ')');
   ok(!(await p.$('.dockets')) && !(await p.$('#fn-band')) && !(await p.$('#cut-band')), 'no dockets on Home, and the function band and the cut-off bar are off it');
   rows = await board(p);
   const fnRow = rows.find(r => r.fn === 'open'), cut = rows.find(r => /order closes$/.test(r.t)), ping = rows.find(r => r.note === 'open');

@@ -1,0 +1,1423 @@
+{
+  "baseline": "7f85629",
+  "method": "Full app, synthetic Firebase records, official app fonts supplied locally, 390x844 and 768/1280x1000. Baseline swaps only original app.js. No layout DOM edits.",
+  "sourceHash": "79ee512fdc4d16dc00f8e89f24c979a1a990482a7223849ad207b6761ff0e174",
+  "records": [
+    {
+      "id": "before-ordinary-390",
+      "phase": "before",
+      "width": 390,
+      "variant": "ordinary",
+      "heading": "Welcome, Ann",
+      "headingRect": {
+        "top": 88,
+        "height": 41.59,
+        "bottom": 129.59
+      },
+      "headingFont": "700 41.6px / 41.6px Caveat, cursive",
+      "ownDay": {
+        "top": 168.78,
+        "height": 202.13,
+        "bottom": 370.91
+      },
+      "team": {
+        "top": 388.5,
+        "height": 262.3,
+        "bottom": 650.8
+      },
+      "seasonal": {
+        "theme": "off",
+        "visibleOrnaments": 0,
+        "note": false,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "fullTeamVisible": true,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAnn Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Ann",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Ann, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "after-ordinary-390",
+      "phase": "after",
+      "width": 390,
+      "variant": "ordinary",
+      "heading": "Hello, Ann",
+      "headingRect": {
+        "top": 88,
+        "height": 41.59,
+        "bottom": 129.59
+      },
+      "headingFont": "700 41.6px / 41.6px Caveat, cursive",
+      "ownDay": {
+        "top": 168.78,
+        "height": 202.13,
+        "bottom": 370.91
+      },
+      "team": {
+        "top": 388.5,
+        "height": 262.3,
+        "bottom": 650.8
+      },
+      "seasonal": {
+        "theme": "off",
+        "visibleOrnaments": 0,
+        "note": false,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "fullTeamVisible": true,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAnn Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Ann",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Ann, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "before-tihar-390",
+      "phase": "before",
+      "width": 390,
+      "variant": "tihar",
+      "heading": "Welcome, Ann",
+      "headingRect": {
+        "top": 88,
+        "height": 41.59,
+        "bottom": 129.59
+      },
+      "headingFont": "700 41.6px / 41.6px Caveat, cursive",
+      "ownDay": {
+        "top": 348.78,
+        "height": 202.13,
+        "bottom": 550.91
+      },
+      "team": {
+        "top": 568.5,
+        "height": 262.3,
+        "bottom": 830.8
+      },
+      "seasonal": {
+        "theme": "np-tihar",
+        "visibleOrnaments": 0,
+        "note": true,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "fullTeamVisible": false,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAnn Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Ann",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Ann, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "after-tihar-390",
+      "phase": "after",
+      "width": 390,
+      "variant": "tihar",
+      "heading": "Happy Tihar, Ann",
+      "headingRect": {
+        "top": 88,
+        "height": 41.59,
+        "bottom": 129.59
+      },
+      "headingFont": "700 41.6px / 41.6px Caveat, cursive",
+      "ownDay": {
+        "top": 348.78,
+        "height": 202.13,
+        "bottom": 550.91
+      },
+      "team": {
+        "top": 568.5,
+        "height": 262.3,
+        "bottom": 830.8
+      },
+      "seasonal": {
+        "theme": "np-tihar",
+        "visibleOrnaments": 0,
+        "note": true,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "fullTeamVisible": false,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAnn Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Ann",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Ann, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "before-long-large-390",
+      "phase": "before",
+      "width": 390,
+      "variant": "long-large",
+      "heading": "Welcome, Alexandria Catherine Montgomery-Smythe J",
+      "headingRect": {
+        "top": 94,
+        "height": 52.78,
+        "bottom": 146.78
+      },
+      "headingFont": "700 24px / 26.4px Caveat, cursive",
+      "ownDay": {
+        "top": 399.78,
+        "height": 217.23,
+        "bottom": 617.02
+      },
+      "team": {
+        "top": 639.02,
+        "height": 338.31,
+        "bottom": 977.33
+      },
+      "seasonal": {
+        "theme": "fun-star-wars-day",
+        "visibleOrnaments": 0,
+        "note": true,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 1,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "fullTeamVisible": false,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAlexandria Catherine Montgomery-Smythe J Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Alexandria Catherine Montgomery-Smythe J, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "after-long-large-390",
+      "phase": "after",
+      "width": 390,
+      "variant": "long-large",
+      "heading": "May the fourth be with you, Alexandria Catherine Montgomery-Smythe J",
+      "headingRect": {
+        "top": 94,
+        "height": 52.78,
+        "bottom": 146.78
+      },
+      "headingFont": "700 24px / 26.4px Caveat, cursive",
+      "ownDay": {
+        "top": 399.78,
+        "height": 217.23,
+        "bottom": 617.02
+      },
+      "team": {
+        "top": 639.02,
+        "height": 338.31,
+        "bottom": 977.33
+      },
+      "seasonal": {
+        "theme": "fun-star-wars-day",
+        "visibleOrnaments": 0,
+        "note": true,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 1,
+      "totalCoworkers": 3,
+      "viewportLimit": 776,
+      "fullTeamVisible": false,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAlexandria Catherine Montgomery-Smythe J Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Alexandria Catherine Montgomery-Smythe J, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "before-ordinary-768",
+      "phase": "before",
+      "width": 768,
+      "variant": "ordinary",
+      "heading": "Welcome, Ann",
+      "headingRect": {
+        "top": 180,
+        "height": 54.41,
+        "bottom": 234.41
+      },
+      "headingFont": "700 54.4px / 54.4px Caveat, cursive",
+      "ownDay": {
+        "top": 273.59,
+        "height": 218.13,
+        "bottom": 491.72
+      },
+      "team": {
+        "top": 273.59,
+        "height": 271.95,
+        "bottom": 545.55
+      },
+      "seasonal": {
+        "theme": "off",
+        "visibleOrnaments": 0,
+        "note": false,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "fullTeamVisible": true,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAnn Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Ann",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Ann, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "after-ordinary-768",
+      "phase": "after",
+      "width": 768,
+      "variant": "ordinary",
+      "heading": "Hello, Ann",
+      "headingRect": {
+        "top": 180,
+        "height": 54.41,
+        "bottom": 234.41
+      },
+      "headingFont": "700 54.4px / 54.4px Caveat, cursive",
+      "ownDay": {
+        "top": 273.59,
+        "height": 218.13,
+        "bottom": 491.72
+      },
+      "team": {
+        "top": 273.59,
+        "height": 271.95,
+        "bottom": 545.55
+      },
+      "seasonal": {
+        "theme": "off",
+        "visibleOrnaments": 0,
+        "note": false,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "fullTeamVisible": true,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAnn Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Ann",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Ann, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "before-tihar-768",
+      "phase": "before",
+      "width": 768,
+      "variant": "tihar",
+      "heading": "Welcome, Ann",
+      "headingRect": {
+        "top": 180,
+        "height": 54.41,
+        "bottom": 234.41
+      },
+      "headingFont": "700 54.4px / 54.4px Caveat, cursive",
+      "ownDay": {
+        "top": 405.59,
+        "height": 218.13,
+        "bottom": 623.72
+      },
+      "team": {
+        "top": 405.59,
+        "height": 271.95,
+        "bottom": 677.55
+      },
+      "seasonal": {
+        "theme": "np-tihar",
+        "visibleOrnaments": 0,
+        "note": true,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "fullTeamVisible": true,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAnn Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Ann",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Ann, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "after-tihar-768",
+      "phase": "after",
+      "width": 768,
+      "variant": "tihar",
+      "heading": "Happy Tihar, Ann",
+      "headingRect": {
+        "top": 180,
+        "height": 54.41,
+        "bottom": 234.41
+      },
+      "headingFont": "700 54.4px / 54.4px Caveat, cursive",
+      "ownDay": {
+        "top": 405.59,
+        "height": 218.13,
+        "bottom": 623.72
+      },
+      "team": {
+        "top": 405.59,
+        "height": 271.95,
+        "bottom": 677.55
+      },
+      "seasonal": {
+        "theme": "np-tihar",
+        "visibleOrnaments": 0,
+        "note": true,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "fullTeamVisible": true,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAnn Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Ann",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Ann, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "before-long-large-768",
+      "phase": "before",
+      "width": 768,
+      "variant": "long-large",
+      "heading": "Welcome, Alexandria Catherine Montgomery-Smythe J",
+      "headingRect": {
+        "top": 192,
+        "height": 204,
+        "bottom": 396
+      },
+      "headingFont": "700 68px / 68px Caveat, cursive",
+      "ownDay": {
+        "top": 593,
+        "height": 254.88,
+        "bottom": 847.88
+      },
+      "team": {
+        "top": 593,
+        "height": 350.31,
+        "bottom": 943.31
+      },
+      "seasonal": {
+        "theme": "fun-star-wars-day",
+        "visibleOrnaments": 0,
+        "note": true,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "fullTeamVisible": true,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAlexandria Catherine Montgomery-Smythe J Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Alexandria Catherine Montgomery-Smythe J, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "after-long-large-768",
+      "phase": "after",
+      "width": 768,
+      "variant": "long-large",
+      "heading": "May the fourth be with you, Alexandria Catherine Montgomery-Smythe J",
+      "headingRect": {
+        "top": 192,
+        "height": 204,
+        "bottom": 396
+      },
+      "headingFont": "700 68px / 68px Caveat, cursive",
+      "ownDay": {
+        "top": 593,
+        "height": 254.88,
+        "bottom": 847.88
+      },
+      "team": {
+        "top": 593,
+        "height": 350.31,
+        "bottom": 943.31
+      },
+      "seasonal": {
+        "theme": "fun-star-wars-day",
+        "visibleOrnaments": 0,
+        "note": true,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "fullTeamVisible": true,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAlexandria Catherine Montgomery-Smythe J Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Alexandria Catherine Montgomery-Smythe J, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "before-ordinary-1280",
+      "phase": "before",
+      "width": 1280,
+      "variant": "ordinary",
+      "heading": "Welcome, Ann",
+      "headingRect": {
+        "top": 164,
+        "height": 48,
+        "bottom": 212
+      },
+      "headingFont": "700 48px / 48px Caveat, cursive",
+      "ownDay": {
+        "top": 251.19,
+        "height": 218.13,
+        "bottom": 469.31
+      },
+      "team": {
+        "top": 251.19,
+        "height": 271.95,
+        "bottom": 523.14
+      },
+      "seasonal": {
+        "theme": "off",
+        "visibleOrnaments": 0,
+        "note": false,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "fullTeamVisible": true,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAnn Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Ann",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Ann, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "after-ordinary-1280",
+      "phase": "after",
+      "width": 1280,
+      "variant": "ordinary",
+      "heading": "Hello, Ann",
+      "headingRect": {
+        "top": 164,
+        "height": 48,
+        "bottom": 212
+      },
+      "headingFont": "700 48px / 48px Caveat, cursive",
+      "ownDay": {
+        "top": 251.19,
+        "height": 218.13,
+        "bottom": 469.31
+      },
+      "team": {
+        "top": 251.19,
+        "height": 271.95,
+        "bottom": 523.14
+      },
+      "seasonal": {
+        "theme": "off",
+        "visibleOrnaments": 0,
+        "note": false,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "fullTeamVisible": true,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAnn Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Ann",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Ann, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "before-tihar-1280",
+      "phase": "before",
+      "width": 1280,
+      "variant": "tihar",
+      "heading": "Welcome, Ann",
+      "headingRect": {
+        "top": 164,
+        "height": 48,
+        "bottom": 212
+      },
+      "headingFont": "700 48px / 48px Caveat, cursive",
+      "ownDay": {
+        "top": 333.19,
+        "height": 218.13,
+        "bottom": 551.31
+      },
+      "team": {
+        "top": 333.19,
+        "height": 271.95,
+        "bottom": 605.14
+      },
+      "seasonal": {
+        "theme": "np-tihar",
+        "visibleOrnaments": 0,
+        "note": true,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "fullTeamVisible": true,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAnn Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Ann",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Ann, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "after-tihar-1280",
+      "phase": "after",
+      "width": 1280,
+      "variant": "tihar",
+      "heading": "Happy Tihar, Ann",
+      "headingRect": {
+        "top": 164,
+        "height": 48,
+        "bottom": 212
+      },
+      "headingFont": "700 48px / 48px Caveat, cursive",
+      "ownDay": {
+        "top": 333.19,
+        "height": 218.13,
+        "bottom": 551.31
+      },
+      "team": {
+        "top": 333.19,
+        "height": 271.95,
+        "bottom": 605.14
+      },
+      "seasonal": {
+        "theme": "np-tihar",
+        "visibleOrnaments": 0,
+        "note": true,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "fullTeamVisible": true,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAnn Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Ann",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Ann, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "before-long-large-1280",
+      "phase": "before",
+      "width": 1280,
+      "variant": "long-large",
+      "heading": "Welcome, Alexandria Catherine Montgomery-Smythe J",
+      "headingRect": {
+        "top": 172,
+        "height": 60,
+        "bottom": 232
+      },
+      "headingFont": "700 60px / 60px Caveat, cursive",
+      "ownDay": {
+        "top": 379,
+        "height": 229.19,
+        "bottom": 608.19
+      },
+      "team": {
+        "top": 379,
+        "height": 328.56,
+        "bottom": 707.56
+      },
+      "seasonal": {
+        "theme": "fun-star-wars-day",
+        "visibleOrnaments": 0,
+        "note": true,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "fullTeamVisible": true,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAlexandria Catherine Montgomery-Smythe J Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Alexandria Catherine Montgomery-Smythe J, menu and Settings"
+      ],
+      "errors": []
+    },
+    {
+      "id": "after-long-large-1280",
+      "phase": "after",
+      "width": 1280,
+      "variant": "long-large",
+      "heading": "May the fourth be with you, Alexandria Catherine Montgomery-Smythe J",
+      "headingRect": {
+        "top": 172,
+        "height": 120,
+        "bottom": 292
+      },
+      "headingFont": "700 60px / 60px Caveat, cursive",
+      "ownDay": {
+        "top": 439,
+        "height": 229.19,
+        "bottom": 668.19
+      },
+      "team": {
+        "top": 439,
+        "height": 328.56,
+        "bottom": 767.56
+      },
+      "seasonal": {
+        "theme": "fun-star-wars-day",
+        "visibleOrnaments": 0,
+        "note": true,
+        "ambient": 0,
+        "overlap": false
+      },
+      "visibleCoworkers": 3,
+      "totalCoworkers": 3,
+      "viewportLimit": 1000,
+      "fullTeamVisible": true,
+      "overflow": false,
+      "dayText": "Your day14:00Your sectionLunch · 10:00 to 15:00LarderYour break30 minutes · back at 15:0014:30to 15:00",
+      "teamText": "On with youLunch teamBo10:00 to 15:00LarderJo10:00 to 15:00SauceSam10:00 to 15:00 · break 14:00 to 14:30, back 14:30GrillView today's full teamOn todayLarderAlexandria Catherine Montgomery-Smythe J Lunch 10:00 to 15:00 · break 14:30Bo Lunch 10:00 to 15:00GrillSam Lunch 10:00 to 15:00 · break 14:00SauceJo Lunch 10:00 to 15:00",
+      "name": "Alexandria Catherine Montgomery-Smythe J",
+      "fonts": [
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "topbarLabels": [
+        "Kitchen Book, home",
+        "Main",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Operandio cooling timer. Prepare 2-hour start",
+        "Your day: Lunch: Larder · Break 14:30",
+        "No shift pings on now",
+        "Signed in as Alexandria Catherine Montgomery-Smythe J, menu and Settings"
+      ],
+      "errors": []
+    }
+  ],
+  "prep": [
+    {
+      "phase": "before",
+      "addTop": 716,
+      "visibleRows": 6,
+      "rows": [
+        {
+          "top": 263,
+          "bottom": 329.953125
+        },
+        {
+          "top": 329.953125,
+          "bottom": 396.90625
+        },
+        {
+          "top": 396.90625,
+          "bottom": 447.90625
+        },
+        {
+          "top": 481.65625,
+          "bottom": 548.609375
+        },
+        {
+          "top": 582.359375,
+          "bottom": 649.3125
+        },
+        {
+          "top": 649.3125,
+          "bottom": 700.3125
+        }
+      ],
+      "errors": []
+    },
+    {
+      "phase": "after",
+      "addTop": 716,
+      "visibleRows": 6,
+      "rows": [
+        {
+          "top": 263,
+          "bottom": 329.953125
+        },
+        {
+          "top": 329.953125,
+          "bottom": 396.90625
+        },
+        {
+          "top": 396.90625,
+          "bottom": 447.90625
+        },
+        {
+          "top": 481.65625,
+          "bottom": 548.609375
+        },
+        {
+          "top": 582.359375,
+          "bottom": 649.3125
+        },
+        {
+          "top": 649.3125,
+          "bottom": 700.3125
+        }
+      ],
+      "errors": []
+    }
+  ]
+}
