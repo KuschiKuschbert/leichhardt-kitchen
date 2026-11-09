@@ -1,0 +1,1962 @@
+{
+  "kind": "Rendered design concepts, not implemented app",
+  "measuredAt": "390 x 844, 768 x 1024, 1280 x 900 CSS pixels; actual bundled fonts",
+  "method": "Complete request bounding boxes below 64 px top bar and above fixed Add dock; unscrolled. All eight requests and recipe context retained. Prototype geometry only.",
+  "captures": [
+    {
+      "design": "a",
+      "role": "chef",
+      "state": "normal",
+      "screenshot": "previews/a-390.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "usableBottom": 707,
+      "fullyVisibleRequestRows": 3,
+      "firstRequestTop": 474.19,
+      "rows": [
+        {
+          "text": "Eggs\n2 trays\nOUT\n\nUsed in Skillet Cookie Dough Prep, Cornbread\n\nAnn 13:03\n⋯",
+          "top": 474.19,
+          "bottom": 556.58,
+          "height": 82.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Cream\n2 L\nOUT\n\nUsed in Creamy Garlic Sauce\n\nAnn 13:05\n⋯",
+          "top": 556.58,
+          "bottom": 623.97,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Butter\n2 kg\nLOW\n\nUsed in Cowboy Butter\n\nAnn 14:00\nSince Sun 8 Nov\n⋯",
+          "top": 623.97,
+          "bottom": 691.36,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Milk\n6 L\nAnn 13:00\n⋯",
+          "top": 691.36,
+          "bottom": 751.36,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": false
+        },
+        {
+          "text": "Brioche buns\n4 packs\nAnn 13:01\n⋯",
+          "top": 751.36,
+          "bottom": 811.36,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": false
+        },
+        {
+          "text": "Coriander\n2 bunches\nAnn 13:02\n⋯",
+          "top": 811.36,
+          "bottom": 871.36,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": false
+        },
+        {
+          "text": "Plain flour\n5 kg\n\nUsed in Cornbread\n\nAnn 13:04\n⋯",
+          "top": 871.36,
+          "bottom": 938.75,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": false
+        },
+        {
+          "text": "Tomatoes\n3 kg\nAnn 13:06\n⋯",
+          "top": 938.75,
+          "bottom": 998.75,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": false
+        }
+      ],
+      "deadlineAreas": [
+        {
+          "top": 224,
+          "bottom": 424.19,
+          "height": 200.19,
+          "width": 324
+        }
+      ],
+      "overflow": 0,
+      "fonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 18px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 24px Caveat",
+          "loaded": true
+        }
+      ]
+    },
+    {
+      "design": "a",
+      "role": "chef",
+      "state": "normal",
+      "screenshot": "previews/a-768.png",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "usableBottom": 1024,
+      "fullyVisibleRequestRows": 6,
+      "firstRequestTop": 575.56,
+      "rows": [
+        {
+          "text": "Eggs\n2 trays\nOUT\n\nUsed in Skillet Cookie Dough Prep, Cornbread\n\nAnn 13:03\n⋯",
+          "top": 575.56,
+          "bottom": 647.3,
+          "height": 71.73,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Cream\n2 L\nOUT\n\nUsed in Creamy Garlic Sauce\n\nAnn 13:05\n⋯",
+          "top": 647.3,
+          "bottom": 719.03,
+          "height": 71.73,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Butter\n2 kg\nLOW\n\nUsed in Cowboy Butter\n\nAnn 14:00\nSince Sun 8 Nov\n⋯",
+          "top": 719.03,
+          "bottom": 790.77,
+          "height": 71.73,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Milk\n6 L\nAnn 13:00\n⋯",
+          "top": 790.77,
+          "bottom": 852.77,
+          "height": 62,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Brioche buns\n4 packs\nAnn 13:01\n⋯",
+          "top": 852.77,
+          "bottom": 914.77,
+          "height": 62,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Coriander\n2 bunches\nAnn 13:02\n⋯",
+          "top": 914.77,
+          "bottom": 976.77,
+          "height": 62,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Plain flour\n5 kg\n\nUsed in Cornbread\n\nAnn 13:04\n⋯",
+          "top": 976.77,
+          "bottom": 1048.5,
+          "height": 71.73,
+          "width": 646,
+          "fullyVisible": false
+        },
+        {
+          "text": "Tomatoes\n3 kg\nAnn 13:06\n⋯",
+          "top": 1048.5,
+          "bottom": 1110.5,
+          "height": 62,
+          "width": 646,
+          "fullyVisible": false
+        }
+      ],
+      "deadlineAreas": [
+        {
+          "top": 315,
+          "bottom": 522.56,
+          "height": 207.56,
+          "width": 646
+        }
+      ],
+      "overflow": 0,
+      "fonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 18px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 24px Caveat",
+          "loaded": true
+        }
+      ]
+    },
+    {
+      "design": "a",
+      "role": "chef",
+      "state": "normal",
+      "screenshot": "previews/a-1280.png",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "usableBottom": 900,
+      "fullyVisibleRequestRows": 5,
+      "firstRequestTop": 525,
+      "rows": [
+        {
+          "text": "Eggs\n2 trays\nOUT\n\nUsed in Skillet Cookie Dough Prep, Cornbread\n\nAnn 13:03\n⋯",
+          "top": 525,
+          "bottom": 595.84,
+          "height": 70.84,
+          "width": 1142,
+          "fullyVisible": true
+        },
+        {
+          "text": "Cream\n2 L\nOUT\n\nUsed in Creamy Garlic Sauce\n\nAnn 13:05\n⋯",
+          "top": 595.84,
+          "bottom": 666.69,
+          "height": 70.84,
+          "width": 1142,
+          "fullyVisible": true
+        },
+        {
+          "text": "Butter\n2 kg\nLOW\n\nUsed in Cowboy Butter\n\nAnn 14:00\nSince Sun 8 Nov\n⋯",
+          "top": 666.69,
+          "bottom": 737.53,
+          "height": 70.84,
+          "width": 1142,
+          "fullyVisible": true
+        },
+        {
+          "text": "Milk\n6 L\nAnn 13:00\n⋯",
+          "top": 737.53,
+          "bottom": 796.53,
+          "height": 59,
+          "width": 1142,
+          "fullyVisible": true
+        },
+        {
+          "text": "Brioche buns\n4 packs\nAnn 13:01\n⋯",
+          "top": 796.53,
+          "bottom": 855.53,
+          "height": 59,
+          "width": 1142,
+          "fullyVisible": true
+        },
+        {
+          "text": "Coriander\n2 bunches\nAnn 13:02\n⋯",
+          "top": 855.53,
+          "bottom": 914.53,
+          "height": 59,
+          "width": 1142,
+          "fullyVisible": false
+        },
+        {
+          "text": "Plain flour\n5 kg\n\nUsed in Cornbread\n\nAnn 13:04\n⋯",
+          "top": 914.53,
+          "bottom": 985.38,
+          "height": 70.84,
+          "width": 1142,
+          "fullyVisible": false
+        },
+        {
+          "text": "Tomatoes\n3 kg\nAnn 13:06\n⋯",
+          "top": 985.38,
+          "bottom": 1044.38,
+          "height": 59,
+          "width": 1142,
+          "fullyVisible": false
+        }
+      ],
+      "deadlineAreas": [
+        {
+          "top": 318,
+          "bottom": 472,
+          "height": 154,
+          "width": 1142
+        }
+      ],
+      "overflow": 0,
+      "fonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 18px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 24px Caveat",
+          "loaded": true
+        }
+      ]
+    },
+    {
+      "design": "a",
+      "role": "staff",
+      "state": "normal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "usableBottom": 707,
+      "fullyVisibleRequestRows": 8,
+      "firstRequestTop": 169,
+      "rows": [
+        {
+          "text": "Milk\n6 L\nAnn 13:00\n⋯",
+          "top": 169,
+          "bottom": 229,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Brioche buns\n4 packs\nAnn 13:01\n⋯",
+          "top": 229,
+          "bottom": 289,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Coriander\n2 bunches\nAnn 13:02\n⋯",
+          "top": 289,
+          "bottom": 349,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Eggs\n2 trays\nOUT\n\nUsed in Skillet Cookie Dough Prep, Cornbread\n\nAnn 13:03\n⋯",
+          "top": 349,
+          "bottom": 416.39,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Plain flour\n5 kg\n\nUsed in Cornbread\n\nAnn 13:04\n⋯",
+          "top": 416.39,
+          "bottom": 483.78,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Cream\n2 L\nOUT\n\nUsed in Creamy Garlic Sauce\n\nAnn 13:05\n⋯",
+          "top": 483.78,
+          "bottom": 551.17,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Tomatoes\n3 kg\nAnn 13:06\n⋯",
+          "top": 551.17,
+          "bottom": 611.17,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Butter\n2 kg\nLOW\n\nUsed in Cowboy Butter\n\nAnn 14:00\nSince Sun 8 Nov\n⋯",
+          "top": 611.17,
+          "bottom": 678.56,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        }
+      ],
+      "deadlineAreas": [],
+      "overflow": 0,
+      "fonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 18px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 24px Caveat",
+          "loaded": true
+        }
+      ]
+    },
+    {
+      "design": "b",
+      "role": "chef",
+      "state": "normal",
+      "screenshot": "previews/b-390.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "usableBottom": 707,
+      "fullyVisibleRequestRows": 5,
+      "firstRequestTop": 339,
+      "rows": [
+        {
+          "text": "Eggs\n2 trays\nOUT\n\nUsed in Skillet Cookie Dough Prep, Cornbread\n\nAnn 13:03\n⋯",
+          "top": 339,
+          "bottom": 421.39,
+          "height": 82.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Cream\n2 L\nOUT\n\nUsed in Creamy Garlic Sauce\n\nAnn 13:05\n⋯",
+          "top": 421.39,
+          "bottom": 488.78,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Butter\n2 kg\nLOW\n\nUsed in Cowboy Butter\n\nAnn 14:00\nSince Sun 8 Nov\n⋯",
+          "top": 488.78,
+          "bottom": 556.17,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Milk\n6 L\nAnn 13:00\n⋯",
+          "top": 556.17,
+          "bottom": 616.17,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Brioche buns\n4 packs\nAnn 13:01\n⋯",
+          "top": 616.17,
+          "bottom": 676.17,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Coriander\n2 bunches\nAnn 13:02\n⋯",
+          "top": 676.17,
+          "bottom": 736.17,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": false
+        },
+        {
+          "text": "Plain flour\n5 kg\n\nUsed in Cornbread\n\nAnn 13:04\n⋯",
+          "top": 736.17,
+          "bottom": 803.56,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": false
+        },
+        {
+          "text": "Tomatoes\n3 kg\nAnn 13:06\n⋯",
+          "top": 803.56,
+          "bottom": 863.56,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": false
+        }
+      ],
+      "deadlineAreas": [
+        {
+          "top": 224,
+          "bottom": 293,
+          "height": 69,
+          "width": 324
+        },
+        {
+          "top": 886.56,
+          "bottom": 1122.3,
+          "height": 235.73,
+          "width": 324
+        }
+      ],
+      "overflow": 0,
+      "fonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 18px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 24px Caveat",
+          "loaded": true
+        }
+      ]
+    },
+    {
+      "design": "b",
+      "role": "chef",
+      "state": "normal",
+      "screenshot": "previews/b-768.png",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "usableBottom": 1024,
+      "fullyVisibleRequestRows": 8,
+      "firstRequestTop": 429,
+      "rows": [
+        {
+          "text": "Eggs\n2 trays\nOUT\n\nUsed in Skillet Cookie Dough Prep, Cornbread\n\nAnn 13:03\n⋯",
+          "top": 429,
+          "bottom": 500.73,
+          "height": 71.73,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Cream\n2 L\nOUT\n\nUsed in Creamy Garlic Sauce\n\nAnn 13:05\n⋯",
+          "top": 500.73,
+          "bottom": 572.47,
+          "height": 71.73,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Butter\n2 kg\nLOW\n\nUsed in Cowboy Butter\n\nAnn 14:00\nSince Sun 8 Nov\n⋯",
+          "top": 572.47,
+          "bottom": 644.2,
+          "height": 71.73,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Milk\n6 L\nAnn 13:00\n⋯",
+          "top": 644.2,
+          "bottom": 706.2,
+          "height": 62,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Brioche buns\n4 packs\nAnn 13:01\n⋯",
+          "top": 706.2,
+          "bottom": 768.2,
+          "height": 62,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Coriander\n2 bunches\nAnn 13:02\n⋯",
+          "top": 768.2,
+          "bottom": 830.2,
+          "height": 62,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Plain flour\n5 kg\n\nUsed in Cornbread\n\nAnn 13:04\n⋯",
+          "top": 830.2,
+          "bottom": 901.94,
+          "height": 71.73,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Tomatoes\n3 kg\nAnn 13:06\n⋯",
+          "top": 901.94,
+          "bottom": 963.94,
+          "height": 62,
+          "width": 646,
+          "fullyVisible": true
+        }
+      ],
+      "deadlineAreas": [
+        {
+          "top": 315,
+          "bottom": 380,
+          "height": 65,
+          "width": 646
+        },
+        {
+          "top": 986.94,
+          "bottom": 1228.05,
+          "height": 241.11,
+          "width": 646
+        }
+      ],
+      "overflow": 0,
+      "fonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 18px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 24px Caveat",
+          "loaded": true
+        }
+      ]
+    },
+    {
+      "design": "b",
+      "role": "chef",
+      "state": "normal",
+      "screenshot": "previews/b-1280.png",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "usableBottom": 900,
+      "fullyVisibleRequestRows": 7,
+      "firstRequestTop": 433,
+      "rows": [
+        {
+          "text": "Eggs\n2 trays\nOUT\n\nUsed in Skillet Cookie Dough Prep, Cornbread\n\nAnn 13:03\n⋯",
+          "top": 433,
+          "bottom": 503.84,
+          "height": 70.84,
+          "width": 765,
+          "fullyVisible": true
+        },
+        {
+          "text": "Cream\n2 L\nOUT\n\nUsed in Creamy Garlic Sauce\n\nAnn 13:05\n⋯",
+          "top": 503.84,
+          "bottom": 574.69,
+          "height": 70.84,
+          "width": 765,
+          "fullyVisible": true
+        },
+        {
+          "text": "Butter\n2 kg\nLOW\n\nUsed in Cowboy Butter\n\nAnn 14:00\nSince Sun 8 Nov\n⋯",
+          "top": 574.69,
+          "bottom": 645.53,
+          "height": 70.84,
+          "width": 765,
+          "fullyVisible": true
+        },
+        {
+          "text": "Milk\n6 L\nAnn 13:00\n⋯",
+          "top": 645.53,
+          "bottom": 704.53,
+          "height": 59,
+          "width": 765,
+          "fullyVisible": true
+        },
+        {
+          "text": "Brioche buns\n4 packs\nAnn 13:01\n⋯",
+          "top": 704.53,
+          "bottom": 763.53,
+          "height": 59,
+          "width": 765,
+          "fullyVisible": true
+        },
+        {
+          "text": "Coriander\n2 bunches\nAnn 13:02\n⋯",
+          "top": 763.53,
+          "bottom": 822.53,
+          "height": 59,
+          "width": 765,
+          "fullyVisible": true
+        },
+        {
+          "text": "Plain flour\n5 kg\n\nUsed in Cornbread\n\nAnn 13:04\n⋯",
+          "top": 822.53,
+          "bottom": 893.38,
+          "height": 70.84,
+          "width": 765,
+          "fullyVisible": true
+        },
+        {
+          "text": "Tomatoes\n3 kg\nAnn 13:06\n⋯",
+          "top": 893.38,
+          "bottom": 952.38,
+          "height": 59,
+          "width": 765,
+          "fullyVisible": false
+        }
+      ],
+      "deadlineAreas": [
+        {
+          "top": 318,
+          "bottom": 379,
+          "height": 61,
+          "width": 1142
+        },
+        {
+          "top": 388,
+          "bottom": 634.55,
+          "height": 246.55,
+          "width": 345
+        }
+      ],
+      "overflow": 0,
+      "fonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 18px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 24px Caveat",
+          "loaded": true
+        }
+      ]
+    },
+    {
+      "design": "b",
+      "role": "staff",
+      "state": "normal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "usableBottom": 707,
+      "fullyVisibleRequestRows": 8,
+      "firstRequestTop": 169,
+      "rows": [
+        {
+          "text": "Milk\n6 L\nAnn 13:00\n⋯",
+          "top": 169,
+          "bottom": 229,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Brioche buns\n4 packs\nAnn 13:01\n⋯",
+          "top": 229,
+          "bottom": 289,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Coriander\n2 bunches\nAnn 13:02\n⋯",
+          "top": 289,
+          "bottom": 349,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Eggs\n2 trays\nOUT\n\nUsed in Skillet Cookie Dough Prep, Cornbread\n\nAnn 13:03\n⋯",
+          "top": 349,
+          "bottom": 416.39,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Plain flour\n5 kg\n\nUsed in Cornbread\n\nAnn 13:04\n⋯",
+          "top": 416.39,
+          "bottom": 483.78,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Cream\n2 L\nOUT\n\nUsed in Creamy Garlic Sauce\n\nAnn 13:05\n⋯",
+          "top": 483.78,
+          "bottom": 551.17,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Tomatoes\n3 kg\nAnn 13:06\n⋯",
+          "top": 551.17,
+          "bottom": 611.17,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Butter\n2 kg\nLOW\n\nUsed in Cowboy Butter\n\nAnn 14:00\nSince Sun 8 Nov\n⋯",
+          "top": 611.17,
+          "bottom": 678.56,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        }
+      ],
+      "deadlineAreas": [],
+      "overflow": 0,
+      "fonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 18px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 24px Caveat",
+          "loaded": true
+        }
+      ]
+    },
+    {
+      "design": "c",
+      "role": "chef",
+      "state": "normal",
+      "screenshot": "previews/c-390.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "usableBottom": 707,
+      "fullyVisibleRequestRows": 5,
+      "firstRequestTop": 340,
+      "rows": [
+        {
+          "text": "Eggs\n2 trays\nOUT\n\nUsed in Skillet Cookie Dough Prep, Cornbread\n\nAnn 13:03\n⋯",
+          "top": 340,
+          "bottom": 422.39,
+          "height": 82.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Cream\n2 L\nOUT\n\nUsed in Creamy Garlic Sauce\n\nAnn 13:05\n⋯",
+          "top": 422.39,
+          "bottom": 489.78,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Butter\n2 kg\nLOW\n\nUsed in Cowboy Butter\n\nAnn 14:00\nSince Sun 8 Nov\n⋯",
+          "top": 489.78,
+          "bottom": 557.17,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Milk\n6 L\nAnn 13:00\n⋯",
+          "top": 557.17,
+          "bottom": 617.17,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Brioche buns\n4 packs\nAnn 13:01\n⋯",
+          "top": 617.17,
+          "bottom": 677.17,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Coriander\n2 bunches\nAnn 13:02\n⋯",
+          "top": 677.17,
+          "bottom": 737.17,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": false
+        },
+        {
+          "text": "Plain flour\n5 kg\n\nUsed in Cornbread\n\nAnn 13:04\n⋯",
+          "top": 737.17,
+          "bottom": 804.56,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": false
+        },
+        {
+          "text": "Tomatoes\n3 kg\nAnn 13:06\n⋯",
+          "top": 804.56,
+          "bottom": 864.56,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": false
+        }
+      ],
+      "deadlineAreas": [
+        {
+          "top": 224,
+          "bottom": 293,
+          "height": 69,
+          "width": 324
+        }
+      ],
+      "overflow": 0,
+      "fonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 18px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 24px Caveat",
+          "loaded": true
+        }
+      ]
+    },
+    {
+      "design": "c",
+      "role": "chef",
+      "state": "normal",
+      "screenshot": "previews/c-768.png",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "usableBottom": 1024,
+      "fullyVisibleRequestRows": 8,
+      "firstRequestTop": 430,
+      "rows": [
+        {
+          "text": "Eggs\n2 trays\nOUT\n\nUsed in Skillet Cookie Dough Prep, Cornbread\n\nAnn 13:03\n⋯",
+          "top": 430,
+          "bottom": 501.73,
+          "height": 71.73,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Cream\n2 L\nOUT\n\nUsed in Creamy Garlic Sauce\n\nAnn 13:05\n⋯",
+          "top": 501.73,
+          "bottom": 573.47,
+          "height": 71.73,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Butter\n2 kg\nLOW\n\nUsed in Cowboy Butter\n\nAnn 14:00\nSince Sun 8 Nov\n⋯",
+          "top": 573.47,
+          "bottom": 645.2,
+          "height": 71.73,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Milk\n6 L\nAnn 13:00\n⋯",
+          "top": 645.2,
+          "bottom": 707.2,
+          "height": 62,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Brioche buns\n4 packs\nAnn 13:01\n⋯",
+          "top": 707.2,
+          "bottom": 769.2,
+          "height": 62,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Coriander\n2 bunches\nAnn 13:02\n⋯",
+          "top": 769.2,
+          "bottom": 831.2,
+          "height": 62,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Plain flour\n5 kg\n\nUsed in Cornbread\n\nAnn 13:04\n⋯",
+          "top": 831.2,
+          "bottom": 902.94,
+          "height": 71.73,
+          "width": 646,
+          "fullyVisible": true
+        },
+        {
+          "text": "Tomatoes\n3 kg\nAnn 13:06\n⋯",
+          "top": 902.94,
+          "bottom": 964.94,
+          "height": 62,
+          "width": 646,
+          "fullyVisible": true
+        }
+      ],
+      "deadlineAreas": [
+        {
+          "top": 315,
+          "bottom": 380,
+          "height": 65,
+          "width": 646
+        }
+      ],
+      "overflow": 0,
+      "fonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 18px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 24px Caveat",
+          "loaded": true
+        }
+      ]
+    },
+    {
+      "design": "c",
+      "role": "chef",
+      "state": "normal",
+      "screenshot": "previews/c-1280.png",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "usableBottom": 900,
+      "fullyVisibleRequestRows": 7,
+      "firstRequestTop": 429,
+      "rows": [
+        {
+          "text": "Eggs\n2 trays\nOUT\n\nUsed in Skillet Cookie Dough Prep, Cornbread\n\nAnn 13:03\n⋯",
+          "top": 429,
+          "bottom": 499.84,
+          "height": 70.84,
+          "width": 1142,
+          "fullyVisible": true
+        },
+        {
+          "text": "Cream\n2 L\nOUT\n\nUsed in Creamy Garlic Sauce\n\nAnn 13:05\n⋯",
+          "top": 499.84,
+          "bottom": 570.69,
+          "height": 70.84,
+          "width": 1142,
+          "fullyVisible": true
+        },
+        {
+          "text": "Butter\n2 kg\nLOW\n\nUsed in Cowboy Butter\n\nAnn 14:00\nSince Sun 8 Nov\n⋯",
+          "top": 570.69,
+          "bottom": 641.53,
+          "height": 70.84,
+          "width": 1142,
+          "fullyVisible": true
+        },
+        {
+          "text": "Milk\n6 L\nAnn 13:00\n⋯",
+          "top": 641.53,
+          "bottom": 700.53,
+          "height": 59,
+          "width": 1142,
+          "fullyVisible": true
+        },
+        {
+          "text": "Brioche buns\n4 packs\nAnn 13:01\n⋯",
+          "top": 700.53,
+          "bottom": 759.53,
+          "height": 59,
+          "width": 1142,
+          "fullyVisible": true
+        },
+        {
+          "text": "Coriander\n2 bunches\nAnn 13:02\n⋯",
+          "top": 759.53,
+          "bottom": 818.53,
+          "height": 59,
+          "width": 1142,
+          "fullyVisible": true
+        },
+        {
+          "text": "Plain flour\n5 kg\n\nUsed in Cornbread\n\nAnn 13:04\n⋯",
+          "top": 818.53,
+          "bottom": 889.38,
+          "height": 70.84,
+          "width": 1142,
+          "fullyVisible": true
+        },
+        {
+          "text": "Tomatoes\n3 kg\nAnn 13:06\n⋯",
+          "top": 889.38,
+          "bottom": 948.38,
+          "height": 59,
+          "width": 1142,
+          "fullyVisible": false
+        }
+      ],
+      "deadlineAreas": [
+        {
+          "top": 318,
+          "bottom": 379,
+          "height": 61,
+          "width": 1142
+        }
+      ],
+      "overflow": 0,
+      "fonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 18px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 24px Caveat",
+          "loaded": true
+        }
+      ]
+    },
+    {
+      "design": "c",
+      "role": "staff",
+      "state": "normal",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "usableBottom": 707,
+      "fullyVisibleRequestRows": 8,
+      "firstRequestTop": 169,
+      "rows": [
+        {
+          "text": "Milk\n6 L\nAnn 13:00\n⋯",
+          "top": 169,
+          "bottom": 229,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Brioche buns\n4 packs\nAnn 13:01\n⋯",
+          "top": 229,
+          "bottom": 289,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Coriander\n2 bunches\nAnn 13:02\n⋯",
+          "top": 289,
+          "bottom": 349,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Eggs\n2 trays\nOUT\n\nUsed in Skillet Cookie Dough Prep, Cornbread\n\nAnn 13:03\n⋯",
+          "top": 349,
+          "bottom": 416.39,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Plain flour\n5 kg\n\nUsed in Cornbread\n\nAnn 13:04\n⋯",
+          "top": 416.39,
+          "bottom": 483.78,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Cream\n2 L\nOUT\n\nUsed in Creamy Garlic Sauce\n\nAnn 13:05\n⋯",
+          "top": 483.78,
+          "bottom": 551.17,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Tomatoes\n3 kg\nAnn 13:06\n⋯",
+          "top": 551.17,
+          "bottom": 611.17,
+          "height": 60,
+          "width": 324,
+          "fullyVisible": true
+        },
+        {
+          "text": "Butter\n2 kg\nLOW\n\nUsed in Cowboy Butter\n\nAnn 14:00\nSince Sun 8 Nov\n⋯",
+          "top": 611.17,
+          "bottom": 678.56,
+          "height": 67.39,
+          "width": 324,
+          "fullyVisible": true
+        }
+      ],
+      "deadlineAreas": [],
+      "overflow": 0,
+      "fonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 18px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 24px Caveat",
+          "loaded": true
+        }
+      ]
+    }
+  ],
+  "layoutChecks": [
+    {
+      "design": "a",
+      "state": "overdue",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 3
+    },
+    {
+      "design": "a",
+      "state": "overdue",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 6
+    },
+    {
+      "design": "a",
+      "state": "overdue",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "a",
+      "state": "offline",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 1
+    },
+    {
+      "design": "a",
+      "state": "offline",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "a",
+      "state": "offline",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 4
+    },
+    {
+      "design": "a",
+      "state": "failed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 1
+    },
+    {
+      "design": "a",
+      "state": "failed",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "a",
+      "state": "failed",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 4
+    },
+    {
+      "design": "a",
+      "state": "none",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 4
+    },
+    {
+      "design": "a",
+      "state": "none",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 8
+    },
+    {
+      "design": "a",
+      "state": "none",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 6
+    },
+    {
+      "design": "a",
+      "state": "all-done",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 3
+    },
+    {
+      "design": "a",
+      "state": "all-done",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 6
+    },
+    {
+      "design": "a",
+      "state": "all-done",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "a",
+      "state": "many",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 0
+    },
+    {
+      "design": "a",
+      "state": "many",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 1
+    },
+    {
+      "design": "a",
+      "state": "many",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 2
+    },
+    {
+      "design": "a",
+      "state": "tomorrow",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 3
+    },
+    {
+      "design": "a",
+      "state": "tomorrow",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 6
+    },
+    {
+      "design": "a",
+      "state": "tomorrow",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "b",
+      "state": "overdue",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "b",
+      "state": "overdue",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 8
+    },
+    {
+      "design": "b",
+      "state": "overdue",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 7
+    },
+    {
+      "design": "b",
+      "state": "offline",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 3
+    },
+    {
+      "design": "b",
+      "state": "offline",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 7
+    },
+    {
+      "design": "b",
+      "state": "offline",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "b",
+      "state": "failed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 3
+    },
+    {
+      "design": "b",
+      "state": "failed",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 7
+    },
+    {
+      "design": "b",
+      "state": "failed",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "b",
+      "state": "none",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "b",
+      "state": "none",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 8
+    },
+    {
+      "design": "b",
+      "state": "none",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 7
+    },
+    {
+      "design": "b",
+      "state": "all-done",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "b",
+      "state": "all-done",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 8
+    },
+    {
+      "design": "b",
+      "state": "all-done",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 7
+    },
+    {
+      "design": "b",
+      "state": "many",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "b",
+      "state": "many",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 8
+    },
+    {
+      "design": "b",
+      "state": "many",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 7
+    },
+    {
+      "design": "b",
+      "state": "tomorrow",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "b",
+      "state": "tomorrow",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 8
+    },
+    {
+      "design": "b",
+      "state": "tomorrow",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 7
+    },
+    {
+      "design": "c",
+      "state": "overdue",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "c",
+      "state": "overdue",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 8
+    },
+    {
+      "design": "c",
+      "state": "overdue",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 7
+    },
+    {
+      "design": "c",
+      "state": "offline",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 3
+    },
+    {
+      "design": "c",
+      "state": "offline",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 7
+    },
+    {
+      "design": "c",
+      "state": "offline",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 6
+    },
+    {
+      "design": "c",
+      "state": "failed",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 3
+    },
+    {
+      "design": "c",
+      "state": "failed",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 7
+    },
+    {
+      "design": "c",
+      "state": "failed",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 6
+    },
+    {
+      "design": "c",
+      "state": "none",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "c",
+      "state": "none",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 8
+    },
+    {
+      "design": "c",
+      "state": "none",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 7
+    },
+    {
+      "design": "c",
+      "state": "all-done",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "c",
+      "state": "all-done",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 8
+    },
+    {
+      "design": "c",
+      "state": "all-done",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 7
+    },
+    {
+      "design": "c",
+      "state": "many",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "c",
+      "state": "many",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 8
+    },
+    {
+      "design": "c",
+      "state": "many",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 7
+    },
+    {
+      "design": "c",
+      "state": "tomorrow",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 5
+    },
+    {
+      "design": "c",
+      "state": "tomorrow",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 8
+    },
+    {
+      "design": "c",
+      "state": "tomorrow",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "overflow": 0,
+      "fullyVisibleRequestRows": 7
+    }
+  ],
+  "checks": [
+    "a 390: no horizontal overflow",
+    "a 390: all eight requests retained",
+    "a 390: actual fonts loaded",
+    "a 768: no horizontal overflow",
+    "a 768: all eight requests retained",
+    "a 768: actual fonts loaded",
+    "a 1280: no horizontal overflow",
+    "a 1280: all eight requests retained",
+    "a 1280: actual fonts loaded",
+    "a: staff has no overflow",
+    "a: staff has no supplier confirmation controls",
+    "a: staff has no chef item completion controls",
+    "a overdue 390: no overflow",
+    "a overdue 768: no overflow",
+    "a overdue 1280: no overflow",
+    "a offline 390: no overflow",
+    "a offline 768: no overflow",
+    "a offline 1280: no overflow",
+    "a failed 390: no overflow",
+    "a failed 768: no overflow",
+    "a failed 1280: no overflow",
+    "a none 390: no overflow",
+    "a none 768: no overflow",
+    "a none 1280: no overflow",
+    "a all-done 390: no overflow",
+    "a all-done 768: no overflow",
+    "a all-done 1280: no overflow",
+    "a many 390: no overflow",
+    "a many 768: no overflow",
+    "a many 1280: no overflow",
+    "a tomorrow 390: no overflow",
+    "a tomorrow 768: no overflow",
+    "a tomorrow 1280: no overflow",
+    "b 390: no horizontal overflow",
+    "b 390: all eight requests retained",
+    "b 390: actual fonts loaded",
+    "b 768: no horizontal overflow",
+    "b 768: all eight requests retained",
+    "b 768: actual fonts loaded",
+    "b 1280: no horizontal overflow",
+    "b 1280: all eight requests retained",
+    "b 1280: actual fonts loaded",
+    "b: staff has no overflow",
+    "b: staff has no supplier confirmation controls",
+    "b: staff has no chef item completion controls",
+    "b overdue 390: no overflow",
+    "b overdue 768: no overflow",
+    "b overdue 1280: no overflow",
+    "b offline 390: no overflow",
+    "b offline 768: no overflow",
+    "b offline 1280: no overflow",
+    "b failed 390: no overflow",
+    "b failed 768: no overflow",
+    "b failed 1280: no overflow",
+    "b none 390: no overflow",
+    "b none 768: no overflow",
+    "b none 1280: no overflow",
+    "b all-done 390: no overflow",
+    "b all-done 768: no overflow",
+    "b all-done 1280: no overflow",
+    "b many 390: no overflow",
+    "b many 768: no overflow",
+    "b many 1280: no overflow",
+    "b tomorrow 390: no overflow",
+    "b tomorrow 768: no overflow",
+    "b tomorrow 1280: no overflow",
+    "c 390: no horizontal overflow",
+    "c 390: all eight requests retained",
+    "c 390: actual fonts loaded",
+    "c 768: no horizontal overflow",
+    "c 768: all eight requests retained",
+    "c 768: actual fonts loaded",
+    "c 1280: no horizontal overflow",
+    "c 1280: all eight requests retained",
+    "c 1280: actual fonts loaded",
+    "c: staff has no overflow",
+    "c: staff has no supplier confirmation controls",
+    "c: staff has no chef item completion controls",
+    "c overdue 390: no overflow",
+    "c overdue 768: no overflow",
+    "c overdue 1280: no overflow",
+    "c offline 390: no overflow",
+    "c offline 768: no overflow",
+    "c offline 1280: no overflow",
+    "c failed 390: no overflow",
+    "c failed 768: no overflow",
+    "c failed 1280: no overflow",
+    "c none 390: no overflow",
+    "c none 768: no overflow",
+    "c none 1280: no overflow",
+    "c all-done 390: no overflow",
+    "c all-done 768: no overflow",
+    "c all-done 1280: no overflow",
+    "c many 390: no overflow",
+    "c many 768: no overflow",
+    "c many 1280: no overflow",
+    "c tomorrow 390: no overflow",
+    "c tomorrow 768: no overflow",
+    "c tomorrow 1280: no overflow",
+    "No JavaScript errors",
+    "No external network requests"
+  ],
+  "errors": [],
+  "external": []
+}

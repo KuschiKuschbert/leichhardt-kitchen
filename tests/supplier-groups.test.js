@@ -1,71 +1,140 @@
-// Supplier groups (5 Nov 2026, head chef, round 2 of the work pages redesign, as drawn in B): on today's order list the
-// head chef and sous chefs see each request under the supplier whose catalogue names it (exact name or alias), under
-// that supplier's cut-off row with its tick, then Open the supplier's order and Delivery arrived; the rest under No
-// supplier yet. The catalogue is read once (one read per supplier) and kept in memory. Staff never see suppliers.
+// Orders C (9 Nov 2026): requests stay in one list, independent of supplier catalogues and confirmations.
+// Supplier cut-offs have a compact, initially closed disclosure. These are synthetic records only.
 const L = require('./lib');
 const F = require('./supplier-fixtures');
 const { R, ok } = L.results(), { txt } = L;
+const yesterday = L.ymd(new Date(L.NOW - 86400000));
 const line = (id, text, x) => [F.key(['orders', F.today, 'lines', id]), Object.assign({ text, qty: '1', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 1800000, ordered: false, deleted: false }, x || {})];
-const extra = () => { const s = F.fixture(); [line('g-cor', 'Coriander'), line('g-out', 'TEST CASE PRODUCT 12 X 250G', { need: 'out', addedAt: L.NOW - 600000 })].forEach(([k, v]) => { s[k] = v; }); return s; };
-const supplierReads = p => p.evaluate(() => window.__fake.bill.filter(x => /\/suppliers$/.test(x.path)).reduce((n, x) => n + x.n, 0));
-const texts = (p, sel) => p.$$eval(sel + ' .nb-row .nb-t', l => l.map(e => e.firstChild.textContent.trim()));
+const extra = () => {
+  const s = F.fixture();
+  [line('g-cor', 'Coriander'), line('g-out', 'TEST CASE PRODUCT 12 X 250G', { need: 'out', addedAt: L.NOW - 600000 }),
+    line('g-old', 'Butter', { need: 'low', rolled: 1, since: yesterday, rolledFrom: yesterday, root: 'butter', from: 'butter', origBy: 'Ann', addedAt: L.NOW - 7200000 })]
+    .forEach(([k, v]) => { s[k] = v; });
+  return s;
+};
+const supplierReads = p => p.evaluate(() => window.__fake.bill.filter(x => /\/(suppliers|supplierlinks)(\/|$)/.test(x.path)).reduce((n, x) => n + x.n, 0));
+const rows = p => p.$$eval('.o-main .nb-row', l => l.map(e => ({ id: e.getAttribute('data-ln').split('/').pop(), y: e.getBoundingClientRect().top + scrollY, h: e.getBoundingClientRect().height })));
+const state = p => p.evaluate(() => window.__fake.dump());
+const completion = F.key(['cutdone', F.today + '_northside']);
+const request = id => F.key(['orders', F.today, 'lines', id]);
+const samePlaces = (a, b) => {
+  const same = JSON.stringify(a) === JSON.stringify(b);
+  if (!same) console.error('Request geometry changed: ' + JSON.stringify({ before: a, after: b }));
+  return same;
+};
+const fold = '.o-cut-fold';
+const summary = fold + ' > summary';
+const confirm = '.cut-tl [data-p="cut-tick"][data-id^="northside|"]';
 (async () => {
   const b = await L.start();
-
-  // Sam (sous chef), today
   let p = await L.open(b, '#/orders', { who: 'sam', extra: extra(), wait: 1600 });
-  await L.waitFor(p, () => !!document.querySelector('.o-sups .o-sup .cut-tl [data-p="cut-tick"]'), null, 10000);
-  const grp = '.o-sups .o-sup:not(.o-sup-none)';
-  ok(/Northside Test Foods/.test(await txt(p, grp + ' .cut-n') || '') && !(await p.$('.cut-today:not(.o-sups)')), 'the cut-off row heads its group, and the plain tick list is gone');
-  const mine = await texts(p, grp);
-  ok(JSON.stringify(mine) === JSON.stringify(['TEST CASE PRODUCT 12 X 250G', 'Test stock request']), 'the requests the catalogue names (by name or alias) are under it, Out first (' + mine.join(', ') + ')');
-  const none = await texts(p, '.o-sup-none');
-  ok(none.indexOf('Coriander') >= 0 && none.indexOf('Test stock request') < 0 && /No supplier yet/.test(await txt(p, '.o-sup-none') || ''), 'what it cannot match is under No supplier yet (' + none.join(', ') + ')');
-  ok(await p.getAttribute(grp + ' .o-sup-acts a[href^="#/suppliers/cutoff/northside/"]', 'href') === '#/suppliers/cutoff/northside/' + F.today && /Open Northside Test Foods order/.test(await txt(p, grp + ' .o-sup-acts') || '') && /Delivery received/.test(await txt(p, grp + ' .o-sup-acts a[href="#/deliveries"]') || ''), 'Open the supplier\'s order, and Delivery received (Delivery arrived until 8 Nov 2026)');
-  // the audit (8 Nov 2026): the link pills under a group centre their words (they sat at the top edge)
-  const mid = await p.$$eval(grp + ' .o-sup-acts .chip', l => l.map(a => { const r = a.getBoundingClientRect(), g = document.createRange(); g.selectNodeContents(a); const t = g.getBoundingClientRect(); return Math.round(Math.abs((t.top + t.bottom) / 2 - (r.top + r.bottom) / 2)) + '/' + Math.round(r.height); }));
-  ok(mid.length >= 1 && mid.every(x => +x.split('/')[0] <= 3 && +x.split('/')[1] >= 44), 'the Open order and Delivery received pills: words in the middle, 44 px (' + mid.join(' ') + ')');
-  // redesign step 3 (8 Nov 2026): No supplier yet comes first, and each group says how many of its lines are ordered
-  const order = await p.$$eval('.o-sups .o-sup', l => l.map(e => e.classList.contains('o-sup-none') ? 'none' : 'sup'));
-  ok(order[0] === 'none' && order.slice(1).every(x => x === 'sup'), 'No supplier yet first, then the suppliers (' + order.join() + ')');
-  ok(/Order by hand · 0 of \d+ ordered/.test(await txt(p, '.o-sup-none .o-sgh') || '') && /0 of 2 ordered/.test(await txt(p, grp + ' .cut-t') || ''), 'each group counts its lines: Order by hand, and 0 of 2 ordered under the supplier');
-  ok(/^in \d/.test((await txt(p, grp + ' .cut-st') || '').trim()) && await p.$eval(grp + ' .cut-st', e => parseFloat(getComputedStyle(e).fontSize) >= 20), 'the time left large on the right, like a departure board');
-  const reads = await supplierReads(p);
-  ok(reads > 0 && reads <= 2, 'the catalogue: one read per supplier (' + reads + ')');
-  await p.click(grp + ' [data-p="cut-tick"]');
-  await L.waitFor(p, k => { const d = window.__fake.dump()[k]; return d && d.on === true; }, F.key(['cutdone', F.today + '_northside']), 10000);
-  await L.settle(p, 400);
-  ok(await supplierReads(p) === reads && !!(await p.$(grp + ' .nb-row')), 'the tick saves from the group, and the page draws again with no second catalogue read');
-  await p.click(grp + ' [data-p="otick"][data-id="g-out"]');
-  await L.waitFor(p, () => /1 of 2 ordered/.test(document.querySelector('.o-sups .o-sup:not(.o-sup-none) .cut-t')?.textContent || ''), null, 8000).catch(() => {});
-  ok(/1 of 2 ordered/.test(await txt(p, grp + ' .cut-t') || '') && await supplierReads(p) === reads, 'a line ticked as ordered counts at once: 1 of 2 ordered, no read');
-  ok(p.errors.length === 0 && !(await L.overflow(p)), 'chef: no page errors, no sideways scroll ' + p.errors.join(' | '));
+  // A wide fallback font reproduces an acknowledgement wrapping to two lines when app fonts are unavailable.
+  // Keep this alongside actual-font captures so CI and local checks both exercise the layout risk.
+  await p.addStyleTag({ content: ':root { --body: "DejaVu Sans", sans-serif; }' });
+  await L.waitFor(p, () => document.querySelectorAll('.o-main .nb-row').length >= 6, null, 10000);
+  const first = await rows(p);
+  ok(!(await p.$('.o-sups, .o-sup, .o-wait')) && first.length === 6, 'chef: all six requests stay in one list without supplier or age sections');
+  ok(first[0].id === 'g-out' && first[1].id === 'g-old', 'chef: Out is first, then the older request, then today (' + first.map(x => x.id).join(', ') + ')');
+  ok(await supplierReads(p) === 0 && !p.urls.some(u => /\/js\/(suppliers|supplier-core|supplier-store)\.js(?:\?|$)/.test(u)), 'opening Orders neither reads the catalogue nor loads supplier tools');
+  ok(!(await p.$('#cut-band:not([hidden])')) && await p.$eval('.o-page .nb-addline', e => e.textContent.trim() === 'Add request'), 'Orders uses its own compact cut-offs and the Add request wording');
+  const hasFold = !!(await p.$(fold));
+  ok(hasFold && !(await p.$eval(fold, e => e.open)), 'supplier cut-offs start closed');
+  // This guard reports the baseline failures without trying to click a control absent from the old design.
+  if (!hasFold) { await p.context().close(); await b.close(); L.report(R); return; }
+  ok(/Northside Test Foods/.test(await txt(p, summary)) && /15:00/.test(await txt(p, summary)) && /View/.test(await p.innerText(summary)), 'closed summary names the next supplier, absolute time and View');
+  ok((await p.$$('a.o-deliv[href="#/deliveries"]')).length === 1 && !(await p.$('.o-sup-acts')), 'one page-level Delivery received link');
+  await p.focus(summary); await p.keyboard.press('Enter'); await L.settle(p, 300);
+  ok(await p.$eval(fold, e => e.open) && /Hide/.test(await p.innerText(summary)), 'keyboard Enter opens the native disclosure and says Hide');
+  ok(await p.getAttribute('.cut-tl a.cut-n', 'href') === '#/suppliers/cutoff/northside/' + F.today, 'supplier preparation remains available from its name');
+  ok(await p.$eval(confirm, e => /Order placed/.test(e.textContent) && e.getBoundingClientRect().height >= 44), 'supplier confirmation is explicit and has a full touch target');
+  const before = await rows(p);
+  await p.click(confirm);
+  await L.waitFor(p, k => window.__fake.dump()[k]?.on === true, completion, 10000);
+  await L.waitFor(p, () => /Ordered by/.test(document.querySelector('.o-cut-row .cut-st').textContent), null, 10000);
+  ok(!(await state(p))[request('g-out')].ordered && await p.$eval(fold, e => e.open), 'supplier confirmation leaves requests untouched and the disclosure open');
+  ok(samePlaces(before, await rows(p)), 'supplier confirmation does not move or resize request rows');
+  await p.click('[data-p="otick"][data-id="g-out"]');
+  await L.waitFor(p, k => window.__fake.dump()[k]?.ordered === true, request('g-out'), 10000);
+  ok((await state(p))[completion].on === true && samePlaces(before, await rows(p)), 'item completion keeps its position and does not change the supplier confirmation');
+  await p.click('[data-p="otick"][data-id="g-out"]');
+  await L.waitFor(p, k => window.__fake.dump()[k]?.ordered === false, request('g-out'), 10000);
+  ok((await state(p))[completion].on === true, 'item Undo also leaves supplier confirmation intact');
+  await p.click(confirm);
+  await L.waitFor(p, k => window.__fake.dump()[k]?.on === false, completion, 10000);
+  ok(!(await state(p))[request('g-out')].ordered, 'supplier Undo leaves requests untouched');
+  await p.click(summary); await L.settle(p, 250);
+  await p.evaluate(([k, value]) => window.__fake.write(k, value), line('g-new', 'New request from another phone'));
+  await L.waitFor(p, () => !!document.querySelector('[data-p="otick"][data-id="g-new"]'), null, 10000);
+  ok(!(await p.$eval(fold, e => e.open)), 'a request arriving from another phone does not open the cut-offs');
+  await p.clock.runFor(31 * 60000); await L.settle(p, 300);
+  ok(!(await p.$eval(fold, e => e.open)) && /15:00/.test(await txt(p, summary)), 'the clock refresh keeps a closed disclosure closed and its absolute time visible');
+  ok(await supplierReads(p) === 0, 'confirmations, request changes and clock refresh add no catalogue reads');
+  await p.fill('#o-day', yesterday);
+  await L.waitFor(p, () => !!document.querySelector('#cut-band:not([hidden]) .cut-n'), null, 10000);
+  ok(!(await p.$(fold)) && /Northside Test Foods/.test(await txt(p, '#cut-band')), 'past-date Orders keeps the current reminder bar while the current-day disclosure is absent');
+  await p.click('.o-nav [data-p="otoday"]');
+  await L.waitFor(p, () => !!document.querySelector('.o-cut-fold') && !document.querySelector('#cut-band:not([hidden])'), null, 10000);
+  ok(!(await p.$eval(fold, e => e.open)), 'Back to today restores the closed disclosure and removes the duplicate reminder bar');
+
+  ok(p.errors.length === 0 && !(await L.overflow(p)), 'chef phone: no page errors or sideways scroll ' + p.errors.join(' | '));
   await p.context().close();
 
-  // a laptop
-  p = await L.open(b, '#/orders', { who: 'sam', extra: extra(), width: 1280, height: 900, wait: 1600 });
-  await L.waitFor(p, () => !!document.querySelector('.o-sups'), null, 10000);
-  ok(!(await L.overflow(p)), '1280 px: no sideways scroll');
+  for (const width of [768, 1280]) {
+    p = await L.open(b, '#/orders', { who: 'sam', extra: extra(), width, height: 1024, wait: 1600 });
+    await L.waitFor(p, () => !!document.querySelector('.o-cut-fold'), null, 10000);
+    await p.click(summary); await L.settle(p, 250);
+    ok((await rows(p)).length === 6 && !(await L.overflow(p)) && p.errors.length === 0, width + ' px: the disclosure and all requests fit with no errors');
+    await p.context().close();
+  }
+
+  // A long supplier name must give room to its absolute time. Crossing the deadline must not move the list.
+  const longExtra = extra(), cfg = longExtra[F.key(['config', 'main'])];
+  cfg.cutoffs[0].name = 'Northside Test Foods with a deliberately long supplier name';
+  cfg.cutoffs.push(Object.assign({}, cfg.cutoffs[0], { id: 'later', name: 'Later Test Supplier', at: 16 * 60 }));
+  p = await L.open(b, '#/orders', { who: 'sam', extra: longExtra, clock: L.NOW + 59 * 60000, wait: 1600 });
+  await L.waitFor(p, () => !!document.querySelector('.o-cut-at'), null, 10000);
+  const deadline = await p.evaluate(() => {
+    const name = document.querySelector('.o-cut-name'), at = document.querySelector('.o-cut-at'), detail = at.parentElement;
+    const r = at.getBoundingClientRect(), box = detail.getBoundingClientRect(), text = document.createRange();
+    text.selectNodeContents(at); const words = text.getBoundingClientRect();
+    return { nameTruncated: name.scrollWidth > name.clientWidth, labelled: name.title === name.textContent,
+      time: at.textContent, visible: r.left >= box.left && r.right <= box.right + 1 && words.left >= box.left && words.right <= box.right + 1,
+      height: document.querySelector('.o-cut-fold > summary').getBoundingClientRect().height };
+  });
+  ok(deadline.nameTruncated && deadline.labelled && deadline.visible && /by 15:00/.test(deadline.time), 'long supplier name truncates with its full label while the absolute time stays visible (' + JSON.stringify(deadline) + ')');
+  const beforeDeadline = await rows(p);
+  await p.clock.runFor(2 * 60000); await L.settle(p, 250);
+  await L.waitFor(p, () => /1 overdue/.test(document.querySelector('.o-cut-fold > summary').textContent), null, 10000);
+  const overdueHeight = await p.$eval(summary, e => e.getBoundingClientRect().height);
+  ok(Math.abs(overdueHeight - deadline.height) < 1 && samePlaces(beforeDeadline, await rows(p)) && !(await p.$eval(fold, e => e.open)), 'the overdue count updates without growing the summary, moving requests or opening the disclosure');
+  await p.click(summary); await L.settle(p, 250);
+  await p.focus('.cut-tl a.cut-n');
+  const focusedSupplier = await p.evaluate(() => document.activeElement.getAttribute('href'));
+  await p.clock.runFor(61 * 1000); await L.settle(p, 250);
+  ok(await p.evaluate(href => document.activeElement.getAttribute('href') === href, focusedSupplier), 'clock updates retain focus on the same supplier link');
+  ok(!(await L.overflow(p)) && p.errors.length === 0, 'long supplier and overdue summary fit a phone without errors');
   await p.context().close();
 
-  // catalogue refused: the plain list and tick list, as before
-  p = await L.open(b, '#/orders', { who: 'sam', extra: extra(), wait: 1600, denyReads: '/suppliers$' });
-  await L.waitFor(p, () => !!document.querySelector('.cut-tl [data-p="cut-tick"]'), null, 10000); await L.settle(p, 800);
-  ok(!(await p.$('.o-sups')) && !!(await p.$('.cut-today')) && /Coriander/.test(await txt(p, '.o-main') || ''), 'a refused catalogue read keeps the plain list');
+  p = await L.open(b, '#/orders', { who: 'sam', extra: extra(), denyReads: '/suppliers$', wait: 1600 });
+  await L.waitFor(p, () => !!document.querySelector('.o-cut-fold'), null, 10000);
+  ok((await rows(p)).length === 6 && await supplierReads(p) === 0 && p.errors.length === 0, 'a refused catalogue is irrelevant: requests and cut-offs still work without asking for it');
   await p.context().close();
 
-  // no catalogue supplier linked to today's cut-offs: grouping would put everything under No supplier yet, so the plain
-  // list stays
-  p = await L.open(b, '#/orders', { who: 'sam', extra: (() => { const s = extra(); Object.keys(s).filter(k => /\/suppliers\//.test(k)).forEach(k => delete s[k]); return s; })(), wait: 1600 });
-  await L.waitFor(p, () => !!document.querySelector('.cut-tl [data-p="cut-tick"]'), null, 10000); await L.settle(p, 800);
-  ok(!(await p.$('.o-sups')) && /Supplier orders today/.test(await txt(p, '.cut-today') || '') && /Coriander/.test(await txt(p, '.o-main') || ''), 'no linked supplier: the plain list and tick list, as before');
-  await p.context().close();
+  for (const opts of [{ cold: '/cutdone' }, { exhausted: '/cutdone' }]) {
+    p = await L.open(b, '#/orders', Object.assign({ who: 'sam', extra: extra(), wait: 1600 }, opts));
+    await L.waitFor(p, () => !!document.querySelector('.o-cut-fold'), null, 10000);
+    const words = await txt(p, summary);
+    ok(/No signal|Could not|Checking/i.test(words) && !/all.*placed|nothing due/i.test(words), (opts.cold ? 'offline' : 'failed read') + ': the closed summary says status is unknown (' + words + ')');
+    await p.click(summary); await L.settle(p, 250);
+    ok((await rows(p)).length === 6, (opts.cold ? 'offline' : 'failed read') + ': requests remain visible independently of supplier status');
+    await p.context().close();
+  }
 
-  // Ann (staff): no suppliers, no catalogue read
-  p = await L.open(b, '#/orders', { who: 'ann', extra: extra(), wait: 1600 }); await L.settle(p, 600);
-  ok(!(await p.$('.o-sups')) && !/Northside/.test(await txt(p, '#prep-root') || '') && await supplierReads(p) === 0, 'staff: no suppliers and no catalogue read');
+  p = await L.open(b, '#/orders', { who: 'ann', extra: extra(), wait: 1600 });
+  ok(!(await p.$('.o-cut-fold, .cut-tl, .o-sups, [data-p="otick"]:not([disabled])')) && await supplierReads(p) === 0, 'staff: requests and Add remain, without cut-offs, completion or catalogue reads');
+  ok((await rows(p)).length === 6 && !(await p.$('.o-wait, #o-overdue, .o-main .nb-roll')) && (await p.$$('.o-main > .nb-rows')).length === 1, 'staff: all requests stay together without waiting-age labels or sections');
+  ok(/Butter\s+1\s+Low/.test(await txt(p, '.o-main [data-ln$="/g-old"]')) && /from Ann/.test(await txt(p, '.o-main [data-ln$="/g-old"]')) && /Out/.test(await txt(p, '.o-main [data-ln$="/g-out"]')), 'staff: hiding ages preserves amount, urgency and original author');
   await p.context().close();
-
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

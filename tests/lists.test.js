@@ -100,8 +100,8 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   await p.keyboard.press('Escape'); await L.settle(p, 300);
   // Waiting from earlier days (one list, 3 Nov 2026): yesterday's Cream rolled over; its tick says Ordered, with Undo
   const cid = 'r' + today.replace(/-/g, '') + '-old1';
-  await L.waitFor(p, id => !!document.querySelector('.o-wait [data-p="otick"][data-id="' + id + '"]'), cid, 6000);
-  await p.click('.o-wait [data-p="otick"][data-id="' + cid + '"]');
+  await L.waitFor(p, id => !!document.querySelector('.o-main [data-p="otick"][data-id="' + id + '"]'), cid, 6000);
+  await p.click('.o-main [data-p="otick"][data-id="' + cid + '"]');
   await L.settle(p, 400);
   ok(/^Ordered \S.*\s*Undo$/.test((await txt(p, '.p-toast') || '').trim()), 'orders: a line waiting from earlier days ticks with Ordered and Undo (' + await txt(p, '.p-toast') + ')');
   await p.click('.p-toast-btn');

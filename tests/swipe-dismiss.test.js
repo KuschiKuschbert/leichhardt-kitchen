@@ -117,7 +117,7 @@ async function closePrep(p) {
   p = await L.open(b, '#/orders', { touch: true, wait: 1500 });
   await L.oLog(p); await p.fill('#o-text', 'Lemons');
   await swipe(p, '.o-sheet h3');
-  ok(!(await p.$('.o-sheet')), 'orders: a downward title swipe closes Add to the order list');
+  ok(!(await p.$('.o-sheet')), 'orders: a downward title swipe closes Add request');
   if (await p.$('.o-sheet')) { await p.keyboard.press('Escape'); await L.settle(p, 200); }
   await L.oLog(p);
   ok(await p.inputValue('#o-text') === 'Lemons', 'orders: the existing draft survives swipe dismissal');

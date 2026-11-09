@@ -98,6 +98,8 @@
    the Home column, which is lifted above it while a celebration is on. Motifs show on the kraft between the board and dockets. */
 #app[data-kb-theme]:not([data-kb-theme="off"]) .wall-main{position:relative;z-index:1}
 .kb-hang{position:absolute;left:0;right:0;top:0;height:0;z-index:-1;pointer-events:none;--kb-hang-size:40px}
+/* A named welcome can occupy the whole heading. Keep that area clear; the seasonal note and background ambience remain. */
+#app .wall-main:has(.hm-welcome) > .kb-hang{display:none}
 .kb-hang-item{position:absolute;display:block;right:calc(3% + var(--kb-hang-i) * 14%);width:var(--kb-hang-size);height:calc(var(--kb-hang-size) * 1.2);font-style:normal;opacity:.78;transform-origin:50% 0;pointer-events:none}
 .kb-hang-item>svg{display:block;width:100%;height:100%;overflow:visible}
 .kb-hang-item.is-hanging{top:0}
