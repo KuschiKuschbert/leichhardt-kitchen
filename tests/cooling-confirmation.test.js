@@ -6,7 +6,7 @@ const CURRENT = key('cooling', 'current'), RECORDED = key('cooling', 'recorded')
 const RUN = 'cooling-confirmation-01', stamp = value => ({ __fakeTimestamp: value });
 const millis = value => value && (value.__fakeTimestamp != null ? value.__fakeTimestamp : value.seconds * 1000 + (value.nanoseconds || 0) / 1000000);
 const first = (at = L.NOW - 2 * HOUR - 1000) => ({ v: 1, run: RUN, rev: 1, firstAt: stamp(at), firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann' });
-const second = () => ({ ...first(L.NOW - 7 * HOUR), rev: 2, secondAt: stamp(L.NOW - 4 * HOUR - 1000), secondBy: 'ann' });
+const second = () => ({ ...first(L.NOW - 4 * HOUR), rev: 2, secondAt: stamp(L.NOW - 2 * HOUR), secondBy: 'ann' });
 const checked = (hours, by = 'ann') => ({ v: 1, run: RUN, firstAt: hours === 2 ? stamp(L.NOW - 500) : 0, firstBy: hours === 2 ? by : '', secondAt: hours === 4 ? stamp(L.NOW - 500) : 0, secondBy: hours === 4 ? by : '', by });
 const read = (p, path) => p.evaluate(path => __fake.dump()[path], path);
 const writes = p => p.evaluate(path => __fake.writes.flat().filter(x => x.path === path), RECORDED);
@@ -167,7 +167,7 @@ async function openClock(p) {
 
     await step('stages stay independent and final lockout remains', async () => {
       const completed = second();
-      p = await L.open(browser, '#/prep', { who: 'bo', extra: { [CURRENT]: completed, [RECORDED]: checked(2, 'ann') }, wait: 1000 });
+      p = await L.open(browser, '#/prep', { who: 'bo', clock: L.NOW + 3 * HOUR, extra: { [CURRENT]: completed, [RECORDED]: checked(2, 'ann') }, wait: 1000 });
       await ping(p);
       ok(/4 hours/.test(await p.locator('.cooling-ping h3').textContent()), 'A confirmed first stage does not suppress the due four-hour reminder');
       await p.getByRole('button', { name: 'Not yet', exact: true }).click(); await openClock(p);
@@ -177,7 +177,7 @@ async function openClock(p) {
       await L.waitFor(p, () => !LK_PREP.unsent());
       const record = await read(p, RECORDED);
       ok(record.firstBy === 'ann' && millis(record.firstAt) === millis(before.firstAt) && record.secondBy === 'bo', 'The second person’s four-hour confirmation preserves the first person’s two-hour check');
-      ok((await read(p, CURRENT)).rev === 2 && await p.locator('.cooling-new button').isDisabled(), 'Confirming the final check does not reset the timer or bypass midnight');
+      ok((await read(p, CURRENT)).rev === 2 && await p.locator('.cooling-new button').isDisabled(), 'Confirming the final check does not reset the timer or unlock another batch today');
     });
 
     await step('quiet outstanding check remains reachable during second timer', async () => {

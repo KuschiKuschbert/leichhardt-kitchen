@@ -8,7 +8,7 @@ const TOMORROW = L.ymd(new Date(L.NOW + 24 * HOUR));
 const team = {
   [CONFIG]: { ...L.seed()[CONFIG], staffIds: ['sam', 'ann', 'bo'], kitSecs: [{ id: 'larder', name: 'Larder', off: false }], kitShifts: [{ id: 'day', name: 'Day', from: 600, to: 1320, off: false }] },
   [['kitchens', L.PIN, 'team', DAY].join('/')]: { day: DAY, v: 1, by: 'sam', at: L.NOW - HOUR, upd: L.NOW - HOUR, on: [{ id: 'ann', sh: 'day', sec: 'larder' }], br: [] },
-  // The midnight journey already has tomorrow's section, so its ordinary daily picker cannot cover Start.
+  // The morning journey already has tomorrow's section, so its ordinary daily picker cannot cover Start.
   [['kitchens', L.PIN, 'shifts', TOMORROW + '_ann'].join('/')]: { day: TOMORROW, sec: 'larder', name: 'Larder', at: L.NOW + 10 * HOUR, auto: false, sh: 'day' }
 };
 const millis = value => value && (value.__fakeTimestamp != null ? value.__fakeTimestamp : value.seconds * 1000 + (value.nanoseconds || 0) / 1000000);
@@ -38,11 +38,19 @@ async function shape(p) {
   return p.evaluate(() => {
     const rect = el => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; };
     const control = [...document.querySelectorAll('.cooling-clock button, .cooling-clock-status')].find(el => getComputedStyle(el).visibility !== 'hidden' && !el.hidden && el.getClientRects().length);
-    const nav = document.querySelector('.tabbar'), limit = nav && nav.getBoundingClientRect().height ? nav.getBoundingClientRect().top : innerHeight;
+    const nav = document.querySelector('.tabbar'), dock = document.querySelector('.wk-dock');
+    const limit = Math.min(nav && nav.getBoundingClientRect().height ? nav.getBoundingClientRect().top : innerHeight, dock && getComputedStyle(dock).position === 'fixed' ? dock.getBoundingClientRect().top : innerHeight);
+    const fullyVisible = el => {
+      const r = el.getBoundingClientRect(); let top = 0, bottom = limit;
+      for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+        if (/(auto|scroll|hidden|clip)/.test(getComputedStyle(parent).overflowY)) { const box = parent.getBoundingClientRect(); top = Math.max(top, box.top); bottom = Math.min(bottom, box.bottom); }
+      }
+      return r.height > 0 && r.top >= top && r.bottom <= bottom;
+    };
     return { control: rect(control), header: rect(document.querySelector('.wtop')), brand: rect(document.querySelector('.wtop-brand')),
       peers: [...document.querySelectorAll('.wtop-back, .wtop .tm-slot .tm-chip, .wtop .nbell, .wtop .wtop-who')].filter(el => el.getClientRects().length).map(rect),
       tabs: [...document.querySelectorAll('.wtop .pnav a')].map(rect),
-      rows: [...document.querySelectorAll('.nb-row')].map(rect), fullRows: [...document.querySelectorAll('.nb-row')].filter(el => el.getBoundingClientRect().bottom <= limit).length,
+      rows: [...document.querySelectorAll('.nb-row')].map(rect), fullRows: [...document.querySelectorAll('.nb-row')].filter(fullyVisible).length,
       expanded: document.querySelector('.cooling-clock').dataset.clockState, hasDialog: !!document.querySelector('.cooling-wrap') };
   });
 }
@@ -60,7 +68,7 @@ function controlsFit(a, width) {
   }
   try {
     for (const width of [390, 768, 1200, 1280]) await step('clock states ' + width, async () => {
-      p = await L.open(browser, '#/prep', { who: 'ann', width, deviceMode: 'personal', extra: team, wait: 1200 }); await phase(p, 'idle');
+      p = await L.open(browser, '#/prep', { who: 'ann', width, clock: L.NOW - 3 * HOUR, deviceMode: 'personal', extra: team, wait: 1200 }); await phase(p, 'idle');
       await L.waitFor(p, () => !!document.querySelector('.wtop .tm-slot .tm-chip'));
       const realFonts = await fonts(p); await L.settle(p, 400);
       if (!realFonts) ok(true, width + ': real Barlow unavailable; width-sensitive navigation checks skipped');
@@ -134,25 +142,61 @@ function controlsFit(a, width) {
       ok(sameLayout(baseline, drawn) && controlsFit(drawn, width), width + ': the completed lockout keeps the same prep rows and header positions');
       await p.locator('.cooling-clock-status').click();
       ok((await writes(p)).length === 2 && (await saved(p)).run === first.run, width + ': tapping the completed clock cannot arm or write a fresh batch');
-      const unlock = L.NOW + 10 * HOUR; // Fixture starts at 14:00 Queensland; this is the following midnight.
-      await p.clock.pauseAt(unlock - 1);
+      const cutoff = L.NOW + 7 * HOUR, unlock = L.NOW + 20 * HOUR;
+      await p.clock.pauseAt(cutoff - 1);
       await p.evaluate(() => window.dispatchEvent(new Event('lk-clock')));
-      ok(await p.locator('button[data-cooling="clock"]:visible').count() === 0, width + ': timer stays disabled until the last millisecond of the day');
+      ok(await p.locator('.cooling-clock').getAttribute('data-clock-state') === 'done2', width + ': completed batch remains locked just before 21:00');
+      await advance(p, cutoff); await phase(p, 'off_hours');
+      ok((await writes(p)).length === 2 && !await p.locator('.cooling-wrap').count(), width + ': 21:00 resets the presentation without a write or popup');
+      drawn = await shape(p);
+      ok(drawn.control[2] === (mobile ? 44 : 152) && sameLayout(baseline, drawn) && controlsFit(drawn, width), width + ': overnight status preserves the phone ring, desktop pill and all prep positions');
+      ok(/10:00 Queensland/.test(await p.locator('.cooling-clock-status').getAttribute('aria-label')) && await p.locator('.cooling-clock-status').getAttribute('aria-disabled') === 'true', width + ': overnight status names 10:00 and is disabled');
+      await p.locator('.cooling-clock-status').click(); await p.locator('.cooling-clock-status').focus(); await p.keyboard.press('Enter'); await p.keyboard.press('Space');
+      await p.locator('button[data-cooling="clock"]').evaluate(el => el.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+      ok((await writes(p)).length === 2 && !await p.locator('.cooling-wrap').count(), width + ': mouse, keyboard and synthetic taps do nothing overnight');
+      // A fresh authorised morning session exercises the 10:00 boundary independently of the 04:00 PIN lock.
+      await p.context().close();
+      p = await L.open(browser, '#/prep', { who: 'ann', width, clock: unlock - 60000, deviceMode: 'personal', extra: { ...team, [CURRENT]: second }, wait: 1200 });
+      await phase(p, 'off_hours'); await fonts(p);
+      ok((await writes(p)).length === 0 && !await p.locator('.cooling-ping').count(), width + ': a morning login keeps yesterday’s record quiet');
+      await p.clock.pauseAt(unlock - 1); await p.evaluate(() => window.dispatchEvent(new Event('lk-clock')));
+      ok(await p.locator('.cooling-clock').getAttribute('data-clock-state') === 'off_hours', width + ': the final millisecond before 10:00 stays inert');
       await advance(p, unlock); await phase(p, 'idle');
-      ok((await writes(p)).length === 2, width + ': midnight restores the idle clock without starting a batch or writing a reset');
+      ok((await writes(p)).length === 0 && !await p.locator('.cooling-wrap').count() && (await saved(p)).run === first.run, width + ': 10:00 restores idle without starting a batch, replaying alerts or deleting the raw record');
       await p.clock.resume();
-      // The midnight section read is asynchronous. Its existing sheet guard correctly blocks Start until it resolves.
       await L.waitFor(p, day => {
         const section = JSON.parse(localStorage.getItem('lk.sec.ann') || 'null');
         return section && section.d === day && section.sec === 'larder';
       }, TOMORROW);
       await clockTap(p); await phase(p, 'armed');
-      ok((await writes(p)).length === 2 && (await saved(p)).run === first.run, width + ': first new-batch tap arms without changing the completed record');
+      ok((await writes(p)).length === 0 && (await saved(p)).run === first.run, width + ': first new-batch tap arms without changing the previous record');
       await clockTap(p); await phase(p, 'first');
-      ok((await saved(p)).run !== first.run && (await saved(p)).secondAt === 0 && (await writes(p)).length === 3, width + ': the second new-batch tap starts exactly one fresh two-hour timer');
+      ok((await saved(p)).run !== first.run && (await saved(p)).secondAt === 0 && (await writes(p)).length === 1, width + ': the second new-batch tap starts exactly one fresh two-hour timer');
       if (realFonts) ok(!await L.overflow(p), width + ': chosen clock fits the native-font header without sideways scroll');
       await p.emulateMedia({ reducedMotion: 'reduce' });
       ok(await p.locator('.cooling-clock-status').evaluate(el => getComputedStyle(el).animationName === 'none' && getComputedStyle(el).transitionDuration.split(',').every(v => parseFloat(v) === 0)), width + ': Reduce motion keeps status while removing decorative motion');
+    });
+    for (const width of [390, 768, 1280]) await step('idle overnight boundary ' + width, async () => {
+      const cutoff = L.NOW + 7 * HOUR;
+      p = await L.open(browser, '#/prep', { who: 'ann', width, touch: true, clock: cutoff - 60000, deviceMode: 'personal', extra: team, wait: 1200 });
+      await phase(p, 'idle'); await fonts(p); await L.settle(p, 400);
+      const before = await shape(p);
+      await p.clock.pauseAt(cutoff - 1); await p.evaluate(() => window.dispatchEvent(new Event('lk-clock')));
+      ok(await p.locator('.cooling-clock').getAttribute('data-clock-state') === 'idle', width + ': unused timer stays idle until the final millisecond before 21:00');
+      await advance(p, cutoff);
+      const motion = await p.locator('.cooling-clock-status').evaluate(el => ({ transition: getComputedStyle(el).transitionProperty, duration: getComputedStyle(el).transitionDuration, animations: el.getAnimations().map(a => a.transitionProperty) }));
+      if (width >= 1280) ok(motion.transition.includes('width') && motion.duration.includes('0.34s') && motion.animations.includes('width'), width + ': the overnight pill expands with the existing 340ms width animation');
+      await phase(p, 'off_hours');
+      const after = await shape(p);
+      ok(before.control[2] === 44 && after.control[2] === (width < 1280 ? 44 : 152) && after.control[3] === 44 && sameLayout(before, after) && controlsFit(after, width), width + ': overnight expansion preserves the header, visible prep lines and every adjacent 44px target');
+      if (width >= 1280) ok(await p.locator('.cooling-clock-status strong').evaluate(el => { const r = el.getBoundingClientRect(), host = el.closest('.cooling-clock-control').getBoundingClientRect(); return el.textContent === 'Back at 10:00' && r.left >= host.left && r.right <= host.right && r.top >= host.top && r.bottom <= host.bottom; }), width + ': the complete Back at 10:00 label fits the expanded native-font pill');
+      await p.locator('.cooling-clock-status').tap();
+      ok((await writes(p)).length === 0 && !await p.locator('.cooling-wrap').count(), width + ': tapping the overnight clock leaves it inert');
+      await p.locator('[data-p="write"]').click(); await L.waitFor(p, () => !!document.querySelector('.p-sheet #p-text'));
+      ok(await p.locator('.p-sheet #p-text').isVisible(), width + ': Add a line still opens in one tap overnight');
+      await p.keyboard.press('Escape');
+      await p.emulateMedia({ reducedMotion: 'reduce' });
+      ok(await p.locator('.cooling-clock-status').evaluate(el => getComputedStyle(el).animationName === 'none' && getComputedStyle(el).transitionDuration.split(',').every(v => parseFloat(v) === 0)), width + ': reduced motion removes the overnight expansion without hiding the status');
     });
     await step('clock read failure and retry', async () => {
       p = await L.open(browser, '#/prep', { who: 'ann', wait: 1200 }); await phase(p, 'idle');

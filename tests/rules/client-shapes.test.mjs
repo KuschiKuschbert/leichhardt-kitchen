@@ -54,7 +54,7 @@ const functionModel = createRequire(import.meta.url)('../../js/functions.js');
 setLogLevel('silent');   // a refusal is an answer here, not something to log
 const PIN = '000000', OWNER = 'headchef@test.local', K = 'kitchens/' + PIN + '/';
 const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8').replaceAll('KITCHEN_PIN', PIN).replaceAll('OWNER_EMAIL', OWNER);
-const env = await initializeTestEnvironment({ projectId: 'demo-client-shapes', firestore: { rules } });
+let env = await initializeTestEnvironment({ projectId: 'demo-client-shapes', firestore: { rules } });
 await env.clearFirestore();
 
 // kitchen time is Queensland (UTC+10): today's date, its midnight, 18:00 tonight
@@ -641,43 +641,49 @@ row('js/manage.js mineHide(): hide a template or own piece (its next version)', 
   prep: r => put({ ['drawtpl/h-' + r]: { name: 'Round plate', slot: 'plate', surf: {}, els: [], defs: '{}', vb: '', svgS: '', svgF: '', v: 1, upd: 1, removed: false, by: 'sam' } }),
   run: (db, w, r) => W(r, [['set', 'drawtpl/h-' + r, { name: 'Round plate', slot: 'plate', surf: {}, els: [], defs: '{}', vb: '', svgS: '', svgF: '', v: 2, upd: Date.now(), removed: true }]]) });
 
-// Operandio: one shared current record, server-timestamp starts and revision compare-and-set.
+// Operandio uses an isolated 18:00 Queensland request clock and exact timestamp stand-ins.
+// All unrelated call shapes keep the unmodified real server clock. Boundary enforcement is in cooling.test.mjs.
+const COOL_NOW = Date.parse('2026-01-02T08:00:00Z');
+const coolStamp = () => Timestamp.fromMillis(COOL_NOW);
+const coolRow = (label, options) => row(label, { ...options, cooling: true });
 const coolRun = (extra = {}) => ({ v: 1, run: 'run-1234567890123456', rev: 1,
-  firstAt: Timestamp.fromMillis(NOW - 7200000 - 1000), firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann', ...extra });
-row('js/prep.js coolingWatch(): canonical current-run listener', { ok: KITCHEN, asks: KITCHEN,
+  firstAt: Timestamp.fromMillis(COOL_NOW - 7200000 - 1000), firstBy: 'ann', secondAt: 0, secondBy: '', by: 'ann', ...extra });
+coolRow('js/prep.js coolingWatch(): canonical current-run listener', { ok: KITCHEN, asks: KITCHEN,
   prep: () => put({ 'cooling/current': coolRun() }), run: db => listen(D(db, 'cooling/current')) });
-row('js/prep.js coolingRead(): current-run recovery after an uncertain save', { ok: KITCHEN, asks: KITCHEN,
+coolRow('js/prep.js coolingRead(): current-run recovery after an uncertain save', { ok: KITCHEN, asks: KITCHEN,
   prep: () => put({ 'cooling/current': coolRun() }), run: db => getDocFromServer(D(db, 'cooling/current')) });
-row('js/prep.js coolingWrite(): first two-hour start through W()', { ok: KITCHEN, asks: KITCHEN,
+coolRow('js/prep.js coolingWrite(): first two-hour start through W()', { ok: KITCHEN, asks: KITCHEN,
   prep: () => put({ 'cooling/current': null }),
-  run: (db, w, r) => W(r, [['set', 'cooling/current', coolRun({ firstAt: serverTimestamp(), firstBy: w, by: w })]]) });
-row('js/prep.js coolingWrite(): four-hour second stage through W()', { ok: KITCHEN, asks: KITCHEN,
+  run: (db, w, r) => W(r, [['set', 'cooling/current', coolRun({ windowAt: Math.floor((COOL_NOW + 36000000) / 86400000) * 86400000, firstAt: coolStamp(), firstBy: w, by: w })]]) });
+coolRow('js/prep.js coolingWrite(): four-hour second stage through W()', { ok: KITCHEN, asks: KITCHEN,
   prep: () => put({ 'cooling/current': coolRun() }),
-  run: (db, w, r) => W(r, [['upd', 'cooling/current', { rev: 2, secondAt: serverTimestamp(), secondBy: w }]]) });
-row('js/prep.js coolingWrite(): new batch after four-hour stage through W()', { ok: KITCHEN, asks: KITCHEN,
-  prep: () => put({ 'cooling/current': coolRun({ rev: 2, firstAt: Timestamp.fromMillis(NOW - 21600000 - 86400000),
-    secondAt: Timestamp.fromMillis(NOW - 14400000 - 86400000), secondBy: 'sam', by: 'sam' }) }),
-  run: (db, w, r) => W(r, [['set', 'cooling/current', coolRun({ run: 'next-1234567890123456', rev: 3,
-    firstAt: serverTimestamp(), firstBy: w, by: w })]]) });
+  run: (db, w, r) => W(r, [['upd', 'cooling/current', { rev: 2, secondAt: coolStamp(), secondBy: w }]]) });
+coolRow('js/prep.js coolingWrite(): four-hour stage preserves the new first-start window through W()', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': coolRun({ windowAt: Math.floor((COOL_NOW + 36000000) / 86400000) * 86400000 }) }),
+  run: (db, w, r) => W(r, [['upd', 'cooling/current', { rev: 2, secondAt: coolStamp(), secondBy: w }]]) });
+coolRow('js/prep.js coolingWrite(): new batch replaces an expired unfinished first stage through W()', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/current': coolRun({ firstAt: Timestamp.fromMillis(COOL_NOW - 86400000) }) }),
+  run: (db, w, r) => W(r, [['set', 'cooling/current', coolRun({ run: 'next-1234567890123456', rev: 2,
+    windowAt: Math.floor((COOL_NOW + 36000000) / 86400000) * 86400000, firstAt: coolStamp(), firstBy: w, by: w })]]) });
 
 const coolRecorded = (extra = {}) => ({ v: 1, run: 'run-1234567890123456', firstAt: 0, firstBy: '', secondAt: 0, secondBy: '', by: 'ann', ...extra });
-const coolCompleted = () => coolRun({ rev: 2, firstAt: Timestamp.fromMillis(NOW - 21600000 - 1000),
-  secondAt: Timestamp.fromMillis(NOW - 14400000 - 1000), secondBy: 'sam', by: 'sam' });
-row('js/prep.js coolingWatch(): shared Operandio declaration listener', { ok: KITCHEN, asks: KITCHEN,
-  prep: () => put({ 'cooling/recorded': coolRecorded({ firstAt: Timestamp.fromMillis(NOW - 1000), firstBy: 'ann' }) }),
+const coolCompleted = () => coolRun({ rev: 2, firstAt: Timestamp.fromMillis(COOL_NOW - 21600000 - 1000),
+  secondAt: Timestamp.fromMillis(COOL_NOW - 14400000 - 1000), secondBy: 'sam', by: 'sam' });
+coolRow('js/prep.js coolingWatch(): shared Operandio declaration listener', { ok: KITCHEN, asks: KITCHEN,
+  prep: () => put({ 'cooling/recorded': coolRecorded({ firstAt: Timestamp.fromMillis(COOL_NOW - 1000), firstBy: 'ann' }) }),
   run: db => listen(D(db, 'cooling/recorded')) });
 for (const stage of [1, 2]) {
   const at = stage === 1 ? 'firstAt' : 'secondAt', by = stage === 1 ? 'firstBy' : 'secondBy';
   const otherAt = stage === 1 ? 'secondAt' : 'firstAt', otherBy = stage === 1 ? 'secondBy' : 'firstBy';
-  row('js/prep.js coolingWrite(): create stage ' + stage + ' Operandio declaration through W()', { ok: KITCHEN, asks: KITCHEN,
+  coolRow('js/prep.js coolingWrite(): create stage ' + stage + ' Operandio declaration through W()', { ok: KITCHEN, asks: KITCHEN,
     prep: () => put({ 'cooling/current': coolCompleted(), 'cooling/recorded': null }),
-    run: (db, w, r) => W(r, [['set', 'cooling/recorded', coolRecorded({ [at]: serverTimestamp(), [by]: w, by: w })]]) });
-  row('js/prep.js coolingWrite(): add stage ' + stage + ' while preserving the other declaration', { ok: KITCHEN, asks: KITCHEN,
-    prep: () => put({ 'cooling/current': coolCompleted(), 'cooling/recorded': coolRecorded({ [otherAt]: Timestamp.fromMillis(NOW - 1000), [otherBy]: 'ann' }) }),
-    run: (db, w, r) => W(r, [['upd', 'cooling/recorded', { run: 'run-1234567890123456', [at]: serverTimestamp(), [by]: w }]]) });
-  row('js/prep.js coolingWrite(): replace earlier run declaration at stage ' + stage, { ok: KITCHEN, asks: KITCHEN,
-    prep: () => put({ 'cooling/current': coolCompleted(), 'cooling/recorded': coolRecorded({ run: 'previous-1234567890123456', firstAt: Timestamp.fromMillis(NOW - 1000), firstBy: 'ann' }) }),
-    run: (db, w, r) => W(r, [['set', 'cooling/recorded', coolRecorded({ [at]: serverTimestamp(), [by]: w, by: w })]]) });
+    run: (db, w, r) => W(r, [['set', 'cooling/recorded', coolRecorded({ [at]: coolStamp(), [by]: w, by: w })]]) });
+  coolRow('js/prep.js coolingWrite(): add stage ' + stage + ' while preserving the other declaration', { ok: KITCHEN, asks: KITCHEN,
+    prep: () => put({ 'cooling/current': coolCompleted(), 'cooling/recorded': coolRecorded({ [otherAt]: Timestamp.fromMillis(COOL_NOW - 1000), [otherBy]: 'ann' }) }),
+    run: (db, w, r) => W(r, [['upd', 'cooling/recorded', { run: 'run-1234567890123456', [at]: coolStamp(), [by]: w }]]) });
+  coolRow('js/prep.js coolingWrite(): replace earlier run declaration at stage ' + stage, { ok: KITCHEN, asks: KITCHEN,
+    prep: () => put({ 'cooling/current': coolCompleted(), 'cooling/recorded': coolRecorded({ run: 'previous-1234567890123456', firstAt: Timestamp.fromMillis(COOL_NOW - 1000), firstBy: 'ann' }) }),
+    run: (db, w, r) => W(r, [['set', 'cooling/recorded', coolRecorded({ [at]: coolStamp(), [by]: w, by: w })]]) });
 }
 
 // functions
@@ -943,10 +949,28 @@ row('js/prep.js signOutPerson(): this phone\'s session deleted', { ok: ALL, asks
 
 
 /* ---------- run ---------- */
+const realEnv = env, realDB = { ...DB };
+let coolingEnv = null, coolingMode = false;
+async function useCoolingClock(enabled) {
+  if (enabled === coolingMode) return;
+  coolingMode = enabled;
+  if (!enabled) { env = realEnv; Object.assign(DB, realDB); return; }
+  const pinnedRules = rules.replaceAll('request.time', 'timestamp.value("' + new Date(COOL_NOW).toISOString() + '")');
+  coolingEnv = await initializeTestEnvironment({ projectId: 'demo-client-shapes-cooling', firestore: { rules: pinnedRules } });
+  env = coolingEnv;
+  await env.clearFirestore();
+  for (const r of ALL) DB[r] = anonContext(env, UID[r]).firestore();
+  const fixture = { 'config/main': CFG, 'login/roster': ROSTER, 'config/admins': { x: 1 } };
+  for (const id of IDS) fixture['pinset/' + id] = { at: 1 };
+  for (const r of PINS) fixture['sessions/' + UID[r]] = dailySession(WHO[r], { at: COOL_NOW, mode: r === 'ownkit' || r === 'tab' ? 'shared' : 'personal' });
+  await put(fixture);
+  for (const r of GOOGLE) await seedOwnerDevice(env, { uid: UID[r], headId: 'kit', at: COOL_NOW, mode: r === 'ownkit' ? 'shared' : 'personal' });
+}
 let fails = 0, cells = 0;
 const known = [], grid = [];
 const mark = ok => ok ? '+' : '.';
 for (const [n, x] of ROWS.entries()) {
+  await useCoolingClock(!!x.cooling);
   const k = x.known || null, kr = k ? (k.roles || []) : [], bad = [], got = {};
   for (const r of ALL) {
     const w = WHO[r];
@@ -971,6 +995,7 @@ for (const [n, x] of ROWS.entries()) {
   if (k) { known.push(x.label + ' [' + kr.join(', ') + '] ' + k.why + ' (' + k.pr + ')'); console.log('KNOWN ' + x.label + ' [' + kr.join(', ') + ']: ' + k.why + ' (' + k.pr + ')'); }
 }
 await env.cleanup();
+if (coolingEnv) await coolingEnv.cleanup();
 console.log('\nWho the rules let through (+) or refuse (.), in the order ' + ALL.join(', ') + '. ! is not as expected, ~ is a known mark:\n' + grid.join('\n'));
 console.log('\nKnown (what the page needs there is not counted as a failure; what the rules do there still is):\n' + known.map(s => '- ' + s).join('\n'));
 console.log('\n' + (fails ? fails + ' of ' + ROWS.length + ' client shape rows FAILED' : ROWS.length + ' client shape rows passed') + ' (' + cells + ' calls, ' + ALL.length + ' sign-ins, ' + known.length + ' known).');

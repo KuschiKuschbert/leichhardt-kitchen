@@ -29,9 +29,11 @@ const reads = p => p.evaluate(() => window.__fake.bill.reduce((t, x) => t + x.n,
 async function admin(b, o) {
   const p = await L.open(b, '#/admin', Object.assign({ admin: true, wait: 1800, extra }, o || {}));
   const cooling = o && o.extra && o.extra[fsKey(['cooling', 'current'])];
+  const at = o && o.clock || L.NOW, opens = Math.floor((at + 10 * 3600000) / 86400000) * 86400000;
+  const active = cooling && cooling.firstAt.__fakeTimestamp >= opens && cooling.firstAt.__fakeTimestamp < opens + 11 * 3600000 && at >= opens && at < opens + 11 * 3600000;
   // Leave each due check outstanding while clearing its popup, so the PIN-move guard still sees the original run.
   for (const [hours, started] of [[2, cooling && cooling.firstAt], [4, cooling && cooling.secondAt]]) {
-    if (!started || started.__fakeTimestamp + hours * 3600000 > L.NOW) continue;
+    if (!active || !started || started.__fakeTimestamp + hours * 3600000 > at) continue;
     const message = 'Operandio batch cooling time ' + hours + ' hours is done.';
     await L.waitFor(p, message => !!Array.from(document.querySelectorAll('.cooling-ping h3')).find(el => el.textContent === message), message);
     await p.locator('.cooling-ping').getByRole('button', { name: 'Not yet', exact: true }).click();
@@ -117,15 +119,32 @@ async function admin(b, o) {
   ok(await p.evaluate(() => window.LK_PREP.state.pin) === L.PIN && !(await p.evaluate(() => localStorage.getItem('lk.move.big'))), 'timer unavailable: old PIN remains and no quota refusal is cached');
   await p.context().close();
 
-  // 7. A finished batch needs no scheduler cutover. The old PIN retains its final record for audit.
-  p = await admin(b, { extra: { ...extra, [coolingPath]: { ...current, rev: 2, firstAt: { __fakeTimestamp: L.NOW - 25200000 }, secondAt: { __fakeTimestamp: L.NOW - 18000000 }, secondBy: 'ann' } } });
+  // 7. A finished daytime batch needs no scheduler cutover. Its first stage starts at 10:00 and the second at 12:00.
+  p = await admin(b, { clock: L.NOW + 3 * 3600000, extra: { ...extra, [coolingPath]: { ...current, rev: 2, firstAt: { __fakeTimestamp: L.NOW - 4 * 3600000 }, secondAt: { __fakeTimestamp: L.NOW - 2 * 3600000 }, secondBy: 'ann' } } });
   msg = await move(p); s = await store(p);
   ok(/^Copied \d+ records/.test(msg) && await p.evaluate(() => window.LK_PREP.state.pin) === NEW, 'finished batch: the normal kitchen PIN move succeeds');
   ok(!!s[coolingPath] && !s['kitchens/' + NEW + '/cooling/current'], 'finished batch: old history remains and the new kitchen is ready for a fresh batch');
   ok(p.errors.length === 0, 'finished batch: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // 8. Cleaning revisions and sign-offs cannot be copied through the old generic PIN mover. Either collection
+  // 8. The daily reset expires even an unfinished batch. Its retained record cannot block a later PIN move.
+  for (const [label, clock, firstAt] of [
+    ['previous-day unfinished batch', L.NOW, L.NOW - 86400000],
+    ['21:00 reset of unfinished batch', L.NOW + 7 * 3600000, L.NOW]
+  ]) {
+    const expired = { ...current, firstAt: { __fakeTimestamp: firstAt } };
+    p = await admin(b, { clock, extra: { ...extra, [coolingPath]: expired },
+      // A previously presented alert also keeps the old client quiet when this regression runs on its baseline.
+      init: () => localStorage.setItem('lk.cooling.seen.000000.anon-test', JSON.stringify({ 'move-cooling-run-01_1': true })) });
+    const retained = JSON.stringify((await store(p))[coolingPath]);
+    msg = await move(p); s = await store(p);
+    ok(/^Copied \d+ records/.test(msg) && await p.evaluate(() => LK_PREP.state.pin) === NEW, label + ': expired timer does not block the kitchen PIN move');
+    ok(JSON.stringify(s[coolingPath]) === retained && !s['kitchens/' + NEW + '/cooling/current'], label + ': the original timer record remains unchanged at its old kitchen');
+    ok(!p.errors.length, label + ': no browser errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
+  // 9. Cleaning revisions and sign-offs cannot be copied through the old generic PIN mover. Either collection
   // must stop the operation before it creates destination records, even when the book fits comfortably in the caps.
   const cleaning = [
     ['cleaningTasks', 'handles', { root: 'handles', prev: '', next: '', text: 'Wipe coldroom handles', area: 'Coldroom', section: '', sectionName: '', shared: true, dows: [0, 1, 2, 3, 4, 5, 6], guide: '', from: Date.parse(day(1) + 'T00:00:00+10:00'), until: 253402178400000, at: L.NOW - 86400000, by: 'sam' }],

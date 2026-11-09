@@ -59,7 +59,7 @@ for (const [id, pin] of [['vic', '4444'], ['fay', '5151']]) {
       await p.evaluate(() => { __fake.mode = 'hold'; }); await p.locator('[data-stage="2"]').click();
       await L.waitFor(p, path => __fake.writes.flat().some(x => x.path === path), CURRENT);
       let record = await saved(p), attempts = await writes(p);
-      ok(attempts.length === 1 && attempts[0].kind === 'set' && record.v === 1 && record.rev === 1 && /^[A-Za-z0-9_-]{16,80}$/.test(record.run) && record.firstBy === 'ann' && record.by === 'ann' && Number.isFinite(millis(record.firstAt)) && record.secondAt === 0,
+      ok(attempts.length === 1 && attempts[0].kind === 'set' && record.v === 1 && record.rev === 1 && record.windowAt === L.NOW - 4 * HOUR && /^[A-Za-z0-9_-]{16,80}$/.test(record.run) && record.firstBy === 'ann' && record.by === 'ann' && Number.isFinite(millis(record.firstAt)) && record.secondAt === 0,
         'The first click writes one timestamped shared two-hour start through W');
       ok(!Object.hasOwn(record, 'firstDue') && !Object.hasOwn(record, 'secondDue') && !Object.hasOwn(record, 'schedule'), 'Fixed deadlines are derived from accepted start timestamps, with no job or stored countdown');
       ok(await p.locator('[data-stage="2"]').getAttribute('aria-busy') === 'true' && await p.locator('.cooling-menu .lk-stamp').count() === 0, 'A locally pending write stays Starting and never shows confirmed success');
@@ -90,7 +90,7 @@ for (const [id, pin] of [['vic', '4444'], ['fay', '5151']]) {
         await p.locator('[data-stage="4"]').click(); await L.waitFor(p, () => !!document.querySelector('[data-timer="4"] .lk-stamp'));
         const continued = await saved(p), secondAt = millis(continued.secondAt), secondDue = secondAt + 4 * HOUR;
         attempts = await writes(p);
-        ok(attempts.length === 2 && attempts[1].kind === 'update' && continued.run === record.run && continued.rev === 2 && millis(continued.firstAt) === firstAt && secondAt >= firstDue && continued.secondBy === 'ann', 'A separate click updates the same batch to a further four hours, preserving its first start');
+        ok(attempts.length === 2 && attempts[1].kind === 'update' && continued.run === record.run && continued.rev === 2 && continued.windowAt === record.windowAt && millis(continued.firstAt) === firstAt && secondAt >= firstDue && continued.secondBy === 'ann', 'A separate click updates the same batch to a further four hours, preserving its first start');
         await server(other, continued);
         await clockOpen(other); await L.waitFor(other, () => !!document.querySelector('[data-timer="4"] .lk-stamp'));
         ok(await other.locator('[data-timer="4"] button').count() === 0, 'The other device follows the accepted manual second start');

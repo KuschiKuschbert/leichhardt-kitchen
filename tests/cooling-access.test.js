@@ -3,7 +3,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 (async () => {
-  let tick = Date.parse('2026-11-08T00:00:00Z');
+  const DAY = 86400000, OPEN = Date.parse('2026-11-08T00:00:00Z');
+  let tick = OPEN + 8 * 3600000; // 18:00 Queensland: both stages can have genuinely elapsed today.
+  const opening = () => Math.floor((tick + 36000000) / DAY) * DAY;
   const root = 'kitchens/000000', realNow = Date.now;
   Date.now = () => tick;
   let user = null, checks = 0;
@@ -33,7 +35,7 @@ const path = require('node:path');
     firstAt: f.Timestamp.fromMillis(tick - 7200000 - 1), firstBy: 'staff', secondAt: 0, secondBy: '', by: 'staff', ...extra });
   const complete = (due = Math.floor((tick + 36000000) / 86400000) * 86400000 - 36000000 - 1) => current({ rev: 2,
     firstAt: f.Timestamp.fromMillis(due - 21600000), secondAt: f.Timestamp.fromMillis(due - 14400000), secondBy: 'sous', by: 'sous' });
-  const first = (by, extra = {}) => current({ firstAt: f.serverTimestamp(), firstBy: by, by, ...extra });
+  const first = (by, extra = {}) => current({ firstAt: f.serverTimestamp(), firstBy: by, by, windowAt: opening(), ...extra });
   const second = (by, extra = {}) => ({ rev: 2, secondAt: f.serverTimestamp(), secondBy: by, by, ...extra });
   write('config/main', config);
   for (const id of [...config.staffIds, 'removed']) write('pinset/' + id, { at: 1 });
@@ -75,7 +77,7 @@ const path = require('node:path');
   for (const [label, change] of Object.entries({ by: { by: 'staff' }, recorder: { firstBy: 'staff' },
     clock: { firstAt: f.Timestamp.fromMillis(tick - 1) }, numeric: { firstAt: tick }, duration: { duration: 7200000 },
     deadline: { firstDue: tick + 7200000 }, skipped: { secondAt: f.serverTimestamp(), secondBy: 'view' },
-    revision: { rev: 2 }, fractional: { rev: 1.5 }, run: { run: 'bad/run' }, version: { v: 2 } })) {
+    revision: { rev: 2 }, fractional: { rev: 1.5 }, run: { run: 'bad/run' }, version: { v: 2 }, window: { windowAt: opening() - DAY }, fractionalWindow: { windowAt: opening() + 0.5 } })) {
     await deny(f.setDoc(D(), first('view', change)), 'first start rejects forged ' + label);
   }
   for (const field of Object.keys(first('view'))) {
@@ -92,21 +94,36 @@ const path = require('node:path');
   await deny(f.updateDoc(D(), second('view')), 'second stage cannot start one millisecond early');
   write('cooling/current', current({ firstAt: f.Timestamp.fromMillis(tick - 7200000) }));
   await allow(f.updateDoc(D(), second('view')), 'second stage may start exactly at two hours');
-  write('cooling/current', { ...complete(), secondAt: f.Timestamp.fromMillis(tick - 14400000 + 1) });
+  write('cooling/current', { ...complete(tick), secondAt: f.Timestamp.fromMillis(tick - 14400000 + 1) });
   await deny(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 3 })), 'new batch cannot start one millisecond early');
-  write('cooling/current', { ...complete(), secondAt: f.Timestamp.fromMillis(tick - 14400000) });
+  write('cooling/current', { ...complete(tick), secondAt: f.Timestamp.fromMillis(tick - 14400000) });
   await deny(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 3 })), 'new batch remains disabled exactly at four hours');
-  const midnight = Date.parse('2026-11-08T14:00:00Z'), ended = complete(midnight - 1800000);
-  tick = midnight - 1; sign('view'); write('cooling/current', ended);
-  await deny(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 3 })), 'one millisecond before Queensland midnight is still locked');
-  tick = midnight; sign('view');
-  await allow(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 3 })), "Queensland midnight unlocks the preceding day's completed batch");
-  write('cooling/current', complete(midnight));
-  await deny(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 3 })), 'a four-hour deadline exactly at midnight locks for that whole new day');
-  write('cooling/current', complete(midnight + 1));
-  await deny(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 3 })), 'cross-midnight four-hour stage cannot restart while running');
-  tick = midnight + 86400000; sign('view');
-  await allow(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 3 })), 'a cross-midnight completion unlocks on the following midnight');
+  write('cooling/current', current({ windowAt: opening() }));
+  await deny(f.updateDoc(D(), second('view', { windowAt: opening() - DAY })), 'second stage cannot change the intended day');
+  await allow(f.updateDoc(D(), second('view')), 'second stage preserves the new day binding');
+  check(window.__fake.dump()[root + '/cooling/current'].windowAt === opening(), 'accepted second stage retains the intended day');
+
+  tick = OPEN - 1; sign('view'); write('cooling/current', null);
+  await deny(f.setDoc(D(), first('view')), '09:59:59.999 cannot start a batch');
+  tick = OPEN; sign('view');
+  await allow(f.setDoc(D(), first('view')), '10:00 allows an explicit first start');
+  tick = OPEN + 11 * 3600000 - 1; sign('view'); write('cooling/current', null);
+  await allow(f.setDoc(D(), first('view')), '20:59:59.999 still allows an explicit first start');
+  const queued = first('view', { run: 'queued-1234567890123456', rev: 2 });
+  const unfinished = current({ firstAt: f.Timestamp.fromMillis(OPEN + 8 * 3600000), windowAt: OPEN });
+  tick++; sign('view'); write('cooling/current', null);
+  await deny(f.setDoc(D(), first('view')), '21:00 refuses a first start');
+  write('cooling/current', unfinished);
+  await deny(f.updateDoc(D(), second('view')), '21:00 refuses a due second start');
+  for (const [at, label] of [[OPEN + 14 * 3600000, 'midnight'], [OPEN + DAY - 1, '09:59:59.999 next morning']]) {
+    tick = at; sign('view');
+    await deny(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 2 })), label + ' remains inactive');
+  }
+  tick = OPEN + DAY; sign('view');
+  await deny(f.setDoc(D(), queued), 'a queued yesterday start cannot activate the next morning');
+  await deny(f.updateDoc(D(), second('view')), "an expired first stage cannot become today's second stage");
+  await allow(f.setDoc(D(), first('view', { run: 'other-1234567890123456', rev: 2 })), '10:00 explicit start replaces an unfinished previous-day batch');
+  tick = OPEN + DAY + 8 * 3600000; sign('view');
   for (const stage of ['first', 'second', 'new']) {
     write('cooling/current', stage === 'first' ? null : stage === 'second' ? current() : complete());
     const results = await Promise.allSettled([1, 2].map(i => stage === 'second' ? f.updateDoc(D(), second('view')) :

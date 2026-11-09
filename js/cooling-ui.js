@@ -13,13 +13,14 @@
     function say(text) { if (live.textContent !== text) live.textContent = text; }
     function text(el, value) { if (el && el.textContent !== value) el.textContent = value; }
     function finite(value) { return typeof value === 'number' && Number.isFinite(value) && value > 0; }
+    function windowOpen() { return !!model.window && model.window.open === true; }
     function validRun(run) {
       return run && typeof run.id === 'string' && finite(run.firstAt) && finite(run.firstDue) && run.firstDue > run.firstAt &&
         ((!run.secondAt && !run.secondDue) || finite(run.secondAt) && finite(run.secondDue) && run.secondAt >= run.firstDue && run.secondDue > run.secondAt && finite(run.restartAt) && run.restartAt >= run.secondDue);
     }
     function state() {
       var run = validRun(model.run) ? model.run : null, bad = !!model.run && !run, clockOK = finite(model.now);
-      return { run: run, ready: !!model.available && !!model.ready && !model.stale && !model.error && !bad && clockOK,
+      return { run: run, ready: !!model.available && windowOpen() && !!model.ready && !model.stale && !model.error && !bad && clockOK,
         bad: bad, firstDone: !!run && clockOK && model.now >= run.firstDue,
         newBatchReady: !!run && !!run.restartAt && clockOK && model.now >= run.restartAt,
         secondDone: !!run && !!run.secondDue && clockOK && model.now >= run.secondDue };
@@ -65,7 +66,8 @@
     }
     function clockState() {
       var s = state(), run = s.run, dueCheck = outstanding(s), hours = model.pending || model.confirmPending || dueCheck || (run && run.secondAt ? 4 : 2), phase;
-      if (model.pending) phase = 'pending';
+      if (model.window && !windowOpen()) phase = 'off_hours';
+      else if (model.pending) phase = 'pending';
       else if (model.confirmPending) phase = 'recording';
       else if (headerError(s)) phase = 'error';
       else if (!s.ready) phase = model.error || s.bad ? 'error' : 'checking';
@@ -81,11 +83,11 @@
       var progress = running ? Math.max(0, Math.min(1, (model.now - began) / (due - began))) : phase === 'done1' || phase === 'done2' ? 1 : 0;
       var seconds = running ? Math.max(0, Math.ceil((due - model.now) / 1000)) : 0;
       var countdown = Math.floor(seconds / 3600) + ':' + String(Math.floor(seconds % 3600 / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
-      var primary = phase === 'idle' ? '' : phase === 'armed' ? 'Start' : phase === 'pending' ? 'Starting…' : phase === 'recording' ? 'Saving…' : phase === 'record' ? 'Record ' + hours + ' h' : phase === 'error' ? 'Check timer' : phase === 'checking' ? 'Check timer' : running ? countdown : 'Done';
-      var secondary = phase === 'done1' ? 'Start 4 h →' : phase === 'done2' ? 'Tomorrow · 00:00' : phase === 'checking' ? model.stale || model.recordedStale ? 'Not connected' : 'Checking…' : phase === 'error' || phase === 'record' ? 'Operandio · details' : 'Operandio · ' + (phase === 'armed' ? 2 : hours) + ' h';
-      var label = phase === 'idle' ? 'Operandio cooling timer. Prepare 2-hour start' : phase === 'armed' ? (s.secondDone ? 'Start another Operandio batch, 2-hour timer' : 'Start Operandio 2-hour timer') : phase === 'pending' ? 'Starting Operandio ' + hours + '-hour timer. Waiting for confirmation.' : phase === 'recording' ? 'Saving Operandio ' + hours + '-hour confirmation.' : phase === 'record' ? 'Operandio ' + hours + '-hour check needs recording. Open timer details.' : phase === 'done1' ? 'Operandio 2 hours done. Start 4-hour timer' : phase === 'done2' ? 'Operandio cooling finished. Timer disabled until tomorrow at 00:00 Queensland time.' : running ? 'Operandio ' + hours + '-hour timer, ' + countdown + ' remaining' : model.actionError ? String(model.actionError.message || 'Couldn’t start Operandio. Check the timer.') : readStatus();
+      var primary = phase === 'off_hours' ? 'Back at 10:00' : phase === 'idle' ? '' : phase === 'armed' ? 'Start' : phase === 'pending' ? 'Starting…' : phase === 'recording' ? 'Saving…' : phase === 'record' ? 'Record ' + hours + ' h' : phase === 'error' ? 'Check timer' : phase === 'checking' ? 'Check timer' : running ? countdown : 'Done';
+      var secondary = phase === 'off_hours' ? 'Operandio' : phase === 'done1' ? 'Start 4 h →' : phase === 'done2' ? 'Tomorrow · 10:00' : phase === 'checking' ? model.stale || model.recordedStale ? 'Not connected' : 'Checking…' : phase === 'error' || phase === 'record' ? 'Operandio · details' : 'Operandio · ' + (phase === 'armed' ? 2 : hours) + ' h';
+      var label = phase === 'off_hours' ? 'Operandio timer unavailable until 10:00 Queensland time.' : phase === 'idle' ? 'Operandio cooling timer. Prepare 2-hour start' : phase === 'armed' ? (s.secondDone ? 'Start another Operandio batch, 2-hour timer' : 'Start Operandio 2-hour timer') : phase === 'pending' ? 'Starting Operandio ' + hours + '-hour timer. Waiting for confirmation.' : phase === 'recording' ? 'Saving Operandio ' + hours + '-hour confirmation.' : phase === 'record' ? 'Operandio ' + hours + '-hour check needs recording. Open timer details.' : phase === 'done1' ? 'Operandio 2 hours done. Start 4-hour timer' : phase === 'done2' ? 'Operandio cooling finished. Timer disabled until tomorrow at 10:00 Queensland time.' : running ? 'Operandio ' + hours + '-hour timer, ' + countdown + ' remaining' : model.actionError ? String(model.actionError.message || 'Couldn’t start Operandio. Check the timer.') : readStatus();
       if (phase === 'pending' && model.error) label += ' ' + String(model.error);
-      return { phase: phase, hours: hours, running: running, readOnly: running || phase === 'done2', progress: progress, primary: primary, secondary: secondary, label: label || 'Check Operandio timers' };
+      return { phase: phase, hours: hours, running: running, readOnly: running || phase === 'done2' || phase === 'off_hours', progress: progress, primary: primary, secondary: secondary, label: label || 'Check Operandio timers' };
     }
     function sector(progress) {
       if (progress <= 0) return '';
@@ -100,7 +102,8 @@
         var button = chip.querySelector('button'), status = chip.querySelector('.cooling-clock-status');
         var focused = document.activeElement === button || document.activeElement === status || restore && document.activeElement === document.body;
         chip.hidden = !model.available; chip.dataset.clockState = c.phase;
-        button.hidden = c.readOnly; status.hidden = !c.readOnly; button.disabled = c.phase === 'pending';
+        button.hidden = c.readOnly; status.hidden = !c.readOnly; button.disabled = c.phase === 'pending' || c.phase === 'off_hours';
+        if (c.phase === 'off_hours') status.setAttribute('aria-disabled', 'true'); else status.removeAttribute('aria-disabled');
         button.setAttribute('aria-busy', String(c.phase === 'pending' || c.phase === 'recording'));
         button.setAttribute('aria-label', c.label); status.setAttribute('aria-label', c.label); button.title = c.label; status.title = c.label;
         if (c.phase === 'checking' || c.phase === 'error' || c.phase === 'record' || c.phase === 'recording') { button.setAttribute('aria-haspopup', 'dialog'); button.setAttribute('aria-expanded', String(!!wrap)); }
@@ -216,7 +219,7 @@
       if (same && recordedAt(pingStage, run.id) && model.confirmPending !== pingStage) {
         say('Operandio ' + pingStage + '-hour check confirmed. The reminder is cleared for everyone.'); close(); return;
       }
-      text(line, run ? 'Time reached at ' + at(pingStage === 2 ? run.firstDue : run.secondDue) + '.' + (pingStage === 4 && same && !s.newBatchReady ? ' Timer available tomorrow at 00:00.' : '') : 'The shared timer has changed. Open the clock for the current batch.');
+      text(line, run ? 'Time reached at ' + at(pingStage === 2 ? run.firstDue : run.secondDue) + '.' + (pingStage === 4 && same && !s.newBatchReady ? ' Timer available tomorrow at 10:00.' : '') : 'The shared timer has changed. Open the clock for the current batch.');
       if (pingStage === 2 && run) {
         next.hidden = false;
         var title = next.querySelector('b'), detail = next.querySelector('p'), host = next.querySelector('.cooling-action'), error = model.pending !== 4 && model.actionError && model.actionError.stage === 4 ? String(model.actionError.message || '') : '';
@@ -249,7 +252,7 @@
       return '<div class="cooling-entry" data-timer="' + hours + '" tabindex="-1"><div class="cooling-row"><span class="cooling-label"><b id="cooling-label-' + hours + '">' + hours + ' hours</b><small class="cooling-detail" id="cooling-detail-' + hours + '"></small></span><span class="cooling-action"></span></div><div class="cooling-record" hidden></div></div>';
     }
     function show(nextKind, stage, anchor) {
-      if (disposed || !model.available || wrap || H.canOpen && !H.canOpen(nextKind)) return false;
+      if (disposed || !model.available || !windowOpen() || wrap || H.canOpen && !H.canOpen(nextKind)) return false;
       if (nextKind === 'ping') {
         var s = state(); if (!s.ready || !model.recordedReady || model.recordedStale || model.recordedError || recordedAt(stage, s.run && s.run.id) || (stage === 2 ? !s.firstDone : stage !== 4 || !s.secondDone)) return false;
       }
@@ -322,6 +325,7 @@
       if (armed && !event.target.closest('.cooling-clock')) { armed = ''; paintChip(); }
       var button = event.target.closest('[data-cooling]'); if (!button) return;
       var action = button.getAttribute('data-cooling');
+      if (!windowOpen()) return;
       if (action === 'clock') {
         event.preventDefault();
         if (!model.available || model.pending || wrap || H.canOpen && !H.canOpen('menu')) return;
@@ -369,6 +373,7 @@
       if (!s.ready || model.pending || headerError(s) || armed && (armed !== armKey(s) || s.run && !s.newBatchReady)) armed = '';
       if (pingRun && current && current.id === pingRun.id) pingRun = Object.assign({}, current);
       if (!model.available) { attempt++; model = { available: false }; armed = ''; clockFocus = false; close(); say(''); paintChip(); return; }
+      if (!windowOpen()) { armed = ''; clockFocus = false; close(); say(''); paintChip(); return; }
       if (model.actionError) say('');
       else if (current && model.ready && !model.stale && !model.error) {
         if (!runBefore || runBefore.id !== current.id) say('Started Operandio 2-hour timer. Due ' + at(current.firstDue) + '.');
