@@ -2,7 +2,7 @@
 <!-- What was wrong or missing for the team, with numbers when there are any (times, sizes, reads). -->
 
 ## Council
-<!-- What the service council decided (.claude/skills/service-council/SKILL.md). A new page, tab, button, setting, workflow or design: the verdict, taps and lines on a 390 px phone before and after, who disagreed, the brief. A fix, tests, docs or CI: Not needed, with the reason. -->
+<!-- What the service council decided (.claude/skills/service-council/SKILL.md). A new page, tab, button, setting, workflow or design: the verdict, taps and lines on a 390 px phone before and after, who disagreed, the brief. Summarise which design-reference principles helped or were rejected and link their evidence, or say why none applies. A fix, tests, docs or CI: Not needed, with the reason. -->
 Verdict: (Build, Build smaller, Don't build, Your call, or Not needed with the reason)
 
 ## What changes for the team
