@@ -1,6 +1,6 @@
 # Today's team: service and section on each row
 
-10 November 2026, Queensland. **Chosen: C, Roster and focus. Implemented and locally verified; hosted checks and release pending.** The owner said "okay lets go with c" after seeing the recommendation and three concrete previews. The A/B/C names below belong to this new review, separate from the earlier C person worksheet. [Implementation contract and evidence](implementation.md). Original Preview figures below retain their own source and limits.
+10 November 2026, Queensland. **Chosen: C, Roster and focus. Implemented and locally verified; hosted checks and delivery are tracked in PR #652.** The owner said "okay lets go with c" after seeing the recommendation and three concrete previews. The A/B/C names below belong to this new review, separate from the earlier C person worksheet. [Implementation contract and evidence](implementation.md). Original Preview figures below retain their own source and limits.
 
 The head chef clarified that each selected person should have **service/shift and section pickers together**. The present page already has the section picker; its service context is global. [The proposal](proposal.md), [shared current-contract packet](review-packet.md) and [actual current-page baseline](baseline.md) establish the scope and evidence limits.
 

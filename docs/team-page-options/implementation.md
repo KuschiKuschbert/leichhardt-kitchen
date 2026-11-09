@@ -1,6 +1,6 @@
 # Today's team: C implementation
 
-10 November 2026, Queensland. **Implemented and locally verified; hosted checks and release pending.** The owner chose C, Roster and focus, saying "okay lets go with c". Existing focused [PR #652](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/652) carries the application implementation. The [brief](brief.md) owns the choice, original independent council votes, preview comparisons, dissent and rejected all-three blend. No further design-choice gate or full council round is needed for faithful implementation.
+10 November 2026, Queensland. **Implemented and locally verified; hosted checks and delivery are tracked in PR #652.** The owner chose C, Roster and focus, saying "okay lets go with c". Existing focused [PR #652](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/652) carries the application implementation. The [brief](brief.md) owns the choice, original independent council votes, preview comparisons, dissent and rejected all-three blend. No further design-choice gate or full council round is needed for faithful implementation.
 
 ## Changed contract
 
@@ -42,13 +42,21 @@ The existing dated-header and dated-Save suites also pass all **49 assertions**,
 
 ### Frozen complete-app verification
 
-The original implemented-app baseline is retained at tag `team-focus-baseline-2026-11-10` (`f15187dd8ccc1275fc268b8f30d09f54bc78114f`) with the matched synthetic captures beside the final evidence. The earlier council source and previews retain their separate original hashes.
+The original implemented-app baseline is retained at tag `team-focus-baseline-2026-11-10` (`f15187dd8ccc1275fc268b8f30d09f54bc78114f`); its captures and pre-integration C evidence are archived under `pre-integration/`. The final compatible paired baseline is main `7f856297e14699711f9fd6b44e08d59d9acb5434`, retaining the newer application/cooling companion assets. The earlier council source and previews retain their separate original hashes.
 
 [Implemented-app evidence](implementation-evidence.md) and [raw verification](implementation-verification.json) pass **215 checks** across 22 initial and 22 complete open-form scenes, six actual shared-picker paths, 15 control samples, four responsive editor moves and 72 natural-Tab fields including failed/conflicting Save. The implementation's assets match their start/end hashes. Original fonts load in every scene; no horizontal overflow, undersized visible controls or browser errors occur. Sampled enabled notebook text reaches at least 5.199:1, with no unresolved sampled colours. Scoped control labels reach 5.048:1 and boundary/focus 13.531:1; these are computed samples, not whole-app accessibility certification.
 
 At 390 px, complete initial people improve **1 to 2** directly and **0 to 1** in the chef panel, matching C's preview counts. The first person begins at 389.5 px directly and 542.0 px in the actual chef shell; the isolated preview's invented shell was shorter. The full app retains all real room/page navigation, identity, Find/Admin access, fields and references. The final 23.2 px chef-phone margin repair preserves every control and recovers the complete first row. Largest text still fits no complete initial person, as disclosed in the design comparison; Save remains initially visible and all focused controls are reachable above it.
 
 Actual task actions match chosen C: section/Save **3**, another service plus section/Save **5**, two-person/two-service Add/Save **6**, break correction/Save **4**, overlapping Spread/Save **5**, another date **2**. Compared with the old global service/week views, another service and another date each cost one extra action. Matched normal captures keep **13 read calls, including three Team/teamsum paths**; the six task paths add no reads and each Save uses one existing batch. These are stand-in call measurements, not claims about production billing or actual staff behaviour.
+
+### Combined main verification
+
+While this implementation was being finished, Orders #642, staff welcome #649 and Operandio confirmation #653 merged. The branch resolves the actual append conflicts by retaining both changes. Independent source review verifies that the entire Team feature, compact chef identity/Find/Admin block and mobile search retention are byte-identical to the locally verified C implementation; incoming features use their separate handlers and data paths.
+
+The final combined run passes **550 team/date assertions**, **215 full-application checks** and all **18 paired current-main baseline scenes**, with identical start/end asset hashes. Rows, task actions, 13 initial calls/three Team paths, no added task reads, contrast, focused control visibility and Save reachability retain the recorded results. The active baseline deliberately uses compatible `7f856297` assets; mixing original `f15187d` prep code with newer cooling modules is not counted as baseline evidence.
+
+All twelve affected combined integration files also have passing evidence: Orders, cut-offs, cooling confirmation, Home board/staff-first Home, current identity, welcome layout, roles/page roles, read budgets, shared surfaces and Save states. The first local welcome-layout attempt encountered this environment's Google Fonts certificate failure. Its unchanged test then passes **68/68** using its existing `LK_WELCOME_TEST_FONTS` option and the official font faces already fetched through verified TLS. No product code, assertion or timing was relaxed for that replay. The earlier 15-file integration result remains a separate pre-integration checkpoint. Required hosted full-app/emulator checks remain the release gate.
 
 ## After each action
 

@@ -1,6 +1,11 @@
 {
   "environment": "Implemented real app, local Chromium, synthetic fake Firebase only. No actual staff records, production writes or live persistence claim.",
   "baseline": null,
+  "comparisonBaseline": "7f856297e14699711f9fd6b44e08d59d9acb5434",
+  "pairedAssetOverrides": [
+    "js/prep.js",
+    "css/app.css"
+  ],
   "height": 844,
   "fixtures": "Same eight selected plus two eligible people, three configured services, one Dinner-only person, a meal and split overlap, and two future people as Preview C.",
   "counting": "Each button, checkbox or disclosure is one actual action. Shared picker open plus option is two. Scrolling and typing are excluded; Save includes acknowledgement.",
@@ -7688,7 +7693,7 @@
         ],
         "v": 2,
         "at": 1794279600000,
-        "upd": 1794283201477
+        "upd": 1794283201465
       },
       "readsAfter": 13,
       "writesAfter": 3,
@@ -7786,7 +7791,7 @@
         ],
         "v": 2,
         "at": 1794279600000,
-        "upd": 1794283201839
+        "upd": 1794283201954
       },
       "readsAfter": 13,
       "writesAfter": 3,
@@ -7907,7 +7912,7 @@
         ],
         "v": 2,
         "at": 1794279600000,
-        "upd": 1794283201880
+        "upd": 1794283201967
       },
       "readsAfter": 13,
       "writesAfter": 3,
@@ -8005,7 +8010,7 @@
         ],
         "v": 2,
         "at": 1794279600000,
-        "upd": 1794283201693
+        "upd": 1794283201877
       },
       "readsAfter": 13,
       "writesAfter": 3,
@@ -8141,7 +8146,7 @@
         ],
         "v": 2,
         "at": 1794279600000,
-        "upd": 1794283201793
+        "upd": 1794283201951
       },
       "readsAfter": 13,
       "writesAfter": 3,
@@ -15344,22 +15349,60 @@
     },
     {
       "pass": true,
-      "name": "App assets stay unchanged during capture",
+      "name": "App and paired companion assets stay unchanged during capture",
       "detail": {
         "before": {
-          "js/prep.js": "f7b5e289f965ceb1fa72edbdca25707b11116805fd8d938b04cfe8dbb9ce5fc6",
-          "css/app.css": "0e95502632263a6906365c0b5b6ac32b6bfa137dc38ec6a3a6d91a7a3240ed57"
+          "js/prep.js": "d4c6f3d97ea766d62070921f518b33cc8f51469abaed2133d237fb2baea8153e",
+          "css/app.css": "611ac35a6337fdf7ee58d1855c71f791e2041a2da0ae560fbda732a4d7d79474"
         },
         "after": {
-          "js/prep.js": "f7b5e289f965ceb1fa72edbdca25707b11116805fd8d938b04cfe8dbb9ce5fc6",
-          "css/app.css": "0e95502632263a6906365c0b5b6ac32b6bfa137dc38ec6a3a6d91a7a3240ed57"
+          "js/prep.js": "d4c6f3d97ea766d62070921f518b33cc8f51469abaed2133d237fb2baea8153e",
+          "css/app.css": "611ac35a6337fdf7ee58d1855c71f791e2041a2da0ae560fbda732a4d7d79474"
+        },
+        "companionsBefore": {
+          "index.html": "d3099ce42504e253abe7f0e79bd2c3910a318f3415aa15170c17f4dffa4d5b4c",
+          "js/app.js": "491b708627cc3d8ff1a3f2c97768929dd28241471105947f4deddd04b7ccb0de",
+          "js/controls.js": "d5ada90bdc6a33719552ab6009a5ee77cf72eb36cfc76868d95caedffd014f60",
+          "js/cooling-core.js": "9b1dfacc14b91e195ceca0228e184aaa2a4f51f9c101163134b4f11af7d492d5",
+          "js/cooling.js": "bf2cbea01c7c8fe9df13375ad6bc564afd7ff0b2299aee6c6fa928edfd342315",
+          "js/cooling-ui.js": "547eee66245f401e1e4e675306ee458d2f5caf6eca038b3496f8d91f32543f5e",
+          "css/cooling.css": "060cfa9c9bf43f506cf778520f8b167db7ac8eb7f271af479f77fa12eb91f404"
+        },
+        "companionsAfter": {
+          "index.html": "d3099ce42504e253abe7f0e79bd2c3910a318f3415aa15170c17f4dffa4d5b4c",
+          "js/app.js": "491b708627cc3d8ff1a3f2c97768929dd28241471105947f4deddd04b7ccb0de",
+          "js/controls.js": "d5ada90bdc6a33719552ab6009a5ee77cf72eb36cfc76868d95caedffd014f60",
+          "js/cooling-core.js": "9b1dfacc14b91e195ceca0228e184aaa2a4f51f9c101163134b4f11af7d492d5",
+          "js/cooling.js": "bf2cbea01c7c8fe9df13375ad6bc564afd7ff0b2299aee6c6fa928edfd342315",
+          "js/cooling-ui.js": "547eee66245f401e1e4e675306ee458d2f5caf6eca038b3496f8d91f32543f5e",
+          "css/cooling.css": "060cfa9c9bf43f506cf778520f8b167db7ac8eb7f271af479f77fa12eb91f404"
         }
       }
     }
   ],
+  "companionSources": {
+    "current": {
+      "index.html": "d3099ce42504e253abe7f0e79bd2c3910a318f3415aa15170c17f4dffa4d5b4c",
+      "js/app.js": "491b708627cc3d8ff1a3f2c97768929dd28241471105947f4deddd04b7ccb0de",
+      "js/controls.js": "d5ada90bdc6a33719552ab6009a5ee77cf72eb36cfc76868d95caedffd014f60",
+      "js/cooling-core.js": "9b1dfacc14b91e195ceca0228e184aaa2a4f51f9c101163134b4f11af7d492d5",
+      "js/cooling.js": "bf2cbea01c7c8fe9df13375ad6bc564afd7ff0b2299aee6c6fa928edfd342315",
+      "js/cooling-ui.js": "547eee66245f401e1e4e675306ee458d2f5caf6eca038b3496f8d91f32543f5e",
+      "css/cooling.css": "060cfa9c9bf43f506cf778520f8b167db7ac8eb7f271af479f77fa12eb91f404"
+    },
+    "expected": {
+      "index.html": "d3099ce42504e253abe7f0e79bd2c3910a318f3415aa15170c17f4dffa4d5b4c",
+      "js/app.js": "491b708627cc3d8ff1a3f2c97768929dd28241471105947f4deddd04b7ccb0de",
+      "js/controls.js": "d5ada90bdc6a33719552ab6009a5ee77cf72eb36cfc76868d95caedffd014f60",
+      "js/cooling-core.js": "9b1dfacc14b91e195ceca0228e184aaa2a4f51f9c101163134b4f11af7d492d5",
+      "js/cooling.js": "bf2cbea01c7c8fe9df13375ad6bc564afd7ff0b2299aee6c6fa928edfd342315",
+      "js/cooling-ui.js": "547eee66245f401e1e4e675306ee458d2f5caf6eca038b3496f8d91f32543f5e",
+      "css/cooling.css": "060cfa9c9bf43f506cf778520f8b167db7ac8eb7f271af479f77fa12eb91f404"
+    }
+  },
   "sources": {
-    "js/prep.js": "f7b5e289f965ceb1fa72edbdca25707b11116805fd8d938b04cfe8dbb9ce5fc6",
-    "css/app.css": "0e95502632263a6906365c0b5b6ac32b6bfa137dc38ec6a3a6d91a7a3240ed57"
+    "js/prep.js": "d4c6f3d97ea766d62070921f518b33cc8f51469abaed2133d237fb2baea8153e",
+    "css/app.css": "611ac35a6337fdf7ee58d1855c71f791e2041a2da0ae560fbda732a4d7d79474"
   },
   "responsive": [
     {
@@ -15432,8 +15475,17 @@
     }
   ],
   "sourcesAfter": {
-    "js/prep.js": "f7b5e289f965ceb1fa72edbdca25707b11116805fd8d938b04cfe8dbb9ce5fc6",
-    "css/app.css": "0e95502632263a6906365c0b5b6ac32b6bfa137dc38ec6a3a6d91a7a3240ed57"
+    "js/prep.js": "d4c6f3d97ea766d62070921f518b33cc8f51469abaed2133d237fb2baea8153e",
+    "css/app.css": "611ac35a6337fdf7ee58d1855c71f791e2041a2da0ae560fbda732a4d7d79474"
+  },
+  "companionSourcesAfter": {
+    "index.html": "d3099ce42504e253abe7f0e79bd2c3910a318f3415aa15170c17f4dffa4d5b4c",
+    "js/app.js": "491b708627cc3d8ff1a3f2c97768929dd28241471105947f4deddd04b7ccb0de",
+    "js/controls.js": "d5ada90bdc6a33719552ab6009a5ee77cf72eb36cfc76868d95caedffd014f60",
+    "js/cooling-core.js": "9b1dfacc14b91e195ceca0228e184aaa2a4f51f9c101163134b4f11af7d492d5",
+    "js/cooling.js": "bf2cbea01c7c8fe9df13375ad6bc564afd7ff0b2299aee6c6fa928edfd342315",
+    "js/cooling-ui.js": "547eee66245f401e1e4e675306ee458d2f5caf6eca038b3496f8d91f32543f5e",
+    "css/cooling.css": "060cfa9c9bf43f506cf778520f8b167db7ac8eb7f271af479f77fa12eb91f404"
   },
   "summary": {
     "checks": 215,

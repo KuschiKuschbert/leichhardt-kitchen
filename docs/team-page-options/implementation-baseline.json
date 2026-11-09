@@ -1,6 +1,11 @@
 {
   "environment": "Implemented real app, local Chromium, synthetic fake Firebase only. No actual staff records, production writes or live persistence claim.",
-  "baseline": "f15187dd8ccc1275fc268b8f30d09f54bc78114f",
+  "baseline": "7f856297e14699711f9fd6b44e08d59d9acb5434",
+  "comparisonBaseline": "7f856297e14699711f9fd6b44e08d59d9acb5434",
+  "pairedAssetOverrides": [
+    "js/prep.js",
+    "css/app.css"
+  ],
   "height": 844,
   "fixtures": "Same eight selected plus two eligible people, three configured services, one Dinner-only person, a meal and split overlap, and two future people as Preview C.",
   "counting": "Each button, checkbox or disclosure is one actual action. Shared picker open plus option is two. Scrolling and typing are excluded; Save includes acknowledgement.",
@@ -11,6 +16,7 @@
       "width": 390,
       "size": "normal",
       "long": false,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 390,
@@ -141,7 +147,9 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 100,
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 95,
+        "minimumEnabled": 5.199,
         "minimum": 2.084,
         "failures": [],
         "disabledBelowThreshold": [
@@ -153,20 +161,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -203,6 +198,7 @@
       "width": 390,
       "size": "xlarge",
       "long": false,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 390,
@@ -333,7 +329,9 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 100,
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 95,
+        "minimumEnabled": 5.199,
         "minimum": 2.084,
         "failures": [],
         "disabledBelowThreshold": [
@@ -345,20 +343,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -395,6 +380,7 @@
       "width": 390,
       "size": "xlarge",
       "long": true,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 390,
@@ -525,7 +511,9 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 100,
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 95,
+        "minimumEnabled": 5.199,
         "minimum": 2.084,
         "failures": [],
         "disabledBelowThreshold": [
@@ -537,20 +525,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -587,6 +562,7 @@
       "width": 768,
       "size": "normal",
       "long": false,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 768,
@@ -717,7 +693,9 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 100,
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 95,
+        "minimumEnabled": 5.199,
         "minimum": 2.084,
         "failures": [],
         "disabledBelowThreshold": [
@@ -729,20 +707,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -779,6 +744,7 @@
       "width": 768,
       "size": "xlarge",
       "long": false,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 768,
@@ -909,7 +875,9 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 100,
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 95,
+        "minimumEnabled": 5.199,
         "minimum": 2.084,
         "failures": [],
         "disabledBelowThreshold": [
@@ -921,20 +889,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -971,6 +926,7 @@
       "width": 768,
       "size": "xlarge",
       "long": true,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 768,
@@ -1101,7 +1057,9 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 100,
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 95,
+        "minimumEnabled": 5.199,
         "minimum": 2.084,
         "failures": [],
         "disabledBelowThreshold": [
@@ -1113,20 +1071,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -1163,6 +1108,7 @@
       "width": 1280,
       "size": "normal",
       "long": false,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 1280,
@@ -1293,17 +1239,11 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 103,
-        "minimum": 1,
-        "failures": [
-          {
-            "text": "Operandio · 2 h",
-            "ratio": 1,
-            "required": 4.5,
-            "size": 11,
-            "disabled": false
-          }
-        ],
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 95,
+        "minimumEnabled": 5.199,
+        "minimum": 2.084,
+        "failures": [],
         "disabledBelowThreshold": [
           {
             "text": "Save Tuesday 10 November",
@@ -1313,20 +1253,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -1363,6 +1290,7 @@
       "width": 1280,
       "size": "xlarge",
       "long": false,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 1280,
@@ -1493,17 +1421,11 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 103,
-        "minimum": 1,
-        "failures": [
-          {
-            "text": "Operandio · 2 h",
-            "ratio": 1,
-            "required": 4.5,
-            "size": 11,
-            "disabled": false
-          }
-        ],
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 95,
+        "minimumEnabled": 5.199,
+        "minimum": 2.084,
+        "failures": [],
         "disabledBelowThreshold": [
           {
             "text": "Save Tuesday 10 November",
@@ -1513,20 +1435,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -1563,6 +1472,7 @@
       "width": 1280,
       "size": "xlarge",
       "long": true,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 1280,
@@ -1693,17 +1603,11 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 103,
-        "minimum": 1,
-        "failures": [
-          {
-            "text": "Operandio · 2 h",
-            "ratio": 1,
-            "required": 4.5,
-            "size": 11,
-            "disabled": false
-          }
-        ],
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 95,
+        "minimumEnabled": 5.199,
+        "minimum": 2.084,
+        "failures": [],
         "disabledBelowThreshold": [
           {
             "text": "Save Tuesday 10 November",
@@ -1713,20 +1617,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -1763,6 +1654,7 @@
       "width": 390,
       "size": "normal",
       "long": false,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 390,
@@ -1893,7 +1785,9 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 112,
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 94,
+        "minimumEnabled": 5.199,
         "minimum": 2.084,
         "failures": [],
         "disabledBelowThreshold": [
@@ -1905,20 +1799,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -1955,6 +1836,7 @@
       "width": 390,
       "size": "xlarge",
       "long": false,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 390,
@@ -2085,7 +1967,9 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 112,
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 94,
+        "minimumEnabled": 5.199,
         "minimum": 2.084,
         "failures": [],
         "disabledBelowThreshold": [
@@ -2097,20 +1981,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -2147,6 +2018,7 @@
       "width": 390,
       "size": "xlarge",
       "long": true,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 390,
@@ -2277,7 +2149,9 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 112,
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 94,
+        "minimumEnabled": 5.199,
         "minimum": 2.084,
         "failures": [],
         "disabledBelowThreshold": [
@@ -2289,20 +2163,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -2339,6 +2200,7 @@
       "width": 768,
       "size": "normal",
       "long": false,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 768,
@@ -2469,7 +2331,9 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 113,
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 94,
+        "minimumEnabled": 5.199,
         "minimum": 2.084,
         "failures": [],
         "disabledBelowThreshold": [
@@ -2481,20 +2345,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -2531,6 +2382,7 @@
       "width": 768,
       "size": "xlarge",
       "long": false,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 768,
@@ -2661,7 +2513,9 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 113,
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 94,
+        "minimumEnabled": 5.199,
         "minimum": 2.084,
         "failures": [],
         "disabledBelowThreshold": [
@@ -2673,20 +2527,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -2723,6 +2564,7 @@
       "width": 768,
       "size": "xlarge",
       "long": true,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 768,
@@ -2853,7 +2695,9 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 113,
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 94,
+        "minimumEnabled": 5.199,
         "minimum": 2.084,
         "failures": [],
         "disabledBelowThreshold": [
@@ -2865,20 +2709,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -2915,6 +2746,7 @@
       "width": 1280,
       "size": "normal",
       "long": false,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 1280,
@@ -3045,17 +2877,11 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 119,
-        "minimum": 1,
-        "failures": [
-          {
-            "text": "Operandio · 2 h",
-            "ratio": 1,
-            "required": 4.5,
-            "size": 11,
-            "disabled": false
-          }
-        ],
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 94,
+        "minimumEnabled": 5.199,
+        "minimum": 2.084,
+        "failures": [],
         "disabledBelowThreshold": [
           {
             "text": "Save Tuesday 10 November",
@@ -3065,20 +2891,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -3115,6 +2928,7 @@
       "width": 1280,
       "size": "xlarge",
       "long": false,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 1280,
@@ -3245,17 +3059,11 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 119,
-        "minimum": 1,
-        "failures": [
-          {
-            "text": "Operandio · 2 h",
-            "ratio": 1,
-            "required": 4.5,
-            "size": 11,
-            "disabled": false
-          }
-        ],
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 94,
+        "minimumEnabled": 5.199,
+        "minimum": 2.084,
+        "failures": [],
         "disabledBelowThreshold": [
           {
             "text": "Save Tuesday 10 November",
@@ -3265,20 +3073,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -3315,6 +3110,7 @@
       "width": 1280,
       "size": "xlarge",
       "long": true,
+      "serviceLong": false,
       "geometry": {
         "viewport": {
           "width": 1280,
@@ -3445,17 +3241,11 @@
         "teamReads": 3
       },
       "colours": {
-        "checked": 119,
-        "minimum": 1,
-        "failures": [
-          {
-            "text": "Operandio · 2 h",
-            "ratio": 1,
-            "required": 4.5,
-            "size": 11,
-            "disabled": false
-          }
-        ],
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 94,
+        "minimumEnabled": 5.199,
+        "minimum": 2.084,
+        "failures": [],
         "disabledBelowThreshold": [
           {
             "text": "Save Tuesday 10 November",
@@ -3465,20 +3255,7 @@
             "disabled": true
           }
         ],
-        "unresolved": [
-          {
-            "text": "All shifts · Saved plan · Set by Sam at 13:00 · Last checked 14:00",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Split · Lunch",
-            "reason": "Unsupported computed text colour"
-          },
-          {
-            "text": "Meal break · Lunch",
-            "reason": "Unsupported computed text colour"
-          }
-        ]
+        "unresolved": []
       },
       "fonts": [
         {
@@ -5909,9 +5686,29 @@
       }
     }
   ],
+  "companionSources": {
+    "current": {
+      "index.html": "d3099ce42504e253abe7f0e79bd2c3910a318f3415aa15170c17f4dffa4d5b4c",
+      "js/app.js": "491b708627cc3d8ff1a3f2c97768929dd28241471105947f4deddd04b7ccb0de",
+      "js/controls.js": "d5ada90bdc6a33719552ab6009a5ee77cf72eb36cfc76868d95caedffd014f60",
+      "js/cooling-core.js": "9b1dfacc14b91e195ceca0228e184aaa2a4f51f9c101163134b4f11af7d492d5",
+      "js/cooling.js": "bf2cbea01c7c8fe9df13375ad6bc564afd7ff0b2299aee6c6fa928edfd342315",
+      "js/cooling-ui.js": "547eee66245f401e1e4e675306ee458d2f5caf6eca038b3496f8d91f32543f5e",
+      "css/cooling.css": "060cfa9c9bf43f506cf778520f8b167db7ac8eb7f271af479f77fa12eb91f404"
+    },
+    "expected": {
+      "index.html": "d3099ce42504e253abe7f0e79bd2c3910a318f3415aa15170c17f4dffa4d5b4c",
+      "js/app.js": "491b708627cc3d8ff1a3f2c97768929dd28241471105947f4deddd04b7ccb0de",
+      "js/controls.js": "d5ada90bdc6a33719552ab6009a5ee77cf72eb36cfc76868d95caedffd014f60",
+      "js/cooling-core.js": "9b1dfacc14b91e195ceca0228e184aaa2a4f51f9c101163134b4f11af7d492d5",
+      "js/cooling.js": "bf2cbea01c7c8fe9df13375ad6bc564afd7ff0b2299aee6c6fa928edfd342315",
+      "js/cooling-ui.js": "547eee66245f401e1e4e675306ee458d2f5caf6eca038b3496f8d91f32543f5e",
+      "css/cooling.css": "060cfa9c9bf43f506cf778520f8b167db7ac8eb7f271af479f77fa12eb91f404"
+    }
+  },
   "sources": {
-    "js/prep.js": "8558f8e99070f01072930530217df236bba9f5e9bdec44fdd1f91592ed98bc0b",
-    "css/app.css": "208e609e327d9d81f724644eb62a7fd4b526a4a1c97d357f272ba4655b51e36d"
+    "js/prep.js": "2faa942eb130ff4eb23649a98500b7b09a8503df634c90387adcfc4588ad494d",
+    "css/app.css": "fd6bcd207842a560a8333140579f0c2bae15c296d2a462941b7347c69c489904"
   },
   "summary": {
     "checks": 18,
