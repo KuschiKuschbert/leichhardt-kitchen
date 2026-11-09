@@ -1,15 +1,205 @@
 {
-  "version": 1,
+  "version": 2,
   "clips": {
+    "idle": {
+      "title": "Idle",
+      "sheet": "idle-sheet-compact.webp",
+      "master": "idle-sheet.png",
+      "poster": "idle-still.png",
+      "columns": 4,
+      "rows": 2,
+      "durations": [
+        1400,
+        180,
+        160,
+        280,
+        400,
+        250,
+        180,
+        950
+      ],
+      "posterFrame": 0,
+      "loop": true
+    },
+    "welcome": {
+      "title": "Welcome",
+      "sheet": "welcome-sheet-compact.webp",
+      "master": "welcome-sheet.png",
+      "poster": "welcome-still.png",
+      "columns": 4,
+      "rows": 2,
+      "durations": [
+        800,
+        160,
+        200,
+        160,
+        200,
+        280,
+        200,
+        700
+      ],
+      "posterFrame": 0,
+      "loop": true
+    },
+    "look-around": {
+      "title": "Look around",
+      "sheet": "look-around-sheet-compact.webp",
+      "master": "look-around-sheet.png",
+      "poster": "look-around-still.png",
+      "columns": 4,
+      "rows": 2,
+      "durations": [
+        900,
+        230,
+        400,
+        180,
+        230,
+        400,
+        180,
+        800
+      ],
+      "posterFrame": 0,
+      "loop": true
+    },
+    "recipe-reading": {
+      "title": "Recipe reading",
+      "sheet": "recipe-reading-sheet-compact.webp",
+      "master": "recipe-reading-sheet.png",
+      "poster": "recipe-reading-still.png",
+      "columns": 4,
+      "rows": 2,
+      "durations": [
+        700,
+        250,
+        450,
+        450,
+        400,
+        350,
+        250,
+        800
+      ],
+      "posterFrame": 0,
+      "loop": true
+    },
+    "ready-to-cook": {
+      "title": "Ready to cook",
+      "sheet": "ready-to-cook-sheet-compact.webp",
+      "master": "ready-to-cook-sheet.png",
+      "poster": "ready-to-cook-still.png",
+      "columns": 4,
+      "rows": 2,
+      "durations": [
+        900,
+        200,
+        300,
+        400,
+        300,
+        250,
+        200,
+        700
+      ],
+      "posterFrame": 0,
+      "loop": true
+    },
+    "smash": {
+      "title": "Smash",
+      "sheet": "smash-sheet-compact.webp",
+      "master": "smash-sheet.png",
+      "poster": "smash-still.png",
+      "columns": 4,
+      "rows": 2,
+      "durations": [
+        650,
+        250,
+        240,
+        350,
+        350,
+        300,
+        350,
+        1100
+      ],
+      "posterFrame": 0,
+      "loop": false
+    },
+    "flip": {
+      "title": "Flip",
+      "sheet": "flip-sheet-compact.webp",
+      "master": "flip-sheet.png",
+      "poster": "flip-still.png",
+      "columns": 4,
+      "rows": 2,
+      "durations": [
+        650,
+        220,
+        120,
+        140,
+        120,
+        200,
+        230,
+        1000
+      ],
+      "posterFrame": 0,
+      "loop": false
+    },
+    "build": {
+      "title": "Build",
+      "sheet": "build-sheet-compact.webp",
+      "master": "build-sheet.png",
+      "poster": "build-still.png",
+      "columns": 4,
+      "rows": 2,
+      "durations": [
+        600,
+        350,
+        350,
+        350,
+        350,
+        350,
+        350,
+        1200
+      ],
+      "posterFrame": 0,
+      "loop": false
+    },
     "burger": {
-      "title": "Burger's up",
+      "title": "Serve",
       "sheet": "burger-sheet-compact.webp",
       "master": "burger-sheet.png",
       "poster": "burger-still.png",
       "columns": 4,
       "rows": 2,
-      "durations": [1000, 140, 180, 260, 420, 300, 180, 700],
-      "posterFrame": 0
+      "durations": [
+        1000,
+        140,
+        180,
+        260,
+        420,
+        300,
+        180,
+        700
+      ],
+      "posterFrame": 0,
+      "loop": true
+    },
+    "walk": {
+      "title": "Walk",
+      "sheet": "walk-sheet-compact.webp",
+      "master": "walk-sheet.png",
+      "poster": "walk-still.png",
+      "columns": 4,
+      "rows": 2,
+      "durations": [
+        500,
+        160,
+        160,
+        160,
+        160,
+        200,
+        250,
+        900
+      ],
+      "posterFrame": 0,
+      "loop": false
     },
     "smoker": {
       "title": "At the smoker",
@@ -18,8 +208,18 @@
       "poster": "smoker-still.png",
       "columns": 4,
       "rows": 2,
-      "durations": [1000, 250, 250, 400, 500, 300, 250, 850],
-      "posterFrame": 0
+      "durations": [
+        1000,
+        250,
+        250,
+        400,
+        500,
+        300,
+        250,
+        850
+      ],
+      "posterFrame": 0,
+      "loop": true
     }
   }
 }

@@ -31,9 +31,10 @@ try {
     magick([frames[clip.posterFrame].path, join(assetDir, clip.poster)]);
     const sequence = frames.flatMap(frame => ['-dispose', 'Background', '-delay', String(frame.delay), frame.path]);
     // Lossless WebP preserves the generated RGBA pixels and exact frame timing.
-    magick([...sequence, '-loop', '0', '-define', 'webp:lossless=true', '-quality', '100', join(assetDir, `${id}.webp`)]);
+    const loopCount = clip.loop === false ? '1' : '0';
+    magick([...sequence, '-loop', loopCount, '-define', 'webp:lossless=true', '-quality', '100', join(assetDir, `${id}.webp`)]);
     // Shareable GIF preview uses the app's paper surface; PNG/WebP retain alpha.
-    magick([...sequence, '-background', '#FBF8F1', '-alpha', 'remove', '-alpha', 'off', '-loop', '0', '-layers', 'Optimize', join(assetDir, `${id}.gif`)]);
+    magick([...sequence, '-background', '#FBF8F1', '-alpha', 'remove', '-alpha', 'off', '-loop', loopCount, '-layers', 'Optimize', join(assetDir, `${id}.gif`)]);
     console.log(`${id}: ${frames.length} frames, ${clip.durations.reduce((a, b) => a + b, 0)} ms, ${fw} × ${fh}`);
   }
 } finally {

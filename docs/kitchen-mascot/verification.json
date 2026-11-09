@@ -1,25 +1,13 @@
 {
-  "scope": "Isolated artwork preview only. No live-app integration, production data or service-row density claim.",
-  "sourceCommit": "7f856297e14699711f9fd6b44e08d59d9acb5434",
+  "scope": "Isolated 11-action artwork gallery. No live-app integration, production data or service-row density claim.",
   "browser": "/usr/bin/chromium",
   "current": {
-    "kind": "geometry-and-font-loading",
-    "fonts": "Local unmodified Barlow 400/600/700 and Barlow Condensed 700; exact existing app families; all four loaded.",
-    "viewports": [
+    "fonts": "Local Barlow 400/600/700 and Barlow Condensed 700, all loaded.",
+    "geometry": [
       {
         "width": 390,
         "overflow": false,
-        "canvases": [
-          {
-            "width": 192,
-            "height": 256
-          },
-          {
-            "width": 192,
-            "height": 256
-          }
-        ],
-        "controls": true,
+        "allButtons44px": true,
         "fonts": [
           {
             "family": "Barlow",
@@ -42,48 +30,46 @@
             "status": "loaded"
           }
         ],
-        "states": [
-          {
-            "id": "burger",
-            "ready": true,
-            "failed": false,
-            "frame": 0,
-            "frames": 8,
-            "playing": false,
-            "visible": true,
-            "scheduled": false
-          },
-          {
-            "id": "smoker",
-            "ready": true,
-            "failed": false,
-            "frame": 0,
-            "frames": 8,
-            "playing": false,
-            "visible": false,
-            "scheduled": false
-          }
-        ],
+        "canvas": {
+          "width": 192,
+          "height": 256
+        },
         "closeup": {
           "width": 192,
-          "height": 256,
-          "overflow": false
-        }
+          "height": 256
+        },
+        "reachable": [
+          "idle",
+          "welcome",
+          "look-around",
+          "recipe-reading",
+          "ready-to-cook",
+          "smash",
+          "flip",
+          "build",
+          "burger",
+          "walk",
+          "smoker"
+        ],
+        "startupAtlases": 1,
+        "selectedAtlasRequests": [
+          "burger-sheet-compact.webp",
+          "smoker-sheet-compact.webp",
+          "idle-sheet-compact.webp",
+          "welcome-sheet-compact.webp",
+          "look-around-sheet-compact.webp",
+          "recipe-reading-sheet-compact.webp",
+          "ready-to-cook-sheet-compact.webp",
+          "smash-sheet-compact.webp",
+          "flip-sheet-compact.webp",
+          "build-sheet-compact.webp",
+          "walk-sheet-compact.webp"
+        ]
       },
       {
         "width": 768,
         "overflow": false,
-        "canvases": [
-          {
-            "width": 192,
-            "height": 256
-          },
-          {
-            "width": 192,
-            "height": 256
-          }
-        ],
-        "controls": true,
+        "allButtons44px": true,
         "fonts": [
           {
             "family": "Barlow",
@@ -106,260 +92,569 @@
             "status": "loaded"
           }
         ],
-        "states": [
-          {
-            "id": "burger",
-            "ready": true,
-            "failed": false,
-            "frame": 0,
-            "frames": 8,
-            "playing": false,
-            "visible": true,
-            "scheduled": false
-          },
-          {
-            "id": "smoker",
-            "ready": true,
-            "failed": false,
-            "frame": 0,
-            "frames": 8,
-            "playing": false,
-            "visible": true,
-            "scheduled": false
-          }
-        ],
-        "closeup": {
-          "width": 192,
-          "height": 256,
-          "overflow": false
-        }
-      },
-      {
-        "width": 1280,
-        "overflow": false,
-        "canvases": [
-          {
-            "width": 192,
-            "height": 256
-          },
-          {
-            "width": 192,
-            "height": 256
-          }
-        ],
-        "controls": true,
-        "fonts": [
-          {
-            "family": "Barlow",
-            "weight": "400",
-            "status": "loaded"
-          },
-          {
-            "family": "Barlow",
-            "weight": "600",
-            "status": "loaded"
-          },
-          {
-            "family": "Barlow",
-            "weight": "700",
-            "status": "loaded"
-          },
-          {
-            "family": "Barlow Condensed",
-            "weight": "700",
-            "status": "loaded"
-          }
-        ],
-        "states": [
-          {
-            "id": "burger",
-            "ready": true,
-            "failed": false,
-            "frame": 0,
-            "frames": 8,
-            "playing": false,
-            "visible": true,
-            "scheduled": false
-          },
-          {
-            "id": "smoker",
-            "ready": true,
-            "failed": false,
-            "frame": 0,
-            "frames": 8,
-            "playing": false,
-            "visible": true,
-            "scheduled": false
-          }
-        ],
-        "closeup": {
-          "width": 384,
-          "height": 512,
-          "overflow": false
-        }
-      }
-    ],
-    "errors": [],
-    "failedRequests": []
-  },
-  "earlier": {
-    "kind": "playback-accessibility-fallback-and-geometry",
-    "fonts": "System fallback; original Google Fonts stylesheet request failed with net::ERR_CERT_AUTHORITY_INVALID. Subsequently resolved for this preview by vendoring approved font files.",
-    "checks": [
-      "frame advances on explicit play",
-      "manual pause remains frozen",
-      "reduced-motion default still",
-      "preference change pauses",
-      "preference reset preserves manual pause",
-      "simulated hidden document pauses timer",
-      "visibility return resumes intended playback",
-      "offscreen pauses and onscreen resumes",
-      "missing sheet shows still image",
-      "missing image shows named fallback"
-    ],
-    "viewports": [
-      {
-        "width": 390,
-        "overflow": false,
-        "canvases": [
-          {
-            "width": 192,
-            "height": 256
-          },
-          {
-            "width": 192,
-            "height": 256
-          }
-        ],
-        "controls": true,
-        "states": [
-          {
-            "id": "burger",
-            "ready": true,
-            "failed": false,
-            "frame": 0,
-            "frames": 8,
-            "playing": false,
-            "visible": true,
-            "scheduled": false
-          },
-          {
-            "id": "smoker",
-            "ready": true,
-            "failed": false,
-            "frame": 0,
-            "frames": 8,
-            "playing": false,
-            "visible": false,
-            "scheduled": false
-          }
-        ],
-        "fontLoaded": [],
-        "closeup": {
+        "canvas": {
           "width": 192,
           "height": 256
-        }
-      },
-      {
-        "width": 768,
-        "overflow": false,
-        "canvases": [
-          {
-            "width": 192,
-            "height": 256
-          },
-          {
-            "width": 192,
-            "height": 256
-          }
-        ],
-        "controls": true,
-        "states": [
-          {
-            "id": "burger",
-            "ready": true,
-            "failed": false,
-            "frame": 0,
-            "frames": 8,
-            "playing": false,
-            "visible": true,
-            "scheduled": false
-          },
-          {
-            "id": "smoker",
-            "ready": true,
-            "failed": false,
-            "frame": 0,
-            "frames": 8,
-            "playing": false,
-            "visible": true,
-            "scheduled": false
-          }
-        ],
-        "fontLoaded": [],
-        "closeup": {
-          "width": 192,
-          "height": 256
-        }
-      },
-      {
-        "width": 1280,
-        "overflow": false,
-        "canvases": [
-          {
-            "width": 192,
-            "height": 256
-          },
-          {
-            "width": 192,
-            "height": 256
-          }
-        ],
-        "controls": true,
-        "states": [
-          {
-            "id": "burger",
-            "ready": true,
-            "failed": false,
-            "frame": 0,
-            "frames": 8,
-            "playing": false,
-            "visible": true,
-            "scheduled": false
-          },
-          {
-            "id": "smoker",
-            "ready": true,
-            "failed": false,
-            "frame": 0,
-            "frames": 8,
-            "playing": false,
-            "visible": true,
-            "scheduled": false
-          }
-        ],
-        "fontLoaded": [],
+        },
         "closeup": {
           "width": 384,
           "height": 512
-        }
+        },
+        "reachable": [
+          "idle",
+          "welcome",
+          "look-around",
+          "recipe-reading",
+          "ready-to-cook",
+          "smash",
+          "flip",
+          "build",
+          "burger",
+          "walk",
+          "smoker"
+        ],
+        "startupAtlases": 1,
+        "selectedAtlasRequests": [
+          "burger-sheet-compact.webp",
+          "smoker-sheet-compact.webp",
+          "idle-sheet-compact.webp",
+          "welcome-sheet-compact.webp",
+          "look-around-sheet-compact.webp",
+          "recipe-reading-sheet-compact.webp",
+          "ready-to-cook-sheet-compact.webp",
+          "smash-sheet-compact.webp",
+          "flip-sheet-compact.webp",
+          "build-sheet-compact.webp",
+          "walk-sheet-compact.webp"
+        ]
+      },
+      {
+        "width": 1280,
+        "overflow": false,
+        "allButtons44px": true,
+        "fonts": [
+          {
+            "family": "Barlow",
+            "weight": "400",
+            "status": "loaded"
+          },
+          {
+            "family": "Barlow",
+            "weight": "600",
+            "status": "loaded"
+          },
+          {
+            "family": "Barlow",
+            "weight": "700",
+            "status": "loaded"
+          },
+          {
+            "family": "Barlow Condensed",
+            "weight": "700",
+            "status": "loaded"
+          }
+        ],
+        "canvas": {
+          "width": 192,
+          "height": 256
+        },
+        "closeup": {
+          "width": 384,
+          "height": 512
+        },
+        "reachable": [
+          "idle",
+          "welcome",
+          "look-around",
+          "recipe-reading",
+          "ready-to-cook",
+          "smash",
+          "flip",
+          "build",
+          "burger",
+          "walk",
+          "smoker"
+        ],
+        "startupAtlases": 1,
+        "selectedAtlasRequests": [
+          "burger-sheet-compact.webp",
+          "smoker-sheet-compact.webp",
+          "idle-sheet-compact.webp",
+          "welcome-sheet-compact.webp",
+          "look-around-sheet-compact.webp",
+          "recipe-reading-sheet-compact.webp",
+          "ready-to-cook-sheet-compact.webp",
+          "smash-sheet-compact.webp",
+          "flip-sheet-compact.webp",
+          "build-sheet-compact.webp",
+          "walk-sheet-compact.webp"
+        ]
       }
     ],
-    "errors": []
-  },
-  "notes": [
-    "After the full playback checks, only a repeated-text guard was added to control painting. A targeted MutationObserver check confirms frame advances create no repeated live-region announcement; Play and Pause each announce once. Geometry was rechecked with local fonts.",
-    "Visibility-change check simulated document.hidden; offscreen test used real scrolling and IntersectionObserver.",
-    "Screenshots use local fonts and reduced-motion stills, with both eight-frame atlases loaded.",
-    "All controls meet 44 px height. App size 192 × 256; close-up 384 × 512 at 1280 px and fitted 192 × 256 at 390/768 px."
-  ],
-  "liveRegionCheck": {
-    "messages": [
-      "Playing",
-      "Paused"
+    "settledActions": [
+      {
+        "id": "smash",
+        "frames": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "finalFrame": 7,
+        "settled": true,
+        "restartFrom0": true,
+        "midPauseResumeFrame": 3
+      },
+      {
+        "id": "flip",
+        "frames": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "finalFrame": 7,
+        "settled": true,
+        "restartFrom0": true,
+        "midPauseResumeFrame": 3
+      },
+      {
+        "id": "build",
+        "frames": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "finalFrame": 7,
+        "settled": true,
+        "restartFrom0": true,
+        "midPauseResumeFrame": 3
+      },
+      {
+        "id": "walk",
+        "frames": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "finalFrame": 7,
+        "settled": true,
+        "restartFrom0": true,
+        "midPauseResumeFrame": 3
+      }
     ],
-    "frameAdvancesWhilePlaying": 6,
+    "checks": [
+      "All 11 actions reachable with mouse and keyboard, eight-frame atlases loaded.",
+      "One selected player and one startup atlas request; all 11 atlases requested only after selection.",
+      "Arrow/Home/End focus navigation does not select or fetch; Enter/Space activates.",
+      "Manual pause persists across selections and reduced-motion preference reset.",
+      "Live region announces Playing and Paused once each across repeated frame advances.",
+      "Single-run actions settle on final frame; Play/Replay restart, manual pause resumes current frame.",
+      "Real offscreen scroll pauses/resumes; simulated document.hidden pauses/resumes.",
+      "Rapid selection disposes old players and leaves one active player.",
+      "Failed atlas shows still fallback; failed all images shows named message and disabled controls."
+    ],
     "errors": [],
-    "method": "MutationObserver over the live region and canvas frame attributes; 2100 ms playing plus 350 ms paused."
-  }
+    "unexpectedFailedRequests": [],
+    "review": {
+      "scope": "Independent source review of lifecycle and keyboard paths, plus a Chromium loop:false fixture using the existing burger atlas.",
+      "findings": "No actionable issues found.",
+      "verified": [
+        "Settlement on frame 7 with no timer",
+        "Play restarts at frame 0",
+        "Manual Pause stops playback",
+        "Switching clips preserves paused state",
+        "No JavaScript errors"
+      ],
+      "limits": "Review did not inspect all incoming artwork or real-device screen-reader behaviour."
+    }
+  },
+  "history": {
+    "twoClipPreview": {
+      "scope": "Isolated artwork preview only. No live-app integration, production data or service-row density claim.",
+      "sourceCommit": "7f856297e14699711f9fd6b44e08d59d9acb5434",
+      "browser": "/usr/bin/chromium",
+      "current": {
+        "kind": "geometry-and-font-loading",
+        "fonts": "Local unmodified Barlow 400/600/700 and Barlow Condensed 700; exact existing app families; all four loaded.",
+        "viewports": [
+          {
+            "width": 390,
+            "overflow": false,
+            "canvases": [
+              {
+                "width": 192,
+                "height": 256
+              },
+              {
+                "width": 192,
+                "height": 256
+              }
+            ],
+            "controls": true,
+            "fonts": [
+              {
+                "family": "Barlow",
+                "weight": "400",
+                "status": "loaded"
+              },
+              {
+                "family": "Barlow",
+                "weight": "600",
+                "status": "loaded"
+              },
+              {
+                "family": "Barlow",
+                "weight": "700",
+                "status": "loaded"
+              },
+              {
+                "family": "Barlow Condensed",
+                "weight": "700",
+                "status": "loaded"
+              }
+            ],
+            "states": [
+              {
+                "id": "burger",
+                "ready": true,
+                "failed": false,
+                "frame": 0,
+                "frames": 8,
+                "playing": false,
+                "visible": true,
+                "scheduled": false
+              },
+              {
+                "id": "smoker",
+                "ready": true,
+                "failed": false,
+                "frame": 0,
+                "frames": 8,
+                "playing": false,
+                "visible": false,
+                "scheduled": false
+              }
+            ],
+            "closeup": {
+              "width": 192,
+              "height": 256,
+              "overflow": false
+            }
+          },
+          {
+            "width": 768,
+            "overflow": false,
+            "canvases": [
+              {
+                "width": 192,
+                "height": 256
+              },
+              {
+                "width": 192,
+                "height": 256
+              }
+            ],
+            "controls": true,
+            "fonts": [
+              {
+                "family": "Barlow",
+                "weight": "400",
+                "status": "loaded"
+              },
+              {
+                "family": "Barlow",
+                "weight": "600",
+                "status": "loaded"
+              },
+              {
+                "family": "Barlow",
+                "weight": "700",
+                "status": "loaded"
+              },
+              {
+                "family": "Barlow Condensed",
+                "weight": "700",
+                "status": "loaded"
+              }
+            ],
+            "states": [
+              {
+                "id": "burger",
+                "ready": true,
+                "failed": false,
+                "frame": 0,
+                "frames": 8,
+                "playing": false,
+                "visible": true,
+                "scheduled": false
+              },
+              {
+                "id": "smoker",
+                "ready": true,
+                "failed": false,
+                "frame": 0,
+                "frames": 8,
+                "playing": false,
+                "visible": true,
+                "scheduled": false
+              }
+            ],
+            "closeup": {
+              "width": 192,
+              "height": 256,
+              "overflow": false
+            }
+          },
+          {
+            "width": 1280,
+            "overflow": false,
+            "canvases": [
+              {
+                "width": 192,
+                "height": 256
+              },
+              {
+                "width": 192,
+                "height": 256
+              }
+            ],
+            "controls": true,
+            "fonts": [
+              {
+                "family": "Barlow",
+                "weight": "400",
+                "status": "loaded"
+              },
+              {
+                "family": "Barlow",
+                "weight": "600",
+                "status": "loaded"
+              },
+              {
+                "family": "Barlow",
+                "weight": "700",
+                "status": "loaded"
+              },
+              {
+                "family": "Barlow Condensed",
+                "weight": "700",
+                "status": "loaded"
+              }
+            ],
+            "states": [
+              {
+                "id": "burger",
+                "ready": true,
+                "failed": false,
+                "frame": 0,
+                "frames": 8,
+                "playing": false,
+                "visible": true,
+                "scheduled": false
+              },
+              {
+                "id": "smoker",
+                "ready": true,
+                "failed": false,
+                "frame": 0,
+                "frames": 8,
+                "playing": false,
+                "visible": true,
+                "scheduled": false
+              }
+            ],
+            "closeup": {
+              "width": 384,
+              "height": 512,
+              "overflow": false
+            }
+          }
+        ],
+        "errors": [],
+        "failedRequests": []
+      },
+      "earlier": {
+        "kind": "playback-accessibility-fallback-and-geometry",
+        "fonts": "System fallback; original Google Fonts stylesheet request failed with net::ERR_CERT_AUTHORITY_INVALID. Subsequently resolved for this preview by vendoring approved font files.",
+        "checks": [
+          "frame advances on explicit play",
+          "manual pause remains frozen",
+          "reduced-motion default still",
+          "preference change pauses",
+          "preference reset preserves manual pause",
+          "simulated hidden document pauses timer",
+          "visibility return resumes intended playback",
+          "offscreen pauses and onscreen resumes",
+          "missing sheet shows still image",
+          "missing image shows named fallback"
+        ],
+        "viewports": [
+          {
+            "width": 390,
+            "overflow": false,
+            "canvases": [
+              {
+                "width": 192,
+                "height": 256
+              },
+              {
+                "width": 192,
+                "height": 256
+              }
+            ],
+            "controls": true,
+            "states": [
+              {
+                "id": "burger",
+                "ready": true,
+                "failed": false,
+                "frame": 0,
+                "frames": 8,
+                "playing": false,
+                "visible": true,
+                "scheduled": false
+              },
+              {
+                "id": "smoker",
+                "ready": true,
+                "failed": false,
+                "frame": 0,
+                "frames": 8,
+                "playing": false,
+                "visible": false,
+                "scheduled": false
+              }
+            ],
+            "fontLoaded": [],
+            "closeup": {
+              "width": 192,
+              "height": 256
+            }
+          },
+          {
+            "width": 768,
+            "overflow": false,
+            "canvases": [
+              {
+                "width": 192,
+                "height": 256
+              },
+              {
+                "width": 192,
+                "height": 256
+              }
+            ],
+            "controls": true,
+            "states": [
+              {
+                "id": "burger",
+                "ready": true,
+                "failed": false,
+                "frame": 0,
+                "frames": 8,
+                "playing": false,
+                "visible": true,
+                "scheduled": false
+              },
+              {
+                "id": "smoker",
+                "ready": true,
+                "failed": false,
+                "frame": 0,
+                "frames": 8,
+                "playing": false,
+                "visible": true,
+                "scheduled": false
+              }
+            ],
+            "fontLoaded": [],
+            "closeup": {
+              "width": 192,
+              "height": 256
+            }
+          },
+          {
+            "width": 1280,
+            "overflow": false,
+            "canvases": [
+              {
+                "width": 192,
+                "height": 256
+              },
+              {
+                "width": 192,
+                "height": 256
+              }
+            ],
+            "controls": true,
+            "states": [
+              {
+                "id": "burger",
+                "ready": true,
+                "failed": false,
+                "frame": 0,
+                "frames": 8,
+                "playing": false,
+                "visible": true,
+                "scheduled": false
+              },
+              {
+                "id": "smoker",
+                "ready": true,
+                "failed": false,
+                "frame": 0,
+                "frames": 8,
+                "playing": false,
+                "visible": true,
+                "scheduled": false
+              }
+            ],
+            "fontLoaded": [],
+            "closeup": {
+              "width": 384,
+              "height": 512
+            }
+          }
+        ],
+        "errors": []
+      },
+      "notes": [
+        "After the full playback checks, only a repeated-text guard was added to control painting. A targeted MutationObserver check confirms frame advances create no repeated live-region announcement; Play and Pause each announce once. Geometry was rechecked with local fonts.",
+        "Visibility-change check simulated document.hidden; offscreen test used real scrolling and IntersectionObserver.",
+        "Screenshots use local fonts and reduced-motion stills, with both eight-frame atlases loaded.",
+        "All controls meet 44 px height. App size 192 × 256; close-up 384 × 512 at 1280 px and fitted 192 × 256 at 390/768 px."
+      ],
+      "liveRegionCheck": {
+        "messages": [
+          "Playing",
+          "Paused"
+        ],
+        "frameAdvancesWhilePlaying": 6,
+        "errors": [],
+        "method": "MutationObserver over the live region and canvas frame attributes; 2100 ms playing plus 350 ms paused."
+      }
+    }
+  },
+  "baselineCommit": "ea2771c39a43af143f0274f1158291608b2eb945",
+  "testedChanges": "Full gallery expansion in the working tree on top of the baseline commit; delivered in the next commit of this PR.",
+  "artworkFollowup": "After gallery verification, Walk frames4/5 were corrected for planted foot contact, independently visually rechecked, and all88 encoded frames and loop metadata were verified again. Dimensions and player code are unchanged."
 }

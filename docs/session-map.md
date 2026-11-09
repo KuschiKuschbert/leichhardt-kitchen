@@ -2,7 +2,7 @@
 
 ## Kitchen mascot animation studies, 10 November 2026
 
-The owner selected the Smashed Burger star robot with its navy bandana, requested hotel research and two animations, and confirmed the on-site offset smoker. `docs/kitchen-mascot/` contains Burger's up and At the smoker, sixteen poses across two clips, full PNG masters, compact lossless WebP atlases, timed manifests, animated WebP/GIF exports, still fallbacks and a repeatable export script. The isolated preview reuses the app's CSS, supports reduced motion and pauses hidden/offscreen playback. [Research, asset contract and limits](kitchen-mascot/brief.md). This is an artwork preview, with no live-app placement, operational reads, saved fields or shell changes. Preview measurements and checks are distinct from implemented-app evidence.
+The owner selected the Smashed Burger star robot with its navy bandana, confirmed the on-site offset smoker, then expanded the first two studies to the full ten-action library. `docs/kitchen-mascot/` contains Idle, Welcome, Look around, Recipe reading, Ready to cook, Smash, Flip, Build, Serve and Walk, plus At the smoker: 88 poses across eleven clips. Full PNG masters, compact lossless WebP atlases, timed manifests, animated WebP/GIF exports, still fallbacks and a repeatable export script are included. The isolated gallery loads only the selected action, reuses the app's CSS/fonts, respects reduced motion, pauses hidden/offscreen playback and settles one-shot actions. [Research, asset contract and verification](kitchen-mascot/brief.md). This is an artwork preview, with no live-app placement, operational reads, saved fields or shell changes. Preview evidence remains distinct from implemented-app evidence.
 
 ## Operandio shared confirmation, 10 November 2026
 

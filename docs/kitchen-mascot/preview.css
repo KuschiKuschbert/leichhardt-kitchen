@@ -21,11 +21,25 @@
 .km-choice-label { font-size: 12px; color: var(--muted); margin-right: 7px; }
 .km-choice button { border: 1px solid var(--edge); border-radius: var(--r-pick); min-height: 44px; background: transparent; color: var(--ink); font-size: 12px; font-weight: 600; padding: 10px 15px; }
 .km-choice button[aria-pressed="true"] { background: var(--bar); border-color: var(--bar); color: var(--bar-text); }
-.km-studies { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.km-gallery { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 28px; align-items: start; }
+.km-library { min-width: 0; padding: 3px 0 0; }
+.km-library-heading { margin: 0 0 19px; }
+.km-library-heading h2 { font: 700 24px/1.2 var(--display); margin: 0 0 4px; }
+.km-library-heading > span { font-size: 12px; color: var(--muted); }
+.km-tabs { display: grid; gap: 16px; }
+.km-tab-group { display: grid; grid-template-columns: 1fr; gap: 5px; }
+.km-tab-group h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; color: var(--muted); font: 600 11px/1.4 var(--body); letter-spacing: .08em; text-transform: uppercase; }
+.km-tab-group h3 span { font-size: 9px; border: 1px solid var(--edge); border-radius: var(--r-pick); padding: 1px 5px; }
+.km-tab-group button { min-height: 44px; border: 1px solid transparent; border-radius: var(--r-act); padding: 10px 13px; background: transparent; color: var(--ink); font: 600 14px/1.4 var(--body); text-align: left; }
+.km-tab-group button span { margin-left: 7px; font-size: 11px; font-weight: 400; }
+.km-tab-group button:hover { background: var(--beige); }
+.km-tab-group button[aria-selected="true"] { background: var(--bar); color: var(--bar-text); border-color: var(--bar); }
+.km-studies { min-width: 0; }
+.km-starting { min-height: 300px; display: grid; place-items: center; color: var(--muted); }
 .km-study { min-width: 0; border: 1px solid var(--surface-work-edge); background: var(--surface-paper); box-shadow: 0 4px 0 var(--beige); border-radius: 3px; overflow: hidden; }
 .km-study-heading { display: flex; align-items: center; gap: 12px; padding: 13px 22px; background: var(--surface-work); border-bottom: 1px solid var(--surface-work-edge); font: 600 11px/1.3 var(--body); letter-spacing: .13em; }
 .km-number { font: 700 20px/1 var(--display); color: var(--muted); letter-spacing: 0; }
-.km-stage { height: 322px; padding: 12px; display: flex; justify-content: center; align-items: center; overflow: hidden; background: var(--surface-paper); position: relative; }
+.km-stage { height: 352px; padding: 12px; display: flex; justify-content: center; align-items: center; overflow: hidden; background: var(--surface-paper); position: relative; }
 .km-studies[data-size="large"] .km-stage { height: 560px; }
 .km-studies[data-surface="charcoal"] .km-stage { background: var(--bar); color: var(--bar-text); }
 .km-canvas { image-rendering: pixelated; image-rendering: crisp-edges; flex: 0 0 auto; object-fit: contain; }
@@ -39,6 +53,8 @@
 .km-play { background: var(--bar); color: var(--bar-text); border: 1px solid var(--bar); }
 .km-replay { background: transparent; color: var(--ink); border: 1px solid var(--faint); }
 .km-status { font-size: 11px; color: var(--muted); margin-left: auto; text-align: right; }
+.km-downloads { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.km-downloads a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; min-height: 44px; display: inline-flex; align-items: center; }
 .km-motion-note { margin: 23px 0 0; color: var(--muted); font-size: 12px; }
 .km-direction { display: grid; grid-template-columns: 1fr 1.1fr; gap: 48px; border-top: 1px solid var(--line); margin-top: 47px; padding: 34px 0; }
 .km-direction h2 { font: 600 29px/1.13 var(--display); margin: 0; }
@@ -46,8 +62,9 @@
 .km-footer { border-top: 1px solid var(--line); padding: 22px 0 32px; color: var(--muted); font-size: 11px; line-height: 1.6; }
 .km-footer p { margin: 0 0 6px; }
 .km-footer a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
-@media (max-width: 939px) {
-  .km-studies[data-size="large"] .km-stage { height: 322px; }
+@media (max-width: 1000px) and (min-width: 701px) {
+  .km-gallery { grid-template-columns: 190px minmax(0, 1fr); gap: 20px; }
+  .km-tab-group button { padding-left: 10px; }
 }
 @media (max-width: 700px) {
   .km-masthead-inner { padding: 20px 20px; gap: 16px; }
@@ -56,7 +73,12 @@
   .km-main { padding: 0 20px; }
   .km-intro { padding: 36px 0 28px; }
   .km-intro h1 { max-width: 350px; }
-  .km-studies { grid-template-columns: 1fr; gap: 25px; }
+  .km-gallery { grid-template-columns: 1fr; gap: 22px; }
+  .km-library-heading { display: flex; align-items: baseline; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; margin-bottom: 15px; }
+  .km-tabs { gap: 14px; }
+  .km-tab-group { display: flex; flex-wrap: wrap; gap: 6px; }
+  .km-tab-group h3 { flex-basis: 100%; }
+  .km-tab-group button { border-color: var(--edge); border-radius: var(--r-pick); padding: 9px 13px; font-size: 13px; }
   .km-tools { align-items: start; gap: 12px; }
   .km-choice-label { width: 100%; margin: 0 0 2px; }
   .km-tools > .km-choice:last-child { padding-top: 21px; }

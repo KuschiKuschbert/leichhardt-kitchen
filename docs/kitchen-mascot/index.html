@@ -23,7 +23,7 @@
       <p class="km-eyebrow">CHARACTER &amp; MOTION STUDY</p>
       <h1 id="km-title">A little Leichhardt spirit.</h1>
       <p class="km-lead">Big-hearted hospitality. Burgers worth showing off. Smoke from our own offset smoker.</p>
-      <p class="km-intro-note">The same little cook, with the bandana on for every shift.</p>
+      <p class="km-intro-note">Ten everyday and cooking animations, plus a turn at the smoker. The bandana stays on throughout.</p>
     </section>
 
     <div class="km-tools">
@@ -38,43 +38,35 @@
       </div>
     </div>
 
-    <div class="km-studies" data-surface="paper" data-size="compact">
-      <article class="km-study" data-clip="burger" aria-labelledby="burger-title">
-        <div class="km-study-heading"><span class="km-number">01</span><span>FROM THE PASS</span></div>
-        <div class="km-stage">
-          <canvas class="km-canvas" width="256" height="256" role="img" aria-label="The bandana-wearing star cook presents a burger and chips."></canvas>
-          <p class="km-image-error" hidden>Burger's up image unavailable.</p>
-        </div>
-        <div class="km-study-body">
-          <h2 id="burger-title">Burger's up</h2>
-          <p>A generous feed, a proud little nod and a warm welcome.</p>
-          <div class="km-playback">
-            <button class="km-play" type="button" data-action="toggle" disabled aria-label="Play Burger's up">Play</button>
-            <button class="km-replay" type="button" data-action="replay" disabled aria-label="Replay Burger's up">Replay</button>
-            <span class="km-status" role="status" aria-live="polite">Preparing animation</span>
+    <div class="km-gallery">
+      <nav class="km-library" aria-label="Animation library">
+        <div class="km-library-heading"><h2>Choose a moment</h2><span>10 actions + 1 extra</span></div>
+        <div class="km-tabs" role="tablist" aria-label="Character animations" aria-orientation="vertical">
+          <div class="km-tab-group"><h3>Everyday</h3>
+            <button type="button" role="tab" id="tab-idle" data-select="idle" aria-controls="km-player-panel" aria-selected="false" tabindex="-1">Idle</button>
+            <button type="button" role="tab" id="tab-welcome" data-select="welcome" aria-controls="km-player-panel" aria-selected="false" tabindex="-1">Welcome</button>
+            <button type="button" role="tab" id="tab-look-around" data-select="look-around" aria-controls="km-player-panel" aria-selected="false" tabindex="-1">Look around</button>
+            <button type="button" role="tab" id="tab-recipe-reading" data-select="recipe-reading" aria-controls="km-player-panel" aria-selected="false" tabindex="-1">Recipe reading</button>
+            <button type="button" role="tab" id="tab-walk" data-select="walk" aria-controls="km-player-panel" aria-selected="false" tabindex="-1">Walk</button>
+          </div>
+          <div class="km-tab-group"><h3>At the grill</h3>
+            <button type="button" role="tab" id="tab-ready-to-cook" data-select="ready-to-cook" aria-controls="km-player-panel" aria-selected="false" tabindex="-1">Ready to cook</button>
+            <button type="button" role="tab" id="tab-smash" data-select="smash" aria-controls="km-player-panel" aria-selected="false" tabindex="-1">Smash</button>
+            <button type="button" role="tab" id="tab-flip" data-select="flip" aria-controls="km-player-panel" aria-selected="false" tabindex="-1">Flip</button>
+            <button type="button" role="tab" id="tab-build" data-select="build" aria-controls="km-player-panel" aria-selected="false" tabindex="-1">Build</button>
+            <button type="button" role="tab" id="tab-burger" data-select="burger" aria-controls="km-player-panel" aria-selected="true" tabindex="0">Serve <span>Burger's up</span></button>
+          </div>
+          <div class="km-tab-group"><h3>House smoked <span>Extra</span></h3>
+            <button type="button" role="tab" id="tab-smoker" data-select="smoker" aria-controls="km-player-panel" aria-selected="false" tabindex="-1">At the smoker</button>
           </div>
         </div>
-      </article>
-
-      <article class="km-study" data-clip="smoker" aria-labelledby="smoker-title">
-        <div class="km-study-heading"><span class="km-number">02</span><span>HOUSE SMOKED</span></div>
-        <div class="km-stage">
-          <canvas class="km-canvas" width="256" height="256" role="img" aria-label="The same bandana-wearing star cook tends an offset smoker with a separate side firebox."></canvas>
-          <p class="km-image-error" hidden>At the smoker image unavailable.</p>
-        </div>
-        <div class="km-study-body">
-          <h2 id="smoker-title">At the smoker</h2>
-          <p>A steady hand, a gentle puff and a bit of kitchen pride.</p>
-          <div class="km-playback">
-            <button class="km-play" type="button" data-action="toggle" disabled aria-label="Play At the smoker">Play</button>
-            <button class="km-replay" type="button" data-action="replay" disabled aria-label="Replay At the smoker">Replay</button>
-            <span class="km-status" role="status" aria-live="polite">Preparing animation</span>
-          </div>
-        </div>
-      </article>
+      </nav>
+      <div class="km-studies" data-surface="paper" data-size="compact" id="km-player-panel" role="tabpanel" aria-labelledby="tab-burger" tabindex="0">
+        <p class="km-starting" role="status">Preparing Burger's up</p>
+      </div>
     </div>
 
-    <p class="km-motion-note" id="km-motion-note">Short movements, then a moment to settle. Pause either animation whenever you like.</p>
+    <p class="km-motion-note" id="km-motion-note">Short movements, then a moment to settle. Choose a moment, then play it at your own pace.</p>
 
     <section class="km-direction" aria-labelledby="km-direction-title">
       <div><p class="km-eyebrow">MADE FOR THIS KITCHEN</p><h2 id="km-direction-title">Country welcome. <br>Kitchen craft.</h2></div>
