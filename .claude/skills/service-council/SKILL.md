@@ -1,18 +1,18 @@
 ---
 name: service-council
-description: The Kitchen Book's critical council for major decisions. Use before building a new page, tab, button, setting, sheet or workflow, before changing how a service task is done (Prep, Orders, Wastage, Transfers, the recipe card on the line), before removing or merging a feature, and for every design choice. Round 1 asks whether it is needed and adds real value while keeping the book quick to read with few taps in a busy service; round 2 draws three different designs and recommends one or a mix. Not for bug fixes, tests, docs or CI.
+description: The Kitchen Book's critical council for major decisions. Use before building a new page, tab, button, setting, sheet or workflow, before changing how a service task is done (Prep, Orders, Wastage, Transfers, the recipe card on the line), before removing or merging a feature, and for every design choice. Round 1 asks whether it is needed and adds real value while keeping the book quick to read with few taps in a busy service; round 2 draws the requested designs (three by default) and recommends one or a mix. Not for bug fixes, tests, docs or CI.
 ---
 
 # Service council
 
-Head chef decision, 5 November 2026 (`docs/head-chef-decisions.md`). The council advises and the head chef decides. Before building anything major, show the head chef the council's verdict in plain words. Before building a design, show the three designs and the recommendation. This is not the recipe council (`kitchen-council`), and a whole-app audit uses `docs/whole-app-audit.md` section 5 instead.
+Head chef decision, 5 November 2026 (`docs/head-chef-decisions.md`). The council advises and the head chef decides. Before building anything major, show the head chef the council's verdict in plain words. Before building a design, show the requested designs (three by default) and the recommendation. This is not the recipe council (`kitchen-council`), and a whole-app audit uses `docs/whole-app-audit.md` section 5 instead.
 
 ## When it runs
 
 | The change | What runs |
 | --- | --- |
 | **Major:** a new page, tab, bar button, setting, sheet, pop-up or workflow; a change to how a service task is done; removing or merging a feature; anything the head chef must choose | Round 1. Then round 2 if the verdict is Build or Build smaller and people will see the change |
-| **Small:** a change on an existing page that adds no tab, bar button, pop-up or step | Quick check: the session answers the round 1 questions itself, applies the relevant design references below, measures taps and lines, and writes the Council section. No extra agents |
+| **Small:** a change on an existing page that adds no tab, bar button, pop-up or step | Quick check: the session reads the current design contracts below, answers the round 1 questions itself, applies the relevant design references, measures taps and lines, and writes the Council section. No extra agents |
 | **None:** a bug fix, test fix, docs, CI, a rules change with no new screen | `Verdict: Not needed (bug fix)` in the pull request, with the reason in brackets |
 
 When unsure, it is major. Run each round once per decision, not once per push. Reuse round 1 if the proposal has not changed.
@@ -27,6 +27,27 @@ Every proposal and every design is checked against these (head chef, 5 November 
 4. A change that adds taps or takes away visible lines says why it is worth it.
 
 Count, do not guess: the taps for the main task, and the list lines visible on a 390 px phone, before and after. Measure them in the click-test stand-in (`tests/`, `tests/fake/`) or a preview, and say how.
+
+## Current design contracts
+
+Before either round, read the current `CLAUDE.md` reading map and the affected feature's chosen design and later decisions. Prepare one short evidence packet for every reviewer: the source commit, relevant contract excerpts with file and heading references, baseline screenshots and available measurements. Include this section and Design references below. Fresh agents do not inherit the lead's reading: a bare link or "keep the approved colours" is not enough. Reuse the packet between rounds unless the contracts or proposal change; the quick check reads the same sources without spawning reviewers.
+
+Every visual proposal includes the relevant parts of [shared surface colours](../../../docs/surface-colours.md#selected-design), [operational colour meanings](../../../docs/colour-coding.md#shared-meanings) and [design patterns](../../../docs/design-patterns.md). Include the affected category exceptions, plus [action feedback](../../../docs/action-feedback.md#the-rule) and [loading and motion](../../../docs/loading-motion.md#behaviour) when states or interactions are involved. These documents own the tokens and detailed rules; do not create another palette in a feature brief.
+
+### Colour and state checks
+
+| Check | Evidence the council needs |
+| --- | --- |
+| Surface purpose | Work books, including Orders, use steel; people use sage; current live boards use charcoal; reading and writing stay quiet paper. Check the actual cover, header, edge and interior, not just a palette. |
+| State meaning | Local state cues take priority over surface decoration. Attention/pending, confirmed success and failure follow the operational contract. Keep brand/action orange, charcoal Prep Urgent and explicit inclusion/assignment meanings. A sage people surface or green draft assignment is not Saved; neutral upcoming information is not automatically amber. |
+| Words and exceptions | Status remains understandable through words, icons, ticks or pressed state without colour. Preserve affected category legends, charts, heat scales, allergen certainty, New/Moved tags, art, celebrations and print. Colour does not establish access or food safety. |
+| Real contrast | Measure the rendered foreground and background, including ancestor opacity and light/dark variants: normal text 4.5:1, large text 3:1, meaningful control/state boundaries 3:1 where applicable. Check visible keyboard focus; do not infer a whole-app accessibility pass from token values or screenshots. |
+| Relevant states | Show the affected ordinary, selected, disabled, saving/Not sent, Saved, empty and failure states. Distinguish confirmed empty data from a failed read. Exercise acknowledgement, retry and work recovery where affected; list states that do not apply. |
+| Service continuity | Measure visible rows, tap targets and main-task tap counts before and after at the relevant 390, 768 and 1280 px widths. Justify lost rows or added taps under the service rules. Keep controls stable through state changes; useful motion respects reduced motion and cannot imply completion or move a live target. |
+
+Round 1 identifies contract risks and the evidence the designs will need. Round 2 records **Contract fit** alongside the reference comparison: **Works**, **Needs work**, **Not evidenced**, or **Not relevant** with a reason, source and evidence for each applicable check. The quick check needs only a short contract-fit note and the relevant evidence. Untested states and contrast remain Not evidenced. Identify the check needed before calling the implementation ready; do not add a review round for missing measurements.
+
+Separate a deliberate proposal to change an approved rule from an accidental violation. Name the exact proposed departure and leave it for the head chef's choice. A high preference score or similarity to another app never makes a contract violation acceptable. Recommend a repair or smaller compliant option where possible; keep unresolved failures and missing evidence visible in the recommendation and handoff.
 
 ## Design references
 
@@ -48,8 +69,8 @@ For each relevant principle, record the concrete benefit, evidence and trade-off
 
 ## Round 1: should we build it?
 
-1. **Write the proposal first, no code.** One page: the problem in the kitchen, who has it, how often, what people do today, the change, and its cost (reads, files, tests, risk). Name the relevant design-reference principles and the benefit to test, or why none apply. Add screenshots of today's page at 390 px (1280 px for admin pages).
-2. **Run the five reviewers at the same time**: five Agent calls in one message, fresh agents, not forks. Give each the proposal, the screenshots, the service rules, the Design references section above and its brief from [reviewers.md](reviewers.md). Do not give them your own opinion or the answer you hope for.
+1. **Write the proposal first, no code.** One page: the problem in the kitchen, who has it, how often, what people do today, the change, and its cost (reads, files, tests, risk). Prepare the current-contract evidence packet above. Name the relevant design-reference principles and the benefit to test, or why none apply. Add screenshots of today's page at 390 px (1280 px for admin pages).
+2. **Run the five reviewers at the same time**: five Agent calls in one message, fresh agents, not forks. Give each the proposal, the same evidence packet, the service rules and its brief from [reviewers.md](reviewers.md). Do not give them your own opinion or the answer you hope for.
 3. **Reconcile.** The verdict is what most reviewers say. Record any disagreement in one line each. Never invent agreement.
 
 | Verdict | Meaning |
@@ -59,14 +80,14 @@ For each relevant principle, record the concrete benefit, evidence and trade-off
 | **Don't build** | Not worth it: say what to do instead (often nothing) |
 | **Your call** | A real trade-off only the head chef can weigh: name it in one line |
 
-## Round 2: three designs
+## Round 2: designs (three by default)
 
-Only after Build or Build smaller, for a change people will see.
+Only after Build or Build smaller, for a change people will see. Three designs by default; use the head chef's requested number when specified.
 
-1. **Draw three really different designs**, not three shades of one: one that changes the least, one that rethinks the flow, and one that removes the most. Build them as previews under `docs/<name>-options/`, like `docs/admin-pages-options/`, never on the live book. Screenshots at 390 px for service pages, 1280 px for admin, 768 px when the tablet matters.
-2. **Write the brief** in `docs/<name>-options/brief.md`: for each design, its pros and cons, and a table with the taps for the main task, lines visible at 390 px, navigation levels, build size (pull requests), relearning, new reads or rules, and risk. Include the reference-principle comparison and its evidence as described above.
-3. **Score all three with the same council plus the kitchen screen designer** (six fresh agents, briefs in [reviewers.md](reviewers.md)). Each sees all three designs, the service rules and the Design references section, not your favourite. Explain how the relevant principles and evidence affect the ranking.
-4. **Recommend one, or a mix** ("B with A's tabs"), and say why in three lines, naming the useful principles kept and any tempting idea rejected. The head chef chooses. Record the choice at the top of `docs/head-chef-decisions.md` and in the brief's "chosen" section, then build it in small steps.
+1. **Draw the requested number of really different designs**, not shades of one. The default three are one that changes the least, one that rethinks the flow, and one that removes the most. Build them as previews under `docs/<name>-options/`, like `docs/admin-pages-options/`, never on the live book. Screenshots at 390 px for service pages, 1280 px for admin, 768 px when the tablet matters.
+2. **Write the brief** in `docs/<name>-options/brief.md`: for each design, its pros and cons, and a table with the taps for the main task, lines visible at 390 px, navigation levels, build size (pull requests), relearning, new reads or rules, and risk. Include Contract fit, the reference-principle comparison and their evidence as described above.
+3. **Score all designs with the same council plus the kitchen screen designer** (six fresh agents, briefs in [reviewers.md](reviewers.md)). Each sees every design, the same current-contract evidence packet and the service rules, not your favourite. Explain how contract fit, the relevant principles and evidence affect the ranking. If using numeric scores, state the scale and reproduce the reviewers' scores without inventing missing ones.
+4. **Recommend one, or a mix** ("B with A's tabs"), and say why in three lines, naming the useful principles kept and any tempting idea rejected. State unresolved contract failures, evidence gaps and any proposed departure needing the head chef's choice. The head chef chooses. Record the choice at the top of `docs/head-chef-decisions.md` and in the brief's "chosen" section, then build it in small steps.
 
 ## What the head chef sees
 
@@ -78,6 +99,7 @@ Verdict: Build smaller (4 of 5)
 Taps to add a prep line: 3 before, 2 after. Lines on a 390 px phone: 11 before, 11 after.
 Skeptic disagreed: the ⋯ sheet already shows who wrote the line.
 Reference fit: Things keeps today's work visible; drag-only ordering rejected for wet hands. Evidence and comparison in the brief.
+Contract fit: sources, colour/state checks, evidence and unresolved items in the brief.
 Brief: docs/<name>-options/brief.md (design B chosen, 5 Nov 2026)
 ```
 
