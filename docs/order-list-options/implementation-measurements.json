@@ -1,9 +1,9 @@
 {
-  "sourceCommit": "5a92e1247633c4c2ce51be4cbf85dd007f6a798e",
+  "sourceCommit": "49d36c82254454f931c6d664e1ef39c1ca257ed1",
   "sourceWorkingTree": "Implementation changes under review; commit above is the base before these uncommitted runtime changes.",
   "sourceHashes": {
-    "js/prep.js": "e3168b23115e6d15f80481e7c5af61f190e067257cdb4894050435e600aa71d8",
-    "css/app.css": "47df81950be75336f0af2c6a55419ee425c2ed075a8980bf1d68331dab85e119"
+    "js/prep.js": "891bf7041aa8133b81914c2d59d7af389dbd36959e7cf29a0b1b56062bc9995e",
+    "css/app.css": "339af8e6726fac4fc5153a7c95719e699581e1ce3f90c0a3e630090c1360a735"
   },
   "kind": "Actual implemented app C with synthetic Firebase fixtures",
   "route": "#/orders",
@@ -2060,47 +2060,47 @@
         {
           "action": "otick",
           "x": 28,
-          "y": 174.27,
+          "y": 182.39,
           "width": 44,
           "height": 44,
-          "top": 174.27,
-          "bottom": 218.27
+          "top": 182.39,
+          "bottom": 226.39
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 225.27,
+          "y": 241.53,
           "width": 44,
           "height": 44,
-          "top": 225.27,
-          "bottom": 269.27
+          "top": 241.53,
+          "bottom": 285.53
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 276.27,
+          "y": 292.53,
           "width": 44,
           "height": 44,
-          "top": 276.27,
-          "bottom": 320.27
+          "top": 292.53,
+          "bottom": 336.53
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 342.55,
+          "y": 343.53,
           "width": 44,
           "height": 44,
-          "top": 342.55,
-          "bottom": 386.55
+          "top": 343.53,
+          "bottom": 387.53
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 416.95,
+          "y": 409.81,
           "width": 44,
           "height": 44,
-          "top": 416.95,
-          "bottom": 460.95
+          "top": 409.81,
+          "bottom": 453.81
         },
         {
           "action": "otick",
@@ -2114,20 +2114,20 @@
         {
           "action": "otick",
           "x": 28,
-          "y": 543.36,
+          "y": 551.48,
           "width": 44,
           "height": 44,
-          "top": 543.36,
-          "bottom": 587.36
+          "top": 551.48,
+          "bottom": 595.48
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 653.42,
+          "y": 610.63,
           "width": 44,
           "height": 44,
-          "top": 653.42,
-          "bottom": 697.42
+          "top": 610.63,
+          "bottom": 654.63
         }
       ],
       "cutoffOpen": false,
@@ -2137,14 +2137,26 @@
       "firstRequestTop": 171.27,
       "rows": [
         {
-          "id": "baseline-0",
-          "text": "Milk 6 L",
+          "id": "baseline-7",
+          "text": "Butter 2 kg LowUsed in Cowboy Butter",
           "x": 33,
           "y": 171.27,
           "width": 324,
-          "height": 51,
+          "height": 67.27,
           "top": 171.27,
-          "bottom": 222.27,
+          "bottom": 238.53,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-0",
+          "text": "Milk 6 L",
+          "x": 33,
+          "y": 238.53,
+          "width": 324,
+          "height": 51,
+          "top": 238.53,
+          "bottom": 289.53,
           "fullyVisible": true,
           "intersectsUsableViewport": true
         },
@@ -2152,11 +2164,11 @@
           "id": "baseline-1",
           "text": "Brioche buns 4 packs",
           "x": 33,
-          "y": 222.27,
+          "y": 289.53,
           "width": 324,
           "height": 51,
-          "top": 222.27,
-          "bottom": 273.27,
+          "top": 289.53,
+          "bottom": 340.53,
           "fullyVisible": true,
           "intersectsUsableViewport": true
         },
@@ -2164,11 +2176,11 @@
           "id": "baseline-2",
           "text": "Coriander 2 bunches",
           "x": 33,
-          "y": 273.27,
+          "y": 340.53,
           "width": 324,
           "height": 51,
-          "top": 273.27,
-          "bottom": 324.27,
+          "top": 340.53,
+          "bottom": 391.53,
           "fullyVisible": true,
           "intersectsUsableViewport": true
         },
@@ -2176,29 +2188,17 @@
           "id": "baseline-3",
           "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
           "x": 33,
-          "y": 324.27,
+          "y": 391.53,
           "width": 324,
           "height": 81.56,
-          "top": 324.27,
-          "bottom": 405.83,
+          "top": 391.53,
+          "bottom": 473.09,
           "fullyVisible": true,
           "intersectsUsableViewport": true
         },
         {
           "id": "baseline-4",
           "text": "Plain flour 5 kgUsed in Cornbread",
-          "x": 33,
-          "y": 405.83,
-          "width": 324,
-          "height": 67.27,
-          "top": 405.83,
-          "bottom": 473.09,
-          "fullyVisible": true,
-          "intersectsUsableViewport": true
-        },
-        {
-          "id": "baseline-5",
-          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
           "x": 33,
           "y": 473.09,
           "width": 324,
@@ -2209,32 +2209,32 @@
           "intersectsUsableViewport": true
         },
         {
-          "id": "baseline-6",
-          "text": "Tomatoes 3 kg",
+          "id": "baseline-5",
+          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
           "x": 33,
           "y": 540.36,
           "width": 324,
-          "height": 51,
+          "height": 67.27,
           "top": 540.36,
-          "bottom": 591.36,
+          "bottom": 607.63,
           "fullyVisible": true,
           "intersectsUsableViewport": true
         },
         {
-          "id": "baseline-7",
-          "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
+          "id": "baseline-6",
+          "text": "Tomatoes 3 kg",
           "x": 33,
-          "y": 629.09,
+          "y": 607.63,
           "width": 324,
-          "height": 93.66,
-          "top": 629.09,
-          "bottom": 722.75,
-          "fullyVisible": false,
+          "height": 51,
+          "top": 607.63,
+          "bottom": 658.63,
+          "fullyVisible": true,
           "intersectsUsableViewport": true
         }
       ],
-      "fullyVisibleRequestRows": 7,
-      "partiallyVisibleRequestRows": 1,
+      "fullyVisibleRequestRows": 8,
+      "partiallyVisibleRequestRows": 0,
       "totalRequestRows": 8,
       "supplierGroupingShown": false,
       "orderedTodayCount": "0 of 8 ordered",

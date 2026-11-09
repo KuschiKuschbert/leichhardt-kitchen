@@ -66,3 +66,5 @@ Measured screenshot counts, tap comparisons and council scores belong in the par
 ## Copy refinement after the council
 
 The council reviewed the initial Add to the order wording and a chevron-only C disclosure. The final previews use Add request across all three and a visible View/Hide cue on C. These apply reviewer suggestions without changing the layout options or adding a step. The original phone screenshots remain as previews/council-a-390.png, council-b-390.png and council-c-390.png. Scores were not rerun or presented as new ratings.
+
+The owner’s 10 November staff-age refinement applies to the implemented app: staff no longer see waiting-age labels, earlier-day groups, creation clocks or rollover reminders. The original comparison previews remain historical review evidence; current measurements are in the brief.

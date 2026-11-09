@@ -1,5 +1,5 @@
 // The order list learns what is ordered. Chefs see older requests in the flat list with their source dates.
-// Staff keep the existing overdue block and advice to tell a chef.
+// Staff keep every request in the plain list, without showing how long it has waited.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const today = L.ymd(new Date(L.NOW));
@@ -95,7 +95,11 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(p.errors.length === 0, 'overdue: no page errors ' + p.errors.join(' | '));
   await p.context().close();
   p = await L.open(b, '#/orders', { who: 'ann', wait: 1500, extra: od });
-  ok(/Vanilla pods/.test(await txt(p, '#o-overdue')) && /Tell the head chef or a sous chef/.test(await txt(p, '#o-overdue')), 'overdue: staff are told to tell the head chef or a sous chef');
+  const staffOlder = await p.$$eval('.o-main .nb-row', rows => rows.map(row => ({ id: row.dataset.ln.split('/').pop(), text: row.textContent })));
+  ok(['r1', 'r2'].every(id => staffOlder.filter(row => row.id === id).length === 1) && staffOlder.some(row => row.id === 'r1' && /Vanilla pods\s+10/.test(row.text) && /from Ann/.test(row.text)), 'staff: the five-day and two-day requests remain exactly once with their amount and author');
+  ok(!(await p.$('#o-overdue, .o-wait, .o-main .nb-roll')) && !/Since |days ago|Waiting from earlier|Waiting more than/.test(await txt(p, '.o-main')), 'staff: no waiting age is rendered for even the oldest request');
+  s = await store(p);
+  ok(s[fsKey(['orders', today, 'lines', 'r1'])].since === back(5) && s[fsKey(['orders', today, 'lines', 'r1'])].rolled === 5 && s[fsKey(['orders', today, 'lines', 'r2'])].since === back(2), 'staff: hiding age leaves stored rollover provenance intact for chefs');
   ok(p.errors.length === 0, 'overdue, staff: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

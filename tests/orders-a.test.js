@@ -1,6 +1,5 @@
-// Orders, Clean notebook (3 Nov 2026, work pages redesign A, docs/work-pages-design-options/brief.md): one list, today's
-// lines then Waiting from earlier days (By day and Everything to order went), Ordered today folded under its count, Add a
-// line as a sheet like the prep list, and for chefs a date chip and Delivery received (a piece of B).
+// Orders: staff see one request list without waiting ages. Chefs retain source dates, the date picker and Delivery
+// received. Ordered today stays folded under its count; Add request opens the existing sheet.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const today = L.ymd(new Date(L.NOW)), back = n => L.ymd(new Date(L.NOW - n * 86400000));
@@ -12,11 +11,18 @@ extra[fsKey(['orders', today, 'lines', 'r-f1'])] = { text: 'Flour', qty: '2 bags
 (async () => {
   const b = await L.start();
 
-  // staff on a phone: the list, then Waiting from earlier days; the form behind Add request
+  // Staff on a phone: one list, including carried requests, without ages or creation times.
   let p = await L.open(b, '#/orders', { who: 'ann', extra, wait: 1600 });
   ok(!(await p.$('#o-text')) && !(await p.$('[data-p="oview"]')), 'staff: no add form on the page and no By day or Everything to order');
-  const order = await p.evaluate(() => { const rows = [...document.querySelectorAll('.o-main .nb-row')].map(r => r.querySelector('.nb-t').textContent); const h = document.querySelector('.o-wait-h'); return { rows, head: h ? h.textContent : '', after: h ? [...document.querySelectorAll('.o-wait .nb-row')].map(r => r.querySelector('.nb-t').textContent) : [] }; });
-  ok(/^Milk/.test(order.rows[0]) && /Waiting from earlier days \(1\)/.test(order.head) && order.after.length === 1 && /^Flour/.test(order.after[0]), 'one list: today\'s lines, then Waiting from earlier days with Flour (' + JSON.stringify(order) + ')');
+  const order = await p.evaluate(() => ({ rows: [...document.querySelectorAll('.o-main .nb-row')].map(r => r.querySelector('.nb-t').textContent), lists: document.querySelectorAll('.o-main > .nb-rows').length, age: !!document.querySelector('.o-main .nb-roll, .o-wait, #o-overdue') }));
+  ok(order.lists === 1 && order.rows.length === 3 && /^Flour/.test(order.rows[0]) && order.rows.some(t => /^Milk/.test(t)) && !order.age, 'staff: every request stays in one creation-ordered list without age sections or badges (' + JSON.stringify(order) + ')');
+  ok((await txt(p, '.o-main [data-ln$="/o1"] .nb-wrote')).trim() === 'Ann', 'staff: the request author remains without the creation clock');
+  await p.click('.o-main [data-ln$="/r-f1"] [data-lm="open"]'); await L.settle(p, 150);
+  ok((await txt(p, '#lm-h')).trim() === 'Flour 2 bags' && (await txt(p, '#lm-sheet .lm-who')).trim() === 'from Ann', 'staff: More keeps the request, amount and author without age in its accessible heading');
+  await p.keyboard.press('Escape'); await L.settle(p, 150);
+  await p.evaluate(([key, at]) => window.__fake.write(key, Object.assign({}, window.__fake.dump()[key], { ordered: true, orderedBy: 'Sam', orderedAt: at })), [fsKey(['orders', today, 'lines', 'o1']), L.NOW - 60000]);
+  await L.waitFor(p, () => /Ordered by Sam 13:59/.test(document.querySelector('.o-main [data-ln$="/o1"] .nb-wrote').textContent), null, 6000);
+  ok(/Ordered by Sam 13:59/.test(await txt(p, '.o-main [data-ln$="/o1"] .nb-wrote')), 'staff: a chef completion still shows who ordered it and the completion time');
   const btn = await p.evaluate(() => { const b = document.querySelector('.o-page .nb-addline').getBoundingClientRect(), t = document.querySelector('.tabbar').getBoundingClientRect(); return b.bottom <= t.top && b.height >= 48; });
   ok(btn, 'staff phone: Add request floats above the tab bar');
   await p.click('[data-p="o-write"]'); await L.settle(p, 250);

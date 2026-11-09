@@ -1562,13 +1562,6 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .jump-at { height: 0; }
 @media (max-width: 599px) { .find-bar { margin: 0 -1rem; padding: 0.6rem 1rem 0.7rem; } }
 
-/* order list: lines waiting more than 3 days, grouped by the day they were first written */
-.o-od { border-left: 4px solid var(--accent); padding-left: 0.6rem; margin: 0 0 1rem; }
-.o-od-h { margin: 0.6rem 0 0.2rem; font-size: 0.875rem; font-weight: 700; color: var(--muted); }
-.o-od-tip { margin: 0 0 0.2rem; font-size: 0.9375rem; }
-/* the day heading above already says since when, so the row's own Since badge is left out here */
-.o-od .nb-roll { display: none; }
-
 /* ---------- guides (#/guides, the admin Guides tab, and the guides box on recipe cards) ---------- */
 /* the fifth and sixth dockets (Transfers, Guides) are the long ones under the other four */
 .dk-sub { display: none; }
@@ -3710,8 +3703,6 @@ button.nb-prog { min-height: 44px; padding: 0; border: 0; background: none; curs
 .nb-nav.o-nav .chip { min-width: 0; padding: 0 0.85rem; font-size: 0.875rem; }
 .o-nav .o-deliv { display: inline-flex; align-items: center; color: var(--ink); text-decoration: none; }
 .o-ro { padding: 0 12px; }
-.o-wait { margin-top: 0.6rem; }
-.o-wait-h { margin-top: 0.4rem; }
 .o-done summary { display: flex; align-items: center; min-height: 44px; cursor: pointer; list-style: none; }
 .o-done summary::-webkit-details-marker { display: none; }
 .o-done summary::after { content: ''; width: 8px; height: 8px; margin-left: 10px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }

@@ -10,11 +10,17 @@
 
 Use C's native compact disclosure, with the council's written **View / Hide** cue and **Add request** wording. The closed summary keeps the next unconfirmed supplier deadline, its absolute time and due/overdue counts visible. Opening it reveals the existing supplier details, confirmation and Undo, tomorrow's early-order action and notification settings. It never opens itself during service. Its open state survives live redraws.
 
-Today's chef requests form one list: Out first, then earlier source days, then creation time. The sort uses stable urgency and age fields so ticking a request does not move it during the existing ten-minute Undo period. Keep amounts, source age, author/time, recipe context and row actions. Staff keep their existing plain-list ordering and earlier-day blocks. Chef past-day access, removed records, regular suggestions and Ordered today stay.
+Today's chef requests form one list: Out first, then earlier source days, then creation time. The sort uses stable urgency and age fields so ticking a request does not move it during the existing ten-minute Undo period. Keep amounts, source age, author/time, recipe context and row actions. Following the owner's 10 November clarification, staff see one list in entry order without Since labels, earlier-day groups, creation times or rollover reminders. Author, amount, urgency and save feedback remain; chefs retain item-age context. Chef past-day access, removed records, regular suggestions and Ordered today stay.
 
 The request list does not allocate items to suppliers or prepare an order. Supplier **Order placed / Undo** changes only its existing cut-off confirmation. Item completion still means actually ordered. Keep one page-level Delivery received link. The compact fold replaces the separate cut-off banner on today's Orders page; other pages retain their reminders. No supplier catalogue or supplier modules load merely to display Orders.
 
 The app keeps its existing queued confirmation and Undo path when offline, with **Not sent** on the affected row and summary. A pending confirmation cannot become an acknowledged all-placed state. This intentionally differs from the isolated preview's disabled offline confirmation buttons. The existing thirty-second clock updates only cut-off content, preserving request positions and disclosure choice.
+
+### Staff age labels, 10 November follow-up
+
+The owner asked that staff no longer see how long requests have been waiting. Quick check: **Build smaller**. Age helps the chef prioritise purchasing; staff need the item, optional amount, Low/Out, author and recipe context. One list without age headings follows Things/Todoist's direct task view and Headspace's quiet wording. It adds no tap, control, read or write. The deliberate trade-off is that staff no longer judge waiting age; chefs retain that context and their existing priority order.
+
+The implemented app omits staff Since badges, earlier/overdue sections, creation clocks and rollover toasts. It retains completion times and save feedback, and does not alter saved rollover history. Regression checks cover old requests remaining once, More-sheet age leakage, author/amount/urgency, unchanged stored provenance, and chef age/priority. All seven affected browser/source files pass after this follow-up. The same actual-font phone fixture now fits eight complete staff rows instead of seven; Add remains one tap to open and two through submission. All 15 captures were refreshed; chef geometry is unchanged. This is the lead's proportional check of the owner's clarification, not a new council round or score.
 
 ### Contract fit
 
@@ -131,7 +137,7 @@ The implemented app was captured in Chromium using synthetic Firebase and the sa
 | Complete chef rows, 390 x 844, closed | 2 | 6 |
 | Complete chef rows, 768 x 1024, closed | 5 | 8 |
 | Complete chef rows, 1280 x 900, closed | 5 | 8 |
-| Complete staff rows, 390 x 844 | 7 | 7 |
+| Complete staff rows, 390 x 844 | 7 | 8 |
 | Complete chef rows, 390 px Extra large text, closed | Not measured | 3 |
 | Initial phone cut-off space | 124.5 px banner plus supplier groups | 69 px fold |
 | Add entry / submission, excluding typing and close | 1 / 2 taps | 1 / 2 taps |
@@ -140,9 +146,9 @@ The implemented app was captured in Chromium using synthetic Firebase and the sa
 
 The closed fold saves 55.5 px against the old banner alone, about 45%, and removes the additional supplier headings. Opening all deadline details intentionally pushes the requests down: the open fixture has 0 / 2 / 1 complete request rows at phone / tablet / laptop widths. Closing returns the list space. These figures describe this fixture, not every list or device. Extra large text uses the app's 125% setting; browser chrome, virtual keyboard and physical safe areas were not simulated.
 
-[Built phone, closed](previews/built-chef-390-closed.png) · [Built phone, open](previews/built-chef-390-open.png) · [Built laptop](previews/built-chef-1280-closed.png) · [Staff unchanged](previews/built-staff-390-plain.png)
+[Built phone, closed](previews/built-chef-390-closed.png) · [Built phone, open](previews/built-chef-390-open.png) · [Built laptop](previews/built-chef-1280-closed.png) · [Staff without age labels](previews/built-staff-390-plain.png)
 
-The four focused Orders files pass 120 assertions. Together with 16 adapted integration files, live-list checks, 12 broader regression files and the design-pattern guard, **34 browser/source test files pass locally**. The broader checks cover read budgets, roles and page access, Low/Out, shared order entry, offline reads, screen-reader labels, existing contrast/surfaces, modal close, safe text and Home. Changed JavaScript syntax and whitespace checks pass. Required hosted Click tests remain the release gate.
+Before the 10 November staff refinement, the four focused Orders files passed 120 assertions. Together with 16 adapted integration files, live-list checks, 12 broader regression files and the design-pattern guard, **34 browser/source test files passed locally**. The staff follow-up checks are recorded above. The broader checks cover read budgets, roles and page access, Low/Out, shared order entry, offline reads, screen-reader labels, existing contrast/surfaces, modal close, safe text and Home. Changed JavaScript syntax and whitespace checks pass. Required hosted Click tests remain the release gate.
 
 Regression and independent source review cover separate item/supplier completion, queued writes and Undo, pending/failure races, stable row height and order, the delayed Ordered today move, a closed fold that stays closed and an open fold that survives redraws, keyboard disclosure control, clock updates without request movement, long-name absolute times, focus on supplier links, and past-date behaviour. The catalogue is not read merely to open Orders. These are local stand-in and source checks, not production save, push delivery, server-role or physical-device verification. Independent rendered contrast checks in Chromium at 390 px used the actual composited ancestor backgrounds, with no opacity or background image affecting the samples. Summary title and View / Hide reach 14.69:1; supplier/time 6.21:1; expanded deadline text 6.73:1; soon/Not sent 5.27:1; done/Undo 5.48:1; failed-read text 7.35:1. The lowest sampled action border is 4.70:1. Sampled text meets 4.5:1 and borders meet 3:1. This verifies the new fold samples, not whole-app accessibility or contrast.
 

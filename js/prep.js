@@ -6659,7 +6659,7 @@
       if (!jobs.length) { S.ordRolling = false; lsSet('lk.ord.rolled', today); return; }
       return Wall(jobs).then(function () {
         S.ordRolling = false; lsSet('lk.ord.rolled', today); ordReload();
-        if (S.name === 'orders') toast(jobs.length + (jobs.length === 1 ? ' line' : ' lines') + ' not ordered yet rolled over from ' + dayName(src.date).toLowerCase());
+        if (S.name === 'orders' && canBrowse()) toast(jobs.length + (jobs.length === 1 ? ' line' : ' lines') + ' not ordered yet rolled over from ' + dayName(src.date).toLowerCase());
       });
     }).catch(function () { S.ordRolling = false; retryLater('ordroll'); });
   }
@@ -6812,12 +6812,12 @@
     var canTick = canBrowse() && !x.deleted, keep = lineMenuOk(x, x.date);
     // an ordered line keeps the ⋯'s room with nothing in it, so ticking Ordered moves no row
     var held = '<span class="nb-more nb-more-held' + (keep ? ' nb-more-fix' : '') + '" aria-hidden="true"></span>';
-    var by = x.ordered && x.orderedBy ? 'Ordered by ' + esc(x.orderedBy) + (x.orderedAt ? ' ' + clock(x.orderedAt) : '') : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : x.addedBy ? esc(x.addedBy) + (x.addedAt ? ' ' + clock(x.addedAt) : '') : '');
+    var by = x.ordered && x.orderedBy ? 'Ordered by ' + esc(x.orderedBy) + (x.orderedAt ? ' ' + clock(x.orderedAt) : '') : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : x.addedBy ? esc(x.addedBy) + (canBrowse() && x.addedAt ? ' ' + clock(x.addedAt) : '') : '');
     return '<li class="nb-row' + (x.ordered ? ' is-done' : '') + (x.deleted ? ' is-removed' : '') + '" data-ln="' + esc(x.date + '/' + x.id) + '">' +
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc('Ordered: ' + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
       '<span class="nb-main"><span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + needTag(x) +
       // Not sent on the words' line, before Used in (a line of its own, .o-used), so its room never adds a line
-      (rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + justStamp(x.id) + recipeChips(x) + '</span>' +
+      (canBrowse() && rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + justStamp(x.id) + recipeChips(x) + '</span>' +
       metaHTML([], by) + '</span>' +
       (canBrowse() && can('del') ? (x.deleted || !x.ordered ? moreBtn(x, keep) : held) : keep ? (x.ordered ? held : moreBtn(x, true)) : '') +
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +
@@ -6877,26 +6877,10 @@
     if (!list.length) return '';
     return '<div class="w-often"><span class="nb-ql">Usually ordered on a ' + esc(dname) + ' or often. Tap to add</span><div class="chiprow">' + list.map(function (e, i) { return '<button type="button" class="chip sq" data-p="oreg" data-i="' + i + '">' + esc(e.text) + (e.q ? ' <span class="nb-uq">' + esc(e.q) + '</span>' : '') + '</button>'; }).join('') + '</div></div>';
   }
-  /* Lines still not ordered after more than 3 days sit together at the top of today's list, under the day they were
-     first written, with one line on what to do. The block is the first thing under the add box, so there is no separate
-     nudge card any more (23 Oct 2026), and its rows leave out their own "Since" badge: the day heading says it. */
-  var ORD_LATE = 3;
-  function ordWait(x, today) { return Math.round((parseYmd(today) - parseYmd(x.since || x.date)) / 86400000); }
-  function ordOverdueHTML(list, today) {
-    if (!list.length) return '';
-    var by = {}, days = [];
-    list.forEach(function (x) { var d = x.since || x.date; if (!by[d]) { by[d] = []; days.push(d); } by[d].push(x); });
-    days.sort();
-    return '<div class="o-od" id="o-overdue"><h3 class="nb-sh">Waiting more than ' + ORD_LATE + ' days (' + list.length + ')</h3>' +
-      '<p class="hint o-od-tip">' + (canBrowse() ? 'Order them today, or remove what is not needed any more.' : 'Tell the head chef or a sous chef.') + '</p>' + days.map(function (d) {
-      var n = ordWait(by[d][0], today);
-      return '<h4 class="o-od-h">Written ' + esc(dayShort(d)) + ', ' + n + ' days ago</h4><ul class="nb-rows">' + by[d].map(ordRow).join('') + '</ul>';
-    }).join('') + '</div>';
-  }
   function ordersHTML() {
     // loadLearned: the order rollover and Closing soon need when tomorrow's list is written (summary/learned, once a day)
     if (can('add')) { loadOrdHist(); loadWSum(); loadOrdLearned(); loadLearned(); }
-    // Staff keep today's requests and earlier-day blocks. Chefs use the chosen flat list and can pick another day.
+    // Staff see all requests without waiting-age labels. Chefs retain age context and can pick another day.
     var br = canBrowse(), today = dayNow(), onToday = S.ordDate === today;
     if (!br && S.ordDate !== today) { S.ordDate = today; watchOrders(); }
     if (S.ordDate === today && S.ordState === 'ok') ordRoll();
@@ -6914,19 +6898,12 @@
       '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" enterkeyhint="done" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
       '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' + justHTML('o') +
       '<div class="w-pick nb-units" id="o-units">' + unitChipsHTML('o', S.oqty) + '</div>' + needChipsHTML() + '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintFull()) + '</p>' + oRegsHTML() + '</form>' : '';
-    var overdue = onToday && !br ? shown.filter(function (x) { return !x.ordered && ordWait(x, today) > ORD_LATE; }) : [];
-    if (overdue.length) shown = shown.filter(function (x) { return overdue.indexOf(x) < 0; });
-    // waiting from earlier days: today's lines that rolled over (the ones more than 3 days old in their own block, as
-    // before); what was written today comes first
-    var earlier = onToday && !br ? shown.filter(function (x) { return rolledN(x) > 0 && !x.ordered; }) : [];
-    var own = shown.filter(function (x) { return earlier.indexOf(x) < 0; }), byAdded = function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); };
-    var waitHTML = overdue.length || earlier.length ? '<div class="o-wait"><h3 class="nb-sh o-wait-h">Waiting from earlier days (' + (overdue.length + earlier.length) + ')</h3>' +
-      ordOverdueHTML(overdue, today) + (earlier.length ? '<ul class="nb-rows">' + earlier.slice().sort(byAdded).map(ordRow).join('') + '</ul>' : '') + '</div>' : '';
+    var byAdded = function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); };
     // Chef requests stay together: Out first, then oldest source day, then creation time. Completion is deliberately
-    // absent from this sort, so the existing ten-minute Undo hold keeps a ticked row under the finger. Staff keep their layout.
+    // absent from this sort, so the existing ten-minute Undo hold keeps a ticked row under the finger. Staff use entry order.
     var requestOrder = function (a, b) { return (needOf(b) === 'out') - (needOf(a) === 'out') ||
       String(a.since || a.date).localeCompare(String(b.since || b.date)) || byAdded(a, b); };
-    var moved = live.filter(function (x) { return shown.indexOf(x) < 0 && overdue.indexOf(x) < 0; }).sort(function (a, b) { return (b.orderedAt || 0) - (a.orderedAt || 0); });
+    var moved = live.filter(function (x) { return shown.indexOf(x) < 0; }).sort(function (a, b) { return (b.orderedAt || 0) - (a.orderedAt || 0); });
     var removedO = (S.ordLines || []).filter(function (x) { return x.deleted; });
     var removedBox = removedO.length && canBrowse() && can('del') ? '<button type="button" class="nb-link" data-p="oremoved">' + (S.oShowRemoved ? 'Hide' : 'Show') + ' removed (' + removedO.length + ')</button>' +
       (S.oShowRemoved ? '<ul class="nb-rows">' + removedO.map(ordRow).join('') + '</ul>' : '') : '';
@@ -6939,7 +6916,7 @@
     var offO = S.ordState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var body =
       (S.ordState === 'error' ? '<p class="p-err">' + pageErr() + '</p>' :
-        offO + (own.length ? '<ul class="nb-rows' + (br && onToday ? ' o-requests' : '') + '">' + own.slice().sort(br && onToday ? requestOrder : byAdded).map(ordRow).join('') + '</ul>' : (waitHTML || offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))) + waitHTML);
+        offO + (shown.length ? '<ul class="nb-rows' + (br && onToday ? ' o-requests' : '') + '">' + shown.slice().sort(br && onToday ? requestOrder : byAdded).map(ordRow).join('') + '</ul>' : (offO ? '' : live.length ? '<p class="nb-empty">Everything on this list has been ordered. See Ordered today below.</p>' : S.ordState === 'ok' ? '<p class="nb-empty">Nothing on the order list for ' + esc(dayName(S.ordDate).toLowerCase()) + ' yet.</p>' : inkWait('Loading the order list...', 'orders', 4))));
     return whoTopHTML() + tabs +
       '<section class="nb-page o-page"><header class="nb-ph"><div><h2 class="nb-title" id="rtitle" tabindex="-1">Order list</h2><span class="nb-date">' + esc(longDate(S.ordDate)) + '</span></div>' +
       (S.ordState !== 'offline' && (S.ordState === 'ok' || live.length) ? '<div class="nb-prog">' + nOrd + ' of ' + live.length + ' ordered</div>' : '') +

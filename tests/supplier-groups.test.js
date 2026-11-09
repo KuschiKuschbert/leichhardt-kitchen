@@ -132,7 +132,8 @@ const confirm = '.cut-tl [data-p="cut-tick"][data-id^="northside|"]';
 
   p = await L.open(b, '#/orders', { who: 'ann', extra: extra(), wait: 1600 });
   ok(!(await p.$('.o-cut-fold, .cut-tl, .o-sups, [data-p="otick"]:not([disabled])')) && await supplierReads(p) === 0, 'staff: requests and Add remain, without cut-offs, completion or catalogue reads');
-  ok((await rows(p)).length === 6 && /Waiting from earlier days/.test(await txt(p, '.o-main')), 'staff keep their existing request and earlier-day presentation');
+  ok((await rows(p)).length === 6 && !(await p.$('.o-wait, #o-overdue, .o-main .nb-roll')) && (await p.$$('.o-main > .nb-rows')).length === 1, 'staff: all requests stay together without waiting-age labels or sections');
+  ok(/Butter\s+1\s+Low/.test(await txt(p, '.o-main [data-ln$="/g-old"]')) && /from Ann/.test(await txt(p, '.o-main [data-ln$="/g-old"]')) && /Out/.test(await txt(p, '.o-main [data-ln$="/g-out"]')), 'staff: hiding ages preserves amount, urgency and original author');
   await p.context().close();
   await b.close();
   L.report(R);
