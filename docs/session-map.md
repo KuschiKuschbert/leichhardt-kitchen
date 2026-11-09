@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Council design references, 9 November 2026
+
+The head chef requested the seven-app recommendations as standing council guidance. The [service council](../.claude/skills/service-council/SKILL.md#design-references) owns the principles, evidence questions and comparison format. Its reviewer briefs pass them to every reviewer in both rounds; small changes use a short reference-fit note. Whole-app audits share the criteria through section 5 of their brief. Current contracts and approved designs win. `CLAUDE.md`, the README and the pull request template point sessions to this guidance; the advisory Council check remains unchanged.
+
 ## Cleaning schedule and checks, 9 November 2026
 
 The owner requested the supplied unbranded 26-task programme and then the ordered 25-step Hot larder, Grill and Pans pack down in the existing Cleaning page. Keep the chosen C daily notebook + A chef week review. [The current contract](cleaning-schedule.md) covers explicit imports, Sunday deep cleaning, two-day drip trays anchored to 9 November 2026, immutable plans, per-event checks, Pass mapping, blocked states, audit snapshots and the temperature reminder. `js/cleaning-schedule.js` is a lazy runtime dependency, never a startup or saved-shell file.

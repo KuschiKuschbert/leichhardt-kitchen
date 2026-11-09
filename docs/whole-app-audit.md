@@ -65,6 +65,8 @@ Separate existing failures from new regressions. Record environment failures wit
 
 ## 5. Run an independent, critical council
 
+For usability and design recommendations, give each reviewer the service council's [Design references](../.claude/skills/service-council/SKILL.md#design-references). Apply the relevant seven-app principles to the kitchen task and record benefits, rejected ideas, trade-offs and evidence in the design comparison. Current contracts and approved choices win; keep the audit's reviewer structure and priority for security, data loss and service blockers.
+
 Use separate reviewers where available. Each reviews evidence independently before a lead reconciles recommendations. If independent agents or real users are unavailable, state that the review is role-based analysis. Do not present invented staff research or staged agreement as evidence.
 
 | Perspective | Required challenge |
