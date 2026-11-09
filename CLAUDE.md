@@ -41,7 +41,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Planning staff sections ahead, dated drafts, week picker and read costs | `docs/team-week-options/brief.md` (chosen A, implementation and verification) |
 | Quieter Today's team management, single roster and per-person details | `docs/team-tidy-options/brief.md` (chosen A, implementation and checks) |
 | Cleaning page, ordered pack down, repeat schedule, checks, Pass verification and team release | `docs/cleaning-schedule.md`, `docs/cleaning-options/brief.md` (chosen C + A), `docs/cleaning-options/implementation.md`, `docs/cleaning-options/release-toggle.md`; keep unbranded templates in `js/cleaning-schedule.js`, separate from history; anchored intervals must agree in client and rules |
-| Compact Cleaning management design exploration for admin, head and sous chefs | `docs/cleaning-chef-options/brief.md` (three previews, no choice yet) |
+| Compact Cleaning management, chosen M1 groups and responsive repeat-task editor | `docs/cleaning-chef-options/implementation.md` (contract and current verification), `docs/cleaning-chef-options/brief.md` (designs and council) |
 | Chef to-do notebook layout | `docs/chef-todo-options/brief.md` (Chosen, implementation contract) |
 | Drinks run notebook style | `docs/drinks-notebook.md`, `docs/code-contracts.md` (Drinks run) |
 | Recipe amounts, the recipe and drawing editor, the drawing studio, smoker batches | `docs/recipe-multiplier.md`, `docs/recipe-editor-options/brief.md`, `docs/studio-options/brief.md`, `docs/smoker-batches.md` |

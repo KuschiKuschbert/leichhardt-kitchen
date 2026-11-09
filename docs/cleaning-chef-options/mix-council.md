@@ -1,6 +1,6 @@
 # Cleaning mixes: follow-up council
 
-9 November 2026. Requested by the owner after the three original alternatives. **Advice only. No mix selected or application change authorised.** [Neutral review packet and sketches](mix-review-packet.md) · [Original designs](brief.md).
+9 November 2026. Council record requested after the three original alternatives. **The owner subsequently chose M1 after its concrete preview and authorised implementation.** The votes below preserve the independent advice that preceded the choice. [Current implementation](implementation.md) · [Neutral review packet and sketches](mix-review-packet.md) · [Original designs](brief.md).
 
 ## Process
 
@@ -53,4 +53,4 @@ Keep one source of task, completion and editor state. Preserve unsent work acros
 - Explain what is left, what is recorded and what event coverage is unknown. Keep today's progress explicitly labelled when Week is open.
 - Consider showing the next incomplete task in a closed group, then measure the additional space before adopting it.
 
-These are recommendations, not accepted requirements. Implementation still needs actual role, draft/recovery, read-budget, keyboard, contrast, target-size and completion checks. The owner has requested advice, not chosen a layout.
+These refinements record council advice, not additional accepted requirements. The owner subsequently chose M1's layout; its actual role, draft/recovery, read-budget, keyboard, target-size and completion verification belongs in [the implementation record](implementation.md).

@@ -1,6 +1,6 @@
 # Cleaning: three compact chef workspaces
 
-9 November 2026. **Design exploration. No layout chosen or application change made.** Baseline `2cb62ba`. [Interactive concepts](index.html) · [Screenshot comparison](comparison.html) · [Proposal](proposal.md).
+9 November 2026. **Chosen: M1, A's grouped Today/Week with B's desktop Repeat tasks editor. Authorised by the owner after the concrete mix preview.** Implementation and verification are recorded in [the current implementation note](implementation.md). Baseline `2cb62ba`. [Original interactive concepts](index.html) · [Screenshot comparison](comparison.html) · [Proposal](proposal.md).
 
 For a single-file preview, download [cleaning-designs.html](cleaning-designs.html) and open it in a browser. It embeds the fonts, CSS and task drafts; A/B/C navigation was checked over local HTTP with no additional network requests. It is a generated copy of the editable preview sources, not an app runtime file.
 
@@ -108,10 +108,10 @@ There was no ranking disagreement. The refinement priorities differ: the head ch
 
 ## Follow-up: possible mixes
 
-The owner requested a fresh mix council. Six new reviewers compared A with B's setup editor, A with C's Week view, and the full A+B+C composition. Scores were **17, 13 and 6** respectively. Five preferred the A+B setup mix; the head-chef reviewer preferred A+C Week. **All six still recommend plain A for the first build.** The best later mix borrows B's adjacent list/editor only for desktop Repeat tasks, with one inline form on phones. Defer C until weekly review earns the extra date and coverage state. [Full votes, sketches, disagreement and recommendation](mix-council.md).
+The owner requested a fresh mix council. Six new reviewers compared A with B's setup editor, A with C's Week view, and the full A+B+C composition. Scores were **17, 13 and 6** respectively. Five preferred the A+B setup mix; the head-chef reviewer preferred A+C Week. All six recommended plain A for the first build before the owner's subsequent choice. The owner selected the A+B mix after seeing it, settling this tradeoff. It borrows B's adjacent list/editor only for desktop Repeat tasks, with one inline form on phones. C's weekly matrix is outside the chosen scope. [Full votes, sketches and disagreement](mix-council.md).
 
-The subsequent request to see that mix is illustrated in [a concrete M1 preview](mix-preview.md), with an [interactive version](mix.html), [visual overview](previews/mix-presentation.png) and [self-contained download](cleaning-mix.html). Its 75 local checks pass at phone, tablet and desktop sizes; the original 117 checks also pass after the shared preview changes. This is a reviewable illustration, not a chosen application implementation.
+The mix was illustrated in [a concrete M1 preview](mix-preview.md), with an [interactive version](mix.html), [visual overview](previews/mix-presentation.png) and [self-contained download](cleaning-mix.html). Its 75 local checks pass at phone, tablet and desktop sizes; the original 117 checks also pass after the shared preview changes. These remain schematic design evidence; [actual implementation results](implementation.md) are separate.
 
 ## Chosen
 
-Awaiting the owner's choice. No application source, navigation, completion model, permissions, saved records or team release switch changed. Any chosen implementation must extend `js/cleaning.js` and the existing shared `css/app.css`, with focused Cleaning, navigation, release-switch, draft/session and read-budget checks. Update the design-pattern registry only for the actual chosen pattern.
+The owner chose M1 and authorised implementation with "yes lets implement that". Extend `js/cleaning.js` and the existing shared `css/app.css`, keeping staff's daily view and all existing data, access and recording contracts. The original chef matrix is replaced with grouped day review. The design-pattern registry, real browser tests and project notes follow the chosen implementation. No schedule import, team switch or database-rule change is part of this layout release.

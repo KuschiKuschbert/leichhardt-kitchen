@@ -2,6 +2,8 @@
 
 ## Cleaning schedule extension, 9 November 2026
 
+The chosen [M1 chef layout](cleaning-chef-options/implementation.md) adds no query, listener, persistent private cache or schema. Groups, six-row pages and global search use the loaded tasks. Repeat tasks reuses the loaded range, including existing post-save refreshes. Explicit import results identify their today-only range so returning to Week reloads the correct bounded week. Named same-range work-return actions do not schedule an extra refresh during a pending write.
+
 Opening or refreshing Cleaning keeps the existing two bounded queries: applicable task revisions and today's occurrence states, or at most a week for canonical chefs. Explicit schedule import adds one bounded all-revision query, one missing-task batch and a normal two-query reload; repeating it never creates duplicate tasks. Every enhanced action writes current state plus one immutable audit snapshot atomically. Daily and week views do not read the action history. No startup cleaning query, listener, polling or private persistent copy is added. The nightly backup adds one action day-range query. Existing session/config rule lookups and task/audit validation reads remain separate server-rule costs. See [the feature contract](cleaning-schedule.md).
 
 On 5 November 2026 the database refused every read from 13:00: the free plan's 50,000 reads for the day were used up (they reset at midnight in California, 18:00 kitchen time). The head chef asked what reads and writes what, and how to get the most out of the free plan. This note is the answer: every read and write in `js/`, `sw.js`, `scripts/` and the workflows, with measured costs where they could be measured.

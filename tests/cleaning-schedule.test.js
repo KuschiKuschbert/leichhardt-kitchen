@@ -15,6 +15,14 @@ function task(code, changes = {}) {
 function fixture(codes, changes = {}) {
   return { ...Object.fromEntries(codes.map(code => [key('cleaningTasks', id(code)), task(code)])), ...changes };
 }
+async function general(p) {
+  if (await p.locator('[data-cln="group"][data-group="general"][aria-expanded="false"]').count()) await p.click('[data-cln="group"][data-group="general"]');
+}
+async function reopened(p) {
+  await L.waitFor(p, () => !!document.querySelector('.cln-page') && !document.querySelector('.cln-loading'));
+  await general(p);
+  await L.waitFor(p, () => !!document.querySelector('.cln-plan-row'));
+}
 async function open(b, options = {}) {
   const p = await L.open(b, '#/cleaning', { who: 'sam', wait: 1000, ...options });
   await L.waitFor(p, () => !!document.querySelector('.cln-page') && !document.querySelector('.cln-loading'));
@@ -22,6 +30,7 @@ async function open(b, options = {}) {
     const C = LK_PREP.cleaning(), day = LK_TIME.day();
     window.__cleanTest = { C, day, tasks: (await C.load(day, day)).tasks };
   });
+  await general(p);
   return p;
 }
 async function act(p, code, action, options = {}) {
@@ -71,7 +80,7 @@ const row = code => '.cln-plan-row[data-id="' + id(code) + '"]';
   await step('explicit import and repeat import', async () => {
     p = await open(b);
     ok((await records(p, 'cleaningTasks')).length === 0, 'import: opening Cleaning never seeds tasks automatically');
-    await p.click('[data-cln="setup"]'); await p.click('.cln-import summary');
+    await p.locator('[data-cln="setup"]').first().click(); await p.click('.cln-import summary');
     await p.check('[data-cln-import-verifier="sam"]'); await p.click('[data-cln="import-schedule"]');
     await L.waitFor(p, () => Object.keys(__fake.dump()).filter(k => k.includes('/cleaningTasks/')).length === 26 && !LK_PREP.unsent());
     const first = await records(p, 'cleaningTasks');
@@ -80,7 +89,7 @@ const row = code => '.cln-plan-row[data-id="' + id(code) + '"]';
     const twice = await p.evaluate(() => LK_PREP.cleaning().importTasks(LK_CLEANING_SCHEDULE.drafts()));
     ok(twice.imported === 0 && twice.skipped === 26 && (await records(p, 'cleaningTasks')).length === 26, 'import: a repeated import creates no duplicate task or revision');
     ok(JSON.stringify(first) === JSON.stringify(await records(p, 'cleaningTasks')), 'import: a repeated import preserves existing task versions byte for byte');
-    await p.reload(); await L.waitFor(p, () => document.querySelectorAll('.cln-plan-row').length > 0);
+    await p.reload(); await reopened(p);
     ok((await records(p, 'cleaningTasks')).length === 26, 'import: imported tasks survive a real page reload');
   });
 
@@ -97,24 +106,34 @@ const row = code => '.cln-plan-row[data-id="' + id(code) + '"]';
 
   await step('ordered pack down import and nightly work', async () => {
     p = await open(b, { clock: Date.parse('2026-11-09T12:00:00Z'), extra: { [key('cleaningTasks', id('c03'))]: task('c03', { from: at('2026-11-01') }) } });
-    await p.click('[data-cln="setup"]'); await p.click('.cln-pack-import summary'); await p.click('[data-cln="import-packdown"]');
+    await p.locator('[data-cln="setup"]').first().click(); await p.click('.cln-pack-import summary'); await p.click('[data-cln="import-packdown"]');
     await L.waitFor(p, () => Object.values(__fake.dump()).filter(t => t.plan && /^pd-/.test(t.plan.template)).length === 25 && !LK_PREP.unsent());
     const imported = (await records(p, 'cleaningTasks')).filter(t => /^pd-/.test(t.plan.template));
     ok(imported.length === 25 && (await records(p, 'cleaningTasks')).length === 26, 'pack down import: the explicit setup action adds 25 ordered tasks and preserves the existing floor task');
     const twice = await p.evaluate(() => LK_PREP.cleaning().importTasks(LK_CLEANING_SCHEDULE.packDownDrafts()));
     ok(twice.imported === 0 && twice.skipped === 25, 'pack down import: running the separate importer again creates no duplicate task or revision');
-    const layout = await p.evaluate(() => {
-      const groups = [...document.querySelectorAll('[data-cln-packdown-group]')], floor = document.querySelector('.cln-row[data-id="clean-template-c03"]'), pack = document.querySelector('.cln-packdown');
-      return { groups: groups.map(g => g.getAttribute('data-cln-packdown-group')), order: groups.flatMap(g => [...g.querySelectorAll('.cln-plan-row')].map(r => r.getAttribute('data-id').replace('clean-template-', ''))), floors: document.querySelectorAll('.cln-row[data-id="clean-template-c03"]').length,
-        floorLast: !!(floor && pack && (pack.compareDocumentPosition(floor) & Node.DOCUMENT_POSITION_FOLLOWING)) };
-    });
-    ok(layout.groups.join(',') === 'Hot larder,Grill,Pans' && layout.order.join(',') === orderedIds.filter(code => code !== 'pd-grill-02').join(','), 'pack down order: the daily view follows the requested section and step order, excluding the Sunday extra on Monday');
-    ok(layout.floors === 1 && layout.floorLast, 'pack down order: the existing floor clean appears once, after overhead shelving work');
+    await p.click('[data-cln="today"]');
+    const shownGroups = await p.$$eval('[data-cln="group"]', es => es.map(e => e.getAttribute('data-group'))), order = [];
+    for (const group of ['hot', 'grill', 'pans']) {
+      await p.click('[data-cln="group"][data-group="' + group + '"]');
+      order.push(...await p.$$eval('[data-cln-group="' + group + '"] .cln-plan-row', es => es.map(r => r.getAttribute('data-id').replace('clean-template-', ''))));
+      if (await p.locator('[data-cln="group-page"][data-group="' + group + '"][data-page="1"]').count()) {
+        await p.click('[data-cln="group-page"][data-group="' + group + '"][data-page="1"]');
+        order.push(...await p.$$eval('[data-cln-group="' + group + '"] .cln-plan-row', es => es.map(r => r.getAttribute('data-id').replace('clean-template-', ''))));
+      }
+    }
+    ok(shownGroups.join(',') === 'hot,grill,pans,floor' && order.join(',') === orderedIds.filter(code => code !== 'pd-grill-02').join(','), 'pack down order: bounded daily groups retain section and numeric step order, excluding the Sunday extra on Monday');
+    await p.click('[data-cln="group"][data-group="floor"]');
+    ok(await p.locator('.cln-row[data-id="clean-template-c03"]').count() === 1 && shownGroups.at(-1) === 'floor', 'pack down order: the existing floor clean appears once in the last group after overhead shelving work');
     const sunday = await p.evaluate(() => { const C = LK_PREP.cleaning(), t = __fake.dump()[['kitchens', LK_PREP.state.pin, 'cleaningTasks', 'clean-template-pd-grill-02'].join('/')]; return [C.due(t, '2026-11-15'), C.due(t, '2026-11-16')]; });
     ok(sunday[0] && !sunday[1], 'pack down schedule: the deep grill and OZ tank clean applies on Sunday and is not due on Monday');
+    await p.locator('[data-cln="setup"]').first().click();
+    await p.fill('#cln-repeat-search', task('pd-grill-03').text);
     await p.click('[data-cln="edit"][data-id="' + id('pd-grill-03') + '"]');
     ok(await p.inputValue('#cln-repeat-days') === '2' && await p.inputValue('#cln-repeat-anchor') === '2026-11-09', 'pack down setup: the two-day interval and confirmed anchor are visible for prospective editing');
     await p.click('[data-cln="cancel-edit"]');
+    await p.click('[data-cln="today"]');
+    await p.click('[data-cln="group"][data-group="hot"]');
     await p.locator('[data-cln="details"][data-id="' + id('pd-hot-02') + '"]').first().click();
     const checks = p.locator('[data-cln-check][data-id="' + id('pd-hot-02') + '"]');
     ok(await p.locator('[data-cln="flow-perform"][data-id="' + id('pd-hot-02') + '"]').isDisabled(), 'pack down work: a nightly clean cannot bypass the required shutdown and cleaning checks');
@@ -200,7 +219,7 @@ const row = code => '.cln-plan-row[data-id="' + id(code) + '"]';
     ok(verified.saved && verified.saved.workerId === before.saved.workerId && verified.saved.doneAt === before.saved.doneAt, 'food: verification preserves the original performance identity and time');
     const close = await act(p, 'c11', 'save', { slot: 'close', kind: 'close' });
     ok(close.saved && !close.saved.done, 'food: a verified start-of-day occurrence leaves end-of-night work incomplete');
-    await p.reload(); await L.waitFor(p, () => !!document.querySelector('.cln-plan-row'));
+    await p.reload(); await reopened(p);
     const persisted = await records(p, 'cleaningDone');
     ok(persisted.some(r => r.flow.slot === 'start' && r.done && r.flow.verifiedBy === 'sam') && persisted.some(r => r.flow.slot === 'close' && !r.done), 'food: performance, verification and independent pending work survive refresh');
   });
@@ -211,11 +230,13 @@ const row = code => '.cln-plan-row[data-id="' + id(code) + '"]';
     ok(!!(await act(p, 'c08', 'perform', { checked: offday.plan.checks })).error && !(await records(p, 'cleaningDone')).length, 'schedule: an unscheduled weekday cannot be completed through the API');
     ok(/^0\/1/.test(await L.txt(p, '.cln-progress')), 'schedule: non-scheduled work never inflates today\'s incomplete denominator');
     await p.setViewportSize({ width: 1280, height: 844 }); await p.click('[data-cln="week"]');
-    await L.waitFor(p, () => !!document.querySelector('.cln-matrix table'));
+    await L.waitFor(p, () => !!document.querySelector('.cln-week-day') && !document.querySelector('.cln-loading'));
+    await general(p);
     const week = await p.evaluate(() => ({ label: document.querySelector('.cln-week-nav').textContent,
-      first: document.querySelector('.cln-matrix thead th:nth-child(2)').textContent,
-      notScheduled: [...document.querySelectorAll('.cln-not-due')].length > 0 && [...document.querySelectorAll('.cln-not-due')].every(el => !el.querySelector('button') && el.getAttribute('aria-label') === 'Not scheduled') }));
-    ok(/Week commencing/.test(week.label) && /Mon/.test(week.first) && week.notScheduled, 'schedule: the week starts Monday and non-scheduled cells remain untickable');
+      first: document.querySelector('[data-cln="day"]').textContent,
+      day: document.querySelector('[data-cln="day"][aria-pressed="true"]').getAttribute('data-day'),
+      unscheduled: !document.querySelector('.cln-week-day [data-id="clean-template-c08"]') }));
+    ok(/Week commencing/.test(week.label) && /Mon/.test(week.first) && week.day === today && week.unscheduled, 'schedule: the week starts Monday and the selected day excludes work not scheduled for it');
   });
 
   await step('anchored repeat cadence', async () => {
@@ -337,7 +358,7 @@ const row = code => '.cln-plan-row[data-id="' + id(code) + '"]';
     await L.waitFor(p, () => Object.values(__fake.dump()).some(r => r.task === 'clean-template-c08' && r.done === true) && !LK_PREP.unsent());
     ok(/Ann|Saved/.test(await L.txt(p, row('c08'))), 'working journey: required checks and Complete save the signed-in worker visibly');
     for (const width of [390, 768, 1280]) { await p.setViewportSize({ width, height: 844 }); await L.settle(p, 150); ok(!(await L.overflow(p)), 'working journey: expanded instructions fit at ' + width + ' px'); }
-    await p.reload(); await L.waitFor(p, () => !!document.querySelector('.cln-plan-row'));
+    await p.reload(); await reopened(p);
     ok((await records(p, 'cleaningDone')).some(r => r.task === id('c08') && r.done && r.workerId === 'ann'), 'working journey: acknowledged completion survives navigation and refresh');
   });
 

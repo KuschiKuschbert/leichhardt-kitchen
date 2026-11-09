@@ -1,6 +1,6 @@
 # What the proposed mix looks like
 
-9 November 2026. The owner asked to see the design after the mix council. This renders **M1, A daily work with B's setup editor**, for review. It does not record a chosen layout or change the application. The council still recommends plain A for the first build.
+9 November 2026. Schematic design evidence created when the owner asked to see the mix. It renders **M1, A daily work with B's setup editor**. The owner subsequently chose it and authorised implementation. [Actual implementation and verification](implementation.md) are separate from this preview and its sample records.
 
 [Visual overview](previews/mix-presentation.png) · [Interactive preview](mix.html) · [All screens](mix-presentation.html) · [Single-file download](cleaning-mix.html) · [Council advice](mix-council.md).
 
