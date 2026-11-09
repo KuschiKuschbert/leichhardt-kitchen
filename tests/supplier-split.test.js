@@ -90,74 +90,36 @@ async function refusal(page, value) {
     await page.context().close();
   }
 
-  const groupedFixture = fixture(), caseName = F.items.find(item => item.id === 't-case').name;
-  groupedFixture[F.key(['config', 'main'])].cutoffs.find(cutoff => cutoff.id === TARGET).dd = [(new Date(L.NOW).getDay() + 1) % 7];
-  groupedFixture[F.key(['orders', F.today, 'lines', 'moved-product-request'])] = { text: caseName, qty: '1 case', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 1800000, ordered: false, deleted: false };
-  page = await L.open(browser, '#/orders', { who: 'bo', extra: groupedFixture, wait: 1600 });
-  await L.waitFor(page, name => Array.from(document.querySelectorAll('.o-sups .o-sup')).some(group => /Northside Test Foods/.test(group.querySelector('.cut-n')?.textContent || '') && Array.from(group.querySelectorAll('.nb-t')).some(line => line.textContent.includes(name))), caseName, 10000);
-  ok(await page.evaluate(name => Array.from(document.querySelectorAll('.o-sups .o-sup')).some(group => /Northside Test Foods/.test(group.querySelector('.cut-n')?.textContent || '') && Array.from(group.querySelectorAll('.nb-t')).some(line => line.textContent.includes(name))), caseName), 'Orders initially groups the moved product under the original supplier from its loaded catalogue');
+  const requestFixture = fixture(), caseName = F.items.find(item => item.id === 't-case').name;
+  requestFixture[F.key(['config', 'main'])].cutoffs.find(cutoff => cutoff.id === TARGET).dd = [(new Date(L.NOW).getDay() + 1) % 7];
+  const requestKey = F.key(['orders', F.today, 'lines', 'moved-product-request']);
+  requestFixture[requestKey] = { text: caseName, qty: '1 case', recipes: [], addedBy: 'Ann', addedById: 'ann', addedAt: L.NOW - 1800000, ordered: false, deleted: false };
+  const requestVisible = p => L.waitFor(p, () => !!document.querySelector('.nb-row[data-ln$="/moved-product-request"]'), null, 10000);
+  page = await L.open(browser, '#/orders', { who: 'bo', extra: requestFixture, wait: 1600 });
+  await requestVisible(page);
+  ok(await page.evaluate(() => !document.querySelector('.o-sups') && !window.__fake.bill.some(entry => /\/suppliers$/.test(entry.path))), 'Orders shows the independent request without reading or grouping the catalogue');
   await page.evaluate(source => { window.__ordersCacheMarker = true; location.hash = '#/suppliers/' + source; }, SOURCE);
   await L.waitFor(page, () => !!document.querySelector('input[data-sf="qty"]'), null, 10000);
-  await L.settle(page, 300);
-  await splitDirect(page);
+  await importThroughUI(page);
   await page.evaluate(() => { window.__fake.bill.length = 0; location.hash = '#/orders'; });
-  await L.waitFor(page, name => Array.from(document.querySelectorAll('.o-sups .o-sup')).some(group => /Northside Test Seafood/.test(group.querySelector('.cut-n')?.textContent || '') && Array.from(group.querySelectorAll('.nb-t')).some(line => line.textContent.includes(name))), caseName, 10000).catch(() => {});
-  const groupedAfterSplit = await page.evaluate(name => ({
+  await requestVisible(page);
+  const requestsAfterSplit = await page.evaluate(key => ({
     samePage: window.__ordersCacheMarker === true,
     queryCount: window.__fake.bill.filter(entry => entry.kind === 'lite-query' && /\/suppliers$/.test(entry.path)).length,
-    originalHasMoved: Array.from(document.querySelectorAll('.o-sups .o-sup')).some(group => /Northside Test Foods/.test(group.querySelector('.cut-n')?.textContent || '') && Array.from(group.querySelectorAll('.nb-t')).some(line => line.textContent.includes(name))),
-    targetHasMoved: Array.from(document.querySelectorAll('.o-sups .o-sup')).some(group => /Northside Test Seafood/.test(group.querySelector('.cut-n')?.textContent || '') && Array.from(group.querySelectorAll('.nb-t')).some(line => line.textContent.includes(name)))
-  }), caseName);
-  ok(groupedAfterSplit.samePage && !groupedAfterSplit.originalHasMoved && groupedAfterSplit.targetHasMoved && groupedAfterSplit.queryCount === 1, 'an acknowledged split refreshes Orders once and groups the moved product under its separate reminder without reloading');
-  await page.evaluate(source => { location.hash = '#/suppliers/' + source; }, SOURCE);
+    grouped: !!document.querySelector('.o-sups'), request: window.__fake.dump()[key]
+  }), requestKey);
+  ok(requestsAfterSplit.samePage && !requestsAfterSplit.grouped && requestsAfterSplit.queryCount === 0 && JSON.stringify(requestsAfterSplit.request) === JSON.stringify(requestFixture[requestKey]), 'an acknowledged split leaves the shared request unchanged and returning to Orders reads no catalogue');
+  await page.evaluate(target => { location.hash = '#/suppliers/' + target; }, TARGET);
   await L.waitFor(page, () => !!document.querySelector('input[data-sf="qty"]'), null, 10000);
-  await L.settle(page, 300);
+  ok((await page.$$eval('.su-row', rows => rows.map(row => row.dataset.item))).join() === movedIds.join(), 'reopening the separate supplier loads its current split items');
   await page.evaluate(async target => {
-    const store = window.__splitStore, supplier = await store.load(target);
+    const store = window.LK_SUP_STORE.create(window.LK_PREP.supplier()), supplier = await store.load(target);
     window.__fake.bill.length = 0;
-    await store.record(target, supplier.v, 'group-cache-record', window.LK_SUP_CORE.snapshotLines(supplier.items, { 't-stock': '3 kg' }), null, 0, false, '');
+    await store.record(target, supplier.v, 'request-return-record', window.LK_SUP_CORE.snapshotLines(supplier.items, { 't-stock': '3 kg' }), null, 0, false, '');
     location.hash = '#/orders';
   }, TARGET);
-  await L.waitFor(page, name => Array.from(document.querySelectorAll('.o-sups .o-sup')).some(group => /Northside Test Seafood/.test(group.querySelector('.cut-n')?.textContent || '') && Array.from(group.querySelectorAll('.nb-t')).some(line => line.textContent.includes(name))), caseName, 10000).catch(() => {});
-  ok(await page.evaluate(() => window.__ordersCacheMarker === true && window.__fake.bill.filter(entry => entry.kind === 'lite-query' && /\/suppliers$/.test(entry.path)).length === 0), 'recording an order keeps the refreshed Orders catalogue cache and adds no catalogue query');
-  await page.context().close();
-
-  // Hold the first Orders catalogue response while the same person splits it and obtains a newer response.
-  const raceLite = require('node:fs').readFileSync(require.resolve('./fake/firebase-firestore-lite.js'), 'utf8').replace(
-    "export { liteGetDoc as getDoc, liteGetDocs as getDocs } from './firebase-firestore.js';",
-    `export { liteGetDoc as getDoc } from './firebase-firestore.js';
-import { liteGetDocs } from './firebase-firestore.js';
-export async function getDocs(ref) {
-  const snapshot = await liteGetDocs(ref);
-  if (ref.path[ref.path.length - 1] !== 'suppliers' || window.__oldCatalogueCaptured) return snapshot;
-  const frozen = { ...snapshot, docs: snapshot.docs.map(doc => { const value = doc.data(); return { ...doc, data: () => JSON.parse(JSON.stringify(value)) }; }) };
-  window.__oldCatalogueCaptured = true;
-  const capturedAt = performance.now();
-  window.__oldCatalogueHadTarget = frozen.docs.some(doc => doc.id === '${TARGET}');
-  await new Promise(resolve => { window.__releaseOldCatalogue = resolve; });
-  window.__oldCatalogueHeldMs = performance.now() - capturedAt;
-  window.__oldCatalogueDelivered = true;
-  return frozen;
-}`);
-  page = await L.open(browser, '#/orders', { who: 'bo', extra: groupedFixture, wait: 100, fakeSDK: { 'firebase-firestore-lite.js': raceLite } });
-  await L.waitFor(page, () => !!window.__releaseOldCatalogue, null, 5000);
-  await page.evaluate(source => { window.__ordersRaceMarker = true; location.hash = '#/suppliers/' + source; }, SOURCE);
-  await L.waitFor(page, () => !!document.querySelector('input[data-sf="qty"]'), null, 5000);
-  await splitDirect(page);
-  await page.evaluate(() => { location.hash = '#/orders'; });
-  await L.waitFor(page, name => Array.from(document.querySelectorAll('.o-sups .o-sup')).some(group => /Northside Test Seafood/.test(group.querySelector('.cut-n')?.textContent || '') && Array.from(group.querySelectorAll('.nb-t')).some(line => line.textContent.includes(name))), caseName, 5000);
-  await page.evaluate(() => { window.__releaseOldCatalogue(); });
-  await L.waitFor(page, () => window.__oldCatalogueDelivered === true, null, 2000);
-  await L.settle(page, 300);
-  const afterOldResponse = await page.evaluate(name => ({
-    samePage: window.__ordersRaceMarker === true,
-    oldWasPreSplit: window.__oldCatalogueHadTarget === false,
-    oldDelivered: window.__oldCatalogueDelivered === true,
-    beforeReadTimeout: window.__oldCatalogueHeldMs < 6000,
-    targetHasMoved: Array.from(document.querySelectorAll('.o-sups .o-sup')).some(group => /Northside Test Seafood/.test(group.querySelector('.cut-n')?.textContent || '') && Array.from(group.querySelectorAll('.nb-t')).some(line => line.textContent.includes(name))),
-    originalHasMoved: Array.from(document.querySelectorAll('.o-sups .o-sup')).some(group => /Northside Test Foods/.test(group.querySelector('.cut-n')?.textContent || '') && Array.from(group.querySelectorAll('.nb-t')).some(line => line.textContent.includes(name)))
-  }), caseName);
-  ok(afterOldResponse.samePage && afterOldResponse.oldWasPreSplit && afterOldResponse.oldDelivered && afterOldResponse.beforeReadTimeout && afterOldResponse.targetHasMoved && !afterOldResponse.originalHasMoved, 'a delayed pre-split Orders catalogue response cannot overwrite the fresh same-person grouping');
+  await requestVisible(page);
+  ok(await page.evaluate(key => window.__ordersCacheMarker === true && window.__fake.bill.filter(entry => entry.kind === 'lite-query' && /\/suppliers$/.test(entry.path)).length === 0 && !window.__fake.dump()[key].ordered, requestKey), 'recording a supplier order leaves the staff request unticked and returning to Orders adds no catalogue query');
   await page.context().close();
 
   for (const supplied of ['', 'unconfigured-reminder']) {

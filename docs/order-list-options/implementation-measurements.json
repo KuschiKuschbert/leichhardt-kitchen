@@ -1,0 +1,4875 @@
+{
+  "sourceCommit": "99fd9b1bdc027611973ce2dad4f4ecc1985b98b1",
+  "sourceWorkingTree": "Implementation changes under review; commit above is the base before these uncommitted runtime changes.",
+  "sourceHashes": {
+    "js/prep.js": "e3168b23115e6d15f80481e7c5af61f190e067257cdb4894050435e600aa71d8",
+    "css/app.css": "842b51114f45974779782fa258e77863914c36cfa32b2a5c34f48710831f5db1"
+  },
+  "kind": "Actual implemented app C with synthetic Firebase fixtures",
+  "route": "#/orders",
+  "clock": {
+    "iso": "2026-11-09T04:00:00.000Z",
+    "kitchenDate": "2026-11-09",
+    "kitchenTime": "14:00",
+    "timezone": "Australia/Brisbane"
+  },
+  "fixture": {
+    "requests": 8,
+    "completedRequests": 0,
+    "earlierRequests": 1,
+    "low": [
+      "Butter"
+    ],
+    "out": [
+      "Cream",
+      "Eggs"
+    ],
+    "supplierCutoffs": [
+      "Northside Test Foods 15:00",
+      "West Bay Test Supply 16:00"
+    ]
+  },
+  "measurementDefinition": "Unscrolled CSS pixels. A request row counts only when its entire bounding box lies below the top bar and above the fixed Add dock or tab bar, or viewport bottom when those controls are not fixed. The summary and full disclosure have independent bounding boxes. Screenshot normal content exactly matches baseline; overdue and long-name scenarios only vary the named cutoff fields.",
+  "limitations": [
+    "Synthetic records and Firebase SDK stand-in; no live kitchen data or server verification.",
+    "The only page style injection loads bundled copies of Barlow, Barlow Condensed and Caveat. Runtime DOM and layout CSS are unchanged.",
+    "Large text uses the app existing xlarge setting at 125 percent.",
+    "The runtime derives Used in recipe links for Eggs, Cream, Plain flour and Butter from its shipped recipe book. These links are retained.",
+    "Chromium with device scale factor 1 and overlay-style hidden scrollbars; browser chrome, virtual keyboard and device safe areas are not simulated.",
+    "The app clock starts at 14:00 and advances normally for a few seconds during each capture.",
+    "Visible-row counts describe these eight synthetic requests, names, font sizes and cut-offs; they are not a density guarantee for every kitchen list."
+  ],
+  "tasks": {
+    "entryToAddFormTaps": 1,
+    "addThroughSubmitTaps": 2,
+    "markItemOrderedTaps": 1,
+    "confirmSupplierFromClosedTaps": 2,
+    "keyboardDisclosureEnterSpace": true,
+    "verifiedWithRealControls": true,
+    "typingExcluded": true,
+    "formCloseExcluded": true,
+    "note": "Count begins on the Orders page. Add keeps its sheet open after submission. Item Ordered is chef-only."
+  },
+  "captures": [
+    {
+      "role": "chef",
+      "text": "normal",
+      "state": "normal",
+      "disclosure": "closed",
+      "screenshot": "previews/built-chef-390-closed.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "topbar": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 64,
+        "top": 0,
+        "bottom": 64
+      },
+      "dock": {
+        "x": 0,
+        "y": 707,
+        "width": 390,
+        "height": 69,
+        "top": 707,
+        "bottom": 776
+      },
+      "dockPosition": "fixed",
+      "tabbar": {
+        "x": 0,
+        "y": 776,
+        "width": 390,
+        "height": 68,
+        "top": 776,
+        "bottom": 844
+      },
+      "usableViewport": {
+        "top": 64,
+        "bottom": 707,
+        "height": 643
+      },
+      "cutoffFold": {
+        "x": 33,
+        "y": 231.27,
+        "width": 324,
+        "height": 69,
+        "top": 231.27,
+        "bottom": 300.27
+      },
+      "cutoffSummary": {
+        "x": 33,
+        "y": 231.27,
+        "width": 324,
+        "height": 68,
+        "top": 231.27,
+        "bottom": 299.27
+      },
+      "cutoffSummaryText": "2 cut-offs due\nNorthside Test Foods\n · by 15:00\nView",
+      "cutoffTitle": {
+        "text": "2 cut-offs due",
+        "clientWidth": 187,
+        "scrollWidth": 187
+      },
+      "cutoffSummaryNameTruncated": false,
+      "cutoffAbsoluteTime": {
+        "text": "· by 15:00",
+        "x": 174.22,
+        "y": 266.45,
+        "width": 57.98,
+        "height": 18.19,
+        "top": 266.45,
+        "bottom": 284.64
+      },
+      "principalTargets": [
+        {
+          "action": "o-write",
+          "x": 16,
+          "y": 716,
+          "width": 358,
+          "height": 52,
+          "top": 716,
+          "bottom": 768
+        },
+        {
+          "action": "o-cut-toggle",
+          "x": 33,
+          "y": 231.27,
+          "width": 324,
+          "height": 68,
+          "top": 231.27,
+          "bottom": 299.27
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 326.55,
+          "width": 44,
+          "height": 44,
+          "top": 326.55,
+          "bottom": 370.55
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 400.95,
+          "width": 44,
+          "height": 44,
+          "top": 400.95,
+          "bottom": 444.95
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 481.52,
+          "width": 44,
+          "height": 44,
+          "top": 481.52,
+          "bottom": 525.52
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 553.95,
+          "width": 44,
+          "height": 44,
+          "top": 553.95,
+          "bottom": 597.95
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 604.95,
+          "width": 44,
+          "height": 44,
+          "top": 604.95,
+          "bottom": 648.95
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 655.95,
+          "width": 44,
+          "height": 44,
+          "top": 655.95,
+          "bottom": 699.95
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 715.08,
+          "width": 44,
+          "height": 44,
+          "top": 715.08,
+          "bottom": 759.08
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 774.22,
+          "width": 44,
+          "height": 44,
+          "top": 774.22,
+          "bottom": 818.22
+        }
+      ],
+      "cutoffOpen": false,
+      "cutoffActions": [
+        {
+          "label": "Order placed",
+          "x": 233,
+          "y": 402.83,
+          "width": 112,
+          "height": 44,
+          "top": 402.83,
+          "bottom": 446.83
+        },
+        {
+          "label": "Order placed",
+          "x": 233,
+          "y": 501.2,
+          "width": 112,
+          "height": 44,
+          "top": 501.2,
+          "bottom": 545.2
+        }
+      ],
+      "cutoffBands": [],
+      "totalCutoffBandHeight": 0,
+      "firstRequestTop": 308.27,
+      "rows": [
+        {
+          "id": "baseline-3",
+          "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
+          "x": 33,
+          "y": 308.27,
+          "width": 324,
+          "height": 81.56,
+          "top": 308.27,
+          "bottom": 389.83,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-5",
+          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
+          "x": 33,
+          "y": 389.83,
+          "width": 324,
+          "height": 67.27,
+          "top": 389.83,
+          "bottom": 457.09,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-7",
+          "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
+          "x": 33,
+          "y": 457.09,
+          "width": 324,
+          "height": 93.86,
+          "top": 457.09,
+          "bottom": 550.95,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-0",
+          "text": "Milk 6 L",
+          "x": 33,
+          "y": 550.95,
+          "width": 324,
+          "height": 51,
+          "top": 550.95,
+          "bottom": 601.95,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-1",
+          "text": "Brioche buns 4 packs",
+          "x": 33,
+          "y": 601.95,
+          "width": 324,
+          "height": 51,
+          "top": 601.95,
+          "bottom": 652.95,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-2",
+          "text": "Coriander 2 bunches",
+          "x": 33,
+          "y": 652.95,
+          "width": 324,
+          "height": 51,
+          "top": 652.95,
+          "bottom": 703.95,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-4",
+          "text": "Plain flour 5 kgUsed in Cornbread",
+          "x": 33,
+          "y": 703.95,
+          "width": 324,
+          "height": 67.27,
+          "top": 703.95,
+          "bottom": 771.22,
+          "fullyVisible": false,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-6",
+          "text": "Tomatoes 3 kg",
+          "x": 33,
+          "y": 771.22,
+          "width": 324,
+          "height": 51,
+          "top": 771.22,
+          "bottom": 822.22,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        }
+      ],
+      "fullyVisibleRequestRows": 6,
+      "partiallyVisibleRequestRows": 1,
+      "totalRequestRows": 8,
+      "supplierGroupingShown": false,
+      "orderedTodayCount": "0 of 8 ordered",
+      "horizontalOverflowPx": 0,
+      "loadedFonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Caveat",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Caveat",
+          "loaded": true
+        }
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "chef",
+      "text": "normal",
+      "state": "normal",
+      "disclosure": "open",
+      "screenshot": "previews/built-chef-390-open.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "topbar": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 64,
+        "top": 0,
+        "bottom": 64
+      },
+      "dock": {
+        "x": 0,
+        "y": 707,
+        "width": 390,
+        "height": 69,
+        "top": 707,
+        "bottom": 776
+      },
+      "dockPosition": "fixed",
+      "tabbar": {
+        "x": 0,
+        "y": 776,
+        "width": 390,
+        "height": 68,
+        "top": 776,
+        "bottom": 844
+      },
+      "usableViewport": {
+        "top": 64,
+        "bottom": 707,
+        "height": 643
+      },
+      "cutoffFold": {
+        "x": 33,
+        "y": 231.27,
+        "width": 324,
+        "height": 553.03,
+        "top": 231.27,
+        "bottom": 784.3
+      },
+      "cutoffSummary": {
+        "x": 33,
+        "y": 231.27,
+        "width": 324,
+        "height": 68,
+        "top": 231.27,
+        "bottom": 299.27
+      },
+      "cutoffSummaryText": "2 cut-offs due\nNorthside Test Foods\n · by 15:00\nHide",
+      "cutoffTitle": {
+        "text": "2 cut-offs due",
+        "clientWidth": 187,
+        "scrollWidth": 187
+      },
+      "cutoffSummaryNameTruncated": false,
+      "cutoffAbsoluteTime": {
+        "text": "· by 15:00",
+        "x": 174.22,
+        "y": 266.45,
+        "width": 57.98,
+        "height": 18.19,
+        "top": 266.45,
+        "bottom": 284.64
+      },
+      "principalTargets": [
+        {
+          "action": "o-write",
+          "x": 16,
+          "y": 716,
+          "width": 358,
+          "height": 52,
+          "top": 716,
+          "bottom": 768
+        },
+        {
+          "action": "o-cut-toggle",
+          "x": 33,
+          "y": 231.27,
+          "width": 324,
+          "height": 68,
+          "top": 231.27,
+          "bottom": 299.27
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 810.58,
+          "width": 44,
+          "height": 44,
+          "top": 810.58,
+          "bottom": 854.58
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 884.98,
+          "width": 44,
+          "height": 44,
+          "top": 884.98,
+          "bottom": 928.98
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 965.55,
+          "width": 44,
+          "height": 44,
+          "top": 965.55,
+          "bottom": 1009.55
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 1037.98,
+          "width": 44,
+          "height": 44,
+          "top": 1037.98,
+          "bottom": 1081.98
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 1088.98,
+          "width": 44,
+          "height": 44,
+          "top": 1088.98,
+          "bottom": 1132.98
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 1139.98,
+          "width": 44,
+          "height": 44,
+          "top": 1139.98,
+          "bottom": 1183.98
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 1199.11,
+          "width": 44,
+          "height": 44,
+          "top": 1199.11,
+          "bottom": 1243.11
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 1258.25,
+          "width": 44,
+          "height": 44,
+          "top": 1258.25,
+          "bottom": 1302.25
+        }
+      ],
+      "cutoffOpen": true,
+      "cutoffActions": [
+        {
+          "label": "Order placed",
+          "x": 233,
+          "y": 402.83,
+          "width": 112,
+          "height": 44,
+          "top": 402.83,
+          "bottom": 446.83
+        },
+        {
+          "label": "Order placed",
+          "x": 233,
+          "y": 501.2,
+          "width": 112,
+          "height": 44,
+          "top": 501.2,
+          "bottom": 545.2
+        }
+      ],
+      "cutoffBands": [],
+      "totalCutoffBandHeight": 0,
+      "firstRequestTop": 792.3,
+      "rows": [
+        {
+          "id": "baseline-3",
+          "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
+          "x": 33,
+          "y": 792.3,
+          "width": 324,
+          "height": 81.56,
+          "top": 792.3,
+          "bottom": 873.86,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-5",
+          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
+          "x": 33,
+          "y": 873.86,
+          "width": 324,
+          "height": 67.27,
+          "top": 873.86,
+          "bottom": 941.13,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-7",
+          "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
+          "x": 33,
+          "y": 941.13,
+          "width": 324,
+          "height": 93.86,
+          "top": 941.13,
+          "bottom": 1034.98,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-0",
+          "text": "Milk 6 L",
+          "x": 33,
+          "y": 1034.98,
+          "width": 324,
+          "height": 51,
+          "top": 1034.98,
+          "bottom": 1085.98,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-1",
+          "text": "Brioche buns 4 packs",
+          "x": 33,
+          "y": 1085.98,
+          "width": 324,
+          "height": 51,
+          "top": 1085.98,
+          "bottom": 1136.98,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-2",
+          "text": "Coriander 2 bunches",
+          "x": 33,
+          "y": 1136.98,
+          "width": 324,
+          "height": 51,
+          "top": 1136.98,
+          "bottom": 1187.98,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-4",
+          "text": "Plain flour 5 kgUsed in Cornbread",
+          "x": 33,
+          "y": 1187.98,
+          "width": 324,
+          "height": 67.27,
+          "top": 1187.98,
+          "bottom": 1255.25,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-6",
+          "text": "Tomatoes 3 kg",
+          "x": 33,
+          "y": 1255.25,
+          "width": 324,
+          "height": 51,
+          "top": 1255.25,
+          "bottom": 1306.25,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        }
+      ],
+      "fullyVisibleRequestRows": 0,
+      "partiallyVisibleRequestRows": 0,
+      "totalRequestRows": 8,
+      "supplierGroupingShown": false,
+      "orderedTodayCount": "0 of 8 ordered",
+      "horizontalOverflowPx": 0,
+      "loadedFonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Caveat",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Caveat",
+          "loaded": true
+        }
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "chef",
+      "text": "normal",
+      "state": "normal",
+      "disclosure": "closed",
+      "screenshot": "previews/built-chef-768-closed.png",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "scrollY": 0,
+      "topbar": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 132,
+        "top": 0,
+        "bottom": 132
+      },
+      "dock": {
+        "x": 582.03,
+        "y": 261.92,
+        "width": 148.97,
+        "height": 44,
+        "top": 261.92,
+        "bottom": 305.92
+      },
+      "dockPosition": "static",
+      "tabbar": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "usableViewport": {
+        "top": 132,
+        "bottom": 1024,
+        "height": 892
+      },
+      "cutoffFold": {
+        "x": 37,
+        "y": 315.92,
+        "width": 694,
+        "height": 69,
+        "top": 315.92,
+        "bottom": 384.92
+      },
+      "cutoffSummary": {
+        "x": 37,
+        "y": 315.92,
+        "width": 694,
+        "height": 68,
+        "top": 315.92,
+        "bottom": 383.92
+      },
+      "cutoffSummaryText": "2 cut-offs due\nNorthside Test Foods\n · by 15:00\nView",
+      "cutoffTitle": {
+        "text": "2 cut-offs due",
+        "clientWidth": 187,
+        "scrollWidth": 187
+      },
+      "cutoffSummaryNameTruncated": false,
+      "cutoffAbsoluteTime": {
+        "text": "· by 15:00",
+        "x": 178.22,
+        "y": 351.11,
+        "width": 57.98,
+        "height": 18.19,
+        "top": 351.11,
+        "bottom": 369.3
+      },
+      "principalTargets": [
+        {
+          "action": "o-write",
+          "x": 582.03,
+          "y": 261.92,
+          "width": 148.97,
+          "height": 44,
+          "top": 261.92,
+          "bottom": 305.92
+        },
+        {
+          "action": "o-cut-toggle",
+          "x": 37,
+          "y": 315.92,
+          "width": 694,
+          "height": 68,
+          "top": 315.92,
+          "bottom": 383.92
+        },
+        {
+          "action": "otick",
+          "x": 32,
+          "y": 405.38,
+          "width": 44,
+          "height": 44,
+          "top": 405.38,
+          "bottom": 449.38
+        },
+        {
+          "action": "otick",
+          "x": 32,
+          "y": 475.3,
+          "width": 44,
+          "height": 44,
+          "top": 475.3,
+          "bottom": 519.3
+        },
+        {
+          "action": "otick",
+          "x": 32,
+          "y": 545.22,
+          "width": 44,
+          "height": 44,
+          "top": 545.22,
+          "bottom": 589.22
+        },
+        {
+          "action": "otick",
+          "x": 32,
+          "y": 606.8,
+          "width": 44,
+          "height": 44,
+          "top": 606.8,
+          "bottom": 650.8
+        },
+        {
+          "action": "otick",
+          "x": 32,
+          "y": 660.03,
+          "width": 44,
+          "height": 44,
+          "top": 660.03,
+          "bottom": 704.03
+        },
+        {
+          "action": "otick",
+          "x": 32,
+          "y": 713.27,
+          "width": 44,
+          "height": 44,
+          "top": 713.27,
+          "bottom": 757.27
+        },
+        {
+          "action": "otick",
+          "x": 32,
+          "y": 774.84,
+          "width": 44,
+          "height": 44,
+          "top": 774.84,
+          "bottom": 818.84
+        },
+        {
+          "action": "otick",
+          "x": 32,
+          "y": 836.42,
+          "width": 44,
+          "height": 44,
+          "top": 836.42,
+          "bottom": 880.42
+        }
+      ],
+      "cutoffOpen": false,
+      "cutoffActions": [
+        {
+          "label": "Order placed",
+          "x": 607,
+          "y": 467.19,
+          "width": 112,
+          "height": 44,
+          "top": 467.19,
+          "bottom": 511.19
+        },
+        {
+          "label": "Order placed",
+          "x": 607,
+          "y": 565.56,
+          "width": 112,
+          "height": 44,
+          "top": 565.56,
+          "bottom": 609.56
+        }
+      ],
+      "cutoffBands": [],
+      "totalCutoffBandHeight": 0,
+      "firstRequestTop": 392.92,
+      "rows": [
+        {
+          "id": "baseline-3",
+          "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
+          "x": 37,
+          "y": 392.92,
+          "width": 694,
+          "height": 69.92,
+          "top": 392.92,
+          "bottom": 462.84,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-5",
+          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
+          "x": 37,
+          "y": 462.84,
+          "width": 694,
+          "height": 69.92,
+          "top": 462.84,
+          "bottom": 532.77,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-7",
+          "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
+          "x": 37,
+          "y": 532.77,
+          "width": 694,
+          "height": 69.92,
+          "top": 532.77,
+          "bottom": 602.69,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-0",
+          "text": "Milk 6 L",
+          "x": 37,
+          "y": 602.69,
+          "width": 694,
+          "height": 53.23,
+          "top": 602.69,
+          "bottom": 655.92,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-1",
+          "text": "Brioche buns 4 packs",
+          "x": 37,
+          "y": 655.92,
+          "width": 694,
+          "height": 53.23,
+          "top": 655.92,
+          "bottom": 709.16,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-2",
+          "text": "Coriander 2 bunches",
+          "x": 37,
+          "y": 709.16,
+          "width": 694,
+          "height": 53.23,
+          "top": 709.16,
+          "bottom": 762.39,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-4",
+          "text": "Plain flour 5 kgUsed in Cornbread",
+          "x": 37,
+          "y": 762.39,
+          "width": 694,
+          "height": 69.92,
+          "top": 762.39,
+          "bottom": 832.31,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-6",
+          "text": "Tomatoes 3 kg",
+          "x": 37,
+          "y": 832.31,
+          "width": 694,
+          "height": 53.23,
+          "top": 832.31,
+          "bottom": 885.55,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        }
+      ],
+      "fullyVisibleRequestRows": 8,
+      "partiallyVisibleRequestRows": 0,
+      "totalRequestRows": 8,
+      "supplierGroupingShown": false,
+      "orderedTodayCount": "0 of 8 ordered",
+      "horizontalOverflowPx": 0,
+      "loadedFonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Caveat",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Caveat",
+          "loaded": true
+        }
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "chef",
+      "text": "normal",
+      "state": "normal",
+      "disclosure": "open",
+      "screenshot": "previews/built-chef-768-open.png",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "scrollY": 0,
+      "topbar": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 132,
+        "top": 0,
+        "bottom": 132
+      },
+      "dock": {
+        "x": 582.03,
+        "y": 261.92,
+        "width": 148.97,
+        "height": 44,
+        "top": 261.92,
+        "bottom": 305.92
+      },
+      "dockPosition": "static",
+      "tabbar": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "usableViewport": {
+        "top": 132,
+        "bottom": 1024,
+        "height": 892
+      },
+      "cutoffFold": {
+        "x": 37,
+        "y": 315.92,
+        "width": 694,
+        "height": 467.52,
+        "top": 315.92,
+        "bottom": 783.44
+      },
+      "cutoffSummary": {
+        "x": 37,
+        "y": 315.92,
+        "width": 694,
+        "height": 68,
+        "top": 315.92,
+        "bottom": 383.92
+      },
+      "cutoffSummaryText": "2 cut-offs due\nNorthside Test Foods\n · by 15:00\nHide",
+      "cutoffTitle": {
+        "text": "2 cut-offs due",
+        "clientWidth": 187,
+        "scrollWidth": 187
+      },
+      "cutoffSummaryNameTruncated": false,
+      "cutoffAbsoluteTime": {
+        "text": "· by 15:00",
+        "x": 178.22,
+        "y": 351.11,
+        "width": 57.98,
+        "height": 18.19,
+        "top": 351.11,
+        "bottom": 369.3
+      },
+      "principalTargets": [
+        {
+          "action": "o-write",
+          "x": 582.03,
+          "y": 261.92,
+          "width": 148.97,
+          "height": 44,
+          "top": 261.92,
+          "bottom": 305.92
+        },
+        {
+          "action": "o-cut-toggle",
+          "x": 37,
+          "y": 315.92,
+          "width": 694,
+          "height": 68,
+          "top": 315.92,
+          "bottom": 383.92
+        },
+        {
+          "action": "otick",
+          "x": 32,
+          "y": 803.89,
+          "width": 44,
+          "height": 44,
+          "top": 803.89,
+          "bottom": 847.89
+        },
+        {
+          "action": "otick",
+          "x": 32,
+          "y": 873.81,
+          "width": 44,
+          "height": 44,
+          "top": 873.81,
+          "bottom": 917.81
+        },
+        {
+          "action": "otick",
+          "x": 32,
+          "y": 943.73,
+          "width": 44,
+          "height": 44,
+          "top": 943.73,
+          "bottom": 987.73
+        },
+        {
+          "action": "otick",
+          "x": 32,
+          "y": 1005.31,
+          "width": 44,
+          "height": 44,
+          "top": 1005.31,
+          "bottom": 1049.31
+        },
+        {
+          "action": "otick",
+          "x": 32,
+          "y": 1058.55,
+          "width": 44,
+          "height": 44,
+          "top": 1058.55,
+          "bottom": 1102.55
+        },
+        {
+          "action": "otick",
+          "x": 32,
+          "y": 1111.78,
+          "width": 44,
+          "height": 44,
+          "top": 1111.78,
+          "bottom": 1155.78
+        },
+        {
+          "action": "otick",
+          "x": 32,
+          "y": 1173.36,
+          "width": 44,
+          "height": 44,
+          "top": 1173.36,
+          "bottom": 1217.36
+        },
+        {
+          "action": "otick",
+          "x": 32,
+          "y": 1234.94,
+          "width": 44,
+          "height": 44,
+          "top": 1234.94,
+          "bottom": 1278.94
+        }
+      ],
+      "cutoffOpen": true,
+      "cutoffActions": [
+        {
+          "label": "Order placed",
+          "x": 607,
+          "y": 467.19,
+          "width": 112,
+          "height": 44,
+          "top": 467.19,
+          "bottom": 511.19
+        },
+        {
+          "label": "Order placed",
+          "x": 607,
+          "y": 565.56,
+          "width": 112,
+          "height": 44,
+          "top": 565.56,
+          "bottom": 609.56
+        }
+      ],
+      "cutoffBands": [],
+      "totalCutoffBandHeight": 0,
+      "firstRequestTop": 791.44,
+      "rows": [
+        {
+          "id": "baseline-3",
+          "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
+          "x": 37,
+          "y": 791.44,
+          "width": 694,
+          "height": 69.92,
+          "top": 791.44,
+          "bottom": 861.36,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-5",
+          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
+          "x": 37,
+          "y": 861.36,
+          "width": 694,
+          "height": 69.92,
+          "top": 861.36,
+          "bottom": 931.28,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-7",
+          "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
+          "x": 37,
+          "y": 931.28,
+          "width": 694,
+          "height": 69.92,
+          "top": 931.28,
+          "bottom": 1001.2,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-0",
+          "text": "Milk 6 L",
+          "x": 37,
+          "y": 1001.2,
+          "width": 694,
+          "height": 53.23,
+          "top": 1001.2,
+          "bottom": 1054.44,
+          "fullyVisible": false,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-1",
+          "text": "Brioche buns 4 packs",
+          "x": 37,
+          "y": 1054.44,
+          "width": 694,
+          "height": 53.23,
+          "top": 1054.44,
+          "bottom": 1107.67,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-2",
+          "text": "Coriander 2 bunches",
+          "x": 37,
+          "y": 1107.67,
+          "width": 694,
+          "height": 53.23,
+          "top": 1107.67,
+          "bottom": 1160.91,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-4",
+          "text": "Plain flour 5 kgUsed in Cornbread",
+          "x": 37,
+          "y": 1160.91,
+          "width": 694,
+          "height": 69.92,
+          "top": 1160.91,
+          "bottom": 1230.83,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-6",
+          "text": "Tomatoes 3 kg",
+          "x": 37,
+          "y": 1230.83,
+          "width": 694,
+          "height": 53.23,
+          "top": 1230.83,
+          "bottom": 1284.06,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        }
+      ],
+      "fullyVisibleRequestRows": 3,
+      "partiallyVisibleRequestRows": 1,
+      "totalRequestRows": 8,
+      "supplierGroupingShown": false,
+      "orderedTodayCount": "0 of 8 ordered",
+      "horizontalOverflowPx": 0,
+      "loadedFonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Caveat",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Caveat",
+          "loaded": true
+        }
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "chef",
+      "text": "normal",
+      "state": "normal",
+      "disclosure": "closed",
+      "screenshot": "previews/built-chef-1280-closed.png",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "scrollY": 0,
+      "topbar": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 132,
+        "top": 0,
+        "bottom": 132
+      },
+      "dock": {
+        "x": 1010.03,
+        "y": 261.92,
+        "width": 148.97,
+        "height": 44,
+        "top": 261.92,
+        "bottom": 305.92
+      },
+      "dockPosition": "static",
+      "tabbar": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "usableViewport": {
+        "top": 132,
+        "bottom": 900,
+        "height": 768
+      },
+      "cutoffFold": {
+        "x": 76.19,
+        "y": 315.92,
+        "width": 1082.81,
+        "height": 69,
+        "top": 315.92,
+        "bottom": 384.92
+      },
+      "cutoffSummary": {
+        "x": 76.19,
+        "y": 315.92,
+        "width": 1082.81,
+        "height": 68,
+        "top": 315.92,
+        "bottom": 383.92
+      },
+      "cutoffSummaryText": "2 cut-offs due\nNorthside Test Foods\n · by 15:00\nView",
+      "cutoffTitle": {
+        "text": "2 cut-offs due",
+        "clientWidth": 187,
+        "scrollWidth": 187
+      },
+      "cutoffSummaryNameTruncated": false,
+      "cutoffAbsoluteTime": {
+        "text": "· by 15:00",
+        "x": 217.41,
+        "y": 351.11,
+        "width": 57.98,
+        "height": 18.19,
+        "top": 351.11,
+        "bottom": 369.3
+      },
+      "principalTargets": [
+        {
+          "action": "o-write",
+          "x": 1010.03,
+          "y": 261.92,
+          "width": 148.97,
+          "height": 44,
+          "top": 261.92,
+          "bottom": 305.92
+        },
+        {
+          "action": "o-cut-toggle",
+          "x": 76.19,
+          "y": 315.92,
+          "width": 1082.81,
+          "height": 68,
+          "top": 315.92,
+          "bottom": 383.92
+        },
+        {
+          "action": "otick",
+          "x": 71.19,
+          "y": 404.48,
+          "width": 44,
+          "height": 44,
+          "top": 404.48,
+          "bottom": 448.48
+        },
+        {
+          "action": "otick",
+          "x": 71.19,
+          "y": 472.63,
+          "width": 44,
+          "height": 44,
+          "top": 472.63,
+          "bottom": 516.63
+        },
+        {
+          "action": "otick",
+          "x": 71.19,
+          "y": 540.94,
+          "width": 44,
+          "height": 44,
+          "top": 540.94,
+          "bottom": 584.94
+        },
+        {
+          "action": "otick",
+          "x": 71.19,
+          "y": 600.89,
+          "width": 44,
+          "height": 44,
+          "top": 600.89,
+          "bottom": 644.89
+        },
+        {
+          "action": "otick",
+          "x": 71.19,
+          "y": 652.34,
+          "width": 44,
+          "height": 44,
+          "top": 652.34,
+          "bottom": 696.34
+        },
+        {
+          "action": "otick",
+          "x": 71.19,
+          "y": 703.8,
+          "width": 44,
+          "height": 44,
+          "top": 703.8,
+          "bottom": 747.8
+        },
+        {
+          "action": "otick",
+          "x": 71.19,
+          "y": 763.59,
+          "width": 44,
+          "height": 44,
+          "top": 763.59,
+          "bottom": 807.59
+        },
+        {
+          "action": "otick",
+          "x": 71.19,
+          "y": 823.39,
+          "width": 44,
+          "height": 44,
+          "top": 823.39,
+          "bottom": 867.39
+        }
+      ],
+      "cutoffOpen": false,
+      "cutoffActions": [
+        {
+          "label": "Order placed",
+          "x": 1035,
+          "y": 446.89,
+          "width": 112,
+          "height": 44,
+          "top": 446.89,
+          "bottom": 490.89
+        },
+        {
+          "label": "Order placed",
+          "x": 1035,
+          "y": 545.27,
+          "width": 112,
+          "height": 44,
+          "top": 545.27,
+          "bottom": 589.27
+        }
+      ],
+      "cutoffBands": [],
+      "totalCutoffBandHeight": 0,
+      "firstRequestTop": 392.92,
+      "rows": [
+        {
+          "id": "baseline-3",
+          "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
+          "x": 76.19,
+          "y": 392.92,
+          "width": 1082.81,
+          "height": 68.14,
+          "top": 392.92,
+          "bottom": 461.06,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-5",
+          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
+          "x": 76.19,
+          "y": 461.06,
+          "width": 1082.81,
+          "height": 68.14,
+          "top": 461.06,
+          "bottom": 529.2,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-7",
+          "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
+          "x": 76.19,
+          "y": 529.2,
+          "width": 1082.81,
+          "height": 68.47,
+          "top": 529.2,
+          "bottom": 597.67,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-0",
+          "text": "Milk 6 L",
+          "x": 76.19,
+          "y": 597.67,
+          "width": 1082.81,
+          "height": 51.45,
+          "top": 597.67,
+          "bottom": 649.13,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-1",
+          "text": "Brioche buns 4 packs",
+          "x": 76.19,
+          "y": 649.13,
+          "width": 1082.81,
+          "height": 51.45,
+          "top": 649.13,
+          "bottom": 700.58,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-2",
+          "text": "Coriander 2 bunches",
+          "x": 76.19,
+          "y": 700.58,
+          "width": 1082.81,
+          "height": 51.45,
+          "top": 700.58,
+          "bottom": 752.03,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-4",
+          "text": "Plain flour 5 kgUsed in Cornbread",
+          "x": 76.19,
+          "y": 752.03,
+          "width": 1082.81,
+          "height": 68.14,
+          "top": 752.03,
+          "bottom": 820.17,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-6",
+          "text": "Tomatoes 3 kg",
+          "x": 76.19,
+          "y": 820.17,
+          "width": 1082.81,
+          "height": 51.45,
+          "top": 820.17,
+          "bottom": 871.63,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        }
+      ],
+      "fullyVisibleRequestRows": 8,
+      "partiallyVisibleRequestRows": 0,
+      "totalRequestRows": 8,
+      "supplierGroupingShown": false,
+      "orderedTodayCount": "0 of 8 ordered",
+      "horizontalOverflowPx": 0,
+      "loadedFonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Caveat",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Caveat",
+          "loaded": true
+        }
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "chef",
+      "text": "normal",
+      "state": "normal",
+      "disclosure": "open",
+      "screenshot": "previews/built-chef-1280-open.png",
+      "viewport": {
+        "width": 1280,
+        "height": 900
+      },
+      "scrollY": 0,
+      "topbar": {
+        "x": 0,
+        "y": 0,
+        "width": 1280,
+        "height": 132,
+        "top": 0,
+        "bottom": 132
+      },
+      "dock": {
+        "x": 1010.03,
+        "y": 261.92,
+        "width": 148.97,
+        "height": 44,
+        "top": 261.92,
+        "bottom": 305.92
+      },
+      "dockPosition": "static",
+      "tabbar": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "top": 0,
+        "bottom": 0
+      },
+      "usableViewport": {
+        "top": 132,
+        "bottom": 900,
+        "height": 768
+      },
+      "cutoffFold": {
+        "x": 76.19,
+        "y": 315.92,
+        "width": 1082.81,
+        "height": 424.03,
+        "top": 315.92,
+        "bottom": 739.95
+      },
+      "cutoffSummary": {
+        "x": 76.19,
+        "y": 315.92,
+        "width": 1082.81,
+        "height": 68,
+        "top": 315.92,
+        "bottom": 383.92
+      },
+      "cutoffSummaryText": "2 cut-offs due\nNorthside Test Foods\n · by 15:00\nHide",
+      "cutoffTitle": {
+        "text": "2 cut-offs due",
+        "clientWidth": 187,
+        "scrollWidth": 187
+      },
+      "cutoffSummaryNameTruncated": false,
+      "cutoffAbsoluteTime": {
+        "text": "· by 15:00",
+        "x": 217.41,
+        "y": 351.11,
+        "width": 57.98,
+        "height": 18.19,
+        "top": 351.11,
+        "bottom": 369.3
+      },
+      "principalTargets": [
+        {
+          "action": "o-write",
+          "x": 1010.03,
+          "y": 261.92,
+          "width": 148.97,
+          "height": 44,
+          "top": 261.92,
+          "bottom": 305.92
+        },
+        {
+          "action": "o-cut-toggle",
+          "x": 76.19,
+          "y": 315.92,
+          "width": 1082.81,
+          "height": 68,
+          "top": 315.92,
+          "bottom": 383.92
+        },
+        {
+          "action": "otick",
+          "x": 71.19,
+          "y": 759.52,
+          "width": 44,
+          "height": 44,
+          "top": 759.52,
+          "bottom": 803.52
+        },
+        {
+          "action": "otick",
+          "x": 71.19,
+          "y": 827.66,
+          "width": 44,
+          "height": 44,
+          "top": 827.66,
+          "bottom": 871.66
+        },
+        {
+          "action": "otick",
+          "x": 71.19,
+          "y": 895.97,
+          "width": 44,
+          "height": 44,
+          "top": 895.97,
+          "bottom": 939.97
+        },
+        {
+          "action": "otick",
+          "x": 71.19,
+          "y": 955.92,
+          "width": 44,
+          "height": 44,
+          "top": 955.92,
+          "bottom": 999.92
+        },
+        {
+          "action": "otick",
+          "x": 71.19,
+          "y": 1007.38,
+          "width": 44,
+          "height": 44,
+          "top": 1007.38,
+          "bottom": 1051.38
+        },
+        {
+          "action": "otick",
+          "x": 71.19,
+          "y": 1058.83,
+          "width": 44,
+          "height": 44,
+          "top": 1058.83,
+          "bottom": 1102.83
+        },
+        {
+          "action": "otick",
+          "x": 71.19,
+          "y": 1118.63,
+          "width": 44,
+          "height": 44,
+          "top": 1118.63,
+          "bottom": 1162.63
+        },
+        {
+          "action": "otick",
+          "x": 71.19,
+          "y": 1178.42,
+          "width": 44,
+          "height": 44,
+          "top": 1178.42,
+          "bottom": 1222.42
+        }
+      ],
+      "cutoffOpen": true,
+      "cutoffActions": [
+        {
+          "label": "Order placed",
+          "x": 1035,
+          "y": 446.89,
+          "width": 112,
+          "height": 44,
+          "top": 446.89,
+          "bottom": 490.89
+        },
+        {
+          "label": "Order placed",
+          "x": 1035,
+          "y": 545.27,
+          "width": 112,
+          "height": 44,
+          "top": 545.27,
+          "bottom": 589.27
+        }
+      ],
+      "cutoffBands": [],
+      "totalCutoffBandHeight": 0,
+      "firstRequestTop": 747.95,
+      "rows": [
+        {
+          "id": "baseline-3",
+          "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
+          "x": 76.19,
+          "y": 747.95,
+          "width": 1082.81,
+          "height": 68.14,
+          "top": 747.95,
+          "bottom": 816.09,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-5",
+          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
+          "x": 76.19,
+          "y": 816.09,
+          "width": 1082.81,
+          "height": 68.14,
+          "top": 816.09,
+          "bottom": 884.23,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-7",
+          "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
+          "x": 76.19,
+          "y": 884.23,
+          "width": 1082.81,
+          "height": 68.47,
+          "top": 884.23,
+          "bottom": 952.7,
+          "fullyVisible": false,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-0",
+          "text": "Milk 6 L",
+          "x": 76.19,
+          "y": 952.7,
+          "width": 1082.81,
+          "height": 51.45,
+          "top": 952.7,
+          "bottom": 1004.16,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-1",
+          "text": "Brioche buns 4 packs",
+          "x": 76.19,
+          "y": 1004.16,
+          "width": 1082.81,
+          "height": 51.45,
+          "top": 1004.16,
+          "bottom": 1055.61,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-2",
+          "text": "Coriander 2 bunches",
+          "x": 76.19,
+          "y": 1055.61,
+          "width": 1082.81,
+          "height": 51.45,
+          "top": 1055.61,
+          "bottom": 1107.06,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-4",
+          "text": "Plain flour 5 kgUsed in Cornbread",
+          "x": 76.19,
+          "y": 1107.06,
+          "width": 1082.81,
+          "height": 68.14,
+          "top": 1107.06,
+          "bottom": 1175.2,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-6",
+          "text": "Tomatoes 3 kg",
+          "x": 76.19,
+          "y": 1175.2,
+          "width": 1082.81,
+          "height": 51.45,
+          "top": 1175.2,
+          "bottom": 1226.66,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        }
+      ],
+      "fullyVisibleRequestRows": 2,
+      "partiallyVisibleRequestRows": 1,
+      "totalRequestRows": 8,
+      "supplierGroupingShown": false,
+      "orderedTodayCount": "0 of 8 ordered",
+      "horizontalOverflowPx": 0,
+      "loadedFonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Caveat",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Caveat",
+          "loaded": true
+        }
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "staff",
+      "text": "normal",
+      "state": "normal",
+      "disclosure": "plain",
+      "screenshot": "previews/built-staff-390-plain.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "topbar": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 64,
+        "top": 0,
+        "bottom": 64
+      },
+      "dock": {
+        "x": 0,
+        "y": 707,
+        "width": 390,
+        "height": 69,
+        "top": 707,
+        "bottom": 776
+      },
+      "dockPosition": "fixed",
+      "tabbar": {
+        "x": 0,
+        "y": 776,
+        "width": 390,
+        "height": 68,
+        "top": 776,
+        "bottom": 844
+      },
+      "usableViewport": {
+        "top": 64,
+        "bottom": 707,
+        "height": 643
+      },
+      "cutoffFold": null,
+      "cutoffSummary": null,
+      "cutoffTitle": null,
+      "cutoffSummaryNameTruncated": false,
+      "cutoffAbsoluteTime": null,
+      "principalTargets": [
+        {
+          "action": "o-write",
+          "x": 16,
+          "y": 716,
+          "width": 358,
+          "height": 52,
+          "top": 716,
+          "bottom": 768
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 174.27,
+          "width": 44,
+          "height": 44,
+          "top": 174.27,
+          "bottom": 218.27
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 225.27,
+          "width": 44,
+          "height": 44,
+          "top": 225.27,
+          "bottom": 269.27
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 276.27,
+          "width": 44,
+          "height": 44,
+          "top": 276.27,
+          "bottom": 320.27
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 342.55,
+          "width": 44,
+          "height": 44,
+          "top": 342.55,
+          "bottom": 386.55
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 416.95,
+          "width": 44,
+          "height": 44,
+          "top": 416.95,
+          "bottom": 460.95
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 484.22,
+          "width": 44,
+          "height": 44,
+          "top": 484.22,
+          "bottom": 528.22
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 543.36,
+          "width": 44,
+          "height": 44,
+          "top": 543.36,
+          "bottom": 587.36
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 653.42,
+          "width": 44,
+          "height": 44,
+          "top": 653.42,
+          "bottom": 697.42
+        }
+      ],
+      "cutoffOpen": false,
+      "cutoffActions": [],
+      "cutoffBands": [],
+      "totalCutoffBandHeight": 0,
+      "firstRequestTop": 171.27,
+      "rows": [
+        {
+          "id": "baseline-0",
+          "text": "Milk 6 L",
+          "x": 33,
+          "y": 171.27,
+          "width": 324,
+          "height": 51,
+          "top": 171.27,
+          "bottom": 222.27,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-1",
+          "text": "Brioche buns 4 packs",
+          "x": 33,
+          "y": 222.27,
+          "width": 324,
+          "height": 51,
+          "top": 222.27,
+          "bottom": 273.27,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-2",
+          "text": "Coriander 2 bunches",
+          "x": 33,
+          "y": 273.27,
+          "width": 324,
+          "height": 51,
+          "top": 273.27,
+          "bottom": 324.27,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-3",
+          "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
+          "x": 33,
+          "y": 324.27,
+          "width": 324,
+          "height": 81.56,
+          "top": 324.27,
+          "bottom": 405.83,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-4",
+          "text": "Plain flour 5 kgUsed in Cornbread",
+          "x": 33,
+          "y": 405.83,
+          "width": 324,
+          "height": 67.27,
+          "top": 405.83,
+          "bottom": 473.09,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-5",
+          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
+          "x": 33,
+          "y": 473.09,
+          "width": 324,
+          "height": 67.27,
+          "top": 473.09,
+          "bottom": 540.36,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-6",
+          "text": "Tomatoes 3 kg",
+          "x": 33,
+          "y": 540.36,
+          "width": 324,
+          "height": 51,
+          "top": 540.36,
+          "bottom": 591.36,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-7",
+          "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
+          "x": 33,
+          "y": 629.09,
+          "width": 324,
+          "height": 93.66,
+          "top": 629.09,
+          "bottom": 722.75,
+          "fullyVisible": false,
+          "intersectsUsableViewport": true
+        }
+      ],
+      "fullyVisibleRequestRows": 7,
+      "partiallyVisibleRequestRows": 1,
+      "totalRequestRows": 8,
+      "supplierGroupingShown": false,
+      "orderedTodayCount": "0 of 8 ordered",
+      "horizontalOverflowPx": 0,
+      "loadedFonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Caveat",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Caveat",
+          "loaded": true
+        }
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "chef",
+      "text": "xlarge",
+      "state": "normal",
+      "disclosure": "closed",
+      "screenshot": "previews/built-chef-390-xlarge-closed.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "topbar": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 64,
+        "top": 0,
+        "bottom": 64
+      },
+      "dock": {
+        "x": 0,
+        "y": 707,
+        "width": 390,
+        "height": 69,
+        "top": 707,
+        "bottom": 776
+      },
+      "dockPosition": "fixed",
+      "tabbar": {
+        "x": 0,
+        "y": 776,
+        "width": 390,
+        "height": 68,
+        "top": 776,
+        "bottom": 844
+      },
+      "usableViewport": {
+        "top": 64,
+        "bottom": 707,
+        "height": 643
+      },
+      "cutoffFold": {
+        "x": 41,
+        "y": 321.55,
+        "width": 308,
+        "height": 69.5,
+        "top": 321.55,
+        "bottom": 391.05
+      },
+      "cutoffSummary": {
+        "x": 41,
+        "y": 321.55,
+        "width": 308,
+        "height": 68.5,
+        "top": 321.55,
+        "bottom": 390.05
+      },
+      "cutoffSummaryText": "2 cut-offs due\nNorthside Test Foods\n · by 15:00\nView",
+      "cutoffTitle": {
+        "text": "2 cut-offs due",
+        "clientWidth": 204,
+        "scrollWidth": 204
+      },
+      "cutoffSummaryNameTruncated": true,
+      "cutoffAbsoluteTime": {
+        "text": "· by 15:00",
+        "x": 187.98,
+        "y": 357.3,
+        "width": 72.47,
+        "height": 22.75,
+        "top": 357.3,
+        "bottom": 380.05
+      },
+      "principalTargets": [
+        {
+          "action": "o-write",
+          "x": 16,
+          "y": 716,
+          "width": 358,
+          "height": 52,
+          "top": 716,
+          "bottom": 768
+        },
+        {
+          "action": "o-cut-toggle",
+          "x": 41,
+          "y": 321.55,
+          "width": 308,
+          "height": 68.5,
+          "top": 321.55,
+          "bottom": 390.05
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 428.55,
+          "width": 44,
+          "height": 44,
+          "top": 428.55,
+          "bottom": 472.55
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 519.61,
+          "width": 44,
+          "height": 44,
+          "top": 519.61,
+          "bottom": 563.61
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 618.23,
+          "width": 44,
+          "height": 44,
+          "top": 618.23,
+          "bottom": 662.23
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 706.42,
+          "width": 44,
+          "height": 44,
+          "top": 706.42,
+          "bottom": 750.42
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 784.17,
+          "width": 44,
+          "height": 44,
+          "top": 784.17,
+          "bottom": 828.17
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 878.42,
+          "width": 44,
+          "height": 44,
+          "top": 878.42,
+          "bottom": 922.42
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 966.61,
+          "width": 44,
+          "height": 44,
+          "top": 966.61,
+          "bottom": 1010.61
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1038.3,
+          "width": 44,
+          "height": 44,
+          "top": 1038.3,
+          "bottom": 1082.3
+        }
+      ],
+      "cutoffOpen": false,
+      "cutoffActions": [
+        {
+          "label": "Order placed",
+          "x": 194,
+          "y": 564.61,
+          "width": 140,
+          "height": 44,
+          "top": 564.61,
+          "bottom": 608.61
+        },
+        {
+          "label": "Order placed",
+          "x": 194,
+          "y": 715.73,
+          "width": 140,
+          "height": 44,
+          "top": 715.73,
+          "bottom": 759.73
+        }
+      ],
+      "cutoffBands": [],
+      "totalCutoffBandHeight": 0,
+      "firstRequestTop": 401.05,
+      "rows": [
+        {
+          "id": "baseline-3",
+          "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
+          "x": 41,
+          "y": 401.05,
+          "width": 308,
+          "height": 100,
+          "top": 401.05,
+          "bottom": 501.05,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-5",
+          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
+          "x": 41,
+          "y": 501.05,
+          "width": 308,
+          "height": 82.13,
+          "top": 501.05,
+          "bottom": 583.17,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-7",
+          "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
+          "x": 41,
+          "y": 583.17,
+          "width": 308,
+          "height": 115.13,
+          "top": 583.17,
+          "bottom": 698.3,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-0",
+          "text": "Milk 6 L",
+          "x": 41,
+          "y": 698.3,
+          "width": 308,
+          "height": 61.25,
+          "top": 698.3,
+          "bottom": 759.55,
+          "fullyVisible": false,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-1",
+          "text": "Brioche buns 4 packs",
+          "x": 41,
+          "y": 759.55,
+          "width": 308,
+          "height": 94.25,
+          "top": 759.55,
+          "bottom": 853.8,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-2",
+          "text": "Coriander 2 bunches",
+          "x": 41,
+          "y": 853.8,
+          "width": 308,
+          "height": 94.25,
+          "top": 853.8,
+          "bottom": 948.05,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-4",
+          "text": "Plain flour 5 kgUsed in Cornbread",
+          "x": 41,
+          "y": 948.05,
+          "width": 308,
+          "height": 82.13,
+          "top": 948.05,
+          "bottom": 1030.17,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-6",
+          "text": "Tomatoes 3 kg",
+          "x": 41,
+          "y": 1030.17,
+          "width": 308,
+          "height": 61.25,
+          "top": 1030.17,
+          "bottom": 1091.42,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        }
+      ],
+      "fullyVisibleRequestRows": 3,
+      "partiallyVisibleRequestRows": 1,
+      "totalRequestRows": 8,
+      "supplierGroupingShown": false,
+      "orderedTodayCount": "0 of 8 ordered",
+      "horizontalOverflowPx": 0,
+      "loadedFonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Caveat",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Caveat",
+          "loaded": true
+        }
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "chef",
+      "text": "xlarge",
+      "state": "normal",
+      "disclosure": "open",
+      "screenshot": "previews/built-chef-390-xlarge-open.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "topbar": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 64,
+        "top": 0,
+        "bottom": 64
+      },
+      "dock": {
+        "x": 0,
+        "y": 707,
+        "width": 390,
+        "height": 69,
+        "top": 707,
+        "bottom": 776
+      },
+      "dockPosition": "fixed",
+      "tabbar": {
+        "x": 0,
+        "y": 776,
+        "width": 390,
+        "height": 68,
+        "top": 776,
+        "bottom": 844
+      },
+      "usableViewport": {
+        "top": 64,
+        "bottom": 707,
+        "height": 643
+      },
+      "cutoffFold": {
+        "x": 41,
+        "y": 321.55,
+        "width": 308,
+        "height": 825.94,
+        "top": 321.55,
+        "bottom": 1147.48
+      },
+      "cutoffSummary": {
+        "x": 41,
+        "y": 321.55,
+        "width": 308,
+        "height": 68.5,
+        "top": 321.55,
+        "bottom": 390.05
+      },
+      "cutoffSummaryText": "2 cut-offs due\nNorthside Test Foods\n · by 15:00\nHide",
+      "cutoffTitle": {
+        "text": "2 cut-offs due",
+        "clientWidth": 207,
+        "scrollWidth": 207
+      },
+      "cutoffSummaryNameTruncated": true,
+      "cutoffAbsoluteTime": {
+        "text": "· by 15:00",
+        "x": 190.66,
+        "y": 357.3,
+        "width": 72.47,
+        "height": 22.75,
+        "top": 357.3,
+        "bottom": 380.05
+      },
+      "principalTargets": [
+        {
+          "action": "o-write",
+          "x": 16,
+          "y": 716,
+          "width": 358,
+          "height": 52,
+          "top": 716,
+          "bottom": 768
+        },
+        {
+          "action": "o-cut-toggle",
+          "x": 41,
+          "y": 321.55,
+          "width": 308,
+          "height": 68.5,
+          "top": 321.55,
+          "bottom": 390.05
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1184.98,
+          "width": 44,
+          "height": 44,
+          "top": 1184.98,
+          "bottom": 1228.98
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1276.05,
+          "width": 44,
+          "height": 44,
+          "top": 1276.05,
+          "bottom": 1320.05
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1374.67,
+          "width": 44,
+          "height": 44,
+          "top": 1374.67,
+          "bottom": 1418.67
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1462.86,
+          "width": 44,
+          "height": 44,
+          "top": 1462.86,
+          "bottom": 1506.86
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1540.61,
+          "width": 44,
+          "height": 44,
+          "top": 1540.61,
+          "bottom": 1584.61
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1634.86,
+          "width": 44,
+          "height": 44,
+          "top": 1634.86,
+          "bottom": 1678.86
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1723.05,
+          "width": 44,
+          "height": 44,
+          "top": 1723.05,
+          "bottom": 1767.05
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1794.73,
+          "width": 44,
+          "height": 44,
+          "top": 1794.73,
+          "bottom": 1838.73
+        }
+      ],
+      "cutoffOpen": true,
+      "cutoffActions": [
+        {
+          "label": "Order placed",
+          "x": 194,
+          "y": 564.61,
+          "width": 140,
+          "height": 44,
+          "top": 564.61,
+          "bottom": 608.61
+        },
+        {
+          "label": "Order placed",
+          "x": 194,
+          "y": 715.73,
+          "width": 140,
+          "height": 44,
+          "top": 715.73,
+          "bottom": 759.73
+        }
+      ],
+      "cutoffBands": [],
+      "totalCutoffBandHeight": 0,
+      "firstRequestTop": 1157.48,
+      "rows": [
+        {
+          "id": "baseline-3",
+          "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
+          "x": 41,
+          "y": 1157.48,
+          "width": 308,
+          "height": 100,
+          "top": 1157.48,
+          "bottom": 1257.48,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-5",
+          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
+          "x": 41,
+          "y": 1257.48,
+          "width": 308,
+          "height": 82.13,
+          "top": 1257.48,
+          "bottom": 1339.61,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-7",
+          "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
+          "x": 41,
+          "y": 1339.61,
+          "width": 308,
+          "height": 115.13,
+          "top": 1339.61,
+          "bottom": 1454.73,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-0",
+          "text": "Milk 6 L",
+          "x": 41,
+          "y": 1454.73,
+          "width": 308,
+          "height": 61.25,
+          "top": 1454.73,
+          "bottom": 1515.98,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-1",
+          "text": "Brioche buns 4 packs",
+          "x": 41,
+          "y": 1515.98,
+          "width": 308,
+          "height": 94.25,
+          "top": 1515.98,
+          "bottom": 1610.23,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-2",
+          "text": "Coriander 2 bunches",
+          "x": 41,
+          "y": 1610.23,
+          "width": 308,
+          "height": 94.25,
+          "top": 1610.23,
+          "bottom": 1704.48,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-4",
+          "text": "Plain flour 5 kgUsed in Cornbread",
+          "x": 41,
+          "y": 1704.48,
+          "width": 308,
+          "height": 82.13,
+          "top": 1704.48,
+          "bottom": 1786.61,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-6",
+          "text": "Tomatoes 3 kg",
+          "x": 41,
+          "y": 1786.61,
+          "width": 308,
+          "height": 61.25,
+          "top": 1786.61,
+          "bottom": 1847.86,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        }
+      ],
+      "fullyVisibleRequestRows": 0,
+      "partiallyVisibleRequestRows": 0,
+      "totalRequestRows": 8,
+      "supplierGroupingShown": false,
+      "orderedTodayCount": "0 of 8 ordered",
+      "horizontalOverflowPx": 0,
+      "loadedFonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Caveat",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Caveat",
+          "loaded": true
+        }
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "chef",
+      "text": "normal",
+      "state": "overdue",
+      "disclosure": "closed",
+      "screenshot": "previews/built-chef-390-overdue-closed.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "topbar": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 64,
+        "top": 0,
+        "bottom": 64
+      },
+      "dock": {
+        "x": 0,
+        "y": 707,
+        "width": 390,
+        "height": 69,
+        "top": 707,
+        "bottom": 776
+      },
+      "dockPosition": "fixed",
+      "tabbar": {
+        "x": 0,
+        "y": 776,
+        "width": 390,
+        "height": 68,
+        "top": 776,
+        "bottom": 844
+      },
+      "usableViewport": {
+        "top": 64,
+        "bottom": 707,
+        "height": 643
+      },
+      "cutoffFold": {
+        "x": 33,
+        "y": 231.27,
+        "width": 324,
+        "height": 69,
+        "top": 231.27,
+        "bottom": 300.27
+      },
+      "cutoffSummary": {
+        "x": 33,
+        "y": 231.27,
+        "width": 324,
+        "height": 68,
+        "top": 231.27,
+        "bottom": 299.27
+      },
+      "cutoffSummaryText": "2 cut-offs · 2 overdue\nNorthside Test Foods\n · by 12:00\nView",
+      "cutoffTitle": {
+        "text": "2 cut-offs · 2 overdue",
+        "clientWidth": 188,
+        "scrollWidth": 188
+      },
+      "cutoffSummaryNameTruncated": false,
+      "cutoffAbsoluteTime": {
+        "text": "· by 12:00",
+        "x": 174.22,
+        "y": 266.45,
+        "width": 58.3,
+        "height": 18.19,
+        "top": 266.45,
+        "bottom": 284.64
+      },
+      "principalTargets": [
+        {
+          "action": "o-write",
+          "x": 16,
+          "y": 716,
+          "width": 358,
+          "height": 52,
+          "top": 716,
+          "bottom": 768
+        },
+        {
+          "action": "o-cut-toggle",
+          "x": 33,
+          "y": 231.27,
+          "width": 324,
+          "height": 68,
+          "top": 231.27,
+          "bottom": 299.27
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 326.55,
+          "width": 44,
+          "height": 44,
+          "top": 326.55,
+          "bottom": 370.55
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 400.95,
+          "width": 44,
+          "height": 44,
+          "top": 400.95,
+          "bottom": 444.95
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 481.52,
+          "width": 44,
+          "height": 44,
+          "top": 481.52,
+          "bottom": 525.52
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 553.95,
+          "width": 44,
+          "height": 44,
+          "top": 553.95,
+          "bottom": 597.95
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 604.95,
+          "width": 44,
+          "height": 44,
+          "top": 604.95,
+          "bottom": 648.95
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 655.95,
+          "width": 44,
+          "height": 44,
+          "top": 655.95,
+          "bottom": 699.95
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 715.08,
+          "width": 44,
+          "height": 44,
+          "top": 715.08,
+          "bottom": 759.08
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 774.22,
+          "width": 44,
+          "height": 44,
+          "top": 774.22,
+          "bottom": 818.22
+        }
+      ],
+      "cutoffOpen": false,
+      "cutoffActions": [
+        {
+          "label": "Order placed",
+          "x": 233,
+          "y": 402.83,
+          "width": 112,
+          "height": 44,
+          "top": 402.83,
+          "bottom": 446.83
+        },
+        {
+          "label": "Order placed",
+          "x": 233,
+          "y": 501.2,
+          "width": 112,
+          "height": 44,
+          "top": 501.2,
+          "bottom": 545.2
+        }
+      ],
+      "cutoffBands": [],
+      "totalCutoffBandHeight": 0,
+      "firstRequestTop": 308.27,
+      "rows": [
+        {
+          "id": "baseline-3",
+          "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
+          "x": 33,
+          "y": 308.27,
+          "width": 324,
+          "height": 81.56,
+          "top": 308.27,
+          "bottom": 389.83,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-5",
+          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
+          "x": 33,
+          "y": 389.83,
+          "width": 324,
+          "height": 67.27,
+          "top": 389.83,
+          "bottom": 457.09,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-7",
+          "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
+          "x": 33,
+          "y": 457.09,
+          "width": 324,
+          "height": 93.86,
+          "top": 457.09,
+          "bottom": 550.95,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-0",
+          "text": "Milk 6 L",
+          "x": 33,
+          "y": 550.95,
+          "width": 324,
+          "height": 51,
+          "top": 550.95,
+          "bottom": 601.95,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-1",
+          "text": "Brioche buns 4 packs",
+          "x": 33,
+          "y": 601.95,
+          "width": 324,
+          "height": 51,
+          "top": 601.95,
+          "bottom": 652.95,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-2",
+          "text": "Coriander 2 bunches",
+          "x": 33,
+          "y": 652.95,
+          "width": 324,
+          "height": 51,
+          "top": 652.95,
+          "bottom": 703.95,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-4",
+          "text": "Plain flour 5 kgUsed in Cornbread",
+          "x": 33,
+          "y": 703.95,
+          "width": 324,
+          "height": 67.27,
+          "top": 703.95,
+          "bottom": 771.22,
+          "fullyVisible": false,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-6",
+          "text": "Tomatoes 3 kg",
+          "x": 33,
+          "y": 771.22,
+          "width": 324,
+          "height": 51,
+          "top": 771.22,
+          "bottom": 822.22,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        }
+      ],
+      "fullyVisibleRequestRows": 6,
+      "partiallyVisibleRequestRows": 1,
+      "totalRequestRows": 8,
+      "supplierGroupingShown": false,
+      "orderedTodayCount": "0 of 8 ordered",
+      "horizontalOverflowPx": 0,
+      "loadedFonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Caveat",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Caveat",
+          "loaded": true
+        }
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "chef",
+      "text": "normal",
+      "state": "overdue",
+      "disclosure": "open",
+      "screenshot": "previews/built-chef-390-overdue-open.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "topbar": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 64,
+        "top": 0,
+        "bottom": 64
+      },
+      "dock": {
+        "x": 0,
+        "y": 707,
+        "width": 390,
+        "height": 69,
+        "top": 707,
+        "bottom": 776
+      },
+      "dockPosition": "fixed",
+      "tabbar": {
+        "x": 0,
+        "y": 776,
+        "width": 390,
+        "height": 68,
+        "top": 776,
+        "bottom": 844
+      },
+      "usableViewport": {
+        "top": 64,
+        "bottom": 707,
+        "height": 643
+      },
+      "cutoffFold": {
+        "x": 33,
+        "y": 231.27,
+        "width": 324,
+        "height": 553.03,
+        "top": 231.27,
+        "bottom": 784.3
+      },
+      "cutoffSummary": {
+        "x": 33,
+        "y": 231.27,
+        "width": 324,
+        "height": 68,
+        "top": 231.27,
+        "bottom": 299.27
+      },
+      "cutoffSummaryText": "2 cut-offs · 2 overdue\nNorthside Test Foods\n · by 12:00\nHide",
+      "cutoffTitle": {
+        "text": "2 cut-offs · 2 overdue",
+        "clientWidth": 188,
+        "scrollWidth": 188
+      },
+      "cutoffSummaryNameTruncated": false,
+      "cutoffAbsoluteTime": {
+        "text": "· by 12:00",
+        "x": 174.22,
+        "y": 266.45,
+        "width": 58.3,
+        "height": 18.19,
+        "top": 266.45,
+        "bottom": 284.64
+      },
+      "principalTargets": [
+        {
+          "action": "o-write",
+          "x": 16,
+          "y": 716,
+          "width": 358,
+          "height": 52,
+          "top": 716,
+          "bottom": 768
+        },
+        {
+          "action": "o-cut-toggle",
+          "x": 33,
+          "y": 231.27,
+          "width": 324,
+          "height": 68,
+          "top": 231.27,
+          "bottom": 299.27
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 810.58,
+          "width": 44,
+          "height": 44,
+          "top": 810.58,
+          "bottom": 854.58
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 884.98,
+          "width": 44,
+          "height": 44,
+          "top": 884.98,
+          "bottom": 928.98
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 965.55,
+          "width": 44,
+          "height": 44,
+          "top": 965.55,
+          "bottom": 1009.55
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 1037.98,
+          "width": 44,
+          "height": 44,
+          "top": 1037.98,
+          "bottom": 1081.98
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 1088.98,
+          "width": 44,
+          "height": 44,
+          "top": 1088.98,
+          "bottom": 1132.98
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 1139.98,
+          "width": 44,
+          "height": 44,
+          "top": 1139.98,
+          "bottom": 1183.98
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 1199.11,
+          "width": 44,
+          "height": 44,
+          "top": 1199.11,
+          "bottom": 1243.11
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 1258.25,
+          "width": 44,
+          "height": 44,
+          "top": 1258.25,
+          "bottom": 1302.25
+        }
+      ],
+      "cutoffOpen": true,
+      "cutoffActions": [
+        {
+          "label": "Order placed",
+          "x": 233,
+          "y": 402.83,
+          "width": 112,
+          "height": 44,
+          "top": 402.83,
+          "bottom": 446.83
+        },
+        {
+          "label": "Order placed",
+          "x": 233,
+          "y": 501.2,
+          "width": 112,
+          "height": 44,
+          "top": 501.2,
+          "bottom": 545.2
+        }
+      ],
+      "cutoffBands": [],
+      "totalCutoffBandHeight": 0,
+      "firstRequestTop": 792.3,
+      "rows": [
+        {
+          "id": "baseline-3",
+          "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
+          "x": 33,
+          "y": 792.3,
+          "width": 324,
+          "height": 81.56,
+          "top": 792.3,
+          "bottom": 873.86,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-5",
+          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
+          "x": 33,
+          "y": 873.86,
+          "width": 324,
+          "height": 67.27,
+          "top": 873.86,
+          "bottom": 941.13,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-7",
+          "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
+          "x": 33,
+          "y": 941.13,
+          "width": 324,
+          "height": 93.86,
+          "top": 941.13,
+          "bottom": 1034.98,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-0",
+          "text": "Milk 6 L",
+          "x": 33,
+          "y": 1034.98,
+          "width": 324,
+          "height": 51,
+          "top": 1034.98,
+          "bottom": 1085.98,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-1",
+          "text": "Brioche buns 4 packs",
+          "x": 33,
+          "y": 1085.98,
+          "width": 324,
+          "height": 51,
+          "top": 1085.98,
+          "bottom": 1136.98,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-2",
+          "text": "Coriander 2 bunches",
+          "x": 33,
+          "y": 1136.98,
+          "width": 324,
+          "height": 51,
+          "top": 1136.98,
+          "bottom": 1187.98,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-4",
+          "text": "Plain flour 5 kgUsed in Cornbread",
+          "x": 33,
+          "y": 1187.98,
+          "width": 324,
+          "height": 67.27,
+          "top": 1187.98,
+          "bottom": 1255.25,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-6",
+          "text": "Tomatoes 3 kg",
+          "x": 33,
+          "y": 1255.25,
+          "width": 324,
+          "height": 51,
+          "top": 1255.25,
+          "bottom": 1306.25,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        }
+      ],
+      "fullyVisibleRequestRows": 0,
+      "partiallyVisibleRequestRows": 0,
+      "totalRequestRows": 8,
+      "supplierGroupingShown": false,
+      "orderedTodayCount": "0 of 8 ordered",
+      "horizontalOverflowPx": 0,
+      "loadedFonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Caveat",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Caveat",
+          "loaded": true
+        }
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "chef",
+      "text": "xlarge",
+      "state": "overdue",
+      "disclosure": "closed",
+      "screenshot": "previews/built-chef-390-xlarge-overdue-closed.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "topbar": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 64,
+        "top": 0,
+        "bottom": 64
+      },
+      "dock": {
+        "x": 0,
+        "y": 707,
+        "width": 390,
+        "height": 69,
+        "top": 707,
+        "bottom": 776
+      },
+      "dockPosition": "fixed",
+      "tabbar": {
+        "x": 0,
+        "y": 776,
+        "width": 390,
+        "height": 68,
+        "top": 776,
+        "bottom": 844
+      },
+      "usableViewport": {
+        "top": 64,
+        "bottom": 707,
+        "height": 643
+      },
+      "cutoffFold": {
+        "x": 41,
+        "y": 321.55,
+        "width": 308,
+        "height": 69.5,
+        "top": 321.55,
+        "bottom": 391.05
+      },
+      "cutoffSummary": {
+        "x": 41,
+        "y": 321.55,
+        "width": 308,
+        "height": 68.5,
+        "top": 321.55,
+        "bottom": 390.05
+      },
+      "cutoffSummaryText": "2 cut-offs · 2 overdue\nNorthside Test Foods\n · by 12:00\nView",
+      "cutoffTitle": {
+        "text": "2 cut-offs · 2 overdue",
+        "clientWidth": 204,
+        "scrollWidth": 204
+      },
+      "cutoffSummaryNameTruncated": true,
+      "cutoffAbsoluteTime": {
+        "text": "· by 12:00",
+        "x": 187.59,
+        "y": 357.3,
+        "width": 72.86,
+        "height": 22.75,
+        "top": 357.3,
+        "bottom": 380.05
+      },
+      "principalTargets": [
+        {
+          "action": "o-write",
+          "x": 16,
+          "y": 716,
+          "width": 358,
+          "height": 52,
+          "top": 716,
+          "bottom": 768
+        },
+        {
+          "action": "o-cut-toggle",
+          "x": 41,
+          "y": 321.55,
+          "width": 308,
+          "height": 68.5,
+          "top": 321.55,
+          "bottom": 390.05
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 428.55,
+          "width": 44,
+          "height": 44,
+          "top": 428.55,
+          "bottom": 472.55
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 519.61,
+          "width": 44,
+          "height": 44,
+          "top": 519.61,
+          "bottom": 563.61
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 618.23,
+          "width": 44,
+          "height": 44,
+          "top": 618.23,
+          "bottom": 662.23
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 706.42,
+          "width": 44,
+          "height": 44,
+          "top": 706.42,
+          "bottom": 750.42
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 784.17,
+          "width": 44,
+          "height": 44,
+          "top": 784.17,
+          "bottom": 828.17
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 878.42,
+          "width": 44,
+          "height": 44,
+          "top": 878.42,
+          "bottom": 922.42
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 966.61,
+          "width": 44,
+          "height": 44,
+          "top": 966.61,
+          "bottom": 1010.61
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1038.3,
+          "width": 44,
+          "height": 44,
+          "top": 1038.3,
+          "bottom": 1082.3
+        }
+      ],
+      "cutoffOpen": false,
+      "cutoffActions": [
+        {
+          "label": "Order placed",
+          "x": 194,
+          "y": 577.3,
+          "width": 140,
+          "height": 44,
+          "top": 577.3,
+          "bottom": 621.3
+        },
+        {
+          "label": "Order placed",
+          "x": 194,
+          "y": 753.8,
+          "width": 140,
+          "height": 44,
+          "top": 753.8,
+          "bottom": 797.8
+        }
+      ],
+      "cutoffBands": [],
+      "totalCutoffBandHeight": 0,
+      "firstRequestTop": 401.05,
+      "rows": [
+        {
+          "id": "baseline-3",
+          "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
+          "x": 41,
+          "y": 401.05,
+          "width": 308,
+          "height": 100,
+          "top": 401.05,
+          "bottom": 501.05,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-5",
+          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
+          "x": 41,
+          "y": 501.05,
+          "width": 308,
+          "height": 82.13,
+          "top": 501.05,
+          "bottom": 583.17,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-7",
+          "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
+          "x": 41,
+          "y": 583.17,
+          "width": 308,
+          "height": 115.13,
+          "top": 583.17,
+          "bottom": 698.3,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-0",
+          "text": "Milk 6 L",
+          "x": 41,
+          "y": 698.3,
+          "width": 308,
+          "height": 61.25,
+          "top": 698.3,
+          "bottom": 759.55,
+          "fullyVisible": false,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-1",
+          "text": "Brioche buns 4 packs",
+          "x": 41,
+          "y": 759.55,
+          "width": 308,
+          "height": 94.25,
+          "top": 759.55,
+          "bottom": 853.8,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-2",
+          "text": "Coriander 2 bunches",
+          "x": 41,
+          "y": 853.8,
+          "width": 308,
+          "height": 94.25,
+          "top": 853.8,
+          "bottom": 948.05,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-4",
+          "text": "Plain flour 5 kgUsed in Cornbread",
+          "x": 41,
+          "y": 948.05,
+          "width": 308,
+          "height": 82.13,
+          "top": 948.05,
+          "bottom": 1030.17,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-6",
+          "text": "Tomatoes 3 kg",
+          "x": 41,
+          "y": 1030.17,
+          "width": 308,
+          "height": 61.25,
+          "top": 1030.17,
+          "bottom": 1091.42,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        }
+      ],
+      "fullyVisibleRequestRows": 3,
+      "partiallyVisibleRequestRows": 1,
+      "totalRequestRows": 8,
+      "supplierGroupingShown": false,
+      "orderedTodayCount": "0 of 8 ordered",
+      "horizontalOverflowPx": 0,
+      "loadedFonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Caveat",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Caveat",
+          "loaded": true
+        }
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "chef",
+      "text": "xlarge",
+      "state": "overdue",
+      "disclosure": "open",
+      "screenshot": "previews/built-chef-390-xlarge-overdue-open.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "topbar": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 64,
+        "top": 0,
+        "bottom": 64
+      },
+      "dock": {
+        "x": 0,
+        "y": 707,
+        "width": 390,
+        "height": 69,
+        "top": 707,
+        "bottom": 776
+      },
+      "dockPosition": "fixed",
+      "tabbar": {
+        "x": 0,
+        "y": 776,
+        "width": 390,
+        "height": 68,
+        "top": 776,
+        "bottom": 844
+      },
+      "usableViewport": {
+        "top": 64,
+        "bottom": 707,
+        "height": 643
+      },
+      "cutoffFold": {
+        "x": 41,
+        "y": 321.55,
+        "width": 308,
+        "height": 876.69,
+        "top": 321.55,
+        "bottom": 1198.23
+      },
+      "cutoffSummary": {
+        "x": 41,
+        "y": 321.55,
+        "width": 308,
+        "height": 68.5,
+        "top": 321.55,
+        "bottom": 390.05
+      },
+      "cutoffSummaryText": "2 cut-offs · 2 overdue\nNorthside Test Foods\n · by 12:00\nHide",
+      "cutoffTitle": {
+        "text": "2 cut-offs · 2 overdue",
+        "clientWidth": 207,
+        "scrollWidth": 207
+      },
+      "cutoffSummaryNameTruncated": true,
+      "cutoffAbsoluteTime": {
+        "text": "· by 12:00",
+        "x": 190.27,
+        "y": 357.3,
+        "width": 72.86,
+        "height": 22.75,
+        "top": 357.3,
+        "bottom": 380.05
+      },
+      "principalTargets": [
+        {
+          "action": "o-write",
+          "x": 16,
+          "y": 716,
+          "width": 358,
+          "height": 52,
+          "top": 716,
+          "bottom": 768
+        },
+        {
+          "action": "o-cut-toggle",
+          "x": 41,
+          "y": 321.55,
+          "width": 308,
+          "height": 68.5,
+          "top": 321.55,
+          "bottom": 390.05
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1235.73,
+          "width": 44,
+          "height": 44,
+          "top": 1235.73,
+          "bottom": 1279.73
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1326.8,
+          "width": 44,
+          "height": 44,
+          "top": 1326.8,
+          "bottom": 1370.8
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1425.42,
+          "width": 44,
+          "height": 44,
+          "top": 1425.42,
+          "bottom": 1469.42
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1513.61,
+          "width": 44,
+          "height": 44,
+          "top": 1513.61,
+          "bottom": 1557.61
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1591.36,
+          "width": 44,
+          "height": 44,
+          "top": 1591.36,
+          "bottom": 1635.36
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1685.61,
+          "width": 44,
+          "height": 44,
+          "top": 1685.61,
+          "bottom": 1729.61
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1773.8,
+          "width": 44,
+          "height": 44,
+          "top": 1773.8,
+          "bottom": 1817.8
+        },
+        {
+          "action": "otick",
+          "x": 36,
+          "y": 1845.48,
+          "width": 44,
+          "height": 44,
+          "top": 1845.48,
+          "bottom": 1889.48
+        }
+      ],
+      "cutoffOpen": true,
+      "cutoffActions": [
+        {
+          "label": "Order placed",
+          "x": 194,
+          "y": 577.3,
+          "width": 140,
+          "height": 44,
+          "top": 577.3,
+          "bottom": 621.3
+        },
+        {
+          "label": "Order placed",
+          "x": 194,
+          "y": 753.8,
+          "width": 140,
+          "height": 44,
+          "top": 753.8,
+          "bottom": 797.8
+        }
+      ],
+      "cutoffBands": [],
+      "totalCutoffBandHeight": 0,
+      "firstRequestTop": 1208.23,
+      "rows": [
+        {
+          "id": "baseline-3",
+          "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
+          "x": 41,
+          "y": 1208.23,
+          "width": 308,
+          "height": 100,
+          "top": 1208.23,
+          "bottom": 1308.23,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-5",
+          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
+          "x": 41,
+          "y": 1308.23,
+          "width": 308,
+          "height": 82.13,
+          "top": 1308.23,
+          "bottom": 1390.36,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-7",
+          "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
+          "x": 41,
+          "y": 1390.36,
+          "width": 308,
+          "height": 115.13,
+          "top": 1390.36,
+          "bottom": 1505.48,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-0",
+          "text": "Milk 6 L",
+          "x": 41,
+          "y": 1505.48,
+          "width": 308,
+          "height": 61.25,
+          "top": 1505.48,
+          "bottom": 1566.73,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-1",
+          "text": "Brioche buns 4 packs",
+          "x": 41,
+          "y": 1566.73,
+          "width": 308,
+          "height": 94.25,
+          "top": 1566.73,
+          "bottom": 1660.98,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-2",
+          "text": "Coriander 2 bunches",
+          "x": 41,
+          "y": 1660.98,
+          "width": 308,
+          "height": 94.25,
+          "top": 1660.98,
+          "bottom": 1755.23,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-4",
+          "text": "Plain flour 5 kgUsed in Cornbread",
+          "x": 41,
+          "y": 1755.23,
+          "width": 308,
+          "height": 82.13,
+          "top": 1755.23,
+          "bottom": 1837.36,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-6",
+          "text": "Tomatoes 3 kg",
+          "x": 41,
+          "y": 1837.36,
+          "width": 308,
+          "height": 61.25,
+          "top": 1837.36,
+          "bottom": 1898.61,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        }
+      ],
+      "fullyVisibleRequestRows": 0,
+      "partiallyVisibleRequestRows": 0,
+      "totalRequestRows": 8,
+      "supplierGroupingShown": false,
+      "orderedTodayCount": "0 of 8 ordered",
+      "horizontalOverflowPx": 0,
+      "loadedFonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Caveat",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Caveat",
+          "loaded": true
+        }
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "chef",
+      "text": "normal",
+      "state": "long-name",
+      "disclosure": "closed",
+      "screenshot": "previews/built-chef-390-long-name-closed.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "topbar": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 64,
+        "top": 0,
+        "bottom": 64
+      },
+      "dock": {
+        "x": 0,
+        "y": 707,
+        "width": 390,
+        "height": 69,
+        "top": 707,
+        "bottom": 776
+      },
+      "dockPosition": "fixed",
+      "tabbar": {
+        "x": 0,
+        "y": 776,
+        "width": 390,
+        "height": 68,
+        "top": 776,
+        "bottom": 844
+      },
+      "usableViewport": {
+        "top": 64,
+        "bottom": 707,
+        "height": 643
+      },
+      "cutoffFold": {
+        "x": 33,
+        "y": 231.27,
+        "width": 324,
+        "height": 69,
+        "top": 231.27,
+        "bottom": 300.27
+      },
+      "cutoffSummary": {
+        "x": 33,
+        "y": 231.27,
+        "width": 324,
+        "height": 68,
+        "top": 231.27,
+        "bottom": 299.27
+      },
+      "cutoffSummaryText": "2 cut-offs due\nNorthside Test Foods and Commercial Kitc\n · by 15:00\nView",
+      "cutoffTitle": {
+        "text": "2 cut-offs due",
+        "clientWidth": 239,
+        "scrollWidth": 239
+      },
+      "cutoffSummaryNameTruncated": true,
+      "cutoffAbsoluteTime": {
+        "text": "· by 15:00",
+        "x": 226.39,
+        "y": 266.45,
+        "width": 57.98,
+        "height": 18.19,
+        "top": 266.45,
+        "bottom": 284.64
+      },
+      "principalTargets": [
+        {
+          "action": "o-write",
+          "x": 16,
+          "y": 716,
+          "width": 358,
+          "height": 52,
+          "top": 716,
+          "bottom": 768
+        },
+        {
+          "action": "o-cut-toggle",
+          "x": 33,
+          "y": 231.27,
+          "width": 324,
+          "height": 68,
+          "top": 231.27,
+          "bottom": 299.27
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 326.55,
+          "width": 44,
+          "height": 44,
+          "top": 326.55,
+          "bottom": 370.55
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 400.95,
+          "width": 44,
+          "height": 44,
+          "top": 400.95,
+          "bottom": 444.95
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 481.52,
+          "width": 44,
+          "height": 44,
+          "top": 481.52,
+          "bottom": 525.52
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 553.95,
+          "width": 44,
+          "height": 44,
+          "top": 553.95,
+          "bottom": 597.95
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 604.95,
+          "width": 44,
+          "height": 44,
+          "top": 604.95,
+          "bottom": 648.95
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 655.95,
+          "width": 44,
+          "height": 44,
+          "top": 655.95,
+          "bottom": 699.95
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 715.08,
+          "width": 44,
+          "height": 44,
+          "top": 715.08,
+          "bottom": 759.08
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 774.22,
+          "width": 44,
+          "height": 44,
+          "top": 774.22,
+          "bottom": 818.22
+        }
+      ],
+      "cutoffOpen": false,
+      "cutoffActions": [
+        {
+          "label": "Order placed",
+          "x": 233,
+          "y": 404.02,
+          "width": 112,
+          "height": 44,
+          "top": 404.02,
+          "bottom": 448.02
+        },
+        {
+          "label": "Order placed",
+          "x": 233,
+          "y": 503.58,
+          "width": 112,
+          "height": 44,
+          "top": 503.58,
+          "bottom": 547.58
+        }
+      ],
+      "cutoffBands": [],
+      "totalCutoffBandHeight": 0,
+      "firstRequestTop": 308.27,
+      "rows": [
+        {
+          "id": "baseline-3",
+          "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
+          "x": 33,
+          "y": 308.27,
+          "width": 324,
+          "height": 81.56,
+          "top": 308.27,
+          "bottom": 389.83,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-5",
+          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
+          "x": 33,
+          "y": 389.83,
+          "width": 324,
+          "height": 67.27,
+          "top": 389.83,
+          "bottom": 457.09,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-7",
+          "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
+          "x": 33,
+          "y": 457.09,
+          "width": 324,
+          "height": 93.86,
+          "top": 457.09,
+          "bottom": 550.95,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-0",
+          "text": "Milk 6 L",
+          "x": 33,
+          "y": 550.95,
+          "width": 324,
+          "height": 51,
+          "top": 550.95,
+          "bottom": 601.95,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-1",
+          "text": "Brioche buns 4 packs",
+          "x": 33,
+          "y": 601.95,
+          "width": 324,
+          "height": 51,
+          "top": 601.95,
+          "bottom": 652.95,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-2",
+          "text": "Coriander 2 bunches",
+          "x": 33,
+          "y": 652.95,
+          "width": 324,
+          "height": 51,
+          "top": 652.95,
+          "bottom": 703.95,
+          "fullyVisible": true,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-4",
+          "text": "Plain flour 5 kgUsed in Cornbread",
+          "x": 33,
+          "y": 703.95,
+          "width": 324,
+          "height": 67.27,
+          "top": 703.95,
+          "bottom": 771.22,
+          "fullyVisible": false,
+          "intersectsUsableViewport": true
+        },
+        {
+          "id": "baseline-6",
+          "text": "Tomatoes 3 kg",
+          "x": 33,
+          "y": 771.22,
+          "width": 324,
+          "height": 51,
+          "top": 771.22,
+          "bottom": 822.22,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        }
+      ],
+      "fullyVisibleRequestRows": 6,
+      "partiallyVisibleRequestRows": 1,
+      "totalRequestRows": 8,
+      "supplierGroupingShown": false,
+      "orderedTodayCount": "0 of 8 ordered",
+      "horizontalOverflowPx": 0,
+      "loadedFonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Caveat",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Caveat",
+          "loaded": true
+        }
+      ],
+      "pageErrors": []
+    },
+    {
+      "role": "chef",
+      "text": "normal",
+      "state": "long-name",
+      "disclosure": "open",
+      "screenshot": "previews/built-chef-390-long-name-open.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "scrollY": 0,
+      "topbar": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 64,
+        "top": 0,
+        "bottom": 64
+      },
+      "dock": {
+        "x": 0,
+        "y": 707,
+        "width": 390,
+        "height": 69,
+        "top": 707,
+        "bottom": 776
+      },
+      "dockPosition": "fixed",
+      "tabbar": {
+        "x": 0,
+        "y": 776,
+        "width": 390,
+        "height": 68,
+        "top": 776,
+        "bottom": 844
+      },
+      "usableViewport": {
+        "top": 64,
+        "bottom": 707,
+        "height": 643
+      },
+      "cutoffFold": {
+        "x": 33,
+        "y": 231.27,
+        "width": 324,
+        "height": 555.41,
+        "top": 231.27,
+        "bottom": 786.67
+      },
+      "cutoffSummary": {
+        "x": 33,
+        "y": 231.27,
+        "width": 324,
+        "height": 68,
+        "top": 231.27,
+        "bottom": 299.27
+      },
+      "cutoffSummaryText": "2 cut-offs due\nNorthside Test Foods and Commercial Kitc\n · by 15:00\nHide",
+      "cutoffTitle": {
+        "text": "2 cut-offs due",
+        "clientWidth": 242,
+        "scrollWidth": 242
+      },
+      "cutoffSummaryNameTruncated": true,
+      "cutoffAbsoluteTime": {
+        "text": "· by 15:00",
+        "x": 228.53,
+        "y": 266.45,
+        "width": 57.98,
+        "height": 18.19,
+        "top": 266.45,
+        "bottom": 284.64
+      },
+      "principalTargets": [
+        {
+          "action": "o-write",
+          "x": 16,
+          "y": 716,
+          "width": 358,
+          "height": 52,
+          "top": 716,
+          "bottom": 768
+        },
+        {
+          "action": "o-cut-toggle",
+          "x": 33,
+          "y": 231.27,
+          "width": 324,
+          "height": 68,
+          "top": 231.27,
+          "bottom": 299.27
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 812.95,
+          "width": 44,
+          "height": 44,
+          "top": 812.95,
+          "bottom": 856.95
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 887.36,
+          "width": 44,
+          "height": 44,
+          "top": 887.36,
+          "bottom": 931.36
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 967.92,
+          "width": 44,
+          "height": 44,
+          "top": 967.92,
+          "bottom": 1011.92
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 1040.36,
+          "width": 44,
+          "height": 44,
+          "top": 1040.36,
+          "bottom": 1084.36
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 1091.36,
+          "width": 44,
+          "height": 44,
+          "top": 1091.36,
+          "bottom": 1135.36
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 1142.36,
+          "width": 44,
+          "height": 44,
+          "top": 1142.36,
+          "bottom": 1186.36
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 1201.48,
+          "width": 44,
+          "height": 44,
+          "top": 1201.48,
+          "bottom": 1245.48
+        },
+        {
+          "action": "otick",
+          "x": 28,
+          "y": 1260.63,
+          "width": 44,
+          "height": 44,
+          "top": 1260.63,
+          "bottom": 1304.63
+        }
+      ],
+      "cutoffOpen": true,
+      "cutoffActions": [
+        {
+          "label": "Order placed",
+          "x": 233,
+          "y": 404.02,
+          "width": 112,
+          "height": 44,
+          "top": 404.02,
+          "bottom": 448.02
+        },
+        {
+          "label": "Order placed",
+          "x": 233,
+          "y": 503.58,
+          "width": 112,
+          "height": 44,
+          "top": 503.58,
+          "bottom": 547.58
+        }
+      ],
+      "cutoffBands": [],
+      "totalCutoffBandHeight": 0,
+      "firstRequestTop": 794.67,
+      "rows": [
+        {
+          "id": "baseline-3",
+          "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
+          "x": 33,
+          "y": 794.67,
+          "width": 324,
+          "height": 81.56,
+          "top": 794.67,
+          "bottom": 876.23,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-5",
+          "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
+          "x": 33,
+          "y": 876.23,
+          "width": 324,
+          "height": 67.27,
+          "top": 876.23,
+          "bottom": 943.5,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-7",
+          "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
+          "x": 33,
+          "y": 943.5,
+          "width": 324,
+          "height": 93.86,
+          "top": 943.5,
+          "bottom": 1037.36,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-0",
+          "text": "Milk 6 L",
+          "x": 33,
+          "y": 1037.36,
+          "width": 324,
+          "height": 51,
+          "top": 1037.36,
+          "bottom": 1088.36,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-1",
+          "text": "Brioche buns 4 packs",
+          "x": 33,
+          "y": 1088.36,
+          "width": 324,
+          "height": 51,
+          "top": 1088.36,
+          "bottom": 1139.36,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-2",
+          "text": "Coriander 2 bunches",
+          "x": 33,
+          "y": 1139.36,
+          "width": 324,
+          "height": 51,
+          "top": 1139.36,
+          "bottom": 1190.36,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-4",
+          "text": "Plain flour 5 kgUsed in Cornbread",
+          "x": 33,
+          "y": 1190.36,
+          "width": 324,
+          "height": 67.27,
+          "top": 1190.36,
+          "bottom": 1257.63,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        },
+        {
+          "id": "baseline-6",
+          "text": "Tomatoes 3 kg",
+          "x": 33,
+          "y": 1257.63,
+          "width": 324,
+          "height": 51,
+          "top": 1257.63,
+          "bottom": 1308.63,
+          "fullyVisible": false,
+          "intersectsUsableViewport": false
+        }
+      ],
+      "fullyVisibleRequestRows": 0,
+      "partiallyVisibleRequestRows": 0,
+      "totalRequestRows": 8,
+      "supplierGroupingShown": false,
+      "orderedTodayCount": "0 of 8 ordered",
+      "horizontalOverflowPx": 0,
+      "loadedFonts": [
+        {
+          "font": "400 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Barlow",
+          "loaded": true
+        },
+        {
+          "font": "600 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "700 16px \"Barlow Condensed\"",
+          "loaded": true
+        },
+        {
+          "font": "600 16px Caveat",
+          "loaded": true
+        },
+        {
+          "font": "700 16px Caveat",
+          "loaded": true
+        }
+      ],
+      "pageErrors": []
+    }
+  ]
+}

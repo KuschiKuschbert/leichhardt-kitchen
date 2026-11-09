@@ -6,6 +6,11 @@ const supplierUrls = p => p.urls.filter(url => /\/js\/(suppliers|supplier-core|s
 const revision = (p, file) => supplierUrls(p).filter(url => new URL(url).pathname.endsWith('/js/' + file)).every(url => new URL(url).searchParams.get('v') === (file === 'suppliers.js' ? '25' : file === 'supplier-core.js' ? '8' : '8'));
 const staleCore = () => { window.LK_SUP_CORE = { API: 3 }; window.LK_SUP_STORE = { API: 1 }; };
 
+async function openCutoffs(p) {
+  await L.waitFor(p, () => !!document.querySelector('.o-cut-fold > summary'), null, 10000);
+  if (!(await p.$eval('.o-cut-fold', e => e.open))) await p.click('.o-cut-fold > summary');
+}
+
 (async () => {
   const b = await L.start();
   let p = await L.open(b, '#/suppliers/northside', { who: 'bo', extra: F.fixture(), init: staleCore, wait: 1500 });
@@ -17,12 +22,10 @@ const staleCore = () => { window.LK_SUP_CORE = { API: 3 }; window.LK_SUP_STORE =
   ok(p.errors.length === 0, 'revised supplier page has no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // The order list groups a chef's requests by supplier (5 Nov 2026, round 2 of the work pages redesign): it loads the
-  // current supplier core and store, replacing an old one in memory, but not the supplier workspace page, which waits for
-  // the supplier's name on the tick list. Since 5 Nov 2026 the tick beside it confirms only; the name opens the sheet.
+  // Orders keeps requests flat and loads no supplier module. Opening a supplier still replaces older modules.
   p = await L.open(b, '#/orders', { who: 'bo', extra: F.fixture(), init: staleCore, wait: 1500 });
-  await L.waitFor(p, () => !!document.querySelector('.o-sups .cut-tl a.cut-n[href*="/northside/"]'), null, 10000);
-  ok(!supplierUrls(p).some(url => new URL(url).pathname.endsWith('/js/suppliers.js')) && revision(p, 'supplier-core.js') && revision(p, 'supplier-store.js') && await p.evaluate(() => window.LK_SUP_CORE.API === 7 && window.LK_SUP_STORE.API === 5), 'the order list loads only the current supplier core and store to group requests, not the workspace page');
+  await openCutoffs(p);
+  ok(supplierUrls(p).length === 0 && await p.evaluate(() => window.LK_SUP_CORE.API === 3 && window.LK_SUP_STORE.API === 1), 'Orders does not load or replace supplier modules just to display requests and cut-offs');
   await p.click('.cut-tl a.cut-n[href*="/northside/"]');
   await L.waitFor(p, () => !!document.querySelector('input[data-sf="qty"]'), null, 15000);
   ok(revision(p, 'supplier-core.js') && await p.evaluate(() => window.LK_SUP_CORE.API === 7), 'reminder entry replaces an old core with the current revision');
@@ -35,10 +38,11 @@ const staleCore = () => { window.LK_SUP_CORE = { API: 3 }; window.LK_SUP_STORE =
   // not arrived (held back, as on a slow live site): the list stays plain and the tick waits for neither.
   p = await L.open(b, '#/orders', { who: 'bo', extra: F.fixture(), init: staleCore, hold: 'js/supplier-(core|store)\\.js|js/suppliers\\.js', wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="northside|"]:not([disabled])'), null, 10000);
+  await openCutoffs(p);
   const asked = supplierUrls(p).length;
   await p.click('.cut-tl [data-p="cut-tick"][data-id^="northside|"]');
   await L.waitFor(p, k => window.__fake.dump()[k]?.on === true, F.key(['cutdone', F.today + '_northside']), 10000);
-  ok(supplierUrls(p).length === asked && await p.evaluate(() => window.LK_SUP_CORE.API === 3 && location.hash === '#/orders' && !document.querySelector('.o-sups')), 'reminder-only completion does not depend on or replace an older supplier module');
+  ok(asked === 0 && supplierUrls(p).length === asked && await p.evaluate(() => window.LK_SUP_CORE.API === 3 && location.hash === '#/orders' && !document.querySelector('.o-sups')), 'reminder-only completion does not depend on or replace an older supplier module');
   ok(p.errors.length === 0, 'reminder-only completion with an old module has no page errors ' + p.errors.join(' | '));
   await p.context().close();
 

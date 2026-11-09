@@ -8,7 +8,7 @@ const F = require('./supplier-fixtures');
 const { R, ok } = L.results();
 const completion = F.key(['cutdone', F.today + '_northside']);
 const tick = '.cut-tl [data-p="cut-tick"][data-id^="northside|"]';
-const reminder = '#cut-band a.cut-n[href*="/northside/"]';
+const reminder = '.o-cut-fold .cut-o:not(.is-done) a.cut-n[href*="/northside/"]';
 const fixture = linked => {
   const seed = F.fixture();
   if (!linked) Object.keys(seed).filter(k => /\/suppliers\//.test(k)).forEach(k => delete seed[k]);
@@ -20,16 +20,21 @@ const pressed = p => p.$eval(tick, e => e.getAttribute('aria-pressed'));
 async function open(b, linked, o) {
   const p = await L.open(b, '#/orders', Object.assign({ who: 'sam', extra: fixture(linked), wait: 1500 }, o || {}));
   await L.waitFor(p, s => !!document.querySelector(s), tick, 10000);
+  await openCutoffs(p);
   return p;
 }
 async function saved(p, on) { await L.waitFor(p, ([k, v]) => { const d = window.__fake.dump()[k]; return d && d.on === v; }, [completion, on !== false], 10000); }
+
+async function openCutoffs(p) {
+  await L.waitFor(p, () => !!document.querySelector('.o-cut-fold > summary'), null, 10000);
+  if (!(await p.$eval('.o-cut-fold', e => e.open))) await p.click('.o-cut-fold > summary');
+}
 
 (async () => {
   const b = await L.start();
   let p;
 
-  // Linked and unlinked, with the supplier tools held back from the start (the order list asks for them to group a
-  // chef's requests by supplier, since 5 Nov 2026): the tick saves at once, asks for none of them and waits for none
+  // Linked and unlinked, with supplier tools held back: Orders no longer loads them. Confirmation still saves directly.
   for (const linked of [true, false]) {
     const name = linked ? 'linked' : 'unlinked';
     p = await open(b, linked, { hold: 'js/supplier-(core|store)\\.js|js/suppliers\\.js' });
@@ -37,7 +42,7 @@ async function saved(p, on) { await L.waitFor(p, ([k, v]) => { const d = window.
     await p.click(tick); await saved(p);
     await L.waitFor(p, s => !document.querySelector(s), reminder, 10000);
     ok((await dump(p))[completion].by === 'sam' && await pressed(p) === 'true', name + ': the tick saves as the chef and shows ticked');
-    ok(tools() === asked && await p.evaluate(() => location.hash === '#/orders' && !window.LK_SUP_CORE), name + ': no supplier tools are loaded and no supplier sheet opens');
+    ok(asked === 0 && tools() === asked && await p.evaluate(() => location.hash === '#/orders' && !window.LK_SUP_CORE), name + ': no supplier tools are loaded and no supplier sheet opens');
     ok((await completionWrites(p)).length === 1, name + ': one completion write');
     ok(p.errors.length === 0, name + ': no page errors ' + p.errors.join(' | '));
     await p.context().close();
@@ -52,14 +57,14 @@ async function saved(p, on) { await L.waitFor(p, ([k, v]) => { const d = window.
   ok(p.errors.length === 0, 'name link: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // A tick then an untick straight after: the list ends unticked, the reminder back on the bar
+  // A tick then an untick straight after: the list ends unticked, the reminder pending in the disclosure
   p = await open(b, false);
   await p.click(tick);
   await L.waitFor(p, s => document.querySelector(s).getAttribute('aria-pressed') === 'true', tick, 10000);
   await p.click(tick); await saved(p, false);
   ok(await pressed(p) === 'false' && (await dump(p))[completion].on === false, 'tick then untick: the last tap wins');
   await L.waitFor(p, s => !!document.querySelector(s), reminder, 10000);
-  ok(!!(await p.$(reminder)), 'tick then untick: the reminder is back on the bar');
+  ok(!!(await p.$(reminder)), 'tick then untick: the reminder is pending in the disclosure');
   await p.context().close();
 
   // Supplier reads refused (rules not published) or failing: the tick does not read the catalogue, so it still saves

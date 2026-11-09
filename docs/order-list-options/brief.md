@@ -2,15 +2,43 @@
 
 ## Status
 
-9 November 2026. **Design review only. No design selected. No app implementation.** The owner asked for the design council and previews before implementation. The actual workflow is staff request, chef prepares a separate supplier order, chef orders through the external system.
+9 November 2026. **C implemented and locally verified.** After the council and previews, the owner said "yeah lets go for c". The actual workflow remains staff request, chef prepares a separate supplier order, chef orders through the external system. This branch implements the selection; verification and release status are recorded below.
 
-[Proposal](proposal.md) · [Round 1 council](council-round-1.md) · [Round 2 scores](council-round-2.md) · [Compare screenshots](comparison.html) · [Interactive concepts](index.html?view=compare) · [Standalone download](orders-designs.html) · [Actual-app measurements](baseline-measurements.json)
+[Proposal](proposal.md) · [Round 1 council](council-round-1.md) · [Round 2 scores](council-round-2.md) · [Compare screenshots](comparison.html) · [Interactive concepts](index.html?view=compare) · [Standalone download](orders-designs.html) · [Pre-change measurements](baseline-measurements.json) · [Implementation measurements](implementation-measurements.json)
+
+## Chosen C
+
+Use C's native compact disclosure, with the council's written **View / Hide** cue and **Add request** wording. The closed summary keeps the next unconfirmed supplier deadline, its absolute time and due/overdue counts visible. Opening it reveals the existing supplier details, confirmation and Undo, tomorrow's early-order action and notification settings. It never opens itself during service. Its open state survives live redraws.
+
+Today's chef requests form one list: Out first, then earlier source days, then creation time. The sort uses stable urgency and age fields so ticking a request does not move it during the existing ten-minute Undo period. Keep amounts, source age, author/time, recipe context and row actions. Staff keep their existing plain-list ordering and earlier-day blocks. Chef past-day access, removed records, regular suggestions and Ordered today stay.
+
+The request list does not allocate items to suppliers or prepare an order. Supplier **Order placed / Undo** changes only its existing cut-off confirmation. Item completion still means actually ordered. Keep one page-level Delivery received link. The compact fold replaces the separate cut-off banner on today's Orders page; other pages retain their reminders. No supplier catalogue or supplier modules load merely to display Orders.
+
+The app keeps its existing queued confirmation and Undo path when offline, with **Not sent** on the affected row and summary. A pending confirmation cannot become an acknowledged all-placed state. This intentionally differs from the isolated preview's disabled offline confirmation buttons. The existing thirty-second clock updates only cut-off content, preserving request positions and disclosure choice.
+
+### Contract fit
+
+Retain the current steel work cover, warm writing paper, orange actions and attention, green completed states and named failed/unchecked states. Native disclosure and explicit words keep the control usable without colour. No new navigation, automatic overlay, saved field, schema, listener, persistent private cache or external service. Main-task entry and item completion remain one tap; confirming a supplier from the closed fold costs two.
+
+C keeps Things/Todoist's plain work list, Linear's direct actions, Flighty's deadline context and Headspace's quiet initial view. No additional gamification or booking-style card is needed from Duolingo or Airbnb. The existing council scores describe the reviewed previews, not a new round or staff research.
+
+### Retrospective all-three mix assessment
+
+This is the implementation lead's fit check against the council guidance added after the original review. It does not rerun the council, transfer scores to a new blend or replace the owner's choice.
+
+| Concept | Retained contribution | Rejected contribution and reason | Cost in the chosen result |
+| --- | --- | --- | --- |
+| A: Compact rows | Full supplier details and explicit confirmation remain inline inside C. | Permanently open deadlines displace requests as the supplier count grows. | Open the fold to see the full set. |
+| B: Requests first | The written View cue makes the secondary deadline task discoverable. | The separate laptop column and phone jump create two layouts and more travel. | One consistent in-place disclosure at every width. |
+| C: One-line fold | The owner-selected compact summary and native disclosure, keeping every request in one list. | Automatic opening would move service rows, so it remains a user choice. | Supplier confirmation takes two taps from closed; Add and item ticking remain one. |
+
+The result is the selected C with the copy refinement already shown to the owner. It has its own actual-app evidence below; the original A/B/C preview scores stay unchanged.
 
 ## Evidence and scope
 
-Source baseline: `origin/main` at `2cb62ba`, fetched for this review. The open PR check found no other Orders redesign in flight; unrelated draft designs are retained. The previous audit's grouping and independent completion behaviour still exist on this main.
+Source baseline: `origin/main` at `2cb62ba`, fetched for this review. The open PR check found no other Orders redesign in flight; unrelated draft designs are retained. The pre-change baseline includes supplier grouping and independent request/supplier completion. Implementation was reconciled with main `2841d4d` before changes.
 
-Current screenshots use the real app, Firebase stand-ins, fictional records and actual Barlow, Barlow Condensed and Caveat fonts. The phone has eight requests, two deadlines and one older outstanding request. The chef sees two complete rows at 390 x 844, five at 768 x 1024 and five at 1280 x 900. Staff see seven complete rows at 390 x 844. These are fixture measurements, not production usage.
+The pre-change screenshots use the real app, Firebase stand-ins, fictional records and actual Barlow, Barlow Condensed and Caveat fonts. The phone has eight requests, two deadlines and one older outstanding request. The pre-change chef view shows two complete rows at 390 x 844, five at 768 x 1024 and five at 1280 x 900. Staff show seven complete rows at 390 x 844. These are fixture measurements, not production usage.
 
 Preview layouts are independently drawn interactive concepts using the same content. Their row counts measure the drawings, not a patched app. They must not omit required content just to increase density. Exact runtime geometry, asynchronous writes, permissions and update recovery require implementation checks.
 
@@ -74,7 +102,7 @@ Staff have no deadline controls or chef ticks in any concept. The drawn staff vi
 
 **C with a written View cue.** Five of six reviewers placed C first; the new starter preferred B's explicit View wording. Points: C 17, B 13, A 6, using 3/2/1 per reviewer. C keeps the extra phone space and opens deadlines in place. Its cost is one additional tap to confirm a supplier while closed. [Full scores, disagreement and limitations](council-round-2.md).
 
-The final previews add View/Hide beside C's chevron and use Add request for the shared action. The three phone images seen during scoring remain under `previews/council-*-390.png`. Scores were not rerun; measurements and interactions were checked after these copy refinements. No design is selected.
+The final previews add View/Hide beside C's chevron and use Add request for the shared action. The three phone images seen during scoring remain under `previews/council-*-390.png`. Scores were not rerun; measurements and interactions were checked after these copy refinements. The owner subsequently selected C.
 
 ## Preview verification
 
@@ -84,16 +112,42 @@ Interaction checks cover request ticks and Undo, independent supplier confirmati
 
 Run `node docs/order-list-options/capture-previews.cjs`, `node docs/order-list-options/build-download.cjs`, then `node docs/order-list-options/check-interactions.cjs` with the repository's test dependencies installed and Chromium available (`CHROME` can select it). Re-run the actual baseline with `capture-baseline.cjs`; its header documents the dependency path option.
 
-## Expected implementation size and risks
+## Implementation size and risks
 
-One focused app PR after a choice, if no new behaviour is added. A uses the existing request list and compact deadline rows; B adds a responsive split and in-page jump; C adds disclosure-state handling. A has the lowest navigation risk, B the largest layout surface, and C the greatest summary/discoverability risk.
+One focused app PR extends the existing review branch. C adds disclosure-state handling around the current cut-off list and removes supplier grouping. Its main risk is hidden deadline detail, addressed by the written View cue, absolute time, due/overdue counts and distinct checking, offline and failed-read wording.
 
-All options intend to remove the supplier-catalogue grouping read from Orders. Existing deadline listeners, writes and notification behaviour stay. This is a source-derived expectation, not a measured runtime saving. Prove request completion, supplier confirmation and partial external orders remain separate.
+The implementation removes the supplier-catalogue grouping read from Orders. Existing deadline listeners, writes and notification behaviour stay. That removes one catalogue query on the first chef Orders open of a person/day scope, formerly at least one read and otherwise one per supplier. Actual savings depend on use; this is a source-derived cost change, not production usage measured here.
 
 ## Validation before shipping
 
-After the owner selects a design, measure actual-app taps and rows again at 390, 768 and 1280 px plus large text. Check urgent and old requests, concurrent additions, delayed completed-row moves, no deadlines, many deadlines, tomorrow, closed/unconfirmed, stale/offline and failed reads. Extend the existing Orders, cut-off, role and read-budget checks; verify server acknowledgement and Undo through the existing write path. Keep saved-shell update contracts. The design prototype cannot verify these production behaviours.
+Measure actual-app taps and rows again at 390, 768 and 1280 px plus large text. Check urgent and old requests, concurrent additions, delayed completed-row moves, no deadlines, many deadlines, tomorrow, closed/unconfirmed, stale/offline and failed reads. Extend the existing Orders, cut-off, role and read-budget checks; verify server acknowledgement and Undo through the existing write path. Keep saved-shell update contracts. The design prototype cannot verify these production behaviours.
+
+## Implementation verification and release
+
+The implemented app was captured in Chromium using synthetic Firebase and the same eight requests, recipe context, two cut-offs and actual Barlow, Barlow Condensed and Caveat fonts as the baseline. [Raw measurements and source hashes](implementation-measurements.json) distinguish the working implementation from the base commit. All 15 captures have no horizontal overflow or browser errors: normal closed/open views at 390, 768 and 1280 px, staff at 390 px, and phone Extra large text, overdue and long supplier-name states.
+
+| Actual-app measure | Pre-change baseline | Implemented C |
+| --- | --- | --- |
+| Complete chef rows, 390 x 844, closed | 2 | 6 |
+| Complete chef rows, 768 x 1024, closed | 5 | 8 |
+| Complete chef rows, 1280 x 900, closed | 5 | 8 |
+| Complete staff rows, 390 x 844 | 7 | 7 |
+| Complete chef rows, 390 px Extra large text, closed | Not measured | 3 |
+| Initial phone cut-off space | 124.5 px banner plus supplier groups | 69 px fold |
+| Add entry / submission, excluding typing and close | 1 / 2 taps | 1 / 2 taps |
+| Mark a requested item ordered | 1 tap | 1 tap |
+| Confirm a supplier | 1 tap once its group is in view | 2 taps from closed |
+
+The closed fold saves 55.5 px against the old banner alone, about 45%, and removes the additional supplier headings. Opening all deadline details intentionally pushes the requests down: the open phone fixture has no complete request row above the Add dock. Closing returns the list space. These figures describe this fixture, not every list or device. Extra large text uses the app's 125% setting; browser chrome, virtual keyboard and physical safe areas were not simulated.
+
+[Built phone, closed](previews/built-chef-390-closed.png) · [Built phone, open](previews/built-chef-390-open.png) · [Built laptop](previews/built-chef-1280-closed.png) · [Staff unchanged](previews/built-staff-390-plain.png)
+
+The four focused Orders files pass 120 assertions. Together with 16 adapted integration files, live-list checks, 12 broader regression files and the design-pattern guard, **34 browser/source test files pass locally**. The broader checks cover read budgets, roles and page access, Low/Out, shared order entry, offline reads, screen-reader labels, existing contrast/surfaces, modal close, safe text and Home. Changed JavaScript syntax and whitespace checks pass. Required hosted Click tests remain the release gate.
+
+Regression and independent source review cover separate item/supplier completion, queued writes and Undo, pending/failure races, stable row height and order, the delayed Ordered today move, a closed fold that stays closed and an open fold that survives redraws, keyboard disclosure control, clock updates without request movement, long-name absolute times, focus on supplier links, and past-date behaviour. The catalogue is not read merely to open Orders. These are local stand-in and source checks, not production save, push delivery, server-role or physical-device verification. Independent rendered contrast checks in Chromium at 390 px used the actual composited ancestor backgrounds, with no opacity or background image affecting the samples. Summary title and View / Hide reach 14.69:1; supplier/time 6.21:1; expanded deadline text 6.73:1; soon/Not sent 5.27:1; done/Undo 5.48:1; failed-read text 7.35:1. The lowest sampled action border is 4.70:1. Sampled text meets 4.5:1 and borders meet 3:1. This verifies the new fold samples, not whole-app accessibility or contrast.
+
+Local implementation verification is complete. Hosted CI and the normal release queue still gate publication; no live deployment is claimed here.
 
 ## Rollback
 
-This proposal adds docs and isolated preview assets only. Removing them has no application or data effect. A later implementation needs its own rollback note. Do not mark a design as selected or ship an app change until the owner chooses.
+Revert the Orders renderer and scoped styles through a new branch and PR. Keep unrelated main changes, existing access rules, cut-off calculations, saved-shell recovery and supplier history. No data migration or saved-field rollback is needed. The isolated review files can be removed independently without application or data effects.

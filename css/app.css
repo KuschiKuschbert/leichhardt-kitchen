@@ -1331,7 +1331,7 @@ html.ks-open, html.ks-open body { overflow: hidden; }
 .o-ordered { background: var(--surface-paper); }
 @media (min-width: 1000px) {
   .o-page { max-width: 72rem; }
-  .o-page .o-cols { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 2.5rem; align-items: start; }
+  .o-page .o-cols:has(> .o-ordered) { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 0 2.5rem; align-items: start; }
   .o-page .o-ordered { padding-top: 0.2rem; }
   .o-page .o-ordered .nb-sh { margin-top: 0.9rem; }
   .o-page .o-add .nb-add-row { flex-wrap: nowrap; }
@@ -2429,12 +2429,6 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .cut-box { width: 44px; height: 44px; padding: 0; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); color: #fff; font-size: 1.4rem; font-weight: 700; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .cut-box[aria-pressed="true"] { background: var(--done); border-color: var(--done); }
 .cut-box:disabled { opacity: 0.5; cursor: default; }
-/* Supplier groups on today's order list for chefs (5 Nov 2026, round 2): each cut-off's tick row heads its requests */
-.o-sups .o-sup { margin: 0.4rem 0 1rem; }
-.o-sup > .cut-tl { margin-bottom: 0.15rem; }
-.o-sup-acts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.45rem 0 0; }
-.o-sup-empty { margin: 0.25rem 0 0; }
-.o-sup-none { border-top: 1.5px solid var(--rule); padding-top: 0.5rem; }
 /* Chef to-do shows the supplier orders without a tick (ticked on the order list only, 5 Nov 2026): the same box, not a button */
 .cut-mark { width: 30px; height: 30px; margin: 7px; border-width: 1.5px; font-size: 1rem; cursor: default; }
 .cut-o.is-done .cut-mark { background: var(--done); border-color: var(--done); }
@@ -3934,23 +3928,6 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 
 /* ---------- Redesign step 3 (8 Nov 2026, head chef): Orders, the supplier order, Delivery received and the cut-off bar.
    docs/whole-app-redesign-options/brief.md (Build, step 3), every-page.html (e-orders, e-supplier, e-delivery). ---------- */
-/* Orders for a chef: each supplier's cut-off row heads its group like a departure board (Flighty): the name small and
-   spaced, when it closes and how many are ordered under it, the time left large on the right, a ruled line below */
-.o-sups .o-sup { margin: 0.2rem 0 1.1rem; }
-.o-sup > .cut-tl li.cut-o { padding: 0.5rem 0 0.45rem; border-bottom: 1.5px solid var(--ink); }
-.o-sup .cut-o .cut-n { font: 700 0.85rem/1.25 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--small-ink); }
-.o-sup .cut-o .cut-t { margin-top: 2px; font-size: 0.85rem; color: var(--muted); }
-.o-sup .cut-o .cut-st { font: 700 1.35rem/1.1 var(--display); color: var(--ink); }
-.o-sup .cut-o.is-soon .cut-st { color: var(--tag); }
-.o-sup .cut-o.is-done .cut-st, .o-sup .cut-o.is-past .cut-st { font: 600 0.9rem/1.25 var(--body); }
-.o-sup .cut-o.is-done .cut-st { color: var(--done-ink); }
-.o-sup .cut-o.is-past .cut-st { color: var(--faint); }
-.o-sgs { white-space: nowrap; }
-.o-sgh { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.1rem 0.75rem; padding: 0.5rem 0 0.4rem; border-bottom: 1.5px solid var(--ink); }
-.o-sgh .nb-sh { margin: 0; }
-.o-sgh .o-sgs { font-size: 0.85rem; color: var(--muted); }
-.o-sup-none { border-top: 0; padding-top: 0; }
-.o-sups > .cut-how { margin: 0.2rem 0 0.1rem; font-size: 0.85rem; }
 /* the cut-off reminder bar in the board's look (step 2's Now and next): dark, the time left as a pill, hot in the last hour.
    Same words, same times, same people, still no tick */
 .cut-band { background: var(--bar); border-bottom: 0; color: var(--bar-text); box-shadow: inset 0 -3px 0 var(--accent-ink); }
@@ -4588,7 +4565,7 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 /* ---------- Gap fix: polish (8 Nov 2026) ---------- */
 /* the audit's small gaps against the chosen drawings (docs/whole-app-redesign-options/every-page.html) */
 /* Orders: a link pill centres its words (they sat at the top edge of the 44 px pill) */
-.o-sup-acts .chip, .chip.o-deliv { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.chip.o-deliv { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 /* Add a line: the small heading over your usual lines */
 .nb-sgh { margin: 0.4rem 0 0.1rem; font: 700 0.72rem/1.2 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-ink); }
 /* Guides step by step: Back and Next stay at the bottom of the screen above the tab bar on a phone, within thumb reach,
@@ -4981,3 +4958,34 @@ dialog.ux-modal::backdrop { background: #1c1d1f88; backdrop-filter: blur(4px); }
 
 .ux-modal.nt.nt-board :is(.nt-eb, .nt-date) { color: var(--muted); }
 @keyframes ux-modal-in { from { opacity: 0; } to { opacity: 1; } }
+
+/* Orders C: compact cut-off disclosure, separate from the shared requests. Existing work cover and paper stay. */
+.o-cut-fold { margin: 0 0 .5rem; border-bottom: 1px solid var(--line); }
+.o-cut-fold > summary { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-height: 68px; padding: .5rem .75rem; box-sizing: border-box; cursor: pointer; list-style: none; background: var(--surface-reference); }
+.o-cut-fold > summary::-webkit-details-marker { display: none; }
+.o-cut-copy { min-width: 0; display: grid; gap: .15rem; }
+.o-cut-copy strong { font: 600 .875rem/1.3 var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.o-cut-detail { font: .875rem/1.3 var(--body); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.o-cut-cue { display: flex; align-items: center; gap: .6rem; flex-shrink: 0; font-size: .875rem; font-weight: 600; }
+.o-cut-fold .o-cut-hide { display: none; }
+.o-cut-fold[open] .o-cut-view { display: none; }
+.o-cut-fold[open] .o-cut-hide { display: inline; }
+.o-cut-chevron { width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); margin: -4px 2px 0 0; }
+.o-cut-fold[open] .o-cut-chevron { transform: rotate(-135deg); margin-top: 4px; }
+.o-cut-body { padding: .6rem .75rem; }
+.o-cut-body .cut-how { font-size: .875rem; }
+.o-cut-body li.o-cut-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n box" "t box" "st box"; gap: 0 .75rem; padding: .4rem 0; }
+.o-cut-row .cut-n { min-height: 44px; display: flex; align-items: center; overflow-wrap: anywhere; }
+.o-cut-row .cut-t { font-size: .875rem; overflow-wrap: anywhere; }
+.o-cut-row .cut-st { max-width: none; text-align: left; font-size: .875rem; }
+.o-cut-row .o-cut-action { width: 7rem; min-height: 44px; height: auto; padding: .45rem .5rem; color: var(--ink); font: 600 .875rem/1.25 var(--body); background: var(--surface-paper); }
+.o-cut-row .o-cut-action[aria-pressed="true"] { color: var(--done-ink); background: var(--surface-paper); border-color: var(--done-ink); }
+.o-cut-row.is-pending .o-cut-action { border-color: var(--faint); color: var(--ink); }
+.o-cut-row.is-pending .cut-st { color: var(--small-ink); }
+.o-cut-row.is-soon .cut-st { color: var(--small-ink); }
+
+.o-cut-detail.has-deadline { display: flex; min-width: 0; }
+.o-cut-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.o-cut-at { flex-shrink: 0; white-space: pre; }
+
+.o-requests .nb-roll { display: inline-block; white-space: nowrap; }

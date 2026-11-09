@@ -1,6 +1,6 @@
 # Order list: three design previews
 
-9 November 2026. Review only. Fictional examples. Nothing saves. No design is selected here.
+9 November 2026. Historical comparison specification. Fictional examples; nothing saves. The owner subsequently selected [C with View / Hide](brief.md#chosen-c); these isolated previews remain the review record.
 
 Open `index.html` for the reviewer controls. Choose a design, chef or staff, a deadline state and a full viewport or three-phone comparison. A clean capture uses `index.html?design=a&shot=1&role=chef&state=normal`. All three use the same fonts, request fixture, steel workbook cover, warm paper, charcoal navigation, local orange Add and green completed state.
 

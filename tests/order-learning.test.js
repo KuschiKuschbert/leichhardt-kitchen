@@ -1,5 +1,5 @@
-// The order list learns what is ordered (like the prep list), and lines waiting more than 3 days sit together at the top
-// with one line on what to do (23 Oct 2026: no separate "Still not ordered" card, which said the same again).
+// The order list learns what is ordered. Chefs see older requests in the flat list with their source dates.
+// Staff keep the existing overdue block and advice to tell a chef.
 const L = require('./lib');
 const { R, ok } = L.results(), { txt } = L;
 const today = L.ymd(new Date(L.NOW));
@@ -75,17 +75,22 @@ const store = page => page.evaluate(() => window.__fake.dump());
   ok(p.errors.length === 0, 'background: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
-  // lines waiting more than 3 days: grouped at the top, with what to do
+  // Older chef requests remain in the flat list, oldest first, with their source date and author.
   const od = Object.assign({}, extra);
   od[fsKey(['orders', today, 'lines', 'r1'])] = { text: 'Vanilla pods', qty: '10', recipes: [], addedBy: 'Rolled over', addedById: '', addedAt: L.NOW - 3600000, ordered: false, deleted: false, rolled: 5, root: 'v1', from: 'v0', rolledFrom: back(1), since: back(5), origBy: 'Ann' };
   od[fsKey(['orders', today, 'lines', 'r2'])] = { text: 'Rice paper', qty: '', recipes: [], addedBy: 'Rolled over', addedById: '', addedAt: L.NOW - 3600000, ordered: false, deleted: false, rolled: 2, root: 'x1', from: 'x0', rolledFrom: back(1), since: back(2), origBy: 'Ann' };
   p = await L.open(b, '#/orders', { wait: 1500, extra: od });
-  ok(/Vanilla pods/.test(await txt(p, '#o-overdue')) && /5 days ago/.test(await txt(p, '#o-overdue')), 'overdue: a line waiting 5 days sits in the overdue block with its day');
-  ok(!/Rice paper/.test(await txt(p, '#o-overdue')) && /Rice paper/.test(await txt(p, '.o-main')), 'overdue: a line waiting 2 days stays in the normal list');
-  ok(/Order them today, or remove what is not needed any more/.test(await txt(p, '#o-overdue')), 'overdue: the sous chef is told to order them or remove them');
+  await L.waitFor(p, () => !!document.querySelector('.o-main [data-ln$="/r1"] .nb-roll'), null, 10000);
+  ok(!(await p.$('#o-overdue')) && !(await p.$('.o-wait')), 'chefs see one flat request list instead of separate overdue and waiting blocks');
+  const older = await p.evaluate(() => ['r1', 'r2'].map(id => {
+    const row = document.querySelector('.o-main [data-ln$="/' + id + '"]'), badge = row && row.querySelector('.nb-roll');
+    return { text: row?.textContent || '', since: badge?.textContent || '', shown: !!badge && badge.getClientRects().length > 0 };
+  }));
+  const days = await p.evaluate(dates => dates.map(day => 'Since ' + new Date(day + 'T00:00:00+10:00').toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Australia/Brisbane' })), [back(5), back(2)]);
+  ok(older[0].text.includes('Vanilla pods') && older[1].text.includes('Rice paper') && older.every((row, i) => row.shown && row.since === days[i] && row.text.includes('from Ann')), 'each older request retains its visible original date and author (' + older.map(row => row.since).join(', ') + ')');
+  const position = await p.$$eval('.o-main .nb-row', rows => rows.map(row => row.dataset.ln.split('/').pop()));
+  ok(position.indexOf('r1') >= 0 && position.indexOf('r1') < position.indexOf('r2'), 'the older five-day request appears before the two-day request');
   ok(await p.$('.o-nudge') === null && await p.$('[data-p="onudge-show"]') === null, 'overdue: no separate Still not ordered card');
-  const since = await p.evaluate(() => [...document.querySelectorAll('.o-main .nb-roll')].map(e => (e.closest('#o-overdue') ? 'overdue ' : 'list ') + (e.getClientRects().length ? 'shown' : 'hidden')));
-  ok(since.indexOf('overdue hidden') >= 0 && since.indexOf('overdue shown') < 0 && since.indexOf('list shown') >= 0, 'overdue: the day heading says since when, so the row leaves out its Since badge; the normal list keeps it (' + since.join(', ') + ')');
   ok(!(await L.overflow(p)), 'overdue: no sideways scroll at 390 px');
   ok(p.errors.length === 0, 'overdue: no page errors ' + p.errors.join(' | '));
   await p.context().close();
