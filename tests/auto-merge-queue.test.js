@@ -60,6 +60,7 @@ fs.writeFileSync(switchScript, stepScript(yml, 'Switch auto-merge on or off for 
 const windowBody = stepScript(yml, 'Open or close the release window'), windowScript = path.join(tmp, 'window.sh');
 fs.writeFileSync(windowScript, windowBody);
 const WINDOWS = (yml.match(/^\s*RELEASE_WINDOWS: '([^']+)'/m) || [])[1] || '';
+const RELEASE_UNTIL = (yml.match(/^\s*RELEASE_UNTIL: '([^']+)'/m) || [])[1] || '';
 // The waiting run (6 Nov 2026): the step that sleeps until the next window opens.
 // An older copy of the workflow (QUEUE_YML) has no such step: it then never sleeps, and those checks fail.
 let waitBody = 'true\n'; try { waitBody = stepScript(yml, 'Sleep until the next release window'); } catch (e) {}
@@ -162,7 +163,7 @@ function pass(name, scenario, opts) {
   fs.writeFileSync(calls, '');
   const r = spawnSync('bash', ['-e', opts.script || script], {
     cwd: tmp, encoding: 'utf8', timeout: 120000,
-    env: Object.assign({}, process.env, { PATH: bin + path.delimiter + process.env.PATH, REPO: 'kitchen/book', GH_TOKEN: 'stand-in', FIX: fix, CALLS: calls }, opts.env || {})
+    env: Object.assign({}, process.env, { PATH: bin + path.delimiter + process.env.PATH, REPO: 'kitchen/book', GH_TOKEN: 'stand-in', FIX: fix, CALLS: calls, RELEASE_UNTIL: '' }, opts.env || {})
   });
   const log = fs.readFileSync(calls, 'utf8').split('\n').filter(Boolean);
   const res = {
@@ -422,6 +423,55 @@ ok(/if: github\.event_name == 'workflow_dispatch' && inputs\.wait/.test(job('wai
 ok(/needs: \[switch, backfill, wait\]/.test(job('queue')) && /actions: write/.test(job('queue')), 'the queue runs after the wait, and may start the waiting run');
 ok(/inputs\.now/.test(job('backfill')), 'the backfill (auto-merge on for every ready one) runs only on Release now, never on the waiting run');
 ok(/run-name: .*'Release now'.*'Waiting for the release window'/.test(yml), 'Release now and the waiting run carry the names the queue looks for');
+
+// 11. The owner's one-off extension ends at 08:00 Queensland on 10 Nov 2026. A full date keeps it from reopening
+// the next morning. NOW_EPOCH stands in for the runner's UTC clock; the normal-window cases above have no override.
+const cutoff = '2026-11-09T22:00:00Z', cutoffEpoch = Date.parse(cutoff) / 1000;
+ok(RELEASE_UNTIL === cutoff, 'the one-off release ends at 08:00 Queensland on 10 November 2026');
+const extended = (hhmm, epoch, value) => ({ NOW_HHMM: hhmm, NOW_EPOCH: String(epoch), RELEASE_UNTIL: value == null ? cutoff : value });
+for (const [name, hhmm, epoch, open] of [
+  ['02:30 during the extension', '0230', cutoffEpoch - 19800, true],
+  ['07:59:59 before expiry', '0759', cutoffEpoch - 1, true],
+  ['08:00 exactly at expiry', '0800', cutoffEpoch, false],
+  ['08:01 after expiry', '0801', cutoffEpoch + 60, false],
+  ['07:59:59 the following day', '0759', cutoffEpoch + 86399, false]
+]) {
+  const env = extended(hhmm, epoch);
+  r = pass('dated window: ' + name, { list: [pr(740, 'BEHIND', null, open ? off : {})] }, win(hhmm, env));
+  eq([r.on, r.off], open ? [[740], []] : [[], [740]], 'queue ' + name + ': ' + (open ? 'open' : 'ordinary window rules'));
+  r = pass('dated switch: ' + name, {}, { script: switchScript, env: Object.assign({}, swAt(hhmm, false, 741).env, env) });
+  eq([r.on, r.off], open ? [[741], []] : [[], [741]], 'switch ' + name + ': ' + (open ? 'open' : 'ordinary window rules'));
+  r = pass('dated wait: ' + name, {}, { script: waitScript, env: Object.assign({ RELEASE_WINDOWS: WINDOWS }, env) });
+  eq(r.slept, open ? 0 : 20700, 'waiting run ' + name + ': ' + (open ? 'moves straight to the queue' : 'waits for the normal window'));
+}
+for (const value of ['', 'not-a-date', 'tomorrow', '2026-11-99T22:00:00Z']) {
+  const env = extended('0759', cutoffEpoch - 1, value);
+  r = pass('dated window with missing/invalid expiry: ' + JSON.stringify(value), { list: [pr(742, 'BEHIND')] }, win('0759', env));
+  eq([r.on, r.off], [[], [742]], 'missing/invalid expiry does not open the queue');
+  r = pass('dated switch with missing/invalid expiry: ' + JSON.stringify(value), {}, { script: switchScript, env: Object.assign({}, swAt('0759', false, 743).env, env) });
+  eq([r.on, r.off], [[], [743]], 'missing/invalid expiry does not open the switch');
+  r = pass('dated wait with missing/invalid expiry: ' + JSON.stringify(value), {}, { script: waitScript, env: Object.assign({ RELEASE_WINDOWS: WINDOWS }, env) });
+  eq(r.slept, 20700, 'missing/invalid expiry keeps the ordinary wait');
+}
+// An expired override must not shut a normal daily window or change draft, hold and fork protection.
+for (const hhmm of ['1500', '2230', '0030']) {
+  const env = extended(hhmm, cutoffEpoch + 86400);
+  r = pass('normal window after dated expiry at ' + hhmm, { list: [pr(744, 'BEHIND', null, off)] }, win(hhmm, env));
+  eq(r.on, [744], 'the queue keeps the normal ' + hhmm + ' window');
+  r = pass('normal switch after dated expiry at ' + hhmm, {}, { script: switchScript, env: Object.assign({}, swAt(hhmm, false, 745).env, env) });
+  eq(r.on, [745], 'the switch keeps the normal ' + hhmm + ' window');
+}
+const activeEnv = extended('0759', cutoffEpoch - 1);
+r = pass('dated window keeps ready/hold/draft/fork guards', { list: [...mixed, pr(746, 'BEHIND', null, Object.assign({ isCrossRepository: true }, off))] }, win('0759', activeEnv));
+eq([r.on, r.off], [[701, 703], []], 'the extension opens only ready same-repository pull requests without hold');
+for (const [guard, changes, expected] of [
+  ['draft', { DRAFT: 'true' }, [[], [747]]],
+  ['held', { HOLD: 'true' }, [[], [747]]],
+  ['fork', { SAME: 'false' }, [[], []]]
+]) {
+  r = pass('dated switch keeps ' + guard + ' guard', {}, { script: switchScript, env: Object.assign({}, swAt('0759', false, 747).env, activeEnv, changes) });
+  eq([r.on, r.off], expected, 'the extension keeps the ' + guard + ' switch guard');
+}
 
 // 8. The triggers: the end of Click tests moves the queue, and the schedule is off the hour.
 const clickName = (fs.readFileSync(path.join(root, '.github', 'workflows', 'pr-tests.yml'), 'utf8').match(/^name: (.+)$/m) || [])[1];
