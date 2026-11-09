@@ -4,6 +4,8 @@
 
 # Leichhardt Kitchen Book
 
+Today's team shows current scheduled meal breaks and splits on a pinned charcoal board. On break now lists each name with Until and the return time. Shift tabs show Lunch first, then Dinner, followed by the other configured shifts. It follows the saved plan across all shifts and updates with the existing kitchen clock. [Break board](docs/team-notebook-options/brief.md#break-board-9-november-2026).
+
 Supplier order shows each item's **last ordered quantity and date** in the existing Last order column. It checks recent saved orders and keeps an item's own last purchase when the latest supplier order omitted it. Older orders extends the check through Order history; unchecked earlier history is labelled clearly. [Behaviour and read costs](docs/supplier-workspace.md#each-items-last-order-9-november-2026).
 
 Sheets and modals can be closed by swiping their grip or title down, or dragging it with a mouse. Normal scrolling and fields keep their own gestures. Swiping uses the existing Cancel action, retaining add-form drafts and leaving pings unread. [Behaviour and checks](docs/adaptive-controls.md#swipe-to-close-9-november-2026).

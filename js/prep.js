@@ -12514,6 +12514,9 @@
     if (selected) { var a = strip.getBoundingClientRect(), b = selected.getBoundingClientRect(); if (b.right > a.right) strip.scrollLeft += b.right - a.right + 8; else if (b.left < a.left) strip.scrollLeft -= a.left - b.left + 8; }
   }
   function tmTabsHTML(shs, ps) {
+    // Display Lunch, then Dinner, without changing configured shift order or the current draft/selection.
+    var rank = function (s) { return /^lunch\b/i.test(s.name) ? 0 : /^dinner\b/i.test(s.name) ? 1 : 2; };
+    shs = shs.slice().sort(function (a, b) { return rank(a) - rank(b); });
     return '<div class="tm-viewbar" role="group" aria-label="Team views"><button type="button" class="chip tm-whole" data-p="tm-whole" aria-pressed="' + tmWhole + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>Whole day<small>Overview</small></button>' +
       '<div class="tm-shift-scroll scroll"><div class="tm-tabs" role="group" aria-label="Shift" data-adaptive="keep">' + shs.map(function (x) {
         var n = ps.filter(function (p) { return tmOnShift(p.id, x.id); }).length;
@@ -12588,7 +12591,7 @@
       '<div class="tm-nbook"><div class="tm-nleft"><header class="tm-nhead"><div><h2 class="p-h" id="rtitle" tabindex="-1">Today\'s team</h2><p>' + esc(date) + '</p></div><div><b class="tm-nclock">' + esc(T.clock(now())) + '</b><small>Queensland time</small></div></header>' +
       '<div class="tm-work">' + use + tmTabsHTML(shs, ps) + '<p class="tm-draftstate" role="status">' + (dirty ? 'Draft, not saved. One Save covers the whole day.' : tm.st === 'err' ? 'Could not check the saved plan. Changes are kept until Save.' : tm.rec ? 'Plan saved. Changes across shifts are saved together.' : 'No team saved yet. Choose shifts, assign people, then Save.') + '</p>' +
       '<div class="tm-editor">' + editor + '</div>' + save + '</div></div><div class="tm-nspine" aria-hidden="true"></div><div class="tm-nright">' +
-      '<aside class="tm-away" aria-label="Scheduled away"><div class="tm-away-slot">' + tmAwayHTML() + '</div></aside>' +
+      '<aside class="tm-away hm-board" aria-label="On break now"><div class="tm-away-slot">' + tmAwayHTML() + '</div></aside>' +
       '<aside class="tm-extra"><div class="tm-next-slot">' + tmNextHTML() + '</div>' +
       (glance ? '<details class="tm-saved-overview"><summary>' + (tm.st === 'err' ? 'Last saved shift overview' : 'Saved shift overview') + '</summary>' + glance + '</details>' : '') + '</aside></div></div></section>';
   }
@@ -12974,13 +12977,13 @@
     return 'Today\'s saved plan has not been checked. Current scheduled status is unknown.';
   }
   function tmAwayHTML() {
-    var d = tmAwayData(), head = '<h3 class="tm-away-title">Scheduled away now</h3>' + tmAwaySource(d);
+    var d = tmAwayData(), head = '<h3 class="tm-away-title">On break now</h3>' + tmAwaySource(d);
     if (d.state !== 'ready') return head + '<p class="' + (d.state === 'unset' || d.state === 'loading' || d.state === 'clock' ? 'tm-away-empty' : 'tm-away-warn') + '">' + esc(tmAwayState(d)) + '</p>';
     var rows = d.away.map(function (g) {
       var b = g.breaks[0];
       return '<div class="tm-away-row' + (g.conflict ? ' is-conflict' : '') + '"><span class="tm-away-name">' + esc(g.p.name) + '</span><span class="tm-away-kind">' +
         esc(g.conflict ? 'Check break times' : (tmIsSplit(b.len) ? 'Split' : 'Meal break') + ' · ' + b.shifts.join(', ')) + '</span><span class="tm-away-back' + (g.conflict ? ' tm-away-warn' : '') + '">' +
-        esc(g.conflict ? tmAwayRanges(g) : 'Back ' + tmAwayTime(b.end)) + '</span></div>';
+        esc(g.conflict ? tmAwayRanges(g) : 'Until ' + tmAwayTime(b.end)) + '</span></div>';
     }).join('');
     return head + (rows || (d.invalid ? '' : '<p class="tm-away-empty">Nobody scheduled away now.</p>')) +
       (d.invalid ? '<p class="tm-away-warn">Check break times in the saved plan. Some times could not be checked.</p>' : '');

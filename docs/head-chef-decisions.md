@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **9 November 2026, a break board on Today's team.** The owner requested a board like the homepage for staff on break now. After requesting Home's board pattern, the owner chose charcoal with the heading On break now and Until beside each return time. Retain names, split labels and saved-plan authority. The owner also clarified that only the shift tabs should show Lunch first, then Dinner; keep other configured shifts in their saved order. [Contract and checks](team-notebook-options/brief.md#break-board-9-november-2026).
+
 - **9 November 2026, each supplier product's last order.** The head chef asked to show when an item was last ordered and how much was ordered then. Show the recorded quantity and Queensland date in the existing Last order column, reusing saved order snapshots. Keep earlier-history coverage explicit and leave quantities as an empty draft until entered. [Contract and quick check](supplier-workspace.md#each-items-last-order-9-november-2026).
 
 - **9 November 2026, distinguish the Home team and prep cards.** The owner asked to colour code On with you and Prep by section differently from the rest. Use soft sage for the scheduled team and cool steel for prep, from the existing palette, alongside the charcoal personal day and amber work board. Preserve fonts, card geometry, full-team disclosure and prep progress states. [Contract and runtime examples](home-staff-first.md#team-and-prep-card-colours-9-november-2026).

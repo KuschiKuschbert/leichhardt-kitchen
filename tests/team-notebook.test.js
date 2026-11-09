@@ -42,7 +42,14 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   const before = await readCount(p), initialAway = await away(p), initialBreaks = plan().br;
   const current = await rows(p);
   ok(current.length === 2 && current.some(r => r.name === 'Ann' && /14:30/.test(r.text)) && current.some(r => r.name === 'Bo' && /[Ss]plit/.test(r.text) && /15:00/.test(r.text)), 'saved status: a Lunch meal break and a Full day split both show with return times');
-  ok(/Scheduled away now/.test(initialAway) && /All shifts/.test(initialAway) && /Saved plan/.test(initialAway), 'saved status: scheduled wording, all shifts and Saved plan are explicit');
+  ok(/On break now/.test(initialAway) && /Until 14:30/.test(initialAway) && /All shifts/.test(initialAway) && /Saved plan/.test(initialAway), 'saved status: On break now shows Until, all shifts and Saved plan');
+  const boardStyle = await p.$eval('.tm-away', e => {
+    const s = getComputedStyle(e), pin = getComputedStyle(e, '::before'), probe = document.createElement('span');
+    probe.style.background = 'var(--bar)'; document.body.appendChild(probe);
+    const charcoal = getComputedStyle(probe).backgroundColor; probe.remove();
+    return { charcoal: s.backgroundColor === charcoal, edge: parseFloat(s.borderInlineStartWidth), radius: parseFloat(s.borderRadius), pin: pin.content !== 'none' && pin.content !== 'normal' };
+  });
+  ok(boardStyle.charcoal && boardStyle.edge >= 4 && boardStyle.radius >= 12 && boardStyle.pin, 'break board: the saved breaks use Home\'s pinned charcoal board with its orange edge');
   ok(await p.$$eval('.tm-next-row', all => all.length) > 0 && await p.$$eval('.tm-next-row', all => all.length) <= 3, 'next breaks: a compact list uses the loaded saved schedule');
   await section(p, 'grill');
   ok(/Move to Grill/.test(await txt(p, '[data-p="tm-assign"][data-id="sam"]') || ''), 'assignment: Sam on another section gets an explicit Move to Grill action');
