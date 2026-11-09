@@ -241,6 +241,8 @@ There's no build step and nothing to install. To try it on a computer, open `ind
 
 ## Testing
 
+The cooling-clock midnight journey waits for the seeded next-day section to finish loading before testing Start. This keeps the existing section/sheet guard active and avoids racing its asynchronous read. [Verification note](docs/operandio-cooling.md#midnight-test-readiness-9-november-2026).
+
 Functions-only sign-ins skip kitchen activity writes (2 November 2026). The existing daily PIN, booking and delivery permissions stay the same. `tests/functions-activity.test.js` enters a real synthetic coordinator PIN, saves a booking draft and delivery, checks Orders stays blocked, and confirms an ordinary staff visit is still counted. It failed 2 of 10 checks before the guard and passes all 10 after it. The real rules matrix retains the same activity permissions and no longer needs its known-client waiver.
 
 The private-ping handover check uses `L.waitFor()` so it runs under the live site's Content Security Policy.
