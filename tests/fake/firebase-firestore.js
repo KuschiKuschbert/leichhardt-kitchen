@@ -465,7 +465,8 @@ function coolingWriteRefused(o, stamp) {
   if (d.rev !== old.rev + 1) return true;
   const second = d.run === old.run && d.firstAt.isEqual(old.firstAt) && d.firstBy === old.firstBy && old.secondAt === 0 && old.secondBy === '' &&
     stamp >= stampMillis(old.firstAt) + 7200000 && stampMillis(d.secondAt) === stamp && d.secondBy === by;
-  const next = d.run !== old.run && old.secondAt instanceof Timestamp && stamp >= stampMillis(old.secondAt) + 14400000 && first;
+  const next = d.run !== old.run && old.secondAt instanceof Timestamp && stamp >= stampMillis(old.secondAt) + 14400000 &&
+    Math.floor((stamp + 36000000) / 86400000) > Math.floor((old.secondAt.seconds + 50400) / 86400) && first;
   return !(second || next);
 }
 function controlWrite(ops) {

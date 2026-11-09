@@ -33,7 +33,7 @@ try {
   check('parsing copies only canonical fields and derives fixed deadlines from Timestamp components', () => {
     const raw = record({ extra: '<script>ignore()</script>', firstDue: 1, schedule: { first: 'queued' } }), parsed = C.parse(raw);
     assert.deepEqual(parsed, { id: runId, rev: 1, firstAt: T, firstDue: T + FIRST, firstBy: 'example-cook',
-      secondAt: 0, secondDue: 0, secondBy: '', by: 'example-cook' });
+      secondAt: 0, secondDue: 0, restartAt: 0, secondBy: '', by: 'example-cook' });
     raw.firstAt.seconds = 0; raw.firstBy = 'different-cook';
     assert.equal(parsed.firstAt, T); assert.equal(parsed.firstDue, T + FIRST); assert.equal(parsed.firstBy, 'example-cook');
     assert.equal(C.parse(record({ firstAt: { ...stamp(T), toMillis() { throw Error('Components avoid method calls.'); } } })).firstAt, T);
@@ -85,7 +85,25 @@ try {
     assert.equal(C.phase(run, run.secondAt), 'second'); assert.equal(C.remaining(run, 2, run.secondAt), SECOND);
     assert.equal(C.phase(run, T + FIRST + SECOND), 'second');
     assert.equal(C.phase(run, run.secondDue - 1), 'second'); assert.equal(C.phase(run, run.secondDue), 'second_due');
-    assert.equal(C.allowed(run, 2, run.secondDue), false); assert.equal(C.allowed(run, 1, run.secondDue), true);
+    assert.equal(C.allowed(run, 2, run.secondDue), false); assert.equal(C.allowed(run, 1, run.secondDue), false);
+  });
+  check('a completed batch stays locked until the next Queensland calendar day', () => {
+    const midnight = Date.parse('2026-11-10T00:00:00+10:00');
+    for (const due of [midnight - 1, midnight, midnight + 1, midnight + 23 * 3600000]) {
+      const unlock = due < midnight ? midnight : midnight + 86400000;
+      const run = C.parse(second({ firstAt: stamp(due - FIRST - SECOND), secondAt: stamp(due - SECOND) }));
+      assert.equal(run.restartAt, unlock);
+      assert.equal(C.allowed(run, 1, due), false);
+      assert.equal(C.allowed(run, 1, unlock - 1), false);
+      assert.equal(C.allowed(run, 1, unlock), true);
+      assert.equal(C.phase(run, unlock), 'second_due');
+      assert.equal(C.allowed(run, 2, unlock), false);
+    }
+    // A raw deadline just before midnight rounds up for display, but still belongs to the earlier day.
+    const precise = C.parse(second({ firstAt: stamp(midnight - FIRST - SECOND - 1000),
+      secondAt: { seconds: (midnight - SECOND) / 1000 - 1, nanoseconds: 999999999 } }));
+    assert.equal(precise.secondDue, midnight); assert.equal(precise.restartAt, midnight);
+    assert.equal(C.allowed(precise, 1, midnight), true);
   });
   check('clock correction never changes accepted state or extends its fixed duration', () => {
     const first = C.parse(record()), next = C.parse(second());

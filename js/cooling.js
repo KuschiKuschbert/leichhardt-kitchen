@@ -54,7 +54,7 @@
       if (disposed) return;
       var next = model(); ui.render(next);
       var signature = JSON.stringify([next.available, next.ready, next.stale, next.error, next.pending,
-        next.actionError, run && run.id, run && run.rev, run && C.phase(run, next.now), !!pending]);
+        next.actionError, run && run.id, run && run.rev, run && C.phase(run, next.now), C.allowed(run, 1, next.now), !!pending]);
       if (signature !== notified) { notified = signature; if (H.changed) H.changed(); }
     }
     function readFailure() { return 'Couldn’t read Operandio timers. Check the connection and try again.'; }
@@ -96,8 +96,8 @@
       if (!next || next.rev < run.rev) return false;
       if (next.id !== run.id) return next.rev > run.rev;
       return next.firstAt === run.firstAt && next.firstDue === run.firstDue && next.firstBy === run.firstBy &&
-        (!run.secondAt || next.secondAt === run.secondAt && next.secondDue === run.secondDue && next.secondBy === run.secondBy) &&
-        (next.rev !== run.rev || next.secondAt === run.secondAt && next.secondDue === run.secondDue && next.secondBy === run.secondBy);
+        (!run.secondAt || next.secondAt === run.secondAt && next.secondDue === run.secondDue && next.restartAt === run.restartAt && next.secondBy === run.secondBy) &&
+        (next.rev !== run.rev || next.secondAt === run.secondAt && next.secondDue === run.secondDue && next.restartAt === run.restartAt && next.secondBy === run.secondBy);
     }
     function subscribe(receive, failed, captured) {
       var unsubscribe = null, ended = false;

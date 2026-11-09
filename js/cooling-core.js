@@ -3,7 +3,7 @@
 (function () {
   'use strict';
   var FIRST = 2 * 60 * 60 * 1000, SECOND = 4 * 60 * 60 * 1000;
-  var MAX = Number.MAX_SAFE_INTEGER;
+  var MAX = Number.MAX_SAFE_INTEGER, DAY = 86400000, QUEENSLAND = 10 * 60 * 60 * 1000;
   function integer(value, minimum) { return typeof value === 'number' && Number.isSafeInteger(value) && value >= minimum; }
   function id(value) { return typeof value === 'string' && value.length >= 16 && value.length <= 80 && !/[^A-Za-z0-9_-]/.test(value); }
   function actor(value) { return typeof value === 'string' && value.length > 0 && value.length <= 80 && value.trim() === value; }
@@ -20,9 +20,10 @@
     if (!run || typeof run !== 'object' || Array.isArray(run) || !id(run.id) || !integer(run.rev, 1)
       || !integer(run.firstAt, 1) || run.firstAt > MAX - FIRST || run.firstDue !== run.firstAt + FIRST
       || !actor(run.firstBy) || !actor(run.by)) return false;
-    if (run.secondAt === 0) return run.secondDue === 0 && run.secondBy === '' && run.by === run.firstBy;
+    if (run.secondAt === 0) return run.secondDue === 0 && run.restartAt === 0 && run.secondBy === '' && run.by === run.firstBy;
     return integer(run.secondAt, run.firstDue) && run.secondAt <= MAX - SECOND
-      && run.secondDue === run.secondAt + SECOND && actor(run.secondBy) && run.by === run.secondBy;
+      && run.secondDue === run.secondAt + SECOND && integer(run.restartAt, run.secondDue)
+      && run.restartAt <= run.secondDue + DAY && actor(run.secondBy) && run.by === run.secondBy;
   }
   // Pick recognised fields into a separate model. Future additive server fields cannot become screen markup.
   function parse(record) {
@@ -35,7 +36,9 @@
     }
     var firstAt = milliseconds(record.firstAt), secondAt = record.secondAt === 0 ? 0 : milliseconds(record.secondAt);
     var run = { id: record.run, rev: record.rev, firstAt: firstAt, firstDue: firstAt + FIRST, firstBy: record.firstBy,
-      secondAt: secondAt, secondDue: secondAt ? secondAt + SECOND : 0, secondBy: record.secondBy, by: record.by };
+      secondAt: secondAt, secondDue: secondAt ? secondAt + SECOND : 0,
+      // Use raw seconds for the calendar day. Rounding a last nanosecond up must not add another locked day.
+      restartAt: secondAt ? (Math.floor(((record.secondAt.seconds * 1000) + SECOND + QUEENSLAND) / DAY) + 1) * DAY - QUEENSLAND : 0, secondBy: record.secondBy, by: record.by };
     return valid(run) ? run : null;
   }
   function phase(run, at) {
@@ -48,7 +51,7 @@
   // This is a UI guard, not authority. The server must check the revision, session and its own time again.
   function allowed(run, stage, at) {
     var state = phase(run, at);
-    return stage === 1 ? state === 'idle' || state === 'second_due' : stage === 2 && state === 'first_due';
+    return stage === 1 ? state === 'idle' || state === 'second_due' && at >= run.restartAt : stage === 2 && state === 'first_due';
   }
   function remaining(run, stage, at) {
     var span = duration(stage);
