@@ -10,7 +10,8 @@ function fixture(name) {
   const cfg = L.seed()[key(['config', 'main'])];
   if (name) cfg.people = cfg.people.map(p => p.id === 'ann' ? { ...p, name } : p);
   cfg.kitSecs = [{ id: 'larder', name: 'Larder' }, { id: 'grill', name: 'Grill' }];
-  cfg.kitShifts = [{ id: 'lunch', name: 'Lunch', from: 600, to: 900 }];
+  // A full day with no shift moment at 14:00, so the welcome stays on its ordinary words (docs/staff-personalisation-options/brief.md).
+  cfg.kitShifts = [{ id: 'lunch', name: 'Lunch', from: 600, to: 1260 }];
   return { [key(['config', 'main'])]: cfg, [key(['team', day])]: { day, on: [{ id: 'ann', sh: 'lunch', sec: 'larder' }, { id: 'sam', sh: 'lunch', sec: 'grill' }],
     br: [{ id: 'ann', sh: 'lunch', at: 870, len: 30 }], v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam' } };
 }
@@ -25,7 +26,8 @@ const realErrors = p => p.errors.filter(e => !/Failed to load resource/.test(e))
 (async () => {
   const b = await L.start(); let p = null;
   async function open(o = {}) {
-    p = await L.open(b, '#/', { who: 'ann', width: 390, height: 844, extra: fixture(o.name), wait: 1200, ...o });
+    // Math.random 0 keeps the varied welcome on Welcome, the words this mascot's layout checks were measured with.
+    p = await L.open(b, '#/', { who: 'ann', width: 390, height: 844, extra: fixture(o.name), wait: 1200, init: () => { Math.random = () => 0; }, ...o });
     p.__sheets = []; p.on('request', r => { if (/art\/mascot\/.*sheet/.test(r.url())) p.__sheets.push(r.url()); });
     await L.waitFor(p, () => !!document.querySelector('#rtitle.hm-welcome'), null, 6000);
     return p;

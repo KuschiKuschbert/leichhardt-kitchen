@@ -2109,7 +2109,8 @@
   // Reuse the calendar's settled state for clock corrections, midnight and the device's On/Off choice.
   document.addEventListener('kb-seasonal-state', homeWelcomePaint);
   // js/prep.js says when the person's shift moment or the hour changes (homePaint(), on its 30 second tick).
-  window.addEventListener('lk-greet', homeWelcomePaint);
+  // New words can reach the mascot's corner: let it check its place again (it steps aside when it would touch them).
+  window.addEventListener('lk-greet', function () { homeWelcomePaint(); mascotSync(); });
   // "Skip to content" must not change the address: #main is not a page, so the router would open the landing page
   document.addEventListener('click', function (e) {
     var sk = e.target.closest && e.target.closest('a.skip');

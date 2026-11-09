@@ -250,3 +250,7 @@ The owner asked to improve the varied welcome before the next personalisation st
 `tests/home-welcome-randomiser.test.js`: **92 of 92** pass. The new checks cover five Queensland times on a Los Angeles phone, the hour turning on an open Home, all five shift moments, the middle of a shift, a double's gap, a celebration over the last hour, a break starting with Home open, an untrusted break, and no extra reads. On #656's code **18 of 86 failed**. Personalisation, welcome layout (68), Home board, Home rota, staff Home, read budget, design patterns and seasonal files also pass (11 files). The older checks now accept every new opener and compare layout with the same opener for every name. Synthetic local browser checks only.
 
 Rollback: revert the pull request. No saved data or rules change.
+
+### With the kitchen mascot (#660)
+
+The mascot stands at the right end of the welcome row and steps aside when it would touch a word (`docs/kitchen-mascot.md`). Measured in the app at 390 px with Ann: it shows for 15 of 23 openers and steps aside for 8 (for example Good morning, Welcome back, Last stretch, Happy Tihar). With Ana María it steps aside for Hello and G’day only. It depends on where the heading's last line ends, not on one word: #656's own Hello already does it. `lk-greet` now also asks the mascot to check its place. `tests/mascot.test.js` keeps its layout checks on Welcome (Math.random 0, a shift with no moment at 14:00). Open question for the owner: keep this step-aside, or give the mascot another spot when the words reach the corner.
