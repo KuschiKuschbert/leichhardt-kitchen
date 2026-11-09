@@ -17,13 +17,20 @@ const rows = p => p.$$eval('.o-main .nb-row', l => l.map(e => ({ id: e.getAttrib
 const state = p => p.evaluate(() => window.__fake.dump());
 const completion = F.key(['cutdone', F.today + '_northside']);
 const request = id => F.key(['orders', F.today, 'lines', id]);
-const samePlaces = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const samePlaces = (a, b) => {
+  const same = JSON.stringify(a) === JSON.stringify(b);
+  if (!same) console.error('Request geometry changed: ' + JSON.stringify({ before: a, after: b }));
+  return same;
+};
 const fold = '.o-cut-fold';
 const summary = fold + ' > summary';
 const confirm = '.cut-tl [data-p="cut-tick"][data-id^="northside|"]';
 (async () => {
   const b = await L.start();
   let p = await L.open(b, '#/orders', { who: 'sam', extra: extra(), wait: 1600 });
+  // A wide fallback font reproduces an acknowledgement wrapping to two lines when app fonts are unavailable.
+  // Keep this alongside actual-font captures so CI and local checks both exercise the layout risk.
+  await p.addStyleTag({ content: ':root { --body: "DejaVu Sans", sans-serif; }' });
   await L.waitFor(p, () => document.querySelectorAll('.o-main .nb-row').length >= 6, null, 10000);
   const first = await rows(p);
   ok(!(await p.$('.o-sups, .o-sup, .o-wait')) && first.length === 6, 'chef: all six requests stay in one list without supplier or age sections');
@@ -43,6 +50,7 @@ const confirm = '.cut-tl [data-p="cut-tick"][data-id^="northside|"]';
   const before = await rows(p);
   await p.click(confirm);
   await L.waitFor(p, k => window.__fake.dump()[k]?.on === true, completion, 10000);
+  await L.waitFor(p, () => /Ordered by/.test(document.querySelector('.o-cut-row .cut-st').textContent), null, 10000);
   ok(!(await state(p))[request('g-out')].ordered && await p.$eval(fold, e => e.open), 'supplier confirmation leaves requests untouched and the disclosure open');
   ok(samePlaces(before, await rows(p)), 'supplier confirmation does not move or resize request rows');
   await p.click('[data-p="otick"][data-id="g-out"]');

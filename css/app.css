@@ -4977,7 +4977,7 @@ dialog.ux-modal::backdrop { background: #1c1d1f88; backdrop-filter: blur(4px); }
 .o-cut-body li.o-cut-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n box" "t box" "st box"; gap: 0 .75rem; padding: .4rem 0; }
 .o-cut-row .cut-n { min-height: 44px; display: flex; align-items: center; overflow-wrap: anywhere; }
 .o-cut-row .cut-t { font-size: .875rem; overflow-wrap: anywhere; }
-.o-cut-row .cut-st { max-width: none; text-align: left; font-size: .875rem; }
+.o-cut-row .cut-st { max-width: none; text-align: left; font-size: .875rem; line-height: 1.35; min-height: 2.7em; }
 .o-cut-row .o-cut-action { width: 7rem; min-height: 44px; height: auto; padding: .45rem .5rem; color: var(--ink); font: 600 .875rem/1.25 var(--body); background: var(--surface-paper); }
 .o-cut-row .o-cut-action[aria-pressed="true"] { color: var(--done-ink); background: var(--surface-paper); border-color: var(--done-ink); }
 .o-cut-row.is-pending .o-cut-action { border-color: var(--faint); color: var(--ink); }

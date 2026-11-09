@@ -36,7 +36,7 @@ const rows = p => p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].
   await openCuts(p);
   r = await rows(p);
   ok(r.map(x => x.n).join() === 'Chicken,PFD,Veg' && r[0].st === 'Closed, not confirmed' && r[1].st === 'in 1 h' && !r.some(x => x.on), 'order list: Supplier orders today, soonest first, nothing ticked (' + JSON.stringify(r) + ')');
-  ok(/3 cut-offs due.*1 overdue/.test(await txt(p, '.o-cut-fold > summary')), 'the summary retains all three outstanding cut-offs and the overdue count');
+  ok(/3 cut-offs · 1 overdue/.test(await txt(p, '.o-cut-fold > summary')), 'the summary retains all three outstanding cut-offs and the overdue count');
   ok((await pending(p)).join() === 'PFD,Veg' && !(await p.$('#cut-band:not([hidden])')), 'Orders: PFD and Veg are due, with no duplicate reminder bar');
   ok(await p.$eval('.cut-box', e => e.getBoundingClientRect().width >= 44 && e.getBoundingClientRect().height >= 44), 'the tick boxes are big enough to tap');
   await openCuts(p);

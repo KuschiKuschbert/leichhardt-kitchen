@@ -1,9 +1,9 @@
 {
-  "sourceCommit": "99fd9b1bdc027611973ce2dad4f4ecc1985b98b1",
+  "sourceCommit": "5a92e1247633c4c2ce51be4cbf85dd007f6a798e",
   "sourceWorkingTree": "Implementation changes under review; commit above is the base before these uncommitted runtime changes.",
   "sourceHashes": {
     "js/prep.js": "e3168b23115e6d15f80481e7c5af61f190e067257cdb4894050435e600aa71d8",
-    "css/app.css": "842b51114f45974779782fa258e77863914c36cfa32b2a5c34f48710831f5db1"
+    "css/app.css": "47df81950be75336f0af2c6a55419ee425c2ed075a8980bf1d68331dab85e119"
   },
   "kind": "Actual implemented app C with synthetic Firebase fixtures",
   "route": "#/orders",
@@ -221,20 +221,20 @@
         {
           "label": "Order placed",
           "x": 233,
-          "y": 402.83,
+          "y": 411.58,
           "width": 112,
           "height": 44,
-          "top": 402.83,
-          "bottom": 446.83
+          "top": 411.58,
+          "bottom": 455.58
         },
         {
           "label": "Order placed",
           "x": 233,
-          "y": 501.2,
+          "y": 527.45,
           "width": 112,
           "height": 44,
-          "top": 501.2,
-          "bottom": 545.2
+          "top": 527.45,
+          "bottom": 571.45
         }
       ],
       "cutoffBands": [],
@@ -421,9 +421,9 @@
         "x": 33,
         "y": 231.27,
         "width": 324,
-        "height": 553.03,
+        "height": 588.03,
         "top": 231.27,
-        "bottom": 784.3
+        "bottom": 819.3
       },
       "cutoffSummary": {
         "x": 33,
@@ -471,74 +471,74 @@
         {
           "action": "otick",
           "x": 28,
-          "y": 810.58,
+          "y": 845.58,
           "width": 44,
           "height": 44,
-          "top": 810.58,
-          "bottom": 854.58
+          "top": 845.58,
+          "bottom": 889.58
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 884.98,
+          "y": 919.98,
           "width": 44,
           "height": 44,
-          "top": 884.98,
-          "bottom": 928.98
+          "top": 919.98,
+          "bottom": 963.98
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 965.55,
+          "y": 1000.55,
           "width": 44,
           "height": 44,
-          "top": 965.55,
-          "bottom": 1009.55
+          "top": 1000.55,
+          "bottom": 1044.55
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 1037.98,
+          "y": 1072.98,
           "width": 44,
           "height": 44,
-          "top": 1037.98,
-          "bottom": 1081.98
+          "top": 1072.98,
+          "bottom": 1116.98
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 1088.98,
+          "y": 1123.98,
           "width": 44,
           "height": 44,
-          "top": 1088.98,
-          "bottom": 1132.98
+          "top": 1123.98,
+          "bottom": 1167.98
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 1139.98,
+          "y": 1174.98,
           "width": 44,
           "height": 44,
-          "top": 1139.98,
-          "bottom": 1183.98
+          "top": 1174.98,
+          "bottom": 1218.98
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 1199.11,
+          "y": 1234.11,
           "width": 44,
           "height": 44,
-          "top": 1199.11,
-          "bottom": 1243.11
+          "top": 1234.11,
+          "bottom": 1278.11
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 1258.25,
+          "y": 1293.25,
           "width": 44,
           "height": 44,
-          "top": 1258.25,
-          "bottom": 1302.25
+          "top": 1293.25,
+          "bottom": 1337.25
         }
       ],
       "cutoffOpen": true,
@@ -546,35 +546,35 @@
         {
           "label": "Order placed",
           "x": 233,
-          "y": 402.83,
+          "y": 411.58,
           "width": 112,
           "height": 44,
-          "top": 402.83,
-          "bottom": 446.83
+          "top": 411.58,
+          "bottom": 455.58
         },
         {
           "label": "Order placed",
           "x": 233,
-          "y": 501.2,
+          "y": 527.45,
           "width": 112,
           "height": 44,
-          "top": 501.2,
-          "bottom": 545.2
+          "top": 527.45,
+          "bottom": 571.45
         }
       ],
       "cutoffBands": [],
       "totalCutoffBandHeight": 0,
-      "firstRequestTop": 792.3,
+      "firstRequestTop": 827.3,
       "rows": [
         {
           "id": "baseline-3",
           "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
           "x": 33,
-          "y": 792.3,
+          "y": 827.3,
           "width": 324,
           "height": 81.56,
-          "top": 792.3,
-          "bottom": 873.86,
+          "top": 827.3,
+          "bottom": 908.86,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -582,11 +582,11 @@
           "id": "baseline-5",
           "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
           "x": 33,
-          "y": 873.86,
+          "y": 908.86,
           "width": 324,
           "height": 67.27,
-          "top": 873.86,
-          "bottom": 941.13,
+          "top": 908.86,
+          "bottom": 976.13,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -594,11 +594,11 @@
           "id": "baseline-7",
           "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
           "x": 33,
-          "y": 941.13,
+          "y": 976.13,
           "width": 324,
           "height": 93.86,
-          "top": 941.13,
-          "bottom": 1034.98,
+          "top": 976.13,
+          "bottom": 1069.98,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -606,11 +606,11 @@
           "id": "baseline-0",
           "text": "Milk 6 L",
           "x": 33,
-          "y": 1034.98,
+          "y": 1069.98,
           "width": 324,
           "height": 51,
-          "top": 1034.98,
-          "bottom": 1085.98,
+          "top": 1069.98,
+          "bottom": 1120.98,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -618,11 +618,11 @@
           "id": "baseline-1",
           "text": "Brioche buns 4 packs",
           "x": 33,
-          "y": 1085.98,
+          "y": 1120.98,
           "width": 324,
           "height": 51,
-          "top": 1085.98,
-          "bottom": 1136.98,
+          "top": 1120.98,
+          "bottom": 1171.98,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -630,11 +630,11 @@
           "id": "baseline-2",
           "text": "Coriander 2 bunches",
           "x": 33,
-          "y": 1136.98,
+          "y": 1171.98,
           "width": 324,
           "height": 51,
-          "top": 1136.98,
-          "bottom": 1187.98,
+          "top": 1171.98,
+          "bottom": 1222.98,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -642,11 +642,11 @@
           "id": "baseline-4",
           "text": "Plain flour 5 kgUsed in Cornbread",
           "x": 33,
-          "y": 1187.98,
+          "y": 1222.98,
           "width": 324,
           "height": 67.27,
-          "top": 1187.98,
-          "bottom": 1255.25,
+          "top": 1222.98,
+          "bottom": 1290.25,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -654,11 +654,11 @@
           "id": "baseline-6",
           "text": "Tomatoes 3 kg",
           "x": 33,
-          "y": 1255.25,
+          "y": 1290.25,
           "width": 324,
           "height": 51,
-          "top": 1255.25,
-          "bottom": 1306.25,
+          "top": 1290.25,
+          "bottom": 1341.25,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         }
@@ -871,20 +871,20 @@
         {
           "label": "Order placed",
           "x": 607,
-          "y": 467.19,
+          "y": 475.94,
           "width": 112,
           "height": 44,
-          "top": 467.19,
-          "bottom": 511.19
+          "top": 475.94,
+          "bottom": 519.94
         },
         {
           "label": "Order placed",
           "x": 607,
-          "y": 565.56,
+          "y": 591.81,
           "width": 112,
           "height": 44,
-          "top": 565.56,
-          "bottom": 609.56
+          "top": 591.81,
+          "bottom": 635.81
         }
       ],
       "cutoffBands": [],
@@ -1071,9 +1071,9 @@
         "x": 37,
         "y": 315.92,
         "width": 694,
-        "height": 467.52,
+        "height": 502.52,
         "top": 315.92,
-        "bottom": 783.44
+        "bottom": 818.44
       },
       "cutoffSummary": {
         "x": 37,
@@ -1121,74 +1121,74 @@
         {
           "action": "otick",
           "x": 32,
-          "y": 803.89,
+          "y": 838.89,
           "width": 44,
           "height": 44,
-          "top": 803.89,
-          "bottom": 847.89
+          "top": 838.89,
+          "bottom": 882.89
         },
         {
           "action": "otick",
           "x": 32,
-          "y": 873.81,
+          "y": 908.81,
           "width": 44,
           "height": 44,
-          "top": 873.81,
-          "bottom": 917.81
+          "top": 908.81,
+          "bottom": 952.81
         },
         {
           "action": "otick",
           "x": 32,
-          "y": 943.73,
+          "y": 978.73,
           "width": 44,
           "height": 44,
-          "top": 943.73,
-          "bottom": 987.73
+          "top": 978.73,
+          "bottom": 1022.73
         },
         {
           "action": "otick",
           "x": 32,
-          "y": 1005.31,
+          "y": 1040.31,
           "width": 44,
           "height": 44,
-          "top": 1005.31,
-          "bottom": 1049.31
+          "top": 1040.31,
+          "bottom": 1084.31
         },
         {
           "action": "otick",
           "x": 32,
-          "y": 1058.55,
+          "y": 1093.55,
           "width": 44,
           "height": 44,
-          "top": 1058.55,
-          "bottom": 1102.55
+          "top": 1093.55,
+          "bottom": 1137.55
         },
         {
           "action": "otick",
           "x": 32,
-          "y": 1111.78,
+          "y": 1146.78,
           "width": 44,
           "height": 44,
-          "top": 1111.78,
-          "bottom": 1155.78
+          "top": 1146.78,
+          "bottom": 1190.78
         },
         {
           "action": "otick",
           "x": 32,
-          "y": 1173.36,
+          "y": 1208.36,
           "width": 44,
           "height": 44,
-          "top": 1173.36,
-          "bottom": 1217.36
+          "top": 1208.36,
+          "bottom": 1252.36
         },
         {
           "action": "otick",
           "x": 32,
-          "y": 1234.94,
+          "y": 1269.94,
           "width": 44,
           "height": 44,
-          "top": 1234.94,
-          "bottom": 1278.94
+          "top": 1269.94,
+          "bottom": 1313.94
         }
       ],
       "cutoffOpen": true,
@@ -1196,35 +1196,35 @@
         {
           "label": "Order placed",
           "x": 607,
-          "y": 467.19,
+          "y": 475.94,
           "width": 112,
           "height": 44,
-          "top": 467.19,
-          "bottom": 511.19
+          "top": 475.94,
+          "bottom": 519.94
         },
         {
           "label": "Order placed",
           "x": 607,
-          "y": 565.56,
+          "y": 591.81,
           "width": 112,
           "height": 44,
-          "top": 565.56,
-          "bottom": 609.56
+          "top": 591.81,
+          "bottom": 635.81
         }
       ],
       "cutoffBands": [],
       "totalCutoffBandHeight": 0,
-      "firstRequestTop": 791.44,
+      "firstRequestTop": 826.44,
       "rows": [
         {
           "id": "baseline-3",
           "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
           "x": 37,
-          "y": 791.44,
+          "y": 826.44,
           "width": 694,
           "height": 69.92,
-          "top": 791.44,
-          "bottom": 861.36,
+          "top": 826.44,
+          "bottom": 896.36,
           "fullyVisible": true,
           "intersectsUsableViewport": true
         },
@@ -1232,11 +1232,11 @@
           "id": "baseline-5",
           "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
           "x": 37,
-          "y": 861.36,
+          "y": 896.36,
           "width": 694,
           "height": 69.92,
-          "top": 861.36,
-          "bottom": 931.28,
+          "top": 896.36,
+          "bottom": 966.28,
           "fullyVisible": true,
           "intersectsUsableViewport": true
         },
@@ -1244,35 +1244,35 @@
           "id": "baseline-7",
           "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
           "x": 37,
-          "y": 931.28,
+          "y": 966.28,
           "width": 694,
           "height": 69.92,
-          "top": 931.28,
-          "bottom": 1001.2,
-          "fullyVisible": true,
+          "top": 966.28,
+          "bottom": 1036.2,
+          "fullyVisible": false,
           "intersectsUsableViewport": true
         },
         {
           "id": "baseline-0",
           "text": "Milk 6 L",
           "x": 37,
-          "y": 1001.2,
+          "y": 1036.2,
           "width": 694,
           "height": 53.23,
-          "top": 1001.2,
-          "bottom": 1054.44,
+          "top": 1036.2,
+          "bottom": 1089.44,
           "fullyVisible": false,
-          "intersectsUsableViewport": true
+          "intersectsUsableViewport": false
         },
         {
           "id": "baseline-1",
           "text": "Brioche buns 4 packs",
           "x": 37,
-          "y": 1054.44,
+          "y": 1089.44,
           "width": 694,
           "height": 53.23,
-          "top": 1054.44,
-          "bottom": 1107.67,
+          "top": 1089.44,
+          "bottom": 1142.67,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -1280,11 +1280,11 @@
           "id": "baseline-2",
           "text": "Coriander 2 bunches",
           "x": 37,
-          "y": 1107.67,
+          "y": 1142.67,
           "width": 694,
           "height": 53.23,
-          "top": 1107.67,
-          "bottom": 1160.91,
+          "top": 1142.67,
+          "bottom": 1195.91,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -1292,11 +1292,11 @@
           "id": "baseline-4",
           "text": "Plain flour 5 kgUsed in Cornbread",
           "x": 37,
-          "y": 1160.91,
+          "y": 1195.91,
           "width": 694,
           "height": 69.92,
-          "top": 1160.91,
-          "bottom": 1230.83,
+          "top": 1195.91,
+          "bottom": 1265.83,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -1304,16 +1304,16 @@
           "id": "baseline-6",
           "text": "Tomatoes 3 kg",
           "x": 37,
-          "y": 1230.83,
+          "y": 1265.83,
           "width": 694,
           "height": 53.23,
-          "top": 1230.83,
-          "bottom": 1284.06,
+          "top": 1265.83,
+          "bottom": 1319.06,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         }
       ],
-      "fullyVisibleRequestRows": 3,
+      "fullyVisibleRequestRows": 2,
       "partiallyVisibleRequestRows": 1,
       "totalRequestRows": 8,
       "supplierGroupingShown": false,
@@ -1521,20 +1521,20 @@
         {
           "label": "Order placed",
           "x": 1035,
-          "y": 446.89,
+          "y": 455.64,
           "width": 112,
           "height": 44,
-          "top": 446.89,
-          "bottom": 490.89
+          "top": 455.64,
+          "bottom": 499.64
         },
         {
           "label": "Order placed",
           "x": 1035,
-          "y": 545.27,
+          "y": 571.52,
           "width": 112,
           "height": 44,
-          "top": 545.27,
-          "bottom": 589.27
+          "top": 571.52,
+          "bottom": 615.52
         }
       ],
       "cutoffBands": [],
@@ -1721,9 +1721,9 @@
         "x": 76.19,
         "y": 315.92,
         "width": 1082.81,
-        "height": 424.03,
+        "height": 459.03,
         "top": 315.92,
-        "bottom": 739.95
+        "bottom": 774.95
       },
       "cutoffSummary": {
         "x": 76.19,
@@ -1771,74 +1771,74 @@
         {
           "action": "otick",
           "x": 71.19,
-          "y": 759.52,
+          "y": 794.52,
           "width": 44,
           "height": 44,
-          "top": 759.52,
-          "bottom": 803.52
+          "top": 794.52,
+          "bottom": 838.52
         },
         {
           "action": "otick",
           "x": 71.19,
-          "y": 827.66,
+          "y": 862.66,
           "width": 44,
           "height": 44,
-          "top": 827.66,
-          "bottom": 871.66
+          "top": 862.66,
+          "bottom": 906.66
         },
         {
           "action": "otick",
           "x": 71.19,
-          "y": 895.97,
+          "y": 930.97,
           "width": 44,
           "height": 44,
-          "top": 895.97,
-          "bottom": 939.97
+          "top": 930.97,
+          "bottom": 974.97
         },
         {
           "action": "otick",
           "x": 71.19,
-          "y": 955.92,
+          "y": 990.92,
           "width": 44,
           "height": 44,
-          "top": 955.92,
-          "bottom": 999.92
+          "top": 990.92,
+          "bottom": 1034.92
         },
         {
           "action": "otick",
           "x": 71.19,
-          "y": 1007.38,
+          "y": 1042.38,
           "width": 44,
           "height": 44,
-          "top": 1007.38,
-          "bottom": 1051.38
+          "top": 1042.38,
+          "bottom": 1086.38
         },
         {
           "action": "otick",
           "x": 71.19,
-          "y": 1058.83,
+          "y": 1093.83,
           "width": 44,
           "height": 44,
-          "top": 1058.83,
-          "bottom": 1102.83
+          "top": 1093.83,
+          "bottom": 1137.83
         },
         {
           "action": "otick",
           "x": 71.19,
-          "y": 1118.63,
+          "y": 1153.63,
           "width": 44,
           "height": 44,
-          "top": 1118.63,
-          "bottom": 1162.63
+          "top": 1153.63,
+          "bottom": 1197.63
         },
         {
           "action": "otick",
           "x": 71.19,
-          "y": 1178.42,
+          "y": 1213.42,
           "width": 44,
           "height": 44,
-          "top": 1178.42,
-          "bottom": 1222.42
+          "top": 1213.42,
+          "bottom": 1257.42
         }
       ],
       "cutoffOpen": true,
@@ -1846,35 +1846,35 @@
         {
           "label": "Order placed",
           "x": 1035,
-          "y": 446.89,
+          "y": 455.64,
           "width": 112,
           "height": 44,
-          "top": 446.89,
-          "bottom": 490.89
+          "top": 455.64,
+          "bottom": 499.64
         },
         {
           "label": "Order placed",
           "x": 1035,
-          "y": 545.27,
+          "y": 571.52,
           "width": 112,
           "height": 44,
-          "top": 545.27,
-          "bottom": 589.27
+          "top": 571.52,
+          "bottom": 615.52
         }
       ],
       "cutoffBands": [],
       "totalCutoffBandHeight": 0,
-      "firstRequestTop": 747.95,
+      "firstRequestTop": 782.95,
       "rows": [
         {
           "id": "baseline-3",
           "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
           "x": 76.19,
-          "y": 747.95,
+          "y": 782.95,
           "width": 1082.81,
           "height": 68.14,
-          "top": 747.95,
-          "bottom": 816.09,
+          "top": 782.95,
+          "bottom": 851.09,
           "fullyVisible": true,
           "intersectsUsableViewport": true
         },
@@ -1882,35 +1882,35 @@
           "id": "baseline-5",
           "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
           "x": 76.19,
-          "y": 816.09,
+          "y": 851.09,
           "width": 1082.81,
           "height": 68.14,
-          "top": 816.09,
-          "bottom": 884.23,
-          "fullyVisible": true,
+          "top": 851.09,
+          "bottom": 919.23,
+          "fullyVisible": false,
           "intersectsUsableViewport": true
         },
         {
           "id": "baseline-7",
           "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
           "x": 76.19,
-          "y": 884.23,
+          "y": 919.23,
           "width": 1082.81,
           "height": 68.47,
-          "top": 884.23,
-          "bottom": 952.7,
+          "top": 919.23,
+          "bottom": 987.7,
           "fullyVisible": false,
-          "intersectsUsableViewport": true
+          "intersectsUsableViewport": false
         },
         {
           "id": "baseline-0",
           "text": "Milk 6 L",
           "x": 76.19,
-          "y": 952.7,
+          "y": 987.7,
           "width": 1082.81,
           "height": 51.45,
-          "top": 952.7,
-          "bottom": 1004.16,
+          "top": 987.7,
+          "bottom": 1039.16,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -1918,11 +1918,11 @@
           "id": "baseline-1",
           "text": "Brioche buns 4 packs",
           "x": 76.19,
-          "y": 1004.16,
+          "y": 1039.16,
           "width": 1082.81,
           "height": 51.45,
-          "top": 1004.16,
-          "bottom": 1055.61,
+          "top": 1039.16,
+          "bottom": 1090.61,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -1930,11 +1930,11 @@
           "id": "baseline-2",
           "text": "Coriander 2 bunches",
           "x": 76.19,
-          "y": 1055.61,
+          "y": 1090.61,
           "width": 1082.81,
           "height": 51.45,
-          "top": 1055.61,
-          "bottom": 1107.06,
+          "top": 1090.61,
+          "bottom": 1142.06,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -1942,11 +1942,11 @@
           "id": "baseline-4",
           "text": "Plain flour 5 kgUsed in Cornbread",
           "x": 76.19,
-          "y": 1107.06,
+          "y": 1142.06,
           "width": 1082.81,
           "height": 68.14,
-          "top": 1107.06,
-          "bottom": 1175.2,
+          "top": 1142.06,
+          "bottom": 1210.2,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -1954,16 +1954,16 @@
           "id": "baseline-6",
           "text": "Tomatoes 3 kg",
           "x": 76.19,
-          "y": 1175.2,
+          "y": 1210.2,
           "width": 1082.81,
           "height": 51.45,
-          "top": 1175.2,
-          "bottom": 1226.66,
+          "top": 1210.2,
+          "bottom": 1261.66,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         }
       ],
-      "fullyVisibleRequestRows": 2,
+      "fullyVisibleRequestRows": 1,
       "partiallyVisibleRequestRows": 1,
       "totalRequestRows": 8,
       "supplierGroupingShown": false,
@@ -2441,20 +2441,20 @@
         {
           "label": "Order placed",
           "x": 194,
-          "y": 564.61,
+          "y": 575.55,
           "width": 140,
           "height": 44,
-          "top": 564.61,
-          "bottom": 608.61
+          "top": 575.55,
+          "bottom": 619.55
         },
         {
           "label": "Order placed",
           "x": 194,
-          "y": 715.73,
+          "y": 748.55,
           "width": 140,
           "height": 44,
-          "top": 715.73,
-          "bottom": 759.73
+          "top": 748.55,
+          "bottom": 792.55
         }
       ],
       "cutoffBands": [],
@@ -2641,9 +2641,9 @@
         "x": 41,
         "y": 321.55,
         "width": 308,
-        "height": 825.94,
+        "height": 869.69,
         "top": 321.55,
-        "bottom": 1147.48
+        "bottom": 1191.23
       },
       "cutoffSummary": {
         "x": 41,
@@ -2691,74 +2691,74 @@
         {
           "action": "otick",
           "x": 36,
-          "y": 1184.98,
+          "y": 1228.73,
           "width": 44,
           "height": 44,
-          "top": 1184.98,
-          "bottom": 1228.98
+          "top": 1228.73,
+          "bottom": 1272.73
         },
         {
           "action": "otick",
           "x": 36,
-          "y": 1276.05,
+          "y": 1319.8,
           "width": 44,
           "height": 44,
-          "top": 1276.05,
-          "bottom": 1320.05
+          "top": 1319.8,
+          "bottom": 1363.8
         },
         {
           "action": "otick",
           "x": 36,
-          "y": 1374.67,
+          "y": 1418.42,
           "width": 44,
           "height": 44,
-          "top": 1374.67,
-          "bottom": 1418.67
+          "top": 1418.42,
+          "bottom": 1462.42
         },
         {
           "action": "otick",
           "x": 36,
-          "y": 1462.86,
+          "y": 1506.61,
           "width": 44,
           "height": 44,
-          "top": 1462.86,
-          "bottom": 1506.86
+          "top": 1506.61,
+          "bottom": 1550.61
         },
         {
           "action": "otick",
           "x": 36,
-          "y": 1540.61,
+          "y": 1584.36,
           "width": 44,
           "height": 44,
-          "top": 1540.61,
-          "bottom": 1584.61
+          "top": 1584.36,
+          "bottom": 1628.36
         },
         {
           "action": "otick",
           "x": 36,
-          "y": 1634.86,
+          "y": 1678.61,
           "width": 44,
           "height": 44,
-          "top": 1634.86,
-          "bottom": 1678.86
+          "top": 1678.61,
+          "bottom": 1722.61
         },
         {
           "action": "otick",
           "x": 36,
-          "y": 1723.05,
+          "y": 1766.8,
           "width": 44,
           "height": 44,
-          "top": 1723.05,
-          "bottom": 1767.05
+          "top": 1766.8,
+          "bottom": 1810.8
         },
         {
           "action": "otick",
           "x": 36,
-          "y": 1794.73,
+          "y": 1838.48,
           "width": 44,
           "height": 44,
-          "top": 1794.73,
-          "bottom": 1838.73
+          "top": 1838.48,
+          "bottom": 1882.48
         }
       ],
       "cutoffOpen": true,
@@ -2766,35 +2766,35 @@
         {
           "label": "Order placed",
           "x": 194,
-          "y": 564.61,
+          "y": 575.55,
           "width": 140,
           "height": 44,
-          "top": 564.61,
-          "bottom": 608.61
+          "top": 575.55,
+          "bottom": 619.55
         },
         {
           "label": "Order placed",
           "x": 194,
-          "y": 715.73,
+          "y": 748.55,
           "width": 140,
           "height": 44,
-          "top": 715.73,
-          "bottom": 759.73
+          "top": 748.55,
+          "bottom": 792.55
         }
       ],
       "cutoffBands": [],
       "totalCutoffBandHeight": 0,
-      "firstRequestTop": 1157.48,
+      "firstRequestTop": 1201.23,
       "rows": [
         {
           "id": "baseline-3",
           "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
           "x": 41,
-          "y": 1157.48,
+          "y": 1201.23,
           "width": 308,
           "height": 100,
-          "top": 1157.48,
-          "bottom": 1257.48,
+          "top": 1201.23,
+          "bottom": 1301.23,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -2802,11 +2802,11 @@
           "id": "baseline-5",
           "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
           "x": 41,
-          "y": 1257.48,
+          "y": 1301.23,
           "width": 308,
           "height": 82.13,
-          "top": 1257.48,
-          "bottom": 1339.61,
+          "top": 1301.23,
+          "bottom": 1383.36,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -2814,11 +2814,11 @@
           "id": "baseline-7",
           "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
           "x": 41,
-          "y": 1339.61,
+          "y": 1383.36,
           "width": 308,
           "height": 115.13,
-          "top": 1339.61,
-          "bottom": 1454.73,
+          "top": 1383.36,
+          "bottom": 1498.48,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -2826,11 +2826,11 @@
           "id": "baseline-0",
           "text": "Milk 6 L",
           "x": 41,
-          "y": 1454.73,
+          "y": 1498.48,
           "width": 308,
           "height": 61.25,
-          "top": 1454.73,
-          "bottom": 1515.98,
+          "top": 1498.48,
+          "bottom": 1559.73,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -2838,11 +2838,11 @@
           "id": "baseline-1",
           "text": "Brioche buns 4 packs",
           "x": 41,
-          "y": 1515.98,
+          "y": 1559.73,
           "width": 308,
           "height": 94.25,
-          "top": 1515.98,
-          "bottom": 1610.23,
+          "top": 1559.73,
+          "bottom": 1653.98,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -2850,11 +2850,11 @@
           "id": "baseline-2",
           "text": "Coriander 2 bunches",
           "x": 41,
-          "y": 1610.23,
+          "y": 1653.98,
           "width": 308,
           "height": 94.25,
-          "top": 1610.23,
-          "bottom": 1704.48,
+          "top": 1653.98,
+          "bottom": 1748.23,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -2862,11 +2862,11 @@
           "id": "baseline-4",
           "text": "Plain flour 5 kgUsed in Cornbread",
           "x": 41,
-          "y": 1704.48,
+          "y": 1748.23,
           "width": 308,
           "height": 82.13,
-          "top": 1704.48,
-          "bottom": 1786.61,
+          "top": 1748.23,
+          "bottom": 1830.36,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -2874,11 +2874,11 @@
           "id": "baseline-6",
           "text": "Tomatoes 3 kg",
           "x": 41,
-          "y": 1786.61,
+          "y": 1830.36,
           "width": 308,
           "height": 61.25,
-          "top": 1786.61,
-          "bottom": 1847.86,
+          "top": 1830.36,
+          "bottom": 1891.61,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         }
@@ -3091,20 +3091,20 @@
         {
           "label": "Order placed",
           "x": 233,
-          "y": 402.83,
+          "y": 411.58,
           "width": 112,
           "height": 44,
-          "top": 402.83,
-          "bottom": 446.83
+          "top": 411.58,
+          "bottom": 455.58
         },
         {
           "label": "Order placed",
           "x": 233,
-          "y": 501.2,
+          "y": 527.45,
           "width": 112,
           "height": 44,
-          "top": 501.2,
-          "bottom": 545.2
+          "top": 527.45,
+          "bottom": 571.45
         }
       ],
       "cutoffBands": [],
@@ -3291,9 +3291,9 @@
         "x": 33,
         "y": 231.27,
         "width": 324,
-        "height": 553.03,
+        "height": 588.03,
         "top": 231.27,
-        "bottom": 784.3
+        "bottom": 819.3
       },
       "cutoffSummary": {
         "x": 33,
@@ -3341,74 +3341,74 @@
         {
           "action": "otick",
           "x": 28,
-          "y": 810.58,
+          "y": 845.58,
           "width": 44,
           "height": 44,
-          "top": 810.58,
-          "bottom": 854.58
+          "top": 845.58,
+          "bottom": 889.58
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 884.98,
+          "y": 919.98,
           "width": 44,
           "height": 44,
-          "top": 884.98,
-          "bottom": 928.98
+          "top": 919.98,
+          "bottom": 963.98
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 965.55,
+          "y": 1000.55,
           "width": 44,
           "height": 44,
-          "top": 965.55,
-          "bottom": 1009.55
+          "top": 1000.55,
+          "bottom": 1044.55
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 1037.98,
+          "y": 1072.98,
           "width": 44,
           "height": 44,
-          "top": 1037.98,
-          "bottom": 1081.98
+          "top": 1072.98,
+          "bottom": 1116.98
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 1088.98,
+          "y": 1123.98,
           "width": 44,
           "height": 44,
-          "top": 1088.98,
-          "bottom": 1132.98
+          "top": 1123.98,
+          "bottom": 1167.98
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 1139.98,
+          "y": 1174.98,
           "width": 44,
           "height": 44,
-          "top": 1139.98,
-          "bottom": 1183.98
+          "top": 1174.98,
+          "bottom": 1218.98
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 1199.11,
+          "y": 1234.11,
           "width": 44,
           "height": 44,
-          "top": 1199.11,
-          "bottom": 1243.11
+          "top": 1234.11,
+          "bottom": 1278.11
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 1258.25,
+          "y": 1293.25,
           "width": 44,
           "height": 44,
-          "top": 1258.25,
-          "bottom": 1302.25
+          "top": 1293.25,
+          "bottom": 1337.25
         }
       ],
       "cutoffOpen": true,
@@ -3416,35 +3416,35 @@
         {
           "label": "Order placed",
           "x": 233,
-          "y": 402.83,
+          "y": 411.58,
           "width": 112,
           "height": 44,
-          "top": 402.83,
-          "bottom": 446.83
+          "top": 411.58,
+          "bottom": 455.58
         },
         {
           "label": "Order placed",
           "x": 233,
-          "y": 501.2,
+          "y": 527.45,
           "width": 112,
           "height": 44,
-          "top": 501.2,
-          "bottom": 545.2
+          "top": 527.45,
+          "bottom": 571.45
         }
       ],
       "cutoffBands": [],
       "totalCutoffBandHeight": 0,
-      "firstRequestTop": 792.3,
+      "firstRequestTop": 827.3,
       "rows": [
         {
           "id": "baseline-3",
           "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
           "x": 33,
-          "y": 792.3,
+          "y": 827.3,
           "width": 324,
           "height": 81.56,
-          "top": 792.3,
-          "bottom": 873.86,
+          "top": 827.3,
+          "bottom": 908.86,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -3452,11 +3452,11 @@
           "id": "baseline-5",
           "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
           "x": 33,
-          "y": 873.86,
+          "y": 908.86,
           "width": 324,
           "height": 67.27,
-          "top": 873.86,
-          "bottom": 941.13,
+          "top": 908.86,
+          "bottom": 976.13,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -3464,11 +3464,11 @@
           "id": "baseline-7",
           "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
           "x": 33,
-          "y": 941.13,
+          "y": 976.13,
           "width": 324,
           "height": 93.86,
-          "top": 941.13,
-          "bottom": 1034.98,
+          "top": 976.13,
+          "bottom": 1069.98,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -3476,11 +3476,11 @@
           "id": "baseline-0",
           "text": "Milk 6 L",
           "x": 33,
-          "y": 1034.98,
+          "y": 1069.98,
           "width": 324,
           "height": 51,
-          "top": 1034.98,
-          "bottom": 1085.98,
+          "top": 1069.98,
+          "bottom": 1120.98,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -3488,11 +3488,11 @@
           "id": "baseline-1",
           "text": "Brioche buns 4 packs",
           "x": 33,
-          "y": 1085.98,
+          "y": 1120.98,
           "width": 324,
           "height": 51,
-          "top": 1085.98,
-          "bottom": 1136.98,
+          "top": 1120.98,
+          "bottom": 1171.98,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -3500,11 +3500,11 @@
           "id": "baseline-2",
           "text": "Coriander 2 bunches",
           "x": 33,
-          "y": 1136.98,
+          "y": 1171.98,
           "width": 324,
           "height": 51,
-          "top": 1136.98,
-          "bottom": 1187.98,
+          "top": 1171.98,
+          "bottom": 1222.98,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -3512,11 +3512,11 @@
           "id": "baseline-4",
           "text": "Plain flour 5 kgUsed in Cornbread",
           "x": 33,
-          "y": 1187.98,
+          "y": 1222.98,
           "width": 324,
           "height": 67.27,
-          "top": 1187.98,
-          "bottom": 1255.25,
+          "top": 1222.98,
+          "bottom": 1290.25,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -3524,11 +3524,11 @@
           "id": "baseline-6",
           "text": "Tomatoes 3 kg",
           "x": 33,
-          "y": 1255.25,
+          "y": 1290.25,
           "width": 324,
           "height": 51,
-          "top": 1255.25,
-          "bottom": 1306.25,
+          "top": 1290.25,
+          "bottom": 1341.25,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         }
@@ -3741,20 +3741,20 @@
         {
           "label": "Order placed",
           "x": 194,
-          "y": 577.3,
+          "y": 575.55,
           "width": 140,
           "height": 44,
-          "top": 577.3,
-          "bottom": 621.3
+          "top": 575.55,
+          "bottom": 619.55
         },
         {
           "label": "Order placed",
           "x": 194,
-          "y": 753.8,
+          "y": 748.55,
           "width": 140,
           "height": 44,
-          "top": 753.8,
-          "bottom": 797.8
+          "top": 748.55,
+          "bottom": 792.55
         }
       ],
       "cutoffBands": [],
@@ -3941,9 +3941,9 @@
         "x": 41,
         "y": 321.55,
         "width": 308,
-        "height": 876.69,
+        "height": 869.69,
         "top": 321.55,
-        "bottom": 1198.23
+        "bottom": 1191.23
       },
       "cutoffSummary": {
         "x": 41,
@@ -3991,74 +3991,74 @@
         {
           "action": "otick",
           "x": 36,
-          "y": 1235.73,
+          "y": 1228.73,
           "width": 44,
           "height": 44,
-          "top": 1235.73,
-          "bottom": 1279.73
+          "top": 1228.73,
+          "bottom": 1272.73
         },
         {
           "action": "otick",
           "x": 36,
-          "y": 1326.8,
+          "y": 1319.8,
           "width": 44,
           "height": 44,
-          "top": 1326.8,
-          "bottom": 1370.8
+          "top": 1319.8,
+          "bottom": 1363.8
         },
         {
           "action": "otick",
           "x": 36,
-          "y": 1425.42,
+          "y": 1418.42,
           "width": 44,
           "height": 44,
-          "top": 1425.42,
-          "bottom": 1469.42
+          "top": 1418.42,
+          "bottom": 1462.42
         },
         {
           "action": "otick",
           "x": 36,
-          "y": 1513.61,
+          "y": 1506.61,
           "width": 44,
           "height": 44,
-          "top": 1513.61,
-          "bottom": 1557.61
+          "top": 1506.61,
+          "bottom": 1550.61
         },
         {
           "action": "otick",
           "x": 36,
-          "y": 1591.36,
+          "y": 1584.36,
           "width": 44,
           "height": 44,
-          "top": 1591.36,
-          "bottom": 1635.36
+          "top": 1584.36,
+          "bottom": 1628.36
         },
         {
           "action": "otick",
           "x": 36,
-          "y": 1685.61,
+          "y": 1678.61,
           "width": 44,
           "height": 44,
-          "top": 1685.61,
-          "bottom": 1729.61
+          "top": 1678.61,
+          "bottom": 1722.61
         },
         {
           "action": "otick",
           "x": 36,
-          "y": 1773.8,
+          "y": 1766.8,
           "width": 44,
           "height": 44,
-          "top": 1773.8,
-          "bottom": 1817.8
+          "top": 1766.8,
+          "bottom": 1810.8
         },
         {
           "action": "otick",
           "x": 36,
-          "y": 1845.48,
+          "y": 1838.48,
           "width": 44,
           "height": 44,
-          "top": 1845.48,
-          "bottom": 1889.48
+          "top": 1838.48,
+          "bottom": 1882.48
         }
       ],
       "cutoffOpen": true,
@@ -4066,35 +4066,35 @@
         {
           "label": "Order placed",
           "x": 194,
-          "y": 577.3,
+          "y": 575.55,
           "width": 140,
           "height": 44,
-          "top": 577.3,
-          "bottom": 621.3
+          "top": 575.55,
+          "bottom": 619.55
         },
         {
           "label": "Order placed",
           "x": 194,
-          "y": 753.8,
+          "y": 748.55,
           "width": 140,
           "height": 44,
-          "top": 753.8,
-          "bottom": 797.8
+          "top": 748.55,
+          "bottom": 792.55
         }
       ],
       "cutoffBands": [],
       "totalCutoffBandHeight": 0,
-      "firstRequestTop": 1208.23,
+      "firstRequestTop": 1201.23,
       "rows": [
         {
           "id": "baseline-3",
           "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
           "x": 41,
-          "y": 1208.23,
+          "y": 1201.23,
           "width": 308,
           "height": 100,
-          "top": 1208.23,
-          "bottom": 1308.23,
+          "top": 1201.23,
+          "bottom": 1301.23,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -4102,11 +4102,11 @@
           "id": "baseline-5",
           "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
           "x": 41,
-          "y": 1308.23,
+          "y": 1301.23,
           "width": 308,
           "height": 82.13,
-          "top": 1308.23,
-          "bottom": 1390.36,
+          "top": 1301.23,
+          "bottom": 1383.36,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -4114,11 +4114,11 @@
           "id": "baseline-7",
           "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
           "x": 41,
-          "y": 1390.36,
+          "y": 1383.36,
           "width": 308,
           "height": 115.13,
-          "top": 1390.36,
-          "bottom": 1505.48,
+          "top": 1383.36,
+          "bottom": 1498.48,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -4126,11 +4126,11 @@
           "id": "baseline-0",
           "text": "Milk 6 L",
           "x": 41,
-          "y": 1505.48,
+          "y": 1498.48,
           "width": 308,
           "height": 61.25,
-          "top": 1505.48,
-          "bottom": 1566.73,
+          "top": 1498.48,
+          "bottom": 1559.73,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -4138,11 +4138,11 @@
           "id": "baseline-1",
           "text": "Brioche buns 4 packs",
           "x": 41,
-          "y": 1566.73,
+          "y": 1559.73,
           "width": 308,
           "height": 94.25,
-          "top": 1566.73,
-          "bottom": 1660.98,
+          "top": 1559.73,
+          "bottom": 1653.98,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -4150,11 +4150,11 @@
           "id": "baseline-2",
           "text": "Coriander 2 bunches",
           "x": 41,
-          "y": 1660.98,
+          "y": 1653.98,
           "width": 308,
           "height": 94.25,
-          "top": 1660.98,
-          "bottom": 1755.23,
+          "top": 1653.98,
+          "bottom": 1748.23,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -4162,11 +4162,11 @@
           "id": "baseline-4",
           "text": "Plain flour 5 kgUsed in Cornbread",
           "x": 41,
-          "y": 1755.23,
+          "y": 1748.23,
           "width": 308,
           "height": 82.13,
-          "top": 1755.23,
-          "bottom": 1837.36,
+          "top": 1748.23,
+          "bottom": 1830.36,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -4174,11 +4174,11 @@
           "id": "baseline-6",
           "text": "Tomatoes 3 kg",
           "x": 41,
-          "y": 1837.36,
+          "y": 1830.36,
           "width": 308,
           "height": 61.25,
-          "top": 1837.36,
-          "bottom": 1898.61,
+          "top": 1830.36,
+          "bottom": 1891.61,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         }
@@ -4391,20 +4391,20 @@
         {
           "label": "Order placed",
           "x": 233,
-          "y": 404.02,
+          "y": 412.77,
           "width": 112,
           "height": 44,
-          "top": 404.02,
-          "bottom": 448.02
+          "top": 412.77,
+          "bottom": 456.77
         },
         {
           "label": "Order placed",
           "x": 233,
-          "y": 503.58,
+          "y": 529.83,
           "width": 112,
           "height": 44,
-          "top": 503.58,
-          "bottom": 547.58
+          "top": 529.83,
+          "bottom": 573.83
         }
       ],
       "cutoffBands": [],
@@ -4591,9 +4591,9 @@
         "x": 33,
         "y": 231.27,
         "width": 324,
-        "height": 555.41,
+        "height": 590.41,
         "top": 231.27,
-        "bottom": 786.67
+        "bottom": 821.67
       },
       "cutoffSummary": {
         "x": 33,
@@ -4641,74 +4641,74 @@
         {
           "action": "otick",
           "x": 28,
-          "y": 812.95,
+          "y": 847.95,
           "width": 44,
           "height": 44,
-          "top": 812.95,
-          "bottom": 856.95
+          "top": 847.95,
+          "bottom": 891.95
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 887.36,
+          "y": 922.36,
           "width": 44,
           "height": 44,
-          "top": 887.36,
-          "bottom": 931.36
+          "top": 922.36,
+          "bottom": 966.36
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 967.92,
+          "y": 1002.92,
           "width": 44,
           "height": 44,
-          "top": 967.92,
-          "bottom": 1011.92
+          "top": 1002.92,
+          "bottom": 1046.92
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 1040.36,
+          "y": 1075.36,
           "width": 44,
           "height": 44,
-          "top": 1040.36,
-          "bottom": 1084.36
+          "top": 1075.36,
+          "bottom": 1119.36
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 1091.36,
+          "y": 1126.36,
           "width": 44,
           "height": 44,
-          "top": 1091.36,
-          "bottom": 1135.36
+          "top": 1126.36,
+          "bottom": 1170.36
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 1142.36,
+          "y": 1177.36,
           "width": 44,
           "height": 44,
-          "top": 1142.36,
-          "bottom": 1186.36
+          "top": 1177.36,
+          "bottom": 1221.36
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 1201.48,
+          "y": 1236.48,
           "width": 44,
           "height": 44,
-          "top": 1201.48,
-          "bottom": 1245.48
+          "top": 1236.48,
+          "bottom": 1280.48
         },
         {
           "action": "otick",
           "x": 28,
-          "y": 1260.63,
+          "y": 1295.63,
           "width": 44,
           "height": 44,
-          "top": 1260.63,
-          "bottom": 1304.63
+          "top": 1295.63,
+          "bottom": 1339.63
         }
       ],
       "cutoffOpen": true,
@@ -4716,35 +4716,35 @@
         {
           "label": "Order placed",
           "x": 233,
-          "y": 404.02,
+          "y": 412.77,
           "width": 112,
           "height": 44,
-          "top": 404.02,
-          "bottom": 448.02
+          "top": 412.77,
+          "bottom": 456.77
         },
         {
           "label": "Order placed",
           "x": 233,
-          "y": 503.58,
+          "y": 529.83,
           "width": 112,
           "height": 44,
-          "top": 503.58,
-          "bottom": 547.58
+          "top": 529.83,
+          "bottom": 573.83
         }
       ],
       "cutoffBands": [],
       "totalCutoffBandHeight": 0,
-      "firstRequestTop": 794.67,
+      "firstRequestTop": 829.67,
       "rows": [
         {
           "id": "baseline-3",
           "text": "Eggs 2 trays OutUsed in Skillet Cookie Dough Prep, Cornbread",
           "x": 33,
-          "y": 794.67,
+          "y": 829.67,
           "width": 324,
           "height": 81.56,
-          "top": 794.67,
-          "bottom": 876.23,
+          "top": 829.67,
+          "bottom": 911.23,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -4752,11 +4752,11 @@
           "id": "baseline-5",
           "text": "Cream 2 L OutUsed in Creamy Garlic Sauce",
           "x": 33,
-          "y": 876.23,
+          "y": 911.23,
           "width": 324,
           "height": 67.27,
-          "top": 876.23,
-          "bottom": 943.5,
+          "top": 911.23,
+          "bottom": 978.5,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -4764,11 +4764,11 @@
           "id": "baseline-7",
           "text": "Butter 2 kg Low Since Sun, 8 NovUsed in Cowboy Butter",
           "x": 33,
-          "y": 943.5,
+          "y": 978.5,
           "width": 324,
           "height": 93.86,
-          "top": 943.5,
-          "bottom": 1037.36,
+          "top": 978.5,
+          "bottom": 1072.36,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -4776,11 +4776,11 @@
           "id": "baseline-0",
           "text": "Milk 6 L",
           "x": 33,
-          "y": 1037.36,
+          "y": 1072.36,
           "width": 324,
           "height": 51,
-          "top": 1037.36,
-          "bottom": 1088.36,
+          "top": 1072.36,
+          "bottom": 1123.36,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -4788,11 +4788,11 @@
           "id": "baseline-1",
           "text": "Brioche buns 4 packs",
           "x": 33,
-          "y": 1088.36,
+          "y": 1123.36,
           "width": 324,
           "height": 51,
-          "top": 1088.36,
-          "bottom": 1139.36,
+          "top": 1123.36,
+          "bottom": 1174.36,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -4800,11 +4800,11 @@
           "id": "baseline-2",
           "text": "Coriander 2 bunches",
           "x": 33,
-          "y": 1139.36,
+          "y": 1174.36,
           "width": 324,
           "height": 51,
-          "top": 1139.36,
-          "bottom": 1190.36,
+          "top": 1174.36,
+          "bottom": 1225.36,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -4812,11 +4812,11 @@
           "id": "baseline-4",
           "text": "Plain flour 5 kgUsed in Cornbread",
           "x": 33,
-          "y": 1190.36,
+          "y": 1225.36,
           "width": 324,
           "height": 67.27,
-          "top": 1190.36,
-          "bottom": 1257.63,
+          "top": 1225.36,
+          "bottom": 1292.63,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         },
@@ -4824,11 +4824,11 @@
           "id": "baseline-6",
           "text": "Tomatoes 3 kg",
           "x": 33,
-          "y": 1257.63,
+          "y": 1292.63,
           "width": 324,
           "height": 51,
-          "top": 1257.63,
-          "bottom": 1308.63,
+          "top": 1292.63,
+          "bottom": 1343.63,
           "fullyVisible": false,
           "intersectsUsableViewport": false
         }
