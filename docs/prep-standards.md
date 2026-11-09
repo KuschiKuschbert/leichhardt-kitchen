@@ -8,7 +8,7 @@ The head-chef, sous-chef and verified admin panels share a fifth room, **Prep**.
 
 The verified admin controls **Smart prep par levels** in **Admin → Prep**. It is off until `config/main.prepStandardsEnabled` is explicitly `true`. While off, the staff view choice, matching hints and reference actions are hidden and make no standards reads; the normal prep list keeps its previous density. Head and sous chefs can still open the catalogue to prepare it. Turning it off keeps all standards, today’s work and unfinished drafts. Connected devices apply changes through the existing config listener; no extra listener or polling is added. Only verified admin can change this rollout setting, using the existing owner-only config permission. A PIN head chef’s catalogue editing right does not include rollout control. Other admin config saves preserve the current flag.
 
-Each standard has an item name, minimum ready before service, unit, approved matching names, optional recipe and short check instruction. A blank minimum says **To come**; zero is a real minimum. Units can describe a chef-confirmed container size. No real standards or sample quantities are seeded automatically. Sections must first exist in the kitchen configuration.
+Each standard has an item name, minimum ready before service, unit, approved matching names, optional recipe and short check instruction. A blank minimum says **To come**; zero is a real minimum. Units can describe a chef-confirmed container size. Standards are not bundled with the app or invented from sample data. The head-requested one-time setup below imports supplied lists into the private catalogue. Sections must first exist in the kitchen configuration.
 
 When enabled, **Work** remains the default on the staff Prep page. **Before service** shows the selected section's complete active reference, including items absent from today's tasks or already ticked. It has instructions, recipe links and an Add to prep action for people with Add permission. Already open matching work is shown for context. There are no stock counts, shortfall calculations, saved readiness ticks or service sign-offs.
 
@@ -68,6 +68,20 @@ Nightly and manual backups include full current and archived standards. The isol
 The rules change is additive: a new private collection with head-only writes. Publish the reviewed rules before releasing the client that uses the collection, then verify the existing foundation and live Lock probe. No migration or production standards seeding is required. Keep publication, browser/emulator verification and actual live deployment evidence separate in the PR.
 
 Rollback is a normal client revert. Preserve stored standards and their private access rules; an older client ignores the collection. Do not delete catalogue data or relax access to recover from a client problem.
+
+## Grill and Pans setup, 9 November 2026
+
+The head chef supplied the real Grill and Pans prep sheets and asked to implement them in the app. They provide 18 Grill rows and 19 Pans rows. Follow-up answers confirmed the ambiguous Grill tray notation and the two separate Pans prawn requirements: defrosting stock and ready stock in the fridge. The source container sizes and preparation instructions stay distinct. Weekly production is recorded as an instruction with an unset before-service minimum; it must not silently become a daily target. No recipe links or matching aliases are invented.
+
+This is data setup for the already approved Prep room and Before service reference. It adds no screen, navigation, service step, stock count or automatic production amount. The 8 November A+C design and measured density remain applicable. Council quick check: **Build**, using the existing catalogue; Add and Tick stay one tap and no staff layout file changes.
+
+`scripts/import-prep-standards.mjs` defaults to dry-run. It validates the complete supplied JSON before data access, resolves only unique active configured section names, checks the current canonical head and reads a bounded catalogue query in one transaction. Apply creates missing records with stable IDs, current head attribution, version 1 and the server read time. An exact saved standard is left intact; a conflicting or archived match aborts the entire import. Configuration, rollout, tasks, history and all saved revisions remain intact. It adds no new field or rule.
+
+Operational source lists stay out of the public repository. `scripts/prep-import-crypto.mjs` protects the import with AES-256-GCM and wraps its fresh key using the existing Firebase service account's RSA public key with OAEP-SHA256. Only the public recipient key and ciphertext may enter GitHub logs or source. The runner decrypts to its temporary folder, checks the importer, previews all changes, applies the supplied setup and reads again to verify the result. It removes plaintext even when a step fails. Logs contain aggregate counts and fixed failure codes only.
+
+The setup uses `.github/workflows/prep-minimums.yml` and existing `FIREBASE_SA` / `KITCHEN_PIN` secrets. A missing or ambiguous configured section, conflicting saved standard, malformed input, changed key or failed read blocks the setup without changing records. The app's staff rollout switch is preserved; the head chef can inspect standards while it is off. The setup is not a stock ledger or a daily prep task generator.
+
+Verification in progress: synthetic importer and protected-envelope checks, actual-app display with the supplied lists using Firebase stand-ins, followed by the separate protected production setup. Record actual production counts in the PR before claiming the lists are loaded. A source revert does not remove imported standards; later changes use the existing head-chef editor and revision checks.
 
 ## Verification record
 
