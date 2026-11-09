@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **9 November 2026, a break board on Today's team.** The owner requested a board like the homepage for staff on break now. Give the existing all-shift Scheduled away now panel Home's pinned warm amber work-board treatment, retaining names, return times, split labels and saved-plan authority. [Contract and checks](team-notebook-options/brief.md#break-board-9-november-2026).
+
 - **9 November 2026, Home work colour and desktop celebration width.** The owner requested Now and next to be colour coded differently and the desktop celebration to span the width so it is thinner. Use the existing warm amber surface for work, retaining charcoal for Your day. Spread the celebration heading and complete explanation horizontally on desktop, preserving fonts and the language cycle. [Contract and examples](home-staff-first.md#work-colour-and-celebration-strip-9-november-2026).
 
 - **9 November 2026, a small × for bottom sheets and modals on non-touch screens.** The owner requested a visible close control and clarified that it belongs to sheet/modal headers. Reuse each panel's Cancel/backdrop action, retain drafts and unread pings, preserve existing close controls and keep the touch layout. [Contract and checks](adaptive-controls.md#swipe-to-close-9-november-2026).

@@ -8,6 +8,8 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 
 ## The look
 
+- **Current break board** (Today's team, 9 November 2026): reuse `.hm-board` on `.tm-away`, with Home's warm amber work surface, orange edge and pin. Keep the notebook position and the saved all-shift names, meal breaks, splits and return times in `.tm-away-slot`. The existing status renderer and clock paints remain authoritative. [Contract and checks](team-notebook-options/brief.md#break-board-9-november-2026).
+
 - **Colours** are tokens in `:root` in `css/app.css`, never a new hex in a rule: `--ink` (text, rules), `--paper` and `--bg` (surfaces), `--muted` and `--faint` (quiet text), `--line` (dividers), `--accent` and `--accent-ink` (the book's orange), `--tag` (needs attention: a filled chip, a due line), `--done` and `--done-ink` (saved, ticked), `--bar` and `--bar-text` (the dark top bar and tab bar).
 - **A fill is for something that needs attention**, nothing else: the top bar chip until today's team is saved, a filled tag. Groups are made with space and headings first.
 - **Notebook colour** (Chef to-do and Today's team, 8 November 2026): keep warm paper with orange headings and selected chips, green ticks and completed or assigned states, and quiet neutral dividers. Use `--small-ink` for small orange text and selected fills with `--bar-text`; `--done-ink` for completion; `--faint` for readable control outlines; `--hit` only on currently scheduled-away rows. Colour reinforces the words, checkmarks, pressed states and strikethrough. Keep the approved spacing and target sizes.

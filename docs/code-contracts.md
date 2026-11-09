@@ -66,6 +66,8 @@ Keep one `tmf` draft across shifts, sections, Whole day, redraws and resizing, a
 
 `tmAwayHTML()`, `tmNextHTML()` and `tmAwayPaint()` use the loaded saved `tm.rec`, never `tmf`, for all-shift Scheduled away now and next-break status in `.tm-away-slot`. Keep Saved plan and the kitchen-clock time visible. Validate day, active membership and times; deduplicate people and flag conflicting overlaps without guessing a return time. Keep meal breaks and long splits distinct. Loading, unset, known nobody scheduled away, unknown, stale and failed reads remain distinct. Repaint from the existing minute, focus and clock-refresh paths without reads or listeners. A successful Save may update saved status; a failed Save must preserve the draft and cannot publish its breaks. No schema, rules, roles, storage, backend service, dependency or read-budget change. Staff Your day, chip, section defaults and session authority retain their existing contracts.
 
+Today's team break-board refinement (9 November 2026) reuses `.hm-board` on `.tm-away` with Home's warm work-board colours, pin and orange edge. This is presentation only; the saved-plan status, notebook position and clock/data contracts above remain unchanged. [Checks](team-notebook-options/brief.md#break-board-9-november-2026).
+
 ## Admin nav
 
 The admin nav (`.a-nav` in `adminHTML()`, `js/prep.js`) sticks to the top and tucks up to its last row while scrolling down. Its "On this page" chips are read from the open page after each draw (`adminJumps()`): the Insights `.a-sh` headings, otherwise each block's first `.label` and its `h3.a-ch-h` headings. Give a new admin block a `.label` (or `h3.a-ch-h`) and it gets a chip; do not add another sticky bar at the top of the admin panel.

@@ -4,6 +4,18 @@
 
 Read first: `CLAUDE.md`, `.claude/skills/service-council/SKILL.md`, `docs/todays-team-options/brief.md`, `docs/prep-book.md` (Today's team), `docs/chef-todo-options/brief.md` and `docs/whole-app-redesign-options/brief.md` (Build, step 7). The earlier Today's team decision and the chosen Chef to-do layout remain their own records.
 
+## Break board, 9 November 2026
+
+The owner requested a board like Home for staff on break now. Reuse Home's current pinned warm amber work board, orange edge and compact heading for the existing Scheduled away now panel. Names and return times stay visible, with meal breaks and splits labelled. Keep the existing notebook placement, all-shift Saved plan source, next breaks and planner controls.
+
+**Verdict: Build smaller (quick check).** This makes existing saved status easier to find without another page, control, step or data source. The owner selected the homepage pattern, so there is no new design choice. This is a session review, not research with staff. Checking scheduled breaks remains zero taps; choosing a section then a person stays two taps, each additional person one, and Save remains separate.
+
+The implementation adds the existing `.hm-board` class and scoped styles only. No break calculation, read, listener, timer, permission, schema or saved data changes. All current freshness, clock, conflict and saved-versus-draft safeguards remain in `tmAwayData()` and its existing paint paths.
+
+Local evidence: the new appearance check failed on the original panel, with the other 63 notebook checks passing. All 64 pass with the board, alongside Today's team, Home board, staff-first Home, desktop Home, design patterns and read budgets, seven files in total. The suite covers exact start/return boundaries, saved-versus-draft status, failed reads, overlaps, long names and largest text at 320, 390, 768 and 1280 px. JavaScript parse and whitespace checks pass. Some unrelated live-font top-bar measurements in the existing Today's team test skipped when remote fonts did not load; separate board captures loaded the app's six original font faces through the trusted local cache.
+
+The same synthetic 390 × 844 fixture retains two complete current-break rows and one complete assignment row before and after; the board adds about 3 px to the phone flow. Tablet retains two break rows and one person, desktop two break rows and three people. No sideways overflow or browser errors at 390, 768 or 1280 px. Existing fallback-font captures have the same 12 reads before and after. These are stand-in browser checks, not private production records or actual attendance. [Phone](break-board-390.png), [desktop](break-board-1280.png). CI and release evidence belongs in the pull request. Revert the implementation to restore the plain notebook status panel; stored plans need no change.
+
 ## Colour refinement, 8 November 2026
 
 After the notebooks were released in [PR600](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/600) and [PR601](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/601), the head chef asked to colour both pages in the style described in CLAUDE.md.

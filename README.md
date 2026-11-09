@@ -4,6 +4,8 @@
 
 # Leichhardt Kitchen Book
 
+Today's team shows current scheduled meal breaks and splits on a warm pinned board like Home, with names and return times. It follows the saved plan across all shifts and updates with the existing kitchen clock. [Break board](docs/team-notebook-options/brief.md#break-board-9-november-2026).
+
 Sheets and modals can be closed by swiping their grip or title down, or dragging it with a mouse. Normal scrolling and fields keep their own gestures. Swiping uses the existing Cancel action, retaining add-form drafts and leaving pings unread. [Behaviour and checks](docs/adaptive-controls.md#swipe-to-close-9-november-2026).
 
 Mouse and trackpad users also get a small **×** in sheet and modal headers where a close control was missing. It uses the same Cancel action, with a keyboard label and a 44 px target. Touch layout stays the same.

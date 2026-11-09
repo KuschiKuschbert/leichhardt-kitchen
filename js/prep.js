@@ -12588,7 +12588,7 @@
       '<div class="tm-nbook"><div class="tm-nleft"><header class="tm-nhead"><div><h2 class="p-h" id="rtitle" tabindex="-1">Today\'s team</h2><p>' + esc(date) + '</p></div><div><b class="tm-nclock">' + esc(T.clock(now())) + '</b><small>Queensland time</small></div></header>' +
       '<div class="tm-work">' + use + tmTabsHTML(shs, ps) + '<p class="tm-draftstate" role="status">' + (dirty ? 'Draft, not saved. One Save covers the whole day.' : tm.st === 'err' ? 'Could not check the saved plan. Changes are kept until Save.' : tm.rec ? 'Plan saved. Changes across shifts are saved together.' : 'No team saved yet. Choose shifts, assign people, then Save.') + '</p>' +
       '<div class="tm-editor">' + editor + '</div>' + save + '</div></div><div class="tm-nspine" aria-hidden="true"></div><div class="tm-nright">' +
-      '<aside class="tm-away" aria-label="Scheduled away"><div class="tm-away-slot">' + tmAwayHTML() + '</div></aside>' +
+      '<aside class="tm-away hm-board" aria-label="Scheduled away"><div class="tm-away-slot">' + tmAwayHTML() + '</div></aside>' +
       '<aside class="tm-extra"><div class="tm-next-slot">' + tmNextHTML() + '</div>' +
       (glance ? '<details class="tm-saved-overview"><summary>' + (tm.st === 'err' ? 'Last saved shift overview' : 'Saved shift overview') + '</summary>' + glance + '</details>' : '') + '</aside></div></div></section>';
   }
