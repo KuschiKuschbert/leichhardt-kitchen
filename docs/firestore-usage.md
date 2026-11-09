@@ -1,5 +1,9 @@
 # Firestore reads and writes: audit, 5 November 2026
 
+## Cleaning schedule extension, 9 November 2026
+
+Opening or refreshing Cleaning keeps the existing two bounded queries: applicable task revisions and today's occurrence states, or at most a week for canonical chefs. Explicit schedule import adds one bounded all-revision query, one missing-task batch and a normal two-query reload; repeating it never creates duplicate tasks. Every enhanced action writes current state plus one immutable audit snapshot atomically. Daily and week views do not read the action history. No startup cleaning query, listener, polling or private persistent copy is added. The nightly backup adds one action day-range query. Existing session/config rule lookups and task/audit validation reads remain separate server-rule costs. See [the feature contract](cleaning-schedule.md).
+
 On 5 November 2026 the database refused every read from 13:00: the free plan's 50,000 reads for the day were used up (they reset at midnight in California, 18:00 kitchen time). The head chef asked what reads and writes what, and how to get the most out of the free plan. This note is the answer: every read and write in `js/`, `sw.js`, `scripts/` and the workflows, with measured costs where they could be measured.
 
 How it was checked. Source review of every Firestore call. The server jobs' own GitHub logs for 4 and 5 November. Page costs measured with the test stand-in, which bills reads the way Firestore does (`tests/fake`), on a month of made-up data the size of this kitchen's (50 prep lines, 20 order lines and 8 wastage lines a day). Nothing was read from the real database, and the Firebase console's usage graph was not seen: the hour-by-hour split below is an estimate. The real rules also read about 4 records (session, PIN, device grant, settings) for each query or live list they let through; the stand-in does not bill those, so real costs are a little higher than measured.

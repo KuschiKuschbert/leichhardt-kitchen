@@ -1362,6 +1362,19 @@ service cloud.firestore {
         && cfg().get('staffSee', {}).get('cleaning', false) == true);
     }
     function cleanRead() { return kitchenRead() && cleanEnabled(reader()); }
+    function cleanWriter() {
+      let c = cfg();
+      let id = request.resource.data.by;
+      return session() && !(id in c.get('fnOnlyIds', []))
+        && (id == c.get('headId', '') || id in c.get('sousIds', []) || c.get('staffSee', {}).get('cleaning', false) == true)
+        && (id == c.get('headId', '') || id in c.get('tickIds', []));
+    }
+    function cleanChefWriter() {
+      let c = cfg();
+      let id = request.resource.data.by;
+      return session() && !(id in c.get('fnOnlyIds', []))
+        && (id == c.get('headId', '') || id in c.get('sousIds', []));
+    }
     function cleanId(id) { return id is string && id.matches('[a-zA-Z0-9_-]{1,80}'); }
     function cleanText(value, n) { return value is string && value.size() <= n; }
     function cleanName(value) { return cleanText(value, 80) && value.size() > 0 && value.matches('.*[^ ].*'); }
@@ -1374,15 +1387,38 @@ service cloud.firestore {
     }
     function cleanToday(day) { return cleanDay(day) && cleanDayStart(day) == cleanStart(); }
     function cleanTaskPath(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/cleaningTasks/$(id); }
+    function cleanDonePath(id) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/cleaningDone/$(id); }
+    function cleanActionPath(id, version) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/cleaningActions/$(id + '_v' + string(version)); }
+    // Bounded text checks share their count, keeping the complete editable plan inside the rule budget.
+    function cleanChecks(checks) {
+      let n = checks.size();
+      return checks is list && n <= 12 && checks.toSet().size() == n
+        && (n < 1 || checks[0].matches('.{0,159}[^ ]')) && (n < 2 || checks[1].matches('.{0,159}[^ ]'))
+        && (n < 3 || checks[2].matches('.{0,159}[^ ]')) && (n < 4 || checks[3].matches('.{0,159}[^ ]'))
+        && (n < 5 || checks[4].matches('.{0,159}[^ ]')) && (n < 6 || checks[5].matches('.{0,159}[^ ]'))
+        && (n < 7 || checks[6].matches('.{0,159}[^ ]')) && (n < 8 || checks[7].matches('.{0,159}[^ ]'))
+        && (n < 9 || checks[8].matches('.{0,159}[^ ]')) && (n < 10 || checks[9].matches('.{0,159}[^ ]'))
+        && (n < 11 || checks[10].matches('.{0,159}[^ ]')) && (n < 12 || checks[11].matches('.{0,159}[^ ]'));
+    }
+    function cleanPlan(p) {
+      return p is map && p.keys().hasOnly(['template', 'method', 'responsibility', 'checks', 'timing', 'verification', 'verifiers', 'review', 'repeat'])
+        && p.template.matches('[a-zA-Z0-9_-]{0,40}')
+        && p.method.matches('(?s).{0,1000}') && p.responsibility.matches('(?s).{0,120}') && p.review.matches('(?s).{0,500}')
+        && p.timing in ['daily', 'service', 'prep-service', 'food', 'use', 'close'] && p.verification is bool
+        && cleanChecks(p.checks)
+        && p.verifiers is list && p.verifiers.size() <= 30 && p.verifiers.toSet().size() == p.verifiers.size()
+        && (!('repeat' in p) || p.repeat is map && p.repeat.keys().hasOnly(['days', 'anchor']) && p.repeat.days is int && p.repeat.days >= 2 && p.repeat.days <= 30
+          && (p.repeat.anchor == '' || cleanDay(p.repeat.anchor) && cleanDayStart(p.repeat.anchor) >= 0));
+    }
     function cleanTaskShape(d) {
-      return d.keys().hasAll(['root', 'prev', 'next', 'text', 'area', 'section', 'sectionName', 'shared', 'dows', 'guide', 'from', 'until', 'at', 'by'])
-        && d.keys().hasOnly(['root', 'prev', 'next', 'text', 'area', 'section', 'sectionName', 'shared', 'dows', 'guide', 'from', 'until', 'at', 'by'])
+      return d.keys().hasOnly(['root', 'prev', 'next', 'text', 'area', 'section', 'sectionName', 'shared', 'dows', 'guide', 'from', 'until', 'at', 'by', 'plan'])
         && cleanId(d.root) && (d.prev == '' || cleanId(d.prev)) && (d.next == '' || cleanId(d.next))
-        && cleanText(d.text, 160) && d.text.size() > 0 && d.text.matches('.*[^ ].*') && cleanName(d.area)
-        && cleanText(d.section, 80) && cleanText(d.sectionName, 80) && d.shared is bool && cleanText(d.guide, 80)
+        && d.text.matches('.{0,159}[^ ]') && d.area.matches('.{0,79}[^ ]')
+        && d.section.matches('(?s).{0,80}') && d.sectionName.matches('(?s).{0,80}') && d.shared is bool && d.guide.matches('(?s).{0,80}')
         && d.dows is list && d.dows.size() > 0 && d.dows.size() <= 7 && d.dows.toSet().size() == d.dows.size()
         && d.dows.toSet().hasOnly([0, 1, 2, 3, 4, 5, 6])
-        && cleanMid(d.from) && cleanMid(d.until) && d.until >= d.from && d.at is number;
+        // Create/replacement/close below already require the exact authoritative effective dates.
+        && d.at is number && (!('plan' in d) || cleanPlan(d.plan));
     }
     function cleanReplacement(id, d) {
       let old = get(cleanTaskPath(d.prev)).data;
@@ -1399,11 +1435,15 @@ service cloud.firestore {
     }
     match /kitchens/KITCHEN_PIN/cleaningTasks/{id} {
       allow read: if cleanRead();
-      allow create: if staff() && chefId(request.resource.data.by) && cleanId(id) && cleanTaskShape(request.resource.data)
+      allow create: if cleanChefWriter() && cleanId(id) && cleanTaskShape(request.resource.data)
         && request.resource.data.next == '' && request.resource.data.until == 253402178400000 && cleanRecent(request.resource.data.at)
+        && (!('plan' in request.resource.data) || request.resource.data.plan.verifiers.size() == 0 || request.resource.data.plan.verifiers.toSet().hasOnly(cfg().get('staffIds', []))
+          && !request.resource.data.plan.verifiers.toSet().hasAny(cfg().get('fnOnlyIds', [])))
         && (request.resource.data.prev == '' ? request.resource.data.root == id && request.resource.data.from == cleanStart()
           : cleanReplacement(id, request.resource.data));
-      allow update: if staff() && chefId(request.resource.data.by) && cleanTaskShape(request.resource.data) && cleanClose(id, request.resource.data);
+      // The body was validated at creation and is immutable. Closing validates only its permitted changes.
+      allow update: if cleanChefWriter() && cleanClose(id, request.resource.data)
+        && (request.resource.data.next == '' || cleanId(request.resource.data.next));
       allow delete: if false;
     }
     // One record per revision and date, with a compare-and-set version. A late competing tick cannot replace
@@ -1418,7 +1458,62 @@ service cloud.firestore {
     function cleanDue(d) {
       let task = get(cleanTaskPath(d.task)).data;
       let start = cleanDayStart(d.day);
-      return task.from <= start && task.until > start && ((start + 36000000) / 86400000 + 4) % 7 in task.dows;
+      return task.from <= start && task.until > start && ((start + 36000000) / 86400000 + 4) % 7 in task.dows
+        && (!('repeat' in task.get('plan', {})) || cleanInterval(task.plan.repeat, start));
+    }
+    function cleanInterval(repeat, start) { return repeat.anchor != '' && start >= cleanDayStart(repeat.anchor) && ((start - cleanDayStart(repeat.anchor)) / 86400000) % repeat.days == 0; }
+    function cleanLegacy(d) { return !('plan' in get(cleanTaskPath(d.task)).data); }
+    function cleanSlot(p, f) {
+      return cleanId(f.slot) && (f.kind == 'daily' ? p.timing == 'daily' && f.slot == 'daily'
+        : f.kind == 'start' ? p.timing == 'food' && f.slot == 'start'
+        : f.kind == 'close' ? p.timing in ['food', 'close'] && f.slot == 'close'
+        : f.kind == 'service' ? p.timing in ['service', 'prep-service'] && f.slot.matches('service-[a-zA-Z0-9_-]+')
+        : f.kind == 'prep' ? p.timing in ['prep-service', 'food'] && f.slot.matches('prep-[a-zA-Z0-9_-]+')
+        : f.kind == 'use' && p.timing == 'use' && f.slot.matches('use-[a-zA-Z0-9_-]+'));
+    }
+    function cleanFlowShape(id, d, p) {
+      let f = d.flow;
+      return d.keys().hasAll(['day', 'task', 'version', 'done', 'doneAt', 'doneById', 'doneBy', 'workerId', 'worker', 'by', 'flow'])
+        && d.keys().hasOnly(['day', 'task', 'version', 'done', 'doneAt', 'doneById', 'doneBy', 'workerId', 'worker', 'by', 'flow'])
+        && d.version is int && d.version > 0 && d.done is bool && d.doneAt is number
+        && f is map && f.keys().hasAll(['slot', 'kind', 'status', 'checked', 'note', 'verifiedBy', 'verifiedAt'])
+        && f.keys().hasOnly(['slot', 'kind', 'status', 'checked', 'note', 'verifiedBy', 'verifiedAt'])
+        && cleanSlot(p, f) && id == d.day + '_' + d.task + '__' + f.slot
+        && f.status in ['pending', 'blocked', 'awaiting', 'complete'] && d.done == (f.status == 'complete')
+        && f.checked is list && f.checked.size() <= 12 && f.checked.toSet().size() == f.checked.size()
+        && f.checked.toSet().difference(p.checks.toSet()).size() == 0 && cleanText(f.note, 500)
+        && cleanText(f.verifiedBy, 80) && f.verifiedAt is number
+        && cleanText(d.doneById, 80) && cleanText(d.doneBy, 80) && cleanText(d.workerId, 80) && cleanText(d.worker, 80);
+    }
+    function cleanEmptyPerformance(d) { return d.doneAt == 0 && d.doneById == '' && d.doneBy == '' && d.workerId == '' && d.worker == ''; }
+    function cleanSamePerformance(d, old) {
+      return d.doneAt == old.doneAt && d.doneById == old.doneById && d.doneBy == old.doneBy && d.workerId == old.workerId && d.worker == old.worker;
+    }
+    function cleanFlowStep(d, old, initial, action, p) {
+      let f = d.flow;
+      let c = cfg();
+      let blankVerification = f.verifiedBy == '' && f.verifiedAt == 0;
+      return action in ['save', 'block'] ? (initial || old.flow.status in ['pending', 'blocked']) && cleanEmptyPerformance(d)
+          && blankVerification && f.status == (action == 'block' ? 'blocked' : 'pending') && (action != 'block' || f.note.matches('.*[^ ].*'))
+        : action == 'perform' ? (initial || old.flow.status in ['pending', 'blocked']) && f.checked.size() == p.checks.size()
+          && f.status == (p.verification ? 'awaiting' : 'complete') && blankVerification && cleanRecent(d.doneAt)
+          && d.doneById == d.by && d.doneBy.size() > 0 && d.worker.size() > 0 && d.workerId in c.get('staffIds', [])
+          && !(d.workerId in c.get('fnOnlyIds', [])) && (get(sessDoc()).data.mode == 'shared' || d.workerId == d.by)
+        : action == 'verify' ? !initial && old.flow.status == 'awaiting' && p.verification && d.by in p.verifiers
+          && f.status == 'complete' && f.checked == old.flow.checked && f.note == old.flow.note && cleanSamePerformance(d, old)
+          && f.verifiedBy == d.by && cleanRecent(f.verifiedAt)
+        : action == 'reopen' && !initial && old.flow.status in ['awaiting', 'complete'] && f.status == 'pending'
+          && f.note.matches('.*[^ ].*') && f.checked.size() == 0 && cleanEmptyPerformance(d) && blankVerification
+          && (chefId(d.by) || old.doneById == d.by && request.time.toMillis() >= old.doneAt && request.time.toMillis() - old.doneAt < 120000);
+    }
+    function cleanFlowWrite(id, d, initial) {
+      let p = get(cleanTaskPath(d.task)).data.plan;
+      let event = getAfter(cleanActionPath(id, d.version)).data;
+      let old = initial ? {} : resource.data;
+      return cleanFlowShape(id, d, p) && (initial ? d.version == 1 : d.task == old.task && d.day == old.day
+          && d.flow.slot == old.flow.slot && d.flow.kind == old.flow.kind && d.version == old.version + 1)
+        && event.snapshot == d && event.occurrence == id && event.at == request.time && event.by == d.by
+        && cleanFlowStep(d, old, initial, event.action, p);
     }
     function cleanTick(d) {
       return d.done && cleanRecent(d.doneAt) && d.doneById == d.by && d.workerId in cfg().get('staffIds', [])
@@ -1431,14 +1526,37 @@ service cloud.firestore {
     match /kitchens/KITCHEN_PIN/cleaningDone/{id} {
       allow get: if cleanRead() && (chefId(reader()) || resource == null || cleanToday(resource.data.day));
       allow list: if cleanRead() && (chefId(reader()) || cleanToday(resource.data.day));
-      allow create: if staff() && cleanEnabled(request.resource.data.by) && capability(request.resource.data.by, 'tick') && cleanDoneShape(id, request.resource.data)
-        && cleanToday(request.resource.data.day) && cleanDue(request.resource.data) && request.resource.data.version == 1 && cleanTick(request.resource.data);
-      allow update: if staff() && cleanEnabled(request.resource.data.by) && capability(request.resource.data.by, 'tick') && cleanDoneShape(id, request.resource.data)
+      allow create: if cleanWriter()
         && cleanToday(request.resource.data.day) && cleanDue(request.resource.data)
-        && request.resource.data.task == resource.data.task && request.resource.data.day == resource.data.day
-        && (request.resource.data == resource.data || (request.resource.data.version == resource.data.version + 1
-          && request.resource.data.done != resource.data.done && (request.resource.data.done ? cleanTick(request.resource.data) : cleanUndo(request.resource.data))));
+        && ('flow' in request.resource.data ? cleanFlowWrite(id, request.resource.data, true)
+          : cleanLegacy(request.resource.data) && cleanDoneShape(id, request.resource.data) && request.resource.data.version == 1 && cleanTick(request.resource.data));
+      allow update: if cleanWriter()
+        && cleanToday(request.resource.data.day) && cleanDue(request.resource.data)
+        && ('flow' in request.resource.data ? cleanFlowWrite(id, request.resource.data, false)
+          : cleanLegacy(request.resource.data) && cleanDoneShape(id, request.resource.data)
+          && request.resource.data.task == resource.data.task && request.resource.data.day == resource.data.day
+          && (request.resource.data == resource.data || (request.resource.data.version == resource.data.version + 1
+            && request.resource.data.done != resource.data.done && (request.resource.data.done ? cleanTick(request.resource.data) : cleanUndo(request.resource.data)))));
       allow delete: if false;
+    }
+    // Every enhanced transition has an immutable, server-stamped snapshot in the same batch.
+    match /kitchens/KITCHEN_PIN/cleaningActions/{id} {
+      allow read: if cleanRead() && (chefId(reader()) || cleanToday(resource.data.day));
+      // The exact before/after version below requires an accompanying state write. Its rule checks this
+      // session, capability and release gate once; repeating them here exceeds the atomic request budget.
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasAll(['day', 'task', 'occurrence', 'version', 'action', 'at', 'by', 'snapshot'])
+        && request.resource.data.keys().hasOnly(['day', 'task', 'occurrence', 'version', 'action', 'at', 'by', 'snapshot'])
+        && cleanToday(request.resource.data.day) && request.resource.data.at == request.time
+        && request.resource.data.version is int && request.resource.data.version > 0
+        && id == request.resource.data.occurrence + '_v' + string(request.resource.data.version)
+        && request.resource.data.snapshot == getAfter(cleanDonePath(request.resource.data.occurrence)).data
+        && request.resource.data.snapshot.keys().hasAny(['flow'])
+        && request.resource.data.snapshot.day == request.resource.data.day && request.resource.data.snapshot.task == request.resource.data.task
+        && request.resource.data.snapshot.by == request.resource.data.by && request.resource.data.snapshot.version == request.resource.data.version
+        && (!exists(cleanDonePath(request.resource.data.occurrence)) ? request.resource.data.version == 1
+          : get(cleanDonePath(request.resource.data.occurrence)).data.version == request.resource.data.version - 1);
+      allow update, delete: if false;
     }
     // Phone pushes for order cut-offs (24 Oct 2026): a chef's phone keeps its push address in push/<hash of it>
     // { tok, at, ua, by }. Only the server reads them (scripts/cutoff-push.mjs, with the service account, which these

@@ -4,6 +4,8 @@
 
 **Chosen: C daily list + A chef week review (8 November 2026).** After reviewing the three designs and council recommendation, the head chef approved the recommendation and required an exact match to the existing app’s design, style and fonts. The original interactive previews remain design evidence; implementation uses the existing app shell and notebook components. See [the implementation record](implementation.md).
 
+**Current extension, 9 November 2026:** the owner supplied the unbranded 26-task schedule and requested methods, required checks, separate service/prep/use records and food-labelling Pass verification within this chosen layout. [The current contract](../cleaning-schedule.md) supersedes the original single-daily-occurrence and no-second-sign-off scope below. The original previews remain historical design evidence.
+
 [Compare the designs](index.html) · [Original proposal](proposal.md)
 
 ## Confirmed by the head chef

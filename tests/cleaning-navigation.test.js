@@ -37,7 +37,7 @@ const back = '.wtop [data-act="back"]';
   const failedLoadErrors = p.errors.splice(0);
   ok(failedLoadErrors.every(e => e === 'console: Failed to load resource: net::ERR_FAILED'), 'the deliberately blocked download reports only its expected network failure');
   ok(await p.evaluate(() => document.title === 'Kitchen cleaning · Leichhardt Kitchen Book' && [...document.querySelectorAll('.pnav [aria-current], .tabbar [aria-current]')].every(a => a.getAttribute('href') === '#/cleaning')), 'cleaning route has its own title and active main tab');
-  await p.context().route(/js\/cleaning\.js/, r => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.LK_CLEANING = { api: 1, mount: function (root) { root.innerHTML = \'<h2 id="rtitle" tabindex="-1">Kitchen cleaning</h2>\'; window.cleaningMounted = true; }, unmount: function () { window.cleaningMounted = false; }, reset: function () { window.cleaningMounted = false; }, dirty: function () { return false; } };' }));
+  await p.context().route(/js\/cleaning\.js/, r => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'window.LK_CLEANING = { api: 2, mount: function (root) { root.innerHTML = \'<h2 id="rtitle" tabindex="-1">Kitchen cleaning</h2>\'; window.cleaningMounted = true; }, unmount: function () { window.cleaningMounted = false; }, reset: function () { window.cleaningMounted = false; }, dirty: function () { return false; } };' }));
   await p.click('[data-cleaning-retry]');
   await L.waitFor(p, () => !!window.cleaningMounted);
   ok(await p.locator('#cleaning-root #rtitle').innerText() === 'Kitchen cleaning', 'Retry opens the cleaning page when the connection returns');

@@ -820,6 +820,58 @@ row('js/prep.js cleaningUndo(): recorder Undo preserves the cycle audit and adva
   prep: (r, w) => put({ ['cleaningTasks/clean-undo-' + r]: cleanTask('clean-undo-' + r), [`cleaningDone/${TODAY}_clean-undo-${r}`]: cleanDone('clean-undo-' + r, w, NAME[r]) }),
   run: (db, w, r) => W(r, [['upd', `cleaningDone/${TODAY}_clean-undo-${r}`, { done: false, version: 2 }]]) });
 
+const cleanPlan = x => ({ template: '', method: 'Clean and dry.', responsibility: 'Kitchen team', checks: ['Clean', 'Dry'], timing: 'daily', verification: false, verifiers: [], review: '', ...x });
+const cleanState = (task, by, x = {}) => ({ day: TODAY, task, version: 1, done: false, doneAt: 0, doneById: '', doneBy: '', workerId: '', worker: '', by,
+  flow: { slot: 'daily', kind: 'daily', status: 'pending', checked: [], note: '', verifiedBy: '', verifiedAt: 0 }, ...x });
+const cleanOccurrence = d => d.day + '_' + d.task + '__' + d.flow.slot;
+function cleanAction(role, d, action) {
+  const occurrence = cleanOccurrence(d);
+  return W(role, [['set', 'cleaningDone/' + occurrence, d], ['set', 'cleaningActions/' + occurrence + '_v' + d.version,
+    { day: d.day, task: d.task, occurrence, version: d.version, action, at: serverTimestamp(), by: d.by, snapshot: d }]]);
+}
+row('js/prep.js cleaningAct(): explicit lost-ack retry reads its exact current occurrence', { ok: KITCHEN, asks: TICKS,
+  prep: (r, w) => { const d = cleanState('clean-act-retry-' + r, w); return put({ ['cleaningDone/' + cleanOccurrence(d)]: d }); },
+  run: (db, w, r) => getDocFromServer(D(db, 'cleaningDone/' + TODAY + '_clean-act-retry-' + r + '__daily')) });
+row('js/prep.js cleaningAct(): an advanced retry confirms the exact immutable accepted action', { ok: KITCHEN, asks: TICKS,
+  prep: (r, w) => { const d = cleanState('clean-audit-retry-' + r, w), occurrence = cleanOccurrence(d); return put({ ['cleaningActions/' + occurrence + '_v1']:
+    { day: TODAY, task: d.task, occurrence, version: 1, action: 'save', at: Timestamp.fromMillis(NOW), by: w, snapshot: d } }); },
+  run: (db, w, r) => getDocFromServer(D(db, 'cleaningActions/' + TODAY + '_clean-audit-retry-' + r + '__daily_v1')) });
+row('js/prep.js exportAll(): full immutable Cleaning audit collection for the owner backup', { ok: CHEFS, asks: GOOGLE,
+  run: db => getDocs(C(db, 'cleaningActions')) });
+row('js/prep.js cleaningImport(): explicit bounded query includes archived roots', { ok: KITCHEN, asks: CHEFS,
+  run: db => getDocsFromServer(query(C(db, 'cleaningTasks'), limit(501))) });
+row('js/prep.js cleaningImport(): deterministic checked task is created by a chef', { ok: CHEFS, asks: CHEFS,
+  prep: r => put({ ['cleaningTasks/clean-template-fixture-' + r]: null }),
+  run: (db, w, r) => W(r, [['set', 'cleaningTasks/clean-template-fixture-' + r, cleanTask('clean-template-fixture-' + r, { by: w, plan: cleanPlan({ template: 'fixture-' + r }) })]]) });
+for (const action of ['save', 'block', 'perform']) {
+  row('js/prep.js cleaningAct(): ' + action + ' occurrence and immutable server-stamped audit atomically', { ok: TICKS, asks: TICKS,
+    prep: r => put({ ['cleaningTasks/clean-flow-' + action + '-' + r]: cleanTask('clean-flow-' + action + '-' + r, { plan: cleanPlan() }) }),
+    run: (db, w, r) => {
+      const d = cleanState('clean-flow-' + action + '-' + r, w);
+      if (action === 'block') d.flow = { ...d.flow, status: 'blocked', note: 'Equipment in use.' };
+      if (action === 'perform') Object.assign(d, { done: true, doneAt: Date.now(), doneById: w, doneBy: NAME[r], workerId: w, worker: NAME[r], flow: { ...d.flow, checked: ['Clean', 'Dry'], status: 'complete' } });
+      return cleanAction(r, d, action);
+    } });
+}
+const cleanVerifyStates = {};
+row('js/prep.js cleaningAct(): only the explicitly mapped Pass checker verifies a saved performance', { ok: ['sam'], asks: ['sam'],
+  prep: r => {
+    const id = 'clean-verify-' + r, d = cleanState(id, 'ann', { doneAt: Date.now(), doneById: 'ann', doneBy: 'Ann', workerId: 'ann', worker: 'Ann',
+      flow: { slot: 'daily', kind: 'daily', status: 'awaiting', checked: ['Clean', 'Dry'], note: '', verifiedBy: '', verifiedAt: 0 } });
+    cleanVerifyStates[r] = d;
+    return put({ ['cleaningTasks/' + id]: cleanTask(id, { plan: cleanPlan({ verification: true, verifiers: ['sam'] }) }), ['cleaningDone/' + cleanOccurrence(d)]: d });
+  }, run: (db, w, r) => {
+    const d = { ...cleanVerifyStates[r], by: w, version: 2, done: true,
+      flow: { slot: 'daily', kind: 'daily', status: 'complete', checked: ['Clean', 'Dry'], note: '', verifiedBy: w, verifiedAt: Date.now() } };
+    return cleanAction(r, d, 'verify');
+  } });
+row('js/prep.js cleaningAct(): recorder reopens their recent occurrence with a reason and immutable audit', { ok: TICKS, asks: TICKS,
+  prep: (r, w) => {
+    const id = 'clean-reopen-' + r, d = cleanState(id, w, { done: true, doneAt: Date.now(), doneById: w, doneBy: NAME[r], workerId: w, worker: NAME[r],
+      flow: { slot: 'daily', kind: 'daily', status: 'complete', checked: ['Clean', 'Dry'], note: '', verifiedBy: '', verifiedAt: 0 } });
+    return put({ ['cleaningTasks/' + id]: cleanTask(id, { plan: cleanPlan() }), ['cleaningDone/' + cleanOccurrence(d)]: d });
+  }, run: (db, w, r) => { const d = cleanState('clean-reopen-' + r, w, { version: 2 }); d.flow.note = 'Ticked the wrong job.'; return cleanAction(r, d, 'reopen'); } });
+
 // The existing admin Save writes both documents atomically; changing Cleaning preserves the other page switches.
 for (const enabled of [true, false]) {
   const see = { guides: true, pings: false, minutes: true, cleaning: enabled };

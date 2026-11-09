@@ -1,0 +1,1345 @@
+{
+  "note": "Actual existing Barlow 400/600/700, Barlow Condensed 700 and Caveat 700 fetched from existing official Google Fonts CSS/TTF endpoints to temporary work files, injected only into screenshot contexts. All five faces awaited and verified loaded. Identical native faces used for before and after. No application font dependency or domain added.",
+  "results": [
+    {
+      "phase": "before",
+      "width": 390,
+      "loaded": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "completeRows": 7,
+      "overflow": false,
+      "controls": [
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "fonts": {
+        "task": "Caveat, cursive",
+        "body": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+      },
+      "errors": []
+    },
+    {
+      "phase": "before",
+      "width": 1280,
+      "loaded": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "completeRows": 8,
+      "overflow": false,
+      "controls": [
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "fonts": {
+        "task": "Caveat, cursive",
+        "body": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+      },
+      "errors": []
+    },
+    {
+      "phase": "after",
+      "width": 390,
+      "loaded": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "completeRows": 7,
+      "overflow": false,
+      "controls": [
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 274.40625,
+          "height": 70.328125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 274.40625,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 274.40625,
+          "height": 70.328125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 274.40625,
+          "height": 70.328125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 274.40625,
+          "height": 70.328125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 274.40625,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 274.40625,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 274.40625,
+          "height": 44
+        }
+      ],
+      "fonts": {
+        "task": "Caveat, cursive",
+        "body": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+      },
+      "errors": []
+    },
+    {
+      "phase": "after",
+      "width": 1280,
+      "loaded": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "completeRows": 8,
+      "overflow": false,
+      "controls": [
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 1112.40625,
+          "height": 44.8125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 1112.40625,
+          "height": 44.8125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 1112.40625,
+          "height": 44.8125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 1112.40625,
+          "height": 44.8125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 1112.40625,
+          "height": 44.8125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 1112.40625,
+          "height": 44.8125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 1112.40625,
+          "height": 44.8125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 1112.40625,
+          "height": 44.8125
+        }
+      ],
+      "fonts": {
+        "task": "Caveat, cursive",
+        "body": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+      },
+      "errors": []
+    },
+    {
+      "phase": "packdown",
+      "width": 390,
+      "loaded": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "collapsed": {
+        "completeRows": 8,
+        "overflow": false,
+        "controls": [
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 123.109375
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 123.109375
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 44
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 96.71875
+          }
+        ],
+        "fonts": {
+          "task": "Caveat, cursive",
+          "body": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+        }
+      },
+      "expanded": {
+        "completeRows": 1,
+        "overflow": false,
+        "controls": [
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 317.625,
+            "height": 44
+          },
+          {
+            "width": 317.625,
+            "height": 44
+          },
+          {
+            "width": 317.625,
+            "height": 44
+          },
+          {
+            "width": 317.625,
+            "height": 44
+          },
+          {
+            "width": 124.234375,
+            "height": 48
+          },
+          {
+            "width": 81.984375,
+            "height": 48
+          },
+          {
+            "width": 127.65625,
+            "height": 44
+          }
+        ],
+        "fonts": {
+          "task": "Caveat, cursive",
+          "body": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+        }
+      },
+      "errors": []
+    },
+    {
+      "phase": "packdown",
+      "width": 1280,
+      "loaded": [
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "400",
+          "status": "unloaded"
+        },
+        {
+          "family": "Kitchenbook Devanagari",
+          "weight": "700",
+          "status": "unloaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Barlow Condensed",
+          "weight": "700",
+          "status": "loaded"
+        },
+        {
+          "family": "Caveat",
+          "weight": "700",
+          "status": "loaded"
+        }
+      ],
+      "collapsed": {
+        "completeRows": 13,
+        "overflow": false,
+        "controls": [
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          }
+        ],
+        "fonts": {
+          "task": "Caveat, cursive",
+          "body": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+        }
+      },
+      "expanded": {
+        "completeRows": 0,
+        "overflow": false,
+        "controls": [
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 1159.625,
+            "height": 44
+          },
+          {
+            "width": 1159.625,
+            "height": 44
+          },
+          {
+            "width": 1159.625,
+            "height": 44
+          },
+          {
+            "width": 1159.625,
+            "height": 44
+          },
+          {
+            "width": 124.234375,
+            "height": 48
+          },
+          {
+            "width": 81.984375,
+            "height": 48
+          },
+          {
+            "width": 127.65625,
+            "height": 48
+          }
+        ],
+        "fonts": {
+          "task": "Caveat, cursive",
+          "body": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif"
+        }
+      },
+      "errors": []
+    }
+  ]
+}

@@ -1531,7 +1531,7 @@
      form, which the page closing after the sign-out kept as a draft again for the next person) */
   function leave() {
     ptClose(true, true);
-    cleaningAttempt = null;
+    cleaningAttempt = null; cleaningActionAttempts = Object.create(null);
     S.privacyLocked = false; S.unlocking = false; S.lockRecorder = ''; S.lockHasDraft = false; S.lockIdentity = ''; S.workNotice = ''; S.grantExp = 0;
     S.ctab = 'dashboard'; S.cgLast = {}; S.cDate = ''; chefHistoryClear(); fdLast = []; fdClose(true, true);
     accessEpoch++; digestMem = null;   // the day digests read for the person before
@@ -1783,14 +1783,18 @@
   }
   /* Cleaning (8 Nov 2026): two bounded server queries only when the lazy page opens or Refresh is tapped.
      Immutable task revisions retain each day's expected jobs. W() owns pending writes and recorder identity. */
-  var CLEAN_OPEN = 253402178400000, cleaningAttempt = null;
+  var CLEAN_OPEN = 253402178400000, cleaningAttempt = null, cleaningActionAttempts = Object.create(null);
   function cleaningOK() { return featOn('cleaning'); }
   function cleaningChef() { return chefAllowed(); }
   function cleaningPermissionsReady() { return S.configState === 'ok' && !!S.configFull; }
   function cleaningTickOK() { return cleaningOK() && canW() && can('tick'); }
   function cleaningError(code) { return { code: code }; }
   function cleaningDate(day) { return typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day) && T.day(T.at(day)) === day; }
-  function cleaningDue(task, day) { var at = T.at(day); return task && task.from <= at && task.until > at && Array.isArray(task.dows) && task.dows.indexOf(T.dow(at)) >= 0; }
+  function cleaningDue(task, day) {
+    var at = T.at(day), repeat = task && task.plan && task.plan.repeat;
+    return task && task.from <= at && task.until > at && Array.isArray(task.dows) && task.dows.indexOf(T.dow(at)) >= 0 &&
+      (!repeat || !!repeat.anchor && cleaningDate(repeat.anchor) && at >= T.at(repeat.anchor) && (at - T.at(repeat.anchor)) / 86400000 % repeat.days === 0);
+  }
   function cleaningContext() { return supplierContext() + '|' + cleaningChef() + '|' + can('tick'); }
   function cleaningLoad(from, to) {
     if (!cleaningPermissionsReady()) return Promise.reject(cleaningError('unavailable'));
@@ -1818,7 +1822,121 @@
       sec = kitSecs().filter(function (s) { return s.id === section; })[0], days = d.dows;
     if (!text || text.length > 160 || !area || area.length > 80 || section.length > 80 || guide.length > 80 || typeof d.shared !== 'boolean' ||
       (!d.shared && !sec) || (d.shared && section) || !Array.isArray(days) || !days.length || days.length > 7 || days.some(function (x, i) { return typeof x !== 'number' || x % 1 || x < 0 || x > 6 || days.indexOf(x) !== i; })) throw cleaningError('invalid-argument');
-    return { text: text, area: area, section: d.shared ? '' : section, sectionName: d.shared ? '' : String(sec.name), shared: d.shared, dows: days.slice().sort(), guide: guide };
+    var result = { text: text, area: area, section: d.shared ? '' : section, sectionName: d.shared ? '' : String(sec.name), shared: d.shared, dows: days.slice().sort(), guide: guide };
+    if (d.plan !== undefined) result.plan = cleaningPlan(d.plan);
+    return result;
+  }
+  function cleaningPlan(p) {
+    function text(value, size) { return typeof value === 'string' && value.length <= size; }
+    if (!p || typeof p !== 'object' || Array.isArray(p) || Object.keys(p).filter(function (key) { return key !== 'repeat'; }).sort().join(',') !== 'checks,method,responsibility,review,template,timing,verification,verifiers' ||
+      !text(p.template, 40) || p.template && !/^[a-zA-Z0-9_-]+$/.test(p.template) || !text(p.method, 1000) || !text(p.responsibility, 120) || !text(p.review, 500) ||
+      ['daily', 'service', 'prep-service', 'food', 'use', 'close'].indexOf(p.timing) < 0 || typeof p.verification !== 'boolean' ||
+      !Array.isArray(p.checks) || p.checks.length > 12 || p.checks.some(function (s, i) { return !text(s, 160) || !s.trim() || p.checks.indexOf(s) !== i; }) ||
+      !Array.isArray(p.verifiers) || p.verifiers.length > 30 || p.verifiers.some(function (id, i) { return p.verifiers.indexOf(id) !== i || !ptPerson(id); })) throw cleaningError('invalid-argument');
+    var checks = p.checks.map(function (s) { return s.trim(); });
+    if (checks.some(function (s, i) { return checks.indexOf(s) !== i || /[\r\n]/.test(s); })) throw cleaningError('invalid-argument');
+    var result = { template: p.template, method: p.method, responsibility: p.responsibility, checks: checks, timing: p.timing, verification: p.verification, verifiers: p.verifiers.slice(), review: p.review };
+    if (p.repeat !== undefined) {
+      if (!p.repeat || typeof p.repeat !== 'object' || Object.keys(p.repeat).sort().join(',') !== 'anchor,days' || !Number.isInteger(p.repeat.days) || p.repeat.days < 2 || p.repeat.days > 30 || p.repeat.anchor !== '' && !cleaningDate(p.repeat.anchor)) throw cleaningError('invalid-argument');
+      result.repeat = { days: p.repeat.days, anchor: p.repeat.anchor };
+    }
+    return result;
+  }
+  function cleaningSlot(task, slot, kind) {
+    if (!task || !task.plan || typeof slot !== 'string' || !/^[a-zA-Z0-9_-]{1,80}$/.test(slot)) return false;
+    var timing = task.plan.timing;
+    if (kind === 'daily') return timing === 'daily' && slot === 'daily';
+    if (kind === 'start') return timing === 'food' && slot === 'start';
+    if (kind === 'close') return (timing === 'food' || timing === 'close') && slot === 'close';
+    return slot.indexOf(kind + '-') === 0 && slot.length > kind.length + 1 &&
+      (kind === 'service' && ['service', 'prep-service'].indexOf(timing) >= 0 || kind === 'prep' && ['prep-service', 'food'].indexOf(timing) >= 0 || kind === 'use' && timing === 'use');
+  }
+  function cleaningNewSlot(kind) {
+    if (['service', 'prep', 'use'].indexOf(kind) < 0 || !fb || !fb.fs) throw cleaningError('invalid-argument');
+    return kind + '-' + fb.fs.doc(colRef('cleaningDone')).id;
+  }
+  function cleaningImport(templates) {
+    if (!cleaningChef() || !canW() || !Array.isArray(templates) || !templates.length || templates.length > 100) return Promise.reject(cleaningError('permission-denied'));
+    var drafts;
+    try { drafts = templates.map(cleaningDraft); } catch (e) { return Promise.reject(e); }
+    var keys = drafts.map(function (d) { return d.plan && d.plan.template; });
+    if (keys.some(function (id, i) { return !id || keys.indexOf(id) !== i; })) return Promise.reject(cleaningError('invalid-argument'));
+    var context = writeContext(), access = cleaningContext(), today = dayNow();
+    // Explicit setup import only: one bounded server query includes archived roots, so a repeat never re-creates them.
+    return sdk().then(function () { return fb.fs.getDocsFromServer(fb.fs.query(colRef('cleaningTasks'), fb.fs.limit(501))); }).then(function (sn) {
+      if (!cleaningChef() || access !== cleaningContext() || today !== dayNow()) throw cleaningError('cancelled');
+      if (sn.metadata && sn.metadata.fromCache) throw cleaningError('unavailable');
+      if (sn.docs.length > 500) throw cleaningError('too-many');
+      var existing = sn.docs.map(function (d) { return d.id; }), ops = [];
+      drafts.forEach(function (d) { var id = 'clean-template-' + d.plan.template; if (existing.indexOf(id) >= 0) return;
+        var data = Object.assign({}, d, { root: id, prev: '', next: '', from: T.at(today), until: CLEAN_OPEN, at: now(), by: context.by });
+        ops.push(['set', docRef('cleaningTasks', id), data]);
+      });
+      if (sn.docs.length + ops.length > 500) throw cleaningError('too-many');
+      return (ops.length ? W(ops, context) : Promise.resolve()).then(function () {
+        return cleaningLoad(today, today).then(function (data) { return Object.assign(data, { imported: ops.length, skipped: drafts.length - ops.length }); });
+      });
+    });
+  }
+  function cleaningAct(task, day, current, action, workerId, options) {
+    options = options || {};
+    if (!cleaningTickOK() || day !== dayNow() || !cleaningDate(day) || !task || !task.plan || !cleaningDue(task, day) || ['save', 'block', 'perform', 'verify', 'reopen'].indexOf(action) < 0) return Promise.reject(cleaningError('permission-denied'));
+    var prior = current && current.flow, slot = options.slot || prior && prior.slot, kind = options.kind || prior && prior.kind;
+    var checked = options.checked === undefined ? prior ? prior.checked.slice() : [] : options.checked, note = options.note === undefined ? prior ? prior.note : '' : options.note;
+    if (!cleaningSlot(task, slot, kind) || !Array.isArray(checked) || checked.some(function (s, i) { return task.plan.checks.indexOf(s) < 0 || checked.indexOf(s) !== i; }) || typeof note !== 'string' || note.length > 500) return Promise.reject(cleaningError('invalid-argument'));
+    var id = day + '_' + task.id + '__' + slot, context = writeContext(), person = me(), stamp = now();
+    if (!person || current && (current.id !== id || current.task !== task.id || current.day !== day || !prior || !Number.isInteger(current.version) || prior.slot !== slot || prior.kind !== kind)) return Promise.reject(cleaningError('stale'));
+    var data = current ? Object.assign({}, current) : { day: day, task: task.id, done: false, doneAt: 0, doneById: '', doneBy: '', workerId: '', worker: '' };
+    delete data.id; delete data.recovered; delete data.advanced; delete data.changed; data.version = current ? current.version + 1 : 1; data.by = context.by;
+    data.flow = { slot: slot, kind: kind, status: 'pending', checked: checked.slice(), note: note, verifiedBy: '', verifiedAt: 0 };
+    if (action === 'save' || action === 'block') {
+      if (prior && ['pending', 'blocked'].indexOf(prior.status) < 0 || action === 'block' && !note.trim()) return Promise.reject(cleaningError('invalid-argument'));
+      data.flow.status = action === 'block' ? 'blocked' : 'pending';
+    } else if (action === 'perform') {
+      var worker = ptPerson(workerId || S.who);
+      if (prior && ['pending', 'blocked'].indexOf(prior.status) < 0 || checked.length !== task.plan.checks.length || !worker || !shared() && worker.id !== S.who) return Promise.reject(cleaningError('permission-denied'));
+      data.doneAt = stamp; data.doneById = context.by; data.doneBy = person.name; data.workerId = worker.id; data.worker = worker.name;
+      data.flow.status = task.plan.verification ? 'awaiting' : 'complete';
+    } else if (action === 'verify') {
+      if (!prior || prior.status !== 'awaiting' || !task.plan.verification || task.plan.verifiers.indexOf(context.by) < 0) return Promise.reject(cleaningError('permission-denied'));
+      data.flow = Object.assign({}, prior, { status: 'complete', verifiedBy: context.by, verifiedAt: stamp });
+    } else {
+      if (!prior || ['awaiting', 'complete'].indexOf(prior.status) < 0 || !note.trim() || !(cleaningChef() || current.doneById === context.by && stamp >= current.doneAt && stamp - current.doneAt < 120000)) return Promise.reject(cleaningError('permission-denied'));
+      data.doneAt = 0; data.doneById = data.doneBy = data.workerId = data.worker = ''; data.flow.checked = [];
+    }
+    data.done = data.flow.status === 'complete';
+    var identity = stableIdentity(), access = cleaningContext(), signature = JSON.stringify([action, workerId || '', options, current && current.version || 0]);
+    var attempt = cleaningActionAttempts[id];
+    if (attempt && (attempt.identity !== identity || current && current.version >= attempt.data.version)) { delete cleaningActionAttempts[id]; attempt = null; }
+    function sameValue(a, b) { return a === b || !!a && !!b && typeof a === 'object' && typeof b === 'object' && Array.isArray(a) === Array.isArray(b) && Object.keys(a).length === Object.keys(b).length && Object.keys(a).every(function (k) { return Object.prototype.hasOwnProperty.call(b, k) && sameValue(a[k], b[k]); }); }
+    function validReply() { if (!cleaningTickOK() || identity !== stableIdentity() || access !== cleaningContext() || day !== dayNow()) throw cleaningError('cancelled'); }
+    // An explicit retry after a lost acknowledgement reads this occurrence only. It never blindly replays an
+    // uncertain accepted version. Ordinary actions add no read; a later competing version also checks our exact audit.
+    var reconciled = !attempt ? Promise.resolve(null) : fb.fs.getDocFromServer(docRef('cleaningDone', id)).then(function (sn) {
+      validReply(); if (sn.metadata && sn.metadata.fromCache) throw cleaningError('unavailable');
+      if (!sn.exists() || sn.data().version < attempt.data.version) { delete cleaningActionAttempts[id]; return null; }
+      var saved = sn.data();
+      if (saved.version === attempt.data.version) {
+        if (!sameValue(saved, attempt.data)) throw cleaningError('stale');
+        delete cleaningActionAttempts[id]; return Object.assign({}, saved, { id: id, recovered: true, changed: signature !== attempt.signature });
+      }
+      return fb.fs.getDocFromServer(docRef('cleaningActions', id + '_v' + attempt.data.version)).then(function (audit) {
+        validReply(); if (audit.metadata && audit.metadata.fromCache) throw cleaningError('unavailable');
+        if (!audit.exists() || !sameValue(audit.data().snapshot, attempt.data)) throw cleaningError('stale');
+        delete cleaningActionAttempts[id]; return Object.assign({}, saved, { id: id, recovered: true, advanced: true, changed: signature !== attempt.signature });
+      });
+    });
+    return reconciled.then(function (saved) {
+      if (saved) return saved;
+      validReply();
+      var event = { day: day, task: task.id, occurrence: id, version: data.version, action: action, at: fb.fs.serverTimestamp(), by: context.by, snapshot: data };
+      return W([['set', docRef('cleaningDone', id), data], ['set', docRef('cleaningActions', id + '_v' + data.version), event]], context).then(function () {
+        delete cleaningActionAttempts[id]; return Object.assign({}, data, { id: id });
+      }, function (error) {
+        if (identity === stableIdentity() && error && ['permission-denied', 'cancelled', 'invalid-argument'].indexOf(error.code) < 0) cleaningActionAttempts[id] = { identity: identity, data: data, action: action, signature: signature };
+        throw error;
+      });
+    });
   }
   function cleaningSave(draft, old) {
     if (!cleaningChef() || !canW()) return Promise.reject(cleaningError('permission-denied'));
@@ -1862,7 +1980,7 @@
     return W([['upd', docRef('cleaningTasks', task.id), { until: until, next: '' }]], context).then(function () { return Object.assign({}, task, { until: until, next: '', by: context.by }); });
   }
   function cleaningTick(task, day, current, workerId) {
-    if (!cleaningTickOK() || day !== dayNow() || !cleaningDate(day) || !task || !/^[a-zA-Z0-9_-]{1,80}$/.test(task.id) || !cleaningDue(task, day)) return Promise.reject(cleaningError('permission-denied'));
+    if (!cleaningTickOK() || day !== dayNow() || !cleaningDate(day) || !task || task.plan || !/^[a-zA-Z0-9_-]{1,80}$/.test(task.id) || !cleaningDue(task, day)) return Promise.reject(cleaningError('permission-denied'));
     var worker = ptPerson(workerId), recorder = me(), id = day + '_' + task.id;
     if (!worker || (!shared() && workerId !== S.who) || !recorder) return Promise.reject(cleaningError('permission-denied'));
     if (current && (current.id !== id || current.task !== task.id || current.day !== day || current.done || !Number.isInteger(current.version))) return Promise.reject(cleaningError('stale'));
@@ -1881,8 +1999,10 @@
       sections: function () { return kitSecs().map(function (s) { return { id: s.id, name: s.name }; }); },
       guides: function () { return featOn('guides') ? gLive().map(function (g) { return { id: g.id, title: g.title }; }) : []; }, loadGuides: loadGuides,
       box: function (done) { return done ? TICK : BOX; }, sheetBusy: function () { return sheetOpen() || ksWait || ovBack || dkFirstUp(); }, sheetNext: sheetNext,
-      discardAttempt: function () { cleaningAttempt = null; },
-      load: cleaningLoad, saveTask: cleaningSave, archiveTask: cleaningArchive, tick: cleaningTick, undo: cleaningUndo, canUndo: cleaningCanUndo };
+      discardAttempt: function () { cleaningAttempt = null; cleaningActionAttempts = Object.create(null); },
+      load: cleaningLoad, saveTask: cleaningSave, archiveTask: cleaningArchive, tick: cleaningTick, undo: cleaningUndo, canUndo: cleaningCanUndo,
+      importTasks: cleaningImport, act: cleaningAct, newSlot: cleaningNewSlot, due: cleaningDue, who: function () { return S.who; },
+      canVerify: function (task) { return cleaningTickOK() && !!task.plan && task.plan.verification && task.plan.verifiers.indexOf(S.who) >= 0; } };
   }
   /* Supplier workspace (24 Oct 2026). This bridge shares the kitchen's sign-in, writer, clock and pending-write
      handling. Its separate Lite client has no offline catalogue cache. Nothing here reads supplier data on start. */
@@ -2925,6 +3045,7 @@
       .then(function () { return all('todos'); }).then(function (r) { out.todos = r; })
       .then(function () { return all('cleaningTasks'); }).then(function (r) { out.cleaningTasks = r; })
       .then(function () { return all('cleaningDone'); }).then(function (r) { out.cleaningDone = r; })
+      .then(function () { return all('cleaningActions'); }).then(function (r) { out.cleaningActions = r; })
       .then(function () { return all('team'); }).then(function (r) { out.team = r; })
       .then(function () { return all('cutdone'); }).then(function (r) { out.cutdone = r; })
       .then(function () { part = 'deliveries'; return f.getDocs(f.query(colRef('deliveries'), f.where('day', '>=', shift(dayNow(), -399)), f.where('day', '<=', dayNow()))).then(grab); }).then(function (r) { out.deliveries = r; })
@@ -3066,7 +3187,7 @@
     })
       .then(function () {
         // Immutable cleaning history needs a source-bound copy procedure. Refuse before any destination write.
-        return Promise.all(['cleaningTasks', 'cleaningDone'].map(function (name) {
+        return Promise.all(['cleaningTasks', 'cleaningDone', 'cleaningActions'].map(function (name) {
           return f.getDocs(f.query(oc(name), f.limit(1))).then(function (sn) { got(sn); if (sn.docs.length) throw { code: 'cleaning-copy' }; });
         }));
       }).then(readRoster).then(function () { return readCol('pinset'); }).then(function () { return readCol('staffpins'); }).then(function () { return readCol('activity'); }).then(function () { return readCol('sections'); })

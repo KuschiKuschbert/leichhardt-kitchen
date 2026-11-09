@@ -1140,12 +1140,12 @@
       root.innerHTML = mgNote('Kitchen cleaning', 'Cleaning is not open to the team yet. The head chef will turn it on when setup is ready.', '<a class="btn dark" href="#/">Back to the start</a>'); return;
     }
     if (window.LK_CLEANING) {
-      if (window.LK_CLEANING.api === 1) window.LK_CLEANING.mount(root);
+      if (window.LK_CLEANING.api === 2) window.LK_CLEANING.mount(root);
       else root.innerHTML = mgNote('Reload the book', 'Kitchen cleaning needs the current book.', '<button type="button" class="btn dark" data-act="reload">Reload</button>');
       return;
     }
     root.innerHTML = mgNote('Kitchen cleaning', 'Opening kitchen cleaning...', ' ', 'prep');
-    if (!cleaningLoad) cleaningLoad = mgScript('js/cleaning.js?v=1').then(function () {
+    if (!cleaningLoad) cleaningLoad = (window.LK_CLEANING_SCHEDULE ? Promise.resolve() : mgScript('js/cleaning-schedule.js?v=1')).then(function () { return mgScript('js/cleaning.js?v=2'); }).then(function () {
       if (!window.LK_CLEANING) throw new Error('Kitchen cleaning did not load');
     }).catch(function (e) { cleaningLoad = null; throw e; });
     cleaningLoad.then(function () { if (parseRoute().name === 'cleaning') mountCleaning(); }, function () {

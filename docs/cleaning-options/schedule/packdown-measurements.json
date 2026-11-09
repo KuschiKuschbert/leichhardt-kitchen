@@ -1,0 +1,260 @@
+{
+  "note": "All 26 cleaning and 25 pack down templates loaded as synthetic records. No production writes.",
+  "measurements": [
+    {
+      "width": 390,
+      "day": "2026-11-09",
+      "fontNote": "Browser-test font stand-in, synthetic identities.",
+      "collapsed": {
+        "overflow": false,
+        "groups": [
+          "Hot larder",
+          "Grill",
+          "Pans"
+        ],
+        "floorCount": 1,
+        "floorsAfterPackdown": true,
+        "heading": "Finish overhead shelves and frames before the final floor clean. Keep each after-service floor check separate. Floor checks follow this list.",
+        "packRows": [
+          "evidence-pd-hot-01",
+          "evidence-pd-hot-02",
+          "evidence-pd-hot-03",
+          "evidence-pd-hot-04",
+          "evidence-pd-hot-05",
+          "evidence-pd-grill-01",
+          "evidence-pd-grill-03",
+          "evidence-pd-grill-04",
+          "evidence-pd-grill-05",
+          "evidence-pd-grill-06",
+          "evidence-pd-grill-07",
+          "evidence-pd-grill-08",
+          "evidence-pd-grill-09",
+          "evidence-pd-grill-10",
+          "evidence-pd-pans-01",
+          "evidence-pd-pans-02",
+          "evidence-pd-pans-03",
+          "evidence-pd-pans-04",
+          "evidence-pd-pans-05",
+          "evidence-pd-pans-06",
+          "evidence-pd-pans-07",
+          "evidence-pd-pans-08",
+          "evidence-pd-pans-09",
+          "evidence-pd-pans-10"
+        ]
+      },
+      "expanded": {
+        "overflow": false,
+        "controls": [
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 274.40625,
+            "height": 70.328125
+          },
+          {
+            "width": 317.625,
+            "height": 50
+          },
+          {
+            "width": 317.625,
+            "height": 44
+          },
+          {
+            "width": 317.625,
+            "height": 44
+          },
+          {
+            "width": 317.625,
+            "height": 44
+          },
+          {
+            "width": 133.546875,
+            "height": 48
+          },
+          {
+            "width": 89.53125,
+            "height": 48
+          },
+          {
+            "width": 146.828125,
+            "height": 44
+          }
+        ]
+      },
+      "keyboardOpened": true,
+      "errors": []
+    },
+    {
+      "width": 768,
+      "day": "2026-11-09",
+      "fontNote": "Browser-test font stand-in, synthetic identities.",
+      "collapsed": {
+        "overflow": false,
+        "groups": [
+          "Hot larder",
+          "Grill",
+          "Pans"
+        ],
+        "floorCount": 1,
+        "floorsAfterPackdown": true,
+        "heading": "Finish overhead shelves and frames before the final floor clean. Keep each after-service floor check separate. Floor checks follow this list.",
+        "packRows": [
+          "evidence-pd-hot-01",
+          "evidence-pd-hot-02",
+          "evidence-pd-hot-03",
+          "evidence-pd-hot-04",
+          "evidence-pd-hot-05",
+          "evidence-pd-grill-01",
+          "evidence-pd-grill-03",
+          "evidence-pd-grill-04",
+          "evidence-pd-grill-05",
+          "evidence-pd-grill-06",
+          "evidence-pd-grill-07",
+          "evidence-pd-grill-08",
+          "evidence-pd-grill-09",
+          "evidence-pd-grill-10",
+          "evidence-pd-pans-01",
+          "evidence-pd-pans-02",
+          "evidence-pd-pans-03",
+          "evidence-pd-pans-04",
+          "evidence-pd-pans-05",
+          "evidence-pd-pans-06",
+          "evidence-pd-pans-07",
+          "evidence-pd-pans-08",
+          "evidence-pd-pans-09",
+          "evidence-pd-pans-10"
+        ]
+      },
+      "expanded": {
+        "overflow": false,
+        "controls": [
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 640.40625,
+            "height": 46.59375
+          },
+          {
+            "width": 687.625,
+            "height": 44
+          },
+          {
+            "width": 687.625,
+            "height": 44
+          },
+          {
+            "width": 687.625,
+            "height": 44
+          },
+          {
+            "width": 687.625,
+            "height": 44
+          },
+          {
+            "width": 133.546875,
+            "height": 48
+          },
+          {
+            "width": 89.53125,
+            "height": 48
+          },
+          {
+            "width": 146.828125,
+            "height": 48
+          }
+        ]
+      },
+      "keyboardOpened": true,
+      "errors": []
+    },
+    {
+      "width": 1280,
+      "day": "2026-11-09",
+      "fontNote": "Browser-test font stand-in, synthetic identities.",
+      "collapsed": {
+        "overflow": false,
+        "groups": [
+          "Hot larder",
+          "Grill",
+          "Pans"
+        ],
+        "floorCount": 1,
+        "floorsAfterPackdown": true,
+        "heading": "Finish overhead shelves and frames before the final floor clean. Keep each after-service floor check separate. Floor checks follow this list.",
+        "packRows": [
+          "evidence-pd-hot-01",
+          "evidence-pd-hot-02",
+          "evidence-pd-hot-03",
+          "evidence-pd-hot-04",
+          "evidence-pd-hot-05",
+          "evidence-pd-grill-01",
+          "evidence-pd-grill-03",
+          "evidence-pd-grill-04",
+          "evidence-pd-grill-05",
+          "evidence-pd-grill-06",
+          "evidence-pd-grill-07",
+          "evidence-pd-grill-08",
+          "evidence-pd-grill-09",
+          "evidence-pd-grill-10",
+          "evidence-pd-pans-01",
+          "evidence-pd-pans-02",
+          "evidence-pd-pans-03",
+          "evidence-pd-pans-04",
+          "evidence-pd-pans-05",
+          "evidence-pd-pans-06",
+          "evidence-pd-pans-07",
+          "evidence-pd-pans-08",
+          "evidence-pd-pans-09",
+          "evidence-pd-pans-10"
+        ]
+      },
+      "expanded": {
+        "overflow": false,
+        "controls": [
+          {
+            "width": 44,
+            "height": 44
+          },
+          {
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "width": 1159.625,
+            "height": 44
+          },
+          {
+            "width": 1159.625,
+            "height": 44
+          },
+          {
+            "width": 1159.625,
+            "height": 44
+          },
+          {
+            "width": 1159.625,
+            "height": 44
+          },
+          {
+            "width": 133.546875,
+            "height": 48
+          },
+          {
+            "width": 89.53125,
+            "height": 48
+          },
+          {
+            "width": 146.828125,
+            "height": 48
+          }
+        ]
+      },
+      "keyboardOpened": true,
+      "errors": []
+    }
+  ]
+}

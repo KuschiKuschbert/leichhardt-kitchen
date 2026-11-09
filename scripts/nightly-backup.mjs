@@ -8,7 +8,7 @@
   empty searches, card opens, the guides' words and small pictures, the recipes the head chef changed or added in the
   book with their earlier versions, shared protected words and immutable proofreader history, canonical Operandio cooling
   state, and who has set a PIN.
-  Cleaning includes every schedule revision and completion records within the selected day window.
+  Cleaning includes every schedule revision, occurrence states and immutable actions within the selected day window.
   People's PIN fingerprints and the guides' page pictures are left out, like the button.
   The workflow then encrypts the file with the BACKUP_KEY secret and keeps it as a GitHub artifact for 90 days.
 
@@ -90,6 +90,9 @@ reads += Math.max(1, out.deliveries.length);
 out.cleaningTasks = await all('cleaningTasks'); reads += Math.max(1, out.cleaningTasks.length);
 out.cleaningDone = grab(await K.collection('cleaningDone').where('day', '>=', shift(today, -(DAYS - 1))).where('day', '<=', today).get());
 reads += Math.max(1, out.cleaningDone.length);
+// One additional dated query keeps the immutable action trail beside each included occurrence.
+out.cleaningActions = grab(await K.collection('cleaningActions').where('day', '>=', shift(today, -(DAYS - 1))).where('day', '<=', today).get());
+reads += Math.max(1, out.cleaningActions.length);
 out.referencesHist = await subs(out.references, 'references', 'hist');
 out.trainingHist = await subs(out.training, 'training', 'hist');
 out.notes = await all('notes'); out.notesSeen = await subs(out.notes, 'notes', 'seen');
