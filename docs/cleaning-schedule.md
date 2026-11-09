@@ -135,6 +135,8 @@ Database verification and production publication are recorded separately below. 
 
 The complete 18-file Firestore/Auth emulator suite passed. Cleaning passed 738 real-rule checks. The actual client matrix passed 255 call shapes, 2,295 calls across nine sign-ins. The maximum supported 12-check plan with mapped verification and anchored recurrence passed create, revision and archive checks. Multiline methods/review and invalid-type rejection also passed. The synthetic backup recovery round trip preserved all 68 included documents, including an enhanced occurrence and its exact immutable action snapshot. Syntax and whitespace checks passed.
 
+After reconciling the current team and supplier changes, all six focused Cleaning, navigation, release, read-budget and design-pattern suites passed on the combined branch. Database rules were unchanged by that integration.
+
 Independent read-only review found no remaining material authorisation or audit bypass. Task ordering is a clear working sequence with per-task checks; it is not a global cross-task lock that could prevent an earlier after-service floor clean.
 
 The code is prepared on a feature branch for a draft pull request. No production rules were dispatched, no live task programme was imported and the team release switch was not enabled. The compatible additive rules must be published before the client is released; required CI and production verification remain distinct release steps.
