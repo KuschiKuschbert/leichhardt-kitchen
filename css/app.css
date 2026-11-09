@@ -5228,3 +5228,14 @@ html:has(.tm-focus-page) {
 .o-cut-at { flex-shrink: 0; white-space: pre; }
 
 .o-requests .nb-roll { display: inline-block; white-space: nowrap; }
+
+/* Kitchen mascot on Home (owner, 9 Nov 2026; docs/kitchen-mascot.md): a decorative button at the right end of the
+   Welcome row, outside the heading. No hover tint or pressed box; a focus ring for keyboards only. */
+.mascot-host { position: relative; }
+.mascot { position: absolute; z-index: 1; margin: 0; padding: 0; border: 0; background: none; box-shadow: none; border-radius: var(--r-act); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.mascot[hidden] { display: none; }
+.mascot:hover { box-shadow: none; }
+.mascot canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; pointer-events: none; }
+.mascot:focus { outline: none; }
+.mascot:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+@media (prefers-reduced-motion: no-preference) { :where(.mascot):active { scale: 0.96; } }
