@@ -2014,11 +2014,13 @@ html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(
 :where(.wm-a, .a-tab, .seg-b, .vsw button, .p-x, .nb-x, summary):not(:disabled):not([aria-disabled="true"]) {
   transition: scale 0.18s ease-out, box-shadow 0.18s ease-out;
 }
-:where(.wtop-btn, .pnav a, .tabbar a):not(:disabled):not([aria-disabled="true"]) {
+:where(.wtop-btn, .tm-chip, .pnav a, .tabbar a):not(:disabled):not([aria-disabled="true"]) {
   scale: none;
   transition: box-shadow 0.18s ease-out;
 }
-:where(.wtop-btn, .tabbar a) > svg { transform-origin: 50% 65%; transition: rotate 0.18s ease-out, scale 0.18s ease-out; }
+/* The timer nests its clock drawing; its progress ring and read-only status stay still. */
+:where(.wtop-btn, .tm-chip, .tabbar a) > svg,
+:where(.cooling-chip) .cooling-clock-drawing > svg { transform-origin: 50% 65%; transition: rotate 0.18s ease-out, scale 0.18s ease-out; }
 .wtop-who[aria-expanded="true"] > svg { rotate: -8deg; }
 .wm-a > svg { transform-origin: 50% 65%; transition: translate 0.18s ease-out, rotate 0.18s ease-out, scale 0.18s ease-out; }
 @media (hover: hover) and (pointer: fine) {
@@ -2032,10 +2034,11 @@ html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(
   :where(.wm-a, .a-tab, .seg-b, .vsw button, .p-x, .nb-x, summary):not(:disabled):not([aria-disabled="true"]):hover {
     box-shadow: inset 0 0 0 100vmax rgb(226 96 42 / 0.09);
   }
-  :where(.wtop-btn, .pnav a, .tabbar a):not(:disabled):not([aria-disabled="true"]):hover {
+  :where(.wtop-btn, .tm-chip, .pnav a, .tabbar a):not(:disabled):not([aria-disabled="true"]):hover {
     box-shadow: inset 0 0 0 100vmax rgb(240 138 75 / 0.16);
   }
-  :where(.wtop-btn, .tabbar a):not(:disabled):not([aria-disabled="true"]):hover > svg { rotate: -8deg; }
+  :where(.wtop-btn, .tm-chip, .tabbar a):not(:disabled):not([aria-disabled="true"]):hover > svg,
+  :where(.cooling-chip):not(:disabled):not([aria-disabled="true"]):hover .cooling-clock-drawing > svg { rotate: -8deg; }
   .wm-a:not(:disabled):not([aria-disabled="true"]):hover > svg { translate: 2px 0; rotate: -8deg; }
 }
 :where(.btn, .nb-addbtn, .nb-btn, .chip, .nb-tab, .ux-picker-trigger, .ux-picker-option):not(:disabled):not([aria-disabled="true"]):active {
@@ -2046,11 +2049,12 @@ html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(
 :where(.wm-a, .a-tab, .seg-b, .vsw button, .p-x, .nb-x, summary):not(:disabled):not([aria-disabled="true"]):active {
   box-shadow: inset 0 0 0 100vmax rgb(226 96 42 / 0.15);
 }
-:where(.wtop-btn, .pnav a, .tabbar a):not(:disabled):not([aria-disabled="true"]):is(:active, .is-pressed) {
+:where(.wtop-btn, .tm-chip, .pnav a, .tabbar a):not(:disabled):not([aria-disabled="true"]):is(:active, .is-pressed) {
   scale: none;
   box-shadow: inset 0 0 0 100vmax rgb(240 138 75 / 0.25);
 }
-:where(.wtop-btn, .tabbar a):not(:disabled):not([aria-disabled="true"]):is(:active, .is-pressed) > svg { rotate: -12deg; scale: 0.94; transition-duration: 0.07s; }
+:where(.wtop-btn, .tm-chip, .tabbar a):not(:disabled):not([aria-disabled="true"]):is(:active, .is-pressed) > svg,
+:where(.cooling-chip):not(:disabled):not([aria-disabled="true"]):is(:active, .is-pressed) .cooling-clock-drawing > svg { rotate: -12deg; scale: 0.94; transition-duration: 0.07s; }
 .wm-a:focus-visible > svg { translate: 2px 0; }
 .wm-a:not(:disabled):not([aria-disabled="true"]):is(:active, .is-pressed) > svg { rotate: -12deg; scale: 0.94; transition-duration: 0.07s; }
 @media (prefers-reduced-motion: no-preference) {
@@ -2063,7 +2067,8 @@ html.has-upd .find-bar, html.has-upd .a-nav, html.has-upd .dw-stage { top: calc(
 @media (prefers-reduced-motion: reduce) {
   :where(button:not(:disabled), a[href], summary):not([aria-disabled="true"]) { scale: none !important; translate: none !important; }
   :where(button:not(:disabled), a[href], summary):not([aria-disabled="true"]):active { opacity: 0.75; }
-  :where(.wtop-btn, .tabbar a, .wm-a) > svg { rotate: none !important; scale: none !important; translate: none !important; }
+  :where(.wtop-btn, .tm-chip, .tabbar a, .wm-a) > svg,
+  :where(.cooling-chip) .cooling-clock-drawing > svg { rotate: none !important; scale: none !important; translate: none !important; }
 }
 
 /* Manage Recipes & Drawings (#/manage, js/manage.js, 21 Oct 2026): the head chef's recipe list and recipe form. Classes
