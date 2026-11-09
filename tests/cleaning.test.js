@@ -34,6 +34,9 @@ const cleanWrites = p => p.evaluate(() => (__fake.writes || []).flat().filter(x 
 const identity = p => p.evaluate(() => ({ who: LK_PREP.state.who, uid: LK_PREP.state.uid,
   session: localStorage.getItem('lk.prep.sess'), here: localStorage.getItem('lk.prep.here') }));
 const visible = async (p, selector) => await p.locator(selector).count() > 0 && await p.locator(selector).first().isVisible();
+async function general(p) {
+  if (await p.locator('[data-cln="group"][data-group="general"][aria-expanded="false"]').count()) await p.click('[data-cln="group"][data-group="general"]');
+}
 const row = id => '.cln-row[data-id="' + id + '"]';
 const tick = async (p, id = 'coldroom') => { await p.click('[data-cln="tick"][data-id="' + id + '"]'); await L.settle(p, 200); };
 async function done(p, id = 'coldroom') {
@@ -46,6 +49,7 @@ async function open(b, options = {}) {
     ['ann', 'bo', 'sam'].forEach(id => localStorage.setItem('lk.sec.' + id, JSON.stringify({ d: date, sec: 'larder', name: 'Larder', self: true, at: Date.now() })));
   }, ...options });
   await L.waitFor(p, () => !!document.querySelector('.cln-page') && !document.querySelector('.cln-loading'));
+  await general(p);
   return p;
 }
 
@@ -189,32 +193,35 @@ async function open(b, options = {}) {
     await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 2);
     const firstReads = (await cleanReads(p)).length;
     await p.click('[data-cln="week"]');
-    await L.waitFor(p, () => !!document.querySelector('.cln-matrix table'));
+    await L.waitFor(p, () => !!document.querySelector('.cln-week-day') && !document.querySelector('.cln-loading'));
+    await general(p);
     const weekReads = await cleanReads(p);
     ok(weekReads.length - firstReads === 2, 'week review uses one template range and one completion range, not seven daily requests');
-    ok(await p.locator('.cln-matrix thead th').count() === 8, 'wide week: task column and seven clearly labelled weekdays');
-    const fit = await p.evaluate(() => { const grid = document.querySelector('.cln-matrix').getBoundingClientRect(), book = document.querySelector('.cln-book').getBoundingClientRect(), footer = document.querySelector('.foot').getBoundingClientRect(); return { grid: grid.bottom, book: book.bottom, footer: footer.top }; });
-    ok(fit.grid <= fit.book + 1 && fit.footer >= fit.book - 1, 'wide week: the complete matrix stays inside its notebook and above the page footer');
-    ok(await p.$$eval('.cln-matrix [data-cln="tick"]', (es, date) => es.every(e => e.getAttribute('data-day') === date), today), 'wide week: only today has completion buttons');
-    ok(/Missed = past and unticked|Due = later|Dot = not due/.test(await L.txt(p, '.cln-legend')), 'week review explains missed, future and not-due states beside the matrix');
+    ok(await p.locator('[data-cln="day"]').count() === 7 && !await p.locator('.cln-matrix').count(), 'wide week: seven labelled days use the same grouped notebook without a matrix');
+    const fit = await p.evaluate(() => { const list = document.querySelector('.cln-week-day').getBoundingClientRect(), book = document.querySelector('.cln-book').getBoundingClientRect(), footer = document.querySelector('.foot').getBoundingClientRect(); return { list: list.bottom, book: book.bottom, footer: footer.top }; });
+    ok(fit.list <= fit.book + 1 && fit.footer >= fit.book - 1, 'wide week: the grouped day stays inside its notebook and above the page footer');
+    ok(await p.$$eval('.cln-week-day [data-cln="tick"]', (es, date) => es.length > 0 && es.every(e => e.getAttribute('data-day') === date), today), 'wide week: the selected today owns the completion buttons');
     await p.setViewportSize({ width: 390, height: 844 }); await L.settle(p, 200);
-    ok(await visible(p, '.cln-day-pick') && !(await visible(p, '.cln-matrix')), 'phone week: labelled days and full-width task rows replace the wide table');
+    ok(await visible(p, '.cln-day-pick') && !(await visible(p, '.cln-matrix')), 'phone week: labelled days and grouped task rows remain visible');
     const dates = await p.$$eval('[data-cln="day"]', es => es.map(e => e.getAttribute('data-day'))), old = dates.find(d => d < today);
     if (old) {
       await p.click('[data-cln="day"][data-day="' + old + '"]');
+      await general(p);
       ok(await p.$$eval('.cln-week-day [data-cln="tick"]', es => es.every(e => e.disabled)), 'past day: all occurrence controls are read only');
     }
     ok((await cleanReads(p)).length === weekReads.length, 'changing a day inside the loaded week makes no read');
     ok(!(await L.overflow(p)), 'phone week fits without sideways page scroll');
     await p.click('[data-cln="next"]');
     await L.waitFor(p, dates => [...document.querySelectorAll('[data-cln="day"]')].every(e => !dates.includes(e.getAttribute('data-day'))), dates);
+    await L.waitFor(p, () => !document.querySelector('.cln-loading'));
+    await general(p);
     await L.waitFor(p, () => !!document.querySelector('.cln-week-day .cln-row'));
     ok(await p.$$eval('.cln-week-day [data-cln="tick"]', es => es.every(e => e.disabled)), 'future week: scheduled work cannot be pre-ticked');
   });
 
   await step('chef task setup and immutable changes', async () => {
     p = await open(b, { who: 'sam' }); await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 2);
-    await p.click('[data-cln="setup"]'); await p.click('[data-cln="add"]');
+    await p.locator('[data-cln="setup"]').first().click(); await p.click('[data-cln="add"]');
     const areas = await p.$$eval('#cln-areas option', es => es.map(e => e.value));
     ok(['Coldroom', 'Freezer', 'Dry store', 'Oven', 'Fryers', 'Behind equipment', 'Pass', 'Shelves'].every(x => areas.includes(x)), 'task setup offers every requested kitchen area without adding staff sections');
     ok(await p.locator('[data-cln="save"]').isDisabled(), 'empty setup has nothing to save');
@@ -224,15 +231,20 @@ async function open(b, options = {}) {
     await L.waitFor(p, () => /Saved Wipe freezer handles/.test((document.querySelector('.cln-save-note') || {}).textContent || ''));
     let records = await dump(p), path = Object.keys(records).find(k => /\/cleaningTasks\//.test(k) && records[k].text === 'Wipe freezer handles'), first = records[path], id = path.split('/').pop();
     ok(first.from === at(today) && first.until === OPEN && first.root === id && first.prev === '' && first.section === 'larder' && first.sectionName === 'Larder' && first.by === 'sam', 'new task starts today with a stable revision and current section name');
+    await p.click('[data-cln="today"]');
     ok(/Wipe freezer handles/.test(await L.txt(p, '.cln-body')), 'new due task appears in the daily list after acknowledgement');
+    await p.locator('[data-cln="setup"]').first().click();
     await p.fill('#cln-text', 'Clean freezer door seals'); await p.click('[data-cln="save"]');
     await L.waitFor(p, () => /Saved Clean freezer door seals/.test((document.querySelector('.cln-save-note') || {}).textContent || ''));
     records = await dump(p); const nextPath = Object.keys(records).find(k => /\/cleaningTasks\//.test(k) && records[k].text === 'Clean freezer door seals'), next = records[nextPath];
     ok(records[path].text === 'Wipe freezer handles' && records[path].until === at(tomorrow) && records[path].next === nextPath.split('/').pop() && next.root === id && next.prev === id && next.from === at(tomorrow), 'editing makes an atomically linked tomorrow revision and retains today\'s original wording');
+    await p.click('[data-cln="today"]');
     ok(/Wipe freezer handles/.test(await L.txt(p, '.cln-body')) && !/Clean freezer door seals/.test(await L.txt(p, '.cln-body')), 'today\'s daily task remains unchanged after an edit');
+    await p.locator('[data-cln="setup"]').first().click();
     await p.click('[data-cln="cancel-edit"]');
     const newId = nextPath.split('/').pop(); await p.click('[data-cln="archive"][data-id="' + newId + '"]'); await p.click('[data-cln="archive"][data-id="' + newId + '"]');
     await L.waitFor(p, k => __fake.dump()[k].until !== 253402178400000, nextPath);
+    await p.click('[data-cln="today"]');
     ok((await dump(p))[nextPath].until === at(tomorrow) && /Wipe freezer handles/.test(await L.txt(p, '.cln-body')), 'archiving tomorrow\'s revision leaves today and earlier records intact');
   });
 
@@ -249,7 +261,7 @@ async function open(b, options = {}) {
   for (const deviceMode of ['personal', 'shared']) await step(deviceMode + ' privacy lock', async () => {
     p = await open(b, { who: 'sam', deviceMode, clock: at(today) + 4 * 3600000 - 60000 });
     await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 2);
-    await p.click('[data-cln="setup"]'); await p.click('[data-cln="add"]');
+    await p.locator('[data-cln="setup"]').first().click(); await p.click('[data-cln="add"]');
     await p.fill('#cln-text', 'Unfinished oven cleaning task'); await p.fill('#cln-area', 'Oven');
     const original = await p.evaluate(() => LK_PREP.identity());
     await p.clock.runFor(90000); await L.settle(p, 200);
@@ -271,18 +283,18 @@ async function open(b, options = {}) {
   await step('retained edit with failed reload', async () => {
     p = await open(b, { who: 'sam', deviceMode: 'shared', clock: at(today) + 4 * 3600000 - 60000 });
     await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 2);
-    await p.click('[data-cln="setup"]'); await p.click('[data-cln="edit"][data-id="coldroom"]');
+    await p.locator('[data-cln="setup"]').first().click(); await p.click('[data-cln="edit"][data-id="coldroom"]');
     await p.fill('#cln-text', 'Edited coldroom cleaning');
     await p.evaluate(() => { __fake.failReads = /\/cleaningTasks$/; });
     await p.clock.runFor(90000); await L.settle(p, 150);
     await L.waitFor(p, () => !LK_PREP.privateAccess() && !!document.querySelector('#pf1'));
     await p.fill('#pf1', '1111');
-    await L.waitFor(p, () => LK_PREP.privateAccess() && !!document.querySelector('.cln-body .p-err'), null, 10000);
+    await L.waitFor(p, () => LK_PREP.privateAccess() && !!document.querySelector('.cln-plan-body > .p-err'), null, 10000);
     ok(await p.inputValue('#cln-text') === 'Edited coldroom cleaning' && await p.locator('[data-cln="save"]').isDisabled(), 'retained edit: failed reload keeps the draft and disables Save until its original revision is known');
     await p.dispatchEvent('#cln-form', 'submit'); await L.settle(p, 150);
     ok(!(await cleanWrites(p)).length, 'retained edit: even a direct submit cannot turn the missing edit target into a new task');
     await p.evaluate(() => { __fake.failReads = null; }); await p.locator('[data-cln="refresh"]').first().click();
-    await L.waitFor(p, () => !document.querySelector('.cln-body .p-err') && document.querySelectorAll('.cln-row').length === 2);
+    await L.waitFor(p, () => !document.querySelector('.cln-plan-body > .p-err') && document.querySelector('[data-cln="save"]') && !document.querySelector('[data-cln="save"]').disabled);
     await p.click('[data-cln="save"]');
     await L.waitFor(p, () => /Saved Edited coldroom cleaning/.test((document.querySelector('.cln-save-note') || {}).textContent || ''));
     const docs = await dump(p), old = docs[key('cleaningTasks', 'coldroom')], replacements = Object.entries(docs).filter(([k, d]) => /\/cleaningTasks\//.test(k) && d.text === 'Edited coldroom cleaning');
@@ -292,7 +304,7 @@ async function open(b, options = {}) {
   await step('lost acknowledgement across unlock', async () => {
     p = await open(b, { who: 'sam', deviceMode: 'shared', clock: at(today) + 4 * 3600000 - 60000 });
     await L.waitFor(p, () => document.querySelectorAll('.cln-row').length === 2);
-    await p.click('[data-cln="setup"]'); await p.click('[data-cln="add"]');
+    await p.locator('[data-cln="setup"]').first().click(); await p.click('[data-cln="add"]');
     await p.fill('#cln-text', 'First saved shelf task'); await p.fill('#cln-area', 'Shelves');
     await p.selectOption('#cln-section', '_shared', { force: true }); await p.click('[data-cln="repeat"][data-dow="' + dow + '"]');
     // The server commits the task but this caller loses the acknowledgement. Only this one task batch is affected.

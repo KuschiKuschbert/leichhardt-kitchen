@@ -71,6 +71,8 @@ async function check(b, hash, o, name, see, then) {
   });
   await check(b, '#/deliveries', { who: 'ann' }, 'deliveries', 'Delivery');
   await check(b, '#/cleaning', { who: 'sam' }, 'cleaning', 'Cleaning', async p => {
+    await L.waitFor(p, () => !!document.querySelector('[data-cln="group"][data-group="general"]'));
+    await L.tap(p, '[data-cln="group"][data-group="general"]');
     await L.waitFor(p, () => !!document.querySelector('.cln-row'));
     const words = await L.txt(p, '.cln-page');
     ok(words.includes('Area ' + P) && words.includes('Worker ' + P) && words.includes('Section ' + P), 'cleaning: area, worker and responsible section remain literal text');

@@ -12,7 +12,7 @@ const people = [
 ];
 const shifts = [{ id: 'lunch', name: 'Lunch', from: 600, to: 900 }, { id: 'dinner', name: 'Dinner', from: 960, to: 1320 }];
 const sections = [{ id: 'grill', name: 'Grill' }, { id: 'pans', name: 'Pans' }, { id: 'larder', name: 'Larder' }];
-const plan = day => ({ day, on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }, { id: 'ann', sh: 'dinner', sec: 'pans' }, { id: 'bo', sh: 'lunch', sec: 'larder' }, { id: 'sam', sh: 'lunch', sec: 'pans' }, { id: 'sam', sh: 'dinner', sec: 'grill' }],
+const plan = day => ({ day, on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }, { id: 'ann', sh: 'dinner', sec: 'pans' }, { id: 'bo', sh: 'lunch', sec: 'larder' }, { id: 'bo', sh: 'dinner', sec: 'larder' }, { id: 'sam', sh: 'lunch', sec: 'pans' }, { id: 'sam', sh: 'dinner', sec: 'grill' }],
   br: [{ id: 'ann', sh: 'lunch', at: 825, len: 45 }, { id: 'ann', sh: 'dinner', at: 1140, len: 30 }, { id: 'sam', sh: 'lunch', at: 870, len: 30 }, { id: 'sam', sh: 'dinner', at: 1140, len: 150 }],
   v: 1, by: 'sam', at: L.NOW - 3600000, upd: L.NOW - 3600000 });
 const fixture = () => ({ [CFG]: { people, headId: 'ann', sousIds: ['sam', 'ann'], staffIds: ['sam', 'ann', 'bo'], kitShifts: shifts, kitSecs: sections }, [TEAM]: plan(today), [key('team', tomorrow)]: plan(tomorrow) });
@@ -130,7 +130,7 @@ async function layouts(p, label) {
   const emptyReads = await readCount(p), emptyWrites = await p.evaluate(() => __fake.writes.length);
   await p.locator(quickPerson('ann')).check(); await p.locator(quickPerson('bo')).check(); await p.locator(quickShift('dinner')).check();
   await click(p, '[data-p="tm-quick-add"]');
-  ok(await p.locator('.tm-person-row').count() === 3 && await value(p, 'tm-sec:ann') === '' && await value(p, 'tm-sec:bo') === '' && await value(p, 'tm-sec:sam') === '__off', 'bulk Add: selected staff enter Lunch together while unselected people remain off');
+  ok(await p.locator('.tm-person-row').count() === 2 && await value(p, 'tm-sec:ann') === '' && await value(p, 'tm-sec:bo') === '' && !await p.locator(field('tm-sec:sam')).count() && await p.locator(quickPerson('sam')).count() === 1, 'bulk Add: selected staff enter Lunch together while unselected people stay in the chooser');
   await pick(p, 'tm-sec:ann', 'grill'); await click(p, '[data-p="tm-sh"][data-v="dinner"]');
   ok(await value(p, 'tm-sec:ann') === '' && await value(p, 'tm-sec:bo') === '', 'bulk Add: both selected people are also on the explicitly chosen Dinner service');
   await pick(p, 'tm-sec:ann', 'pans'); await details(p, 'ann'); await click(p, '[data-p="tm-addbr"][data-id="ann"]');

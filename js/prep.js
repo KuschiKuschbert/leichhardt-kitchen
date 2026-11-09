@@ -12683,6 +12683,11 @@
       .sort(function (a, b) { return rank(a) - rank(b) || String(a.name).localeCompare(String(b.name)); });
   }
   function tmOnShift(id, sh) { return !!(tmf && tmf.on[id] && tmf.on[id][sh] !== undefined); }
+  // The worksheet follows this date's draft. The Add staff chooser still offers the full staff list.
+  function tmDayPeople() {
+    var shs = kitShifts();
+    return tmPeople().filter(function (p) { return shs.some(function (s) { return tmOnShift(p.id, s.id); }); });
+  }
   function tmAddShift(id, sh) {
     if (tmOnShift(id, sh)) return;
     var o = tmf.on[id], was = o ? o[Object.keys(o)[0]] : '', usual = tmUsual(id, sh);
@@ -12776,7 +12781,7 @@
   }
   function tmPersonListHTML(s) {
     var q = tmFind.toLowerCase().trim();
-    var list = tmPeople().filter(function (p) { var current = tmOnShift(p.id, s.id) ? tmSecName(tmf.on[p.id][s.id]) : ''; return !q || (p.name + ' ' + current).toLowerCase().indexOf(q) >= 0; });
+    var list = tmDayPeople().filter(function (p) { var current = tmOnShift(p.id, s.id) ? tmSecName(tmf.on[p.id][s.id]) : ''; return !q || (p.name + ' ' + current).toLowerCase().indexOf(q) >= 0; });
     if (!list.length) return '<li class="hint">No people match. Change the search.</li>';
     return list.map(function (p) {
       var on = tmOnShift(p.id, s.id), current = on ? tmf.on[p.id][s.id] : '__off';
@@ -12789,14 +12794,14 @@
     }).join('');
   }
   function tmAssignHTML(s) {
-    if (!Object.keys(tmf.on).length) return tmQuickHTML(s);
+    if (!tmDayPeople().length) return tmQuickHTML(s);
     return '<div class="tm-worksheet"><label class="visually-hidden" for="tm-find">Find a person</label><input id="tm-find" type="search" class="search tm-find" data-k="tm-q" placeholder="Find a person" value="' + esc(tmFind) + '" autocomplete="off">' +
       '<div class="tm-worksheet-head" aria-hidden="true"><span>Person &amp; break</span><span>Section</span><span>More</span></div>' +
-      '<ul class="tm-people" aria-label="People on ' + esc(s.name) + '">' + tmPersonListHTML(s) + '</ul></div>' + tmQuickHTML(s);
+      '<ul class="tm-people" aria-label="' + esc('Selected staff for ' + tmPlanDate(tmPlanDay()) + ', ' + s.name) + '">' + tmPersonListHTML(s) + '</ul></div>' + tmQuickHTML(s);
   }
   // This chooser only changes the existing dated draft. Names/services remain in memory with that day's UI.
   function tmQuickHTML(s) {
-    var empty = !Object.keys(tmf.on).length, q = tmUi.quick;
+    var empty = !tmDayPeople().length, q = tmUi.quick;
     if (!q) { q = tmUi.quick = { people: {}, shifts: {} }; if (s) q.shifts[s.id] = true; }
     var busy = svOf('t') === 'busy', dis = busy ? ' disabled' : '', ps = tmPeople(), shs = kitShifts();
     var count = ps.filter(function (p) { return q.people[p.id]; }).length, services = shs.filter(function (x) { return q.shifts[x.id]; }).length;
@@ -12807,7 +12812,7 @@
     return empty ? '<section class="tm-quick-add" aria-label="Who\'s working?"><h3>Who\'s working?</h3>' + body + '</section>' : '<details class="tm-quick-add"><summary>Add staff to this day</summary>' + body + '</details>';
   }
   function tmWholeHTML() {
-    var out = tmOut(tmf), shs = kitShifts(), ps = tmPeople().filter(function (p) { return shs.some(function (s) { return tmOnShift(p.id, s.id); }); });
+    var out = tmOut(tmf), shs = kitShifts(), ps = tmDayPeople();
     var body = ps.map(function (p) {
       return '<section class="tm-dayperson"><h4 class="tm-dayname">' + esc(p.name) + '</h4>' + shs.filter(function (s) { return tmOnShift(p.id, s.id); }).map(function (s) {
         var sec = tmSecName(tmf.on[p.id][s.id]) || (chefP(p) ? p.role === 'head' ? 'Head chef' : 'Sous chef' : 'No section');
