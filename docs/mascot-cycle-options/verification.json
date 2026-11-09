@@ -1,0 +1,2281 @@
+{
+  "kind": "Preview: actual application with review-only injection; synthetic Firebase stand-in. Not delivered app behaviour.",
+  "date": "2026-11-09T19:21:04.395Z",
+  "viewports": [
+    [
+      390,
+      844
+    ],
+    [
+      768,
+      1024
+    ],
+    [
+      1280,
+      900
+    ]
+  ],
+  "screens": [
+    {
+      "mascot": {
+        "x": 310,
+        "y": 76,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "A",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "burger",
+          "frame": 3,
+          "playing": true,
+          "settled": false,
+          "plays": 1,
+          "scheduled": true,
+          "atlasLoaded": true,
+          "rest": "welcome-still.png"
+        },
+        "label": "",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png"
+        ]
+      },
+      "file": "evidence/a-playing-390.png",
+      "note": "Design A: first Home view of the day, today's action part way through.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 310,
+        "y": 76,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "A",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "burger",
+          "frame": 7,
+          "playing": false,
+          "settled": true,
+          "plays": 1,
+          "scheduled": false,
+          "atlasLoaded": true,
+          "rest": "welcome-still.png"
+        },
+        "label": "",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png"
+        ]
+      },
+      "file": "evidence/a-rest-390.png",
+      "note": "Design A: at rest on the neutral Welcome still.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 310,
+        "y": 76,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "B",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "burger",
+          "frame": 3,
+          "playing": true,
+          "settled": false,
+          "plays": 1,
+          "scheduled": true,
+          "atlasLoaded": true,
+          "rest": "burger-still.png"
+        },
+        "label": "Kitchen mascot. Today: Serve. Play again",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png"
+        ]
+      },
+      "file": "evidence/b-playing-390.png",
+      "note": "Design B: first Home view of the day, today's action part way through.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 310,
+        "y": 76,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "B",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "burger",
+          "frame": 7,
+          "playing": false,
+          "settled": true,
+          "plays": 1,
+          "scheduled": false,
+          "atlasLoaded": true,
+          "rest": "burger-still.png"
+        },
+        "label": "Kitchen mascot. Today: Serve. Play again",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png"
+        ]
+      },
+      "file": "evidence/b-rest-390.png",
+      "note": "Design B: at rest on today's action still.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 310,
+        "y": 76,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "B",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "burger",
+          "frame": 2,
+          "playing": true,
+          "settled": false,
+          "plays": 2,
+          "scheduled": true,
+          "atlasLoaded": true,
+          "rest": "burger-still.png"
+        },
+        "label": "Kitchen mascot. Today: Serve. Play again",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png"
+        ]
+      },
+      "file": "evidence/b-tapped-390.png",
+      "note": "Design B: tapped, today's action playing.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 310,
+        "y": 76,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "C",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "idle",
+          "frame": 0,
+          "playing": false,
+          "settled": true,
+          "plays": 0,
+          "scheduled": false,
+          "atlasLoaded": false,
+          "rest": "idle-still.png"
+        },
+        "label": "Kitchen mascot. Play today’s action",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/idle-still.png"
+        ]
+      },
+      "file": "evidence/c-rest-390.png",
+      "note": "Design C: at rest on the Idle still, waiting for a tap.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 310,
+        "y": 76,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "C",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "burger",
+          "frame": 0,
+          "playing": true,
+          "settled": false,
+          "plays": 1,
+          "scheduled": true,
+          "atlasLoaded": true,
+          "rest": "idle-still.png"
+        },
+        "label": "Kitchen mascot. Today: Serve. Play again",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/idle-still.png",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/idle-still.png"
+        ]
+      },
+      "file": "evidence/c-tapped-390.png",
+      "note": "Design C: tapped, today's action playing.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 656,
+        "y": 168,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "A",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "burger",
+          "frame": 3,
+          "playing": true,
+          "settled": false,
+          "plays": 1,
+          "scheduled": true,
+          "atlasLoaded": true,
+          "rest": "welcome-still.png"
+        },
+        "label": "",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png"
+        ]
+      },
+      "file": "evidence/a-playing-768.png",
+      "note": "Design A: first Home view of the day, today's action part way through.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 656,
+        "y": 168,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "A",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "burger",
+          "frame": 7,
+          "playing": false,
+          "settled": true,
+          "plays": 1,
+          "scheduled": false,
+          "atlasLoaded": true,
+          "rest": "welcome-still.png"
+        },
+        "label": "",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png"
+        ]
+      },
+      "file": "evidence/a-rest-768.png",
+      "note": "Design A: at rest on the neutral Welcome still.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 656,
+        "y": 168,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "B",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "burger",
+          "frame": 3,
+          "playing": true,
+          "settled": false,
+          "plays": 1,
+          "scheduled": true,
+          "atlasLoaded": true,
+          "rest": "burger-still.png"
+        },
+        "label": "Kitchen mascot. Today: Serve. Play again",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png"
+        ]
+      },
+      "file": "evidence/b-playing-768.png",
+      "note": "Design B: first Home view of the day, today's action part way through.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 656,
+        "y": 168,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "B",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "burger",
+          "frame": 7,
+          "playing": false,
+          "settled": true,
+          "plays": 1,
+          "scheduled": false,
+          "atlasLoaded": true,
+          "rest": "burger-still.png"
+        },
+        "label": "Kitchen mascot. Today: Serve. Play again",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png"
+        ]
+      },
+      "file": "evidence/b-rest-768.png",
+      "note": "Design B: at rest on today's action still.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 656,
+        "y": 168,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "C",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "idle",
+          "frame": 0,
+          "playing": false,
+          "settled": true,
+          "plays": 0,
+          "scheduled": false,
+          "atlasLoaded": false,
+          "rest": "idle-still.png"
+        },
+        "label": "Kitchen mascot. Play today’s action",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/idle-still.png"
+        ]
+      },
+      "file": "evidence/c-rest-768.png",
+      "note": "Design C: at rest on the Idle still, waiting for a tap.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 1148,
+        "y": 152,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "A",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "burger",
+          "frame": 3,
+          "playing": true,
+          "settled": false,
+          "plays": 1,
+          "scheduled": true,
+          "atlasLoaded": true,
+          "rest": "welcome-still.png"
+        },
+        "label": "",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png"
+        ]
+      },
+      "file": "evidence/a-playing-1280.png",
+      "note": "Design A: first Home view of the day, today's action part way through.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 1148,
+        "y": 152,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "A",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "burger",
+          "frame": 7,
+          "playing": false,
+          "settled": true,
+          "plays": 1,
+          "scheduled": false,
+          "atlasLoaded": true,
+          "rest": "welcome-still.png"
+        },
+        "label": "",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png"
+        ]
+      },
+      "file": "evidence/a-rest-1280.png",
+      "note": "Design A: at rest on the neutral Welcome still.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 1148,
+        "y": 152,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "B",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "burger",
+          "frame": 3,
+          "playing": true,
+          "settled": false,
+          "plays": 1,
+          "scheduled": true,
+          "atlasLoaded": true,
+          "rest": "burger-still.png"
+        },
+        "label": "Kitchen mascot. Today: Serve. Play again",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png"
+        ]
+      },
+      "file": "evidence/b-playing-1280.png",
+      "note": "Design B: first Home view of the day, today's action part way through.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 1148,
+        "y": 152,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "B",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "burger",
+          "frame": 7,
+          "playing": false,
+          "settled": true,
+          "plays": 1,
+          "scheduled": false,
+          "atlasLoaded": true,
+          "rest": "burger-still.png"
+        },
+        "label": "Kitchen mascot. Today: Serve. Play again",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png"
+        ]
+      },
+      "file": "evidence/b-rest-1280.png",
+      "note": "Design B: at rest on today's action still.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 1148,
+        "y": 152,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "C",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "idle",
+          "frame": 0,
+          "playing": false,
+          "settled": true,
+          "plays": 0,
+          "scheduled": false,
+          "atlasLoaded": false,
+          "rest": "idle-still.png"
+        },
+        "label": "Kitchen mascot. Play today’s action",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/idle-still.png"
+        ]
+      },
+      "file": "evidence/c-rest-1280.png",
+      "note": "Design C: at rest on the Idle still, waiting for a tap.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 310,
+        "y": 76,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "B",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "burger",
+          "frame": 0,
+          "playing": false,
+          "settled": true,
+          "plays": 0,
+          "scheduled": false,
+          "atlasLoaded": false,
+          "rest": "burger-still.png"
+        },
+        "label": "Kitchen mascot. Today: Serve. Play again",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-still.png"
+        ]
+      },
+      "file": "evidence/b-reduced-motion-390.png",
+      "note": "Design B under reduced motion: today’s action as a still.",
+      "errors": []
+    },
+    {
+      "mascot": {
+        "x": 310,
+        "y": 76,
+        "width": 64,
+        "height": 85.328125
+      },
+      "state": {
+        "design": "A",
+        "route": "#/",
+        "mounted": true,
+        "omitted": null,
+        "player": {
+          "id": "burger",
+          "frame": 3,
+          "playing": true,
+          "settled": false,
+          "plays": 1,
+          "scheduled": true,
+          "atlasLoaded": true,
+          "rest": "welcome-still.png"
+        },
+        "label": "",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/burger-sheet-compact.webp",
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/welcome-still.png"
+        ]
+      },
+      "file": "evidence/a-seasonal-playing-390.png",
+      "note": "Design A playing beside the Diwali celebration art.",
+      "errors": []
+    }
+  ],
+  "geometry": [
+    {
+      "label": "A Home",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "A Home at rest",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Home",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Home at rest",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "C Home",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "C Home at rest",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "A Home",
+      "width": 768,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 768,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "A Home at rest",
+      "width": 768,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 768,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Home",
+      "width": 768,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 768,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Home at rest",
+      "width": 768,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 768,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "C Home",
+      "width": 768,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 768,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "C Home at rest",
+      "width": 768,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 768,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "A Home",
+      "width": 1280,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 1280,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "A Home at rest",
+      "width": 1280,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 1280,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Home",
+      "width": 1280,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 1280,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B Home at rest",
+      "width": 1280,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 1280,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "C Home",
+      "width": 1280,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 1280,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "C Home at rest",
+      "width": 1280,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 1280,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "A missing art",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "B missing art",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "C missing art",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "Long name",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 390,
+      "extraFirestoreCalls": 0
+    },
+    {
+      "label": "A with Diwali",
+      "width": 390,
+      "unchanged": true,
+      "changes": [],
+      "scrollWidth": 390,
+      "extraFirestoreCalls": 0
+    }
+  ],
+  "checks": [
+    {
+      "name": "Ann round 1 shows all 11 once",
+      "pass": true,
+      "block": [
+        "recipe-reading",
+        "look-around",
+        "walk",
+        "welcome",
+        "smash",
+        "idle",
+        "flip",
+        "smoker",
+        "ready-to-cook",
+        "burger",
+        "build"
+      ]
+    },
+    {
+      "name": "Ann round 2 shows all 11 once",
+      "pass": true,
+      "block": [
+        "smoker",
+        "idle",
+        "recipe-reading",
+        "burger",
+        "build",
+        "walk",
+        "welcome",
+        "ready-to-cook",
+        "flip",
+        "smash",
+        "look-around"
+      ]
+    },
+    {
+      "name": "Ann round 3 shows all 11 once",
+      "pass": true,
+      "block": [
+        "ready-to-cook",
+        "smash",
+        "welcome",
+        "look-around",
+        "walk",
+        "build",
+        "burger",
+        "smoker",
+        "recipe-reading",
+        "idle",
+        "flip"
+      ]
+    },
+    {
+      "name": "Ann never shows one action two days running",
+      "pass": true,
+      "seq": [
+        "recipe-reading",
+        "look-around",
+        "walk",
+        "welcome",
+        "smash",
+        "idle",
+        "flip",
+        "smoker",
+        "ready-to-cook",
+        "burger",
+        "build",
+        "smoker",
+        "idle",
+        "recipe-reading",
+        "burger",
+        "build",
+        "walk",
+        "welcome",
+        "ready-to-cook",
+        "flip",
+        "smash",
+        "look-around",
+        "ready-to-cook",
+        "smash",
+        "welcome",
+        "look-around",
+        "walk",
+        "build",
+        "burger",
+        "smoker",
+        "recipe-reading",
+        "idle",
+        "flip"
+      ]
+    },
+    {
+      "name": "Bo round 1 shows all 11 once",
+      "pass": true,
+      "block": [
+        "walk",
+        "look-around",
+        "recipe-reading",
+        "smoker",
+        "flip",
+        "idle",
+        "ready-to-cook",
+        "smash",
+        "burger",
+        "build",
+        "welcome"
+      ]
+    },
+    {
+      "name": "Bo round 2 shows all 11 once",
+      "pass": true,
+      "block": [
+        "build",
+        "smash",
+        "burger",
+        "idle",
+        "recipe-reading",
+        "look-around",
+        "flip",
+        "welcome",
+        "ready-to-cook",
+        "walk",
+        "smoker"
+      ]
+    },
+    {
+      "name": "Bo round 3 shows all 11 once",
+      "pass": true,
+      "block": [
+        "look-around",
+        "build",
+        "ready-to-cook",
+        "smash",
+        "smoker",
+        "welcome",
+        "recipe-reading",
+        "burger",
+        "flip",
+        "walk",
+        "idle"
+      ]
+    },
+    {
+      "name": "Bo never shows one action two days running",
+      "pass": true,
+      "seq": [
+        "walk",
+        "look-around",
+        "recipe-reading",
+        "smoker",
+        "flip",
+        "idle",
+        "ready-to-cook",
+        "smash",
+        "burger",
+        "build",
+        "welcome",
+        "build",
+        "smash",
+        "burger",
+        "idle",
+        "recipe-reading",
+        "look-around",
+        "flip",
+        "welcome",
+        "ready-to-cook",
+        "walk",
+        "smoker",
+        "look-around",
+        "build",
+        "ready-to-cook",
+        "smash",
+        "smoker",
+        "welcome",
+        "recipe-reading",
+        "burger",
+        "flip",
+        "walk",
+        "idle"
+      ]
+    },
+    {
+      "name": "Ann and Bo have their own order",
+      "pass": true,
+      "ann": [
+        "recipe-reading",
+        "look-around",
+        "walk",
+        "welcome",
+        "smash",
+        "idle",
+        "flip",
+        "smoker",
+        "ready-to-cook",
+        "burger",
+        "build"
+      ],
+      "bo": [
+        "walk",
+        "look-around",
+        "recipe-reading",
+        "smoker",
+        "flip",
+        "idle",
+        "ready-to-cook",
+        "smash",
+        "burger",
+        "build",
+        "welcome"
+      ]
+    },
+    {
+      "name": "A Home 390 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "A Home 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "A Home 390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "a-playing 390 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "A 390 plays once then rests",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 7,
+        "playing": false,
+        "settled": true,
+        "plays": 1,
+        "scheduled": false,
+        "atlasLoaded": true,
+        "rest": "welcome-still.png"
+      }
+    },
+    {
+      "name": "a-rest 390 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "A Home at rest 390 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "A Home at rest 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "A Home at rest 390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "A not on Prep",
+      "pass": true
+    },
+    {
+      "name": "A return Home the same day stays still",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 0,
+        "playing": false,
+        "settled": true,
+        "plays": 0,
+        "scheduled": false,
+        "atlasLoaded": false,
+        "rest": "welcome-still.png"
+      }
+    },
+    {
+      "name": "A return Home keeps today's action",
+      "pass": true,
+      "rec1": {
+        "bag": [
+          "build",
+          "recipe-reading",
+          "look-around",
+          "welcome",
+          "walk",
+          "smoker",
+          "ready-to-cook",
+          "idle",
+          "smash",
+          "flip"
+        ],
+        "last": "burger",
+        "day": "2026-11-10",
+        "today": "burger",
+        "played": true
+      },
+      "rec2": {
+        "bag": [
+          "build",
+          "recipe-reading",
+          "look-around",
+          "welcome",
+          "walk",
+          "smoker",
+          "ready-to-cook",
+          "idle",
+          "smash",
+          "flip"
+        ],
+        "last": "burger",
+        "day": "2026-11-10",
+        "today": "burger",
+        "played": true
+      }
+    },
+    {
+      "name": "A next day takes the next action from the set",
+      "pass": true,
+      "rec2": {
+        "bag": [
+          "build",
+          "recipe-reading",
+          "look-around",
+          "welcome",
+          "walk",
+          "smoker",
+          "ready-to-cook",
+          "idle",
+          "smash",
+          "flip"
+        ],
+        "last": "burger",
+        "day": "2026-11-10",
+        "today": "burger",
+        "played": true
+      },
+      "rec3": {
+        "bag": [
+          "recipe-reading",
+          "look-around",
+          "welcome",
+          "walk",
+          "smoker",
+          "ready-to-cook",
+          "idle",
+          "smash",
+          "flip"
+        ],
+        "last": "build",
+        "day": "2026-11-10",
+        "today": "build",
+        "played": true
+      },
+      "s": {
+        "id": "build",
+        "frame": 2,
+        "playing": true,
+        "settled": false,
+        "plays": 1,
+        "scheduled": true,
+        "atlasLoaded": true,
+        "rest": "welcome-still.png"
+      }
+    },
+    {
+      "name": "A hidden tab ends the play on the rest image",
+      "pass": true,
+      "s": {
+        "id": "recipe-reading",
+        "frame": 2,
+        "playing": false,
+        "settled": true,
+        "plays": 1,
+        "scheduled": false,
+        "atlasLoaded": true,
+        "rest": "welcome-still.png"
+      }
+    },
+    {
+      "name": "B Home 390 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "B Home 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "B Home 390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "b-playing 390 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "B 390 plays once then rests",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 7,
+        "playing": false,
+        "settled": true,
+        "plays": 1,
+        "scheduled": false,
+        "atlasLoaded": true,
+        "rest": "burger-still.png"
+      }
+    },
+    {
+      "name": "b-rest 390 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "B Home at rest 390 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "B Home at rest 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "B Home at rest 390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "B 390 tap target at least 44 px",
+      "pass": true,
+      "box": {
+        "x": 310,
+        "y": 76,
+        "width": 64,
+        "height": 85.328125
+      }
+    },
+    {
+      "name": "B 390 tap plays today's action",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 2,
+        "playing": true,
+        "settled": false,
+        "plays": 2,
+        "scheduled": true,
+        "atlasLoaded": true,
+        "rest": "burger-still.png"
+      },
+      "label": "Kitchen mascot. Today: Serve. Play again"
+    },
+    {
+      "name": "b-tapped 390 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "B 390 tap play rests again",
+      "pass": true
+    },
+    {
+      "name": "B not on Prep",
+      "pass": true
+    },
+    {
+      "name": "B return Home the same day stays still",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 0,
+        "playing": false,
+        "settled": true,
+        "plays": 0,
+        "scheduled": false,
+        "atlasLoaded": false,
+        "rest": "burger-still.png"
+      }
+    },
+    {
+      "name": "B return Home keeps today's action",
+      "pass": true,
+      "rec1": {
+        "bag": [
+          "build",
+          "recipe-reading",
+          "look-around",
+          "welcome",
+          "walk",
+          "smoker",
+          "ready-to-cook",
+          "idle",
+          "smash",
+          "flip"
+        ],
+        "last": "burger",
+        "day": "2026-11-10",
+        "today": "burger",
+        "played": true
+      },
+      "rec2": {
+        "bag": [
+          "build",
+          "recipe-reading",
+          "look-around",
+          "welcome",
+          "walk",
+          "smoker",
+          "ready-to-cook",
+          "idle",
+          "smash",
+          "flip"
+        ],
+        "last": "burger",
+        "day": "2026-11-10",
+        "today": "burger",
+        "played": true
+      }
+    },
+    {
+      "name": "B names today’s action for screen readers",
+      "pass": true,
+      "label": "Kitchen mascot. Today: Serve. Play again"
+    },
+    {
+      "name": "B next day takes the next action from the set",
+      "pass": true,
+      "rec2": {
+        "bag": [
+          "build",
+          "recipe-reading",
+          "look-around",
+          "welcome",
+          "walk",
+          "smoker",
+          "ready-to-cook",
+          "idle",
+          "smash",
+          "flip"
+        ],
+        "last": "burger",
+        "day": "2026-11-10",
+        "today": "burger",
+        "played": true
+      },
+      "rec3": {
+        "bag": [
+          "recipe-reading",
+          "look-around",
+          "welcome",
+          "walk",
+          "smoker",
+          "ready-to-cook",
+          "idle",
+          "smash",
+          "flip"
+        ],
+        "last": "build",
+        "day": "2026-11-10",
+        "today": "build",
+        "played": true
+      },
+      "s": {
+        "id": "build",
+        "frame": 1,
+        "playing": true,
+        "settled": false,
+        "plays": 1,
+        "scheduled": true,
+        "atlasLoaded": true,
+        "rest": "build-still.png"
+      }
+    },
+    {
+      "name": "B hidden tab ends the play on the rest image",
+      "pass": true,
+      "s": {
+        "id": "recipe-reading",
+        "frame": 2,
+        "playing": false,
+        "settled": true,
+        "plays": 1,
+        "scheduled": false,
+        "atlasLoaded": true,
+        "rest": "recipe-reading-still.png"
+      }
+    },
+    {
+      "name": "C Home 390 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "C Home 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "C Home 390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "C 390 nothing plays or loads by itself",
+      "pass": true,
+      "s": {
+        "id": "idle",
+        "frame": 0,
+        "playing": false,
+        "settled": true,
+        "plays": 0,
+        "scheduled": false,
+        "atlasLoaded": false,
+        "rest": "idle-still.png"
+      }
+    },
+    {
+      "name": "c-rest 390 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "C Home at rest 390 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "C Home at rest 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "C Home at rest 390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "C 390 tap target at least 44 px",
+      "pass": true,
+      "box": {
+        "x": 310,
+        "y": 76,
+        "width": 64,
+        "height": 85.328125
+      }
+    },
+    {
+      "name": "C 390 tap plays today's action",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 0,
+        "playing": true,
+        "settled": false,
+        "plays": 1,
+        "scheduled": true,
+        "atlasLoaded": true,
+        "rest": "idle-still.png"
+      },
+      "label": "Kitchen mascot. Today: Serve. Play again"
+    },
+    {
+      "name": "c-tapped 390 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "C 390 tap play rests again",
+      "pass": true
+    },
+    {
+      "name": "C not on Prep",
+      "pass": true
+    },
+    {
+      "name": "C return Home the same day stays still",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 0,
+        "playing": false,
+        "settled": true,
+        "plays": 0,
+        "scheduled": false,
+        "atlasLoaded": false,
+        "rest": "idle-still.png"
+      }
+    },
+    {
+      "name": "C return Home keeps today's action",
+      "pass": true,
+      "rec1": {
+        "bag": [
+          "build",
+          "recipe-reading",
+          "look-around",
+          "welcome",
+          "walk",
+          "smoker",
+          "ready-to-cook",
+          "idle",
+          "smash",
+          "flip"
+        ],
+        "last": "burger",
+        "day": "2026-11-10",
+        "today": "burger",
+        "played": true
+      },
+      "rec2": {
+        "bag": [
+          "build",
+          "recipe-reading",
+          "look-around",
+          "welcome",
+          "walk",
+          "smoker",
+          "ready-to-cook",
+          "idle",
+          "smash",
+          "flip"
+        ],
+        "last": "burger",
+        "day": "2026-11-10",
+        "today": "burger",
+        "played": true
+      }
+    },
+    {
+      "name": "C next day still waits for a tap",
+      "pass": true
+    },
+    {
+      "name": "C next day takes the next action from the set",
+      "pass": true,
+      "rec2": {
+        "bag": [
+          "build",
+          "recipe-reading",
+          "look-around",
+          "welcome",
+          "walk",
+          "smoker",
+          "ready-to-cook",
+          "idle",
+          "smash",
+          "flip"
+        ],
+        "last": "burger",
+        "day": "2026-11-10",
+        "today": "burger",
+        "played": true
+      },
+      "rec3": {
+        "bag": [
+          "recipe-reading",
+          "look-around",
+          "welcome",
+          "walk",
+          "smoker",
+          "ready-to-cook",
+          "idle",
+          "smash",
+          "flip"
+        ],
+        "last": "build",
+        "day": "2026-11-10",
+        "today": "build",
+        "played": true
+      },
+      "s": {
+        "id": "build",
+        "frame": 0,
+        "playing": true,
+        "settled": false,
+        "plays": 1,
+        "scheduled": true,
+        "atlasLoaded": true,
+        "rest": "idle-still.png"
+      }
+    },
+    {
+      "name": "C hidden tab ends the play on the rest image",
+      "pass": true,
+      "s": {
+        "id": "recipe-reading",
+        "frame": 0,
+        "playing": false,
+        "settled": true,
+        "plays": 1,
+        "scheduled": false,
+        "atlasLoaded": true,
+        "rest": "idle-still.png"
+      }
+    },
+    {
+      "name": "A Home 768 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "A Home 768 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "A Home 768 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "a-playing 768 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "A 768 plays once then rests",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 7,
+        "playing": false,
+        "settled": true,
+        "plays": 1,
+        "scheduled": false,
+        "atlasLoaded": true,
+        "rest": "welcome-still.png"
+      }
+    },
+    {
+      "name": "a-rest 768 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "A Home at rest 768 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "A Home at rest 768 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "A Home at rest 768 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "B Home 768 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "B Home 768 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "B Home 768 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "b-playing 768 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "B 768 plays once then rests",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 7,
+        "playing": false,
+        "settled": true,
+        "plays": 1,
+        "scheduled": false,
+        "atlasLoaded": true,
+        "rest": "burger-still.png"
+      }
+    },
+    {
+      "name": "b-rest 768 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "B Home at rest 768 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "B Home at rest 768 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "B Home at rest 768 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "B 768 tap target at least 44 px",
+      "pass": true,
+      "box": {
+        "x": 656,
+        "y": 168,
+        "width": 64,
+        "height": 85.328125
+      }
+    },
+    {
+      "name": "B 768 tap plays today's action",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 2,
+        "playing": true,
+        "settled": false,
+        "plays": 2,
+        "scheduled": true,
+        "atlasLoaded": true,
+        "rest": "burger-still.png"
+      },
+      "label": "Kitchen mascot. Today: Serve. Play again"
+    },
+    {
+      "name": "B 768 tap play rests again",
+      "pass": true
+    },
+    {
+      "name": "C Home 768 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "C Home 768 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "C Home 768 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "C 768 nothing plays or loads by itself",
+      "pass": true,
+      "s": {
+        "id": "idle",
+        "frame": 0,
+        "playing": false,
+        "settled": true,
+        "plays": 0,
+        "scheduled": false,
+        "atlasLoaded": false,
+        "rest": "idle-still.png"
+      }
+    },
+    {
+      "name": "c-rest 768 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "C Home at rest 768 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "C Home at rest 768 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "C Home at rest 768 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "C 768 tap target at least 44 px",
+      "pass": true,
+      "box": {
+        "x": 656,
+        "y": 168,
+        "width": 64,
+        "height": 85.328125
+      }
+    },
+    {
+      "name": "C 768 tap plays today's action",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 0,
+        "playing": true,
+        "settled": false,
+        "plays": 1,
+        "scheduled": true,
+        "atlasLoaded": true,
+        "rest": "idle-still.png"
+      },
+      "label": "Kitchen mascot. Today: Serve. Play again"
+    },
+    {
+      "name": "C 768 tap play rests again",
+      "pass": true
+    },
+    {
+      "name": "A Home 1280 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "A Home 1280 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "A Home 1280 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "a-playing 1280 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "A 1280 plays once then rests",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 7,
+        "playing": false,
+        "settled": true,
+        "plays": 1,
+        "scheduled": false,
+        "atlasLoaded": true,
+        "rest": "welcome-still.png"
+      }
+    },
+    {
+      "name": "a-rest 1280 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "A Home at rest 1280 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "A Home at rest 1280 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "A Home at rest 1280 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "B Home 1280 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "B Home 1280 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "B Home 1280 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "b-playing 1280 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "B 1280 plays once then rests",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 7,
+        "playing": false,
+        "settled": true,
+        "plays": 1,
+        "scheduled": false,
+        "atlasLoaded": true,
+        "rest": "burger-still.png"
+      }
+    },
+    {
+      "name": "b-rest 1280 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "B Home at rest 1280 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "B Home at rest 1280 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "B Home at rest 1280 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "B 1280 tap target at least 44 px",
+      "pass": true,
+      "box": {
+        "x": 1148,
+        "y": 152,
+        "width": 64,
+        "height": 85.328125
+      }
+    },
+    {
+      "name": "B 1280 tap plays today's action",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 2,
+        "playing": true,
+        "settled": false,
+        "plays": 2,
+        "scheduled": true,
+        "atlasLoaded": true,
+        "rest": "burger-still.png"
+      },
+      "label": "Kitchen mascot. Today: Serve. Play again"
+    },
+    {
+      "name": "B 1280 tap play rests again",
+      "pass": true
+    },
+    {
+      "name": "C Home 1280 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "C Home 1280 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "C Home 1280 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "C 1280 nothing plays or loads by itself",
+      "pass": true,
+      "s": {
+        "id": "idle",
+        "frame": 0,
+        "playing": false,
+        "settled": true,
+        "plays": 0,
+        "scheduled": false,
+        "atlasLoaded": false,
+        "rest": "idle-still.png"
+      }
+    },
+    {
+      "name": "c-rest 1280 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "C Home at rest 1280 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "C Home at rest 1280 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "C Home at rest 1280 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "C 1280 tap target at least 44 px",
+      "pass": true,
+      "box": {
+        "x": 1148,
+        "y": 152,
+        "width": 64,
+        "height": 85.328125
+      }
+    },
+    {
+      "name": "C 1280 tap plays today's action",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 0,
+        "playing": true,
+        "settled": false,
+        "plays": 1,
+        "scheduled": true,
+        "atlasLoaded": true,
+        "rest": "idle-still.png"
+      },
+      "label": "Kitchen mascot. Today: Serve. Play again"
+    },
+    {
+      "name": "C 1280 tap play rests again",
+      "pass": true
+    },
+    {
+      "name": "A reduced motion shows a still, loads no atlas",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 0,
+        "playing": false,
+        "settled": true,
+        "plays": 0,
+        "scheduled": false,
+        "atlasLoaded": false,
+        "rest": "welcome-still.png"
+      }
+    },
+    {
+      "name": "A missing art leaves Home as it was",
+      "pass": true,
+      "s": {
+        "design": "A",
+        "route": "#/",
+        "mounted": false,
+        "omitted": "artwork-unavailable",
+        "player": null,
+        "label": "",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json"
+        ]
+      }
+    },
+    {
+      "name": "A missing art 390 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "A missing art 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "A missing art 390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "B reduced motion shows a still, loads no atlas",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 0,
+        "playing": false,
+        "settled": true,
+        "plays": 0,
+        "scheduled": false,
+        "atlasLoaded": false,
+        "rest": "burger-still.png"
+      }
+    },
+    {
+      "name": "b-reduced-motion 390 no JS exceptions",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "name": "B missing art leaves Home as it was",
+      "pass": true,
+      "s": {
+        "design": "B",
+        "route": "#/",
+        "mounted": false,
+        "omitted": "artwork-unavailable",
+        "player": null,
+        "label": "",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json"
+        ]
+      }
+    },
+    {
+      "name": "B missing art 390 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "B missing art 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "B missing art 390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "C reduced motion shows a still, loads no atlas",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 0,
+        "playing": false,
+        "settled": true,
+        "plays": 0,
+        "scheduled": false,
+        "atlasLoaded": false,
+        "rest": "idle-still.png"
+      }
+    },
+    {
+      "name": "C missing art leaves Home as it was",
+      "pass": true,
+      "s": {
+        "design": "C",
+        "route": "#/",
+        "mounted": false,
+        "omitted": "artwork-unavailable",
+        "player": null,
+        "label": "",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/idle-still.png"
+        ]
+      }
+    },
+    {
+      "name": "C missing art 390 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "C missing art 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "C missing art 390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "Long name: mascot omitted, name kept",
+      "pass": true,
+      "s": {
+        "design": "A",
+        "route": "#/",
+        "mounted": false,
+        "omitted": "no-spare-heading-space",
+        "player": null,
+        "label": "",
+        "assets": []
+      }
+    },
+    {
+      "name": "Long name 390 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "Long name 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "Long name 390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "A with Diwali 390 keeps every Home rectangle",
+      "pass": true,
+      "changes": []
+    },
+    {
+      "name": "A with Diwali 390 adds no Firestore calls",
+      "pass": true
+    },
+    {
+      "name": "A with Diwali 390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "a-seasonal-playing 390 no JS exceptions",
+      "pass": true,
+      "errors": []
+    }
+  ],
+  "limitations": [
+    "The preview keys each person by display name; an implementation keys by staff id.",
+    "Hidden tab is simulated with a test-owned document.hidden getter.",
+    "No staff usability study, physical kitchen legibility, native offline or saved-shell claim."
+  ],
+  "sequence": {
+    "ann": [
+      "recipe-reading",
+      "look-around",
+      "walk",
+      "welcome",
+      "smash",
+      "idle",
+      "flip",
+      "smoker",
+      "ready-to-cook",
+      "burger",
+      "build",
+      "smoker",
+      "idle",
+      "recipe-reading",
+      "burger",
+      "build",
+      "walk",
+      "welcome",
+      "ready-to-cook",
+      "flip",
+      "smash",
+      "look-around",
+      "ready-to-cook",
+      "smash",
+      "welcome",
+      "look-around",
+      "walk",
+      "build",
+      "burger",
+      "smoker",
+      "recipe-reading",
+      "idle",
+      "flip"
+    ],
+    "bo": [
+      "walk",
+      "look-around",
+      "recipe-reading",
+      "smoker",
+      "flip",
+      "idle",
+      "ready-to-cook",
+      "smash",
+      "burger",
+      "build",
+      "welcome",
+      "build",
+      "smash",
+      "burger",
+      "idle",
+      "recipe-reading",
+      "look-around",
+      "flip",
+      "welcome",
+      "ready-to-cook",
+      "walk",
+      "smoker",
+      "look-around",
+      "build",
+      "ready-to-cook",
+      "smash",
+      "smoker",
+      "welcome",
+      "recipe-reading",
+      "burger",
+      "flip",
+      "walk",
+      "idle"
+    ]
+  }
+}

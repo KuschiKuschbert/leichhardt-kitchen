@@ -65,4 +65,42 @@ The owner refined the recommendation: "can we have a random action come up for e
 
 **Next:** round 2, three structurally different designs of this rule, previews in this folder and the six-reviewer scoring.
 
+## Round 2: three designs
+
+Built as review-only injections into the real Home page (`candidate.js`, `candidate.css`), captured by `capture.mjs` with the click-test Firebase stand-in and synthetic staff. [Compare them](index.html). Measurements are **Preview**, source `783a60f` on this branch, role staff (Ann), fixture Lunch on Larder, local Barlow and Caveat. `verification.json` holds 148 checks, all passing, and 19 screenshots.
+
+All three share the owner's rule, A's spot (64 x 85 px at x310 y76 on a 390 px phone, between the top bar and Your day), A's omission rules and one atlas a day. They differ in what starts the action, what stays on screen after it and whether the mascot is a control.
+
+| | A: Quiet draw | B: Today's pose | C: Tap to see |
+| --- | --- | --- | --- |
+| Central idea | Plays by itself once, then the neutral Welcome pose | Plays by itself once, then holds today's action pose; tap replays | Never moves by itself; Idle pose waits, tap plays today's action |
+| Trigger | First Home view of the kitchen day | First Home view, and any tap | Tap only |
+| At rest beside the board | Welcome, every day | Today's pose (Serve, Ready to cook, Recipe reading...) all day | Idle, every day |
+| Control | None, decorative, hidden from screen readers | Button, 64 x 85 px, named "Kitchen mascot. Today: Serve. Play again" | Button, 64 x 85 px, named "Kitchen mascot. Play today's action" |
+| Set advances | Every kitchen day Home is opened | Every kitchen day Home is opened | Only on days the person taps |
+| Status-like pose risk | Plays about 3 s, never held | Held all day | Only after the person asks |
+
+Structural differences: A vs B differ in end state and interaction (no control vs a replay button); A vs C in trigger and rest state (automatic vs on request, Welcome vs Idle); B vs C in trigger and what the rest state means (today's pose vs a neutral waiting pose).
+
+### Measured service cost (Preview)
+
+| Measure | Baseline | A | B | C |
+| --- | --- | --- | --- | --- |
+| Home rectangles changed (390, 768, 1280) | | 0 | 0 | 0 |
+| Prep, Orders, recipe search taps | unchanged | unchanged | unchanged | unchanged |
+| Mascot on Prep or any work page | | no | no | no |
+| New Firestore calls | | 0 | 0 | 0 |
+| Automatic motion per kitchen day | | one play, 2.5 to 3.9 s | one play, 2.5 to 3.9 s | none |
+| New tap targets on Home | | 0 | 1 (64 x 85) | 1 (64 x 85) |
+| Atlas downloads per day | | 1 | 1, plus none for replays | 0 or 1 |
+| Build size | | 1 pull request | 1, plus button focus and label | 1, plus button focus and label |
+
+### Checked in the preview (`verification.json`)
+
+- **Shuffle:** for Ann and Bo, each of three rounds of 11 shows every action once; no action two days running across 33 days; the two orders differ.
+- **Day flow:** first Home view plays once and rests (A, B); return to Home the same day stays still and loads no atlas; the next kitchen day takes the next action and the set shrinks by one; C waits for a tap on the next day too.
+- **Lifecycle:** hidden tab ends the play at once on the rest image; reduced motion shows a still and loads no atlas; missing art removes the mascot and leaves every Home rectangle as it was, without retrying; a 40-character name omits the mascot and keeps the name; Diwali art and the mascot coexist without moving anything.
+- **Targets:** B and C buttons are 64 x 85 px at 390 px; a tap plays and rests again.
+- **Not evidenced:** native offline and saved-shell behaviour, a real shared tablet in service, staff reading the poses, screen readers in use, keyboard focus contrast, battery.
+
 **Chosen:** per-person shuffled daily action, all 11, kept per device (9 November 2026). Design pending round 2.

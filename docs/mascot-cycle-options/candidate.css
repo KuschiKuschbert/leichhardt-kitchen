@@ -1,0 +1,9 @@
+/* Review-only styling for the mascot cycle designs. Loaded only by the capture harness. */
+.mc-anchor { position: relative; }
+.mc-mascot { position: absolute; right: 0; top: 0; display: block; width: 48px; height: 64px; padding: 0; margin: 0; border: 0; background: none; }
+.mc-mascot.mc-roomy { width: 64px; height: 85.333333px; }
+.mc-A { pointer-events: none; }
+button.mc-mascot { cursor: pointer; border-radius: var(--r-act, 8px); }
+button.mc-mascot:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.mc-mascot canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+@media (prefers-reduced-motion: no-preference) { button.mc-mascot:where(:active) { scale: .96; } }

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mascot daily action</title>
+<style>
+  :root { --paper: #f7f3ea; --ink: #1c1d1f; --muted: #5b5d61; --line: #d9d2c3; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper: #1c1d1f; --ink: #f2efe8; --muted: #b9b6ae; --line: #3a3b3e; } }
+  :root[data-theme="dark"] { --paper: #1c1d1f; --ink: #f2efe8; --muted: #b9b6ae; --line: #3a3b3e; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.5 system-ui, sans-serif; }
+  main { max-width: 1180px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; } h2 { margin: 32px 0 8px; font-size: 1.25rem; }
+  p { max-width: 70ch; } .note { color: var(--muted); }
+  .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  figure { margin: 0; border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+  figure img { width: 100%; height: auto; display: block; border-radius: 4px; }
+  figcaption { font-size: .9rem; color: var(--muted); margin-top: 6px; }
+  .days { display: flex; flex-wrap: wrap; gap: 8px; }
+  .days div { width: 76px; text-align: center; font-size: .78rem; color: var(--muted); }
+  .days img { width: 48px; height: 64px; image-rendering: pixelated; display: block; margin: 0 auto; }
+  .round { width: 100%; font-weight: 600; color: var(--ink); margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Mascot: a shuffled action each day</h1>
+  <p class="note">Preview, 9 November 2026. Real Home page with synthetic staff and the test stand-in for Firebase. Nothing in the live book has changed. <a href="brief.md">Brief and council</a>.</p>
+  <p>Each signed-in person gets one action a day from their own shuffled set of all 11. Nothing repeats until all 11 have played. The three designs differ in what starts the action, what stays on screen afterwards and whether you can tap it.</p>
+
+  <h2>A: plays by itself, settles on Welcome</h2>
+  <p>First Home view of the day: today's action plays once. Then the neutral Welcome pose stays. No tap, no words.</p>
+  <div class="row">
+    <figure><img src="evidence/a-playing-390.png" alt="Design A at 390 px with the Serve action playing beside Welcome, Ann"><figcaption>Playing (Serve), 390 px</figcaption></figure>
+    <figure><img src="evidence/a-rest-390.png" alt="Design A at rest on the Welcome pose"><figcaption>At rest on Welcome, 390 px</figcaption></figure>
+    <figure><img src="evidence/a-seasonal-playing-390.png" alt="Design A beside the Diwali celebration art"><figcaption>Beside Diwali celebration art</figcaption></figure>
+  </div>
+
+  <h2>B: plays by itself, keeps today's pose, tap to replay</h2>
+  <p>First Home view of the day: today's action plays once, then its own pose stays. Tap the mascot to see it again.</p>
+  <div class="row">
+    <figure><img src="evidence/b-playing-390.png" alt="Design B playing Serve"><figcaption>Playing, 390 px</figcaption></figure>
+    <figure><img src="evidence/b-rest-390.png" alt="Design B at rest holding the Serve pose"><figcaption>At rest on today's pose (Serve)</figcaption></figure>
+    <figure><img src="evidence/b-tapped-390.png" alt="Design B replaying after a tap"><figcaption>Tapped, replaying</figcaption></figure>
+  </div>
+
+  <h2>C: waits for a tap</h2>
+  <p>Nothing moves by itself. The Idle pose waits; a tap plays today's action. A day without a tap does not use up an action.</p>
+  <div class="row">
+    <figure><img src="evidence/c-rest-390.png" alt="Design C waiting on the Idle pose"><figcaption>Waiting on Idle, 390 px</figcaption></figure>
+    <figure><img src="evidence/c-tapped-390.png" alt="Design C playing today's action after a tap"><figcaption>Tapped, today's action plays</figcaption></figure>
+  </div>
+
+  <h2>Two rounds for one person</h2>
+  <p class="note">A test order for "Ann" from the shuffle (pinned seed). Each round of 11 has every action once; no action shows two days running.</p>
+  <div class="days" id="days"></div>
+
+  <h2>Other widths</h2>
+  <div class="row">
+    <figure><img src="evidence/a-playing-768.png" alt="Design A at 768 px"><figcaption>A, 768 px</figcaption></figure>
+    <figure><img src="evidence/b-rest-1280.png" alt="Design B at 1280 px"><figcaption>B, 1280 px</figcaption></figure>
+    <figure><img src="evidence/c-rest-1280.png" alt="Design C at 1280 px"><figcaption>C, 1280 px</figcaption></figure>
+  </div>
+</main>
+<script>
+  const seq = ['recipe-reading','look-around','walk','welcome','smash','idle','flip','smoker','ready-to-cook','burger','build','smoker','idle','recipe-reading','burger','build','walk','welcome','ready-to-cook','flip','smash','look-around'];
+  const names = { idle: 'Idle', welcome: 'Welcome', 'look-around': 'Look around', 'recipe-reading': 'Recipe reading', 'ready-to-cook': 'Ready to cook', smash: 'Smash', flip: 'Flip', build: 'Build', burger: 'Serve', walk: 'Walk', smoker: 'At the smoker' };
+  const box = document.getElementById('days');
+  seq.forEach((id, i) => {
+    if (i % 11 === 0) { const r = document.createElement('div'); r.className = 'round'; r.textContent = 'Round ' + (i / 11 + 1); box.append(r); }
+    const d = document.createElement('div'), img = document.createElement('img');
+    img.src = '../kitchen-mascot/assets/' + id + '-still.png'; img.alt = '';
+    d.append(img, document.createTextNode('Day ' + (i + 1) + ': ' + names[id])); box.append(d);
+  });
+</script>
+</body>
+</html>
