@@ -1,0 +1,240 @@
+{
+  "baseline": "c7e52c7",
+  "recommended": "b",
+  "strategies": [
+    {
+      "id": "a",
+      "name": "Purpose on the whole block",
+      "summary": "Large surfaces tell you whether the block is people, work, upcoming or live information."
+    },
+    {
+      "id": "b",
+      "name": "Coloured books, quiet pages",
+      "summary": "Recognisable covers and headers, warm paper inside, common banners everywhere."
+    },
+    {
+      "id": "c",
+      "name": "Colour only when needed",
+      "summary": "Quiet everyday surfaces; colour draws attention to due, failed or completed work."
+    }
+  ],
+  "scenes": [
+    {
+      "id": "home",
+      "name": "Home",
+      "caption": "Your day, people, work and upcoming cards read as different surfaces.",
+      "shots": {
+        "390": {
+          "before": "previews/baseline-home-390.png",
+          "a": "previews/a-home-390.png",
+          "b": "previews/b-home-390.png",
+          "c": "previews/c-home-390.png"
+        },
+        "1280": {
+          "before": "previews/baseline-home-1280.png",
+          "a": "previews/a-home-1280.png",
+          "b": "previews/b-home-1280.png",
+          "c": "previews/c-home-1280.png"
+        }
+      }
+    },
+    {
+      "id": "prep",
+      "name": "Prep book",
+      "caption": "A coloured book cover with a clear, warm writing page and familiar row states.",
+      "shots": {
+        "390": {
+          "before": "previews/baseline-prep-390.png",
+          "a": "previews/a-prep-390.png",
+          "b": "previews/b-prep-390.png",
+          "c": "previews/c-prep-390.png"
+        },
+        "1280": {
+          "before": "previews/baseline-prep-1280.png",
+          "a": "previews/a-prep-1280.png",
+          "b": "previews/b-prep-1280.png",
+          "c": "previews/c-prep-1280.png"
+        }
+      }
+    },
+    {
+      "id": "orders",
+      "name": "Orders and cut-off banner",
+      "caption": "Book identity stays separate from the banner asking you to order.",
+      "shots": {
+        "390": {
+          "before": "previews/baseline-orders-390.png",
+          "a": "previews/a-orders-390.png",
+          "b": "previews/b-orders-390.png",
+          "c": "previews/c-orders-390.png"
+        },
+        "1280": {
+          "before": "previews/baseline-orders-1280.png",
+          "a": "previews/a-orders-1280.png",
+          "b": "previews/b-orders-1280.png",
+          "c": "previews/c-orders-1280.png"
+        }
+      }
+    },
+    {
+      "id": "team",
+      "name": "Today’s team",
+      "caption": "A people book, a paper planner and a charcoal current-break board.",
+      "shots": {
+        "390": {
+          "before": "previews/baseline-team-390.png",
+          "a": "previews/a-team-390.png",
+          "b": "previews/b-team-390.png",
+          "c": "previews/c-team-390.png"
+        },
+        "1280": {
+          "before": "previews/baseline-team-1280.png",
+          "a": "previews/a-team-1280.png",
+          "b": "previews/b-team-1280.png",
+          "c": "previews/c-team-1280.png"
+        }
+      }
+    },
+    {
+      "id": "todo",
+      "name": "Chef to-do",
+      "caption": "The work cover identifies the book; the ruled tasks and editor stay quiet.",
+      "shots": {
+        "390": {
+          "before": "previews/baseline-todo-390.png",
+          "a": "previews/a-todo-390.png",
+          "b": "previews/b-todo-390.png",
+          "c": "previews/c-todo-390.png"
+        },
+        "1280": {
+          "before": "previews/baseline-todo-1280.png",
+          "a": "previews/a-todo-1280.png",
+          "b": "previews/b-todo-1280.png",
+          "c": "previews/c-todo-1280.png"
+        }
+      }
+    },
+    {
+      "id": "drinks",
+      "name": "Drinks run",
+      "caption": "The same cover, writing-page and people-block rules on a different notebook.",
+      "shots": {
+        "390": {
+          "before": "previews/baseline-drinks-390.png",
+          "a": "previews/a-drinks-390.png",
+          "b": "previews/b-drinks-390.png",
+          "c": "previews/c-drinks-390.png"
+        },
+        "1280": {
+          "before": "previews/baseline-drinks-1280.png",
+          "a": "previews/a-drinks-1280.png",
+          "b": "previews/b-drinks-1280.png",
+          "c": "previews/c-drinks-1280.png"
+        }
+      }
+    },
+    {
+      "id": "cleaning",
+      "name": "Cleaning book",
+      "caption": "A work book with local completed ticks, not a whole green completed page.",
+      "shots": {
+        "390": {
+          "before": "previews/baseline-cleaning-390.png",
+          "a": "previews/a-cleaning-390.png",
+          "b": "previews/b-cleaning-390.png",
+          "c": "previews/c-cleaning-390.png"
+        },
+        "1280": {
+          "before": "previews/baseline-cleaning-1280.png",
+          "a": "previews/a-cleaning-1280.png",
+          "b": "previews/b-cleaning-1280.png",
+          "c": "previews/c-cleaning-1280.png"
+        }
+      }
+    },
+    {
+      "id": "functions",
+      "name": "Function service",
+      "caption": "Charcoal means live service information; the late round carries its own warning.",
+      "shots": {
+        "390": {
+          "before": "previews/baseline-functions-390.png",
+          "a": "previews/a-functions-390.png",
+          "b": "previews/b-functions-390.png",
+          "c": "previews/c-functions-390.png"
+        },
+        "1280": {
+          "before": "previews/baseline-functions-1280.png",
+          "a": "previews/a-functions-1280.png",
+          "b": "previews/b-functions-1280.png",
+          "c": "previews/c-functions-1280.png"
+        }
+      }
+    },
+    {
+      "id": "recipes",
+      "name": "Recipe reference",
+      "caption": "Reference stays on paper, and the safety note retains its own emphasis.",
+      "shots": {
+        "390": {
+          "before": "previews/baseline-recipes-390.png",
+          "a": "previews/a-recipes-390.png",
+          "b": "previews/b-recipes-390.png",
+          "c": "previews/c-recipes-390.png"
+        },
+        "1280": {
+          "before": "previews/baseline-recipes-1280.png",
+          "a": "previews/a-recipes-1280.png",
+          "b": "previews/b-recipes-1280.png",
+          "c": "previews/c-recipes-1280.png"
+        }
+      }
+    },
+    {
+      "id": "admin",
+      "name": "Chef and admin blocks",
+      "caption": "Reports, staff, work and form blocks follow the same cover and banner rules.",
+      "shots": {
+        "390": {
+          "before": "previews/baseline-admin-390.png",
+          "a": "previews/a-admin-390.png",
+          "b": "previews/b-admin-390.png",
+          "c": "previews/c-admin-390.png"
+        },
+        "1280": {
+          "before": "previews/baseline-admin-1280.png",
+          "a": "previews/a-admin-1280.png",
+          "b": "previews/b-admin-1280.png",
+          "c": "previews/c-admin-1280.png"
+        }
+      }
+    },
+    {
+      "id": "banners",
+      "name": "The same banners everywhere",
+      "caption": "Illustrative component board: information, attention, confirmation, error and live service.",
+      "shots": {
+        "390": {
+          "before": "previews/baseline-banners-390.png",
+          "a": "previews/a-banners-390.png",
+          "b": "previews/b-banners-390.png",
+          "c": "previews/c-banners-390.png"
+        },
+        "1280": {
+          "before": "previews/baseline-banners-1280.png",
+          "a": "previews/a-banners-1280.png",
+          "b": "previews/b-banners-1280.png",
+          "c": "previews/c-banners-1280.png"
+        }
+      }
+    }
+  ],
+  "council": {
+    "recommendedVotes": 4,
+    "reviewers": 5,
+    "a": 3.34,
+    "b": 4.2,
+    "c": 3.92,
+    "note": "Four reviewers prefer B; one prefers A. Source-based role review, not staff research."
+  }
+}

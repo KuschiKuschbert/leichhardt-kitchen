@@ -1,0 +1,23 @@
+[
+  {
+    "width": 390,
+    "scenes": 11,
+    "overflow": false,
+    "errors": [],
+    "focusReturned": true
+  },
+  {
+    "width": 768,
+    "scenes": 11,
+    "overflow": false,
+    "errors": [],
+    "focusReturned": true
+  },
+  {
+    "width": 1280,
+    "scenes": 11,
+    "overflow": false,
+    "errors": [],
+    "focusReturned": true
+  }
+]

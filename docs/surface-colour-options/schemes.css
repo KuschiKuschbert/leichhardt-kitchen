@@ -1,0 +1,99 @@
+/* Preview only. Existing boxes, headings and notebook parts keep their exact geometry. */
+html[data-surface-design] {
+  --sc-ivory: #FBF8F1;
+  --sc-ink: var(--ink);
+  --sc-charcoal: #2B2A27;
+  --sc-charcoal-ink: #FBF8F1;
+  --sc-live-accent: #F08A4B;
+  --sc-steel: color-mix(in srgb, var(--steel) 65%, var(--paper));
+  --sc-steel-ink: var(--ink);
+  --sc-steel-edge: var(--muted);
+  --sc-sage: var(--done-tint);
+  --sc-sage-ink: var(--ink);
+  --sc-sage-edge: color-mix(in srgb, var(--done) 25%, var(--muted));
+  --sc-amber: var(--hit);
+  --sc-amber-ink: var(--ink);
+  --sc-amber-edge: var(--stone);
+  --sc-warning: var(--hit);
+  --sc-warning-ink: var(--small-ink);
+  --sc-error: var(--bad-tint, #FBE9E5);
+  --sc-error-ink: var(--bad-ink, #9B2716);
+  --sc-chapter: var(--sc-steel);
+  --sc-chapter-ink: var(--sc-steel-ink);
+  --sc-chapter-edge: var(--sc-steel-edge);
+  --sc-purpose: var(--sc-steel);
+  --sc-purpose-edge: var(--sc-steel-edge);
+}
+html[data-sc-chapter="orders"] { --sc-chapter: var(--sc-amber); --sc-chapter-edge: var(--sc-amber-edge); }
+html[data-sc-chapter="team"] { --sc-chapter: var(--sc-sage); --sc-chapter-edge: var(--sc-sage-edge); --sc-purpose: var(--sc-sage); --sc-purpose-edge: var(--sc-sage-edge); }
+html[data-sc-chapter="recipes"] { --sc-chapter: var(--sc-ivory); --sc-chapter-edge: var(--stone); --sc-purpose: var(--sc-ivory); --sc-purpose-edge: var(--stone); }
+html[data-sc-chapter="functions"] { --sc-chapter: var(--sc-charcoal); --sc-chapter-ink: var(--sc-charcoal-ink); --sc-chapter-edge: var(--sc-charcoal); }
+html[data-surface-design] [data-sc-role="work"] { --sc-purpose: var(--sc-steel); --sc-purpose-edge: var(--sc-steel-edge); }
+html[data-surface-design] [data-sc-role="people"] { --sc-purpose: var(--sc-sage); --sc-purpose-edge: var(--sc-sage-edge); }
+html[data-surface-design] [data-sc-role="reference"] { --sc-purpose: var(--sc-ivory); --sc-purpose-edge: var(--stone); }
+html[data-surface-design] [data-sc-role="upcoming"] { --sc-purpose: var(--sc-amber); --sc-purpose-edge: var(--sc-amber-edge); }
+
+/* A. Purpose colours cover the outer book and its supporting panels. Writing stays ivory. */
+html[data-surface-design="a"] :is(.nb-page, .todo-book, .tm-nbook, .dr-book, .cln-book, .cln-plan, .card, .dsh-panel, .dsh-dtile, .dsh-tile, .fn-card, [data-sc-role="work"], [data-sc-role="people"], [data-sc-role="reference"], [data-sc-role="upcoming"]) {
+  background: var(--sc-purpose); color: var(--sc-ink); border-color: var(--sc-purpose-edge);
+  box-shadow: inset 4px 0 0 var(--sc-purpose-edge), 0 4px 0 color-mix(in srgb, var(--ink) 12%, transparent);
+}
+html[data-surface-design="a"] :is(.nb-ph, .todo-bookhead, .tm-nhead, .dr-bookhead, .card-head, .dsh-panel-head, [data-sc-part="cover"]) { background: var(--sc-purpose); color: var(--sc-ink); }
+html[data-surface-design="a"] :is(.nb-body, .nb-foot, .todo-work, .todo-add, .tm-work, .dr-work, .dr-usual, .dr-people, .cln-plan-body, [data-sc-part="body"]) { background-color: var(--sc-ivory); }
+html[data-surface-design="a"] :is(.todo-spine, .tm-nspine, .dr-spine, [data-sc-part="spine"]) { background-color: var(--sc-purpose); }
+html[data-surface-design="a"] .tm-notebook .tm-nright { background: var(--sc-purpose); }
+html[data-surface-design="a"] :is(.todo-bookhead .p-h, .tm-nhead .p-h, .dr-bookhead .p-h, .nb-title, [data-sc-part="heading"]) { color: var(--sc-ink); }
+html[data-surface-design="a"] .is-home :is(#hm-with .hm-pt, #hm-prep .hm-pt, #hm-prep .hm-pc, .hm-up .hm-pt) { color: var(--sc-ink); }
+html[data-surface-design="a"] .is-home :is(#hm-with, #hm-prep) { background: var(--sc-purpose); box-shadow: inset 4px 0 0 var(--sc-purpose-edge), 0 4px 0 color-mix(in srgb, var(--ink) 12%, transparent); }
+
+/* B. Coloured chapter heads and spines; warm paper pages. Home keeps its approved role colours. */
+html[data-surface-design="b"]:not([data-sc-chapter="home"]) :is(.nb-page, .todo-book, .tm-nbook, .dr-book, .cln-book, .cln-plan, .card, .dsh-panel, .fn-card) {
+  background: var(--sc-ivory); border-color: var(--edge);
+  box-shadow: inset 3px 0 0 var(--sc-chapter-edge), 0 4px 0 color-mix(in srgb, var(--ink) 12%, transparent);
+}
+html[data-surface-design="b"]:not([data-sc-chapter="home"]) :is(.nb-ph, .todo-bookhead, .tm-nhead, .dr-bookhead, .card-head, .dsh-panel-head, .set-block > .label, .set-block > .a-ch-h, [data-sc-part="cover"]) {
+  background: var(--sc-chapter); color: var(--sc-chapter-ink);
+  box-shadow: inset 0 -2px 0 var(--sc-chapter-edge);
+}
+html[data-surface-design="b"]:not([data-sc-chapter="home"]) :is(.nb-ph .nb-title, .todo-bookhead .p-h, .tm-nhead .p-h, .dr-bookhead .p-h, .card-head h2, .dsh-panel-head .dsh-h, .dsh-panel-head .a-ch-h, [data-sc-part="cover"] [data-sc-part="heading"]) { color: var(--sc-chapter-ink); }
+html[data-surface-design="b"]:not([data-sc-chapter="home"]) :is(.nb-body, .nb-foot, .todo-work, .todo-add, .tm-work, .dr-work, .dr-usual, .dr-people, .cln-plan-body, [data-sc-part="body"]) { background-color: var(--sc-ivory); }
+html[data-surface-design="b"]:not([data-sc-chapter="home"]) :is(.todo-spine, .tm-nspine, .dr-spine, [data-sc-part="spine"]) { background-color: var(--sc-chapter); }
+html[data-surface-design="b"] [data-sc-role="reference"] [data-sc-part="cover"] { background: var(--sc-ivory); color: var(--sc-ink); }
+html[data-surface-design="b"][data-sc-chapter="admin"] :is(.dsh-dtile, .dsh-tile) { background: var(--sc-ivory); box-shadow: inset 0 4px 0 var(--sc-steel); }
+
+/* C. Routine books, covers and cards are paper. Colour identifies a local state only. */
+html[data-surface-design="c"] :is(.nb-page, .todo-book, .tm-nbook, .dr-book, .cln-book, .cln-plan, .card, .dsh-panel, .dsh-dtile, .dsh-tile, .fn-card, .hm-paper, [data-sc-role="work"], [data-sc-role="people"], [data-sc-role="reference"], [data-sc-role="upcoming"]) {
+  background: var(--sc-ivory); color: var(--sc-ink); border-color: var(--edge);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--ink) 10%, transparent);
+}
+html[data-surface-design="c"] :is(.nb-ph, .nb-body, .nb-foot, .todo-bookhead, .todo-work, .todo-add, .tm-nhead, .tm-work, .tm-nright, .dr-bookhead, .dr-work, .dr-usual, .dr-people, .card-head, .dsh-panel-head, .cln-plan-body, [data-sc-part="cover"], [data-sc-part="body"]) { background-color: var(--sc-ivory); }
+html[data-surface-design="c"] :is(.todo-spine, .tm-nspine, .dr-spine, [data-sc-part="spine"]) { background-color: var(--beige); }
+html[data-surface-design="c"] :is(.nb-title, .todo-bookhead .p-h, .todo-formtitle, .tm-nhead .p-h, .dr-bookhead .p-h, .hm-paper .hm-pt, .hm-paper .hm-pc, [data-sc-part="heading"]) { color: var(--sc-ink); }
+html[data-surface-design="c"] :is(.nb-ph, .tm-nhead, .dr-bookhead, .card-head) { border-bottom-color: var(--line); box-shadow: none; }
+html[data-surface-design="c"] .todo-bookhead::after { background: var(--line); }
+html[data-surface-design="c"] .is-home :is(#hm-with, #hm-prep) { background: var(--sc-ivory); box-shadow: 0 3px 0 color-mix(in srgb, var(--ink) 10%, transparent); }
+html[data-surface-design="c"] .is-home :is(#hm-with .hm-pt, #hm-prep .hm-pt, #hm-prep .hm-pc) { color: var(--sc-ink); }
+
+/* Shared semantic banners, independent of the chapter colour. No ordinary upcoming item is urgent. */
+html[data-surface-design] :is(.fn-banner, [data-sc-role="information"]) { background: var(--beige); color: var(--sc-ink); }
+html[data-surface-design] :is([data-sc-role="attention"], .hm-warn, .nb-guest, .nt-i.t-safety, .nt-i.t-allergen) {
+  background: var(--sc-warning); color: var(--sc-ink); box-shadow: inset 4px 0 0 var(--sc-warning-ink);
+}
+html[data-surface-design] :is([data-sc-role="error"], .fn-banner.is-off) { background: var(--sc-error); color: var(--sc-error-ink); box-shadow: inset 4px 0 0 var(--sc-error-ink); }
+html[data-surface-design] .fn-banner.is-moved { background: var(--sc-steel); color: var(--sc-ink); box-shadow: inset 4px 0 0 var(--sc-steel-edge); }
+html[data-surface-design] [data-sc-role="success"] { background: var(--done-tint); color: var(--done-ink); box-shadow: inset 4px 0 0 var(--done-ink); }
+
+/* Live charcoal is an exception inside every book. Preserve status chips and local error colours. */
+html[data-surface-design] :is([data-sc-role="live"], #hm-day, .tm-away.hm-board, .fn-svc-board, .fn-next, .fn-band, .fn-cnext:not(.is-done), .cut-band) {
+  background: var(--sc-charcoal); color: var(--sc-charcoal-ink);
+}
+html[data-surface-design] [data-sc-role="live"] :is([data-sc-part="cover"], [data-sc-part="body"]) { background: var(--sc-charcoal); color: var(--sc-charcoal-ink); }
+html[data-surface-design] [data-sc-role="live"] [data-sc-part="heading"] { color: var(--sc-charcoal-ink); }
+html[data-surface-design] :is(.tm-away.hm-board .tm-away-warn, #hm-day .hm-n) { color: var(--bar-accent); }
+html[data-surface-design="a"] .is-home #hm-board { background: var(--sc-charcoal); color: var(--sc-charcoal-ink); }
+html[data-surface-design="a"] .is-home #hm-board :is(.hm-bt, .hm-a, .hm-tm, .hm-i svg) { color: var(--sc-charcoal-ink); }
+html[data-surface-design="a"] .is-home #hm-board :is(.hm-s, .hm-none) { color: color-mix(in srgb, var(--sc-charcoal-ink) 80%, transparent); }
+html[data-surface-design="a"] .is-home #hm-board :is(.hm-clock, .hm-n) { color: var(--sc-live-accent); }
+html[data-surface-design="a"] .is-home #hm-board .hm-a.is-hot .hm-n { background: var(--sc-live-accent); color: var(--sc-charcoal); }
+html[data-surface-design="a"] .is-home #hm-board .hm-rows li + li { border-top-color: color-mix(in srgb, var(--sc-charcoal-ink) 18%, transparent); }
+html[data-surface-design="a"] .is-home #hm-board .hm-bh { border-bottom-color: color-mix(in srgb, var(--sc-charcoal-ink) 18%, transparent); }

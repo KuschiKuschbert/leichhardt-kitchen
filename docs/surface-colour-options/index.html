@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Colour across the whole book · Kitchen Book</title>
+  <style>
+    @font-face{font-family:Barlow;src:url('fonts/barlow-regular.ttf') format('truetype');font-style:normal;font-weight:400;font-display:swap}
+    @font-face{font-family:Barlow;src:url('fonts/barlow-semibold.ttf') format('truetype');font-style:normal;font-weight:600;font-display:swap}
+    @font-face{font-family:Barlow;src:url('fonts/barlow-bold.ttf') format('truetype');font-style:normal;font-weight:700;font-display:swap}
+    @font-face{font-family:'Barlow Condensed';src:url('fonts/barlow-condensed-bold.ttf') format('truetype');font-style:normal;font-weight:700;font-display:swap}
+    @font-face{font-family:Caveat;src:url('fonts/caveat-bold.ttf') format('truetype');font-style:normal;font-weight:700;font-display:swap}
+    :root{--bg:#fbfaf7;--paper:#fffefa;--ink:#1c1d1f;--muted:#55585e;--line:#ddd8cd;--orange:#b83f15;--charcoal:#2b2a27;--sage:#eaf5ee;--steel:#e0e2e6;--amber:#fff1e6;--ivory:#fbf8f1;--green:#237347;--red:#9b2716}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 Barlow,system-ui,sans-serif}
+    button,a{-webkit-tap-highlight-color:transparent}
+    button{font:inherit;color:inherit;cursor:pointer}
+    button:disabled{cursor:wait}
+    :focus-visible{outline:3px solid var(--orange);outline-offset:4px}
+    [hidden]{display:none!important}
+    .skip{position:absolute;top:-100px;left:16px;z-index:10;padding:12px;background:var(--ink);color:#fff}
+    .skip:focus{top:12px}
+    .mast{background:var(--charcoal);color:var(--ivory);border-bottom:3px solid #e2602a}
+    .mast-inner{max-width:1480px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 32px}
+    .brand{display:flex;align-items:center;gap:12px;font:700 23px/1 'Barlow Condensed',sans-serif;letter-spacing:.025em}
+    .mark{font:700 29px/1 Caveat,cursive;border:1px solid #8d8b84;border-radius:6px;padding:7px 8px 9px}
+    .mast-note{font-size:13px;color:#ddd8cd;text-align:right}
+    main{max-width:1480px;margin:auto;padding:42px 32px 60px}
+    .eyebrow{margin:0 0 10px;color:var(--orange);font:700 13px/1.3 'Barlow Condensed',sans-serif;letter-spacing:.17em;text-transform:uppercase}
+    h1{margin:0;font:700 clamp(38px,4.2vw,64px)/1.04 'Barlow Condensed',sans-serif;letter-spacing:-.015em}
+    .intro{display:flex;justify-content:space-between;align-items:flex-end;gap:30px}
+    .lead{max-width:750px;margin:15px 0 0;font-size:18px;color:var(--muted)}
+    .recommendation{flex:none;margin:0 0 2px;padding:12px 16px;border-left:3px solid var(--orange);background:#f2efe8;font-size:14px}
+    .recommendation strong{display:block;font-weight:600}
+    .strategies{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:30px 0 22px}
+    .strategy{position:relative;display:grid;grid-template-columns:37px 1fr;align-content:start;gap:3px 12px;min-height:148px;padding:18px;text-align:left;background:var(--paper);border:1px solid #bdb8ae;border-radius:10px;box-shadow:0 3px 0 #1c1d1f08}
+    .strategy[aria-pressed="true"]{border:2px solid var(--orange);padding:17px;background:#fff8f1;box-shadow:0 3px 0 #b83f1512}
+    .strategy:hover{border-color:var(--ink)}
+    .strategy-letter{grid-row:1/4;display:grid;place-items:center;align-self:start;width:35px;height:35px;border:1px solid var(--line);border-radius:50%;font:700 23px/1 'Barlow Condensed',sans-serif;background:#f2efe8}
+    .strategy[aria-pressed="true"] .strategy-letter{background:var(--orange);border-color:var(--orange);color:#fff}
+    .strategy-title{font:700 23px/1.1 'Barlow Condensed',sans-serif}
+    .strategy-copy{max-width:42ch;font-size:14px;color:var(--muted);margin-top:5px}
+    .strategy-tag{justify-self:start;margin-top:7px;color:var(--orange);font-size:12px;font-weight:600}
+    .toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding:17px 0;border-block:1px solid var(--line)}
+    .toolbar-controls{display:flex;align-items:center;flex-wrap:wrap;gap:12px}
+    .control-label{font-size:13px;font-weight:600;color:var(--muted)}
+    .segmented{display:inline-flex;max-width:100%;padding:3px;border:1px solid #bdb8ae;border-radius:999px;background:var(--paper)}
+    .segmented button{min-height:38px;border:0;border-radius:999px;background:none;padding:7px 15px;font-size:14px;font-weight:600}
+    .segmented button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+    .before-control{display:flex;align-items:center;gap:9px;min-height:44px;font-size:14px;cursor:pointer}
+    .before-control input{width:19px;height:19px;accent-color:var(--orange)}
+    .legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px;margin:16px 0 4px;padding:0;list-style:none;font-size:13px;color:var(--muted)}
+    .legend li{display:flex;align-items:center;gap:7px}
+    .swatch{display:inline-block;width:14px;height:14px;border:1px solid #1c1d1f40;border-radius:3px;flex:none}
+    .legend-note{margin:6px 0 24px;color:var(--muted);font-size:13px}
+    .gallery-heading{display:flex;align-items:baseline;justify-content:space-between;gap:20px;margin:27px 0 14px}
+    h2{margin:0;font:700 28px/1.2 'Barlow Condensed',sans-serif}
+    .gallery-count{margin:0;color:var(--muted);font-size:13px;text-align:right}
+    .gallery{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px 18px}
+    .scene{min-width:0;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--paper);box-shadow:0 4px 0 #1c1d1f06}
+    .scene-open{display:block;position:relative;width:100%;padding:0;border:0;border-bottom:1px solid var(--line);background:#eae7df;text-align:left;overflow:hidden}
+    .scene-open:focus-visible{outline-offset:-5px}
+    .shot-frame{display:block;aspect-ratio:390/510;overflow:hidden;background:#eeebe4}
+    .is-desktop .shot-frame{aspect-ratio:1280/900}
+    .scene-image{display:block;width:100%;height:100%;object-fit:cover;object-position:top;transition:filter .15s}
+    .scene-open:hover .scene-image{filter:brightness(.96)}
+    .enlarge{position:absolute;right:9px;bottom:9px;display:flex;align-items:center;gap:6px;min-height:32px;padding:5px 9px;border:1px solid #1c1d1f30;border-radius:6px;background:#fffefaf2;color:var(--ink);font-size:12px;font-weight:600;box-shadow:0 2px 5px #1c1d1f16}
+    .enlarge svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.7}
+    .scene-copy{padding:13px 15px 16px}
+    .scene-title{margin:0;font:700 23px/1.15 'Barlow Condensed',sans-serif}
+    .scene-caption{margin:5px 0 0;color:var(--muted);font-size:13px;line-height:1.4}
+    .status{padding:40px 0;color:var(--muted)}
+    .status button{min-height:44px;padding:0 16px;margin-left:10px;border:1px solid var(--ink);background:var(--paper);border-radius:6px}
+    .council{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:40px;padding-top:25px;border-top:2px solid var(--ink)}
+    .council p{margin:7px 0;color:var(--muted);font-size:14px;max-width:70ch}
+    .council strong{color:var(--ink)}
+    .council h2{font-size:24px}
+    .small-print{margin:20px 0 0;color:var(--muted);font-size:12px}
+    dialog{width:min(1500px,calc(100% - 32px));max-height:calc(100dvh - 32px);padding:0;border:1px solid #aaa69e;border-radius:12px;background:var(--bg);color:var(--ink);box-shadow:0 18px 80px #0005}
+    dialog::backdrop{background:#171815b8}
+    .dialog-head{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 24px;border-bottom:1px solid var(--line);background:var(--bg)}
+    .dialog-title{font-size:30px}
+    .dialog-caption{margin:4px 0 0;font-size:13px;color:var(--muted)}
+    .close{flex:none;min-width:74px;min-height:44px;padding:8px 15px;border:1px solid var(--ink);border-radius:7px;background:var(--paper);font-weight:600}
+    .dialog-tools{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:12px 24px}
+    .dialog-tools p{margin:0;color:var(--muted);font-size:13px}
+    .comparison{display:grid;grid-template-columns:1fr 1fr;align-items:start;gap:20px;padding:0 24px 24px}
+    .compare-panel{min-width:0;margin:0}
+    .compare-panel figcaption{margin:0 0 9px;font-weight:600;font-size:14px}
+    .compare-panel figcaption small{display:block;color:var(--muted);font-size:12px;font-weight:400}
+    .compare-image-frame{max-height:69dvh;overflow:auto;border:1px solid var(--line);border-radius:5px;background:#eae7df;overscroll-behavior:contain}
+    .compare-image{display:block;width:100%;height:auto;margin:auto}
+    .comparison.is-phone .compare-image{max-width:390px}
+    .comparison.is-actual .compare-image{width:auto;max-width:none}
+    @media(min-width:1600px){.gallery{grid-template-columns:repeat(5,minmax(0,1fr))}}
+    @media(max-width:1100px){.gallery{grid-template-columns:repeat(3,minmax(0,1fr))}.intro{align-items:flex-start}.recommendation{max-width:200px}.strategy{padding:14px;gap:3px 9px}.strategy[aria-pressed="true"]{padding:13px}.strategy-title{font-size:21px}}
+    @media(max-width:760px){.mast-inner{padding:14px 20px}.mast-note{max-width:210px;font-size:12px}main{padding:30px 20px 40px}.intro{display:block}.recommendation{max-width:none;display:inline-block;margin:20px 0 0;padding:9px 13px}.recommendation strong{display:inline;margin-right:8px}.strategies{gap:8px;margin-top:24px}.strategy{display:flex;flex-direction:column;min-height:0;padding:12px;gap:7px}.strategy[aria-pressed="true"]{padding:11px}.strategy-letter{width:29px;height:29px;font-size:20px}.strategy-title{font-size:20px}.strategy-copy{font-size:12px;margin:0}.strategy-tag{font-size:11px;margin:0}.gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 12px}.scene-copy{padding:11px}.scene-title{font-size:21px}.scene-caption{font-size:12px}.council{grid-template-columns:1fr;gap:17px}.comparison{gap:12px;padding:0 15px 15px}.dialog-head{padding:14px 15px}.dialog-tools{padding:10px 15px}.dialog-tools p{max-width:45%}.compare-panel figcaption{font-size:13px}.gallery-heading{align-items:flex-start}.gallery-count{max-width:125px}}
+    @media(max-width:430px){.mast-note{max-width:175px;font-size:11px}main{padding-inline:15px}.mast-inner{padding-inline:15px}.brand{gap:8px;font-size:21px}.strategies{gap:6px}.strategy{padding:10px}.strategy[aria-pressed="true"]{padding:9px}.strategy-title{font-size:19px}.strategy-copy{font-size:11px}.strategy-tag{font-size:10px}.toolbar{gap:8px}.toolbar-controls{gap:8px}.segmented button{padding-inline:12px}.legend{gap:7px 12px;font-size:12px}.scene-copy{padding:9px}.scene-title{font-size:20px}dialog{width:calc(100% - 14px);max-height:calc(100dvh - 14px)}.comparison{grid-template-columns:1fr}.compare-image-frame{max-height:none}.comparison.is-actual .compare-image-frame{max-height:65dvh}.dialog-title{font-size:27px}}
+    @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+  </style>
+</head>
+<body>
+  <a class="skip" href="#examples">Skip to examples</a>
+  <header class="mast"><div class="mast-inner"><div class="brand"><span class="mark" aria-hidden="true">KB</span>Kitchen Book</div><div class="mast-note">Design preview · synthetic examples · layouts unchanged</div></div></header>
+  <main>
+    <div class="intro"><div><p class="eyebrow">The whole book, side by side</p><h1>Colour across the whole book</h1><p class="lead">Three ways to bring the books, blocks and banners together. Choose a colour system, then open any example to compare it with today.</p></div><p class="recommendation"><strong>B is recommended</strong>4 of 5 council reviewers</p></div>
+    <div class="strategies" role="group" aria-label="Colour strategy" id="strategies"></div>
+    <div class="toolbar">
+      <div class="toolbar-controls"><span class="control-label" id="screen-label">Screen</span><div class="segmented" role="group" aria-labelledby="screen-label"><button type="button" data-width="390" aria-pressed="true">Phone · 390</button><button type="button" data-width="1280" aria-pressed="false">Desktop · 1280</button></div></div>
+      <label class="before-control"><input id="show-before" type="checkbox">Show current look</label>
+    </div>
+    <ul class="legend" aria-label="Colour roles" id="legend"></ul>
+    <p class="legend-note" id="legend-note"></p>
+    <section id="examples" aria-labelledby="examples-title"><div class="gallery-heading"><h2 id="examples-title">Across the book</h2><p class="gallery-count" id="gallery-count" aria-live="polite"></p></div><div id="status" class="status" role="status">Loading the examples…</div><div class="gallery" id="gallery"></div></section>
+    <footer class="council"><div><p class="eyebrow">The council’s view</p><h2>Coloured books, quiet pages</h2><p><strong>4 reviewers prefer B. 1 prefers A.</strong> B gives each chapter a clear identity while the pages stay easy to read. A gives the strongest whole-block hierarchy.</p><p>These are role-based design reviews, using synthetic examples. They are not staff usability tests.</p></div><div><h2>One meaning for each colour</h2><p>A colours whole blocks by purpose. B uses steel for Prep, Cleaning and To-do; sage for Team; warm amber for Orders; ivory for reference. Live boards keep charcoal. C keeps everyday surfaces neutral.</p><p>Every option keeps shared banner meanings: neutral information, amber attention, green confirmation and red errors. Words and symbols stay with the colour.</p></div></footer>
+    <p class="small-print">Preview only. The app’s layouts, controls, permissions and data behaviour are unchanged.</p>
+  </main>
+  <dialog id="comparison-dialog" aria-labelledby="comparison-title" aria-describedby="comparison-caption">
+    <div class="dialog-head"><div><h2 class="dialog-title" id="comparison-title">Compare an example</h2><p class="dialog-caption" id="comparison-caption"></p></div><button type="button" class="close" id="close-dialog" autofocus>Close</button></div>
+    <div class="dialog-tools"><p>Matched app screenshots. Use 100% to inspect text.</p><div class="segmented" role="group" aria-label="Image size"><button type="button" data-zoom="fit" aria-pressed="true">Fit</button><button type="button" data-zoom="actual" aria-pressed="false">100%</button></div></div>
+    <div class="comparison" id="comparison"><figure class="compare-panel"><figcaption>Current look<small>Before</small></figcaption><div class="compare-image-frame"><img class="compare-image" id="compare-before" alt=""></div></figure><figure class="compare-panel"><figcaption id="compare-after-label">Proposed look</figcaption><div class="compare-image-frame"><img class="compare-image" id="compare-after" alt=""></div></figure></div>
+  </dialog>
+  <script id="surface-data" type="application/json"></script>
+  <script>
+    (() => {
+      'use strict';
+      const $ = id => document.getElementById(id);
+      const definitions = [
+        {id:'a',name:'Purpose on the whole block',summary:'Large surfaces carry their purpose: live work, people, work books, upcoming and reference.'},
+        {id:'b',name:'Coloured books, quiet pages',summary:'Colour on headings and spines. Warm paper inside, with shared banners for attention.'},
+        {id:'c',name:'Colour only when needed',summary:'Everyday surfaces stay neutral. Colour draws the eye to attention and state.'}
+      ];
+      const state = {strategy:'b',width:'390',before:false,manifest:null,opener:null};
+      const element = (tag, className, text) => { const node=document.createElement(tag); if(className)node.className=className; if(text!==undefined)node.textContent=text; return node; };
+      const strategyName = () => definitions.find(item=>item.id===state.strategy).name;
+      const shot = (scene, key) => scene.shots && scene.shots[state.width] && scene.shots[state.width][key];
+      function drawStrategies() {
+        $('strategies').replaceChildren(...definitions.map(item => {
+          const button=element('button','strategy'); button.type='button'; button.dataset.strategy=item.id; button.setAttribute('aria-pressed',String(item.id===state.strategy));
+          button.append(element('span','strategy-letter',item.id.toUpperCase()),element('span','strategy-title',item.name),element('span','strategy-copy',item.summary));
+          if(item.id==='b')button.append(element('span','strategy-tag','Recommended · 4 of 5'));
+          button.addEventListener('click',()=>{ state.strategy=item.id; paint(); }); return button;
+        }));
+      }
+      function drawLegend() {
+        const roles=state.strategy==='c' ? [['#fbf8f1','Everyday paper'],['#fff1e6','Needs attention'],['#237347','Confirmed'],['#9b2716','Error']] : state.strategy==='b' ? [['#e0e2e6','Prep / Cleaning / To-do'],['#eaf5ee','Team'],['#fff1e6','Orders'],['#fbf8f1','Reference'],['#2b2a27','Live boards']] : [['#2b2a27','Live work'],['#eaf5ee','People'],['#e0e2e6','Work books'],['#fff1e6','Upcoming'],['#fbf8f1','Reference & forms']];
+        $('legend').replaceChildren(...roles.map(([colour,label])=>{const li=element('li');const swatch=element('span','swatch');swatch.style.backgroundColor=colour;swatch.setAttribute('aria-hidden','true');li.append(swatch,document.createTextNode(label));return li;}));
+        $('legend-note').textContent=state.strategy==='a'?'A · Colour covers the whole block. Shared banners keep their own meaning.':state.strategy==='b'?'B · Chapter colour stays on headings and spines. Pages stay quiet.':'C · Colour appears when something needs attention or its state changes.';
+      }
+      function paint() {
+        document.querySelectorAll('[data-strategy]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.strategy===state.strategy)));
+        document.querySelectorAll('[data-width]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.width===state.width)));
+        drawLegend(); if(!state.manifest)return;
+        const scenes=state.manifest.scenes||[];
+        $('gallery-count').textContent=scenes.length+' examples · '+(state.before?'Current look':state.strategy.toUpperCase()+' selected')+' · '+(state.width==='390'?'Phone':'Desktop');
+        $('gallery').classList.toggle('is-desktop',state.width==='1280');
+        $('gallery').replaceChildren(...scenes.map(scene=>{
+          const article=element('article','scene');const button=element('button','scene-open');button.type='button';button.setAttribute('aria-label','Compare '+scene.name+', current look and option '+state.strategy.toUpperCase());
+          const frame=element('span','shot-frame');const img=element('img','scene-image');img.src=shot(scene,state.before?'before':state.strategy)||'';img.alt=scene.name+', '+(state.before?'current look':'option '+state.strategy.toUpperCase())+', '+state.width+' px';img.loading='lazy';img.decoding='async';frame.append(img);
+          const enlarge=element('span','enlarge','Open comparison ↗');enlarge.setAttribute('aria-hidden','true');button.append(frame,enlarge);button.addEventListener('click',()=>openComparison(scene,button));
+          const copy=element('div','scene-copy');copy.append(element('h3','scene-title',scene.name),element('p','scene-caption',scene.caption||''));article.append(button,copy);return article;
+        }));
+        $('status').hidden=true;
+      }
+      function setZoom(mode) {
+        $('comparison').classList.toggle('is-actual',mode==='actual');
+        document.querySelectorAll('[data-zoom]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.zoom===mode)));
+      }
+      function openComparison(scene,button) {
+        state.opener=button; $('comparison-title').textContent=scene.name;
+        $('comparison-caption').textContent=(state.width==='390'?'Phone · 390 px':'Desktop · 1280 px')+' · '+(scene.caption||'Same layout, different surface colours.');
+        $('compare-after-label').textContent=state.strategy.toUpperCase()+' · '+strategyName();
+        $('compare-before').src=shot(scene,'before')||'';$('compare-before').alt=scene.name+', complete current screenshot';
+        $('compare-after').src=shot(scene,state.strategy)||'';$('compare-after').alt=scene.name+', complete option '+state.strategy.toUpperCase()+' screenshot';
+        $('comparison').classList.toggle('is-phone',state.width==='390');setZoom('fit');
+        $('comparison-dialog').showModal();$('comparison-dialog').scrollTop=0;
+        document.querySelectorAll('.compare-image-frame').forEach(frame=>{frame.scrollTop=0;frame.scrollLeft=0;});
+      }
+      window.renderSurfacePreview = manifest => {
+        if(!manifest || !Array.isArray(manifest.scenes) || !manifest.scenes.length)throw new Error('No preview scenes were supplied.');
+        state.manifest=manifest;drawStrategies();paint();
+      };
+      document.querySelectorAll('[data-width]').forEach(button=>button.addEventListener('click',()=>{state.width=button.dataset.width;paint();}));
+      document.querySelectorAll('[data-zoom]').forEach(button=>button.addEventListener('click',()=>setZoom(button.dataset.zoom)));
+      $('show-before').addEventListener('change',event=>{state.before=event.target.checked;paint();});
+      $('close-dialog').addEventListener('click',()=>$('comparison-dialog').close());
+      $('comparison-dialog').addEventListener('click',event=>{if(event.target===$('comparison-dialog'))$('comparison-dialog').close();});
+      $('comparison-dialog').addEventListener('close',()=>{if(state.opener&&state.opener.isConnected)state.opener.focus({preventScroll:true});});
+      async function load() {
+        $('status').hidden=false;$('status').textContent='Loading the examples…';
+        try {
+          const embedded=$('surface-data').textContent.trim();
+          if(window.SURFACE_PREVIEW_MANIFEST)window.renderSurfacePreview(window.SURFACE_PREVIEW_MANIFEST);
+          else if(embedded)window.renderSurfacePreview(JSON.parse(embedded));
+          else { const response=await fetch('manifest.json');if(!response.ok)throw new Error('Preview manifest unavailable.');window.renderSurfacePreview(await response.json()); }
+        } catch(error) {
+          $('status').textContent='The example images could not be loaded. Open the complete preview folder and try again.';
+          const retry=element('button','','Try again');retry.type='button';retry.addEventListener('click',load);$('status').append(retry);
+        }
+      }
+      drawStrategies();drawLegend();load();
+    })();
+  </script>
+</body>
+</html>

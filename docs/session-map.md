@@ -20,6 +20,10 @@ The owner requested disabling the timer after the second deadline until the foll
 
 The owner requested a small × on bottom sheets and modals for non-touch screens. The shared `SwipeDismiss()` helper in `js/controls.js` adds a missing header close using the original cancellation callback. `css/app.css` controls pointer/hover visibility and title spacing; `js/app.js` and `js/upkeep.js` keep the visible control in their keyboard loops. [Contract and verification](adaptive-controls.md#swipe-to-close-9-november-2026); `tests/modal-close.test.js`, `tests/update-confirmation.test.js` and existing overlay/swipe checks. No reads, rules, stored fields or saved-shell manifest changes.
 
+## Whole-surface colour examples, 9 November 2026
+
+The owner clarified that colour consistency includes all blocks, books and banners, then requested examples across the app. [The preview](surface-colour-options/index.html) compares A purpose-tinted blocks, B coloured book headings and spines with quiet paper pages, and C attention-only colour. [The brief](surface-colour-options/brief.md) records five independent role reviews, scores, four recommendations for B and one for A, screenshot coverage and verification. The files under `docs/surface-colour-options/` are preview assets only. No surface design has been selected and the app's styles, flows and data are unchanged.
+
 ## Swipe to close, 9 November 2026
 
 The owner requested swiping to dismiss the existing sheets and modals. The small-change quick check retains the same layout, visible rows and service taps. `js/controls.js` shares header/grip drag handling and routes dismissal through the original backdrop/Cancel action; `css/app.css` adds pointer feedback and reduced-motion support. [Contract, council and verification](adaptive-controls.md#swipe-to-close-9-november-2026), [shared pattern](design-patterns.md#over-the-page); `tests/swipe-dismiss.test.js`, `tests/adaptive-controls.test.js`, `tests/overlays-back.test.js`. No new reads, rules or saved data.

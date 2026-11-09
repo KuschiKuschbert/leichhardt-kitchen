@@ -18,6 +18,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | --- | --- |
 | A new page, tab, button, setting, sheet or workflow; how a service task is done; removing a feature; any design choice | `.claude/skills/service-council/SKILL.md`: run the service council first |
 | Any screen piece: a page card, chips and pickers, Save, a sheet, a top bar chip, a list header line, a fold, an admin block, a chef hat tile | `docs/design-patterns.md`: use one, or add the new one there and its names to `tests/design-patterns.test.js` |
+| Whole-surface colour examples for books, blocks and banners (preview, no selection) | `docs/surface-colour-options/brief.md`, `docs/surface-colour-options/index.html` |
 | Home, list rows, the chef hat, the function page or the admin panel (the chosen whole-book redesign) | `docs/whole-app-redesign-options/brief.md` (Chosen, Build) and its `every-page.html` |
 | Staff-first Home: personal shift, break/return, scheduled coworkers and full-team disclosure | `docs/home-staff-first.md` |
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over anything older in this file) |
