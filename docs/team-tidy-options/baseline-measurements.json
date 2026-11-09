@@ -1,0 +1,38 @@
+[
+  {
+    "route": "team",
+    "width": 390,
+    "errors": [],
+    "people": 0,
+    "firstPersonTop": 822.1875,
+    "duplicateEditorRows": 8,
+    "overflow": false
+  },
+  {
+    "route": "team",
+    "width": 1280,
+    "errors": [],
+    "people": 1,
+    "firstPersonTop": 687.75,
+    "duplicateEditorRows": 8,
+    "overflow": false
+  },
+  {
+    "route": "chef",
+    "width": 390,
+    "errors": [],
+    "people": 0,
+    "firstPersonTop": 1098.921875,
+    "duplicateEditorRows": 8,
+    "overflow": false
+  },
+  {
+    "route": "chef",
+    "width": 1280,
+    "errors": [],
+    "people": 0,
+    "firstPersonTop": 976.8125,
+    "duplicateEditorRows": 8,
+    "overflow": false
+  }
+]

@@ -2,6 +2,8 @@
 
 9 November 2026. **A chosen by the head chef, implemented and locally verified. CI and release pending.**
 
+Layout follow-up: the head chef subsequently chose [A, Quiet notebook, one list](../team-tidy-options/brief.md) for management. Its per-person details replace the duplicate roster without changing the week picker, independent date drafts or dated Save contracts below.
+
 The head chef asks to let head and sous chefs allocate sections for staff a week ahead, with a day picker to move backwards and forwards. This follows the existing roster notebook, rather than replacing the kitchen's payroll roster. [Initial proposal](proposal.md).
 
 ## Round 1

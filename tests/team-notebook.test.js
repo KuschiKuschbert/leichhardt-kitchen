@@ -20,14 +20,20 @@ const fixture = (p, c) => Object.assign(cfg(c), p === null ? {} : { [TEAM]: p ||
 const readCount = p => p.evaluate(() => window.__fake.reads.filter(k => /\/(team|teamsum)\//.test(k)).length);
 const saved = p => p.evaluate(k => window.__fake.dump()[k], TEAM);
 const away = p => txt(p, '.tm-away-slot');
+const boardHidden = p => p.$eval('.tm-away', e => e.hidden && getComputedStyle(e).display === 'none' && e.getBoundingClientRect().height === 0);
+const boardShown = p => p.$eval('.tm-away', e => !e.hidden && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0);
 const rows = p => p.$$eval('.tm-away-row', all => all.map(e => ({ name: (e.querySelector('.tm-away-name') || {}).textContent || '', text: e.textContent.trim() })));
 const press = async (p, s) => { const found = await tap(p, s); await L.settle(p, 150); return found; };
 const shift = (p, id) => press(p, '[data-p="tm-sh"][data-v="' + id + '"]');
 const section = (p, id) => press(p, '[data-p="tm-section"][data-v="' + id + '"]');
 const assign = (p, id) => press(p, '[data-p="tm-assign"][data-id="' + id + '"]');
-const pick = (p, k, v) => p.evaluate(([k, v]) => { const e = document.querySelector('select[data-k="' + k + '"]'); if (!e) return false; e.value = String(v); e.dispatchEvent(new Event('change', { bubbles: true })); return true; }, [k, v]);
+const pick = async (p, k, v) => { await details(p, k.split(':')[1]); await L.pick(p, 'select[data-k="' + k + '"]', String(v)); return true; };
 async function ready(p) { await L.waitFor(p, () => !!document.querySelector('.tm-page.tm-notebook .tm-nbook .tm-work [data-p="tm-whole"]'), null, 6000); }
-async function details(p) { await p.evaluate(() => { const d = document.querySelector('details.tm-details'); if (d) d.open = true; }); await L.settle(p, 120); }
+async function details(p, id) {
+  const folds = p.locator('details.tm-person-details' + (id ? '[data-id="' + id + '"]' : ''));
+  for (let i = 0; i < await folds.count(); i++) if (!await folds.nth(i).evaluate(e => e.open)) await folds.nth(i).locator(':scope > summary').click();
+  await L.settle(p, 120);
+}
 async function refresh(p, rec) {
   if (rec !== undefined) await p.evaluate(([k, v]) => window.__fake.write(k, v), [TEAM, rec]);
   await press(p, '[data-p="tm-refresh"]');
@@ -66,7 +72,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   await press(p, '.tm-work [data-p="tm-whole"]');
   const whole = await txt(p, '.tm-work') || '';
   const samDay = await p.$$eval('.tm-dayperson', all => (all.find(e => /Sam/.test(e.textContent)) || {}).textContent || '');
-  ok(/Draft, not saved/.test(whole) && /Lunch/.test(samDay) && /Grill/.test(samDay) && /Dinner/.test(samDay) && /Pans/.test(samDay), 'Whole day: the same draft shows Lunch Grill Sam and Dinner Pans Sam');
+  ok(/Unsaved changes/.test(await txt(p, '.tm-draftstate') || '') && /Lunch/.test(samDay) && /Grill/.test(samDay) && /Dinner/.test(samDay) && /Pans/.test(samDay), 'Whole day: the same draft shows Lunch Grill Sam and Dinner Pans Sam');
   ok(/14:30/.test(samDay) && /19:00/.test(samDay) && /21:30/.test(samDay) && /[Ss]plit/.test(samDay), 'Whole day: Sam\'s meal break, split and return time remain in the draft');
   ok(await p.$$eval('[data-p="tm-save"]', all => all.length) === 1 && (await saved(p)).v === 1 && await away(p) === initialAway, 'draft: one Save, no automatic write, and the saved away panel stays unchanged');
   ok(await readCount(p) === before, 'reads: section, person, shift and Whole day selection reuse the loaded plan and training data');
@@ -118,6 +124,25 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   ok(p.errors.length === 0, 'clock boundaries: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // A checked empty board takes no space, but its retained node can show each saved break when the clock reaches it.
+  p = await L.open(b, '#/team', { who: 'sam', extra: fixture(plan({ br: [{ id: 'ann', sh: 'lunch', at: 825, len: 45 }, { id: 'bo', sh: 'full', at: 900, len: 150 }] })), clock: L.NOW - 16 * 60000, wait: 1200 });
+  await ready(p);
+  ok(await boardHidden(p), 'empty board: a confirmed plan with nobody away hides the whole board and its layout space on initial render');
+  await p.fill('[data-k="tm-q"]', 'Sam');
+  await p.evaluate(() => { window.__emptyBoardProbe = document.querySelector('.tm-away'); window.__emptyInputProbe = document.querySelector('[data-k="tm-q"]'); });
+  const visibilityReads = await readCount(p);
+  await p.clock.fastForward(60000); await L.settle(p, 180);
+  ok(await boardShown(p) && (await rows(p)).some(r => r.name === 'Ann'), 'empty board: the first meal break shows the board at its inclusive start without reloading');
+  await focusAt(p, L.NOW + 30 * 60000);
+  ok(await boardHidden(p), 'empty board: the final meal return hides the board at its exclusive end');
+  await focusAt(p, L.NOW + 60 * 60000);
+  ok(await boardShown(p) && /Split|split/.test(await away(p) || '') && (await rows(p)).some(r => r.name === 'Bo'), 'empty board: the next split shows the retained board at its inclusive start');
+  await focusAt(p, L.NOW + 210 * 60000);
+  ok(await boardHidden(p), 'empty board: the final split return hides the board again');
+  ok(await readCount(p) === visibilityReads && await p.evaluate(() => document.querySelector('.tm-away') === window.__emptyBoardProbe && document.querySelector('[data-k="tm-q"]') === window.__emptyInputProbe && window.__emptyInputProbe.value === 'Sam'), 'empty board: clock visibility changes retain the board, unfinished search and read count');
+  ok(p.errors.length === 0, 'empty board: no browser errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // The same input data can contain duplicate or overlapping planned intervals. Never guess one return time.
   const overlap = plan({ on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }, { id: 'ann', sh: 'full', sec: 'pans' }], br: [{ id: 'ann', sh: 'lunch', at: 825, len: 45 }, { id: 'ann', sh: 'full', at: 825, len: 45 }] });
   p = await L.open(b, '#/team', { who: 'sam', extra: fixture(overlap), wait: 1200 }); await ready(p);
@@ -130,6 +155,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   ok(!(await rows(p)).length && /Nobody scheduled away/.test(await away(p) || ''), 'membership: orphan breaks, removed people and removed shifts do not imply someone is away');
   await refresh(p, plan({ v: 4, on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }], br: [{ id: 'ann', sh: 'lunch', at: 825, len: 40 }] }));
   ok(/Some times could not be checked/.test(await away(p) || '') && !/Nobody scheduled away/.test(await away(p) || ''), 'malformed saved break: a discarded current-member interval warns instead of claiming zero');
+  ok(await boardShown(p), 'malformed saved break: an unknown current status keeps its warning board visible');
   await section(p, 'pans'); await assign(p, 'ann'); await press(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 5, TEAM, 6000);
   ok(!Object.hasOwn(await saved(p), 'uncheckedBr'), 'saved format: defensive warning metadata stays in memory and never changes the team document');
@@ -147,6 +173,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   ok(/Checking|Loading/i.test(loading) && !/Nobody scheduled away|No saved plan/i.test(loading), 'loading: a pending plan read never becomes a false zero or an unset plan');
   await p.evaluate(() => window.__fake.releaseTeamRead()); await ready(p);
   ok(/No saved plan/i.test(await away(p) || '') && !/Nobody scheduled away/i.test(await away(p) || ''), 'unset: no saved plan is distinct from a checked empty schedule');
+  ok(await boardShown(p), 'unset: a missing saved plan keeps its explanatory board visible');
   await p.evaluate(() => { window.__fake.failReads = /\/team(?:\/|$)/; }); await refresh(p);
   const errorState = await away(p) || await txt(p, '.tm-page') || '';
   ok(/Could not check|Could not load/i.test(errorState) && !/Nobody scheduled away/i.test(errorState), 'failed read: an unavailable plan is unknown, never Nobody scheduled away');
@@ -156,11 +183,14 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   // Staleness uses elapsed read age, while an old calendar day must never claim the current break count.
   p = await L.open(b, '#/team', { who: 'sam', extra: fixture(plan({ on: [], br: [] })), clock: L.NOW - 9.5 * 3600000, wait: 1200 }); await ready(p);
   const beforeAge = await readCount(p);
+  ok(await boardHidden(p), 'fresh empty plan: its checked zero is hidden before authority or time becomes unknown');
   await p.evaluate(() => { window.__teamClockReady = window.LK_TIME.ready; window.LK_TIME.ready = () => false; window.dispatchEvent(new Event('focus')); });
   ok(/Checking the kitchen clock/i.test(await away(p) || '') && !/Nobody scheduled away/i.test(await away(p) || ''), 'unknown clock: an unchecked kitchen clock cannot claim a reliable zero');
+  ok(await boardShown(p), 'unknown clock: the hidden board becomes visible to explain the unchecked clock');
   await p.evaluate(() => { window.LK_TIME.ready = window.__teamClockReady; });
   await focusAt(p, L.NOW + 3 * 3600000);
   ok(/Refresh|last checked|older|stale/i.test(await away(p) || '') && !/Nobody scheduled away/i.test(await away(p) || ''), 'stale: a plan held more than twelve hours asks to check again instead of claiming a reliable zero');
+  ok(await boardShown(p), 'stale: an old empty plan keeps its refresh warning visible');
   await focusAt(p, L.NOW + 24 * 3600000);
   ok(/today|day|check|Refresh/i.test(await away(p) || '') && !/Nobody scheduled away/i.test(await away(p) || ''), 'day boundary: yesterday\'s loaded plan cannot answer who is scheduled away today');
   ok(await readCount(p) === beforeAge, 'freshness painting: checking old state itself adds no reads');
@@ -178,7 +208,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
     const m = await p.evaluate(() => {
       const strip = document.querySelector('.tm-shift-scroll'), tabs = strip && strip.querySelector(':scope > .tm-tabs[data-adaptive="keep"]');
       const whole = document.querySelector('.tm-work > * [data-p="tm-whole"], .tm-work > [data-p="tm-whole"]');
-      const targets = [...document.querySelectorAll('.tm-work button[data-p="tm-whole"], .tm-tabs [data-p="tm-sh"], [data-p="tm-section"], [data-p="tm-assign"], details.tm-details > summary, [data-p="tm-save"]')].filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect(); return { action: e.dataset.p || 'details', width: r.width, height: r.height }; });
+      const targets = [...document.querySelectorAll('.tm-work button[data-p="tm-whole"], .tm-tabs [data-p="tm-sh"], [data-p="tm-section"], [data-p="tm-assign"], details.tm-person-details > summary, [data-p="tm-save"]')].filter(e => e.getClientRects().length).map(e => { const r = e.getBoundingClientRect(); return { action: e.dataset.p || 'details', width: r.width, height: r.height }; });
       if (strip) strip.scrollLeft = strip.scrollWidth;
       return { tabs: tabs ? [...tabs.querySelectorAll('[data-p="tm-sh"]')].map(e => e.dataset.v) : [], scrolls: !!strip && strip.scrollWidth > strip.clientWidth && strip.scrollLeft > 0, whole: !!whole && (!strip || !strip.contains(whole)), small: targets.filter(r => r.width < 43.5 || r.height < 43.5), saves: document.querySelectorAll('[data-p="tm-save"]').length };
     });
