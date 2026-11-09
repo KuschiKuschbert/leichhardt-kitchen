@@ -4,6 +4,8 @@
 
 # Leichhardt Kitchen Book
 
+Dismissible sheets and modals share the picker frame: warm paper, a named 44 px close × on touch and mouse, swipe from the header/grip, bottom sheets below 768 px and centred modals above. Closing keeps existing drafts and leaves pings unread; Save and Got it remain separate. Mandatory sign-in stays in place. [Contract and comparisons](docs/adaptive-controls.md#shared-modal-frame-9-november-2026).
+
 Today's team shows current scheduled meal breaks and splits on a pinned charcoal board. On break now lists each name with Until and the return time. Shift tabs show Lunch first, then Dinner, followed by the other configured shifts. It follows the saved plan across all shifts and updates with the existing kitchen clock. [Break board](docs/team-notebook-options/brief.md#break-board-9-november-2026).
 
 Supplier sheets can follow updated order templates while keeping previous quantities attached to the same items. Re-import the updated private catalogue through **Import catalogue**: existing IDs follow the file's sequence, new items are added once and other saved items stay at the end. PFD Dry Goods and PFD Seafood can use their separate existing delivery reminders. If Seafood already has a catalogue, an exact unique supplier-name match reuses it and preserves its item IDs, current pars, own orders and drafts. An immutable item mapping retains the moved products' earlier quantities from PFD. Review shows the existing destination, item counts, sequence and reminder links; a smaller order-only format is also supported. A screenshot of existing counts does not confirm that the revised private file has been imported. [Contract and checks](docs/supplier-workspace.md#template-order-updates-9-november-2026).
@@ -238,6 +240,8 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 There's no build step and nothing to install. To try it on a computer, open `index.html` in a browser.
 
 ## Testing
+
+The cooling-clock midnight journey waits for the seeded next-day section to finish loading before testing Start. This keeps the existing section/sheet guard active and avoids racing its asynchronous read. [Verification note](docs/operandio-cooling.md#midnight-test-readiness-9-november-2026).
 
 Functions-only sign-ins skip kitchen activity writes (2 November 2026). The existing daily PIN, booking and delivery permissions stay the same. `tests/functions-activity.test.js` enters a real synthetic coordinator PIN, saves a booking draft and delivery, checks Orders stays blocked, and confirms an ordinary staff visit is still counted. It failed 2 of 10 checks before the guard and passes all 10 after it. The real rules matrix retains the same activity permissions and no longer needs its known-client waiver.
 
