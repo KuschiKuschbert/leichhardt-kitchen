@@ -1,0 +1,1070 @@
+{
+  "environment": {
+    "kind": "Isolated, in-memory, synthetic prototypes",
+    "reproduction": "Install existing test dependencies with cd tests && npm ci; from the repository root run node docs/team-page-options/verify-previews.cjs --ready. TEAM_PREVIEW_PLAYWRIGHT may point to an existing playwright-core installation; TEAM_PREVIEW_ROOT and TEAM_PREVIEW_PORT are optional overrides.",
+    "viewportHeight": 844,
+    "fonts": "Original local Barlow, Barlow Condensed and Caveat faces",
+    "taskCount": "Native picker open + option choice count as two tap-equivalent actions; scroll and typing excluded. Save includes acknowledgement.",
+    "prototypeHashes": {
+      "preview.js": "3787bb9bf36a49e24fc67a6835d0b6e6856275ee65c6157d3eebbf20ea398690",
+      "preview.css": "b6cb4700a3fb420fc504a48dfb57219666e1f8cad9badf78159f99a91fc98625",
+      "preview.html": "be9cdbb0fe8c741c7715926f3bed8c78c0fc0acb197c796c3411e2b32074fc59"
+    }
+  },
+  "measurements": [],
+  "tasks": [],
+  "stateChecks": [],
+  "adversarial": [
+    {
+      "name": "Shared controls/390/service: boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "service",
+        "label": "Service to edit for Ann",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          255,
+          255,
+          255,
+          1
+        ],
+        "border": "rgb(107, 112, 119)",
+        "borderWidth": "1px",
+        "boundaryContrast": 4.703728547805816,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "Shared controls/390/section: boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "section",
+        "label": "Section for Ann on Lunch",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          255,
+          255,
+          255,
+          1
+        ],
+        "border": "rgb(107, 112, 119)",
+        "borderWidth": "1px",
+        "boundaryContrast": 4.703728547805816,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "Shared controls/390/date: boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "date",
+        "label": "Tuesday 10 November, today",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          184,
+          63,
+          21,
+          1
+        ],
+        "border": "rgba(0, 0, 0, 0)",
+        "borderWidth": "1px",
+        "boundaryContrast": 5.265825534421191,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "Shared controls/390/save: boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "save",
+        "label": "Save Tuesday 10 November",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          28,
+          29,
+          31,
+          1
+        ],
+        "border": "rgb(28, 29, 31)",
+        "borderWidth": "1px",
+        "boundaryContrast": 15.90398420546879,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "Shared controls/390/toggle-board: boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "toggle-board",
+        "label": "Saved details",
+        "outer": [
+          43,
+          42,
+          39,
+          1
+        ],
+        "fill": [
+          43,
+          42,
+          39,
+          1
+        ],
+        "border": "rgb(251, 248, 241)",
+        "borderWidth": "1px",
+        "boundaryContrast": 13.53128213299507,
+        "outline": "rgb(251, 248, 241)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 13.53128213299507
+      }
+    },
+    {
+      "name": "Shared controls/390: reduced-motion preference honoured",
+      "pass": true
+    },
+    {
+      "name": "Shared controls/768/service: boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "service",
+        "label": "Service to edit for Ann",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          255,
+          255,
+          255,
+          1
+        ],
+        "border": "rgb(107, 112, 119)",
+        "borderWidth": "1px",
+        "boundaryContrast": 4.703728547805816,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "Shared controls/768/section: boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "section",
+        "label": "Section for Ann on Lunch",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          255,
+          255,
+          255,
+          1
+        ],
+        "border": "rgb(107, 112, 119)",
+        "borderWidth": "1px",
+        "boundaryContrast": 4.703728547805816,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "Shared controls/768/date: boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "date",
+        "label": "Tuesday 10 November, today",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          184,
+          63,
+          21,
+          1
+        ],
+        "border": "rgba(0, 0, 0, 0)",
+        "borderWidth": "1px",
+        "boundaryContrast": 5.265825534421191,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "Shared controls/768/save: boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "save",
+        "label": "Save Tuesday 10 November",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          28,
+          29,
+          31,
+          1
+        ],
+        "border": "rgb(28, 29, 31)",
+        "borderWidth": "1px",
+        "boundaryContrast": 15.90398420546879,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "Shared controls/768/toggle-board: boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "toggle-board",
+        "label": "Saved details",
+        "outer": [
+          43,
+          42,
+          39,
+          1
+        ],
+        "fill": [
+          43,
+          42,
+          39,
+          1
+        ],
+        "border": "rgb(251, 248, 241)",
+        "borderWidth": "1px",
+        "boundaryContrast": 13.53128213299507,
+        "outline": "rgb(251, 248, 241)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 13.53128213299507
+      }
+    },
+    {
+      "name": "Shared controls/768: reduced-motion preference honoured",
+      "pass": true
+    },
+    {
+      "name": "Shared controls/1280/service: boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "service",
+        "label": "Service to edit for Ann",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          255,
+          255,
+          255,
+          1
+        ],
+        "border": "rgb(107, 112, 119)",
+        "borderWidth": "1px",
+        "boundaryContrast": 4.703728547805816,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "Shared controls/1280/section: boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "section",
+        "label": "Section for Ann on Lunch",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          255,
+          255,
+          255,
+          1
+        ],
+        "border": "rgb(107, 112, 119)",
+        "borderWidth": "1px",
+        "boundaryContrast": 4.703728547805816,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "Shared controls/1280/date: boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "date",
+        "label": "Tuesday 10 November, today",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          184,
+          63,
+          21,
+          1
+        ],
+        "border": "rgba(0, 0, 0, 0)",
+        "borderWidth": "1px",
+        "boundaryContrast": 5.265825534421191,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "Shared controls/1280/save: boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "save",
+        "label": "Save Tuesday 10 November",
+        "outer": [
+          251,
+          248,
+          241,
+          1
+        ],
+        "fill": [
+          28,
+          29,
+          31,
+          1
+        ],
+        "border": "rgb(28, 29, 31)",
+        "borderWidth": "1px",
+        "boundaryContrast": 15.90398420546879,
+        "outline": "rgb(28, 29, 31)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 15.90398420546879
+      }
+    },
+    {
+      "name": "Shared controls/1280/toggle-board: boundary and visible focus contrast",
+      "pass": true,
+      "detail": {
+        "action": "toggle-board",
+        "label": "Saved details",
+        "outer": [
+          43,
+          42,
+          39,
+          1
+        ],
+        "fill": [
+          43,
+          42,
+          39,
+          1
+        ],
+        "border": "rgb(251, 248, 241)",
+        "borderWidth": "1px",
+        "boundaryContrast": 13.53128213299507,
+        "outline": "rgb(251, 248, 241)",
+        "outlineStyle": "solid",
+        "outlineWidth": 3,
+        "focusVisible": true,
+        "focused": true,
+        "focusContrast": 13.53128213299507
+      }
+    },
+    {
+      "name": "Shared controls/1280: reduced-motion preference honoured",
+      "pass": true
+    },
+    {
+      "name": "C/normal/last service: keyboard reaches an unobscured control",
+      "pass": true,
+      "detail": {
+        "action": "service",
+        "top": 571.4375,
+        "bottom": 615.4375,
+        "saveTop": 681.828125,
+        "navTop": 776,
+        "hit": true,
+        "focusVisible": true
+      }
+    },
+    {
+      "name": "C/normal/last section: keyboard reaches an unobscured control",
+      "pass": true,
+      "detail": {
+        "action": "section",
+        "top": 571.4375,
+        "bottom": 615.4375,
+        "saveTop": 681.828125,
+        "navTop": 776,
+        "hit": true,
+        "focusVisible": true
+      }
+    },
+    {
+      "name": "C/normal/last service: pointer click reaches the control after deliberate scroll",
+      "pass": true
+    },
+    {
+      "name": "C/normal/last section: pointer click reaches the control after deliberate scroll",
+      "pass": true
+    },
+    {
+      "name": "C/normal: last-row keyboard/pointer path has no browser errors",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "C/xlarge/last service: keyboard reaches an unobscured control",
+      "pass": true,
+      "detail": {
+        "action": "service",
+        "top": 286.40625,
+        "bottom": 330.40625,
+        "saveTop": 402.40625,
+        "navTop": 776,
+        "hit": true,
+        "focusVisible": true
+      }
+    },
+    {
+      "name": "C/xlarge/last section: keyboard reaches an unobscured control",
+      "pass": true,
+      "detail": {
+        "action": "section",
+        "top": 286.40625,
+        "bottom": 330.40625,
+        "saveTop": 402.40625,
+        "navTop": 776,
+        "hit": true,
+        "focusVisible": true
+      }
+    },
+    {
+      "name": "C/xlarge/last service: pointer click reaches the control after deliberate scroll",
+      "pass": true
+    },
+    {
+      "name": "C/xlarge/last section: pointer click reaches the control after deliberate scroll",
+      "pass": true
+    },
+    {
+      "name": "C/xlarge: last-row keyboard/pointer path has no browser errors",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "C/long/last service: keyboard reaches an unobscured control",
+      "pass": true,
+      "detail": {
+        "action": "service",
+        "top": 552.03125,
+        "bottom": 596.03125,
+        "saveTop": 665.5,
+        "navTop": 776,
+        "hit": true,
+        "focusVisible": true
+      }
+    },
+    {
+      "name": "C/long/last section: keyboard reaches an unobscured control",
+      "pass": true,
+      "detail": {
+        "action": "section",
+        "top": 552.03125,
+        "bottom": 596.03125,
+        "saveTop": 665.5,
+        "navTop": 776,
+        "hit": true,
+        "focusVisible": true
+      }
+    },
+    {
+      "name": "C/long/last service: pointer click reaches the control after deliberate scroll",
+      "pass": true
+    },
+    {
+      "name": "C/long/last section: pointer click reaches the control after deliberate scroll",
+      "pass": true
+    },
+    {
+      "name": "C/long: last-row keyboard/pointer path has no browser errors",
+      "pass": true,
+      "detail": []
+    },
+    {
+      "name": "All captures used one unchanged prototype source set",
+      "pass": true
+    }
+  ],
+  "limitations": [
+    "No production records, Firebase persistence, server permissions, device locks, handover or reload recovery are tested.",
+    "Browser checks and role-based design review do not establish actual kitchen task frequency or staff usability.",
+    "Control contrast samples computed rendered colours and native focus outlines in Chromium; OS-native option-menu rendering, touch motor performance and full WCAG conformance are not established."
+  ],
+  "focusControls": [
+    {
+      "design": "a",
+      "width": 390,
+      "action": "service",
+      "label": "Service to edit for Ann",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        255,
+        255,
+        255,
+        1
+      ],
+      "border": "rgb(107, 112, 119)",
+      "borderWidth": "1px",
+      "boundaryContrast": 4.703728547805816,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "a",
+      "width": 390,
+      "action": "section",
+      "label": "Section for Ann on Lunch",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        255,
+        255,
+        255,
+        1
+      ],
+      "border": "rgb(107, 112, 119)",
+      "borderWidth": "1px",
+      "boundaryContrast": 4.703728547805816,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "a",
+      "width": 390,
+      "action": "date",
+      "label": "Tuesday 10 November, today",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        184,
+        63,
+        21,
+        1
+      ],
+      "border": "rgba(0, 0, 0, 0)",
+      "borderWidth": "1px",
+      "boundaryContrast": 5.265825534421191,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "a",
+      "width": 390,
+      "action": "save",
+      "label": "Save Tuesday 10 November",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        28,
+        29,
+        31,
+        1
+      ],
+      "border": "rgb(28, 29, 31)",
+      "borderWidth": "1px",
+      "boundaryContrast": 15.90398420546879,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "a",
+      "width": 390,
+      "action": "toggle-board",
+      "label": "Saved details",
+      "outer": [
+        43,
+        42,
+        39,
+        1
+      ],
+      "fill": [
+        43,
+        42,
+        39,
+        1
+      ],
+      "border": "rgb(251, 248, 241)",
+      "borderWidth": "1px",
+      "boundaryContrast": 13.53128213299507,
+      "outline": "rgb(251, 248, 241)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 13.53128213299507
+    },
+    {
+      "design": "a",
+      "width": 768,
+      "action": "service",
+      "label": "Service to edit for Ann",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        255,
+        255,
+        255,
+        1
+      ],
+      "border": "rgb(107, 112, 119)",
+      "borderWidth": "1px",
+      "boundaryContrast": 4.703728547805816,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "a",
+      "width": 768,
+      "action": "section",
+      "label": "Section for Ann on Lunch",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        255,
+        255,
+        255,
+        1
+      ],
+      "border": "rgb(107, 112, 119)",
+      "borderWidth": "1px",
+      "boundaryContrast": 4.703728547805816,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "a",
+      "width": 768,
+      "action": "date",
+      "label": "Tuesday 10 November, today",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        184,
+        63,
+        21,
+        1
+      ],
+      "border": "rgba(0, 0, 0, 0)",
+      "borderWidth": "1px",
+      "boundaryContrast": 5.265825534421191,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "a",
+      "width": 768,
+      "action": "save",
+      "label": "Save Tuesday 10 November",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        28,
+        29,
+        31,
+        1
+      ],
+      "border": "rgb(28, 29, 31)",
+      "borderWidth": "1px",
+      "boundaryContrast": 15.90398420546879,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "a",
+      "width": 768,
+      "action": "toggle-board",
+      "label": "Saved details",
+      "outer": [
+        43,
+        42,
+        39,
+        1
+      ],
+      "fill": [
+        43,
+        42,
+        39,
+        1
+      ],
+      "border": "rgb(251, 248, 241)",
+      "borderWidth": "1px",
+      "boundaryContrast": 13.53128213299507,
+      "outline": "rgb(251, 248, 241)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 13.53128213299507
+    },
+    {
+      "design": "a",
+      "width": 1280,
+      "action": "service",
+      "label": "Service to edit for Ann",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        255,
+        255,
+        255,
+        1
+      ],
+      "border": "rgb(107, 112, 119)",
+      "borderWidth": "1px",
+      "boundaryContrast": 4.703728547805816,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "a",
+      "width": 1280,
+      "action": "section",
+      "label": "Section for Ann on Lunch",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        255,
+        255,
+        255,
+        1
+      ],
+      "border": "rgb(107, 112, 119)",
+      "borderWidth": "1px",
+      "boundaryContrast": 4.703728547805816,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "a",
+      "width": 1280,
+      "action": "date",
+      "label": "Tuesday 10 November, today",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        184,
+        63,
+        21,
+        1
+      ],
+      "border": "rgba(0, 0, 0, 0)",
+      "borderWidth": "1px",
+      "boundaryContrast": 5.265825534421191,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "a",
+      "width": 1280,
+      "action": "save",
+      "label": "Save Tuesday 10 November",
+      "outer": [
+        251,
+        248,
+        241,
+        1
+      ],
+      "fill": [
+        28,
+        29,
+        31,
+        1
+      ],
+      "border": "rgb(28, 29, 31)",
+      "borderWidth": "1px",
+      "boundaryContrast": 15.90398420546879,
+      "outline": "rgb(28, 29, 31)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 15.90398420546879
+    },
+    {
+      "design": "a",
+      "width": 1280,
+      "action": "toggle-board",
+      "label": "Saved details",
+      "outer": [
+        43,
+        42,
+        39,
+        1
+      ],
+      "fill": [
+        43,
+        42,
+        39,
+        1
+      ],
+      "border": "rgb(251, 248, 241)",
+      "borderWidth": "1px",
+      "boundaryContrast": 13.53128213299507,
+      "outline": "rgb(251, 248, 241)",
+      "outlineStyle": "solid",
+      "outlineWidth": 3,
+      "focusVisible": true,
+      "focused": true,
+      "focusContrast": 13.53128213299507
+    }
+  ],
+  "occlusion": [
+    {
+      "stress": "normal",
+      "id": "gia",
+      "tabs": 28,
+      "service": {
+        "action": "service",
+        "top": 571.4375,
+        "bottom": 615.4375,
+        "saveTop": 681.828125,
+        "navTop": 776,
+        "hit": true,
+        "focusVisible": true
+      },
+      "section": {
+        "action": "section",
+        "top": 571.4375,
+        "bottom": 615.4375,
+        "saveTop": 681.828125,
+        "navTop": 776,
+        "hit": true,
+        "focusVisible": true
+      }
+    },
+    {
+      "stress": "xlarge",
+      "id": "gia",
+      "tabs": 28,
+      "service": {
+        "action": "service",
+        "top": 286.40625,
+        "bottom": 330.40625,
+        "saveTop": 402.40625,
+        "navTop": 776,
+        "hit": true,
+        "focusVisible": true
+      },
+      "section": {
+        "action": "section",
+        "top": 286.40625,
+        "bottom": 330.40625,
+        "saveTop": 402.40625,
+        "navTop": 776,
+        "hit": true,
+        "focusVisible": true
+      }
+    },
+    {
+      "stress": "long",
+      "id": "gia",
+      "tabs": 28,
+      "service": {
+        "action": "service",
+        "top": 552.03125,
+        "bottom": 596.03125,
+        "saveTop": 665.5,
+        "navTop": 776,
+        "hit": true,
+        "focusVisible": true
+      },
+      "section": {
+        "action": "section",
+        "top": 552.03125,
+        "bottom": 596.03125,
+        "saveTop": 665.5,
+        "navTop": 776,
+        "hit": true,
+        "focusVisible": true
+      }
+    }
+  ]
+}

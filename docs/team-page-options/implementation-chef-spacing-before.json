@@ -1,0 +1,376 @@
+{
+  "sources": {
+    "js/prep.js": "f7b5e289f965ceb1fa72edbdca25707b11116805fd8d938b04cfe8dbb9ce5fc6",
+    "css/app.css": "3997ccaea6116e7602ee5ecfaf64989770f175bc71db364487dd61aa32c95412"
+  },
+  "scope": "Before the two scoped phone chef margin repairs. Same eight-selected fixture and original fonts.",
+  "scene": {
+    "name": "implemented-chef-390",
+    "frame": "chef",
+    "width": 390,
+    "size": "normal",
+    "long": false,
+    "serviceLong": false,
+    "geometry": {
+      "viewport": {
+        "width": 390,
+        "height": 844,
+        "unobscuredBottom": 679.84375
+      },
+      "firstPersonTop": 565.25,
+      "firstPersonHeight": 135.453125,
+      "completeInitialPeople": 0,
+      "rows": [
+        {
+          "id": "ann",
+          "x": 30.59375,
+          "y": 565.25,
+          "width": 328.8125,
+          "height": 135.453125,
+          "right": 359.40625,
+          "bottom": 700.703125,
+          "service": true,
+          "section": true
+        },
+        {
+          "id": "sam",
+          "x": 30.59375,
+          "y": 700.703125,
+          "width": 328.8125,
+          "height": 135.453125,
+          "right": 359.40625,
+          "bottom": 836.15625,
+          "service": true,
+          "section": true
+        },
+        {
+          "id": "bo",
+          "x": 30.59375,
+          "y": 836.15625,
+          "width": 328.8125,
+          "height": 135.453125,
+          "right": 359.40625,
+          "bottom": 971.609375,
+          "service": true,
+          "section": true
+        },
+        {
+          "id": "cam",
+          "x": 30.59375,
+          "y": 971.609375,
+          "width": 328.8125,
+          "height": 135.453125,
+          "right": 359.40625,
+          "bottom": 1107.0625,
+          "service": true,
+          "section": true
+        },
+        {
+          "id": "dee",
+          "x": 30.59375,
+          "y": 1107.0625,
+          "width": 328.8125,
+          "height": 135.453125,
+          "right": 359.40625,
+          "bottom": 1242.515625,
+          "service": true,
+          "section": true
+        },
+        {
+          "id": "eli",
+          "x": 30.59375,
+          "y": 1242.515625,
+          "width": 328.8125,
+          "height": 135.453125,
+          "right": 359.40625,
+          "bottom": 1377.96875,
+          "service": true,
+          "section": true
+        },
+        {
+          "id": "fin",
+          "x": 30.59375,
+          "y": 1377.96875,
+          "width": 328.8125,
+          "height": 135.453125,
+          "right": 359.40625,
+          "bottom": 1513.421875,
+          "service": true,
+          "section": true
+        },
+        {
+          "id": "gia",
+          "x": 30.59375,
+          "y": 1513.421875,
+          "width": 328.8125,
+          "height": 136.453125,
+          "right": 359.40625,
+          "bottom": 1649.875,
+          "service": true,
+          "section": true
+        }
+      ],
+      "save": {
+        "x": 30.59375,
+        "y": 721.609375,
+        "width": 328.8125,
+        "height": 44,
+        "right": 359.40625,
+        "bottom": 765.609375
+      },
+      "saveArea": {
+        "x": 17,
+        "y": 679.84375,
+        "width": 356,
+        "height": 96.15625,
+        "right": 373,
+        "bottom": 776
+      },
+      "saveVisible": true,
+      "nav": {
+        "x": 0,
+        "y": 776,
+        "width": 390,
+        "height": 68,
+        "right": 390,
+        "bottom": 844
+      },
+      "overflow": false,
+      "smallTargets": [],
+      "board": {
+        "hidden": false,
+        "text": "ON BREAK NOW\n14:00\n\nToday · Saved plan · All services\n\nBo\nSplit\nUntil 15:00\nAnn\nMeal break\nUntil 14:30\nSaved details"
+      },
+      "rowServiceCount": 8,
+      "globalServiceButtons": 0,
+      "status": "Saved 13:00 · Sam",
+      "reads": 13,
+      "teamReads": 3
+    },
+    "colours": {
+      "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+      "checked": 78,
+      "minimum": 2.084,
+      "failures": [],
+      "disabledBelowThreshold": [
+        {
+          "text": "Save Tuesday 10 November",
+          "ratio": 2.084,
+          "required": 4.5,
+          "size": 16,
+          "disabled": true
+        }
+      ],
+      "unresolved": [
+        {
+          "text": "Today · Saved plan · All services",
+          "reason": "Unsupported computed text colour"
+        },
+        {
+          "text": "Split",
+          "reason": "Unsupported computed text colour"
+        },
+        {
+          "text": "Meal break",
+          "reason": "Unsupported computed text colour"
+        }
+      ]
+    },
+    "fonts": [
+      {
+        "family": "Barlow",
+        "weight": "400",
+        "loaded": true
+      },
+      {
+        "family": "Barlow",
+        "weight": "600",
+        "loaded": true
+      },
+      {
+        "family": "Barlow",
+        "weight": "700",
+        "loaded": true
+      },
+      {
+        "family": "Barlow Condensed",
+        "weight": "700",
+        "loaded": true
+      },
+      {
+        "family": "Caveat",
+        "weight": "700",
+        "loaded": true
+      }
+    ],
+    "errors": [],
+    "openWorkbench": {
+      "geometry": {
+        "viewport": {
+          "width": 390,
+          "height": 844,
+          "unobscuredBottom": 679.84375
+        },
+        "firstPersonTop": 518.25,
+        "firstPersonHeight": 432.734375,
+        "completeInitialPeople": 0,
+        "rows": [
+          {
+            "id": "ann",
+            "x": 30.59375,
+            "y": 518.25,
+            "width": 328.8125,
+            "height": 432.734375,
+            "right": 359.40625,
+            "bottom": 950.984375,
+            "service": true,
+            "section": true
+          },
+          {
+            "id": "sam",
+            "x": 30.59375,
+            "y": 950.984375,
+            "width": 328.8125,
+            "height": 135.453125,
+            "right": 359.40625,
+            "bottom": 1086.4375,
+            "service": true,
+            "section": true
+          },
+          {
+            "id": "bo",
+            "x": 30.59375,
+            "y": 1086.4375,
+            "width": 328.8125,
+            "height": 135.453125,
+            "right": 359.40625,
+            "bottom": 1221.890625,
+            "service": true,
+            "section": true
+          },
+          {
+            "id": "cam",
+            "x": 30.59375,
+            "y": 1221.890625,
+            "width": 328.8125,
+            "height": 135.453125,
+            "right": 359.40625,
+            "bottom": 1357.34375,
+            "service": true,
+            "section": true
+          },
+          {
+            "id": "dee",
+            "x": 30.59375,
+            "y": 1357.34375,
+            "width": 328.8125,
+            "height": 135.453125,
+            "right": 359.40625,
+            "bottom": 1492.796875,
+            "service": true,
+            "section": true
+          },
+          {
+            "id": "eli",
+            "x": 30.59375,
+            "y": 1492.796875,
+            "width": 328.8125,
+            "height": 135.453125,
+            "right": 359.40625,
+            "bottom": 1628.25,
+            "service": true,
+            "section": true
+          },
+          {
+            "id": "fin",
+            "x": 30.59375,
+            "y": 1628.25,
+            "width": 328.8125,
+            "height": 135.453125,
+            "right": 359.40625,
+            "bottom": 1763.703125,
+            "service": true,
+            "section": true
+          },
+          {
+            "id": "gia",
+            "x": 30.59375,
+            "y": 1763.703125,
+            "width": 328.8125,
+            "height": 136.453125,
+            "right": 359.40625,
+            "bottom": 1900.15625,
+            "service": true,
+            "section": true
+          }
+        ],
+        "save": {
+          "x": 30.59375,
+          "y": 721.609375,
+          "width": 328.8125,
+          "height": 44,
+          "right": 359.40625,
+          "bottom": 765.609375
+        },
+        "saveArea": {
+          "x": 17,
+          "y": 679.84375,
+          "width": 356,
+          "height": 96.15625,
+          "right": 373,
+          "bottom": 776
+        },
+        "saveVisible": true,
+        "nav": {
+          "x": 0,
+          "y": 776,
+          "width": 390,
+          "height": 68,
+          "right": 390,
+          "bottom": 844
+        },
+        "overflow": false,
+        "smallTargets": [],
+        "board": {
+          "hidden": false,
+          "text": "ON BREAK NOW\n14:00\n\nToday · Saved plan · All services\n\nBo\nSplit\nUntil 15:00\nAnn\nMeal break\nUntil 14:30\nSaved details"
+        },
+        "rowServiceCount": 8,
+        "globalServiceButtons": 0,
+        "status": "Saved 13:00 · Sam",
+        "reads": 13,
+        "teamReads": 3
+      },
+      "colours": {
+        "scope": "Rendered Today team notebook text, excluding OS picker options and hidden details",
+        "checked": 88,
+        "minimum": 2.084,
+        "failures": [],
+        "disabledBelowThreshold": [
+          {
+            "text": "Save Tuesday 10 November",
+            "ratio": 2.084,
+            "required": 4.5,
+            "size": 16,
+            "disabled": true
+          }
+        ],
+        "unresolved": [
+          {
+            "text": "Today · Saved plan · All services",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Split",
+            "reason": "Unsupported computed text colour"
+          },
+          {
+            "text": "Meal break",
+            "reason": "Unsupported computed text colour"
+          }
+        ]
+      },
+      "label": "Break details for Ann on Lunch, Tuesday 10 November"
+    }
+  }
+}

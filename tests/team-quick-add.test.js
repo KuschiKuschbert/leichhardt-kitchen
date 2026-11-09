@@ -34,14 +34,15 @@ const saveOff = p => p.locator('[data-p="tm-save"]').isDisabled();
 const selected = p => p.locator('[data-p="tm-day"][aria-pressed="true"]').getAttribute('data-day');
 const ready = p => L.waitFor(p, () => !!document.querySelector('.tm-work [data-p="tm-whole"]'), null, 7000);
 async function goDay(p, day) {
+  if (!await p.locator('.tm-weeknav').isVisible()) await click(p, '[data-p="tm-date-toggle"]');
   for (let n = 0; n < 3 && !await p.locator('[data-p="tm-day"][data-day="' + day + '"]').count(); n++) await click(p, '[data-p="tm-week-next"]');
   await click(p, '[data-p="tm-day"][data-day="' + day + '"]'); await ready(p);
 }
 async function quickOpen(p) {
-  const fold = p.locator('details.tm-quick-add');
-  if (await fold.count() && !await fold.evaluate(e => e.open)) await click(p, 'details.tm-quick-add > summary');
+  if (!await p.locator('.tm-quick-add').isVisible()) await click(p, '.tm-focus-toolbar [data-p="tm-add-staff"]');
 }
 async function pick(p, k, value) { await L.pick(p, 'select' + field(k), String(value)); }
+const service = (p, id, sh) => pick(p, 'tm-row-sh:' + id, sh);
 async function save(p, version, day = today) {
   await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, ([k, v]) => (__fake.dump()[k] || {}).v === v, [key('team', day), version], 7000);
@@ -71,13 +72,13 @@ const spreadPlan = () => ({ day: today,
   ok(!await p.locator('[data-p="tm-quick-add"]').isDisabled() && await saveOff(p), 'chooser selections enable Add while the plan still waits for Add before Save');
   ok(await p.evaluate(() => LK_PREP.unsaved() && LK_PREP.dirtyForUpdate()), 'chooser protection: unsent staff choices count as work before the roster is changed');
   await click(p, '[data-p="tm-quick-add"]');
-  ok(!await p.locator('details.tm-quick-add').evaluate(e => e.open) && await p.locator('[data-k^="tm-quick-person:"]:checked').count() === 0, 'Add: the chooser collapses and clears only its completed selection');
+  ok(!await p.locator('.tm-quick-add').isVisible() && await p.locator('[data-k^="tm-quick-person:"]:checked').count() === 0, 'Add: the chooser collapses and clears only its completed selection');
   ok(await p.locator('select' + field('tm-sec:ann')).inputValue() === '' && await p.locator('select' + field('tm-sec:bo')).inputValue() === '' && !await p.locator('select' + field('tm-sec:sam')).count() && await p.locator(personCheck('sam')).count() === 1, 'Add: only chosen people enter the worksheet; other staff stay available in the chooser');
   ok(!await saveOff(p) && !await read(p) && await readCount(p) === initialReads, 'Add is a local draft change with no database read or premature save');
-  await click(p, '[data-p="tm-sh"][data-v="dinner"]');
+  await service(p, 'ann', 'dinner'); await service(p, 'bo', 'dinner');
   ok(await p.locator('select' + field('tm-sec:ann')).inputValue() === '' && await p.locator('select' + field('tm-sec:bo')).inputValue() === '', 'multi-service add: both selected staff also join Dinner without an invented section or break');
   await pick(p, 'tm-sec:ann', 'pans');
-  await click(p, '[data-p="tm-sh"][data-v="lunch"]'); await pick(p, 'tm-sec:ann', 'grill');
+  await service(p, 'ann', 'lunch'); await pick(p, 'tm-sec:ann', 'grill');
   const first = await save(p, 1);
   ok(first.on.length === 4 && has(first, 'ann', 'lunch', 'grill') && has(first, 'ann', 'dinner', 'pans') && has(first, 'bo', 'lunch', '') && has(first, 'bo', 'dinner', '') && !first.br.length, 'one Save persists the selected people, services and distinct sections without guessing breaks');
   await quickOpen(p); await check(p, personCheck('ann')); await check(p, personCheck('cam'));
@@ -105,8 +106,8 @@ const spreadPlan = () => ({ day: today,
   // Pending chooser work is separate for each date and survives the same chef's daily/privacy lock.
   p = await L.open(browser, '#/team', { who: 'sam', extra: fixture(), deviceMode: 'shared', touch: true, wait: 950 }); await ready(p);
   await goDay(p, tomorrow); await check(p, personCheck('ann')); await check(p, serviceCheck('dinner'));
-  await click(p, '[data-p="tm-sh"][data-v="dinner"]');
-  ok(await p.locator(personCheck('ann')).isChecked() && await p.locator(serviceCheck('lunch')).isChecked() && await p.locator(serviceCheck('dinner')).isChecked(), 'shift navigation retains the deliberately chosen people and service group');
+  await click(p, '.tm-batch > summary'); await pick(p, 'tm-tool-sh', 'dinner');
+  ok(await p.locator(personCheck('ann')).isChecked() && await p.locator(serviceCheck('lunch')).isChecked() && await p.locator(serviceCheck('dinner')).isChecked(), 'tools service choice retains the deliberately chosen people and service group');
   await goDay(p, today);
   ok(await p.locator('[data-k^="tm-quick-person:"]:checked').count() === 0 && await p.evaluate(() => LK_PREP.unsaved() && LK_PREP.dirtyForUpdate()), 'date isolation: today has its own empty chooser while hidden tomorrow choices protect work');
   await goDay(p, tomorrow);

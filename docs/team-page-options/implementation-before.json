@@ -1,0 +1,23 @@
+{
+  "baseline": "f15187dd8ccc1275fc268b8f30d09f54bc78114f",
+  "environment": "Local Chromium, real app renderer, synthetic fake Firebase. No production records or writes.",
+  "rowCount": 3,
+  "rowServiceCount": 0,
+  "globalServiceButtons": 2,
+  "focusActions": 0,
+  "errors": [],
+  "checks": [
+    {
+      "name": "Each selected person exposes a Service to edit picker",
+      "passed": false
+    },
+    {
+      "name": "Each row exposes the focused Details action",
+      "passed": false
+    },
+    {
+      "name": "Main roster no longer changes every row via global service buttons",
+      "passed": false
+    }
+  ]
+}
