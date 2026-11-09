@@ -198,3 +198,5 @@ Supplier selection and Refresh read one page of 20 orders, with one lookahead re
 Verification uses the Firebase stand-in, never live kitchen records: supplier workspace, row layout, quantity entry, module revisions and read budgets, plus dedicated last-order checks for dates, IDs, history coverage, failures and recording. `js/suppliers.js?v=21` retains `LK_SUP.api` 9 and the existing core/store versions. Revert the pull request to restore the previous display; all saved orders stay compatible. CI and release status are recorded in the pull request.
 
 Synthetic screenshots: [phone before](supplier-last-ordered/before-390.png), [phone with dates](supplier-last-ordered/after-390.png), [desktop with dates](supplier-last-ordered/after-1280.png).
+
+The later [earlier-order indication brainstorm](supplier-last-order-status-options/brief.md) compares making order membership explicit. It records the council's recommendation and three visual directions. Choice pending; it does not change the live contract above.

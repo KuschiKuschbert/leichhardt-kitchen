@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Supplier earlier-order indication designs, 9 November 2026
+
+The head chef requested brainstorming and council review of how to distinguish an item's earlier purchase from the latest supplier order. [The brief](supplier-last-order-status-options/brief.md) records five Build smaller verdicts, three visual directions and six independent rankings. A is recommended, with no extra reads, taps or measured row height. [The gallery](supplier-last-order-status-options/index.html) contains phone/tablet/desktop previews. Choice pending; application source and the live page are unchanged.
+
 ## Each supplier item's last order, 9 November 2026
 
 The existing supplier row shows its last recorded quantity and Queensland date, including purchases omitted from the newest supplier order. One bounded history page on selection, explicit Older orders coverage and no new saved fields. `js/suppliers.js?v=21`, `css/app.css`, the lazy URL in `js/app.js`; `tests/supplier-last-ordered.test.js`, supplier workspace, quantities and module versions. [Contract, quick council and verification](supplier-workspace.md#each-items-last-order-9-november-2026).

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Supplier order: three ways to show an earlier purchase</title>
+  <style>
+    :root { --paper: #fffaf0; --desk: #eee7d9; --ink: #302d28; --muted: #665f53; --line: #d7cdba; --orange: #ad4d28; --soft: #f7ead8; --green: #4b6650; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--desk); color: var(--ink); font: 16px/1.55 Arial, Helvetica, sans-serif; }
+    a { color: var(--orange); text-underline-offset: .18em; text-decoration-thickness: 1px; }
+    a:hover { text-decoration-thickness: 2px; }
+    a:focus-visible, summary:focus-visible { outline: 3px solid var(--orange); outline-offset: 5px; border-radius: 2px; }
+    .skip { position: absolute; top: -6rem; left: 1rem; padding: .7rem 1rem; background: var(--paper); z-index: 2; }
+    .skip:focus { top: 1rem; }
+    .wrap { width: min(1200px, calc(100% - 64px)); margin: auto; }
+    header { padding: 64px 0 36px; border-bottom: 1px solid var(--line); }
+    .eyebrow { margin: 0 0 14px; font-size: .75rem; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; color: var(--orange); }
+    h1, h2, h3 { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; line-height: 1.12; }
+    h1 { max-width: 850px; margin: 0; font-size: clamp(2.4rem, 4.5vw, 4.4rem); letter-spacing: -.035em; }
+    .lead { max-width: 740px; margin: 22px 0 24px; font-size: 1.1rem; color: var(--muted); }
+    .status { display: inline-flex; align-items: center; gap: .7rem; margin: 0; padding: .55rem .8rem; border: 1px solid var(--line); background: var(--paper); font-size: .8rem; }
+    .status::before { content: ''; width: .45rem; height: .45rem; border: 1.5px solid var(--orange); border-radius: 50%; flex: none; }
+    nav { display: flex; gap: 8px; flex-wrap: wrap; margin: 24px 0 0; }
+    nav a { padding: .5rem .9rem; border: 1px solid var(--line); border-radius: 40px; background: transparent; font-size: .85rem; text-decoration: none; }
+    nav a:hover { background: var(--paper); }
+    main { padding: 32px 0 48px; }
+    .context { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: start; margin-bottom: 36px; }
+    .context h2, .rules h2 { margin: 0 0 12px; font-size: 1.8rem; letter-spacing: -.02em; }
+    .context p { margin: 0; max-width: 620px; color: var(--muted); }
+    .context details { border-block: 1px solid var(--line); }
+    summary { cursor: pointer; padding: 14px 0; color: var(--orange); font-size: .9rem; font-weight: 700; }
+    .baseline { margin: 0 0 20px; }
+    .baseline img { display: block; width: min(100%, 250px); height: auto; border: 1px solid var(--line); margin: 0 auto; }
+    figcaption { margin-top: 10px; font-size: .8rem; color: var(--muted); }
+    .gallery { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: stretch; }
+    .concept { display: flex; flex-direction: column; min-width: 0; padding: 22px; background: var(--paper); border: 1px solid var(--line); border-top: 3px solid var(--orange); border-radius: 3px; scroll-margin-top: 20px; }
+    .concept-head { min-height: 182px; }
+    .letter { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin-bottom: 18px; border: 1px solid var(--orange); border-radius: 50%; font-size: .8rem; font-weight: 700; color: var(--orange); }
+    .concept h2 { margin: 0 0 12px; font-size: 1.7rem; letter-spacing: -.02em; }
+    .description { margin: 0; font-size: .9rem; color: var(--muted); }
+    .phone { margin: 22px 0 18px; }
+    .phone a { display: block; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--desk); }
+    .phone img { display: block; width: 100%; height: auto; }
+    .reference { padding: 12px 0; margin: 0 0 14px; border-block: 1px solid var(--line); font-size: .82rem; }
+    .reference span { display: block; margin-bottom: 3px; color: var(--orange); font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .tradeoffs { margin: 0; font-size: .85rem; }
+    .tradeoffs dt { margin-top: 12px; font-weight: 700; }
+    .tradeoffs dt:first-child { margin-top: 0; }
+    .tradeoffs dd { margin: 3px 0 0; color: var(--muted); }
+    .view-links { display: flex; gap: 14px; flex-wrap: wrap; margin: 20px 0 0; padding-top: 14px; border-top: 1px solid var(--line); font-size: .8rem; }
+    .concept details { margin-top: 6px; }
+    .concept details summary { padding-bottom: 7px; font-size: .8rem; }
+    .desktop { margin: 8px 0 0; }
+    .desktop img { display: block; width: 100%; height: auto; border: 1px solid var(--line); }
+    .rules { margin-top: 36px; padding: 28px; background: var(--soft); border-left: 3px solid var(--orange); }
+    .rules > p { margin: 0 0 22px; color: var(--muted); font-size: .9rem; }
+    .rule-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px 28px; }
+    .rule-grid h3 { margin: 0 0 8px; font: 700 .88rem Arial, Helvetica, sans-serif; }
+    .rule-grid p { margin: 0; color: var(--muted); font-size: .85rem; }
+    code { padding: .08em .24em; border-radius: 2px; background: #ede0cc; font-size: .9em; }
+    .choice { display: flex; align-items: baseline; justify-content: space-between; gap: 24px; margin-top: 30px; padding-top: 22px; border-top: 1px solid var(--line); }
+    .choice p { margin: 0; font-size: .9rem; }
+    .choice a { flex: none; font-size: .85rem; }
+    footer { padding: 18px 0 30px; font-size: .75rem; color: var(--muted); }
+    @media (max-width: 1050px) { .wrap { width: calc(100% - 40px); } .gallery { gap: 16px; } .concept { padding: 18px; } .concept-head { min-height: 210px; } .concept h2 { font-size: 1.55rem; } }
+    @media (max-width: 760px) { header { padding-top: 38px; } .context { grid-template-columns: 1fr; gap: 22px; } .gallery { grid-template-columns: 1fr; gap: 26px; } .concept { padding: 22px; } .concept-head { min-height: 0; } .concept h2 { font-size: 1.9rem; } .phone { width: min(100%, 390px); align-self: center; } .rule-grid { grid-template-columns: 1fr 1fr; } .choice { flex-direction: column; gap: 12px; } }
+    @media (max-width: 440px) { .wrap { width: calc(100% - 28px); } h1 { font-size: 2.45rem; } .lead { font-size: 1rem; } .status { font-size: .75rem; } nav { gap: 6px; } nav a { padding-inline: .7rem; font-size: .8rem; } .concept { padding: 18px; } .rules { padding: 22px 18px; } .rule-grid { grid-template-columns: 1fr; gap: 20px; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    @media print { body { background: white; } .wrap { width: 100%; } header { padding-top: 0; } nav, .skip { display: none; } .concept { break-inside: avoid; } .gallery { display: block; } .concept { margin-bottom: 24px; } .phone { width: 240px; } .rules { background: white; } }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#concepts">Skip to the three concepts</a>
+  <header>
+    <div class="wrap">
+      <p class="eyebrow">Kitchen Book / Supplier order / Design discussion</p>
+      <h1>Which order does this amount belong to?</h1>
+      <p class="lead">An item's last purchase may come from an earlier supplier order. These three directions make that difference easier to see while preparing the next order.</p>
+      <p class="status">Council recommends A. The head chef's choice is pending. Design previews only.</p>
+      <nav aria-label="Compare concepts">
+        <a href="#concept-a">A · Label</a>
+        <a href="#concept-b">B · Compare</a>
+        <a href="#concept-c">C · Latest first</a>
+        <a href="#state-rules">Shared rules</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    <section class="context" aria-labelledby="context-title">
+      <div>
+        <h2 id="context-title">The same fact, three priorities</h2>
+        <p>Today the quantity and date look the same whether the item was in the newest supplier order or bought earlier. A label can clarify the reference, a comparison can explain both orders, or the newest order can take the lead.</p>
+      </div>
+      <details>
+        <summary>See the current earlier-purchase example</summary>
+        <figure class="baseline">
+          <a href="baseline-earlier-390.png"><img src="baseline-earlier-390.png" width="390" height="844" alt="Current supplier sheet on a phone, showing an item's earlier purchase without a separate earlier-order label." loading="lazy"></a>
+          <figcaption>Synthetic baseline at 390 px. <a href="baseline-earlier-390.png">Open the full phone image</a>. <a href="baseline-1280.png">Open the current laptop view</a>.</figcaption>
+        </figure>
+      </details>
+    </section>
+
+    <section id="concepts" class="gallery" aria-label="Three design concepts">
+      <article class="concept" id="concept-a" aria-labelledby="a-title">
+        <div class="concept-head">
+          <span class="letter" aria-hidden="true">A</span>
+          <h2 id="a-title">Label the reference</h2>
+          <p class="description">Keep the last quantity and date in place. Add a short <strong>Latest order</strong> or <strong>Earlier order</strong> label beside that reference.</p>
+        </div>
+        <figure class="phone">
+          <a href="a-390.png"><img src="a-390.png" width="390" height="844" alt="Concept A on a phone: the existing quantity and date gain a Latest order or Earlier order label." loading="lazy"></a>
+          <figcaption>Phone / 390 px. Select the image for the full view.</figcaption>
+        </figure>
+        <p class="reference"><span>Reading priority</span>Last purchase, then which order it came from.</p>
+        <dl class="tradeoffs">
+          <dt>Strength</dt><dd>The smallest change. The previous quantity and date stay visible as a quick reference.</dd>
+          <dt>Cost</dt><dd>The short status must remain readable. Measured row height is unchanged at 390, 768 and 1280 px in this fixture.</dd>
+          <dt>Extra taps</dt><dd>None to read the earlier quantity and date.</dd>
+        </dl>
+        <div class="view-links"><a href="a-390.png">Full phone image</a><a href="a-1280.png">Full laptop image</a></div>
+        <details><summary>Show the laptop preview</summary><figure class="desktop"><a href="a-1280.png"><img src="a-1280.png" width="1280" height="900" alt="Concept A at laptop width, with a short order label beside each last-purchase reference." loading="lazy"></a></figure></details>
+      </article>
+
+      <article class="concept" id="concept-b" aria-labelledby="b-title">
+        <div class="concept-head">
+          <span class="letter" aria-hidden="true">B</span>
+          <h2 id="b-title">Compare latest and previous</h2>
+          <p class="description">Lead with the item's state in the newest supplier order. Show its previous quantity and date underneath when an earlier purchase is known.</p>
+        </div>
+        <figure class="phone">
+          <a href="b-390.png"><img src="b-390.png" width="390" height="844" alt="Concept B on a phone: the latest supplier-order state leads, with the earlier quantity and date shown underneath." loading="lazy"></a>
+          <figcaption>Phone / 390 px. Select the image for the full view.</figcaption>
+        </figure>
+        <p class="reference"><span>Reading priority</span>What was in the latest order, with the earlier purchase beside it.</p>
+        <dl class="tradeoffs">
+          <dt>Strength</dt><dd>Both facts are visible together. It clearly says when the newest order omitted an item while retaining the previous reference.</dd>
+          <dt>Cost</dt><dd>More words, with the negative more prominent than the earlier quantity. At 768 px the earlier row grows from 150 to 215 px.</dd>
+          <dt>Extra taps</dt><dd>None to compare the newest order with the earlier purchase.</dd>
+        </dl>
+        <div class="view-links"><a href="b-390.png">Full phone image</a><a href="b-1280.png">Full laptop image</a></div>
+        <details><summary>Show the laptop preview</summary><figure class="desktop"><a href="b-1280.png"><img src="b-1280.png" width="1280" height="900" alt="Concept B at laptop width, comparing each item's latest-order state and previous purchase in the reference column." loading="lazy"></a></figure></details>
+      </article>
+
+      <article class="concept" id="concept-c" aria-labelledby="c-title">
+        <div class="concept-head">
+          <span class="letter" aria-hidden="true">C</span>
+          <h2 id="c-title">Latest first with details</h2>
+          <p class="description">Show the newest order's amount or <strong>Not ordered</strong> as the main reference. Put the earlier quantity and date in the item's existing <strong>Details</strong>.</p>
+        </div>
+        <figure class="phone">
+          <a href="c-390.png"><img src="c-390.png" width="390" height="844" alt="Concept C on a phone: the main reference describes the latest supplier order, with earlier-purchase information inside existing item Details." loading="lazy"></a>
+          <figcaption>Phone / 390 px. Select the image for the full view.</figcaption>
+        </figure>
+        <p class="reference"><span>Reading priority</span>Latest order first. Earlier purchases are available on demand.</p>
+        <dl class="tradeoffs">
+          <dt>Strength</dt><dd>The reference has one meaning on the first scan. It reuses the existing Details control.</dd>
+          <dt>Cost</dt><dd>The earlier quantity and date need another tap. This prototype saves no phone row height and also grows the tablet row.</dd>
+          <dt>Extra taps</dt><dd>One to open Details for an earlier quantity and date.</dd>
+        </dl>
+        <div class="view-links"><a href="c-390.png">Full phone image</a><a href="c-1280.png">Full laptop image</a></div>
+        <details><summary>Show the laptop preview</summary><figure class="desktop"><a href="c-1280.png"><img src="c-1280.png" width="1280" height="900" alt="Concept C at laptop width, leading with the latest supplier order and keeping previous purchases within item Details." loading="lazy"></a></figure></details>
+      </article>
+    </section>
+
+    <section class="rules" id="state-rules" aria-labelledby="rules-title">
+      <h2 id="rules-title">The facts stay the same in every direction</h2>
+      <p>Each concept uses the saved order snapshots and the history already loaded by the supplier sheet.</p>
+      <div class="rule-grid">
+        <div><h3>Compare order IDs</h3><p>A reference belongs to the latest supplier order when their immutable order IDs match. A different reference order ID identifies an earlier purchase.</p></div>
+        <div><h3>Allow two orders on one day</h3><p>Two separate orders can share a Queensland date. The date is a useful reference; the order ID establishes which order it belongs to.</p></div>
+        <div><h3>Keep incomplete history unknown</h3><p>Unseen earlier purchases stay <strong>Earlier orders not checked</strong> while more pages remain. Only exhausted history can establish <strong>No order yet</strong>. Failed reads say <strong>Not read</strong>.</p></div>
+        <div><h3>Separate the newest order's state</h3><p>Once the newest saved order has loaded, its item list establishes whether a product was ordered in that order. An unknown earlier purchase stays unknown.</p></div>
+        <div><h3>Reuse the current reads</h3><p>No extra reads, listeners or saved fields are proposed. Keep the existing page of 20 orders plus one lookahead and the explicit Older orders action.</p></div>
+        <div><h3>Keep ordering deliberate</h3><p>Draft amounts stay empty until entered. Review order and Record order placed remain the same two actions. A historical label carries no stock or reorder instruction.</p></div>
+      </div>
+    </section>
+
+    <div class="choice">
+      <p><strong>All six reviewers ranked A first.</strong> Ranked points: A 18, B 12, C 6. The earlier quantity stays visible with a neutral order label and no added tap. These are role-based reviews, not staff trials. The head chef's choice remains open.</p>
+      <a href="brief.md">Read the proposal and council record</a>
+    </div>
+  </main>
+  <footer class="wrap">9 November 2026 · Design previews with synthetic data · Standalone gallery with no app connections</footer>
+</body>
+</html>
