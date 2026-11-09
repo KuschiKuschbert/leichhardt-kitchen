@@ -309,7 +309,7 @@ export async function getDocs(ref) {
   await L.waitFor(page, () => /2 kg/.test(document.querySelector('[data-item="t-stock"] .su-last')?.textContent || ''), null, 10000);
   const empty = await page.evaluate(async target => (await window.LK_SUP_STORE.create(window.LK_PREP.supplier()).history(target, 1)).rows, TARGET);
   ok(empty[0]?.sourceOrderId === 'latest-dry-only' && empty[0]?.lines.length === 0, 'an original latest order without moved items stays an empty projection rather than pulling older quantities forward');
-  ok(await page.$eval(qty('t-stock'), element => element.placeholder) === '2 kg' && !!(await page.$('[data-item="t-stock"] .su-last time')), 'the separate sheet shows the item\'s earlier recorded purchase and date without treating it as part of the latest batch');
+  ok(await page.$eval(qty('t-stock'), element => element.placeholder) === '2 kg' && !!(await page.$('[data-item="t-stock"] .su-last time')) && await page.getAttribute('[data-item="t-stock"] .su-last', 'data-order-kind') === 'earlier', 'the separate sheet labels the inherited purchase Earlier order when the latest projected batch omitted it');
   await action(page, 'history');
   await L.waitFor(page, () => !!document.querySelector('.su-history-dates'), null, 5000);
   ok(!(await page.$('[data-su="reuse"]:not([disabled])')), 'an empty inherited projection cannot offer a live reuse-quantities action');

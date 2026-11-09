@@ -112,6 +112,8 @@ These checks do not establish production data enforcement, real-device colour pe
 
 The final focused rerun passed Colour semantics, Status contrast (including secondary error-panel button focus), Prep ownership, Design patterns and Screen reader checks after the shared warning-panel styles were reconciled.
 
+The branch was reconciled with supplier update `9129700`. Its Latest/Earlier order labels keep their neutral informational treatment. The combined source then passed six focused files: supplier purchase status, supplier module version, split history, colour semantics, status contrast and design patterns. The shared-file merge preserved both decision records and the supplier's new styles.
+
 ## Release and rollback
 
 Ship as one focused, reversible visual change under the existing branch, PR and saved-shell rules. Keep the operational code, state timing and Firestore rules unchanged. Stop release for unreadable labels, a missed pending/error state, a category recoloured as a verdict, changed list geometry or a failed critical journey.

@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Supplier Latest/Earlier purchase labels, 9 November 2026
+
+The head chef selected A, Label the reference, after the [council and three visual directions](supplier-last-order-status-options/brief.md#chosen). Latest order / Earlier order uses loaded order IDs, keeps quantity/date visible and adds no read, tap or measured row height. `js/suppliers.js?v=23`, its loader in `js/app.js`, `css/app.css` and the focused `tests/supplier-order-status.test.js` implement and check the labels. Unknown history remains neutral, including old-record replay after a failed read. [Actual measurements and screenshots](supplier-last-order-status-options/brief.md#implementation-evidence).
+
 ## Each supplier item's last order, 9 November 2026
 
 The existing supplier row shows its last recorded quantity and Queensland date, including purchases omitted from the newest supplier order. One bounded history page on selection, explicit Older orders coverage and no new saved fields for this reference. Split entries retain their separate immutable history link and can use the bounded original-history fallback. `js/suppliers.js?v=22`, `css/app.css`, the lazy URL in `js/app.js`; `tests/supplier-last-ordered.test.js`, supplier workspace, quantities and module versions. [Contract, quick council and verification](supplier-workspace.md#each-items-last-order-9-november-2026).
