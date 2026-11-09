@@ -63,6 +63,8 @@ Before building anything major (a new page, tab, button, setting, sheet or workf
 
 Both rounds and small-change quick checks use the council skill's **Current design contracts** and **Design references**: Linear, Things 3, Airbnb, Todoist, Flighty, Duolingo and Headspace. Give every reviewer the relevant current contract excerpts, including surface and operational colour rules for visual work. Record contract fit, evidence, trade-offs and unresolved issues; approved choices win over app inspiration.
 
+The Skeptic also runs the skill's **Try to break it** review; the Keeper checks technical failure and recovery. Record concrete failure scenarios, distinguish reproduced faults from untested risks, and carry unresolved findings into the recommendation and verification plan. Use isolated synthetic fixtures and keep security detail private.
+
 **Service rules** (head chef, 5 Nov 2026). The book is used in a busy service: quick to read, few taps.
 - The main job of each work page (add a line, tick a line, find a recipe) is one tap from its tab.
 - No new tab, top bar or tab bar button, or pop-up on a service page without the head chef's OK.
