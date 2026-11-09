@@ -6,7 +6,7 @@
 
 Sheets and modals can be closed by swiping their grip or title down, or dragging it with a mouse. Normal scrolling and fields keep their own gestures. Swiping uses the existing Cancel action, retaining add-form drafts and leaving pings unread. [Behaviour and checks](docs/adaptive-controls.md#swipe-to-close-9-november-2026).
 
-Bottom message bars have a small **×** for mouse and trackpad users. It dismisses the message without using Undo; touch screens keep their existing layout. [Notification controls](docs/action-feedback.md#closing-notification-bars-9-november-2026).
+Mouse and trackpad users also get a small **×** in sheet and modal headers where a close control was missing. It uses the same Cancel action, with a keyboard label and a 44 px target. Touch layout stays the same.
 
 Section prep standards, approved 8 November 2026: the management panels share a separate **Prep** room. The canonical head chef or verified admin sets each section's minimums, units, matching names and check instructions; sous chefs read them. The verified admin enables **Smart prep par levels** in Admin → Prep; it starts off while chefs set up the catalogue. Once enabled, staff see the minimum during normal typing and can open the complete **Before service** reference, including absent and ticked prep. Amount to make stays separate. The feature reuses the current notebook, Add sheet, panel, colours and fonts. [Implementation, permissions and read costs](docs/prep-standards.md); [design comparison](docs/prep-par-options/index.html). Release evidence is tracked in PR #612.
 

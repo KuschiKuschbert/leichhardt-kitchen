@@ -16,16 +16,6 @@ The rule every action in the book follows once someone taps it: a Save, Add, Tic
 7. **A tap that cannot act says why.** An empty Add puts the cursor in the box and says what is missing; Refresh says when it last read ("Up to date, read 14:02") or why it could not.
 8. **Colour carries meaning, never alone.** Orange is the accent, urgent, rolled and the counts; green (`--done-ink`) is saved and done; red is a failure. A switched-off button looks off (faint words, light edge), so it is never mistaken for one still waiting. Stamps are words in a box, never a fill. Reduce motion removes fades and slides, never the words.
 
-## Closing notification bars (9 November 2026)
-
-Mouse and trackpad users get a small × at the right of each bottom message bar, beside Undo or OK. It is a native button labelled Dismiss notification, with a 44 px target and visible keyboard focus. It appears for a fine primary pointer that supports hover, rather than at a particular screen width. Touch screens keep their existing layout and gestures.
-
-The main × uses the same dismissal as tapping the message: both current slips go away without undoing either action. The earlier Undo chip has its own ×, labelled Dismiss earlier notification, which removes that chip only, including when it is the only slip left. Off the work pages and in the recipe, drawing and function editors, × clears that message and its timer. Closing a slip never saves, retries, calls Undo or clears an unfinished form. Errors still persist until an explicit dismissal or the next message.
-
-Council quick check: Build smaller. This fixes the missing visible mouse control for an existing dismissal action, using the owner's requested ×. No new workflow, popup or service step. Ticking Prep remains one tap; closing the bar gains one obvious click. At 390 px with touch, old and new source show the same six fixture rows, 90.27 px header and 68.75 px first row. This is a role-based quick check with synthetic fixtures, not staff research. No reads, writes, rules, saved fields or dependencies change.
-
-The dedicated `toast-close.test.js` fails 27 of 48 checks on the pinned old source and passes all 48 with the close buttons. It covers mouse-pointer windows at 390, 768 and 1280 px, keyboard dismissal, 44 px targets, Undo separation, earlier-only slips, persistent errors, fallback callbacks, touch hiding and a real recipe save through the stand-in. Existing toast, Undo and editor checks retain their contracts. Release and live verification are recorded in the PR.
-
 ## For a new action
 
 Before the pull request, answer these for every new button or tap, the same questions the audit asked:

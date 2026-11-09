@@ -1,6 +1,6 @@
 # Head chef decisions
 
-- **9 November 2026, visible close on the bottom message bar.** The owner asked for a small × so non-touch screens can close the bottom bar. Keep it separate from Undo and OK, with a 44 px target and keyboard label. It dismisses the message only; the touch layout and existing actions remain. [Contract](action-feedback.md#closing-notification-bars-9-november-2026).
+- **9 November 2026, a small × for bottom sheets and modals on non-touch screens.** The owner requested a visible close control and clarified that it belongs to sheet/modal headers. Reuse each panel's Cancel/backdrop action, retain drafts and unread pings, preserve existing close controls and keep the touch layout. [Contract and checks](adaptive-controls.md#swipe-to-close-9-november-2026).
 
 - **9 November 2026, desktop Home cleanup.** The owner requested a less cluttered desktop Home after the staff-first release. Refine the existing layout with matching columns and spacing, compact quiet-day prep and upcoming items below current work. Preserve section, break and coworkers first, the native fonts/header and the existing phone/tablet layout. [Contract and comparisons](home-staff-first.md#desktop-spacing-and-alignment-9-november-2026).
 

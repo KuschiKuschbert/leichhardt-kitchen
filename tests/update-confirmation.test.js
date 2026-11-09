@@ -60,14 +60,21 @@ async function gate(p, kind) {
     ok(geometry.native && geometry.title === 'Unsaved changes' && geometry.fits && geometry.targets && geometry.safeFocus, label + ': a fitting native dialog explains the choice, with 44 px actions and Keep working focused ' + JSON.stringify(geometry));
     if (width === 390 && text === 'normal') {
       await p.keyboard.press('Shift+Tab');
-      ok(await p.locator(confirm + ' [data-update="discard"]').evaluate(el => el === document.activeElement), 'phone confirmation keeps reverse keyboard focus inside its actions');
+      ok(await p.locator(confirm + ' .ux-modal-close').evaluate(el => el === document.activeElement), 'confirmation: reverse Tab reaches the visible header close button');
+      await p.keyboard.press('Shift+Tab');
+      ok(await p.locator(confirm + ' [data-update="discard"]').evaluate(el => el === document.activeElement), 'confirmation: reverse Tab from Close wraps to the final action');
       await p.keyboard.press('Tab');
-      ok(await p.locator(confirm + ' [data-update="keep"]').evaluate(el => el === document.activeElement), 'phone confirmation wraps keyboard focus back to Keep working');
+      ok(await p.locator(confirm + ' .ux-modal-close').evaluate(el => el === document.activeElement), 'confirmation: Tab from the final action wraps to Close');
+      await p.keyboard.press('Tab');
+      ok(await p.locator(confirm + ' [data-update="keep"]').evaluate(el => el === document.activeElement), 'confirmation: Tab from Close reaches Keep working');
     }
     await p.click(confirm + ' [data-update="keep"]');
     // the draft from the page's state: reading the box would open the Add a line sheet and move the focus
     ok(!(await reloaded(p)) && await p.evaluate(() => LK_PREP.state.text) === 'Keep this unfinished prep line', label + ': Keep working preserves the actual draft');
     ok(await p.evaluate(() => document.activeElement === document.querySelector('.upd-bar button')), label + ': dismissing the dialog restores focus to Update now');
+    await p.click('.upd-bar button');
+    await p.locator(confirm + ' .ux-modal-close').click();
+    ok(!(await reloaded(p)) && await p.evaluate(() => LK_PREP.state.text) === 'Keep this unfinished prep line' && await p.locator(confirm).count() === 0, label + ': header Close keeps the actual draft without updating');
     await p.click('.upd-bar button');
     await p.keyboard.press('Escape');
     ok(await p.locator(confirm).count() === 0 && !(await reloaded(p)), label + ': Escape keeps the draft and closes the dialog');

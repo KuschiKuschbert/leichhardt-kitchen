@@ -543,10 +543,8 @@
     say(m);
     if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'p-toasts mg-toasts'; document.body.appendChild(toastEl); }
     toastEl.innerHTML = '<div class="p-toast' + (bad ? ' p-toast-bad' : ' p-toast-plain') + '" role="presentation"><span class="p-toast-msg">' + (confirmed ? inkLabel(m, 'save', 'done') : esc(m)) + '</span>' +
-      (bad ? '<button type="button" class="p-toast-btn" data-dw-ok="1">OK</button>' : '') + '<button type="button" class="p-toast-close" aria-label="Dismiss notification">×</button></div>';
-    var dismiss = function () { clearTimeout(toastT); toastEl.innerHTML = ''; };
-    var ok = toastEl.querySelector('[data-dw-ok]'); if (ok) ok.addEventListener('click', dismiss);
-    toastEl.querySelector('.p-toast-close').addEventListener('click', dismiss);
+      (bad ? '<button type="button" class="p-toast-btn" data-dw-ok="1">OK</button>' : '') + '</div>';
+    var ok = toastEl.querySelector('[data-dw-ok]'); if (ok) ok.addEventListener('click', function () { toastEl.innerHTML = ''; });
     clearTimeout(toastT); if (!bad) toastT = setTimeout(function () { if (toastEl) toastEl.innerHTML = ''; }, 4000);
   }
   function panelFail(m) { W.msg = m; toast(m, false, true); }

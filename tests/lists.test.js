@@ -25,7 +25,7 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   ok(await p.evaluate(() => { const r = document.querySelector('#nbr-i5'); return r && r.classList.contains('is-done'); }), 'tick: line stays, struck through');
   const mid = await p.evaluate(() => [...document.querySelectorAll('.nb-row')].map(r => r.id));
   ok(JSON.stringify(before) === JSON.stringify(mid), 'tick: no line moved');
-  ok(/^Ticked \S/.test((await txt(p, '.p-toast .p-toast-msg') || '').trim()) && (await txt(p, '.p-toast [data-p="toast-act"]') || '').trim() === 'Undo', 'tick: toast says Ticked and the line, with Undo (' + await txt(p, '.p-toast') + ')');
+  ok(/^Ticked \S.*\s*Undo$/.test((await txt(p, '.p-toast') || '').trim()), 'tick: toast says Ticked and the line, with Undo (' + await txt(p, '.p-toast') + ')');
   await L.settle(p, 3600);
   ok(await p.$('#nbr-i5') === null, 'tick: line leaves after 3.5 seconds');
 
@@ -86,7 +86,7 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   await L.settle(p, 400);
   const oa = await p.evaluate(() => [...document.querySelectorAll('.o-main .nb-row .nb-t')].map(t => t.firstChild.textContent));
   ok(JSON.stringify(ob) === JSON.stringify(oa), 'orders: ordered line keeps its place ' + JSON.stringify(oa));
-  ok(/^Ordered \S/.test((await txt(p, '.p-toast .p-toast-msg') || '').trim()) && (await txt(p, '.p-toast [data-p="toast-act"]') || '').trim() === 'Undo', 'orders: tick says Ordered and the line, with Undo (' + await txt(p, '.p-toast') + ')');
+  ok(/^Ordered \S.*\s*Undo$/.test((await txt(p, '.p-toast') || '').trim()), 'orders: tick says Ordered and the line, with Undo (' + await txt(p, '.p-toast') + ')');
   await p.click('.p-toast-btn');
   await L.settle(p, 300);
   s = await store(p);
@@ -103,7 +103,7 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   await L.waitFor(p, id => !!document.querySelector('.o-wait [data-p="otick"][data-id="' + id + '"]'), cid, 6000);
   await p.click('.o-wait [data-p="otick"][data-id="' + cid + '"]');
   await L.settle(p, 400);
-  ok(/^Ordered \S/.test((await txt(p, '.p-toast .p-toast-msg') || '').trim()) && (await txt(p, '.p-toast [data-p="toast-act"]') || '').trim() === 'Undo', 'orders: a line waiting from earlier days ticks with Ordered and Undo (' + await txt(p, '.p-toast') + ')');
+  ok(/^Ordered \S.*\s*Undo$/.test((await txt(p, '.p-toast') || '').trim()), 'orders: a line waiting from earlier days ticks with Ordered and Undo (' + await txt(p, '.p-toast') + ')');
   await p.click('.p-toast-btn');
   await L.settle(p, 400);
   s = await store(p);
