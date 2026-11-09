@@ -116,17 +116,24 @@ const realErrors = p => p.errors.filter(e => !/Failed to load resource/.test(e))
     ok((await st(p)).plays === 0, 'a return to Home stays still with storage refused');
   });
 
+  // Missing art removes the mascot when the blocked download fails, which is network time, not the page clock:
+  // wait for it to go rather than for a fixed time.
   await step('missing art', async () => {
-    p = await L.open(b, '#/', { who: 'ann', width: 390, height: 844, extra: fixture(), wait: 1200, block: 'art/mascot/' });
-    await L.waitFor(p, () => !!window.LK_MASCOT, null, 6000); await run(p, 1500);
+    p = await L.open(b, '#/', { who: 'ann', width: 390, height: 844, extra: fixture(), wait: 1200, init: () => { Math.random = () => 0; }, block: 'art/mascot/' });
+    await L.waitFor(p, () => !!window.LK_MASCOT, null, 6000); await L.waitFor(p, () => !document.querySelector('.mascot-host'), null, 10000); await run(p, 1500);
     ok(!(await p.locator('.mascot').count()), 'missing art: no mascot');
     const r = await rec(p); ok(!r || !r.played, 'missing art leaves today unplayed');
     ok(await p.evaluate(() => !document.querySelector('.mascot-host')), 'Home is left exactly as it was');
+    // New welcome words or a seasonal change move a mascot that is there; they never start another download.
+    let asks = 0; p.on('request', q => { if (/art\/mascot\//.test(q.url())) asks++; });
+    await p.evaluate(() => { window.dispatchEvent(new Event('lk-greet')); document.dispatchEvent(new Event('kb-seasonal-state')); });
+    await run(p, 1500);
+    ok(asks === 0 && !(await p.locator('.mascot').count()), 'a new greeting or seasonal change does not try the missing art again (' + asks + ' requests)');
   });
 
   for (const [w, h] of [[390, 844], [768, 1024], [1280, 900]]) await step('layout ' + w, async () => {
-    p = await L.open(b, '#/', { who: 'ann', width: w, height: h, extra: fixture(), wait: 1200, block: 'art/mascot/' });
-    await L.waitFor(p, () => !!window.LK_MASCOT, null, 6000); await run(p, 600); const plain = await geometry(p); await p.context().close();
+    p = await L.open(b, '#/', { who: 'ann', width: w, height: h, extra: fixture(), wait: 1200, init: () => { Math.random = () => 0; }, block: 'art/mascot/' });
+    await L.waitFor(p, () => !!window.LK_MASCOT, null, 6000); await L.waitFor(p, () => !document.querySelector('.mascot-host'), null, 10000); await run(p, 600); const plain = await geometry(p); await p.context().close();
     await open({ width: w, height: h }); await mounted(); await run(p, 600);
     ok(JSON.stringify(await geometry(p)) === JSON.stringify(plain), `${w} px: every Home rectangle stays where it was`);
     ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${w} px: no sideways scroll`);
@@ -154,7 +161,7 @@ const realErrors = p => p.errors.filter(e => !/Failed to load resource/.test(e))
   const WIDE = 'WWWWWWWWWWWWW'; // one word that cannot wrap, wider than the space left of the corner
   await step('words fill the corner: on the Your day card', async () => {
     p = await L.open(b, '#/', { who: 'ann', width: 390, height: 844, extra: fixture(WIDE), wait: 1200, init: () => { Math.random = () => 0; }, block: 'art/mascot/' });
-    await L.waitFor(p, () => !!window.LK_MASCOT, null, 6000); await run(p, 600); const plain = await geometry(p); await p.context().close();
+    await L.waitFor(p, () => !!window.LK_MASCOT, null, 6000); await L.waitFor(p, () => !document.querySelector('.mascot-host'), null, 10000); await run(p, 600); const plain = await geometry(p); await p.context().close();
     await open({ name: WIDE }); await mounted(); await run(p, 600);
     ok(await spot() === 'card' && !(await room()), 'the corner is full, so it stands on the Your day card: ' + await spot());
     ok(await clearOfWords() === 'clear', 'it covers no word of the welcome or date');
@@ -182,7 +189,7 @@ const realErrors = p => p.errors.filter(e => !/Failed to load resource/.test(e))
     cfg.fnOnlyIds = ['ann']; cfg.fnIds = ['ann']; cfg.addIds = ['sam', 'bo']; cfg.tickIds = ['sam', 'bo'];
     const long = { width: 390, height: 844, extra: { [key(['config', 'main'])]: cfg } };
     p = await L.open(b, '#/', { who: 'ann', wait: 1200, init: () => { Math.random = () => 0; }, block: 'art/mascot/', ...long });
-    await L.waitFor(p, () => !!window.LK_MASCOT, null, 6000); await run(p, 600); const plain = await geometry(p); await p.context().close();
+    await L.waitFor(p, () => !!window.LK_MASCOT, null, 6000); await L.waitFor(p, () => !document.querySelector('.mascot-host'), null, 10000); await run(p, 600); const plain = await geometry(p); await p.context().close();
     await open(long); await mounted(); await run(p, 600);
     ok(!(await p.locator('#hm-day:not([hidden])').count()), 'Functions-only Home has no Your day card');
     ok(await spot() === 'room', 'neither the corner nor the card is free, so the words make room: ' + await spot());

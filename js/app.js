@@ -1233,6 +1233,12 @@
     if (window.LK_MASCOT) { if (window.LK_MASCOT.api === 1) window.LK_MASCOT.mount(app, { id: id }); return; }
     if (!mascotLoad) mascotLoad = mgScript('js/mascot.js?v=1').then(function () { mascotSync(); }, function () { mascotLoad = null; });
   }
+  // New words or a seasonal change move a mascot already on Home to its new place. Never a new one: a failed
+  // download waits for the next Home view (docs/kitchen-mascot.md).
+  function mascotPlace() {
+    var M = window.LK_MASCOT, s = M && M.api === 1 && M.state();
+    if (s && s.mounted && parseRoute().name === 'landing') mascotSync();
+  }
   /* Private tools load only on their page. A failed download leaves a Retry action.
      Protected data is fetched only after the current sign-in has been checked. */
   var deliveryLoad = null;
@@ -2107,10 +2113,10 @@
     homeWelcomePaint(); mascotSync();
   });
   // Reuse the calendar's settled state for clock corrections, midnight and the device's On/Off choice.
-  document.addEventListener('kb-seasonal-state', function () { homeWelcomePaint(); mascotSync(); });
+  document.addEventListener('kb-seasonal-state', function () { homeWelcomePaint(); mascotPlace(); });
   // js/prep.js says when the person's shift moment or the hour changes (homePaint(), on its 30 second tick).
   // New words can reach the mascot's corner: let it check its place again (it steps aside when it would touch them).
-  window.addEventListener('lk-greet', function () { homeWelcomePaint(); mascotSync(); });
+  window.addEventListener('lk-greet', function () { homeWelcomePaint(); mascotPlace(); });
   // "Skip to content" must not change the address: #main is not a page, so the router would open the landing page
   document.addEventListener('click', function (e) {
     var sk = e.target.closest && e.target.closest('a.skip');

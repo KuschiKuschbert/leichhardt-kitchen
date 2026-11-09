@@ -2,7 +2,7 @@
 
 ## Kitchen mascot on Home, 9 November 2026
 
-The owner chose a per-person shuffled daily action of all 11 mascot actions, design A (plays once, then the Welcome pose) at the right end of the Welcome row, and a tap that replays today's action. `js/mascot.js` (lazy, `LK_MASCOT.api` 1, loaded by `mascotSync()` in `js/app.js`), `art/mascot/` (11 compact sprite sheets and 11 stills, loaded with `?v=1` so `sw.js` never keeps them), `LK_PREP.whoId()`, `.mascot` and `.mascot-host` in `css/app.css`, `tests/mascot.test.js` (91 checks). No reads, writes or rules. Since 10 Nov 2026, when the varied welcome fills the corner it stands on the Your day card, then makes room (`.mascot-room`) ([note](kitchen-mascot.md)). [Feature note](kitchen-mascot.md). The artwork, both council rounds and the placement mock are in pull request #654.
+The owner chose a per-person shuffled daily action of all 11 mascot actions, design A (plays once, then the Welcome pose) at the right end of the Welcome row, and a tap that replays today's action. `js/mascot.js` (lazy, `LK_MASCOT.api` 1, loaded by `mascotSync()` in `js/app.js`), `art/mascot/` (11 compact sprite sheets and 11 stills, loaded with `?v=1` so `sw.js` never keeps them), `LK_PREP.whoId()`, `.mascot` and `.mascot-host` in `css/app.css`, `tests/mascot.test.js` (92 checks). No reads, writes or rules. Since 10 Nov 2026, when the varied welcome fills the corner it stands on the Your day card, then makes room (`.mascot-room`) ([note](kitchen-mascot.md)). [Feature note](kitchen-mascot.md). The artwork, both council rounds and the placement mock are in pull request #654.
 
 ## Per-person service and section review, 10 November 2026
 
