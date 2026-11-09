@@ -2,7 +2,7 @@
 // Fixtures stay synthetic. Existing journey tests cover writes, permissions and saved drafts.
 const L = require('./lib'), M = require('../js/functions');
 const { R, ok } = L.results();
-const minimumContrast = { all: null, normal: null };
+const minimumContrast = { all: null, normal: null, outline: null };
 const day = L.ymd(new Date(L.NOW)), key = (...parts) => ['kitchens', L.PIN, ...parts].join('/');
 const tokenNames = ['--surface-work', '--surface-work-edge', '--surface-people', '--surface-people-edge', '--surface-paper', '--surface-reference', '--bar'];
 const fixture = {
@@ -26,8 +26,8 @@ const fixture = {
     was: {}, chg: [], cBy: 'sam', cAt: L.NOW - 86400000, confBy: 'sam', confAt: L.NOW - 86400000, by: 'sam', upd: L.NOW - 3600000 })
 };
 
-async function facts(p, selectors, scopes) {
-  return p.evaluate(({ selectors, scopes, tokenNames }) => {
+async function facts(p, selectors, scopes, outlineSelectors = []) {
+  return p.evaluate(({ selectors, scopes, tokenNames, outlineSelectors }) => {
     const canvas = document.createElement('canvas'); canvas.width = canvas.height = 1;
     const context = canvas.getContext('2d');
     // Canvas normalises rgb(), color(srgb), alpha and the shared color-mix() token into the same rendered space.
@@ -35,23 +35,29 @@ async function facts(p, selectors, scopes) {
     const over = (a, b) => { const alpha = a[3] + b[3] * (1 - a[3]); return alpha ? [0, 1, 2].map(i => (a[i] * a[3] + b[i] * b[3] * (1 - a[3])) / alpha).concat(alpha) : [0, 0, 0, 0]; };
     const luminance = c => c.slice(0, 3).map(x => { x /= 255; return x <= .04045 ? x / 12.92 : ((x + .055) / 1.055) ** 2.4; }).reduce((sum, x, i) => sum + x * [.2126, .7152, .0722][i], 0);
     const visible = e => !!e && !!e.getClientRects().length && getComputedStyle(e).visibility === 'visible';
-    function pair(e) {
-      const style = getComputedStyle(e); let foreground = rgba(style.color), background = [0, 0, 0, 0];
+    function pair(e, outline) {
+      const style = getComputedStyle(e); let foreground = rgba(outline ? style.outlineColor : style.color), background = [0, 0, 0, 0];
+      if (outline) foreground[3] *= +style.opacity;
       // Text and empty background pass through every ancestor opacity group, including dimmed list rows.
-      for (let node = e; node; node = node.parentElement) {
+      for (let node = outline ? e.parentElement : e; node; node = node.parentElement) {
         const st = getComputedStyle(node), bg = rgba(st.backgroundColor), alpha = +st.opacity;
         foreground = over(foreground, bg); background = over(background, bg);
         foreground[3] *= alpha; background[3] *= alpha;
       }
       foreground = over(foreground, [255, 255, 255, 1]); background = over(background, [255, 255, 255, 1]);
       const a = luminance(foreground), b = luminance(background), size = parseFloat(style.fontSize), bold = parseInt(style.fontWeight, 10) >= 700;
-      return { background: background.slice(0, 3).map(Math.round), ratio: (Math.max(a, b) + .05) / (Math.min(a, b) + .05), threshold: size >= 24 || bold && size >= 18.667 ? 3 : 4.5 };
+      return { background: background.slice(0, 3).map(Math.round), ratio: (Math.max(a, b) + .05) / (Math.min(a, b) + .05), threshold: outline ? 3 : size >= 24 || bold && size >= 18.667 ? 3 : 4.5 };
     }
     const tokens = {}, rootStyle = getComputedStyle(document.documentElement), probe = document.createElement('span');
     document.body.appendChild(probe);
     tokenNames.forEach(name => { const exists = !!rootStyle.getPropertyValue(name).trim(); probe.style.backgroundColor = 'var(' + name + ')'; tokens[name] = exists ? rgba(getComputedStyle(probe).backgroundColor).slice(0, 3) : null; });
     probe.remove();
     const surfaces = Object.fromEntries(selectors.map(selector => { const e = document.querySelector(selector); return [selector, visible(e) ? pair(e).background : null]; }));
+    const outlines = Object.fromEntries(outlineSelectors.map(selector => {
+      const e = document.querySelector(selector), style = e && getComputedStyle(e);
+      return [selector, visible(e) ? { ...pair(e, true), width: parseFloat(style.outlineWidth), style: style.outlineStyle,
+        keyboard: document.activeElement === e && e.matches(':focus-visible'), name: e.textContent.trim(), action: e.dataset.cln } : null];
+    }));
     const text = [], checked = new Set();
     scopes.forEach(selector => {
       document.querySelectorAll(selector).forEach(root => {
@@ -68,8 +74,8 @@ async function facts(p, selectors, scopes) {
         }
       });
     });
-    return { surfaces, tokens, text };
-  }, { selectors, scopes, tokenNames });
+    return { surfaces, tokens, text, outlines };
+  }, { selectors, scopes, tokenNames, outlineSelectors });
 }
 const same = (a, b) => !!a && !!b && a.every((value, index) => Math.abs(value - b[index]) <= 1);
 function checkSurface(readings, selector, token, label) {
@@ -142,6 +148,14 @@ async function visit(p, route, selector) {
         checkSurface(reading, '.cln-plan > .nb-ph', '--surface-work', width + ' Cleaning setup cover');
         checkSurface(reading, '.cln-plan-body', '--surface-paper', width + ' Cleaning setup paper');
         checkText(reading, width + ' Cleaning setup');
+        const close = '.cln-plan [data-cln="hide-setup"]';
+        await p.locator(close).focus(); await p.keyboard.press('Tab'); await p.keyboard.press('Shift+Tab');
+        const outline = (await facts(p, [], [], [close])).outlines[close];
+        if (outline && (!minimumContrast.outline || outline.ratio < minimumContrast.outline.ratio)) minimumContrast.outline = { label: width + ' Cleaning setup Close', ...outline };
+        await p.locator(close).click();
+        ok(outline && outline.keyboard && outline.width >= 2 && outline.style !== 'none' && outline.ratio >= 3 && outline.name === 'Close' && outline.action === 'hide-setup' &&
+          !await p.locator('.cln-plan').count() && await p.locator('.cln-book').isVisible() && await p.evaluate(() => location.hash === '#/cleaning'),
+        width + ': keyboard Close outline contrasts with the steel cover at 3:1, and Close still hides only repeat-task setup (' + (outline ? outline.ratio.toFixed(3) : 'missing') + ')');
       }
       ok(!await L.overflow(p), width + ' ' + page.name + ': surface treatment adds no sideways scroll');
     }
