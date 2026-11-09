@@ -3,6 +3,7 @@
 
 ## Council
 <!-- What the service council decided (.claude/skills/service-council/SKILL.md). A new page, tab, button, setting, workflow or design: the verdict, taps and lines on a 390 px phone before and after, who disagreed, the brief. Summarise contract fit (including colour/state checks for visual work), useful or rejected reference principles and unresolved issues; link sources and evidence, or explain what does not apply. A fix, tests, docs or CI: Not needed, with the reason. -->
+<!-- If round 2 ran: link the three structurally different designs (or requested count), the all-three mix assessment, and one clear recommendation with reasons and its main downside. A recommended mix needs a combined preview, its own evidence and an explicit review status. -->
 Verdict: (Build, Build smaller, Don't build, Your call, or Not needed with the reason)
 
 ## What changes for the team
