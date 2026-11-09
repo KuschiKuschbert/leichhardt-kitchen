@@ -1,6 +1,6 @@
 # Quieter Today's team management
 
-9 November 2026. **A, Quiet notebook, chosen by the head chef, implemented and locally verified. CI and release pending.** The empty-break-board change is retained in this work.
+9 November 2026. **Current choice: C, Person worksheet, replacing the head chef's earlier A choice. C is implemented and locally verified; hosted CI and release are pending.** The empty-break-board change and the existing weekly planner remain. A's earlier implementation measurements and checks below are historical evidence for that delivery, not proof of C.
 
 The head chef asks to tidy the noisy Today's team page for admin, head and sous chefs. [Proposal](proposal.md). Keep the notebook, week planning and the existing service/access/data contracts. Do not replace them with a second roster.
 
@@ -97,12 +97,15 @@ Six fresh reviewers saw all three concepts, their phone/desktop screenshots, exp
 
 Recommendation: **A, with clear labels from C and section counts from B in the existing chips.** Replace bare disclosure arrows with a labelled Edit breaks or Details action. Keep break summaries legible and saved live status clearly separate from changed draft rows. Put Save after the one main roster and secondary copy/break tools below it. Preserve deliberate disclosure/focus state and measure the result inside the real management frame.
 
-All reviewers noted the extra disclosure tap for breaks and copy, and that the schematic counts are not production proof. The head chef subsequently chose A below.
+All reviewers noted the extra disclosure tap for breaks and copy, and that the schematic counts are not production proof. The head chef initially chose A, then changed to C from this comparison on 9 November 2026. The council's original scores and recommendation remain unchanged; the head chef's revised choice settles the layout.
 
 ## Acceptance contract for the chosen implementation
 
 - One shared renderer for the existing direct and management-panel entry routes; no duplicate editor, new backend, listener, permanent private copy or extra database read.
 - People appear once in the main flow, with current shift/section and a visible break summary. Detailed controls remain easy to find and keep deliberate open state across redraws and resizes.
+- For C, put a labelled section picker on each person's row instead of a shared selected-section mode. A section choice affects only that person on the selected shift. Keep clearing a section distinct from removing the person from the shift and its breaks.
+- An empty day offers an inline Who's working? chooser. Add only checked people on explicitly selected services to the draft, with no assumption that the full staff list works. Keep unfinished quick choices private, separate by date/shift and included in protected-work guards until applied or deliberately cleared.
+- Spread them keeps break length separate from the interval between group starts. Default After previous break preserves the previous schedule; an explicit shorter interval can create deliberate overlap without shortening anyone's break.
 - Full selected date and saved/dirty/failed status remain clear. One explicit dated Save stays within the planning flow and acknowledges server success; failed saves retain the draft and version conflicts cannot overwrite another chef.
 - Preserve week navigation, independent date drafts, Whole day review, per-shift section assignment, membership/removal, meal breaks/splits, selected-weekday copy and Spread them. No guessed hours or seeded real staff.
 - Current saved break status remains authoritative, with unknown/malformed/error states visible. Confirmed empty is hidden. Clock paint can change status without replacing focused inputs or changing drafts.
@@ -110,15 +113,72 @@ All reviewers noted the extra disclosure tap for breaks and copy, and that the s
 - Measure primary assignment, break correction and empty-day copy, including added disclosure taps and scrolling. Verify at 390, 768 and 1280 px, normal/largest text, keyboard focus, 44 px targets and no page overflow.
 - Recheck canonical chef/admin access, saved-vs-draft state, failed/cache-only reads, conflicts, protected work, midnight and unchanged read costs. Prototypes do not prove real Firebase persistence or production permission checks.
 
-## Chosen and build
+## Current choice: C, Person worksheet
 
-The head chef chose **A: Quiet notebook, one list (recommended)** in chat on 9 November 2026. Implement the shared section-first notebook with one person list, visible current section/break summaries, labelled per-person Edit breaks disclosures, section counts, a compact selected-date/status header, the compact saved break board and one dated Save before secondary tools. Preserve all existing data, role, clock and recovery contracts. Do not maintain the three preview editors in the app.
+On 9 November 2026 the head chef changed the management tidy-up from **A, Quiet notebook, one list**, to **C, Person worksheet** from the same review. This is the C in this brief, not the older shared team-board concept or the weekly planner's chef-panel concept. Reuse the existing council and previews; no new design selection is pending.
+
+The shared direct and management-panel renderer shows one row per person, with their name, their own section picker and a readable meal-break/split summary together. On a laptop the rows form a worksheet; on a phone each row uses the available width. A labelled **Edit breaks** disclosure keeps the existing membership and detailed shift/break controls with that person. Do not show another full roster or a second section picker inside the disclosure.
+
+Picking a section for a person off the selected shift adds that shift membership deliberately. A clearly labelled **Not on [shift]** choice removes only that shift and its breaks. Keep an on-shift person with no section distinct from an off-shift person, and preserve other shifts and dates. Row sections and break summaries describe the current draft. The saved current-break board still describes `tm.rec`, never unsaved worksheet changes.
+
+Keep Monday to Sunday, previous/next week and Today, full selected dates and written status, configured shifts with Whole day review, search and per-person details state, one version-protected dated Save, selected-weekday copy, Spread them and folded saved references. Retain same-person work recovery, deliberate handover privacy, read-only past dates, current-day staff Home, Your day and manual section choices. No new schema, role, backend, listener, persistent private copy or database read is part of C.
+
+The production C implementation uses `.tm-worksheet`, `.tm-worksheet-head`, `.tm-person-head` and `.tm-person-section` with the existing `.tm-person-row` and `.tm-person-details`. Each section picker reuses the existing `tm-sec:<id>` change path. The existing shared picker frame, explicit Save and selected-date draft helpers remain authoritative.
+
+### Who's working? and independent break spacing
+
+The head chef refined C with a quick empty-day start: **Who's working?** opens inline staff and service/shift checkboxes, followed by **Add selected staff**. No staff member starts selected. The current service is visibly preselected, and the chef deliberately keeps or changes the services for that group. Add only the checked people to the checked configured services in the selected date's draft; no network write occurs until the single dated Save. Reopen the same chooser to add another group on different services. It uses the existing membership schema, preserving every other person, date, shift, section and break. Then use each person's section picker on each service and their Edit breaks details as usual.
+
+For a newly added membership, reuse `tmAddShift()`: use an available usual section from `tmUsual()`, then a valid section already assigned on another service, otherwise no section. These are reviewable draft suggestions, not assumptions that someone works. Existing memberships, sections and breaks stay intact. The chef can review or change every suggested section before Save.
+
+The inline chooser uses `.tm-quick-add`, `.tm-quick-people` and `.tm-quick-services`. Its unfinished people/service choices remain memory-only and retain their own date/shift context. Date or shift navigation cannot apply them to another plan. Same-person privacy/daily-lock recovery retains unfinished choices behind the PIN screen; deliberate handover clears them. Include meaningful unfinished selections in the existing unsaved-work, Update and reload guards, and keep the existing stronger safeguards for unsent saves. The chooser adds no listener, private persistent copy or database read.
+
+Unapplied choices say **Staff selection waiting for Add** beside the draft status. Saving an already edited worksheet saves that worksheet only; pending checked names are not added until **Add selected staff** is pressed. Saving other roster work must not silently clear those unfinished choices or imply that they were published.
+
+**Spread them** retains one-person, two-person and all-together modes. **Each break** sets duration. A separate **Start next group every** choice sets the spacing between starts. Its default, **After previous break**, retains the existing schedule. An explicit interval such as 15 minutes lets 30-minute breaks start at 14:00, 14:15 and 14:30, retaining the full 30 minutes for every person. This is deliberate overlap. Two-person mode applies the interval between pairs; all together has one start, so no interval between groups is needed. Keep meal breaks and long splits distinct, preserve the other break kind and use existing validated time/date helpers. These controls change only the draft until Save.
+
+### Council follow-up for the specified workflow
+
+**Verdict: Build smaller (quick check, session review).** Reuse the existing value review and A/B/C comparison. The head chef selected C and specified the quick-add and spacing behaviour, so no new design selection is pending. This follow-up is not a new five- or six-reviewer vote and does not change the original council scores. It reduces repeated membership actions while keeping service choices explicit, and separates break duration from start spacing without changing the data model.
+
+The primary service-page Add/Tick paths remain outside this planner. No global navigation or automatic service popup is added. The new controls stay inline in the existing planner or its tools fold. Group-add, section, break and Save counts are recorded with the actual controls below; the earlier schematic preview did not contain this refinement.
+
+### C verification and release
+
+Actual C captures use baseline commit `2cb62ba`, the same eight fictional people, Lunch and Dinner, two active saved breaks at 14:00 Queensland time, 844 px-high viewports and the Firebase stand-in. All five existing app font faces used by the fixture loaded from verified fetched responses. These are browser stand-in checks, not live Firebase or private production-record verification. See [measurements](person-c-measurements.json), direct [390](person-c-implemented-team-390.png), [768](person-c-implemented-team-768.png), [1280](person-c-implemented-team-1280.png), and embedded chef-panel [390](person-c-implemented-chef-390.png), [768](person-c-implemented-chef-768.png), [1280](person-c-implemented-chef-1280.png).
+
+| Actual normal-text view | First person A / C | Complete initial rows A / C | Save top A / C |
+| --- | --- | --- | --- |
+| Direct, 390 px | 706 / 654 px | 0 / 1 | 1391 / 1366 px |
+| Direct, 768 px | 699 / 647 px | 1 / 2 | 1383 / 1353 px |
+| Direct, 1280 px | 529 / 655 px | 3 / 2 | 1214 / 1361 px |
+| Chef panel, 390 px | 983 / 931 px | 0 / 0 | 1668 / 1643 px |
+| Chef panel, 768 px | 1042 / 990 px | 0 / 0 | 1727 / 1697 px |
+| Chef panel, 1280 px | 818 / 944 px | 0 / 0 | 1503 / 1650 px |
+
+The first row is 52 px higher at 390 px in both routes, and one complete row now fits initially on the direct phone view. The embedded panel still requires scrolling to reach its first row. At desktop width, C places the full-width saved-break board above the worksheet, so its first row and Save are lower than A. This is not a universal density improvement. With eight people, Save still requires scrolling in both phone routes.
+
+All twelve matching route/width/text pairs, direct and embedded at 390/768/1280 px with normal and largest text, contain eight unique person rows and exactly eight section pickers outside details, no duplicate section pickers inside details and no shared section-selection controls. There is no horizontal overflow, browser error or visible planner control below 44 px. The fixture records the same 13 total reads and three team reads before and after in every pair. Largest text grows vertically; the full measurements retain its separate row counts and positions.
+
+Supplemental [Who's working?](person-c-quick-add-390.png) and [break spacing](person-c-break-spacing-390.png) captures show three selected people across two services and 30-minute breaks with a 15-minute start interval. Neither capture adds a write, overflows, records a browser error or finds a target below 44 px. Unapplied selected people activate the protected-work guard. The quick-add capture is an unfinished selection, not proof that those people were added or saved.
+
+Tap counts follow the implemented controls and exclude scrolling and typing. From an open Who's working? chooser, selecting `n` people and changing `s` service checkboxes takes `n + s + 1` taps including Add selected staff; the current visibly preselected service needs no toggle. Opening a closed chooser adds one tap. A section change takes picker then option, two taps per person/service; one final Save publishes all accumulated edits. A break correction takes Edit breaks, picker, option and Save, four taps. A section correction plus Save is three taps; every additional person's correction costs two picker taps, replacing A's one tap after a shared section selection. Empty-day copy still takes the tools fold, Use last weekday and Save, three taps. Changing duration or start spacing each uses its own picker and option, then Spread them and the shared Save. These control counts do not imply that Save is initially visible.
+
+All six focused local suites passed **430 checks**: `team-quiet.test.js` **117**, `team-notebook.test.js` **76**, `team-week.test.js` **65**, `team-shift-tabs.test.js` **14**, `todays-team.test.js` **121** and `team-quick-add.test.js` **37**. Coverage includes row pickers and disclosures, date/shift draft and quick-choice retention, membership and break preservation, repeat group adds, explicit staff/service choices, usual-section and valid other-service defaults, spacing and deliberate overlap, all-together behaviour, role gates, saved-versus-draft status, conflicts and protected work. Before implementation, all four C-specific probes and all four quick-add probes failed against the earlier source. The current implementation passes the focused suites.
+
+All **15 distinct integration files** passed: chef panel, read budget, Home board, staff-first Home, staff Home roster, desktop Home layout, design patterns, roles, page roles, device work recovery, device lock handover, device prep lock, safe text, Chef to-do notebook and surface colours. Fourteen passed on the first run. The surface-colour suite's old desktop assertion expected the second notebook page that C deliberately removes; it now checks the actual supporting-reference `.tm-extra` paper at all three widths, with all **174 checks** passing on rerun. This adapts the assertion to the selected layout while extending width coverage. Independent source review found no remaining blockers. Final JavaScript syntax and whitespace checks pass. Hosted CI and deployed verification remain pending; local stand-in checks do not establish live production behaviour.
+
+Preserve the earlier A source and evidence for comparison; reverting C restores A without a data migration. The new quick choices and spacing controls are memory-only. Existing saved assignments and breaks use the unchanged dated membership/break shape.
+
+## Historical A delivery, PR635
+
+The head chef initially chose **A: Quiet notebook, one list (recommended)** in chat on 9 November 2026. PR635 implemented the shared section-first notebook with one person list, visible current section/break summaries, labelled per-person Edit breaks disclosures, section counts, a compact selected-date/status header, the compact saved break board and one dated Save before secondary tools. The later C choice above supersedes A's shared section-selection mode. The following record preserves A's implementation and verification history.
 
 The implementation reuses `teamPageHTML()` for direct and management-panel entry points. Each `.tm-person-row` contains the existing assignment control and a labelled native `.tm-person-details` fold; `tmRow()` supplies the original controls inside it. Per-person folds are independent by date and shift. Section counts and row summaries come from the selected draft. The compact header names the date and saved/dirty/failed state. One dated Save follows the roster; Copy a day or spread breaks, Next planned breaks and Saved shift overview are named folds. Future saved overviews are also folded. The active break board still reads the saved current-day record.
 
-## Implemented measurements and checks
+## Historical A measurements and checks
 
-These are measurements of the real shared planner in its actual outer frame, not the sketches above. The fixture matches the baseline: eight fictional people, two shifts, two active breaks, 14:00 kitchen time, original fonts and an 844 px-high viewport. See [measurements](implemented-measurements.json), [direct phone](implemented-team-390.png), [direct desktop](implemented-team-1280.png), [chef phone](implemented-chef-390.png) and [chef desktop](implemented-chef-1280.png).
+These are measurements of the real A shared planner in its actual outer frame, not C or the sketches above. The fixture matches the baseline: eight fictional people, two shifts, two active breaks, 14:00 kitchen time, original fonts and an 844 px-high viewport. See [measurements](implemented-measurements.json), [direct phone](implemented-team-390.png), [direct desktop](implemented-team-1280.png), [chef phone](implemented-chef-390.png) and [chef desktop](implemented-chef-1280.png).
 
 | Real app view | First person before | First person after | Complete initial rows before / after | Separate fine-adjustment rows before / after |
 | --- | --- | --- | --- | --- |

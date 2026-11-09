@@ -26,7 +26,8 @@ const fixture = () => Object.assign({ [CFG]: { people, staffIds: ['sam', 'ann', 
 const fullDate = d => new Date(d + 'T12:00:00+10:00').toLocaleDateString('en-AU', { timeZone: 'Australia/Brisbane', weekday: 'long', day: 'numeric', month: 'long' });
 const click = async (p, s) => { const found = await tap(p, s); await L.settle(p, 120); return found; };
 const read = (p, d) => p.evaluate(k => window.__fake.dump()[k], key(['team', d]));
-const assignment = (p, person, sh, sec) => click(p, '[data-p="tm-sh"][data-v="' + sh + '"]').then(() => click(p, '[data-p="tm-section"][data-v="' + sec + '"]')).then(() => click(p, '[data-p="tm-assign"][data-id="' + person + '"]'));
+const assignment = (p, person, sh, sec) => click(p, '[data-p="tm-sh"][data-v="' + sh + '"]').then(() => L.pick(p, 'select[data-k="tm-sec:' + person + '"]', sec));
+const rowSection = (p, id) => p.$eval('select[data-k="tm-sec:' + id + '"]', e => e.value);
 const savedSection = (rec, id, sh) => (rec.on.find(x => x.id === id && x.sh === sh) || {}).sec;
 const selected = p => p.$eval('[data-p="tm-day"][aria-pressed="true"]', e => e.getAttribute('data-day'));
 async function ready(p) { await L.waitFor(p, () => !!document.querySelector('.tm-weeknav') && !!document.querySelector('.tm-work [data-p="tm-whole"]'), null, 7000); }
@@ -79,7 +80,7 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   ok(JSON.stringify(await read(p, today)) === JSON.stringify(originalToday) && await p.evaluate(([k, value]) => window.__fake.dump()[k].pastEdit.t === value, [CFG, originalCfg.pastEdit.t]), 'isolation: saving a future date preserves today and its live-team stamp');
   await goDate(p, later);
   await click(p, '[data-p="tm-sh"][data-v="lunch"]');
-  ok(/Pans/.test(await txt(p, '[data-p="tm-assign"][data-id="bo"]') || '') && !await p.$eval('[data-p="tm-save"]', e => e.disabled), 'drafts: saving tomorrow does not discard the other date\'s unsaved section');
+  ok(await rowSection(p, 'bo') === 'pans' && !await p.$eval('[data-p="tm-save"]', e => e.disabled), 'drafts: saving tomorrow does not discard the other date\'s unsaved section');
   await click(p, '[data-p="tm-today"]');
   await ready(p);
   ok(await selected(p) === today && /Ann|14:30/.test(await txt(p, '.tm-away-slot') || ''), 'Today returns directly to the unchanged live saved plan');
@@ -98,7 +99,7 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   await click(p, '[data-p="tm-whole"]');
   ok(/Grill/.test(await txt(p, '.tm-work') || '') && /Larder/.test(await txt(p, '.tm-work') || '') && (await read(p, tomorrow)).v === 2, 'reload: the future plan survives a fresh page and is read from its own dated record');
   await goDate(p, yesterday, false);
-  ok(/read.only|past|saved/i.test(await txt(p, '.tm-page') || '') && !(await p.$('[data-p="tm-save"]')) && !(await p.$('[data-p="tm-assign"]')), 'past dates: the saved plan is browsable without editing or Save controls');
+  ok(/read.only|past|saved/i.test(await txt(p, '.tm-page') || '') && !(await p.$('[data-p="tm-save"]')) && !(await p.$('.tm-person-section')), 'past dates: the saved plan is browsable without editing or Save controls');
   ok(p.errors.length === 0, 'dated planning: no browser errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -109,11 +110,11 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, () => /Not saved|not save/i.test((document.querySelector('.tm-save') || {}).textContent || ''), null, 6000);
   ok((await read(p, tomorrow)).v === 2 && savedSection(await read(p, tomorrow), 'ann', 'lunch') === 'pans', 'conflict: another chef\'s newer future plan is not overwritten');
-  ok(/Grill/.test(await txt(p, '[data-p="tm-assign"][data-id="ann"]') || ''), 'conflict: the losing future section edit remains recoverable');
+  ok(await rowSection(p, 'ann') === 'grill', 'conflict: the losing future section edit remains recoverable');
   await click(p, '[data-p="tm-refresh"]');
-  ok(/Grill/.test(await txt(p, '[data-p="tm-assign"][data-id="ann"]') || ''), 'Refresh requires confirmation before discarding a future-date draft');
+  ok(await rowSection(p, 'ann') === 'grill', 'Refresh requires confirmation before discarding a future-date draft');
   await click(p, '[data-p="tm-refresh"]'); await ready(p);
-  ok(await p.$eval('[data-p="tm-save"]', e => e.disabled) && /Pans/.test(await txt(p, '[data-p="tm-assign"][data-id="ann"]') || ''), 'Refresh confirmation loads the winning plan for that date');
+  ok(await p.$eval('[data-p="tm-save"]', e => e.disabled) && await rowSection(p, 'ann') === 'pans', 'Refresh confirmation loads the winning plan for that date');
   ok(p.errors.length === 0, 'conflicts: no browser errors ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -122,8 +123,8 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   p = await L.open(browser, '#/team', { who: 'sam', extra: emptyFuture, wait: 900 }); await ready(p); await goDate(p, nextWeek);
   ok(!!(await p.$('[data-p="tm-use"]')), 'copy: an empty selected future day offers Same as last weekday');
   await p.locator('details.tm-batch > summary').click(); await click(p, '[data-p="tm-use"]');
-  await L.waitFor(p, () => !!document.querySelector('[data-p="tm-assign"][data-id="ann"]'), null, 6000);
-  ok(/Grill/.test(await txt(p, '[data-p="tm-assign"][data-id="ann"]') || '') && !await p.$eval('[data-p="tm-save"]', e => e.disabled), 'copy: next week copies today\'s dated plan into an unsaved draft');
+  await L.waitFor(p, () => !!document.querySelector('select[data-k="tm-sec:ann"]'), null, 6000);
+  ok(await rowSection(p, 'ann') === 'grill' && !await p.$eval('[data-p="tm-save"]', e => e.disabled), 'copy: next week copies today\'s dated plan into an unsaved draft');
   ok(!await read(p, nextWeek) && JSON.stringify(await read(p, today)) === JSON.stringify(plan(today)), 'copy: neither source nor destination is saved automatically');
   ok(p.errors.length === 0, 'copy: no browser errors ' + p.errors.join(' | '));
   await p.context().close();
@@ -133,7 +134,7 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   await p.evaluate(() => { window.__fake.mode = 'fail'; });
   await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, () => /Not saved|not save|Try again/i.test((document.querySelector('.tm-save') || {}).textContent || ''), null, 6000);
-  ok((await read(p, tomorrow)).v === 1 && /Grill/.test(await txt(p, '[data-p="tm-assign"][data-id="ann"]') || ''), 'failed Save: a lost connection preserves the future draft and the last confirmed record');
+  ok((await read(p, tomorrow)).v === 1 && await rowSection(p, 'ann') === 'grill', 'failed Save: a lost connection preserves the future draft and the last confirmed record');
   await p.evaluate(() => { window.__fake.mode = 'ok'; });
   await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 2, key(['team', tomorrow]), 6000);
@@ -146,7 +147,7 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
     await L.waitFor(p, () => !!document.querySelector('.tm-weeknav'), null, 6000);
     await goDate(p, tomorrow, false);
     const words = await txt(p, '.tm-page') || '';
-    ok(/Could not|could not|Check|Try again/.test(words) && !(await p.$('[data-p="tm-assign"]')), (failure.cold ? 'offline' : 'failed') + ' week: unknown dates have an error and no assignment controls');
+    ok(/Could not|could not|Check|Try again/.test(words) && !(await p.$('.tm-person-section')), (failure.cold ? 'offline' : 'failed') + ' week: unknown dates have an error and no assignment controls');
     ok(!(await p.$('[data-p="tm-save"]')) || await p.$eval('[data-p="tm-save"]', e => e.disabled), 'unknown future plan cannot be saved as empty');
     ok(p.errors.length === 0, 'failed week: no browser errors ' + p.errors.join(' | '));
     await p.context().close();
@@ -173,7 +174,7 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   await p.fill('#pf1', '1111');
   await L.waitFor(p, () => LK_PREP.privateAccess() && LK_PREP.state.who === 'sam', null, 8000); await ready(p);
   await goDate(p, tomorrow);
-  ok(/Grill/.test(await txt(p, '[data-p="tm-assign"][data-id="ann"]') || '') && !await p.$eval('[data-p="tm-save"]', e => e.disabled) && (await read(p, tomorrow)).v === 1, 'privacy unlock: the same chef recovers the unsaved future section after a fresh authority check');
+  ok(await rowSection(p, 'ann') === 'grill' && !await p.$eval('[data-p="tm-save"]', e => e.disabled) && (await read(p, tomorrow)).v === 1, 'privacy unlock: the same chef recovers the unsaved future section after a fresh authority check');
   await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 2, key(['team', tomorrow]), 6000);
   ok(savedSection(await read(p, tomorrow), 'ann', 'lunch') === 'grill' && JSON.stringify(await read(p, today)) === JSON.stringify(plan(today)), 'privacy recovery: Save sends the retained draft to its original future date only');
@@ -186,7 +187,7 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   await goDate(p, tomorrow); await assignment(p, 'ann', 'lunch', 'grill');
   await p.clock.runFor(90000); await L.settle(p, 250);
   await L.waitFor(p, d => LK_TIME.day(LK_TIME.now()) === d, tomorrow, 6000);
-  ok(await selected(p) === tomorrow && /Grill/.test(await txt(p, '[data-p="tm-assign"][data-id="ann"]') || '') && (await read(p, tomorrow)).v === 1, 'midnight: tomorrow becomes the live date without losing or automatically saving its selected draft');
+  ok(await selected(p) === tomorrow && await rowSection(p, 'ann') === 'grill' && (await read(p, tomorrow)).v === 1, 'midnight: tomorrow becomes the live date without losing or automatically saving its selected draft');
   await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 2, key(['team', tomorrow]), 6000);
   ok(savedSection(await read(p, tomorrow), 'ann', 'lunch') === 'grill' && JSON.stringify(await read(p, today)) === JSON.stringify(plan(today)), 'midnight Save: the new live date receives the draft and the previous day remains unchanged');
@@ -207,7 +208,7 @@ const heldWeekSDK = sdk.replace('export function getDocsFromServer(ref) {', `exp
   await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 2, TEAM, 6000);
   await p.evaluate(() => window.__fake.releaseInitialWeek()); await L.settle(p, 200);
-  ok(/Pans/.test(await txt(p, '[data-p="tm-assign"][data-id="ann"]') || '') && !/Ann/.test(await txt(p, '.tm-away-slot') || ''), 'late week read: an older snapshot cannot replace the saved section or restore an old current break');
+  ok(await rowSection(p, 'ann') === 'pans' && !/Ann/.test(await txt(p, '.tm-away-slot') || ''), 'late week read: an older snapshot cannot replace the saved section or restore an old current break');
   await assignment(p, 'ann', 'lunch', 'larder'); await click(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 3, TEAM, 6000);
   ok(savedSection(await read(p, today), 'ann', 'lunch') === 'larder', 'late week read: the next Save retains the acknowledged version and advances to version three');
