@@ -96,6 +96,32 @@ async function main() {
       const x = await openHome(b, 390, 844); await x.context().route('**/docs/kitchen-mascot/assets/*', q => q.abort()); const before = await geometry(x); await install(x, d); if (d === 'C') { await x.locator('.mc-mascot').click().catch(() => {}); } await run(x, 1500);
       const sx = await st(x); record(`${d} missing art leaves Home as it was`, !sx.mounted && sx.omitted === 'artwork-unavailable', { s: sx }); compare(`${d} missing art`, 390, before, await geometry(x)); await x.context().close();
     }
+    // Round 2 break-it repairs, design A (and B for the double tap).
+    const hid = await openHome(b, 390, 844);
+    await hid.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); });
+    await install(hid, 'A'); await run(hid, 1200); let sh = await st(hid);
+    record('A first view while the screen is hidden: rest image, nothing played', sh.player && sh.player.plays === 0 && sh.player.settled, { s: sh.player });
+    const recH = await hid.evaluate(() => LK_MASCOT_CYCLE.record('Ann')); record('A hidden view leaves today unplayed', recH.today && !recH.played, { recH });
+    await hid.evaluate(() => { delete document.hidden; }); await go(hid, '#/recipes'); await go(hid, '#/'); await run(hid, 1000); sh = await st(hid);
+    const recH2 = await hid.evaluate(() => LK_MASCOT_CYCLE.record('Ann'));
+    record('A next visible view the same day plays the same action', sh.player.plays === 1 && recH2.today === recH.today && recH2.played, { s: sh.player, recH2 });
+    await hid.context().close();
+    const ref = await openHome(b, 390, 844);
+    await ref.evaluate(() => { Storage.prototype.setItem = function () { throw new Error('QuotaExceededError'); }; localStorage.removeItem('lk.mascot.cycle.Ann'); });
+    await install(ref, 'A'); await run(ref, 4500); let sr = await st(ref); record('A storage refused: first view plays once', sr.player.plays === 1, { s: sr.player });
+    await go(ref, '#/recipes'); await go(ref, '#/'); await run(ref, 1000); sr = await st(ref); record('A storage refused: return Home stays still', sr.player && sr.player.plays === 0 && !sr.player.atlasLoaded, { s: sr.player });
+    await ref.context().close();
+    const art = await openHome(b, 390, 844); const block = q => q.abort(); await art.context().route('**/docs/kitchen-mascot/assets/*', block);
+    await install(art, 'A'); await run(art, 1200); const sa = await st(art); const recA = await art.evaluate(() => LK_MASCOT_CYCLE.record('Ann'));
+    record('A missing art leaves today unplayed', !sa.mounted && recA.today && !recA.played, { s: sa, recA });
+    await art.context().unroute('**/docs/kitchen-mascot/assets/*', block); await go(art, '#/recipes'); await go(art, '#/'); await run(art, 1000); const sa2 = await st(art);
+    const recA2 = await art.evaluate(() => LK_MASCOT_CYCLE.record('Ann'));
+    record('A art back the same day: the same action plays', sa2.player && sa2.player.plays === 1 && recA2.today === recA.today, { s: sa2.player });
+    await art.context().close();
+    const dbl = await openHome(b, 390, 844); await install(dbl, 'B'); await run(dbl, 4500);
+    await dbl.locator('.mc-mascot').dblclick(); await run(dbl, 600); const sd = await st(dbl);
+    record('B double tap replays once at normal speed', sd.player.plays === 2 && sd.player.frame <= 3, { s: sd.player });
+    await dbl.context().close();
     const extra = JSON.parse(JSON.stringify(fixture)); extra[key(['config', 'main'])].people[0].name = 'Alexandria Catherine Montgomery Williams';
     const ln = await openHome(b, 390, 844, extra); const lb = await geometry(ln); await install(ln, 'A'); const ls = await st(ln); record('Long name: mascot omitted, name kept', !ls.mounted && ls.omitted === 'no-spare-heading-space', { s: ls }); compare('Long name', 390, lb, await geometry(ln)); await ln.context().close();
     const sea = await openHome(b, 390, 844); await sea.evaluate(() => window.KB_SEASONAL?.configure({ selection: 'in-diwali' })); await L.settle(sea, 450); const sb = await geometry(sea); await install(sea, 'A'); await run(sea, 1100); compare('A with Diwali', 390, sb, await geometry(sea)); await shot(sea, 'a-seasonal-playing', 390, 'Design A playing beside the Diwali celebration art.'); await sea.context().close();

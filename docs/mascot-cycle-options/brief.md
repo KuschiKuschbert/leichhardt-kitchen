@@ -1,6 +1,6 @@
 # Cycling the kitchen mascot through its actions
 
-9 November 2026, Queensland. **Round 1 verdict: Build smaller, 5 of 5. Owner chose a per-person shuffled set of all 11 actions, one a day (see Owner direction). Round 2 pending.** No app code has changed. [Proposal](proposal.md). Evidence reused from the [placement study](../mascot-placement-options/brief.md) (source `e6cbd61`, app files match `main` `7f85629`). This is role-based council analysis, not research with real staff. All measurements below are **Preview** from the placement study; nothing is measured in the implemented app.
+9 November 2026, Queensland. **Round 1 verdict: Build smaller, 5 of 5. Owner chose a per-person shuffled set of all 11 actions, one a day (see Owner direction). Round 2: all six reviewers recommend A. Owner choice pending.** No app code has changed. [Proposal](proposal.md). Evidence reused from the [placement study](../mascot-placement-options/brief.md) (source `e6cbd61`, app files match `main` `7f85629`). This is role-based council analysis, not research with real staff. All measurements below are **Preview** from the placement study; nothing is measured in the implemented app.
 
 ## The idea
 
@@ -63,11 +63,9 @@ The owner refined the recommendation: "can we have a random action come up for e
 - **Retained from round 1.** A's spot and guards (omitted for long names, locked Home, missing art; still under reduced motion and Still celebrations), one atlas per day, no atlas in `SHELL`, and the break-it checks above.
 - **Size.** Eleven kitchen days for a full round per person.
 
-**Next:** round 2, three structurally different designs of this rule, previews in this folder and the six-reviewer scoring.
-
 ## Round 2: three designs
 
-Built as review-only injections into the real Home page (`candidate.js`, `candidate.css`), captured by `capture.mjs` with the click-test Firebase stand-in and synthetic staff. [Compare them](index.html). Measurements are **Preview**, source `783a60f` on this branch, role staff (Ann), fixture Lunch on Larder, local Barlow and Caveat. `verification.json` holds 148 checks, all passing, and 19 screenshots.
+Built as review-only injections into the real Home page (`candidate.js`, `candidate.css`), captured by `capture.mjs` with the click-test Firebase stand-in and synthetic staff. [Compare them](index.html). Measurements are **Preview**, source `783a60f` on this branch, role staff (Ann), fixture Lunch on Larder, local Barlow and Caveat. `verification.json` holds 156 checks, all passing after the Break-it repairs below, and 19 screenshots.
 
 All three share the owner's rule, A's spot (64 x 85 px at x310 y76 on a 390 px phone, between the top bar and Your day), A's omission rules and one atlas a day. They differ in what starts the action, what stays on screen after it and whether the mascot is a control.
 
@@ -103,4 +101,70 @@ Structural differences: A vs B differ in end state and interaction (no control v
 - **Targets:** B and C buttons are 64 x 85 px at 390 px; a tap plays and rests again.
 - **Not evidenced:** native offline and saved-shell behaviour, a real shared tablet in service, staff reading the poses, screen readers in use, keyboard focus contrast, battery.
 
-**Chosen:** per-person shuffled daily action, all 11, kept per device (9 November 2026). Design pending round 2.
+## Round 2: ranking and disagreement
+
+Six fresh reviewers saw all three designs, the same evidence and the same contracts. The ranking is ordinal, best first; no numeric scale was used.
+
+| Reviewer | Ranking | Recommendation and main reservation |
+| --- | --- | --- |
+| Cook mid-service | A, C, B | A. A button about 16 px under the chef hat catches wet-thumb misses (estimated from the screenshot); each sign-in on a shared tablet replays in service |
+| Head chef | A, B, C | A, plus: take an action from the set only after it has played. C defeats the owner's goal: most staff never tap, so most never see most actions |
+| Skeptic | A, C, B | A once the hidden-view fault is fixed. Still decoration |
+| New starter | A, C, B | A. B's held Ready to cook or Serve reads as "station ready" or "order up"; C's still gives no sign it can be tapped |
+| Keeper of the book | A, C, B | A, keyed by staff id, with the stamp pattern of the seasonal arrival; keep atlases out of the runtime cache |
+| Screen designer | A, C, B | A. B and C put a button inside the heading, so the heading reads out the mascot label; a pale pressed box stays after a tap |
+
+All six rank A first. Five rank B last for the held status-like pose; the head chef ranks C last because the set barely moves. The screen designer said A and C look nearly the same at rest and the real differences are trigger and control; the other five called the designs structurally different.
+
+### Reference comparison
+
+| Principle | A | B | C |
+| --- | --- | --- | --- |
+| Flighty: no distracting movement, no stale status shown as live | Works: one play, then a neutral pose | Needs work: today's pose held beside the board all day | Works: no automatic movement |
+| Linear: the work leads, state shown means state | Works: decoration only, hidden from screen readers | Needs work: a held pose looks like a state | Needs work: a control with no task in the heading |
+| Duolingo: each tap answers truthfully | Not relevant: no tap | Needs work: under reduced motion a tap shows nothing new | Needs work: same, and a tap answers with motion only |
+| Things 3: no stray targets | Works | Needs work: 64 x 85 px target under the top bar | Needs work: same |
+| Headspace: calm, no interruption | Works | Needs work | Works |
+
+### Contract fit
+
+| Check | A | B | C | Source |
+| --- | --- | --- | --- | --- |
+| Arrives, then settles | Works (Preview: one play of 2.5 to 3.9 s, return opens at rest) | Needs work (held pose) | Works | `docs/seasonal-celebrations.md`, `docs/loading-motion.md` |
+| Home rectangles and service taps | Works (0 changed at 390, 768, 1280; Prep, Orders, search unchanged) | Works | Works | `verification.json` |
+| No new service control in the named heading | Works | Needs work | Needs work | `docs/design-patterns.md`, Named Home heading |
+| Ornaments out of the heading area | **Your call:** the mascot sits in the heading's spare space, as the placement study's A did. The named heading rule keeps anchored seasonal ornaments out of that area; the mascot is not a seasonal ornament, but it is the same kind of object | same | same | `docs/design-patterns.md` |
+| Action feedback | Not relevant | Needs work | Needs work | `docs/action-feedback.md` |
+| Saved shell and offline | Not evidenced; see Break-it | Not evidenced | Not evidenced | `sw.js` `net()` |
+| Contrast, focus, screen readers in use | Not evidenced (A is hidden from them) | Not evidenced | Not evidenced | |
+
+### Break-it findings and disposition
+
+| Scenario | Expected | Observed or hypothesis | Status | Disposition |
+| --- | --- | --- | --- | --- |
+| First Home view while the screen is hidden or asleep (A, B) | Rest image; today's action plays at the next visible view | Old preview drew the action, painted nothing and never showed it | **Reproduced** (old preview failed "next visible view the same day plays the same action") | Fixed in preview: a hidden, failed or reduced-motion view leaves today unplayed and paints the rest image. Checked in the click-test stand-in |
+| Phone refuses storage (A, B) | One play a day | Old preview replayed on every return to Home | **Reproduced** (old preview failed "return Home stays still") | Fixed: the record stays in memory for the page. Checked |
+| Art missing, then back the same day (A) | Today's action plays once the art loads | Old preview used up the action unseen | **Reproduced** | Fixed. Checked |
+| Double tap while the art loads (B, C) | One play at normal speed | Two timer chains could double the speed | Risk; the old preview passed the double tap with local art | A busy guard was added anyway; moot for A, which has no tap |
+| Runtime cache grows (all) | Mascot art kept bounded or out of the offline copy | `sw.js` `net()` saves any successful same-origin file not in the shell, so 11 atlases and stills, about 3.7 MB, would collect per device | **Checked in source** (`sw.js` lines 365 to 373), not measured | Implementation must exclude the mascot files from the runtime cache or bound them, and test it in the saved-shell checks |
+| Shared tablet, several sign-ins in service (A) | Calm board | One 2.5 to 3.9 s play per person per day, so several plays in an evening | Risk / Not evidenced | Accepted by the owner's per-person rule; implementation test counts plays across sign-ins |
+| Two staff with the same name, or a rename | Own set each | Preview keys by display name | Risk in preview only | Implementation keys by staff id |
+| Day changes while Home stays open | New action on the next Home view | Not tested | Not evidenced | Implementation test across Queensland midnight |
+
+## All-three mix and recommendation
+
+| Source and part | Take or reject | Principle and kitchen effect | Cost / evidence |
+| --- | --- | --- | --- |
+| A: automatic once a day, decorative, no control | Take | Flighty, Things 3: the set moves every day with no taps and no new target | 156 preview checks |
+| A: settle on the neutral Welcome pose | Take | Flighty, Linear: a status-like pose never sits beside the board | `a-rest-*` screenshots |
+| B: hold today's pose | Reject | Five of six rank it last for "station ready" or "order up" | `b-rest-390` |
+| B and C: replay or play button in the heading | Reject | Named heading allows no new service control; target under the chef hat; tap feedback and screen-reader name problems | Screen designer and cook findings |
+| C: advance the set only when tapped | Reject | Duolingo: progress should not depend on an optional tap; staff who never tap never see the set | Head chef finding |
+| C: Idle as the rest pose | Reject as a cosmetic swap | Welcome matches the "Welcome, Ann" heading beside it | New starter, cook |
+| Repairs from Break-it | Take | Only an action that actually played is used up | 3 reproduced faults now pass |
+
+**Recommend A, with the Break-it repairs:** on the first Home view of each kitchen day where it can play, today's action from the person's shuffled set plays once, then the mascot rests on the neutral Welcome pose. No control, nothing for screen readers to announce, no Home rectangle moved. It gets every person through all 11 in 11 kitchen days with no taps. Main downside: it is decoration, and a 3 s play is easy to miss; there is no way to see a missed action again. A blend with B or C does not beat A: every part they add brings a control into the heading or a held status-like pose. No mix is recommended, so no combined preview is claimed.
+
+**Before release** (implementation, not this preview): key by staff id; use `LK_TIME.day()` and the seasonal stamp pattern; keep mascot files out of `SHELL` and out of, or bounded in, the `sw.js` runtime cache; client tests for one play a day, return at rest, next day's action, hidden first view, refused storage, missing art, sign-ins on one shared tablet and Queensland midnight; complete-app long-name and enlarged-text geometry.
+
+**Chosen:** per-person shuffled daily action, all 11, kept per device (9 November 2026). Design: pending owner choice after round 2 (recommend A).

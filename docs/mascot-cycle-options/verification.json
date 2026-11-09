@@ -1,6 +1,6 @@
 {
   "kind": "Preview: actual application with review-only injection; synthetic Firebase stand-in. Not delivered app behaviour.",
-  "date": "2026-11-09T19:21:04.395Z",
+  "date": "2026-11-09T19:26:30.962Z",
   "viewports": [
     [
       390,
@@ -1182,7 +1182,7 @@
       },
       "s": {
         "id": "build",
-        "frame": 2,
+        "frame": 1,
         "playing": true,
         "settled": false,
         "plays": 1,
@@ -2155,6 +2155,163 @@
     {
       "name": "C missing art 390 no sideways scroll",
       "pass": true
+    },
+    {
+      "name": "A first view while the screen is hidden: rest image, nothing played",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 0,
+        "playing": false,
+        "settled": true,
+        "plays": 0,
+        "scheduled": false,
+        "atlasLoaded": true,
+        "rest": "welcome-still.png"
+      }
+    },
+    {
+      "name": "A hidden view leaves today unplayed",
+      "pass": true,
+      "recH": {
+        "bag": [
+          "build",
+          "recipe-reading",
+          "look-around",
+          "welcome",
+          "walk",
+          "smoker",
+          "ready-to-cook",
+          "idle",
+          "smash",
+          "flip"
+        ],
+        "last": "burger",
+        "day": "2026-11-10",
+        "today": "burger",
+        "played": false
+      }
+    },
+    {
+      "name": "A next visible view the same day plays the same action",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 2,
+        "playing": true,
+        "settled": false,
+        "plays": 1,
+        "scheduled": true,
+        "atlasLoaded": true,
+        "rest": "welcome-still.png"
+      },
+      "recH2": {
+        "bag": [
+          "build",
+          "recipe-reading",
+          "look-around",
+          "welcome",
+          "walk",
+          "smoker",
+          "ready-to-cook",
+          "idle",
+          "smash",
+          "flip"
+        ],
+        "last": "burger",
+        "day": "2026-11-10",
+        "today": "burger",
+        "played": true
+      }
+    },
+    {
+      "name": "A storage refused: first view plays once",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 7,
+        "playing": false,
+        "settled": true,
+        "plays": 1,
+        "scheduled": false,
+        "atlasLoaded": true,
+        "rest": "welcome-still.png"
+      }
+    },
+    {
+      "name": "A storage refused: return Home stays still",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 0,
+        "playing": false,
+        "settled": true,
+        "plays": 0,
+        "scheduled": false,
+        "atlasLoaded": false,
+        "rest": "welcome-still.png"
+      }
+    },
+    {
+      "name": "A missing art leaves today unplayed",
+      "pass": true,
+      "s": {
+        "design": "A",
+        "route": "#/",
+        "mounted": false,
+        "omitted": "artwork-unavailable",
+        "player": null,
+        "label": "",
+        "assets": [
+          "http://127.0.0.1:8765/docs/kitchen-mascot/assets/manifest.json"
+        ]
+      },
+      "recA": {
+        "bag": [
+          "build",
+          "recipe-reading",
+          "look-around",
+          "welcome",
+          "walk",
+          "smoker",
+          "ready-to-cook",
+          "idle",
+          "smash",
+          "flip"
+        ],
+        "last": "burger",
+        "day": "2026-11-10",
+        "today": "burger",
+        "played": false
+      }
+    },
+    {
+      "name": "A art back the same day: the same action plays",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 2,
+        "playing": true,
+        "settled": false,
+        "plays": 1,
+        "scheduled": true,
+        "atlasLoaded": true,
+        "rest": "welcome-still.png"
+      }
+    },
+    {
+      "name": "B double tap replays once at normal speed",
+      "pass": true,
+      "s": {
+        "id": "burger",
+        "frame": 0,
+        "playing": true,
+        "settled": false,
+        "plays": 2,
+        "scheduled": true,
+        "atlasLoaded": true,
+        "rest": "burger-still.png"
+      }
     },
     {
       "name": "Long name: mascot omitted, name kept",

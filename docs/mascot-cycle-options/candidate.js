@@ -18,8 +18,10 @@
   function shuffle(list, seed) { const out = list.slice(), r = rng(seed); for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; } return out; }
   // Saved on this device only, one record per person: the actions still to come this round, the last
   // one shown and the kitchen day it was drawn. Out of date: never; the day stamp only gates a new draw.
-  function load(who) { try { const r = JSON.parse(localStorage.getItem(KEY + who) || 'null'); if (r && Array.isArray(r.bag) && r.bag.every(x => ALL.includes(x))) return r; } catch (_) {} return { bag: [], last: '', day: '', today: '', played: false }; }
-  function save(who, r) { try { localStorage.setItem(KEY + who, JSON.stringify(r)); } catch (_) {} }
+  // If the phone refuses storage, the record lives in memory for this page, so returns still open at rest.
+  const memo = {};
+  function load(who) { try { const r = JSON.parse(localStorage.getItem(KEY + who) || 'null'); if (r && Array.isArray(r.bag) && r.bag.every(x => ALL.includes(x))) return r; } catch (_) {} return memo[who] ? JSON.parse(JSON.stringify(memo[who])) : { bag: [], last: '', day: '', today: '', played: false }; }
+  function save(who, r) { memo[who] = JSON.parse(JSON.stringify(r)); try { localStorage.setItem(KEY + who, JSON.stringify(r)); } catch (_) {} }
   // Today's action for this person. A new kitchen day takes the next action from the shuffled set;
   // an empty set reshuffles all 11, and never starts with yesterday's action.
   function draw(who, day, rec = load(who)) {
@@ -47,11 +49,16 @@
     function tick() { if (disposed || !playing) return; if (document.hidden) return finish(); timer = setTimeout(() => { if (frame >= 7) return finish(); frame++; paint(sheet, frame); tick(); }, spec.durations[frame]); }
     async function restLoad() { if (rest) return rest; rest = await image(restFile); return rest; }
     async function showRest() { try { await restLoad(); if (!playing) paint(rest); host.dataset.state = 'settled'; } catch (_) { onFail(); } }
+    let busy = false;
     async function play() {
-      if (disposed || playing) return;
+      if (disposed || playing || busy) return false;
+      busy = true; try { return await playNow(); } finally { busy = false; }
+    }
+    async function playNow() {
       if (reduced.matches) { await showRest(); return false; }
       try { spec = spec || (await manifest()).clips[id]; sheet = sheet || await image(spec.sheet); await restLoad(); } catch (_) { onFail(); return false; }
-      if (disposed || document.hidden) return false;
+      if (disposed) return false;
+      if (document.hidden) { paint(rest); host.dataset.state = 'settled'; return false; }
       plays++; frame = 0; playing = true; settled = false; host.dataset.state = 'playing'; paint(sheet, 0); tick(); return true;
     }
     function onVis() { if (document.hidden && playing) finish(); }
@@ -89,7 +96,9 @@
     const fail = () => { omitted = 'artwork-unavailable'; clear(); };
     const restOf = x => design === 'A' ? 'welcome-still.png' : design === 'B' ? `${x}-still.png` : 'idle-still.png';
     player = newPlayer(node, id || 'idle', restOf(id || 'idle'), fail);
-    const firstPlay = design !== 'C' && newDay && !rec.played;
+    // Today's action plays on the first Home view where it can actually play: a hidden, failed or
+    // reduced-motion view leaves it unplayed, so a later view the same day still shows it.
+    const firstPlay = design !== 'C' && rec.day === today && !rec.played;
     if (firstPlay) player.play().then(ok => { if (ok) { const r = load(who); r.played = true; save(who, r); } });
     else player.showRest();
     if (tap) node.addEventListener('click', async () => {
