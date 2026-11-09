@@ -271,6 +271,113 @@ await ok(Promise.resolve().then(async () => {
   assert.deepEqual((await snap(owner, 'suppliers/restored-before-parent')).data(), restoredBeforeParent, 'Early restore changed the raw lineage');
 }), true, 'early owner restore retains exact lineage without requiring the parent yet');
 
+// A destination already used for orders keeps its own identities and snapshots when the combined history is attached.
+const ATTACH_SOURCE = 'existing-split-source', ATTACH_TARGET = 'existing-split-target', ATTACH_AT = 200;
+const attachItems = ['stock', 'case', 'zero', 'dry', 'other'].map((name, index) => ({ ...item,
+  id: 'parent-' + name, name: 'TEST ATTACH ' + name.toUpperCase(), source: { ...source, row: index + 1, name: 'TEST ATTACH ' + name.toUpperCase() } }));
+const attachOriginal = catalogue({ name: 'Test existing combined supplier', cutoffId: 'dry-cutoff', items: attachItems });
+const ownAttachItems = attachItems.slice(0, 2).map(entry => ({ ...entry, id: entry.id.replace('parent-', 'seafood-'), par: '7',
+  source: { ...entry.source, file: 'test-existing-seafood.pdf' } }));
+const attachDestination = catalogue({ name: 'Test existing seafood supplier', cutoffId: 'seafood-cutoff', v: 4, at: 80, items: ownAttachItems });
+const attachMap = Object.fromEntries(attachItems.slice(0, 3).map((entry, index) => [entry.id, ownAttachItems[index]?.id || entry.id]));
+const attachSourceOrder = order({ sid: ATTACH_SOURCE, supplierName: attachOriginal.name, at: 100,
+  lines: attachItems.map(entry => line({ itemId: entry.id, name: entry.name, source: entry.source })) });
+const attachOwnOrder = order({ sid: ATTACH_TARGET, supplierName: attachDestination.name, v: 4, at: 110,
+  lines: [line({ itemId: ownAttachItems[0].id, name: ownAttachItems[0].name, qty: '11 bags', amount: 11, source: ownAttachItems[0].source })] });
+await env.withSecurityRulesDisabled(async ctx => {
+  const db = ctx.firestore();
+  for (const [id, data] of [[ATTACH_SOURCE, attachOriginal], [ATTACH_TARGET, attachDestination], ['mapped-create-source', splitOriginal],
+    ['mutual-split-a', splitOriginal], ['mutual-split-b', splitOriginal]])
+    await setDoc(doc(db, K + 'suppliers/' + id), data);
+  await setDoc(doc(db, K + 'suppliers/' + ATTACH_SOURCE + '/orders/previous'), attachSourceOrder);
+  await setDoc(doc(db, K + 'suppliers/' + ATTACH_TARGET + '/orders/previous'), attachOwnOrder);
+});
+function attachSplitWrite(db, options = {}) {
+  const by = options.by || 'head';
+  const sourceNext = { ...attachOriginal, v: 2, at: ATTACH_AT, by,
+    items: attachItems.map((entry, index) => index < 3 ? { ...entry, archived: true } : entry), ...(options.sourcePatch || {}) };
+  const targetNext = { ...attachDestination, v: 5, at: ATTACH_AT, by, items: [...ownAttachItems, attachItems[2]],
+    historyFrom: ATTACH_SOURCE, historyBefore: ATTACH_AT, historyItems: attachMap, ...(options.targetPatch || {}) };
+  const b = writeBatch(db);
+  if (!options.noSource) b.set(doc(db, K + 'suppliers/' + ATTACH_SOURCE), sourceNext);
+  if (!options.noSourceAudit) b.set(doc(db, K + 'suppliers/' + ATTACH_SOURCE + '/audit/' + sourceNext.v), {
+    v: sourceNext.v, itemId: '', action: 'split-source', before: attachOriginal, after: sourceNext, at: sourceNext.at, by: sourceNext.by });
+  b.set(doc(db, K + 'suppliers/' + ATTACH_TARGET), targetNext);
+  if (!options.noTargetAudit) b.set(doc(db, K + 'suppliers/' + ATTACH_TARGET + '/audit/' + targetNext.v), {
+    v: targetNext.v, itemId: '', action: 'split-supplier', before: attachDestination, after: targetNext, at: targetNext.at, by: targetNext.by });
+  if (options.oldTargetOrder) b.set(doc(db, K + 'suppliers/' + ATTACH_TARGET + '/orders/backdated-attachment'), {
+    ...attachOwnOrder, at: ATTACH_AT - 1, by });
+  return b.commit();
+}
+await ok(Promise.resolve().then(() => {
+  const b = writeBatch(head);
+  for (const [sid, parent] of [['mutual-split-a', 'mutual-split-b'], ['mutual-split-b', 'mutual-split-a']]) {
+    const next = { ...splitOriginal, v: 2, at: ATTACH_AT, by: 'head', historyFrom: parent, historyBefore: ATTACH_AT };
+    b.set(doc(head, K + 'suppliers/' + sid), next);
+    b.set(doc(head, K + 'suppliers/' + sid + '/audit/2'), { v: 2, itemId: '', action: 'split-supplier',
+      before: splitOriginal, after: next, at: ATTACH_AT, by: 'head' });
+  }
+  return b.commit();
+}), false, 'two existing suppliers cannot acquire mutual lineage in the same batch');
+for (const [db, by, label] of [[sous, 'sous', 'sous'], [staff, 'head', 'staff'], [phone('function-phone'), 'function', 'function-only session'], [anon, 'head', 'signed-out device']])
+  await ok(attachSplitWrite(db, { by }), false, label + ' cannot attach lineage to an existing destination');
+for (const [options, label] of [
+  [{ noSource: true, noSourceAudit: true }, 'unpaired parent'],
+  [{ noSourceAudit: true }, 'missing source audit'], [{ noTargetAudit: true }, 'missing target audit'],
+  [{ sourcePatch: { v: 3 } }, 'skipped source revision'], [{ targetPatch: { v: 6 } }, 'skipped destination revision'],
+  [{ sourcePatch: { at: ATTACH_AT + 1 } }, 'different parent timestamp'], [{ sourcePatch: { by: 'sous' } }, 'different parent writer'],
+  [{ targetPatch: { historyBefore: ATTACH_AT - 1 } }, 'earlier attachment boundary'],
+  [{ targetPatch: { at: attachDestination.at, historyBefore: attachDestination.at } }, 'reused destination timestamp'],
+  [{ oldTargetOrder: true }, 'backdated destination order against the old catalogue']
+]) await ok(attachSplitWrite(head, options), false, 'existing destination attachment refuses ' + label);
+for (const [patch, label] of [
+  [{ historyItems: attachMap }, 'map without lineage'],
+  [{ historyFrom: ATTACH_SOURCE, historyItems: attachMap }, 'map without cutoff'],
+  [{ historyBefore: ATTACH_AT, historyItems: attachMap }, 'map without parent'],
+  ...[null, [], 'invalid', {}, Object.fromEntries(Array.from({ length: 601 }, (_, index) => ['item-' + index, 'target-' + index]))]
+    .map((historyItems, index) => [{ historyFrom: ATTACH_SOURCE, historyBefore: ATTACH_AT, historyItems }, ['null map', 'list map', 'text map', 'empty map', 'oversized map'][index]])
+]) await ok(setDoc(doc(owner, K + 'suppliers/invalid-history-map'), catalogue({ at: ATTACH_AT, ...patch })), false, label + ' refused even for owner restore');
+await ok(Promise.resolve().then(async () => {
+  assert.deepEqual((await snap(head, 'suppliers/' + ATTACH_SOURCE)).data(), attachOriginal);
+  assert.deepEqual((await snap(head, 'suppliers/' + ATTACH_TARGET)).data(), attachDestination);
+}), true, 'refused existing destination attachments leave both catalogues unchanged');
+await ok(attachSplitWrite(head), true, 'head attaches mapped history to an existing destination with both catalogue revisions and audits');
+const attached = (await snap(head, 'suppliers/' + ATTACH_TARGET)).data();
+await ok(Promise.resolve().then(async () => {
+  assert.equal(attached.v, 5); assert.equal(attached.historyFrom, ATTACH_SOURCE); assert.equal(attached.historyBefore, ATTACH_AT);
+  assert.deepEqual(attached.historyItems, attachMap);
+  assert.deepEqual(attached.items.slice(0, 2), ownAttachItems);
+  assert.equal(attached.items[2].id, attachItems[2].id);
+  assert.deepEqual((await snap(head, 'suppliers/' + ATTACH_SOURCE + '/orders/previous')).data(), attachSourceOrder);
+  assert.deepEqual((await snap(head, 'suppliers/' + ATTACH_TARGET + '/orders/previous')).data(), attachOwnOrder);
+  assert.equal((await snap(head, 'suppliers/' + ATTACH_SOURCE + '/audit/2')).data().at, ATTACH_AT);
+  assert.equal((await snap(head, 'suppliers/' + ATTACH_TARGET + '/audit/5')).data().at, ATTACH_AT);
+}), true, 'attachment preserves two saved item identities and both colliding old order IDs with exact quantities');
+await ok(saveCatalogue(head, { ...attached, v: 6, at: 210, by: 'head', items: attached.items.map(entry => ({ ...entry, par: '9' })) }, {}, ATTACH_TARGET), true, 'ordinary destination edit retains the complete immutable history map');
+const attachedEdited = (await snap(head, 'suppliers/' + ATTACH_TARGET)).data();
+for (const [patch, label] of [
+  [{ historyItems: { ...attachMap, [attachItems[0].id]: ownAttachItems[1].id } }, 'remap a source item'],
+  [{ historyItems: { ...attachMap, 'parent-extra': 'seafood-extra' } }, 'add a mapped item'],
+  [{ historyItems: Object.fromEntries(Object.entries(attachMap).slice(1)) }, 'remove a mapped item'],
+  [{ historyItems: undefined }, 'strip the map'],
+  [{ historyFrom: undefined, historyBefore: undefined, historyItems: undefined }, 'strip all lineage'],
+  [{ historyFrom: SID }, 'change the mapped parent'], [{ historyBefore: ATTACH_AT - 1 }, 'change the mapped boundary']
+]) {
+  const value = { ...attachedEdited, v: attachedEdited.v + 1, at: 220, by: 'head', ...patch };
+  for (const field of ['historyFrom', 'historyBefore', 'historyItems']) if (value[field] === undefined) delete value[field];
+  await ok(saveCatalogue(head, value, {}, ATTACH_TARGET), false, 'head cannot ' + label + ' after attachment');
+  await ok(saveCatalogue(owner, value, {}, ATTACH_TARGET), false, 'owner cannot ' + label + ' after attachment');
+}
+await ok(saveCatalogue(head, { ...splitEdited, v: 3, at: 170, by: 'head', historyItems: { [splitMoved.id]: splitMoved.id } }, {}, SPLIT_TARGET), false, 'older identity-lineage destination cannot acquire a map later');
+await ok(splitWrite(head, { sourceId: 'mapped-create-source', targetId: 'mapped-create-target', targetPatch: { historyItems: { [splitMoved.id]: splitMoved.id } } }), true, 'new destination creation also permits a bounded map with its paired split');
+const restoredMapped = { ...attachedEdited, historyFrom: 'mapped-parent-not-restored' };
+await ok(setDoc(doc(owner, K + 'suppliers/restored-mapped-before-parent'), restoredMapped), true, 'owner raw restore copies a mapped destination before its parent exists');
+await ok(setDoc(doc(owner, K + 'suppliers/restored-mapped-before-parent'), restoredMapped), true, 'owner may repeat the exact mapped raw restore');
+await ok(Promise.resolve().then(async () => {
+  assert.equal((await snap(owner, 'suppliers/mapped-parent-not-restored')).exists(), false);
+  assert.deepEqual((await snap(owner, 'suppliers/restored-mapped-before-parent')).data(), restoredMapped);
+}), true, 'owner restore retains the raw map and original boundary exactly');
+
 // Use the real pinned Lite SDK, not the click-test stand-in. Auth belongs to one FirebaseApp and both Firestore
 // clients obtain the same real emulator sign-in through its auth-internal provider. No per-client mock token is used.
 const smokeApp = initializeApp({ apiKey: 'test-api-key', projectId: 'demo-test' }, 'supplier-lite-auth-smoke');

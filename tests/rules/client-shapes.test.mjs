@@ -121,6 +121,13 @@ const drawing = (rid, v) => ({ rid, slot: 'plate', name: 'Plate', vb: '-110 -110
 const mins = x => Object.assign({ no: 1, v: 1, status: 'published', pubAt: NOW - DAY, date: YDAY, start: '14:00', loc: 'Kitchen', guests: '', chair: 'sam', taker: 'sam', next: '',
   decisions: 'Label every tub', menu: '', safety: '', dates: '', other: '', att: [{ id: 'ann', st: 'present' }], acts: [], removed: false, at: 1, upd: 1, by: '' }, x || {});
 const ping = x => Object.assign({ text: 'Fish delivery 10:00', tag: 'delivery', start: TODAY, until: TODAY, dows: [], tm: null, removed: false, upd: NOW, at: NOW, author: 'sam', by: 'sam' }, x || {});
+const SUP_GOODS = ['stock', 'case', 'zero', 'dry', 'other'].map((name, index) => ({ id: 'parent-' + name, name: 'TEST ' + name.toUpperCase(),
+  pack: '1 kg bag', group: 'Test goods', category: 'TEST CATEGORY', par: '0', parUnit: '', orderUnit: 'bag', factor: 0,
+  aliases: [], archived: index < 3, manual: false, source: { file: 'test-client-shapes.pdf', page: 1, row: index + 1, name: 'TEST ' + name.toUpperCase(), par: '0' } }));
+const SUP_SEAFOOD = SUP_GOODS.slice(0, 3).map((item, index) => ({ ...item, id: index < 2 ? item.id.replace('parent-', 'seafood-') : item.id, archived: false }));
+const supOrder = (sid, supplierName, item, v, time) => ({ sid, supplierName, v, at: time, day: TODAY, deliveryDay: TMW,
+  cutoffDay: '', cutoffId: '', by: 'sam', lines: [{ itemId: item.id, name: item.name, pack: item.pack, qty: '2 bags', amount: 2,
+    unit: 'bag', par: item.par, parUnit: '', source: item.source, suggestion: '', stock: '' }] });
 
 const seed = {
   'config/main': CFG, 'login/roster': ROSTER, 'config/admins': { x: 1 },
@@ -146,7 +153,12 @@ const seed = {
   'todos/td1': { text: 'Call the fridge tech', st: 'open', due: '', for: '', from: 'sam', at: NOW, doneAt: 0, doneBy: '', upd: NOW, by: 'sam' },
   'todos/td0': { text: 'Fixed the dishwasher', st: 'done', due: '', for: '', from: 'sam', at: NOW - DAY, doneAt: NOW - DAY, doneBy: 'sam', upd: NOW - DAY, by: 'sam' },
   [`cutdone/${TODAY}_northside`]: { day: TODAY, sid: 'northside', on: true, at: NOW, by: 'sam' },
-  'suppliers/s1': { name: 'Northside Test Foods', cutoffId: 'northside', v: 1, items: [], at: 1, by: 'kit' },
+  'suppliers/s1': { name: 'Northside Test Foods', cutoffId: 'northside', v: 2, items: SUP_GOODS, at: NOW, by: 'kit' },
+  'suppliers/s2': { name: 'Northside Test Seafood', cutoffId: 'seafood', v: 5, items: SUP_SEAFOOD, at: NOW, by: 'kit',
+    historyFrom: 's1', historyBefore: NOW, historyItems: Object.fromEntries(SUP_GOODS.slice(0, 3).map((item, index) => [item.id, SUP_SEAFOOD[index].id])) },
+  // The destination's own earlier order and the parent's same-named order keep their existing query shapes.
+  'suppliers/s1/orders/previous': supOrder('s1', 'Northside Test Foods', SUP_GOODS[0], 1, NOW - 60000),
+  'suppliers/s2/orders/previous': supOrder('s2', 'Northside Test Seafood', SUP_SEAFOOD[0], 4, NOW - 30000),
   [`supplierlinks/${TODAY}_northside`]: { sid: 's1', cutoffId: 'northside', day: TODAY, v: 1, orderId: 'o1', at: 1, by: 'sam' },
   'drinks/ann': { by: 'ann', kind: 'flat', at: 1 }, [`shifts/${TODAY}_ann`]: { by: 'ann', day: TODAY, sec: 'larder', name: 'Larder', auto: false, at: 1 },
   'activity/ann': { name: 'Ann', visits: 1, by: 'ann' }, 'sections/larder': { name: 'Larder', uses: 1, by: 'ann' },
@@ -307,7 +319,7 @@ row('js/prep.js psSave(): create a head-owned minimum through W()', { ok: ['owne
 row('js/prep.js psSave(): update an item with the next revision through W()', { ok: ['owner', 'ownkit', 'kit'], asks: ['owner', 'ownkit', 'kit'],
   prep: () => put({ 'prepStandards/edit': prepStandard() }),
   run: (db, w, r) => W(r, [['set', 'prepStandards/edit', prepStandard({ v: 2, minimum: 0, archived: true, by: w })]]) });
-row('js/supplier-store.js: a supplier\'s orders (suppliers/<id>/orders, the last 21)', { ok: CHEFS, asks: CHEFS, run: db => getDocs(query(C(db, 'suppliers/s1/orders'), orderBy('at', 'desc'), limit(21))) });
+row('js/supplier-store.js: a supplier\'s own orders, including before lineage attachment (the last 21)', { ok: CHEFS, asks: CHEFS, run: db => getDocs(query(C(db, 'suppliers/s2/orders'), orderBy('at', 'desc'), limit(21))) });
 row('js/supplier-store.js: inherited split history before its fixed cutoff (parent orders, bounded 21)', { ok: CHEFS, asks: CHEFS,
   run: db => getDocs(query(C(db, 'suppliers/s1/orders'), where('at', '<=', NOW), orderBy('at', 'desc'), limit(21))) });
 row('js/supplier-store.js: a cut-off\'s link (supplierlinks/<day>_<cut-off>)', { ok: CHEFS, asks: CHEFS, run: db => getDoc(D(db, `supplierlinks/${TODAY}_northside`)) });

@@ -1971,9 +1971,9 @@
   function supplierTools() {
     if (!supplierToolsPromise) supplierToolsPromise = Promise.resolve().then(function () {
       if (!window.LK_APP || !window.LK_APP.load) throw { code: 'unavailable' };
-      return window.LK_SUP_CORE && window.LK_SUP_CORE.API === 5 ? null : window.LK_APP.load('js/supplier-core.js?v=6');
-    }).then(function () { return window.LK_SUP_STORE && window.LK_SUP_STORE.API === 3 ? null : window.LK_APP.load('js/supplier-store.js?v=6'); }).then(function () {
-      if (!window.LK_SUP_CORE || window.LK_SUP_CORE.API !== 5 || !window.LK_SUP_STORE || window.LK_SUP_STORE.API !== 3) throw { code: 'version' };
+      return window.LK_SUP_CORE && window.LK_SUP_CORE.API === 6 ? null : window.LK_APP.load('js/supplier-core.js?v=7');
+    }).then(function () { return window.LK_SUP_STORE && window.LK_SUP_STORE.API === 4 ? null : window.LK_APP.load('js/supplier-store.js?v=7'); }).then(function () {
+      if (!window.LK_SUP_CORE || window.LK_SUP_CORE.API !== 6 || !window.LK_SUP_STORE || window.LK_SUP_STORE.API !== 4) throw { code: 'version' };
       supplierService = window.LK_SUP_STORE.create(supplierApi()); return supplierService;
     }).catch(function (e) { supplierToolsPromise = null; throw e; });
     return supplierToolsPromise;
