@@ -1,0 +1,18 @@
+[
+  {
+    "stage": "before",
+    "hidden": false,
+    "boardHeight": 107.96875,
+    "firstPersonTop": 729.3125,
+    "people": 0,
+    "overflow": false
+  },
+  {
+    "stage": "after",
+    "hidden": true,
+    "boardHeight": 0,
+    "firstPersonTop": 621.34375,
+    "people": 1,
+    "overflow": false
+  }
+]

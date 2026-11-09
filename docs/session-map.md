@@ -10,7 +10,13 @@ The head chef selected A, Label the reference, after the [council and three visu
 
 ## Planning staff sections ahead, 9 November 2026
 
+The later requested empty-break-board refinement hides only confirmed valid empty current status; clock paints can show it again without reads or replacing draft inputs. The notebook suite passes 76 checks, including four failures on the prior source. [Contract](team-notebook-options/brief.md#hide-a-confirmed-empty-board-9-november-2026).
+
 The head chef requested dated section planning a week ahead, reviewed three isolated previews, then chose A, a week strip in Today's team, and authorised coding. Round 1: Build smaller, 5 of 5. Round 2: A first for 6 of 6. `js/prep.js` and `css/app.css` extend the roster notebook with Monday to Sunday, previous/next week, Today, written day status and dated Save. Each date retains its own memory-only draft and version, separate from today's live record. Future saves do not invalidate today's staff view; older dates are read-only. The week query is bounded, with no listener. `tests/team-week.test.js`, existing team/Home/device/read-budget checks, the design registry and the real-emulator client shape matrix cover the changed contracts. `docs/team-week-options/` retains the proposal, previews, council, actual-app screenshots, density measurements and release status. [Feature record](team-week-options/brief.md).
+
+## Quieter team management review, 9 November 2026
+
+The head chef also asked to tidy the noisy planner across the existing management entry points. Round 1: Build smaller, 5 of 5. [Three isolated interactive previews](team-tidy-options/index.html) compare a quiet section-first notebook, a section board and a person worksheet. The brief separates actual baseline and schematic preview measurements, preserves the weekly/date/access/draft contracts and records the council and selection. No tidy-up layout is selected or implemented yet. This is separate from the authorised empty-board behaviour above. [Design record](team-tidy-options/brief.md).
 
 ## Each supplier item's last order, 9 November 2026
 

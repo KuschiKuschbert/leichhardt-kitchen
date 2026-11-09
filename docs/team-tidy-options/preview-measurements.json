@@ -1,0 +1,92 @@
+[
+  {
+    "concept": "a",
+    "width": 390,
+    "errors": [],
+    "overflow": false,
+    "people": 3,
+    "firstPersonTop": 557.8125,
+    "saveTop": 1099.8125,
+    "smallControls": []
+  },
+  {
+    "concept": "a",
+    "width": 768,
+    "errors": [],
+    "overflow": false,
+    "people": 3,
+    "firstPersonTop": 573.5625,
+    "saveTop": 1123.5625,
+    "smallControls": []
+  },
+  {
+    "concept": "a",
+    "width": 1280,
+    "errors": [],
+    "overflow": false,
+    "people": 3,
+    "firstPersonTop": 571.765625,
+    "saveTop": 1121.765625,
+    "smallControls": []
+  },
+  {
+    "concept": "b",
+    "width": 390,
+    "errors": [],
+    "overflow": false,
+    "people": 3,
+    "firstPersonTop": 531.265625,
+    "saveTop": 1282.140625,
+    "smallControls": []
+  },
+  {
+    "concept": "b",
+    "width": 768,
+    "errors": [],
+    "overflow": false,
+    "people": 3,
+    "firstPersonTop": 547.015625,
+    "saveTop": 1309.515625,
+    "smallControls": []
+  },
+  {
+    "concept": "b",
+    "width": 1280,
+    "errors": [],
+    "overflow": false,
+    "people": 8,
+    "firstPersonTop": 550.21875,
+    "saveTop": 837.21875,
+    "smallControls": []
+  },
+  {
+    "concept": "c",
+    "width": 390,
+    "errors": [],
+    "overflow": false,
+    "people": 4,
+    "firstPersonTop": 510.65625,
+    "saveTop": 1052.65625,
+    "smallControls": []
+  },
+  {
+    "concept": "c",
+    "width": 768,
+    "errors": [],
+    "overflow": false,
+    "people": 3,
+    "firstPersonTop": 526.40625,
+    "saveTop": 1076.40625,
+    "smallControls": []
+  },
+  {
+    "concept": "c",
+    "width": 1280,
+    "errors": [],
+    "overflow": false,
+    "people": 3,
+    "firstPersonTop": 524.609375,
+    "saveTop": 1074.609375,
+    "smallControls": []
+  }
+]

@@ -12704,8 +12704,8 @@
         : '<button type="button" class="tm-fold" data-p="tm-showoff" aria-expanded="false">Not on ' + esc(s.name) + ': ' + esc(offL.map(function (p) { return p.name; }).join(', ')) + '. Show</button>') : '');
     var dirty = tmDirty(), busy = svOf('t') === 'busy';
     var save = '<div class="tm-save">' + svButton({ k: 't', p: 'tm-save', idle: 'Save ' + date, off: !dirty, busy: busy }) + svLine('t', busy, tmMsg || tmAssignMsg) + '</div>';
-    var glance = rec ? tmTimelineHTML(rec) : '';
-    var summary = isToday ? '<aside class="tm-away hm-board" aria-label="On break now"><div class="tm-away-slot">' + tmAwayHTML() + '</div></aside><aside class="tm-extra"><div class="tm-next-slot">' + tmNextHTML() + '</div>' + (glance ? '<details class="tm-saved-overview"><summary>Saved shift overview</summary>' + glance + '</details>' : '') + '</aside>' : '<aside class="tm-extra tm-plan-summary"><h3>Plan for ' + esc(date) + '</h3><p class="hint">Planning ahead. Today\'s live team stays unchanged.</p>' + (glance || '<p class="hint">No team saved for this day yet.</p>') + '</aside>';
+    var glance = rec ? tmTimelineHTML(rec) : '', away = isToday ? tmAwayData() : null;
+    var summary = isToday ? '<aside class="tm-away hm-board" aria-label="On break now"' + (tmAwayHidden(away) ? ' hidden' : '') + '><div class="tm-away-slot">' + tmAwayHTML(away) + '</div></aside><aside class="tm-extra"><div class="tm-next-slot">' + tmNextHTML() + '</div>' + (glance ? '<details class="tm-saved-overview"><summary>Saved shift overview</summary>' + glance + '</details>' : '') + '</aside>' : '<aside class="tm-extra tm-plan-summary"><h3>Plan for ' + esc(date) + '</h3><p class="hint">Planning ahead. Today\'s live team stays unchanged.</p>' + (glance || '<p class="hint">No team saved for this day yet.</p>') + '</aside>';
     var editor = tmWhole ? tmWholeHTML() : tmAssignHTML(s) + '<details class="tm-details" open><summary>Breaks and fine adjustments</summary>' +
       '<p class="hint">Tick to put someone on ' + esc(s.name) + '. Untick to remove them and this shift\'s breaks.</p>' + list + '</details>' +
       (spread ? '<details class="tm-batch"><summary>Set breaks in one go</summary>' + spread + '</details>' : '');
@@ -13151,8 +13151,13 @@
     if (d.state === 'unset') return 'No saved plan for today. Save today\'s team to publish the planned breaks.';
     return 'Today\'s saved plan has not been checked. Current scheduled status is unknown.';
   }
-  function tmAwayHTML() {
-    var d = tmAwayData(), head = '<h3 class="tm-away-title">On break now</h3>' + tmAwaySource(d);
+  function tmAwayHidden(d) {
+    d = d || tmAwayData();
+    return d.state === 'ready' && !d.away.length && !d.invalid;
+  }
+  function tmAwayHTML(d) {
+    d = d || tmAwayData();
+    var head = '<h3 class="tm-away-title">On break now</h3>' + tmAwaySource(d);
     if (d.state !== 'ready') return head + '<p class="' + (d.state === 'unset' || d.state === 'loading' || d.state === 'clock' ? 'tm-away-empty' : 'tm-away-warn') + '">' + esc(tmAwayState(d)) + '</p>';
     var rows = d.away.map(function (g) {
       var b = g.breaks[0];
@@ -13183,7 +13188,9 @@
       if (el.innerHTML !== check.innerHTML) el.innerHTML = html;
       el._tmStatusHTML = html;
     };
-    put('.tm-away-slot', tmAwayHTML()); put('.tm-next-slot', tmNextHTML());
+    var away = tmAwayData(), board = S.root.querySelector('.tm-away');
+    put('.tm-away-slot', tmAwayHTML(away)); put('.tm-next-slot', tmNextHTML());
+    if (board) board.hidden = tmAwayHidden(away);
     var el = S.root.querySelector('.tm-nclock'), text = tmHHMM(T.mins());
     if (el && el.textContent !== text) el.textContent = text;
   }

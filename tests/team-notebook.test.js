@@ -20,6 +20,8 @@ const fixture = (p, c) => Object.assign(cfg(c), p === null ? {} : { [TEAM]: p ||
 const readCount = p => p.evaluate(() => window.__fake.reads.filter(k => /\/(team|teamsum)\//.test(k)).length);
 const saved = p => p.evaluate(k => window.__fake.dump()[k], TEAM);
 const away = p => txt(p, '.tm-away-slot');
+const boardHidden = p => p.$eval('.tm-away', e => e.hidden && getComputedStyle(e).display === 'none' && e.getBoundingClientRect().height === 0);
+const boardShown = p => p.$eval('.tm-away', e => !e.hidden && getComputedStyle(e).display !== 'none' && e.getBoundingClientRect().height > 0);
 const rows = p => p.$$eval('.tm-away-row', all => all.map(e => ({ name: (e.querySelector('.tm-away-name') || {}).textContent || '', text: e.textContent.trim() })));
 const press = async (p, s) => { const found = await tap(p, s); await L.settle(p, 150); return found; };
 const shift = (p, id) => press(p, '[data-p="tm-sh"][data-v="' + id + '"]');
@@ -118,6 +120,25 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   ok(p.errors.length === 0, 'clock boundaries: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // A checked empty board takes no space, but its retained node can show each saved break when the clock reaches it.
+  p = await L.open(b, '#/team', { who: 'sam', extra: fixture(plan({ br: [{ id: 'ann', sh: 'lunch', at: 825, len: 45 }, { id: 'bo', sh: 'full', at: 900, len: 150 }] })), clock: L.NOW - 16 * 60000, wait: 1200 });
+  await ready(p);
+  ok(await boardHidden(p), 'empty board: a confirmed plan with nobody away hides the whole board and its layout space on initial render');
+  await p.fill('[data-k="tm-q"]', 'Sam');
+  await p.evaluate(() => { window.__emptyBoardProbe = document.querySelector('.tm-away'); window.__emptyInputProbe = document.querySelector('[data-k="tm-q"]'); });
+  const visibilityReads = await readCount(p);
+  await p.clock.fastForward(60000); await L.settle(p, 180);
+  ok(await boardShown(p) && (await rows(p)).some(r => r.name === 'Ann'), 'empty board: the first meal break shows the board at its inclusive start without reloading');
+  await focusAt(p, L.NOW + 30 * 60000);
+  ok(await boardHidden(p), 'empty board: the final meal return hides the board at its exclusive end');
+  await focusAt(p, L.NOW + 60 * 60000);
+  ok(await boardShown(p) && /Split|split/.test(await away(p) || '') && (await rows(p)).some(r => r.name === 'Bo'), 'empty board: the next split shows the retained board at its inclusive start');
+  await focusAt(p, L.NOW + 210 * 60000);
+  ok(await boardHidden(p), 'empty board: the final split return hides the board again');
+  ok(await readCount(p) === visibilityReads && await p.evaluate(() => document.querySelector('.tm-away') === window.__emptyBoardProbe && document.querySelector('[data-k="tm-q"]') === window.__emptyInputProbe && window.__emptyInputProbe.value === 'Sam'), 'empty board: clock visibility changes retain the board, unfinished search and read count');
+  ok(p.errors.length === 0, 'empty board: no browser errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   // The same input data can contain duplicate or overlapping planned intervals. Never guess one return time.
   const overlap = plan({ on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }, { id: 'ann', sh: 'full', sec: 'pans' }], br: [{ id: 'ann', sh: 'lunch', at: 825, len: 45 }, { id: 'ann', sh: 'full', at: 825, len: 45 }] });
   p = await L.open(b, '#/team', { who: 'sam', extra: fixture(overlap), wait: 1200 }); await ready(p);
@@ -130,6 +151,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   ok(!(await rows(p)).length && /Nobody scheduled away/.test(await away(p) || ''), 'membership: orphan breaks, removed people and removed shifts do not imply someone is away');
   await refresh(p, plan({ v: 4, on: [{ id: 'ann', sh: 'lunch', sec: 'grill' }], br: [{ id: 'ann', sh: 'lunch', at: 825, len: 40 }] }));
   ok(/Some times could not be checked/.test(await away(p) || '') && !/Nobody scheduled away/.test(await away(p) || ''), 'malformed saved break: a discarded current-member interval warns instead of claiming zero');
+  ok(await boardShown(p), 'malformed saved break: an unknown current status keeps its warning board visible');
   await section(p, 'pans'); await assign(p, 'ann'); await press(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => window.__fake.dump()[k].v === 5, TEAM, 6000);
   ok(!Object.hasOwn(await saved(p), 'uncheckedBr'), 'saved format: defensive warning metadata stays in memory and never changes the team document');
@@ -147,6 +169,7 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   ok(/Checking|Loading/i.test(loading) && !/Nobody scheduled away|No saved plan/i.test(loading), 'loading: a pending plan read never becomes a false zero or an unset plan');
   await p.evaluate(() => window.__fake.releaseTeamRead()); await ready(p);
   ok(/No saved plan/i.test(await away(p) || '') && !/Nobody scheduled away/i.test(await away(p) || ''), 'unset: no saved plan is distinct from a checked empty schedule');
+  ok(await boardShown(p), 'unset: a missing saved plan keeps its explanatory board visible');
   await p.evaluate(() => { window.__fake.failReads = /\/team(?:\/|$)/; }); await refresh(p);
   const errorState = await away(p) || await txt(p, '.tm-page') || '';
   ok(/Could not check|Could not load/i.test(errorState) && !/Nobody scheduled away/i.test(errorState), 'failed read: an unavailable plan is unknown, never Nobody scheduled away');
@@ -156,11 +179,14 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   // Staleness uses elapsed read age, while an old calendar day must never claim the current break count.
   p = await L.open(b, '#/team', { who: 'sam', extra: fixture(plan({ on: [], br: [] })), clock: L.NOW - 9.5 * 3600000, wait: 1200 }); await ready(p);
   const beforeAge = await readCount(p);
+  ok(await boardHidden(p), 'fresh empty plan: its checked zero is hidden before authority or time becomes unknown');
   await p.evaluate(() => { window.__teamClockReady = window.LK_TIME.ready; window.LK_TIME.ready = () => false; window.dispatchEvent(new Event('focus')); });
   ok(/Checking the kitchen clock/i.test(await away(p) || '') && !/Nobody scheduled away/i.test(await away(p) || ''), 'unknown clock: an unchecked kitchen clock cannot claim a reliable zero');
+  ok(await boardShown(p), 'unknown clock: the hidden board becomes visible to explain the unchecked clock');
   await p.evaluate(() => { window.LK_TIME.ready = window.__teamClockReady; });
   await focusAt(p, L.NOW + 3 * 3600000);
   ok(/Refresh|last checked|older|stale/i.test(await away(p) || '') && !/Nobody scheduled away/i.test(await away(p) || ''), 'stale: a plan held more than twelve hours asks to check again instead of claiming a reliable zero');
+  ok(await boardShown(p), 'stale: an old empty plan keeps its refresh warning visible');
   await focusAt(p, L.NOW + 24 * 3600000);
   ok(/today|day|check|Refresh/i.test(await away(p) || '') && !/Nobody scheduled away/i.test(await away(p) || ''), 'day boundary: yesterday\'s loaded plan cannot answer who is scheduled away today');
   ok(await readCount(p) === beforeAge, 'freshness painting: checking old state itself adds no reads');
