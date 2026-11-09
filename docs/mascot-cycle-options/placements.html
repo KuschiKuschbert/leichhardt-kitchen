@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mascot placements</title>
+<style>
+  :root { --paper: #f7f3ea; --ink: #1c1d1f; --muted: #5b5d61; --line: #d9d2c3; --chip: #ffffff; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper: #1c1d1f; --ink: #f2efe8; --muted: #b9b6ae; --line: #3a3b3e; --chip: #2a2b2e; } }
+  :root[data-theme="dark"] { --paper: #1c1d1f; --ink: #f2efe8; --muted: #b9b6ae; --line: #3a3b3e; --chip: #2a2b2e; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.5 system-ui, sans-serif; }
+  main { max-width: 1240px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; } h2 { margin: 36px 0 4px; font-size: 1.3rem; }
+  p { max-width: 72ch; } .note { color: var(--muted); }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; }
+  .bar button { min-height: 44px; padding: 8px 16px; border-radius: 22px; border: 1px solid var(--line); background: var(--chip); color: var(--ink); font: 600 1rem system-ui, sans-serif; cursor: pointer; }
+  .bar button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .row { display: grid; grid-template-columns: minmax(0, 390fr) minmax(0, 768fr) minmax(0, 1280fr); gap: 14px; align-items: start; }
+  @media (max-width: 760px) { .row { grid-template-columns: 1fr; } }
+  figure { margin: 0; border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+  figure img { width: 100%; height: auto; display: block; border-radius: 4px; }
+  figcaption { font-size: .9rem; color: var(--muted); margin-top: 6px; }
+  ul { padding-left: 20px; max-width: 72ch; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Where the mascot could stand</h1>
+  <p class="note">Preview, 9 November 2026. The real Home page with synthetic staff (Ann, Lunch on Larder) and the test stand-in for Firebase, at phone 390 px, tablet 768 px and laptop 1280 px. The mascot shows its resting Welcome pose; on the first Home view of the day it would play today's action once in the same spot. No Home card moves in any of them. The live book is unchanged.</p>
+  <div class="bar" role="group" aria-label="Celebration">
+    <button type="button" data-festive="" aria-pressed="true">Normal day</button>
+    <button type="button" data-festive="-christmas" aria-pressed="false">With Christmas Day</button>
+  </div>
+
+  <h2>1. Heading corner</h2>
+  <p>Far right of the "Welcome" row, under the top bar. The spot the council reviewed. On a laptop it sits a long way from the name.</p>
+  <div class="row" data-kind="corner"></div>
+
+  <h2>2. Beside the name</h2>
+  <p>Just after "Welcome, Ann", feet on the date line, so it reads as part of the greeting. A long name leaves no room and the mascot is left out that day.</p>
+  <div class="row" data-kind="name"></div>
+
+  <h2>3. End of Home</h2>
+  <p>Standing on a ledge after all of Home's work, right aligned, before the footer line. It never sits near the board, but on a phone you only see it when you scroll to the bottom. It adds about 90 to 140 px to the end of the page.</p>
+  <div class="row" data-kind="end"></div>
+
+  <h2>What the celebration shows</h2>
+  <ul>
+    <li>On a named Home the celebration keeps its ornaments out of the heading area (the welcome rule), so none of the three spots touches celebration art.</li>
+    <li>Christmas adds its chalkboard card under the date. Placements 1 and 2 stay above it; placement 3 moves down with the page.</li>
+    <li>Captured with reduced motion, so moving celebration pieces are still in the images.</li>
+  </ul>
+  <p class="note">Measurements and checks: <code>placements-verification.json</code>. Capture: <code>capture-placements.mjs</code>. <a href="index.html">The three behaviour designs</a> · <a href="brief.md">Brief</a>.</p>
+</main>
+<script>
+  const widths = [['390', 'Phone'], ['768', 'Tablet'], ['1280', 'Laptop']];
+  const names = { corner: 'Heading corner', name: 'Beside the name', end: 'End of Home' };
+  function draw(festive) {
+    document.querySelectorAll('.row').forEach(row => {
+      const kind = row.dataset.kind;
+      row.replaceChildren(...widths.map(([w, label]) => {
+        const f = document.createElement('figure'), img = document.createElement('img'), c = document.createElement('figcaption');
+        img.src = 'placements/' + kind + festive + '-' + w + '.png'; img.loading = 'lazy';
+        img.alt = names[kind] + ', ' + label.toLowerCase() + ' ' + w + ' px' + (festive ? ', Christmas Day' : '');
+        c.textContent = label + ', ' + w + ' px' + (kind === 'end' ? ', scrolled to the end' : '');
+        f.append(img, c); return f;
+      }));
+    });
+  }
+  document.querySelectorAll('[data-festive]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-festive]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    draw(b.dataset.festive);
+  }));
+  draw('');
+</script>
+</body>
+</html>

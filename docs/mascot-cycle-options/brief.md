@@ -151,6 +151,10 @@ All six rank A first. Five rank B last for the held status-like pose; the head c
 | Two staff with the same name, or a rename | Own set each | Preview keys by display name | Risk in preview only | Implementation keys by staff id |
 | Day changes while Home stays open | New action on the next Home view | Not tested | Not evidenced | Implementation test across Queensland midnight |
 
+## Placement mock, 9 November 2026
+
+The owner asked to see different spots at every size before choosing, plus a celebration. [Compare placements](placements.html): heading corner, beside the name, and end of Home, each at 390, 768 and 1280 px, on a normal day and on Christmas Day. Preview, real Home with the click-test stand-in, resting Welcome still only (`placements.js`, `capture-placements.mjs`, `placements-verification.json`). All 18 captures mount, keep every Home rectangle, have no sideways scroll and no JavaScript errors. The mascot is 64 x 85 px in the heading spots at every width (the largest whole-pixel size that fits under the top bar) and 64 or 96 px at the end of Home. On a named Home the celebration keeps its ornaments out of the heading area, so no spot overlaps celebration art; Christmas adds its chalkboard below the date. The council reviewed only the heading corner; the other two spots would need a quick check if chosen.
+
 ## All-three mix and recommendation
 
 | Source and part | Take or reject | Principle and kitchen effect | Cost / evidence |

@@ -1,0 +1,476 @@
+{
+  "kind": "Preview: placement mock in the actual Home page, synthetic data, resting Welcome still only.",
+  "date": "2026-11-09T19:35:45.027Z",
+  "shots": [
+    {
+      "file": "placements/corner-390.png",
+      "kind": "corner",
+      "width": 390,
+      "festive": false,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 310,
+          "y": 71.4375,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/name-390.png",
+      "kind": "name",
+      "width": 390,
+      "festive": false,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 232.875,
+          "y": 71.4375,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/end-390.png",
+      "kind": "end",
+      "width": 390,
+      "festive": false,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 16,
+          "y": 762.6875,
+          "width": 358,
+          "height": 85.328125
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/corner-768.png",
+      "kind": "corner",
+      "width": 768,
+      "festive": false,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 656,
+          "y": 176.25,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/name-768.png",
+      "kind": "name",
+      "width": 768,
+      "festive": false,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 321.609375,
+          "y": 176.25,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/end-768.png",
+      "kind": "end",
+      "width": 768,
+      "festive": false,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 48,
+          "y": 715.828125,
+          "width": 672,
+          "height": 128
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/corner-1280.png",
+      "kind": "corner",
+      "width": 1280,
+      "festive": false,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 1148,
+          "y": 153.84375,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/name-1280.png",
+      "kind": "name",
+      "width": 1280,
+      "festive": false,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 311.34375,
+          "y": 153.84375,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/end-1280.png",
+      "kind": "end",
+      "width": 1280,
+      "festive": false,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 68,
+          "y": 618.234375,
+          "width": 1144,
+          "height": 128
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/corner-christmas-390.png",
+      "kind": "corner",
+      "width": 390,
+      "festive": true,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 310,
+          "y": 71.4375,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/name-christmas-390.png",
+      "kind": "name",
+      "width": 390,
+      "festive": true,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 232.875,
+          "y": 71.4375,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/end-christmas-390.png",
+      "kind": "end",
+      "width": 390,
+      "festive": true,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 16,
+          "y": 923.46875,
+          "width": 358,
+          "height": 85.328125
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/corner-christmas-768.png",
+      "kind": "corner",
+      "width": 768,
+      "festive": true,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 656,
+          "y": 176.25,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/name-christmas-768.png",
+      "kind": "name",
+      "width": 768,
+      "festive": true,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 321.609375,
+          "y": 176.25,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/end-christmas-768.png",
+      "kind": "end",
+      "width": 768,
+      "festive": true,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 48,
+          "y": 851.015625,
+          "width": 672,
+          "height": 128
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/corner-christmas-1280.png",
+      "kind": "corner",
+      "width": 1280,
+      "festive": true,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 1148,
+          "y": 153.84375,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/name-christmas-1280.png",
+      "kind": "name",
+      "width": 1280,
+      "festive": true,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 311.34375,
+          "y": 153.84375,
+          "width": 64,
+          "height": 85.328125
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    },
+    {
+      "file": "placements/end-christmas-1280.png",
+      "kind": "end",
+      "width": 1280,
+      "festive": true,
+      "state": {
+        "mounted": true,
+        "why": null,
+        "rect": {
+          "x": 68,
+          "y": 703.421875,
+          "width": 1144,
+          "height": 128
+        }
+      },
+      "overlapsOrnaments": [],
+      "errors": []
+    }
+  ],
+  "checks": [
+    {
+      "name": "corner-390 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "corner-390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "name-390 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "name-390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "end-390 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "end-390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "corner-768 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "corner-768 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "name-768 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "name-768 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "end-768 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "end-768 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "corner-1280 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "corner-1280 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "name-1280 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "name-1280 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "end-1280 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "end-1280 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "corner-christmas-390 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "corner-christmas-390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "name-christmas-390 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "name-christmas-390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "end-christmas-390 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "end-christmas-390 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "corner-christmas-768 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "corner-christmas-768 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "name-christmas-768 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "name-christmas-768 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "end-christmas-768 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "end-christmas-768 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "corner-christmas-1280 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "corner-christmas-1280 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "name-christmas-1280 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "name-christmas-1280 no sideways scroll",
+      "pass": true
+    },
+    {
+      "name": "end-christmas-1280 keeps every Home rectangle",
+      "pass": true
+    },
+    {
+      "name": "end-christmas-1280 no sideways scroll",
+      "pass": true
+    }
+  ]
+}
