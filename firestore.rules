@@ -1517,28 +1517,35 @@ service cloud.firestore {
     function supLinkDoc(day, cid) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/supplierlinks/$(day + '_' + cid); }
     function supCutDoc(day, cid) { return /databases/$(database)/documents/kitchens/KITCHEN_PIN/cutdone/$(day + '_' + cid); }
     function supHistoryOk(sid, d) {
-      return !d.keys().hasAny(['historyFrom', 'historyBefore'])
+      return !d.keys().hasAny(['historyFrom', 'historyBefore', 'historyItems'])
         || (d.keys().hasAll(['historyFrom', 'historyBefore']) && supId(d.historyFrom) && d.historyFrom != sid
           && d.historyBefore is number && d.historyBefore > 0 && d.historyBefore < 9007199254740991
-          && d.historyBefore <= d.at);
+          && d.historyBefore <= d.at && (!d.keys().hasAny(['historyItems'])
+            || (d.historyItems is map && d.historyItems.size() > 0 && d.historyItems.size() <= 600)));
     }
-    // A new split has one immutable parent and cutoff. Both catalogue revisions and audits commit together.
+    // A first split has one immutable parent, cutoff and optional item map. Both revisions and audits commit together.
     function supSplitPair() {
       let d = request.resource.data;
       let p = supDoc(d.historyFrom);
       let old = get(p).data;
       let next = getAfter(p).data;
-      return exists(p) && old.get('historyFrom', '') == '' && next.v == old.v + 1
+      return exists(p) && !old.keys().hasAny(['historyFrom', 'historyBefore', 'historyItems']) && next.v == old.v + 1
+        && !next.keys().hasAny(['historyFrom', 'historyBefore', 'historyItems'])
         && next.at == d.at && next.by == d.by && d.historyBefore == d.at;
     }
     function supHistoryUnchanged() {
       let d = request.resource.data;
       return d.get('historyFrom', '') == resource.data.get('historyFrom', '')
-        && d.get('historyBefore', 0) == resource.data.get('historyBefore', 0);
+        && d.get('historyBefore', 0) == resource.data.get('historyBefore', 0)
+        && d.get('historyItems', {}) == resource.data.get('historyItems', {});
+    }
+    function supHistoryAttach() {
+      return !resource.data.keys().hasAny(['historyFrom', 'historyBefore', 'historyItems'])
+        && request.resource.data.keys().hasAll(['historyFrom', 'historyBefore']) && supSplitPair();
     }
     function supCatalogueOk(sid) {
       let d = request.resource.data;
-      return supId(sid) && d.keys().hasOnly(['name', 'cutoffId', 'v', 'items', 'at', 'by', 'historyFrom', 'historyBefore'])
+      return supId(sid) && d.keys().hasOnly(['name', 'cutoffId', 'v', 'items', 'at', 'by', 'historyFrom', 'historyBefore', 'historyItems'])
         && d.name is string && d.name.size() > 0 && d.name.size() <= 80
         && supString(d, 'cutoffId', 40) && (d.cutoffId == '' || d.cutoffId.matches('[a-z0-9-]{1,40}'))
         && d.v is int && d.v > 0 && d.items is list && d.items.size() <= 600
@@ -1612,8 +1619,9 @@ service cloud.firestore {
       allow create: if supEdit() && supCatalogueOk(sid)
         && (isAdmin() || (request.resource.data.v == 1 && supCatalogueAudit(sid)
           && (!request.resource.data.keys().hasAny(['historyFrom', 'historyBefore']) || supSplitPair())));
-      allow update: if supEdit() && supCatalogueOk(sid) && supHistoryUnchanged() && ((isAdmin() && request.resource.data == resource.data)
-        || (request.resource.data.v == resource.data.v + 1 && request.resource.data.at > resource.data.at && supCatalogueAudit(sid)));
+      allow update: if supEdit() && supCatalogueOk(sid) && ((isAdmin() && request.resource.data == resource.data)
+        || (request.resource.data.v == resource.data.v + 1 && request.resource.data.at > resource.data.at && supCatalogueAudit(sid)
+          && (supHistoryUnchanged() || supHistoryAttach())));
       allow delete: if false;
       match /audit/{revision} {
         allow read: if supRead();

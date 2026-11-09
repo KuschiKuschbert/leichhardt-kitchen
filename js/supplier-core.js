@@ -131,7 +131,7 @@
     return out;
   }
   function cleanSupplier(value, previous) {
-    keys(value, ['id', 'name', 'cutoffId', 'v', 'items', 'at', 'by', 'historyFrom', 'historyBefore'], 'supplier');
+    keys(value, ['id', 'name', 'cutoffId', 'v', 'items', 'at', 'by', 'historyFrom', 'historyBefore', 'historyItems'], 'supplier');
     if (!Array.isArray(value.items) || value.items.length > MAX_ITEMS) fail('items', 'items', 'Use no more than ' + MAX_ITEMS + ' items per supplier.');
     var seen = Object.create(null), old = Object.create(null);
     if (previous) (previous.items || []).forEach(function (x) { old[x.id] = x; });
@@ -141,15 +141,31 @@
       seen[item.id] = true; return item;
     }), at: value.at == null ? 0 : value.at, by: text(value.by, 80, 'by') };
     if (typeof out.at !== 'number' || !isFinite(out.at) || out.at < 0) fail('number', 'at', 'Check the saved time.');
-    if (own(value, 'historyFrom') || own(value, 'historyBefore')) {
+    if (own(value, 'historyFrom') || own(value, 'historyBefore') || own(value, 'historyItems')) {
       if (!own(value, 'historyFrom') || !own(value, 'historyBefore')) fail('history', 'historyFrom', 'Keep the supplier history link and its time together.');
       out.historyFrom = id(value.historyFrom, 'historyFrom');
       out.historyBefore = value.historyBefore;
       if (out.historyFrom === out.id || typeof out.historyBefore !== 'number' || !isFinite(out.historyBefore) || out.historyBefore <= 0 || out.historyBefore >= 9007199254740991 || out.historyBefore > out.at) fail('history', 'historyBefore', 'Use the original supplier history link and split time.');
     }
+    if (own(value, 'historyItems')) {
+      var historyKeys = plain(value.historyItems) ? Object.keys(value.historyItems) : [];
+      if (!historyKeys.length || historyKeys.length > MAX_ITEMS) fail('history', 'historyItems', 'Use between 1 and ' + MAX_ITEMS + ' original item links.');
+      var targets = Object.create(null);
+      out.historyItems = {};
+      historyKeys.forEach(function (key) {
+        id(key, 'historyItems');
+        var target = id(value.historyItems[key], 'historyItems.' + key);
+        if (!own(seen, target) || own(targets, target)) fail('history', 'historyItems', 'Link each original item to a different saved destination item.');
+        targets[target] = true; out.historyItems[key] = target;
+      });
+    }
     if (previous) {
       if (out.id !== previous.id) fail('immutable', 'supplier.id', 'Keep the saved supplier ID.');
       if (out.historyFrom !== previous.historyFrom || out.historyBefore !== previous.historyBefore) fail('immutable', 'historyFrom', 'Keep the original supplier history link and split time.');
+      if (own(out, 'historyItems') !== own(previous, 'historyItems')) fail('immutable', 'historyItems', 'Keep the original item history links.');
+      if (own(out, 'historyItems') && (!plain(previous.historyItems) || historyKeys.length !== Object.keys(previous.historyItems).length || historyKeys.some(function (key) {
+        return !own(previous.historyItems, key) || out.historyItems[key] !== previous.historyItems[key];
+      }))) fail('immutable', 'historyItems', 'Keep the original item history links.');
       Object.keys(old).forEach(function (key) { if (!own(seen, key)) fail('archive', 'items', 'Archive a saved item instead of removing it.'); });
     }
     return out;
@@ -174,6 +190,29 @@
     return { version: 1, suppliers: suppliers };
   }
   function normaliseName(v) { return String(v == null ? '' : v).trim().toLowerCase().replace(/\s+/g, ' '); }
+  // A split may attach to an existing entry. Resolve only its supplier ID; item provenance is checked by the split planner.
+  function resolveCatalogueDestinations(value, existing) {
+    var payload = validateCatalogue(value), byId = Object.create(null), names = Object.create(null), reuses = [];
+    if (!Array.isArray(existing) || existing.length > 50) fail('items', 'suppliers', 'Read the current supplier catalogue before matching destinations.');
+    existing.forEach(function (entry) {
+      var saved = cleanSupplier(entry), name = normaliseName(saved.name);
+      if (own(byId, saved.id)) fail('duplicate', 'supplier.id', 'Each supplier needs its own ID.');
+      byId[saved.id] = saved;
+      if (!own(names, name)) names[name] = [];
+      names[name].push(saved);
+    });
+    payload.suppliers.forEach(function (entry) {
+      if (!own(entry, 'splitFrom') || own(byId, entry.id)) return;
+      var matches = names[normaliseName(entry.name)] || [];
+      if (matches.length > 1) fail('supplier-ambiguous', 'supplier.name', entry.name + ' matches more than one saved supplier. Check the destination before importing.');
+      if (!matches.length) return;
+      var saved = matches[0];
+      if (entry.cutoffId && entry.cutoffId !== saved.cutoffId) fail('cutoff-conflict', 'cutoffId', entry.name + ' has a different saved reminder. Check the destination before importing.');
+      reuses.push({ incomingId: entry.id, id: saved.id, name: saved.name });
+      entry.id = saved.id;
+    });
+    return { payload: validateCatalogue(payload), reuses: reuses };
+  }
   // A private order-only file contains names and packs, never replacement catalogue items or quantities.
   function validateTemplateOrder(value) {
     keys(value, ['version', 'kind', 'templates'], 'template order');
@@ -215,11 +254,12 @@
     });
     Object.keys(names).forEach(function (key) {
       names[key] = names[key].filter(function (origin, index, candidates) {
-        // A split retains an archived source copy. The direct child's current copy owns that stable ID,
+        // A split retains an archived source copy. The direct child's mapped or legacy copy owns its history,
         // including when the child later archives it; unrelated archived duplicates remain ambiguous.
         return !origin.item.archived || !candidates.some(function (candidate) {
-          return candidate.sid !== origin.sid && candidate.item.id === origin.item.id
-            && byId[candidate.sid].supplier.historyFrom === origin.sid;
+          var child = byId[candidate.sid].supplier;
+          return candidate.sid !== origin.sid && child.historyFrom === origin.sid
+            && (own(child, 'historyItems') ? own(child.historyItems, origin.item.id) && child.historyItems[origin.item.id] === candidate.item.id : candidate.item.id === origin.item.id);
         });
       });
     });
@@ -327,5 +367,5 @@
     if (!old && !changes.length) changes.push({ itemId: '', action: 'add_supplier', before: null, after: { name: next.name, cutoffId: next.cutoffId } });
     return changes;
   }
-  return { API: 5, MAX_ITEMS: MAX_ITEMS, MAX_ORDER_LINES: MAX_ORDER_LINES, cleanPar: cleanPar, normaliseUnit: normaliseUnit, parseQuantity: parseQuantity, parseStock: parseStock, convert: convert, cleanItem: cleanItem, cleanSupplier: cleanSupplier, validateCatalogue: validateCatalogue, validateTemplateOrder: validateTemplateOrder, planTemplateOrder: planTemplateOrder, normaliseName: normaliseName, duplicateItems: duplicateItems, matchRequests: matchRequests, snapshotLines: snapshotLines, suggestQuantity: suggestQuantity, catalogueDiff: catalogueDiff };
+  return { API: 6, MAX_ITEMS: MAX_ITEMS, MAX_ORDER_LINES: MAX_ORDER_LINES, cleanPar: cleanPar, normaliseUnit: normaliseUnit, parseQuantity: parseQuantity, parseStock: parseStock, convert: convert, cleanItem: cleanItem, cleanSupplier: cleanSupplier, validateCatalogue: validateCatalogue, resolveCatalogueDestinations: resolveCatalogueDestinations, validateTemplateOrder: validateTemplateOrder, planTemplateOrder: planTemplateOrder, normaliseName: normaliseName, duplicateItems: duplicateItems, matchRequests: matchRequests, snapshotLines: snapshotLines, suggestQuantity: suggestQuantity, catalogueDiff: catalogueDiff };
 });
