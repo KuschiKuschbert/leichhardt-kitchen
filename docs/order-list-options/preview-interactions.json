@@ -1,0 +1,68 @@
+{
+  "kind": "Prototype interaction checks, not app or server verification",
+  "checks": [
+    "a: one item tick never places a supplier order",
+    "a: item tick preserves every row height and position in list",
+    "a: item Undo restores request",
+    "a: supplier confirmation leaves all requests pending",
+    "a: supplier Undo works independently",
+    "a: Add form opens in one tap",
+    "a: amount stays optional and submit is the second tap",
+    "a: Escape closes form and returns focus",
+    "a: offline supplier confirmations are disabled",
+    "a: offline item tick reports Not sent without successful completion",
+    "a: early confirmation explicitly names tomorrow",
+    "b: one item tick never places a supplier order",
+    "b: item tick preserves every row height and position in list",
+    "b: item Undo restores request",
+    "B: View moves focus to the full deadline block",
+    "b: supplier confirmation leaves all requests pending",
+    "b: supplier Undo works independently",
+    "b: Add form opens in one tap",
+    "b: amount stays optional and submit is the second tap",
+    "b: Escape closes form and returns focus",
+    "b: offline supplier confirmations are disabled",
+    "b: offline item tick reports Not sent without successful completion",
+    "b: early confirmation explicitly names tomorrow",
+    "c: one item tick never places a supplier order",
+    "c: item tick preserves every row height and position in list",
+    "c: item Undo restores request",
+    "c: supplier confirmation leaves all requests pending",
+    "c: supplier Undo works independently",
+    "c: Add form opens in one tap",
+    "c: amount stays optional and submit is the second tap",
+    "c: Escape closes form and returns focus",
+    "c: offline supplier confirmations are disabled",
+    "c: offline item tick reports Not sent without successful completion",
+    "c: early confirmation explicitly names tomorrow",
+    "Standalone download renders all three comparison frames",
+    "No JavaScript errors during interaction checks"
+  ],
+  "tasks": [
+    {
+      "design": "a",
+      "addFormEntry": 1,
+      "addThroughSubmitExcludingTypingAndClose": 2,
+      "itemOrdered": 1,
+      "supplierPlacedPhoneFromInitialState": 1,
+      "supplierPlacedDesktopFromInitialState": 1
+    },
+    {
+      "design": "b",
+      "addFormEntry": 1,
+      "addThroughSubmitExcludingTypingAndClose": 2,
+      "itemOrdered": 1,
+      "supplierPlacedPhoneFromInitialState": 2,
+      "supplierPlacedDesktopFromInitialState": 1
+    },
+    {
+      "design": "c",
+      "addFormEntry": 1,
+      "addThroughSubmitExcludingTypingAndClose": 2,
+      "itemOrdered": 1,
+      "supplierPlacedPhoneFromInitialState": 2,
+      "supplierPlacedDesktopFromInitialState": 2
+    }
+  ],
+  "errors": []
+}

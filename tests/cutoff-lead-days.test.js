@@ -33,6 +33,11 @@ async function save(p, pre) {
   await L.waitFor(p, ({ key, value }) => window.__fake.dump()[key]?.cutoffs?.[0]?.pre === value && /^Saved \d\d:\d\d$/.test(document.querySelector('.a-cut .lk-stamp')?.textContent || ''), { key: CFG, value: pre }, 10000);
 }
 
+async function openCutoffs(p) {
+  await L.waitFor(p, () => !!document.querySelector('.o-cut-fold > summary'), null, 10000);
+  if (!(await p.$eval('.o-cut-fold', e => e.open))) await p.click('.o-cut-fold > summary');
+}
+
 (async () => {
   ok(CUT.MAX_PRE === 14, 'shared cutoff range reaches 14 days');
   const valid = Array.from({ length: 15 }, (_, pre) => makeCut(pre));
@@ -94,8 +99,8 @@ async function save(p, pre) {
 
   // The delivery is two weeks later, but the reminder, completion and snapshot belong to this cutoff day.
   p = await L.open(b, '#/orders', { who: 'bo', extra: fixture([makeCut(14)]), clock: testClock, wait: 1500 });
-  await L.waitFor(p, () => !!document.querySelector('#cut-band:not([hidden]) .cut-row') && !!document.querySelector('.cut-tl'), null, 10000);
-  ok(/for Sun 10 Jan/.test(await txt(p, '#cut-band')) && /for Sun 10 Jan/.test(await txt(p, '.cut-tl')), 'bar and order-list reminders name the delivery date two weeks away');
+  await openCutoffs(p);
+  ok(!(await p.$('#cut-band:not([hidden])')) && /for Sun 10 Jan/.test(await txt(p, '.cut-tl')), 'the expanded order-list reminder names the delivery date two weeks away, without a duplicate bar');
   ok((await domainWrites(p)).length === 0, 'showing two-week reminders creates no order or completion');
   const occurrences = await p.evaluate(() => window.LK_PREP.supplier().occurrences());
   const occurrence = occurrences.find(x => x.day === testDay && x.cutoffId === 'northside');

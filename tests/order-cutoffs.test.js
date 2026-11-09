@@ -26,6 +26,7 @@ const CUTS = [
 ];
 const withCuts = (cuts) => ({ [CFG]: { people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, cutoffs: cuts } });
 const bad = p => p.evaluate(() => ({ i: document.querySelectorAll('#pwn').length, img: document.querySelectorAll('img[src="x"]').length, attr: document.querySelectorAll('[data-pwn]').length, run: !!window.__pwn }));
+async function openCuts(p) { await L.waitFor(p, () => !!document.querySelector('.o-cut-fold'), null, 10000); if (!(await p.$eval('.o-cut-fold', e => e.open))) { await p.click('.o-cut-fold > summary'); await L.settle(p, 200); } }
 const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cut-n')].map(e => e.textContent));
 
 (async () => {
@@ -51,21 +52,26 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
   // the order list: every cut-off today as a tick list; ticking PFD there takes it off the bar for today
   await p.evaluate(() => { location.hash = '#/orders'; });
   await L.waitFor(p, () => !!document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="pfd|"]'), null, 10000);
+  ok(!(await p.$eval('.o-cut-fold', e => e.open)) && !(await p.$('#cut-band:not([hidden])')), 'Orders starts with compact cut-offs closed and no duplicate bar');
+  await openCuts(p);
   await p.click('.cut-tl [data-p="cut-tick"][data-id^="pfd|"]');
   await L.waitFor(p, k => { const d = window.__fake.dump()[k]; return d && d.on === true; }, fsKey(['cutdone', L.ymd(new Date(L.NOW)) + '_pfd']), 10000);
-  await L.waitFor(p, () => !document.querySelector('#cut-band a.cut-n[href*="/pfd/"]'), null, 10000);
+  await p.evaluate(() => { location.hash = '#/recipes'; });
+  await L.waitFor(p, () => document.querySelectorAll('#cut-band .cut-n').length === 2, null, 10000);
   n = await names(p);
-  ok(n.length === 2 && n[0].indexOf('Veg') === 0, 'Ordered: PFD leaves the bar');
+  ok(n.length === 2 && n[0].indexOf('Veg') === 0, 'Ordered on Orders: PFD leaves the bar on other pages');
+  await p.evaluate(() => { location.hash = '#/orders'; });
+  await openCuts(p);
   // the one at 13:00 Closed, the ordered one ticked by Sam
-  const tl = await p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].map(e => e.textContent));
-  ok(tl.length === 5 && /^Chickenby 13:00.*Closed, not ticked$/.test(tl[0]) && /^✓PFDby 15:00.*Ordered by Sam, \d\d:\d\d$/.test(tl[1]) && /Late Meatsby 20:00/.test(tl[4]), 'order list: today\'s cut-offs in time order, as a tick list (' + tl.join(' | ') + ')');
+  const tl = await p.evaluate(() => [...document.querySelectorAll('.cut-tl li')].map(e => e.querySelector('.cut-n').textContent + e.querySelector('.cut-t').textContent + e.querySelector('.cut-st').textContent));
+  ok(tl.length === 5 && /^Chickenby 13:00.*Closed, not confirmed$/.test(tl[0]) && /^PFDby 15:00.*Ordered by Sam, \d\d:\d\d$/.test(tl[1]) && /Late Meatsby 20:00/.test(tl[4]), 'order list: today\'s cut-offs in time order, as a tick list (' + tl.join(' | ') + ')');
   ok(await p.$eval('.cut-tl li:nth-child(2) .cut-box', e => e.getAttribute('aria-pressed') === 'true'), 'order list: PFD\'s box is ticked');
   ok(!tl.some(t => /Other Day|To Come/.test(t)), 'order list: another day\'s and a to-come cut-off are left off');
-  ok(!!(await p.$('#cut-band:not([hidden])')), 'order list: the bar is there too');
+  ok(!(await p.$('#cut-band:not([hidden])')), 'order list: the compact cut-offs replace the duplicate bar');
   await p.context().close();
 
   // a fresh phone at 14:50: PFD is 10 minutes away and marked soon
-  p = await L.open(b, '#/orders', { who: 'sam', extra: withCuts(CUTS), wait: 1500, clock: L.NOW + 50 * 60000 });
+  p = await L.open(b, '#/recipes', { who: 'sam', extra: withCuts(CUTS), wait: 1500, clock: L.NOW + 50 * 60000 });
   await L.waitFor(p, () => { const e = document.getElementById('cut-band'); return e && !e.hidden; }, null, 10000);
   ok(await p.$eval('#cut-band .cut-row', e => e.classList.contains('is-soon') && /in 10 min/.test(e.textContent)), 'ten minutes out: the cut-off is marked soon');
   await p.context().close();
@@ -89,10 +95,13 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
   ok(/by tomorrow 06:00 in 7 h 30 min/.test(await txt(p, '#cut-band .cut-row')), 'early cut-off: on the bar at 22:30 the night before, as tomorrow 06:00');
   await p.evaluate(() => { location.hash = '#/orders'; });
   await L.waitFor(p, () => !!document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="early|"]'), null, 10000);
+  await openCuts(p);
   await p.click('.cut-tl [data-p="cut-tick"][data-id^="early|"]');
   await L.waitFor(p, k => { const d = window.__fake.dump()[k]; return d && d.on === true; }, fsKey(['cutdone', L.ymd(new Date(L.NOW + 86400000)) + '_early']), 10000);
   await p.reload(); await L.settle(p, 1500);
-  ok(!(await p.$('#cut-band:not([hidden])')), 'early cut-off: Ordered the night before holds after a reload');
+  await L.waitFor(p, () => document.querySelector('.cut-tl [data-id^="early|"]')?.getAttribute('aria-pressed') === 'true', null, 10000);
+  await p.evaluate(() => { location.hash = '#/recipes'; }); await L.settle(p, 300);
+  ok(!(await p.$('#cut-band:not([hidden])')), 'early cut-off: Ordered the night before holds after a reload and suppresses the reminder on other pages');
   await p.context().close();
 
   // Ann, staff: no bar and no cut-offs on the order list
@@ -142,4 +151,4 @@ const names = p => p.evaluate(() => [...document.querySelectorAll('#cut-band .cu
 
   await b.close();
   L.report(R);
-})();
+})().catch(e => { console.error(e); process.exit(1); });

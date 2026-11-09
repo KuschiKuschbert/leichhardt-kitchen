@@ -5,7 +5,7 @@ const L = require('./lib');
 const F = require('./supplier-fixtures');
 const { R, ok } = L.results();
 const button = '.cut-tl [data-p="cut-tick"][data-id^="northside|"]';
-const reminder = '#cut-band a.cut-n[href*="/northside/"]';
+const reminder = '.o-cut-fold .cut-o:not(.is-done) a.cut-n[href*="/northside/"]';
 const completion = F.key(['cutdone', F.today + '_northside']);
 const qty = 'input[data-sf="qty"][data-i="t-stock"]';
 const stock = 'input[data-sf="stock"][data-i="t-stock"]';
@@ -14,16 +14,20 @@ const protectedRecords = s => JSON.stringify(Object.entries(s).filter(([k]) => /
 const writes = (p, key) => p.evaluate(k => window.__fake.writes.flat().filter(o => o.path === k), key || completion);
 const supplierReads = p => p.evaluate(() => window.__fake.reads.filter(k => /\/(suppliers|supplierlinks)(\/|$)/.test(k)));
 const undo = p => p.getByRole('button', { name: 'Undo', exact: true });
-async function ready(p) { await L.waitFor(p, () => { const t = document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="northside|"]'); return !!t && t.getAttribute('aria-pressed') === 'false'; }, null, 10000); }
+async function ready(p) { await openCutoffs(p); await L.waitFor(p, () => { const t = document.querySelector('.cut-tl [data-p="cut-tick"][data-id^="northside|"]'); return !!t && t.getAttribute('aria-pressed') === 'false'; }, null, 10000); }
 const ticked = p => p.evaluate(s => { const t = document.querySelector(s); return !!t && t.getAttribute('aria-pressed') === 'true'; }, button);
 async function saved(p, key, on) {
   await L.waitFor(p, ([k, v]) => { const d = window.__fake.dump()[k]; return d && d.on === v; }, [key || completion, on !== false], 10000);
 }
 async function undoReady(p) { await undo(p).waitFor({ state: 'visible' }); }
 async function open(b, hash, options) { return L.open(b, hash || '#/orders', Object.assign({ who: 'sam', extra: F.fixture(), wait: 1500 }, options || {})); }
-// blocked: the test blocks the supplier tools, which the order list asks for to group a chef's requests (5 Nov 2026), so
-// the browser's own note that they failed to load is expected there, and nothing else is
-async function noErrors(p, label, blocked) { const e = p.errors.filter(x => !(blocked && /Failed to load resource: net::ERR_FAILED/.test(x))); ok(e.length === 0, label + ': no page errors ' + e.join(' | ')); }
+// Orders does not load supplier tools, even when their requests would fail.
+async function noErrors(p, label) { ok(p.errors.length === 0, label + ': no page errors ' + p.errors.join(' | ')); }
+
+async function openCutoffs(p) {
+  await L.waitFor(p, () => !!document.querySelector('.o-cut-fold > summary'), null, 10000);
+  if (!(await p.$eval('.o-cut-fold', e => e.open))) await p.click('.o-cut-fold > summary');
+}
 
 (async () => {
   const b = await L.start();
@@ -36,7 +40,7 @@ async function noErrors(p, label, blocked) { const e = p.errors.filter(x => !(bl
     p = await open(b, '#/orders', { extra, block: 'js/supplier-(core|store)\\.js|js/suppliers\\.js', denyReads: '/suppliers$' });
     await ready(p);
     before = protectedRecords(await dump(p));
-    ok(!!(await p.$(reminder)) && !(await p.$('#cut-band button')), (linked ? 'linked' : 'unlinked') + ': the bar keeps the reminder, with no tick of its own');
+    ok(!!(await p.$(reminder)) && !(await p.$('#cut-band:not([hidden])')), (linked ? 'linked' : 'unlinked') + ': the disclosure keeps the pending reminder without a duplicate bar');
     await p.click(button); await saved(p); await undoReady(p);
     after = await dump(p);
     ok(after[completion].by === 'sam' && after[completion].day === F.today && after[completion].sid === 'northside', (linked ? 'linked' : 'unlinked') + ': saves this chef and the exact occurrence');
@@ -44,7 +48,7 @@ async function noErrors(p, label, blocked) { const e = p.errors.filter(x => !(bl
     ok(before === protectedRecords(after), 'completion creates no order history, changes no staff requests and leaves catalogue data untouched');
     ok(await p.evaluate(() => location.hash === '#/orders' && !window.LK_SUP_CORE && !window.LK_SUP_STORE && !window.LK_SUP), (linked ? 'linked' : 'unlinked') + ': the tick stays on the order list without loading supplier tools or opening the supplier sheet');
     ok((await supplierReads(p)).length === 0, 'completion needs no catalogue or order history reads');
-    ok(await ticked(p) && !(await p.$(reminder)), 'completion ticks the list and removes the reminder from the bar');
+    ok(await ticked(p) && !(await p.$(reminder)), 'completion marks the cut-off done and removes it from the pending reminders');
     await undo(p).click(); await saved(p, completion, false); await ready(p);
     ok(protectedRecords(await dump(p)) === before, 'Undo restores the reminder without touching orders or history');
     ok((await writes(p)).length === 2 && (await writes(p))[1].data.on === false, 'completion and Undo make one reminder write each');
@@ -70,7 +74,7 @@ async function noErrors(p, label, blocked) { const e = p.errors.filter(x => !(bl
   before = protectedRecords(await dump(p));
   await p.evaluate(() => { window.__fake.deny = /\/cutdone\//; });
   await p.click(button);
-  await L.waitFor(p, () => /Not saved|Not ticked|Could not/i.test(document.body.textContent) && !!document.querySelector('#cut-band a.cut-n[href*="/northside/"]'), null, 10000);
+  await L.waitFor(p, () => /Not saved|Not ticked|Could not/i.test(document.body.textContent) && !!document.querySelector('.o-cut-fold .cut-o:not(.is-done) a.cut-n[href*="/northside/"]'), null, 10000);
   ok(!(await dump(p))[completion] && !(await ticked(p)) && !!(await p.$(reminder)), 'a refused save restores the reminder and the tick, and records no completion');
   ok(await undo(p).count() === 0 && protectedRecords(await dump(p)) === before, 'a failed save offers no successful Undo and changes no order data');
   await p.evaluate(() => { window.__fake.deny = null; });
