@@ -38,7 +38,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Head-set section minimums, Prep room, smart matching and Before service | `docs/prep-standards.md`, `docs/prep-par-options/brief.md` |
 | Today's team and its chosen notebook, council and build record | `docs/todays-team-options/brief.md`, `docs/team-notebook-options/brief.md` (Chosen, Build, council), `docs/prep-book.md` (Today's team) |
 | Planning staff sections ahead, dated drafts, week picker and read costs | `docs/team-week-options/brief.md` (chosen A, implementation and verification) |
-| Cleaning page, Guides navigation move and council | `docs/cleaning-options/brief.md` (chosen C + A), `docs/cleaning-options/implementation.md`, `docs/cleaning-options/release-toggle.md` |
+| Cleaning page, ordered pack down, repeat schedule, checks, Pass verification and team release | `docs/cleaning-schedule.md`, `docs/cleaning-options/brief.md` (chosen C + A), `docs/cleaning-options/implementation.md`, `docs/cleaning-options/release-toggle.md`; keep unbranded templates in `js/cleaning-schedule.js`, separate from history; anchored intervals must agree in client and rules |
 | Chef to-do notebook layout | `docs/chef-todo-options/brief.md` (Chosen, implementation contract) |
 | Drinks run notebook style | `docs/drinks-notebook.md`, `docs/code-contracts.md` (Drinks run) |
 | Recipe amounts, the recipe and drawing editor, the drawing studio, smoker batches | `docs/recipe-multiplier.md`, `docs/recipe-editor-options/brief.md`, `docs/studio-options/brief.md`, `docs/smoker-batches.md` |

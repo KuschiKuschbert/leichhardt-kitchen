@@ -33,6 +33,13 @@ extra[fsKey(['cleaningTasks', 'x1'])] = { root: 'x1', prev: '', next: '', text: 
   from: Date.parse(today + 'T00:00:00+10:00'), until: 253402178400000, at: L.NOW - 600000, by: 'sam' };
 extra[fsKey(['cleaningDone', today + '_x1'])] = { day: today, task: 'x1', version: 1, done: true, doneAt: L.NOW - 60000,
   doneById: 'ann', doneBy: 'Recorder ' + P, workerId: 'ann', worker: 'Worker ' + P, by: 'ann' };
+// Enhanced cleaning instructions and exception notes are still data, including inside inline disclosures and inputs.
+extra[fsKey(['cleaningTasks', 'x2'])] = { ...extra[fsKey(['cleaningTasks', 'x1'])], root: 'x2', text: 'Checked cleaning ' + P,
+  guide: '', plan: { template: 'synthetic-safe-text', method: 'Method ' + P, responsibility: 'Role ' + P,
+    checks: ['Check ' + P], timing: 'daily', verification: false, verifiers: [], review: 'Review ' + P } };
+extra[fsKey(['cleaningDone', today + '_x2__daily'])] = { day: today, task: 'x2', version: 1, done: false,
+  doneAt: 0, doneById: '', doneBy: '', workerId: '', worker: '', by: 'ann',
+  flow: { slot: 'daily', kind: 'daily', status: 'blocked', checked: [], note: 'Blocked ' + P, verifiedBy: '', verifiedAt: 0 } };
 Object.assign(extra, L.wasteSum([{ t: 'Often ' + P, n: 3, r: { prep: 3 }, unit: 'kg', reason: 'prep', sec: 'Sec' + P, amt: 1, last: { unit: 'kg', reason: 'prep', sec: 'Sec' + P, amt: 1 } }]));
 
 // what a page must not have: the marker element, an injected image, an attribute broken out of its quotes, the handler run
@@ -67,8 +74,14 @@ async function check(b, hash, o, name, see, then) {
     await L.waitFor(p, () => !!document.querySelector('.cln-row'));
     const words = await L.txt(p, '.cln-page');
     ok(words.includes('Area ' + P) && words.includes('Worker ' + P) && words.includes('Section ' + P), 'cleaning: area, worker and responsible section remain literal text');
+    await L.tap(p, '[data-cln="details"][data-id="x2"]');
+    const details = await L.txt(p, '.cln-plan-row[data-id="x2"]');
+    ok(['Method ', 'Role ', 'Check ', 'Review '].every(label => details.includes(label + P)), 'cleaning details: method, responsibility, required checks and clarification remain literal text');
+    ok(await p.inputValue('textarea[data-cln-note][data-id="x2"]') === 'Blocked ' + P, 'cleaning details: the saved blocked reason remains a literal textarea value');
     await L.tap(p, '[data-cln="setup"]'); await L.tap(p, '[data-cln="edit"][data-id="x1"]');
     ok(await p.inputValue('#cln-text') === 'Cleaning ' + P && await p.inputValue('#cln-area') === 'Area ' + P, 'cleaning editor: saved text and area remain literal input values');
+    await L.tap(p, '[data-cln="edit"][data-id="x2"]');
+    ok(await p.inputValue('#cln-method') === 'Method ' + P && await p.inputValue('#cln-responsibility') === 'Role ' + P && await p.inputValue('#cln-checks') === 'Check ' + P && await p.inputValue('#cln-review') === 'Review ' + P, 'cleaning editor: enhanced method, responsibility, checks and clarification remain literal input values');
   });
   await check(b, '#/drinks', { who: 'sam' }, 'drinks run', null);
   await check(b, '#/todo', { who: 'sam' }, 'chef to-do', 'Todo', async p => { await L.waitFor(p, () => !!document.querySelector('.todo-row'), null, 5000).catch(() => {}); await L.tap(p, '.todo-donebox summary'); await L.waitFor(p, () => !!document.querySelector('[data-lv="tododone"] .todo-row'), null, 5000).catch(() => {}); });

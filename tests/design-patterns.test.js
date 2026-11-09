@@ -28,7 +28,7 @@ const CLASSES = [
   'todo-notebook', 'todo-book', 'todo-bookhead', 'todo-spine', 'todo-work', 'todo-formtitle', 'todo-status', 'todo-privacy',
   'tm-notebook', 'tm-nbook', 'tm-nhead', 'tm-nspine', 'tm-work', 'tm-viewbar', 'tm-shift-scroll', 'tm-person-pick', 'tm-dayperson', 'tm-away-slot',
   'tm-weeknav', 'tm-daypick',
-  'cln-page', 'cln-book', 'cln-row', 'cln-matrix', 'cln-day-pick', 'cln-form',
+  'cln-page', 'cln-book', 'cln-row', 'cln-matrix', 'cln-day-pick', 'cln-form', 'cln-detail', 'cln-task-detail', 'cln-occurrence', 'cln-checks', 'cln-import', 'cln-packdown', 'cln-packdown-title', 'cln-temperature',
   'dr-notebook', 'dr-book', 'dr-bookhead', 'dr-usual', 'dr-work', 'dr-spine', 'dr-people'
 ];
 const TOKENS = ['--ink', '--paper', '--bg', '--muted', '--faint', '--line', '--accent', '--accent-ink', '--tag', '--done', '--done-ink',

@@ -1,0 +1,949 @@
+{
+  "note": "Synthetic test identities, fixed kitchen clock, test font stand-in. Before uses committed app/cleaning/CSS with identical task labels. Counts exclude fixed mobile tabs.",
+  "taps": {
+    "ordinaryPersonalComplete": {
+      "before": 1,
+      "after": 1
+    },
+    "checkedDailyComplete": {
+      "disclosure": 1,
+      "checks": "one per required check",
+      "record": 1
+    },
+    "repeatingComplete": {
+      "disclosure": 1,
+      "addOccurrence": 1,
+      "checks": "one per required check",
+      "record": 1
+    }
+  },
+  "measurements": [
+    {
+      "phase": "before",
+      "fontNote": "Identical browser-test font stand-in in both captures; no external font response.",
+      "width": 390,
+      "height": 844,
+      "cutoff": 776,
+      "completeRows": 7,
+      "rows": [
+        {
+          "top": 264.0625,
+          "bottom": 342.390625,
+          "height": 78.328125
+        },
+        {
+          "top": 342.390625,
+          "bottom": 394.328125,
+          "height": 51.9375
+        },
+        {
+          "top": 394.328125,
+          "bottom": 472.65625,
+          "height": 78.328125
+        },
+        {
+          "top": 472.65625,
+          "bottom": 550.984375,
+          "height": 78.328125
+        },
+        {
+          "top": 550.984375,
+          "bottom": 655.703125,
+          "height": 104.71875
+        },
+        {
+          "top": 655.703125,
+          "bottom": 707.640625,
+          "height": 51.9375
+        },
+        {
+          "top": 707.640625,
+          "bottom": 759.578125,
+          "height": 51.9375
+        },
+        {
+          "top": 759.578125,
+          "bottom": 837.90625,
+          "height": 78.328125
+        }
+      ],
+      "targets": [
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "phase": "before",
+      "fontNote": "Identical browser-test font stand-in in both captures; no external font response.",
+      "width": 768,
+      "height": 844,
+      "cutoff": 844,
+      "completeRows": 8,
+      "rows": [
+        {
+          "top": 312.71875,
+          "bottom": 367.3125,
+          "height": 54.59375
+        },
+        {
+          "top": 367.3125,
+          "bottom": 421.90625,
+          "height": 54.59375
+        },
+        {
+          "top": 421.90625,
+          "bottom": 476.5,
+          "height": 54.59375
+        },
+        {
+          "top": 476.5,
+          "bottom": 531.09375,
+          "height": 54.59375
+        },
+        {
+          "top": 531.09375,
+          "bottom": 614.734375,
+          "height": 83.640625
+        },
+        {
+          "top": 614.734375,
+          "bottom": 669.328125,
+          "height": 54.59375
+        },
+        {
+          "top": 669.328125,
+          "bottom": 723.921875,
+          "height": 54.59375
+        },
+        {
+          "top": 723.921875,
+          "bottom": 778.515625,
+          "height": 54.59375
+        }
+      ],
+      "targets": [
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "phase": "before",
+      "fontNote": "Identical browser-test font stand-in in both captures; no external font response.",
+      "width": 1280,
+      "height": 844,
+      "cutoff": 844,
+      "completeRows": 8,
+      "rows": [
+        {
+          "top": 312.71875,
+          "bottom": 365.53125,
+          "height": 52.8125
+        },
+        {
+          "top": 365.53125,
+          "bottom": 418.34375,
+          "height": 52.8125
+        },
+        {
+          "top": 418.34375,
+          "bottom": 471.15625,
+          "height": 52.8125
+        },
+        {
+          "top": 471.15625,
+          "bottom": 523.96875,
+          "height": 52.8125
+        },
+        {
+          "top": 523.96875,
+          "bottom": 576.78125,
+          "height": 52.8125
+        },
+        {
+          "top": 576.78125,
+          "bottom": 629.59375,
+          "height": 52.8125
+        },
+        {
+          "top": 629.59375,
+          "bottom": 682.40625,
+          "height": 52.8125
+        },
+        {
+          "top": 682.40625,
+          "bottom": 735.21875,
+          "height": 52.8125
+        }
+      ],
+      "targets": [
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "phase": "after",
+      "fontNote": "Identical browser-test font stand-in in both captures; no external font response.",
+      "width": 390,
+      "height": 844,
+      "cutoff": 776,
+      "completeRows": 6,
+      "rows": [
+        {
+          "top": 309.0625,
+          "bottom": 386.390625,
+          "height": 77.328125
+        },
+        {
+          "top": 386.390625,
+          "bottom": 437.390625,
+          "height": 51
+        },
+        {
+          "top": 437.390625,
+          "bottom": 514.71875,
+          "height": 77.328125
+        },
+        {
+          "top": 514.71875,
+          "bottom": 592.046875,
+          "height": 77.328125
+        },
+        {
+          "top": 592.046875,
+          "bottom": 695.765625,
+          "height": 103.71875
+        },
+        {
+          "top": 695.765625,
+          "bottom": 746.765625,
+          "height": 51
+        },
+        {
+          "top": 746.765625,
+          "bottom": 797.765625,
+          "height": 51
+        },
+        {
+          "top": 797.765625,
+          "bottom": 875.09375,
+          "height": 77.328125
+        }
+      ],
+      "targets": [
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 274.40625,
+          "height": 70.328125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 274.40625,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 274.40625,
+          "height": 70.328125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 274.40625,
+          "height": 70.328125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 274.40625,
+          "height": 96.71875
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 274.40625,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 274.40625,
+          "height": 44
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 274.40625,
+          "height": 70.328125
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "phase": "after",
+      "fontNote": "Identical browser-test font stand-in in both captures; no external font response.",
+      "width": 768,
+      "height": 844,
+      "cutoff": 844,
+      "completeRows": 8,
+      "rows": [
+        {
+          "top": 357.71875,
+          "bottom": 411.3125,
+          "height": 53.59375
+        },
+        {
+          "top": 411.3125,
+          "bottom": 464.90625,
+          "height": 53.59375
+        },
+        {
+          "top": 464.90625,
+          "bottom": 518.5,
+          "height": 53.59375
+        },
+        {
+          "top": 518.5,
+          "bottom": 572.09375,
+          "height": 53.59375
+        },
+        {
+          "top": 572.09375,
+          "bottom": 654.734375,
+          "height": 82.640625
+        },
+        {
+          "top": 654.734375,
+          "bottom": 708.328125,
+          "height": 53.59375
+        },
+        {
+          "top": 708.328125,
+          "bottom": 761.921875,
+          "height": 53.59375
+        },
+        {
+          "top": 761.921875,
+          "bottom": 815.515625,
+          "height": 53.59375
+        }
+      ],
+      "targets": [
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 640.40625,
+          "height": 46.59375
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 640.40625,
+          "height": 46.59375
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 640.40625,
+          "height": 46.59375
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 640.40625,
+          "height": 46.59375
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 640.40625,
+          "height": 75.640625
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 640.40625,
+          "height": 46.59375
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 640.40625,
+          "height": 46.59375
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 640.40625,
+          "height": 46.59375
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "phase": "after",
+      "fontNote": "Identical browser-test font stand-in in both captures; no external font response.",
+      "width": 1280,
+      "height": 844,
+      "cutoff": 844,
+      "completeRows": 8,
+      "rows": [
+        {
+          "top": 357.71875,
+          "bottom": 409.53125,
+          "height": 51.8125
+        },
+        {
+          "top": 409.53125,
+          "bottom": 461.34375,
+          "height": 51.8125
+        },
+        {
+          "top": 461.34375,
+          "bottom": 513.15625,
+          "height": 51.8125
+        },
+        {
+          "top": 513.15625,
+          "bottom": 564.96875,
+          "height": 51.8125
+        },
+        {
+          "top": 564.96875,
+          "bottom": 616.78125,
+          "height": 51.8125
+        },
+        {
+          "top": 616.78125,
+          "bottom": 668.59375,
+          "height": 51.8125
+        },
+        {
+          "top": 668.59375,
+          "bottom": 720.40625,
+          "height": 51.8125
+        },
+        {
+          "top": 720.40625,
+          "bottom": 772.21875,
+          "height": 51.8125
+        }
+      ],
+      "targets": [
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 1112.40625,
+          "height": 44.8125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 1112.40625,
+          "height": 44.8125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 1112.40625,
+          "height": 44.8125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 1112.40625,
+          "height": 44.8125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 1112.40625,
+          "height": 44.8125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 1112.40625,
+          "height": 44.8125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 1112.40625,
+          "height": 44.8125
+        },
+        {
+          "width": 44,
+          "height": 44
+        },
+        {
+          "width": 1112.40625,
+          "height": 44.8125
+        }
+      ],
+      "overflow": false,
+      "errors": []
+    },
+    {
+      "phase": "full-schedule",
+      "width": 390,
+      "fontNote": "Browser-test font stand-in.",
+      "collapsed": {
+        "count": 23,
+        "overflow": false,
+        "completeRows": 3
+      },
+      "expanded": {
+        "overflow": false,
+        "controls": [
+          {
+            "text": "",
+            "width": 44,
+            "height": 44
+          },
+          {
+            "text": "Floor swept, deck scrubbed and dried, including un",
+            "width": 274.40625,
+            "height": 123.109375
+          },
+          {
+            "text": "Floor swept",
+            "width": 317.625,
+            "height": 44
+          },
+          {
+            "text": "Floor deck scrubbed and rinsed",
+            "width": 317.625,
+            "height": 44
+          },
+          {
+            "text": "Under equipment cleaned",
+            "width": 317.625,
+            "height": 44
+          },
+          {
+            "text": "Floor dried",
+            "width": 317.625,
+            "height": 44
+          },
+          {
+            "text": "Reopen with reason",
+            "width": 148.890625,
+            "height": 44
+          },
+          {
+            "text": "Floor swept",
+            "width": 317.625,
+            "height": 44
+          },
+          {
+            "text": "Floor deck scrubbed and rinsed",
+            "width": 317.625,
+            "height": 44
+          },
+          {
+            "text": "Under equipment cleaned",
+            "width": 317.625,
+            "height": 44
+          },
+          {
+            "text": "Floor dried",
+            "width": 317.625,
+            "height": 44
+          },
+          {
+            "text": "Record done",
+            "width": 133.546875,
+            "height": 48
+          },
+          {
+            "text": "Save checks",
+            "width": 89.53125,
+            "height": 48
+          },
+          {
+            "text": "Unable to complete",
+            "width": 146.828125,
+            "height": 44
+          },
+          {
+            "text": "Add service clean",
+            "width": 170.40625,
+            "height": 48
+          }
+        ],
+        "words": "Floor swept, deck scrubbed and dried, including underneath equipmentFloors · Kitchen hand · 1/2 recorded; record each service▴Method Floor chemical; rinse. After each service.Responsible: Kitchen handRecord every service. Counts cover recorded occurrences only.After service 1CompleteFloor sweptFloor deck scrubbed and rinsedUnder equipment cleanedFloor driedReason to reopenRecorded by Ann · 14:00Reopen with reasonRecorded Floor swept, deck scrubbed and dried, including underneath equipment done. Saved 14:00.After service 2Checks pendingFloor sweptFloor deck scrubbed and rinsedUnder equipment cleanedFloor driedNote or reason unable to completeRecord doneSave checksUnable to completeSaved checks for Floor swept, deck scrubbed and dried, including underneath equipment. Saved 14:00.Add service clean",
+        "serviceRecords": [
+          {
+            "status": "complete",
+            "done": true,
+            "checked": 4
+          },
+          {
+            "status": "pending",
+            "done": false,
+            "checked": 1
+          }
+        ]
+      },
+      "keyboardChecks": true,
+      "errors": []
+    },
+    {
+      "phase": "full-schedule",
+      "width": 768,
+      "fontNote": "Browser-test font stand-in.",
+      "collapsed": {
+        "count": 23,
+        "overflow": false,
+        "completeRows": 7
+      },
+      "expanded": {
+        "overflow": false,
+        "controls": [
+          {
+            "text": "",
+            "width": 44,
+            "height": 44
+          },
+          {
+            "text": "Floor swept, deck scrubbed and dried, including un",
+            "width": 640.40625,
+            "height": 75.640625
+          },
+          {
+            "text": "Floor swept",
+            "width": 687.625,
+            "height": 44
+          },
+          {
+            "text": "Floor deck scrubbed and rinsed",
+            "width": 687.625,
+            "height": 44
+          },
+          {
+            "text": "Under equipment cleaned",
+            "width": 687.625,
+            "height": 44
+          },
+          {
+            "text": "Floor dried",
+            "width": 687.625,
+            "height": 44
+          },
+          {
+            "text": "Reopen with reason",
+            "width": 148.890625,
+            "height": 44
+          },
+          {
+            "text": "Floor swept",
+            "width": 687.625,
+            "height": 44
+          },
+          {
+            "text": "Floor deck scrubbed and rinsed",
+            "width": 687.625,
+            "height": 44
+          },
+          {
+            "text": "Under equipment cleaned",
+            "width": 687.625,
+            "height": 44
+          },
+          {
+            "text": "Floor dried",
+            "width": 687.625,
+            "height": 44
+          },
+          {
+            "text": "Record done",
+            "width": 133.546875,
+            "height": 48
+          },
+          {
+            "text": "Save checks",
+            "width": 89.53125,
+            "height": 48
+          },
+          {
+            "text": "Unable to complete",
+            "width": 146.828125,
+            "height": 48
+          },
+          {
+            "text": "Add service clean",
+            "width": 170.40625,
+            "height": 48
+          }
+        ],
+        "words": "Floor swept, deck scrubbed and dried, including underneath equipmentFloors · Kitchen hand · 1/2 recorded; record each service▴Method Floor chemical; rinse. After each service.Responsible: Kitchen handRecord every service. Counts cover recorded occurrences only.After service 1CompleteFloor sweptFloor deck scrubbed and rinsedUnder equipment cleanedFloor driedReason to reopenRecorded by Ann · 14:00Reopen with reasonRecorded Floor swept, deck scrubbed and dried, including underneath equipment done. Saved 14:00.After service 2Checks pendingFloor sweptFloor deck scrubbed and rinsedUnder equipment cleanedFloor driedNote or reason unable to completeRecord doneSave checksUnable to completeSaved checks for Floor swept, deck scrubbed and dried, including underneath equipment. Saved 14:00.Add service clean",
+        "serviceRecords": [
+          {
+            "status": "complete",
+            "done": true,
+            "checked": 4
+          },
+          {
+            "status": "pending",
+            "done": false,
+            "checked": 1
+          }
+        ]
+      },
+      "keyboardChecks": true,
+      "errors": []
+    },
+    {
+      "phase": "full-schedule",
+      "width": 1280,
+      "fontNote": "Browser-test font stand-in.",
+      "collapsed": {
+        "count": 23,
+        "overflow": false,
+        "completeRows": 8
+      },
+      "expanded": {
+        "overflow": false,
+        "controls": [
+          {
+            "text": "",
+            "width": 44,
+            "height": 44
+          },
+          {
+            "text": "Floor swept, deck scrubbed and dried, including un",
+            "width": 1112.40625,
+            "height": 44.8125
+          },
+          {
+            "text": "Floor swept",
+            "width": 1159.625,
+            "height": 44
+          },
+          {
+            "text": "Floor deck scrubbed and rinsed",
+            "width": 1159.625,
+            "height": 44
+          },
+          {
+            "text": "Under equipment cleaned",
+            "width": 1159.625,
+            "height": 44
+          },
+          {
+            "text": "Floor dried",
+            "width": 1159.625,
+            "height": 44
+          },
+          {
+            "text": "Reopen with reason",
+            "width": 148.890625,
+            "height": 44
+          },
+          {
+            "text": "Floor swept",
+            "width": 1159.625,
+            "height": 44
+          },
+          {
+            "text": "Floor deck scrubbed and rinsed",
+            "width": 1159.625,
+            "height": 44
+          },
+          {
+            "text": "Under equipment cleaned",
+            "width": 1159.625,
+            "height": 44
+          },
+          {
+            "text": "Floor dried",
+            "width": 1159.625,
+            "height": 44
+          },
+          {
+            "text": "Record done",
+            "width": 133.546875,
+            "height": 48
+          },
+          {
+            "text": "Save checks",
+            "width": 89.53125,
+            "height": 48
+          },
+          {
+            "text": "Unable to complete",
+            "width": 146.828125,
+            "height": 48
+          },
+          {
+            "text": "Add service clean",
+            "width": 170.40625,
+            "height": 48
+          }
+        ],
+        "words": "Floor swept, deck scrubbed and dried, including underneath equipmentFloors · Kitchen hand · 1/2 recorded; record each service▴Method Floor chemical; rinse. After each service.Responsible: Kitchen handRecord every service. Counts cover recorded occurrences only.After service 1CompleteFloor sweptFloor deck scrubbed and rinsedUnder equipment cleanedFloor driedReason to reopenRecorded by Ann · 14:00Reopen with reasonRecorded Floor swept, deck scrubbed and dried, including underneath equipment done. Saved 14:00.After service 2Checks pendingFloor sweptFloor deck scrubbed and rinsedUnder equipment cleanedFloor driedNote or reason unable to completeRecord doneSave checksUnable to completeSaved checks for Floor swept, deck scrubbed and dried, including underneath equipment. Saved 14:00.Add service clean",
+        "serviceRecords": [
+          {
+            "status": "complete",
+            "done": true,
+            "checked": 4
+          },
+          {
+            "status": "pending",
+            "done": false,
+            "checked": 1
+          }
+        ]
+      },
+      "keyboardChecks": true,
+      "errors": []
+    }
+  ]
+}

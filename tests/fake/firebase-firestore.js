@@ -245,7 +245,7 @@ function colRefused(ref, list) {
     return store[k] !== undefined && !isToday(store[k].day);   // a new receipt's id may be checked before it is written
   }
   if (c === 'cleaningTasks') return !cleaningReader(ref);
-  if (c === 'cleaningDone') {
+  if (c === 'cleaningDone' || c === 'cleaningActions') {
     if (!cleaningReader(ref)) return true;
     if (chefReader(ref)) return false;
     const today = new Date(requestNow() + 36000000).toISOString().slice(0, 10);
@@ -682,7 +682,7 @@ function commitOps(ops) {
   if (badPrepared) return Promise.reject({ code: 'permission-denied' });
   // Cleaning uses immutable schedule revisions and versioned ticks. Mirror the real rules, including the
   // atomic successor link, daily scope, canonical Tick capability and shared-device reported worker.
-  const cleanOps = ops.filter(o => /^kitchens\/[^/]+\/(cleaningTasks|cleaningDone)\/[^/]+$/.test(key(o.ref.path)));
+  const cleanOps = ops.filter(o => /^kitchens\/[^/]+\/(cleaningTasks|cleaningDone|cleaningActions)\/[^/]+$/.test(key(o.ref.path)));
   if (cleanOps.length) {
     const openUntil = 253402178400000, today = requestNow() - (requestNow() + 36000000) % 86400000;
     const identifier = value => typeof value === 'string' && /^[a-zA-Z0-9_-]{1,80}$/.test(value);
@@ -690,12 +690,25 @@ function commitOps(ops) {
     const name = value => bounded(value, 80) && value.length > 0 && /[^ ]/.test(value);
     const midnight = value => Number.isInteger(value) && value >= 0 && (value + 36000000) % 86400000 === 0;
     const recent = value => Number.isFinite(value) && value >= requestNow() - 60000 && value <= requestNow() + 60000;
+    const sameData = (a, b) => a === b || !!a && !!b && typeof a === 'object' && typeof b === 'object' &&
+      Array.isArray(a) === Array.isArray(b) && Object.keys(a).length === Object.keys(b).length && Object.keys(a).every(k => Object.hasOwn(b, k) && sameData(a[k], b[k]));
     const dayStart = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? Date.parse(value + 'T00:00:00Z') - 36000000 : NaN;
     const pathAfter = path => {
       const op = ops.find(value => key(value.ref.path) === path);
       return op ? op.kind === 'delete' ? null : after(op) : store[path];
     };
-    const taskShape = d => exactKeys(d, ['root', 'prev', 'next', 'text', 'area', 'section', 'sectionName', 'shared', 'dows', 'guide', 'from', 'until', 'at', 'by']) &&
+    const planKeys = ['template', 'method', 'responsibility', 'checks', 'timing', 'verification', 'verifiers', 'review'];
+    const planShape = p => (exactKeys(p, planKeys) || exactKeys(p, planKeys.concat('repeat'))) &&
+      bounded(p.template, 40) && (!p.template || /^[a-zA-Z0-9_-]+$/.test(p.template)) && bounded(p.method, 1000) && bounded(p.responsibility, 120) && bounded(p.review, 500) &&
+      ['daily', 'service', 'prep-service', 'food', 'use', 'close'].includes(p.timing) && typeof p.verification === 'boolean' &&
+      Array.isArray(p.checks) && p.checks.length <= 12 && new Set(p.checks).size === p.checks.length && p.checks.every(s => typeof s === 'string' && /^.{0,159}[^ ]$/.test(s)) &&
+      Array.isArray(p.verifiers) && p.verifiers.length <= 30 && new Set(p.verifiers).size === p.verifiers.length && p.verifiers.every(identifier) &&
+      (!Object.hasOwn(p, 'repeat') || exactKeys(p.repeat, ['days', 'anchor']) && Number.isInteger(p.repeat.days) && p.repeat.days >= 2 && p.repeat.days <= 30 &&
+        (p.repeat.anchor === '' || Number.isFinite(dayStart(p.repeat.anchor)) && new Date(dayStart(p.repeat.anchor) + 36000000).toISOString().slice(0, 10) === p.repeat.anchor));
+    const intervalDue = task => !task.plan || !task.plan.repeat || !!task.plan.repeat.anchor && today >= dayStart(task.plan.repeat.anchor) &&
+      ((today - dayStart(task.plan.repeat.anchor)) / 86400000) % task.plan.repeat.days === 0;
+    const taskKeys = ['root', 'prev', 'next', 'text', 'area', 'section', 'sectionName', 'shared', 'dows', 'guide', 'from', 'until', 'at', 'by'];
+    const taskShape = d => (exactKeys(d, taskKeys) || exactKeys(d, taskKeys.concat('plan'))) && (!Object.hasOwn(d, 'plan') || planShape(d.plan)) &&
       identifier(d.root) && (d.prev === '' || identifier(d.prev)) && (d.next === '' || identifier(d.next)) &&
       bounded(d.text, 160) && d.text.length > 0 && /[^ ]/.test(d.text) && name(d.area) &&
       bounded(d.section, 80) && bounded(d.sectionName, 80) && typeof d.shared === 'boolean' && bounded(d.guide, 80) &&
@@ -706,9 +719,17 @@ function commitOps(ops) {
       const path = key(o.ref.path), old = store[path], d = after(o), c = cfgOf(o.ref), id = o.ref.path.at(-1);
       const root = rootOf(o), taskPath = tid => root + '/cleaningTasks/' + tid;
       if (o.kind === 'delete' || !actor || d.by !== actor || (c.fnOnlyIds || []).includes(actor) || !cleaningReader(o.ref)) return true;
+      if (o.ref.path[2] === 'cleaningActions') {
+        const prior = store[root + '/cleaningDone/' + d.occurrence], next = pathAfter(root + '/cleaningDone/' + d.occurrence);
+        return !!old || !hasCap(c, 'tick') || !exactKeys(d, ['day', 'task', 'occurrence', 'version', 'action', 'at', 'by', 'snapshot']) ||
+          dayStart(d.day) !== today || !freshStamp(d.at) || !Number.isInteger(d.version) || d.version < 1 || id !== d.occurrence + '_v' + d.version ||
+          !next || !d.snapshot.flow || !sameData(d.snapshot, next) || d.snapshot.day !== d.day || d.snapshot.task !== d.task || d.snapshot.by !== d.by || d.snapshot.version !== d.version ||
+          (prior ? prior.version !== d.version - 1 : d.version !== 1);
+      }
       if (o.ref.path[2] === 'cleaningTasks') {
-        if (!chef(c) || !identifier(id) || !taskShape(d)) return true;
+        if (!chef(c) || !old && (!identifier(id) || !taskShape(d))) return true;
         if (!old) {
+          if (d.plan && d.plan.verifiers.some(person => !(c.staffIds || []).includes(person) || (c.fnOnlyIds || []).includes(person))) return true;
           if (d.next !== '' || d.until !== openUntil || !recent(d.at)) return true;
           if (d.prev === '') return d.root !== id || d.from !== today;
           const prev = store[taskPath(d.prev)], closed = pathAfter(taskPath(d.prev));
@@ -718,15 +739,42 @@ function commitOps(ops) {
         if (old.until !== openUntil || d.until !== today + 86400000 || d.until < d.from ||
           fieldsChanged(old, d).some(field => !['until', 'by', 'next'].includes(field))) return true;
         if (d.next === '') return false;
+        if (!identifier(d.next)) return true;
         const next = pathAfter(taskPath(d.next));
         return d.next === id || !!store[taskPath(d.next)] || !next || next.prev !== id || next.root !== d.root || next.from !== d.until;
+      }
+      if (d.flow) {
+        const task = store[taskPath(d.task)], p = task && task.plan, f = d.flow, previous = old && old.flow, stampKeys = ['doneAt', 'doneById', 'doneBy', 'workerId', 'worker'];
+        const event = pathAfter(root + '/cleaningActions/' + id + '_v' + d.version), weekday = ((today + 36000000) / 86400000 + 4) % 7;
+        if (!hasCap(c, 'tick') || !p || !exactKeys(d, ['day', 'task', 'version', 'done', 'doneAt', 'doneById', 'doneBy', 'workerId', 'worker', 'by', 'flow']) ||
+          dayStart(d.day) !== today || !identifier(d.task) || !Number.isInteger(d.version) || d.version < 1 ||
+          task.from > today || task.until <= today || !task.dows.includes(weekday) || !intervalDue(task) || typeof d.done !== 'boolean' || !Number.isFinite(d.doneAt) ||
+          !stampKeys.slice(1).every(field => bounded(d[field], 80)) || !exactKeys(f, ['slot', 'kind', 'status', 'checked', 'note', 'verifiedBy', 'verifiedAt']) ||
+          !identifier(f.slot) || id !== d.day + '_' + d.task + '__' + f.slot || !['pending', 'blocked', 'awaiting', 'complete'].includes(f.status) ||
+          d.done !== (f.status === 'complete') || !Array.isArray(f.checked) || f.checked.length > 12 || new Set(f.checked).size !== f.checked.length ||
+          f.checked.some(s => !p.checks.includes(s)) || !bounded(f.note, 500) || !bounded(f.verifiedBy, 80) || !Number.isFinite(f.verifiedAt)) return true;
+        const slotOK = f.kind === 'daily' ? p.timing === 'daily' && f.slot === 'daily' : f.kind === 'start' ? p.timing === 'food' && f.slot === 'start'
+          : f.kind === 'close' ? ['food', 'close'].includes(p.timing) && f.slot === 'close' : f.kind === 'service' ? ['service', 'prep-service'].includes(p.timing) && /^service-[a-zA-Z0-9_-]+$/.test(f.slot)
+          : f.kind === 'prep' ? ['prep-service', 'food'].includes(p.timing) && /^prep-[a-zA-Z0-9_-]+$/.test(f.slot) : f.kind === 'use' && p.timing === 'use' && /^use-[a-zA-Z0-9_-]+$/.test(f.slot);
+        if (!slotOK || (old ? !previous || d.task !== old.task || d.day !== old.day || f.slot !== previous.slot || f.kind !== previous.kind || d.version !== old.version + 1 : d.version !== 1) ||
+          !event || !sameData(event.snapshot, d) || event.occurrence !== id || event.by !== d.by || !freshStamp(event.at)) return true;
+        const empty = d.doneAt === 0 && stampKeys.slice(1).every(field => d[field] === ''), blank = f.verifiedBy === '' && f.verifiedAt === 0;
+        const notPerformed = !old || ['pending', 'blocked'].includes(previous.status), same = old && stampKeys.every(field => d[field] === old[field]);
+        if (['save', 'block'].includes(event.action)) return !notPerformed || !empty || !blank || f.status !== (event.action === 'block' ? 'blocked' : 'pending') || event.action === 'block' && !f.note.trim();
+        if (event.action === 'perform') return !notPerformed || f.checked.length !== p.checks.length || f.status !== (p.verification ? 'awaiting' : 'complete') || !blank ||
+          !recent(d.doneAt) || d.doneById !== d.by || !name(d.doneBy) || !name(d.worker) || !(c.staffIds || []).includes(d.workerId) ||
+          (c.fnOnlyIds || []).includes(d.workerId) || sessNow.mode !== 'shared' && d.workerId !== d.by;
+        if (event.action === 'verify') return !old || previous.status !== 'awaiting' || !p.verification || !p.verifiers.includes(d.by) || f.status !== 'complete' ||
+          JSON.stringify(f.checked) !== JSON.stringify(previous.checked) || f.note !== previous.note || !same || f.verifiedBy !== d.by || !recent(f.verifiedAt);
+        return event.action !== 'reopen' || !old || !['awaiting', 'complete'].includes(previous.status) || f.status !== 'pending' || !f.note.trim() || f.checked.length !== 0 || !empty || !blank ||
+          !(chef(c) || old.doneById === d.by && requestNow() >= old.doneAt && requestNow() - old.doneAt < 120000);
       }
       if (!hasCap(c, 'tick') || !exactKeys(d, ['day', 'task', 'version', 'done', 'doneAt', 'doneById', 'doneBy', 'workerId', 'worker', 'by']) ||
         dayStart(d.day) !== today || !identifier(d.task) || id !== d.day + '_' + d.task || !Number.isInteger(d.version) || d.version < 1 ||
         typeof d.done !== 'boolean' || !Number.isFinite(d.doneAt) || d.doneAt <= 0 || !identifier(d.doneById) || !name(d.doneBy) ||
         !identifier(d.workerId) || !name(d.worker)) return true;
       const task = store[taskPath(d.task)], weekday = ((today + 36000000) / 86400000 + 4) % 7;
-      if (!task || task.from > today || task.until <= today || !task.dows.includes(weekday)) return true;
+      if (!task || task.plan || task.from > today || task.until <= today || !task.dows.includes(weekday) || !intervalDue(task)) return true;
       const tick = () => d.done && recent(d.doneAt) && d.doneById === d.by && (c.staffIds || []).includes(d.workerId) &&
         !(c.fnOnlyIds || []).includes(d.workerId) && (sessNow.mode === 'shared' || d.workerId === d.by);
       if (!old) return d.version !== 1 || !tick();

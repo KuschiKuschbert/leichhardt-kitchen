@@ -1,7 +1,8 @@
 /* Cleaning schedules and daily reports on the real rules. All people and tasks here are synthetic. */
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, collection, query, where, limit, getDoc, getDocs, setDoc, updateDoc, deleteDoc, writeBatch, setLogLevel } from 'firebase/firestore';
+import { doc, collection, query, where, limit, getDoc, getDocs, setDoc, updateDoc, deleteDoc, writeBatch, setLogLevel, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { anonContext, dailySession, seedOwnerDevice } from './device-auth-fixtures.mjs';
 
 setLogLevel('silent');
@@ -249,6 +250,101 @@ try {
   await check('historical completion remains readable when worker leaves', () => getDoc(ref(dbs.head, donePath('removed-after'))));
   await check('removed recorder cannot tick using an old session', () => setDoc(ref(dbs.staff, donePath('read')), done('read')), false);
   await put({ 'config/main': cfg });
+  // Enhanced tasks keep each explicit occurrence, required checks and verification in server-validated state.
+  const plan = (x = {}) => ({ template: '', method: 'Clean and dry.', responsibility: 'Kitchen team', checks: ['Clean', 'Dry'], timing: 'daily', verification: false, verifiers: [], review: '', ...x });
+  const flowRecord = (id, who = 'staff', x = {}) => ({ day: TODAY, task: id, version: 1, done: false, doneAt: 0, doneById: '', doneBy: '', workerId: '', worker: '', by: who,
+    flow: { slot: 'daily', kind: 'daily', status: 'pending', checked: [], note: '', verifiedBy: '', verifiedAt: 0 }, ...x });
+  const occurrenceId = d => d.day + '_' + d.task + '__' + d.flow.slot;
+  const actionPath = d => 'cleaningActions/' + occurrenceId(d) + '_v' + d.version;
+  function flowWrite(db, d, action, eventChanges = {}) {
+    const b = writeBatch(db), occurrence = occurrenceId(d);
+    b.set(ref(db, 'cleaningDone/' + occurrence), d);
+    b.set(ref(db, actionPath(d)), { day: d.day, task: d.task, occurrence, version: d.version, action, at: serverTimestamp(), by: d.by, snapshot: d, ...eventChanges });
+    return b.commit();
+  }
+  const performed = (d, who, x = {}) => ({ ...d, by: who, doneAt: Date.now(), doneById: who, doneBy: name(who), workerId: who, worker: name(who),
+    flow: { ...d.flow, checked: ['Clean', 'Dry'], status: 'complete' }, done: true, ...x });
+  for (const r of roles) {
+    const tid = 'enhanced-' + r.id, d = flowRecord(tid, r.who);
+    await put({ [taskPath(tid)]: task(tid, { plan: plan() }) });
+    await check(r.id + ': enhanced occurrence save is capability gated', () => flowWrite(dbs[r.id], d, 'save'), r.tick);
+    await check(r.id + ': explicit verifier configuration is chef only', () => setDoc(ref(dbs[r.id], taskPath(tid + '-plan')), task(tid + '-plan', { by: r.who, plan: plan({ verification: true, verifiers: ['sous'] }) })), r.chef);
+  }
+  await put({ [taskPath('checked')]: task('checked', { plan: plan() }) });
+  const partial = flowRecord('checked', 'staff');
+  await check('required checks cannot be bypassed with legacy completion', () => setDoc(ref(dbs.staff, donePath('checked')), done('checked')), false);
+  await check('enhanced current state requires its atomic audit event', () => setDoc(ref(dbs.staff, 'cleaningDone/' + occurrenceId(partial)), partial), false);
+  await check('audit timestamp cannot be client supplied', () => flowWrite(dbs.staff, partial, 'save', { at: Timestamp.fromMillis(NOW - DAY) }), false);
+  await check('partial checks save without claiming completion', () => flowWrite(dbs.staff, partial, 'save'));
+  const incomplete = performed({ ...partial, version: 2 }, 'staff'); incomplete.flow.checked = ['Clean'];
+  await check('perform refuses missing required checks', () => flowWrite(dbs.staff, incomplete, 'perform'), false);
+  await check('perform refuses a checklist not present in the saved revision', () => flowWrite(dbs.staff, { ...incomplete, flow: { ...incomplete.flow, checked: ['Clean', 'Invented'] } }, 'perform'), false);
+  const full = performed({ ...partial, version: 2 }, 'staff');
+  await check('perform accepts the complete persisted checklist', () => flowWrite(dbs.staff, full, 'perform'));
+  await check('a standalone audit cannot claim an unperformed next state', () => setDoc(ref(dbs.head, 'cleaningActions/' + occurrenceId(full) + '_v3'),
+    { day: TODAY, task: full.task, occurrence: occurrenceId(full), version: 3, action: 'verify', at: serverTimestamp(), by: 'head', snapshot: { ...full, version: 3, by: 'head' } }), false);
+  await check('stale competitor cannot replace the saved occurrence', () => flowWrite(dbs.lead, performed({ ...partial, version: 2 }, 'lead'), 'perform'), false);
+  await check('audit records cannot be edited', () => updateDoc(ref(dbs.staff, actionPath(full)), { action: 'save' }), false);
+  await check('audit records cannot be deleted', () => deleteDoc(ref(dbs.head, actionPath(full))), false);
+  await same('audit has a real server Timestamp and exact accepted snapshot', async () => {
+    const event = (await getDoc(ref(dbs.head, actionPath(full)))).data();
+    return event.at instanceof Timestamp && event.snapshot.version === 2 && event.snapshot.flow.status === 'complete' && event.snapshot.workerId === 'staff';
+  });
+  const reopen = flowRecord('checked', 'staff', { version: 3 }); reopen.flow.note = 'Ticked the wrong task.';
+  await check('recorder can reopen with a reason and a new audit version', () => flowWrite(dbs.staff, reopen, 'reopen'));
+  await same('reopening does not erase the earlier performance audit', async () => (await getDoc(ref(dbs.head, actionPath(full)))).data().snapshot.done === true);
+  const blocked = { ...reopen, version: 4, flow: { ...reopen.flow, status: 'blocked', note: '' } };
+  await check('blocked requires a reason', () => flowWrite(dbs.staff, blocked, 'block'), false);
+  blocked.flow.note = 'Equipment in use.';
+  await check('blocked work is persisted without counting complete', () => flowWrite(dbs.staff, blocked, 'block'));
+  const invalidSlot = { ...blocked, version: 5, flow: { ...blocked.flow, slot: 'service-one', kind: 'service' } };
+  await check('daily task refuses an arbitrary service slot', () => flowWrite(dbs.staff, invalidSlot, 'save'), false);
+  await put({ [taskPath('food')]: task('food', { plan: plan({ timing: 'food', verification: true, verifiers: ['sous'] }) }) });
+  const foodBase = flowRecord('food'); foodBase.flow.slot = foodBase.flow.kind = 'start';
+  const food = performed(foodBase, 'staff', { done: false }); food.flow.status = 'awaiting';
+  await check('food performance is saved awaiting the configured checker', () => flowWrite(dbs.staff, food, 'perform'));
+  const verified = { ...food, version: 2, by: 'sous', done: true, flow: { ...food.flow, status: 'complete', verifiedBy: 'sous', verifiedAt: Date.now() } };
+  await check('performer cannot grant themselves Pass verification', () => flowWrite(dbs.staff, { ...verified, by: 'staff', flow: { ...verified.flow, verifiedBy: 'staff' } }, 'verify'), false);
+  await check('canonical head role alone is not a mapped Pass checker', () => flowWrite(dbs.head, { ...verified, by: 'head', flow: { ...verified.flow, verifiedBy: 'head' } }, 'verify'), false);
+  await check('verification cannot change the original cleaner', () => flowWrite(dbs.sous, { ...verified, workerId: 'sous' }, 'verify'), false);
+  await check('mapped Pass checker verifies the saved performance', () => flowWrite(dbs.sous, verified, 'verify'));
+  await put({ [taskPath('service')]: task('service', { plan: plan({ timing: 'service' }) }) });
+  for (const slot of ['service-one', 'service-two']) {
+    const d = flowRecord('service'); d.flow.slot = slot; d.flow.kind = 'service';
+    await check(slot + ': explicit occurrences persist separately', () => flowWrite(dbs.staff, performed(d, 'staff'), 'perform'));
+  }
+  await put({ [taskPath('no-verifier')]: task('no-verifier', { plan: plan({ verification: true }) }) });
+  const noVerifier = performed(flowRecord('no-verifier'), 'staff', { done: false }); noVerifier.flow.status = 'awaiting';
+  await check('missing checker mapping still records honest awaiting status', () => flowWrite(dbs.staff, noVerifier, 'perform'));
+  await check('missing checker mapping never auto-verifies', () => flowWrite(dbs.head, { ...noVerifier, version: 2, done: true, by: 'head', flow: { ...noVerifier.flow, status: 'complete', verifiedBy: 'head', verifiedAt: Date.now() } }, 'verify'), false);
+  for (const [id, anchor, allowed] of [['interval-due', TODAY, true], ['interval-between', YDAY, false], ['interval-future', TOMORROW, false], ['interval-unset', '', false]]) {
+    await check(id + ': a chef saves the bounded anchored recurrence', () => setDoc(ref(dbs.head, taskPath(id)), task(id, { plan: plan({ repeat: { days: 2, anchor } }) })));
+    await check(id + ': interval is enforced on the server', () => flowWrite(dbs.staff, performed(flowRecord(id), 'staff'), 'perform'), allowed);
+  }
+  await check('enhanced schedule accepts the full bounded checklist and text', () => setDoc(ref(dbs.head, taskPath('plan-bounds')), task('plan-bounds', { plan: plan({ method: 'x'.repeat(1000), responsibility: 'r'.repeat(120), review: 'q'.repeat(500), checks: Array.from({ length: 12 }, (_, i) => 'Check ' + i) }) })));
+  const combinedPlan = plan({ checks: Array.from({ length: 12 }, (_, i) => 'Check ' + i), verification: true, verifiers: ['sous'], repeat: { days: 2, anchor: TODAY } });
+  await check('maximum checklist also supports mapped verification and anchored recurrence', () => setDoc(ref(dbs.head, taskPath('plan-bounds-combined')), task('plan-bounds-combined', { plan: combinedPlan })));
+  await check('maximum enhanced plan can be revised prospectively in one atomic batch', () => replace(dbs.head, 'plan-bounds-combined', 'plan-bounds-combined-next', { plan: combinedPlan }));
+  await check('maximum enhanced plan can be archived without revalidating its immutable body', () => updateDoc(ref(dbs.head, taskPath('plan-bounds-combined-next')), { until: START + DAY, by: 'head' }));
+  await check('method responsibility and review retain multiline text', () => setDoc(ref(dbs.head, taskPath('plan-multiline')), task('plan-multiline', {
+    plan: plan({ method: 'Wash\nDry', responsibility: 'Night\nKitchen team', review: 'See the approved procedure.\nConfirm the equipment settings.' }) })));
+  for (const [label, changes] of [['method too long', { method: 'x'.repeat(1001) }], ['duplicate checks', { checks: ['Clean', 'Clean'] }], ['non-string checks', { checks: [1] }],
+    ['unknown timing', { timing: 'whenever' }], ['forged checker role label', { verifiers: ['Pass Chef'] }], ['function-only checker', { verifiers: ['fn'] }],
+    ['non-string method', { method: 1 }], ['non-string review', { review: false }], ['non-string responsibility', { responsibility: [] }],
+    ['invalid interval', { repeat: { days: 1, anchor: TODAY } }], ['fractional interval', { repeat: { days: 2.5, anchor: TODAY } }],
+    ['invalid anchor', { repeat: { days: 2, anchor: '2026-13-40' } }]]) {
+    const id = 'plan-invalid-' + n;
+    await check(label, () => setDoc(ref(dbs.head, taskPath(id)), task(id, { plan: plan(changes) })), false);
+  }
+  await put({ 'config/main': { ...cfg, staffIds: cfg.staffIds.filter(id => id !== 'sous') } });
+  await check('removed checker cannot verify through a stale session', () => flowWrite(dbs.sous, { ...noVerifier, version: 2, by: 'sous' }, 'save'), false);
+  await check('a chef can still archive a task after its mapped checker leaves', () => updateDoc(ref(dbs.head, taskPath('food')), { until: START + DAY, by: 'head' }));
+  await put({ 'config/main': cfg });
+  await check('the actual 26-template schedule imports in one authorised atomic batch', () => {
+    const templates = createRequire(import.meta.url)('../../js/cleaning-schedule.js').drafts(), b = writeBatch(dbs.head);
+    for (const draft of templates) { const id = 'clean-template-' + draft.plan.template; b.set(ref(dbs.head, taskPath(id)), task(id, draft)); }
+    return b.commit();
+  });
   console.log(`${fails} failed of ${n} cleaning rule checks`);
 } finally { await env.cleanup(); }
 if (fails) process.exit(1);
