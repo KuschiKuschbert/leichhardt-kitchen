@@ -4,6 +4,8 @@
 
 # Leichhardt Kitchen Book
 
+Head and sous chefs can plan staff sections ahead in **Today's team** (9 November 2026, chosen A). The notebook has a Monday to Sunday picker, previous/next week and Today, written day status, separate drafts and a Save naming the selected date. Future planning keeps staff's live day and break board on today. Past dates are read-only here. The [council, three designs and verification](docs/team-week-options/brief.md) record the choice and measured phone-space cost.
+
 Today's team shows current scheduled meal breaks and splits on a pinned charcoal board. On break now lists each name with Until and the return time. Shift tabs show Lunch first, then Dinner, followed by the other configured shifts. It follows the saved plan across all shifts and updates with the existing kitchen clock. [Break board](docs/team-notebook-options/brief.md#break-board-9-november-2026).
 
 Supplier sheets can follow updated order templates while keeping previous quantities attached to the same items. Re-import the updated private catalogue through **Import catalogue**: existing IDs follow the file's sequence, new items are added once and other saved items stay at the end. PFD Dry Goods and PFD Seafood can be separated for their different delivery schedules: Dry Goods keeps its existing reminder and Seafood links to the Seafood reminder already in the book. The split keeps previous quantities through the original immutable order history. Current pars, original records and drafts remain intact. The review shows the file sequence and reminder links; a smaller order-only format is also supported. [Contract and checks](docs/supplier-workspace.md#template-order-updates-9-november-2026).

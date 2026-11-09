@@ -79,6 +79,8 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 - **A long run of rows that are not the point** folds into one line that names them and says Show (`.tm-fold`, with `aria-expanded`), instead of filling the screen.
 - **Nothing new over a list during service** unless it stops a mistake (`CLAUDE.md`, Service rules).
 
+The dated roster notebook, A chosen 9 November 2026, adds `.tm-weeknav` and `.tm-daypick` inside the existing team notebook. Keep Monday to Sunday choices, previous/next week and Today, with written read/save status and a full selected date. Future days show a dated saved-plan summary, while On break now keeps today's live record. One selected-date editor and one dated Save reuse the notebook controls; other dates retain separate protected drafts. Use the existing paper, orange, green saved state, 44 px targets and keyboard focus. [Design and contract](team-week-options/brief.md).
+
 ## Section prep standards
 
 The approved Prep room and staff guidance reuse the notebook, shared Add sheet and role panel. `psPanelHTML()` loads the one private standards editor. `psRolloutHTML()` uses the shared checkbox and acknowledged status pattern for the admin-only, default-off Smart prep par levels switch. `psHintHTML()` adds a short `.ps-minimum` line below the normal typed item, with a canonical name, configured section and read time. It never writes the minimum into the combined quantity field. `psReferenceHTML()` draws the complete section reference inside the existing notebook; its item count is separate from completed tasks.
