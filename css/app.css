@@ -4613,6 +4613,20 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .is-home #hm-board .hm-bt { color: var(--small-ink); }
 .is-home #hm-board .hm-rows li + li { border-top-color: var(--edge); }
 .is-home #hm-board .hm-s, .is-home #hm-board .hm-none { color: var(--muted); }
+/* Home's team and prep cards keep their paper shape, with a distinct palette cue for each job. */
+.is-home #hm-with {
+  background: var(--done-tint);
+  box-shadow: inset 4px 0 0 var(--done-ink), 0 4px 0 rgba(28, 29, 31, 0.14);
+}
+.is-home #hm-with .hm-pt { color: var(--done-ink); }
+.is-home #hm-with .hm-full-team > summary:focus-visible { outline-color: var(--done-ink); }
+.is-home #hm-prep {
+  background: var(--steel);
+  background: color-mix(in srgb, var(--steel) 65%, var(--paper));
+  box-shadow: inset 4px 0 0 var(--muted), 0 4px 0 rgba(28, 29, 31, 0.14);
+}
+.is-home #hm-prep :is(.hm-pt, .hm-pc) { color: var(--ink); }
+.is-home #hm-prep :is(.hm-sec, .hm-go):focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
 @media (min-width: 720px) {
   .hm-staff-first { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 2rem; }
   .hm-day-row { min-height: 78px; }
