@@ -41,15 +41,13 @@ const state = p => p.evaluate(([configKey, teamKey]) => ({
     ok(!(await L.overflow(p)), width + ': reordered shift tabs do not cause sideways page scroll');
   }
 
-  await press(p, '[data-p="tm-section"][data-v="grill"]');
-  await press(p, '[data-p="tm-assign"][data-id="ann"]');
+  await L.pick(p, 'select[data-k="tm-sec:ann"]', 'grill');
   await press(p, '.tm-tabs [data-v="lunch"]');
-  await press(p, '[data-p="tm-section"][data-v="pans"]');
-  await press(p, '[data-p="tm-assign"][data-id="ann"]');
+  await L.pick(p, 'select[data-k="tm-sec:ann"]', 'pans');
   await press(p, '.tm-tabs [data-v="dinner"]');
-  ok(await p.$eval('.tm-tabs [aria-pressed="true"]', e => e.dataset.v) === 'dinner' && /Grill/.test(await L.txt(p, '[data-p="tm-assign"][data-id="ann"] .tm-person-detail') || ''), 'tab switching: Dinner stays selected with its own unsaved Grill assignment');
+  ok(await p.$eval('.tm-tabs [aria-pressed="true"]', e => e.dataset.v) === 'dinner' && await p.$eval('select[data-k="tm-sec:ann"]', e => e.value) === 'grill', 'tab switching: Dinner stays selected with its own unsaved Grill assignment');
   await press(p, '.tm-tabs [data-v="lunch"]');
-  ok(/Pans/.test(await L.txt(p, '[data-p="tm-assign"][data-id="ann"] .tm-person-detail') || ''), 'shared draft: Lunch retains its separate unsaved Pans assignment');
+  ok(await p.$eval('select[data-k="tm-sec:ann"]', e => e.value) === 'pans', 'shared draft: Lunch retains its separate unsaved Pans assignment');
   const after = await state(p);
   ok(JSON.stringify(after.shifts) === JSON.stringify(shifts), 'display order: the saved shift configuration remains unchanged');
   ok(JSON.stringify(after.team) === JSON.stringify(before.team) && after.writes === before.writes, 'draft switching: the saved day and write count remain unchanged until Save');

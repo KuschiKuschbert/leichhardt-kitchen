@@ -2,7 +2,7 @@
 
 9 November 2026. **A chosen by the head chef, implemented and locally verified. CI and release pending.**
 
-Layout follow-up: the head chef subsequently chose [A, Quiet notebook, one list](../team-tidy-options/brief.md) for management. Its per-person details replace the duplicate roster without changing the week picker, independent date drafts or dated Save contracts below.
+Current layout follow-up, 9 November 2026: the head chef switched the management tidy-up from A, Quiet notebook, to [C, Person worksheet](../team-tidy-options/brief.md#current-choice-c-person-worksheet). Each row has its own section picker, break summary and labelled details. This changes the allocation layout while preserving this brief's chosen A week strip, independent date drafts and dated Save contracts.
 
 The head chef asks to let head and sous chefs allocate sections for staff a week ahead, with a day picker to move backwards and forwards. This follows the existing roster notebook, rather than replacing the kitchen's payroll roster. [Initial proposal](proposal.md).
 
