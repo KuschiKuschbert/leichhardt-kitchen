@@ -60,6 +60,8 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 
 Before building anything major (a new page, tab, button, setting, sheet or workflow, a change to how a service task is done, removing a feature, any design choice), run the council in `.claude/skills/service-council/SKILL.md`. Round 1: five critical reviewers ask whether it is needed and adds value. Round 2: the head chef's requested number of really different designs (three by default), with pros and cons, scored by the council and a screen designer, which recommends one or a mix. Record the verdict, scores, disagreement and recommendation in the feature's brief and link it in the reading map above. The council advises; the head chef decides. Show the head chef the verdict and designs before changing the app. Small changes get the quick check, fixes none. Every pull request that changes the app has a `Verdict:` line (the Council check shows red without one, but never stops a merge).
 
+Both rounds and small-change quick checks use the council skill's **Design references**: Linear, Things 3, Airbnb, Todoist, Flighty, Duolingo and Headspace. Record the relevant principles, evidence and trade-offs; current contracts and the head chef's chosen designs win.
+
 **Service rules** (head chef, 5 Nov 2026). The book is used in a busy service: quick to read, few taps.
 - The main job of each work page (add a line, tick a line, find a recipe) is one tap from its tab.
 - No new tab, top bar or tab bar button, or pop-up on a service page without the head chef's OK.
