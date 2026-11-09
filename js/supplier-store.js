@@ -123,10 +123,20 @@
       if (!idOk(sid)) throw error('invalid', 'Choose a valid supplier.');
       var c = await access(true), m = meta || {};
       return transaction(c, async function (tx, by) {
-        var sr = ref(c, ['suppliers', sid]), old = catalogueData(await tx.get(sr)), oldV = old ? old.v : 0;
+        var sr = ref(c, ['suppliers', sid]), snapshot = await tx.get(sr), rawOld = data(snapshot), old = catalogueData(snapshot), oldV = old ? old.v : 0;
         if (oldV !== expectedV) throw error('stale', 'The catalogue changed on another device. Refresh it before saving.', { current: old });
         var clean = cleanSupplier(sid, old, patch), at = B.now(), next = { name: clean.name, cutoffId: clean.cutoffId, v: oldV + 1, items: clean.items, at: at, by: by };
-        var itemId = typeof m.itemId === 'string' ? m.itemId : '', before = old ? withoutId(old) : null, after = copy(next);
+        if (m.action === 'reorder') {
+          if (!old || clean.name !== old.name || clean.cutoffId !== old.cutoffId || clean.items.length !== old.items.length) throw error('invalid', 'A template order can only change the item sequence, not supplier details or catalogue items.');
+          var canonicalItems = new Map(old.items.map(function (entry) { return [entry.id, entry]; })), rawItems = new Map(rawOld.items.map(function (entry) { return [entry.id, entry]; }));
+          clean.items.forEach(function (entry) {
+            if (!canonicalItems.has(entry.id) || JSON.stringify(entry) !== JSON.stringify(canonicalItems.get(entry.id))) throw error('invalid', 'A template order cannot change the saved details for ' + entry.name + '. Refresh and check the catalogue before saving.');
+          });
+          // Validation uses canonical units, but a sequence change keeps even legacy spelling and omitted item fields.
+          next.name = rawOld.name; next.cutoffId = rawOld.cutoffId;
+          next.items = clean.items.map(function (entry) { return copy(rawItems.get(entry.id)); });
+        }
+        var itemId = m.action === 'reorder' ? '' : typeof m.itemId === 'string' ? m.itemId : '', before = old ? withoutId(m.action === 'reorder' ? rawOld : old) : null, after = copy(next);
         if (itemId) {
           before = old ? (old.items || []).filter(function (x) { return x.id === itemId; })[0] || null : null;
           after = next.items.filter(function (x) { return x.id === itemId; })[0] || null;
@@ -168,6 +178,28 @@
         catch (e) { e.saved = saved; throw e; }
       }
       return saved;
+    }
+    /* One catalogue query on Apply, followed by the existing guarded transaction per changed supplier (one current
+       document read and two writes). Re-match every row and check every reviewed revision before the first write.
+       Order history and all item fields stay untouched. A later concurrent edit can stop a partially applied set. */
+    async function applyTemplateOrder(payload, expectedVersions) {
+      var validated = core().validateTemplateOrder(payload), importContext = (await access(true)).ctx;
+      var existing = await loadSuppliers(); check(importContext, true);
+      if (existing.bad && existing.bad.length) throw error('invalid', 'Some supplier records could not be read. Resolve them before matching template items. No sequence was changed.');
+      var planned = core().planTemplateOrder(validated, existing), versions = expectedVersions || {}, byId = new Map(existing.map(function (s) { return [s.id, s]; }));
+      planned.plans.forEach(function (plan) {
+        if (!Object.prototype.hasOwnProperty.call(versions, plan.id) || versions[plan.id] !== plan.v) throw error('stale', 'The catalogue changed after the template review. Refresh and check the template order before saving.', { current: byId.get(plan.id) });
+      });
+      var saved = [], unchanged = [];
+      try {
+        for (var i = 0; i < planned.plans.length; i++) {
+          check(importContext, true);
+          var plan = planned.plans[i];
+          if (!plan.changed) { unchanged.push(copy(byId.get(plan.id))); continue; }
+          saved.push(await saveCatalogue(plan.id, plan.v, { items: plan.items }, { action: 'reorder' })); check(importContext, true);
+        }
+      } catch (e) { e.saved = saved; e.unchanged = unchanged; throw e; }
+      return { saved: saved, unchanged: unchanged, matched: planned.matched, total: planned.total };
     }
     function linesFor(items, lines) {
       if (!Array.isArray(lines) || !lines.length || lines.length > 300) throw error('invalid', 'Enter between 1 and 300 item quantities.');
@@ -258,8 +290,8 @@
       return counts;
     }
     return { loadSuppliers: loadSuppliers, load: load, history: function (sid, n, cursor) { return page(sid, 'orders', n, cursor); },
-      audit: function (sid, n, cursor) { return page(sid, 'audit', n, cursor); }, saveCatalogue: saveCatalogue, importCatalogue: importCatalogue,
+      audit: function (sid, n, cursor) { return page(sid, 'audit', n, cursor); }, saveCatalogue: saveCatalogue, importCatalogue: importCatalogue, applyTemplateOrder: applyTemplateOrder,
       record: record, link: link, exportAll: exportAll, copyTo: copyTo, reset: function () { generation++; } };
   }
-  window.LK_SUP_STORE = { API: API, create: create };
+  window.LK_SUP_STORE = { API: API, templateOrder: 1, create: create };
 })();

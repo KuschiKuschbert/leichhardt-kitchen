@@ -160,6 +160,73 @@
     return { version: 1, suppliers: suppliers };
   }
   function normaliseName(v) { return String(v == null ? '' : v).trim().toLowerCase().replace(/\s+/g, ' '); }
+  // A private order-only file contains names and packs, never replacement catalogue items or quantities.
+  function validateTemplateOrder(value) {
+    keys(value, ['version', 'kind', 'templates'], 'template order');
+    if (value.version !== 1 || value.kind !== 'supplier-template-order') fail('version', 'template order', 'Use supplier template order version 1.');
+    if (!Array.isArray(value.templates) || !value.templates.length || value.templates.length > 50) fail('items', 'templates', 'Use between 1 and 50 order templates.');
+    var seen = Object.create(null), count = 0;
+    var templates = value.templates.map(function (entry) {
+      keys(entry, ['file', 'items'], 'template');
+      var file = text(entry.file, 180, 'template.file', true), key = normaliseName(file);
+      if (own(seen, key)) fail('duplicate', 'template.file', 'The template ' + file + ' appears more than once.');
+      seen[key] = true;
+      if (!Array.isArray(entry.items) || !entry.items.length || entry.items.length > MAX_ITEMS) fail('items', 'template.items', 'Use between 1 and ' + MAX_ITEMS + ' rows in ' + file + '.');
+      var items = entry.items.map(function (row) {
+        keys(row, ['name', 'pack'], 'template row');
+        return { name: text(row.name, 180, 'template.name', true), pack: text(row.pack, 120, 'template.pack') };
+      });
+      count += items.length;
+      return { file: file, items: items };
+    });
+    if (count > MAX_ITEMS) fail('items', 'templates', 'Use no more than ' + MAX_ITEMS + ' rows in one template order file.');
+    return { version: 1, kind: 'supplier-template-order', templates: templates };
+  }
+  /* Match complete original names, preserving punctuation. A matching source file breaks a name tie; a complete
+     pack breaks a remaining tie. Unique names still match renamed templates and an edited current pack. Never
+     change an item's ID, original source, current details or archived state to make it fit the new order. */
+  function planTemplateOrder(value, suppliers) {
+    var payload = validateTemplateOrder(value), byId = Object.create(null), names = Object.create(null), plans = [], selected = Object.create(null), total = 0;
+    if (!Array.isArray(suppliers) || suppliers.length > 50) fail('items', 'suppliers', 'Read the current supplier catalogue before matching templates.');
+    suppliers.forEach(function (value) {
+      var checked = cleanSupplier(value), saved = copy(value);
+      if (own(byId, checked.id)) fail('duplicate', 'supplier.id', 'Each supplier needs its own ID.');
+      byId[checked.id] = { supplier: saved, plan: null };
+      saved.items.forEach(function (entry) {
+        if (entry.manual || !entry.source || !entry.source.name) return;
+        var key = normaliseName(entry.source.name);
+        if (!own(names, key)) names[key] = [];
+        names[key].push({ sid: saved.id, item: entry });
+      });
+    });
+    payload.templates.forEach(function (template) {
+      template.items.forEach(function (row, rowIndex) {
+        total++;
+        var candidates = names[normaliseName(row.name)] || [], label = template.file + ', row ' + (rowIndex + 1) + ': ' + row.name;
+        if (!candidates.length) fail('template-missing', 'templates', label + ' is missing from the current catalogue. Check this row before changing the order.');
+        if (candidates.length > 1) {
+          var sameFile = candidates.filter(function (candidate) { return normaliseName(candidate.item.source.file) === normaliseName(template.file); });
+          if (sameFile.length) candidates = sameFile;
+        }
+        if (candidates.length > 1 && normaliseName(row.pack)) candidates = candidates.filter(function (candidate) { return normaliseName(candidate.item.pack) === normaliseName(row.pack); });
+        if (candidates.length !== 1) fail('template-ambiguous', 'templates', label + ' does not identify one saved item. Check its source file and pack before changing the order.');
+        var match = candidates[0], key = match.sid + '/' + match.item.id, current = byId[match.sid];
+        if (own(selected, key)) fail('duplicate', 'templates', label + ' selects an item already included in this template order.');
+        selected[key] = true;
+        if (!current.plan) {
+          current.plan = { id: current.supplier.id, v: current.supplier.v, name: current.supplier.name, items: [], matched: 0, retained: 0, changed: false };
+          plans.push(current.plan);
+        }
+        current.plan.items.push(match.item); current.plan.matched++;
+      });
+    });
+    plans.forEach(function (plan) {
+      var current = byId[plan.id].supplier;
+      current.items.forEach(function (entry) { if (!own(selected, plan.id + '/' + entry.id)) { plan.items.push(entry); plan.retained++; } });
+      plan.changed = current.items.some(function (entry, index) { return entry.id !== plan.items[index].id; });
+    });
+    return { plans: plans, matched: total, total: total };
+  }
   function duplicateItems(items, candidate) {
     var name = normaliseName(candidate.name);
     return (items || []).filter(function (x) { return !x.archived && x.id !== candidate.id && normaliseName(x.name) === name; });
@@ -236,5 +303,5 @@
     if (!old && !changes.length) changes.push({ itemId: '', action: 'add_supplier', before: null, after: { name: next.name, cutoffId: next.cutoffId } });
     return changes;
   }
-  return { API: 4, MAX_ITEMS: MAX_ITEMS, MAX_ORDER_LINES: MAX_ORDER_LINES, cleanPar: cleanPar, normaliseUnit: normaliseUnit, parseQuantity: parseQuantity, parseStock: parseStock, convert: convert, cleanItem: cleanItem, cleanSupplier: cleanSupplier, validateCatalogue: validateCatalogue, normaliseName: normaliseName, duplicateItems: duplicateItems, matchRequests: matchRequests, snapshotLines: snapshotLines, suggestQuantity: suggestQuantity, catalogueDiff: catalogueDiff };
+  return { API: 4, MAX_ITEMS: MAX_ITEMS, MAX_ORDER_LINES: MAX_ORDER_LINES, cleanPar: cleanPar, normaliseUnit: normaliseUnit, parseQuantity: parseQuantity, parseStock: parseStock, convert: convert, cleanItem: cleanItem, cleanSupplier: cleanSupplier, validateCatalogue: validateCatalogue, validateTemplateOrder: validateTemplateOrder, planTemplateOrder: planTemplateOrder, normaliseName: normaliseName, duplicateItems: duplicateItems, matchRequests: matchRequests, snapshotLines: snapshotLines, suggestQuantity: suggestQuantity, catalogueDiff: catalogueDiff };
 });

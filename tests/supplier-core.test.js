@@ -177,6 +177,78 @@ test('duplicate-name warnings retain pack variants and audit changes are isolate
   changed.par = '99'; assert.strictEqual(audit[0].after.par, '12');
   assert.strictEqual(C.catalogueDiff(supplier(), supplier([item({ archived: true })]))[0].action, 'archive_item');
 });
+function imported(id, name, file, overrides) {
+  return item(Object.assign({ id, name, manual: false, source: { file, page: 1, row: 1, name, par: '0' } }, overrides || {}));
+}
+function templateOrder(templates) { return { version: 1, kind: 'supplier-template-order', templates }; }
+function template(file, names) { return { file, items: names.map(name => typeof name === 'string' ? { name, pack: '' } : name) }; }
+test('template order validation accepts only the bounded private ordering format', () => {
+  const payload = templateOrder([template('example.pdf', ['TEST BAG'])]);
+  assert.deepStrictEqual(C.validateTemplateOrder(payload), payload);
+  const checked = C.validateTemplateOrder(payload); checked.templates[0].items[0].name = 'Changed';
+  assert.strictEqual(payload.templates[0].items[0].name, 'TEST BAG');
+  throws('version', () => C.validateTemplateOrder({ ...payload, version: 2 }));
+  throws('version', () => C.validateTemplateOrder({ ...payload, kind: 'supplier-catalogue' }));
+  throws('items', () => C.validateTemplateOrder(templateOrder([])));
+  throws('items', () => C.validateTemplateOrder(templateOrder([template('example.pdf', [])])));
+  throws('field', () => C.validateTemplateOrder({ ...payload, suppliers: [] }));
+  throws('field', () => C.validateTemplateOrder(templateOrder([{ file: 'example.pdf', items: [{ name: 'TEST BAG', pack: '', price: 2 }] }])));
+  throws('duplicate', () => C.validateTemplateOrder(templateOrder([template('Example.pdf', ['TEST A']), template(' example.PDF ', ['TEST B'])])));
+});
+test('template order follows all files for a supplier and retains unchanged extra items afterwards', () => {
+  const first = imported('first', 'TEST FIRST', 'dry.pdf', { pack: 'Current edited pack', par: '1.50', aliases: ['Exact alias'] });
+  const second = imported('second', 'TEST SECOND', 'fish.pdf', { par: '', archived: true });
+  const third = imported('third', 'TEST THIRD', 'dry.pdf', { category: 'Another category' });
+  const extra = item({ id: 'manual-extra', name: 'Manual extra' });
+  const extraImported = imported('imported-extra', 'TEST EXTRA', 'old.pdf');
+  const saved = supplier([extra, first, extraImported, second, third]), before = JSON.stringify(saved);
+  const result = C.planTemplateOrder(templateOrder([template('dry.pdf', [{ name: 'TEST THIRD', pack: '' }, { name: 'TEST FIRST', pack: 'Original pack' }]), template('fish.pdf', ['TEST SECOND'])]), [saved]);
+  assert.deepStrictEqual([result.matched, result.total], [3, 3]);
+  const plan = result.plans[0];
+  assert.deepStrictEqual([plan.id, plan.v, plan.name, plan.matched, plan.retained, plan.changed], ['s-test', 1, 'Test supplier', 3, 2, true]);
+  assert.deepStrictEqual(plan.items.map(x => x.id), ['third', 'first', 'second', 'manual-extra', 'imported-extra']);
+  plan.items.forEach(entry => assert.deepStrictEqual(entry, saved.items.find(x => x.id === entry.id)));
+  assert.strictEqual(JSON.stringify(saved), before, 'planning never mutates the supplied catalogue');
+  plan.items[1].source.par = '99'; assert.strictEqual(first.source.par, '0', 'preview items are isolated copies');
+});
+test('renamed templates and a template spanning suppliers use complete original names only', () => {
+  const a = supplier([imported('a', 'TEST APPLE', 'original-a.pdf')]);
+  const b = { ...supplier([imported('b', 'TEST BEAN', 'original-b.pdf')]), id: 's-other', name: 'Other supplier' };
+  const result = C.planTemplateOrder(templateOrder([template('new-template.pdf', [' test   bean ', 'TEST APPLE'])]), [a, b]);
+  assert.deepStrictEqual(result.plans.map(p => p.id), ['s-other', 's-test']);
+  assert(result.plans.every(p => !p.changed), 'unchanged plans are returned for the preview');
+  assert.throws(() => C.planTemplateOrder(templateOrder([template('new.pdf', ['TEST APPL'])]), [a, b]), e => e.code === 'template-missing' && /TEST APPL/.test(e.message) && /new.pdf/.test(e.message));
+  a.items[0].aliases = ['SHORT NAME'];
+  throws('template-missing', () => C.planTemplateOrder(templateOrder([template('new.pdf', ['SHORT NAME'])]), [a]));
+});
+test('file provenance and pack variants resolve exact duplicates without guessing', () => {
+  const one = imported('one', 'TEST SAME', 'first.pdf', { pack: '1 kg' });
+  const two = imported('two', 'TEST SAME', 'second.pdf', { pack: '2 kg' });
+  const entries = [supplier([one, two])];
+  let result = C.planTemplateOrder(templateOrder([template(' SECOND.PDF ', [{ name: 'TEST SAME', pack: 'Old edited pack' }])]), entries);
+  assert.strictEqual(result.plans[0].items[0].id, 'two');
+  result = C.planTemplateOrder(templateOrder([template('renamed.pdf', [{ name: 'TEST SAME', pack: ' 2 KG ' }])]), entries);
+  assert.strictEqual(result.plans[0].items[0].id, 'two');
+  assert.throws(() => C.planTemplateOrder(templateOrder([template('renamed.pdf', ['TEST SAME'])]), entries), e => e.code === 'template-ambiguous' && /TEST SAME/.test(e.message));
+  throws('template-ambiguous', () => C.planTemplateOrder(templateOrder([template('renamed.pdf', [{ name: 'TEST SAME', pack: '2 kg' }])]), [supplier([one, two, { ...two, id: 'three' }])]));
+  throws('template-ambiguous', () => C.planTemplateOrder(templateOrder([template('first.pdf', ['TEST SAME'])]), [supplier([one]), { ...supplier([{ ...one, id: 'different' }]), id: 'other' }]));
+});
+test('repeated template rows cannot select the same item twice or discard catalogue records', () => {
+  const saved = supplier([imported('one', 'TEST ONE', 'example.pdf'), imported('two', 'TEST TWO', 'example.pdf')]);
+  throws('duplicate', () => C.planTemplateOrder(templateOrder([template('one.pdf', ['TEST ONE']), template('two.pdf', ['TEST ONE'])]), [saved]));
+  throws('duplicate', () => C.planTemplateOrder(templateOrder([template('one.pdf', ['TEST ONE', 'TEST ONE'])]), [saved]));
+  throws('duplicate', () => C.planTemplateOrder(templateOrder([template('one.pdf', ['TEST ONE'])]), [saved, saved]));
+  throws('duplicate', () => C.planTemplateOrder(templateOrder([template('one.pdf', ['TEST ONE'])]), [supplier([saved.items[0], saved.items[0]])]));
+});
+test('reordering keeps previous quantities attached to stable IDs and leaves history untouched', () => {
+  const first = imported('first', 'TEST FIRST', 'example.pdf'), second = imported('second', 'TEST SECOND', 'example.pdf');
+  const previous = { id: 'recorded', lines: C.snapshotLines([first, second], { first: '2 kg', second: '7 kg' }) }, frozen = JSON.stringify(previous);
+  const plan = C.planTemplateOrder(templateOrder([template('example.pdf', ['TEST SECOND', 'TEST FIRST'])]), [supplier([first, second])]).plans[0];
+  assert.deepStrictEqual(plan.items.map(entry => [entry.id, C.suggestQuantity(entry, previous).qty]), [['second', '7 kg'], ['first', '2 kg']]);
+  const reused = C.snapshotLines(plan.items, Object.fromEntries(previous.lines.map(line => [line.itemId, line.qty])));
+  assert.deepStrictEqual(reused.map(line => [line.itemId, line.qty]), [['second', '7 kg'], ['first', '2 kg']]);
+  assert.strictEqual(JSON.stringify(previous), frozen);
+});
 results.forEach(r => console.log(r));
 const failed = results.filter(r => r.startsWith('FAIL')).length;
 console.log(failed + ' failed of ' + results.length);

@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **9 November 2026, supplier sheets follow the new order templates.** The owner supplied five revised templates and asked for the app's item sequence to match while keeping previous ordered quantities. Reorder existing items by stable identity, retain pars and immutable history, and keep supplier goods private. Existing items absent from the new templates remain at the end. [Contract and verification](supplier-workspace.md#template-order-updates-9-november-2026).
+
 - **9 November 2026, Home work colour and desktop celebration width.** The owner requested Now and next to be colour coded differently and the desktop celebration to span the width so it is thinner. Use the existing warm amber surface for work, retaining charcoal for Your day. Spread the celebration heading and complete explanation horizontally on desktop, preserving fonts and the language cycle. [Contract and examples](home-staff-first.md#work-colour-and-celebration-strip-9-november-2026).
 
 - **9 November 2026, a small × for bottom sheets and modals on non-touch screens.** The owner requested a visible close control and clarified that it belongs to sheet/modal headers. Reuse each panel's Cancel/backdrop action, retain drafts and unread pings, preserve existing close controls and keep the touch layout. [Contract and checks](adaptive-controls.md#swipe-to-close-9-november-2026).

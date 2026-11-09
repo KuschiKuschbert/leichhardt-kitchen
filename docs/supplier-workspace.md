@@ -2,6 +2,28 @@
 
 Status: implemented. Approved by the head chef on 24 October 2026 after the workspace, history, smart suggestions and catalogue editor drafts. Private catalogue loading is a separate authenticated release step; the source data is never bundled with the public app.
 
+## Template order updates, 9 November 2026
+
+The owner supplied revised order templates and asked for the catalogue sequence to follow them while preserving previous quantities. **Import catalogue** now also accepts a private order-only JSON file. It reviews matched suppliers and their full proposed item sequence before **Apply template order**. This uses the existing file picker and review step, with no new service-page control.
+
+The private format is `{version: 1, kind: 'supplier-template-order', templates: [{file, items: [{name, pack}]}]}`. The names and packs describe template rows, never replacement catalogue records. Keep actual files and supplier goods outside this public repository.
+
+Match the complete original `source.name`, ignoring only case and whitespace. For duplicate names, the exact source filename and then complete pack description can disambiguate. A unique name still matches a renamed PDF or edited current pack. Unknown, ambiguous or repeated item matches stop the whole plan before any write. An unreadable supplier also stops matching, because its items could hide a duplicate name. Never infer a match from a product's position, shorthand or similar spelling. Multiple template files may contribute to one supplier; a template may span existing suppliers. Within each supplier, matched rows follow file order, then unlisted existing items retain their relative order at the end. Archived and manual items are retained without changing state.
+
+Every existing item object, supplier ID, item ID, original source, category, pack, current par, unit, alias and conversion is preserved. Previous quantities and live drafts remain keyed by item ID. Recorded orders, occurrence links and completion ticks are never read or written by this update. The order sheet's historical snapshots retain their original sequence.
+
+Apply rereads the catalogue once and rematches every row. It checks every reviewed supplier revision before the first write, then uses the existing version-protected catalogue transaction and paired `reorder` audit for each changed supplier. Unchanged sequences save nothing. A late concurrent edit or lost session can stop a partially applied set; the page reports confirmed saves and refreshes the remaining review, with no automatic retry. Reapplying skips already matching sequences. The catalogue revision also protects any existing order review from being recorded against stale data.
+
+Reads: the preview uses the already loaded catalogue. Apply costs one catalogue query, plus the existing one current-document read and two writes per changed supplier. A failed apply refreshes the review with one further catalogue query. There are no new listeners, polling, history reads, persistent copies, rule changes or schema fields.
+
+Quick council: **Build smaller**. Following the supplied sequence saves scanning between paper and screen. Reuse the current import review rather than adding reorder controls to service pages. This is the session's proportional product, usability and engineering check, not research with staff. In the 390 px synthetic browser check, a To order field remains one tap away and one complete item heading is visible before and after. The same controls and row geometry remain. No extra ordering step is added. The proposed sequence is visible in the existing review; there are no new visual design choices.
+
+Action feedback: Apply immediately says Saving and disables itself. An acknowledged update returns to the catalogue with the supplier names and confirmation that quantities and pars are unchanged. Failure stays in the review with its reason and kept input. A refreshed review needs an explicit second Apply. A no-change review disables Apply, and the handler also refuses it. Each saved audit holds the before and after catalogue for a controlled reversal; there is no new Undo action.
+
+Local verification includes 24 pure core checks (six new checks failed before implementation), existing supplier module/quantity/row/unreadable checks, and 61 focused import checks at 390, 768 and 1280 px. The browser regression caught three raw-item preservation failures from a legacy unit spelling; the reorder transaction now retains the exact raw item maps while validating canonical equality, and the checks pass. The production catalogue cannot be accessed in this session, so actual live matching and application of the private update remain a signed-in chef action after the code ships. Do not describe the kitchen's catalogue as already reordered.
+
+Delivery revisions: `js/suppliers.js?v=19`, `js/supplier-core.js?v=5`, `js/supplier-store.js?v=4`. Existing public API numbers stay compatible; the workspace additionally checks the template-order capability before reading the catalogue. Rollback reverts the client support; an already saved sequence and its audit remain valid to older clients.
+
 ## Outcome
 
 Chef-hat > Supplier order opens a collapsible supplier workspace for the head chef, sous chefs and verified Google owner. Head chef and owner manage the catalogue; sous chefs order and read history. Staff, leads and function managers have no access. Admin > Content > Suppliers & pars links to the same editor. Keep the full Google-only admin gate.
