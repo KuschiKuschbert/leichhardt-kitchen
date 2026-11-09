@@ -106,6 +106,10 @@ There was no ranking disagreement. The refinement priorities differ: the head ch
 
 **Recommendation: A, Grouped notebook.** It makes every work group visible on a phone and removes the stacked setup list with the least relearning. Keep Repeat tasks as its own content view and reuse the real task/editor paths. Keep B and C as alternatives rather than combining their extra navigation into A.
 
+## Follow-up: possible mixes
+
+The owner requested a fresh mix council. Six new reviewers compared A with B's setup editor, A with C's Week view, and the full A+B+C composition. Scores were **17, 13 and 6** respectively. Five preferred the A+B setup mix; the head-chef reviewer preferred A+C Week. **All six still recommend plain A for the first build.** The best later mix borrows B's adjacent list/editor only for desktop Repeat tasks, with one inline form on phones. Defer C until weekly review earns the extra date and coverage state. [Full votes, sketches, disagreement and recommendation](mix-council.md).
+
 ## Chosen
 
 Awaiting the owner's choice. No application source, navigation, completion model, permissions, saved records or team release switch changed. Any chosen implementation must extend `js/cleaning.js` and the existing shared `css/app.css`, with focused Cleaning, navigation, release-switch, draft/session and read-budget checks. Update the design-pattern registry only for the actual chosen pattern.
