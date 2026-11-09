@@ -42,6 +42,8 @@ Add a prep line remains one tap from its tab; Tick remains one tap; opening Reci
 
 ### Verification and comparison
 
+The complete 279-file local run passed 274 files on the first run. The remaining files were resolved as follows: attribution and shift-start expectations now use the approved 768 px breakpoint; Screens expects the shared picker backdrop; Guides passed after the existing PDF test dependency was made available in the worktree; and the pre-existing cooling-motion midnight readiness race was reproduced on the unchanged app and fixed in its own test-only branch. The four layout/dependency reruns pass, as do the focused modal checks. The new modal-overlays file and the supplier-status file added during integration pass separately. Exact CI and release status are recorded in the PR.
+
 `tests/modal-frame.test.js` checks the real Prep, Orders, Wastage and Transfers forms and chef menu at 390, 768 and 1280 px. Before implementation, 27 of its original 70 checks failed. With the shared frame, all 110 checks pass, including touch targets, responsive placement, cancellation without writes and draft retention. `tests/modal-close.test.js` retains keyboard, busy guard, unread-ping and nested-picker checks with the newly approved touch-visible ×. `tests/modal-overlays.test.js` covers native device backdrop cancellation, cooling, menu Back, occasion swipe/Back, guide redraws and backdrop cleanup. The existing swipe checks cover cancelled/short/multitouch gestures, native scrolling, nested cancellation and drafts. Full-suite results and release state are recorded in the pull request; local/mock evidence does not establish a production-device check.
 
 | Before, 390 px | Shared frame, 390 px |

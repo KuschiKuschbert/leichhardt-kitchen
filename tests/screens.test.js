@@ -12,7 +12,7 @@ const cfg = () => ({ [fsKey(['config', 'main'])]: { people: [P('sam', 'Sam', 'so
   let p = await L.open(b, '#/prep', { who: 'sam', wait: 1500 });
   await p.click('.wtop-who'); await L.settle(p, 200);
   const bg = await p.evaluate(() => { const e = document.querySelector('.wm-bg'); return e ? getComputedStyle(e).backgroundColor : ''; });
-  ok(/rgba\(28, 29, 31, 0\.45\)/.test(bg), 'chef menu: the page behind is dimmed (' + bg + ')');
+  ok(/rgba\(28, 29, 31, 0\.53[0-9]*\)/.test(bg), 'chef menu: the shared picker backdrop dims the page (' + bg + ')');
   // since 3 Nov 2026 the menu is a sheet from the bottom on a phone: the dimmed page is above it. Since the hat became a
   // list (redesign step 7, 8 Nov 2026) the sheet is taller, so the tap goes in the middle of the dimmed strip above it,
   // and the strip must stay big enough for a thumb
