@@ -71,4 +71,6 @@ All twelve affected combined integration files also have passing evidence: Order
 
 ## Delivery
 
+The first hosted application run (`42653475161`) passed four browser groups and the rules/nightly group, but blocked release on one legacy `kitchen-pages.test.js` assertion. It used the old attendance button as a proxy for whether the editor was present. C deliberately keeps membership changes inside named details while its service/section controls are directly visible. The assertion now checks both selected people's visible, enabled, dated picker pairs and performs an inline section change, requiring an enabled Save and no acknowledged record change or write before Save. The saved-timeline checks remain. All **45 cross-page assertions** pass locally; application assets are unchanged, so the 550 team/date and 215 full-app results retain their source hashes. Required hosted checks are rerun on the correction before automatic release.
+
 Local implementation and verification are complete. Required hosted checks and the existing normal release queue remain the delivery gate, tracked in PR #652. Rollback is a focused revert of the new UI/view-state code, scoped CSS and matching tests/docs; preserve stored records and unrelated changes. No data migration or rule publication is proposed.
