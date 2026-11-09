@@ -8,6 +8,8 @@ The follow-up request makes [current design contracts](../.claude/skills/service
 
 The head chef then required three structurally different designs and a clear recommendation that explicitly considers a mix of all three through the seven-app principles. [Compare a mix](../.claude/skills/service-council/SKILL.md#compare-a-mix) records contributions, rejections, conflicts and cost. A recommended blend needs one combined preview, its own measurements and clear review status; original scores do not transfer. The same rule applies to whole-app redesigns. Small-change and fix exemptions remain.
 
+The accepted [Try to break it](../.claude/skills/service-council/SKILL.md#try-to-break-it) improvement makes the existing Skeptic challenge concrete failure paths in both rounds, with the Keeper covering technical recovery. Findings record trigger, expected/observed result or hypothesis, impact, bounded evidence and disposition. Quick checks apply relevant scenarios themselves; whole-app audits assign the duty to an existing reviewer. No extra round, reviewer or live-data testing is introduced; security details remain private.
+
 ## Cleaning schedule and checks, 9 November 2026
 
 The owner requested the supplied unbranded 26-task programme and then the ordered 25-step Hot larder, Grill and Pans pack down in the existing Cleaning page. Keep the chosen C daily notebook + A chef week review. [The current contract](cleaning-schedule.md) covers explicit imports, Sunday deep cleaning, two-day drip trays anchored to 9 November 2026, immutable plans, per-event checks, Pass mapping, blocked states, audit snapshots and the temperature reminder. `js/cleaning-schedule.js` is a lazy runtime dependency, never a startup or saved-shell file.

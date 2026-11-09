@@ -12,7 +12,7 @@ Head chef decision, 5 November 2026 (`docs/head-chef-decisions.md`). The council
 | The change | What runs |
 | --- | --- |
 | **Major:** a new page, tab, bar button, setting, sheet, pop-up or workflow; a change to how a service task is done; removing or merging a feature; anything the head chef must choose | Round 1. Then round 2 if the verdict is Build or Build smaller and people will see the change |
-| **Small:** a change on an existing page that adds no tab, bar button, pop-up or step | Quick check: the session reads the current design contracts below, answers the round 1 questions itself, applies the relevant design references, measures taps and lines, and writes the Council section. No extra agents |
+| **Small:** a change on an existing page that adds no tab, bar button, pop-up or step | Quick check: the session reads the current design contracts below, answers the round 1 questions itself, applies the relevant design references and failure scenarios, measures taps and lines, and writes the Council section. No extra agents |
 | **None:** a bug fix, test fix, docs, CI, a rules change with no new screen | `Verdict: Not needed (bug fix)` in the pull request, with the reason in brackets |
 
 When unsure, it is major. Run each round once per decision, not once per push. Reuse round 1 if the proposal has not changed.
@@ -30,7 +30,7 @@ Count, do not guess: the taps for the main task, and the list lines visible on a
 
 ## Current design contracts
 
-Before either round, read the current `CLAUDE.md` reading map and the affected feature's chosen design and later decisions. Prepare one short evidence packet for every reviewer: the source commit, relevant contract excerpts with file and heading references, baseline screenshots and available measurements. Include this section and Design references below. Fresh agents do not inherit the lead's reading: a bare link or "keep the approved colours" is not enough. Reuse the packet between rounds unless the contracts or proposal change; the quick check reads the same sources without spawning reviewers.
+Before either round, read the current `CLAUDE.md` reading map and the affected feature's chosen design and later decisions. Prepare one short evidence packet for every reviewer: the source commit, relevant contract excerpts with file and heading references, baseline screenshots and available measurements. Include this section, Design references and Try to break it below. Fresh agents do not inherit the lead's reading: a bare link or "keep the approved colours" is not enough. Reuse the packet between rounds unless the contracts or proposal change; the quick check reads the same sources without spawning reviewers.
 
 Every visual proposal includes the relevant parts of [shared surface colours](../../../docs/surface-colours.md#selected-design), [operational colour meanings](../../../docs/colour-coding.md#shared-meanings) and [design patterns](../../../docs/design-patterns.md). Include the affected category exceptions, plus [action feedback](../../../docs/action-feedback.md#the-rule) and [loading and motion](../../../docs/loading-motion.md#behaviour) when states or interactions are involved. These documents own the tokens and detailed rules; do not create another palette in a feature brief.
 
@@ -67,11 +67,32 @@ The service rules, current feature contracts and the head chef's later choices t
 
 For each relevant principle, record the concrete benefit, evidence and trade-off in the feature brief. Round 2 uses a small comparison table: principle, then one column per design marked **Works**, **Needs work** or **Not evidenced**, with a short reason. Explain rejected ideas or **Not relevant** together where helpful. Cite measured taps/visible lines, screenshots or exercised states; a still image cannot prove speed, save feedback or recovery. The quick check needs only a short reference-fit note, not another review round. Rank kitchen value and the evidence above resemblance to an app.
 
+## Try to break it
+
+The existing **Skeptic** is the adversarial reviewer in both rounds. Keep the challenge to whether the feature is worth building, then try to disprove its claims of being clear, quick and reliable. The **Keeper** checks the technical failure, recovery and verification implications. No new reviewer or full review round is added. Criticism must name a plausible failure and its consequences; do not invent faults, reject everything automatically or prescribe more prompts without evidence.
+
+Consider the applicable families below and prioritise the most consequential realistic cases. Report up to three leading scenarios per review, with more detail in the existing brief only when needed. A quick check does this within its self-review; fixes keep their existing exemption and regression-test rules.
+
+| Failure family | Challenge |
+| --- | --- |
+| Confusion and accidental action | Can a rushed person choose the wrong day, item or unit, miss the next action, or confuse Back/Cancel with saving or deleting? Try long labels and unfamiliar roles. |
+| Repetition and delayed answers | What happens after double taps, repeated Save, retry or Undo while an answer is delayed? Can work be duplicated, removed twice or overwritten by a late response? |
+| Failed reads and writes | With no signal, a held write or refusal, does the page preserve work and show the right pending/failure state? Can an empty cache look like confirmed empty data or a pending write look Saved? |
+| Interruption and handover | What happens on Back, closing a sheet, navigation, reload/update or daily lock while work is unsent? Does same-person recovery retain the right draft, and does handover prevent the next person inheriting it or its authority? |
+| Access and conflicting state | Can a wrong role read or write, a stale session retain authority, or two writers silently lose each other's work? Check current role/device, draft-versus-saved and version contracts; hidden controls alone do not prove enforcement. |
+| Misleading presentation | Could colour, motion, disabled controls or hidden feedback imply success, availability or food safety that is not established? Can the task and recovery still be understood without colour or a mouse? |
+
+Round 1 records risks and the evidence needed to test them. Round 2 exercises supported interactions in isolated previews or existing test fixtures where possible, including new failure paths in a proposed mix. Use synthetic data; this review does not authorise disruptive production tests, real staff identities, operational writes or notifications. If a preview cannot exercise a case, say so and name the smallest later check. A source review or mock is not proof of live behaviour or server enforcement.
+
+Record **Break-it findings** in the existing brief: scenario and role/state, expected result, observed result or hypothesis, impact, evidence location and environment, smallest repair or verification needed, and disposition. Label evidence **Reproduced**, **Checked in [named fixture]**, **Risk / Not evidenced**, or **Not applicable** with a reason. Checked means only the stated case and environment passed. Keep security reproduction and authority-bypass details in the existing private evidence record; the public brief contains only a non-sensitive outcome, fix and verification summary.
+
+The lead reconciles findings before recommending: say what was fixed and checked, what still needs verification before readiness, and what is deferred with a reason. A preference score or majority vote does not resolve a demonstrated failure. Keep unresolved access, data-loss or service-blocking failures prominent; change the recommendation or name the required repair. A hypothetical concern remains a risk, not a claimed defect. If no actionable issue was found, state the reviewed scope and limits instead of claiming the design cannot break.
+
 ## Round 1: should we build it?
 
 1. **Write the proposal first, no code.** One page: the problem in the kitchen, who has it, how often, what people do today, the change, and its cost (reads, files, tests, risk). Prepare the current-contract evidence packet above. Name the relevant design-reference principles and the benefit to test, or why none apply. Add screenshots of today's page at 390 px (1280 px for admin pages).
 2. **Run the five reviewers at the same time**: five Agent calls in one message, fresh agents, not forks. Give each the proposal, the same evidence packet, the service rules and its brief from [reviewers.md](reviewers.md). Do not give them your own opinion or the answer you hope for.
-3. **Reconcile.** The verdict is what most reviewers say. Record any disagreement in one line each. Never invent agreement.
+3. **Reconcile.** The verdict is what most reviewers say. Record any disagreement in one line each and carry the leading Break-it findings into the brief and verification plan. Never invent agreement.
 
 | Verdict | Meaning |
 | --- | --- |
@@ -88,7 +109,7 @@ Only after Build or Build smaller, for a change people will see. Three designs b
 2. **Write the brief** in `docs/<name>-options/brief.md`: for each design, its pros and cons, and a table with the taps for the main task, lines visible at 390 px, navigation levels, build size (pull requests), relearning, new reads or rules, and risk. Compare the same task, roles, representative synthetic data, long content, viewports and relevant states. State omissions and capability trade-offs explicitly. Add a short differences table showing how A, B and C differ structurally. Include Contract fit, the reference-principle comparison and their evidence as described above.
 3. **Score all designs with the same council plus the kitchen screen designer** (six fresh agents, briefs in [reviewers.md](reviewers.md)). Each sees every design, the same current-contract evidence packet and the service rules, not your favourite. Explain how contract fit, the relevant principles and evidence affect the ranking. If using numeric scores, state the scale and reproduce the reviewers' scores without inventing missing ones.
 4. **Explicitly consider a mix of all three**, using the process below. Every reviewer names useful or rejected parts from A, B and C, ties them to the relevant seven-app principles, and says whether a blend could beat their preferred single design. The lead reconciles these independent answers after the original rankings.
-5. **Make one clear recommendation**, a named design or an exact mix. Lead with "Recommend B" or "Recommend B's main flow + A's quick entry + C's detail view", then explain why it beats the alternatives, which app principles help and the main downside. State unresolved contract failures, evidence gaps, disagreement and any proposed departure needing the head chef's choice. Do not leave the head chef with an unranked menu or only "your call". The head chef still chooses. Record the choice at the top of `docs/head-chef-decisions.md` and in the brief's "chosen" section, then build it in small steps.
+5. **Make one clear recommendation**, a named design or an exact mix. Lead with "Recommend B" or "Recommend B's main flow + A's quick entry + C's detail view", then explain why it beats the alternatives, which app principles help and the main downside. State the disposition of leading Break-it findings, unresolved contract failures, evidence gaps, disagreement and any proposed departure needing the head chef's choice. Do not leave the head chef with an unranked menu or only "your call". The head chef still chooses. Record the choice at the top of `docs/head-chef-decisions.md` and in the brief's "chosen" section, then build it in small steps.
 
 ### Compare a mix
 
@@ -109,6 +130,7 @@ Taps to add a prep line: 3 before, 2 after. Lines on a 390 px phone: 11 before, 
 Skeptic disagreed: the ⋯ sheet already shows who wrote the line.
 Reference fit: Things keeps today's work visible; drag-only ordering rejected for wet hands. Evidence and comparison in the brief.
 Contract fit: sources, colour/state checks, evidence and unresolved items in the brief.
+Break-it findings: leading failure scenarios, evidence, repairs and unresolved checks in the brief; security detail stays private.
 Recommendation: one named design or an exact mix, why it wins and its main downside.
 Mix considered: A + B + C contributions, rejected parts and combined-preview review status in the brief.
 Brief: docs/<name>-options/brief.md (design B chosen, 5 Nov 2026)
