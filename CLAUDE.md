@@ -233,11 +233,11 @@ These hold for every file, old and new. When you touch code that breaks one, bri
 
 **Screens**
 - Build from the patterns in `docs/design-patterns.md`. A new one goes there in the same pull request, with its names in `tests/design-patterns.test.js`, and a new look is the head chef's call.
-- Every popup or sheet dims the page behind it, closes on the backdrop, Cancel and Escape, and is appended to `document.body`.
+- Dismissible popups and sheets follow the shared frame and cancellation contract in `docs/adaptive-controls.md` (Shared modal frame). Mandatory kitchen/PIN/name screens stay non-dismissible, and pending-save guards remain authoritative.
 - A choice of more than about 12 things gets a type-to-find box with the likely few first, not a long dropdown.
 - A row that scrolls sideways fades at its edge so people can see there is more.
 - Group with space and headings first. Approved book covers, headers, spines and existing purpose cards may use the shared surfaces in `docs/surface-colours.md`; writing pages stay quiet and stronger state fills identify attention or a named outcome. Do not box every group. A long list of rows may alternate a light tint to keep the eye on its row (Settings, head chef 5 Nov 2026), counted from the rows on screen.
-- Pages work at 390, 768 and 1280 px with no sideways scroll (the click tests check it).
+- Pages work at 390, 768 and 1280 px with no sideways scroll (the click tests check it). Verify delivered layout claims in the full app with its actual shell, fonts, representative data and complete forms; keep preview measurements separate.
 
 **Loading**
 - The book's start loads only what the landing page and the prep pages need. Anything big that only one page uses is loaded by that page (the loader `mountManage()` uses), and stays in `SHELL` if the book needs it with no signal.
