@@ -287,7 +287,7 @@ test('split supplier history metadata round-trips without adding fields to ordin
   assert.deepStrictEqual(C.cleanSupplier(ordinary), ordinary);
   const split = { ...supplier(), id: 'split-test', at: 20, historyFrom: 's-test', historyBefore: 10 };
   assert.deepStrictEqual(C.cleanSupplier(split), split);
-  assert.strictEqual(C.API, 6);
+  assert.strictEqual(C.API, 7);
 });
 test('split history requires a complete finite pair for another same-kitchen supplier', () => {
   const base = { ...supplier(), id: 'split-test', at: 20 };
