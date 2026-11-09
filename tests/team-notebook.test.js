@@ -217,6 +217,22 @@ async function focusAt(p, time) { await p.context().clock.setSystemTime(time); a
   await p.focus('[data-p="tm-sh"][data-v="extra8"]'); await p.keyboard.press('Enter'); await L.settle(p, 150);
   ok(await p.$eval('[data-p="tm-sh"][data-v="extra8"]', e => e.getAttribute('aria-pressed')) === 'true', 'keyboard: the last configured shift remains reachable in the scroll strip');
   ok(await readCount(p) === layoutReads && p.errors.length === 0, 'layout: resizing, largest text and keyboard shift changes reuse reads and raise no page errors ' + p.errors.join(' | '));
+
+  // Wednesday gives the dated Save a long label in every month. Match the wider CI fallback without web fonts.
+  const wednesday = L.ymd(new Date(L.NOW + ((3 - new Date(L.NOW).getDay() + 7) % 7) * 86400000));
+  if (!await p.$('[data-p="tm-day"][data-day="' + wednesday + '"]')) await press(p, '[data-p="tm-week-next"]');
+  await press(p, '[data-p="tm-day"][data-day="' + wednesday + '"]');
+  await L.waitFor(p, () => /Save Wednesday/.test(document.querySelector('.tm-save .sv-now')?.textContent || ''));
+  await p.setViewportSize({ width: 320, height: 844 });
+  await p.evaluate(() => { document.documentElement.dataset.text = 'xlarge'; document.documentElement.style.setProperty('--body', '"DejaVu Sans", sans-serif'); });
+  await L.settle(p, 200);
+  const dateSave = await p.$eval('[data-p="tm-save"]', e => {
+    const button = e.getBoundingClientRect(), label = e.querySelector('.sv-now').getBoundingClientRect();
+    return { fits: label.left >= button.left && label.right <= button.right && label.top >= button.top && label.bottom <= button.bottom,
+      button: button.width, label: label.width, text: e.textContent.trim() };
+  });
+  const dateOverflow = await L.overflow(p);
+  ok(dateSave.fits && !dateOverflow, '320 xlarge fallback: the full dated Save label stays inside its button and page (' + JSON.stringify(dateSave) + ', ' + dateOverflow + ')');
   await p.context().close();
   await b.close();
   L.report(R);
