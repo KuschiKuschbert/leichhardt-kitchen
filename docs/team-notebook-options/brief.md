@@ -6,7 +6,7 @@ Read first: `CLAUDE.md`, `.claude/skills/service-council/SKILL.md`, `docs/todays
 
 ## Break board, 9 November 2026
 
-The owner requested a board like Home for staff on break now. Reuse Home's current pinned warm amber work board, orange edge and compact heading for the existing Scheduled away now panel. Names and return times stay visible, with meal breaks and splits labelled. Keep the existing notebook placement, all-shift Saved plan source, next breaks and planner controls.
+The owner requested a board like Home for staff on break now. On 9 November the owner explicitly requested immediate release: Send live now. Reuse Home's current pinned warm amber work board, orange edge and compact heading for the existing Scheduled away now panel. Names and return times stay visible, with meal breaks and splits labelled. Keep the existing notebook placement, all-shift Saved plan source, next breaks and planner controls.
 
 **Verdict: Build smaller (quick check).** This makes existing saved status easier to find without another page, control, step or data source. The owner selected the homepage pattern, so there is no new design choice. This is a session review, not research with staff. Checking scheduled breaks remains zero taps; choosing a section then a person stays two taps, each additional person one, and Save remains separate.
 
