@@ -42,9 +42,10 @@ const saved = async (p, data) => {
     const section = await read(p, '[data-hm-priority="section"]'), br = await read(p, '[data-hm-priority="break"]');
     ok(/Larder/.test(section) && /Lunch/.test(section) && /10:00/.test(section) && /15:00/.test(section), width + ': section and full configured shift hours are visible (' + section + ')');
     ok(/14:30/.test(br) && /15:00/.test(br) && /30 min/.test(br) && /back|return/i.test(br), width + ': break shows start, end, duration and return (' + br + ')');
-    const crew = await read(p, '#hm-with-body'), names = await p.$$eval('.hm-coworkers > li', rows => rows.map(e => e.textContent));
+    const crew = await read(p, '#hm-with-body'), names = await p.$$eval('#hm-with-body .hm-tp', rows => rows.map(e => e.textContent));
     ok(/On with you/.test(crew) && names.some(s => /Sam/.test(s)) && names.some(s => /Bo/.test(s)) && names.every(s => !/Ann|Jo/.test(s)), width + ': same-shift and overlapping coworkers show; self and later-only shift stay out (' + JSON.stringify(names) + ')');
-    ok(/Grill/.test(crew) && /14:00/.test(crew) && /14:30/.test(crew) && /back|return|to/i.test(crew), width + ': coworker section and scheduled break/return stay visible');
+    // a coworker on a break now shows when they are back (the board's cell, 10 Nov 2026), not when they left
+    ok(/Grill/.test(crew) && /Sam back 14:30/.test(crew), width + ': coworker section and return from the current break stay visible (' + crew + ')');
     const positions = await p.evaluate(() => {
       const r = sel => document.querySelector(sel).getBoundingClientRect();
       const own = r('#hm-day'), crew = r('#hm-with'), work = r('#hm-board'), a = document.querySelector('[data-hm-priority="section"]'), b = document.querySelector('[data-hm-priority="break"]');

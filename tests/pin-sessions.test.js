@@ -44,6 +44,9 @@ async function signOut(p) {
   const cutoff = (Math.floor((L.NOW + 6 * 3600000) / 86400000) + 1) * 86400000 - 6 * 3600000;
   ok(s && s.v === 2 && s.by === 'sam' && s.pinAt === 1 && s.exp === cutoff && s.mode === 'shared' && s.issuedAt.seconds * 1000 + s.issuedAt.nanoseconds / 1000000 > L.NOW - 1000, 'fresh PIN opens a v2 device session ending at the exact next Brisbane04 (' + JSON.stringify(s) + ')');
   ok((await secrets(p)).length === 0, 'nothing secret is kept on the phone');
+  // the first PIN of a person's day opens Home (10 Nov 2026, docs/home-staff-first.md)
+  ok(await p.evaluate(() => location.hash === '#/'), 'fresh PIN: Home opens before returning to Prep');
+  await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 500);
   // a tick goes through the session: it carries who ticked it, and no proof
   await tickSelf(p, 'i1');
   let wb = await batchFor(p, '/items/i1$'), i1 = await item(p, 'i1');

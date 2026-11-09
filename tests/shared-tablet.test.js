@@ -28,6 +28,9 @@ async function idle(p) { await p.clock.runFor(11 * 60000); await L.settle(p, 300
   await idle(p); await p.click('[data-p="who-change"]'); await L.settle(p, 200);
   ok(await p.locator('.p-names .p-name').first().getAttribute('data-id') === 'sam', 'recent people remain first in the login picker');
   await pin(p,'ann','2222');
+  // the first PIN of a person's day opens Home (10 Nov 2026, docs/home-staff-first.md)
+  ok(await p.evaluate(() => location.hash === '#/'), 'handover: Ann\'s first PIN of the day opens Home');
+  await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 600);
   await p.fill('#p-text','Ann new line');await p.press('#p-text','Enter');await L.settle(p,300);
   ok((await lineBy(p,'Ann new line')).addedById === 'ann', 'a new login writes only as its own person');
   await idle(p);
@@ -83,6 +86,9 @@ async function idle(p) { await p.clock.runFor(11 * 60000); await L.settle(p, 300
   p = await L.open(b, '#/orders', { who: '', touch: true, deviceMode: 'shared', wait: 1500 });
   ok(await p.$('.p-name') !== null && !await p.$('.o-row'), 'orders stay hidden until login');
   await pin(p,'ann','2222');
+  // the first PIN of a person's day opens Home (10 Nov 2026, docs/home-staff-first.md)
+  ok(await p.evaluate(() => location.hash === '#/'), 'orders login: Home opens after the PIN');
+  await p.evaluate(() => { location.hash = '#/orders'; }); await L.settle(p, 600);
   await p.fill('#o-text', 'Eggs');
   await p.press('#o-text', 'Enter');
   await L.settle(p, 300);

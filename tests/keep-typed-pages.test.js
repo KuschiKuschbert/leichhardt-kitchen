@@ -283,6 +283,8 @@ const rvBo = { [fsKey(['waste', today])]: { avoidable: 'Over-portioned chips', c
     await L.waitFor(p, () => !!document.querySelector('.p-name[data-id="bo"]'), null, 8000);
     await p.click('.p-name[data-id="bo"]'); await L.settle(p, 300);
     await p.fill('#pf1', '3333'); await L.settle(p, 1500);
+    ok(await p.evaluate(() => location.hash === '#/'), 'section hand-over: Bo\'s first PIN of the day opens Home');
+    await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 600);
     await L.waitFor(p, () => !!document.querySelector('[data-p="write"]'), null, 8000); await L.pLog(p);
     ok(await S(p, () => window.LK_PREP.state.who) === 'bo' && await p.inputValue('#p-section') === '' && !(await S(p, () => window.LK_PREP.state.secTyped)), 'section hand-over: Bo\'s Section box does not hold Sam\'s Larder (' + await p.inputValue('#p-section') + ')');
     ok(p.errors.length === 0, 'section hand-over: no page errors ' + p.errors.join(' | '));

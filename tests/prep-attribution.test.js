@@ -162,6 +162,8 @@ async function open(b, options = {}) {
     await p.fill('#pf1', '9999'); await L.settle(p, 500);
     ok(await p.evaluate(old => localStorage.getItem('lk.prep.here') === old, initial), 'a wrong personal PIN never updates device sign-in recency');
     await p.clock.runFor(21000); await p.fill('#pf1', '3333'); await L.settle(p, 1000);
+    ok(await p.evaluate(() => location.hash === '#/'), 'a successful first PIN of the day opens Home');
+    await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 600);
     await tick(p);
     ok((await names(p, 'recent')).slice(0, 3).join(',') === 'bo,ann,sam', 'a successful personal sign-in moves that authenticated member to the front');
     await p.keyboard.press('Escape'); await L.settle(p, 200);

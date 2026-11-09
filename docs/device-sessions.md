@@ -31,7 +31,7 @@ The existing default-app Google session migrates away from operational authentic
 
 ## The daily boundary and work in progress
 
-04:00 is the authentication-day boundary, separate from the prep calendar's midnight and the 03:00 nightly learning job. Locking does not depend on the learning job succeeding. The client uses the shared Queensland clock and checks expiry on wake and clock correction before private screens resume. The server enforces expiry independently.
+04:00 is the authentication-day boundary, separate from the prep calendar's midnight and the 03:00 nightly learning job. The first personal PIN of a person's authentication day opens Home; later PINs keep the page (`docs/home-staff-first.md`, First sign-in of the day). Locking does not depend on the learning job succeeding. The client uses the shared Queensland clock and checks expiry on wake and clock correction before private screens resume. The server enforces expiry independently.
 
 A scheduled privacy lock must not reload over unsent work or discard the same person's drafts. Keep the tab open and re-enter the same person's PIN to finish sending. Work must never be applied under a different person after a handover. Browser shutdown, eviction or an offline reload can still lose Firestore's in-memory queue; the app must say when work has not reached the server.
 

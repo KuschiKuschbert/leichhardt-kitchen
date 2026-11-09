@@ -58,7 +58,9 @@ const val = (p, f) => txt(p, '.dr-fold[data-f="' + f + '"] .dr-val');
   await p.click('.p-name[data-id="kim"]');
   await p.keyboard.type('4444'); await L.settle(p, 600);
   await p.keyboard.type('4444'); await L.settle(p, 1000);
-  ok(await L.whoIs(p) === 'Kim Lee' && /#\/orders$/.test(p.url()) && !/One more thing/.test(await txt(p, '#prep-root') || ''), 'first PIN on the order list: the order list, not One more thing');
+  // the first PIN of the day opens Home (10 Nov 2026); back on the order list the drinks run card asks there
+  ok(await L.whoIs(p) === 'Kim Lee' && /#\/$/.test(p.url()) && !/One more thing/.test(await txt(p, '#prep-root') || ''), 'first PIN on the order list: Home, not One more thing (' + p.url().replace(/^.*#/, '#') + ')');
+  await p.evaluate(() => { location.hash = '#/orders'; }); await L.settle(p, 900);
   ok(/New: the drinks run/.test(await txt(p, '.dr-nudge') || ''), 'first PIN on the order list: the drinks run card asks for a usual');
   await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 900);
   ok(!/One more thing/.test(await txt(p, '#prep-root') || '') && !!(await p.$('.nb-left')) && !!(await p.$('.dr-nudge')), 'first PIN on the order list: Prep shows the list with the card, not One more thing');

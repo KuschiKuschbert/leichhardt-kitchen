@@ -398,7 +398,13 @@
     }
     m = text.match(/[\p{L}\p{N}]\p{M}*/u); return m ? m[0].toUpperCase() : '?';
   }
+  // The welcome flip runs 1.1 s from a sign-in. A top bar redrawn in that time (the first PIN of the day moves to Home and
+  // redraws it, 10 Nov 2026) carries the flip on from where it was, so it is neither cut nor started again.
+  // Date.now(): time passing on this phone only.
+  var whoFlipEnd = 0;
   function whoMark(flip) {
+    if (flip) whoFlipEnd = Date.now() + 1100;
+    var left = whoFlipEnd - Date.now();
     var n = window.LK_PREP && window.LK_PREP.whoName ? window.LK_PREP.whoName() : '';
     var rn = parseRoute().name, here = rn === 'settings' || rn === 'admin' ? ' aria-current="page"' : '';
     // open kitchen mail shows as a count on the hat, as it did on the Admin key
@@ -406,7 +412,7 @@
     // who is signed in shows on the hat itself (3 Nov 2026, the Writing as row went): their initial in a small disc, and on
     // a shared screen their display name next to it, with the complete name in the menu and accessible label
     var sh = n && window.LK_DEVICE && window.LK_DEVICE.mode() === 'shared' ? ' is-shared' : '';
-    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + sh + (n && flip ? ' flip' : '') + '" data-who="menu" aria-haspopup="true" aria-expanded="' + !!wmenu + '"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + (n ? '<span class="wtop-av" aria-hidden="true">' + esc(initial(n)) + '</span>' : '') + '<span class="wtop-lbl wtop-who-n">' + esc(n) + '</span>' + mailBadge(ml) + '</button>';
+    return '<button type="button" class="wtop-btn wtop-who' + (n ? ' on' : '') + sh + (n && left > 0 ? ' flip' : '') + '"' + (n && left > 0 && left < 1100 ? ' style="animation-delay:-' + (1100 - left) + 'ms"' : '') + ' data-who="menu" aria-haspopup="true" aria-expanded="' + !!wmenu + '"' + here + (n ? ' title="Signed in as ' + esc(n) + mt + '" aria-label="Signed in as ' + esc(n) + ', menu and Settings' + mt + '"' : ' title="Menu and Settings' + mt + '" aria-label="Menu and Settings' + mt + '"') + '>' + ICON.chef + (n ? '<span class="wtop-av" aria-hidden="true">' + esc(initial(n)) + '</span>' : '') + '<span class="wtop-lbl wtop-who-n">' + esc(n) + '</span>' + mailBadge(ml) + '</button>';
   }
   // A roster rename patches current identity in place. Keep the open menu, focused control and draft warnings.
   // Reuses the existing config event and held roster: no reads, listeners or separate profile cache.

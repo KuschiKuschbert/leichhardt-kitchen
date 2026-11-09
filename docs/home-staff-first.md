@@ -7,8 +7,8 @@ Home answers the staff questions first: **what section and shift, when is my bre
 ## Contract
 
 - `#hm-day` shows the existing personal section precedence, configured shift hours and full break window, length and return. On-break, split, completed-break, no-break, changed, unassigned, loading and failed-plan states stay distinct. Your day retains additional breaks, later shifts and save metadata.
-- `#hm-with` shows scheduled coworkers by selected shift or overlapping configured shift hours, excluding the signed-in person. This is a saved plan, not a claim that somebody is physically present. Names stay visible. Without a usable personal assignment, use the full saved day and label it On today.
-- The native full-team disclosure retains every saved shift, person, section and break. Staff get read-only records; chef planner links retain `teamOK()`.
+- `#hm-with` shows scheduled coworkers by selected shift or overlapping configured shift hours, excluding the signed-in person. This is a saved plan, not a claim that somebody is physically present. Names stay visible. Without a usable personal assignment, use the full saved day and label it On today. Since 10 November 2026 both show as the section board in [On today board](#on-today-board-10-november-2026).
+- The native full-team disclosure retains every saved shift, person, section and break. Since 10 November 2026 it shows only when the card holds one shift's coworkers; a card that already holds the whole day has no fold. Staff get read-only records; chef planner links retain `teamOK()`.
 - Work reminders, order cut-offs, functions, pings, minutes and Prep by section follow the personal/team group. A confirmed empty work board is hidden; loading/error information is retained.
 - Reuse `tm.rec`, the existing team stamp/read, `tmNow`, `tmNextBreak`, `tmSecWords` and personal section precedence. Never use the unsaved `tmf` planner draft or a stale/failed roster as current truth. Existing paint paths update times and changed plans without a new query.
 - Signed-out and Functions-only users retain their existing Home. Clock, Cleaning rollout, Guides, prep standards and their permissions retain their shipped implementations. This change creates no independent timer, stock ledger or cleaning system.
@@ -81,3 +81,48 @@ Rendered contrast is 5.20:1 for the sage heading and 6.38:1 for its secondary te
 
 
 [Desktop before](home-staff-first/card-colours/before-1280.png), [desktop after](home-staff-first/card-colours/after-1280.png), [phone](home-staff-first/card-colours/after-390.png), [lower phone cards](home-staff-first/card-colours/after-390-lower.png), [tablet](home-staff-first/card-colours/after-768.png) and [all measurements](home-staff-first/card-colours/measurements.json) record 91 passing capture checks. Settled full-team hover text is 13.68:1. The inherited wrap of a long section label at extra-large phone text is identical before and after, with no clipped text.
+
+
+## On today board, 10 November 2026
+
+The owner said On today looked very loud and asked for it to be consolidated. On their real day most chefs work a double: Lunch 10:00 to 15:00, then Dinner 15:00 to 21:00, often on another section, with a two-hour break between. The card listed each person once per shift, alphabetically, with the shift name and hours on every row, so the same chefs filled a whole phone screen. **View today's full team** then listed everyone again by section.
+
+**Quick council check: build smaller.** This changes one existing card: no new tab, bar button, pop-up or step. Three previews ran in the real app with a synthetic double-shift day and the app's fonts: A by shift (558 px), B one row per person (530 px), C a section board (446 px). The owner chose C, the recommendation. Reference fit: Flighty and Airbnb (time, place and status together in one glance); Things 3 (the whole day visible, nothing repeated behind a fold). Contract fit: the sage people surface, words, read and access contracts are unchanged; a bold break state also has its own words.
+
+### Contract
+
+- `homeRotaHTML()` draws a `.hm-rota` table: sections down in the kitchen's order (No section last), the day's shifts across in start order (shifts without hours last), each shift's hours once in its column head. Each saved person and shift is one `.hm-tp` in its cell, names in order; a chef on a double is in both columns. An empty cell means the plan has nobody on that section for that shift.
+- A cell shows the person's breaks on that shift ("break 13:00 to 15:00", "split ..." from 150 minutes). While they are on one now it says "back 15:00" in bold instead. The minute paint updates it from the held plan.
+- Up to three shifts share one board. With four or more, each shift gets its own one-column board, one under the other, so a phone never scrolls sideways.
+- Head chef, or anyone not on today's plan: On today holds the whole saved day and the full-team fold is hidden, because it would repeat the card. Chefs get **Today's team** under the board.
+- Staff with a shift: On with you is the board of coworkers on their shift or an overlapping one, as before. **View today's full team** opens the same board for the whole day, without a second On today heading. Its open state still survives clock paints.
+- Checking, unset, failed and empty plans keep their existing words. No read, listener, field, rule or saved copy changes: the board uses the plan already held (`tm.rec`).
+
+### Measured
+
+Implemented app, synthetic day of 8 chefs and 13 shift rows, five breaks, at 14:00 with the real Barlow fonts:
+
+| View | Before | After |
+| --- | --- | --- |
+| Head chef, 390 px | 858 px card, then the same 13 rows again in the fold | 446 px card, no fold |
+| Head chef, 1280 px | 865 px | 446 px |
+| Staff on Lunch, 390 px, folded | 431 px | 396 px |
+
+Checking who is on takes no tap, before and after. The whole day is no tap for the head chef and one tap for staff, before and after. [Options as chosen](home-staff-first/on-today-board/options-390.png), [phone](home-staff-first/on-today-board/after-390.png), [tablet](home-staff-first/on-today-board/after-768.png), [laptop](home-staff-first/on-today-board/after-1280.png), [staff with the fold open](home-staff-first/on-today-board/after-staff-390.png), [four shifts](home-staff-first/on-today-board/after-four-shifts-390.png).
+
+`tests/home-rota.test.js` checks the board at 390, 768 and 1280 px, the double, the break words, the hidden fold, the staff fold, three and four shifts and no team listener: 57 of 57 pass, and it failed 8 of 20 on the old Home (the rest need a board to run). The Home, roster, welcome, colour and pattern tests now look for `.hm-tp` in `#hm-with`. Revert the change to restore the list; no saved data changes.
+
+## First sign-in of the day, 10 November 2026
+
+The owner asked to close #599 and rebuild only its first sign-in part on current main. #599's shift rows are not rebuilt: `#hm-day` above already shows the person's section, shift and break.
+
+- The first successful personal PIN of a person's authentication day opens Home (`#/`). The day turns at 04:00 Queensland, with the PIN session, not at midnight. Later PINs that day, after an idle lock, sign-out, reload or the chef hat's Sign in, keep the page.
+- These keep their page on the first PIN too, and count as that day's sign-in: unsent or unfinished work (`dirtyForUpdate()`, `sendingNow()`), a tap waiting on a shared screen (`S.pending` without `back`), a Functions-only account, the head chef unlocking on Admin (owner, 10 Nov 2026: "Keep Admin on its page for the head chef"), and a new starter whose first PIN, set on Prep, asks for their usual drink there.
+- A session still valid when the book opens counts as today's sign-in, including a shared screen reopened past its idle time.
+- The personal PIN button says where the tap goes: **Open Home**, the page's own name (**Open the order list**), or **Resume your work**. The kitchen PIN screen keeps the page's name. The chef hat's Who are you? says the first sign-in of the day opens Home.
+- `lk.prep.home.<person>` keeps the end of the day the person last signed in on this device (their session's expiry). It survives sign-out and reload, is out of date at the next 04:00, grants nothing and is never sent to the server.
+- The welcome flip on the chef mark carries on through the top bar redraw that the move to Home makes (`whoFlipEnd` in `js/app.js`). Its peak zoom is 1.1, not 1.3: at 1.3 a long name on a shared phone pushed the page 18 px sideways.
+
+Quick check (small change: no new tab, bar button, pop-up or step). Taps: seeing your own section and break after the first PIN goes from 1 tap (Home) to 0; every other task is unchanged, and later PINs never move the person. Lines on a 390 px phone: unchanged, no new line on any work page. Try to break it: a cook signing in to tick one line on a shared tablet is not taken away (`S.pending`); a typed order at the 04:00 lock is finished on its page; a wrong PIN does not use up the day's Home. No new Firestore read, listener, write or rule. Rollback: revert the pull request; old `lk.prep.home.*` keys are ignored.
+
+`tests/login-home.test.js`: 11 of 31 checks fail on the old main, 0 with the change. `tests/device-sessions.test.js` checks the head chef's first PIN on Admin keeps Admin, with the button naming the admin panel. Nineteen existing browser tests now expect Home after a person's first PIN, then go back to their page.

@@ -1313,6 +1313,8 @@
   }
   function signedIn(id, hash) {
     if (!deviceReady() || !window.LK_DEVICE.verify(id)) { S.authed = false; S.pinMsg = 'This personal device is assigned to another person. Change it in Settings first.'; draw(); return; }
+    // asked before the PIN screen's state is cleared: unsent work, a waiting tap and the drink question keep their page
+    var toHome = homeNext(id) && S.drinkAsk !== 'first';
     setTimeout(dailyFlush, 3000);   // yesterday's counts, once someone is signed in (W writes as them)
     S.privacyLocked = false; S.unlocking = false; S.lockHasDraft = false; S.lockIdentity = ''; S.lockRecorder = ''; S.authed = true; S.tok = hash; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = '';
     lsSet('lk.prep.tok', ''); lsSet('lk.prep.seen', String(Date.now())); lsSet('lk.prep.day', dayNow()); lastAct = Date.now(); startIdle();
@@ -1322,6 +1324,9 @@
     // chef hat (back) is a real start
     S.guestIn = !!(pend && !pend.back);
     lsSet('lk.prep.guest', S.guestIn ? id + ':' + dayNow() : '');   // kept for a reload; out of date for another person or day
+    // The first PIN of the person's day opens Home (10 Nov 2026, docs/home-staff-first.md); later PINs keep the page.
+    homeLoginKeep(id, S.sessExp);
+    if (toHome) { pend = null; location.hash = '#/'; }
     recoverWrites(id); loadAdmins(); accessChanged(); draw(); whoSync(true);
     if (pend) guestReplay(pend);
     dkCheck(); ksCheck(); noteMaybePop();
@@ -1329,6 +1334,20 @@
   /* Who signed in on this device today, newest first: "Who are you?" lists them first (lk.prep.here). */
   function hereGet() { try { var h = JSON.parse(lsGet('lk.prep.here') || 'null'); return h && h.d === dayNow() ? h.ids : []; } catch (e) { return []; } }
   function hereAdd(id) { var ids = hereGet().filter(function (x) { return x !== id; }); ids.unshift(id); lsSet('lk.prep.here', JSON.stringify({ d: dayNow(), ids: ids.slice(0, 12) })); }
+  /* Home on the first sign-in of the day (10 Nov 2026, docs/home-staff-first.md). lk.prep.home.<person> keeps the end of
+     the day the person last signed in on this device: their session's expiry, the next 04:00 Queensland. Out of date at
+     that 04:00, so the next PIN opens Home again. It survives sign-out and reload, and it is a screen hint only: it grants
+     nothing and saves nothing on the server. */
+  function homeLoginSeen(id) { return !!id && Number(lsGet('lk.prep.home.' + id)) === nextUnlock(now()); }
+  function homeLoginKeep(id, exp) { if (id && exp > now()) lsSet('lk.prep.home.' + id, String(exp)); }
+  // Home first, unless the person has work to finish here: kept or unsent work, a tap waiting on a shared screen (not the
+  // chef hat's Sign in, which only came back), a Functions-only account, which stays on its functions, or the head chef
+  // unlocking on Admin, which keeps Admin (owner, 10 Nov 2026).
+  function homeNext(id) {
+    var c = S.config || {};
+    return !!id && !homeLoginSeen(id) && (c.fnOnlyIds || []).indexOf(id) < 0 && !(S.name === 'admin' && id === c.headId) &&
+      !dirtyForUpdate() && !sendingNow() && (!S.pending || !!S.pending.back);
+  }
   /* ---------- a shared kitchen device with nobody signed in (20 Oct 2026) ----------
      After the 10 minute lock, the prep list, orders and wastage still show. A tap that writes (tick, add, urgent, order,
      log waste) asks "Who are you?" first, then does that same thing once the PIN is right, so nobody taps twice. What was
@@ -1464,6 +1483,7 @@
     }
     if (S.user && S.who !== (S.config || {}).headId) { var previous = S.who; dropGoogle().then(function () { pickName(previous); accessChanged(); }); return; }
     var sv = savedSession(), hasSess = sv && sv.by === S.who && sv.exp > now() && sv.exp === nextUnlock(sv.issuedAt) && sv.issuedAt < now() + 60000 && sv.uid === S.uid && sv.mode === deviceMode() && (deviceMode() !== 'personal' || deviceOwner() === S.who);
+    if (hasSess) homeLoginKeep(S.who, sv.exp);
     // a shared device handing over when it opens (a new kitchen day, or its idle time passed with the tab closed) takes
     // what the last person left on it, like Sign out (29 Oct 2026: their recipe, drawing and function drafts stayed for
     // the next person). A personal phone keeps its own drafts: the same person types their PIN again.
@@ -4688,6 +4708,9 @@
   var TICK = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M5 14 L11 20 L22 5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   function openLabel() { return { orders: 'Open the order list', waste: 'Open the wastage log', transfers: 'Open the transfer list', minutes: 'Open the minutes', guides: 'Open the guides', cleaning: 'Open the cleaning list', mail: 'Open kitchen mail', drinks: 'Open the drinks run', admin: 'Open the admin panel' }[S.name] || 'Open the prep list'; }
+  // The personal PIN button names where the tap goes (docs/action-feedback.md): kept work, Home on the first sign-in of
+  // the day (homeNext), or this page
+  function pinGoLabel() { return blockedRecorder() ? 'Resume your work' : homeNext(S.who) ? 'Open Home' : openLabel(); }
   function gateHTML() {
     return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Kitchen PIN</h2><p class="hint">' + (S.name === 'admin' ? 'The admin panel needs the kitchen PIN on this device once, then the head chef\'s Google sign-in.' : 'Enter the kitchen PIN to open the prep list, orders, wastage, transfers, minutes and guides. This device remembers it.') + '</p>' +
       '<div class="field"><label class="label" for="p-pin">PIN</label>' + pinField('p-pin', 'p-pin', S.pinInput, true) + '</div>' +
@@ -4704,7 +4727,7 @@
     here.forEach(function (id) { var p = list.filter(function (x) { return x.id === id; })[0]; if (p) first.push(p); });
     list.forEach(function (p) { if (first.indexOf(p) < 0) rest.push(p); });
     function names(l) { return '<div class="p-names">' + l.map(function (p) { return '<button type="button" class="chip p-name" data-p="who" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>'; }).join('') + '</div>'; }
-    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2>' + workNoticeHTML(true) + '<p class="hint">' + (S.pending && S.pending.back ? 'Pick your name and type your PIN. Then the book goes back to where you were.' : S.pending ? 'Pick your name and type your PIN. Then it is done for you.' : 'Pick your name. The first time, you choose your own 4-digit PIN to go with it.') + '</p>' +
+    return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Who are you?</h2>' + workNoticeHTML(true) + '<p class="hint">' + (S.pending && S.pending.back ? 'Pick your name and type your PIN. Your first sign-in of the day opens Home. After that, the book goes back to where you were.' : S.pending ? 'Pick your name and type your PIN. Then it is done for you.' : 'Pick your name. The first time, you choose your own 4-digit PIN to go with it.') + '</p>' +
       (!list.length ? '<p class="p-err">No names are set up yet. The head chef adds them in the admin panel.</p>' :
         first.length ? '<p class="nb-ql p-here">Here today</p>' + names(first) + (rest.length ? '<p class="nb-ql p-here">Everyone</p>' + names(rest) : '') : names(list)) +
       (S.picking && shared() ? '<div class="btn-row"><button type="button" class="btn" data-p="who-back">Back to the list</button></div>' : '') + '</section>';
@@ -4723,7 +4746,7 @@
       (setting ? '<div class="field"><label class="label" for="pf2">Type it again</label>' + pinField('pf2', 'pf2', S.pf2, true) + '</div>' : '') +
       // a wait or a PIN just saved is a status, not an error (LF-06)
       (S.pinMsg ? S.pinMsg === 'Checking your PIN...' ? inkWait(S.pinMsg, 'chef') : S.pinMsg === PIN_AGAIN ? msgHTML(S.pinMsg) : '<p class="p-err" role="alert">' + esc(S.pinMsg) + '</p>' : '') +
-      '<div class="btn-row"><button type="submit" class="btn dark">' + (setting ? 'Save my PIN' : openLabel()) + '</button><button type="button" class="btn" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Not me') + '</button></div></form>';
+      '<div class="btn-row"><button type="submit" class="btn dark">' + (setting ? 'Save my PIN' : pinGoLabel()) + '</button><button type="button" class="btn" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Not me') + '</button></div></form>';
   }
 
   var BOX = '<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><rect x="2.5" y="2.5" width="21" height="21" rx="3" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
@@ -10656,7 +10679,11 @@
     var br = homeRowHTML(row).replace('<li>', '<li data-hm-priority="break">').replace('class="hm-a', 'class="hm-a hm-day-break');
     return head + '<ul class="hm-rows">' + section + br + '</ul>';
   }
+  /* the full-day fold under On with you shows only when it adds people: a card that already holds the whole saved day
+     (the head chef, or anyone not on today's plan) hides it, so nobody reads the same team twice (head chef, 10 Nov 2026) */
+  var homeFold = false;
   function homeWithHTML() {
+    homeFold = false;
     var d = homePlanData(); if (!d) return '';
     var p = me(), m = T.mins(), ready = d.state === 'ready', n = ready ? tmNow(tmMy(p.id), m) : null;
     var byShift = {}; kitShifts().forEach(function (s) { byShift[s.id] = s; });
@@ -10664,20 +10691,46 @@
     var hours = function (s) { return s && s.from != null && s.to != null && s.from < s.to; };
     var scoped = !!n && (hours(n.s) || all.some(function (o) { return o.id !== p.id && o.sh === n.s.id; }));
     var rows = scoped ? all.filter(function (o) { var s = byShift[o.sh]; return o.id !== p.id && (o.sh === n.s.id || hours(s) && hours(n.s) && s.from < n.s.to && n.s.from < s.to); }) : all;
-    var ownSec = n && n.sec;
-    rows.sort(function (a, b) { return (a.sec === ownSec ? 0 : 1) - (b.sec === ownSec ? 0 : 1) ||
-      (n && a.sh === n.s.id ? 0 : 1) - (n && b.sh === n.s.id ? 0 : 1) || mnName(a.id).localeCompare(mnName(b.id)); });
     var head = '<div class="hm-ph"><h3 class="hm-pt">' + (scoped ? 'On with you' : 'On today') + '</h3>' +
       '<span class="hm-roster-caption">' + esc(scoped ? n.s.name + ' team' : 'Saved plan') + '</span></div>';
     if (!ready) return head + '<p class="hint" role="status">' + esc(homePlanNote(d)) + '</p>';
-    if (!rows.length) return head + '<p class="hint">' + (scoped ? 'No other staff are rostered alongside this shift.' : d.rec.on.length ? 'Could not check today\'s team.' : 'Nobody is rostered today.') + '</p>';
-    var seen = {};
-    return head + '<ul class="hm-coworkers">' + rows.filter(function (o) { var k = JSON.stringify([o.id, o.sh]); if (seen[k]) return false; seen[k] = true; return true; }).map(function (o) {
-      var s = byShift[o.sh], breaks = tmShiftBreaks(d.rec, o), line = (scoped && n.s.id === o.sh ? '' : s.name + ' · ') + homeShiftHours(s);
-      line += breaks.map(function (b) { return ' · ' + (tmIsSplit(b.len) ? 'split ' : 'break ') + tmAwayTime(b.at) + ' to ' + tmAwayTime(b.at + b.len) +
-        (tmOnBreak(b, m) ? ', back ' + tmAwayTime(b.at + b.len) : ''); }).join('');
-      return '<li><span><b>' + esc(mnName(o.id)) + '</b><small>' + esc(line) + '</small></span><span>' + esc(o.sec ? tmSecName(o.sec) || 'No section' : 'No section') + '</span></li>';
-    }).join('') + '</ul>';
+    if (!rows.length) { homeFold = scoped; return head + '<p class="hint">' + (scoped ? 'No other staff are rostered alongside this shift.' : d.rec.on.length ? 'Could not check today\'s team.' : 'Nobody is rostered today.') + '</p>'; }
+    homeFold = scoped;
+    return head + homeRotaHTML(d.rec, rows, m) + (!scoped && teamOK() ? '<a class="hm-pl" href="#/team">Today\'s team</a>' : '');
+  }
+  /* On today as a board (head chef, 10 Nov 2026, chosen C of three; docs/home-staff-first.md): sections down, the day's
+     shifts across in start order, each person in their cell with their break. A chef on a double shows in both columns,
+     as the plan saves it, and a section nobody has on a shift is an empty cell. Each shift's hours are said once, in its
+     column head. More than three shifts do not fit a phone: each shift then has its own one-column board, one under the
+     other. From the saved plan already held (tm.rec): no read, listener or saved copy of its own. */
+  function homeRotaHTML(rec, rows, m) {
+    var ks = kitShifts(), byShift = {}, seen = {}, cols = [], at = {};
+    ks.forEach(function (s) { byShift[s.id] = s; });
+    rows.forEach(function (o) {
+      var k = JSON.stringify([o.id, o.sh]); if (!byShift[o.sh] || seen[k]) return; seen[k] = true;
+      if (!at[o.sh]) { at[o.sh] = []; cols.push(byShift[o.sh]); } at[o.sh].push(o);
+    });
+    var start = function (s) { return s.from == null ? 1e9 : s.from; };
+    cols.sort(function (a, b) { return start(a) - start(b) || ks.indexOf(a) - ks.indexOf(b); });
+    var secs = kitSecs().map(function (x) { return x.id; }), row = function (o) { return secs.indexOf(o.sec) >= 0 ? o.sec : ''; };
+    var board = function (list) {
+      var keys = secs.concat(['']).filter(function (k) { return list.some(function (s) { return at[s.id].some(function (o) { return row(o) === k; }); }); });
+      return '<table class="hm-rota"><thead><tr><td></td>' + list.map(function (s) { return '<th scope="col">' + esc(s.name) + ' <small>' + esc(homeShiftHours(s)) + '</small></th>'; }).join('') + '</tr></thead><tbody>' +
+        keys.map(function (k) {
+          return '<tr><th scope="row">' + esc(k ? tmSecName(k) : 'No section') + '</th>' + list.map(function (s) {
+            return '<td>' + at[s.id].filter(function (o) { return row(o) === k; }).sort(function (a, b) { return mnName(a.id).localeCompare(mnName(b.id)); })
+              .map(function (o) { return homeRotaPerson(rec, o, m); }).join('') + '</td>';
+          }).join('') + '</tr>';
+        }).join('') + '</tbody></table>';
+    };
+    return cols.length <= 3 ? board(cols) : cols.map(function (s) { return board([s]); }).join('');
+  }
+  // one person in a cell: their name, then their breaks on that shift; while on one, bold "back 15:00" in its place
+  function homeRotaPerson(rec, o, m) {
+    var bs = tmShiftBreaks(rec, o), away = bs.filter(function (b) { return tmOnBreak(b, m); })[0];
+    var words = away ? 'back ' + tmAwayTime(away.at + away.len) :
+      bs.map(function (b) { return (tmIsSplit(b.len) ? 'split ' : 'break ') + tmAwayTime(b.at) + ' to ' + tmAwayTime(b.at + b.len); }).join(', ');
+    return '<span class="hm-tp' + (away ? ' is-away' : '') + '"><b>' + esc(mnName(o.id)) + '</b>' + (words ? ' <small>' + esc(words) + '</small>' : '') + '</span>';
   }
   function homeBoardHTML() {
     var head = '<div class="hm-bh"><h3 class="hm-bt" id="hm-board-h">Now and next</h3><b class="hm-clock">' + esc(T.clock(now())) + '</b></div>';
@@ -10702,29 +10755,21 @@
       return '<li><a class="hm-sec" href="#/prep" data-hm-sec="' + esc(n) + '"><span class="hm-sn">' + esc(n || 'No section') + '</span><span class="nb-hbar' + (left ? '' : ' is-done') + '" aria-hidden="true"><i style="width:' + pct + '%"></i></span><span class="hm-sl">' + (left ? left + ' left' : 'Done') + '</span></a></li>';
     }).join('') + '</ul>';
   }
-  /* On today (8 Nov 2026): who is on each section, with their shifts and breaks, from the saved plan already read for
-     the top bar's chip (teamLoad(), once a day): no read of its own. Staff see it below their own day on every screen;
-     chefs keep the planner link and their existing tablet/laptop card. Staff never see the editor or an unsaved draft. */
+  /* The full saved day under On with you's fold (8 Nov 2026; a board since 10 Nov 2026): every saved shift, person,
+     section and break, from the plan already read for the top bar's chip (teamLoad(), once a day): no read of its own.
+     Chefs keep the planner link. Staff never see the editor or an unsaved draft. */
   function homeTeamHTML() {
     var chef = teamOK();
     if (!chef && (!homeOn() || !me() || !tmCanRead())) return '';
     teamLoad();
-    var rec = tm.rec;
-    var head = '<div class="hm-ph"><h3 class="hm-pt">On today</h3>' + (chef ? '<a class="hm-pl" href="#/team">Today\'s team</a>' : '') + '</div>';
+    var rec = tm.rec, link = chef ? '<a class="hm-pl" href="#/team">Today\'s team</a>' : '';
     var state = tmAwayData();
-    if (state.state !== 'ready') return head + '<p class="hint" role="status">' + esc(homePlanNote(state)) + '</p>';
-    if (!rec || !rec.on || !rec.on.length) return chef ? '' : head + '<p class="hint">Nobody is rostered today.</p>';
+    if (state.state !== 'ready') return '<p class="hint" role="status">' + esc(homePlanNote(state)) + '</p>';
+    if (!rec || !rec.on || !rec.on.length) return chef ? '' : '<p class="hint">Nobody is rostered today.</p>';
     var byId = {}; kitShifts().forEach(function (x) { byId[x.id] = x; });
     var rows = rec.on.filter(function (o) { return byId[o.sh]; });
-    if (!rows.length) return chef ? '' : head + '<p class="hint" role="status">Could not check today\'s team.</p>';
-    var order = kitSecs().map(function (x) { return x.id; }).concat(['']), groups = {};
-    rows.forEach(function (o) { var k = order.indexOf(o.sec) >= 0 ? o.sec : ''; (groups[k] = groups[k] || []).push(o); });
-    return head + '<ul class="hm-team-l">' +
-      order.filter(function (k) { return groups[k]; }).map(function (k) {
-        return '<li><span class="hm-tsec">' + esc(k ? tmSecName(k) : 'No section') + '</span><span class="hm-tw">' + groups[k].map(function (o) {
-          return '<span class="hm-tp"><b>' + esc(mnName(o.id)) + '</b> <small>' + tmShiftWords(rec, o, byId[o.sh]) + '</small></span>';
-        }).join('') + '</span></li>';
-      }).join('') + '</ul>';
+    if (!rows.length) return chef ? '' : '<p class="hint" role="status">Could not check today\'s team.</p>';
+    return homeRotaHTML(rec, rows, T.mins()) + link;
   }
   /* Coming up's order cut-offs (8 Nov 2026, the audit of the redesign): each supplier's next cut-off after today, in the
      next 7 days, for the chefs who get the cut-off bar; from the kitchen's settings already held, no read. Today's are on
@@ -10747,7 +10792,7 @@
     var team = '<section class="hm-paper hm-team' + (staff ? ' hm-team-staff' : '') + '" id="hm-team" aria-label="On today"' + (tt ? '' : ' hidden') + '>' + tt + '</section>';
     var first = '<div class="hm-staff-first"><section class="hm-board" id="hm-day" aria-labelledby="hm-day-h"' + (day ? '' : ' hidden') + '>' + day + '</section>' +
       '<section class="hm-paper hm-with" id="hm-with" aria-label="Your team"><div id="hm-with-body">' + crew + '</div>' +
-      '<details class="hm-full-team" id="hm-full-team"><summary>View today\'s full team</summary>' + team + '</details></section></div>';
+      '<details class="hm-full-team" id="hm-full-team"' + (homeFold ? '' : ' hidden') + '><summary>View today\'s full team</summary>' + team + '</details></section></div>';
     return first + '<section class="hm-board" id="hm-board" aria-labelledby="hm-board-h"' + (b ? '' : ' hidden') + '>' + b + '</section>' + prep;
   }
   function homePaint() {
@@ -10763,6 +10808,7 @@
       dy.hidden = !dh;
     }
     var cw = document.getElementById('hm-with-body'); if (cw) { var wh = homeWithHTML(); if (cw.lkH !== wh) { cw.innerHTML = wh; cw.lkH = wh; } }
+    var fd = document.getElementById('hm-full-team'); if (fd && fd.hidden !== !homeFold) fd.hidden = !homeFold;
     var b = document.getElementById('hm-board'); if (b) { var h = homeBoardHTML(); if (b.lkH !== h) { b.innerHTML = h; b.lkH = h; } b.hidden = !h; }
     var pp = document.getElementById('hm-prep'); if (pp) { var ph = homePrepHTML(); if (pp.lkH !== ph) { pp.innerHTML = ph; pp.lkH = ph; } pp.hidden = !ph; }
     var te = document.getElementById('hm-team'); if (te) { var th = homeTeamHTML(); if (te.lkH !== th) { te.innerHTML = th; te.lkH = th; } te.hidden = !th; }
@@ -12948,7 +12994,7 @@
      the hours and the breaks in words and a bar for the day (the break in orange, a split as a gap). From the record
      already read (tm.rec) and the kitchen's shifts: no read of its own. Positions are worked out here from checked
      minutes (teamClean, kitShifts), clamped to 0 to 100. The editor below it changes the plan, as before. */
-  // one person's shift on the plan in words: "Lunch 10:00 to 15:00 · break 14:30" (HTML-safe); Today at a glance and Home's On today
+  // one person's shift on the plan in words: "Lunch 10:00 to 15:00 · break 14:30" (HTML-safe); Today at a glance
   function tmShiftBreaks(rec, o) { return rec.br.filter(function (b) { return b.id === o.id && b.sh === o.sh; }).sort(function (a, b) { return a.at - b.at; }); }
   function tmShiftWords(rec, o, sh) {
     return esc(sh.name) + (sh.from != null && sh.to != null ? ' ' + tmHHMM(sh.from) + ' to ' + tmHHMM(sh.to) : '') +

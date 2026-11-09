@@ -38,7 +38,7 @@ const homeGeometry = p => p.evaluate(() => {
   // Caveat's font box extends vertically beyond its line box even for the unchanged short heading.
   // Check actual horizontal text bounds and that overflow is not clipped, rather than asserting font metrics.
   return { heading: h.textContent, named: h.classList.contains('hm-welcome'), nameFits: text.every(r => r.left >= hb.left - 1 && r.right <= hb.right + 1) && getComputedStyle(h).overflowY === 'visible',
-    own: b(own), team: b(team), visible: [...document.querySelectorAll('.hm-coworkers > li')].filter(e => e.getBoundingClientRect().bottom <= limit + 0.5).length,
+    own: b(own), team: b(team), visible: [...document.querySelectorAll('#hm-with-body .hm-tp')].filter(e => e.getBoundingClientRect().bottom <= limit + 0.5).length,
     fullTeam: document.querySelector('#hm-full-team > summary').getBoundingClientRect().bottom <= limit + 0.5,
     section: document.querySelector('[data-hm-priority="section"]').textContent,
     overflow: document.documentElement.scrollWidth > innerWidth };
@@ -52,7 +52,7 @@ const homeGeometry = p => p.evaluate(() => {
   const open = async (name, options = {}) => {
     // Compare the same ordinary prefix for every name so random copy cannot change the density baseline.
     p = await L.open(browser, '#/', { who: 'ann', width: 390, height: 844, extra: fixture(name), wait: 1200, init: () => { Math.random = () => 0; }, ...options });
-    await L.waitFor(p, () => document.querySelectorAll('.hm-coworkers > li').length === 3, null, 6000);
+    await L.waitFor(p, () => document.querySelectorAll('#hm-with-body .hm-tp').length === 3, null, 6000);
   };
   let short;
   for (const name of ['Ann', 'Ana María O’Neill', LONG]) await step('real fonts ' + name, async () => {
