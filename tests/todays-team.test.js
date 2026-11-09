@@ -20,12 +20,18 @@ const SHIFTS = [{ id: 'lunch', name: 'Lunch', from: 600, to: 900, off: false }, 
 const cfg = x => ({ [CFG]: Object.assign({ people, sousIds: ['sam'], pingIds: ['sam'], staffIds: ['sam', 'ann', 'bo'], showBadges: true, prepStandardsEnabled: true, kitSecs: SECS, kitShifts: SHIFTS }, x || {}) });
 const dayTitle = new Date(today + 'T12:00:00+10:00').toLocaleDateString('en-AU', { timeZone: 'Australia/Brisbane', weekday: 'long', day: 'numeric', month: 'long' });
 const store = p => p.evaluate(() => window.__fake.dump());
-// a picker on the page: the shared controls dress each select up, so set the select and send its change like a tap would
-const pick = (p, k, v) => p.evaluate(([k, v]) => { const s = document.querySelector('select[data-k="' + k + '"]'); if (!s) return false; s.value = String(v); s.dispatchEvent(new Event('change', { bubbles: true })); return true; }, [k, v]);
+// Open the person's labelled disclosure and use the same visible picker as a chef.
+async function details(p, id) {
+  const d = p.locator('details.tm-person-details[data-id="' + id + '"]');
+  if (!await d.evaluate(e => e.open)) await d.locator(':scope > summary').click();
+  await L.settle(p, 120);
+}
+async function tools(p) { const d = p.locator('details.tm-batch'); if (!await d.evaluate(e => e.open)) await d.locator(':scope > summary').click(); await L.settle(p, 120); }
+const pick = async (p, k, v) => { if (k.includes(':')) await details(p, k.split(':')[1]); else await tools(p); await L.pick(p, 'select[data-k="' + k + '"]', String(v)); return true; };
 const chip = p => p.evaluate(() => { const c = document.querySelector('.wtop .tm-slot .tm-chip'); return c ? { due: c.classList.contains('is-due'), label: c.getAttribute('aria-label'), href: c.getAttribute('href') } : null; });
 const titleCut = p => p.evaluate(() => { const b = document.querySelector('.wtop-brand b'), i = document.querySelector('.wtop-icons'); return !b || b.scrollWidth > b.clientWidth + 1 || b.getBoundingClientRect().right > i.getBoundingClientRect().left + 1; });
-// tick a person onto the shift shown: the people not on it fold away once someone is on, so open the fold first
-const onShift = async (p, id) => { await p.evaluate(() => { const b = [...document.querySelectorAll('.tm-fold')].find(e => /Show$/.test(e.textContent.trim())); if (b) b.click(); }); await L.settle(p, 150); const done = await tap(p, '[data-p="tm-on"][data-id="' + id + '"]'); await L.settle(p, 200); return done; };
+// Attendance is inside that person's Edit breaks disclosure.
+const onShift = async (p, id) => { await details(p, id); const done = await tap(p, '[data-p="tm-on"][data-id="' + id + '"]'); await L.settle(p, 200); return done; };
 const linesSeen = p => p.evaluate(() => { const bar = document.querySelector('.nb-addline').getBoundingClientRect().top; return [...document.querySelectorAll('[id^="nbr-"]')].filter(e => { const q = e.getBoundingClientRect(); return q.top >= 0 && q.bottom <= bar; }).length; });
 // Measure the approved local view choice separately from the unchanged team header and work rows.
 const withoutViewChoice = async p => {
@@ -65,10 +71,10 @@ const withoutViewChoice = async p => {
   // the page: tick people onto Lunch, a section, a break, Spread them, Dinner with another section, Save
   await p.click('.wtop .tm-slot .tm-chip'); await L.settle(p, 900);
   ok(/#\/team$/.test(p.url()) && /Today's team/.test(await txt(p, '#rtitle') || ''), 'page: the chip opens Today\'s team');
-  ok(/Not set yet/.test(await txt(p, '.tm-page .hint') || '') && !!(await p.$('[data-p="tm-use"]')), 'page: not set yet, and Same as last Saturday? Use it is offered');
+  ok(/No team saved yet/.test(await txt(p, '.tm-draftstate') || '') && !!(await p.$('[data-p="tm-use"]')), 'page: not set yet, and Same as last Saturday? Use it is offered');
   ok(await p.$eval('[data-p="tm-sh"][data-v="lunch"]', e => e.getAttribute('aria-pressed')) === 'true', 'page: Lunch is the shift shown first');
   ok(await p.$eval('[data-p="tm-save"]', e => e.disabled), 'page: Save is off while nothing changed');
-  await tap(p, '[data-p="tm-on"][data-id="ann"]'); await L.settle(p, 200);
+  await onShift(p, 'ann');
   ok(await pick(p, 'tm-sec:ann', 'grill'), 'page: Ann on Lunch gets a section picker');
   ok(await onShift(p, 'sam'), 'page: Sam is ticked onto Lunch');
   ok(await p.$eval('select[data-k="tm-sec:sam"]', e => e.value === '' && e.options[0].textContent === 'Sous chef'), 'page: a sous chef has a section picker too, starting on their role');
@@ -78,7 +84,7 @@ const withoutViewChoice = async p => {
   ok((await p.$eval('[data-p="tm-save"]', e => e.disabled)) === false, 'page: Save is on once something changed');
   ok(TEAM in (await store(p)) === false, 'page: nothing is saved before Save');
   await onShift(p, 'bo');
-  await p.locator('.tm-batch > summary').click();
+  await tools(p);
   await pick(p, 'tm-spfrom', 720); await L.settle(p, 100);
   await tap(p, '[data-p="tm-spread"]'); await L.settle(p, 200);
   ok(/3 breaks from 12:00/.test(await txt(p, '.tm-save') || ''), 'page: Spread them sets 3 breaks from 12:00, one at a time (' + (await txt(p, '.tm-save')) + ')');
@@ -86,7 +92,7 @@ const withoutViewChoice = async p => {
   await onShift(p, 'ann');
   ok(await p.$eval('select[data-k="tm-sec:ann"]', e => e.value) === 'grill', 'page: Ann on Dinner starts with her Lunch section');
   await pick(p, 'tm-sec:ann', 'pans'); await L.settle(p, 150);
-  ok(/Also on Lunch: Grill/.test(await txt(p, '.tm-list') || ''), 'page: Ann\'s row says she is also on Lunch, on Grill');
+  ok(/Also on Lunch: Grill/.test(await txt(p, '.tm-people') || ''), 'page: Ann\'s row says she is also on Lunch, on Grill');
   await tap(p, '[data-p="tm-save"]');
   await L.waitFor(p, k => !!window.__fake.dump()[k], TEAM, 8000);
   s = await store(p);
@@ -115,13 +121,13 @@ const withoutViewChoice = async p => {
   await tap(p, '[data-p="tm-refresh"]'); await L.settle(p, 200);
   ok(!!(await p.$('.tm-page')), 'conflict: Refresh asks a second tap first (the changes would go)');
   await tap(p, '[data-p="tm-refresh"]'); await L.settle(p, 900);
-  ok(/Set by Sam/.test(await txt(p, '.tm-page .hint') || '') && (await p.$eval('[data-p="tm-save"]', e => e.disabled)), 'conflict: after Refresh the page shows theirs, nothing to save');
+  ok(/Saved \d\d:\d\d.*Sam/.test(await txt(p, '.tm-draftstate') || '') && (await p.$eval('[data-p="tm-save"]', e => e.disabled)), 'conflict: after Refresh the page shows theirs, nothing to save');
   await p.context().close();
 
   // Use it: last week's team filled in to check, people no longer on the list and shifts taken off left out
   const lw = { day: lastWeek, on: [{ id: 'bo', sh: 'dinner', sec: 'pans' }, { id: 'ann', sh: 'lunch', sec: 'grill' }, { id: 'gone', sh: 'lunch', sec: 'grill' }, { id: 'ann', sh: 'brunch', sec: 'grill' }], br: [{ id: 'bo', sh: 'dinner', at: 1140, len: 60 }], v: 3, at: 1, upd: 1, by: 'sam' };
   p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(cfg(), { [fsKey(['team', lastWeek])]: lw }), wait: 1800 });
-  await tap(p, '[data-p="tm-use"]'); await L.settle(p, 900);
+  await tools(p); await tap(p, '[data-p="tm-use"]'); await L.settle(p, 900);
   ok(/Filled in from last \w+day: 2 people/.test(await txt(p, '.tm-save') || ''), 'use it: last week\'s team filled in for 2 people (' + (await txt(p, '.tm-save')) + ')');
   ok(!(fsKey(['team', today]) in (await store(p))), 'use it: nothing saved until Save');
   await tap(p, '[data-p="tm-save"]');
@@ -231,10 +237,10 @@ const withoutViewChoice = async p => {
   // them on a 2.5 hour split 4.5 hours in; splits and meal breaks spread apart; + Break starts with the split
   const DAY = [{ id: 'day', name: 'Day', from: 600, to: 1320, off: false }];
   p = await L.open(b, '#/team', { who: 'sam', extra: cfg({ kitShifts: DAY }), wait: 1800 });
-  await tap(p, '[data-p="tm-on"][data-id="ann"]'); await L.settle(p, 200);
+  await onShift(p, 'ann');
   await onShift(p, 'bo'); await onShift(p, 'sam');
   ok(await pick(p, 'tm-sec:sam', 'pans'), 'chef section: Sam puts himself on Pans');
-  await p.locator('.tm-batch > summary').click();
+  await tools(p);
   ok(await p.$eval('select[data-k="tm-spfrom"]', e => e.value) === '870' && await p.$eval('select[data-k="tm-splen"]', e => e.value) === '150' && await p.$eval('select[data-k="tm-spmode"]', e => e.value) === '0', 'split: on a 10:00 to 22:00 shift Spread them starts on a 2.5 hour split at 14:30, all together');
   await tap(p, '[data-p="tm-addbr"][data-id="sam"]'); await L.settle(p, 200);
   ok(await p.$eval('select[data-k="tm-len:sam:0"]', e => e.value) === '150' && await p.$eval('select[data-k="tm-at:sam:0"]', e => e.value) === '870', '+ Break: on a long shift the first one is the split');
@@ -284,7 +290,7 @@ const withoutViewChoice = async p => {
   p = await L.open(b, '#/team', { who: 'sam', extra: withSum(), wait: 1800 });
   ok(await onShift(p, 'ann'), 'usual: Ann is ticked onto Lunch');
   ok(await p.$eval('select[data-k="tm-sec:ann"]', e => e.value) === 'grill', 'usual: she starts on her usual section, Grill');
-  const annRow = await p.evaluate(() => { const x = document.querySelector('[data-p="tm-on"][data-id="ann"]'); return x ? x.closest('.tm-row').querySelector('.tm-name').textContent : ''; });
+  const annRow = await p.evaluate(() => { const x = document.querySelector('[data-p="tm-on"][data-id="ann"]'); return x ? x.closest('.tm-person-row').textContent : ''; });
   ok(annRow.includes('Usually Grill, 6 of the last 8 ' + wdName + 's') && annRow.includes('In training: Pans'), 'usual: her row says her usual section and what she is in training on (' + annRow + ')');
   await onShift(p, 'bo');
   ok(await p.$eval('select[data-k="tm-sec:bo"]', e => e.value) === '', 'usual: a section taken off the list is not filled in');
@@ -323,7 +329,7 @@ const withoutViewChoice = async p => {
   }
   for (const w of [390, 768, 1280]) {
     p = await L.open(b, '#/team', { who: 'sam', extra: cfg(), width: w, wait: 1600 });
-    await tap(p, '[data-p="tm-on"][data-id="ann"]'); await L.settle(p, 200);
+    await onShift(p, 'ann');
     const controlsFit = await p.evaluate(() => {
       const controls = [...document.querySelectorAll('.wtop .cooling-chip, .wtop .tm-slot .tm-chip, .wtop .nbell, .wtop .wtop-who')].filter(e => !!e.getClientRects().length);
       return controls.length === 4 && controls.every(e => { const r = e.getBoundingClientRect(); return r.width >= 44 && r.height >= 44 && r.left >= 0 && r.right <= innerWidth; });
