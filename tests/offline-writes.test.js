@@ -713,6 +713,9 @@ const slowHead = (p, ms) => p.context().route(u => u.href === L.BASE + 'index.ht
     ok(await fetching(st), '04:00: it fetches the files');
     ok(await p.evaluate(() => !LK_PREP.privateAccess()), '04:00: the private prep page locks while the atomic files arrive');
     await unlock(p, 'ann', '2222');
+    // nothing was typed yet, so the first PIN of the new day opens Home (10 Nov 2026); then back to the prep list
+    ok(await p.evaluate(() => location.hash === '#/'), '04:00: a fresh PIN with no unfinished work opens Home');
+    await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 500);
     await p.fill('#p-text', 'Dice carrots');
     releaseFiles();
     await L.settle(p, 4000);

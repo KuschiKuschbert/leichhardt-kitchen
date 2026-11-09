@@ -220,7 +220,7 @@ async function pin(p, name, digits) {
   await p.keyboard.type('4444'); await L.settle(p, 600);
   await p.keyboard.type('4444'); await L.settle(p, 1000);
   await L.waitFor(p, () => !!document.querySelector('.nt-wrap')).catch(() => {});
-  ok(/walk-in/.test(await txt(p, '.nt-list') || '') && await p.evaluate(() => location.hash) === '#/orders', 'first PIN on the order list: the pings sheet still comes up');
+  ok(/walk-in/.test(await txt(p, '.nt-list') || '') && await p.evaluate(() => location.hash) === '#/', 'first PIN on the order list: Home opens and the pings sheet still comes up');
   await p.context().close();
 
   // the sheet keeps its place while another phone ticks a line, and closes by itself when its ping is removed

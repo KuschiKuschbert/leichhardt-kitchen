@@ -135,7 +135,7 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   ok(await active(p) === 'w-text', 'waste: after Log it the cursor is back on What was wasted');
   await p.context().close();
 
-  // PIN screens: page name on the button; mismatch empties the second box
+  // PIN screens: the button says where the tap goes (Home on the first PIN of the day); mismatch empties the second box
   const nopin = {}; nopin[fsKey(['pinset', 'bo'])] = undefined; nopin[fsKey(['staffpins', 'bo'])] = undefined;
   p = await L.open(b, '#/orders', { who: 'bo', noTok: true, extra: nopin, wait: 1500 });
   await p.type('#pf1', '4444');
@@ -144,12 +144,12 @@ function past(n) { const d = new Date(); d.setDate(d.getDate() - n); return L.ym
   ok(/do not match/.test(await txt(p, '.p-err') || '') && await p.inputValue('#pf2') === '' && await active(p) === 'pf2', 'PIN: mismatch empties Type it again and puts the cursor there');
   await p.context().close();
   p = await L.open(b, '#/orders', { who: 'ann', noTok: true, wait: 1500 });
-  ok(/Open the order list/.test(await txt(p, '.p-card button[type="submit"]') || ''), 'PIN: button names the page (' + await txt(p, '.p-card button[type="submit"]') + ')');
+  ok(/Open Home/.test(await txt(p, '.p-card button[type="submit"]') || ''), 'PIN: the first PIN of the day names Home (' + await txt(p, '.p-card button[type="submit"]') + ')');
   const nl = await p.evaluate(() => { const r = document.querySelector('[data-p="who-change"]').getBoundingClientRect(); return r.height; });
   ok(nl >= 44, 'PIN: Not me / Not you are 44 tall');
   await p.context().close();
   p = await L.open(b, '#/drinks', { who: 'ann', noTok: true, wait: 1500 });
-  ok(/Open the drinks run/.test(await txt(p, '.p-card button[type="submit"]') || ''), 'PIN: the drinks run names its own page (' + await txt(p, '.p-card button[type="submit"]') + ')');
+  ok(/Open Home/.test(await txt(p, '.p-card button[type="submit"]') || ''), 'PIN: the drinks run also names Home on the first PIN of the day (' + await txt(p, '.p-card button[type="submit"]') + ')');
   await p.context().close();
 
   const mins = {}; mins[fsKey(['minutes', 'm1'])] = { no: 1, v: 1, status: 'published', date: today, start: '14:00', loc: 'Kitchen', chair: 'sam', taker: 'sam', att: [{ id: 'ann', st: 'present' }, { id: 'sam', st: 'present' }, { id: 'bo', st: 'apology' }], guests: '', decisions: 'Fryer oil every Monday', menu: '', safety: '', dates: '', other: '', acts: [], next: '', pubAt: L.NOW, removed: false, at: 1, upd: 1, by: 'sam' };
