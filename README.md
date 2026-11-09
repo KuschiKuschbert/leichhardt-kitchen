@@ -4,6 +4,8 @@
 
 # Leichhardt Kitchen Book
 
+Orders has a [design review for one shared request list and smaller supplier cut-offs](docs/order-list-options/brief.md), requested on 9 November 2026. The council and three isolated previews compare the options before the owner chooses. Staff requests, supplier preparation and external ordering remain separate; the app has not changed.
+
 Operational colour meanings are shared across the book after the 9 November council review: orange for actions and attention, green for completed or assigned states, and red for failures, cancellation and destructive actions. Existing words, ticks and ownership badges keep each state clear; claimed Prep work stays readable. Artwork, allergens, wastage reasons, charts and the approved Home card colours retain their own meanings. [Inventory, council and checks](docs/colour-coding.md).
 
 The owner approved shared surface colours across books, blocks and banners: coloured covers, headers and spines with warm paper inside; steel for work, including Orders; sage for people; charcoal for live boards; quiet ivory for reference and forms. Amber remains attention or pending work, with green and red local to their stated outcomes. Layouts, controls and data behaviour stay intact. [Selected hybrid, council and release evidence](docs/surface-colours.md).

@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Orders request list and smaller cut-offs, 9 November 2026
+
+The owner clarified that Orders is the staff request list, followed by separate supplier preparation and manual external ordering, then requested a design council and previews before implementation. `docs/order-list-options/` holds the proposal, five-reviewer first round, three interactive concepts, current-app baseline and comparison evidence. First-round verdict: Build smaller, 5 of 5. In round 2, five of six reviewers preferred C; scores C 17, B 13, A 6. The new starter preferred B for its written View cue, added to the final C preview alongside Add request wording. No design is selected and no runtime behaviour changes. The [brief](order-list-options/brief.md) records the final comparison, preservation contract and implementation checks. The preview uses synthetic records and actual fonts; no live data, writes, schema, rules or listeners are added.
+
 ## Cleaning schedule and checks, 9 November 2026
 
 The owner requested the supplied unbranded 26-task programme and then the ordered 25-step Hot larder, Grill and Pans pack down in the existing Cleaning page. Keep the chosen C daily notebook + A chef week review. [The current contract](cleaning-schedule.md) covers explicit imports, Sunday deep cleaning, two-day drip trays anchored to 9 November 2026, immutable plans, per-event checks, Pass mapping, blocked states, audit snapshots and the temperature reminder. `js/cleaning-schedule.js` is a lazy runtime dependency, never a startup or saved-shell file.

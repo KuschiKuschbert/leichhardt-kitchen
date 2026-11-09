@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Order list · Design previews</title>
+  <link rel="stylesheet" href="assets/fonts.css">
+  <link rel="stylesheet" href="preview.css">
+  <script src="preview.js" defer></script>
+</head>
+<body>
+  <aside id="reviewer" class="reviewer" aria-label="Design review controls">
+    <div class="review-intro"><span class="eyebrow">Kitchen Book / Design review only</span><h1>One shared order list.</h1><p>Three ways to keep supplier deadlines separate. <strong>Fictional examples. Nothing saves.</strong></p></div>
+    <div class="review-controls">
+      <fieldset class="design-picker"><legend>Design</legend><button type="button" data-design="a">A · Compact rows</button><button type="button" data-design="b">B · Requests first</button><button type="button" data-design="c">C · One-line fold</button></fieldset>
+      <label>Role<select id="role-select"><option value="chef">Chef</option><option value="staff">Staff</option></select></label>
+      <label>Example<select id="state-select"><option value="normal">Two deadlines</option><option value="overdue">Overdue</option><option value="offline">Offline</option><option value="failed">Could not check</option><option value="none">No deadlines</option><option value="all-done">All supplier orders placed</option><option value="many">Six deadlines</option><option value="tomorrow">Tomorrow / early order</option></select></label>
+      <label>View<select id="view-select"><option value="full">Full viewport</option><option value="compare">Compare all three</option></select></label>
+      <button id="reset-preview" type="button" class="reset-button">Reset example</button>
+    </div>
+    <p id="design-description" class="design-description"></p>
+  </aside>
+  <div id="comparison" class="comparison" hidden></div>
+  <div id="app"></div>
+  <dialog id="add-dialog" aria-labelledby="add-heading">
+    <form id="add-form">
+      <header class="dialog-head"><div><span class="eyebrow">Order list</span><h2 id="add-heading">Add request</h2></div><button type="button" class="icon-button" data-action="close-dialog" aria-label="Close add form">×</button></header>
+      <p class="prototype-note">Fictional example. Nothing saves.</p>
+      <label>Item<input id="item-name" name="item" required maxlength="70" autocomplete="off" placeholder="What do we need?"></label>
+      <label>Amount <span class="optional">Optional</span><input id="item-amount" name="amount" maxlength="30" autocomplete="off" placeholder="e.g. 2 tubs"></label>
+      <fieldset class="urgency-picker"><legend>Stock</legend><label><input type="radio" name="urgency" value="" checked> No mark</label><label><input type="radio" name="urgency" value="Low"> Low</label><label><input type="radio" name="urgency" value="Out"> Out</label></fieldset>
+      <p id="form-message" class="form-message" aria-live="polite"></p>
+      <footer class="dialog-foot"><button type="button" class="quiet-button" data-action="close-dialog">Close</button><button type="submit" class="primary-button">Add request</button></footer>
+    </form>
+  </dialog>
+  <div id="announcement" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>
