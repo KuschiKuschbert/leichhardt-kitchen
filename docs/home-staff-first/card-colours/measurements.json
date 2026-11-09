@@ -1,0 +1,2403 @@
+{
+  "baseline": "877e946 css/app.css",
+  "fixture": "Synthetic Ann plus three same/overlap coworkers; 14 prep lines across Larder, Grill and Sauce; 2 done including all Grill; Example service function reminder. Seasonal off. Existing official font cache routed locally.",
+  "captures": {
+    "390": {
+      "before": {
+        "cards": {
+          "#hm-day": {
+            "x": 16,
+            "y": 168.78,
+            "width": 358,
+            "height": 202.13
+          },
+          "#hm-with": {
+            "x": 16,
+            "y": 388.5,
+            "width": 358,
+            "height": 262.3
+          },
+          "#hm-board": {
+            "x": 16,
+            "y": 668.39,
+            "width": 358,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 16,
+            "y": 799.11,
+            "width": 358,
+            "height": 180.92
+          },
+          ".wall-h.hm-day": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 41.59
+          },
+          ".hm-staff-first": {
+            "x": 16,
+            "y": 168.78,
+            "width": 358,
+            "height": 482.02
+          },
+          ".hm": {
+            "x": 16,
+            "y": 168.78,
+            "width": 358,
+            "height": 811.25
+          }
+        },
+        "fonts": {
+          "#hm-with .hm-pt": {
+            "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+            "size": "12.8px",
+            "lineHeight": "15.36px",
+            "weight": "700"
+          },
+          "#hm-prep .hm-pt": {
+            "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+            "size": "12.8px",
+            "lineHeight": "15.36px",
+            "weight": "700"
+          },
+          ".hm-coworkers b": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "15px",
+            "lineHeight": "21.75px",
+            "weight": "600"
+          },
+          ".hm-coworkers small": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "12px",
+            "lineHeight": "17.4px",
+            "weight": "400"
+          },
+          ".hm-sn": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "16px",
+            "lineHeight": "23.2px",
+            "weight": "600"
+          }
+        },
+        "targets": [
+          {
+            "selector": "#hm-full-team > summary",
+            "x": 32,
+            "y": 594,
+            "width": 326,
+            "height": 44
+          },
+          {
+            "selector": "#hm-day .hm-a",
+            "x": 32,
+            "y": 209.52,
+            "width": 326,
+            "height": 70
+          },
+          {
+            "selector": "#hm-day .hm-a",
+            "x": 32,
+            "y": 280.52,
+            "width": 326,
+            "height": 84
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 32,
+            "y": 835.23,
+            "width": 326,
+            "height": 44
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 32,
+            "y": 879.23,
+            "width": 326,
+            "height": 44
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 32,
+            "y": 923.23,
+            "width": 326,
+            "height": 44
+          }
+        ],
+        "visibleCoworkers": 3,
+        "visiblePrepSections": 0,
+        "tabTop": 776,
+        "overflow": 0,
+        "colors": {
+          "#hm-with": "rgb(255, 254, 250)",
+          "#hm-prep": "rgb(255, 254, 250)",
+          "#hm-day": "rgb(43, 42, 39)",
+          "#hm-board": "rgb(255, 241, 230)"
+        },
+        "expanded": {
+          "cards": {
+            "#hm-day": {
+              "x": 16,
+              "y": 168.78,
+              "width": 358,
+              "height": 202.13
+            },
+            "#hm-with": {
+              "x": 16,
+              "y": 388.5,
+              "width": 358,
+              "height": 512.91
+            },
+            "#hm-board": {
+              "x": 16,
+              "y": 919,
+              "width": 358,
+              "height": 113.13
+            },
+            "#hm-prep": {
+              "x": 16,
+              "y": 1049.72,
+              "width": 358,
+              "height": 180.92
+            },
+            ".wall-h.hm-day": {
+              "x": 16,
+              "y": 88,
+              "width": 358,
+              "height": 41.59
+            },
+            ".hm-staff-first": {
+              "x": 16,
+              "y": 168.78,
+              "width": 358,
+              "height": 732.63
+            },
+            ".hm": {
+              "x": 16,
+              "y": 168.78,
+              "width": 358,
+              "height": 1061.86
+            }
+          },
+          "fonts": {
+            "#hm-with .hm-pt": {
+              "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+              "size": "12.8px",
+              "lineHeight": "15.36px",
+              "weight": "700"
+            },
+            "#hm-prep .hm-pt": {
+              "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+              "size": "12.8px",
+              "lineHeight": "15.36px",
+              "weight": "700"
+            },
+            ".hm-coworkers b": {
+              "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+              "size": "15px",
+              "lineHeight": "21.75px",
+              "weight": "600"
+            },
+            ".hm-coworkers small": {
+              "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+              "size": "12px",
+              "lineHeight": "17.4px",
+              "weight": "400"
+            },
+            ".hm-sn": {
+              "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+              "size": "16px",
+              "lineHeight": "23.2px",
+              "weight": "600"
+            }
+          },
+          "targets": [
+            {
+              "selector": "#hm-full-team > summary",
+              "x": 32,
+              "y": 594,
+              "width": 326,
+              "height": 44
+            },
+            {
+              "selector": "#hm-day .hm-a",
+              "x": 32,
+              "y": 209.52,
+              "width": 326,
+              "height": 70
+            },
+            {
+              "selector": "#hm-day .hm-a",
+              "x": 32,
+              "y": 280.52,
+              "width": 326,
+              "height": 84
+            },
+            {
+              "selector": "#hm-prep .hm-sec",
+              "x": 32,
+              "y": 1085.84,
+              "width": 326,
+              "height": 44
+            },
+            {
+              "selector": "#hm-prep .hm-sec",
+              "x": 32,
+              "y": 1129.84,
+              "width": 326,
+              "height": 44
+            },
+            {
+              "selector": "#hm-prep .hm-sec",
+              "x": 32,
+              "y": 1173.84,
+              "width": 326,
+              "height": 44
+            }
+          ],
+          "visibleCoworkers": 3,
+          "visiblePrepSections": 0,
+          "tabTop": 776,
+          "overflow": 0,
+          "colors": {
+            "#hm-with": "rgb(255, 254, 250)",
+            "#hm-prep": "rgb(255, 254, 250)",
+            "#hm-day": "rgb(43, 42, 39)",
+            "#hm-board": "rgb(255, 241, 230)"
+          }
+        },
+        "nestedTeam": {
+          "background": "rgba(0, 0, 0, 0)",
+          "shadow": "none",
+          "borderLeft": "0px",
+          "pin": "none",
+          "content": "ON TODAY\nLarder\nAnn\nLunch 10:00 to 15:00 · break 14:30\nBo\nAfternoon 13:00 to 17:00\nGrill\nSam\nLunch 10:00 to 15:00 · break 14:00\nSauce\nJo\nLunch 10:00 to 15:00"
+        },
+        "prepList": {
+          "visibleRows": 5,
+          "totalRows": 12,
+          "addTop": 716,
+          "visibleWords": [
+            "Make gravy 5 L. Start here, 1 Rolled",
+            "Chimichurri 2 L",
+            "Garlic butter 1 tub",
+            "Tomato sauce 2 L",
+            "Mustard dressing 1 L"
+          ],
+          "rowRects": [
+            {
+              "x": 33,
+              "y": 379.28125,
+              "width": 324,
+              "height": 66.953125
+            },
+            {
+              "x": 33,
+              "y": 446.234375,
+              "width": 324,
+              "height": 51
+            },
+            {
+              "x": 33,
+              "y": 497.234375,
+              "width": 324,
+              "height": 51
+            },
+            {
+              "x": 33,
+              "y": 548.234375,
+              "width": 324,
+              "height": 66.953125
+            },
+            {
+              "x": 33,
+              "y": 615.1875,
+              "width": 324,
+              "height": 66.953125
+            },
+            {
+              "x": 33,
+              "y": 682.140625,
+              "width": 324,
+              "height": 51
+            },
+            {
+              "x": 33,
+              "y": 766.890625,
+              "width": 324,
+              "height": 109.359375
+            },
+            {
+              "x": 33,
+              "y": 876.25,
+              "width": 324,
+              "height": 88.15625
+            },
+            {
+              "x": 33,
+              "y": 964.40625,
+              "width": 324,
+              "height": 66.953125
+            },
+            {
+              "x": 33,
+              "y": 1031.359375,
+              "width": 324,
+              "height": 66.953125
+            },
+            {
+              "x": 33,
+              "y": 1098.3125,
+              "width": 324,
+              "height": 51
+            },
+            {
+              "x": 33,
+              "y": 1149.3125,
+              "width": 324,
+              "height": 51
+            }
+          ],
+          "smallTargets": [],
+          "overflow": 0
+        }
+      },
+      "after": {
+        "cards": {
+          "#hm-day": {
+            "x": 16,
+            "y": 168.78,
+            "width": 358,
+            "height": 202.13
+          },
+          "#hm-with": {
+            "x": 16,
+            "y": 388.5,
+            "width": 358,
+            "height": 262.3
+          },
+          "#hm-board": {
+            "x": 16,
+            "y": 668.39,
+            "width": 358,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 16,
+            "y": 799.11,
+            "width": 358,
+            "height": 180.92
+          },
+          ".wall-h.hm-day": {
+            "x": 16,
+            "y": 88,
+            "width": 358,
+            "height": 41.59
+          },
+          ".hm-staff-first": {
+            "x": 16,
+            "y": 168.78,
+            "width": 358,
+            "height": 482.02
+          },
+          ".hm": {
+            "x": 16,
+            "y": 168.78,
+            "width": 358,
+            "height": 811.25
+          }
+        },
+        "fonts": {
+          "#hm-with .hm-pt": {
+            "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+            "size": "12.8px",
+            "lineHeight": "15.36px",
+            "weight": "700"
+          },
+          "#hm-prep .hm-pt": {
+            "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+            "size": "12.8px",
+            "lineHeight": "15.36px",
+            "weight": "700"
+          },
+          ".hm-coworkers b": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "15px",
+            "lineHeight": "21.75px",
+            "weight": "600"
+          },
+          ".hm-coworkers small": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "12px",
+            "lineHeight": "17.4px",
+            "weight": "400"
+          },
+          ".hm-sn": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "16px",
+            "lineHeight": "23.2px",
+            "weight": "600"
+          }
+        },
+        "targets": [
+          {
+            "selector": "#hm-full-team > summary",
+            "x": 32,
+            "y": 594,
+            "width": 326,
+            "height": 44
+          },
+          {
+            "selector": "#hm-day .hm-a",
+            "x": 32,
+            "y": 209.52,
+            "width": 326,
+            "height": 70
+          },
+          {
+            "selector": "#hm-day .hm-a",
+            "x": 32,
+            "y": 280.52,
+            "width": 326,
+            "height": 84
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 32,
+            "y": 835.23,
+            "width": 326,
+            "height": 44
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 32,
+            "y": 879.23,
+            "width": 326,
+            "height": 44
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 32,
+            "y": 923.23,
+            "width": 326,
+            "height": 44
+          }
+        ],
+        "visibleCoworkers": 3,
+        "visiblePrepSections": 0,
+        "tabTop": 776,
+        "overflow": 0,
+        "colors": {
+          "#hm-with": "rgb(234, 245, 238)",
+          "#hm-prep": "color(srgb 0.877647 0.887843 0.900588)",
+          "#hm-day": "rgb(43, 42, 39)",
+          "#hm-board": "rgb(255, 241, 230)"
+        },
+        "contrast": [
+          {
+            "selector": "#hm-with .hm-pt",
+            "foreground": "rgb(35, 115, 71)",
+            "background": "rgb(234, 245, 238)",
+            "effectiveBackground": [
+              234,
+              245,
+              238
+            ],
+            "ratio": 5.2,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": ".hm-coworkers small",
+            "foreground": "rgb(85, 88, 94)",
+            "background": "rgb(234, 245, 238)",
+            "effectiveBackground": [
+              234,
+              245,
+              238
+            ],
+            "ratio": 6.38,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": ".hm-roster-caption",
+            "foreground": "rgb(85, 88, 94)",
+            "background": "rgb(234, 245, 238)",
+            "effectiveBackground": [
+              234,
+              245,
+              238
+            ],
+            "ratio": 6.38,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-prep .hm-pt",
+            "foreground": "rgb(28, 29, 31)",
+            "background": "color(srgb 0.877647 0.887843 0.900588)",
+            "effectiveBackground": [
+              224,
+              226,
+              230
+            ],
+            "ratio": 13.01,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-prep .hm-pc",
+            "foreground": "rgb(28, 29, 31)",
+            "background": "color(srgb 0.877647 0.887843 0.900588)",
+            "effectiveBackground": [
+              224,
+              226,
+              230
+            ],
+            "ratio": 13.01,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-prep .hm-sl",
+            "foreground": "rgb(85, 88, 94)",
+            "background": "color(srgb 0.877647 0.887843 0.900588)",
+            "effectiveBackground": [
+              224,
+              226,
+              230
+            ],
+            "ratio": 5.5,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-full-team > summary",
+            "foreground": "rgb(35, 115, 71)",
+            "background": "rgb(234, 245, 238)",
+            "effectiveBackground": [
+              234,
+              245,
+              238
+            ],
+            "ratio": 5.2,
+            "outlineStyle": "solid",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "foreground": "rgb(28, 29, 31)",
+            "background": "color(srgb 0.877647 0.887843 0.900588)",
+            "effectiveBackground": [
+              224,
+              226,
+              230
+            ],
+            "ratio": 13.01,
+            "outlineStyle": "solid",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          }
+        ],
+        "summaryHover": {
+          "selector": "#hm-full-team > summary",
+          "foreground": "rgb(28, 29, 31)",
+          "background": "rgb(234, 245, 238)",
+          "effectiveBackground": [
+            232.92,
+            231.92,
+            220.5
+          ],
+          "ratio": 13.68,
+          "outlineStyle": "none",
+          "outlineWidth": "3px",
+          "shadow": "rgba(226, 96, 42, 0.09) 0px 0px 0px 844px inset"
+        },
+        "expanded": {
+          "cards": {
+            "#hm-day": {
+              "x": 16,
+              "y": 168.78,
+              "width": 358,
+              "height": 202.13
+            },
+            "#hm-with": {
+              "x": 16,
+              "y": 388.5,
+              "width": 358,
+              "height": 512.91
+            },
+            "#hm-board": {
+              "x": 16,
+              "y": 919,
+              "width": 358,
+              "height": 113.13
+            },
+            "#hm-prep": {
+              "x": 16,
+              "y": 1049.72,
+              "width": 358,
+              "height": 180.92
+            },
+            ".wall-h.hm-day": {
+              "x": 16,
+              "y": 88,
+              "width": 358,
+              "height": 41.59
+            },
+            ".hm-staff-first": {
+              "x": 16,
+              "y": 168.78,
+              "width": 358,
+              "height": 732.63
+            },
+            ".hm": {
+              "x": 16,
+              "y": 168.78,
+              "width": 358,
+              "height": 1061.86
+            }
+          },
+          "fonts": {
+            "#hm-with .hm-pt": {
+              "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+              "size": "12.8px",
+              "lineHeight": "15.36px",
+              "weight": "700"
+            },
+            "#hm-prep .hm-pt": {
+              "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+              "size": "12.8px",
+              "lineHeight": "15.36px",
+              "weight": "700"
+            },
+            ".hm-coworkers b": {
+              "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+              "size": "15px",
+              "lineHeight": "21.75px",
+              "weight": "600"
+            },
+            ".hm-coworkers small": {
+              "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+              "size": "12px",
+              "lineHeight": "17.4px",
+              "weight": "400"
+            },
+            ".hm-sn": {
+              "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+              "size": "16px",
+              "lineHeight": "23.2px",
+              "weight": "600"
+            }
+          },
+          "targets": [
+            {
+              "selector": "#hm-full-team > summary",
+              "x": 32,
+              "y": 594,
+              "width": 326,
+              "height": 44
+            },
+            {
+              "selector": "#hm-day .hm-a",
+              "x": 32,
+              "y": 209.52,
+              "width": 326,
+              "height": 70
+            },
+            {
+              "selector": "#hm-day .hm-a",
+              "x": 32,
+              "y": 280.52,
+              "width": 326,
+              "height": 84
+            },
+            {
+              "selector": "#hm-prep .hm-sec",
+              "x": 32,
+              "y": 1085.84,
+              "width": 326,
+              "height": 44
+            },
+            {
+              "selector": "#hm-prep .hm-sec",
+              "x": 32,
+              "y": 1129.84,
+              "width": 326,
+              "height": 44
+            },
+            {
+              "selector": "#hm-prep .hm-sec",
+              "x": 32,
+              "y": 1173.84,
+              "width": 326,
+              "height": 44
+            }
+          ],
+          "visibleCoworkers": 3,
+          "visiblePrepSections": 0,
+          "tabTop": 776,
+          "overflow": 0,
+          "colors": {
+            "#hm-with": "rgb(234, 245, 238)",
+            "#hm-prep": "color(srgb 0.877647 0.887843 0.900588)",
+            "#hm-day": "rgb(43, 42, 39)",
+            "#hm-board": "rgb(255, 241, 230)"
+          }
+        },
+        "nestedTeam": {
+          "background": "rgba(0, 0, 0, 0)",
+          "shadow": "none",
+          "borderLeft": "0px",
+          "pin": "none",
+          "content": "ON TODAY\nLarder\nAnn\nLunch 10:00 to 15:00 · break 14:30\nBo\nAfternoon 13:00 to 17:00\nGrill\nSam\nLunch 10:00 to 15:00 · break 14:00\nSauce\nJo\nLunch 10:00 to 15:00"
+        },
+        "prepList": {
+          "visibleRows": 5,
+          "totalRows": 12,
+          "addTop": 716,
+          "visibleWords": [
+            "Make gravy 5 L. Start here, 1 Rolled",
+            "Chimichurri 2 L",
+            "Garlic butter 1 tub",
+            "Tomato sauce 2 L",
+            "Mustard dressing 1 L"
+          ],
+          "rowRects": [
+            {
+              "x": 33,
+              "y": 379.28125,
+              "width": 324,
+              "height": 66.953125
+            },
+            {
+              "x": 33,
+              "y": 446.234375,
+              "width": 324,
+              "height": 51
+            },
+            {
+              "x": 33,
+              "y": 497.234375,
+              "width": 324,
+              "height": 51
+            },
+            {
+              "x": 33,
+              "y": 548.234375,
+              "width": 324,
+              "height": 66.953125
+            },
+            {
+              "x": 33,
+              "y": 615.1875,
+              "width": 324,
+              "height": 66.953125
+            },
+            {
+              "x": 33,
+              "y": 682.140625,
+              "width": 324,
+              "height": 51
+            },
+            {
+              "x": 33,
+              "y": 766.890625,
+              "width": 324,
+              "height": 109.359375
+            },
+            {
+              "x": 33,
+              "y": 876.25,
+              "width": 324,
+              "height": 88.15625
+            },
+            {
+              "x": 33,
+              "y": 964.40625,
+              "width": 324,
+              "height": 66.953125
+            },
+            {
+              "x": 33,
+              "y": 1031.359375,
+              "width": 324,
+              "height": 66.953125
+            },
+            {
+              "x": 33,
+              "y": 1098.3125,
+              "width": 324,
+              "height": 51
+            },
+            {
+              "x": 33,
+              "y": 1149.3125,
+              "width": 324,
+              "height": 51
+            }
+          ],
+          "smallTargets": [],
+          "overflow": 0
+        }
+      }
+    },
+    "768": {
+      "before": {
+        "cards": {
+          "#hm-day": {
+            "x": 48,
+            "y": 273.59,
+            "width": 304.75,
+            "height": 218.13
+          },
+          "#hm-with": {
+            "x": 384.75,
+            "y": 273.59,
+            "width": 335.25,
+            "height": 271.95
+          },
+          "#hm-board": {
+            "x": 48,
+            "y": 563.14,
+            "width": 355.55,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 435.55,
+            "y": 563.14,
+            "width": 284.45,
+            "height": 180.92
+          },
+          ".wall-h.hm-day": {
+            "x": 48,
+            "y": 180,
+            "width": 672,
+            "height": 54.41
+          },
+          ".hm-staff-first": {
+            "x": 48,
+            "y": 273.59,
+            "width": 672,
+            "height": 271.95
+          },
+          ".hm": {
+            "x": 48,
+            "y": 273.59,
+            "width": 672,
+            "height": 470.47
+          }
+        },
+        "fonts": {
+          "#hm-with .hm-pt": {
+            "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+            "size": "12.8px",
+            "lineHeight": "15.36px",
+            "weight": "700"
+          },
+          "#hm-prep .hm-pt": {
+            "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+            "size": "12.8px",
+            "lineHeight": "15.36px",
+            "weight": "700"
+          },
+          ".hm-coworkers b": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "15px",
+            "lineHeight": "21.75px",
+            "weight": "600"
+          },
+          ".hm-coworkers small": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "12px",
+            "lineHeight": "17.4px",
+            "weight": "400"
+          },
+          ".hm-sn": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "16px",
+            "lineHeight": "23.2px",
+            "weight": "600"
+          }
+        },
+        "targets": [
+          {
+            "selector": "#hm-full-team > summary",
+            "x": 400.75,
+            "y": 488.75,
+            "width": 303.25,
+            "height": 44
+          },
+          {
+            "selector": "#hm-day .hm-a",
+            "x": 64,
+            "y": 314.33,
+            "width": 272.75,
+            "height": 78
+          },
+          {
+            "selector": "#hm-day .hm-a",
+            "x": 64,
+            "y": 393.33,
+            "width": 272.75,
+            "height": 92
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 451.55,
+            "y": 599.27,
+            "width": 252.45,
+            "height": 44
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 451.55,
+            "y": 643.27,
+            "width": 252.45,
+            "height": 44
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 451.55,
+            "y": 687.27,
+            "width": 252.45,
+            "height": 44
+          }
+        ],
+        "visibleCoworkers": 3,
+        "visiblePrepSections": 3,
+        "tabTop": 1024,
+        "overflow": 0,
+        "colors": {
+          "#hm-with": "rgb(255, 254, 250)",
+          "#hm-prep": "rgb(255, 254, 250)",
+          "#hm-day": "rgb(43, 42, 39)",
+          "#hm-board": "rgb(255, 241, 230)"
+        }
+      },
+      "after": {
+        "cards": {
+          "#hm-day": {
+            "x": 48,
+            "y": 273.59,
+            "width": 304.75,
+            "height": 218.13
+          },
+          "#hm-with": {
+            "x": 384.75,
+            "y": 273.59,
+            "width": 335.25,
+            "height": 271.95
+          },
+          "#hm-board": {
+            "x": 48,
+            "y": 563.14,
+            "width": 355.55,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 435.55,
+            "y": 563.14,
+            "width": 284.45,
+            "height": 180.92
+          },
+          ".wall-h.hm-day": {
+            "x": 48,
+            "y": 180,
+            "width": 672,
+            "height": 54.41
+          },
+          ".hm-staff-first": {
+            "x": 48,
+            "y": 273.59,
+            "width": 672,
+            "height": 271.95
+          },
+          ".hm": {
+            "x": 48,
+            "y": 273.59,
+            "width": 672,
+            "height": 470.47
+          }
+        },
+        "fonts": {
+          "#hm-with .hm-pt": {
+            "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+            "size": "12.8px",
+            "lineHeight": "15.36px",
+            "weight": "700"
+          },
+          "#hm-prep .hm-pt": {
+            "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+            "size": "12.8px",
+            "lineHeight": "15.36px",
+            "weight": "700"
+          },
+          ".hm-coworkers b": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "15px",
+            "lineHeight": "21.75px",
+            "weight": "600"
+          },
+          ".hm-coworkers small": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "12px",
+            "lineHeight": "17.4px",
+            "weight": "400"
+          },
+          ".hm-sn": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "16px",
+            "lineHeight": "23.2px",
+            "weight": "600"
+          }
+        },
+        "targets": [
+          {
+            "selector": "#hm-full-team > summary",
+            "x": 400.75,
+            "y": 488.75,
+            "width": 303.25,
+            "height": 44
+          },
+          {
+            "selector": "#hm-day .hm-a",
+            "x": 64,
+            "y": 314.33,
+            "width": 272.75,
+            "height": 78
+          },
+          {
+            "selector": "#hm-day .hm-a",
+            "x": 64,
+            "y": 393.33,
+            "width": 272.75,
+            "height": 92
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 451.55,
+            "y": 599.27,
+            "width": 252.45,
+            "height": 44
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 451.55,
+            "y": 643.27,
+            "width": 252.45,
+            "height": 44
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 451.55,
+            "y": 687.27,
+            "width": 252.45,
+            "height": 44
+          }
+        ],
+        "visibleCoworkers": 3,
+        "visiblePrepSections": 3,
+        "tabTop": 1024,
+        "overflow": 0,
+        "colors": {
+          "#hm-with": "rgb(234, 245, 238)",
+          "#hm-prep": "color(srgb 0.877647 0.887843 0.900588)",
+          "#hm-day": "rgb(43, 42, 39)",
+          "#hm-board": "rgb(255, 241, 230)"
+        },
+        "contrast": [
+          {
+            "selector": "#hm-with .hm-pt",
+            "foreground": "rgb(35, 115, 71)",
+            "background": "rgb(234, 245, 238)",
+            "effectiveBackground": [
+              234,
+              245,
+              238
+            ],
+            "ratio": 5.2,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": ".hm-coworkers small",
+            "foreground": "rgb(85, 88, 94)",
+            "background": "rgb(234, 245, 238)",
+            "effectiveBackground": [
+              234,
+              245,
+              238
+            ],
+            "ratio": 6.38,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": ".hm-roster-caption",
+            "foreground": "rgb(85, 88, 94)",
+            "background": "rgb(234, 245, 238)",
+            "effectiveBackground": [
+              234,
+              245,
+              238
+            ],
+            "ratio": 6.38,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-prep .hm-pt",
+            "foreground": "rgb(28, 29, 31)",
+            "background": "color(srgb 0.877647 0.887843 0.900588)",
+            "effectiveBackground": [
+              224,
+              226,
+              230
+            ],
+            "ratio": 13.01,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-prep .hm-pc",
+            "foreground": "rgb(28, 29, 31)",
+            "background": "color(srgb 0.877647 0.887843 0.900588)",
+            "effectiveBackground": [
+              224,
+              226,
+              230
+            ],
+            "ratio": 13.01,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-prep .hm-sl",
+            "foreground": "rgb(85, 88, 94)",
+            "background": "color(srgb 0.877647 0.887843 0.900588)",
+            "effectiveBackground": [
+              224,
+              226,
+              230
+            ],
+            "ratio": 5.5,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-full-team > summary",
+            "foreground": "rgb(35, 115, 71)",
+            "background": "rgb(234, 245, 238)",
+            "effectiveBackground": [
+              234,
+              245,
+              238
+            ],
+            "ratio": 5.2,
+            "outlineStyle": "solid",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "foreground": "rgb(28, 29, 31)",
+            "background": "color(srgb 0.877647 0.887843 0.900588)",
+            "effectiveBackground": [
+              224,
+              226,
+              230
+            ],
+            "ratio": 13.01,
+            "outlineStyle": "solid",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          }
+        ],
+        "summaryHover": {
+          "selector": "#hm-full-team > summary",
+          "foreground": "rgb(28, 29, 31)",
+          "background": "rgb(234, 245, 238)",
+          "effectiveBackground": [
+            232.92,
+            231.92,
+            220.5
+          ],
+          "ratio": 13.68,
+          "outlineStyle": "none",
+          "outlineWidth": "3px",
+          "shadow": "rgba(226, 96, 42, 0.09) 0px 0px 0px 1024px inset"
+        }
+      }
+    },
+    "1280": {
+      "before": {
+        "cards": {
+          "#hm-day": {
+            "x": 68,
+            "y": 251.19,
+            "width": 560,
+            "height": 218.13
+          },
+          "#hm-with": {
+            "x": 652,
+            "y": 251.19,
+            "width": 560,
+            "height": 271.95
+          },
+          "#hm-board": {
+            "x": 68,
+            "y": 547.14,
+            "width": 560,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 652,
+            "y": 547.14,
+            "width": 560,
+            "height": 180.92
+          },
+          ".wall-h.hm-day": {
+            "x": 68,
+            "y": 164,
+            "width": 1144,
+            "height": 48
+          },
+          ".hm-staff-first": {
+            "x": 68,
+            "y": 251.19,
+            "width": 1144,
+            "height": 271.95
+          },
+          ".hm": {
+            "x": 68,
+            "y": 251.19,
+            "width": 1144,
+            "height": 476.88
+          }
+        },
+        "fonts": {
+          "#hm-with .hm-pt": {
+            "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+            "size": "12.8px",
+            "lineHeight": "15.36px",
+            "weight": "700"
+          },
+          "#hm-prep .hm-pt": {
+            "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+            "size": "12.8px",
+            "lineHeight": "15.36px",
+            "weight": "700"
+          },
+          ".hm-coworkers b": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "15px",
+            "lineHeight": "21.75px",
+            "weight": "600"
+          },
+          ".hm-coworkers small": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "12px",
+            "lineHeight": "17.4px",
+            "weight": "400"
+          },
+          ".hm-sn": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "16px",
+            "lineHeight": "23.2px",
+            "weight": "600"
+          }
+        },
+        "targets": [
+          {
+            "selector": "#hm-full-team > summary",
+            "x": 668,
+            "y": 466.34,
+            "width": 528,
+            "height": 44
+          },
+          {
+            "selector": "#hm-day .hm-a",
+            "x": 84,
+            "y": 291.92,
+            "width": 528,
+            "height": 78
+          },
+          {
+            "selector": "#hm-day .hm-a",
+            "x": 84,
+            "y": 370.92,
+            "width": 528,
+            "height": 92
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 668,
+            "y": 583.27,
+            "width": 528,
+            "height": 44
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 668,
+            "y": 627.27,
+            "width": 528,
+            "height": 44
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 668,
+            "y": 671.27,
+            "width": 528,
+            "height": 44
+          }
+        ],
+        "visibleCoworkers": 3,
+        "visiblePrepSections": 3,
+        "tabTop": 1024,
+        "overflow": 0,
+        "colors": {
+          "#hm-with": "rgb(255, 254, 250)",
+          "#hm-prep": "rgb(255, 254, 250)",
+          "#hm-day": "rgb(43, 42, 39)",
+          "#hm-board": "rgb(255, 241, 230)"
+        }
+      },
+      "after": {
+        "cards": {
+          "#hm-day": {
+            "x": 68,
+            "y": 251.19,
+            "width": 560,
+            "height": 218.13
+          },
+          "#hm-with": {
+            "x": 652,
+            "y": 251.19,
+            "width": 560,
+            "height": 271.95
+          },
+          "#hm-board": {
+            "x": 68,
+            "y": 547.14,
+            "width": 560,
+            "height": 113.13
+          },
+          "#hm-prep": {
+            "x": 652,
+            "y": 547.14,
+            "width": 560,
+            "height": 180.92
+          },
+          ".wall-h.hm-day": {
+            "x": 68,
+            "y": 164,
+            "width": 1144,
+            "height": 48
+          },
+          ".hm-staff-first": {
+            "x": 68,
+            "y": 251.19,
+            "width": 1144,
+            "height": 271.95
+          },
+          ".hm": {
+            "x": 68,
+            "y": 251.19,
+            "width": 1144,
+            "height": 476.88
+          }
+        },
+        "fonts": {
+          "#hm-with .hm-pt": {
+            "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+            "size": "12.8px",
+            "lineHeight": "15.36px",
+            "weight": "700"
+          },
+          "#hm-prep .hm-pt": {
+            "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+            "size": "12.8px",
+            "lineHeight": "15.36px",
+            "weight": "700"
+          },
+          ".hm-coworkers b": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "15px",
+            "lineHeight": "21.75px",
+            "weight": "600"
+          },
+          ".hm-coworkers small": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "12px",
+            "lineHeight": "17.4px",
+            "weight": "400"
+          },
+          ".hm-sn": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "16px",
+            "lineHeight": "23.2px",
+            "weight": "600"
+          }
+        },
+        "targets": [
+          {
+            "selector": "#hm-full-team > summary",
+            "x": 668,
+            "y": 466.34,
+            "width": 528,
+            "height": 44
+          },
+          {
+            "selector": "#hm-day .hm-a",
+            "x": 84,
+            "y": 291.92,
+            "width": 528,
+            "height": 78
+          },
+          {
+            "selector": "#hm-day .hm-a",
+            "x": 84,
+            "y": 370.92,
+            "width": 528,
+            "height": 92
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 668,
+            "y": 583.27,
+            "width": 528,
+            "height": 44
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 668,
+            "y": 627.27,
+            "width": 528,
+            "height": 44
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 668,
+            "y": 671.27,
+            "width": 528,
+            "height": 44
+          }
+        ],
+        "visibleCoworkers": 3,
+        "visiblePrepSections": 3,
+        "tabTop": 1024,
+        "overflow": 0,
+        "colors": {
+          "#hm-with": "rgb(234, 245, 238)",
+          "#hm-prep": "color(srgb 0.877647 0.887843 0.900588)",
+          "#hm-day": "rgb(43, 42, 39)",
+          "#hm-board": "rgb(255, 241, 230)"
+        },
+        "contrast": [
+          {
+            "selector": "#hm-with .hm-pt",
+            "foreground": "rgb(35, 115, 71)",
+            "background": "rgb(234, 245, 238)",
+            "effectiveBackground": [
+              234,
+              245,
+              238
+            ],
+            "ratio": 5.2,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": ".hm-coworkers small",
+            "foreground": "rgb(85, 88, 94)",
+            "background": "rgb(234, 245, 238)",
+            "effectiveBackground": [
+              234,
+              245,
+              238
+            ],
+            "ratio": 6.38,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": ".hm-roster-caption",
+            "foreground": "rgb(85, 88, 94)",
+            "background": "rgb(234, 245, 238)",
+            "effectiveBackground": [
+              234,
+              245,
+              238
+            ],
+            "ratio": 6.38,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-prep .hm-pt",
+            "foreground": "rgb(28, 29, 31)",
+            "background": "color(srgb 0.877647 0.887843 0.900588)",
+            "effectiveBackground": [
+              224,
+              226,
+              230
+            ],
+            "ratio": 13.01,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-prep .hm-pc",
+            "foreground": "rgb(28, 29, 31)",
+            "background": "color(srgb 0.877647 0.887843 0.900588)",
+            "effectiveBackground": [
+              224,
+              226,
+              230
+            ],
+            "ratio": 13.01,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-prep .hm-sl",
+            "foreground": "rgb(85, 88, 94)",
+            "background": "color(srgb 0.877647 0.887843 0.900588)",
+            "effectiveBackground": [
+              224,
+              226,
+              230
+            ],
+            "ratio": 5.5,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-full-team > summary",
+            "foreground": "rgb(35, 115, 71)",
+            "background": "rgb(234, 245, 238)",
+            "effectiveBackground": [
+              234,
+              245,
+              238
+            ],
+            "ratio": 5.2,
+            "outlineStyle": "solid",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "foreground": "rgb(28, 29, 31)",
+            "background": "color(srgb 0.877647 0.887843 0.900588)",
+            "effectiveBackground": [
+              224,
+              226,
+              230
+            ],
+            "ratio": 13.01,
+            "outlineStyle": "solid",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          }
+        ],
+        "summaryHover": {
+          "selector": "#hm-full-team > summary",
+          "foreground": "rgb(28, 29, 31)",
+          "background": "rgb(234, 245, 238)",
+          "effectiveBackground": [
+            232.92,
+            231.92,
+            220.5
+          ],
+          "ratio": 13.68,
+          "outlineStyle": "none",
+          "outlineWidth": "3px",
+          "shadow": "rgba(226, 96, 42, 0.09) 0px 0px 0px 1280px inset"
+        }
+      }
+    },
+    "390-xlarge": {
+      "before": {
+        "cards": {
+          "#hm-day": {
+            "x": 20,
+            "y": 195,
+            "width": 350,
+            "height": 217.23
+          },
+          "#hm-with": {
+            "x": 20,
+            "y": 434.23,
+            "width": 350,
+            "height": 338.31
+          },
+          "#hm-board": {
+            "x": 20,
+            "y": 794.55,
+            "width": 350,
+            "height": 138.47
+          },
+          "#hm-prep": {
+            "x": 20,
+            "y": 955.02,
+            "width": 350,
+            "height": 193.19
+          },
+          ".wall-h.hm-day": {
+            "x": 20,
+            "y": 94,
+            "width": 350,
+            "height": 52
+          },
+          ".hm-staff-first": {
+            "x": 20,
+            "y": 195,
+            "width": 350,
+            "height": 577.55
+          },
+          ".hm": {
+            "x": 20,
+            "y": 195,
+            "width": 350,
+            "height": 953.2
+          }
+        },
+        "fonts": {
+          "#hm-with .hm-pt": {
+            "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+            "size": "16px",
+            "lineHeight": "19.2px",
+            "weight": "700"
+          },
+          "#hm-prep .hm-pt": {
+            "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+            "size": "16px",
+            "lineHeight": "19.2px",
+            "weight": "700"
+          },
+          ".hm-coworkers b": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "18.75px",
+            "lineHeight": "27.1875px",
+            "weight": "600"
+          },
+          ".hm-coworkers small": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "15px",
+            "lineHeight": "21.75px",
+            "weight": "400"
+          },
+          ".hm-sn": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "20px",
+            "lineHeight": "29px",
+            "weight": "600"
+          }
+        },
+        "targets": [
+          {
+            "selector": "#hm-full-team > summary",
+            "x": 40,
+            "y": 712.55,
+            "width": 310,
+            "height": 44
+          },
+          {
+            "selector": "#hm-day .hm-a",
+            "x": 40,
+            "y": 245.19,
+            "width": 310,
+            "height": 74.05
+          },
+          {
+            "selector": "#hm-day .hm-a",
+            "x": 40,
+            "y": 320.23,
+            "width": 310,
+            "height": 84
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 40,
+            "y": 1000.2,
+            "width": 310,
+            "height": 44
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 40,
+            "y": 1044.2,
+            "width": 310,
+            "height": 44
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 40,
+            "y": 1088.2,
+            "width": 310,
+            "height": 44
+          }
+        ],
+        "visibleCoworkers": 3,
+        "visiblePrepSections": 0,
+        "tabTop": 776,
+        "overflow": 0,
+        "colors": {
+          "#hm-with": "rgb(255, 254, 250)",
+          "#hm-prep": "rgb(255, 254, 250)",
+          "#hm-day": "rgb(43, 42, 39)",
+          "#hm-board": "rgb(255, 241, 230)"
+        }
+      },
+      "after": {
+        "cards": {
+          "#hm-day": {
+            "x": 20,
+            "y": 195,
+            "width": 350,
+            "height": 217.23
+          },
+          "#hm-with": {
+            "x": 20,
+            "y": 434.23,
+            "width": 350,
+            "height": 338.31
+          },
+          "#hm-board": {
+            "x": 20,
+            "y": 794.55,
+            "width": 350,
+            "height": 138.47
+          },
+          "#hm-prep": {
+            "x": 20,
+            "y": 955.02,
+            "width": 350,
+            "height": 193.19
+          },
+          ".wall-h.hm-day": {
+            "x": 20,
+            "y": 94,
+            "width": 350,
+            "height": 52
+          },
+          ".hm-staff-first": {
+            "x": 20,
+            "y": 195,
+            "width": 350,
+            "height": 577.55
+          },
+          ".hm": {
+            "x": 20,
+            "y": 195,
+            "width": 350,
+            "height": 953.2
+          }
+        },
+        "fonts": {
+          "#hm-with .hm-pt": {
+            "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+            "size": "16px",
+            "lineHeight": "19.2px",
+            "weight": "700"
+          },
+          "#hm-prep .hm-pt": {
+            "family": "\"Barlow Condensed\", \"Arial Narrow\", sans-serif",
+            "size": "16px",
+            "lineHeight": "19.2px",
+            "weight": "700"
+          },
+          ".hm-coworkers b": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "18.75px",
+            "lineHeight": "27.1875px",
+            "weight": "600"
+          },
+          ".hm-coworkers small": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "15px",
+            "lineHeight": "21.75px",
+            "weight": "400"
+          },
+          ".hm-sn": {
+            "family": "Barlow, system-ui, -apple-system, \"Segoe UI\", sans-serif",
+            "size": "20px",
+            "lineHeight": "29px",
+            "weight": "600"
+          }
+        },
+        "targets": [
+          {
+            "selector": "#hm-full-team > summary",
+            "x": 40,
+            "y": 712.55,
+            "width": 310,
+            "height": 44
+          },
+          {
+            "selector": "#hm-day .hm-a",
+            "x": 40,
+            "y": 245.19,
+            "width": 310,
+            "height": 74.05
+          },
+          {
+            "selector": "#hm-day .hm-a",
+            "x": 40,
+            "y": 320.23,
+            "width": 310,
+            "height": 84
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 40,
+            "y": 1000.2,
+            "width": 310,
+            "height": 44
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 40,
+            "y": 1044.2,
+            "width": 310,
+            "height": 44
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "x": 40,
+            "y": 1088.2,
+            "width": 310,
+            "height": 44
+          }
+        ],
+        "visibleCoworkers": 3,
+        "visiblePrepSections": 0,
+        "tabTop": 776,
+        "overflow": 0,
+        "colors": {
+          "#hm-with": "rgb(234, 245, 238)",
+          "#hm-prep": "color(srgb 0.877647 0.887843 0.900588)",
+          "#hm-day": "rgb(43, 42, 39)",
+          "#hm-board": "rgb(255, 241, 230)"
+        },
+        "contrast": [
+          {
+            "selector": "#hm-with .hm-pt",
+            "foreground": "rgb(35, 115, 71)",
+            "background": "rgb(234, 245, 238)",
+            "effectiveBackground": [
+              234,
+              245,
+              238
+            ],
+            "ratio": 5.2,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": ".hm-coworkers small",
+            "foreground": "rgb(85, 88, 94)",
+            "background": "rgb(234, 245, 238)",
+            "effectiveBackground": [
+              234,
+              245,
+              238
+            ],
+            "ratio": 6.38,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": ".hm-roster-caption",
+            "foreground": "rgb(85, 88, 94)",
+            "background": "rgb(234, 245, 238)",
+            "effectiveBackground": [
+              234,
+              245,
+              238
+            ],
+            "ratio": 6.38,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-prep .hm-pt",
+            "foreground": "rgb(28, 29, 31)",
+            "background": "color(srgb 0.877647 0.887843 0.900588)",
+            "effectiveBackground": [
+              224,
+              226,
+              230
+            ],
+            "ratio": 13.01,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-prep .hm-pc",
+            "foreground": "rgb(28, 29, 31)",
+            "background": "color(srgb 0.877647 0.887843 0.900588)",
+            "effectiveBackground": [
+              224,
+              226,
+              230
+            ],
+            "ratio": 13.01,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-prep .hm-sl",
+            "foreground": "rgb(85, 88, 94)",
+            "background": "color(srgb 0.877647 0.887843 0.900588)",
+            "effectiveBackground": [
+              224,
+              226,
+              230
+            ],
+            "ratio": 5.5,
+            "outlineStyle": "none",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-full-team > summary",
+            "foreground": "rgb(35, 115, 71)",
+            "background": "rgb(234, 245, 238)",
+            "effectiveBackground": [
+              234,
+              245,
+              238
+            ],
+            "ratio": 5.2,
+            "outlineStyle": "solid",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          },
+          {
+            "selector": "#hm-prep .hm-sec",
+            "foreground": "rgb(28, 29, 31)",
+            "background": "color(srgb 0.877647 0.887843 0.900588)",
+            "effectiveBackground": [
+              224,
+              226,
+              230
+            ],
+            "ratio": 13.01,
+            "outlineStyle": "solid",
+            "outlineWidth": "3px",
+            "shadow": "none"
+          }
+        ],
+        "summaryHover": {
+          "selector": "#hm-full-team > summary",
+          "foreground": "rgb(28, 29, 31)",
+          "background": "rgb(234, 245, 238)",
+          "effectiveBackground": [
+            232.92,
+            231.92,
+            220.5
+          ],
+          "ratio": 13.68,
+          "outlineStyle": "none",
+          "outlineWidth": "3px",
+          "shadow": "rgba(226, 96, 42, 0.09) 0px 0px 0px 844px inset"
+        }
+      }
+    }
+  },
+  "checks": [
+    {
+      "pass": true,
+      "detail": "before 390 normal: all existing fonts loaded"
+    },
+    {
+      "pass": true,
+      "detail": "before 390: no horizontal overflow"
+    },
+    {
+      "pass": true,
+      "detail": "before 390: Home interactive targets at least44px"
+    },
+    {
+      "pass": true,
+      "detail": "before: expanded roster stays transparent, without a second pin/shadow"
+    },
+    {
+      "pass": true,
+      "detail": "before: Prep targets and horizontal fit retained"
+    },
+    {
+      "pass": true,
+      "detail": "after 390 normal: all existing fonts loaded"
+    },
+    {
+      "pass": true,
+      "detail": "after 390: no horizontal overflow"
+    },
+    {
+      "pass": true,
+      "detail": "after 390: Home interactive targets at least44px"
+    },
+    {
+      "pass": true,
+      "detail": "390: text contrast #hm-with .hm-pt 5.2"
+    },
+    {
+      "pass": true,
+      "detail": "390: text contrast .hm-coworkers small 6.38"
+    },
+    {
+      "pass": true,
+      "detail": "390: text contrast .hm-roster-caption 6.38"
+    },
+    {
+      "pass": true,
+      "detail": "390: text contrast #hm-prep .hm-pt 13.01"
+    },
+    {
+      "pass": true,
+      "detail": "390: text contrast #hm-prep .hm-pc 13.01"
+    },
+    {
+      "pass": true,
+      "detail": "390: text contrast #hm-prep .hm-sl 5.5"
+    },
+    {
+      "pass": true,
+      "detail": "390: keyboard focus #hm-full-team > summary 5.2"
+    },
+    {
+      "pass": true,
+      "detail": "390: keyboard focus #hm-prep .hm-sec 13.01"
+    },
+    {
+      "pass": true,
+      "detail": "390: settled hover text contrast 13.68"
+    },
+    {
+      "pass": true,
+      "detail": "after: expanded roster stays transparent, without a second pin/shadow"
+    },
+    {
+      "pass": true,
+      "detail": "after: Prep targets and horizontal fit retained"
+    },
+    {
+      "pass": true,
+      "detail": "390: identical before/after cards"
+    },
+    {
+      "pass": true,
+      "detail": "390: identical before/after fonts"
+    },
+    {
+      "pass": true,
+      "detail": "390: identical before/after targets"
+    },
+    {
+      "pass": true,
+      "detail": "390: identical before/after visibleCoworkers"
+    },
+    {
+      "pass": true,
+      "detail": "390: identical before/after visiblePrepSections"
+    },
+    {
+      "pass": true,
+      "detail": "390: identical before/after tabTop"
+    },
+    {
+      "pass": true,
+      "detail": "390: identical expanded card geometry"
+    },
+    {
+      "pass": true,
+      "detail": "390: identical actual Prep visible rows/geometry"
+    },
+    {
+      "pass": true,
+      "detail": "before 768 normal: all existing fonts loaded"
+    },
+    {
+      "pass": true,
+      "detail": "before 768: no horizontal overflow"
+    },
+    {
+      "pass": true,
+      "detail": "before 768: Home interactive targets at least44px"
+    },
+    {
+      "pass": true,
+      "detail": "after 768 normal: all existing fonts loaded"
+    },
+    {
+      "pass": true,
+      "detail": "after 768: no horizontal overflow"
+    },
+    {
+      "pass": true,
+      "detail": "after 768: Home interactive targets at least44px"
+    },
+    {
+      "pass": true,
+      "detail": "768: text contrast #hm-with .hm-pt 5.2"
+    },
+    {
+      "pass": true,
+      "detail": "768: text contrast .hm-coworkers small 6.38"
+    },
+    {
+      "pass": true,
+      "detail": "768: text contrast .hm-roster-caption 6.38"
+    },
+    {
+      "pass": true,
+      "detail": "768: text contrast #hm-prep .hm-pt 13.01"
+    },
+    {
+      "pass": true,
+      "detail": "768: text contrast #hm-prep .hm-pc 13.01"
+    },
+    {
+      "pass": true,
+      "detail": "768: text contrast #hm-prep .hm-sl 5.5"
+    },
+    {
+      "pass": true,
+      "detail": "768: keyboard focus #hm-full-team > summary 5.2"
+    },
+    {
+      "pass": true,
+      "detail": "768: keyboard focus #hm-prep .hm-sec 13.01"
+    },
+    {
+      "pass": true,
+      "detail": "768: settled hover text contrast 13.68"
+    },
+    {
+      "pass": true,
+      "detail": "768: identical before/after cards"
+    },
+    {
+      "pass": true,
+      "detail": "768: identical before/after fonts"
+    },
+    {
+      "pass": true,
+      "detail": "768: identical before/after targets"
+    },
+    {
+      "pass": true,
+      "detail": "768: identical before/after visibleCoworkers"
+    },
+    {
+      "pass": true,
+      "detail": "768: identical before/after visiblePrepSections"
+    },
+    {
+      "pass": true,
+      "detail": "768: identical before/after tabTop"
+    },
+    {
+      "pass": true,
+      "detail": "before 1280 normal: all existing fonts loaded"
+    },
+    {
+      "pass": true,
+      "detail": "before 1280: no horizontal overflow"
+    },
+    {
+      "pass": true,
+      "detail": "before 1280: Home interactive targets at least44px"
+    },
+    {
+      "pass": true,
+      "detail": "after 1280 normal: all existing fonts loaded"
+    },
+    {
+      "pass": true,
+      "detail": "after 1280: no horizontal overflow"
+    },
+    {
+      "pass": true,
+      "detail": "after 1280: Home interactive targets at least44px"
+    },
+    {
+      "pass": true,
+      "detail": "1280: text contrast #hm-with .hm-pt 5.2"
+    },
+    {
+      "pass": true,
+      "detail": "1280: text contrast .hm-coworkers small 6.38"
+    },
+    {
+      "pass": true,
+      "detail": "1280: text contrast .hm-roster-caption 6.38"
+    },
+    {
+      "pass": true,
+      "detail": "1280: text contrast #hm-prep .hm-pt 13.01"
+    },
+    {
+      "pass": true,
+      "detail": "1280: text contrast #hm-prep .hm-pc 13.01"
+    },
+    {
+      "pass": true,
+      "detail": "1280: text contrast #hm-prep .hm-sl 5.5"
+    },
+    {
+      "pass": true,
+      "detail": "1280: keyboard focus #hm-full-team > summary 5.2"
+    },
+    {
+      "pass": true,
+      "detail": "1280: keyboard focus #hm-prep .hm-sec 13.01"
+    },
+    {
+      "pass": true,
+      "detail": "1280: settled hover text contrast 13.68"
+    },
+    {
+      "pass": true,
+      "detail": "1280: identical before/after cards"
+    },
+    {
+      "pass": true,
+      "detail": "1280: identical before/after fonts"
+    },
+    {
+      "pass": true,
+      "detail": "1280: identical before/after targets"
+    },
+    {
+      "pass": true,
+      "detail": "1280: identical before/after visibleCoworkers"
+    },
+    {
+      "pass": true,
+      "detail": "1280: identical before/after visiblePrepSections"
+    },
+    {
+      "pass": true,
+      "detail": "1280: identical before/after tabTop"
+    },
+    {
+      "pass": true,
+      "detail": "before 390 xlarge: all existing fonts loaded"
+    },
+    {
+      "pass": true,
+      "detail": "before 390-xlarge: no horizontal overflow"
+    },
+    {
+      "pass": true,
+      "detail": "before 390-xlarge: Home interactive targets at least44px"
+    },
+    {
+      "pass": true,
+      "detail": "after 390 xlarge: all existing fonts loaded"
+    },
+    {
+      "pass": true,
+      "detail": "after 390-xlarge: no horizontal overflow"
+    },
+    {
+      "pass": true,
+      "detail": "after 390-xlarge: Home interactive targets at least44px"
+    },
+    {
+      "pass": true,
+      "detail": "390-xlarge: text contrast #hm-with .hm-pt 5.2"
+    },
+    {
+      "pass": true,
+      "detail": "390-xlarge: text contrast .hm-coworkers small 6.38"
+    },
+    {
+      "pass": true,
+      "detail": "390-xlarge: text contrast .hm-roster-caption 6.38"
+    },
+    {
+      "pass": true,
+      "detail": "390-xlarge: text contrast #hm-prep .hm-pt 13.01"
+    },
+    {
+      "pass": true,
+      "detail": "390-xlarge: text contrast #hm-prep .hm-pc 13.01"
+    },
+    {
+      "pass": true,
+      "detail": "390-xlarge: text contrast #hm-prep .hm-sl 5.5"
+    },
+    {
+      "pass": true,
+      "detail": "390-xlarge: keyboard focus #hm-full-team > summary 5.2"
+    },
+    {
+      "pass": true,
+      "detail": "390-xlarge: keyboard focus #hm-prep .hm-sec 13.01"
+    },
+    {
+      "pass": true,
+      "detail": "390-xlarge: settled hover text contrast 13.68"
+    },
+    {
+      "pass": true,
+      "detail": "390-xlarge: identical before/after cards"
+    },
+    {
+      "pass": true,
+      "detail": "390-xlarge: identical before/after fonts"
+    },
+    {
+      "pass": true,
+      "detail": "390-xlarge: identical before/after targets"
+    },
+    {
+      "pass": true,
+      "detail": "390-xlarge: identical before/after visibleCoworkers"
+    },
+    {
+      "pass": true,
+      "detail": "390-xlarge: identical before/after visiblePrepSections"
+    },
+    {
+      "pass": true,
+      "detail": "390-xlarge: identical before/after tabTop"
+    },
+    {
+      "pass": true,
+      "detail": "No browser errors"
+    }
+  ],
+  "errors": []
+}
