@@ -47,7 +47,7 @@ for (const [id, pin] of [['vic', '4444'], ['fay', '5151']]) {
       const before = await p.locator('.wtop').evaluate(el => el.getBoundingClientRect().height);
       await clockOpen(p); await ready(p);
       const box = await p.locator('.cooling-menu').evaluate(el => { const r = el.getBoundingClientRect(); return { width: r.width, height: r.height, fits: r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight }; });
-      ok(box.width === 248 && box.height <= 157 && box.fits && !await L.overflow(p), width + ': approved compact dropdown fits the real app');
+      ok(box.width === (width < 768 ? width : 416) && box.height <= 300 && box.fits && !await L.overflow(p), width + ': shared timer sheet fits the real app');
       ok(await p.locator('[data-stage="4"]').isDisabled(), width + ': a confirmed empty timer offers 2 hours and keeps 4 hours unavailable');
       await p.keyboard.press('Escape');
       ok(await p.locator('.wtop').evaluate(el => el.getBoundingClientRect().height) === before && await p.evaluate(() => !!document.activeElement.closest('.cooling-clock')), width + ': closing keeps header height and returns focus to the clock');

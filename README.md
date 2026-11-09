@@ -4,6 +4,8 @@
 
 # Leichhardt Kitchen Book
 
+Dismissible sheets and modals share the picker frame: warm paper, a named 44 px close × on touch and mouse, swipe from the header/grip, bottom sheets below 768 px and centred modals above. Closing keeps existing drafts and leaves pings unread; Save and Got it remain separate. Mandatory sign-in stays in place. [Contract and comparisons](docs/adaptive-controls.md#shared-modal-frame-9-november-2026).
+
 Head and sous chefs can plan staff sections ahead in **Today's team** (9 November 2026, chosen A). The notebook has a Monday to Sunday picker, previous/next week and Today, written day status, separate drafts and a Save naming the selected date. Future planning keeps staff's live day and break board on today. Past dates are read-only here. The [council, three designs and verification](docs/team-week-options/brief.md) record the choice and measured phone-space cost.
 
 Today's team shows current scheduled meal breaks and splits on a pinned charcoal board. On break now lists each name with Until and the return time. Shift tabs show Lunch first, then Dinner, followed by the other configured shifts. It follows the saved plan across all shifts and updates with the existing kitchen clock. [Break board](docs/team-notebook-options/brief.md#break-board-9-november-2026).
@@ -240,6 +242,8 @@ Drawings for The Pass are in `js/art.js`. A recipe with no drawing still shows, 
 There's no build step and nothing to install. To try it on a computer, open `index.html` in a browser.
 
 ## Testing
+
+The cooling-clock midnight journey waits for the seeded next-day section to finish loading before testing Start. This keeps the existing section/sheet guard active and avoids racing its asynchronous read. [Verification note](docs/operandio-cooling.md#midnight-test-readiness-9-november-2026).
 
 Functions-only sign-ins skip kitchen activity writes (2 November 2026). The existing daily PIN, booking and delivery permissions stay the same. `tests/functions-activity.test.js` enters a real synthetic coordinator PIN, saves a booking draft and delivery, checks Orders stays blocked, and confirms an ordinary staff visit is still counted. It failed 2 of 10 checks before the guard and passes all 10 after it. The real rules matrix retains the same activity permissions and no longer needs its known-client waiver.
 

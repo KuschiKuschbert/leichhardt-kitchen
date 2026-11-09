@@ -263,14 +263,14 @@ async function pin(p, name, digits) {
   ok(await p.evaluate(() => !!localStorage.getItem('lk.note.seen.ann')) && !!(await store(p))[fsKey(['notes', 'n1', 'seen', today + '_ann'])], 'idle lock: her Got it records both the local mark and personal receipt for Ann');
   await p.context().close();
 
-  // the sheet at tablet and laptop width: no sideways scroll, Got it in view, in the middle from 900 px
+  // the sheet at tablet and laptop width: no sideways scroll, Got it in view, in the middle from 768 px
   for (const w of [768, 1280]) {
     p = await L.open(b, '#/', { who: 'ann', width: w, height: w === 768 ? 1024 : 800, board: true, extra: Object.assign(cfg(), ping('n1', 'Delivery: Bidfood 09:00'), mins()), wait: 2000 });
     await L.waitFor(p, () => !!document.querySelector('.nt-wrap')).catch(() => {});
     await p.evaluate(() => Promise.all(document.getAnimations().map(a => a.finished)));
     const g = await p.$eval('.nt-got', e => { const r = e.getBoundingClientRect(); return r.bottom <= window.innerHeight && r.top >= 0; });
     const mid = await p.$eval('.nt', e => window.innerHeight - e.getBoundingClientRect().bottom > 4);
-    ok(!(await L.overflow(p)) && g && mid === (w >= 900), w + ' px: fits, Got it in view, ' + (w >= 900 ? 'in the middle' : 'at the bottom'));
+    ok(!(await L.overflow(p)) && g && mid === (w >= 768), w + ' px: fits, Got it in view, ' + (w >= 768 ? 'in the middle' : 'at the bottom'));
     await p.context().close();
   }
 

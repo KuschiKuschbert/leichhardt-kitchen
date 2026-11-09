@@ -135,6 +135,11 @@ function controlsFit(a, width) {
       await advance(p, unlock); await phase(p, 'idle');
       ok((await writes(p)).length === 2, width + ': midnight restores the idle clock without starting a batch or writing a reset');
       await p.clock.resume();
+      // The midnight section read is asynchronous. Its existing sheet guard correctly blocks Start until it resolves.
+      await L.waitFor(p, day => {
+        const section = JSON.parse(localStorage.getItem('lk.sec.ann') || 'null');
+        return section && section.d === day && section.sec === 'larder';
+      }, TOMORROW);
       await clockTap(p); await phase(p, 'armed');
       ok((await writes(p)).length === 2 && (await saved(p)).run === first.run, width + ': first new-batch tap arms without changing the completed record');
       await clockTap(p); await phase(p, 'first');

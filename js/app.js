@@ -452,10 +452,11 @@
     return '<a class="wm-a wm-tile wm-mg" href="#/manage" data-who="go"' + on + '>' + ICON.pen + '<span><b>Recipes &amp; drawings</b></span></a>';
   }
   /* The chef mark's menu, appended to document.body (a top bar redraw does not remove it). Clicks use data-who. */
-  var wmenu = null;
-  function whoMenuClose(back) {
+  var wmenu = null, wmenuHistory = null;
+  function whoMenuClose(back, fromHistory) {
     if (!wmenu) return;
     wmenu.parentNode.removeChild(wmenu); wmenu = null;
+    var finish = wmenuHistory; wmenuHistory = null; if (finish) finish(!!fromHistory);
     var b = app.querySelector('.wtop-who');
     if (b) { b.setAttribute('aria-expanded', 'false'); if (back) b.focus({ preventScroll: true }); }
   }
@@ -511,6 +512,7 @@
     }
     el.innerHTML = '<div class="wm-bg" data-who="close"></div><nav class="wm" aria-label="' + (n ? esc(n) : 'Menu') + '" style="--wm-top:' + Math.round(r.bottom + 8) + 'px;top:var(--wm-top);right:' + Math.max(8, Math.round(window.innerWidth - r.right)) + 'px"><span class="wm-grip" aria-hidden="true"></span>' + body + '</nav>';
     document.body.appendChild(el); wmenu = el;
+    if (window.LK_PREP && window.LK_PREP.pickerOverlay) wmenuHistory = window.LK_PREP.pickerOverlay(function () { whoMenuClose(true, true); });
     btn.setAttribute('aria-expanded', 'true');
     // focus starts on the first tile, not on Sign out, so a stray Enter never hands the phone over
     var first = el.querySelector('.wm-tile') || el.querySelector('.wm-a'); if (first) first.focus({ preventScroll: true });
@@ -519,13 +521,13 @@
     var el = e.target.closest && e.target.closest('[data-who]');
     if (!el) return;
     var a = el.getAttribute('data-who');
-    if (a === 'menu') { if (wmenu) whoMenuClose(); else whoMenuOpen(el); return; }
+    if (a === 'menu') { if (wmenu) whoMenuClose(true); else whoMenuOpen(el); return; }
     if (a === 'close') { whoMenuClose(true); return; }
-    if (a === 'go') { whoMenuClose(); return; }
-    if (a === 'admmail') { e.preventDefault(); whoMenuClose(); window.LK_PREP.mailTab(); return; }
-    if (a === 'signin') { e.preventDefault(); whoMenuClose(); if (window.LK_PREP && window.LK_PREP.signIn) window.LK_PREP.signIn(location.hash || '#/'); else location.hash = '#/prep'; return; }
-    if (a === 'open') { whoMenuClose(); window.LK_PREP.chefOpen(el.getAttribute('data-v')); return; }
-    if (a === 'sec') { whoMenuClose(); window.LK_PREP.secOpen(); return; }
+    if (a === 'go') { whoMenuClose(false, true); return; }
+    if (a === 'admmail') { e.preventDefault(); whoMenuClose(false, true); window.LK_PREP.mailTab(); return; }
+    if (a === 'signin') { e.preventDefault(); whoMenuClose(false, true); if (window.LK_PREP && window.LK_PREP.signIn) window.LK_PREP.signIn(location.hash || '#/'); else location.hash = '#/prep'; return; }
+    if (a === 'open') { whoMenuClose(false, true); window.LK_PREP.chefOpen(el.getAttribute('data-v')); return; }
+    if (a === 'sec') { whoMenuClose(false, true); window.LK_PREP.secOpen(); return; }
     if (a === 'out') {
       // something not saved yet: the first tap says so, the second signs out anyway. "Not sent yet." when the only thing
       // waiting is a change on its way to the server (28 Oct 2026: it said Not saved yet for that too). On the head chef's
@@ -538,7 +540,7 @@
         el.querySelector('small').textContent = wait ? 'Not sent yet.' : (window.LK_PREP.unsavedHere && !window.LK_PREP.unsavedHere() ? 'Not sent yet.' : 'Not saved yet.') + ' Tap again to sign out'; return;
       }
       // "Signed out" is the prep toast, which shows by itself off the prep pages too (toast() in js/prep.js)
-      whoMenuClose();
+      whoMenuClose(false, true);
     }
   });
   // the change Sign out waited for is sent (js/prep.js, 29 Oct 2026): "Not sent yet." goes from an open menu, so it never
@@ -557,7 +559,7 @@
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     }
   });
-  window.addEventListener('hashchange', function () { whoMenuClose(); });
+  window.addEventListener('hashchange', function () { whoMenuClose(false, true); });
   /* the Pings bell: there every day while pings or minutes are on for this phone, with a dot for an unread ping or minutes
      to sign (js/prep.js noteBell() keeps it right after the page is drawn) */
   function noteBellHTML() {
@@ -1576,7 +1578,7 @@
     window.scrollTo(0, a.getBoundingClientRect().top + window.scrollY - homeAt.top);
     requestAnimationFrame(function () { requestAnimationFrame(function () { app.classList.remove('cv-all'); }); });
   }
-  window.addEventListener('lk-access', function () { whoMenuClose(); render(); });
+  window.addEventListener('lk-access', function () { whoMenuClose(false, true); render(); });
   function render() {
     if (navBackTarget && (!history.state || history.state.lkPage !== navBackTarget)) return;
     var returning = navVisit();
@@ -1941,14 +1943,14 @@
     if (tb) tb.outerHTML = tabBar();
   }
   window.addEventListener('lk-feat', function () {
-    whoMenuClose();
+    whoMenuClose(false, true);
     if (parseRoute().name === 'landing' || parseRoute().name === 'cleaning') { render(); return; }
     featureNavPaint();
     try { window.dispatchEvent(new Event('lk-guides')); } catch (e) {}
   });
   // js/prep.js signed the head chef in or out on this phone (lk.admin changed): show or drop Admin in the chef hat's menu, and the head chef's Settings blocks
   window.addEventListener('lk-admin', function () {
-    whoMenuClose(); editSlotRedraw(); redrawManage();
+    whoMenuClose(false, true); editSlotRedraw(); redrawManage();
     if (parseRoute().name === 'settings') { render(); return; }
     var ic = app.querySelector('.wtop-icons');
     if (ic) { ic.outerHTML = topIcons(); paintCooling(); }
@@ -1973,7 +1975,7 @@
   window.addEventListener('lk-mail', function () { var ic = app.querySelector('.wtop-icons'); if (ic) { ic.outerHTML = topIcons(); paintCooling(); } });
   // The Head chef's PIN also shows or drops Admin in the menu, so the whole icon group is redrawn.
   window.addEventListener('lk-who', function (e) {
-    whoMenuClose(); editSlotRedraw(); redrawManage();
+    whoMenuClose(false, true); editSlotRedraw(); redrawManage();
     var ic = app.querySelector('.wtop-icons'); if (ic) { ic.outerHTML = topIcons(); paintCooling(); }
     var el = app.querySelector('.wtop-who'); if (el) el.outerHTML = whoMark(!!(e.detail && e.detail.signedIn));
   });

@@ -41,36 +41,63 @@
   // Dismiss through Cancel/backdrop so drafts, unread pings, pending saves and overlay history keep their rules.
   var swipePanels = new WeakMap(), swipeDrag = null, swipeClickUntil = 0;
   function SwipeDismiss(panel) {
-    var dialog = panel.matches('dialog.ux-picker'), backdrop = panel.previousElementSibling;
+    var dialog = panel.matches('dialog.ux-picker, dialog.kb-occasion-panel'), backdrop = panel.previousElementSibling;
     var viewer = panel.matches('.gz-wrap');
     if (!dialog && !viewer && (!backdrop || !backdrop.matches('.sheet-bg, .nt-bg, .wm-bg, .fn-pop-bg, .mlp-bg'))) return;
-    panel.classList.add('ux-swipe');
+    panel.classList.add('ux-swipe', 'ux-modal');
     swipePanels.set(panel, function () {
       if (dialog) panel.dispatchEvent(new Event('cancel', { cancelable: true }));
       else if (viewer) { var close = panel.querySelector('[data-gz="close"]'); if (close) close.click(); }
       else if (backdrop.isConnected) backdrop.click();
     });
-    // The same Cancel path is visible to mouse and keyboard users. Keep existing header controls single.
-    if (!panel.querySelector('.ux-picker-close, .fn-close, .cooling-close, .gz-x')) {
-      var header = panel.querySelector('.nt-head, .wm-me, .ux-picker-head, .mlp-h, :scope > h3, :scope > .wm-h');
-      if (header) {
-        var closeButton = panel.querySelector('.ux-modal-close');
-        header.classList.add(header.matches('h2, h3, p') ? 'ux-modal-title' : 'ux-modal-head');
-        if (!closeButton) {
-          closeButton = node('button', 'ux-modal-close', '×'); closeButton.type = 'button'; closeButton.setAttribute('aria-label', 'Close dialog');
-          closeButton.addEventListener('click', function (e) {
-            e.preventDefault(); e.stopPropagation();
-            if (panel.getAttribute('aria-busy') !== 'true' && !panel.inert) { var dismiss = swipePanels.get(panel); if (dismiss) dismiss(); }
-          });
-          (header.matches('h2, h3, p') ? panel : header).appendChild(closeButton);
-        }
-        var busy = panel.getAttribute('aria-busy') === 'true'; if (closeButton.disabled !== busy) closeButton.disabled = busy;
-      }
-    }
-    slice(panel.querySelectorAll('.sheet-grip, :scope > h3, .nt-grip, .nt-head, .wm-grip, .wm-me, :scope > .wm-h:first-of-type, .cooling-head, .fn-grip, .fn-sheet-top, .mlp-eb, .mlp-h, .ux-picker-grip, .ux-picker-head h2, .gz-bar')).forEach(function (handle) {
+    ModalFrame(panel, viewer);
+    slice(panel.querySelectorAll('.sheet-grip, :scope > h3, .nt-grip, .nt-head, .wm-grip, .wm-me, :scope > .wm-h:first-of-type, .cooling-head, .fn-grip, .fn-sheet-top, .mlp-eb, .mlp-h, .ux-picker-grip, .ux-picker-head, .gz-bar, .kb-occasion-panel-heading, .ux-modal-head, .ux-modal-grip')).forEach(function (handle) {
       handle.classList.add('ux-swipe-handle');
     });
   }
+  // Decorate the existing heading and route every close through the feature's cancellation path.
+  // Keep fields in place: the live forms, selection, draft restoration and delegated handlers own them.
+  function ModalFrame(panel, viewer) {
+    var header = panel.querySelector('.ux-modal-head, .nt-head, .wm-me, .ux-picker-head, .cooling-head, .fn-sheet-top, .gz-bar, .kb-occasion-panel-heading, .mlp-h, :scope > h3, :scope > .wm-h');
+    if (!header) return;
+    if (header.matches('h2, h3, p')) {
+      var title = header; header = node('header', 'ux-modal-head ux-modal-simple');
+      title.before(header); header.appendChild(title); title.classList.add('ux-modal-title');
+    }
+    header.classList.add('ux-modal-head');
+    var close = panel.querySelector('.ux-modal-close, .ux-picker-close, .fn-close, .cooling-close, .gz-x, .kb-occasion-close');
+    if (!close) {
+      close = node('button', 'ux-modal-close', '×'); close.type = 'button';
+      close.addEventListener('click', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        if (panel.getAttribute('aria-busy') !== 'true' && !panel.inert) { var dismiss = swipePanels.get(panel); if (dismiss) dismiss(); }
+      });
+      header.appendChild(close);
+    }
+    close.classList.add('ux-modal-close');
+    if (close.textContent !== '×') close.textContent = '×';
+    if (!close.hasAttribute('aria-label')) close.setAttribute('aria-label', 'Close dialog');
+    var busy = panel.getAttribute('aria-busy') === 'true'; if (close.disabled !== busy) close.disabled = busy;
+    if (!panel.querySelector('.sheet-grip, .nt-grip, .wm-grip, .fn-grip, .ux-picker-grip, .ux-modal-grip')) {
+      var grip = node('div', panel.matches('dialog.ux-picker') ? 'ux-picker-grip' : 'ux-modal-grip'); grip.setAttribute('aria-hidden', 'true');
+      if (panel.matches('dialog.ux-picker')) header.insertBefore(grip, header.firstChild); else panel.insertBefore(grip, panel.firstChild);
+    }
+    if (viewer && !panel._uxShade) {
+      var shade = node('div', 'ux-modal-shade'); shade._uxPanel = panel;
+      shade.addEventListener('click', function () { var dismiss = swipePanels.get(panel); if (dismiss) dismiss(); });
+      panel.before(shade); panel._uxShade = shade;
+    }
+  }
+  // Native dialog backdrops have no sibling button. Hit-test outside the box, then use cancel.
+  document.addEventListener('click', function (e) {
+    var panel = e.target;
+    if (!panel.matches || !panel.matches('dialog.ux-modal[open]')) return;
+    if (e.isTrusted && e.detail && performance.now() < swipeClickUntil) return;
+    var r = panel.getBoundingClientRect();
+    if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) return;
+    e.preventDefault(); e.stopImmediatePropagation();
+    if (panel.getAttribute('aria-busy') !== 'true') { var dismiss = swipePanels.get(panel); if (dismiss) dismiss(); }
+  }, true);
   function swipeReset() {
     var drag = swipeDrag; swipeDrag = null; if (!drag) return;
     drag.panel.classList.remove('ux-swipe-dragging');
@@ -603,7 +630,8 @@
   }
 
   function enhance(root) {
-    slice(root.querySelectorAll('.sheet, .nt, .wm, .cooling-menu, .fn-sheet, .mlp, dialog.ux-picker, .gz-wrap')).forEach(SwipeDismiss);
+    slice(root.querySelectorAll('.sheet, .nt, .wm, .cooling-menu, .fn-sheet, .mlp, dialog.ux-picker, .gz-wrap, dialog.kb-occasion-panel')).forEach(SwipeDismiss);
+    slice(root.querySelectorAll('.ux-modal-shade')).forEach(function (shade) { if (!shade._uxPanel.isConnected) shade.remove(); });
     slice(root.querySelectorAll('button[data-mg="tag"], button[data-p="mn-attc"]')).forEach(cyclePicker);
     slice(root.querySelectorAll('.p-admin table')).forEach(reportTable);
     slice(root.querySelectorAll('select')).forEach(selectPicker);
@@ -629,6 +657,7 @@
   new MutationObserver(function (records) {
     var added = false;
     records.forEach(function (r) {
+      if (r.type === 'childList') slice(r.removedNodes).forEach(function (n) { if (n._uxShade) n._uxShade.remove(); });
       if (r.type === 'childList' && slice(r.addedNodes).some(function (n) { return n.nodeType === 1 && !n.classList.contains('ux-picker-trigger') && (n.matches('dialog.ux-picker, .ux-picker-head, .ux-picker-head h2, .ux-picker-grip') || !n.closest('.ux-picker, .ux-choice-measure')); })) added = true;
       if (r.type === 'attributes') {
         var source = r.target._uxUpdate ? r.target : r.target.closest('.ux-choice-source'); if (source && source._uxUpdate) source._uxUpdate();
