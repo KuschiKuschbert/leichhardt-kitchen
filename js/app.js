@@ -2113,7 +2113,15 @@
     homeWelcomePaint(); mascotSync();
   });
   // Reuse the calendar's settled state for clock corrections, midnight and the device's On/Off choice.
-  document.addEventListener('kb-seasonal-state', function () { homeWelcomePaint(); mascotPlace(); });
+  /* The seasonal bridge publishes on every page change, many a second while snow falls. Only a new occasion, its
+     On/Off gate, the kitchen day, clock readiness or page changes the welcome (Christmas at rest: 25 ms of main
+     thread a second when it repainted on each one, 13 ms on main before the varied welcome). */
+  var seasonalSeen = '';
+  document.addEventListener('kb-seasonal-state', function (e) {
+    var d = e.detail || {}, k = [d.themeId || '', !!d.gated, window.LK_TIME.day(), window.LK_TIME.ready(), location.hash].join('|');
+    if (k === seasonalSeen) return;
+    seasonalSeen = k; homeWelcomePaint(); mascotPlace();
+  });
   // js/prep.js says when the person's shift moment or the hour changes (homePaint(), on its 30 second tick).
   // New words can reach the mascot's corner: let it check its place again (it steps aside when it would touch them).
   window.addEventListener('lk-greet', function () { homeWelcomePaint(); mascotPlace(); });
