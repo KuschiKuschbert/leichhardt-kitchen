@@ -32,7 +32,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Loading, saving, progress and motion | `docs/loading-motion.md` (current), `docs/loading-feedback-options/brief.md` |
 | Shared controls, search and tables | `docs/adaptive-controls.md`, `docs/ux-council-audit.md` |
 | A whole-app audit | `docs/whole-app-audit.md`, `docs/ux-council-audit.md`, `docs/whole-app-inventory.md` |
-| Shared operational colour meanings and content/category exceptions | `docs/colour-coding.md`, `docs/design-patterns.md` |
+| Shared surface and operational colours, banners and category exceptions | `docs/surface-colours.md` (chosen hybrid), `docs/colour-coding.md`, `docs/design-patterns.md` |
 | Admin: analysis, proofreader, dashboard, pages, look | `docs/admin-intelligence.md`, `docs/proofreader-admin.md`, `docs/admin-dashboard-options/brief.md`, `docs/admin-pages-options/brief.md`, `docs/admin-design-options/brief.md`, `docs/admin-flow-spec.md` |
 | Head chef / sous chef panel, chosen dedicated admin-style panel | `docs/chef-panel-options/brief.md` (Chosen implementation, permissions, reads and verification) |
 | Prep, Orders, Wastage, Transfers and the chef hat; who did a Prep line on a shared screen | `docs/work-pages-design-options/brief.md`, `docs/shared-prep-attribution.md` |
@@ -230,7 +230,7 @@ These hold for every file, old and new. When you touch code that breaks one, bri
 - Every popup or sheet dims the page behind it, closes on the backdrop, Cancel and Escape, and is appended to `document.body`.
 - A choice of more than about 12 things gets a type-to-find box with the likely few first, not a long dropdown.
 - A row that scrolls sideways fades at its edge so people can see there is more.
-- Group with space and headings first. A box or a fill is for something that needs attention, not for every group. A long list of rows may alternate a light tint to keep the eye on its row (Settings, head chef 5 Nov 2026), counted from the rows on screen.
+- Group with space and headings first. Approved book covers, headers, spines and existing purpose cards may use the shared surfaces in `docs/surface-colours.md`; writing pages stay quiet and stronger state fills identify attention or a named outcome. Do not box every group. A long list of rows may alternate a light tint to keep the eye on its row (Settings, head chef 5 Nov 2026), counted from the rows on screen.
 - Pages work at 390, 768 and 1280 px with no sideways scroll (the click tests check it).
 
 **Loading**

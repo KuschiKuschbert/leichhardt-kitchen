@@ -1,0 +1,52 @@
+{
+  "baseline": "14cfab4:css/app.css",
+  "currentCSSSHA256": "1ed8c7adc1bcc4926ff47c14072ae5ae4eacbd3d1544005d8e1802608943ebe5",
+  "fixtureOnly": true,
+  "actualFonts": true,
+  "sameDOM": true,
+  "previewCSS": false,
+  "port": 8782,
+  "widths": [
+    390,
+    768,
+    1280
+  ],
+  "scenes": [
+    "prep",
+    "orders",
+    "team",
+    "drinks",
+    "cleaning",
+    "recipes-pass",
+    "recipes-tiles",
+    "recipe",
+    "admin",
+    "home",
+    "admin-people",
+    "prep-modal",
+    "todo",
+    "functions"
+  ],
+  "pairs": 42,
+  "screenshots": 84,
+  "measuredBoxes": 2202,
+  "geometryDifferencePairs": 0,
+  "overflowPairs": 0,
+  "browserErrorPairs": 0,
+  "composite": "docs/surface-colours/selected-examples.png",
+  "compositeBytes": 625042,
+  "surfaceTest": {
+    "assertions": 169,
+    "passed": 169,
+    "minimumNormalTextContrast": 4.759,
+    "minimumLargeTextContrast": 3.333,
+    "dietaryLabelBaselineContrast": 4.239,
+    "dietaryLabelCurrentContrast": 9.941
+  },
+  "notes": [
+    "Same DOM for each baseline/current CSS pair; only app stylesheet replaced in place.",
+    "Closed disclosure content excluded by native checkVisibility, correcting initial hidden-box false positive.",
+    "Todo and Functions recaptured after final corner and dietaries-label fixes.",
+    "Visual inspection included selected composite, Home1280, Prep390, Orders390, Team390, Cleaning390, Functions390, recipe Pass390/Tiles390, To-do1280, Drinks1280, Admin1280 and shared Prep modal390."
+  ]
+}

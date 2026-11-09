@@ -4,6 +4,8 @@
 
 Source baseline: `72d36a0`, current main when the audit began. Status: the focused CSS implementation and local verification are complete; required CI and the normal release queue remain the release gate. No live operational records were read or written for this audit. The review is role-based analysis, not research with kitchen staff.
 
+The owner subsequently clarified that the work also covered whole books, blocks and banners, reviewed three app-wide previews, then approved a restrained hybrid for implementation in the same PR #632. [Shared surface colours](surface-colours.md) records that selected design, original option scores, dissent and separate verification. It extends this status contract without changing its category, chart, artwork or print exceptions. Orders uses a steel work cover; amber remains attention or pending work. The local evidence below covers the earlier status pass unless explicitly stated otherwise.
+
 ## What the council decided
 
 All five independent reviewers support a focused pass. None supports a wholesale recolour.
