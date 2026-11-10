@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@600;700&family=Caveat:wght@700&display=swap">
 <link rel="stylesheet" href="../admin-dashboard-restyle-options/kit.css">
+<style>.tl { display: inline-flex; align-items: center; min-height: 44px; }</style>
 <style>
 /* Preview only: synthetic people and counts, no reads, no saves. */
 .picker { display: flex; gap: .5rem; flex-wrap: wrap; padding: .6rem 1rem; background: var(--beige); border-bottom: 1px solid var(--line); }
@@ -46,7 +47,8 @@ ul.words { padding-left: 1.1rem; } ul.words li { margin: .35rem 0; }
 <script>
 // Layout: ?d=A|B|C|M and ?p=plan|reports. Shifts worked in the last 30 days, from the nightly teamsum record (chefs and admin only).
 var q = new URLSearchParams(location.search), D = (q.get('d') || 'A').toUpperCase(), P = q.get('p') || 'plan';
-var NAMES = { A: 'A. One line in the planner', B: 'B. One page in Reports', C: 'C. Counts in the section picker', M: 'Mix: A line + C same-shift + B page' };
+var NAMES = { A: 'A. One line in the planner', B: 'B. One page in Reports', C: 'C. Counts in the section picker', M: 'Mix: A line + C same-shift + B page', R: 'Recommended: repaired mix' };
+var ERR = !!q.get('err');
 var SECS = ['Grill', 'Larder', 'Pans', 'Garnish', 'Fryer'];
 var PPL = [ // shifts worked per section, last 30 days
   { n: 'Alex', s: [2, 1, 12, 0, 1], today: 'Pans', usual: 'Usually Pans, 7 of the last 8 Saturdays' },
@@ -56,7 +58,7 @@ var PPL = [ // shifts worked per section, last 30 days
   { n: 'Eli', s: [1, 0, 0, 0, 0], today: 'Fryer', usual: '', fresh: true }
 ];
 function el(id) { return document.getElementById(id); }
-el('picker').innerHTML = ['A', 'B', 'C', 'M'].map(function (d) { return '<a class="pill' + (d === D ? ' on' : '') + '" href="?d=' + d + '&p=' + P + '">' + NAMES[d] + '</a>'; }).join('') +
+el('picker').innerHTML = ['A', 'B', 'C', 'M', 'R'].map(function (d) { return '<a class="pill' + (d === D ? ' on' : '') + '" href="?d=' + d + '&p=' + P + '">' + NAMES[d] + '</a>'; }).join('') +
   '<a class="pill' + (P === 'plan' ? ' on' : '') + '" href="?d=' + D + '&p=plan">Today\'s team planner</a><a class="pill' + (P === 'reports' ? ' on' : '') + '" href="?d=' + D + '&p=reports">Reports, Team</a>';
 el('rail').innerHTML = '<div class="find">Find</div><a>Inbox <em>3</em></a><a>Dashboard</a><div class="lab">' + (P === 'plan' ? 'Chef panel' : 'Admin panel') + '</div><a class="room">Today</a><a class="room">Reports</a><a class="room on">Team</a><a class="room">Kitchen</a><a class="room">Prep</a>';
 function rooms(on) { return '<div class="rooms">' + ['Today', 'Reports', 'Team', 'Kitchen'].map(function (r) { return '<span' + (r === on ? ' class="on"' : '') + '>' + r + '</span>'; }).join('') + '</div>'; }
@@ -107,13 +109,44 @@ function reportsOld() {
     '<h3>Cross-training chances</h3><p class="hint">Busy sections and people with no shifts there in 30 days. Pair them with someone who has.</p><ul class="words"><li><b>Pans:</b> Bo, Cy, Dee have no shifts here. Pair them with Alex (12).</li><li><b>Grill:</b> Dee has no shifts here. Pair with Bo (11).</li></ul>' +
     '<p class="hint">The note "Check assessments before pairing people" goes.</p>';
 }
+
+// R: the repaired mix. A planner line only where it can be acted on in this plan: the person has no shifts on a section
+// in 30 days and someone with 5 or more shifts there is on it in this plan (the draft). At most 2 lines a shift, sections
+// with the fewest people first. Counts by section id, sections on the list only. A failed or stale count shows no line.
+function plannerR() {
+  var h = '<div class="book"><div class="book-h"><b>Saturday 15 November</b><p>Dinner. Draft, not saved yet.</p></div>';
+  if (ERR) h += '<div class="headline">Shift counts did not load, so there are no learning hints on this plan. The plan itself works as usual.</div>';
+  var people = {}; few().forEach(function (x) { people[x.s] = x.n; });
+  var cand = [];
+  PPL.forEach(function (p) {
+    SECS.forEach(function (sec, i) {
+      if (p.s[i] || p.today === sec) return;
+      var m = PPL.filter(function (o) { return o !== p && o.today === sec && o.s[i] >= 5; })[0];
+      if (m) cand.push({ p: p, sec: sec, m: m, n: PPL.filter(function (o) { return o.s[i]; }).length });
+    });
+  });
+  cand.sort(function (a, b) { return a.n - b.n || a.p.n.localeCompare(b.p.n); });
+  var pick = {}, used = 0;
+  cand.forEach(function (c) { if (used < 2 && !pick[c.p.n]) { pick[c.p.n] = c; used++; } });
+  PPL.forEach(function (p) {
+    var c = !ERR && pick[p.n];
+    h += '<div class="prow"><span class="nm">' + p.n + '</span><span class="sec">' + p.today + ' &#9662;</span>' + (p.usual ? '<span class="meta">' + p.usual + '</span>' : '') +
+      (c ? '<div class="grow">Not on ' + c.sec + ' in 30 days. ' + c.m.n + ' is on ' + c.sec + ' in this plan.</div>' : '') + '</div>';
+  });
+  return h + '</div><p class="hint">At most two hints a shift. They follow this draft and are only a prompt: who goes where is still your call.</p>';
+}
+function reportsR() {
+  if (ERR) return '<h2>Who has worked where</h2><p class="p-err" role="status" style="color:var(--bad-ink)">Could not load the shift counts. <a class="link tl">Try again</a></p>';
+  return '<h2>Who has worked where</h2><p><span class="pill">7 days</span> <span class="pill">14 days</span> <span class="pill on">30 days</span></p><div class="split2"><div>' + grid().replace('none recorded', '0, no shifts recorded') + '</div><div>' + wordsB() + '</div></div>' +
+    '<details style="margin-top:1rem"><summary>Lines ticked in each section</summary><p class="hint">The ticks table that used to sit on this page, unchanged.</p></details>';
+}
 var main = '';
 if (P === 'plan') {
   main = rooms('Team') + '<p class="kicker">Chef panel</p><h1>Team</h1><p class="sub">Today\'s team, planned ahead.</p><hr class="rule"><div class="tabs"><span class="on">Today\'s team</span><span>Manage staff</span><span>Meeting minutes</span></div>' +
-    (D === 'B' ? '<p class="hint">B leaves the planner as it is now, without the "In training" line.</p>' + planner('B') : planner(D));
+    (D === 'R' ? plannerR() : D === 'B' ? '<p class="hint">B leaves the planner as it is now, without the "In training" line.</p>' + planner('B') : planner(D));
 } else {
   main = rooms('Reports') + '<p class="kicker">Admin panel</p><h1>Reports</h1><p class="sub">Read the recorded activity and follow it back to its source.</p><hr class="rule"><div class="tabs"><span>Insights</span><span>Wastage</span><span>Transfers</span><span class="on">Team</span><span>Item evidence</span></div>' +
-    (D === 'B' || D === 'M' ? '<h2>Who has worked where</h2><p><span class="pill">7 days</span> <span class="pill">14 days</span> <span class="pill on">30 days</span></p><div class="split2"><div>' + grid() + '</div><div>' + wordsB() + '</div></div><p class="hint">Replaces four parts: ticks per section, Cross-training chances, Section habits and Shifts on each section. Ticks stay in Insights.</p>' : reportsOld());
+    (D === 'R' ? reportsR() : D === 'B' || D === 'M' ? '<h2>Who has worked where</h2><p><span class="pill">7 days</span> <span class="pill">14 days</span> <span class="pill on">30 days</span></p><div class="split2"><div>' + grid() + '</div><div>' + wordsB() + '</div></div><p class="hint">Replaces four parts: ticks per section, Cross-training chances, Section habits and Shifts on each section. Ticks stay in Insights.</p>' : reportsOld());
 }
 if (q.get('bare')) { el('picker').style.display = 'none'; document.querySelector('.pv-note').textContent = 'Preview, example data. ' + NAMES[D]; }
 el('main').innerHTML = main;
