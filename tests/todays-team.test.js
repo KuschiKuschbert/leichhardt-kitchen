@@ -320,6 +320,10 @@ const withoutViewChoice = async p => {
   await L.waitFor(p, () => !!document.querySelector('.sk-shifts'), null, 8000).catch(() => {});
   const grid = await txt(p, '.sk-shifts') || '';
   ok(/Grill/.test(grid) && /Pans/.test(grid) && /Ann/.test(grid) && /Bo/.test(grid), 'admin: the Team report has shifts on each section (' + grid.slice(0, 160) + ')');
+  // Who has worked where (10 Nov 2026): one page from shifts, sections few people worked in words, ticks behind a fold
+  const team = await txt(p, '.a-pane') || '';
+  ok(/Who has worked where/.test(team) && /Pans: 1 person in 30 days \(Ann, 1 shift\)\./.test(team) && !/Cross-training chances|Section habits|Shifts on each section/.test(team), 'admin: Who has worked where replaces the four parts and names Pans as a section few people worked (' + ((team.match(/Sections few people.{0,200}/) || [''])[0]) + ')');
+  ok(await p.locator('details.sk-ticks').count() === 1 && !(await p.$eval('details.sk-ticks', e => e.open)), 'admin: the ticks table waits behind a closed fold');
   ok(!(await L.overflow(p)), 'admin: no sideways scroll');
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));
   await p.context().close();

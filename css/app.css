@@ -805,6 +805,9 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .a-table.sk-t tbody tr:nth-child(even) { background: transparent; }
 .sk-tot td, .sk-tot th { font-weight: 700; border-top: 1.5px solid var(--ink); }
 .sk-key { flex-wrap: wrap; }
+/* Reports, Team: the ticks table behind a fold under Who has worked where (10 Nov 2026) */
+.sk-ticks { margin-top: 1rem; }
+.sk-ticks > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
 .sk-key i { border: 1px solid var(--edge); }
 .a-list { margin: 0.4rem 0 0; padding-left: 1.1rem; }
 .a-list li { margin: 0.3rem 0; }
