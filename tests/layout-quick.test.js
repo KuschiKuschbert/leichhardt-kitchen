@@ -46,7 +46,9 @@ const onTop = (p, sel) => p.evaluate(s => {
       else await L.tap(p, groupControl(group));
       await L.settle(p, 300);
       const pages = await p.locator('[data-p="a-tab"]').evaluateAll(nodes => nodes.map(el => ({ id: el.getAttribute('data-t'), label: el.textContent.trim(), hidden: !el.getClientRects().length })));
-      ok(pages.length > 0, w + ' admin: ' + label + ' exposes its destinations');
+      // a room with one page (Team, since the Assessments page was retired on 10 Nov 2026) opens that page with no tabs
+      const single = !pages.length && group === 'team' && await p.evaluate(() => LK_PREP.state.atab === 'people' && !!document.querySelector('.a-pane'));
+      ok(pages.length > 0 || single, w + ' admin: ' + label + ' exposes its destinations');
       for (const page of pages) {
         // on a laptop Inbox and Dashboard show once, in the rail (gap fix, 8 Nov 2026): there they must be seen and tapped
         v = await onTop(p, page.hidden ? '.a-quick[data-v="' + page.id + '"]' : '[data-p="a-tab"][data-t="' + page.id + '"]');
