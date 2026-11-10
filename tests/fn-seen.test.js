@@ -77,6 +77,27 @@ const marks = (p, who) => p.evaluate(w => JSON.parse(localStorage.getItem('lk.fn
     ok((await seenWrites(p)).length === 1, 'the next open sends nothing again');
   });
 
+  // 3b. a second Got it to the same card and version (after a cancel and restore) moves the record's time forward, so the
+  // chefs see Got it, not Before the last change; a refusal is not taken as sent
+  await step('again after a restore', async () => {
+    const pre = { [key(['fnseen', seenId('ann')])]: { fid: 'smith', g: SIG, s: 'week', day: today, at: L.NOW - 3 * 3600000, by: 'ann' },
+      [key(['fnseen', seenId('ann', 'off')])]: { fid: 'smith', g: SIG, s: 'off', day: today, at: L.NOW - 2 * 3600000, by: 'ann' } };
+    p = await L.open(b, '#/', { who: 'ann', extra: extra(pre), init: mark('ann', { smith: { s: 'week', g: SIG, d: SMITH.date, t: L.NOW - 3600000 } }), width: 390, height: 844, wait: 1800 });
+    await homeWait(p); await L.settle(p, 800);
+    const rec = (await store(p))[key(['fnseen', seenId('ann')])];
+    ok(rec && rec.at === L.NOW - 3600000 && (await marks(p, 'ann')).smith.w === 1, 'the Back on Got it moves Ann\'s week record on to its own time (' + (rec && rec.at) + ')');
+  });
+  await step('refused, not sent', async () => {
+    const pre = { [key(['fnseen', seenId('ann')])]: { fid: 'smith', g: SIG, s: 'week', day: today, at: L.NOW - 60000, by: 'ann' } };
+    p = await L.open(b, '#/', { who: 'ann', extra: extra(pre), init: mark('ann', { smith: { s: 'week', g: SIG, d: SMITH.date, t: L.NOW - 3600000 } }), width: 390, height: 844, wait: 1800 });
+    await homeWait(p); await L.settle(p, 800);
+    const m = (await marks(p, 'ann')).smith;
+    ok(m && !m.w && m.n === 1, 'a refused Got it is counted, not marked as sent (' + JSON.stringify(m) + ')');
+    await p.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await L.settle(p, 600);
+    ok((await seenWrites(p)).length === 1, 'and is not tried again until the book loads again');
+    ok((await store(p))[key(['fnseen', seenId('ann')])].at === L.NOW - 60000, 'the newer record on the server is kept');
+  });
+
   // 4. no signal: nothing waits to be sent; back online, the next open sends it
   await step('no signal', async () => {
     p = await L.open(b, '#/', { who: 'ann', extra: extra(), width: 390, height: 844, wait: 1800 });
@@ -93,6 +114,8 @@ const marks = (p, who) => p.evaluate(w => JSON.parse(localStorage.getItem('lk.fn
   // 5. a sous chef on the function's page: one read when asked, then who has, who said it before a change, who has not
   const SEEN = {
     [key(['fnseen', seenId('ann')])]: { fid: 'smith', g: SIG, s: 'week', day: today, at: L.NOW - 600000, by: 'ann' },
+    [key(['fnseen', seenId('dev', 'off')])]: { fid: 'smith', g: SIG, s: 'off', day: today, at: L.NOW - 7200000, by: 'dev' },
+    [key(['fnseen', seenId('dev')])]: { fid: 'smith', g: SIG, s: 'week', day: today, at: L.NOW - 3600000, by: 'dev' },
     [key(['fnseen', seenId('cleo', 'week', 'old1')])]: { fid: 'smith', g: 'old1', s: 'week', day: M.addDays(today, -1), at: L.NOW - 86400000, by: 'cleo' },
     [key(['fnseen', seenId('bo', 'week')])]: { fid: 'smith', g: SIG, s: 'week', day: M.addDays(today, -1), at: L.NOW - 90000000, by: 'bo' },
     [key(['fnseen', seenId('bo', 'off')])]: { fid: 'smith', g: SIG, s: 'off', day: today, at: L.NOW - 300000, by: 'bo' },
@@ -110,15 +133,16 @@ const marks = (p, who) => p.evaluate(w => JSON.parse(localStorage.getItem('lk.fn
     await p.focus('#fn-seen .fn-seen-b'); await p.keyboard.press('Enter');
     await L.waitFor(p, () => !!document.querySelector('#fn-seen .fn-seen-l'), null, 6000);
     const t = await p.evaluate(() => document.getElementById('fn-seen').innerText.replace(/\s+/g, ' '));
-    ok(/Got it \(1\) Ann today \d\d:\d\d/.test(t), w + ': Got it names Ann with when (' + t.slice(0, 160) + ')');
+    ok(/Got it \(\d\) Ann today \d\d:\d\d/.test(t), w + ': Got it names Ann with when (' + t.slice(0, 160) + ')');
     ok(/Before the last change \(2\) Bo today \d\d:\d\d, Cleo \w{3} \d\d:\d\d/.test(t), w + ': Cleo said it to an older booking, Bo last heard it was cancelled');
-    ok(/Not yet \(2\) Dev, Sam/.test(t), w + ': not yet: Dev and Sam; Fay (functions only), the record off the list and another function are left out');
+    ok(/Got it \(2\) Ann today \d\d:\d\d, Dev today \d\d:\d\d/.test(t), w + ': Dev said Got it again after the cancellation was undone: Got it');
+    ok(/Not yet \(1\) Sam/.test(t), w + ': not yet: Sam; Fay (functions only), the record off the list and another function are left out');
     ok(!/zed|Fay|Someone/.test(t), w + ': nobody off the list is shown');
     ok((await p.evaluate(() => window.__fake.reads)).filter(r => /\/fnseen/.test(r)).length === 1, w + ': one read');
     ok(await p.evaluate(() => { const a = document.activeElement; return !!a && a.getAttribute('data-fn') === 'seen'; }), w + ': the focus stays on the button (now Check again)');
-    ok(await L.waitFor(p, () => /Got it: 1\. Before the last change: 2\. Not yet: 2\./.test((document.getElementById('lk-live') || {}).textContent || ''), null, 3000).then(() => true, () => false), w + ': the result is said for a screen reader');
+    ok(await L.waitFor(p, () => /Got it: 2\. Before the last change: 2\. Not yet: 1\./.test((document.getElementById('lk-live') || {}).textContent || ''), null, 3000).then(() => true, () => false), w + ': the result is said for a screen reader');
     ok(!(await L.overflow(p)), w + ': no sideways scroll');
-    ok(await p.evaluate(() => !document.querySelector('#pwn, [data-pwn], img[src="x"]') && !window.__pwn), w + ': damaged records add no markup and do not count for Dev');
+    ok(await p.evaluate(() => !document.querySelector('#pwn, [data-pwn], img[src="x"]') && !window.__pwn), w + ': damaged records add no markup');
   });
 
   // 6. at extra large text the names wrap; nothing goes sideways

@@ -202,7 +202,10 @@ await ok(setDoc(doc(owner, K + 'notes/n-sam/seen/2026-10-19_sam'), { day: '2026-
   const sr = (s, at, x) => Object.assign({ fid: 'f1', g: '1abc2', s: s || 'week', day: '2026-10-19', at: at || 5 }, x || {});
   await ok(W([['fnseen/f1_ann_week_1abc2', sr()]], { id: 'ann' }), true, 'fnseen: Ann says Got it to a function');
   await ok(W([['fnseen/f1_ann_week_1abc2', sr()]], { id: 'ann' }), true, 'fnseen: the same record again is an exact retry');
-  await ok(W([['fnseen/f1_ann_week_1abc2', sr('week', 6)]], { id: 'ann' }), false, 'fnseen: a record cannot be changed');
+  await ok(W([['fnseen/f1_ann_week_1abc2', sr('week', 6)]], { id: 'ann' }), true, 'fnseen: a later Got it to the same card and version moves its time forward');
+  await ok(W([['fnseen/f1_ann_week_1abc2', sr('week', 4)]], { id: 'ann' }), false, 'fnseen: but never back');
+  await ok(W([['fnseen/f1_ann_week_1abc2', sr('week', 9, { day: '2026-10-20' })]], { id: 'ann' }), true, 'fnseen: its day moves with it');
+  await ok(W([['fnseen/f1_ann_week_1abc2', sr('week', 10, { fid: 'f2' })]], { id: 'ann' }), false, 'fnseen: nothing else changes (the id carries it)');
   await ok(W([['fnseen/f1_ann_tom_1abc2', sr('tom')]], { id: 'ann' }), true, 'fnseen: the day before is a record of its own');
   await ok(W([['fnseen/f1_bo_week_1abc2', sr()]], { id: 'ann' }), false, 'fnseen: Ann cannot say Got it for Bo');
   await ok(W([['fnseen/f1_bo_week_1abc2', sr()]], { id: 'ann', as: 'bo' }), false, 'fnseen: nor in Bo\'s name');

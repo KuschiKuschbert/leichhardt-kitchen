@@ -918,13 +918,16 @@ function commitOps(ops) {
     return a.sent === true && !(old && old.sent === true) && a.sentBy !== (a.by || '');
   });
   if (badSent) return Promise.reject({ code: 'permission-denied' });
-  // who said Got it to a function (fnseen, 10 Nov 2026), like fnSeenOk() in the rules: created once, as the writer
-  // (or copied as it is by the admin), its id from its fields; an exact retry changes nothing; never deleted
+  // who said Got it to a function (fnseen, 10 Nov 2026), like fnSeenOk() in the rules: created as the writer (or copied
+  // as it is by the admin), its id from its fields; an exact retry changes nothing; a later Got it by that person moves
+  // only at and day forward; never deleted
   const badSeen = ops.some(o => {
     if (!/^kitchens\/[^/]+\/fnseen\/[^/]+$/.test(key(o.ref.path))) return false;
     if (o.kind === 'delete') return true;
     const a = after(o), old = store[key(o.ref.path)];
-    if (old) return JSON.stringify(Object.keys(a).sort().map(x => [x, a[x]])) !== JSON.stringify(Object.keys(old).sort().map(x => [x, old[x]]));
+    const same = (x, y, skip) => JSON.stringify(Object.keys(x).filter(k => !skip.includes(k)).sort().map(k => [k, x[k]])) === JSON.stringify(Object.keys(y).filter(k => !skip.includes(k)).sort().map(k => [k, y[k]]));
+    if (old && same(a, old, [])) return false;
+    if (old && ((admin && a.by !== cfgOf(o.ref).headId) || !same(a, old, ['at', 'day']) || !Number.isInteger(a.at) || !(a.at > old.at))) return true;
     const keys = Object.keys(a).every(x => ['fid', 'g', 's', 'day', 'at', 'by'].includes(x));
     return !keys || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(a.fid || '') || !/^[0-9a-z]{1,24}$/.test(a.g || '') || !['week', 'tom', 'off'].includes(a.s) ||
       !/^\d{4}-\d{2}-\d{2}$/.test(a.day || '') || !Number.isInteger(a.at) || !(a.at > 0) || typeof a.by !== 'string' || !a.by ||

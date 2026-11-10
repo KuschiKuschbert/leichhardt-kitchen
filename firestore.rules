@@ -1227,9 +1227,10 @@ service cloud.firestore {
     }
     // Functions: who said Got it to a function on Home (10 Nov 2026, docs/function-ahead-options/brief.md, step 4).
     // One record per person, function, card (week, tom or off) and what the kitchen needed then (g, kitchenSig()):
-    // fnseen/<function id>_<staff id>_<s>_<g>. Written once by that person on their own PIN session, never changed or
-    // deleted. The verified admin may copy one as it is (a kitchen PIN move); an exact retry changes nothing. Read by
-    // the head chef, the sous chefs (own PIN) and the verified admin: one query by fid, when a chef asks.
+    // fnseen/<function id>_<staff id>_<s>_<g>. Written by that person on their own PIN session; a later Got it to the
+    // same card and version (after a cancel and restore, or an edit and its undo) moves only its time (at, day) forward.
+    // Never deleted. The verified admin may copy one as it is (a kitchen PIN move); an exact retry changes nothing.
+    // Read by the head chef, the sous chefs (own PIN) and the verified admin: one query by fid, when a chef asks.
     function fnSeenOk(sid) {
       let d = request.resource.data;
       return d.keys().hasOnly(['fid', 'g', 's', 'day', 'at', 'by'])
@@ -1244,7 +1245,9 @@ service cloud.firestore {
     match /kitchens/KITCHEN_PIN/fnseen/{sid} {
       allow read: if isAdmin() || (kitchenRead() && chefId(reader()));
       allow create: if (isAdmin() || staff()) && fnSeenOk(sid);
-      allow update: if (isAdmin() || staff()) && request.resource.data == resource.data;
+      allow update: if ((isAdmin() || staff()) && request.resource.data == resource.data)
+        || (staff() && fnSeenOk(sid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['at', 'day'])
+          && request.resource.data.at > resource.data.at);
       allow delete: if false;
     }
     // Who has seen a shift ping: one small record per person, ping and day, written when they tap Got it.

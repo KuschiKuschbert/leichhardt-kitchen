@@ -606,9 +606,9 @@
   function huOK() { var p = window.LK_PREP; return !!p && p.privateAccess() && !(p.functionOnly && p.functionOnly()); }
   function huKey() { return 'lk.fn.hu.' + (ahWho() || 'device'); }
   // lk.fn.hu.<staff id>: { <function id>: { s: 'week' | 'tom' | 'off', g: what the card showed (huSig()), d: its date,
-  // t: when (now()), w: 1 once the chefs have it (fnseen, huSync()) } }, this person on this phone. Out of date for a
-  // function once its day has passed (dropped at an open, huOpen()); a booking whose kitchen words changed since (g)
-  // brings its card back once, marked Changed.
+  // t: when (now()), w: 1 once the chefs have it (fnseen, huSync()), n: refusals so far, w: 2 after 5 } }, this person
+  // on this phone. Out of date for a function once its day has passed (dropped at an open, huOpen()); a booking whose
+  // kitchen words changed since (g) brings its card back once, marked Changed.
   function huGet() { try { var m = JSON.parse(lsGet(huKey()) || '{}'); return m && typeof m === 'object' && !Array.isArray(m) ? m : {}; } catch (e) { return {}; } }
   function huPut(m) { lsSet(huKey(), Object.keys(m).length ? JSON.stringify(m) : null); }
   var huSig = kitchenSig;
@@ -687,8 +687,9 @@
   // the notes as they were typed (service and dietary notes), never shortened by rule: an allergy keeps its words
   function huNotes(f) { return f.notes ? esc(f.notes) : 'None entered'; }
   function huPlatters(f) { var tot = totalQty(f); return esc(linesText(f)) + (tot ? ' (' + tot + ')' : ''); }
+  // the chefs see who has said Got it only while a function is on (seenHTML()), so the cancelled card does not say so
   function huGotBtn(ids, s, name, plain) {
-    return '<button type="button" class="btn' + (plain ? '' : ' dark') + ' fn-hu-got" data-fn="hu-got" data-ids="' + esc(ids.join(',')) + '" data-s="' + s + '" aria-label="' + esc('Got it: ' + name + '. It stays on Home as one line for you. Your chefs see who has said Got it.') + '">Got it</button>';
+    return '<button type="button" class="btn' + (plain ? '' : ' dark') + ' fn-hu-got" data-fn="hu-got" data-ids="' + esc(ids.join(',')) + '" data-s="' + s + '" aria-label="' + esc('Got it: ' + name + '. It stays on Home as one line for you.' + (s === 'off' ? '' : ' Your chefs see who has said Got it.')) + '">Got it</button>';
   }
   // opens the function's sheet over Home (a button: the page under it stays Home)
   function huOpenB(f) { return '<button type="button" class="fn-hu-open" data-fn="open" data-id="' + esc(f.id) + '" aria-haspopup="dialog">Open the function</button>'; }
@@ -813,8 +814,10 @@
      fnseen/<function id>_<staff id>_<card>_<g> once, after its Undo has gone (the 9 seconds, another Got it or the next
      open of Home), so an Undo writes nothing. Marks made before this change go at the next open. One small write per
      Got it, never a read. Only with a signal and the functions list from the server: a receipt waiting with no signal
-     would hold Sign out and the 04:00 refresh for nothing. A record the server already has (another phone, a cleared
-     phone) is refused as a change: that counts as sent. The mark keeps w: 1 once it is in. */
+     would hold Sign out and the 04:00 refresh for nothing. A later Got it to the same card and version moves the
+     record's time forward (the rules allow that one change). A refusal is not taken as sent: the rules may not be
+     published yet, or the session was reset. The mark counts it (n) and tries again at a later load of the book; after
+     5 refusals it stops (w: 2; another phone may hold a newer record). The mark keeps w: 1 once it is in. */
   var huSending = {};
   function huSync() {
     var prep = P(), api = prep && prep.book && prep.book();
@@ -830,13 +833,16 @@
       huSending[sid] = 1;
       var at = typeof r.t === 'number' && r.t > 0 && r.t <= now() ? Math.round(r.t) : Math.round(now());
       var rec = { fid: id, g: r.g, s: r.s, day: kday(at), at: at };
-      var done = function () {
+      var done = function (refused) {
         if (huKey() !== key) return;   // the phone has someone else on it now: their marks are their own
         var m2 = huGet(), x = m2[id];
-        if (x && x.s === r.s && x.g === r.g && !x.w) { x.w = 1; huPut(m2); }
+        if (!x || x.s !== r.s || x.g !== r.g || x.w) return;
+        if (!refused) x.w = 1; else { x.n = (+x.n || 0) + 1; if (x.n >= 5) x.w = 2; }
+        huPut(m2);
       };
+      // a refused one waits for the next load of the book (huSending stays set in this one): no retry loop
       api.ready().then(function () { return api.W([['set', api.docRef('fnseen', sid), rec]]); })
-        .then(done, function (e) { if (e && e.code === 'permission-denied') done(); else delete huSending[sid]; });
+        .then(function () { done(false); }, function (e) { if (e && e.code === 'permission-denied') done(true); else delete huSending[sid]; });
     });
   }
   // js/app.js draws the empty slot under the top bar; this fills it, and refills it when anything changes
@@ -1403,7 +1409,10 @@
     if (SEEN.who !== seenFor()) SEEN = { who: seenFor(), by: {} };
     var who = SEEN.who, st = SEEN.by[id] = { state: 'loading' };
     changed();
-    api.ready().then(function () { var fs = api.fs(); return fs.getDocsFromServer(fs.query(api.colRef('fnseen'), fs.where('fid', '==', id))); }).then(function (snap) {
+    // a server read on a half-dropped signal can wait a long time without failing: after 6 seconds it is a failed check,
+    // like fromServer() in js/prep.js, so Check who has seen it comes back
+    var late = new Promise(function (res, rej) { setTimeout(function () { rej({ code: 'deadline-exceeded' }); }, 6000); });
+    Promise.race([api.ready().then(function () { var fs = api.fs(); return fs.getDocsFromServer(fs.query(api.colRef('fnseen'), fs.where('fid', '==', id))); }), late]).then(function (snap) {
       if (SEEN.who !== who || SEEN.by[id] !== st || seenFor() !== who) return;
       SEEN.by[id] = { state: 'ok', docs: snap.docs.map(function (d) { return d.data(); }), at: now() };
       changed();

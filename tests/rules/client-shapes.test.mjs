@@ -740,8 +740,10 @@ row('js/functions.js huSync(): Got it on Home\'s function card (fnseen/<fid>_<me
   prep: (r, w) => put({ [SEEN(w)]: null }), run: (db, w, r) => W(r, [['set', SEEN(w), seenRec()]]) });
 row('js/functions.js huSync(): the same record sent again from another phone (an exact retry)', { ok: KPINS, asks: KPINS,
   prep: (r, w) => put({ [SEEN(w, 'tom')]: seenRec('tom', NOW, w) }), run: (db, w, r) => W(r, [['set', SEEN(w, 'tom'), seenRec('tom', NOW)]]) });
-row('js/functions.js huSync(): a Got it already recorded is not changed (another time)', { ok: [], asks: [],
-  prep: (r, w) => put({ [SEEN(w, 'off')]: seenRec('off', NOW, w) }), run: (db, w, r) => W(r, [['set', SEEN(w, 'off'), seenRec('off', NOW + 1)]]) });
+row('js/functions.js huSync(): a later Got it to the same card and version moves its time forward', { ok: KPINS, asks: KPINS,
+  prep: (r, w) => put({ [SEEN(w, 'off')]: seenRec('off', NOW - MIN, w) }), run: (db, w, r) => W(r, [['set', SEEN(w, 'off'), seenRec('off', NOW)]]) });
+row('js/functions.js huSync(): an older Got it never goes over a newer one (another phone; refused, counted, tried at a later load)', { ok: [], asks: [],
+  prep: (r, w) => put({ [SEEN(w, 'week', 'old2')]: Object.assign(seenRec('week', NOW, w), { g: 'old2' }) }), run: (db, w, r) => W(r, [['set', SEEN(w, 'week', 'old2'), Object.assign(seenRec('week', NOW - MIN), { g: 'old2' })]]) });
 row('js/functions.js: a Got it in another person\'s name (never sent; the admin copies one as it is in a PIN move)', { ok: GOOGLE, asks: [],
   prep: (r, w) => put({ [SEEN(w === 'ann' ? 'sam' : 'ann', 'tom', 'zz9')]: null }),
   run: (db, w, r) => { const o = w === 'ann' ? 'sam' : 'ann'; return W(r, [['set', SEEN(o, 'tom', 'zz9'), Object.assign(seenRec('tom'), { g: 'zz9', by: o })]]); } });
