@@ -13,7 +13,8 @@
 //   (unavailable). Listeners started before keep their documents, marked fromCache. __fake.warm() is the signal coming
 //   back: cold goes, held writes are sent ('hold' becomes 'ok') and every listener gets the server's answer.
 //   __fake.ack() lets the listeners hear the server's confirm of the held writes, whose promises still wait for
-//   release(); __fake.quiet = true tells a listener only what changed for it, like the SDK (see sigOf below).
+//   release(); __fake.answer() is the other order: the promises are answered, the listeners still say pending;
+//   __fake.quiet = true tells a listener only what changed for it, like the SDK (see sigOf below).
 //   __fake.notOwner = true: the Google account is not the head chef's (the owner check, config/admins, is refused)
 // __fake.reads lists the paths asked for (getDoc, getDocs, getDocFromServer) and __fake.readLog every document read from the "server";
 // getDocsFromCache only returns documents this page has read before.
@@ -84,6 +85,9 @@ window.__fake.release = function () { const h = held.splice(0); pendingKeys.clea
 // the server's confirm reaching the listeners first (28 Oct 2026): the snapshots lose hasPendingWrites while the writes'
 // promises still wait (release() ends them), so a page's own .then() after a write does not draw
 window.__fake.ack = function () { pendingKeys.clear(); notify(); };
+// the other order (10 Nov 2026): the held writes' own promises are answered while the listeners still say
+// hasPendingWrites, the way the SDK raises a write's callback before its listen events. ack() then tells the listeners
+window.__fake.answer = function () { held.splice(0).forEach(f => f()); };
 // __fake.quiet = true: like the SDK, a listener hears nothing when nothing it holds changed (documents, hasPendingWrites
 // and fromCache all the same as its last snapshot). Off by default: every listener is told again after any write, which
 // redraws the page, so a check that something is patched in place without a redraw turns this on

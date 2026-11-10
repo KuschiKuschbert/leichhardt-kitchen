@@ -58,7 +58,7 @@
 
   /* ---------- small helpers ---------- */
   var LS = (function () { try { localStorage.getItem('x'); return localStorage; } catch (e) { return null; } })();
-  function privateKey(k) { return /^lk\.(past$|ord\.(hist(\.at)?|learned)$|[wx]\.(sum|note|history)$|use$|learned$|secs$|guides$|drinks$|mail\.sent$)/.test(k); }
+  function privateKey(k) { return /^lk\.(past$|ord\.(hist(\.at)?|learned)$|[wx]\.(sum|note|history)$|use$|learned$|secs$|said\.day$|guides$|drinks$|mail\.sent$)/.test(k); }
   function lsGet(k) { try { return LS ? LS.getItem(k) : null; } catch (e) { return null; } }
   function lsSet(k, v) { try { if (LS) { if (v == null || v === '') LS.removeItem(k); else LS.setItem(k, v); } } catch (e) {} }
   function clearPrivateCache() { try { Object.keys(LS || {}).forEach(function (k) { if (privateKey(k) || k === 'lk.fn') LS.removeItem(k); }); } catch (e) {} }
@@ -895,7 +895,12 @@
     if (!S.toast && !o) return '';
     // the new toast comes first (screen readers and the tests meet it first); the stack shows the chip above it. The
     // older Undo keeps its own 6 seconds when a short toast after it goes first (4 Nov 2026, LF-02).
-    return '<div class="p-toasts">' + (S.toast ? '<div class="' + toastClass(S.toastAct, S.toastBad, Date.now() - toastAt < 250) + '" data-toast="new" data-p="toast-hide"' + toastClock(S.toastAct, S.toastBad, S.toastLife, Date.now() - toastAt) + '><span class="p-toast-msg">' + esc(S.toast) + '</span>' +
+    // a tick that finished a section: its own slip carries one more line of words (secWords(), 10 Nov 2026)
+    var say = S.toast && S.toastAct && S.toastAct.sec && !S.toastBad ? secWords(S.toastAct) : '';
+    // once it stops being true, or the cook moves to another view, it is gone for this slip
+    if (S.toastAct && S.toastAct.sec && !say) S.toastAct.sec = null;
+    return '<div class="p-toasts">' + (S.toast ? '<div class="' + toastClass(S.toastAct, S.toastBad, Date.now() - toastAt < 250) + (say ? ' p-toast-two' : '') + '" data-toast="new" data-p="toast-hide"' + toastClock(S.toastAct, S.toastBad, S.toastLife, Date.now() - toastAt) + '><span class="p-toast-msg">' + esc(S.toast) + '</span>' +
+      (say ? '<span class="p-toast-say">' + esc(say) + '</span>' : '') +
       (S.toastAct ? '<button type="button" class="p-toast-btn" data-p="toast-act">' + esc(S.toastAct.label) + '</button>' : '') + '</div>' : '') +
       (o ? '<div class="p-toast p-toast-old" data-toast="old"><button type="button" class="p-toast-btn p-toast-chip" data-p="toast-old">' + esc(toastChip(o)) + '</button></div>' : '') + '</div>';
   }
@@ -2439,8 +2444,9 @@
     bump({ ticked: 1 });
     finNote(d.date, d.id, true);
     if (S.toastAct && S.toastAct.stampFor === d.id) { S.toast = ''; S.toastAct = null; }
-    var dn = ptItem(d.id);
-    ptClose();batch(function () { toast('Ticked' + (dn ? ' ' + slipName(dn.text) : ''), { label: 'Undo', fn: function () { tick(d.date, d.id, false); } });draw(); });setTimeout(draw, LINGER + 100);
+    var dn = ptItem(d.id), act = { label: 'Undo', fn: function () { tick(d.date, d.id, false); } };
+    // the server has answered, so the section's sentence comes with the slip (secSay())
+    ptClose();batch(function () { toast('Ticked' + (dn ? ' ' + slipName(dn.text) : ''), act);secSay(d.date, d.id, d.value.doneAt, d.value.doneById, act);draw(); });setTimeout(draw, LINGER + 100);
   }
   function ptCheck() {
     var d = pt;if (!d || d.busy || !ptContext(d)) return;
@@ -2519,11 +2525,13 @@
     if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return; }
     // the tick keeps the On it stamp (10 Nov 2026): doneAt less onAt is how long the job took (onItHTML())
     var at = done ? now() : 0, w = p;
-    supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: at, preparedBy: done ? w.name : '', preparedById: done ? w.id : '', preparedAt: at }).then(function () { markPast('p', date); }, failed);
+    // the tick's own slip (its Undo): once the server has the tick it may gain the section's sentence (secSay())
+    var act = done ? { label: 'Undo', fn: function () { tick(date, id, false); } } : null;
+    supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: at, preparedBy: done ? w.name : '', preparedById: done ? w.id : '', preparedAt: at }).then(function () { markPast('p', date); if (done) secSay(date, id, at, p.id, act); }, failed);
     // the stamp's Undo means nothing once the line is ticked: the Ticked toast takes its place, not a chip above it
     if (done && S.toastAct && S.toastAct.stampFor === id) { S.toast = ''; S.toastAct = null; }
     finNote(date, id, done);
-    if (done) { bump({ ticked: 1 }); toast('Ticked ' + slipName(it.text), { label: 'Undo', fn: function () { tick(date, id, false); } }); setTimeout(draw, LINGER + 100); }
+    if (done) { bump({ ticked: 1 }); toast('Ticked ' + slipName(it.text), act); setTimeout(draw, LINGER + 100); }
     else toast('Unticked ' + slipName(it.text) + '. It is open again.');
     if (!done && it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
   }
@@ -3331,6 +3339,9 @@
     if (x.rolled || !x.addedAt || T.day(x.addedAt) !== day) return false;
     return T.mins(x.addedAt) >= cut;
   }
+  // An open line that sits under "Tonight, for tomorrow" on today's All list (pageBody()), not under its section.
+  // One rule for the page and for the section's sentence on the slip (secWords()), so the two cannot disagree.
+  function tonightLine(x, day, cut) { return cut >= 0 && !x.done && !x.deleted && writtenLate(x, day, cut); }
   // the rollovers wait for summary/learned (or for its read to fail), so they know when the night list was written
   function learnedIn() { return S.learnFor === S.pin + '|' + dayNow() || waiting('learned'); }
   // the same for the past days: read, or their read failed (the rollover then reads the days it needs itself)
@@ -5070,6 +5081,144 @@
       if (finSprite.play('burger', function () { finPlayed = day; lsSet(FIN_KEY, day); })) finCheer = null;
     } catch (e) { finOff = true; }
   }
+  /* A finished section, on the slip (owner, 10 Nov 2026; docs/kitchen-mascot.md; the council's record is pull
+     request #670, step 2). When this phone's tick finishes a section of two or more lines, and the server has the
+     tick, that tick's own slip gains one line of words under "Ticked ...": "Sauce is done. Larder has 2 left."
+     Words only: no art, no control, no read, no write. It names the section and a count, never a person or the clock.
+     True on every screen, or not said. The book counts a section three ways: its heading on the All list, its own
+     tab (which also holds the lines listed under it as an also section) and Home. So a section is done only when
+     every line of it anywhere is ticked (secLines()), and "has 2 left" is only said of a section those three
+     count the same (secNext()). When lines are left but no section can be named for them, nothing is said, so the
+     words never read as "nothing is left".
+     On the All list, or on a section's own tab (Home sends each cook to theirs). Not on the Functions tab, the wall
+     board, the Prep room view or another day. On the All list the tick that finishes the whole list says nothing
+     here: the finished list speaks under the list (finHTML()).
+     Decided once, when the server answers that tick (secSay()), for the view the cook is on; after that it is only
+     checked (secWords(), on every draw) and taken away for good when it stops being true or the cook moves to
+     another view. Never late and never on another slip: it lives on the tick's own Undo (act.sec), and a slip with
+     under 3 seconds left says nothing more. One line or nothing: secFit() takes it off again when it would make the
+     slip any taller than the plain slip. Date.now() and the timer are only time passing here.
+     lk.said.day keeps the kitchen day and the sections already said on this device ({ d, s }), once the words have
+     stood 2 seconds: out of date on the next kitchen day, and cleared with the other kitchen words at a lock or a
+     handover (privateKey()), since it holds section names (secMem is the same in this tab's memory, also for a
+     phone that refuses storage). The name stays out of lk.sec.<staff id>, where each person's section for the day
+     is kept. secAck is this tab's memory only: the ticks whose own write the server has answered, by line id, with
+     the time ticked. The SDK answers a write's promise before its listeners hear, so the listener's "not sent"
+     mark alone would hold the words back. */
+  var SEC_KEY = 'lk.said.day', SEC_MIN = 3000, SEC_KEEP = 2000, SEC_NOT = ['all', 'done', 'prep', 'function', 'functions'], secAck = {}, secMem = null;
+  function secDay() {
+    var today = dayNow(), c = secMem && secMem.d === today ? secMem : null;
+    if (!c) { try { c = JSON.parse(lsGet(SEC_KEY) || 'null'); } catch (e) { c = null; } }
+    if (!c || c.d !== today || !Array.isArray(c.s)) c = { d: today, s: [] };
+    return secMem = c;
+  }
+  function secMark(name) { var c = secDay(); if (c.s.indexOf(name) < 0) { c.s.push(name); lsSet(SEC_KEY, JSON.stringify(c)); } }
+  // The server has this line as the phone shows it: the listener says nothing is waiting, or it is a tick whose own
+  // write this phone has seen answered.
+  function secSent(x) { return !x._unsent || (!!x.done && secAck[x.id] === x.doneAt); }
+  // A name the words can carry: not a word that reads as the whole list or as the Functions tab (the book itself
+  // writes daily lines under "Functions"), and not a person's name (a section named after a cook).
+  function secName(n) {
+    var k = String(n || '').trim().toLowerCase();
+    return !!k && SEC_NOT.indexOf(k) < 0 && !(S.config.people || []).some(function (p) { return String(p && p.name || '').trim().toLowerCase() === k; });
+  }
+  // "Pans are done. Fryers have 2 left.": a name that ends in one s, or joins two things, reads as more than one.
+  function secMany(n) { return /[^s]s$/i.test(n) || /\s(and|&)\s/i.test(n); }
+  // Every line of a section, wherever the book shows it: its own lines and the lines also listed under it.
+  function secLines(daily, n) { return daily.filter(function (x) { return (x.station || '') === n || (Array.isArray(x.also) ? x.also : []).indexOf(n) >= 0; }); }
+  /* What is next: the first section in the All list's own order (pageBody()) that has a name, an open line, and a
+     count the All list, its own tab and Home agree on: every open line of it is its own (none only listed under it
+     as an also section) and none was written tonight for tomorrow. A section they count differently is passed over. */
+  function secNext(date, daily, not) {
+    var cut = cutFor(date, S.items), seen = Object.create(null), order = [];
+    S.items.filter(function (x) { return !x.fn && (S.showRemoved || !x.deleted); }).sort(sortItems).forEach(function (x) {
+      var k = x.station || '';
+      if (!tonightLine(x, date, cut) && !seen[k]) { seen[k] = 1; order.push(k); }
+    });
+    for (var i = 0; i < order.length; i++) {
+      var n = order[i], open = n === not || !secName(n) ? [] : secLines(daily, n).filter(function (x) { return !x.done; });
+      if (open.length && open.every(function (x) { return (x.station || '') === n && !tonightLine(x, date, cut); })) return { name: n, left: open.length };
+    }
+    return null;
+  }
+  /* The sentence for this slip now, or ''. Worked out again on every draw from the lines this phone holds, so it
+     stays true while it shows: a line added to the section, or one unticked on another phone, takes it away, and
+     the count follows the list. It runs inside draw(), so it never throws: anything it does not expect is ''. */
+  function secWords(act) {
+    try {
+      var m = act && act.sec, date = m && m.date;
+      if (!m || S.name !== 'prep' || S.date !== date || date !== dayNow() || S.itemsState !== 'ok' || S.tab !== m.tab || S.tab === FN_TAB || wallOn() || (psEnabled() && psView === 'reference')) return '';
+      // nothing of the day's own list is waiting to be sent: a removal, a move to another section or a new line the
+      // server does not hold yet could make the section look finished here when it is not there
+      if (S.items.some(function (x) { return !x.fn && !secSent(x); })) return '';
+      var daily = S.items.filter(function (x) { return !x.deleted && !x.fn; }), it = daily.filter(function (x) { return x.id === m.id; })[0];
+      // this person's own tick, still standing
+      if (!it || !it.done || it.doneById !== m.who || m.who !== S.who) return '';
+      // the heading the line sits under: the tab's on a section's own tab, the line's own section on All
+      var name = S.tab || it.station || '';
+      if (typeof name !== 'string' || !secName(name) || (m.name && m.name !== name)) return '';
+      var group = secLines(daily, name);
+      // a section of one line is an ordinary tick
+      if (group.length < 2 || group.indexOf(it) < 0 || group.some(function (x) { return !x.done; })) return '';
+      var open = daily.filter(function (x) { return !x.done; }).length;
+      if (!open && !S.tab) return '';
+      // once a kitchen day for each section on this device
+      if (!act.shown && secDay().s.indexOf(name) >= 0) return '';
+      var next = open ? secNext(date, daily, name) : null;
+      if (open && !next) return '';
+      m.name = name;
+      return name + (secMany(name) ? ' are' : ' is') + ' done.' + (next ? ' ' + next.name + (secMany(next.name) ? ' have ' : ' has ') + next.left + ' left.' : '');
+    } catch (e) { return ''; }
+  }
+  /* The server has answered this phone's tick (the write's own promise; on the shared tablet the slip is only made
+     then). at: the time ticked, as written. who: the person whose tick it is. act: that tick's own Undo. */
+  function secSay(date, id, at, who, act) {
+    // words on a slip are an extra: nothing they do may break a tick
+    try {
+      secAck[id] = at;
+      if (!act || S.toastAct !== act || !S.toast || S.toastBad || S.toastLife - (Date.now() - toastAt) < SEC_MIN) return;
+      act.sec = { date: date, id: id, who: who, tab: S.tab, name: '' };
+      var words = secWords(act);
+      if (!words) { act.sec = null; return; }
+      // a draw is being held (the shared tablet makes the slip and the words together): toastHTML() draws both
+      if (holdDraw) { draw(); return; }
+      /* The slip on screen gains the line where it stands: no redraw, so the page is not drawn under a cook who is
+         ticking and the slip's slide in is not started again. A slip that is not on screen at the answer (the cook
+         opened a recipe or another page) never gets the words: they would first show late, when the cook comes back. */
+      var slip = S.root && document.body.contains(S.root) && S.root.querySelector('.p-toasts [data-toast="new"]'), msg = slip && slip.querySelector('.p-toast-msg');
+      if (!msg || msg.textContent !== S.toast || slip.querySelector('.p-toast-say')) { act.sec = null; return; }
+      var el = document.createElement('span'); el.className = 'p-toast-say'; el.textContent = words;
+      slip.insertBefore(el, msg.nextSibling); slip.classList.add('p-toast-two'); secFit();
+    } catch (e) {}
+  }
+  /* After each draw: one line or nothing. The words stay only on the prep list itself (never on a PIN screen or
+     another page drawn in its place), only with this version's styles (a saved copy can hold an older stylesheet),
+     and only when they fit: when the ticked name already wraps, or the sentence does not fit on its one line, the
+     slip is the plain slip again and nothing is said (measured, because it depends on the text size and the names).
+     Once they have stood 2 seconds on this slip the section is kept for the day and the words are read out: words
+     that were undone, replaced or taken away before anyone could read them are not spent, and never read out. */
+  function secFit() {
+    try {
+      var act = S.toastAct, say = act && act.sec && S.root && document.body.contains(S.root) && S.root.querySelector('.p-toasts [data-toast="new"] > .p-toast-say');
+      if (!say) return;
+      var slip = say.parentNode, off = function () { slip.classList.remove('p-toast-two'); slip.removeChild(say); act.sec = null; };
+      if (!S.root.querySelector('.nb-left .nb-ph') || getComputedStyle(say).whiteSpace !== 'nowrap') { off(); return; }
+      say.style.display = 'none'; slip.classList.remove('p-toast-two'); var plain = slip.getBoundingClientRect().height;
+      say.style.display = ''; slip.classList.add('p-toast-two');
+      if (slip.getBoundingClientRect().height > plain + 0.5 || say.scrollWidth > say.clientWidth + 0.5) { off(); return; }
+      if (act.shown) return;
+      act.shown = true;
+      var name = act.sec.name;
+      setTimeout(function () {
+        try {
+          var up = S.toastAct === act && act.sec && act.sec.name === name && S.root && S.root.querySelector('.p-toasts [data-toast="new"] > .p-toast-say');
+          if (up) { secMark(name); liveSay(up.textContent); }
+        } catch (e) {}
+      }, SEC_KEEP);
+    } catch (e) {}
+  }
+  // a turned phone or a resized window: measure again, so the words are never cut short
+  window.addEventListener('resize', function () { secFit(); });
   function pageBody(items, date, board) {
     /* ticked lines leave the list and show under Done today in Handy. Sections with nothing left to do are hidden.
        board: the wall board (wallOn()): every section, each in its own column, function platters in theirs, no removed
@@ -5083,7 +5232,7 @@
        tonight's list was started (cutFor(), the same cut the rollover uses) sit last under their own heading, because
        they go on tomorrow's list. No read: the cut comes from the day's own lines and summary/learned. */
     var TONIGHT = '\u0001tonight', FNS = 'Function platters', FNCOL = '\u0002fn', cut = !S.tab && date === dayNow() ? cutFor(date, items) : -1;
-    function secOf(x) { if (board && x.fn) return FNCOL; if (cut >= 0 && !x.done && !x.deleted && writtenLate(x, date, cut)) return TONIGHT; return S.tab === FN_TAB ? FNS : S.tab || x.station || ''; }
+    function secOf(x) { if (board && x.fn) return FNCOL; if (tonightLine(x, date, cut)) return TONIGHT; return S.tab === FN_TAB ? FNS : S.tab || x.station || ''; }
     shown.forEach(function (x) { var k = secOf(x); if (!seen[k]) { seen[k] = 1; order.push(k); } });
     [FNCOL, TONIGHT].forEach(function (last) { if (seen[last]) order = order.filter(function (k) { return k !== last; }).concat([last]); });
     return order.map(function (sec) {
@@ -6685,6 +6834,7 @@
     if (S.name === 'orders') cutPaint();
     tmPaint();
     finPaint();
+    secFit();
     window.dispatchEvent(new Event('lk-back'));
   }
 
@@ -11753,7 +11903,8 @@
     if (a === 'removed') { S.showRemoved = !S.showRemoved; draw(); return; }
     if (a === 'urgent') { toggleUrgent(id); return; }
     if ((a === 'toast-old' || a === 'toast-act' || a === 'toast-hide') && Date.now() - toastSwiped < 500) return;
-    if (a === 'toast-hide') { toastAway('all'); return; }
+    // the section's sentence is not a control: a tap on it does nothing, so it cannot throw Undo away by mistake
+    if (a === 'toast-hide') { if (e.target.closest('.p-toast-say')) return; toastAway('all'); return; }
     // an Undo says what it undid (5 Nov 2026, docs/action-feedback.md), unless what it ran said so itself (Put back...)
     if (a === 'toast-old') { var to = S.toastOld; S.toastOld = null; clearTimeout(toastOldTimer); if (to && to.act && to.act.fn) { to.act.fn(); undoneSay(to.act, to.msg); } draw(); return; }
     if (a === 'just-undo') { justUndo(el.getAttribute('data-id')); return; }

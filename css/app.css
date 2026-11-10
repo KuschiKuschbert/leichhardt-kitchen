@@ -1928,6 +1928,15 @@ button.wm-a.wm-tile { text-align: left; }
 .p-toasts .p-toast.p-toast-in { animation: slip-in 0.18s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .p-toasts .p-toast.p-toast-plain { padding-right: 16px; }
 .p-toast-msg { flex: 1 1 auto; min-width: 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; padding: 0.35rem 0; }
+/* A tick that finished a section (10 Nov 2026, docs/kitchen-mascot.md): that tick's own slip carries one more line of
+   words under "Ticked ...", in the done green. Words only. One line, never wrapped: secFit() in js/prep.js takes it off
+   again when it does not fit or would make the slip any taller than the plain slip, so the slip keeps its height.
+   The two lines sit 2 px inside the slip, with no room of their own, so they also fit its 60 px at Large and Extra
+   large text (two lines of 26 px in 53.5 px). */
+.p-toasts .p-toast.p-toast-two { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "msg btn" "say btn"; column-gap: 0.75rem; row-gap: 0; padding-top: 2px; padding-bottom: 2px; }
+.p-toast-two > .p-toast-msg { grid-area: msg; align-self: end; padding: 0; }
+.p-toast-two > .p-toast-say { grid-area: say; align-self: start; min-width: 0; padding: 0; font-weight: 700; line-height: 1.3; color: var(--done-ink); white-space: nowrap; overflow: hidden; }
+.p-toast-two > .p-toast-btn { grid-area: btn; align-self: center; }
 .p-toasts .p-toast-btn { flex: none; min-height: 44px; min-width: 72px; padding: 0 1rem; border: 0; border-radius: var(--r-act); background: var(--ink); color: #fff; font-weight: 700; }
 .p-toasts .p-toast-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .p-toasts .p-toast[style*="--toast-life"]::before { content: ""; position: absolute; left: 0; right: 0; top: -2.5px; height: 3px; background: var(--accent); transform-origin: 0 50%; animation: slip-time var(--toast-life) linear var(--toast-since, 0ms) forwards; }
