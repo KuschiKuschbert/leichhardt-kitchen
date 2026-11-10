@@ -69,23 +69,61 @@
 .fn-hu.is-off .btn { border-color: var(--ink); background: var(--paper); color: var(--ink); }
 .fn-hu .btn:focus-visible, .fn-hu-open:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 
-/* ---------- 2. A's quiet Next function line (design-a/build.cjs), on the work pages and on Home ---------- */
+/* ---------- 1b. the busy week (focused review, 10 Nov 2026): 3 or more functions in the next 7 days ----------
+   One card, one compact row per function (day, name, guests, first food time, platters, dietaries shortened), one Got
+   it for all of them. Each row opens that function's sheet. Got it collapses the card to the line with +N more. */
+.fn-wk { margin: 0.45rem 0 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.fn-wk li { border-bottom: 1px solid var(--line); }
+.fn-wk-r { display: grid; grid-template-columns: 2.9rem minmax(0, 1fr) 14px; align-items: center; column-gap: 0.6rem; width: 100%; min-height: 44px; margin: 0; padding: 0.3rem 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.fn-wk-r:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
+.fn-wk-d { display: flex; flex-direction: column; font: 700 0.8rem/1.15 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--small-ink); }
+.fn-wk-d b { font-size: 0.95rem; color: var(--ink); letter-spacing: 0.06em; }
+.fn-wk-m { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.fn-wk-1 { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.fn-wk-n { min-width: 0; font-weight: 700; font-size: 1.05rem; line-height: 1.2; overflow-wrap: anywhere; }
+.fn-wk-g { flex: none; font-weight: 600; font-size: 0.9rem; color: var(--muted); }
+.fn-wk-2 { font-size: 0.9rem; font-weight: 600; line-height: 1.3; color: #3b3a36; overflow-wrap: anywhere; }
+.fn-wk-r .fa-next-chev { align-self: center; }
+.fn-wk-r:hover .fn-wk-n { text-decoration: underline; text-underline-offset: 2px; }
+
+/* ---------- 2. A's quiet Next function line (design-a/build.cjs), on the work pages and on Home ----------
+   Revised after the focused review (10 Nov 2026): two rows that never wrap. Row 1 starts with the status words
+   (Next function, Cancelled · Do not prep, Order today, Tomorrow, No signal), which are never cut; only the date after
+   them may shorten. Row 2 is the name, cut with an ellipsis, then a short fixed part. So no name and no state can make
+   the slot taller than the height it was given when the page opened. */
 .fn-band.fa-quiet { background: var(--surface-reference); color: var(--ink); border-bottom: 1.5px solid var(--ink); box-shadow: none; }
 .fn-band.fa-quiet .fn-fold { border-color: var(--ink); background: var(--paper); color: var(--ink); }
 .fa-next { display: flex; align-items: center; gap: 0.5rem; max-width: 1240px; margin: 0 auto; padding: 0.15rem 0.75rem; }
-.fa-next-b { flex: 1 1 auto; min-width: 0; min-height: 44px; display: flex; flex-direction: column; justify-content: center; gap: 1px; margin: 0; padding: 0.2rem 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
-.fa-next-b:focus-visible, .fa-next-more:focus-visible, .fa-next .fn-fold:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 2px; border-radius: 4px; }
+.fa-next-b { flex: 1 1 auto; min-width: 0; min-height: 44px; display: flex; align-items: center; justify-content: flex-start; gap: 0.35rem; margin: 0; padding: 0.2rem 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.fa-next-tx { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 1px; }
+.fa-next-b:focus-visible, .fa-next-more:focus-visible, .fa-next .fn-fold:focus-visible, .fa-next-undo:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 2px; border-radius: 4px; }
 .fa-next .fn-fold:focus-visible { border-radius: 50%; }
-.fa-next-l { font: 700 0.8rem/1.2 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
-.fa-next-d { color: var(--small-ink); }
-.fa-next-t { font-size: 1rem; line-height: 1.3; color: #3b3a36; overflow-wrap: anywhere; }
-.fa-next-n { color: var(--ink); font-weight: 700; }
+/* row 1: one line, never wraps. Every item is exactly 1rem tall, so the Got it words fit the same row height */
+.fa-next-l { display: flex; align-items: baseline; min-width: 0; white-space: nowrap; font: 700 0.8rem/1.25 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.fa-next-s { flex: none; }
+.fa-next-d { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--small-ink); }
+.fa-next-stop { color: var(--bad-ink); }
+/* row 2: the name is the only part that shortens */
+.fa-next-t { display: flex; min-width: 0; white-space: nowrap; font-size: 1rem; line-height: 1.3; color: #3b3a36; }
+.fa-next-n { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink); font-weight: 700; }
+.fa-next-p, .fa-next-x { flex: none; }
 .fa-next-b:hover .fa-next-n { text-decoration: underline; text-underline-offset: 2px; }
+/* the chevron says the line opens something (new starter) */
+.fa-next-chev { flex: none; width: 14px; height: 14px; color: var(--muted); }
 .fa-next-more { flex: 0 0 auto; display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.55rem; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); color: var(--ink); font-size: 0.875rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.fa-next-more .fa-m2 { margin-left: 0.25em; }
+/* phones: "+1 more" over "this week", so the status words keep their room at every text size. Never cut. */
+@media (max-width: 479px) {
+  .fa-next-more { flex-direction: column; justify-content: center; padding: 0.1rem 0.55rem; line-height: 1.12; text-align: center; }
+  .fa-next-more .fa-m2 { margin-left: 0; font-size: 0.8rem; font-weight: 500; }
+}
 /* the minus: the band's own round control, at the full 44 px tap size (the designer found 36 px, Not evidenced) */
 .fa-next .fn-fold { width: 44px; height: 44px; margin-left: 0; }
 .fa-next-more[hidden] { display: none; }
-@media (min-width: 720px) { .fn-band .fa-next-b { flex-direction: row; flex-wrap: wrap; justify-content: flex-start; align-items: baseline; align-content: center; gap: 0 0.9rem; } }
+@media (min-width: 720px) {
+  .fn-band .fa-next-tx { flex: 0 1 auto; flex-direction: row; align-items: baseline; gap: 0 0.9rem; }
+  .fn-band .fa-next-l { flex: none; max-width: 60%; }
+}
 .fa-next.is-cancelled { box-shadow: inset 4px 0 0 var(--bad-ink); padding-left: 0.95rem; }
 .fa-next.is-cancelled .fa-next-n s { text-decoration-thickness: 2px; }
 /* the existing function tags, sized to sit inside the label row so a tagged state keeps the same two rows */
@@ -94,10 +132,18 @@
 .fa-next-k.is-pending { color: var(--small-ink); }
 .fa-next-l .fn-t-order, .fa-next-l .fn-t-tom { color: var(--ink); letter-spacing: 0.04em; }
 
+/* Got it answered in place (Home only): the line itself says "Got it. Kept here as one line" with Undo inside it, for
+   the book's slip time (9 s), then goes back to its own words. Same two rows, so nothing under it moves either way. */
+.fa-next-ack { display: none; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 700 0.95rem/1rem var(--display); letter-spacing: 0.02em; text-transform: none; color: var(--ink); }
+.fa-next-undo { display: none; flex: none; min-height: 44px; min-width: 72px; padding: 0 1rem; border: 0; border-radius: var(--r-act); background: var(--ink); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.fa-next.is-ack .fa-next-s, .fa-next.is-ack .fa-next-d, .fa-next.is-ack .fa-next-chev, .fa-next.is-ack .fa-next-more { display: none; }
+.fa-next.is-ack .fa-next-ack { display: block; }
+.fa-next.is-ack .fa-next-undo { display: inline-block; }
+.fa-hm-next:has(.is-ack) { box-shadow: inset 4px 0 0 var(--ink), 0 4px 0 rgba(28, 29, 31, 0.14); }
+
 /* Home: the same line on a pinned quiet card, in the card's place under Your day. Always two rows; no minus on Home. */
 .is-home .fa-hm-next { padding: 0.3rem 0.25rem; background: var(--surface-reference); }
 .fa-hm-next .fa-next { max-width: none; margin: 0; padding: 0 0.6rem; }
-.fa-hm-next .fa-next-b { flex-direction: column; align-items: flex-start; gap: 1px; }
 .fa-hm-next[hidden] { display: none; }
 
 /* Home order. Phone: Your day, then the heads-up card or the line, then On with you. Nothing above Your day.
@@ -173,80 +219,138 @@ ins.fa-add { text-decoration: none; }
 
 
 
-<div class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div><div id="kb-festive-effects" aria-hidden="true" data-motion-intensity="festive" data-surface="work" class="effect-glow"></div><div class="fa-pop" id="fa-sheet-smith"><div class="fn-pop-bg" data-fn="close"></div><section class="fn-sheet" role="dialog" aria-modal="true" aria-labelledby="fn-sh-h-smith" tabindex="-1"><div class="fn-grip" aria-hidden="true"></div><header class="fn-sheet-top"><div class="fn-sheet-t"><span class="fn-eb">Function</span><h2 id="fn-sh-h-smith">Smith 60th</h2></div><button type="button" class="fn-close" data-fn="close">Close</button></header><div class="fn-sheet-body"><p class="fn-sub">Thu 12 Nov · Function room · event 18:00 · <ins class="fa-add">60 guests</ins></p><section class="fn-next" aria-label="Next out"><p class="fn-next-h"><span class="fn-next-l">Next out</span> <b>18:30 · round 1 of 2</b></p><p class="fn-next-s">5 platters of 10</p><ul class="fn-next-list"><li class="fn-next-row"><span class="fn-next-n">3<span class="fn-x">×</span></span><span class="fn-next-name"><a href="#/r/antipasto-platter">Antipasto Platter</a></span></li><li class="fn-next-row"><span class="fn-next-n">2<span class="fn-x">×</span></span><span class="fn-next-name"><a href="#/r/pizza-platter">Pizza Platter</a></span></li></ul><div class="fn-next-sent"><button type="button" class="btn fn-sent-b" data-fn="sent" aria-label="Round 1 sent">Sent</button></div></section><section class="fn-whole" aria-label="Whole function"><h3 class="fn-whole-h">Whole function <b>10 platters</b></h3><p class="fn-whole-s">All 2 rounds added up.</p><ul class="fn-whole-list"><li><b>5</b> × <a href="#/r/antipasto-platter">Antipasto Platter</a></li><li><b>5</b> × <a href="#/r/pizza-platter">Pizza Platter</a></li></ul></section><h3 class="fn-h">Every round</h3><ol class="fn-rounds"><li class="fn-round is-next"><span class="fn-round-t">18:30 <span class="fn-tag">Next</span></span><span class="fn-round-w">3 × Antipasto, 2 × Pizza <b>(5)</b></span><span class="fn-sent"><button type="button" class="btn fn-sent-b" data-fn="sent">Sent</button></span></li><li class="fn-round"><span class="fn-round-t">19:15</span><span class="fn-round-w">2 × Antipasto, 3 × Pizza <b>(5)</b></span><span class="fn-sent"><button type="button" class="btn fn-sent-b" data-fn="sent">Sent</button></span></li></ol><p class="hint fn-note">Tick each round as it goes out.</p><h3 class="fn-h" id="fa-diet-smith">Service and dietary notes</h3><p class="fn-text">4 gluten free, 1 nut allergy.</p><p class="fn-by fn-last">Last changed by Gus, Mon 9 Nov 14:00.</p><div class="btn-row fn-acts"><button type="button" class="btn" data-fn="print">Print function</button><a class="btn dark" href="docs/function-ahead-options/design-mix/fn-week.html" data-fn="go">Open the full sheet</a></div></div></section></div><div class="fa-pop" id="fa-sheet-jones"><div class="fn-pop-bg" data-fn="close"></div><section class="fn-sheet" role="dialog" aria-modal="true" aria-labelledby="fn-sh-h-jones" tabindex="-1"><div class="fn-grip" aria-hidden="true"></div><header class="fn-sheet-top"><div class="fn-sheet-t"><span class="fn-eb">Function</span><h2 id="fn-sh-h-jones">Jones wedding</h2></div><button type="button" class="fn-close" data-fn="close">Close</button></header><div class="fn-sheet-body"><p class="fn-sub">Sat 14 Nov · Beer garden · event 17:00 · <ins class="fa-add">90 guests</ins></p><section class="fn-next" aria-label="Next out"><p class="fn-next-h"><span class="fn-next-l">Next out</span> <b>All at 18:00</b></p><p class="fn-next-s">6 platters</p><ul class="fn-next-list"><li class="fn-next-row"><span class="fn-next-n">6<span class="fn-x">×</span></span><span class="fn-next-name"><a href="#/r/antipasto-platter">Antipasto Platter</a></span></li></ul><div class="fn-next-sent"><button type="button" class="btn fn-sent-b" data-fn="sent" aria-label="Round 1 sent">Sent</button></div></section><p class="fn-whole fn-whole-one">One round: this is the whole function, <b>6 platters</b>.</p><p class="fn-by fn-last">Last changed by Gus, Mon 9 Nov 14:00.</p><div class="btn-row fn-acts"><button type="button" class="btn" data-fn="print">Print function</button><a class="btn dark" href="docs/function-ahead-options/design-mix/fn-week.html" data-fn="go">Open the full sheet</a></div></div></section></div><div class="fa-pop" id="fa-sheet-lee"><div class="fn-pop-bg" data-fn="close"></div><section class="fn-sheet" role="dialog" aria-modal="true" aria-labelledby="fn-sh-h-lee" tabindex="-1"><div class="fn-grip" aria-hidden="true"></div><header class="fn-sheet-top"><div class="fn-sheet-t"><span class="fn-eb">Function</span><h2 id="fn-sh-h-lee">Lee engagement</h2></div><button type="button" class="fn-close" data-fn="close">Close</button></header><div class="fn-sheet-body"><p class="fn-sub">Fri 13 Nov · Function room · event 19:00 · <ins class="fa-add">40 guests</ins></p><section class="fn-next" aria-label="Next out"><p class="fn-next-h"><span class="fn-next-l">Next out</span> <b>All at 19:30</b></p><p class="fn-next-s">4 platters</p><ul class="fn-next-list"><li class="fn-next-row"><span class="fn-next-n">4<span class="fn-x">×</span></span><span class="fn-next-name"><a href="#/r/antipasto-platter">Antipasto Platter</a></span></li></ul><div class="fn-next-sent"><button type="button" class="btn fn-sent-b" data-fn="sent" aria-label="Round 1 sent">Sent</button></div></section><p class="fn-whole fn-whole-one">One round: this is the whole function, <b>4 platters</b>.</p><h3 class="fn-h" id="fa-diet-lee">Service and dietary notes</h3><p class="fn-text">2 vegan.</p><p class="fn-by fn-last">Last changed by Gus, Mon 9 Nov 14:00.</p><div class="btn-row fn-acts"><button type="button" class="btn" data-fn="print">Print function</button><a class="btn dark" href="docs/function-ahead-options/design-mix/fn-week.html" data-fn="go">Open the full sheet</a></div></div></section></div><div class="p-toasts" id="fma-slip" hidden=""><div class="p-toast" data-toast="new" style="--toast-life:9000ms;--toast-since:-3000ms"><span class="p-toast-msg"></span><button type="button" class="p-toast-btn" data-fma="undo">Undo</button></div></div><script>
-/* Combined preview only (functions ahead of time, round 2, 10 Nov 2026). The taps the preview can show: Got it and its
-   Undo on Home, the work-page minus and its Undo, a tap on the line opening the existing function sheet, and the
-   open-only rule (the slot's height is set when the page opens; later changes only change the words inside it).
-   Nothing is saved. In the app, Got it would be kept on the phone per person (lk.fn.hu.<staffId>), the minus per phone
-   for the kitchen day (lk.fn.fold), and the height lock would live in js/functions.js paint(). */
+<div class="visually-hidden" role="status" aria-live="polite" aria-atomic="true"></div><div id="kb-festive-effects" aria-hidden="true" data-motion-intensity="festive" data-surface="work" class="effect-glow"></div><div class="fa-pop" id="fa-sheet-smith"><div class="fn-pop-bg" data-fn="close"></div><section class="fn-sheet" role="dialog" aria-modal="true" aria-labelledby="fn-sh-h-smith" tabindex="-1"><div class="fn-grip" aria-hidden="true"></div><header class="fn-sheet-top"><div class="fn-sheet-t"><span class="fn-eb">Function</span><h2 id="fn-sh-h-smith">Smith 60th</h2></div><button type="button" class="fn-close" data-fn="close">Close</button></header><div class="fn-sheet-body"><p class="fn-sub">Thu 12 Nov · Function room · event 18:00 · <ins class="fa-add">60 guests</ins></p><section class="fn-next" aria-label="Next out"><p class="fn-next-h"><span class="fn-next-l">Next out</span> <b>18:30 · round 1 of 2</b></p><p class="fn-next-s">5 platters of 10</p><ul class="fn-next-list"><li class="fn-next-row"><span class="fn-next-n">3<span class="fn-x">×</span></span><span class="fn-next-name"><a href="#/r/antipasto-platter">Antipasto Platter</a></span></li><li class="fn-next-row"><span class="fn-next-n">2<span class="fn-x">×</span></span><span class="fn-next-name"><a href="#/r/pizza-platter">Pizza Platter</a></span></li></ul><div class="fn-next-sent"><button type="button" class="btn fn-sent-b" data-fn="sent" aria-label="Round 1 sent">Sent</button></div></section><section class="fn-whole" aria-label="Whole function"><h3 class="fn-whole-h">Whole function <b>10 platters</b></h3><p class="fn-whole-s">All 2 rounds added up.</p><ul class="fn-whole-list"><li><b>5</b> × <a href="#/r/antipasto-platter">Antipasto Platter</a></li><li><b>5</b> × <a href="#/r/pizza-platter">Pizza Platter</a></li></ul></section><h3 class="fn-h">Every round</h3><ol class="fn-rounds"><li class="fn-round is-next"><span class="fn-round-t">18:30 <span class="fn-tag">Next</span></span><span class="fn-round-w">3 × Antipasto, 2 × Pizza <b>(5)</b></span><span class="fn-sent"><button type="button" class="btn fn-sent-b" data-fn="sent">Sent</button></span></li><li class="fn-round"><span class="fn-round-t">19:15</span><span class="fn-round-w">2 × Antipasto, 3 × Pizza <b>(5)</b></span><span class="fn-sent"><button type="button" class="btn fn-sent-b" data-fn="sent">Sent</button></span></li></ol><p class="hint fn-note">Tick each round as it goes out.</p><h3 class="fn-h" id="fa-diet-smith">Service and dietary notes</h3><p class="fn-text">4 gluten free, 1 nut allergy.</p><p class="fn-by fn-last">Last changed by Gus, Mon 9 Nov 14:00.</p><div class="btn-row fn-acts"><button type="button" class="btn" data-fn="print">Print function</button><a class="btn dark" href="docs/function-ahead-options/design-mix/fn-week.html" data-fn="go">Open the full sheet</a></div></div></section></div><div class="fa-pop" id="fa-sheet-jones"><div class="fn-pop-bg" data-fn="close"></div><section class="fn-sheet" role="dialog" aria-modal="true" aria-labelledby="fn-sh-h-jones" tabindex="-1"><div class="fn-grip" aria-hidden="true"></div><header class="fn-sheet-top"><div class="fn-sheet-t"><span class="fn-eb">Function</span><h2 id="fn-sh-h-jones">Jones wedding</h2></div><button type="button" class="fn-close" data-fn="close">Close</button></header><div class="fn-sheet-body"><p class="fn-sub">Sat 14 Nov · Beer garden · event 17:00 · <ins class="fa-add">90 guests</ins></p><section class="fn-next" aria-label="Next out"><p class="fn-next-h"><span class="fn-next-l">Next out</span> <b>All at 18:00</b></p><p class="fn-next-s">6 platters</p><ul class="fn-next-list"><li class="fn-next-row"><span class="fn-next-n">6<span class="fn-x">×</span></span><span class="fn-next-name"><a href="#/r/antipasto-platter">Antipasto Platter</a></span></li></ul><div class="fn-next-sent"><button type="button" class="btn fn-sent-b" data-fn="sent" aria-label="Round 1 sent">Sent</button></div></section><p class="fn-whole fn-whole-one">One round: this is the whole function, <b>6 platters</b>.</p><p class="fn-by fn-last">Last changed by Gus, Mon 9 Nov 14:00.</p><div class="btn-row fn-acts"><button type="button" class="btn" data-fn="print">Print function</button><a class="btn dark" href="docs/function-ahead-options/design-mix/fn-week.html" data-fn="go">Open the full sheet</a></div></div></section></div><div class="fa-pop" id="fa-sheet-lee"><div class="fn-pop-bg" data-fn="close"></div><section class="fn-sheet" role="dialog" aria-modal="true" aria-labelledby="fn-sh-h-lee" tabindex="-1"><div class="fn-grip" aria-hidden="true"></div><header class="fn-sheet-top"><div class="fn-sheet-t"><span class="fn-eb">Function</span><h2 id="fn-sh-h-lee">Lee engagement</h2></div><button type="button" class="fn-close" data-fn="close">Close</button></header><div class="fn-sheet-body"><p class="fn-sub">Fri 13 Nov · Function room · event 19:00 · <ins class="fa-add">40 guests</ins></p><section class="fn-next" aria-label="Next out"><p class="fn-next-h"><span class="fn-next-l">Next out</span> <b>All at 19:30</b></p><p class="fn-next-s">4 platters</p><ul class="fn-next-list"><li class="fn-next-row"><span class="fn-next-n">4<span class="fn-x">×</span></span><span class="fn-next-name"><a href="#/r/antipasto-platter">Antipasto Platter</a></span></li></ul><div class="fn-next-sent"><button type="button" class="btn fn-sent-b" data-fn="sent" aria-label="Round 1 sent">Sent</button></div></section><p class="fn-whole fn-whole-one">One round: this is the whole function, <b>4 platters</b>.</p><h3 class="fn-h" id="fa-diet-lee">Service and dietary notes</h3><p class="fn-text">2 vegan.</p><p class="fn-by fn-last">Last changed by Gus, Mon 9 Nov 14:00.</p><div class="btn-row fn-acts"><button type="button" class="btn" data-fn="print">Print function</button><a class="btn dark" href="docs/function-ahead-options/design-mix/fn-week.html" data-fn="go">Open the full sheet</a></div></div></section></div><div class="fa-pop" id="fa-sheet-patel"><div class="fn-pop-bg" data-fn="close"></div><section class="fn-sheet" role="dialog" aria-modal="true" aria-labelledby="fn-sh-h-patel" tabindex="-1"><div class="fn-grip" aria-hidden="true"></div><header class="fn-sheet-top"><div class="fn-sheet-t"><span class="fn-eb">Function</span><h2 id="fn-sh-h-patel">Patel farewell</h2></div><button type="button" class="fn-close" data-fn="close">Close</button></header><div class="fn-sheet-body"><p class="fn-sub">Tue 10 Nov · Beer garden · event 17:30 · <ins class="fa-add">25 guests</ins></p><section class="fn-next" aria-label="Next out"><p class="fn-next-h"><span class="fn-next-l">Next out</span> <b>All at 18:00</b></p><p class="fn-next-s">4 platters</p><ul class="fn-next-list"><li class="fn-next-row"><span class="fn-next-n">4<span class="fn-x">×</span></span><span class="fn-next-name"><a href="#/r/antipasto-platter">Antipasto Platter</a></span></li></ul><div class="fn-next-sent"><button type="button" class="btn fn-sent-b" data-fn="sent" aria-label="Round 1 sent">Sent</button></div></section><p class="fn-whole fn-whole-one">One round: this is the whole function, <b>4 platters</b>.</p><h3 class="fn-h" id="fa-diet-patel">Service and dietary notes</h3><p class="fn-text">1 nut allergy.</p><p class="fn-by fn-last">Last changed by Gus, Mon 9 Nov 14:00.</p><div class="btn-row fn-acts"><button type="button" class="btn" data-fn="print">Print function</button><a class="btn dark" href="docs/function-ahead-options/design-mix/fn-week.html" data-fn="go">Open the full sheet</a></div></div></section></div><div class="p-toasts" id="fma-slip" hidden=""><div class="p-toast" data-toast="new" style="--toast-life:9000ms;--toast-since:-3000ms"><span class="p-toast-msg"></span><button type="button" class="p-toast-btn" data-fma="undo">Undo</button></div></div><script>
+/* Combined preview only (functions ahead of time, round 2, 10 Nov 2026; revised after the focused review the same day).
+   The taps the preview can show: Got it answered in place inside the Next function line (with Undo in the line, no
+   bottom slip on Home), the work-page minus with its slip and Undo, a tap on the line opening the existing function
+   sheet, and the open-only rule (the slot's height is set when the page opens, for the tallest words it can become at
+   the current text size; later changes only change the words inside it; a function today breaks the lock).
+   Nothing is saved. In the app: Got it per person on the phone (lk.fn.hu.<staffId>: function id, stage and a now()
+   stamp), the minus per phone, per person, for the kitchen day (lk.fn.ahead.fold: day and staff id, apart from the
+   band's own lk.fn.fold), and the lock in js/functions.js paint() and js/prep.js homePaint(). */
 (function () {
   function $(s, r) { return (r || document).querySelector(s); }
   function all(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
-  var undo = null;
+  var html = document.documentElement;
 
-  /* the slip: the book's own bottom slip (toast()), words by name, with Undo */
+  /* the text size setting, as js/boot.js applies it before the page draws (Settings: large 112.5%, extra large 125%).
+     The preview takes it from ?text=large or ?text=xlarge, or from the frame's own data-fma-text. */
+  (function () {
+    var m = /[?&]text=(large|xlarge)\b/.exec(location.search), v = m ? m[1] : html.getAttribute('data-fma-text');
+    if (v) html.setAttribute('data-text', v);
+  })();
+
+  /* ---------- the book's slip (toast()), work pages only: words by name, with Undo ---------- */
+  var slipUndo = null;
   function slip(text, back) {
     var s = $('#fma-slip'); if (!s) return;
     s.querySelector('.p-toast-msg').textContent = text;
-    s.hidden = false; undo = back;
+    s.hidden = false; slipUndo = back;
   }
 
-  /* ---------- open-only rule: lock the slot's height as the page opens ---------- */
+  /* ---------- open-only rule ----------
+     An open is: a route change, the app becoming visible again, a PIN unlock after an idle or daily lock, or a reload.
+     At an open the slot is sized for the tallest set of words it can become (every state of the line, drawn at the
+     current text size and width), so later words never need more room. Here: every words-only template on the page. */
   function lock() {
     var b = document.getElementById('fn-band');
     if (!b || b.hidden || !b.hasAttribute('data-fma-lock')) return;
-    var h = Math.round(b.getBoundingClientRect().height);
-    b.style.height = h + 'px'; b.setAttribute('data-fma-h', h);
+    var keep = b.innerHTML, hs = [];
+    var sets = [keep].concat(all('template[data-sim]').filter(function (t) { return !t.hasAttribute('data-unlock') && !t.hasAttribute('data-target'); }).map(function (t) { return t.innerHTML; }));
+    b.style.height = '';
+    sets.forEach(function (h) { b.innerHTML = h; hs.push(Math.ceil(b.getBoundingClientRect().height)); });
+    b.innerHTML = keep;
+    var h = Math.max.apply(null, hs);
+    b.style.height = h + 'px'; b.setAttribute('data-fma-h', h); b.setAttribute('data-fma-sets', hs.join(' '));
   }
-  /* later data while the page is open: swap the words inside the locked slot, never its height */
+  /* later data while the page is open. Words-only: swap the words inside the locked slot (or the Home line), never its
+     height. data-unlock (a function today): the full band draws at once, because a missed round is the mistake the band
+     exists to stop (service rule 3). */
   window.fmaSim = function (kind) {
-    var b = document.getElementById('fn-band'), t = document.querySelector('template[data-sim="' + kind + '"]');
-    if (!b || !t || b.hidden) return false;
+    var t = document.querySelector('template[data-sim="' + kind + '"]');
+    if (!t) return false;
+    if (t.hasAttribute('data-target')) {
+      var line = document.getElementById(t.getAttribute('data-target'));
+      if (!line || line.hidden) return false;
+      var n = line.querySelector('.fa-next'); if (!n) return false;
+      n.outerHTML = t.innerHTML;
+      return true;
+    }
+    var b = document.getElementById('fn-band');
+    if (!b || b.hidden) return false;
+    if (t.hasAttribute('data-unlock')) { b.outerHTML = t.innerHTML; html.setAttribute('data-fma-unlocked', kind); return true; }
     b.innerHTML = t.innerHTML;
     var st = b.querySelector('[role="status"]'); if (st) st.setAttribute('aria-live', 'polite');
     return true;
   };
 
-  /* ---------- Home: Got it collapses the card in place to the line ---------- */
+  /* ---------- Home: Got it collapses the card in place to the line, and the line answers ---------- */
   function snapshot() { return all('[data-fma-part]').map(function (e) { return [e, e.hidden]; }); }
   function restore(snap) { snap.forEach(function (x) { x[0].hidden = x[1]; }); }
+  var ack = null;   // { n: the .fa-next, back: undo, timer }
+  function endAck() {
+    if (!ack) return;
+    var a = ack; ack = null; clearTimeout(a.timer);
+    var hadFocus = a.n.contains(document.activeElement);
+    a.n.classList.remove('is-ack');
+    var sr = a.n.querySelector('[data-fma-sr]'); if (sr) sr.textContent = '';
+    if (hadFocus) { var lb = a.n.querySelector('.fa-next-b'); if (lb) lb.focus({ preventScroll: true }); }
+  }
+  window.fmaAckEnd = endAck;   // the capture script uses this to show the line after the 9 s
+  function startAck(line, words, said, back) {
+    endAck();
+    var n = line.querySelector('.fa-next'); if (!n) return;
+    n.querySelector('.fa-next-ack').textContent = words;
+    var sr = n.querySelector('[data-fma-sr]'); if (sr) sr.textContent = said;
+    n.classList.add('is-ack');
+    ack = { n: n, back: back, timer: html.hasAttribute('data-fma-hold') ? 0 : setTimeout(endAck, 9000) };
+    var lb = n.querySelector('.fa-next-b'); if (lb) lb.focus({ preventScroll: true });
+  }
+  function gotIt(got) {
+    var card = got.closest('[data-fma-part]'), snap = snapshot();
+    (got.getAttribute('data-hide') || '').split(' ').filter(Boolean).forEach(function (id) { var x = document.getElementById(id); if (x) x.hidden = true; });
+    (got.getAttribute('data-show') || '').split(' ').filter(Boolean).forEach(function (id) { var x = document.getElementById(id); if (x) x.hidden = false; });
+    card.hidden = true;
+    var line = document.getElementById(got.getAttribute('data-line'));
+    if (!line) return;
+    startAck(line, got.getAttribute('data-ack') || 'Got it. Kept here as one line', got.getAttribute('data-said') || '', function () {
+      restore(snap); var g = card.querySelector('[data-fma="got"]'); if (g) g.focus({ preventScroll: true });
+    });
+  }
 
   document.addEventListener('click', function (e) {
     var t = e.target;
     var got = t.closest('[data-fma="got"]');
-    if (got) {
+    if (got) { e.preventDefault(); gotIt(got); return; }
+    var u = t.closest('[data-fma="undo"]');
+    if (u) {
       e.preventDefault();
-      var card = got.closest('[data-fma-part]'), snap = snapshot();
-      (got.getAttribute('data-hide') || '').split(' ').filter(Boolean).forEach(function (id) { var x = document.getElementById(id); if (x) x.hidden = true; });
-      (got.getAttribute('data-show') || '').split(' ').filter(Boolean).forEach(function (id) { var x = document.getElementById(id); if (x) x.hidden = false; });
-      card.hidden = true;
-      var line = document.getElementById(got.getAttribute('data-line'));
-      if (line) { var lb = line.querySelector('.fa-next-b'); if (lb) lb.focus({ preventScroll: true }); }
-      slip(got.getAttribute('data-slip'), function () { restore(snap); var g = card.querySelector('[data-fma="got"]'); if (g) g.focus({ preventScroll: true }); });
-      return;
+      if (u.closest('.fa-next')) { if (ack) { var back = ack.back; endAck(); back(); } return; }
+      var s = $('#fma-slip'); if (s) s.hidden = true; if (slipUndo) { var b2 = slipUndo; slipUndo = null; b2(); } return;
     }
-    if (t.closest('[data-fma="undo"]')) { e.preventDefault(); var s = $('#fma-slip'); if (s) s.hidden = true; if (undo) { var u = undo; undo = null; u(); } return; }
 
-    /* the work-page minus: hides the line on this phone for the kitchen day */
+    /* the work-page minus: hides the line for this person on this phone for the kitchen day (lk.fn.ahead.fold) */
     var f = t.closest('#fn-band.fa-quiet [data-fn="fold"]');
     if (f) {
       var band = document.getElementById('fn-band'); band.hidden = true;
-      slip('Hidden on this phone until tomorrow. Home still shows it.', function () { band.hidden = false; var m = band.querySelector('[data-fn="fold"]'); if (m) m.focus({ preventScroll: true }); });
+      slip('Hidden for you on this phone until tomorrow. Home still shows it.', function () { band.hidden = false; var m = band.querySelector('[data-fn="fold"]'); if (m) m.focus({ preventScroll: true }); });
       return;
     }
-    /* a tap on the line (or Open the function) opens the existing function sheet */
+    /* a tap on the line, a busy-week row or Open the function opens the existing function sheet */
     var o = t.closest('[data-fn="open"]');
     if (o) { e.preventDefault(); var p = document.getElementById('fa-sheet-' + o.getAttribute('data-id')); if (p) { p.className = 'fn-pop'; p.querySelector('.fn-sheet').focus(); } return; }
     var c = t.closest('[data-fn="close"]'); if (c) { c.closest('.fn-pop').className = 'fa-pop'; return; }
   });
 
-  // lock once the page and its fonts are in (the app locks on the first paint after the route opens)
+  // lock once the page and its fonts are in (the app sizes the slot on the first paint after an open)
   window.addEventListener('load', function () {
     (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () {
       lock();
-      var sim = document.documentElement.getAttribute('data-fma-sim');
+      var sim = html.getAttribute('data-fma-sim');
       if (sim) window.fmaSim(sim);
-      document.documentElement.setAttribute('data-fma-ready', '1');
+      var auto = html.getAttribute('data-fma-auto');   // a frame that shows the moment just after Got it
+      if (auto) auto.split(' ').forEach(function (id) { var g = document.querySelector('#' + id + ' [data-fma="got"]'); if (g) gotIt(g); });
+      html.setAttribute('data-fma-ready', '1');
     });
   });
 })();
