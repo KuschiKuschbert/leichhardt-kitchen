@@ -215,7 +215,7 @@ How the book should work, as the head chef decided it. Newest first. Add new one
 - **22 Oct 2026.** Fewer boxes on the admin panel, from before and after screenshots: each block is set apart by space, its heading and a thin rule, not a card. The totals are big numbers in a row, the filters a plain row, the report sections open. Tables keep their lines, and the save bar keeps its card because it sticks over the page.
 - **22 Oct 2026.** Everyone signed in has Functions in the chef hat menu. Staff read today's and the next days' functions (`#/fn`); only function managers can book or change one.
 - **22 Oct 2026.** Service view (`#/fn/now`): one screen with what goes out now across all functions, late first, with the platters to plate added up. The band and the strip go by the next round not sent, most urgent first.
-- **22 Oct 2026.** The kitchen's function views show no guest count; the function sheet leads with what goes out next.
+- **22 Oct 2026.** The kitchen's function views show no guest count; the function sheet leads with what goes out next. (Changed since: the `#/fn` cards show the guests from 8 Nov 2026, and the sheet's first line and the Next function line from 10 Nov 2026, functions ahead of time. The band still shows none.)
 - **22 Oct 2026.** Function platters have their own Functions tab on the prep list; a function may have up to 12 kinds of platter.
 - **22 Oct 2026.** Function stock is ordered the Sunday before (at least 4 days ahead), with a line on the order list and a reminder in the band. Tomorrow's functions show in the band, and a one-line strip stays at the top of the screen while scrolling.
 - **22 Oct 2026.** The kitchen ticks each function round as sent; the band moves on to the next round.

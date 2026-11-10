@@ -9,6 +9,7 @@ Council for the head chef's question of 10 November 2026: "If there is a functio
 - **Mix:** five of six reviewers recommended the same narrow mix. It has its own combined preview (`design-mix/`), which all six endorse with changes (8 to 8.5 out of 10). A revision pass fixed the two faults they reproduced. The four reviewers who found faults re-checked it and endorse it with changes (8 to 8.5), with six repairs listed for the build (see **Revisions and re-check**).
 - **Review status:** a lead synthesis, given a focused review by all six reviewers and re-checked by four. It is not a full council round on its own.
 - **Chosen (10 Nov 2026, head chef): the mix**, with the line kept for everyone on the work pages and the Function tomorrow card shown to everyone once more. See **Chosen** below.
+- **Build:** step 1 (the work-page line) built 10 Nov 2026, see **Build record**. Steps 2 and 3 to come.
 
 **Recommendation: the mix.** A's quiet Next function line is the base, on Home and in the band's place on every work page. Add C's heads-up card under Your day, which collapses into A's line after Got it. Add B's rule that the line only appears or changes size when a page opens, and B's "Not ordered yet" words on the Orders stock line. Also show `#/fn` Upcoming 7 days ahead and put the guests on the sheet. Leave out B's week strip, B's band changes, C's bell dot and any record of who has seen it.
 
@@ -189,6 +190,30 @@ Build in the order below, with the six repairs from the re-check, each step its 
 3. **Orders "Not ordered yet" tag.**
 
 No new reads, writes, rules or listeners in any step. Each step remeasures the implemented app at 390, 768 and 1280 px.
+
+## Build record
+
+**Step 1, the work-page line (10 Nov 2026, `feat/fn-ahead-line`).** Built as chosen, with the Implemented app checked in the click-test stand-in (`tests/fn-ahead.test.js`, 66 checks at 390, 768 and 1280 px):
+
+- The line fills the band's slot on Prep, Orders, Wastage, Transfers and Recipes on a band-empty day. It is 50 px at 390 px, and the list never moved: through a booking for tomorrow, no signal, a cancellation with a 43 character name and midnight while open, the slot stayed 50 px and the first prep row stayed at 324 px.
+- A function booked for today waits until the finger is up, including a touch that turned into a scroll. It then shows the full band (115 px).
+- `#/fn` Upcoming looks 7 days ahead, and the sheet's first line has the guests ("guests not known yet" when unknown). This updates the 22 Oct decision, which said no guest count in the kitchen's function views.
+
+**Difference from the preview:**
+- **Cancelled line.** With the test machine's wider stand-in font, "Cancelled · Do not prep" was 214 px in a 205 px row 1 at 390 px. Row 1 now says "Cancelled · Thu 12 Nov". "Do not prep:" leads row 2 as a fixed prefix before the struck-through name, so neither is ever cut.
+- **Order of states.** A cancelled function now shows from the day before (the prep day), because the band never shows a cancellation before its day. "No signal" replaces only the plain Next function words: a cancellation, order or tomorrow the phone already knows stays on the line.
+
+**An independent code review** (four lenses, each finding verified) found real faults in the first version, all now fixed and tested. The new checks fail on that first version (9 failed of 66) and pass with the fixes (0 of 66):
+- `lk-who` was treated as an open. A shared tablet sends it on every Prep tick, so the line could appear mid-service and move the list 50 px.
+- A cancellation vanished the day before. No signal hid a known cancellation.
+- The slot was rebuilt every 20 seconds (a no-break space never matched the browser's copy), losing focus.
+- The minus on changed words swapped in the full band.
+- A PIN unlock decided on an empty list.
+- A scrolling finger counted as lifted.
+
+On plain main the new file fails 18 of 44.
+
+**Steps 2 and 3** (the Home card, the Orders tag) are still to build, with the repairs listed above.
 
 ## Files
 

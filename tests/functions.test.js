@@ -212,13 +212,14 @@ function hasPrivateContact(value) {
   ok(/Upcoming functions/.test(pg) && new RegExp(M.dayName(day2)).test(pg) && /Brown 21st/.test(pg) && !/Draft do/.test(pg), '#/fn: the next three days, without drafts');
   await p.context().close();
 
-  // guests not known yet: it can be confirmed, and the kitchen's views never show guests (22 Oct 2026)
+  // guests not known yet: it can be confirmed; the band never shows guests (22 Oct 2026), the sheet says not known yet (10 Nov 2026)
   const unk = fn({ name: 'Mystery do', guests: 0 }); unk.gu = true; unk.guests = 0;
   p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ unk }), wait: 1200 });
   await L.waitFor(p, () => /Mystery do/.test((document.getElementById('fn-band') || {}).textContent || ''));
   ok(!/guest/i.test(await txt(p, '#fn-band') || ''), 'guests: the band never mentions guests');
   await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
-  ok(!/guest/i.test(await txt(p, '.fn-sheet') || ''), 'guests: the sheet never mentions guests');
+  // the sheet's first line has the guests since 10 Nov 2026 (head chef, functions ahead of time): not known yet is said so, never "0 guests"
+  { const sub = await txt(p, '.fn-sheet .fn-sub') || ''; ok(/guests not known yet/.test(sub) && !/\b0 guests/.test(await txt(p, '.fn-sheet') || ''), 'guests: the sheet says guests not known yet, never 0 guests (' + sub + ')'); }
   ok(/One round: this is the whole function, 3 platters/.test(await txt(p, '.fn-sheet .fn-whole') || '') && !(await p.$('.fn-sheet .fn-whole-list')), 'sheet: one round says it is the whole function, with no second list of the same platters');
   await p.context().close();
 

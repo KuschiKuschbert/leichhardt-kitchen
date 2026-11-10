@@ -372,7 +372,7 @@
   function sentRec(f, i) { var r = (f.rounds || [])[i], x = r && r.at ? F.sent[f.id + '_' + r.at] : null; return x && x.sent ? x : null; }
   function sentText(x) { return 'sent ' + kclock(x.sentAt) + ', ' + nameOf(x.sentBy); }
   // tell the pages: the band and the landing card redraw themselves, #/fn redraws through js/app.js
-  function changed() { paint(); try { window.dispatchEvent(new Event('lk-fn')); } catch (e) {} }
+  function changed() { ahFirst(); paint(); try { window.dispatchEvent(new Event('lk-fn')); } catch (e) {} }
 
   /* ---------- the band under the top bar ---------- */
   // amounts read "2 × Pizza" in every function view (22 Oct 2026); the prep and order lines keep their own words
@@ -422,7 +422,22 @@
     var xs = showing(F.list, t, isSentK), ys = soon(F.list, t);
     return { xs: xs, ys: ys, a: F.more ? xs : xs.slice(0, 2), b: F.more ? ys : ys.slice(0, 2) };
   }
+  /* What the slot under the top bar draws: the band, or, on a day the band would draw nothing, the quiet Next function
+     line (functions ahead of time, head chef 10 Nov 2026, docs/function-ahead-options/brief.md, Chosen). The line is
+     decided when the slot is drawn (ahOpen()) and keeps its place and its two rows until the next open; later changes
+     swap its words only, so the list under it never moves under a finger. A function today is the one exception: the
+     full band replaces the line, once no finger is down (ahWait()). */
   function bandHTML() {
+    var base = bandBase();
+    if (!AH.on && !AH.gone) return base;
+    // locked or signed out since the open: nothing private stays on screen
+    if (!window.LK_PREP || !window.LK_PREP.privateAccess()) { AH.on = AH.gone = false; return ''; }
+    var t = now(), xs = showing(F.list, t, isSentK);
+    if (xs.length && !ahWait()) { AH.on = AH.gone = false; return base; }
+    if (AH.gone) return '';   // hidden with its minus until the next open
+    return ahHTML(t, xs);
+  }
+  function bandBase() {
     if (!window.LK_PREP || !window.LK_PREP.privateAccess()) return '';
     if (location.hash === '#/fn/now') return '';   // the service view shows the same rounds in full: no band above it
     var t = now(), R = bandRows(t), xs = R.xs, stale = '';
@@ -454,11 +469,117 @@
       (more || svc ? '<div class="fn-more-row">' + svc + more + '</div>' : '') +
       (stale ? '<p class="fn-stale" role="status">' + esc(stale) + '</p>' : '');
   }
+  /* ---------- the Next function line (10 Nov 2026) ----------
+     AH.on: the line holds the slot since the last open. AH.gone: its minus hid it, until the next open. AH.pending: the
+     slot was drawn before the functions came in (the first open, or after a lock cleared the list), so the first answer
+     decides. AH.wait: a function today wants the full band while a finger is down. */
+  var AH = { on: false, gone: false, pending: false, wait: false }, touchDown = false, touchAt = 0, touchUp = 0, ahTimer = 0;
+  var AH_DAYS = 7;
+  // the functions the line may name, nearest first: a confirmed one from the day after tomorrow (today and tomorrow are
+  // the band's) up to 7 days ahead; a cancelled one from tomorrow (the band never shows a cancellation before its day,
+  // and the day before is the prep day), once it was cancelled inside the 7 days. It says Cancelled until its day passes.
+  function ahList(t) {
+    var today = kday(t), tom = addDays(today, 1), end = addDays(today, AH_DAYS);
+    return F.list.filter(function (f) {
+      if (!isYmd(f.date) || f.date > end) return false;
+      if (f.status === 'confirmed') return f.date > tom;
+      return f.status === 'cancelled' && f.date >= tom && !!f.confAt && !!f.canAt && kday(f.canAt) >= addDays(f.date, -AH_DAYS);
+    }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : (a.first || 9e15) - (b.first || 9e15) || String(a.name).localeCompare(String(b.name)); });
+  }
+  function ahWho() { try { var p = P(); return (p && p.book && p.book().who()) || ''; } catch (e) { return ''; } }
+  // lk.fn.ahead.fold: "<kitchen day>|<staff id>" from the line's minus. Out of date the next kitchen day, or when a
+  // different person is signed in on this device (so one cook's minus never hides the line from the next).
+  function ahHidden(t) { return lsGet('lk.fn.ahead.fold') === kday(t) + '|' + ahWho(); }
+  /* An open: a page draws the slot (js/app.js fnBand(), which a PIN unlock or a change of person on a shared device
+     also does), or the book comes back on screen. Never lk-who alone: a shared tablet sends it on every Prep tick. */
+  function ahOpen() {
+    var t = now();
+    AH.wait = false; AH.gone = false;
+    AH.pending = F.state !== 'ok' && !F.list.length;   // nothing current read yet: the first answer decides (ahFirst())
+    AH.on = !AH.pending && !!window.LK_PREP && window.LK_PREP.privateAccess() && !/^#\/fn(?:\/|$)|^#\/functions/.test(location.hash) && !bandBase() && ahList(t).length > 0 && !ahHidden(t);
+  }
+  // the functions' first answer after an open decides, once no finger is down (and 400 ms after one lifts)
+  function ahFirst() {
+    if (!AH.pending || F.state !== 'ok' && !F.list.length) return;
+    if (touchDown || Date.now() - touchUp < 400) { clearTimeout(ahTimer); ahTimer = setTimeout(function () { ahFirst(); paint(); }, 450); return; }
+    ahOpen();
+  }
+  // a function today ends the line: true while it must wait for the finger to lift (and 400 ms of quiet after)
+  function ahWait() {
+    if (touchDown && Date.now() - touchAt > 15000) touchDown = false;   // a lost lift never holds the band back for long
+    if (touchDown) { AH.wait = true; return true; }
+    if (Date.now() - touchUp < 400) { AH.wait = true; ahLater(); return true; }
+    AH.wait = false; return false;
+  }
+  function ahLater() { clearTimeout(ahTimer); ahTimer = setTimeout(function () { if (AH.wait && !touchDown) paint(); }, 450); }
+  function lift() { touchDown = false; touchUp = Date.now(); if (AH.wait) ahLater(); }
+  document.addEventListener('pointerdown', function () { touchDown = true; touchAt = Date.now(); }, true);
+  document.addEventListener('pointerup', lift, true);
+  // a touch that turns into a scroll sends pointercancel with the finger still on the glass: only the touch's end lifts it
+  document.addEventListener('pointercancel', function (e) { if (e.pointerType !== 'touch') lift(); }, true);
+  document.addEventListener('touchend', function (e) { if (!e.touches || !e.touches.length) lift(); }, { capture: true, passive: true });
+  document.addEventListener('touchcancel', function (e) { if (!e.touches || !e.touches.length) lift(); }, { capture: true, passive: true });
+  window.addEventListener('blur', function () { if (touchDown) lift(); });
+  // the line's words: row 1 starts with what it is (never cut), row 2 the name (shortened) and one short part
+  var AH_CHEV = '<svg class="fn-ahead-chev" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function ahHTML(t, xs) {
+    var list = ahList(t), ys = soon(F.list, t), today = kday(t), tom = addDays(today, 1), end = addDays(today, AH_DAYS);
+    // what the line says, the most pressing first: a function today waiting for the finger to lift, then the band's own
+    // Order and Tomorrow words, then the nearest function (Cancelled before its day, or Next function)
+    var f, kind;
+    if (xs && xs.length) { f = xs[0].f; kind = 'today'; }
+    else if (ys.length) { f = ys[0].f; kind = ys[0].kind; }
+    else { f = list[0]; kind = f && f.status === 'cancelled' ? 'cancelled' : 'next'; }
+    var d = function (s) { return '<span class="fn-ahead-d">\u00a0\u00b7 ' + esc(s) + '</span>'; };
+    var s, dd = '', pre = '', nm, x = '', aria;
+    if (!f) {
+      // the function it named went (deleted, moved past the week): the same two rows until the next open
+      return '<div class="fn-ahead"><a class="fn-ahead-b" href="#/fn"><span class="fn-ahead-tx"><span class="fn-ahead-l"><span class="fn-ahead-s">Next function</span></span>' +
+        '<span class="fn-ahead-t"><span class="fn-ahead-nm"><b class="fn-ahead-n">Nothing booked in the next ' + AH_DAYS + ' days</b></span></span></span>' + AH_CHEV + '</a></div>';
+    }
+    nm = '<b class="fn-ahead-n">' + esc(f.name) + '</b>';
+    // no signal or a failed read changes only the plain Next function words: a known cancellation, order or tomorrow stays
+    var stale = kind === 'next' && (F.offline || navigator.onLine === false || F.state === 'error') && F.at;
+    var upd = stale ? (kday(F.at) === today ? '' : dayName(kday(F.at)) + ' ') + kclock(F.at) : '';
+    if (kind === 'today') {
+      s = '<span class="fn-ahead-k">Today</span>'; dd = d(f.first ? 'food ' + kclock(f.first) : 'times TBC');
+      aria = 'Today: ' + f.name + (f.first ? ', food ' + kclock(f.first) : ', times TBC') + '. Open the function';
+    } else if (stale) {
+      var word = F.state === 'error' ? 'Not updated' : 'No signal';
+      s = '<span class="fn-ahead-k is-pending" role="status">' + word + '</span>'; dd = d('updated ' + upd); x = '\u00a0\u00b7 ' + esc(dayName(f.date));
+      aria = word + '. Functions last updated ' + upd + '. Next function: ' + f.name + ', ' + dayName(f.date) + '. Open the function';
+    } else if (kind === 'order') {
+      s = '<span class="fn-tag fn-t-order">Order today</span>'; dd = d(dayName(f.date)); pre = '<span class="fn-ahead-p">Stock:\u00a0</span>';
+      aria = 'Order today: stock for ' + f.name + ', ' + dayName(f.date) + '. It is on the order list. Open the function';
+    } else if (kind === 'tomorrow') {
+      s = '<span class="fn-tag fn-t-tom">Tomorrow</span>'; dd = d(dayName(f.date)); x = '\u00a0\u00b7 ' + (f.first ? 'food ' + esc(kclock(f.first)) : 'times TBC');
+      aria = 'Tomorrow: ' + f.name + ', ' + dayName(f.date) + (f.first ? ', food ' + kclock(f.first) : ', times TBC') + '. Open the function';
+    } else if (kind === 'cancelled') {
+      // "Do not prep" leads row 2 and is never shortened (measured: on row 1 beside "+1 more this week" it was cut at 390 px)
+      s = '<span class="fn-tag fn-t-off">Cancelled</span>'; dd = d(dayName(f.date)); pre = '<span class="fn-ahead-p fn-ahead-stop">Do not prep:\u00a0</span>'; nm = '<b class="fn-ahead-n"><s>' + esc(f.name) + '</s></b>';
+      aria = 'Cancelled: ' + f.name + ', ' + dayName(f.date) + '. Do not prep. Open the function';
+    } else {
+      s = '<span class="fn-ahead-k">Next function</span>'; dd = d(dayName(f.date)); x = '\u00a0\u00b7 ' + esc(guestsText(f));
+      aria = 'Next function: ' + f.name + ', ' + dayName(f.date) + ', ' + guestsText(f) + '. Open the function';
+    }
+    var more = F.list.filter(function (g) { return g.id !== f.id && g.status === 'confirmed' && isYmd(g.date) && g.date >= tom && g.date <= end; }).length;
+    return '<div class="fn-ahead' + (kind === 'cancelled' ? ' is-cancelled' : '') + '"><button type="button" class="fn-ahead-b" data-fn="open" data-id="' + esc(f.id) + '" aria-haspopup="dialog" aria-label="' + esc(aria) + '">' +
+      '<span class="fn-ahead-tx"><span class="fn-ahead-l"><span class="fn-ahead-s">' + s + '</span>' + dd + '</span><span class="fn-ahead-t"><span class="fn-ahead-nm">' + pre + nm + '</span>' + (x ? '<span class="fn-ahead-x">' + x + '</span>' : '') + '</span></span>' +
+      AH_CHEV + '</button>' +
+      // the spoken name starts with the words on the button (+1 more this week)
+      (more ? '<a class="fn-ahead-more" href="#/fn" aria-label="+' + more + ' more this week: open Functions, the next ' + AH_DAYS + ' days"><span class="fn-ahead-m1">+' + more + ' more</span> <span class="fn-ahead-m2">this week</span></a>' : '') +
+      '<button type="button" class="fn-fold fn-ahead-hide" data-fn="ahead-hide" aria-label="Hide this line on this phone until tomorrow" title="Hide until tomorrow">\u2212</button></div>';
+  }
   // js/app.js draws the empty slot under the top bar; this fills it, and refills it when anything changes
   var lastBand = null;
   function paint() {
     var el = document.getElementById('fn-band');
-    if (el) { var h = bandHTML(); if (h !== lastBand || el.innerHTML !== h) { el.innerHTML = h; lastBand = h; } el.hidden = !h; fitFold(); }
+    if (el) {
+      // compared with what this element was given (el.lkH), not its innerHTML: the browser writes text back differently
+      // (a no-break space as &nbsp;), so that never matched and the slot was rebuilt every 20 seconds, losing focus
+      var h = bandHTML(); if (h !== lastBand || el.lkH !== h) { el.innerHTML = h; lastBand = h; el.lkH = h; } el.hidden = !h; fitFold();
+      el.classList.toggle('is-ahead', AH.on); el.setAttribute('aria-label', AH.on ? 'Next function' : 'Functions');
+    }
     strip();
     var lc = document.getElementById('fn-land');
     landHome = !!document.getElementById('hm-board');
@@ -593,8 +714,8 @@
     var status = f.status === 'cancelled' ? '<p class="fn-banner is-off" role="note"><b>Cancelled.</b> Do not send these platters.' + (f.canAt ? ' Cancelled by ' + esc(nameOf(f.canBy)) + ', ' + esc(dayName(kday(f.canAt)) + ' ' + kclock(f.canAt)) + '.' : '') + '</p>' :
       f.was && f.was.until && f.was.from <= t && t < f.was.until && !(f.from <= t && t < f.until) ? '<p class="fn-banner is-moved" role="note"><b>Rescheduled.</b> Not on ' + esc(dayName(kday(f.was.start || f.was.first))) + ' any more: now ' + esc(dayName(f.date)) + '.</p>' :
       f.status === 'draft' ? '<p class="fn-banner" role="note"><b>Draft.</b> Not confirmed yet: the kitchen does not see it.</p>' : '';
-    // one quiet line for the day, the place and the event start; then what goes out next, every round, the comment
-    var sub = [dayName(f.date), f.loc, 'event ' + when(f.start, f.date)].filter(Boolean).join(' · ');
+    // one quiet line for the day, the place, the event start and the guests (10 Nov 2026); then what goes out next, every round, the comment
+    var sub = [dayName(f.date), f.loc, 'event ' + when(f.start, f.date), guestsText(f)].filter(Boolean).join(' · ');
     var out = status + '<p class="fn-sub">' + esc(sub) + '</p>' + nextHTML(f) + wholeHTML(f) +
       ((f.rounds || []).length > 1 || f.status !== 'confirmed' ? '<h3 class="fn-h">Every round</h3>' + roundsList(f) +
         (f.status === 'confirmed' && f.first ? '<p class="hint fn-note">Tick each round as it goes out.</p>' : '') : '');
@@ -891,7 +1012,7 @@
   }
 
   /* ---------- #/fn: today, the next three days from tomorrow (or 14), and the platter totals per day ---------- */
-  var pageDays = 3;
+  var pageDays = 7;   // Upcoming looks a week ahead, as Home's Coming up and the Next function line do (10 Nov 2026)
   /* A function on #/fn as one card (redesign step 5, 8 Nov 2026, Airbnb's Today and Upcoming, every-page.html e-fn): a
      small line with the event start, the place and the guests; the name; today, what goes out next (the same words as
      the band); when food goes out and how many rounds; what is booked; the service and dietary notes in short. The card
@@ -996,7 +1117,7 @@
       });
       if (empty.length) body += '<p class="fn-quiet">' + (!booked ? 'Nothing booked in the next ' + pageDays + ' days.' : empty.length > 3 ? 'Nothing booked on the other ' + empty.length + ' days.' :
         'Nothing booked on ' + esc(empty.map(dayName).join(', ').replace(/, ([^,]*)$/, ' or $1')) + '.') + '</p>';
-      body += '<div class="btn-row">' + (pageDays < 14 ? '<button type="button" class="btn" data-fn="days" data-v="14">Show the next 14 days</button>' : '<button type="button" class="btn" data-fn="days" data-v="3">Show the next 3 days</button>') + '</div></div>';
+      body += '<div class="btn-row">' + (pageDays < 14 ? '<button type="button" class="btn" data-fn="days" data-v="14">Show the next 14 days</button>' : '<button type="button" class="btn" data-fn="days" data-v="7">Show the next 7 days</button>') + '</div></div>';
     }
     var can = prep.fnOK && prep.fnOK();
     return '<section class="set-block fn-page fn-list-page"><h2 id="rtitle" tabindex="-1">Functions</h2><p class="hint">Confirmed functions and their platters.</p>' +
@@ -1105,8 +1226,23 @@
     if (a === 'go') { sheetClose(false, true); return; }
     if (a === 'ckhide') { try { localStorage.setItem('lk.fn.ckhide', kday(now())); } catch (x) {} if (window.LK_PREP && window.LK_PREP.sg) window.LK_PREP.sg('checks', 'd'); paint(); return; }
     if (a === 'fold') { lsSet('lk.fn.fold', lsGet('lk.fn.fold') === kday(now()) ? null : kday(now())); lastBand = null; paint(); var fb = document.querySelector('#fn-band [data-fn="fold"]'); if (fb) fb.focus({ preventScroll: true }); return; }
+    // the Next function line's minus: this person, this phone, until tomorrow (lk.fn.ahead.fold), with Undo in the slip
+    if (a === 'ahead-hide') {
+      var hk = kday(now()) + '|' + ahWho();
+      lsSet('lk.fn.ahead.fold', hk); AH.on = false; AH.gone = true; lastBand = null; paint();
+      var pr = P(), back = function () {
+        if (lsGet('lk.fn.ahead.fold') === hk) lsSet('lk.fn.ahead.fold', null);
+        AH.gone = false; AH.on = !!(window.LK_PREP && window.LK_PREP.privateAccess()); lastBand = null; paint();
+        var hb = document.querySelector('#fn-band [data-fn="ahead-hide"]'); if (hb) hb.focus({ preventScroll: true });
+      };
+      if (pr && pr.toast) {
+        pr.toast('Next function hidden on this phone until tomorrow.', { label: 'Undo', fn: back }, 9000);
+        var ub = document.querySelector('.p-toasts .p-toast-btn'); if (ub) ub.focus({ preventScroll: true });   // the line went: focus to its Undo
+      }
+      return;
+    }
     if (a === 'more') { F.more = !F.more; lastBand = null; paint(); var mb = document.querySelector('#fn-band [data-fn="more"]'); if (mb) mb.focus({ preventScroll: true }); return; }
-    if (a === 'days') { pageDays = +el.getAttribute('data-v') || 3; try { window.dispatchEvent(new Event('lk-fn')); } catch (x) {} }
+    if (a === 'days') { pageDays = +el.getAttribute('data-v') || 7; try { window.dispatchEvent(new Event('lk-fn')); } catch (x) {} }
   });
   document.addEventListener('keydown', function (e) {
     if (!sheetEl) return;
@@ -1126,7 +1262,8 @@
     paint();
     if (/^#\/fn\//.test(location.hash)) { try { window.dispatchEvent(new Event('lk-fn')); } catch (x) {} }   // a function page or the service view: late shows on time
   }, 20000);
-  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') { watch(); changed(); } });
+  // back on screen is an open for the Next function line (ahOpen())
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') { watch(); ahOpen(); changed(); } });
   window.addEventListener('online', function () { watch(); changed(); });
   window.addEventListener('offline', changed);
   window.addEventListener('lk-clock', changed);
@@ -1157,7 +1294,8 @@
     M: M, list: function () { return F.list.slice(); }, state: function () { return F; },
     // every booking from today on as the live list has them, removed ones included; null until the server answered
     live: function () { return F.state === 'ok' && F.all ? F.all.slice() : null; },
-    bandSlot: function () { var h = bandHTML(); lastBand = h; return '<div class="fn-band" id="fn-band" role="region" aria-label="Functions"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
+    // a page draws the slot: an open, so the Next function line is decided here (ahOpen())
+    bandSlot: function () { ahOpen(); var h = bandHTML(); lastBand = h; return '<div class="fn-band' + (AH.on ? ' is-ahead' : '') + '" id="fn-band" role="region" aria-label="' + (AH.on ? 'Next function' : 'Functions') + '"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     landSlot: function (home) { landHome = !!home; var h = landHTML(); return '<div id="fn-land"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     homeRows: fnHomeRows,
     checkSlot: function () { var h = checkHTML(); return '<div id="fn-check"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
