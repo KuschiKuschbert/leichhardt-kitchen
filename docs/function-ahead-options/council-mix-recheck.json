@@ -1,0 +1,202 @@
+[
+ {
+  "reviewer": "The cook mid-service",
+  "fixed": [
+   {
+    "issue": "The locked slot clipped 'Do not prep' on a long name (Reproduced earlier)",
+    "status": "Fixed and checked",
+    "evidence": "I re-ran my probe on prep-long.html at 360, 390 and 768 px, at default, large and extra-large text, in 5 states (45 runs). The status words were whole every time and the name ends in an ellipsis (screenshot at extra-large). The first row moved 0 px. Preview."
+   },
+   {
+    "issue": "After Got it, the slip covered the next card's Got it",
+    "status": "Fixed and checked",
+    "evidence": "There is no slip now. Jones's Got it and Open the function were clear at 9 of 9 tap points at 360 and 390, at all three text sizes. The line keeps its height (54, 60 and 67 px), so Jones moves 0 px when the answer ends. Preview."
+   },
+   {
+    "issue": "Click tests before ready (header height, midnight, cancel, two staff on one tablet)",
+    "status": "Not evidenced",
+    "evidence": "Planned in build plan steps 2 and 3. Not run: this is a preview only."
+   },
+   {
+    "issue": "Remeasure in the implemented app",
+    "status": "Not evidenced",
+    "evidence": "Planned after the build. All numbers are Preview."
+   },
+   {
+    "issue": "At least 8 px around '+1 more this week', the minus and the top bar chips",
+    "status": "Fixed and checked",
+    "evidence": "'+1 more' to the minus: 8, 9 and 10 px. Top bar chips to the line: 12, 15 and 19 px at 360 and 390, and 28 to 29 px at 768. Probe, Preview."
+   },
+   {
+    "issue": "Line steps aside after Got it (head chef's choice)",
+    "status": "Fixed and checked",
+    "evidence": "Recorded as head chef choice 1 in the spec, with the case for and against."
+   },
+   {
+    "issue": "A tablet left on Prep misses a short-notice booking",
+    "status": "Partly fixed",
+    "evidence": "A function booked for today now breaks the lock: the rows dropped from 313 to 379 px in my probe. A short-notice Order today still shows only as words in the quiet slot until Prep is opened again (row stayed at 313). This is now the head chef's call on a cap."
+   },
+   {
+    "issue": "The words change under a finger",
+    "status": "Not evidenced",
+    "evidence": "Accepted in the spec, with a click test planned (Break it 13)."
+   }
+  ],
+  "newProblems": [
+   "Reproduced in the preview: at 360 and 375 px with large text, a double tap on the first card's Got it also taps the next card's Got it. The new Got it slides up under the finger. Two taps 150 ms apart put away both Smith 60th and Jones wedding at 360x844, 375x812 and 360x780 (not at 390, 412 or 375x667). Fix: ignore Got it on a card that just appeared for about 600 ms, then retest.",
+   "Minor: at 360 px with large and extra-large text, the date after the status words gets shortened ('Thu 12 N...', 'updated 13:5...'). The spec did not check 360.",
+   "Minor: when a long-named function is cancelled, the line at 390 drops its date ('\u00b7 Thu 12 Nov' is hidden), so it does not say which day."
+  ],
+  "mixScore": 8.5,
+  "endorse": "Endorse with changes",
+  "text": "Cook mid-service, second look: 8.5. Endorse with changes.\n\nBoth faults I reproduced are fixed. I re-ran my probes (Preview).\n1. Slot clipping: 45 runs at 360, 390 and 768 px, all three text sizes, five states, 37-character name. Status words always whole, name ends in an ellipsis, rows move 0 px.\n2. Slip over the next card: gone. Jones's Got it and Open the function were clear at 9 of 9 points. The line keeps its height.\n\nGaps: 8 to 10 px and 12 to 19 px. Fixed. Step aside is recorded for the head chef. Tablet left on Prep: partly fixed. A function today now draws the band (+66 px); a short-notice Order today is still words only. Click tests and an app remeasure are planned, not evidenced.\n\nNew fault, reproduced: at 360 and 375 px with large text, a double tap on the first Got it also puts away the next function. Its Got it slides under the finger (both hidden at 360x844, 375x812 and 360x780). Fix: ignore a Got it on a card that just appeared for about 600 ms, and test at 360.\n\nMinor: at 360, large text shortens the date; a cancelled long name at 390 loses its day."
+ },
+ {
+  "reviewer": "The skeptic",
+  "fixed": [
+   {
+    "issue": "Change 1 and reproduced risk 1: the locked 50 px slot cut off 'Do not prep' with a 37 character name",
+    "status": "Fixed and checked",
+    "evidence": "Re-ran my probe on prep-long.html (Preview, 390 x 844) with names of 37, 45 and 60 characters, at default, large and extra-large text, through booking, nosignal, midnight and cancelled: 36 runs. The slot held 50 / 56 / 62 px, all five word sets measured the same, status words were whole on one line, the date was never shortened, the first row stayed at 313 / 348 / 369 px and there was no sideways scroll. Outside the contract widths, at 360 px with large text, 'No signal \u00b7 updated 1\u2026' loses its time, and 'Cancelled \u00b7 Do not prep' overflows its own box by 8 to 11 px. It is still visible, 2 px from '+1 more'."
+   },
+   {
+    "issue": "Change 2 and reproduced risk 2: the bottom slip covered the Jones card's Got it and Open the function",
+    "status": "Fixed and checked",
+    "evidence": "Re-ran on home.html at 390, default text: no bottom slip after Got it. Jones Got it (679 to 727) and Open the function (681 to 725) each hit 5 of 5 points by elementFromPoint. Undo sits inside the line at 393 to 437. The line is 44 px during and after the answer, so Jones moves 0 px. The answer words are whole at 390 at every text size. At large text the tab bar now covers the bottom 12 px (see new problems)."
+   },
+   {
+    "issue": "Change 3: skip the Function tomorrow card for people who tapped Got it on the week card (Ann's 4 taps down to 2)",
+    "status": "Not fixed",
+    "evidence": "Recorded fairly as head chef choice 2 in spec.md, with the case for and against. The preview is unchanged. I accept that this is the head chef's call."
+   },
+   {
+    "issue": "Change 4 and risk 3: the red Cancelled card reached only people who had tapped Got it",
+    "status": "Fixed and checked",
+    "evidence": "In shots/states/s-cancelled-untold.png, Dev was never told, and his Home line shows 'CANCELLED \u00b7 DO NOT PREP' with Smith 60th struck through. In s-cancelled-wed-prep.png, Prep on Wednesday still shows it. Preview only. The listener path from offline to online is still Not evidenced."
+   },
+   {
+    "issue": "Change 5: design the busy-week card before the Home card pull request",
+    "status": "Fixed and checked",
+    "evidence": "home-busy5-390.png: one card with 5 rows and one Got it at 700 to 748 px, clear of the tab bar. home-busy3-settled-390.png: the line with '+2 more this week' and 5 of 5 coworker rows. The new card created the allergy wording problem listed below."
+   },
+   {
+    "issue": "Change 6 and risk 4: the open-only lock was proven only by swapping templates, not on the app's real paint()",
+    "status": "Partly fixed",
+    "evidence": "Build plan step 3 now puts the tests first, on the real paint() with the stand-in listener and clock: a booking, going offline, 23:59:30 to 00:00:30, a cancellation, a 40 character name and large text. The preview is still a template swap, so the app's behaviour remains Not evidenced until that pull request."
+   }
+  ],
+  "newProblems": [
+   "Busy card allergy wording (Preview, seen in home-busy5-390.png): the busy card shows '4 gluten free, 1 nut allergy' as '4 GF, 1 nut'. In the app, dietaries are the free-text f.notes field. A rule that shortens 'gluten free' and drops 'allergy' could lose or garble allergy meaning in notes people type. This is Risk / Not evidenced in the app. Repair: show the notes as typed, cut with an ellipsis, and add a safe-text and allergy-words test.",
+   "The large-text claim is wrong (Reproduced, home.html at 390 with large text): after Got it on Smith 60th, the Jones Got it (740 to 788) and Open the function sit under the tab bar, whose top is at 776. Their bottom corners hit the #/recipes and #/orders tab links. measurements.json gotIt.large records unobstructed false, 4 of 5 points, but spec.md says 'nothing over them'. Repair: scroll the next card's Got it clear after the answer, or correct the claim, and test it at large text.",
+   "Deliberate lock break (Reproduced, prep.html at 390): when fmaSim('today') books a function for today, the rows drop 66 px. A tick aimed at Portion rump then lands on the Today header. This is the header-height failure the lock exists to stop, accepted here on purpose. It needs its click test. A short untouched pause before the band draws is worth considering.",
+   "At 360 px (outside the 390 / 768 / 1280 contract widths) with large text: 'No signal \u00b7 updated 13:52' loses its time, 'Cancelled \u00b7 Do not prep' overflows its own box by 8 to 11 px, and at extra-large 'Got it. Kept here as one line' is cut with an ellipsis. Preview only.",
+   "Minor consequence of my own change 4: a cancelled function keeps the line until its date passes. On Wednesday and Thursday the next live function, Jones wedding, is then named only behind '+1 more this week'. This is a hypothesis, not tested with staff."
+  ],
+  "mixScore": 8.5,
+  "endorse": "Endorse with changes",
+  "text": "Score 8.5 (was 8). Endorse with changes. Both faults I reproduced are fixed at 390 (Preview). I re-ran the slot probe with 37, 45 and 60 character names, all four word changes and three text sizes. The slot held 50, 56 and 62 px, the status words stayed whole and the list moved 0 px. After Got it there is no slip. Jones Got it and Open the function hit 5 of 5 points, and Undo sits inside the line. Cancelled now reaches people who were never told (Dev's Home, Wednesday Prep). The busy card is designed. The real paint() test is in build step 3, so it is still Not evidenced. Skipping the Tomorrow card is left to the head chef, which I accept.\n\nNew problems:\n1. The busy card shows \"1 nut allergy\" as \"1 nut\". Dietaries are free-text notes in the app, so a shortening rule can lose allergy meaning. Show the notes as typed, cut with an ellipsis.\n2. Large text: the spec says nothing covers the next Got it, but its own data says 4 of 5 points. The tab bar covers 12 px, and a tap on the bottom edge opens Recipes or Orders. Scroll it clear, or correct the claim.\n3. A function booked for today drops the rows 66 px, and a tick aimed at Portion rump lands on the Today header. This is on purpose; it needs its click test.\n4. At 360 px with large text, \"updated 13:52\" is cut."
+ },
+ {
+  "reviewer": "The keeper of the book",
+  "fixed": [
+   {
+    "issue": "Change 1 and new risk 1: lock the Home slot so homePaint() never inserts a card mid-view",
+    "status": "Fixed and checked",
+    "evidence": "Preview. spec.md revision 3 and build plan step 2. My probe of states/s-home-open-booking.html at 390 ran fmaSim('home-booking'): On with you stayed at 460 px, no card was inserted, and '+1 more this week' changed to '+2 more this week'. This was checked only with the line on screen. A card still on screen was not exercised, which leads to new problem 1. The real homePaint() behaviour is Not evidenced until the planned click test."
+   },
+   {
+    "issue": "Change 2: define an open (route change, back on screen, PIN unlock, reload); a function today breaks the lock",
+    "status": "Fixed and checked",
+    "evidence": "Preview. Revision 3 lists all four opens. My probe of prep.html at 390 ran fmaSim('today'): the band is 116 px and the rows drop 66 px, as designed. Seen in shots/prep-390-today-while-open.png and states/s-today-after.html."
+   },
+   {
+    "issue": "Change 3 and new risk 3: size the fixed slot for the tallest words at the current text size, status words first (it was 49 px of words in a 50 px slot)",
+    "status": "Fixed and checked",
+    "evidence": "Preview. My probe ran 45 times on prep-long.html: 360, 375 and 390 px, by default, large and extra-large text, by open plus 4 changes. Every run moved 0 px and kept the status words whole, with 0 px sideways scroll. The slot measured 50, 56 and 62 px. The tightest margin was 2 px, between 'Cancelled \u00b7 Do not prep' and '+1 more' at 360 px extra large. Seen in shots/prep-long-390-cancelled-xlarge.png. Remeasure with the app's stand-in fonts."
+   },
+   {
+    "issue": "Change 4: give the line's minus its own key, not lk.fn.fold",
+    "status": "Fixed and checked",
+    "evidence": "Preview and design only. Revision 6, the contract fit row and build step 3 give the minus lk.fn.ahead.fold (day and staff id), kept apart from the band's lk.fn.fold. states/s-hidden-dev.html shows the reset for another person. The storage is Not evidenced until the two-staff click test."
+   },
+   {
+    "issue": "Change 5: lk.fn.hu.<staffId> holds id, stage and a now() stamp; Changed comes from chg[]; past days are pruned; a comment says what makes it out of date",
+    "status": "Partly fixed",
+    "evidence": "Everything I asked for is now in the contract fit row and build step 2. Two gaps remain. First, the now() tap stamp now conflicts with the Home lock (new problem 1). Second, 'pruned when Home paints' means a write on every 20 s paint. Nothing is stored in the preview."
+   },
+   {
+    "issue": "Change 6 and new risk 4: the slip covered the Jones card's Got it (Reproduced, home-after-390.png)",
+    "status": "Fixed and checked",
+    "evidence": "Preview, 390, real taps in my probe of home.html. There is no bottom slip now. Jones's Got it (679 to 727 px) and Open the function (681 to 725 px) each passed 5 of 5 elementFromPoint checks, and the tab bar starts at 776 px. The line is 54 px with and without the answer, so the Jones card moved 0 px. A second tap at the same point lands on the Platters label. Undo restores the card and moves focus to its Got it."
+   },
+   {
+    "issue": "New risk 2: a tablet left on Prep holds a short-notice booking as 50 px of words until 04:00",
+    "status": "Partly fixed",
+    "evidence": "The same-day case is fixed: the lock breaks and the band draws, checked in my probe. An Order today booking still shows only as words until the next open. That is spec Break it row 14, left Open as the head chef's call. On a shared screen, the 10-minute idle lock and tab changes count as opens (docs/device-sessions.md). A personal phone left on Prep has no idle lock."
+   }
+  ],
+  "newProblems": [
+   "The Home lock and a now() Got it stamp together lose a change. A card stays frozen while Home is on screen. If the function changes after the card was drawn and before the tap, the Got it stamp is later than the chg[] entry, so the Changed card never comes back for that person. A cancellation that arrives under an open card is not specified. Risk / Not evidenced, from reading spec revision 3 and build step 2. Repair: store the newest chg[] time the card showed, and add a click test that changes the function while the card is open.",
+   "The planned 66 px drop for a same-day booking has no guard. A tick in flight while the band draws lands a row high, which is the failure the header-height rule exists to stop. Seen in my probe of prep.html (+66 px). Repair: draw the band once the finger lifts, and add a click test that ticks at the moment of the draw.",
+   "lk.fn.hu is pruned 'when Home paints', which runs every 20 s and on each cut-off tick. That is a needless localStorage write. Prune at an open instead.",
+   "Minor. With a long name, the hidden second line drops the short part: food 18:30 on the Tomorrow words and guests on Next function, in every probe run at 360 to 390 px. The sheet is 1 tap away. There is only 2 px to spare at 360 px extra large."
+  ],
+  "mixScore": 8.5,
+  "endorse": "Endorse with changes",
+  "text": "Mix 8.5 (was 8). All six of my changes landed, and my reproduced fault is gone. All figures are Preview.\n\nI re-probed 45 runs at 360, 375 and 390 px, at three text sizes, across five word sets, with a 37 character name. The list moved 0 px every time, \"Cancelled \u00b7 Do not prep\" stayed whole, and there was no sideways scroll. The tightest gap was 2 px, between the status and \"+1 more\" at 360 px extra large.\n\nHome has no slip. Jones's Got it and Open the function are clear at 5 of 5 points. The line is 54 px with and without the answer, and Undo returns focus. A same-day booking draws a 116 px band and moves the rows 66 px, as designed. With a booking while Home is open, On with you moves 0 px.\n\nNew problems:\n1. Home lock plus a now() stamp: a card frozen on screen misses a change made while it is read. Got it then stamps later than the chg[] entry, so Changed never comes back. Store the newest chg[] time the card showed, and say what a cancel does to an open card.\n2. The planned 66 px drop has no guard against a tick in flight. Draw it after the finger lifts, with a click test.\n3. Prune lk.fn.hu at an open, not on every 20 s paint.\n\nEndorse with changes."
+ },
+ {
+  "reviewer": "The new starter",
+  "fixed": [
+   {
+    "issue": "Replace 'Function heads-up' with plain words",
+    "status": "Fixed and checked",
+    "evidence": "No 'heads-up' left in any preview page, state or src (grep). Rendered: 'Function this week', 'Functions this week', 'Function tomorrow' (shots/home-390.png, my d1-home probe shot)."
+   },
+   {
+    "issue": "Day-before foot read as a contradiction",
+    "status": "Fixed and checked",
+    "evidence": "states/d1-home.html renders 'Everyone sees this once, the day before. Got it hides it only for you.' word for word."
+   },
+   {
+    "issue": "Chevron to show the line opens",
+    "status": "Partly fixed",
+    "evidence": "My probe: a 14 px chevron on the Home line at default, large and extra-large; on Prep, Orders and the long name at default and large; none at extra-large on the work pages (spec says so, on purpose)."
+   },
+   {
+    "issue": "Slip covering card 2's Got it (Reproduced earlier)",
+    "status": "Fixed and checked",
+    "evidence": "Re-ran my tap probe at 390: no slip; Jones Got it 679 to 727 px and Open the function 681 to 725 px, 5 of 5 points clear, tab bar at 776; Undo inside the line 393 to 437. A second tap at the old Got it lands on the Platters label, no control."
+   },
+   {
+    "issue": "Second card in the same place looks like Got it failed",
+    "status": "Partly fixed",
+    "evidence": "The line now says 'Got it. Kept here as one line', names Smith 60th, offers Undo; card 2 starts 71 px lower and says 2 OF 2. Whether a new starter reads it right: Not evidenced."
+   },
+   {
+    "issue": "Got it against the minus; minus carrying to the next person on the tablet",
+    "status": "Partly fixed",
+    "evidence": "Minus spoken label and slip match: 'Hidden for you on this phone until tomorrow. Home still shows it.' states/s-hidden-dev.html shows the line back for Dev. Per staff keying and understanding: Not evidenced (static page)."
+   },
+   {
+    "issue": "Busy week: one Got it per function",
+    "status": "Fixed and checked",
+    "evidence": "states/s-busy5-home.html: one card, Got it 700 to 748 px, 5 of 5 clear; after it the line reads '+4 more this week'."
+   },
+   {
+    "issue": "New-starter walk-through and two-staff shared tablet click test before ready",
+    "status": "Not evidenced",
+    "evidence": "Listed as 'Test before ready' in spec Break it 2 and 3; not run."
+   }
+  ],
+  "newProblems": [
+   "The busy card shortens dietaries to '4 GF, 1 nut', dropping the word 'allergy'. A new starter may not know GF, and '1 nut' can read as a quantity. This is an allergen line (states/s-busy3-home.html, home-busy5-390.png).",
+   "At large text, card 2's Got it (740 to 788 px) and Open the function sit partly under the tab bar (776 px). My probe found 3 of 5 tap points clear. The spec's measurements.json says 4 of 5, yet the spec text says 'nothing over them'. The next step is half hidden again, this time by the tab bar instead of the slip.",
+   "'Kept here as one line' is abstract for a second-language reader. Words like 'Saved on Home as one line' or 'Now one line here' could be clearer. Not tested."
+  ],
+  "mixScore": 8,
+  "endorse": "Endorse with changes",
+  "text": "Score 8. Endorse with changes. All measurements are Preview.\n\nFixed and checked: the plain names ('heads-up' is gone everywhere) and the day-before foot, word for word. I re-ran my tap probe and the slip has gone. Card 2's Got it and Open the function are clear at 5 of 5 tap points, and a double tap lands on Platters, not on a control. The busy week now needs one Got it, then shows '+4 more this week'.\n\nPartly fixed: the chevron shows on Home at every size but not on the work pages at extra-large. The line now answers by name with Undo, but whether a new starter understands it is untested. The minus words are clear and Dev's line comes back, but the per-person keying is Not evidenced. The walk-through and the two-staff click test have not been run.\n\nNew problems: on the busy card, '4 GF, 1 nut' drops 'allergy' on an allergen line, so write it in full. At large text, the tab bar covers 12 px of card 2's Got it (3 of 5 points clear in my probe). The spec says 'nothing over them'; correct the claim or scroll the button into view. 'Kept here as one line' may be too abstract, so test it with a new starter."
+ }
+]

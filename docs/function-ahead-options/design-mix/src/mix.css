@@ -1,0 +1,156 @@
+/* Combined preview (functions ahead of time, round 2, 10 Nov 2026; revised after the focused review the same day):
+   C's card (now "Function this week") under Your day, A's quiet
+   Next function line, B's open-only rule and B's Orders tag. Preview only: nothing here is loaded by the book.
+   Every colour is an existing token from css/app.css :root; no new palette.
+   Upcoming information stays quiet (paper and reference), never charcoal (live) and never amber (attention). */
+
+/* ---------- 1. C's card (src/c.css; named "Function this week" and "Function tomorrow"), placed under Your day ---------- */
+.fn-hu { padding: 0.8rem 1rem 0.7rem 1.15rem; box-shadow: inset 4px 0 0 var(--surface-work-edge), 0 4px 0 rgba(28, 29, 31, 0.14); }
+.fn-hu[hidden] { display: none; }
+.fn-hu .hm-ph { margin-bottom: 0.15rem; }
+.fn-hu .hm-pt { color: var(--small-ink); }
+.fn-hu-n { font: 700 0.8rem/1.2 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.fn-hu-when { margin: 0.3rem 0 0; font: 700 0.85rem/1.2 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--small-ink); }
+.fn-hu-name { margin: 0.1rem 0 0; font: 700 1.75rem/1.1 var(--display); overflow-wrap: anywhere; }
+.fn-hu-sub { margin: 0.15rem 0 0; font-weight: 600; color: var(--muted); overflow-wrap: anywhere; }
+.fn-hu-facts { margin: 0.55rem 0 0; border-top: 1px solid var(--line); }
+.fn-hu-facts > div { display: grid; grid-template-columns: 5.6rem minmax(0, 1fr); gap: 0.6rem; padding: 0.26rem 0; border-bottom: 1px solid var(--line); }
+.fn-hu-facts dt { padding-top: 0.12rem; font: 700 0.75rem/1.5 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.fn-hu-facts dd { margin: 0; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.fn-hu-act { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.1rem; margin-top: 0.6rem; }
+.fn-hu-got { min-width: 8.5rem; }
+.fn-hu-open { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; color: var(--ink); text-underline-offset: 3px; }
+.fn-hu-also { margin: 0.4rem 0 0; font-size: 0.95rem; overflow-wrap: anywhere; }
+.fn-hu-also b { font: 700 0.8rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--small-ink); }
+.fn-hu-foot { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--muted); }
+.fn-hu-sig { margin: 0.35rem 0 0; padding: 0.15rem 0.5rem; border-radius: 6px; background: var(--surface-reference); font-size: 0.9rem; font-weight: 600; color: var(--ink); }
+.fn-hu.is-tom .fn-hu-name { font-size: 1.45rem; }
+.fn-hu-line { margin: 0.25rem 0 0; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+.fn-hu-chg { margin: 0.5rem 0 0; padding: 0.4rem 0 0.1rem; list-style: none; border-top: 1px solid var(--line); }
+.fn-hu-chg li { padding: 0.15rem 0; font-weight: 600; overflow-wrap: anywhere; }
+.fn-hu-chg li span { color: var(--muted); font-weight: 500; }
+.fn-hu-facts dd ins { text-decoration: none; padding: 0 3px; border-radius: 3px; box-shadow: inset 0 -2px 0 var(--accent-ink); }
+/* cancelled after this person was told: the failure family with words; Got it is the plain .btn here, not orange
+   (C's own repair: an orange action on the red card read as a clash) */
+.fn-hu.is-off { background: var(--bad-tint); box-shadow: inset 4px 0 0 var(--bad-ink), 0 4px 0 rgba(28, 29, 31, 0.14); }
+.fn-hu.is-off .hm-pt, .fn-hu.is-off .fn-hu-when { color: var(--bad-ink); }
+.fn-hu.is-off .fn-hu-name s { text-decoration-thickness: 2px; }
+.fn-hu.is-off .fn-hu-sub { color: var(--ink); }
+.fn-hu.is-off .fn-hu-foot { color: var(--ink); }
+.fn-hu.is-off .btn { border-color: var(--ink); background: var(--paper); color: var(--ink); }
+.fn-hu .btn:focus-visible, .fn-hu-open:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+/* ---------- 1b. the busy week (focused review, 10 Nov 2026): 3 or more functions in the next 7 days ----------
+   One card, one compact row per function (day, name, guests, first food time, platters, dietaries shortened), one Got
+   it for all of them. Each row opens that function's sheet. Got it collapses the card to the line with +N more. */
+.fn-wk { margin: 0.45rem 0 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.fn-wk li { border-bottom: 1px solid var(--line); }
+.fn-wk-r { display: grid; grid-template-columns: 2.9rem minmax(0, 1fr) 14px; align-items: center; column-gap: 0.6rem; width: 100%; min-height: 44px; margin: 0; padding: 0.3rem 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.fn-wk-r:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
+.fn-wk-d { display: flex; flex-direction: column; font: 700 0.8rem/1.15 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--small-ink); }
+.fn-wk-d b { font-size: 0.95rem; color: var(--ink); letter-spacing: 0.06em; }
+.fn-wk-m { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.fn-wk-1 { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.fn-wk-n { min-width: 0; font-weight: 700; font-size: 1.05rem; line-height: 1.2; overflow-wrap: anywhere; }
+.fn-wk-g { flex: none; font-weight: 600; font-size: 0.9rem; color: var(--muted); }
+.fn-wk-2 { font-size: 0.9rem; font-weight: 600; line-height: 1.3; color: #3b3a36; overflow-wrap: anywhere; }
+.fn-wk-r .fa-next-chev { align-self: center; }
+.fn-wk-r:hover .fn-wk-n { text-decoration: underline; text-underline-offset: 2px; }
+
+/* ---------- 2. A's quiet Next function line (design-a/build.cjs), on the work pages and on Home ----------
+   Revised after the focused review (10 Nov 2026): two rows that never wrap. Row 1 starts with the status words
+   (Next function, Cancelled · Do not prep, Order today, Tomorrow, No signal), which are never cut; only the date after
+   them may shorten. Row 2 is the name, cut with an ellipsis, then a short fixed part. So no name and no state can make
+   the slot taller than the height it was given when the page opened. */
+.fn-band.fa-quiet { background: var(--surface-reference); color: var(--ink); border-bottom: 1.5px solid var(--ink); box-shadow: none; }
+.fn-band.fa-quiet .fn-fold { border-color: var(--ink); background: var(--paper); color: var(--ink); }
+.fa-next { display: flex; align-items: center; gap: 0.5rem; max-width: 1240px; margin: 0 auto; padding: 0.15rem 0.75rem; }
+.fa-next-b { flex: 1 1 auto; min-width: 0; min-height: 44px; display: flex; align-items: center; justify-content: flex-start; gap: 0.35rem; margin: 0; padding: 0.2rem 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.fa-next-tx { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 1px; }
+.fa-next-b:focus-visible, .fa-next-more:focus-visible, .fa-next .fn-fold:focus-visible, .fa-next-undo:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 2px; border-radius: 4px; }
+.fa-next .fn-fold:focus-visible { border-radius: 50%; }
+/* row 1: one line, never wraps. Every item is exactly 1rem tall, so the Got it words fit the same row height */
+.fa-next-l { display: flex; align-items: baseline; min-width: 0; white-space: nowrap; font: 700 0.8rem/1.25 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.fa-next-s { flex: none; }
+.fa-next-d { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--small-ink); }
+.fa-next-stop { color: var(--bad-ink); }
+/* row 2: one line. The name (with its Stock: prefix) shortens with an ellipsis; the short part after it (guests, the
+   day, the food time) shows whole or, when a long name needs the room, steps onto a hidden second line */
+.fa-next-t { display: flex; flex-wrap: wrap; align-content: flex-start; min-width: 0; height: 1.3em; overflow: hidden; white-space: nowrap; font-size: 1rem; line-height: 1.3; color: #3b3a36; }
+.fa-next-nm { flex: 0 1 auto; display: flex; min-width: 0; max-width: 100%; }
+.fa-next-n { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink); font-weight: 700; }
+.fa-next-p, .fa-next-x { flex: none; }
+.fa-next-b:hover .fa-next-n { text-decoration: underline; text-underline-offset: 2px; }
+/* the chevron says the line opens something (new starter) */
+.fa-next-chev { flex: none; width: 14px; height: 14px; color: var(--muted); }
+.fa-next-more { flex: 0 0 auto; display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.55rem; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); color: var(--ink); font-size: 0.875rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.fa-next-more .fa-m2 { margin-left: 0.25em; }
+/* phones: "+1 more" over "this week", so the status words keep their room at every text size. Never cut. */
+@media (max-width: 479px) {
+  .fa-next-more { flex-direction: column; justify-content: center; padding: 0.1rem 0.55rem; line-height: 1.12; text-align: center; }
+  .fa-next-more .fa-m2 { margin-left: 0; font-size: 0.8rem; font-weight: 500; }
+  /* extra-large text on a phone: the work-page chevron gives its room to the status words, and row 1 sits a little
+     tighter, so "Cancelled · Do not prep" and the date still fit whole (measured in measurements.json textSizes) */
+  html[data-text="xlarge"] .fn-band .fa-next-chev { display: none; }
+  html[data-text="xlarge"] .fa-next-l { letter-spacing: 0.08em; }
+}
+/* the minus: the band's own round control, at the full 44 px tap size (the designer found 36 px, Not evidenced) */
+.fa-next .fn-fold { width: 44px; height: 44px; margin-left: 0; }
+.fa-next-more[hidden] { display: none; }
+@media (min-width: 720px) {
+  .fn-band .fa-next-tx { flex: 0 1 auto; flex-direction: row; align-items: baseline; gap: 0 0.9rem; }
+  .fn-band .fa-next-l { flex: none; max-width: 60%; }
+}
+.fa-next.is-cancelled { box-shadow: inset 4px 0 0 var(--bad-ink); padding-left: 0.95rem; }
+.fa-next.is-cancelled .fa-next-n s { text-decoration-thickness: 2px; }
+/* the existing function tags, sized to sit inside the label row so a tagged state keeps the same two rows */
+.fa-next .fn-tag { padding: 0 4px; font-size: 0.7rem; line-height: 1.05; vertical-align: 0.5px; }
+/* the slot's words when they change after the page opened (no signal, a booking, midnight): same box, new words */
+.fa-next-k.is-pending { color: var(--small-ink); }
+.fa-next-l .fn-t-order, .fa-next-l .fn-t-tom { color: var(--ink); letter-spacing: 0.04em; }
+
+/* Got it answered in place (Home only): the line itself says "Got it. Kept here as one line" with Undo inside it, for
+   the book's slip time (9 s), then goes back to its own words. Same two rows, so nothing under it moves either way. */
+.fa-next-ack { display: none; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 700 0.95rem/1rem var(--display); letter-spacing: 0.02em; text-transform: none; color: var(--ink); }
+.fa-next-undo { display: none; flex: none; min-height: 44px; min-width: 72px; padding: 0 1rem; border: 0; border-radius: var(--r-act); background: var(--ink); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.fa-next.is-ack .fa-next-s, .fa-next.is-ack .fa-next-d, .fa-next.is-ack .fa-next-chev, .fa-next.is-ack .fa-next-more { display: none; }
+.fa-next.is-ack .fa-next-ack { display: block; }
+.fa-next.is-ack .fa-next-undo { display: inline-block; }
+.fa-hm-next:has(.is-ack) { box-shadow: inset 4px 0 0 var(--surface-work-edge), 0 4px 0 rgba(28, 29, 31, 0.14); }
+
+/* Home: the same line on a pinned quiet card, in the card's place under Your day. Always two rows; no minus on Home. */
+.is-home .fa-hm-next { padding: 0.3rem 0.25rem; background: var(--surface-reference); }
+.fa-hm-next .fa-next { max-width: none; margin: 0; padding: 0 0.6rem; }
+.fa-hm-next[hidden] { display: none; }
+
+/* Home order. Phone: Your day, then the card or the line, then On with you. Nothing above Your day.
+   720 to 1099 px (the shared tablet): Your day and On with you side by side as today, the slot full width under them,
+   so the card's three facts sit side by side (C's tablet layout) instead of wrapping in the narrow left column.
+   From 1100 px: the slot in the left column under Your day, in the space On with you leaves there. */
+@media (min-width: 720px) and (max-width: 1099px) {
+  .is-home .hm-staff-first > #hm-with { grid-column: 2; grid-row: 1; }
+  .is-home .hm-staff-first > .fma-slot { grid-column: 1 / -1; }
+  .fn-hu-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 1.5rem; border-bottom: 1px solid var(--line); }
+  .fn-hu-facts > div { grid-template-columns: minmax(0, 1fr); gap: 0.05rem; padding: 0.35rem 0; border-bottom: 0; }
+}
+@media (min-width: 1100px) {
+  .is-home .hm-staff-first { grid-template-rows: auto auto auto 1fr; }
+  .is-home .hm-staff-first > .fma-slot { grid-column: 1; }
+  .is-home .hm-staff-first > #hm-with { grid-column: 2; grid-row: 1 / span 4; }
+}
+
+/* ---------- 3. B's Orders tag inside the existing function stock line (design-b/src/b.css) ---------- */
+.nb-marks .fn-tag { font-family: var(--body); }
+/* the shared Order tag measures 4.04:1 on its tint with --accent-ink words: ink words, as the band does on charcoal */
+.nb-marks .fn-t-order { color: var(--ink); }
+.ru-ometa { font-weight: 600; color: var(--ink); }
+/* the stock line's state words wrap rather than cut: "order day was Sun 8 Nov" is the point of the tag */
+.nb-meta:has(.ru-ometa) { white-space: normal; }
+
+/* ---------- 4. B's open-only rule: the slot's height is set when the page opens ---------- */
+/* The preview script writes the height the line had at open as an inline height; later words fit in the same box. */
+.fn-band[data-fma-lock] { overflow: hidden; box-sizing: border-box; }
+
+/* ---------- preview only: the existing sheet and slip, shown by src/mix.js ---------- */
+.fa-pop, .p-toasts[hidden] { display: none; }
+ins.fa-add { text-decoration: none; }

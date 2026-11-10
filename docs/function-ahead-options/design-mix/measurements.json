@@ -1,0 +1,3422 @@
+{
+  "source": "Preview: the recommended mix, revised after the focused review, static pages built from the implemented-app snapshots at main 184174e (../baseline), synthetic data, bundled Barlow, Barlow Condensed and Caveat fonts, Chromium headless shell 1243, deviceScaleFactor 1, built 2026-11-10",
+  "pages": {
+    "home-390": {
+      "viewport": "390x844",
+      "overflow": 0,
+      "tabBarTop": 776,
+      "smithTop": 437,
+      "smithIn": "hu-smith",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 169,
+        "bottom": 371,
+        "height": 202
+      },
+      "slot": [
+        {
+          "id": "hu-smith",
+          "top": 389,
+          "bottom": 719,
+          "height": 331
+        }
+      ],
+      "onWithYou": {
+        "top": 737,
+        "bottom": 1088,
+        "height": 351
+      },
+      "comingUp": {
+        "top": 1304,
+        "bottom": 1456,
+        "height": 152
+      },
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "0 of 5",
+      "pageHeight": 1635
+    },
+    "home-768": {
+      "viewport": "768x1024",
+      "overflow": 0,
+      "tabBarTop": 1024,
+      "smithTop": 705,
+      "smithIn": "hu-smith",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 274,
+        "bottom": 492,
+        "height": 218
+      },
+      "slot": [
+        {
+          "id": "hu-smith",
+          "top": 657,
+          "bottom": 949,
+          "height": 292
+        }
+      ],
+      "onWithYou": {
+        "top": 274,
+        "bottom": 625,
+        "height": 351
+      },
+      "comingUp": {
+        "top": 1165,
+        "bottom": 1317,
+        "height": 152
+      },
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1417
+    },
+    "home-1280": {
+      "viewport": "1280x900",
+      "overflow": 0,
+      "tabBarTop": 900,
+      "smithTop": 542,
+      "smithIn": "hu-smith",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 251,
+        "bottom": 469,
+        "height": 218
+      },
+      "slot": [
+        {
+          "id": "hu-smith",
+          "top": 493,
+          "bottom": 824,
+          "height": 331
+        }
+      ],
+      "onWithYou": {
+        "top": 251,
+        "bottom": 602,
+        "height": 351
+      },
+      "comingUp": {
+        "top": 1013,
+        "bottom": 1142,
+        "height": 129
+      },
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1242
+    },
+    "home-after-390": {
+      "viewport": "390x844",
+      "overflow": 0,
+      "tabBarTop": 776,
+      "smithTop": 413,
+      "smithIn": "fma-line",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 169,
+        "bottom": 371,
+        "height": 202
+      },
+      "slot": [
+        {
+          "id": "fma-line",
+          "top": 389,
+          "bottom": 442,
+          "height": 54
+        },
+        {
+          "id": "hu-jones",
+          "top": 460,
+          "bottom": 762,
+          "height": 302
+        }
+      ],
+      "onWithYou": {
+        "top": 780,
+        "bottom": 1131,
+        "height": 351
+      },
+      "comingUp": {
+        "top": 1347,
+        "bottom": 1499,
+        "height": 152
+      },
+      "onWithYouTopOnFirstScreen": false,
+      "coworkerRowsOnFirstScreen": "0 of 5",
+      "pageHeight": 1677
+    },
+    "prep-390": {
+      "viewport": "390x844",
+      "overflow": 0,
+      "addedAboveList": 50,
+      "cutBar": 0,
+      "firstRowTop": 313,
+      "addTop": 707,
+      "rowsAboveAdd": 5,
+      "rowsTotal": 6,
+      "slotFit": {
+        "slot": 50,
+        "lockedAt": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "label": "Next function · Thu 12 Nov",
+        "name": "Smith 60th",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "moreText": "+1 more this week",
+        "minusWhole": true,
+        "chevronShown": true,
+        "wordsHeight": 49
+      },
+      "gaps": {
+        "moreToMinusPx": 8,
+        "chipsToMorePx": 12,
+        "chipsToMinusPx": 12
+      }
+    },
+    "prep-768": {
+      "viewport": "768x1024",
+      "overflow": 0,
+      "addedAboveList": 50,
+      "cutBar": 0,
+      "firstRowTop": 412,
+      "addTop": 1024,
+      "rowsAboveAdd": 6,
+      "rowsTotal": 6,
+      "slotFit": {
+        "slot": 50,
+        "lockedAt": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "label": "Next function · Thu 12 Nov",
+        "name": "Smith 60th",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "moreText": "+1 more this week",
+        "minusWhole": true,
+        "chevronShown": true,
+        "wordsHeight": 49
+      },
+      "gaps": {
+        "moreToMinusPx": 8,
+        "chipsToMorePx": 46,
+        "chipsToMinusPx": 46
+      }
+    },
+    "prep-1280": {
+      "viewport": "1280x900",
+      "overflow": 0,
+      "addedAboveList": 50,
+      "cutBar": 0,
+      "firstRowTop": 353,
+      "addTop": 900,
+      "rowsAboveAdd": 6,
+      "rowsTotal": 6,
+      "slotFit": {
+        "slot": 50,
+        "lockedAt": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "label": "Next function · Thu 12 Nov",
+        "name": "Smith 60th",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "moreText": "+1 more this week",
+        "minusWhole": true,
+        "chevronShown": true,
+        "wordsHeight": 49
+      },
+      "gaps": {
+        "moreToMinusPx": 8,
+        "chipsToMorePx": 46,
+        "chipsToMinusPx": 46
+      }
+    },
+    "prep-long-390": {
+      "viewport": "390x844",
+      "overflow": 0,
+      "addedAboveList": 50,
+      "cutBar": 0,
+      "firstRowTop": 313,
+      "addTop": 707,
+      "rowsAboveAdd": 5,
+      "rowsTotal": 6,
+      "slotFit": {
+        "slot": 50,
+        "lockedAt": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "label": "Next function · Thu 12 Nov",
+        "name": "Robertson and Nguyen engagement party",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": true,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "moreText": "+1 more this week",
+        "minusWhole": true,
+        "chevronShown": true,
+        "wordsHeight": 49
+      },
+      "gaps": {
+        "moreToMinusPx": 8,
+        "chipsToMorePx": 12,
+        "chipsToMinusPx": 12
+      }
+    },
+    "orders-390": {
+      "viewport": "390x844",
+      "overflow": 0,
+      "addedAboveList": 50,
+      "cutBar": 0,
+      "firstRowTop": 221,
+      "addTop": 707,
+      "rowsAboveAdd": 3,
+      "rowsTotal": 3,
+      "slotFit": {
+        "slot": 50,
+        "lockedAt": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "label": "Next function · Thu 12 Nov",
+        "name": "Smith 60th",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "moreText": "+1 more this week",
+        "minusWhole": true,
+        "chevronShown": true,
+        "wordsHeight": 49
+      },
+      "gaps": {
+        "moreToMinusPx": 8,
+        "chipsToMorePx": 12,
+        "chipsToMinusPx": 12
+      }
+    },
+    "home-head-1280": {
+      "viewport": "1280x900",
+      "overflow": 0,
+      "tabBarTop": 900,
+      "smithTop": 542,
+      "smithIn": "hu-smith",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 251,
+        "bottom": 469,
+        "height": 218
+      },
+      "slot": [
+        {
+          "id": "hu-smith",
+          "top": 493,
+          "bottom": 824,
+          "height": 331
+        }
+      ],
+      "onWithYou": {
+        "top": 251,
+        "bottom": 617,
+        "height": 366
+      },
+      "comingUp": {
+        "top": 1013,
+        "bottom": 1142,
+        "height": 129
+      },
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1242
+    },
+    "fn-week-390": {
+      "viewport": "390x844",
+      "overflow": 0
+    },
+    "home-busy-390": {
+      "viewport": "390x844",
+      "overflow": 0,
+      "tabBarTop": 776,
+      "smithTop": 430,
+      "smithIn": "hu-week",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 169,
+        "bottom": 371,
+        "height": 202
+      },
+      "slot": [
+        {
+          "id": "hu-week",
+          "top": 389,
+          "bottom": 803,
+          "height": 414
+        }
+      ],
+      "onWithYou": {
+        "top": 821,
+        "bottom": 1171,
+        "height": 351
+      },
+      "comingUp": null,
+      "onWithYouTopOnFirstScreen": false,
+      "coworkerRowsOnFirstScreen": "0 of 5",
+      "pageHeight": 1549
+    },
+    "home-settled-390": {
+      "viewport": "390x844",
+      "overflow": 0,
+      "tabBarTop": 776,
+      "smithTop": 413,
+      "smithIn": "fma-line",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 169,
+        "bottom": 371,
+        "height": 202
+      },
+      "slot": [
+        {
+          "id": "fma-line",
+          "top": 389,
+          "bottom": 442,
+          "height": 54
+        }
+      ],
+      "onWithYou": {
+        "top": 460,
+        "bottom": 811,
+        "height": 351
+      },
+      "comingUp": {
+        "top": 1027,
+        "bottom": 1179,
+        "height": 152
+      },
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1358
+    },
+    "home-settled-768": {
+      "viewport": "768x1024",
+      "overflow": 0,
+      "tabBarTop": 1024,
+      "smithTop": 682,
+      "smithIn": "fma-line",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 274,
+        "bottom": 492,
+        "height": 218
+      },
+      "slot": [
+        {
+          "id": "fma-line",
+          "top": 657,
+          "bottom": 710,
+          "height": 54
+        }
+      ],
+      "onWithYou": {
+        "top": 274,
+        "bottom": 625,
+        "height": 351
+      },
+      "comingUp": {
+        "top": 926,
+        "bottom": 1078,
+        "height": 152
+      },
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1178
+    },
+    "home-settled-1280": {
+      "viewport": "1280x900",
+      "overflow": 0,
+      "tabBarTop": 900,
+      "smithTop": 518,
+      "smithIn": "fma-line",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 251,
+        "bottom": 469,
+        "height": 218
+      },
+      "slot": [
+        {
+          "id": "fma-line",
+          "top": 493,
+          "bottom": 547,
+          "height": 54
+        }
+      ],
+      "onWithYou": {
+        "top": 251,
+        "bottom": 602,
+        "height": 351
+      },
+      "comingUp": {
+        "top": 743,
+        "bottom": 872,
+        "height": 129
+      },
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 972
+    },
+    "home-dev-handover-390": {
+      "viewport": "390x844",
+      "overflow": 0,
+      "tabBarTop": 776,
+      "smithTop": 437,
+      "smithIn": "hu-smith",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 169,
+        "bottom": 371,
+        "height": 202
+      },
+      "slot": [
+        {
+          "id": "hu-smith",
+          "top": 389,
+          "bottom": 719,
+          "height": 331
+        }
+      ],
+      "onWithYou": {
+        "top": 737,
+        "bottom": 1103,
+        "height": 366
+      },
+      "comingUp": {
+        "top": 1319,
+        "bottom": 1471,
+        "height": 152
+      },
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "0 of 5",
+      "pageHeight": 1650
+    },
+    "home-busy3-390": {
+      "viewport": "390x844",
+      "overflow": 0,
+      "tabBarTop": 776,
+      "smithTop": 430,
+      "smithIn": "hu-week",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 169,
+        "bottom": 371,
+        "height": 202
+      },
+      "slot": [
+        {
+          "id": "hu-week",
+          "top": 389,
+          "bottom": 697,
+          "height": 308
+        }
+      ],
+      "onWithYou": {
+        "top": 714,
+        "bottom": 1065,
+        "height": 351
+      },
+      "comingUp": null,
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "0 of 5",
+      "pageHeight": 1442,
+      "busyCard": {
+        "top": 389,
+        "height": 308,
+        "rows": 3,
+        "rowHeights": [
+          52,
+          52,
+          52
+        ]
+      },
+      "gotItButton": {
+        "found": true,
+        "top": 594,
+        "bottom": 642,
+        "firstScreenBottom": 776,
+        "onFirstScreen": true,
+        "unobstructed": true,
+        "pointsHit": "5 of 5"
+      }
+    },
+    "home-busy5-390": {
+      "viewport": "390x844",
+      "overflow": 0,
+      "tabBarTop": 776,
+      "smithTop": 430,
+      "smithIn": "hu-week",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 169,
+        "bottom": 371,
+        "height": 202
+      },
+      "slot": [
+        {
+          "id": "hu-week",
+          "top": 389,
+          "bottom": 803,
+          "height": 414
+        }
+      ],
+      "onWithYou": {
+        "top": 821,
+        "bottom": 1171,
+        "height": 351
+      },
+      "comingUp": null,
+      "onWithYouTopOnFirstScreen": false,
+      "coworkerRowsOnFirstScreen": "0 of 5",
+      "pageHeight": 1549,
+      "busyCard": {
+        "top": 389,
+        "height": 414,
+        "rows": 5,
+        "rowHeights": [
+          52,
+          52,
+          52,
+          52,
+          52
+        ]
+      },
+      "gotItButton": {
+        "found": true,
+        "top": 700,
+        "bottom": 748,
+        "firstScreenBottom": 776,
+        "onFirstScreen": true,
+        "unobstructed": true,
+        "pointsHit": "5 of 5"
+      }
+    },
+    "home-busy3-settled-390": {
+      "viewport": "390x844",
+      "overflow": 0,
+      "tabBarTop": 776,
+      "smithTop": 413,
+      "smithIn": "fma-line",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 169,
+        "bottom": 371,
+        "height": 202
+      },
+      "slot": [
+        {
+          "id": "fma-line",
+          "top": 389,
+          "bottom": 442,
+          "height": 54
+        }
+      ],
+      "onWithYou": {
+        "top": 460,
+        "bottom": 811,
+        "height": 351
+      },
+      "comingUp": null,
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1188,
+      "busyCard": null
+    },
+    "home-busy5-settled-390": {
+      "viewport": "390x844",
+      "overflow": 0,
+      "tabBarTop": 776,
+      "smithTop": 413,
+      "smithIn": "fma-line",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 169,
+        "bottom": 371,
+        "height": 202
+      },
+      "slot": [
+        {
+          "id": "fma-line",
+          "top": 389,
+          "bottom": 442,
+          "height": 54
+        }
+      ],
+      "onWithYou": {
+        "top": 460,
+        "bottom": 811,
+        "height": 351
+      },
+      "comingUp": null,
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1188,
+      "busyCard": null
+    },
+    "home-busy5-768": {
+      "viewport": "768x1024",
+      "overflow": 0,
+      "tabBarTop": 1024,
+      "smithTop": 698,
+      "smithIn": "hu-week",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 274,
+        "bottom": 492,
+        "height": 218
+      },
+      "slot": [
+        {
+          "id": "hu-week",
+          "top": 657,
+          "bottom": 1051,
+          "height": 395
+        }
+      ],
+      "onWithYou": {
+        "top": 274,
+        "bottom": 625,
+        "height": 351
+      },
+      "comingUp": null,
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1350,
+      "busyCard": {
+        "top": 657,
+        "height": 395,
+        "rows": 5,
+        "rowHeights": [
+          52,
+          52,
+          52,
+          52,
+          52
+        ]
+      }
+    },
+    "home-busy5-1280": {
+      "viewport": "1280x900",
+      "overflow": 0,
+      "tabBarTop": 900,
+      "smithTop": 534,
+      "smithIn": "hu-week",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 251,
+        "bottom": 469,
+        "height": 218
+      },
+      "slot": [
+        {
+          "id": "hu-week",
+          "top": 493,
+          "bottom": 888,
+          "height": 395
+        }
+      ],
+      "onWithYou": {
+        "top": 251,
+        "bottom": 602,
+        "height": 351
+      },
+      "comingUp": null,
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1153,
+      "busyCard": {
+        "top": 493,
+        "height": 395,
+        "rows": 5,
+        "rowHeights": [
+          52,
+          52,
+          52,
+          52,
+          52
+        ]
+      }
+    },
+    "runup-1280": {
+      "overflow": 0,
+      "frames": 44
+    }
+  },
+  "baseline": {
+    "home-390": {
+      "overflow": 0,
+      "tabBarTop": 776,
+      "smithTop": 998,
+      "smithIn": "",
+      "smithOnFirstScreen": false,
+      "yourDay": {
+        "top": 169,
+        "bottom": 371,
+        "height": 202
+      },
+      "slot": [],
+      "onWithYou": {
+        "top": 389,
+        "bottom": 739,
+        "height": 351
+      },
+      "comingUp": {
+        "top": 956,
+        "bottom": 1140,
+        "height": 185
+      },
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1319
+    },
+    "home-768": {
+      "overflow": 0,
+      "tabBarTop": 1024,
+      "smithTop": 884,
+      "smithIn": "",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 274,
+        "bottom": 492,
+        "height": 218
+      },
+      "slot": [],
+      "onWithYou": {
+        "top": 274,
+        "bottom": 625,
+        "height": 351
+      },
+      "comingUp": {
+        "top": 841,
+        "bottom": 1049,
+        "height": 208
+      },
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1149
+    },
+    "home-1280": {
+      "overflow": 0,
+      "tabBarTop": 900,
+      "smithTop": 786,
+      "smithIn": "",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 251,
+        "bottom": 469,
+        "height": 218
+      },
+      "slot": [],
+      "onWithYou": {
+        "top": 251,
+        "bottom": 602,
+        "height": 351
+      },
+      "comingUp": {
+        "top": 743,
+        "bottom": 905,
+        "height": 162
+      },
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1005
+    },
+    "home-head-1280": {
+      "overflow": 0,
+      "tabBarTop": 900,
+      "smithTop": 801,
+      "smithIn": "",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 251,
+        "bottom": 469,
+        "height": 218
+      },
+      "slot": [],
+      "onWithYou": {
+        "top": 251,
+        "bottom": 617,
+        "height": 366
+      },
+      "comingUp": {
+        "top": 758,
+        "bottom": 920,
+        "height": 162
+      },
+      "onWithYouTopOnFirstScreen": true,
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1020
+    },
+    "prep-390": {
+      "overflow": 0,
+      "addedAboveList": 0,
+      "cutBar": 0,
+      "firstRowTop": 263,
+      "addTop": 707,
+      "rowsAboveAdd": 6,
+      "rowsTotal": 6
+    },
+    "orders-390": {
+      "overflow": 0,
+      "addedAboveList": 0,
+      "cutBar": 0,
+      "firstRowTop": 171,
+      "addTop": 707,
+      "rowsAboveAdd": 2,
+      "rowsTotal": 2
+    },
+    "prep-day-before-390": {
+      "overflow": 0,
+      "addedAboveList": 113,
+      "cutBar": 0,
+      "firstRowTop": 376,
+      "addTop": 707,
+      "rowsAboveAdd": 4,
+      "rowsTotal": 6
+    },
+    "prep-on-the-day-390": {
+      "overflow": 0,
+      "addedAboveList": 116,
+      "cutBar": 0,
+      "firstRowTop": 379,
+      "addTop": 707,
+      "rowsAboveAdd": 4,
+      "rowsTotal": 6
+    },
+    "prep-390-large": {
+      "addedAboveList": 0,
+      "cutBar": 0,
+      "firstRowTop": 292,
+      "addTop": 707,
+      "rowsAboveAdd": 3,
+      "rowsTotal": 6
+    },
+    "prep-390-xlarge": {
+      "addedAboveList": 0,
+      "cutBar": 0,
+      "firstRowTop": 307,
+      "addTop": 707,
+      "rowsAboveAdd": 1,
+      "rowsTotal": 6
+    }
+  },
+  "gotIt": {
+    "default": {
+      "before": {
+        "cardSmith": {
+          "top": 389,
+          "height": 331
+        },
+        "line": null,
+        "cardJones": null,
+        "moreLink": false,
+        "onWithYou": {
+          "top": 737,
+          "height": 351
+        },
+        "bottomSlip": null,
+        "lineAnswer": null,
+        "focus": " Skip to content\nLeichhardt Hot"
+      },
+      "afterGotItOnSmith": {
+        "cardSmith": null,
+        "line": {
+          "top": 389,
+          "height": 54
+        },
+        "cardJones": {
+          "top": 460,
+          "height": 302
+        },
+        "moreLink": false,
+        "onWithYou": {
+          "top": 780,
+          "height": 351
+        },
+        "bottomSlip": null,
+        "lineAnswer": {
+          "words": "Got it. Kept here as one line",
+          "whole": true,
+          "undoInLine": true,
+          "said": "Got it: Smith 60th. Kept on Home as one line."
+        },
+        "focus": "fa-next-b Next function · Thu 12 NovGot "
+      },
+      "nextCardAfterGotIt": {
+        "gotIt": {
+          "found": true,
+          "top": 679,
+          "bottom": 727,
+          "firstScreenBottom": 776,
+          "onFirstScreen": true,
+          "unobstructed": true,
+          "pointsHit": "5 of 5"
+        },
+        "openTheFunction": {
+          "found": true,
+          "top": 681,
+          "bottom": 725,
+          "firstScreenBottom": 776,
+          "onFirstScreen": true,
+          "unobstructed": true,
+          "pointsHit": "5 of 5"
+        },
+        "undoInLine": {
+          "found": true,
+          "top": 393,
+          "bottom": 437,
+          "firstScreenBottom": 776,
+          "onFirstScreen": true,
+          "unobstructed": true,
+          "pointsHit": "5 of 5"
+        }
+      },
+      "doubleTapOnTheOldGotItLandsOn": "DT: Platters",
+      "afterTheAnswerGoes": {
+        "cardSmith": null,
+        "line": {
+          "top": 389,
+          "height": 54
+        },
+        "cardJones": {
+          "top": 460,
+          "height": 302
+        },
+        "moreLink": false,
+        "onWithYou": {
+          "top": 780,
+          "height": 351
+        },
+        "bottomSlip": null,
+        "lineAnswer": null,
+        "focus": "fa-next-b Next function · Thu 12 NovGot "
+      },
+      "collapsedInPlace": true,
+      "noBottomSlip": true,
+      "lineHeightSameWithAndWithoutAnswer": true,
+      "nextCardMovedWhenAnswerWent": 0,
+      "afterUndo": {
+        "cardSmith": {
+          "top": 389,
+          "height": 331
+        },
+        "line": null,
+        "cardJones": null,
+        "moreLink": false,
+        "onWithYou": {
+          "top": 737,
+          "height": 351
+        },
+        "bottomSlip": null,
+        "lineAnswer": null,
+        "focus": "btn dark fn-hu-got Got it"
+      },
+      "undoRestores": true,
+      "afterGotItOnBoth": {
+        "cardSmith": null,
+        "line": {
+          "top": 389,
+          "height": 54
+        },
+        "cardJones": null,
+        "moreLink": false,
+        "onWithYou": {
+          "top": 460,
+          "height": 351
+        },
+        "bottomSlip": null,
+        "lineAnswer": {
+          "words": "Got it. Kept here as one line",
+          "whole": true,
+          "undoInLine": true,
+          "said": "Got it: Jones wedding. Kept on Home in the Next function line, as 1 more this week."
+        },
+        "focus": "fa-next-b Next function · Thu 12 NovGot "
+      },
+      "afterBothAnswerGone": {
+        "cardSmith": null,
+        "line": {
+          "top": 389,
+          "height": 54
+        },
+        "cardJones": null,
+        "moreLink": true,
+        "onWithYou": {
+          "top": 460,
+          "height": 351
+        },
+        "bottomSlip": null,
+        "lineAnswer": null,
+        "focus": "fa-next-b Next function · Thu 12 NovGot "
+      }
+    },
+    "large": {
+      "before": {
+        "cardSmith": {
+          "top": 414,
+          "height": 365
+        },
+        "line": null,
+        "cardJones": null,
+        "moreLink": false,
+        "onWithYou": {
+          "top": 799,
+          "height": 389
+        },
+        "bottomSlip": null,
+        "lineAnswer": null,
+        "focus": " Skip to content\nLeichhardt Hot"
+      },
+      "afterGotItOnSmith": {
+        "cardSmith": null,
+        "line": {
+          "top": 414,
+          "height": 60
+        },
+        "cardJones": {
+          "top": 494,
+          "height": 334
+        },
+        "moreLink": false,
+        "onWithYou": {
+          "top": 847,
+          "height": 389
+        },
+        "bottomSlip": null,
+        "lineAnswer": {
+          "words": "Got it. Kept here as one line",
+          "whole": true,
+          "undoInLine": true,
+          "said": "Got it: Smith 60th. Kept on Home as one line."
+        },
+        "focus": "fa-next-b Next function · Thu 12 NovGot "
+      },
+      "nextCardAfterGotIt": {
+        "gotIt": {
+          "found": true,
+          "top": 740,
+          "bottom": 788,
+          "firstScreenBottom": 776,
+          "onFirstScreen": false,
+          "unobstructed": false,
+          "pointsHit": "4 of 5"
+        },
+        "openTheFunction": {
+          "found": true,
+          "top": 742,
+          "bottom": 786,
+          "firstScreenBottom": 776,
+          "onFirstScreen": false,
+          "unobstructed": false,
+          "pointsHit": "4 of 5"
+        },
+        "undoInLine": {
+          "found": true,
+          "top": 422,
+          "bottom": 466,
+          "firstScreenBottom": 776,
+          "onFirstScreen": true,
+          "unobstructed": true,
+          "pointsHit": "5 of 5"
+        }
+      },
+      "doubleTapOnTheOldGotItLandsOn": "DT: Platters",
+      "afterTheAnswerGoes": {
+        "cardSmith": null,
+        "line": {
+          "top": 414,
+          "height": 60
+        },
+        "cardJones": {
+          "top": 494,
+          "height": 334
+        },
+        "moreLink": false,
+        "onWithYou": {
+          "top": 847,
+          "height": 389
+        },
+        "bottomSlip": null,
+        "lineAnswer": null,
+        "focus": "fa-next-b Next function · Thu 12 NovGot "
+      },
+      "collapsedInPlace": true,
+      "noBottomSlip": true,
+      "lineHeightSameWithAndWithoutAnswer": true,
+      "nextCardMovedWhenAnswerWent": 0,
+      "afterUndo": {
+        "cardSmith": {
+          "top": 414,
+          "height": 365
+        },
+        "line": null,
+        "cardJones": null,
+        "moreLink": false,
+        "onWithYou": {
+          "top": 799,
+          "height": 389
+        },
+        "bottomSlip": null,
+        "lineAnswer": null,
+        "focus": "btn dark fn-hu-got Got it"
+      },
+      "undoRestores": true,
+      "afterGotItOnBoth": {
+        "cardSmith": null,
+        "line": {
+          "top": 414,
+          "height": 60
+        },
+        "cardJones": null,
+        "moreLink": false,
+        "onWithYou": {
+          "top": 494,
+          "height": 389
+        },
+        "bottomSlip": null,
+        "lineAnswer": {
+          "words": "Got it. Kept here as one line",
+          "whole": true,
+          "undoInLine": true,
+          "said": "Got it: Jones wedding. Kept on Home in the Next function line, as 1 more this week."
+        },
+        "focus": "fa-next-b Next function · Thu 12 NovGot "
+      },
+      "afterBothAnswerGone": {
+        "cardSmith": null,
+        "line": {
+          "top": 414,
+          "height": 60
+        },
+        "cardJones": null,
+        "moreLink": true,
+        "onWithYou": {
+          "top": 494,
+          "height": 389
+        },
+        "bottomSlip": null,
+        "lineAnswer": null,
+        "focus": "fa-next-b Next function · Thu 12 NovGot "
+      }
+    },
+    "xlarge": {
+      "before": {
+        "cardSmith": {
+          "top": 472,
+          "height": 592
+        },
+        "line": null,
+        "cardJones": null,
+        "moreLink": false,
+        "onWithYou": {
+          "top": 1086,
+          "height": 427
+        },
+        "bottomSlip": null,
+        "lineAnswer": null,
+        "focus": " Skip to content\nLeichhardt Hot"
+      },
+      "afterGotItOnSmith": {
+        "cardSmith": null,
+        "line": {
+          "top": 472,
+          "height": 67
+        },
+        "cardJones": {
+          "top": 561,
+          "height": 448
+        },
+        "moreLink": false,
+        "onWithYou": {
+          "top": 1031,
+          "height": 427
+        },
+        "bottomSlip": null,
+        "lineAnswer": {
+          "words": "Got it. Kept here as one line",
+          "whole": true,
+          "undoInLine": true,
+          "said": "Got it: Smith 60th. Kept on Home as one line."
+        },
+        "focus": "fa-next-b Next function · Thu 12 NovGot "
+      },
+      "nextCardAfterGotIt": {
+        "gotIt": {
+          "found": true,
+          "top": 461,
+          "bottom": 509,
+          "firstScreenBottom": 776,
+          "onFirstScreen": true,
+          "unobstructed": true,
+          "pointsHit": "5 of 5"
+        },
+        "openTheFunction": {
+          "found": true,
+          "top": 519,
+          "bottom": 563,
+          "firstScreenBottom": 776,
+          "onFirstScreen": true,
+          "unobstructed": true,
+          "pointsHit": "5 of 5"
+        },
+        "undoInLine": {
+          "found": true,
+          "top": 81,
+          "bottom": 125,
+          "firstScreenBottom": 776,
+          "onFirstScreen": true,
+          "unobstructed": true,
+          "pointsHit": "5 of 5"
+        }
+      },
+      "doubleTapOnTheOldGotItLandsOn": null,
+      "afterTheAnswerGoes": {
+        "cardSmith": null,
+        "line": {
+          "top": 472,
+          "height": 67
+        },
+        "cardJones": {
+          "top": 561,
+          "height": 448
+        },
+        "moreLink": false,
+        "onWithYou": {
+          "top": 1031,
+          "height": 427
+        },
+        "bottomSlip": null,
+        "lineAnswer": null,
+        "focus": "fa-next-b Next function · Thu 12 NovGot "
+      },
+      "collapsedInPlace": true,
+      "noBottomSlip": true,
+      "lineHeightSameWithAndWithoutAnswer": true,
+      "nextCardMovedWhenAnswerWent": 0,
+      "afterUndo": {
+        "cardSmith": {
+          "top": 472,
+          "height": 592
+        },
+        "line": null,
+        "cardJones": null,
+        "moreLink": false,
+        "onWithYou": {
+          "top": 1086,
+          "height": 427
+        },
+        "bottomSlip": null,
+        "lineAnswer": null,
+        "focus": "btn dark fn-hu-got Got it"
+      },
+      "undoRestores": true,
+      "afterGotItOnBoth": {
+        "cardSmith": null,
+        "line": {
+          "top": 472,
+          "height": 67
+        },
+        "cardJones": null,
+        "moreLink": false,
+        "onWithYou": {
+          "top": 561,
+          "height": 427
+        },
+        "bottomSlip": null,
+        "lineAnswer": {
+          "words": "Got it. Kept here as one line",
+          "whole": true,
+          "undoInLine": true,
+          "said": "Got it: Jones wedding. Kept on Home in the Next function line, as 1 more this week."
+        },
+        "focus": "fa-next-b Next function · Thu 12 NovGot "
+      },
+      "afterBothAnswerGone": {
+        "cardSmith": null,
+        "line": {
+          "top": 472,
+          "height": 67
+        },
+        "cardJones": null,
+        "moreLink": true,
+        "onWithYou": {
+          "top": 561,
+          "height": 427
+        },
+        "bottomSlip": null,
+        "lineAnswer": null,
+        "focus": "fa-next-b Next function · Thu 12 NovGot "
+      }
+    },
+    "busy3": {
+      "before": {
+        "card": 389,
+        "line": null,
+        "onWithYou": 714,
+        "more": null,
+        "answer": null
+      },
+      "justAfterGotIt": {
+        "card": null,
+        "line": 389,
+        "onWithYou": 460,
+        "more": null,
+        "answer": "Got it. Kept here as one line"
+      },
+      "afterTheAnswer": {
+        "card": null,
+        "line": 389,
+        "onWithYou": 460,
+        "more": "+2 more this week",
+        "answer": null
+      },
+      "collapsedInPlace": true
+    },
+    "busy5": {
+      "before": {
+        "card": 389,
+        "line": null,
+        "onWithYou": 821,
+        "more": null,
+        "answer": null
+      },
+      "justAfterGotIt": {
+        "card": null,
+        "line": 389,
+        "onWithYou": 460,
+        "more": null,
+        "answer": "Got it. Kept here as one line"
+      },
+      "afterTheAnswer": {
+        "card": null,
+        "line": 389,
+        "onWithYou": 460,
+        "more": "+4 more this week",
+        "answer": null
+      },
+      "collapsedInPlace": true
+    }
+  },
+  "minus": {
+    "key": "lk.fn.ahead.fold: { day, staffId }, apart from the band's lk.fn.fold; a different staff id signed in on the device shows the line again (states/s-hidden-dev.html)",
+    "before": {
+      "band": 50,
+      "rows": 5
+    },
+    "afterMinus": {
+      "band": true,
+      "slip": "Hidden for you on this phone until tomorrow. Home still shows it.",
+      "rowsAboveAdd": 6
+    },
+    "afterUndo": {
+      "band": true,
+      "focus": "fold",
+      "height": 50
+    },
+    "spokenLabel": "Hide this line for you on this phone until tomorrow. Home still shows it."
+  },
+  "openOnly": {
+    "prep-390-booking": {
+      "simulated": true,
+      "slotAtOpen": 50,
+      "slotAfter": 50,
+      "firstRowTopAtOpen": 313,
+      "firstRowTopAfter": 313,
+      "listMoved": 0,
+      "wordsFit": true,
+      "wordsHeight": 49,
+      "label": "Order today · Fri 13 Nov",
+      "name": "Lee engagement"
+    },
+    "prep-390-nosignal": {
+      "simulated": true,
+      "slotAtOpen": 50,
+      "slotAfter": 50,
+      "firstRowTopAtOpen": 313,
+      "firstRowTopAfter": 313,
+      "listMoved": 0,
+      "wordsFit": true,
+      "wordsHeight": 49,
+      "label": "No signal · updated 13:52",
+      "name": "Smith 60th"
+    },
+    "prep-390-midnight": {
+      "simulated": true,
+      "slotAtOpen": 50,
+      "slotAfter": 50,
+      "firstRowTopAtOpen": 313,
+      "firstRowTopAfter": 313,
+      "listMoved": 0,
+      "wordsFit": true,
+      "wordsHeight": 49,
+      "label": "Tomorrow · Thu 12 Nov",
+      "name": "Smith 60th"
+    },
+    "prep-390-cancelled": {
+      "simulated": true,
+      "slotAtOpen": 50,
+      "slotAfter": 50,
+      "firstRowTopAtOpen": 313,
+      "firstRowTopAfter": 313,
+      "listMoved": 0,
+      "wordsFit": true,
+      "wordsHeight": 49,
+      "label": "Cancelled · Do not prep",
+      "name": "Smith 60th"
+    },
+    "prep-768-booking": {
+      "simulated": true,
+      "slotAtOpen": 50,
+      "slotAfter": 50,
+      "firstRowTopAtOpen": 412,
+      "firstRowTopAfter": 412,
+      "listMoved": 0,
+      "wordsFit": true,
+      "wordsHeight": 49,
+      "label": "Order today · Fri 13 Nov",
+      "name": "Lee engagement"
+    },
+    "prep-768-nosignal": {
+      "simulated": true,
+      "slotAtOpen": 50,
+      "slotAfter": 50,
+      "firstRowTopAtOpen": 412,
+      "firstRowTopAfter": 412,
+      "listMoved": 0,
+      "wordsFit": true,
+      "wordsHeight": 49,
+      "label": "No signal · updated 13:52",
+      "name": "Smith 60th"
+    },
+    "prep-768-midnight": {
+      "simulated": true,
+      "slotAtOpen": 50,
+      "slotAfter": 50,
+      "firstRowTopAtOpen": 412,
+      "firstRowTopAfter": 412,
+      "listMoved": 0,
+      "wordsFit": true,
+      "wordsHeight": 49,
+      "label": "Tomorrow · Thu 12 Nov",
+      "name": "Smith 60th"
+    },
+    "prep-768-cancelled": {
+      "simulated": true,
+      "slotAtOpen": 50,
+      "slotAfter": 50,
+      "firstRowTopAtOpen": 412,
+      "firstRowTopAfter": 412,
+      "listMoved": 0,
+      "wordsFit": true,
+      "wordsHeight": 49,
+      "label": "Cancelled · Do not prep",
+      "name": "Smith 60th"
+    },
+    "prep-1280-booking": {
+      "simulated": true,
+      "slotAtOpen": 50,
+      "slotAfter": 50,
+      "firstRowTopAtOpen": 353,
+      "firstRowTopAfter": 353,
+      "listMoved": 0,
+      "wordsFit": true,
+      "wordsHeight": 49,
+      "label": "Order today · Fri 13 Nov",
+      "name": "Lee engagement"
+    },
+    "prep-1280-nosignal": {
+      "simulated": true,
+      "slotAtOpen": 50,
+      "slotAfter": 50,
+      "firstRowTopAtOpen": 353,
+      "firstRowTopAfter": 353,
+      "listMoved": 0,
+      "wordsFit": true,
+      "wordsHeight": 49,
+      "label": "No signal · updated 13:52",
+      "name": "Smith 60th"
+    },
+    "prep-1280-midnight": {
+      "simulated": true,
+      "slotAtOpen": 50,
+      "slotAfter": 50,
+      "firstRowTopAtOpen": 353,
+      "firstRowTopAfter": 353,
+      "listMoved": 0,
+      "wordsFit": true,
+      "wordsHeight": 49,
+      "label": "Tomorrow · Thu 12 Nov",
+      "name": "Smith 60th"
+    },
+    "prep-1280-cancelled": {
+      "simulated": true,
+      "slotAtOpen": 50,
+      "slotAfter": 50,
+      "firstRowTopAtOpen": 353,
+      "firstRowTopAfter": 353,
+      "listMoved": 0,
+      "wordsFit": true,
+      "wordsHeight": 49,
+      "label": "Cancelled · Do not prep",
+      "name": "Smith 60th"
+    },
+    "orders-390-booking": {
+      "simulated": true,
+      "slotAtOpen": 50,
+      "slotAfter": 50,
+      "firstRowTopAtOpen": 221,
+      "firstRowTopAfter": 221,
+      "listMoved": 0,
+      "wordsFit": true,
+      "wordsHeight": 49,
+      "label": "Order today · Fri 13 Nov",
+      "name": "Lee engagement"
+    },
+    "orders-390-nosignal": {
+      "simulated": true,
+      "slotAtOpen": 50,
+      "slotAfter": 50,
+      "firstRowTopAtOpen": 221,
+      "firstRowTopAfter": 221,
+      "listMoved": 0,
+      "wordsFit": true,
+      "wordsHeight": 49,
+      "label": "No signal · updated 13:52",
+      "name": "Smith 60th"
+    },
+    "orders-390-midnight": {
+      "simulated": true,
+      "slotAtOpen": 50,
+      "slotAfter": 50,
+      "firstRowTopAtOpen": 221,
+      "firstRowTopAfter": 221,
+      "listMoved": 0,
+      "wordsFit": true,
+      "wordsHeight": 49,
+      "label": "Tomorrow · Thu 12 Nov",
+      "name": "Smith 60th"
+    },
+    "orders-390-cancelled": {
+      "simulated": true,
+      "slotAtOpen": 50,
+      "slotAfter": 50,
+      "firstRowTopAtOpen": 221,
+      "firstRowTopAfter": 221,
+      "listMoved": 0,
+      "wordsFit": true,
+      "wordsHeight": 49,
+      "label": "Cancelled · Do not prep",
+      "name": "Smith 60th"
+    },
+    "reopenedAfterBooking390": {
+      "band": 113,
+      "firstRowTop": 376,
+      "rowsAboveAdd": 4,
+      "wouldHaveMovedMidViewPx": 63,
+      "note": "If the slot were repainted live (design A without the rule), every row would drop this far under a finger at 14:05. With the rule this happens only when Prep is opened again."
+    },
+    "prep-390-today": {
+      "lockBroken": true,
+      "slotAtOpen": 50,
+      "bandAfter": 116,
+      "listMoved": 66,
+      "rowsAboveAddBefore": 5,
+      "rowsAboveAddAfter": 4,
+      "why": "A function today: a missed round is the mistake the band exists to stop (service rule 3), so it draws at once."
+    },
+    "prep-768-today": {
+      "lockBroken": true,
+      "slotAtOpen": 50,
+      "bandAfter": 116,
+      "listMoved": 66,
+      "rowsAboveAddBefore": 6,
+      "rowsAboveAddAfter": 6,
+      "why": "A function today: a missed round is the mistake the band exists to stop (service rule 3), so it draws at once."
+    },
+    "prep-1280-today": {
+      "lockBroken": true,
+      "slotAtOpen": 50,
+      "bandAfter": 116,
+      "listMoved": 66,
+      "rowsAboveAddBefore": 6,
+      "rowsAboveAddAfter": 6,
+      "why": "A function today: a missed round is the mistake the band exists to stop (service rule 3), so it draws at once."
+    },
+    "checks": 16,
+    "maxListMoved": 0,
+    "allWordsFit": true
+  },
+  "taps": {
+    "homeNotSeen": {
+      "taps": 0,
+      "visibleOnOpen": {
+        "time": true,
+        "guests": true,
+        "platters": true,
+        "dietaries": true,
+        "place": true
+      }
+    },
+    "homeAfterGotIt": {
+      "taps": 1,
+      "how": "tap the Next function line",
+      "lineTop": 389,
+      "name": "Smith 60th",
+      "visibleAfterOneTap": {
+        "time": true,
+        "guests": true,
+        "platters": true,
+        "dietaries": true,
+        "place": true
+      }
+    },
+    "prep": {
+      "taps": 1,
+      "how": "tap the Next function line",
+      "visibleAfterOneTap": {
+        "time": true,
+        "guests": true,
+        "platters": true,
+        "dietaries": true,
+        "place": true
+      }
+    },
+    "prepSaturday": {
+      "taps": 1,
+      "how": "tap +1 more this week: Functions, the next 7 days",
+      "jonesCardTop": 833
+    },
+    "busyWeekRow": {
+      "taps": 1,
+      "how": "tap a row on the Functions this week card (Brown christening, Sun 15 Nov)",
+      "sheetOpen": true
+    },
+    "chevron": {
+      "home": true,
+      "workPage390": "see textSizes: shown at default and large text, left out at extra-large on a phone so the status words keep their room"
+    },
+    "baseline": "From the baseline (design-a/spec.md, same snapshots): Home 1 tap after a scroll of about 360 px (Coming up at 955 to 998 px); Prep 2 taps and a scroll (chef hat, Functions); Saturday 3 taps from Prep (#/fn showed 3 days)."
+  },
+  "contrast": {
+    "home card (heads-up)": {
+      "card heading \"Function this week\"": {
+        "fg": "rgb(184, 63, 21)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 5.27,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "card count \"1 of 2 this week\"": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 6.73,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "card day \"THU 12 NOV · IN 2 DAYS\"": {
+        "fg": "rgb(184, 63, 21)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 5.27,
+        "sizePx": 13.6,
+        "weight": "700"
+      },
+      "card name": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 15.9,
+        "sizePx": 28,
+        "weight": "700"
+      },
+      "card place, guests, event": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 6.73,
+        "sizePx": 16,
+        "weight": "600"
+      },
+      "card fact labels": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 6.73,
+        "sizePx": 12,
+        "weight": "700"
+      },
+      "card facts": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 15.9,
+        "sizePx": 16,
+        "weight": "600"
+      },
+      "Got it (white on orange)": {
+        "fg": "rgb(255, 255, 255)",
+        "bg": "rgb(194, 69, 26)",
+        "ratio": 5.05,
+        "sizePx": 16,
+        "weight": "700"
+      },
+      "Got it against the card (control edge)": {
+        "fill": "rgb(194, 69, 26)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 4.76
+      },
+      "Open the function": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 15.9,
+        "sizePx": 16,
+        "weight": "700"
+      },
+      "Also this week": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 15.9,
+        "sizePx": 15.2,
+        "weight": "400"
+      },
+      "Also this week day": {
+        "fg": "rgb(184, 63, 21)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 5.27,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "card foot (what Got it does)": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 6.73,
+        "sizePx": 13.6,
+        "weight": "400"
+      }
+    },
+    "home line (after Got it)": {
+      "line label \"Next function\"": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 6.21,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "line date": {
+        "fg": "rgb(184, 63, 21)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 4.86,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "line words": {
+        "fg": "rgb(59, 58, 54)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 9.91,
+        "sizePx": 16,
+        "weight": "400"
+      },
+      "line name": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 14.69,
+        "sizePx": 16,
+        "weight": "700"
+      },
+      "+1 more this week": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(255, 255, 255)",
+        "ratio": 16.87,
+        "sizePx": 14,
+        "weight": "600"
+      },
+      "+1 more this week edge": {
+        "edge": "rgb(28, 29, 31)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 14.69
+      },
+      "line strip against the page": {
+        "fill": "rgb(242, 239, 232)",
+        "bg": "rgb(201, 180, 143)",
+        "ratio": 1.76
+      },
+      "chevron (graphic, needs 3:1)": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 6.21,
+        "sizePx": 16,
+        "weight": "400"
+      }
+    },
+    "work-page line": {
+      "line label \"Next function\"": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 6.21,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "line date": {
+        "fg": "rgb(184, 63, 21)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 4.86,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "line words": {
+        "fg": "rgb(59, 58, 54)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 9.91,
+        "sizePx": 16,
+        "weight": "400"
+      },
+      "line name": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 14.69,
+        "sizePx": 16,
+        "weight": "700"
+      },
+      "+1 more this week": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(255, 255, 255)",
+        "ratio": 16.87,
+        "sizePx": 14,
+        "weight": "600"
+      },
+      "+1 more this week edge": {
+        "edge": "rgb(28, 29, 31)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 14.69
+      },
+      "line strip against the page": {
+        "fill": "rgb(242, 239, 232)",
+        "bg": "rgb(251, 250, 247)",
+        "ratio": 1.1
+      },
+      "chevron (graphic, needs 3:1)": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 6.21,
+        "sizePx": 16,
+        "weight": "400"
+      },
+      "minus": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(255, 255, 255)",
+        "ratio": 16.87,
+        "sizePx": 21.6,
+        "weight": "600"
+      },
+      "minus edge": {
+        "edge": "rgb(28, 29, 31)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 14.69
+      }
+    },
+    "no signal words": {
+      "\"No signal · updated 13:52\"": {
+        "fg": "rgb(184, 63, 21)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 4.86,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "name": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 14.69,
+        "sizePx": 16,
+        "weight": "700"
+      },
+      "date words": {
+        "fg": "rgb(59, 58, 54)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 9.91,
+        "sizePx": 16,
+        "weight": "400"
+      }
+    },
+    "booking words": {
+      "Order today tag (ink words)": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(255, 224, 204)",
+        "ratio": 13.48,
+        "sizePx": 11.2,
+        "weight": "600"
+      },
+      "date": {
+        "fg": "rgb(184, 63, 21)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 4.86,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "words": {
+        "fg": "rgb(59, 58, 54)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 9.91,
+        "sizePx": 16,
+        "weight": "400"
+      }
+    },
+    "midnight words": {
+      "Tomorrow tag": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(238, 240, 243)",
+        "ratio": 14.78,
+        "sizePx": 11.2,
+        "weight": "600"
+      },
+      "words": {
+        "fg": "rgb(59, 58, 54)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 9.91,
+        "sizePx": 16,
+        "weight": "400"
+      }
+    },
+    "cancelled line": {
+      "Cancelled tag": {
+        "fg": "rgb(155, 39, 22)",
+        "bg": "rgb(251, 233, 229)",
+        "ratio": 6.64,
+        "sizePx": 11.2,
+        "weight": "600"
+      },
+      "\"Do not prep\"": {
+        "fg": "rgb(155, 39, 22)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 6.78,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "name": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 14.69,
+        "sizePx": 16,
+        "weight": "700"
+      },
+      "day": {
+        "fg": "rgb(59, 58, 54)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 9.91,
+        "sizePx": 16,
+        "weight": "400"
+      }
+    },
+    "Orders tag": {
+      "\"Not ordered yet\" (ink words on the tint)": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(255, 224, 204)",
+        "ratio": 13.48,
+        "sizePx": 12,
+        "weight": "600"
+      },
+      "\"For Sat 14 Nov\"": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 15.9,
+        "sizePx": 12,
+        "weight": "600"
+      },
+      "\"order day was Sun 8 Nov · Gus\"": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 6.73,
+        "sizePx": 12,
+        "weight": "400"
+      }
+    },
+    "Got it answer in the line": {
+      "\"Got it. Kept here as one line\"": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 14.69,
+        "sizePx": 15.2,
+        "weight": "700"
+      },
+      "Undo in the line (white on ink)": {
+        "fg": "rgb(255, 255, 255)",
+        "bg": "rgb(28, 29, 31)",
+        "ratio": 16.87,
+        "sizePx": 16,
+        "weight": "700"
+      },
+      "Undo against the line (control edge)": {
+        "fill": "rgb(28, 29, 31)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 14.69
+      },
+      "name": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 14.69,
+        "sizePx": 16,
+        "weight": "700"
+      }
+    },
+    "work-page slip (the minus)": {
+      "slip words": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(255, 254, 250)",
+        "ratio": 16.72,
+        "sizePx": 16,
+        "weight": "600"
+      },
+      "Undo": {
+        "fg": "rgb(255, 255, 255)",
+        "bg": "rgb(28, 29, 31)",
+        "ratio": 16.87,
+        "sizePx": 16,
+        "weight": "700"
+      }
+    },
+    "busy week card": {
+      "heading": {
+        "fg": "rgb(184, 63, 21)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 5.27,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "count": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 6.73,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "row day": {
+        "fg": "rgb(184, 63, 21)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 5.27,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "row weekday": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 15.9,
+        "sizePx": 15.2,
+        "weight": "900"
+      },
+      "row name": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 15.9,
+        "sizePx": 16.8,
+        "weight": "700"
+      },
+      "row guests": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 6.73,
+        "sizePx": 14.4,
+        "weight": "600"
+      },
+      "row food, platters, dietaries": {
+        "fg": "rgb(59, 58, 54)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 10.73,
+        "sizePx": 14.4,
+        "weight": "600"
+      },
+      "row chevron (graphic)": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 6.73,
+        "sizePx": 16,
+        "weight": "400"
+      },
+      "foot": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 6.73,
+        "sizePx": 13.6,
+        "weight": "400"
+      }
+    },
+    "cancelled card": {
+      "heading": {
+        "fg": "rgb(155, 39, 22)",
+        "bg": "rgb(251, 233, 229)",
+        "ratio": 6.64,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "day": {
+        "fg": "rgb(155, 39, 22)",
+        "bg": "rgb(251, 233, 229)",
+        "ratio": 6.64,
+        "sizePx": 13.6,
+        "weight": "700"
+      },
+      "words": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(251, 233, 229)",
+        "ratio": 14.37,
+        "sizePx": 16,
+        "weight": "600"
+      },
+      "foot": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(251, 233, 229)",
+        "ratio": 14.37,
+        "sizePx": 13.6,
+        "weight": "400"
+      },
+      "Got it (plain)": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(255, 255, 255)",
+        "ratio": 16.87,
+        "sizePx": 16,
+        "weight": "700"
+      },
+      "Got it edge": {
+        "edge": "rgb(28, 29, 31)",
+        "bg": "rgb(251, 233, 229)",
+        "ratio": 14.37
+      }
+    },
+    "changed card": {
+      "Changed tag": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(230, 240, 255)",
+        "ratio": 14.68,
+        "sizePx": 12,
+        "weight": "600"
+      },
+      "change words": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 15.9,
+        "sizePx": 16,
+        "weight": "600"
+      },
+      "who and when": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 6.73,
+        "sizePx": 16,
+        "weight": "500"
+      }
+    },
+    "tomorrow card": {
+      "Tomorrow tag": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(238, 240, 243)",
+        "ratio": 14.78,
+        "sizePx": 12,
+        "weight": "600"
+      },
+      "lines": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 15.9,
+        "sizePx": 16,
+        "weight": "600"
+      },
+      "foot \"Everyone sees this once\"": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(251, 248, 241)",
+        "ratio": 6.73,
+        "sizePx": 13.6,
+        "weight": "400"
+      }
+    },
+    "booked today card": {
+      "Booked today tag": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(230, 240, 255)",
+        "ratio": 14.68,
+        "sizePx": 12,
+        "weight": "600"
+      }
+    }
+  },
+  "frames": {
+    "d5-home": {
+      "smithTop": 437,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "hu-smith 331 px"
+      ],
+      "onWithYouTop": 737,
+      "coworkerRowsOnFirstScreen": "0 of 5"
+    },
+    "d5-home-got": {
+      "smithTop": 413,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "fma-line 54 px"
+      ],
+      "onWithYouTop": 460,
+      "coworkerRowsOnFirstScreen": "5 of 5"
+    },
+    "d5-prep": {
+      "band": 50,
+      "rowsAboveAdd": 5,
+      "firstRowTop": 313
+    },
+    "od-home": {
+      "smithTop": 437,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "hu-smith 331 px"
+      ],
+      "onWithYouTop": 737,
+      "coworkerRowsOnFirstScreen": "0 of 5"
+    },
+    "od-home-got": {
+      "smithTop": 413,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "fma-line 54 px"
+      ],
+      "onWithYouTop": 460,
+      "coworkerRowsOnFirstScreen": "5 of 5"
+    },
+    "od-prep": {
+      "band": 171,
+      "rowsAboveAdd": 3,
+      "firstRowTop": 434
+    },
+    "od-orders": {
+      "band": 171,
+      "rowsAboveAdd": 4,
+      "firstRowTop": 342
+    },
+    "d2-home": {
+      "smithTop": 437,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "hu-smith 331 px"
+      ],
+      "onWithYouTop": 737,
+      "coworkerRowsOnFirstScreen": "0 of 5"
+    },
+    "d2-home-got": {
+      "smithTop": 413,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "fma-line 54 px"
+      ],
+      "onWithYouTop": 460,
+      "coworkerRowsOnFirstScreen": "5 of 5"
+    },
+    "d2-prep": {
+      "band": 50,
+      "rowsAboveAdd": 5,
+      "firstRowTop": 313
+    },
+    "d2-orders": {
+      "band": 50,
+      "rowsAboveAdd": 3,
+      "firstRowTop": 221
+    },
+    "d1-home": {
+      "smithTop": 422,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "hu-tom 248 px"
+      ],
+      "onWithYouTop": 654,
+      "coworkerRowsOnFirstScreen": "1 of 5"
+    },
+    "d1-home-got": {
+      "smithTop": 413,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "fma-line 54 px"
+      ],
+      "onWithYouTop": 460,
+      "coworkerRowsOnFirstScreen": "5 of 5"
+    },
+    "d1-prep": {
+      "band": 113,
+      "rowsAboveAdd": 4,
+      "firstRowTop": 376
+    },
+    "d0-home": {
+      "smithTop": 879,
+      "smithOnFirstScreen": false,
+      "slot": [
+        "fma-line 54 px"
+      ],
+      "onWithYouTop": 460,
+      "coworkerRowsOnFirstScreen": "5 of 5"
+    },
+    "d0-prep": {
+      "band": 116,
+      "rowsAboveAdd": 4,
+      "firstRowTop": 379
+    },
+    "s-two-2": {
+      "smithTop": 413,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "fma-line 54 px",
+        "hu-jones 302 px"
+      ],
+      "onWithYouTop": 780,
+      "coworkerRowsOnFirstScreen": "0 of 5"
+    },
+    "s-two-3": {
+      "smithTop": 413,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "fma-line 54 px"
+      ],
+      "onWithYouTop": 460,
+      "coworkerRowsOnFirstScreen": "5 of 5"
+    },
+    "s-busy3-home": {
+      "smithTop": 430,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "hu-week 308 px"
+      ],
+      "onWithYouTop": 714,
+      "coworkerRowsOnFirstScreen": "0 of 5"
+    },
+    "s-busy3-got": {
+      "smithTop": 413,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "fma-line 54 px"
+      ],
+      "onWithYouTop": 460,
+      "coworkerRowsOnFirstScreen": "5 of 5"
+    },
+    "s-busy5-home": {
+      "smithTop": 430,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "hu-week 414 px"
+      ],
+      "onWithYouTop": 821,
+      "coworkerRowsOnFirstScreen": "0 of 5"
+    },
+    "s-busy5-settled": {
+      "smithTop": 413,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "fma-line 54 px"
+      ],
+      "onWithYouTop": 460,
+      "coworkerRowsOnFirstScreen": "5 of 5"
+    },
+    "s-hidden": {
+      "band": 0,
+      "rowsAboveAdd": 6,
+      "firstRowTop": 263
+    },
+    "s-hidden-dev": {
+      "band": 50,
+      "rowsAboveAdd": 5,
+      "firstRowTop": 313
+    },
+    "s-nosignal": {
+      "band": 50,
+      "rowsAboveAdd": 5,
+      "firstRowTop": 313
+    },
+    "s-booking-after": {
+      "band": 50,
+      "rowsAboveAdd": 5,
+      "firstRowTop": 313
+    },
+    "s-booking-reopen": {
+      "band": 113,
+      "rowsAboveAdd": 4,
+      "firstRowTop": 376
+    },
+    "s-today-after": {
+      "band": 116,
+      "rowsAboveAdd": 4,
+      "firstRowTop": 379
+    },
+    "s-home-open-booking": {
+      "smithTop": 413,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "fma-line 54 px"
+      ],
+      "onWithYouTop": 460,
+      "coworkerRowsOnFirstScreen": "5 of 5"
+    },
+    "s-booking-home": {
+      "smithTop": 413,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "fma-line 54 px",
+        "hu-lee 307 px"
+      ],
+      "onWithYouTop": 784,
+      "coworkerRowsOnFirstScreen": "0 of 5"
+    },
+    "s-midnight-after": {
+      "band": 50,
+      "rowsAboveAdd": 5,
+      "firstRowTop": 313
+    },
+    "s-cancelled-home": {
+      "smithTop": 442,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "hu-off 247 px"
+      ],
+      "onWithYouTop": 653,
+      "coworkerRowsOnFirstScreen": "1 of 5"
+    },
+    "s-cancelled-untold": {
+      "smithTop": 413,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "fma-line 54 px"
+      ],
+      "onWithYouTop": 460,
+      "coworkerRowsOnFirstScreen": "5 of 5"
+    },
+    "s-cancelled-prep": {
+      "band": 50,
+      "rowsAboveAdd": 5,
+      "firstRowTop": 313
+    },
+    "s-cancelled-wed-prep": {
+      "band": 50,
+      "rowsAboveAdd": 5,
+      "firstRowTop": 313
+    },
+    "s-long-cancelled-xl": {
+      "band": 62,
+      "rowsAboveAdd": 1,
+      "firstRowTop": 369
+    },
+    "s-changed-home": {
+      "smithTop": 442,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "hu-chg 400 px"
+      ],
+      "onWithYouTop": 806,
+      "coworkerRowsOnFirstScreen": "0 of 5"
+    },
+    "s-handover-dev": {
+      "smithTop": 437,
+      "smithOnFirstScreen": true,
+      "slot": [
+        "hu-smith 331 px"
+      ],
+      "onWithYouTop": 737,
+      "coworkerRowsOnFirstScreen": "0 of 5"
+    }
+  },
+  "overflow": {
+    "home.html@390": 0,
+    "home-after.html@390": 0,
+    "prep.html@390": 0,
+    "prep-long.html@390": 0,
+    "orders.html@390": 0,
+    "home-head-1280.html@390": 0,
+    "home-busy.html@390": 0,
+    "fn-week.html@390": 0,
+    "states/d5-home.html@390": 0,
+    "states/d5-home-got.html@390": 0,
+    "states/d5-prep.html@390": 0,
+    "states/od-home.html@390": 0,
+    "states/od-home-got.html@390": 0,
+    "states/od-prep.html@390": 0,
+    "states/od-orders.html@390": 0,
+    "states/d2-home.html@390": 0,
+    "states/d2-home-got.html@390": 0,
+    "states/d2-prep.html@390": 0,
+    "states/d2-orders.html@390": 0,
+    "states/d1-home.html@390": 0,
+    "states/d1-home-got.html@390": 0,
+    "states/d1-prep.html@390": 0,
+    "states/d0-home.html@390": 0,
+    "states/d0-prep.html@390": 0,
+    "states/s-two-2.html@390": 0,
+    "states/s-two-3.html@390": 0,
+    "states/s-busy3-home.html@390": 0,
+    "states/s-busy3-got.html@390": 0,
+    "states/s-busy5-home.html@390": 0,
+    "states/s-busy5-settled.html@390": 0,
+    "states/s-hidden.html@390": 0,
+    "states/s-hidden-dev.html@390": 0,
+    "states/s-nosignal.html@390": 0,
+    "states/s-booking-after.html@390": 0,
+    "states/s-booking-reopen.html@390": 0,
+    "states/s-today-after.html@390": 0,
+    "states/s-home-open-booking.html@390": 0,
+    "states/s-booking-home.html@390": 0,
+    "states/s-midnight-after.html@390": 0,
+    "states/s-cancelled-home.html@390": 0,
+    "states/s-cancelled-untold.html@390": 0,
+    "states/s-cancelled-prep.html@390": 0,
+    "states/s-cancelled-wed-prep.html@390": 0,
+    "states/s-long-cancelled-xl.html@390": 0,
+    "states/s-changed-home.html@390": 0,
+    "states/s-handover-dev.html@390": 0,
+    "runup.html@390": 0,
+    "home.html@768": 0,
+    "home-after.html@768": 0,
+    "prep.html@768": 0,
+    "prep-long.html@768": 0,
+    "orders.html@768": 0,
+    "home-head-1280.html@768": 0,
+    "home-busy.html@768": 0,
+    "fn-week.html@768": 0,
+    "states/d5-home.html@768": 0,
+    "states/d5-home-got.html@768": 0,
+    "states/d5-prep.html@768": 0,
+    "states/od-home.html@768": 0,
+    "states/od-home-got.html@768": 0,
+    "states/od-prep.html@768": 0,
+    "states/od-orders.html@768": 0,
+    "states/d2-home.html@768": 0,
+    "states/d2-home-got.html@768": 0,
+    "states/d2-prep.html@768": 0,
+    "states/d2-orders.html@768": 0,
+    "states/d1-home.html@768": 0,
+    "states/d1-home-got.html@768": 0,
+    "states/d1-prep.html@768": 0,
+    "states/d0-home.html@768": 0,
+    "states/d0-prep.html@768": 0,
+    "states/s-two-2.html@768": 0,
+    "states/s-two-3.html@768": 0,
+    "states/s-busy3-home.html@768": 0,
+    "states/s-busy3-got.html@768": 0,
+    "states/s-busy5-home.html@768": 0,
+    "states/s-busy5-settled.html@768": 0,
+    "states/s-hidden.html@768": 0,
+    "states/s-hidden-dev.html@768": 0,
+    "states/s-nosignal.html@768": 0,
+    "states/s-booking-after.html@768": 0,
+    "states/s-booking-reopen.html@768": 0,
+    "states/s-today-after.html@768": 0,
+    "states/s-home-open-booking.html@768": 0,
+    "states/s-booking-home.html@768": 0,
+    "states/s-midnight-after.html@768": 0,
+    "states/s-cancelled-home.html@768": 0,
+    "states/s-cancelled-untold.html@768": 0,
+    "states/s-cancelled-prep.html@768": 0,
+    "states/s-cancelled-wed-prep.html@768": 0,
+    "states/s-long-cancelled-xl.html@768": 0,
+    "states/s-changed-home.html@768": 0,
+    "states/s-handover-dev.html@768": 0,
+    "runup.html@768": 0,
+    "home.html@1280": 0,
+    "home-after.html@1280": 0,
+    "prep.html@1280": 0,
+    "prep-long.html@1280": 0,
+    "orders.html@1280": 0,
+    "home-head-1280.html@1280": 0,
+    "home-busy.html@1280": 0,
+    "fn-week.html@1280": 0,
+    "states/d5-home.html@1280": 0,
+    "states/d5-home-got.html@1280": 0,
+    "states/d5-prep.html@1280": 0,
+    "states/od-home.html@1280": 0,
+    "states/od-home-got.html@1280": 0,
+    "states/od-prep.html@1280": 0,
+    "states/od-orders.html@1280": 0,
+    "states/d2-home.html@1280": 0,
+    "states/d2-home-got.html@1280": 0,
+    "states/d2-prep.html@1280": 0,
+    "states/d2-orders.html@1280": 0,
+    "states/d1-home.html@1280": 0,
+    "states/d1-home-got.html@1280": 0,
+    "states/d1-prep.html@1280": 0,
+    "states/d0-home.html@1280": 0,
+    "states/d0-prep.html@1280": 0,
+    "states/s-two-2.html@1280": 0,
+    "states/s-two-3.html@1280": 0,
+    "states/s-busy3-home.html@1280": 0,
+    "states/s-busy3-got.html@1280": 0,
+    "states/s-busy5-home.html@1280": 0,
+    "states/s-busy5-settled.html@1280": 0,
+    "states/s-hidden.html@1280": 0,
+    "states/s-hidden-dev.html@1280": 0,
+    "states/s-nosignal.html@1280": 0,
+    "states/s-booking-after.html@1280": 0,
+    "states/s-booking-reopen.html@1280": 0,
+    "states/s-today-after.html@1280": 0,
+    "states/s-home-open-booking.html@1280": 0,
+    "states/s-booking-home.html@1280": 0,
+    "states/s-midnight-after.html@1280": 0,
+    "states/s-cancelled-home.html@1280": 0,
+    "states/s-cancelled-untold.html@1280": 0,
+    "states/s-cancelled-prep.html@1280": 0,
+    "states/s-cancelled-wed-prep.html@1280": 0,
+    "states/s-long-cancelled-xl.html@1280": 0,
+    "states/s-changed-home.html@1280": 0,
+    "states/s-handover-dev.html@1280": 0,
+    "runup.html@1280": 0
+  },
+  "jsErrors": [],
+  "textSizes": {
+    "note": "Root font size raised as Settings does (html[data-text]: large 112.5%, xlarge 125%). The slot is sized at open for the tallest of its five word sets; the list must not move and nothing may be cut except the name (and the short part after it).",
+    "runs": {
+      "prep-long-390-default-cancelled": {
+        "slotAtOpen": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "slotAfter": 50,
+        "listMoved": 0,
+        "label": "Cancelled · Do not prep",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": true,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 5,
+        "gaps": {
+          "moreToMinusPx": 8,
+          "chipsToMorePx": 12,
+          "chipsToMinusPx": 12
+        },
+        "overflow": 0
+      },
+      "prep-long-390-default-booking": {
+        "slotAtOpen": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "slotAfter": 50,
+        "listMoved": 0,
+        "label": "Order today · Fri 13 Nov",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": true,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 5,
+        "gaps": {
+          "moreToMinusPx": 8,
+          "chipsToMorePx": 12,
+          "chipsToMinusPx": 12
+        },
+        "overflow": 0
+      },
+      "prep-long-390-default-nosignal": {
+        "slotAtOpen": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "slotAfter": 50,
+        "listMoved": 0,
+        "label": "No signal · updated 13:52",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": true,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 5,
+        "gaps": {
+          "moreToMinusPx": 8,
+          "chipsToMorePx": 12,
+          "chipsToMinusPx": 12
+        },
+        "overflow": 0
+      },
+      "prep-long-390-default-midnight": {
+        "slotAtOpen": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "slotAfter": 50,
+        "listMoved": 0,
+        "label": "Tomorrow · Thu 12 Nov",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": true,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 5,
+        "gaps": {
+          "moreToMinusPx": 8,
+          "chipsToMorePx": 12,
+          "chipsToMinusPx": 12
+        },
+        "overflow": 0
+      },
+      "prep-long-768-default-cancelled": {
+        "slotAtOpen": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "slotAfter": 50,
+        "listMoved": 0,
+        "label": "Cancelled · Do not prep",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 6,
+        "gaps": {
+          "moreToMinusPx": 8,
+          "chipsToMorePx": 46,
+          "chipsToMinusPx": 46
+        },
+        "overflow": 0
+      },
+      "prep-long-768-default-booking": {
+        "slotAtOpen": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "slotAfter": 50,
+        "listMoved": 0,
+        "label": "Order today · Fri 13 Nov",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 6,
+        "gaps": {
+          "moreToMinusPx": 8,
+          "chipsToMorePx": 46,
+          "chipsToMinusPx": 46
+        },
+        "overflow": 0
+      },
+      "prep-long-768-default-nosignal": {
+        "slotAtOpen": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "slotAfter": 50,
+        "listMoved": 0,
+        "label": "No signal · updated 13:52",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 6,
+        "gaps": {
+          "moreToMinusPx": 8,
+          "chipsToMorePx": 46,
+          "chipsToMinusPx": 46
+        },
+        "overflow": 0
+      },
+      "prep-long-768-default-midnight": {
+        "slotAtOpen": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "slotAfter": 50,
+        "listMoved": 0,
+        "label": "Tomorrow · Thu 12 Nov",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 6,
+        "gaps": {
+          "moreToMinusPx": 8,
+          "chipsToMorePx": 46,
+          "chipsToMinusPx": 46
+        },
+        "overflow": 0
+      },
+      "prep-long-1280-default-cancelled": {
+        "slotAtOpen": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "slotAfter": 50,
+        "listMoved": 0,
+        "label": "Cancelled · Do not prep",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 6,
+        "gaps": {
+          "moreToMinusPx": 8,
+          "chipsToMorePx": 46,
+          "chipsToMinusPx": 46
+        },
+        "overflow": 0
+      },
+      "prep-long-1280-default-booking": {
+        "slotAtOpen": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "slotAfter": 50,
+        "listMoved": 0,
+        "label": "Order today · Fri 13 Nov",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 6,
+        "gaps": {
+          "moreToMinusPx": 8,
+          "chipsToMorePx": 46,
+          "chipsToMinusPx": 46
+        },
+        "overflow": 0
+      },
+      "prep-long-1280-default-nosignal": {
+        "slotAtOpen": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "slotAfter": 50,
+        "listMoved": 0,
+        "label": "No signal · updated 13:52",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 6,
+        "gaps": {
+          "moreToMinusPx": 8,
+          "chipsToMorePx": 46,
+          "chipsToMinusPx": 46
+        },
+        "overflow": 0
+      },
+      "prep-long-1280-default-midnight": {
+        "slotAtOpen": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "slotAfter": 50,
+        "listMoved": 0,
+        "label": "Tomorrow · Thu 12 Nov",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 6,
+        "gaps": {
+          "moreToMinusPx": 8,
+          "chipsToMorePx": 46,
+          "chipsToMinusPx": 46
+        },
+        "overflow": 0
+      },
+      "prep-long-390-large-cancelled": {
+        "slotAtOpen": 56,
+        "setsMeasuredAtOpen": "56 56 56 56 56",
+        "slotAfter": 56,
+        "listMoved": 0,
+        "label": "Cancelled · Do not prep",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": true,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 2,
+        "gaps": {
+          "moreToMinusPx": 9,
+          "chipsToMorePx": 15,
+          "chipsToMinusPx": 15
+        },
+        "overflow": 0
+      },
+      "prep-long-390-large-booking": {
+        "slotAtOpen": 56,
+        "setsMeasuredAtOpen": "56 56 56 56 56",
+        "slotAfter": 56,
+        "listMoved": 0,
+        "label": "Order today · Fri 13 Nov",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": true,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 2,
+        "gaps": {
+          "moreToMinusPx": 9,
+          "chipsToMorePx": 15,
+          "chipsToMinusPx": 15
+        },
+        "overflow": 0
+      },
+      "prep-long-390-large-nosignal": {
+        "slotAtOpen": 56,
+        "setsMeasuredAtOpen": "56 56 56 56 56",
+        "slotAfter": 56,
+        "listMoved": 0,
+        "label": "No signal · updated 13:52",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": true,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 2,
+        "gaps": {
+          "moreToMinusPx": 9,
+          "chipsToMorePx": 15,
+          "chipsToMinusPx": 15
+        },
+        "overflow": 0
+      },
+      "prep-long-390-large-midnight": {
+        "slotAtOpen": 56,
+        "setsMeasuredAtOpen": "56 56 56 56 56",
+        "slotAfter": 56,
+        "listMoved": 0,
+        "label": "Tomorrow · Thu 12 Nov",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": true,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 2,
+        "gaps": {
+          "moreToMinusPx": 9,
+          "chipsToMorePx": 15,
+          "chipsToMinusPx": 15
+        },
+        "overflow": 0
+      },
+      "prep-long-390-xlarge-cancelled": {
+        "slotAtOpen": 62,
+        "setsMeasuredAtOpen": "62 62 62 62 62",
+        "slotAfter": 62,
+        "listMoved": 0,
+        "label": "Cancelled · Do not prep",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": true,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": false,
+        "rowsAboveAdd": 1,
+        "gaps": {
+          "moreToMinusPx": 10,
+          "chipsToMorePx": 19,
+          "chipsToMinusPx": 19
+        },
+        "overflow": 0
+      },
+      "prep-long-390-xlarge-booking": {
+        "slotAtOpen": 62,
+        "setsMeasuredAtOpen": "62 62 62 62 62",
+        "slotAfter": 62,
+        "listMoved": 0,
+        "label": "Order today · Fri 13 Nov",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": true,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": false,
+        "rowsAboveAdd": 1,
+        "gaps": {
+          "moreToMinusPx": 10,
+          "chipsToMorePx": 19,
+          "chipsToMinusPx": 19
+        },
+        "overflow": 0
+      },
+      "prep-long-390-xlarge-nosignal": {
+        "slotAtOpen": 62,
+        "setsMeasuredAtOpen": "62 62 62 62 62",
+        "slotAfter": 62,
+        "listMoved": 0,
+        "label": "No signal · updated 13:52",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": true,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": false,
+        "rowsAboveAdd": 1,
+        "gaps": {
+          "moreToMinusPx": 10,
+          "chipsToMorePx": 19,
+          "chipsToMinusPx": 19
+        },
+        "overflow": 0
+      },
+      "prep-long-390-xlarge-midnight": {
+        "slotAtOpen": 62,
+        "setsMeasuredAtOpen": "62 62 62 62 62",
+        "slotAfter": 62,
+        "listMoved": 0,
+        "label": "Tomorrow · Thu 12 Nov",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": true,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": false,
+        "rowsAboveAdd": 1,
+        "gaps": {
+          "moreToMinusPx": 10,
+          "chipsToMorePx": 19,
+          "chipsToMinusPx": 19
+        },
+        "overflow": 0
+      },
+      "prep-390-default-cancelled": {
+        "slotAtOpen": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "slotAfter": 50,
+        "listMoved": 0,
+        "label": "Cancelled · Do not prep",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 5,
+        "gaps": {
+          "moreToMinusPx": 8,
+          "chipsToMorePx": 12,
+          "chipsToMinusPx": 12
+        },
+        "overflow": 0
+      },
+      "prep-390-default-booking": {
+        "slotAtOpen": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "slotAfter": 50,
+        "listMoved": 0,
+        "label": "Order today · Fri 13 Nov",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 5,
+        "gaps": {
+          "moreToMinusPx": 8,
+          "chipsToMorePx": 12,
+          "chipsToMinusPx": 12
+        },
+        "overflow": 0
+      },
+      "prep-390-default-nosignal": {
+        "slotAtOpen": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "slotAfter": 50,
+        "listMoved": 0,
+        "label": "No signal · updated 13:52",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 5,
+        "gaps": {
+          "moreToMinusPx": 8,
+          "chipsToMorePx": 12,
+          "chipsToMinusPx": 12
+        },
+        "overflow": 0
+      },
+      "prep-390-default-midnight": {
+        "slotAtOpen": 50,
+        "setsMeasuredAtOpen": "50 50 50 50 50",
+        "slotAfter": 50,
+        "listMoved": 0,
+        "label": "Tomorrow · Thu 12 Nov",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 5,
+        "gaps": {
+          "moreToMinusPx": 8,
+          "chipsToMorePx": 12,
+          "chipsToMinusPx": 12
+        },
+        "overflow": 0
+      },
+      "prep-390-large-cancelled": {
+        "slotAtOpen": 56,
+        "setsMeasuredAtOpen": "56 56 56 56 56",
+        "slotAfter": 56,
+        "listMoved": 0,
+        "label": "Cancelled · Do not prep",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 2,
+        "gaps": {
+          "moreToMinusPx": 9,
+          "chipsToMorePx": 15,
+          "chipsToMinusPx": 15
+        },
+        "overflow": 0
+      },
+      "prep-390-large-booking": {
+        "slotAtOpen": 56,
+        "setsMeasuredAtOpen": "56 56 56 56 56",
+        "slotAfter": 56,
+        "listMoved": 0,
+        "label": "Order today · Fri 13 Nov",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 2,
+        "gaps": {
+          "moreToMinusPx": 9,
+          "chipsToMorePx": 15,
+          "chipsToMinusPx": 15
+        },
+        "overflow": 0
+      },
+      "prep-390-large-nosignal": {
+        "slotAtOpen": 56,
+        "setsMeasuredAtOpen": "56 56 56 56 56",
+        "slotAfter": 56,
+        "listMoved": 0,
+        "label": "No signal · updated 13:52",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 2,
+        "gaps": {
+          "moreToMinusPx": 9,
+          "chipsToMorePx": 15,
+          "chipsToMinusPx": 15
+        },
+        "overflow": 0
+      },
+      "prep-390-large-midnight": {
+        "slotAtOpen": 56,
+        "setsMeasuredAtOpen": "56 56 56 56 56",
+        "slotAfter": 56,
+        "listMoved": 0,
+        "label": "Tomorrow · Thu 12 Nov",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": true,
+        "rowsAboveAdd": 2,
+        "gaps": {
+          "moreToMinusPx": 9,
+          "chipsToMorePx": 15,
+          "chipsToMinusPx": 15
+        },
+        "overflow": 0
+      },
+      "prep-390-xlarge-cancelled": {
+        "slotAtOpen": 62,
+        "setsMeasuredAtOpen": "62 62 62 62 62",
+        "slotAfter": 62,
+        "listMoved": 0,
+        "label": "Cancelled · Do not prep",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": false,
+        "rowsAboveAdd": 1,
+        "gaps": {
+          "moreToMinusPx": 10,
+          "chipsToMorePx": 19,
+          "chipsToMinusPx": 19
+        },
+        "overflow": 0
+      },
+      "prep-390-xlarge-booking": {
+        "slotAtOpen": 62,
+        "setsMeasuredAtOpen": "62 62 62 62 62",
+        "slotAfter": 62,
+        "listMoved": 0,
+        "label": "Order today · Fri 13 Nov",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": true,
+        "shortPartShown": false,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": false,
+        "rowsAboveAdd": 1,
+        "gaps": {
+          "moreToMinusPx": 10,
+          "chipsToMorePx": 19,
+          "chipsToMinusPx": 19
+        },
+        "overflow": 0
+      },
+      "prep-390-xlarge-nosignal": {
+        "slotAtOpen": 62,
+        "setsMeasuredAtOpen": "62 62 62 62 62",
+        "slotAfter": 62,
+        "listMoved": 0,
+        "label": "No signal · updated 13:52",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": false,
+        "rowsAboveAdd": 1,
+        "gaps": {
+          "moreToMinusPx": 10,
+          "chipsToMorePx": 19,
+          "chipsToMinusPx": 19
+        },
+        "overflow": 0
+      },
+      "prep-390-xlarge-midnight": {
+        "slotAtOpen": 62,
+        "setsMeasuredAtOpen": "62 62 62 62 62",
+        "slotAfter": 62,
+        "listMoved": 0,
+        "label": "Tomorrow · Thu 12 Nov",
+        "statusWordsWhole": true,
+        "labelRowOneLine": true,
+        "dateShortened": false,
+        "nameShortened": false,
+        "shortPartShown": true,
+        "moreWhole": true,
+        "minusWhole": true,
+        "chevronShown": false,
+        "rowsAboveAdd": 1,
+        "gaps": {
+          "moreToMinusPx": 10,
+          "chipsToMorePx": 19,
+          "chipsToMinusPx": 19
+        },
+        "overflow": 0
+      }
+    },
+    "summary": {
+      "runs": 32,
+      "listMovedMax": 0,
+      "statusWordsWholeAll": true,
+      "moreWholeAll": true,
+      "minusWholeAll": true,
+      "dateShortenedIn": [],
+      "overflowNonZero": [],
+      "minMoreToMinusPx": 8,
+      "minChipsToMorePx": 12,
+      "minChipsToMinusPx": 12,
+      "slotHeightAt390": {
+        "default": 50,
+        "large": 56,
+        "xlarge": 62
+      },
+      "rowsAboveAddAt390": {
+        "default": 5,
+        "large": 2,
+        "xlarge": 1
+      }
+    }
+  },
+  "homeLock": {
+    "atOpen": {
+      "onWithYouTop": 460,
+      "cards": 0,
+      "more": "+1 more this week",
+      "lineHeight": 54
+    },
+    "afterBookingWhileOpen": {
+      "onWithYouTop": 460,
+      "cards": 0,
+      "more": "+2 more this week",
+      "lineHeight": 54
+    },
+    "onWithYouMoved": 0,
+    "cardInserted": false,
+    "nextOpen": "states/s-booking-home.html: the Booked today card under the line"
+  },
+  "overflowNonZero": [],
+  "overflowChecks": 141
+}

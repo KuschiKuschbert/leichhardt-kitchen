@@ -1,0 +1,777 @@
+{
+  "source": "Preview, design A, static pages built from the implemented-app snapshots at main 184174e (../baseline), synthetic data, bundled Barlow fonts, Chromium headless shell 1243, deviceScaleFactor 1, 2026-11-10",
+  "pages": {
+    "home-390": {
+      "width": 390,
+      "viewport": "390x844",
+      "overflow": 0,
+      "tabBarTop": 776,
+      "smithTop": 413,
+      "smithBottom": 432,
+      "smithIn": "hm-paper fa-hm-next",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 169,
+        "bottom": 371,
+        "height": 202
+      },
+      "nextLine": {
+        "top": 389,
+        "bottom": 442,
+        "height": 54
+      },
+      "onWithYou": {
+        "top": 460,
+        "bottom": 811,
+        "height": 351
+      },
+      "comingUp": {
+        "top": 1027,
+        "bottom": 1179,
+        "height": 152
+      },
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1358
+    },
+    "prep-390": {
+      "width": 390,
+      "viewport": "390x844",
+      "overflow": 0,
+      "addedAboveList": 50,
+      "bandHeight": 50,
+      "cutBarHeight": 0,
+      "firstRowTop": 313,
+      "addTop": 707,
+      "rowsFullyVisible": 5,
+      "rowsTotal": 6,
+      "visibleRowNames": [
+        "Portion rump 20. Start here, 1",
+        "Make gravy 5 L. Start here, 2 ",
+        "Laksa 1 batch",
+        "Slice onions 2 tubs. Start her",
+        "Pick coriander"
+      ]
+    },
+    "orders-390": {
+      "width": 390,
+      "viewport": "390x844",
+      "overflow": 0,
+      "addedAboveList": 50,
+      "bandHeight": 50,
+      "cutBarHeight": 0,
+      "firstRowTop": 221,
+      "addTop": 707,
+      "rowsFullyVisible": 2,
+      "rowsTotal": 2,
+      "visibleRowNames": [
+        "Milk 6 L",
+        "Brioche buns 4 packs"
+      ]
+    },
+    "home-head-1280": {
+      "width": 1280,
+      "viewport": "1280x900",
+      "overflow": 0,
+      "tabBarTop": 900,
+      "smithTop": 518,
+      "smithBottom": 537,
+      "smithIn": "hm-paper fa-hm-next",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 251,
+        "bottom": 469,
+        "height": 218
+      },
+      "nextLine": {
+        "top": 493,
+        "bottom": 547,
+        "height": 54
+      },
+      "onWithYou": {
+        "top": 251,
+        "bottom": 617,
+        "height": 366
+      },
+      "comingUp": {
+        "top": 758,
+        "bottom": 887,
+        "height": 129
+      },
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 987
+    },
+    "home-768": {
+      "width": 768,
+      "viewport": "768x1024",
+      "overflow": 0,
+      "tabBarTop": 1024,
+      "smithTop": 548,
+      "smithBottom": 567,
+      "smithIn": "hm-paper fa-hm-next",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 274,
+        "bottom": 492,
+        "height": 218
+      },
+      "nextLine": {
+        "top": 524,
+        "bottom": 577,
+        "height": 54
+      },
+      "onWithYou": {
+        "top": 274,
+        "bottom": 625,
+        "height": 351
+      },
+      "comingUp": {
+        "top": 841,
+        "bottom": 993,
+        "height": 152
+      },
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1093
+    },
+    "home-alt-card-390": {
+      "width": 390,
+      "viewport": "390x844",
+      "overflow": 0,
+      "tabBarTop": 776,
+      "smithTop": 431,
+      "smithBottom": 450,
+      "smithIn": "",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 169,
+        "bottom": 371,
+        "height": 202
+      },
+      "nextLine": null,
+      "onWithYou": {
+        "top": 591,
+        "bottom": 942,
+        "height": 351
+      },
+      "comingUp": {
+        "top": 389,
+        "bottom": 573,
+        "height": 185
+      },
+      "coworkerRowsOnFirstScreen": "3 of 5",
+      "pageHeight": 1319
+    },
+    "home-alt-row-390": {
+      "width": 390,
+      "viewport": "390x844",
+      "overflow": 0,
+      "tabBarTop": 776,
+      "smithTop": 403,
+      "smithBottom": 420,
+      "smithIn": "hm-board",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 169,
+        "bottom": 442,
+        "height": 273
+      },
+      "nextLine": null,
+      "onWithYou": {
+        "top": 460,
+        "bottom": 810,
+        "height": 351
+      },
+      "comingUp": {
+        "top": 1027,
+        "bottom": 1179,
+        "height": 152
+      },
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1357
+    },
+    "fn-week-390": {
+      "width": 390,
+      "viewport": "390x844",
+      "overflow": 0
+    },
+    "runup-1280": {
+      "overflow": 0,
+      "frames": 18
+    }
+  },
+  "baseline": {
+    "home-390": {
+      "overflow": 0,
+      "tabBarTop": 776,
+      "smithTop": 998,
+      "smithBottom": 1017,
+      "smithIn": "",
+      "smithOnFirstScreen": false,
+      "yourDay": {
+        "top": 169,
+        "bottom": 371,
+        "height": 202
+      },
+      "nextLine": null,
+      "onWithYou": {
+        "top": 389,
+        "bottom": 739,
+        "height": 351
+      },
+      "comingUp": {
+        "top": 956,
+        "bottom": 1140,
+        "height": 185
+      },
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1319
+    },
+    "prep-390": {
+      "overflow": 0,
+      "addedAboveList": 0,
+      "bandHeight": 0,
+      "cutBarHeight": 0,
+      "firstRowTop": 263,
+      "addTop": 707,
+      "rowsFullyVisible": 6,
+      "rowsTotal": 6,
+      "visibleRowNames": [
+        "Portion rump 20. Start here, 1",
+        "Make gravy 5 L. Start here, 2 ",
+        "Laksa 1 batch",
+        "Slice onions 2 tubs. Start her",
+        "Pick coriander",
+        "Wash bok choy"
+      ]
+    },
+    "orders-390": {
+      "overflow": 0,
+      "addedAboveList": 0,
+      "bandHeight": 0,
+      "cutBarHeight": 0,
+      "firstRowTop": 171,
+      "addTop": 707,
+      "rowsFullyVisible": 2,
+      "rowsTotal": 2,
+      "visibleRowNames": [
+        "Milk 6 L",
+        "Brioche buns 4 packs"
+      ]
+    },
+    "prep-day-before-390": {
+      "overflow": 0,
+      "addedAboveList": 113,
+      "bandHeight": 113,
+      "cutBarHeight": 0,
+      "firstRowTop": 376,
+      "addTop": 707,
+      "rowsFullyVisible": 4,
+      "rowsTotal": 6,
+      "visibleRowNames": [
+        "Portion rump 20. Start here, 1",
+        "Make gravy 5 L. Start here, 2 ",
+        "Laksa 1 batch",
+        "Slice onions 2 tubs. Start her"
+      ]
+    },
+    "prep-on-the-day-390": {
+      "overflow": 0,
+      "addedAboveList": 116,
+      "bandHeight": 116,
+      "cutBarHeight": 0,
+      "firstRowTop": 379,
+      "addTop": 707,
+      "rowsFullyVisible": 4,
+      "rowsTotal": 6,
+      "visibleRowNames": [
+        "Portion rump 20. Start here, 1",
+        "Make gravy 5 L. Start here, 2 ",
+        "Laksa 1 batch",
+        "Slice onions 2 tubs. Start her"
+      ]
+    },
+    "home-head-1280": {
+      "tabBarTop": 900,
+      "smithTop": 801,
+      "smithBottom": 820,
+      "smithIn": "",
+      "smithOnFirstScreen": true,
+      "yourDay": {
+        "top": 251,
+        "bottom": 469,
+        "height": 218
+      },
+      "nextLine": null,
+      "onWithYou": {
+        "top": 251,
+        "bottom": 617,
+        "height": 366
+      },
+      "comingUp": {
+        "top": 758,
+        "bottom": 920,
+        "height": 162
+      },
+      "coworkerRowsOnFirstScreen": "5 of 5",
+      "pageHeight": 1020
+    }
+  },
+  "overflow": {
+    "home.html@390": 0,
+    "prep.html@390": 0,
+    "orders.html@390": 0,
+    "home-head-1280.html@390": 0,
+    "home-alt-card.html@390": 0,
+    "home-alt-row.html@390": 0,
+    "fn-week.html@390": 0,
+    "runup.html@390": 0,
+    "frames/fn-week.html@390": 0,
+    "frames/home-d0.html@390": 0,
+    "frames/home-d1.html@390": 0,
+    "frames/home-d2.html@390": 0,
+    "frames/home-d5.html@390": 0,
+    "frames/home-od.html@390": 0,
+    "frames/prep-cancelled.html@390": 0,
+    "frames/prep-d0.html@390": 0,
+    "frames/prep-d1.html@390": 0,
+    "frames/prep-d2.html@390": 0,
+    "frames/prep-d5.html@390": 0,
+    "frames/prep-head.html@390": 0,
+    "frames/prep-hidden.html@390": 0,
+    "frames/prep-long.html@390": 0,
+    "frames/prep-od.html@390": 0,
+    "frames/prep-offline.html@390": 0,
+    "frames/prep-sheet.html@390": 0,
+    "home.html@768": 0,
+    "prep.html@768": 0,
+    "orders.html@768": 0,
+    "home-head-1280.html@768": 0,
+    "home-alt-card.html@768": 0,
+    "home-alt-row.html@768": 0,
+    "fn-week.html@768": 0,
+    "runup.html@768": 0,
+    "frames/fn-week.html@768": 0,
+    "frames/home-d0.html@768": 0,
+    "frames/home-d1.html@768": 0,
+    "frames/home-d2.html@768": 0,
+    "frames/home-d5.html@768": 0,
+    "frames/home-od.html@768": 0,
+    "frames/prep-cancelled.html@768": 0,
+    "frames/prep-d0.html@768": 0,
+    "frames/prep-d1.html@768": 0,
+    "frames/prep-d2.html@768": 0,
+    "frames/prep-d5.html@768": 0,
+    "frames/prep-head.html@768": 0,
+    "frames/prep-hidden.html@768": 0,
+    "frames/prep-long.html@768": 0,
+    "frames/prep-od.html@768": 0,
+    "frames/prep-offline.html@768": 0,
+    "frames/prep-sheet.html@768": 0,
+    "home.html@1280": 0,
+    "prep.html@1280": 0,
+    "orders.html@1280": 0,
+    "home-head-1280.html@1280": 0,
+    "home-alt-card.html@1280": 0,
+    "home-alt-row.html@1280": 0,
+    "fn-week.html@1280": 0,
+    "runup.html@1280": 0,
+    "frames/fn-week.html@1280": 0,
+    "frames/home-d0.html@1280": 0,
+    "frames/home-d1.html@1280": 0,
+    "frames/home-d2.html@1280": 0,
+    "frames/home-d5.html@1280": 0,
+    "frames/home-od.html@1280": 0,
+    "frames/prep-cancelled.html@1280": 0,
+    "frames/prep-d0.html@1280": 0,
+    "frames/prep-d1.html@1280": 0,
+    "frames/prep-d2.html@1280": 0,
+    "frames/prep-d5.html@1280": 0,
+    "frames/prep-head.html@1280": 0,
+    "frames/prep-hidden.html@1280": 0,
+    "frames/prep-long.html@1280": 0,
+    "frames/prep-od.html@1280": 0,
+    "frames/prep-offline.html@1280": 0,
+    "frames/prep-sheet.html@1280": 0
+  },
+  "taps": {
+    "home": {
+      "onOpen": {
+        "time": false,
+        "guests": true,
+        "platters": false,
+        "dietaries": false
+      },
+      "afterOneTapOnTheLine": {
+        "time": true,
+        "guests": true,
+        "platters": true,
+        "dietaries": true
+      },
+      "sheetScrollToDietariesPx": 0,
+      "afterScrollingTheSheet": {
+        "time": true,
+        "guests": false,
+        "platters": true,
+        "dietaries": true
+      },
+      "afterOneTapOnPlusMore": {
+        "time": true,
+        "guests": true,
+        "platters": true,
+        "dietaries": true
+      },
+      "jonesCardTopOnFunctionsPage": 833,
+      "summary": "Tap the line (1 tap): time, guests and platters on screen at once, dietaries too. Or tap +1 more (1 tap): the Smith 60th card shows all four; Jones wedding card at 833 px."
+    },
+    "prep": {
+      "onOpen": {
+        "time": false,
+        "guests": true,
+        "platters": false,
+        "dietaries": false
+      },
+      "afterOneTapOnTheLine": {
+        "time": true,
+        "guests": true,
+        "platters": true,
+        "dietaries": true
+      },
+      "sheetScrollToDietariesPx": 0,
+      "afterScrollingTheSheet": {
+        "time": true,
+        "guests": false,
+        "platters": true,
+        "dietaries": true
+      },
+      "afterOneTapOnPlusMore": {
+        "time": true,
+        "guests": true,
+        "platters": true,
+        "dietaries": true
+      },
+      "jonesCardTopOnFunctionsPage": 833,
+      "summary": "Tap the line (1 tap): time, guests and platters on screen at once, dietaries too. Or tap +1 more (1 tap): the Smith 60th card shows all four; Jones wedding card at 833 px."
+    },
+    "hide": {
+      "afterHide": {
+        "band": true,
+        "slip": true,
+        "words": "Next function hidden on this phone until tomorrow. Home still shows it."
+      },
+      "rowsAfterHide": 6,
+      "afterUndo": {
+        "band": true,
+        "focus": "fold"
+      }
+    }
+  },
+  "jsErrors": [],
+  "frames": {
+    "home-d0": {
+      "smithTop": 413,
+      "smithOnFirstScreen": true,
+      "nextLine": 54,
+      "onWithYouTop": 460,
+      "coworkerRowsOnFirstScreen": "5 of 5"
+    },
+    "home-d1": {
+      "smithTop": 413,
+      "smithOnFirstScreen": true,
+      "nextLine": 54,
+      "onWithYouTop": 460,
+      "coworkerRowsOnFirstScreen": "5 of 5"
+    },
+    "home-d2": {
+      "smithTop": 413,
+      "smithOnFirstScreen": true,
+      "nextLine": 54,
+      "onWithYouTop": 460,
+      "coworkerRowsOnFirstScreen": "5 of 5"
+    },
+    "home-d5": {
+      "smithTop": 413,
+      "smithOnFirstScreen": true,
+      "nextLine": 54,
+      "onWithYouTop": 460,
+      "coworkerRowsOnFirstScreen": "5 of 5"
+    },
+    "home-od": {
+      "smithTop": 413,
+      "smithOnFirstScreen": true,
+      "nextLine": 54,
+      "onWithYouTop": 460,
+      "coworkerRowsOnFirstScreen": "5 of 5"
+    },
+    "prep-cancelled": {
+      "band": 54,
+      "cutBar": 0,
+      "rowsFullyVisible": 5,
+      "firstRowTop": 317
+    },
+    "prep-d0": {
+      "band": 116,
+      "cutBar": 0,
+      "rowsFullyVisible": 4,
+      "firstRowTop": 379
+    },
+    "prep-d1": {
+      "band": 113,
+      "cutBar": 0,
+      "rowsFullyVisible": 4,
+      "firstRowTop": 376
+    },
+    "prep-d2": {
+      "band": 50,
+      "cutBar": 0,
+      "rowsFullyVisible": 5,
+      "firstRowTop": 313
+    },
+    "prep-d5": {
+      "band": 50,
+      "cutBar": 0,
+      "rowsFullyVisible": 5,
+      "firstRowTop": 313
+    },
+    "prep-head": {
+      "band": 50,
+      "cutBar": 68,
+      "rowsFullyVisible": 4,
+      "firstRowTop": 381
+    },
+    "prep-hidden": {
+      "band": 0,
+      "cutBar": 0,
+      "rowsFullyVisible": 6,
+      "firstRowTop": 263
+    },
+    "prep-long": {
+      "band": 70,
+      "cutBar": 0,
+      "rowsFullyVisible": 5,
+      "firstRowTop": 333
+    },
+    "prep-od": {
+      "band": 171,
+      "cutBar": 0,
+      "rowsFullyVisible": 3,
+      "firstRowTop": 434
+    },
+    "prep-offline": {
+      "band": 76,
+      "cutBar": 0,
+      "rowsFullyVisible": 5,
+      "firstRowTop": 339
+    },
+    "prep-sheet": {
+      "band": 50,
+      "cutBar": 0,
+      "rowsFullyVisible": 5,
+      "firstRowTop": 313
+    }
+  },
+  "contrast": {
+    "prep": {
+      "label \"Next function\"": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 6.21,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "date": {
+        "fg": "rgb(184, 63, 21)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 4.86,
+        "sizePx": 12.8,
+        "weight": "900"
+      },
+      "guests words": {
+        "fg": "rgb(59, 58, 54)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 9.91,
+        "sizePx": 16,
+        "weight": "400"
+      },
+      "function name": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 14.69,
+        "sizePx": 16,
+        "weight": "700"
+      },
+      "+1 more": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(255, 255, 255)",
+        "ratio": 16.87,
+        "sizePx": 14,
+        "weight": "600"
+      },
+      "minus": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(255, 255, 255)",
+        "ratio": 16.87,
+        "sizePx": 21.6,
+        "weight": "600"
+      },
+      "strip against page": {
+        "strip": "rgb(242, 239, 232)",
+        "page": "rgb(251, 250, 247)",
+        "ratio": 1.1,
+        "edge": "rgb(28, 29, 31) 1px",
+        "edgeRatio": 16.16
+      }
+    },
+    "home": {
+      "label \"Next function\"": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 6.21,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "date": {
+        "fg": "rgb(184, 63, 21)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 4.86,
+        "sizePx": 12.8,
+        "weight": "900"
+      },
+      "guests words": {
+        "fg": "rgb(59, 58, 54)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 9.91,
+        "sizePx": 16,
+        "weight": "400"
+      },
+      "function name": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 14.69,
+        "sizePx": 16,
+        "weight": "700"
+      },
+      "+1 more": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(255, 255, 255)",
+        "ratio": 16.87,
+        "sizePx": 14,
+        "weight": "600"
+      },
+      "strip against page": {
+        "strip": "rgb(242, 239, 232)",
+        "page": "rgb(201, 180, 143)",
+        "ratio": 1.76,
+        "edge": "rgb(28, 29, 31) 0px",
+        "edgeRatio": 8.36
+      }
+    },
+    "no signal": {
+      "label \"Next function\"": {
+        "fg": "rgb(85, 88, 94)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 6.21,
+        "sizePx": 12.8,
+        "weight": "700"
+      },
+      "date": {
+        "fg": "rgb(184, 63, 21)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 4.86,
+        "sizePx": 12.8,
+        "weight": "900"
+      },
+      "guests words": {
+        "fg": "rgb(59, 58, 54)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 9.91,
+        "sizePx": 16,
+        "weight": "400"
+      },
+      "function name": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 14.69,
+        "sizePx": 16,
+        "weight": "700"
+      },
+      "+1 more": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(255, 255, 255)",
+        "ratio": 16.87,
+        "sizePx": 14,
+        "weight": "600"
+      },
+      "minus": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(255, 255, 255)",
+        "ratio": 16.87,
+        "sizePx": 21.6,
+        "weight": "600"
+      },
+      "no signal words": {
+        "fg": "rgb(184, 63, 21)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 4.86,
+        "sizePx": 13.6,
+        "weight": "400"
+      },
+      "strip against page": {
+        "strip": "rgb(242, 239, 232)",
+        "page": "rgb(251, 250, 247)",
+        "ratio": 1.1,
+        "edge": "rgb(28, 29, 31) 1px",
+        "edgeRatio": 16.16
+      }
+    },
+    "cancelled": {
+      "date": {
+        "fg": "rgb(184, 63, 21)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 4.86,
+        "sizePx": 12.8,
+        "weight": "900"
+      },
+      "guests words": {
+        "fg": "rgb(59, 58, 54)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 9.91,
+        "sizePx": 16,
+        "weight": "400"
+      },
+      "function name": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(242, 239, 232)",
+        "ratio": 14.69,
+        "sizePx": 16,
+        "weight": "700"
+      },
+      "+1 more": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(255, 255, 255)",
+        "ratio": 16.87,
+        "sizePx": 14,
+        "weight": "600"
+      },
+      "minus": {
+        "fg": "rgb(28, 29, 31)",
+        "bg": "rgb(255, 255, 255)",
+        "ratio": 16.87,
+        "sizePx": 21.6,
+        "weight": "600"
+      },
+      "Cancelled tag": {
+        "fg": "rgb(155, 39, 22)",
+        "bg": "rgb(251, 233, 229)",
+        "ratio": 6.64,
+        "sizePx": 12,
+        "weight": "600"
+      },
+      "strip against page": {
+        "strip": "rgb(242, 239, 232)",
+        "page": "rgb(251, 250, 247)",
+        "ratio": 1.1,
+        "edge": "rgb(28, 29, 31) 1px",
+        "edgeRatio": 16.16
+      }
+    }
+  }
+}
