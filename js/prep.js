@@ -6856,20 +6856,21 @@
     if (S.name !== 'orders' || !S.root || !document.body.contains(S.root)) return;
     if (fnOrdSig() !== fnOrdSeen) draw();
   });
-  /* The tag in the line's words and, for Not ordered yet, "For Sat 14 Nov · order day was Sun 8 Nov" on a line of its
-     own that wraps rather than cut. A ticked line keeps both, hidden and silent, like the ⋯ below, so a tick (or its
-     Undo) never changes the row's height under the finger. */
+  /* The tag in the line's words and, for Not ordered yet, "For Sat 14 Nov" on a line of its own that wraps rather than
+     cut; chefs also see "· order day was Sun 8 Nov" (head chef, 10 Nov 2026: staff see no waiting ages on Orders, and
+     chefs see that date once, so their Since badge steps aside on a tagged line). A ticked line keeps both, hidden and
+     silent, like the ⋯ below, so a tick (or its Undo) never changes the row's height under the finger. */
   function fnOrdHTML(t) {
     if (!t) return { tag: '', when: '' };
     var cls = t.held ? ' o-fn-held' : '', aria = t.held ? ' aria-hidden="true"' : '';
     var whole = function (s) { return esc(s).replace(/ /g, '\u00a0'); };   // a date never breaks across two lines
     return {
       tag: ' <span class="fn-tag fn-t-order o-fn-tag' + cls + '"' + aria + '>' + (t.kind === 'today' ? 'Order today' : 'Not ordered yet') + '</span>',
-      when: t.kind === 'late' ? '<span class="o-fn-when' + cls + '"' + aria + '><span class="o-fn-for">For\u00a0' + whole(t.day) + '</span> · order day was ' + whole(t.od) + '</span>' : ''
+      when: t.kind === 'late' ? '<span class="o-fn-when' + cls + '"' + aria + '><span class="o-fn-for">For\u00a0' + whole(t.day) + '</span>' + (canBrowse() ? ' · order day was ' + whole(t.od) : '') + '</span>' : ''
     };
   }
   function ordRow(x) {
-    var canTick = canBrowse() && !x.deleted, keep = lineMenuOk(x, x.date), fo = fnOrdHTML(fnOrdRoom(x));
+    var canTick = canBrowse() && !x.deleted, keep = lineMenuOk(x, x.date), fr = fnOrdRoom(x), fo = fnOrdHTML(fr);
     // an ordered line keeps the ⋯'s room with nothing in it, so ticking Ordered moves no row
     var held = '<span class="nb-more nb-more-held' + (keep ? ' nb-more-fix' : '') + '" aria-hidden="true"></span>';
     var by = x.ordered && x.orderedBy ? 'Ordered by ' + esc(x.orderedBy) + (x.orderedAt ? ' ' + clock(x.orderedAt) : '') : (x.rolled ? (x.origBy ? 'from ' + esc(x.origBy) : '') : x.addedBy ? esc(x.addedBy) + (canBrowse() && x.addedAt ? ' ' + clock(x.addedAt) : '') : '');
@@ -6877,7 +6878,7 @@
       '<button type="button" class="nb-box" data-p="otick" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-pressed="' + !!x.ordered + '" aria-label="' + esc('Ordered: ' + x.text) + '"' + (canTick ? '' : ' disabled') + '>' + (x.ordered ? TICK : BOX) + '</button>' +
       '<span class="nb-main"><span class="nb-t"' + (x.orig ? ' title="' + esc('Corrected from: ' + x.orig) + '"' : '') + '>' + esc(x.text) + (x.qty ? ' <span class="nb-q">' + esc(x.qty) + '</span>' : '') + needTag(x) + fo.tag +
       // Not sent on the words' line, before Used in (a line of its own, .o-used), so its room never adds a line
-      (canBrowse() && rolledN(x) ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + justStamp(x.id) + recipeChips(x) + '</span>' +
+      (canBrowse() && rolledN(x) && !fr ? ' <span class="nb-roll" title="Not ordered yet, so it rolled over">Since ' + esc(dayShort(x.since || x.rolledFrom || x.date)) + '</span>' : '') + unsentMark(x) + justStamp(x.id) + recipeChips(x) + '</span>' +
       fo.when + metaHTML([], by) + '</span>' +
       (canBrowse() && can('del') ? (x.deleted || !x.ordered ? moreBtn(x, keep) : held) : keep ? (x.ordered ? held : moreBtn(x, true)) : '') +
       (canBrowse() && can('del') && !x.deleted && !x.ordered ? '<button type="button" class="p-x" data-p="odel" data-id="' + esc(x.id) + '" data-d="' + esc(x.date) + '" aria-label="' + esc('Remove ' + x.text) + '">Remove</button>' : '') +

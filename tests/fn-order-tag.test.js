@@ -69,7 +69,9 @@ const rowOf = (p, id) => p.evaluate(([d, id]) => {
 const tagged = p => L.waitFor(p, () => !!document.querySelector('.o-main .o-fn-tag'), null, 6000).catch(() => {});
 const settle = (p, ms) => L.settle(p, ms || 400);
 const day = d => M.dayName(d);
-const LATE = 'For ' + day(JONES.date) + ' · order day was ' + day(JONES.od);
+// staff see the function's day only; chefs also see the order day (head chef, 10 Nov 2026: no waiting ages for staff)
+const LATE = 'For ' + day(JONES.date) + ' · order day was ' + day(JONES.od), LATE_STAFF = 'For ' + day(JONES.date);
+const sinceOn = (p, id) => p.evaluate(s => !!document.querySelector(s), '.nb-row[data-ln="' + today + '/' + id + '"] .nb-roll');
 
 (async () => {
   // 0. the rule itself (node): which line, which words, and never a guess
@@ -105,7 +107,7 @@ const LATE = 'For ' + day(JONES.date) + ' · order day was ' + day(JONES.od);
     await tagged(p);
     const s = await rowOf(p, 'fn-smith'), j = await rowOf(p, rid('fn-jones'));
     ok(!!s && s.tag === 'Order today' && !s.when, 'staff: the function stock line on its order day says Order today (' + JSON.stringify(s && { tag: s.tag, when: s.when }) + ')');
-    ok(!!j && j.tag === 'Not ordered yet' && j.when === LATE, 'staff: the rolled stock line after its order day says Not ordered yet, "' + LATE + '" (' + JSON.stringify(j && { tag: j.tag, when: j.when }) + ')');
+    ok(!!j && j.tag === 'Not ordered yet' && j.when === LATE_STAFF, 'staff: the rolled stock line after its order day says Not ordered yet, "' + LATE_STAFF + '", with no order day (no waiting ages for staff) (' + JSON.stringify(j && { tag: j.tag, when: j.when }) + ')');
     ok(!!j && !j.whenCut && j.inside && !!s && s.inside, 'the tag and the day words sit inside their row, "order day was" never cut');
     ok(!!j && j.ratio >= 4.5 && j.color === 'rgb(28, 29, 31)', 'the tag\'s words are ink on the attention tint, 4.5:1 or more (' + (j && j.ratio) + ':1, ' + (j && j.color) + ')');
     const none = {};
@@ -146,7 +148,7 @@ const LATE = 'For ' + day(JONES.date) + ' · order day was ' + day(JONES.od);
     await p.evaluate(([k, v, k2, v2]) => { window.__fake.write(k, v); window.__fake.write(k2, v2); }, [key(['functions', 'smith']), SMITH, key(['functions', 'jones']), JONES]);
     await tagged(p);
     const s2 = await rowOf(p, 'fn-smith'), j2 = await rowOf(p, rid('fn-jones'));
-    ok(s2.tag === 'Order today' && j2.tag === 'Not ordered yet' && j2.when === LATE, 'the functions answer after the list was drawn: the tags are drawn then (' + s2.tag + ', ' + j2.tag + ')');
+    ok(s2.tag === 'Order today' && j2.tag === 'Not ordered yet' && j2.when === LATE_STAFF, 'the functions answer after the list was drawn: the tags are drawn then (' + s2.tag + ', ' + j2.tag + ')');
   });
 
   // 4. a sous chef: the same tags; ticking keeps the row's height and puts the tag away; Undo brings it back; past days have none
@@ -154,7 +156,8 @@ const LATE = 'For ' + day(JONES.date) + ' · order day was ' + day(JONES.od);
     p = await L.open(b, '#/orders', { who: 'sam', extra: extra(FNS), width: 390, height: 844, wait: 1600 });
     await tagged(p);
     const s = await rowOf(p, 'fn-smith'), j = await rowOf(p, rid('fn-jones'));
-    ok(s.tag === 'Order today' && j.tag === 'Not ordered yet' && j.when === LATE, 'chef: Order today and Not ordered yet with the days, as staff see them');
+    ok(s.tag === 'Order today' && j.tag === 'Not ordered yet' && j.when === LATE, 'chef: Order today, and Not ordered yet with the function\'s day and the order day');
+    ok(!(await sinceOn(p, rid('fn-jones'))), 'chef: the Since badge steps aside on the tagged line, so the date shows once');
     const next = await p.evaluate(id => { const r = document.querySelector('.o-main [data-ln$="/' + id + '"]'), n = r && r.nextElementSibling; return n ? n.getAttribute('data-ln') : ''; }, rid('fn-jones'));
     const nextId = next.split('/').slice(1).join('/'), n0 = nextId ? await rowOf(p, nextId) : null;
     await p.click('.o-main [data-p="otick"][data-id="' + rid('fn-jones') + '"]');
@@ -180,7 +183,7 @@ const LATE = 'For ' + day(JONES.date) + ' · order day was ' + day(JONES.od);
       p = await L.open(b, '#/orders', { who, extra: extra(FNS), width: w, height: h, wait: 1600, settings: text ? { text } : undefined });
       await tagged(p);
       const s = await rowOf(p, 'fn-smith'), j = await rowOf(p, rid('fn-jones'));
-      ok(!!s && !!j && s.tag === 'Order today' && j.tag === 'Not ordered yet' && j.when === LATE && !j.whenCut && j.inside && s.inside, w + ' px ' + who + (text ? ', ' + text + ' text' : '') + ': the tags and days in their rows, nothing cut');
+      ok(!!s && !!j && s.tag === 'Order today' && j.tag === 'Not ordered yet' && j.when === (who === 'ann' ? LATE_STAFF : LATE) && !j.whenCut && j.inside && s.inside, w + ' px ' + who + (text ? ', ' + text + ' text' : '') + ': the tags and days in their rows, nothing cut');
       ok(!(await L.overflow(p)), w + ' px ' + who + (text ? ', ' + text + ' text' : '') + ': no sideways scroll');
     });
   }
