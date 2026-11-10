@@ -4092,6 +4092,8 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fn-hm-line { padding: 0.3rem 0.25rem; background: var(--surface-reference); }
 .fn-hm-line .fn-ahead { max-width: none; margin: 0; padding: 0 0.6rem; }
 .fn-hm-line .fn-ahead.is-cancelled { padding-left: 0.95rem; }
+/* the Got it words may shorten at the end (extra-large text on a narrow phone), never push the page sideways */
+.fn-ahead.is-ack .fn-ahead-s { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .fn-ahead-ack { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 700 0.95rem/1rem var(--display); letter-spacing: 0.02em; text-transform: none; color: var(--ink); }
 .fn-hu-undo { flex: none; min-height: 44px; min-width: 72px; padding: 0 1rem; border: 0; border-radius: var(--r-act); background: var(--ink); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
 .fn-hu-undo:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 2px; }
@@ -4109,7 +4111,7 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fn-hu-facts dd { margin: 0; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
 .fn-hu-act { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.1rem; margin-top: 0.6rem; }
 .fn-hu-got { min-width: 8.5rem; }
-.fn-hu-open { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; color: var(--ink); text-underline-offset: 3px; }
+.fn-hu-open { display: inline-flex; align-items: center; min-height: 44px; margin: 0; padding: 0; border: 0; background: none; font: inherit; font-weight: 700; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .fn-hu-also { margin: 0.4rem 0 0; font-size: 0.95rem; overflow-wrap: anywhere; }
 .fn-hu-also b { font: 700 0.8rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--small-ink); }
 .fn-hu-foot { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--muted); }
@@ -4143,9 +4145,12 @@ html.tm-open, html.tm-open body { overflow: hidden; }
   .fn-hu-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 1.5rem; border-bottom: 1px solid var(--line); }
   .fn-hu-facts > div { grid-template-columns: minmax(0, 1fr); gap: 0.05rem; padding: 0.35rem 0; border-bottom: 0; }
 }
+/* from 1100 px with a card or line: two rows, Your day sized by itself (auto), the card under it, On with you beside
+   both; its extra height goes to the flexible second row, so Your day and the card never drift apart */
 @media (min-width: 1100px) {
-  .is-home .hm-staff-first > #fn-hm { grid-column: 1; }
-  .is-home .hm-staff-first > #hm-with { grid-column: 2; grid-row: 1 / span 2; }
+  .is-home .hm-staff-first:has(> #fn-hm:not([hidden])) { grid-template-rows: auto 1fr; }
+  .is-home .hm-staff-first > #fn-hm { grid-column: 1; grid-row: 2; }
+  .is-home .hm-staff-first:has(> #fn-hm:not([hidden])) > #hm-with { grid-column: 2; grid-row: 1 / span 2; }
 }
 /* the one line that stays pinned once the band has scrolled off: the same dark */
 .fn-strip { background: var(--bar); border-bottom: 0; color: var(--bar-text); box-shadow: inset 0 -3px 0 var(--accent-ink), 0 2px 8px rgba(0, 0, 0, 0.18); }

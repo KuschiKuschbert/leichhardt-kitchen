@@ -50,7 +50,7 @@ const homeWait = p => L.waitFor(p, () => { const e = document.getElementById('fn
     const g = await geo(p);
     ok(g.day < g.hm && g.hm < g.with, 'order: Your day, then the function card, then On with you (' + [g.day, g.hm, g.with].join(' < ') + ')');
     ok(g.card !== null && g.card < g.tab, 'the card starts on the first screen, above the tab bar (' + g.card + ' < ' + g.tab + ')');
-    ok(/FUNCTION THIS WEEK/i.test(g.cardText) && /1 of 2 this week/i.test(g.cardText) && /Smith 60th/.test(g.cardText) && /in 2 days/i.test(g.cardText), 'it names the nearest function, which of how many, and how soon (' + g.cardText.slice(0, 90) + ')');
+    ok(/FUNCTION THIS WEEK/i.test(g.cardText) && /2 this week/i.test(g.cardText) && /Smith 60th/.test(g.cardText) && /in 2 days/i.test(g.cardText), 'it names the nearest function, how many this week, and how soon (' + g.cardText.slice(0, 90) + ')');
     ok(/60 guests/.test(g.cardText) && /18:30 and 19:15 \(2 rounds\)/.test(g.cardText) && /5 × Antipasto \(5\)/.test(g.cardText), 'guests, food times and platters on the card, no tap');
     ok(/4 gluten free, 1 nut allergy at table 4\./.test(g.cardText), 'the notes as typed: the allergy keeps its words');
     ok(/Also this week: SAT 14 NOV Jones wedding/i.test(g.cardText), 'the other function this week is named in one line');
@@ -66,11 +66,12 @@ const homeWait = p => L.waitFor(p, () => { const e = document.getElementById('fn
     await p.dblclick('#fn-hm .fn-hu-got');
     await L.settle(p, 400);
     const g = await geo(p);
-    ok(g.line === a.card && /Got it\. It stays here as one line\./.test(g.lineText) && /Smith 60th/.test(g.lineText), 'Got it: the line in the card\'s place says Got it, naming the function (' + g.lineText + ')');
+    ok(g.line === a.card && /Got it\. Kept here as one line\./.test(g.lineText) && /Smith 60th/.test(g.lineText), 'Got it: the line in the card\'s place says Got it, naming the function (' + g.lineText + ')');
     ok(/Jones wedding/.test(g.cardText), 'the next card follows under the line, and the second tap of a double tap did not put it away (' + g.cardText.slice(0, 60) + ')');
     ok(!/Also this week: .*Smith/i.test(g.cardText), 'the next card does not repeat the function the line names');
     const m = await p.evaluate(() => JSON.parse(localStorage.getItem('lk.fn.hu.ann') || '{}'));
-    ok(m.smith && m.smith.s === 'week' && m.smith.v === SMITH.upd && !m.jones, 'Got it is kept for Ann, stamped with the booking\'s version the card showed (' + JSON.stringify(m) + ')');
+    ok(m.smith && m.smith.s === 'week' && m.smith.g === M.kitchenSig(SMITH) && !m.jones, 'Got it is kept for Ann, with what the card showed (' + JSON.stringify(m) + ')');
+    ok(/Got it: Smith 60th/.test(await txt(p, '#fn-hm-say') || ''), 'Got it is said once for a screen reader, beside the slot');
     await p.click('#fn-hm .fn-hu-undo'); await L.settle(p, 400);
     const u = await geo(p);
     ok(/Smith 60th/.test(u.cardText) && u.line === null, 'Undo brings the Smith card back');
@@ -87,14 +88,14 @@ const homeWait = p => L.waitFor(p, () => { const e = document.getElementById('fn
   // 3. seen before: the next open shows only the line; the cards are per person, so Sam on the same phone gets his own
   await step('seen, next open', async () => {
     p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith: SMITH, jones: JONES }), width: 390, height: 844, wait: 1800,
-      init: seen('ann', { smith: { s: 'week', v: SMITH.upd, d: SMITH.date }, jones: { s: 'week', v: JONES.upd, d: JONES.date } }) });
+      init: seen('ann', { smith: { s: 'week', g: M.kitchenSig(SMITH), d: SMITH.date }, jones: { s: 'week', g: M.kitchenSig(JONES), d: JONES.date } }) });
     await homeWait(p);
     const g = await geo(p);
     ok(g.card === null && /Smith 60th/.test(g.lineText) && /60 guests/.test(g.lineText), 'seen both: just the line (' + g.lineText + ')');
   });
   await step('per person', async () => {
     p = await L.open(b, '#/', { who: 'sam', extra: extra({ smith: SMITH, jones: JONES }), width: 390, height: 844, wait: 1800,
-      init: seen('ann', { smith: { s: 'week', v: SMITH.upd, d: SMITH.date }, jones: { s: 'week', v: JONES.upd, d: JONES.date } }) });
+      init: seen('ann', { smith: { s: 'week', g: M.kitchenSig(SMITH), d: SMITH.date }, jones: { s: 'week', g: M.kitchenSig(JONES), d: JONES.date } }) });
     await homeWait(p);
     ok(/Smith 60th/.test((await geo(p)).cardText), 'Ann saw them on this phone; Sam still gets his own card');
   });
@@ -102,7 +103,7 @@ const homeWait = p => L.waitFor(p, () => { const e = document.getElementById('fn
   // 4. the day before: everyone sees Function tomorrow once more, even after Got it
   await step('function tomorrow', async () => {
     const tom = fn('Smith 60th', 1, { start: '18:00', rounds: ['18:30'], guests: 60, notes: '1 nut allergy' });
-    p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith: tom }), width: 390, height: 844, wait: 1800, init: seen('ann', { smith: { s: 'week', v: tom.upd, d: tom.date } }) });
+    p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith: tom }), width: 390, height: 844, wait: 1800, init: seen('ann', { smith: { s: 'week', g: M.kitchenSig(tom), d: tom.date } }) });
     await homeWait(p);
     const g = await geo(p);
     ok(/FUNCTION TOMORROW/i.test(g.cardText) && /Everyone sees this once, the day before/.test(g.cardText) && /1 nut allergy/.test(g.cardText), 'the day before: Function tomorrow, once more, after a Got it in the week (' + g.cardText.slice(0, 80) + ')');
@@ -111,16 +112,75 @@ const homeWait = p => L.waitFor(p, () => { const e = document.getElementById('fn
   // 5. changed since Got it: the card comes back once, marked Changed
   await step('changed', async () => {
     const chg = Object.assign({}, SMITH, { upd: L.NOW - 600000, chg: [{ at: L.NOW - 600000, by: 'bo', what: 'Guests 60 to 70' }], guests: 70 });
-    p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith: chg }), width: 390, height: 844, wait: 1800, init: seen('ann', { smith: { s: 'week', v: SMITH.upd, d: SMITH.date } }) });
+    p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith: chg }), width: 390, height: 844, wait: 1800, init: seen('ann', { smith: { s: 'week', g: M.kitchenSig(SMITH), d: SMITH.date, t: L.NOW - 7200000 } }) });
     await homeWait(p);
     const g = await geo(p);
     ok(/Changed/.test(g.cardText) && /70 guests/.test(g.cardText), 'a booking changed after Got it brings its card back once, marked Changed (' + g.cardText.slice(0, 80) + ')');
   });
 
+  // 5b. only the customer's contact changed (upd moves, the kitchen's words do not): no card comes back
+  await step('contact only', async () => {
+    const c = Object.assign({}, SMITH, { upd: L.NOW - 600000 });
+    p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith: c }), width: 390, height: 844, wait: 1800, init: seen('ann', { smith: { s: 'week', g: M.kitchenSig(SMITH), d: SMITH.date, t: L.NOW - 7200000 } }) });
+    await homeWait(p);
+    const g = await geo(p);
+    ok(g.card === null && /Smith 60th/.test(g.lineText), 'an edit to the contact alone brings no card back (' + g.cardText.slice(0, 40) + ')');
+  });
+  // 5c. while the card is open: a cancellation or a removal shows in its words, in place; Open the function stays on Home
+  await step('changes while open', async () => {
+    p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith: SMITH, jones: JONES }), width: 390, height: 844, wait: 1800 });
+    await homeWait(p);
+    await p.click('#fn-hm .fn-hu-open'); await L.settle(p, 400);
+    ok(await p.evaluate(() => location.hash === '#/' && !!document.querySelector('.fn-sheet')), 'Open the function opens the sheet over Home, the page under it stays Home');
+    await p.keyboard.press('Escape'); await L.settle(p, 300);
+    await p.evaluate(([k, v]) => window.__fake.write(k, v), [key(['functions', 'smith']), Object.assign({}, SMITH, { status: 'cancelled', canAt: L.NOW - 1000, canBy: 'bo' })]);
+    await L.waitFor(p, () => /Cancelled/i.test((document.querySelector('#fn-hm .fn-hu') || {}).innerText || ''), null, 4000);
+    let g = await geo(p);
+    ok(/CANCELLED/i.test(g.cardText) && /Do not prep or order for it/.test(g.cardText) && !/Food out/i.test(g.cardText), 'cancelled while the card is open: the card says so at once (' + g.cardText.slice(0, 60) + ')');
+    ok(await p.$eval('#fn-hm .fn-hu-got', e => e.getAttribute('data-s')) === 'off', 'its Got it marks the cancellation as seen');
+    await p.evaluate(([k, v]) => window.__fake.write(k, v), [key(['functions', 'smith']), Object.assign({}, SMITH, { removed: true })]);
+    await L.waitFor(p, () => /Removed/i.test((document.querySelector('#fn-hm .fn-hu') || {}).innerText || ''), null, 4000);
+    g = await geo(p);
+    ok(/REMOVED/i.test(g.cardText) && /Removed from the bookings/.test(g.cardText), 'removed while open: the card stays, saying Removed, Do not prep (' + g.cardText.slice(0, 60) + ')');
+  });
+  // 5d. a busy week with one booking changed since Got it: its row says Changed
+  await step('busy changed', async () => {
+    const lee = fn('Lee engagement', 5, { guests: 40 }), chg = Object.assign({}, JONES, { guests: 95 });
+    p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith: SMITH, jones: chg, lee }), width: 390, height: 844, wait: 1800,
+      init: seen('ann', { jones: { s: 'week', g: M.kitchenSig(JONES), d: JONES.date, t: L.NOW - 7200000 } }) });
+    await homeWait(p);
+    const row = await p.evaluate(() => [...document.querySelectorAll('#fn-hm .fn-wk-r')].map(e => e.innerText.replace(/\s+/g, ' ')).find(t => /Jones/.test(t)) || '');
+    ok(/Changed/.test(row) && /95 guests/.test(row), 'the changed booking\'s row in the busy card says Changed (' + row + ')');
+  });
+  // 5e. tablets and laptops: Got it never scrolls the page (no tab bar there); the next card stays on screen
+  for (const [w, h] of [[768, 1024], [1280, 900]]) {
+    await step('got it ' + w, async () => {
+      p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith: SMITH, jones: JONES }), width: w, height: h, wait: 1800 });
+      await homeWait(p);
+      const y0 = await p.evaluate(() => scrollY);
+      await p.clock.fastForward(1000); await p.click('#fn-hm .fn-hu-got'); await L.settle(p, 400);
+      const r = await p.evaluate(() => { const g = document.querySelector('#fn-hm .fn-hu-got'), u = document.querySelector('#fn-hm .fn-hu-undo'); return { y: scrollY, g: g ? Math.round(g.getBoundingClientRect().bottom) : -1, u: u ? Math.round(u.getBoundingClientRect().top) : -1, h: innerHeight }; });
+      ok(r.y === y0 && r.g > 0 && r.g <= r.h && r.u >= 0, w + ': Got it does not scroll; the next card\'s Got it and the Undo stay on screen (' + JSON.stringify(r) + ')');
+      if (w === 1280) {
+        const gap = await p.evaluate(() => { const d = document.getElementById('hm-day').getBoundingClientRect(), c = document.getElementById('fn-hm').getBoundingClientRect(); return Math.round(c.top - d.bottom); });
+        ok(gap >= 0 && gap <= 32, '1280: the card sits right under Your day, On with you beside both (' + gap + ' px)');
+      }
+      await p.clock.fastForward(10000); await L.settle(p, 300);
+      ok(await p.evaluate(() => !document.querySelector('#fn-hm .fn-hu-undo')), w + ': after 9 s the Undo goes');
+    });
+  }
+  await step('focus after undo goes', async () => {
+    p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith: SMITH }), width: 390, height: 844, wait: 1800 });
+    await homeWait(p);
+    await p.clock.fastForward(1000); await p.click('#fn-hm .fn-hu-got'); await L.settle(p, 300);
+    await p.clock.fastForward(10000); await L.settle(p, 300);
+    ok(await p.evaluate(() => document.activeElement && document.activeElement.classList.contains('fn-ahead-b')), 'when the Undo goes, the focus moves to the line, not the top of the page');
+  });
+
   // 6. cancelled: told people get a red card once; the line says Cancelled, Do not prep, to everyone until the day passes
   const OFF = Object.assign({}, SMITH, { status: 'cancelled', canAt: L.NOW - 3600000, canBy: 'bo', upd: L.NOW - 3600000 });
   await step('cancelled, told', async () => {
-    p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith: OFF }), width: 390, height: 844, wait: 1800, init: seen('ann', { smith: { s: 'week', v: SMITH.upd, d: SMITH.date } }) });
+    p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith: OFF }), width: 390, height: 844, wait: 1800, init: seen('ann', { smith: { s: 'week', g: M.kitchenSig(SMITH), d: SMITH.date, t: L.NOW - 7200000 } }) });
     await homeWait(p);
     let g = await geo(p);
     ok(/CANCELLED/i.test(g.cardText) && /Do not prep or order for it/.test(g.cardText), 'told before: a cancelled card, once (' + g.cardText.slice(0, 70) + ')');
