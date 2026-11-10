@@ -5394,3 +5394,18 @@ html:has(.tm-focus-page) {
 .mascot:focus { outline: none; }
 .mascot:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 @media (prefers-reduced-motion: no-preference) { :where(.mascot):active { scale: 0.96; } }
+/* The finished prep list (owner, 10 Nov 2026; docs/kitchen-mascot.md): the mascot beside the page's own words when
+   every line is ticked and sent. In the page, never over it. The bubble is a speech shape in the green that means
+   done, with no outline, so it is not taken for a chip or a button. The art keeps its room before it loads, so
+   nothing under it moves when it arrives. On one page (under 900 px, Handy below the list) he is 48 x 64 px so the
+   page's own words stay on one line beside him. */
+.nb-fin { display: flex; align-items: center; gap: 14px; margin: 0.9rem 0 0.6rem; }
+.nb-fin-art { flex: none; width: 48px; height: 64px; }
+.nb-fin-w { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.nb-fin-w .nb-empty { margin: 0; }
+.nb-fin-say { position: relative; margin: 0; padding: 8px 14px; border-radius: 16px 16px 16px 4px; background: var(--done-tint); color: var(--done-ink); font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+.nb-fin-say::before { content: ""; position: absolute; left: -14px; bottom: 8px; border: 8px solid transparent; border-right-color: var(--done-tint); }
+.mascot-still { display: block; width: 100%; height: 100%; }
+.mascot-still[hidden] { display: none; }
+.mascot-still canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+@media (min-width: 900px) { .nb-fin-art { width: 64px; height: calc(64px * 4 / 3); } }
