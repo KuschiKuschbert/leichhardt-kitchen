@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design A run-up</title>
+<link rel="stylesheet" href="../../order-list-options/assets/fonts.css">
+<link rel="stylesheet" href="../../../css/app.css">
+<style>
+/* Preview sheet for the council: each frame is a real 390 x 844 page (built from the implemented-app snapshots) shown at 60%. */
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); }
+.ru { max-width: 1240px; margin: 0 auto; padding: 24px 16px 48px; }
+.ru h1 { margin: 0; font: 700 2rem var(--display); }
+.ru h2 { margin: 2rem 0 0.25rem; font: 700 1.4rem var(--display); border-bottom: 1.5px solid var(--ink); padding-bottom: 0.25rem; }
+.ru-lead { max-width: 60rem; margin: 0.4rem 0 0; color: var(--muted); }
+.ru-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 20px; margin-top: 1rem; }
+.ru-grid.is-one { grid-template-columns: repeat(auto-fill, minmax(min(100%, 270px), 1fr)); }
+.ru-card { padding: 12px; border: 1.5px solid var(--ink); border-radius: 12px; background: var(--surface-paper); }
+.ru-card h3 { margin: 0; font: 700 1.15rem var(--display); }
+.ru-card h3 small { display: block; font: 700 0.75rem var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--small-ink); }
+.ru-card p { margin: 0.3rem 0 0.6rem; font-size: 0.9rem; line-height: 1.35; }
+.ru-card p b { font-weight: 700; }
+.ru-frames { display: flex; flex-wrap: wrap; gap: 12px; }
+.ru-f { margin: 0; }
+.ru-f figcaption { font: 700 0.75rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.ru-phone { width: 234px; height: 506px; overflow: hidden; border: 2px solid var(--ink); border-radius: 14px; background: #000; }
+.ru-phone iframe { width: 390px; height: 844px; border: 0; transform: scale(0.6); transform-origin: 0 0; background: var(--bg); }
+.ru-wide { width: min(512px, 100%); height: 360px; overflow: hidden; border: 2px solid var(--ink); border-radius: 8px; }
+.ru-wide iframe { width: 1280px; height: 900px; border: 0; transform: scale(0.4); transform-origin: 0 0; }
+.ru-tag { display: inline-block; padding: 0 6px; border-radius: 999px; border: 1px solid var(--edge); background: var(--beige); font-size: 0.75rem; font-weight: 600; }
+.ru-new { border-color: var(--ink); background: var(--surface-reference); }
+.ru-same { color: var(--muted); }
+table.ru-t { border-collapse: collapse; margin-top: 0.8rem; font-size: 0.9rem; width: 100%; }
+.ru-t th, .ru-t td { text-align: left; vertical-align: top; padding: 0.35rem 0.6rem 0.35rem 0; border-top: 1px solid var(--line); }
+.ru-t th { font: 700 0.75rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+</style>
+</head>
+<body>
+<main class="ru">
+  <h1>Design A, Fill the gap: the run-up to a Thursday function</h1>
+  <p class="ru-lead">Preview, synthetic data. Every frame is a full 390 x 844 page of the real app's CSS and snapshot markup, shown at 60%. Smith 60th is on Thursday 12 Nov (food 18:30 and 19:15, 60 guests); Jones wedding is on Saturday 14 Nov. <span class="ru-tag ru-new">New</span> marks the one new piece: the quiet Next function line. Everything else is the band and Home as they are today.</p>
+
+  <table class="ru-t" aria-label="What shows on each run-up day">
+    <thead><tr><th>Day</th><th>Prep, Orders, Wastage, Transfers, Recipes (the band's slot)</th><th>Home</th></tr></thead>
+    <tbody>
+      <tr><td>7 to 5 days before (Sat 7 Nov)</td><td><span class="ru-tag ru-new">New</span> Next function · Thu 12 Nov · Smith 60th · 60 guests, +1 more</td><td><span class="ru-tag ru-new">New</span> the same line under Your day; Coming up keeps the rest</td></tr>
+      <tr><td>Order day (Sun 8 Nov)</td><td class="ru-same">The band's Order today lines, as today (the Next line steps aside)</td><td><span class="ru-tag ru-new">New</span> the line; the board's order rows, as today</td></tr>
+      <tr><td>3 and 2 days before (Mon 9, Tue 10 Nov)</td><td><span class="ru-tag ru-new">New</span> Next function line</td><td><span class="ru-tag ru-new">New</span> the line</td></tr>
+      <tr><td>Day before (Wed 11 Nov)</td><td class="ru-same">The band's Tomorrow line, as today</td><td><span class="ru-tag ru-new">New</span> the line says Tomorrow</td></tr>
+      <tr><td>The day (Thu 12 Nov)</td><td class="ru-same">The band's live rounds and strip, as today</td><td><span class="ru-tag ru-new">New</span> the line says Today 18:30; Now and next has the round, as today</td></tr>
+    </tbody>
+  </table>
+
+  <h2>The run-up, Prep and Home</h2>
+  <div class="ru-grid">
+    <section class="ru-card"><h3><small>5 days before</small>Saturday 7 Nov</h3><p><b>Prep:</b> the band would be empty, so the Next line fills its slot. <b>Home:</b> the same line under Your day, on the first screen.</p>
+      <div class="ru-frames"><figure class="ru-f"><figcaption>Prep</figcaption><div class="ru-phone"><iframe src="frames/prep-d5.html" title="Prep, 5 days before" loading="eager"></iframe></div></figure><figure class="ru-f"><figcaption>Home</figcaption><div class="ru-phone"><iframe src="frames/home-d5.html" title="Home, 5 days before" loading="eager"></iframe></div></figure></div></section>
+    <section class="ru-card"><h3><small>Order day</small>Sunday 8 Nov</h3><p><b>Prep:</b> the band's own Order today lines, unchanged; the Next line never stacks with them. <b>Home:</b> the line, and the board's order rows lower down, as today.</p>
+      <div class="ru-frames"><figure class="ru-f"><figcaption>Prep</figcaption><div class="ru-phone"><iframe src="frames/prep-od.html" title="Prep, order day" loading="eager"></iframe></div></figure><figure class="ru-f"><figcaption>Home</figcaption><div class="ru-phone"><iframe src="frames/home-od.html" title="Home, order day" loading="eager"></iframe></div></figure></div></section>
+    <section class="ru-card"><h3><small>2 days before (today in the preview)</small>Tuesday 10 Nov</h3><p><b>Prep:</b> Next function line with +1 more (Jones wedding, Saturday). <b>Home:</b> the line under Your day; Coming up lists only Jones wedding.</p>
+      <div class="ru-frames"><figure class="ru-f"><figcaption>Prep</figcaption><div class="ru-phone"><iframe src="frames/prep-d2.html" title="Prep, 2 days before" loading="eager"></iframe></div></figure><figure class="ru-f"><figcaption>Home</figcaption><div class="ru-phone"><iframe src="frames/home-d2.html" title="Home, 2 days before" loading="eager"></iframe></div></figure></div></section>
+    <section class="ru-card"><h3><small>The day before</small>Wednesday 11 Nov</h3><p><b>Prep:</b> the band's Tomorrow line, unchanged (charcoal, 113 px). <b>Home:</b> the line says Tomorrow.</p>
+      <div class="ru-frames"><figure class="ru-f"><figcaption>Prep</figcaption><div class="ru-phone"><iframe src="frames/prep-d1.html" title="Prep, the day before" loading="eager"></iframe></div></figure><figure class="ru-f"><figcaption>Home</figcaption><div class="ru-phone"><iframe src="frames/home-d1.html" title="Home, the day before" loading="eager"></iframe></div></figure></div></section>
+    <section class="ru-card"><h3><small>The day</small>Thursday 12 Nov</h3><p><b>Prep:</b> the band's live rounds, unchanged. <b>Home:</b> the line says Today 18:30, so the function is on the first screen; the board's round row stays lower down.</p>
+      <div class="ru-frames"><figure class="ru-f"><figcaption>Prep</figcaption><div class="ru-phone"><iframe src="frames/prep-d0.html" title="Prep, the day" loading="eager"></iframe></div></figure><figure class="ru-f"><figcaption>Home</figcaption><div class="ru-phone"><iframe src="frames/home-d0.html" title="Home, the day" loading="eager"></iframe></div></figure></div></section>
+  </div>
+
+  <h2>States the line adds</h2>
+  <div class="ru-grid is-one">
+    <section class="ru-card"><h3><small>Tap the line</small>The function sheet</h3><p>The existing sheet, with the guests added to its first line. Dietary notes sit lower in the sheet.</p><figure class="ru-f"><div class="ru-phone"><iframe src="frames/prep-sheet.html" title="The function sheet" loading="eager"></iframe></div></figure></section>
+    <section class="ru-card"><h3><small>Two functions this week</small>+1 more opens Functions</h3><p>The functions page, Upcoming widened from 3 to 7 days so Saturday shows. Each card has time, place, guests, platters and notes.</p><figure class="ru-f"><div class="ru-phone"><iframe src="frames/fn-week.html" title="Functions, the next 7 days" loading="eager"></iframe></div></figure></section>
+    <section class="ru-card"><h3><small>Folded</small>Hidden for today</h3><p>The minus hides the line on this phone until tomorrow. The slip says so, with Undo. Home still shows it.</p><figure class="ru-f"><div class="ru-phone"><iframe src="frames/prep-hidden.html" title="Prep, line hidden" loading="eager"></iframe></div></figure></section>
+    <section class="ru-card"><h3><small>No signal</small>Saved copy</h3><p>The line stays from the list already read, with the band's own No signal words under it. Opened with no signal and nothing read: no line, never "no functions".</p><figure class="ru-f"><div class="ru-phone"><iframe src="frames/prep-offline.html" title="Prep, no signal" loading="eager"></iframe></div></figure></section>
+    <section class="ru-card"><h3><small>Cancelled</small>Smith 60th cancelled</h3><p>For the rest of the day it was cancelled, the line names it with the red Cancelled tag and Do not prep. Then it moves on to the next function.</p><figure class="ru-f"><div class="ru-phone"><iframe src="frames/prep-cancelled.html" title="Prep, cancelled function" loading="eager"></iframe></div></figure></section>
+    <section class="ru-card"><h3><small>Long name</small>Wraps, never cut</h3><p>A long function name wraps to a third line (about 70 px); nothing is cut off.</p><figure class="ru-f"><div class="ru-phone"><iframe src="frames/prep-long.html" title="Prep, long function name" loading="eager"></iframe></div></figure></section>
+    <section class="ru-card"><h3><small>Head chef's phone</small>With the cut-off bar</h3><p>On a head chef's work page during an order cut-off, the line sits above the existing cut-off bar. Both show.</p><figure class="ru-f"><div class="ru-phone"><iframe src="frames/prep-head.html" title="Head chef Prep with cut-off bar" loading="eager"></iframe></div></figure></section>
+  </div>
+
+  <h2>Head chef's Home on a laptop (1280 px)</h2>
+  <div class="ru-grid"><section class="ru-card"><h3><small>Head chef</small>Bo, Tuesday 10 Nov</h3><p>The line fills the empty space under Your day in the left column, so nothing else moves on a laptop.</p><figure class="ru-f"><div class="ru-wide"><iframe src="home-head-1280.html" title="Head chef Home at 1280" loading="eager"></iframe></div></figure></section></div>
+</main>
+</body>
+</html>
