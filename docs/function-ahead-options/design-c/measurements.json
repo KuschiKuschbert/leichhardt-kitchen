@@ -1,0 +1,1033 @@
+{
+  "source": "Preview: static pages built from ../baseline snapshots (main 184174e), real css/app.css, bundled Barlow fonts, Chromium headless shell 1243, deviceScaleFactor 1, synthetic data (Tue 10 Nov 2026 14:00)",
+  "pages": {
+    "home-390": {
+      "firstMention": {
+        "y": 218,
+        "text": "Smith 60th",
+        "tabbarTop": 776,
+        "onFirstScreen": true
+      },
+      "boxes": {
+        "card": {
+          "top": 169,
+          "bottom": 499,
+          "h": 331
+        },
+        "yourDay": {
+          "top": 522,
+          "bottom": 724,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 742,
+          "bottom": 1092,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 1110,
+          "bottom": 1291,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 1309,
+          "bottom": 1493,
+          "h": 185
+        },
+        "page": 1672
+      },
+      "factsOnFirstScreen": {
+        "time": true,
+        "guests": true,
+        "platters": true,
+        "dietaries": true,
+        "place": true
+      }
+    },
+    "home-768": {
+      "firstMention": {
+        "y": 322,
+        "text": "Smith 60th",
+        "tabbarTop": 1024,
+        "onFirstScreen": true
+      },
+      "boxes": {
+        "card": {
+          "top": 274,
+          "bottom": 566,
+          "h": 292
+        },
+        "yourDay": {
+          "top": 588,
+          "bottom": 807,
+          "h": 218
+        },
+        "onWithYou": {
+          "top": 588,
+          "bottom": 939,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 957,
+          "bottom": 1138,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 1155,
+          "bottom": 1363,
+          "h": 208
+        },
+        "page": 1463
+      },
+      "factsOnFirstScreen": {
+        "time": true,
+        "guests": true,
+        "platters": true,
+        "dietaries": true,
+        "place": true
+      }
+    },
+    "prep-390": {
+      "band": 0,
+      "cutBand": 0,
+      "addedAboveList": 0,
+      "firstRowTop": 263,
+      "addTop": 716,
+      "rowsAboveAdd": 6,
+      "rowsTotal": 6,
+      "bellDot": true
+    },
+    "orders-390": {
+      "band": 0,
+      "cutBand": 0,
+      "addedAboveList": 0,
+      "firstRowTop": 171,
+      "addTop": 716,
+      "rowsAboveAdd": 2,
+      "rowsTotal": 2,
+      "bellDot": true
+    },
+    "home-head-1280": {
+      "firstMention": {
+        "y": 302,
+        "text": "Smith 60th",
+        "tabbarTop": 900,
+        "onFirstScreen": true
+      },
+      "boxes": {
+        "card": {
+          "top": 251,
+          "bottom": 584,
+          "h": 333
+        },
+        "yourDay": {
+          "top": 607,
+          "bottom": 825,
+          "h": 218
+        },
+        "onWithYou": {
+          "top": 607,
+          "bottom": 973,
+          "h": 366
+        },
+        "prepBySection": {
+          "top": 997,
+          "bottom": 1089,
+          "h": 93
+        },
+        "comingUp": {
+          "top": 1113,
+          "bottom": 1275,
+          "h": 162
+        },
+        "page": 1375
+      },
+      "factsOnFirstScreen": {
+        "time": true,
+        "guests": true,
+        "platters": true,
+        "dietaries": true,
+        "place": true
+      }
+    },
+    "home-1280": {
+      "firstMention": {
+        "y": 300,
+        "text": "Smith 60th",
+        "tabbarTop": 900,
+        "onFirstScreen": true
+      },
+      "boxes": {
+        "card": {
+          "top": 251,
+          "bottom": 544,
+          "h": 292
+        },
+        "yourDay": {
+          "top": 566,
+          "bottom": 784,
+          "h": 218
+        },
+        "onWithYou": {
+          "top": 566,
+          "bottom": 917,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 941,
+          "bottom": 1034,
+          "h": 93
+        },
+        "comingUp": {
+          "top": 1058,
+          "bottom": 1220,
+          "h": 162
+        },
+        "page": 1319
+      },
+      "factsOnFirstScreen": {
+        "time": true,
+        "guests": true,
+        "platters": true,
+        "dietaries": true,
+        "place": true
+      }
+    }
+  },
+  "baseline": {
+    "home-390": {
+      "firstMention": {
+        "y": 998,
+        "text": "Thu 12 Nov Smith 60th, food 18:30, 10 platters",
+        "tabbarTop": 776,
+        "onFirstScreen": false
+      },
+      "boxes": {
+        "card": null,
+        "yourDay": {
+          "top": 169,
+          "bottom": 371,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 389,
+          "bottom": 739,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 757,
+          "bottom": 938,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 956,
+          "bottom": 1140,
+          "h": 185
+        },
+        "page": 1319
+      }
+    },
+    "home-768": {
+      "firstMention": {
+        "y": 884,
+        "text": "Thu 12 Nov Smith 60th, food 18:30, 10 platters",
+        "tabbarTop": 1024,
+        "onFirstScreen": true
+      },
+      "boxes": {
+        "card": null,
+        "yourDay": {
+          "top": 274,
+          "bottom": 492,
+          "h": 218
+        },
+        "onWithYou": {
+          "top": 274,
+          "bottom": 625,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 642,
+          "bottom": 823,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 841,
+          "bottom": 1049,
+          "h": 208
+        },
+        "page": 1149
+      }
+    },
+    "prep-390": {
+      "band": 0,
+      "cutBand": 0,
+      "addedAboveList": 0,
+      "firstRowTop": 263,
+      "addTop": 716,
+      "rowsAboveAdd": 6,
+      "rowsTotal": 6,
+      "bellDot": false
+    },
+    "orders-390": {
+      "band": 0,
+      "cutBand": 0,
+      "addedAboveList": 0,
+      "firstRowTop": 171,
+      "addTop": 716,
+      "rowsAboveAdd": 2,
+      "rowsTotal": 2,
+      "bellDot": false
+    },
+    "home-head-1280": {
+      "firstMention": {
+        "y": 801,
+        "text": "Thu 12 Nov Smith 60th, food 18:30, 10 platters",
+        "tabbarTop": 900,
+        "onFirstScreen": true
+      },
+      "boxes": {
+        "card": null,
+        "yourDay": {
+          "top": 251,
+          "bottom": 469,
+          "h": 218
+        },
+        "onWithYou": {
+          "top": 251,
+          "bottom": 617,
+          "h": 366
+        },
+        "prepBySection": {
+          "top": 641,
+          "bottom": 734,
+          "h": 93
+        },
+        "comingUp": {
+          "top": 758,
+          "bottom": 920,
+          "h": 162
+        },
+        "page": 1020
+      }
+    }
+  },
+  "taps": {
+    "homeToSmithDetails": {
+      "taps": 0,
+      "how": "Home opens with the card: time, guests, platters, dietaries and place on the first screen",
+      "check": {
+        "time": true,
+        "guests": true,
+        "platters": true,
+        "dietaries": true,
+        "place": true
+      }
+    },
+    "homeToJonesDetails": {
+      "taps": 1,
+      "how": "Got it on Smith 60th shows Jones wedding (2 of 2); its name and day are already on the first card (Also this week), 0 taps",
+      "check": true
+    },
+    "afterBothGotIt": {
+      "shown": true,
+      "height": 58,
+      "words": "Got it: Jones wedding. Both stay in Coming up.Undo"
+    },
+    "undoBringsBack": true,
+    "prepToSmithDetails": {
+      "taps": 1,
+      "how": "Not yet Got it: the bell (dot) opens the sheet with the heads-up. Or the KB mark to Home, 1 tap, card on top. After Got it: as today, Home then Open functions (2 taps and a scroll)",
+      "check": true
+    },
+    "baseline": {
+      "homeToSmithDetails": "1 tap and a scroll: Coming up starts at 955 px, then Open functions (#/fn shows the next 3 days with time, guests, platters and notes)",
+      "prepToSmithDetails": "2 taps and a scroll (KB mark to Home, Open functions)",
+      "homeToJonesDetails": "2 taps and a scroll (Open functions, Show the next 14 days)",
+      "source": "Implemented app baseline (evidence.md) and the #/fn card in js/functions.js cardHTML()"
+    },
+    "afterGotItLater": {
+      "homeToSmithDetails": "As baseline: 1 tap and a scroll (Coming up, Open functions). Design C does not change Coming up.",
+      "note": "Counted from the design, not exercised"
+    }
+  },
+  "overflow": {
+    "home-390": 0,
+    "home-768": 0,
+    "prep-390": 0,
+    "orders-390": 0,
+    "home-head-1280": 0,
+    "home-1280": 0,
+    "prep-390-bell-open": 0,
+    "runup-1280": 0,
+    "state-d5-home-new": 0,
+    "state-d5-home-got": 0,
+    "state-d5-prep": 0,
+    "state-od-home-new": 0,
+    "state-od-home-got": 0,
+    "state-od-prep": 0,
+    "state-d2-home-new": 0,
+    "state-d2-home-got": 0,
+    "state-d2-prep": 0,
+    "state-d1-home-tom": 0,
+    "state-d1-home-got": 0,
+    "state-d1-prep": 0,
+    "state-d0-home": 0,
+    "state-d0-prep": 0,
+    "state-s-got-next": 0,
+    "state-s-done": 0,
+    "state-s-later": 0,
+    "state-s-nosignal": 0,
+    "state-s-changed": 0,
+    "state-s-cancelled": 0,
+    "state-s-short": 0,
+    "state-s-bell": 0,
+    "state-s-head-home": 0,
+    "state-s-head-sheet": 0,
+    "state-d1-home-tom-768": 0,
+    "state-s-changed-768": 0,
+    "state-s-cancelled-768": 0
+  },
+  "errors": {},
+  "frames": {
+    "d5-home-new": {
+      "firstMention": {
+        "y": 218,
+        "text": "Smith 60th",
+        "tabbarTop": 776,
+        "onFirstScreen": true
+      },
+      "boxes": {
+        "card": {
+          "top": 169,
+          "bottom": 499,
+          "h": 331
+        },
+        "yourDay": {
+          "top": 522,
+          "bottom": 724,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 742,
+          "bottom": 1092,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 1110,
+          "bottom": 1291,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 1309,
+          "bottom": 1493,
+          "h": 185
+        },
+        "page": 1672
+      }
+    },
+    "d5-home-got": {
+      "firstMention": {
+        "y": 998,
+        "text": "Thu 12 Nov Smith 60th, food 18:30, 10 platters",
+        "tabbarTop": 776,
+        "onFirstScreen": false
+      },
+      "boxes": {
+        "card": null,
+        "yourDay": {
+          "top": 169,
+          "bottom": 371,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 389,
+          "bottom": 739,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 757,
+          "bottom": 938,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 956,
+          "bottom": 1140,
+          "h": 185
+        },
+        "page": 1319
+      }
+    },
+    "d5-prep": {
+      "band": 0,
+      "cutBand": 0,
+      "addedAboveList": 0,
+      "firstRowTop": 263,
+      "addTop": 716,
+      "rowsAboveAdd": 6,
+      "rowsTotal": 6,
+      "bellDot": true
+    },
+    "od-home-new": {
+      "firstMention": {
+        "y": 218,
+        "text": "Smith 60th",
+        "tabbarTop": 776,
+        "onFirstScreen": true
+      },
+      "boxes": {
+        "card": {
+          "top": 169,
+          "bottom": 499,
+          "h": 331
+        },
+        "yourDay": {
+          "top": 522,
+          "bottom": 724,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 742,
+          "bottom": 1092,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 1313,
+          "bottom": 1494,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 1512,
+          "bottom": 1697,
+          "h": 185
+        },
+        "page": 1875
+      }
+    },
+    "od-home-got": {
+      "firstMention": {
+        "y": 807,
+        "text": "Order the stock for Smith 60th",
+        "tabbarTop": 776,
+        "onFirstScreen": false
+      },
+      "boxes": {
+        "card": null,
+        "yourDay": {
+          "top": 169,
+          "bottom": 371,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 389,
+          "bottom": 739,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 960,
+          "bottom": 1141,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 1159,
+          "bottom": 1344,
+          "h": 185
+        },
+        "page": 1522
+      }
+    },
+    "od-prep": {
+      "band": 171,
+      "cutBand": 0,
+      "addedAboveList": 0,
+      "firstRowTop": 434,
+      "addTop": 716,
+      "rowsAboveAdd": 3,
+      "rowsTotal": 6,
+      "bellDot": false
+    },
+    "d2-home-new": {
+      "firstMention": {
+        "y": 218,
+        "text": "Smith 60th",
+        "tabbarTop": 776,
+        "onFirstScreen": true
+      },
+      "boxes": {
+        "card": {
+          "top": 169,
+          "bottom": 499,
+          "h": 331
+        },
+        "yourDay": {
+          "top": 522,
+          "bottom": 724,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 742,
+          "bottom": 1092,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 1110,
+          "bottom": 1291,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 1309,
+          "bottom": 1493,
+          "h": 185
+        },
+        "page": 1672
+      }
+    },
+    "d2-home-got": {
+      "firstMention": {
+        "y": 998,
+        "text": "Thu 12 Nov Smith 60th, food 18:30, 10 platters",
+        "tabbarTop": 776,
+        "onFirstScreen": false
+      },
+      "boxes": {
+        "card": null,
+        "yourDay": {
+          "top": 169,
+          "bottom": 371,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 389,
+          "bottom": 739,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 757,
+          "bottom": 938,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 956,
+          "bottom": 1140,
+          "h": 185
+        },
+        "page": 1319
+      }
+    },
+    "d2-prep": {
+      "band": 0,
+      "cutBand": 0,
+      "addedAboveList": 0,
+      "firstRowTop": 263,
+      "addTop": 716,
+      "rowsAboveAdd": 6,
+      "rowsTotal": 6,
+      "bellDot": true
+    },
+    "d1-home-tom": {
+      "firstMention": {
+        "y": 202,
+        "text": "Smith 60th Thu 12 Nov",
+        "tabbarTop": 776,
+        "onFirstScreen": true
+      },
+      "boxes": {
+        "card": {
+          "top": 169,
+          "bottom": 373,
+          "h": 205
+        },
+        "yourDay": {
+          "top": 396,
+          "bottom": 598,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 616,
+          "bottom": 966,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 984,
+          "bottom": 1165,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 1183,
+          "bottom": 1367,
+          "h": 185
+        },
+        "page": 1546
+      }
+    },
+    "d1-home-got": {
+      "firstMention": {
+        "y": 998,
+        "text": "Tomorrow Smith 60th, food 18:30, 10 platters",
+        "tabbarTop": 776,
+        "onFirstScreen": false
+      },
+      "boxes": {
+        "card": null,
+        "yourDay": {
+          "top": 169,
+          "bottom": 371,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 389,
+          "bottom": 739,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 757,
+          "bottom": 938,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 956,
+          "bottom": 1140,
+          "h": 185
+        },
+        "page": 1319
+      }
+    },
+    "d1-prep": {
+      "band": 113,
+      "cutBand": 0,
+      "addedAboveList": 0,
+      "firstRowTop": 376,
+      "addTop": 716,
+      "rowsAboveAdd": 4,
+      "rowsTotal": 6,
+      "bellDot": false
+    },
+    "d0-home": {
+      "firstMention": {
+        "y": 807,
+        "text": "Smith 60th",
+        "tabbarTop": 776,
+        "onFirstScreen": false
+      },
+      "boxes": {
+        "card": null,
+        "yourDay": {
+          "top": 169,
+          "bottom": 371,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 389,
+          "bottom": 739,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 882,
+          "bottom": 1063,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 1080,
+          "bottom": 1232,
+          "h": 152
+        },
+        "page": 1411
+      }
+    },
+    "d0-prep": {
+      "band": 116,
+      "cutBand": 0,
+      "addedAboveList": 0,
+      "firstRowTop": 379,
+      "addTop": 716,
+      "rowsAboveAdd": 4,
+      "rowsTotal": 6,
+      "bellDot": false
+    },
+    "s-got-next": {
+      "firstMention": {
+        "y": 184,
+        "text": "Got it: Smith 60th. It stays in Coming up.",
+        "tabbarTop": 776,
+        "onFirstScreen": true
+      },
+      "boxes": {
+        "card": {
+          "top": 169,
+          "bottom": 526,
+          "h": 358
+        },
+        "yourDay": {
+          "top": 549,
+          "bottom": 751,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 769,
+          "bottom": 1119,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 1137,
+          "bottom": 1318,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 1336,
+          "bottom": 1520,
+          "h": 185
+        },
+        "page": 1699
+      }
+    },
+    "s-done": {
+      "firstMention": {
+        "y": 1079,
+        "text": "Thu 12 Nov Smith 60th, food 18:30, 10 platters",
+        "tabbarTop": 776,
+        "onFirstScreen": false
+      },
+      "boxes": {
+        "card": {
+          "top": 169,
+          "bottom": 227,
+          "h": 58
+        },
+        "yourDay": {
+          "top": 250,
+          "bottom": 452,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 469,
+          "bottom": 820,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 838,
+          "bottom": 1019,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 1036,
+          "bottom": 1221,
+          "h": 185
+        },
+        "page": 1400
+      }
+    },
+    "s-later": {
+      "firstMention": {
+        "y": 998,
+        "text": "Thu 12 Nov Smith 60th, food 18:30, 10 platters",
+        "tabbarTop": 776,
+        "onFirstScreen": false
+      },
+      "boxes": {
+        "card": null,
+        "yourDay": {
+          "top": 169,
+          "bottom": 371,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 389,
+          "bottom": 739,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 757,
+          "bottom": 938,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 956,
+          "bottom": 1140,
+          "h": 185
+        },
+        "page": 1319
+      }
+    },
+    "s-nosignal": {
+      "firstMention": {
+        "y": 218,
+        "text": "Smith 60th",
+        "tabbarTop": 776,
+        "onFirstScreen": true
+      },
+      "boxes": {
+        "card": {
+          "top": 169,
+          "bottom": 507,
+          "h": 338
+        },
+        "yourDay": {
+          "top": 529,
+          "bottom": 731,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 749,
+          "bottom": 1100,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 1118,
+          "bottom": 1299,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 1316,
+          "bottom": 1501,
+          "h": 185
+        },
+        "page": 1680
+      }
+    },
+    "s-changed": {
+      "firstMention": {
+        "y": 222,
+        "text": "Smith 60th",
+        "tabbarTop": 776,
+        "onFirstScreen": true
+      },
+      "boxes": {
+        "card": {
+          "top": 169,
+          "bottom": 549,
+          "h": 380
+        },
+        "yourDay": {
+          "top": 571,
+          "bottom": 773,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 791,
+          "bottom": 1142,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 1159,
+          "bottom": 1340,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 1358,
+          "bottom": 1543,
+          "h": 185
+        },
+        "page": 1721
+      }
+    },
+    "s-cancelled": {
+      "firstMention": {
+        "y": 222,
+        "text": "Smith 60th",
+        "tabbarTop": 776,
+        "onFirstScreen": true
+      },
+      "boxes": {
+        "card": {
+          "top": 169,
+          "bottom": 416,
+          "h": 247
+        },
+        "yourDay": {
+          "top": 438,
+          "bottom": 641,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 658,
+          "bottom": 1009,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 1027,
+          "bottom": 1208,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 1225,
+          "bottom": 1377,
+          "h": 152
+        },
+        "page": 1556
+      }
+    },
+    "s-short": {
+      "firstMention": {
+        "y": 1472,
+        "text": "Thu 12 Nov Smith 60th, food 18:30, 10 platters",
+        "tabbarTop": 776,
+        "onFirstScreen": false
+      },
+      "boxes": {
+        "card": {
+          "top": 169,
+          "bottom": 476,
+          "h": 307
+        },
+        "yourDay": {
+          "top": 498,
+          "bottom": 700,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 718,
+          "bottom": 1069,
+          "h": 351
+        },
+        "prepBySection": {
+          "top": 1230,
+          "bottom": 1411,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 1429,
+          "bottom": 1670,
+          "h": 241
+        },
+        "page": 1848
+      }
+    },
+    "s-head-home": {
+      "firstMention": {
+        "y": 218,
+        "text": "Smith 60th",
+        "tabbarTop": 776,
+        "onFirstScreen": true
+      },
+      "boxes": {
+        "card": {
+          "top": 169,
+          "bottom": 712,
+          "h": 543
+        },
+        "yourDay": {
+          "top": 734,
+          "bottom": 936,
+          "h": 202
+        },
+        "onWithYou": {
+          "top": 954,
+          "bottom": 1320,
+          "h": 366
+        },
+        "prepBySection": {
+          "top": 1337,
+          "bottom": 1518,
+          "h": 181
+        },
+        "comingUp": {
+          "top": 1536,
+          "bottom": 1721,
+          "h": 185
+        },
+        "page": 1899
+      }
+    }
+  },
+  "maxOverflow": 0
+}

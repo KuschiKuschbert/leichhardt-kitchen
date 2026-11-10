@@ -1,0 +1,80 @@
+/* Design C preview (10 Nov 2026), "Tell everyone once": the Function heads-up card on Home.
+   Preview only. Every colour is an existing token from css/app.css :root; no new palette.
+   Body: quiet paper (functions keep quiet card bodies). Edge: the work steel edge, as on .fn-row.
+   Attention comes from the place (top of Home, once) and the words, not from an amber fill. */
+.fn-hu {
+  margin: 0 0 1.4rem;
+  padding: 0.8rem 1rem 0.7rem 1.15rem;
+  box-shadow: inset 4px 0 0 var(--surface-work-edge), 0 4px 0 rgba(28, 29, 31, 0.14);
+}
+.fn-hu[hidden] { display: none; }
+.fn-hu .hm-ph { margin-bottom: 0.15rem; }
+.fn-hu .hm-pt { color: var(--small-ink); }
+.fn-hu-n { font: 700 0.8rem/1.2 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.fn-hu-when { margin: 0.3rem 0 0; font: 700 0.85rem/1.2 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--small-ink); }
+.fn-hu-name { margin: 0.1rem 0 0; font: 700 1.75rem/1.1 var(--display); overflow-wrap: anywhere; }
+.fn-hu-sub { margin: 0.15rem 0 0; font-weight: 600; color: var(--muted); overflow-wrap: anywhere; }
+.fn-hu-facts { margin: 0.55rem 0 0; border-top: 1px solid var(--line); }
+.fn-hu-facts > div { display: grid; grid-template-columns: 5.6rem minmax(0, 1fr); gap: 0.6rem; padding: 0.26rem 0; border-bottom: 1px solid var(--line); }
+.fn-hu-facts dt { padding-top: 0.12rem; font: 700 0.75rem/1.5 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.fn-hu-facts dd { margin: 0; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.fn-hu-act { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.1rem; margin-top: 0.6rem; }
+.fn-hu-got { min-width: 8.5rem; }
+.fn-hu-open { display: inline-flex; align-items: center; min-height: 44px; font-weight: 700; color: var(--ink); text-underline-offset: 3px; }
+.fn-hu-also { margin: 0.4rem 0 0; font-size: 0.95rem; overflow-wrap: anywhere; }
+.fn-hu-also b { font: 700 0.8rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--small-ink); }
+.fn-hu-foot { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--muted); }
+.fn-hu-sig { margin: 0.35rem 0 0; padding: 0.15rem 0.5rem; border-radius: 6px; background: var(--surface-reference); font-size: 0.9rem; font-weight: 600; color: var(--ink); }
+
+/* the second, short heads-up on the day before */
+.fn-hu.is-tom .fn-hu-name { font-size: 1.45rem; }
+.fn-hu-line { margin: 0.25rem 0 0; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+
+/* changed since this person tapped Got it: the existing function Changed tag and the change words */
+.fn-hu-chg { margin: 0.5rem 0 0; padding: 0.4rem 0 0.1rem; list-style: none; border-top: 1px solid var(--line); }
+.fn-hu-chg li { padding: 0.15rem 0; font-weight: 600; overflow-wrap: anywhere; }
+.fn-hu-chg li span { color: var(--muted); font-weight: 500; }
+.fn-hu-facts dd ins { text-decoration: none; padding: 0 3px; border-radius: 3px; box-shadow: inset 0 -2px 0 var(--accent-ink); }
+
+/* cancelled after this person was told: the existing failure/adverse family, with words */
+.fn-hu.is-off { background: var(--bad-tint); box-shadow: inset 4px 0 0 var(--bad-ink), 0 4px 0 rgba(28, 29, 31, 0.14); }
+.fn-hu.is-off .hm-pt, .fn-hu.is-off .fn-hu-when { color: var(--bad-ink); }
+.fn-hu.is-off .fn-hu-name s { text-decoration-thickness: 2px; }
+.fn-hu.is-off .fn-hu-sub { color: var(--ink); }
+
+/* Got it answered in the card's own frame: neutral words (a local acknowledgement, not a server Saved) */
+.fn-hu-done { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; margin: 0 0 0.35rem; padding: 0 0 0.3rem; border-bottom: 1px dashed var(--edge); font-size: 0.95rem; font-weight: 600; line-height: 1.3; }
+.fn-hu-done > span { display: flex; align-items: flex-start; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.fn-hu-done svg { flex: 0 0 auto; display: block; width: 16px; height: 16px; margin-top: 1px; }
+.fn-hu-done .p-link { flex: 0 0 auto; min-height: 44px; }
+.fn-hu.is-done { padding-top: 0.45rem; padding-bottom: 0.45rem; }
+.fn-hu.is-done .fn-hu-done { margin: 0; padding: 0; border: 0; }
+
+/* chefs: who has seen it (phase 2, receipts read on a tap) */
+.fn-hu-seen { margin-top: 0.7rem; padding: 0.6rem 0.75rem 0.5rem; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+.fn-hu-seen-h { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.2rem 0.6rem; }
+.fn-hu-seen-h b { font: 700 0.8rem var(--display); letter-spacing: 0.12em; text-transform: uppercase; }
+.fn-hu-seen-h span { font-size: 0.85rem; color: var(--muted); }
+.fn-hu-seen p { margin: 0.35rem 0 0; line-height: 1.4; overflow-wrap: anywhere; }
+.fn-hu-k { display: inline-block; min-width: 6.2rem; font: 700 0.8rem var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.fn-hu-seen .p-link { display: inline-flex; align-items: center; min-height: 44px; }
+
+@media (min-width: 720px) {
+  /* staff: the three facts side by side; chefs with Who has seen it open: facts left, the list right */
+  .fn-hu-cols:has(> .fn-hu-seen:not([hidden])) { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 0.4rem 2rem; align-items: start; }
+  .fn-hu-cols:has(> .fn-hu-seen:not([hidden])) .fn-hu-seen { margin-top: 0.35rem; }
+  .fn-hu-cols:not(:has(> .fn-hu-seen:not([hidden]))) .fn-hu-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 1.5rem; border-bottom: 1px solid var(--line); }
+  .fn-hu-cols:not(:has(> .fn-hu-seen:not([hidden]))) .fn-hu-facts > div { grid-template-columns: minmax(0, 1fr); gap: 0.05rem; padding: 0.35rem 0; border-bottom: 0; }
+}
+
+/* the bell's sheet, opened by a tap: the heads-up as an inbox row (preview copy of .nt-wrap) */
+.c-sheet[hidden] { display: none; }
+.nt-i.t-function .nt-w p { font-size: 1.05rem; }
+.c-sheet .nt-meta .fn-tag { margin-right: 4px; }
+
+/* the function sheet's new Heads-up part (chefs) */
+.fn-hu-sh { margin-top: 0.4rem; }
+.fn-hu-sh .fn-hu-seen { margin-top: 0.4rem; }
+
+.c-sheet .c-sh1 { margin-top: 4px; padding-top: 0; border-top: 0; }
+.nt-i.t-function .nt-w p + p { font-size: 0.95rem; font-weight: 500; }

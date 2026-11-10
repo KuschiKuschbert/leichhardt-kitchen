@@ -1,0 +1,312 @@
+[
+ {
+  "reviewer": "The cook mid-service",
+  "structurallyDifferent": "Yes, structurally different, not just cosmetic. A adds one standing quiet line in the band's slot on every work page and under Your day on Home, so it is passive and always on while the band is empty. B spreads the run-up milestones inside the pages: a day strip above Your day on Home, a This week line and a day-before Prep ahead entry inside the prep list's own frame, and tags on the Orders stock line. It also takes the Order and Tomorrow lines out of the band. C is a one-off, per-person acknowledgement: a full-fact heads-up card on Home with Got it, a reminder only through the bell dot, and nothing new on the work pages. The three differ in placement, disclosure, task sequence and lifetime.",
+  "ranking": [
+   "C",
+   "A",
+   "B"
+  ],
+  "scores": {
+   "a": 6,
+   "b": 4,
+   "c": 8
+  },
+  "perDesign": [
+   {
+    "design": "A",
+    "strength": "Quiet, static and predictable. One name in one slot on every page, no motion, and the minus folds it for the day with a slip and Undo. One pull request, with no new reads or rules.",
+    "weakness": "It costs one complete prep row at 390 on every band-empty day for every person, all week (6 to 5, Preview). The small-caps label and date cannot be read at arm's length. The +1 more and minus sit just under the chef hat, so a stray tap takes Prep away to #/fn mid-service.",
+    "take": "The #/fn Upcoming going from 3 to 7 days, and guests on the sheet's first line. Also the quiet line itself, but only as a reminder for a person who has not yet acknowledged the function.",
+    "reject": "The line shown to everyone on every work page for the whole week. Once I know about the function it is a permanent row tax during service.",
+    "principle": "Things 3: keep today's work and upcoming work distinct and tuck occasional details away. Airbnb: time, place and requirements together on the sheet."
+   },
+   {
+    "design": "B",
+    "strength": "Each mention is tied to the job it serves. The Orders 'Not ordered yet, For Sat 14 Nov' tag sits inside the existing stock line and adds no space above the list. The Home card gives all the facts in place with 1 tap.",
+    "weakness": "It puts expandable and actionable things inside my live prep list: This week Show adds about 200 px and the day-before Prep ahead entry is 135 px with Add buttons. A wet-hand tap meant for the Grill line shifts every row or adds an item. The strip goes above Your day, the open card pushes Your day off the screen, and Order and Tomorrow leave the band on Wastage, Transfers and Recipes, which works against 'every page'. It needs 3 pull requests and the most relearning.",
+    "take": "The Not ordered yet tag with its 'order day was' words inside the existing function stock line on Orders.",
+    "reject": "Anything inside the prep list (the This week line and the day-before Prep ahead entry with Add), the strip above Your day, and removing the band's Order and Tomorrow lines.",
+    "principle": "Linear: the work frame stays stable and more prominent than navigation, with no second system inside the list. Flighty: real status from data the phone already holds (the tag)."
+   },
+   {
+    "design": "C",
+    "strength": "Work pages are untouched: Prep 6 of 6 rows and Orders 2 of 2 at 390 on every run-up day (Preview). The first PIN of the day lands on a big, readable card with time, guests, platters and dietaries at 0 taps. Got it answers by name, with Undo. It comes back once when the function changes or is cancelled.",
+    "weakness": "The card sits above Your day until Got it. The bell dot stays lit for an unseen heads-up, possibly for days, so at 19:30 I stop to check the bell for something four days away, or learn to ignore a dot that also means pings and minutes. Got it can be a reflex tap, and adds taps in a busy week. After Got it, finding the function again is as hard as today.",
+    "take": "The one-off heads-up card with every fact, Got it with Undo, the Changed and Cancelled returns, and the Tomorrow heads-up.",
+    "reject": "Using the bell dot as the work-page reminder, and placing the card above Your day (use C's own repair: directly under Your day).",
+    "principle": "Duolingo: an immediate, truthful answer by name with Undo. Airbnb: all the facts and the next action together. Headspace rejects the bell dot: one meaning per signal."
+   }
+  ],
+  "mix": "Blending every surface of all three loses for the line: the same function in three places (strip, standing line, card), fewer prep rows and more for a new starter to learn. A selective blend of all three beats pure C:\n- C's heads-up card, placed directly under Your day.\n- A's quiet band-slot line on work pages, shown only to a person who has not yet tapped Got it, replacing C's bell dot. It is drawn only when a page opens, never mid-view.\n- A's 7-day #/fn Upcoming and guests on the sheet.\n- B's Not ordered yet tag inside the existing Orders stock line.\n\nWhat I reject: B's in-list This week and Prep ahead entries, B's Home strip, and B's removal of the band lines.\n\nConflicts and costs:\n- Per-person Got it state now decides whether a work-page line shows. On a shared tablet a handover could add or remove it, so it must be drawn only on page open, never live.\n- B's tag makes the stock line taller.\n- The mix needs its own combined preview and measured rows at 390, 768 and 1280.",
+  "mixBeatsBest": true,
+  "recommendation": "Recommend C's heads-up card placed under Your day, plus:\n- A's quiet Next function line on the work pages, only until that person taps Got it. It replaces C's bell dot.\n- A's 7-day #/fn Upcoming and guests on the sheet's first line.\n- B's Not ordered yet tag inside the existing Orders stock line.\n\nThis needs one combined preview, and Prep rows remeasured in the implemented app at 390 before the head chef chooses.",
+  "mainDownside": "Per-person acknowledgement state now drives a line on the work pages. It adds build and test cost: per-person keys on a shared tablet, draw only on page open, and the midnight change. Anyone who never taps Got it still loses one prep row on band-empty days until the day before.",
+  "contractFit": "Needs work.\n\nWhat works:\n- Surfaces and words. C and A use quiet paper or reference surfaces, never charcoal or amber for upcoming information, and every state has words.\n- Service continuity on the work pages. C has 6 of 6 Prep rows and 0 px added (Preview).\n\nWhat needs the head chef's decision:\n- C's card above Your day and B's strip both depart from the staff-first Home order.\n- C's bell dot changes what an existing top bar button means.\n- B's removal of the band's Order and Tomorrow lines reverses the 22 Oct decision.\n\nWhat is not evidenced:\n- All row counts are Preview with bundled fonts. The implemented-app baseline shows 5 rows with stand-in fonts, so remeasure in the full app.\n- Focus rings, large text, the midnight change and live listener updates are untested.",
+  "breakIt": [
+   "C, staff phone mid-service (Risk / Not evidenced): the bell dot stays lit for an unseen heads-up for days. At 19:30 a cook stops to open the bell for a function four days away, or learns to ignore the dot that also signals pings and minutes to sign. Smallest check: count how long the dot stays on for a person who skips Home, or replace the dot with A's line until Got it.",
+   "B, Prep at 390 with wet hands (Risk / Not evidenced): the This week Show line and the day-before Prep ahead entry with Add sit inside the live list. A tap meant for the first Grill line expands about 135 to 200 px or adds an item, so the next tick lands on the wrong row. Smallest check: a click test that taps Show and checks the first row's position, like the header-height rule.",
+   "Mix or C on a shared tablet (Risk / Not evidenced): if the per-person Got it state drives a work-page line, a handover while Prep is open could add or remove 50 px above the list mid-view. Required: draw it only on page open, keyed per staff id, with a click test of a handover while Prep is open.",
+   "A, Prep (Risk, low harm): +1 more and the minus sit just under the chef hat. A stray tap mid-service navigates to #/fn or hides the line. No write, but it costs a Back tap."
+  ],
+  "text": "Cook mid-service. Structurally different: yes. A adds a standing line to every work page; B puts milestones inside Home, Prep and Orders and empties the band; C tells each person once on Home and leaves work pages alone.\n\n1 C (8): Prep keeps 6 of 6 rows, Orders 2 of 2 at 390 (Preview); every fact at 0 taps on the first PIN. Weak: above Your day until Got it; the bell dot stays lit, so at 19:30 I check the bell for something four days off.\n2 A (6): quiet, static, folds for the day. Weak: one prep row lost (6 to 5) every band-empty day; small text, unreadable at arm's length.\n3 B (4): good Orders tag, but This week Show and the day-before Prep ahead with Add sit inside my list and push rows 135 to 200 px on a wet-hand tap.\n\nA: take 7-day Upcoming and guests on the sheet (Airbnb); reject the line for everyone all week (Things 3). B: take the Not ordered yet tag in the stock line (Flighty); reject anything inside the prep list (Linear). C: take the card, Got it and Undo (Duolingo); reject the bell dot (Headspace) and the slot above Your day.\n\nAll three surfaces together lose: one fact in three places, fewer rows. A selective blend beats C. Recommend C's card under Your day, plus A's quiet line only until that person taps Got it (replacing the bell dot), A's 7-day Upcoming and guests, and B's Orders tag. Downside: per-person state drives a work-page line; it needs its own preview and must draw only on page open, so a tablet handover never shifts rows.\n\nContract fit: Needs work. Surfaces and words work; Home order and bell meaning need the head chef; rows are Preview only."
+ },
+ {
+  "reviewer": "The head chef",
+  "structurallyDifferent": "Yes. A adds one quiet line in the band's empty slot on every work page and under Your day. B spreads the run-up through the pages (a Home week strip, a line inside the Prep list, tags on Orders) and takes the order-day and Tomorrow lines out of the band. C tells each person once on Home with a full card and Got it, and adds nothing to the work pages. They differ in placement, persistence, interaction (read vs acknowledge) and band behaviour.",
+  "ranking": [
+   "A",
+   "C",
+   "B"
+  ],
+  "scores": {
+   "a": 7,
+   "b": 4,
+   "c": 6
+  },
+  "perDesign": [
+   {
+    "design": "A",
+    "strength": "Fixes the actual Tuesday problem, a Saturday function nowhere on Prep, on every work page and on Home's first screen (413 px, was 998). One PR, no new reads, writes or rules.",
+    "weakness": "Passive and likely to become wallpaper. Costs one prep row at 390 px (6 to 5) on band-empty days. Saturday only shows as '+1 more' until Friday.",
+    "take": "The Next function line in the band slot, #/fn Upcoming 3 to 7 days (confirmed pageDays = 3 in js/functions.js) and guests on the sheet's first line.",
+    "reject": "'+1 more' as the only cue for a second function in the week.",
+    "principle": "Linear: one name, one place, the same tap to the same sheet on every page."
+   },
+   {
+    "design": "B",
+    "strength": "The week strip shows the shape of the week, and Prep ahead on the day before is useful thinking.",
+    "weakness": "3 PRs and the most relearning. It takes Order today and Tomorrow off Wastage, Transfers and Recipes, the opposite of 'every page'. The strip sits above Your day. Prep ahead needs content of mine that is still [To come].",
+    "take": "Only the 'Not ordered yet, order day was Sun 8 Nov' tag on the rolled function stock line (0 px), later, in its own PR if wanted.",
+    "reject": "Emptying the band and the strip above Your day.",
+    "principle": "Things 3: today's work first, upcoming apart. B puts next week ahead of the person's own day and removes today's warnings."
+   },
+   {
+    "design": "C",
+    "strength": "Every fact (time, guests, platters, dietaries) on Home's first screen with 0 taps and 0 px on Prep. It comes back once on a change or cancellation.",
+    "weakness": "The card sits above Your day, and it adds a Got it tap per function per person per stage. After Got it there is nothing on the work pages, so my own problem stays. The person who saved the function is never shown it.",
+    "take": "The phase 1 heads-up card with Got it and Undo, placed under Your day (its own stated repair).",
+    "reject": "The bell dot meaning 'heads-up' (changes the pings contract) and the phase 2 receipts for now (looser rules, backups, more writes).",
+    "principle": "Airbnb: day, place, guests, platters, dietaries and next action together on one card."
+   }
+  ],
+  "mix": "A + B + C does not beat a two-way mix. Home would tell the same thing three times (strip, card, line), and B's empty band conflicts with A's line in that slot. It would be 5 or more PRs and need a rules change for receipts. A + C (phase 1 card under Your day, which becomes A's quiet line after Got it) can beat pure A. It gives a real 'attention' moment once per person and keeps A's every-page reminder. It costs a second PR and needs its own combined preview.",
+  "mixBeatsBest": false,
+  "recommendation": "Recommend A + C's phase 1 heads-up card placed under Your day. On Home, the card shows until that person taps Got it, then becomes A's quiet Next function line. A's line on work pages, #/fn 7 days and guests on the sheet stay as specified. No B, no bell dot and no receipts for now. B's Orders tag can come later in its own PR.",
+  "mainDownside": "One prep row lost at 390 px on band-empty days, plus one Got it tap per function per person. Until the card is tapped, On with you is pushed off the first screen. The mix has no preview or measurements yet.",
+  "contractFit": "Needs work. Surfaces and words fit in A and C: quiet paper, not charcoal or amber, every state in words. The lost prep row (rule 4) and a function card on Home's staff-first order need my OK. B departs from the 22 Oct band decision and from staff-first. Not evidenced: midnight handover, moved, failed read, focus rings, roles (signed out, Functions only).",
+  "breakIt": [
+   "Midnight: A's Next line must hand over to the band's Tomorrow line, and C's week card to the Tomorrow card, in one repaint. A missed repaint shows both or neither (Risk / Not evidenced; needs a clock test at 23:59 and 00:01 Queensland).",
+   "Weak Wi-Fi that looks online: a function cancelled on another phone stays on A's line or C's card, and a cook preps for nothing (Risk / Not evidenced; test that the listener's cancel update clears both).",
+   "Shared tablet: Got it is stored against the wrong person, so the first cook never sees the card (Risk; per-person key test with two people signed in in turn).",
+   "B only: a Monday function's order day falls outside the 7-day strip and the band's Order line is gone, so the stock is missed (Risk, not drawn)."
+  ],
+  "text": "Head chef. The designs differ structurally. A adds one quiet line in the band's empty slot on every page and under Your day. B spreads the run-up into each page and empties the band. C tells each person once on Home with Got it and leaves the work pages alone.\n\nRank: A 7, C 6, B 4.\nA: fixes my actual Tuesday problem (Saturday's function nowhere on Prep) on every page, in 1 PR with no reads or rules. Weakness: it is passive and costs one prep row (6 to 5) on band-empty days.\nC: every fact on Home's first screen and 0 px on Prep. Weakness: the card sits above Your day, it adds a Got it per function, and after Got it the work pages show nothing, so my own problem stays.\nB: the week strip is clever. Weakness: 3 PRs and the most relearning, and it takes Order today and Tomorrow off Wastage, Transfers and Recipes, the opposite of what I asked.\n\nTake: A's line, #/fn 7 days and guests on the sheet (Linear). C's card under Your day (Airbnb). Later, B's Not ordered yet tag on Orders (0 px).\nReject: B's empty band and the strip above Your day (Things 3). C's bell dot and receipts for now (pings contract, rules cost).\n\nBlending all three loses. Home would tell the same thing three times, and B's empty band fights A's line.\n\nRecommend A plus C's phase 1 card under Your day, which becomes A's line after Got it. Main downside: one prep row and one Got it tap per function; this mix needs its own combined preview first.\n\nContract fit: Needs work. Surfaces and words fit. The lost row and the Home order need my OK. Midnight, moved, failed read and focus are Not evidenced.\n\nBreak it: the midnight handover showing both lines or neither; a cancelled function still showing on weak Wi-Fi; Got it stored against the wrong person on the shared tablet."
+ },
+ {
+  "reviewer": "The skeptic",
+  "structurallyDifferent": "Yes, they differ in structure, not just looks. A adds one passive, permanent line in slots that already exist: under Your day on Home, and in the band's slot on days the band would be empty. B splits the run-up into milestones shown inside each page's own frame: a week strip and an in-place card on Home, a This week line inside the Prep list, tags on Orders. It also takes the Order and Tomorrow lines out of the band. C replaces standing lines with a one-off Home card per person and stage, put away with Got it, plus the bell's dot on work pages and optional receipts. They differ in placement, how long the message stays, the interaction (read, open in place, acknowledge) and what each one writes.",
+  "ranking": [
+   "A",
+   "C",
+   "B"
+  ],
+  "scores": {
+   "a": 7,
+   "b": 4,
+   "c": 5
+  },
+  "perDesign": [
+   {
+    "design": "A, Fill the gap",
+    "strength": "Fixes the incident that was reported with the least change. On Home the function's first mention moves from 998 to 413 px, onto the first screen (Preview). The fn page's Upcoming goes from 3 to 7 days, so Saturday is no longer hidden behind Open functions. Guests go on the sheet. No new reads, writes, rules or listeners, and it reuses the band's slot and the sheet people already know. It is the only design that actually reaches every work page, which is what the head chef asked for.",
+    "weakness": "The work-page line is close to permanent in any week with a function: it costs 1 of 6 Prep rows at 390 px on every band-empty day and will soon be read as wallpaper. It reuses the per-phone lk.fn.fold key, so one cook's minus on the shared tablet hides it for everyone on that tablet. It also adds new height changes above a live list. It appears when a function is booked elsewhere (0 to 50 px), grows when signal drops (50 to 76 px) and becomes the Tomorrow line at midnight (50 to 113 px). The band is repainted every 20 s and on offline/online events (js/functions.js setInterval and the offline listener). It is still passive, so nobody learns who has missed it.",
+    "take": "The Home line under Your day, Upcoming at 7 days and guests on the sheet's first line. Together they fix the real gap at zero cost.",
+    "reject": "Shipping the work-page line in the first PR. It should come only after a click test shows the list header keeps its height through offline, booking and midnight changes. Also reject a fold that is shared per phone on the shared tablet.",
+    "principle": "Flighty: real dates from data the phone already holds, no polling. Things 3: the quiet upcoming line is kept apart from today's charcoal band."
+   },
+   {
+    "design": "B, The run-up",
+    "strength": "Each mention is useful where it sits. The 'Not ordered yet, order day was Sun 8 Nov' words go inside the rolled Orders stock line with 0 px added above the list. That speaks to the most costly failure, missed stock. The in-place card puts time, place, guests, platters, dietaries and the next step together one tap from Home. It also found an existing contrast issue: the fn-t-order tag on paper measures 4.04:1.",
+    "weakness": "It removes the Order-day and Tomorrow lines from Wastage, Transfers and Recipes, which reverses the 22 Oct decision and the head chef's 'every page' goal. It invents a 'Prep ahead, NEXT' milestone whose content is only '[Prep ahead list] To come'. That is unconfirmed and invites a cook to start platters a day early, the risk round 1 raised. The strip goes before Your day, the largest break from staff-first order, and pushes the coworker board past the tab bar. The spec contradicts itself: the Prep line changes only when Prep opens (Break it 1), yet it hands over to the band on the clock paint at midnight and moves to the end of the list on the day. It needs 3 PRs and the most relearning.",
+    "take": "The Orders words on the rolled function stock line ('Not ordered yet', its order day), as a later small change with its own preview. Also fix the fn-t-order tag contrast.",
+    "reject": "Removing the band's Order and Tomorrow lines, the Prep ahead milestone and the strip above Your day.",
+    "principle": "Things 3 is rejected: upcoming work placed above the person's own day. Airbnb is useful for the card that shows everything together, but A's sheet already gives that in one tap."
+   },
+   {
+    "design": "C, Tell everyone once",
+    "strength": "Work pages gain nothing on any day (Prep 6 of 6 rows, Orders 2 of 2). Every fact is on Home's first screen with 0 taps. A change or cancellation comes back once, only to the people who were told. Phase 1 needs no reads, writes or rules.",
+    "weakness": "After Got it the work pages show nothing until the day before, so the 'every page' goal is mostly missed. Your day drops 353 px until Got it, the second-largest staff-first departure. In a busy week Got it adds 5 or 6 taps in a row and turns into a reflex. Phase 1 tells the head chef nothing. Phase 2 adds new writes, looser rules, and backups and a PIN move that must copy a new subcollection. The bell dot's meaning gets overloaded. In the preview, the sheet's single Got it puts away every heads-up at once (src/c.js line 33).",
+    "take": "The change and cancel words that come back once, using the existing changes() words, could later go on A's line. Also take the rule that a function cancelled before someone was told shows them nothing.",
+    "reject": "Got it receipts as proof of attention, the card above Your day and the bulk Got it in the bell sheet.",
+    "principle": "Duolingo is rejected for receipts: a tap is not reading, and progress must show real work. Airbnb works for the all-facts card."
+   }
+  ],
+  "mix": "A blend of A, B and C does not beat A. It would put three function pieces on Home (A's line, B's strip, C's card) where each person needs one. C's rule of no line on work pages directly contradicts A's work-page line. B's removal of band lines conflicts with A's 'only when the band is empty' logic. C's Got it adds taps and needs a decision on the bell's meaning. The cost rises to 3 to 5 PRs, plus a rules change if receipts are kept. The only parts worth carrying over are B's in-line Orders words and C's change/cancel words returning once. Both are additive text with 0 px above the list. Even A plus those would need its own combined preview, and no such preview exists, so it is Not evidenced.",
+  "mixBeatsBest": false,
+  "recommendation": "Recommend A, shipped in two PRs. PR 1: the Home line under Your day, fn Upcoming at 7 days and guests on the sheet. This alone fixes the reported incident. PR 2: the work-page Next function line, only after click tests prove the list header keeps its height when signal drops, when a booking arrives elsewhere and at the midnight handover to Tomorrow. Do not take B's band removal or Prep ahead step, or C's Got it and receipts. B's Orders 'Not ordered yet' words can follow as their own small change.",
+  "mainDownside": "It is still passive. A cook who never opens Home or a work page learns nothing, and the head chef cannot tell who has missed it. On band-empty days the work-page line costs one Prep row at 390 px and is likely to turn into wallpaper. How often functions happen is not in the evidence, so how close to permanent the line becomes is unknown.",
+  "contractFit": "Needs work. All three depart from staff-first Home (docs/home-staff-first.md: functions follow the personal and team group, and upcoming stays after current work). A departs least (On with you +71 px, Your day still first). C pushes Your day down 353 px. B puts the strip before Your day and pushes the coworker board past the tab bar. A's work-page line strains the CLAUDE.md rule that a line above a live list keeps the header's height, and costs a row under service rule 4. B changes the 22 Oct band decision. C changes what the bell means and, in phase 2, loosens the rules. Surface colours work in all three: quiet paper or reference, not charcoal or amber. Existing issue: the fn-t-order tag on paper is 4.04:1. Every number is Preview. The implemented app still needs remeasuring with the real shell, the head chef's cut-off bar, the mascot, extra-large text, focus rings and roles (signed out, Functions only).",
+  "breakIt": [
+   "A. Role/state: staff on Prep at 390 px on a band-empty day of a function week. Trigger: the phone loses signal (or a function is confirmed on another phone, or midnight turns the line into the band's Tomorrow line). Expected: rows stay put under the finger. Hypothesis: the line grows from 50 to 76 px with 'No signal. Functions last updated...', and every row shifts 26 px mid-tap, so a tick lands on the wrong line. Today the stale words only show when the band has today's rows, so A brings this to most days of the week. Evidence: Checked in source that the offline event and the 20 s timer repaint the band (js/functions.js offline listener and setInterval). The 50/76 px heights are Preview. The shift itself is Risk / Not evidenced. Smallest repair: keep the stale words on the line's own row at a fixed height, and add a click test that toggles offline with Prep open and checks the first row's top.",
+   "B. Role/state: a chef or cook working from Recipes, Wastage or Transfers on a Sunday order day. Trigger: B removes the band's 'Order the stock' line from those pages. Expected: the function's stock order is visible on every page, as today and as the head chef asked. Hypothesis: nothing shows on those pages, the order is missed and platter stock is short. Evidence: B's own spec run-up table. Risk / Not evidenced in use. Smallest repair: keep the band's Order and Tomorrow lines (B's own fallback).",
+   "C. Role/state: staff on Prep with an unseen heads-up, so the bell dot is on. Trigger: they tap the bell and press the sheet's single Got it. Expected: each function is acknowledged after its facts are read. Observed in preview: one Got it clears the dot and puts away both heads-ups at once (src/c.js line 33, shots/prep-390-bell-open.png). In phase 2 that would record both as Seen, and the auto-opening start sheet could carry them as a pop-up. Evidence: Checked in design C preview. Impact on receipts is Risk / Not evidenced. Smallest repair: no bulk Got it for heads-ups (the bell row links to the Home card), and leave heads-ups out of the start sheet."
+  ],
+  "text": "Structural: yes. A adds a passive line in existing slots; B moves the run-up into each page and strips the band; C gives each person one Home card with Got it.\n\nRanking: A 7, C 5, B 4.\nA: fixes the actual incident (Home 998 to 413 px, fn page 3 to 7 days), no reads or rules. But a near-permanent line costs 1 of 6 Prep rows and becomes wallpaper. Take the Home line and 7 days (Flighty: real dates, data held).\nC: 0 px on work pages, every fact at 0 taps (Airbnb). But after Got it work pages show nothing until the day before; Your day drops 353 px. Take change and cancel returning once. Reject receipts (Duolingo: a tap is not reading).\nB: Orders \"Not ordered yet\" sits inside the line. But it strips the Order and Tomorrow lines from Wastage, Transfers and Recipes and invents an unconfirmed \"Prep ahead\" step. Take the Orders words; reject the strip before Your day (Things 3).\n\nBlend A+B+C loses: three Home placements, C contradicts A on work pages, more taps and PRs.\n\nRecommend A in two PRs: Home line, 7 days and guests first; the work-page line only after header-height and midnight tests pass. Downside: still passive; nobody knows who missed it.\n\nContract fit: Needs work. All break staff-first order, A least (+71 px). A strains the header-height rule. Colours Works. All Preview.\n\nBreak it:\n1. A, Prep, band-empty day, signal drops: line grows 50 to 76 px, rows shift under a finger. Repaint checked in source; shift Risk. Fixed-height line, offline test.\n2. B, chef on Recipes, order day: no order line, stock missed. Risk. Keep band lines.\n3. C, bell sheet: one Got it clears both heads-ups unread. Checked in C preview. Drop bulk Got it."
+ },
+ {
+  "reviewer": "The new starter",
+  "structurallyDifferent": "Yes, the difference is in the structure, not only the look. A adds one quiet line that stays put, in the band's slot on every work page and under Your day on Home, and nothing else changes. B spreads the run-up across three pages: a week strip above Your day, a line inside the Prep notebook frame and a tag on the Orders stock line. B also removes the order-day and Tomorrow lines from the band. C tells each person once, with a full card above Your day and Got it. The work pages get nothing new, only the bell dot. The three differ in placement, information hierarchy, how long the mention lasts and how you interact with it (read only, open in place, or acknowledge).",
+  "ranking": [
+   "C",
+   "A",
+   "B"
+  ],
+  "scores": {
+   "a": 6,
+   "b": 5,
+   "c": 7
+  },
+  "perDesign": [
+   {
+    "design": "A",
+    "strength": "The same calm line, NEXT FUNCTION \u00b7 THU 12 NOV, sits in the same slot on every page. A new starter sees it every day and does not have to learn a new place. The minus answers with a slip in words and Undo (exercised in the preview).",
+    "weakness": "It shows only a name and guests: nothing says what a function means for my work, and platters and dietaries need a tap. At 390 px, '+1 more' does not say more of what, and the minus has no word on it. A line that never changes can become wallpaper nobody reads.",
+    "take": "Take the line on the work pages on days the band is empty. Take the 7-day #/fn Upcoming and the guests on the sheet's first line. Use the line as the place a function goes on Home after Got it.",
+    "reject": "Reject the bare '+1 more' at 390 px. Say '+1 more this week' at every width, or name the day.",
+    "principle": "Linear (one name and one place on every page) works. Headspace (words on actions) needs work for '+1 more' and the minus without a word."
+   },
+   {
+    "design": "B",
+    "strength": "The week strip is a picture of the days with names on them, so you need the least English to see that Thursday and Saturday have functions. The card opens in place with time, place, guests, platters, dietaries and the next step together.",
+    "weakness": "It has the most new words and pieces to learn: This week, The run-up, Prep ahead, Next and '[Prep ahead list] To come'. The selected day turns orange and could read as urgent or late. The Order today and Tomorrow lines leave Wastage, Transfers and Recipes, and a new starter would not know to look on Prep or Home instead. The Prep line is cut off ('Sat Jones we...'). Three pages change.",
+    "take": "Take the Orders stock line tag 'Not ordered yet, For Sat 14 Nov, order day was Sun 8 Nov'. It says the state in words, inside the line, and adds 0 px.",
+    "reject": "Reject the strip above Your day, the in-place run-up with its placeholder words, and taking the order and Tomorrow lines out of the band.",
+    "principle": "Flighty (real status from data already held) works for the Orders tag. Headspace (one calm name for each thing, no placeholder words) fails for The run-up and Prep ahead '[To come]'."
+   },
+   {
+    "design": "C",
+    "strength": "Every fact is in labelled words (Food out, Platters, Dietaries) with 0 taps. The card says what Got it does before you tap ('Got it puts this away for you until the day before'), and after the tap it names the function and offers Undo. The work pages stay exactly as I learnt them.",
+    "weakness": "A rushed new starter taps Got it to reach Your day. After that, the function is as hard to find as it is today: Coming up near the bottom of Home, and #/fn shows only 3 days. 'Heads-up' is slang, hard for staff who speak English as a second language. The bell dot is a colour-only cue, and its sheet puts function cards under the heading 'Today's shift pings'. The orange Got it on the red cancelled card mixes signals.",
+    "take": "Take the card with its labelled facts, Got it with the name and Undo, the Tomorrow card, and the Changed and Cancelled return cards with words. Put the card under Your day, which is C's own repair.",
+    "reject": "Reject the bell dot and the Function heads-up section in the pings sheet. They give an existing button a second meaning that only colour shows. Also reject the card placed above Your day.",
+    "principle": "Airbnb (time, place, needs and next step together) and Duolingo (a truthful answer by name, with Undo) work. Headspace needs work: 'heads-up' is slang, and the bell carries two meanings."
+   }
+  ],
+  "mix": "A blend of all three as drawn (B's strip, C's card and A's line all on Home) would show one function three times and push Your day and the team below the first screen. That is worse than any single design. A selective blend beats C alone. The card has to settle into A's line after Got it, or a reflex tap loses the function. The conflicts: there are two ways to put it away with different reach (Got it until the day before, the minus for today on this phone), which a new starter must tell apart. The bell dot repeats what A's line already says, so drop it. The cost: about 2 or 3 pull requests, one Prep row lost on days the band is empty, and a combined preview that has not been built yet (Not evidenced).",
+  "mixBeatsBest": true,
+  "recommendation": "I recommend a mix of all three. C's heads-up card goes directly under Your day (C's own repair), and after Got it it becomes A's quiet Next function line on Home. A's line goes on the work pages on days the band is empty. Add A's 7-day #/fn Upcoming and the guests on the sheet, and B's 'Not ordered yet, For [day]' tag on the Orders stock line. No bell dot, no week strip, and no change to the band. Before the head chef chooses, this needs one combined preview, tested with a new starter.",
+  "mainDownside": "There are two ways to put it away, with different reach (Got it on Home until the day before, the minus on work pages for today on this phone), and a new starter can mix them up. The work pages also lose one Prep row at 390 px on days the band is empty.",
+  "contractFit": "Needs work. All three depart from the staff-first Home order: A sits between Your day and On with you, while B and C sit above Your day. That needs the head chef's OK. Words and exceptions: mostly Works. Needs work for A's wordless minus and '+1 more' at 390 px, B's orange chosen day (it could read as attention), and C's colour-only bell dot under the 'Today's shift pings' heading. Not evidenced in any design: keyboard focus, large text, dark variants, 360 px phones, the mascot, a bigger team, and every Implemented app first-screen position (all numbers are Preview).",
+  "breakIt": [
+   "C, staff new starter, first PIN of the day: taps Got it as a reflex to reach Your day without reading. Expected: still knows Thursday's platters and dietaries. Hypothesis: the card is gone, Coming up is near the bottom of Home and #/fn shows 3 days, so nothing reminds them until the Tomorrow card. Risk / Not evidenced. Smallest repair: after Got it, A's line stays on Home.",
+   "C, shared tablet: a new starter taps Got it while the previous cook is still signed in. Expected: only their own mark. Hypothesis: the previous cook's mark is set, so that cook never sees the card (C's own case 4). Risk / Not evidenced. Check: a click test with two people on one device.",
+   "B, staff on Wastage or Recipes on the order day or the day before: the band's Order today and Tomorrow lines are gone, and a new starter does not know to check Home, Prep or Orders. Risk / Not evidenced. Smallest repair: keep the band lines.",
+   "A, staff at 390 px: taps the wordless minus, thinking it closes or removes the function. Checked in the A preview: the slip says 'hidden on this phone until tomorrow' with Undo. The risk left is that the person does not read the slip. Low, accept, but add a spoken label and test it.",
+   "Mix, any staff: Got it on Home and the minus on work pages put the same function away for different lengths of time. Risk / Not evidenced. The combined preview needs a new-starter walk-through of both."
+  ],
+  "text": "Structurally different: yes. A adds one permanent quiet line to every page. B spreads the run-up across a Home strip, the Prep frame and Orders, and empties the band. C tells each person once on Home with Got it, and puts nothing on the work pages.\n\nRanking: C 7, A 6, B 5.\n\nC: strength, every fact in labelled words (Food out, Platters, Dietaries), and Got it says what it did (Airbnb, Duolingo). Weakness: tap Got it out of habit and the function goes back near the bottom of Home. \"Heads-up\" is slang for staff who speak English as a second language. The bell dot is colour only and sits under \"Today's shift pings\". Take the card and its words. Reject the bell dot (Headspace: one name per thing).\n\nA: strength, the same calm line on every page, never gone (Linear). Weakness: name only, and \"+1 more\" and the minus have no words at 390 px. Take the line on the work pages, the 7-day Upcoming and the guests on the sheet. Reject the bare \"+1 more\" (Headspace).\n\nB: strength, the week as a picture, so the least reading (Things 3). Weakness: the most new words (The run-up, Prep ahead, \"[Prep ahead list] To come\"). The orange chosen day may read as urgent, and the Order and Tomorrow lines leave Wastage, Transfers and Recipes. Take the Orders tag \"Not ordered yet, For Sat 14 Nov\" (Flighty: in place, 0 px). Reject the strip and the band change.\n\nBlend: A, B and C all on Home as drawn (strip, card, line) shows one function three times, which is worse. A selective blend beats C alone.\n\nRecommend C's card placed under Your day, turning into A's Next function line after Got it. Add A's line on the work pages, A's 7-day Upcoming and the guests on the sheet, and B's Orders tag. No bell dot, no strip. Main downside: two ways to put it away, with different reach (Got it, minus), to learn, and one Prep row lost on days the band is empty. It needs its own combined preview.\n\nContract fit: Needs work. All three depart from the staff-first Home order. Focus, large text and the first-screen positions in the real app are Not evidenced."
+ },
+ {
+  "reviewer": "The keeper of the book",
+  "structurallyDifferent": "Yes, structurally different. A adds one line in the band's existing slot and on Home, with the same paint and fold. B spreads the reminders into Home (day strip), the Prep list frame and Orders, and takes lines out of the band. C makes a per-person acknowledged Home card with Got it and the bell's dot, and nothing new on work pages. They differ in placement, task sequence (read, open in place, or acknowledge) and persistence (always on, open-only, or once per person).",
+  "ranking": [
+   "A: Fill the gap (7)",
+   "C: Tell everyone once (5)",
+   "B: The run-up (4)"
+  ],
+  "scores": {
+   "a": 7,
+   "b": 4,
+   "c": 5
+  },
+  "perDesign": [
+   {
+    "design": "A",
+    "strength": "Cheapest and safest to keep. bandHTML() returns the line only when it would otherwise return '', so the line, the Tomorrow line and the day share one paint and one 20-second repaint. No new read, listener, rule or key: it reuses lk.fn.fold and the functions listener (js/functions.js line 329, kq from today, limit 150). One PR that extends the existing functions and roles tests.",
+    "weakness": "The line is redrawn by paint() on every listener change and every 20 s, so a booking confirmed elsewhere can add 50 px above a live Prep or Orders list mid-service. It costs one prep row at 390 on band-empty days (Preview 6 to 5). It is passive and names only the nearest function.",
+    "take": "The band-slot Next function line built inside bandHTML(), with its no-signal and Cancelled words and the #/fn 7-day fix.",
+    "reject": "'+1 more' that goes to #/fn. In the same slot, the band's existing '+N more' expands in place (aria-expanded). Use one behaviour, or different words such as 'This week'.",
+    "principle": "Linear and Flighty for the line (one name, one place, real dates from data already held). Headspace and Linear for the rejection (one name, one meaning)."
+   },
+   {
+    "design": "B",
+    "strength": "The in-line Orders tag ('Not ordered yet', 'For Sat 14 Nov') uses data Orders already holds and adds 0 px. The rule that the Prep line appears only when the page opens is the right defence against rows moving under a finger.",
+    "weakness": "Highest cost and risk: 3 PRs and a change to the Prep list render in js/prep.js. It takes the Order today and Tomorrow lines out of the band on Wastage, Transfers and Recipes, which removes a safety net and means rewriting existing band assertions in the function tests. Two paint loops (the Prep list and the band) have to hand over at midnight. An order day can fall outside the 7-day strip, and that case is not drawn.",
+    "take": "The open-only rule (presence is fixed when the page opens, and later changes alter words, not height) and the in-line Orders status tag.",
+    "reject": "Emptying the band and moving Prep ahead and What the platters need into the prep list.",
+    "principle": "Flighty for the take (real status from data already read, no new listener). Things 3 for the rejection (today's list stays today's)."
+   },
+   {
+    "design": "C",
+    "strength": "Phase 1 adds no read, write, rule or listener, and Prep and Orders lose nothing (Preview 6 of 6, 2 of 2). Got it is a per-person local mark (lk.fn.hu.<staffId>) on the existing ping pattern. Changed and cancelled come back once, in words.",
+    "weakness": "It overloads the bell. Today the dot means a ping is on for 30 minutes, and the pings sheet's Got it (noteClose in js/prep.js) marks and writes every ping in the sheet together. A days-long function dot would weaken safety pings. Phase 2 loosens rules and adds a subcollection that backups and the PIN move must copy, plus nine sign-in rows. The 331 px card sits above Your day.",
+    "take": "Naming a change or a cancellation once, in words from changes(), to the people who already knew.",
+    "reject": "The bell dot, heads-up rows in the pings sheet with its shared Got it, and phase 2 receipts.",
+    "principle": "Duolingo for the take (truthful answer to what changed). Linear and Flighty for the rejection (one meaning per control; no status that outlives its data)."
+   }
+  ],
+  "mix": "Blending all of A, B and C does not beat A. It would put three function pieces on Home (A's line, B's strip and C's card) competing around Your day. It would carry contradictory band rules: A fills the band, B empties it, and C leaves it alone and adds a bell dot. It would mean 7 or more PRs across js/functions.js, the js/prep.js Prep render, pings and rules, and it would multiply the tests: function band tests rewritten, a two-person shared-tablet test, pings sheet tests and emulator rows. A narrow two-way mix does beat pure A at small cost: A's line plus B's open-only rule closes A's main technical risk, and B's in-line Orders tag adds a missed-order cue for 0 px and 0 reads. Nothing from C is worth its cost, except possibly its changed-once words, which A's Cancelled or Rescheduled notice mostly covers.",
+  "mixBeatsBest": false,
+  "recommendation": "Recommend A, plus B's open-only rule for the line (whether it shows is fixed when the page opens, and later changes alter words, not height) and B's in-line Orders 'Not ordered yet \u00b7 For <day>' tag as a second small PR. Reject C's bell dot and receipts.",
+  "mainDownside": "It is still passive: a cook who opens neither Home nor a work page learns nothing, and the head chef cannot see who knows. Prep also loses one row at 390 px on band-empty days until the line is hidden (Preview, to be remeasured in the app).",
+  "contractFit": "Reads Works for all three: no new reads or listeners, and the listener was checked in js/functions.js line 329. C phase 2 Needs work (looser rules, backup and PIN-move copies). Saved copies Works (lk.fn.fold reused; B and C need comments saying what makes their new lk.* keys out of date). State meaning Needs work for C (bell dot overload). Service continuity Needs work for A and B (one prep row lost, A's line can appear live), Works for C on work pages. Staff-first Home departure needs the head chef's call in all three. Focus, dark variants and large text Not evidenced. The preview fonts differ from the implemented baseline screenshot, so rows and Home positions must be remeasured in the implemented app at 390, 768 and 1280 px.",
+  "breakIt": [
+   "1. A (and any mix using its line). Role/state: staff with Prep open during lunch on a band-empty day. Trigger: a function manager confirms a booking for Saturday on another phone. Expected: the list stays still. Hypothesis: the listener's changed() and the 20-second paint() (js/functions.js) draw the new line, the list drops 50 px under a finger, and a tick lands on the wrong row. Impact: wrong line ticked. Evidence: Risk / Not evidenced (from a source read). Repair: B's open-only rule, plus a click test that confirms a booking with Prep open and checks the first row's y.",
+   "2. C. Role/state: staff at shift start when an unread ping opens the pings sheet by itself. Trigger: the cook taps the sheet's Got it to read the ping. Expected: only the ping is read. Hypothesis: noteClose('got') marks and writes every row in the sheet, so both function heads-ups are put away unread (in phase 2, recorded as Seen). Impact: the head chef believes the team knows when it does not. Evidence: Risk / Not evidenced (from a source read of js/prep.js noteClose). Repair: keep heads-ups out of the pings sheet, or give each heads-up its own Got it, with a test.",
+   "3. B. Role/state: staff with Prep open across Queensland midnight on Tue to Wed. Trigger: 00:00. Expected: the This week line becomes the Prep ahead entry once. Hypothesis: the Prep list render (js/prep.js, frozen at open) and the band (js/functions.js, 20 s paint, listener restarted at midnight) update separately, so both show or neither does. Impact: tomorrow's prep is missed or doubled. Evidence: Risk / Not evidenced. Repair: one clock source for both, and a stand-in clock test at 23:59:30 and 00:00:30, kept separate from the 04:00 unlock."
+  ],
+  "text": "Keeper of the book. Are the designs structurally different? Yes. A adds one line in the band's slot and on Home. B moves the reminders into Home, Prep and Orders and empties the band. C is a per-person Home card with Got it, and nothing new on work pages.\n\nRanking: A 7, C 5, B 4.\nA: one bandHTML() paint, no reads, reuses lk.fn.fold, one PR. Weak: the line can appear mid-view (20 s paint) and costs a prep row.\nC: phase 1 adds no reads or writes, and Prep is untouched. Weak: it overloads the bell dot and the pings sheet. Phase 2 loosens the rules and needs backup and PIN-move copies.\nB: the Orders status is good. Weak: three PRs, two paint loops at midnight, the band's order and Tomorrow lines removed, existing band tests rewritten.\n\nTake and reject:\nA: take the band-slot line (Linear, Flighty). Reject '+1 more' opening #/fn: the band's '+N more' expands in place (Headspace).\nB: take the open-only rule and the in-line 'Not ordered yet' tag (Flighty). Reject emptying the band (Things 3).\nC: take saying a change or cancellation once. Reject the bell dot, the sheet's Got it and receipts (Linear).\n\nBlending all three: three Home pieces, band rules that contradict each other, 7 or more PRs. It does not beat A.\n\nRecommend A + B's open-only rule + B's Orders tag. Downside: still passive, and one prep row lost at 390 on band-empty days.\n\nContract fit: reads Works (listener checked). Service continuity Needs work. Focus, dark and large text Not evidenced. The preview fonts differ from the baseline, so remeasure in the real app.\n\nBreak it (all Risk, from reading the source):\n1. Staff on Prep, booking confirmed elsewhere: A's line appears and the rows drop 50 px. Fix: the open-only rule and a click test.\n2. A ping sheet opens at shift start and its Got it puts away both heads-ups unread. Fix: keep heads-ups out of the sheet.\n3. B at 00:00: the Prep entry and the band paint separately, so both show or neither. Fix: a stand-in clock test at 23:59:30 and 00:00:30."
+ },
+ {
+  "reviewer": "The kitchen screen designer",
+  "structurallyDifferent": "Yes, structurally different, not cosmetic. A is ambient and permanent: one quiet line in the band slot on every work page, plus the same line on Home. B is contextual and milestone-led: a week strip with an in-place card on Home, a line inside Prep's list, a tag inside the Orders stock line, and the band loses its order-day and Tomorrow lines. C is an acknowledgement model: a one-off card per person on Home with Got it, nothing new on work pages, and a dot on the existing bell.",
+  "ranking": [
+   "C",
+   "A",
+   "B"
+  ],
+  "scores": {
+   "a": 6,
+   "b": 5,
+   "c": 7
+  },
+  "perDesign": [
+   {
+    "design": "A, Fill the gap",
+    "strength": "One consistent piece in a slot the team already reads, with the same words on every page. The line and +1 more are 44 px minimum (build.cjs). It has honest stale words and no motion. Home's first Smith 60th is at 413 px (Preview).",
+    "weakness": "Quiet reference paper is only 1.1:1 against the page, with a small uppercase label, so on a wet phone it reads as part of the top bar and is easy to ignore. That is weak for 'everyone's attention'. It costs one prep row (6 to 5) on most days of the week. At 1280 the Home line has an empty left gap of about 125 px (home-head-1280.png). The minus is the band's existing round control, and its 44 px is Not evidenced.",
+    "take": "The Next function line in the band slot with its minus, slip and Undo. Also #/fn Upcoming at 7 days and guests on the sheet's first line.",
+    "reject": "Nothing structural. Fix the 1280 left gap. Do not rely on the quiet line alone to win attention.",
+    "principle": "Linear (one name, one place, the tap goes to the sheet the band already opens). Things 3 (upcoming looks different from the live charcoal band)."
+   },
+   {
+    "design": "B, The run-up",
+    "strength": "The richest context: the in-place card shows day, place, guests, times, platters, dietaries and the next milestone at 1 tap, with no new navigation level. The Orders tag sits inside the existing line and adds 0 px. Prep's line sits inside the notebook frame.",
+    "weakness": "Most surfaces and the most relearning (3 PRs). The strip leads Your day. The open cell's orange fill reads as attention or late. Cells shrink to about 50 px in a 5 to 7 function week. Opening a day pushes Your day off the first screen (home-390-open.png). Prep's line truncates ('Sat Jones we...') and costs a row. It removes the approved order-day and Tomorrow band lines from Wastage, Transfers and Recipes.",
+    "take": "The 'Order today' / 'Not ordered yet, For Sat 14 Nov, order day was Sun 8 Nov' tag inside the existing Orders function stock line.",
+    "reject": "The week strip above Your day, which would be a third Home representation in any mix, and the removal of the band's order and Tomorrow lines.",
+    "principle": "Flighty (real status from data already held, 0 px) for the tag. Things 3 (upcoming must not lead today's personal work) for rejecting the strip."
+   },
+   {
+    "design": "C, Tell everyone once",
+    "strength": "The clearest hierarchy. The eye lands on the function name first, and day, place, guests, food times, platters and dietaries are all on the first screen at 0 taps (home-390.png). Got it is a large primary button, answers by name with Undo, and the button's effect is said in words. 0 px on Prep and Orders, 6 of 6 rows kept.",
+    "weakness": "The 331 px card sits above Your day, so the person's own section moves down 353 px and On with you leaves the first screen. After Got it the function falls back to Coming up at 998 px, so the head chef's original gap returns. The bell dot is a small colour dot that overloads pings (a sheet titled 'Today's shift pings' now holds heads-ups with a second Got it). Orange Got it on the red cancelled card clashes.",
+    "take": "The heads-up card with its fact rows, Got it, Undo, Changed and Cancelled returns, and the Tomorrow heads-up.",
+    "reject": "The bell dot and the heads-up rows in the pings sheet, and the placement above Your day (use C's own repair, under Your day).",
+    "principle": "Airbnb (time, place, needs and next action together) and Duolingo (truthful, named answer with Undo) for the card. Headspace (one meaning per control, no unexplained icon) for rejecting the bell dot."
+   }
+  ],
+  "mix": "The full A + B + C blend loses. B's strip, C's card and A's line would show the same function three times on Home, with competing emphasis. B's band removal conflicts with A's use of the band slot. B's Prep in-list line duplicates A's line on Prep. C's bell dot duplicates A's line on work pages. A narrow blend that takes one part from each does beat C alone. On Home, C's card goes under Your day; after Got it it collapses to A's one-line Next function in the same spot, so the function never drops back to 998 px. On work pages, A's line goes in the band slot with its minus. From A also take 7-day Upcoming and guests on the sheet. From B take only the Orders stock-line tag. The cost is two dismiss controls with different meanings: Got it, per person, acknowledges the heads-up on Home; the minus, per phone, hides the line for the day. The words must say Got it does not hide the work-page line. A's lost prep row on band-empty days stays. All of this is Not evidenced until one combined preview is built and measured.",
+  "mixBeatsBest": true,
+  "recommendation": "A narrow mix:\n- **From C:** the heads-up card, placed directly under Your day, with Got it, Undo, Changed and Cancelled returns, and the Tomorrow heads-up.\n- **From A:** after Got it the card collapses to A's Next function line in the same Home spot. A's Next function line in the band slot on work pages, with its minus, slip and Undo. #/fn Upcoming at 7 days, and guests on the sheet's first line.\n- **From B:** only the Not ordered yet / Order today tag inside the existing Orders stock line.\n- **Rejected:** B's strip and band removals, C's bell dot, and C above Your day.\n\nBuild one combined preview and measure it at 390, 768 and 1280 before the head chef chooses.",
+  "mainDownside": "Two dismiss verbs with different scopes (Got it per person on Home, minus per phone for the day on work pages) can be confused. Prep still loses one complete row at 390 px on band-empty days. The combined flow is Not evidenced until its own preview exists.",
+  "contractFit": "**Surface purpose:** Works in all three. They use quiet paper or reference, not charcoal for upcoming and not amber.\n\n**State meaning:** Needs work in B and C. B's orange open-day cell may read as attention. C's orange Got it on the red cancelled card clashes.\n\n**Head chef decisions:**\n- Staff-first Home is a proposed departure in all three: A +71 px, B strip first, C 353 px until Got it. C's repair is to put the card under Your day.\n- B dropping the band's order and Tomorrow lines is a proposed departure from the 22 Oct decision.\n\n**Real contrast:** Text is measured in Preview, light mode only, at 4.5:1 or more. Keyboard focus, dark variants, large text, 360 px and reduced motion are Not evidenced in any design.\n\n**Service continuity:** A and B Need work (Prep 6 to 5 rows). C Works on work pages.\n\nAll figures are Preview. Remeasure in the implemented app with the real shell, the cut-off bar and the mascot before ready.",
+  "breakIt": [
+   "A and the recommended mix, Prep at 390, staff mid-service: a booking confirmed on another phone, or the midnight change, makes the Next function line appear or change height above a live list, dropping every row about 50 px under a finger. B designs this out (it draws only on open); A does not say. Risk / Not evidenced: needs the header-height click test with the line appearing while the list is open.",
+   "C, staff on the first PIN of the day: a reflex Got it removes the card and the function falls back to Coming up at 998 px, below the first screen, until the Tomorrow heads-up. The head chef's original gap returns. Risk / Not evidenced. Repair: collapse to A's line instead of disappearing.",
+   "B, a busy week (5 to 7 functions) at 390: strip cells narrow to about 50 px so names wrap or clip, and opening a day pushes Your day off the first screen. The two-function open state was checked in the preview (home-390-open.png, Your day header near 760 px); the busy week was not drawn."
+  ],
+  "text": "Structure: yes, three models. A is an always-on quiet line in the band slot. B spreads milestones into each page (Home week strip, Prep line, Orders tag) and empties the band. C is a one-off card per person on Home with Got it, nothing on work pages.\n\nRanking: 1 C (7): the eye lands on the function first, every fact at 0 taps, 0 px lost on Prep. Weak: 331 px above Your day; after Got it the function falls back to 998 px; the bell dot overloads pings. 2 A (6): one consistent piece, 44 px targets, honest stale words. Weak: quiet paper and a small label are easy to miss on a wet phone; costs a prep row most days; empty gap at 1280. 3 B (5): richest in-place run-up. Weak: most relearning, strip leads Your day, orange open cell reads as attention, cells near 50 px in a busy week, drops approved band reminders.\n\nTake and reject: A take the line and 7-day Upcoming (Linear: one name, one place). B take the Not ordered yet tag (Flighty: real status, 0 px); reject the strip and band removals (Things 3). C take the card with Got it and Undo (Airbnb, Duolingo); reject the bell dot (Headspace) and the spot above Your day.\n\nMix: all three in full triples the function on Home, and B's band removal fights A. A narrow blend beats C alone.\n\nRecommendation: C's card under Your day, collapsing to A's line after Got it; A's line on work pages with its minus; A's 7 days and guests; B's Orders tag. Downside: two dismiss verbs, one prep row, needs its own preview.\n\nContract fit: surfaces Works; staff-first and band changes need the head chef; focus, dark, large text, reduced motion Not evidenced."
+ }
+]
