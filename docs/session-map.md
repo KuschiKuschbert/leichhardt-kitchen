@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Cross-training and admin Today council, 10 November 2026
+
+The head chef asked to remove written assessments, improve cross-training and consider restyling the admin dashboard. Both rounds ran on synthetic previews. Cross-training: Build smaller (5 of 5); recommended R retires the assessment screens (data kept), one Reports page "Who has worked where" from shifts in `teamsum/main`, and a planner line only where a pairing is possible in this plan, at most two a shift. Admin Today: Build smaller (3 of 5); recommended R puts needs first, keeps one always-visible comparison table with today's change rule, folds only the charts and removes the laptop picked-row pane (a departure from 8 Nov for the head chef). No app code, reads or rules changed. [Cross-training brief](cross-training-options/brief.md), [Admin Today brief](admin-dashboard-restyle-options/brief.md).
+
 ## On it job times and Waiting longest, 10 November 2026
 
 Prep drops "Usually takes" (it timed a line from written to ticked, so a line written at 07:00 and ticked at 15:00 read 8 h). The tick keeps the On it stamp, hidden on a ticked line, and the admin's Insights, Timing shows a **Time on it** card: from On it to the tick, per job, typical and slow days. Start here tags waiting lines "Waiting longest" with no time and orders them by when each line was really written (`byFirst()`), so an overnight copy no longer reads "Waiting since 00:08". `js/prep.js` (`startHere()`, `tickNow()`, `ptSave()`, `onTook()`, `onItHTML()`), `tests/on-it-timing.test.js`, `tests/prep-on-it.test.js`, `tests/written-late.test.js`, a client shapes row for the tick that keeps the stamp. No new reads and no rules change. Detail in `docs/prep-book.md` (search "Time on it"). Pull request #664.
@@ -154,6 +158,7 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | Admin analysis, references, training records and nightly analysis | `docs/admin-intelligence.md` |
 | Admin autocorrect repairs, shared protected words and private correction history | `docs/proofreader-admin.md` |
 | Admin visual design, selected A: The Chef's Desk | `docs/admin-design-options/brief.md` |
+| Cross-training without written assessments, and the admin Inbox and Dashboard restyle: council 10 Nov 2026, both Build smaller, recommendations R (repaired mixes), awaiting the head chef | `docs/cross-training-options/brief.md`, `docs/admin-dashboard-restyle-options/brief.md` |
 | Admin dashboard, selected A with B's headlines (3 Nov 2026) | `docs/admin-dashboard-options/brief.md` |
 | Admin pages redesign, selected B: Four rooms on the shared page kit (4 Nov 2026), built in seven steps by 5 Nov 2026 | `docs/admin-pages-options/brief.md` |
 | Prep, Orders, Wastage, Transfers and chef hat redesign, selected: shared fixes, then A with four pieces of B (3 Nov 2026), built in steps, the last on 4 Nov 2026 | `docs/work-pages-design-options/brief.md` |
