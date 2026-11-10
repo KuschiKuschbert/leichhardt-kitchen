@@ -114,3 +114,13 @@ Status: the lead synthesis R, repaired after this follow-up. Not re-scored after
 3. Planner line (one PR), with the failed, stale, renamed and removed-section tests above.
 
 Rollback: revert each PR. `training/*` data is untouched throughout.
+
+## Built, 10 November 2026
+
+Built on branch `ccr-87b66b00-enk63u` (pull request #666) in three commits:
+
+1. **Assessment screens retired.** No Training tab, Inbox row, Assessments page, person block or planner "In training". A device whose last admin page was `training` or `training-records` opens the Inbox (`tests/admin-nav.test.js`: 12 failed of 78 on the old `js/prep.js`, 0 with the change). `training/*` records, rules, history and backup are untouched; `admin-intelligence.js` keeps API 3.
+2. **Who has worked where** in Reports, Team (`whoWorkedHTML()`): shifts on each current section from `teamsum/main`, a People row, sections few people worked and anyone mostly on one section in words, the ticks table behind a closed fold. Sections are matched by name, as stored; a section taken off or renamed drops out.
+3. **The planner hint** (`tmLearnHints()`): one plain line under a person's row, only where a pairing is possible in this draft, at most two a service, one per mentor, never for the only cook on a service with 5 or more shifts on their own section. None when the counts failed or are older than yesterday (`tests/todays-team.test.js`).
+
+No new reads, writes, rules or saved fields. Still to check on the live book: whether the hint moves a picker under the thumb while the chef changes sections (Risk / Not evidenced in the stand-in).

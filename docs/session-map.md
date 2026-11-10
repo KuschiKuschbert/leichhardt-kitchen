@@ -1,8 +1,8 @@
 # Session map: which note to read, and every file
 
-## Cross-training and admin Today council, 10 November 2026
+## Cross-training and admin Today, chosen and built 10 November 2026
 
-The head chef asked to remove written assessments, improve cross-training and consider restyling the admin dashboard. Both rounds ran on synthetic previews. Cross-training: Build smaller (5 of 5); recommended R retires the assessment screens (data kept), one Reports page "Who has worked where" from shifts in `teamsum/main`, and a planner line only where a pairing is possible in this plan, at most two a shift. Admin Today: Build smaller (3 of 5); recommended R puts needs first, keeps one always-visible comparison table with today's change rule, folds only the charts and removes the laptop picked-row pane (a departure from 8 Nov for the head chef). No app code, reads or rules changed. [Cross-training brief](cross-training-options/brief.md), [Admin Today brief](admin-dashboard-restyle-options/brief.md).
+The head chef asked to remove written assessments, improve cross-training and consider restyling the admin dashboard. Both rounds ran on synthetic previews. Cross-training: Build smaller (5 of 5); recommended R retires the assessment screens (data kept), one Reports page "Who has worked where" from shifts in `teamsum/main`, and a planner line only where a pairing is possible in this plan, at most two a shift. Admin Today: Build smaller (3 of 5); recommended R puts needs first, keeps one always-visible comparison table with today's change rule, folds only the charts and removes the laptop picked-row pane (a departure from 8 Nov for the head chef). Chosen by the owner and built the same day: `js/prep.js` (Training and Assessments pages out, a saved retired page opens the Inbox, `whoWorkedHTML()`, `tmLearnHints()`, `adminHeadingHTML()`), `js/admin-dashboard.js` (loader `?v=4`, `LK_DASH` API 1 kept: needs first, no picked-row pane, `cmpHTML()`, `chartsHTML()`), `css/app.css`; tests in `admin-nav`, `admin-dashboard`, `admin-inbox`, `todays-team`, `team-person` and the other admin files. No reads, rules or saved fields changed; `training/*` kept. [Cross-training brief](cross-training-options/brief.md), [Admin Today brief](admin-dashboard-restyle-options/brief.md).
 
 ## On it job times and Waiting longest, 10 November 2026
 
@@ -158,7 +158,7 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | Admin analysis, references, training records and nightly analysis | `docs/admin-intelligence.md` |
 | Admin autocorrect repairs, shared protected words and private correction history | `docs/proofreader-admin.md` |
 | Admin visual design, selected A: The Chef's Desk | `docs/admin-design-options/brief.md` |
-| Cross-training without written assessments, and the admin Inbox and Dashboard restyle: council 10 Nov 2026, both Build smaller, recommendations R (repaired mixes), awaiting the head chef | `docs/cross-training-options/brief.md`, `docs/admin-dashboard-restyle-options/brief.md` |
+| Cross-training without written assessments, and the admin Inbox and Dashboard restyle: council 10 Nov 2026, both Build smaller, R chosen and built 10 Nov 2026 | `docs/cross-training-options/brief.md`, `docs/admin-dashboard-restyle-options/brief.md` |
 | Admin dashboard, selected A with B's headlines (3 Nov 2026) | `docs/admin-dashboard-options/brief.md` |
 | Admin pages redesign, selected B: Four rooms on the shared page kit (4 Nov 2026), built in seven steps by 5 Nov 2026 | `docs/admin-pages-options/brief.md` |
 | Prep, Orders, Wastage, Transfers and chef hat redesign, selected: shared fixes, then A with four pieces of B (3 Nov 2026), built in steps, the last on 4 Nov 2026 | `docs/work-pages-design-options/brief.md` |

@@ -99,3 +99,18 @@ Status: the lead synthesis R, repaired after this follow-up. Not re-scored after
 ## If chosen: build
 
 One PR in `js/admin-dashboard.js` (API 1 kept, loader `?v=` bumped), `css/app.css` and `js/prep.js` (page titles), after the cross-training retirement PR removes the Training row. Tests: `admin-dashboard`, `admin-inbox`, `admin-nav`, `admin-chefs-desk`, `read-budget`, `design-patterns` (new names). Remeasure the implemented app at 390, 768 and 1280 px against the preview numbers above. Rollback: revert the PR; nothing stored changes.
+
+## Built, 10 November 2026
+
+Built on branch `ccr-87b66b00-enk63u` (pull request #666), commit "Admin Today: what needs you first, one comparison table, charts on Show". `js/admin-dashboard.js` keeps `LK_DASH` API 1 and its two reads on open; the loader is `?v=4`.
+
+**Implemented app** (click-test stand-in, real shell, synthetic data, test fonts, admin on Google plus PIN):
+
+| Page and width | Before | After |
+| --- | --- | --- |
+| Inbox, 390 px | 1532 px tall | 1205 px; the first need 443 px down |
+| Dashboard, 390 px, charts shut | 3796 px | 2458 px |
+| Inbox, 1280 px | 1249 px | 1028 px |
+| Dashboard, 1280 px, charts shut | 2452 px | 1907 px |
+
+Differences from the preview: the Inbox keeps its block heading bands (approved surface), today's numbers stay as three lines with their own words, and on a phone the comparison table drops the "days before" column so it fits without sideways scroll; the earlier number is still in the change words. The darkest-but-one heat step became `#C2451A` so white text reads 5.05:1 (was 4.43:1). Checks: `tests/admin-dashboard.test.js` and `tests/admin-inbox.test.js` (names, order, no pane, the table, 90 days with no "Same as before", charts open through a redraw with no reads, the week ahead's quiet line) and the other admin, roles, read-budget and safe-text files: 34 files, 0 failed.
