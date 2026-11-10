@@ -193,4 +193,9 @@ The owner's own example, started then finished, has one preview screen as a late
 
 ## Chosen
 
-Pending the owner's selection.
+- **Step 1, 10 November 2026.** The owner said "yes i trust your recommendations". Built as pull request #671: the compact card under a finished prep list, Serve once, then the Welcome pose. Live at 22:47 Queensland time; the live click tests passed.
+- **Step 2, 11 November 2026.** The owner said "yeah go ahead" the same evening, then "lets merge". The recommendation here was to wait about four weeks; the owner chose now. Built as pull request #673: one line of words on the slip when a tick finishes a section, no art. Live at 01:37 Queensland time; the live click tests passed.
+
+The build of step 2 is stricter than the preview drawn here, after two break-it reviews before the code and an independent review of it. It is silent whenever the All list, a section's own tab and Home would count a section differently; it says "Pans are done. Fryers have 2 left." for plural names; it never says Prep, Kitchen, a time of day or a person's name; and it is kept as said only once it has stood 2 seconds. The current contract is `docs/kitchen-mascot.md` on `main`, "A finished section, on the slip".
+
+Still the head chef's to decide: the words for the kitchen's own section names (ask three staff), the Top tickers strip, one measure to look at after four weeks, and the later ideas (Thanks from Chef, started and finished, the pack down card), each with its own council.
