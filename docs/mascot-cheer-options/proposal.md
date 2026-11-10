@@ -2,6 +2,8 @@
 
 10 November 2026, Queensland. Written for round 1 of the service council, before any design was scored. No app code has changed.
 
+**Note added after the council.** This page is kept as the reviewers saw it. It was written against this branch (`main` at `7f85629`). On `main` since then: the daily mascot on Home is built (`docs/kitchen-mascot.md`), its player and art ship in `js/mascot.js` and `art/mascot/`, and the tick keeps the On it stamp for the head chef's Time on it card (#664). See the brief, "What main has now".
+
 ## The problem in the kitchen
 
 The owner wants the team to get prep done and to use the book more, and wants the mascot to be the cheerful supporter: "if someone started and finished a task give him a cheer", "across the whole board", "maybe some kind of speech bubbles".

@@ -6,6 +6,17 @@
 
 This is role-based council analysis, not research with staff. Every measurement is a **Preview**: a review-only injection into the real app with the click tests' Firebase stand-in and made-up people. Nothing was measured in the implemented app or in the kitchen. Source: this branch on top of the mascot studies (`71cbf84`); the app files match `main` at `7f85629`.
 
+## What main has now, checked when this study finished
+
+The study ran on this branch, whose app files are `main` at `7f85629`. By the time it finished, `main` (`f495019`) had moved, and four things matter here:
+
+- **The daily mascot is built and live on Home** (`docs/kitchen-mascot.md` on `main`): one shuffled action a day per person, once then the Welcome pose, tap to replay, in the heading corner or on the Your day card when the words fill the corner. The council's packet called it "chosen, not built", which was true on this branch. The studies' own pull request, #654, was closed unmerged; this study sits on the same branch for the same reason.
+- **The player and the art already ship.** `js/mascot.js` is lazy and `art/mascot/` holds every still and sprite sheet, loaded with `?v=1` so the saved copy never keeps them. A build of step 1 reuses both and adds no art file. The keeper's "move the art out of `docs/`" is done.
+- **The tick keeps the On it stamp** (#664, 10 November), hidden on a ticked line, for the head chef's Time on it card. The map for this study read "the tick clears the On it time". The rule here does not change: no cheer ever uses time taken.
+- **Home's welcome already follows the time of day and the shift** ("Good morning", "Thanks for today"; #656, #661). Ideas 12 and 13 overlap with it and should start from it.
+
+Unchanged on `main`, checked in source: the finished-list sentence, the tick slip, the 3.5 second linger and the Top tickers strip. So the recommended card has the same place to stand. The previews were not re-run on `f495019`: that is the first check of an implementation.
+
 ## What the owner asked
 
 "I want to use our little mascot as a cheerfully supporter for completed actions for example if someone started and finished a task give him a cheer up or something? But I want it to be across the whole board with usefully things to motivate the staff to get more prep done faster and to use the app more. Can you brainstorm some ideas like how Duolingo does it or other fancy apps? ... I was maybe thinking some kind of speech bubbles or something?"
@@ -126,7 +137,7 @@ No access, data-loss or service-blocking fault was found in the bounded previews
 
 **Recommend B cut down, in two steps.**
 
-**Step 1, build first: one compact card under a finished list on Prep.** When every line is ticked and the server has every tick, the mascot stands beside the book's own sentence with one bubble, "Every line ticked. 6 of 6." The book's sentence keeps its second half, "See Done today under Handy.", so the finish is said once. The card is the list's state: it shows on every device and after a reload, as a still. On the device whose tick finished the list he plays Serve once, after the ticked lines have left, then rests. Undo takes it back. Nothing shows while lines are left, nothing on the slip, nothing new on Home (the daily action chosen on 9 November is Home's mascot), no setting, no reads.
+**Step 1, build first: one compact card under a finished list on Prep.** When every line is ticked and the server has every tick, the mascot stands beside the book's own sentence with one bubble, "Every line ticked. 6 of 6." The book's sentence keeps its second half, "See Done today under Handy.", so the finish is said once. The card is the list's state: it shows on every device and after a reload, as a still. On the device whose tick finished the list he plays Serve once, after the ticked lines have left, then rests. Undo takes it back. Nothing shows while lines are left, nothing on the slip, nothing new on Home (the daily action, live on `main` since 9 November, is Home's mascot), no setting, no reads.
 
 **Step 2, after step 1 has run about four weeks: the sentence on the slip.** At a finished section of two or more lines the slip adds one line of words, "Sauce is done. Larder has 2 left.", with no art. One line or nothing: if the ticked name already wraps, or the sentence would not fit, the slip is exactly today's. Only while that tick's own slip is up, never late.
 
@@ -174,7 +185,7 @@ The owner's own example, started then finished, has one preview screen as a late
 ## Before release (implementation, not this preview)
 
 - Take the finish line from the tick handler and the write's own answer, not from reading the page. Never from a cached answer.
-- Move the art out of `docs/` to an app folder with fixed names. One still and one clip. Keep them out of `SHELL` and out of, or bounded in, the `sw.js` runtime cache.
+- Reuse `js/mascot.js` and `art/mascot/` from `main` (the Serve sheet and still are already there, loaded with `?v=1` so the saved copy never keeps them). No new art, nothing in `SHELL`.
 - Reserve the card's height where the book's sentence sits, so a late answer moves nothing.
 - Client tests: a held, late and refused finishing tick; Undo; another phone's tick; a line added after the finish; a section chip; a reload on a finished list; reduced motion; missing art; no extra reads (`tests/read-budget.test.js`); the shared tablet's "Who did this?" sheet.
 - Full app at 390, 768 and 1280 px with real section names, long names and Extra large text. Count the Done today rows in view before and after.

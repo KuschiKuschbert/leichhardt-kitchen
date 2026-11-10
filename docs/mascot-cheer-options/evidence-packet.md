@@ -2,6 +2,8 @@
 
 10 November 2026, Queensland. The same packet for every reviewer in both rounds. Source: branch `ccr-cdd67156-ujemkx` on top of the mascot studies (`71cbf84`); the app files match `main` at `7f85629`. Screens are **Preview**: the real app with the click tests' Firebase stand-in, made-up people (Ann, staff, Lunch on Larder; Sam, sous chef) and local Barlow, Barlow Condensed and Caveat fonts. Nothing was measured in the live kitchen. This is role-based analysis, not research with staff.
 
+**Note added after the council.** This page is kept as the reviewers saw it. It was written against this branch (`main` at `7f85629`). On `main` since then: the daily mascot on Home is built (`docs/kitchen-mascot.md`), its player and art ship in `js/mascot.js` and `art/mascot/`, and the tick keeps the On it stamp for the head chef's Time on it card (#664). See the brief, "What main has now".
+
 ## Today's book (see `evidence/sheet-today-390.png`)
 
 - **Home:** "Welcome, Ann", the date, Your day (charcoal), On with you (sage), Prep by section (steel) with "0 of 6 done" and one bar per section ("Larder ... 3 left").

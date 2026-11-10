@@ -19,7 +19,7 @@ Sources and the full findings are with the session's working files, summarised i
 
 - **Only real, confirmed work.** He speaks after the server has the tick. Never on a line that is Not sent, never on a refused save. Undo takes the cheer back.
 - **Say what was finished and what is next.** The section and the count. Never who is good.
-- **Never the clock.** No fast, early, quick, record or beat. The book does not even store how long a line took: the tick clears the On it time.
+- **Never the clock.** No fast, early, quick, record or beat. Since 10 November the head chef can see Time on it in the admin panel (#664); no cheer ever reads it.
 - **The section and the kitchen, not the person.** Above all on the shared tablet.
 - **Rare beats constant.** An ordinary tick keeps today's plain slip. A cook ticks 5 to 30 lines a day: a cheer on each is noise by the tenth.
 - **Never in the way.** No pop-up, nothing over a list line, no moved tap target, no sound. One clip at a time, played once, then still. Reduced motion keeps the words.
@@ -28,6 +28,8 @@ Sources and the full findings are with the session's working files, summarised i
 - **A way out from day one.** Each device: Cheers, Words only, Off.
 
 ## The ideas
+
+Written against this branch. Since then `main` has built the daily mascot on Home with tap to replay (`docs/kitchen-mascot.md`), so idea 14 is done, and Home's welcome already follows the time of day and the shift, so ideas 12 and 13 start from that.
 
 Marks: **First** worth designing first. **Later** good, after the first step proves itself. **Your call** needs the head chef's decision because it changes a rule or adds a workflow. **Cut** left out, with the reason.
 
