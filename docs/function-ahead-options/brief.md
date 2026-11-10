@@ -6,7 +6,8 @@ Council for the head chef's question of 10 November 2026: "If there is a functio
 
 - **Round 1 (10 Nov 2026):** Build smaller, 5 of 5.
 - **Round 2 (10 Nov 2026):** three designs, A, B and C, scored by six reviewers. The scores were A 39, C 38 and B 26, and B came last with every reviewer.
-- **Mix:** five of six reviewers recommended the same narrow mix. It has its own combined preview (`design-mix/`), which all six endorse with changes (8 to 8.5 out of 10). A revision pass fixed the faults they reproduced (see **Revisions and re-check**).
+- **Mix:** five of six reviewers recommended the same narrow mix. It has its own combined preview (`design-mix/`), which all six endorse with changes (8 to 8.5 out of 10). A revision pass fixed the two faults they reproduced. The four reviewers who found faults re-checked it and endorse it with changes (8 to 8.5), with six repairs listed for the build (see **Revisions and re-check**).
+- **Review status:** a lead synthesis, given a focused review by all six reviewers and re-checked by four. It is not a full council round on its own.
 - **Chosen:** waiting on the head chef.
 
 **Recommendation: the mix.** A's quiet Next function line is the base, on Home and in the band's place on every work page. Add C's heads-up card under Your day, which collapses into A's line after Got it. Add B's rule that the line only appears or changes size when a page opens, and B's "Not ordered yet" words on the Orders stock line. Also show `#/fn` Upcoming 7 days ahead and put the guests on the sheet. Leave out B's week strip, B's band changes, C's bell dot and any record of who has seen it.
@@ -137,7 +138,32 @@ Measured (Preview, 390 x 844):
 
 ## Revisions and re-check
 
-To be filled in when the revision pass and the re-check finish.
+The mix preview was revised after the focused review ([design-mix/spec.md](design-mix/spec.md), "Revisions after the focused review"). The four reviewers who raised faults then re-checked it with their own probes. All four said **Endorse with changes**: the cook, skeptic and keeper gave 8.5, the new starter 8. Full answers: [council-mix-recheck.json](council-mix-recheck.json). All figures are Preview.
+
+| Change | Re-check |
+| --- | --- |
+| Got it answers inside the line ("Got it. Kept here as one line", Undo in the line); no bottom slip | **Fixed and checked** at 390 px, default text: the next card's Got it and Open the function were clear at 9 of 9 tap points |
+| The work-page slot puts its status words first on one line, shortens the name, and is sized at open for its tallest words | **Fixed and checked**: 36 to 45 probe runs, names of 37 to 60 characters, three text sizes, while booking, no signal, midnight and cancel. The list moved 0 px and the status words were whole |
+| A function today breaks the lock; Home uses the same open-only lock; an "open" is a route change, back on screen, PIN unlock or reload | **Fixed and checked** in the preview. The real `paint()` path is not evidenced |
+| One card for 3 or more functions in a week | **Fixed and checked**: 308 px for 3 and 414 px for 5. On with you is back at 460 px after the one Got it |
+| "Function this week" and "Function tomorrow"; a chevron on the line | **Fixed and checked**. The chevron is only partly shown on work pages |
+| The minus has its own key (`lk.fn.ahead.fold`) and resets for a new person on a shared device | **Fixed and checked** in the preview |
+| "Cancelled · Do not prep" stays until the function's date passes, for everyone | **Fixed and checked** in the preview |
+
+**Repairs still needed before build** (found in the re-check):
+
+1. **Allergens on the busy card.** It shortens dietaries to "4 GF, 1 nut", which drops "allergy" (skeptic and new starter; seen in the preview). Show the notes as typed, cut with an ellipsis only at the end, and add a safe-text check. Dietaries are free text in `f.notes`.
+2. **Double tap.** At 360 and 375 px with large text, a double tap on the first Got it also puts away the next function, because the next card's Got it slides under the finger (cook, **Reproduced**). Ignore Got it on a card that appeared in the last 600 ms, and test at 360 px.
+3. **Large text.** The next card's Got it sits partly under the tab bar (skeptic and new starter, **Reproduced**; the spec's earlier "nothing over them" is corrected). Scroll it clear.
+4. **A same-day booking.** It drops the Prep list 66 px on purpose, so a tick in flight can land a row high (skeptic and keeper, Reproduced in the preview). Draw the band once the finger lifts, and add a click test that ticks at the moment of the draw.
+5. **Got it and a change while Home is open.** A change that arrives while the card is frozen is lost for that person, because the Got it stamp is later than the change (keeper, Risk from the spec). Stamp Got it with the version the card showed, not the time of the tap.
+6. **Small ones:**
+   - Prune `lk.fn.hu` when a page opens, not on every Home paint.
+   - A cancelled long name loses its date at 390 px. Keep the day.
+   - At 360 px with large text the date and the no-signal time are shortened. 360 px is outside the contract widths, but check it.
+   - "Kept here as one line" may be abstract for a second-language reader. Test "Now one line here".
+
+Still **Not evidenced**: the click tests on the app's real `paint()` and listener (booking, no signal, 23:59:30 to 00:00:30 Queensland, cancel, two staff on one tablet), the implemented-app measurements at 390, 768 and 1280 px with the stand-in fonts and the head chef's cut-off bar, focus rings, dark variants, roles, and a walk-through with a new starter.
 
 ## Questions for the head chef
 
@@ -148,8 +174,8 @@ To be filled in when the revision pass and the re-check finish.
 
 ## Build plan if chosen (small pull requests, in order)
 
-1. **Work-page line** with the open-only rule, `#/fn` 7 days, guests on the sheet. The header-height click test goes first: a booking, no signal, midnight and a cancel while Prep is open. The head chef asked for this order because it fixes his Tuesday problem.
-2. **Home card** under Your day, collapsing to the line. Includes the busy-week card, the per-person Got it key and the shared-tablet test.
+1. **Work-page line** with the open-only rule, `#/fn` 7 days, guests on the sheet. The header-height click test goes first: a booking, no signal, midnight, a cancel and a same-day booking while Prep is open (repair 4). The head chef reviewer asked for this order because it fixes his Tuesday problem.
+2. **Home card** under Your day, collapsing to the line. Includes the busy-week card with dietaries as typed (repair 1), the double-tap guard (repair 2), the large-text scroll (repair 3), the version stamp (repair 5), the per-person Got it key and the shared-tablet test.
 3. **Orders "Not ordered yet" tag.**
 
 No new reads, writes, rules or listeners in any step. Each step remeasures the implemented app at 390, 768 and 1280 px.
