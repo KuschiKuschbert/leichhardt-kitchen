@@ -44,7 +44,7 @@ const geometry = p => p.evaluate(() => {
   let p = await L.open(b, '#/drinks', { who: 'sam', width: 390, extra: fixture(), wait: 1200 });
   await ready(p);
   const initialReads = await reads(p), originalOrder = await order(p);
-  ok(originalOrder.length === 3 && /^2 x Regular oat flat white, 1 sugar$/.test(originalOrder[0]) && /^2 x Coke No Sugar$/.test(originalOrder[1]) && /^1 x Large long black, extra shot$/.test(originalOrder[2]), 'order: the three counted drink groups still describe today\'s three people exactly');
+  ok(originalOrder.length === 2 && /^2 x Regular oat flat white, 1 sugar$/.test(originalOrder[0]) && /^1 x Large long black, extra shot$/.test(originalOrder[1]), 'order: one drink for each of today\'s three people, the coffee before the Coke (' + originalOrder.join(' / ') + ')');
   ok(await p.$$eval('.dr-run', all => all.length) === 1 && await p.$$eval('.dr-team .dr-row', all => all.length) === 3, 'read view: one order and one row per person on today');
   let g = await geometry(p);
   ok(g.head.bottom <= g.usual.y + 1 && g.usual.bottom <= g.work.y + 1 && g.work.bottom <= g.people.y + 1, 'phone: heading, Your usual, counted order and people remain in reading order');
@@ -93,6 +93,13 @@ const geometry = p => p.evaluate(() => {
   await p.evaluate(() => { window.__fake.failReads = /\/(drinks|activity)$/; location.hash = '#/drinks'; });
   await L.waitFor(p, () => !!document.querySelector('.dr-page .p-err'), null, 7000);
   ok(/Could not load the team's drinks/.test(await txt(p, '.dr-page') || '') && !!(await p.$('[data-p="dk-retry"]')) && !(await p.$('.dr-order, .dr-team')), 'failed read: the notebook keeps Try again and never invents an empty team or counted order');
+  await p.context().close();
+
+  // One drink each: no coffee means the cold drink goes on the order instead (10 Nov 2026).
+  p = await L.open(b, '#/drinks', { who: 'sam', extra: fixture({ [key(['drinks', 'ann'])]: usual('ann', { kind: 'none', size: '', milk: '', sugar: '' }) }), wait: 1200 }); await ready(p);
+  const coldOrder = await order(p);
+  ok(coldOrder.length === 3 && /^1 x Coke No Sugar$/.test(coldOrder[0]) && /^1 x Regular oat flat white, 1 sugar$/.test(coldOrder[1]) && /^1 x Large long black, extra shot$/.test(coldOrder[2]) && /3 drinks · 3 people/.test(await txt(p, '.dr-oh') || ''), 'one each: Ann with no coffee gets her Coke, Bo his coffee only (' + coldOrder.join(' / ') + ')');
+  ok(/^AnnCoke No Sugar$/.test(await p.$eval('.dr-team .dr-row', e => e.textContent.replace(/^✓/, ''))), 'one each: Ann\'s row shows just the Coke');
   await p.context().close();
 
   const longPeople = people.map(p => p.id === 'ann' ? Object.assign({}, p, { name: 'A very long synthetic name for layout testing' }) : p);
