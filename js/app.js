@@ -1231,7 +1231,7 @@
     var P = window.LK_PREP, id = P && P.whoId ? P.whoId() : '';
     if (parseRoute().name !== 'landing' || !id) { if (window.LK_MASCOT) window.LK_MASCOT.unmount(); return; }
     if (window.LK_MASCOT) { if (window.LK_MASCOT.api === 1) window.LK_MASCOT.mount(app, { id: id }); return; }
-    if (!mascotLoad) mascotLoad = mgScript('js/mascot.js?v=1').then(function () { mascotSync(); }, function () { mascotLoad = null; });
+    if (!mascotLoad) mascotLoad = mgScript('js/mascot.js?v=2').then(function () { mascotSync(); }, function () { mascotLoad = null; });
   }
   // New words or a seasonal change move a mascot already on Home to its new place. Never a new one: a failed
   // download waits for the next Home view (docs/kitchen-mascot.md).

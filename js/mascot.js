@@ -4,9 +4,14 @@
    of the kitchen day where it can play, today's action plays once at the right end of the Welcome row,
    then the mascot rests on the Welcome pose. A tap replays today's action and never draws a new one.
    No reads, no writes, nothing over a list. The full name always wins: when the words fill the corner it stands on
-   the Your day card, then the heading keeps it room; only a name that cannot wrap leaves it out. */
+   the Your day card, then the heading keeps it room; only a name that cannot wrap leaves it out.
+   Since 10 Nov 2026 js/prep.js also loads this file for the finished prep list: sprite() below is a still mascot
+   that can play one action once. */
 (function () {
   'use strict';
+  // Home and the finished prep list each ask for this file. A second run would replace LK_MASCOT and lose hold of
+  // a mascot already on Home, so a copy that is already here with sprite() stays.
+  if (window.LK_MASCOT && typeof window.LK_MASCOT.sprite === 'function') return;
   var API = 1, KEY = 'lk.mascot.', ART = 'art/mascot/', V = '?v=1';
   // Frame times (ms) for the 8 frames of each 4 x 2 sheet of 192 x 256 px poses.
   var CLIPS = {
@@ -195,6 +200,58 @@
     };
   }
 
+  /* A still mascot that can play one action once (the finished prep list, owner 10 Nov 2026). Not a control: a
+     span with a canvas, hidden from screen readers, sized by the place it is put in. It rests on the Welcome pose.
+     play() answers false, and the pose stays, under reduced motion, on a hidden tab, off the page or with no art.
+     The page it stands in is redrawn often: the span is moved into the new markup, so a play is never cut or
+     started again by a redraw, and it ends by itself when the span is no longer on the page. */
+  var lastSprite = null;
+  function Sprite() {
+    var el = document.createElement('span'), cv = document.createElement('canvas'), ctx = cv.getContext('2d');
+    var timer = null, sheets = {}, restImg = null, playing = false, busy = false, frame = 0, clip = '', plays = 0, gone = false, failed = false, atEnd = null, wanted = null;
+    el.className = 'mascot-still'; el.setAttribute('aria-hidden', 'true'); cv.width = 192; cv.height = 256; el.appendChild(cv);
+    function paintImg(img, f) {
+      if (gone || !ctx) return;
+      ctx.clearRect(0, 0, 192, 256); ctx.imageSmoothingEnabled = false;
+      if (f == null) ctx.drawImage(img, 0, 0, 192, 256); else ctx.drawImage(img, (f % 4) * 192, Math.floor(f / 4) * 256, 192, 256, 0, 0, 192, 256);
+      el.setAttribute('data-frame', f == null ? 'rest' : String(f));
+    }
+    function stop() { if (timer) clearTimeout(timer); timer = null; }
+    function rest() { stop(); playing = false; atEnd = null; el.setAttribute('data-state', failed ? 'no-art' : 'rest'); if (restImg) paintImg(restImg); }
+    function step() {
+      if (gone || !playing) return;
+      if (document.hidden || !el.isConnected) { rest(); return; }
+      timer = setTimeout(function () {
+        if (!el.isConnected) { rest(); return; }
+        if (frame >= 7) { var end = atEnd; rest(); if (end) end(); return; }
+        frame++; paintImg(sheets[clip], frame); step();
+      }, CLIPS[clip][frame]);
+    }
+    // One pass of an action, then the Welcome pose. onEnd runs only when the pass reached its last frame.
+    // Asked before the Welcome pose has loaded, it waits for the pose and plays then.
+    function play(name, onEnd) {
+      if (gone || playing || busy || failed || wanted || !CLIPS[name] || reduced.matches || document.hidden || !el.isConnected) return false;
+      if (!restImg) { wanted = [name, onEnd]; return true; }
+      busy = true;
+      function go(sheet) {
+        busy = false; if (gone || !sheet || document.hidden || !el.isConnected) return;
+        sheets[name] = sheet; clip = name; frame = 0; playing = true; plays++; atEnd = onEnd || null; el.setAttribute('data-state', 'playing'); paintImg(sheet, 0); step();
+      }
+      if (sheets[name]) go(sheets[name]); else image(name + '-sheet-compact.webp', go, function () { busy = false; });
+      return true;
+    }
+    function onVis() { if (document.hidden && playing) rest(); }
+    document.addEventListener('visibilitychange', onVis);
+    // Missing art hides the span and leaves the words beside it as they are.
+    image('welcome-still.png', function (i) { if (gone) return; restImg = i; if (!playing) rest(); if (wanted) { var w = wanted; wanted = null; play(w[0], w[1]); } },
+      function () { failed = true; wanted = null; el.hidden = true; el.setAttribute('data-state', 'no-art'); });
+    return {
+      el: el, play: play,
+      state: function () { return { clip: clip, frame: frame, playing: playing, plays: plays, scheduled: !!timer, failed: failed, mounted: el.isConnected, rest: el.getAttribute('data-state') }; },
+      dispose: function () { gone = true; stop(); document.removeEventListener('visibilitychange', onVis); if (el.parentNode) el.parentNode.removeChild(el); }
+    };
+  }
+
   function mount(app, person) {
     var host = app.querySelector('#main.wall-main');
     if (!person || !person.id || !host || !host.querySelector('#rtitle.hm-welcome')) { unmount(); return; }
@@ -204,7 +261,10 @@
   function unmount() { if (cur) cur.dispose(); cur = null; }
   window.LK_MASCOT = {
     api: API, mount: mount, unmount: unmount,
+    sprite: function () { lastSprite = Sprite(); return lastSprite; },
     state: function () { return cur ? cur.state() : null; },
+    // For the click tests: the last still mascot made by sprite().
+    stillState: function () { return lastSprite ? lastSprite.state() : null; },
     record: function (id) { return load(id); },
     // For the click tests: the order a person would see over n kitchen days, without touching saved data.
     order: function (id, n) { var r = blank(), out = [], i; for (i = 0; i < n; i++) { r = draw(id, 'd' + i, r); out.push(r.today); } return out; },
