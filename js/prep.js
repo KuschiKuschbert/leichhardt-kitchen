@@ -2304,7 +2304,9 @@
      stamped (as built that morning) left finished lines open. On a phone the stamp is the person signed in: On it on a
      free line puts you on it, on your own takes you off, on someone else's takes it over. On the shared kitchen device On
      it asks Who's on it? (the picker below), and on a stamped line takes the cook off. Every phone, the shared tablet and
-     the wall board show the stamp. The tick clears it; a rolled copy starts without one. onBy, onById, onAt on the line;
+     the wall board show the stamp. The tick keeps it (10 Nov 2026) and onOf() hides it on a ticked line, so On it to the
+     tick says how long the job took (onItHTML(), for the head chef); a line unticked shows its stamp again. A rolled copy
+     starts without one. onBy, onById, onAt on the line;
      the rules check them (onPerson() in firestore.rules). */
   function onOf(x) { return x && !x.done && typeof x.onById === 'string' && x.onById && typeof x.onBy === 'string' && x.onBy ? { id: x.onById, name: x.onBy, at: +x.onAt || 0 } : null; }
   function onMine(x) { var o = onOf(x), p = me(); return !!o && !!p && o.id === p.id; }
@@ -2459,7 +2461,7 @@
     var d = pt, actor = me(), worker = ptPerson(id);
     if (!d || d.busy || !ptContext(d)) return;
     if (!ptSource(d) || !worker || !actor) { d.stale = true;d.error = 'The prep line or person changed. Close and try again.';ptDraw();return; }
-    var at = now(), value = d.mode === 'on' ? { onBy: worker.name, onById: worker.id, onAt: at } : { done: true, doneBy: actor.name, doneById: actor.id, doneAt: at, preparedBy: worker.name, preparedById: worker.id, preparedAt: at, onBy: '', onById: '', onAt: 0 };
+    var at = now(), value = d.mode === 'on' ? { onBy: worker.name, onById: worker.id, onAt: at } : { done: true, doneBy: actor.name, doneById: actor.id, doneAt: at, preparedBy: worker.name, preparedById: worker.id, preparedAt: at };
     d.selected = worker.id;d.error = '';d.busy = true;d.latest = null;d.latestServer = false;d.value = value;ptDraw();whoSync();
     supd(itemRef(d.date, d.id), value).then(function () {
       if ((pt !== d || !ptContext(d)) && !ptRetained(d)) return;
@@ -2512,8 +2514,9 @@
     if (!p) { toast('Choose your name before ticking prep.');return; }
     var done = !it.done;
     if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return; }
-    var at = done ? now() : 0, on = onOf(it), w = p;
-    supd(itemRef(date, id), Object.assign({ done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: at, preparedBy: done ? w.name : '', preparedById: done ? w.id : '', preparedAt: at }, done && on ? { onBy: '', onById: '', onAt: 0 } : {})).then(function () { markPast('p', date); }, failed);
+    // the tick keeps the On it stamp (10 Nov 2026): doneAt less onAt is how long the job took (onItHTML())
+    var at = done ? now() : 0, w = p;
+    supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: at, preparedBy: done ? w.name : '', preparedById: done ? w.id : '', preparedAt: at }).then(function () { markPast('p', date); }, failed);
     // the stamp's Undo means nothing once the line is ticked: the Ticked toast takes its place, not a chip above it
     if (done && S.toastAct && S.toastAct.stampFor === id) { S.toast = ''; S.toastAct = null; }
     if (done) { bump({ ticked: 1 }); toast('Ticked ' + slipName(it.text), { label: 'Undo', fn: function () { tick(date, id, false); } }); setTimeout(draw, LINGER + 100); }
@@ -2744,13 +2747,16 @@
     function take(list, why) { list.forEach(function (x) { if (picked.length < 3 && !seen[x.id]) { seen[x.id] = 1; picked.push({ x: x, why: why(x) }); } }); }
     take(open.filter(function (x) { return x.urgent; }).sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }), function () { return 'Urgent'; });
     take(open.filter(function (x) { return rolledN(x); }).sort(function (a, b) { return rolledN(b) - rolledN(a); }), function (x) { return 'Rolled over' + (rolledN(x) > 1 ? ' x' + rolledN(x) : ''); });
-    var slow = open.map(function (x) { return { x: x, m: ((S.hist || {})[lkey(x.text)] || {}).med || 0 }; }).filter(function (o) { return o.m >= 2 * 3600000; }).sort(function (a, b) { return b.m - a.m; }).map(function (o) { return o.x; });
-    take(slow, function (x) { return 'Usually takes ' + dur(((S.hist || {})[lkey(x.text)] || {}).med); });
-    take(open.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }), function (x) { return x.addedAt ? 'Waiting since ' + clock(x.addedAt) : 'Waiting longest'; });
+    // No "Usually takes" pick (council quick check, 10 Nov 2026): it timed written to ticked, so a line written early
+    // looked like a long job. How long a job takes is now On it to the tick, for the head chef (onItHTML()).
+    // waiting longest by when each line was really written (firstAt()), not when a copy rolled onto today: a line
+    // written after last night's cut is copied just after midnight. No time in the tag (council quick check, 10 Nov
+    // 2026): the line's second line already says who wrote it and when, and the copy's time read as "since 00:08".
+    take(open.slice().sort(byFirst), function () { return 'Waiting longest'; });
     return picked;
   }
   /* Start here, numbered in place (3 Nov 2026, work pages redesign A): the three lines to do first carry 1, 2 and 3 on
-     the list itself, with why when the line does not say it already (Usually takes, Waiting since). Same picks as
+     the list itself, with why when the line does not say it already (Waiting longest). Same picks as
      before (startHere()), the same rule for when they show: today, for someone who may tick, 4 or more open lines. */
   /* The page's add button (work pages redesign A, 3 Nov 2026, as drawn in the agreed options page): one full-width bar
      with a plus, docked above the tab bar on a phone (.wk-dock), in the page header on wider screens, the count beside it.
@@ -3884,15 +3890,13 @@
   }
   function pastDays(n) { var today = dayNow(), out = [], i; for (i = 1; i <= n; i++) { var d = shift(today, -i); if (S.past && S.past[d]) out.push([d, S.past[d]]); } return out; }
   function pastDerive() {
-    // amounts and time to tick per line
+    // amounts per line
     var hist = {};
     pastDays(PAST_DAYS).forEach(function (e) { e[1].forEach(function (x) {
       if (x.deleted || !x.text) return;
-      var h = hist[lkey(x.text)] = hist[lkey(x.text)] || { q: {}, tt: [] };
+      var h = hist[lkey(x.text)] = hist[lkey(x.text)] || { q: {} };
       if (!x.rolled && x.qty) { var qk = lkey(x.qty).slice(0, 40); h.q[qk] = h.q[qk] || { q: x.qty, n: 0 }; h.q[qk].n++; }
-      if (!x.rolled && x.done && x.doneAt && x.addedAt && x.doneAt > x.addedAt) h.tt.push(Math.min(x.doneAt - x.addedAt, 16 * 3600000));
     }); });
-    Object.keys(hist).forEach(function (k) { var t = hist[k].tt.sort(function (a, b) { return a - b; }); hist[k].med = t.length >= 2 ? t[Math.floor(t.length / 2)] : 0; });
     S.hist = hist;
     // the usual time of the last tick of the day (minutes after midnight)
     var lasts = [];
@@ -4633,6 +4637,23 @@
     return '<h3 class="a-ch-h">Time to tick by section</h3><span class="hint">From writing a line to ticking it. "Slow days" is how long the slowest 1 in 10 took.</span><div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain"><thead><tr><th scope="col">Section</th><th scope="col">Lines</th><th scope="col">Typical</th><th scope="col">Slow days</th></tr></thead><tbody>' +
       rows.map(function (r) { return '<tr><th scope="row">' + esc(r.k) + '</th><td>' + r.n + '</td><td>' + dur(r.med) + '</td><td>' + dur(r.p90) + '</td></tr>'; }).join('') + '</tbody></table></div>';
   }
+  /* How long a job takes (council quick check, 10 Nov 2026): from On it to the tick, only for lines someone put On it
+     (the tick keeps the stamp since that day). A take over restarts the clock. Admin only; staff see no times. */
+  function onTook(x) { return x.done && typeof x.onAt === 'number' && x.onAt > 0 && typeof x.doneAt === 'number' && x.doneAt > x.onAt ? Math.min(x.doneAt - x.onAt, 16 * 3600000) : 0; }
+  function onItHTML(n) {
+    var m = {}, who = AF().who;
+    afDates(n, 0).forEach(function (d) { afItems(d).forEach(function (x) {
+      var t = onTook(x), k = okey(x.text);
+      if (!t || !k || (who && preparedWorker(x).id !== who)) return;
+      (m[k] = m[k] || { text: String(x.text).trim(), v: [] }).v.push(t);
+    }); });
+    var all = Object.keys(m).filter(function (k) { return m[k].v.length >= 2; }).map(function (k) { var v = m[k].v.sort(function (a, b) { return a - b; }); return { t: m[k].text, n: v.length, med: v[Math.floor(v.length / 2)], p90: v[Math.min(v.length - 1, Math.floor(v.length * 0.9))] }; }).sort(function (a, b) { return b.med - a.med; });
+    var head = '<h3 class="a-ch-h">Time on it</h3>';
+    if (!all.length) return head + '<p class="hint">Not enough jobs yet. A job counts when someone taps On it and then ticks it, twice or more.</p>';
+    var rows = all.slice(0, 10);
+    return head + '<span class="hint">From On it to the tick: how long a job takes. Only lines someone put On it. "Slow days" is how long the slowest 1 in 10 took.' + (all.length > rows.length ? ' The ' + rows.length + ' longest of ' + all.length + '.' : '') + '</span><div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain"><thead><tr><th scope="col">Job</th><th scope="col">Times</th><th scope="col">Typical</th><th scope="col">Slow days</th></tr></thead><tbody>' +
+      rows.map(function (r) { return '<tr><th scope="row">' + esc(r.t) + '</th><td>' + r.n + '</td><td>' + dur(r.med) + '</td><td>' + dur(r.p90) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  }
   var INS_SECS = [['ins-overview', 'Overview'], ['ins-days', 'Days'], ['ins-timing', 'Timing'], ['ins-sections', 'Sections and people'], ['ins-problems', 'Problem lines'], ['ins-book', 'Recipe book'], ['ins-usage', 'Smart features and speed']];
   function secHead(i) { return '<h3 class="a-sh" id="' + INS_SECS[i][0] + '"><span class="a-sn">' + (i < 9 ? '0' : '') + (i + 1) + '</span>' + esc(INS_SECS[i][1]) + '</h3>'; }
   function insightsHTML() {
@@ -4656,7 +4677,7 @@
     return head +
       '<section class="a-sec">' + secHead(0) + '<div class="a-grid">' + smartHTML(agg, prev, n) + '</div><div class="a-tiles">' + tiles.filter(tileKeep).map(tileHTML).join('') + '</div></section>' +
       '<section class="a-sec">' + secHead(1) + '<div class="a-grid">' + card(calHTML(n), 'full') + card('<h3 class="a-ch-h">Lines each day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + dailyChart(agg) + tbl, 'full') + '</div></section>' +
-      '<section class="a-sec">' + secHead(2) + '<div class="a-grid">' + card(hourHTML(n), 'full') + card(tickBySectionHTML(n)) + card('<h3 class="a-ch-h">Time of day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + hoursChart(agg)) + '</div></section>' +
+      '<section class="a-sec">' + secHead(2) + '<div class="a-grid">' + card(hourHTML(n), 'full') + card(tickBySectionHTML(n)) + card(onItHTML(n)) + card('<h3 class="a-ch-h">Time of day</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + hoursChart(agg)) + '</div></section>' +
       '<section class="a-sec">' + secHead(3) + '<div class="a-grid">' + card('<h3 class="a-ch-h">Load by weekday and section</h3><span class="hint">Which sections are busy on which days. Useful for the roster.</span>' + heatHTML(n), 'full') +
         card('<h3 class="a-ch-h">Sections</h3>' + sectionsChart(agg)) + card('<h3 class="a-ch-h">By person</h3>' + legend([['Written', CW], ['Ticked off', CT]]) + peopleChart(agg) + '<p class="hint">More on people in the Team tab.</p>') + '</div></section>' +
       '<section class="a-sec">' + secHead(4) + '<div class="a-grid">' + card('<h3 class="a-ch-h">Slow and sticky lines</h3><span class="hint">Roll over 3 or more times, usually take 4 hours or more to tick, or keep being removed.</span>' + stickyHTML(n), 'full') +
@@ -4768,7 +4789,7 @@
       (x.deleted && x.mergedInto ? '<span class="nb-also">Double up</span>' : (also || ''));
     // Start here, numbered in place (startNums()): the number before the words, and why when the line does not show it
     var sn = !readonly && (!x.done || lingers(x)) && !x.deleted && date === dayNow() && S.startN && S.startN[x.id];
-    if (sn && /^(Usually|Waiting)/.test(sn.why)) marks += '<span class="nb-why">' + esc(sn.why) + '</span>';
+    if (sn && /^Waiting/.test(sn.why)) marks += '<span class="nb-why">' + esc(sn.why) + '</span>';
     // the number is a badge drawn by CSS from data-n (.nb-t[data-n]::before), so the line's words stay its first text;
     // a screen reader hears "Start here, 1" after them
     var num = sn ? ' data-n="' + sn.n + '"' : '', numSay = sn ? '<span class="visually-hidden">. Start here, ' + sn.n + '</span>' : '';

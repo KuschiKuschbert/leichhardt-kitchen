@@ -43,7 +43,9 @@ async function tap(p, sel) { await p.click(sel); await L.settle(p, 400); }
   ok(!d.onById && d.done === false && /You are off Dice carrot/.test(await txt(p, '.p-toast') || ''), 'a second tap on On it takes her off (' + JSON.stringify({ on: d.onById }) + ')');
   await tap(p, onBtn('on1')); await tap(p, box('on1'));
   d = await item(p, 'on1');
-  ok(d.done === true && d.preparedById === 'ann' && d.doneById === 'ann' && d.onById === '' && d.onAt === 0, 'on it, then one tap on the box ticks it and clears the stamp (' + JSON.stringify({ done: d.done, prep: d.preparedById, on: d.onById }) + ')');
+  // the tick keeps the stamp (10 Nov 2026): On it to the tick is how long the job took, for the head chef
+  ok(d.done === true && d.preparedById === 'ann' && d.doneById === 'ann' && d.onById === 'ann' && d.onAt > 0 && d.onAt <= d.doneAt, 'on it, then one tap on the box ticks it and keeps when she started (' + JSON.stringify({ done: d.done, prep: d.preparedById, on: d.onById }) + ')');
+  ok(!/on it/i.test(await txt(p, '#nbr-on1 .nb-on') || ''), 'a ticked line no longer says who is on it');
 
   // Bo's neutral badge and name identify ownership without fading work that Ann can still take over.
   ok(await p.$eval('#nbr-on2', e => e.classList.contains('is-on-other') && getComputedStyle(e).opacity === '1') && /Bo on it/.test(await txt(p, '#nbr-on2 .nb-on') || '') && /Bo ✓/.test(await txt(p, onBtn('on2')) || ''), 'someone else\'s stamp: readable row, Bo on it, Bo ✓ on the button');
@@ -53,7 +55,7 @@ async function tap(p, sel) { await p.click(sel); await L.settle(p, 400); }
   ok(d.onById === 'ann' && d.done === false && /Taken over from Bo/.test(await txt(p, '.p-toast') || ''), 'On it on Bo\'s line takes it over');
   await tap(p, box('on4'));
   d = await item(p, 'on4');
-  ok(d.done === true && d.preparedById === 'ann' && d.onById === '', 'one tap on the box of a line Bo is on ticks it for Ann and clears his stamp');
+  ok(d.done === true && d.preparedById === 'ann' && d.onById === 'bo', 'one tap on the box of a line Bo is on ticks it for Ann; his start time stays for the timing');
   ok(p.errors.length === 0 && !(await L.overflow(p)), 'phone: no page errors, no sideways scroll ' + p.errors.join(' | '));
   await p.context().close();
 
@@ -83,7 +85,7 @@ async function tap(p, sel) { await p.click(sel); await L.settle(p, 400); }
   ok(/Who did this\?/.test(await txt(p, '#pt-sheet h3') || '') && await p.$eval('#pt-sheet .pt-on [data-pt="choose"]', e => e.getAttribute('data-id') === 'ann' && document.activeElement === e), 'shared: the tick asks Who did this?, Ann first under On it and focused');
   await p.click('#pt-sheet .pt-on [data-pt="choose"]'); await L.settle(p, 500);
   d = await item(p, 'on1');
-  ok(!(await p.$('#pt-sheet')) && d.done === true && d.preparedById === 'ann' && d.doneById === 'sam' && d.onById === '', 'shared: ticked for Ann, Sam recorded it, the stamp cleared');
+  ok(!(await p.$('#pt-sheet')) && d.done === true && d.preparedById === 'ann' && d.doneById === 'sam' && d.onById === 'ann' && d.onAt > 0, 'shared: ticked for Ann, Sam recorded it, the start time kept');
   ok(await p.getAttribute(onBtn('on2'), 'aria-label') === 'Take Bo off Pick parsley', 'shared: On it on Bo\'s line takes him off');
   await tap(p, onBtn('on2'));
   d = await item(p, 'on2');

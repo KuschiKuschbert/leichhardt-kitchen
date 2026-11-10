@@ -58,6 +58,21 @@ const at = (day, h, m) => { const p = day.split('-'); return new Date(+p[0], +p[
   ok(p.errors.length === 0, 'prep: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  /* Start here (10 Nov 2026): a line written last night after the cut and copied onto today just after midnight was
+     tagged "Waiting since 00:08", the copy's time. The tag now says Waiting longest, with no time (the line's own
+     second line already says when it was written), and the order goes by when each line was really written. */
+  const wait = {};
+  wait[fsKey(['days', today, 'items', rid('night')])] = item('Roast beetroot', at(today, 0, 8), { addedBy: 'Rolled over', addedById: '', rolled: 1, ahead: true, root: 'night', from: 'night', rolledFrom: yday, origBy: 'Ann', origAt: at(yday, 21, 40) });
+  wait[fsKey(['days', today, 'items', 'early'])] = item('Juice limes', at(today, 0, 5));
+  p = await L.open(b, '#/prep', { who: 'ann', wait: 2500, extra: wait });
+  const nums = await p.evaluate(() => Array.from(document.querySelectorAll('.nb-t[data-n]')).map(t => ({ n: t.dataset.n, row: t.closest('li').id, why: (t.closest('li').querySelector('.nb-why') || {}).textContent || '' })));
+  const night = nums.find(x => x.row === 'nbr-' + rid('night'));
+  ok(!!night && night.n === '3', 'Start here: the line written last night is the one waiting longest (' + JSON.stringify(nums) + ')');
+  ok(!!night && night.why === 'Waiting longest', 'Start here: its tag says Waiting longest, not the time it was copied (' + (night && night.why) + ')');
+  ok(!nums.some(x => /\d:\d\d/.test(x.why)), 'Start here: no tag shows a time');
+  ok(p.errors.length === 0, 'Start here: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   p = await L.open(b, '#/orders', { who: 'ann', wait: 2000, extra });
   s = await store(p);
   const fl = s[fsKey(['orders', today, 'lines', rid('ol')])];
