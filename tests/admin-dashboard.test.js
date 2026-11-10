@@ -98,7 +98,7 @@ const toDash = async p => { await L.adminTab(p, 'dashboard'); await ready(p); };
     ok(await q.evaluate(() => (window.__fake.dump()['kitchens/000000/mail/m2'] || {}).done === true) && /2 kitchen mails open/.test(await L.txt(q, '.dsh-needs')) && await q.locator('.dsh-needs .dsh-ml .ml-row').count() === 2, width + ': ticking a line in To do marks it done and takes it off the list');
     ok(/Late/.test(needs) && /still to sign/.test(needs) && /1 of \d+ signed/.test(needs), width + ': Needs you says who has not signed the late minutes');
     ok(/1 meeting action past the date/.test(needs), width + ': Needs you lists the overdue meeting action');
-    ok(/3 item links to check/.test(needs) && /5 training reviews/.test(needs) && /2 in training/.test(needs), width + ': Needs you shows the Review desk counts from the nightly run');
+    ok(/3 item links to check/.test(needs) && !/training review/.test(needs) && !/in training/i.test(needs), width + ': Needs you shows the item links count from the nightly run, and no training reviews (retired 10 Nov 2026) though the record still has them');
     ok(/1 transfer not returned/.test(needs) && /Oldest: Butter to Venue B, 9 days/.test(needs), width + ': Needs you lists the transfer not back, with the oldest');
     ok(/The nightly run finished\./.test(needs), width + ': the nightly run counts as clear when it finished');
     ok(!await L.overflow(q), width + ': no sideways scroll with Needs you');

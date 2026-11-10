@@ -77,17 +77,6 @@ async function checkFocusedTask(p, width, name) {
   ok(!(await L.overflow(p)), width + ': ' + name + ' editor fits without sideways scrolling');
 }
 
-async function checkDateClearance(p, name) {
-  await p.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
-  await L.settle(p, 100);
-  const clearance = await p.evaluate(() => {
-    const field = document.getElementById('ai-day').getBoundingClientRect(), actions = document.querySelector('.ai-task-actions').getBoundingClientRect();
-    const top = Math.max(0, document.querySelector('.wtop').getBoundingClientRect().bottom);
-    return { ok: field.top >= top && field.bottom <= actions.top + 1 && actions.top < innerHeight, top: field.top, bottom: field.bottom, actions: actions.top, header: top, scroll: scrollY };
-  });
-  ok(clearance.ok, name + ': the last required training field can scroll clear of the fixed Save area' + (clearance.ok ? '' : ' ' + JSON.stringify(clearance)));
-}
-
 async function checkLearningJump(browser, text) {
   const name = '390 Learning ' + (text === 'xlarge' ? 'extra large' : 'normal text');
   const p = await L.open(browser, '#/admin', { admin: true, adminPage: 'learning', who: '', width: 390, height: 844, settings: { text }, wait: 1600 });
@@ -140,7 +129,7 @@ const privateWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(x
     ok(await p.locator('.ai-resume [data-ai="resume"]').isVisible() && await p.locator('.ai-editor:visible').count() === 0, width + ': contextual Back exposes the retained draft in its review queue');
     if (width < 720) ok(await p.locator('.a-groups').isVisible(), width + ': returning to the queue restores the room switch');
 
-    for (const [group, tab] of [['reports', 'analysis'], ['kitchen', 'reference-records'], ['team', 'training-records'], ['kitchen', 'tools']]) {
+    for (const [group, tab] of [['reports', 'analysis'], ['kitchen', 'reference-records'], ['kitchen', 'guides'], ['kitchen', 'tools']]) {
       await chapter(p, group, tab);
       await checkLayout(p, width, group);
       ok(await p.locator('.ai-resume [data-ai="resume"]').isVisible(), width + ': the unfinished review remains reachable in ' + group);
@@ -153,18 +142,6 @@ const privateWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(x
     const savedLink = await p.evaluate(() => Object.values(window.__fake.dump()).find(r => r && r.alias === 'House slaw' && r.recipeId === 'slaw'));
     ok(savedLink.by === 'owner' && savedLink.v === 1 && !await p.evaluate(() => LK_PREP.unsaved()), width + ': the acknowledged Save retains the existing owner and revision contract');
 
-    await L.adminTab(p, 'training');
-    await p.click('[data-ai="new-training"]');
-    await checkFocusedTask(p, width, 'training assessment');
-    await L.pick(p, '#ai-personId', 'ann');
-    await L.pick(p, '#ai-section', 'Grill');
-    await L.pick(p, '#ai-status', 'in-training');
-    await L.pick(p, '#ai-assessorId', 'sam');
-    if (width < 720) await checkDateClearance(p, String(width));
-    await p.click('[data-ai="save"]');
-    await L.waitFor(p, () => Object.entries(window.__fake.dump()).some(([key, value]) => /\/training\/[^/]+$/.test(key) && value.personId === 'ann'));
-    const assessment = await p.evaluate(() => Object.entries(window.__fake.dump()).find(([key, value]) => /\/training\/[^/]+$/.test(key) && value.personId === 'ann')[1]);
-    ok(assessment.section === 'Grill' && !assessment.recipeId && assessment.status === 'in-training' && assessment.assessorId === 'sam' && assessment.by === 'owner', width + ': training saves the explicitly chosen section, outcome and assessor');
     if (width < 720) {
       await chapter(p, 'kitchen', 'tools');
       await p.evaluate(() => navigator.serviceWorker.dispatchEvent(new MessageEvent('message', { data: 'lk-new' })));
@@ -193,19 +170,14 @@ const privateWrites = p => p.evaluate(() => window.__fake.writes.flat().filter(x
   });
   ok(firstTarget.usable, '390 normal text: the first review row offers a visible 44 px target above the kitchen navigation without scrolling' + (firstTarget.usable ? '' : ' ' + JSON.stringify(firstTarget)));
   await queuePage.context().close();
-  const p = await L.open(b, '#/admin', { admin: true, adminPage: 'training', who: '', width: 390, height: 844, settings: { text: 'xlarge' }, extra, wait: 1600 });
+  // extra large text: the item link review (the Training assessment editor was retired on 10 Nov 2026)
+  const p = await L.open(b, '#/admin', { admin: true, adminPage: 'references', who: '', width: 390, height: 844, settings: { text: 'xlarge' }, extra, wait: 1600 });
   ok(await p.evaluate(() => document.documentElement.getAttribute('data-text') === 'xlarge'), '390 extra large: the app uses its largest reading setting');
-  await L.adminTab(p, 'training');
-  await p.click('[data-ai="new-training"]');
-  await checkFocusedTask(p, 390, 'extra large training assessment');
-  await L.pick(p, '#ai-personId', 'ann');
-  await L.pick(p, '#ai-section', 'Grill');
-  await L.pick(p, '#ai-status', 'confirmed');
-  await L.pick(p, '#ai-assessorId', 'sam');
-  await checkDateClearance(p, '390 extra large');
-  await p.click('[data-ai="save"]');
-  await L.waitFor(p, () => Object.entries(window.__fake.dump()).some(([key, value]) => /\/training\/[^/]+$/.test(key) && value.personId === 'ann' && value.status === 'confirmed'));
-  ok(await p.locator('.ai-editor:visible').count() === 0 && !(await L.overflow(p)), '390 extra large: the visible Save completes the explicit assessment and returns to a fitting queue');
+  await L.adminTab(p, 'references');
+  await L.waitFor(p, () => !!document.querySelector('[data-ai="review-reference"][data-value="ref:recipe:slaw"]'));
+  await p.click('[data-ai="review-reference"][data-value="ref:recipe:slaw"]');
+  await L.waitFor(p, () => !!document.querySelector('[data-ai="save"]'));
+  await checkFocusedTask(p, 390, 'extra large item link review');
   ok(p.errors.length === 0, '390 extra large: no browser errors ' + p.errors.join(' | '));
   await p.context().close();
   for (const text of ['normal', 'xlarge']) await checkLearningJump(b, text);

@@ -38,7 +38,7 @@
         w: { n: n(w.n), reason: counts(w.reason), sec: counts(w.sec), items: (Array.isArray(w.items) ? w.items : []).slice(0, 400).filter(function (i) { return i && str(i.t); }).map(function (i) { return { t: str(i.t), u: str(i.u, 40), a: n(i.a), n: n(i.n) }; }) },
         x: { out: n(x.out), in: n(x.in) } };
     }).sort(function (a, b) { return a.day < b.day ? -1 : a.day > b.day ? 1 : 0; });
-    var nd = d.needs && typeof d.needs === 'object' ? { links: n(d.needs.links), training: n(d.needs.training), inTraining: n(d.needs.inTraining) } : null;
+    var nd = d.needs && typeof d.needs === 'object' ? { links: n(d.needs.links) } : null;
     return { at: n(d.at), from: str(d.from, 10), to: str(d.to, 10), days: days, needs: nd };
   }
   function load(force) {
@@ -298,8 +298,7 @@
     if (q) {
       if (q.links) rows.push(needRow('wait', 'To review', q.links + ' item link' + (q.links === 1 ? '' : 's') + ' to check', 'Recorded names with no confirmed recipe or supplier link. Counted at ' + api.clock(state.data.at) + '.', 'references', 'Item links'));
       else clear.push('item links');
-      if (q.training) rows.push(needRow('wait', 'Training', q.training + ' training review' + (q.training === 1 ? '' : 's'), (q.inTraining ? q.inTraining + ' in training. ' : '') + 'People and sections without a confirmed assessment. Counted at ' + api.clock(state.data.at) + '.', 'training', 'Training'));
-      else clear.push('training');
+      // training reviews: retired with the written assessments on 10 Nov 2026 (needs.training is still published, unread)
     }
     // Transfers not returned: lent or borrowed before today and still open.
     if (state.loans === undefined) rows.push(needRow('wait', 'Checking', 'Transfers', 'Still loading.', '', ''));
@@ -579,7 +578,7 @@
       watchSet(w2.list.filter(function (x, j) { return j !== i; }), 'Stopped watching ' + gone + '.'); return;
     }
     // a tile of today's numbers on the Inbox says its own period (data-days="7"), the Dashboard's follow the period chips
-    if (a === 'open') { var t = el.getAttribute('data-t'); if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references', 'training', 'team'].indexOf(t) >= 0) api.open(t, el.getAttribute('data-days') === '7' ? 7 : state.period); }
+    if (a === 'open') { var t = el.getAttribute('data-t'); if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references', 'team'].indexOf(t) >= 0) api.open(t, el.getAttribute('data-days') === '7' ? 7 : state.period); }
   }
   // Typing in the watch list's Find box narrows the choices (the admin panel keeps focus and cursor through redraws).
   document.addEventListener('input', function (e) { if (valid() && state.add && e.target && e.target.id === 'dsh-watch-q') { state.add.q = String(e.target.value || '').slice(0, 80); redraw(); } });

@@ -1,4 +1,4 @@
-// Recorded items and saved links remain accessible. Training activity never becomes a section assessment.
+// Recorded items and saved links remain accessible. (The Training page and its assessments were retired on 10 Nov 2026.)
 const L = require('./lib'), C = require('../js/analysis-core');
 const { R, ok } = L.results();
 const path = (...parts) => ['kitchens', L.PIN, ...parts].join('/');
@@ -76,11 +76,11 @@ const searchReferences = async (p, text) => {
     ok(await p.locator('.ai-reference-candidates [data-ai="review-reference"]').count() === 2 && /Chop herbs/.test(await L.txt(p, '.ai-reference-candidates')), width + ': confirming one item leaves the other recorded items available');
     await savedReferences(p);
     const confirmedCount = await p.locator('.ai-reference-confirmed [data-ai="edit-reference"]').count();
-    await L.adminTab(p, 'training'); await L.adminTab(p, 'references');
+    await L.adminTab(p, 'analysis'); await L.adminTab(p, 'references');
     ok(confirmedCount === 2 && await p.locator('.ai-reference-candidates [data-ai="review-reference"]').count() === 2, width + ': returning to review preserves both the remaining queue and saved links');
 
     await review(p, 'prep:chop herbs'); await referenceOptions(p); await p.fill('#ai-label', 'Keep this draft');
-    await L.adminTab(p, 'training'); await L.adminTab(p, 'references');
+    await L.adminTab(p, 'analysis'); await L.adminTab(p, 'references');
     if (await p.locator('.ai-resume [data-ai="resume"]').count()) await p.click('.ai-resume [data-ai="resume"]');
     await referenceOptions(p);
     ok(await p.inputValue('#ai-label') === 'Keep this draft' && await p.evaluate(() => LK_PREP.unsaved()), width + ': a reference draft survives changing admin pages');
@@ -88,58 +88,14 @@ const searchReferences = async (p, text) => {
     const labelFocus = await p.evaluate(() => { const label = document.getElementById('ai-label'); return { focused: document.activeElement === label, value: label.value, start: label.selectionStart, end: label.selectionEnd, open: label.closest('details').open }; });
     ok(labelFocus.focused && labelFocus.value === 'Keep this draft' && labelFocus.start === 2 && labelFocus.end === 5, width + ': a background redraw preserves the chosen field, text and selection (' + JSON.stringify(labelFocus) + ')');
     await p.click('[data-ai="cancel"]');
-    await L.adminTab(p, 'training');
-    await L.waitFor(p, () => !!document.querySelector('.ai-training-opportunities [data-ai="training-opportunity"]'));
-    const opportunityValues = await p.locator('.ai-training-opportunities [data-ai="training-opportunity"]').evaluateAll(nodes => nodes.map(el => JSON.parse(el.getAttribute('data-value'))));
-    ok(opportunityValues.some(x => x.personId === 'ann' && x.section === 'Grill'), width + ': a confirmed recipe does not hide the whole-section training opportunity');
-    ok(opportunityValues.some(x => x.personId === 'sam' && x.section === 'Grill'), width + ': recorded ticks alone do not confirm a section');
-    ok(/Prep ticks show recorded work\. They do not confirm skill or training\./.test(await L.txt(p, '.ai-workspace')), width + ': training explains how activity and assessment differ');
-    const opportunity = p.locator('.ai-training-opportunities [data-ai="training-opportunity"]');
-    for (let i = 0; i < await opportunity.count(); i++) {
-      const value = JSON.parse(await opportunity.nth(i).getAttribute('data-value'));
-      if (value.personId === 'ann' && value.section === 'Grill') { await opportunity.nth(i).click(); break; }
-    }
-    ok(await p.inputValue('#ai-personId') === 'ann' && await p.inputValue('#ai-section') === 'Grill' && await p.inputValue('#ai-status') === 'not-assessed', width + ': an opportunity opens an explicit assessment draft without confirming it');
-    ok(await privateWrites(p) === 1, width + ': reviewing opportunities creates no assessment write');
-    const sectionFocus = await p.evaluate(() => {
-      document.getElementById('ai-section-picker').focus();
-      LK_PREP.mount('admin', LK_PREP.state.root);
-      return { id: document.activeElement && document.activeElement.id, value: document.getElementById('ai-section').value };
-    });
-    ok(sectionFocus.id === 'ai-section-picker' && sectionFocus.value === 'Grill', width + ': a background redraw keeps focus and value in the training section field (' + JSON.stringify(sectionFocus) + ')');
-    const sectionKeys = await p.evaluate(() => { const k = document.getElementById('ai-section').getAttribute('data-k'); return { editor: k, uses: document.querySelectorAll('[data-k="' + k + '"]').length }; });
-    ok(sectionKeys.uses === 1, width + ': the training section field has a focus key of its own (' + JSON.stringify(sectionKeys) + ')');
-
-    await L.pick(p, '#ai-status', 'confirmed'); await L.pick(p, '#ai-assessorId', 'sam');
-    await p.click('[data-ai="save-next"]');
-    await L.waitFor(p, () => Object.values(window.__fake.dump()).some(r => r && r.personId === 'ann' && r.section === 'Grill' && !r.recipeId && r.status === 'confirmed'));
-    const assessments = await p.evaluate(() => Object.entries(window.__fake.dump()).filter(([k]) => /\/training\/[^/]+$/.test(k)).map(([, v]) => v));
-    ok(assessments.some(r => r.personId === 'ann' && r.section === 'Grill' && !r.recipeId && r.status === 'confirmed') && assessments.some(r => r.recipeId === 'burger' && r.status === 'confirmed'), width + ': explicit whole-section confirmation is saved separately from the earlier recipe assessment');
-    await L.waitFor(p, () => document.getElementById('ai-personId') && (document.getElementById('ai-personId').value !== 'ann' || document.getElementById('ai-section').value !== 'Grill'));
-    ok(await p.locator('.ai-editor').isVisible() && (await p.inputValue('#ai-personId') !== 'ann' || await p.inputValue('#ai-section') !== 'Grill'), width + ': training Save and next opens another person and section after confirmation');
-    await p.click('[data-ai="cancel"]');
-    ok(!(await L.overflow(p)), width + ': references and training fit without sideways scroll');
+    // the Training page and its assessments were retired on 10 Nov 2026: no opportunity queue, nothing written
+    ok(await p.locator('[data-t="training"], .ai-training-opportunities').count() === 0 && await privateWrites(p) === 1, width + ': no Training page, and only the confirmed link was written');
+    ok(!(await L.overflow(p)), width + ': references fit without sideways scroll');
     ok(p.errors.length === 0, width + ': no browser errors ' + p.errors.join(' | '));
     await p.context().close();
   }
 
-  let p = await L.open(b, '#/admin', { admin: true, who: '', extra, width: 390, wait: 1400 });
-  await L.adminTab(p, 'training');
-  await p.locator('.ai-training-opportunities [data-ai="training-opportunity"]').first().click();
-  const visited = [];
-  for (let i = 0; i < 3; i++) {
-    const subject = await p.inputValue('#ai-personId') + ':' + await p.inputValue('#ai-section');
-    visited.push(subject);
-    await L.pick(p, '#ai-status', 'in-training'); await L.pick(p, '#ai-assessorId', 'sam');
-    await p.click('[data-ai="save-next"]');
-    await L.waitFor(p, before => !LK_INTELLIGENCE.busy() && document.getElementById('ai-personId') && document.getElementById('ai-personId').value + ':' + document.getElementById('ai-section').value !== before, subject);
-    const next = await p.inputValue('#ai-personId') + ':' + await p.inputValue('#ai-section');
-    ok(!visited.includes(next), 'In training Save and next ' + (i + 1) + ': advances to an unreviewed person and section (' + visited.join(', ') + ' -> ' + next + ')');
-    const highlighted = await p.locator('.ai-training-opportunities [aria-current="true"]').evaluateAll(nodes => nodes.map(el => { const x = JSON.parse(el.getAttribute('data-value')); return x.personId + ':' + x.section; }));
-    ok(highlighted.length === 1 && highlighted[0] === next, 'In training Save and next ' + (i + 1) + ': the queue highlight follows the open assessment');
-  }
-  await p.context().close();
-
+  let p;
   p = await L.open(b, '#/admin', { admin: true, who: '', extra, failReads: '/analysis/range-90$', wait: 1600 });
   await L.adminTab(p, 'references');
   await L.waitFor(p, () => /Could not|Unable|unavailable|Try again/i.test((document.querySelector('.ai-reference-queue') || {}).textContent || ''));

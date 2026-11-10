@@ -1,7 +1,7 @@
 // A page for each person (5 Nov 2026, admin pages step 5, docs/admin-pages-options/brief.md): opened from the team list,
 // it shows what the person may do (read only: changes stay in the list and its Save), their activity over the shared
-// report period, counted like the Team report, and (part 2) their saved assessments, with a way to Assessments filtered
-// to them. Example data only.
+// report period, counted like the Team report. Part 2 (their saved assessments) was retired on 10 Nov 2026; the
+// test keeps saved assessments in the data to prove the page no longer shows or reads them. Example data only.
 const L = require('./lib');
 const { R, ok } = L.results();
 const fsKey = p => ['kitchens', L.PIN].concat(p).join('/');
@@ -33,26 +33,20 @@ extra[fsKey(['training', 'ai-ann-larder'])] = { personId: 'ann', section: 'Larde
     const num = re => { const t = tiles.find(x => re.test(x)); return t ? parseInt(t, 10) : -1; };
     ok(num(/lines written/) >= 3 && num(/lines ticked off/) >= 2 && tiles.some(t => /in Larder, the main section/.test(t)), width + ': Sam\'s last 30 days: written, ticked off and the main section (' + tiles.join(' | ') + ')');
     ok(/Ticks record activity\. They do not confirm skill\./.test(page), width + ': the page says ticks are activity, not skill');
-    // part 2: Sam's saved assessments, newest first, and none of Ann's
-    await L.waitFor(p, () => document.querySelectorAll('.a-pp-assess li').length > 0, null, 8000).catch(() => {});
-    const assess = await p.$$eval('.a-pp-assess li', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
-    ok(assess.length === 2 && /^Larder: Confirmed/.test(assess[0]) && /^Grill: In training/.test(assess[1]) && /assessor Ann/.test(assess[0]), width + ': Sam\'s page lists his saved assessments, newest first (' + assess.join(' | ') + ')');
+    // part 2 retired 10 Nov 2026: the page shows no assessments, though Sam has saved ones, and reads nothing more
+    await L.settle(p, 600);
+    ok(await p.locator('.a-pp-assess, [data-p="a-person-assess"]').count() === 0 && !/Assessments/.test(await L.txt(p, '.a-personpage') || ''), width + ': Sam\'s page shows no assessments block');
     const extraReads = await p.evaluate(b => window.__fake.reads.slice(b), before);
-    ok(extraReads.every(r => /training/.test(r)), width + ': the person page reads only the assessments list beyond the Team report (' + extraReads.join(', ') + ')');
+    ok(!extraReads.some(r => /training/.test(r)), width + ': the person page reads no assessments (' + extraReads.join(', ') + ')');
     ok(await p.locator('.a-personpage input, .a-personpage select, .a-personpage [data-a]').count() === 0, width + ': nothing on the page changes what Sam may do: that stays in the team list');
     ok(!await L.overflow(p), width + ': no sideways scroll on the person page');
-    // Open Sam's assessments: the Assessments page on Sam only
-    await L.tap(p, '[data-p="a-person-assess"][data-id="sam"]'); await L.settle(p, 500);
-    await L.waitFor(p, () => LK_PREP.state.atab === 'training-records' && !!document.querySelector('#ai-person-filter'), null, 8000).catch(() => {});
-    ok(await p.evaluate(() => LK_PREP.state.atab) === 'training-records' && await p.$eval('#ai-person-filter', e => e.value) === 'sam', width + ': Open Sam\'s assessments shows Assessments filtered to Sam');
-    ok(!/Ann: Larder/.test(await L.txt(p, '.ai-saved-library') || ''), width + ': and Ann\'s assessment is not in that view');
     await L.adminTab(p, 'people'); await L.settle(p, 300);
     await L.tap(p, '[data-p="a-person"][data-id="sam"]'); await L.settle(p, 400);
     // the top bar's Back goes back to the list, and so does changing page
     await p.click('.wtop [data-act="back"]'); await L.settle(p, 300);
     ok(await p.evaluate(() => !LK_PREP.state.personId) && await p.locator('[data-p="a-person"][data-id="sam"]').count() === 1, width + ': Back returns to all people');
     await L.tap(p, '[data-p="a-person"][data-id="ann"]'); await L.settle(p, 300);
-    await L.adminTab(p, 'training-records'); await L.settle(p, 300);
+    await L.adminTab(p, 'insights'); await L.settle(p, 300);
     await L.adminTab(p, 'people'); await L.settle(p, 300);
     ok(await p.locator('.a-personpage').count() === 0 && await p.locator('[data-p="a-person"][data-id="ann"]').count() === 1, width + ': changing page closes the person, so People opens on the list');
     // an unsaved change in the list keeps its Save bar on a person's page

@@ -5547,7 +5547,7 @@
     var top = '<section class="set-block a-personpage">' + back + '<span class="label">' + esc(p.name || 'No name yet') + '</span>' +
       '<p class="a-pp-role"><b>' + esc((ROLES[p.role] || {}).name || 'No role') + '</b>' + (p.active === false ? ', off the list' : '') + '. Can: ' + esc(can.length ? can.join(', ') : 'read only') + '.</p>' +
       '<p class="hint">Change the role and ticks in the team list, then save.</p>';
-    return top + personActivityHTML(id) + personTrainingHTML(p) + '</section>' + saveBlock;
+    return top + personActivityHTML(id) + '</section>' + saveBlock;
   }
   // the person's last N days over the shared report period, counted by the Team report's own code
   function personActivityHTML(id) {
@@ -5562,22 +5562,6 @@
     return h3 + miss + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' +
       (secs.length ? '<p class="a-pp-secs">Ticked off by section: ' + secs.slice(0, 6).map(function (k) { return esc(k) + ' ' + r.tsecs[k]; }).join(', ') + '.</p>' : '') +
       (r.last ? '<p class="hint">Last wrote a line on ' + esc(dayShort(r.last)) + '. The period is the one every report shares.</p>' : '') + note;
-  }
-  /* the person's saved assessments (step 5, part 2), from the list the Assessments page reads, through the workspace
-     module (js/admin-intelligence.js, lazy): one read per record, once per visit, nothing more once Assessments has read
-     them. A book without the module's personTraining() keeps the link to Assessments. */
-  function personTrainingHTML(p) {
-    if (!intelligenceAllowed()) return '';
-    var h3 = '<h3 class="a-ch-h">Assessments</h3>', open = '<div class="btn-row"><button type="button" class="btn" data-p="a-person-assess" data-id="' + esc(p.id) + '">Open ' + esc(p.name || 'their') + (p.name ? '\'s' : '') + ' assessments</button></div>';
-    if (!intelligenceReady()) return h3 + (intelligenceError ? '<p class="p-err" role="status">Could not load the assessments. Check the connection and reload this page.</p>' : inkWait('Loading assessments...', 'chef', 3));
-    if (typeof window.LK_INTELLIGENCE.personTraining !== 'function') return h3 + '<p class="hint">Saved assessments are under Assessments.</p>' + open;
-    var rows = window.LK_INTELLIGENCE.personTraining(p.id, intelligenceAdapter());
-    if (rows === undefined) return h3 + inkWait('Loading assessments...', 'chef', 3);
-    if (rows === null) return h3 + '<p class="p-err" role="status">Could not load the assessments. Check the connection and reload this page.</p>' + open;
-    if (!rows.length) return h3 + '<p class="hint">No saved assessments yet.</p>' + open;
-    return h3 + '<ul class="a-pp-assess">' + rows.slice(0, 8).map(function (r) {
-      return '<li><b>' + esc(r.subject || 'No section') + '</b>: ' + esc(r.status) + '. <small>' + esc(r.scope) + ' assessment, ' + esc(r.day) + ', assessor ' + esc(r.assessor) + '.</small></li>';
-    }).join('') + '</ul>' + (rows.length > 8 ? '<p class="hint">' + (rows.length - 8) + ' more under Assessments.</p>' : '') + open;
   }
   /* The sous chef's Staff page: a short list of names with Remove. Same helper, rows as cards. */
   function staffListHTML(d) {
@@ -5905,12 +5889,12 @@
       },
       open: function (tab, days) {
         if (tab === 'team') { if (teamOK()) location.hash = '#/team'; return; }
-        if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references', 'training'].indexOf(tab) < 0 || (tab === 'mail' && !mlOwner())) return;
+        if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references'].indexOf(tab) < 0 || (tab === 'mail' && !mlOwner())) return;
         if (tab === 'insights' || tab === 'waste' || tab === 'transfers') setReportDays(days === 7 ? 7 : 30);
         S.atab = tab; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(tab)[0]] = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop();
       }
     });
-    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=3').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
+    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=4').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
     return '<section class="set-block"><h3 class="label">Dashboard</h3><p class="hint" role="status">' + (dashError ? 'Could not load the dashboard. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
   }
   function dashWeek() {
@@ -5936,7 +5920,9 @@
   var intelligenceLoading = null, intelligenceError = false;
   function intelligenceAllowed() { return !!fb && S.level === 'owner' && ownerHere() && !!S.user; }
   function intelligenceContext() { return S.pin + '|' + (S.user ? S.user.uid : '') + '|' + S.who + '|' + accessEpoch; }
-  var INTELLIGENCE_PAGES = ['overview', 'analysis', 'references', 'training', 'reference-records', 'training-records'];
+  /* Written assessments were retired from the screens on 10 Nov 2026 (head chef, docs/cross-training-options/brief.md):
+     'training' and 'training-records' are no longer pages. Saved training/* records, their rules and the backup stay. */
+  var INTELLIGENCE_PAGES = ['overview', 'analysis', 'references', 'reference-records'];
   function intelligenceVisible() {
     return intelligenceAllowed() && S.name === 'admin' && S.root && document.body.contains(S.root) &&
       S.root.querySelector('.ai-workspace') && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3;
@@ -6277,13 +6263,16 @@
      a laptop left on one paid it at every update. The Inbox reads about 140. The report is one tap away. */
   function startTab() {
     var t = (lsGet('lk.dash.intro') && lsGet('lk.prep.atab')) || 'inbox', auto = false;
+    // a saved page that is no longer in a room (Training and Assessments, retired 10 Nov 2026) opens the Inbox
+    // (a fixed list: startTab() runs before A_GROUPS below is set)
+    if (t === 'training' || t === 'training-records') { t = 'inbox'; lsSet('lk.prep.atab', t); }
     try { auto = !!sessionStorage.getItem('lk.upd.auto'); sessionStorage.removeItem('lk.upd.auto'); } catch (e) {}
     if (!auto || !/^#\/admin/.test(location.hash) || ['insights', 'team', 'waste', 'transfers', 'learning', 'proofreader'].indexOf(t) < 0) return t;
     lsSet('lk.prep.atab', 'inbox');   // the page on screen, so a reload by hand stays on it
     return 'inbox';
   }
-  var A_GROUPS = [['today', 'Today', ['inbox', 'dashboard', 'overview', 'references', 'training', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people', 'training-records']], ['kitchen', 'Kitchen', ['kitchen-home', 'cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']], ['prep', 'Prep', ['prep-standards']]];
-  var A_GROUP_NOTES = { prep: 'The prep each section should have ready before service.', today: 'What needs you, and how the kitchen is going.', reports: 'Read the recorded activity and follow it back to its source.', team: 'Who is in the kitchen, what each person may do, and their assessments.', kitchen: 'How the kitchen is set up, its records, the backup and the PIN.' };
+  var A_GROUPS = [['today', 'Today', ['inbox', 'dashboard', 'overview', 'references', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people']], ['kitchen', 'Kitchen', ['kitchen-home', 'cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']], ['prep', 'Prep', ['prep-standards']]];
+  var A_GROUP_NOTES = { prep: 'The prep each section should have ready before service.', today: 'What needs you, and how the kitchen is going.', reports: 'Read the recorded activity and follow it back to its source.', team: 'Who is in the kitchen and what each person may do.', kitchen: 'How the kitchen is set up, its records, the backup and the PIN.' };
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
      and the chart headings in it), so a long page is one tap from any part. Built from the page after each draw, so a
@@ -11771,8 +11760,6 @@
     // a person's page (admin pages step 5): open it from their row, and back to the list (also the top bar's Back)
     if (a === 'a-person') { S.personId = id; draw(); adminToTop(); return; }
     if (a === 'a-person-back') { S.personId = ''; draw(); adminToTop(); return; }
-    // Assessments, opened on this person (the workspace module's person filter, when the module has it)
-    if (a === 'a-person-assess') { if (intelligenceBusy()) return; S.personId = ''; if (window.LK_INTELLIGENCE && typeof window.LK_INTELLIGENCE.showPerson === 'function') window.LK_INTELLIGENCE.showPerson(id); S.atab = 'training-records'; S.agLast = S.agLast || {}; S.agLast.team = 'training-records'; lsSet('lk.prep.atab', 'training-records'); draw(); adminToTop(); return; }
     if (a === 'range') { var rv = el.getAttribute('data-v'); if (S.atab === 'waste') { if (!whCanChange()) return; whState().period = rv; if (/^(7|14|30)$/.test(rv)) S.statsRange = +rv; } else setReportDays(+rv); draw(); return; }
     // on Team, the order days too (28 Oct 2026): a day that could not load stayed under "Refresh reads the newest"
     if (a === 'stats-refresh') { loadStats(true); if (el.getAttribute('data-v') === 'team') loadOrdStats(true); draw(); return; }
@@ -12838,10 +12825,10 @@
   function tmRow(p, s) {
     var on = tmOnShift(p.id, s.id), chef = chefP(p), others = [];
     Object.keys((tmf.on[p.id] || {})).forEach(function (sh) { if (sh !== s.id) { var o = tmShift(sh); if (o) others.push(o.name + (tmSecName(tmf.on[p.id][sh]) ? ': ' + tmSecName(tmf.on[p.id][sh]) : '')); } });
-    // a cook's usual section on this weekday's shift and what they are In training on (step 4, the nightly teamsum)
-    var u = tmUsual(p.id, s.id), learn = tmLearning(p.id);
+    // a cook's usual section on this weekday's shift (step 4, the nightly teamsum)
+    var u = tmUsual(p.id, s.id);
     var sub = [chef ? (p.role === 'head' ? 'Head chef' : 'Sous chef') : '', others.length ? 'Also on ' + others.join(', ') : '',
-      u ? 'Usually ' + tmSecName(u.sec) + ', ' + u.n + ' of the last ' + u.of + ' ' + tmWeekday(tmPlanDay()) + 's' : '', learn.length ? 'In training: ' + learn.join(', ') : ''].filter(Boolean).join('. ');
+      u ? 'Usually ' + tmSecName(u.sec) + ', ' + u.n + ' of the last ' + u.of + ' ' + tmWeekday(tmPlanDay()) + 's' : ''].filter(Boolean).join('. ');
     var picks = '';
     if (on) {
       // The section picker lives beside the name in the worksheet, once per person.
@@ -13667,16 +13654,14 @@
       var o = usual[k] = mapOf();
       Object.keys(u[k]).forEach(function (id) { var v = u[k][id]; if (str(id, 80) && Array.isArray(v) && str(v[0], 40) && typeof v[1] === 'number' && typeof v[2] === 'number') o[id] = { sec: v[0], n: v[1], of: v[2] }; });
     });
-    var learn = mapOf(), l = x.learn && typeof x.learn === 'object' ? x.learn : {};
-    Object.keys(l).forEach(function (id) { if (str(id, 80) && Array.isArray(l[id])) learn[id] = l[id].filter(function (v) { return str(v, 40); }); });
-    return { day: str(x.day, 10), days: days, usual: usual, learn: learn };
+    // x.learn (who is In training, from assessments) is no longer shown since 10 Nov 2026 and is left unread
+    return { day: str(x.day, 10), days: days, usual: usual };
   }
   // a cook's usual section on today's weekday and this shift, while that section is still on the list
   function tmUsual(id, sh) {
     var r = tsum.rec, u = r && r.usual[parseYmd(tmPlanDay()).getDay() + '|' + sh], v = u && u[id];
     return v && kitSecs().some(function (x) { return x.id === v.sec; }) ? v : null;
   }
-  function tmLearning(id) { var r = tsum.rec; return r && r.learn[id] ? r.learn[id] : []; }
   /* Admin, Reports, Team: shifts worked on each section, beside the ticks (the last 7, 14 or 30 days of the report) */
   function tsShiftsHTML(n) {
     tsLoad();
