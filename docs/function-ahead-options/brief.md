@@ -227,6 +227,20 @@ The repairs:
 
 Head chef choices applied: the work-page line stays for everyone; everyone sees Function tomorrow once more.
 
+**The independent review of step 2** used four lenses (state, data, access and layout), and each finding was verified against the code. All the confirmed findings are fixed and have a check in `tests/fn-home-card.test.js` (69 checks):
+- **Got it on a tablet or laptop scrolled the page away.** The tab bar is hidden there and measured as the top of the screen.
+- **A cancellation or removal while the card was open did not show.** The card now follows the booking's status in place, as words.
+- **Any save brought the card back as Changed,** even one that only changed the customer's phone. The mark now keeps what the kitchen saw (`kitchenSig()`). A change inside the busy card shows on its row.
+- **"Also this week" was worked out on every paint,** so a booking from another phone could add a row. It is now decided at the open.
+- **From 1100 px, Your day and the card drifted apart.**
+- **Smaller ones:**
+  - "1 of N" restarted after each Got it; it is now "N this week".
+  - "in 0 days" showed at midnight.
+  - Open the function also changed the page under the sheet.
+  - The Got it words could push the page sideways at extra-large text.
+  - Focus fell to the top of the page when Undo went.
+  - The spoken status kept old words across people.
+
 **Step 3** (the Orders tag) is built on its own branch.
 
 ## Files
