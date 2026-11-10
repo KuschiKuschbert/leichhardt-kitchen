@@ -148,6 +148,7 @@ const seed = {
   'guides/g1': { title: 'Dishwasher', cat: 'equipment', pages: 1, v: 1, removed: false }, 'guides/g1/pages/0': { img: 'data:image/png;base64,AA', v: 1, n: 0 },
   'functions/f1': fnRec('f1'), 'functions/f1/hist/0': { was: {}, at: 1, by: 'fay' }, 'fncontact/f1': { cname: 'Jo Example', phone: '0400 000 000', email: '', upd: 1, by: 'fay' },
   [`fnsent/f1_${T0}`]: { fid: 'f1', at: T0, day: TODAY, sent: false, sentAt: 1, sentBy: 'ann', by: 'sam' },
+  'fnseen/f1_ann_week_1abc2': { fid: 'f1', g: '1abc2', s: 'week', day: TODAY, at: NOW, by: 'ann' },
   'mail/x1': { from: 'ann', by: 'ann', cat: 'stock', pri: 'week', text: 'Out of foil', at: NOW, done: false, seen: false },
   'mail/x0': { from: 'ann', by: 'ann', cat: 'stock', pri: 'week', text: 'Gloves', at: NOW - 3 * DAY, done: true, doneAt: NOW - DAY, seen: true },
   'mailstat/x1': { by: 'ann', seen: false, done: false },
@@ -274,6 +275,7 @@ row('js/prep.js loadNotes(): my own personal pings (directnotes, until >= today,
 row('js/prep.js loadNotes(): every personal ping, for those who manage pings', { ok: CHEFS, asks: CHEFS, run: db => getDocsFromServer(query(C(db, 'directnotes'), where('until', '>=', TODAY))) });
 row('js/prep.js loadSeen(): who tapped Got it on an Everyone ping (notes/<id>/seen)', { ok: KITCHEN, asks: CHEFS, run: db => getDocs(query(C(db, 'notes/n1/seen'), where('day', '==', TODAY))) });
 row('js/prep.js loadSeen(): who tapped Got it on a personal ping (directnotes/<id>/seen)', { ok: CHEFS, asks: CHEFS, run: db => getDocs(query(C(db, 'directnotes/d1/seen'), where('day', '==', TODAY))) });
+row('js/functions.js seenLoad(): who said Got it to a function, on its page (fnseen, fid == id)', { ok: CHEFS, asks: CHEFS, run: db => getDocs(query(C(db, 'fnseen'), where('fid', '==', 'f1'))) });
 // loadPastNotes(): the finished pings, for those who manage pings (noteQuery(): from the server, 30 at a time)
 const pastPings = (db, col) => getDocsFromServer(query(C(db, col), where('until', '<', TODAY), orderBy('until', 'desc'), limit(30)));
 row('js/prep.js loadPastNotes(): finished Everyone pings (notes, until < today, newest first)', { ok: KITCHEN, asks: CHEFS, run: db => pastPings(db, 'notes') });
@@ -345,6 +347,7 @@ row(EXP_ALL + 'every personal ping (the directnotes list, no filter)', { ok: CHE
 row(EXP_ALL + 'every chef job (the todos list, no filter)', { ok: CHEFS, asks: GOOGLE, run: db => getDocs(C(db, 'todos')) });
 row(EXP_ALL + 'every day\'s team (the team list, no filter)', { ok: KITCHEN, asks: GOOGLE, run: db => getDocs(C(db, 'team')) });
 row(EXP_ALL + 'every supplier order tick (the cutdone list, no filter)', { ok: CHEFS, asks: GOOGLE, run: db => getDocs(C(db, 'cutdone')) });
+row(EXP_ALL + 'who said Got it to a function (the fnseen list, no filter)', { ok: CHEFS, asks: GOOGLE, run: db => getDocs(C(db, 'fnseen')) });
 // the PIN move copies the PIN fingerprints too (copyCol(); its writes go to the new kitchen PIN, not rows here)
 row('js/prep.js movePin() copyCol(): the staffpins list', { ok: GOOGLE, asks: GOOGLE, run: db => getDocs(C(db, 'staffpins')) });
 
@@ -730,6 +733,21 @@ row('js/functions.js tickSent(): take back my own tick within 2 minutes', { ok: 
   prep: (r, w) => { const a = T0 + 200 + ALL.indexOf(r), t = Date.now() - 30000; return put({ [`fnsent/f1_${a}`]: { fid: 'f1', at: a, day: TODAY, sent: true, sentAt: t, sentBy: w, by: w } }); },
   run: async (db, w, r) => { const a = T0 + 200 + ALL.indexOf(r), cur = await serverRec(`fnsent/f1_${a}`);
     return W(r, [['set', `fnsent/f1_${a}`, { fid: 'f1', at: a, day: TODAY, sent: false, sentAt: cur.sentAt, sentBy: cur.sentBy }, true]]); } });
+// who said Got it to a function on Home (fnseen, 10 Nov 2026): once, as myself; never changed or deleted
+const SEEN = (w, s, g) => `fnseen/f1_${w}_${s || 'week'}_${g || '1abc2'}`;
+const seenRec = (s, at, by) => Object.assign({ fid: 'f1', g: '1abc2', s: s || 'week', day: TODAY, at: at || Date.now() }, by ? { by } : {});
+row('js/functions.js huSync(): Got it on Home\'s function card (fnseen/<fid>_<me>_<card>_<g>)', { ok: KPINS, asks: KPINS,
+  prep: (r, w) => put({ [SEEN(w)]: null }), run: (db, w, r) => W(r, [['set', SEEN(w), seenRec()]]) });
+row('js/functions.js huSync(): the same record sent again from another phone (an exact retry)', { ok: KPINS, asks: KPINS,
+  prep: (r, w) => put({ [SEEN(w, 'tom')]: seenRec('tom', NOW, w) }), run: (db, w, r) => W(r, [['set', SEEN(w, 'tom'), seenRec('tom', NOW)]]) });
+row('js/functions.js huSync(): a Got it already recorded is not changed (another time)', { ok: [], asks: [],
+  prep: (r, w) => put({ [SEEN(w, 'off')]: seenRec('off', NOW, w) }), run: (db, w, r) => W(r, [['set', SEEN(w, 'off'), seenRec('off', NOW + 1)]]) });
+row('js/functions.js: a Got it in another person\'s name (never sent; the admin copies one as it is in a PIN move)', { ok: GOOGLE, asks: [],
+  prep: (r, w) => put({ [SEEN(w === 'ann' ? 'sam' : 'ann', 'tom', 'zz9')]: null }),
+  run: (db, w, r) => { const o = w === 'ann' ? 'sam' : 'ann'; return W(r, [['set', SEEN(o, 'tom', 'zz9'), Object.assign(seenRec('tom'), { g: 'zz9', by: o })]]); } });
+row('js/functions.js: a Got it whose id does not match its card (never sent)', { ok: [], asks: [],
+  prep: (r, w) => put({ [SEEN(w, 'tom')]: null }), run: (db, w, r) => W(r, [['set', SEEN(w, 'tom'), seenRec('week')]]) });
+row('js/functions.js: a Got it record deleted (never sent)', { ok: [], asks: [], run: (db, w, r) => W(r, [['del', 'fnseen/f1_ann_week_1abc2']]) });
 row('js/fnedit.js save(): confirm a new function with its contact, prep line and order line', { ok: ['owner', 'ownkit', 'fay'], asks: FNMGR,
   prep: r => put({ ['functions/n' + FN(r)]: null }),
   run: (db, w, r) => { const id = 'n' + FN(r), t = Date.now(), f = fnRec(id, { cBy: w, cAt: t, confBy: w, confAt: t, by: w, upd: t });

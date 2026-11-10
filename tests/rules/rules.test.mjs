@@ -197,6 +197,30 @@ await ok(W([['notes/n-sam/seen/2026-10-19_ann', { day: '2026-10-19', at: 6 }]], 
 await ok(W([['notes/n-sam/seen/2026-10-19_bo', { day: '2026-10-19', at: 5 }]], { id: 'ann' }), false, 'seen: Ann cannot mark it seen for Bo');
 await ok(W([['notes/n-sam/seen/2026-10-20_ann', { day: '2026-10-19', at: 5 }]], { id: 'ann' }), false, 'seen: the id must carry the day in the record');
 await ok(setDoc(doc(owner, K + 'notes/n-sam/seen/2026-10-19_sam'), { day: '2026-10-19', at: 5, by: 'sam' }), true, 'seen: the head chef copies one as it is (move to a new kitchen PIN)');
+// who said Got it to a function on Home (fnseen, 10 Nov 2026): once, as myself; read by chefs only
+{
+  const sr = (s, at, x) => Object.assign({ fid: 'f1', g: '1abc2', s: s || 'week', day: '2026-10-19', at: at || 5 }, x || {});
+  await ok(W([['fnseen/f1_ann_week_1abc2', sr()]], { id: 'ann' }), true, 'fnseen: Ann says Got it to a function');
+  await ok(W([['fnseen/f1_ann_week_1abc2', sr()]], { id: 'ann' }), true, 'fnseen: the same record again is an exact retry');
+  await ok(W([['fnseen/f1_ann_week_1abc2', sr('week', 6)]], { id: 'ann' }), false, 'fnseen: a record cannot be changed');
+  await ok(W([['fnseen/f1_ann_tom_1abc2', sr('tom')]], { id: 'ann' }), true, 'fnseen: the day before is a record of its own');
+  await ok(W([['fnseen/f1_bo_week_1abc2', sr()]], { id: 'ann' }), false, 'fnseen: Ann cannot say Got it for Bo');
+  await ok(W([['fnseen/f1_bo_week_1abc2', sr()]], { id: 'ann', as: 'bo' }), false, 'fnseen: nor in Bo\'s name');
+  await ok(W([['fnseen/f1_ann_week_9zz', sr()]], { id: 'ann' }), false, 'fnseen: the id must carry what the record says');
+  await ok(W([['fnseen/f1_ann_x_1abc2', sr('x')]], { id: 'ann' }), false, 'fnseen: only the three cards');
+  await ok(W([['fnseen/f1_ann_off_1abc2', sr('off', 5, { note: 'x' })]], { id: 'ann' }), false, 'fnseen: no other fields');
+  await ok(W([['fnseen/f1_fay_week_1abc2', sr()]], { id: 'fay' }), false, 'fnseen: functions only people do not see Home\'s card');
+  await ok(W([['fnseen/f1_sam_week_1abc2', sr()]], { id: 'sam' }), true, 'fnseen: a sous chef says Got it too');
+  await ok(deleteDoc(doc(wPhone('w-ann'), K + 'fnseen/f1_ann_week_1abc2')), false, 'fnseen: never deleted');
+  await ok(getDocs(query(collection(wPhone('w-sam'), K + 'fnseen'), where('fid', '==', 'f1'))), true, 'fnseen: a sous chef sees who said Got it');
+  await ok(getDocs(query(collection(wPhone('w-ann'), K + 'fnseen'), where('fid', '==', 'f1'))), false, 'fnseen: staff do not');
+  await ok(getDoc(doc(wPhone('w-ann'), K + 'fnseen/f1_ann_week_1abc2')), false, 'fnseen: not even their own record');
+  await ok(getDocs(query(collection(anon, K + 'fnseen'), where('fid', '==', 'f1'))), false, 'fnseen: nobody without a session');
+  await ok(setDoc(doc(owner, K + 'fnseen/f1_bo_tom_1abc2'), sr('tom', 5, { by: 'bo' })), true, 'fnseen: the head chef copies one as it is (move to a new kitchen PIN)');
+  await ok(setDoc(doc(owner, K + 'fnseen/f1_bo_tom_1abc2'), sr('tom', 5, { by: 'bo' })), true, 'fnseen: and copies it again after a stopped move');
+  await ok(setDoc(doc(owner, K + 'fnseen/f1_bo_tom_1abc2'), sr('tom', 7, { by: 'bo' })), false, 'fnseen: but cannot change it');
+  await ok(getDocs(collection(owner, K + 'fnseen')), true, 'fnseen: the Google account lists them (backup, PIN move)');
+}
 // what the order list learned, and the learning log
 await ok(W([['ordlearned/cream', { text: 'Cream', uses: 1, hidden: false }]], { id: 'ann' }), false, 'ordlearned: a phone cannot add an item (the nightly job writes it)');
 await ok(W([['ordlearned/milk', { uses: 99 }, true]], { id: 'sam' }), false, 'ordlearned: a sous chef cannot change the counts');

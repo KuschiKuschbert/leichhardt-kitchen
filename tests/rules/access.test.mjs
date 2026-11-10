@@ -13,7 +13,7 @@ const paths = [
  'config/main','config/admins','proofHistory/x',`days/${today}/items/x`,`orders/${today}/lines/x`,`waste/${today}/lines/x`,`waste/${today}`,
  'transferOpen/x',`transfers/${today}/lines/x`,'daily/x','summary/waste','misses/x','views/x','notes/x','notes/x/seen/x',
  'minutes/x','minutes/x/hist/1','minutes/x/signs/x','minutes/x/signs/1_staff','guides/x','guides/x/pages/0','functions/x','functions/x/hist/1',
- 'fncontact/x','fnsent/x','mail/x','mailstat/x','todos/x','push/x','cutdone/x','suppliers/x','suppliers/x/audit/1',
+ 'fncontact/x','fnsent/x','fnseen/x','mail/x','mailstat/x','todos/x','push/x','cutdone/x','suppliers/x','suppliers/x/audit/1',
  'suppliers/x/orders/x','supplierlinks/x','drinks/x','shifts/x','staffpins/x','pinset/x','sessions/x','proofs/x','activity/x',
  'sections/x','learned/x','ordlearned/x','learnlog/x','recipes/x/hist/1','drawings/x/hist/1'
 ];
@@ -40,6 +40,8 @@ const fn=anonContext(env,'fn').firestore(), staff=anonContext(env,'staff').fires
 for(const p of paths.filter(p=>!['functions/x','functions/x/hist/1','fncontact/x','fnsent/x'].includes(p))) { await assertFails(getDoc(doc(fn,K+p)));checks++; }
 for(const p of ['functions/x','functions/x/hist/1','fncontact/x','fnsent/x']) { await assertSucceeds(getDoc(doc(fn,K+p)));checks++; }
 for(const p of ['config/main',`days/${today}/items/x`,`orders/${today}/lines/x`,`waste/${today}/lines/x`,'notes/x','guides/x']) { await assertSucceeds(getDoc(doc(staff,K+p)));checks++; }
+await assertFails(getDoc(doc(staff,K+'fnseen/x')));checks++;
+await assertSucceeds(getDoc(doc(anonContext(env,'sous').firestore(),K+'fnseen/x')));checks++;
 await assertFails(setDoc(doc(fn,K+`days/${today}/items/foreign`),{text:'Injected',qty:'1',by:'fn'}));checks++;
 await assertFails(setDoc(doc(staff,'publicRecipes/forged'),{by:'staff'}));checks++;
 await assertFails(getDocs(collection(fn,K+'days/'+today+'/items')));checks++;
