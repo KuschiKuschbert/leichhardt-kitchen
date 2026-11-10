@@ -246,6 +246,14 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
     ok(v.up && v.msg === 'Ticked Laksa' && !v.say && v.undo === 'Undo', 'on Orders the slip keeps its Undo and has no words about prep: ' + JSON.stringify([v.msg, v.say]));
     await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 700); v = await slip(p);
     ok(!v.say, 'and back on Prep they do not return: ' + JSON.stringify([v.up, v.say]));
+    await p.context().close();
+    // Recipes is not a kitchen page: nothing is drawn there, so the words must go when the cook leaves. Inside their
+    // first 2 seconds they were not kept or read out, and they are not while the cook is away
+    await ready(); await tick(p, 'i5', 0); await said(p);
+    await p.evaluate(() => { location.hash = '#/recipes'; }); await L.settle(p, 400); await run(p, 2400); v = await slip(p);
+    ok(v.kept === null && !/is done/.test(v.live), 'on Recipes inside 2 seconds: nothing is kept as said and nothing is read out: ' + JSON.stringify([v.kept, v.live]));
+    await p.evaluate(() => { location.hash = '#/prep'; }); await L.settle(p, 800); v = await slip(p);
+    ok(!v.say && v.kept === null, 'and back on Prep the words do not return: ' + JSON.stringify([v.up, v.msg, v.say]));
   });
 
   await step('one line or nothing', async () => {
@@ -333,7 +341,7 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
     ok(v.up && v.msg === 'Ticked Laksa' && !v.say && !v.card, 'a line with no section is still open: no bare "Sauce is done.": ' + JSON.stringify([v.msg, v.say]));
     await p.context().close();
     // names that would read wrongly: the whole list, the Functions tab, a person
-    for (const n of ['Prep', 'functions', 'Bo']) {
+    for (const n of ['Prep', 'functions', 'Bo', 'Kitchen', 'Dinner', 'Night']) {
       await ready({ extra: { [item('i4')]: line('Make gravy', n, { rolled: 1 }), [item('i5')]: line('Laksa', n) } }); await tick(p, 'i5', 0); v = await quiet(p, 800);
       ok(v.up && v.msg === 'Ticked Laksa' && !v.say && v.kept === null, 'a section called ' + n + ' is not said: ' + JSON.stringify([v.msg, v.say]));
       await p.context().close();
@@ -341,6 +349,11 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
     // and such a name is not named as next either: Grill is renamed Prep, so Larder is next
     await ready({ extra: { [item('i3')]: line('Portion rump', 'Prep', { urgent: true }) } }); await tick(p, 'i5', 0); v = await said(p);
     ok(v.say === 'Sauce is done. Larder has 3 left.', 'a name that reads wrongly is passed over as next: ' + v.say);
+    await p.context().close();
+    // a section that is a cook's first name: "Sam is done." would be about a person
+    const cfg = L.seed()[key(['config', 'main'])]; cfg.people = cfg.people.map(q => q.id === 'sam' ? { ...q, name: 'Sam Rivers' } : q);
+    await ready({ extra: { [key(['config', 'main'])]: cfg, [item('i4')]: line('Make gravy', 'Sam', { rolled: 1 }), [item('i5')]: line('Laksa', 'Sam') } }); await tick(p, 'i5', 0); v = await quiet(p, 800);
+    ok(v.up && v.msg === 'Ticked Laksa' && !v.say && v.kept === null, 'a section that is a person\'s first name is not said: ' + JSON.stringify([v.msg, v.say]));
   });
 
   await step('tonight, for tomorrow', async () => {
@@ -386,6 +399,13 @@ const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y
     await ready(); await tick(p, 'i5', 0); await said(p);
     await p.click('.p-toasts [data-toast="new"] .p-toast-say'); v = await quiet(p, 400);
     ok(v.up && v.undo === 'Undo' && v.say === 'Sauce is done. Grill has 1 left.', 'a tap on the sentence does nothing: it cannot throw Undo away: ' + JSON.stringify([v.up, v.undo]));
+    // only the words are dead to a tap: the empty room beside them, left of Undo, still puts the slip away
+    const at = await p.evaluate(() => { const s = document.querySelector('.p-toasts [data-toast="new"] .p-toast-say').getBoundingClientRect(), u = document.querySelector('.p-toasts [data-toast="new"] .p-toast-btn').getBoundingClientRect(), r = document.createRange(); r.selectNodeContents(document.querySelector('.p-toasts [data-toast="new"] .p-toast-say')); return { x: u.left - 24, y: s.top + s.height / 2, words: r.getBoundingClientRect().right }; });
+    ok(at.words < at.x - 8, 'there is empty room between the words and Undo to tap: ' + JSON.stringify(at));
+    await p.mouse.click(at.x, at.y); v = await quiet(p, 400);
+    ok(!v.up, 'a tap beside the sentence, not on it, still puts the slip away: ' + JSON.stringify([v.up, v.say]));
+    await p.context().close();
+    await ready(); await tick(p, 'i5', 0); await said(p);
     await p.click('.p-toasts [data-toast="new"] .p-toast-msg'); v = await quiet(p, 400);
     ok(!v.up, 'a tap on the slip\'s own words still puts it away');
   });

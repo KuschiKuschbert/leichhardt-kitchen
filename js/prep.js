@@ -61,7 +61,8 @@
   function privateKey(k) { return /^lk\.(past$|ord\.(hist(\.at)?|learned)$|[wx]\.(sum|note|history)$|use$|learned$|secs$|said\.day$|guides$|drinks$|mail\.sent$)/.test(k); }
   function lsGet(k) { try { return LS ? LS.getItem(k) : null; } catch (e) { return null; } }
   function lsSet(k, v) { try { if (LS) { if (v == null || v === '') LS.removeItem(k); else LS.setItem(k, v); } } catch (e) {} }
-  function clearPrivateCache() { try { Object.keys(LS || {}).forEach(function (k) { if (privateKey(k) || k === 'lk.fn') LS.removeItem(k); }); } catch (e) {} }
+  // (secMem: the sections said today, the tab's own copy of lk.said.day, goes with it)
+  function clearPrivateCache() { secMem = null; try { Object.keys(LS || {}).forEach(function (k) { if (privateKey(k) || k === 'lk.fn') LS.removeItem(k); }); } catch (e) {} }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   // Motion follows the existing work state. It adds no reads, timers or save acknowledgements.
   // A pending operation keeps its busy markup even when drawn offline: the ink-offline class pauses it, so the same
@@ -1723,6 +1724,9 @@
      hat's Sign out and the self-updates saying "Not saved yet" on the other pages. Prep shows it closed. */
   function leftPrep() {
     ptClose(true, true);
+    // the section's sentence on a slip belongs to the prep list: a page this file does not draw (Home, Recipes, a
+    // recipe card) draws nothing here, so it is taken away now, and it does not come back with the cook
+    if (S.toastAct && S.toastAct.sec) S.toastAct.sec = null;
     if (S.staffOpen && !draftDirty()) { S.staffOpen = false; S.draft = null; }
     if (S.minOpen && !mfDirty()) { S.minOpen = false; S.mf = null; }
     if (S.notesOpen && !nfDirty()) S.notesOpen = false;
@@ -5105,7 +5109,7 @@
      is kept. secAck is this tab's memory only: the ticks whose own write the server has answered, by line id, with
      the time ticked. The SDK answers a write's promise before its listeners hear, so the listener's "not sent"
      mark alone would hold the words back. */
-  var SEC_KEY = 'lk.said.day', SEC_MIN = 3000, SEC_KEEP = 2000, SEC_NOT = ['all', 'done', 'prep', 'function', 'functions'], secAck = {}, secMem = null;
+  var SEC_KEY = 'lk.said.day', SEC_MIN = 3000, SEC_KEEP = 2000, SEC_NOT = ['all', 'done', 'prep', 'function', 'functions', 'kitchen', 'service', 'list', 'today', 'tonight', 'tomorrow', 'morning', 'night', 'breakfast', 'lunch', 'dinner'], secAck = {}, secMem = null;
   function secDay() {
     var today = dayNow(), c = secMem && secMem.d === today ? secMem : null;
     if (!c) { try { c = JSON.parse(lsGet(SEC_KEY) || 'null'); } catch (e) { c = null; } }
@@ -5116,11 +5120,12 @@
   // The server has this line as the phone shows it: the listener says nothing is waiting, or it is a tick whose own
   // write this phone has seen answered.
   function secSent(x) { return !x._unsent || (!!x.done && secAck[x.id] === x.doneAt); }
-  // A name the words can carry: not a word that reads as the whole list or as the Functions tab (the book itself
-  // writes daily lines under "Functions"), and not a person's name (a section named after a cook).
+  // A name the words can carry: not a word that reads as the whole list, the kitchen, a service or a time of day
+  // ("Kitchen is done.", "Dinner is done."), not the Functions tab's (the book itself writes daily lines under
+  // "Functions"), and not a person's name or first name (a section named after a cook).
   function secName(n) {
     var k = String(n || '').trim().toLowerCase();
-    return !!k && SEC_NOT.indexOf(k) < 0 && !(S.config.people || []).some(function (p) { return String(p && p.name || '').trim().toLowerCase() === k; });
+    return !!k && SEC_NOT.indexOf(k) < 0 && !(S.config.people || []).some(function (p) { var pn = String(p && p.name || '').trim().toLowerCase(); return pn === k || pn.split(/\s+/)[0] === k; });
   }
   // "Pans are done. Fryers have 2 left.": a name that ends in one s, or joins two things, reads as more than one.
   function secMany(n) { return /[^s]s$/i.test(n) || /\s(and|&)\s/i.test(n); }
@@ -5211,7 +5216,7 @@
       var name = act.sec.name;
       setTimeout(function () {
         try {
-          var up = S.toastAct === act && act.sec && act.sec.name === name && S.root && S.root.querySelector('.p-toasts [data-toast="new"] > .p-toast-say');
+          var up = S.toastAct === act && act.sec && act.sec.name === name && S.root && document.body.contains(S.root) && S.root.querySelector('.p-toasts [data-toast="new"] > .p-toast-say');
           if (up) { secMark(name); liveSay(up.textContent); }
         } catch (e) {}
       }, SEC_KEEP);
