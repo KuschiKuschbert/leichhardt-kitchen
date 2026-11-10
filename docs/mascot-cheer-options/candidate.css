@@ -1,0 +1,61 @@
+/* Review-only styling for the mascot cheer designs. Loaded only by the capture harness, never by the live book.
+   Colours come from the book's own tokens: paper, ink and the green that already means done. */
+.ck-canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.ck-head, .ck-body { display: block; flex: none; pointer-events: none; }
+.ck-head-24 { width: 24px; height: 24px; }
+.ck-head-48 { width: 48px; height: 48px; }
+.ck-body-64 { width: 64px; height: 85.333333px; }
+.ck-body-96 { width: 96px; height: 128px; }
+.ck-no-art { display: none !important; }
+
+/* The speech bubble: words in a paper box with an ink edge and a small tail. */
+.ck-bubble { position: relative; display: inline-flex; flex-direction: column; gap: 1px; box-sizing: border-box; min-width: 0; max-width: 100%; padding: 7px 12px; border: 2px solid var(--ink); border-radius: 12px; background: #FFFEFA; color: var(--ink); font: 700 1rem/1.25 var(--body); letter-spacing: 0; text-transform: none; text-align: left; }
+.ck-bubble .ck-line { display: block; overflow-wrap: anywhere; }
+.ck-bubble .ck-sub { font-weight: 500; font-size: 0.9375rem; color: var(--muted); }
+.ck-bubble::before, .ck-bubble::after { content: ""; position: absolute; width: 0; height: 0; border: 8px solid transparent; }
+.ck-tail-left::before { left: -17px; top: 50%; margin-top: -8px; border-right-color: var(--ink); }
+.ck-tail-left::after { left: -13.5px; top: 50%; margin-top: -8px; border-right-color: #FFFEFA; }
+.ck-tail-right::before { right: -17px; top: 50%; margin-top: -8px; border-left-color: var(--ink); }
+.ck-tail-right::after { right: -13.5px; top: 50%; margin-top: -8px; border-left-color: #FFFEFA; }
+.ck-tail-none::before, .ck-tail-none::after { display: none; }
+
+/* A: the docket slip is the bubble. The slip keeps its place, its height and its Undo. */
+.p-toasts .p-toast.ck-slip { display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; grid-template-areas: "head msg btn" "head say btn"; column-gap: 0.6rem; row-gap: 0; align-items: center; padding: 4px 10px 4px 8px; }
+.ck-slip > .ck-head { grid-area: head; align-self: center; }
+.ck-slip > .p-toast-msg { grid-area: msg; align-self: end; padding: 0.15rem 0 0; }
+.ck-slip > .ck-say { grid-area: say; align-self: start; padding: 0 0 0.15rem; font-weight: 700; line-height: 1.3; color: var(--done-ink); overflow-wrap: anywhere; }
+.ck-slip > .p-toast-btn { grid-area: btn; }
+.p-toasts .p-toast.ck-slip.ck-slip-words { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "msg btn" "say btn"; padding-left: 16px; }
+
+/* C: the head on a bar. Laid over the row, so the row keeps its height and the list never moves. */
+.ck-row, .ck-ph, .ck-anchor { position: relative; }
+.ck-row > .ck-head-24 { position: absolute; z-index: 1; transition: left 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.ck-row > .ck-flag { position: absolute; top: 50%; transform: translateY(-50%); z-index: 1; padding: 1px 8px; border-width: 1.5px; border-radius: 9px; font-size: 0.8125rem; line-height: 1.35; white-space: nowrap; }
+.ck-flag.ck-tail-right::before { right: -11px; margin-top: -5px; border-width: 5px; }
+.ck-flag.ck-tail-right::after { right: -8.5px; margin-top: -5px; border-width: 5px; }
+.ck-ph > .ck-head-48 { position: absolute; z-index: 1; }
+@media (prefers-reduced-motion: reduce) { .ck-row > .ck-head-24 { transition: none; } }
+
+/* B: a note in the page's own paper. */
+.ck-note { display: flex; align-items: center; gap: 16px; min-height: 48px; margin: 0.7rem 0 0.4rem; }
+.ck-note > .ck-bubble { flex: 0 1 auto; }
+.ck-note-done { align-items: center; margin: 0.9rem 0 0; }
+.ck-note-empty { margin: 0.9rem 0 0; }
+#hm-prep > .ck-note { margin: 0.1rem 0 0.5rem; }
+
+/* The daily action already chosen for Home's heading corner, at rest. */
+.ck-corner { position: absolute; right: 0; top: -12px; }
+
+/* R and S (after round 2): one compact card under a finished list. The bubble is a speech shape in the
+   green that means done, with no outline, so it cannot be taken for a chip or a button. */
+.ck-card { display: flex; align-items: center; gap: 14px; margin: 0.9rem 0 0.6rem; }
+/* On a phone or tablet (one page, Handy under the list) the mascot is one whole-number step smaller (48 x 64), so the book's own words stay on one
+   line beside him and the finished page is no longer than today's. */
+@media (max-width: 899px) { .ck-card > .ck-body-64 { width: 48px; height: 64px; } }
+.ck-card-words { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.ck-card-words > .nb-empty { margin: 0; }
+.ck-bubble.ck-done { border: 0; border-radius: 16px 16px 16px 4px; padding: 8px 14px; background: var(--done-tint); color: var(--done-ink); }
+.ck-bubble.ck-done.ck-tail-left::before { left: -14px; top: auto; bottom: 8px; margin: 0; border-width: 8px; border-color: transparent; border-right-color: var(--done-tint); }
+.ck-bubble.ck-done.ck-tail-left::after { display: none; }
+/* S: the slip sentence is one line or it is not shown. */
+.ck-slip-one > .ck-say { white-space: nowrap; overflow: hidden; }

@@ -1,0 +1,4235 @@
+{
+ "kind": "Preview: the real application with a review-only injection and a synthetic Firebase stand-in. Not delivered app behaviour.",
+ "source": "71cbf844388fc88e938c601dd7df5f221c51e322",
+ "role": "staff (Ann), Lunch on Larder; sous chef (Sam) for Orders",
+ "fonts": "local Barlow, Barlow Condensed and Caveat",
+ "date": "2026-11-10T10:45:12.644Z",
+ "viewports": [
+  [
+   390,
+   844
+  ],
+  [
+   768,
+   1024
+  ],
+  [
+   1280,
+   900
+  ]
+ ],
+ "designs": [
+  "R",
+  "S"
+ ],
+ "checks": [
+  {
+   "name": "base-prep-start 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "base-ordinary 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "base-section 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "base-list 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "base-list-settled 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "base-home-done 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "base-home 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "r-prep-start 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R 390 an ordinary tick does not cheer",
+   "pass": true,
+   "said": []
+  },
+  {
+   "name": "r-ordinary 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "r-section 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R 390 says nothing on the work page while lines are left",
+   "pass": true,
+   "said": []
+  },
+  {
+   "name": "R 390 every sprite has settled, no timers left",
+   "pass": true,
+   "sprites": {}
+  },
+  {
+   "name": "R 390 a section of one line is an ordinary tick: no cheer",
+   "pass": true,
+   "said": []
+  },
+  {
+   "name": "r-one-line-section 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "r-list 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "r-list-settled 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R 390 cheers the finished list",
+   "pass": true,
+   "said": [
+    {
+     "text": "Every line ticked. 6 of 6.",
+     "kind": "list",
+     "name": "",
+     "where": "card",
+     "design": "R"
+    }
+   ]
+  },
+  {
+   "name": "R 390 no redraw loop",
+   "pass": true
+  },
+  {
+   "name": "r-home-done 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "r-home 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R 390 start: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 390 start: no sideways scroll",
+   "pass": true,
+   "scrollW": 390
+  },
+  {
+   "name": "R 390 start: no extra Firestore calls",
+   "pass": true,
+   "base": 47,
+   "got": 47
+  },
+  {
+   "name": "R 390 start: the same lines in view",
+   "pass": true,
+   "base": 6,
+   "got": 6
+  },
+  {
+   "name": "R 390 ordinary: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 390 ordinary: no sideways scroll",
+   "pass": true,
+   "scrollW": 390
+  },
+  {
+   "name": "R 390 ordinary: no extra Firestore calls",
+   "pass": true,
+   "base": 48,
+   "got": 48
+  },
+  {
+   "name": "R 390 ordinary: the same lines in view",
+   "pass": true,
+   "base": 5,
+   "got": 5
+  },
+  {
+   "name": "R 390 ordinary: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    308,
+    656,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "R 390 section: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 390 section: no sideways scroll",
+   "pass": true,
+   "scrollW": 390
+  },
+  {
+   "name": "R 390 section: no extra Firestore calls",
+   "pass": true,
+   "base": 50,
+   "got": 50
+  },
+  {
+   "name": "R 390 section: the same lines in view",
+   "pass": true,
+   "base": 4,
+   "got": 4
+  },
+  {
+   "name": "R 390 section: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    308,
+    656,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "R 390 list: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 390 list: no sideways scroll",
+   "pass": true,
+   "scrollW": 390
+  },
+  {
+   "name": "R 390 list: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "R 390 list: the same lines in view",
+   "pass": true,
+   "base": 1,
+   "got": 1
+  },
+  {
+   "name": "R 390 list: the same Done today Undo links in view",
+   "pass": true,
+   "base": 1,
+   "got": 1
+  },
+  {
+   "name": "R 390 list: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    308,
+    656,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "R 390 settled: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 390 settled: no sideways scroll",
+   "pass": true,
+   "scrollW": 390
+  },
+  {
+   "name": "R 390 settled: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "R 390 settled: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "R 390 settled: the same Done today Undo links in view",
+   "pass": true,
+   "base": 2,
+   "got": 2
+  },
+  {
+   "name": "R 390 settled: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    308,
+    656,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "R 390 homeDone: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 390 homeDone: no sideways scroll",
+   "pass": true,
+   "scrollW": 390
+  },
+  {
+   "name": "R 390 homeDone: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "R 390 homeDone: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "R 390 home: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 390 home: no sideways scroll",
+   "pass": true,
+   "scrollW": 390
+  },
+  {
+   "name": "R 390 home: no extra Firestore calls",
+   "pass": true,
+   "base": 18,
+   "got": 18
+  },
+  {
+   "name": "R 390 home: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "s-prep-start 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S 390 an ordinary tick does not cheer",
+   "pass": true,
+   "said": []
+  },
+  {
+   "name": "s-ordinary 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "s-section 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S 390 cheers the finished section once, by name",
+   "pass": true,
+   "said": [
+    {
+     "text": "Sauce is done. Grill has 1 left.",
+     "kind": "section",
+     "name": "Sauce",
+     "where": "slip",
+     "design": "S"
+    }
+   ]
+  },
+  {
+   "name": "S 390 every sprite has settled, no timers left",
+   "pass": true,
+   "sprites": {}
+  },
+  {
+   "name": "S 390 a section of one line is an ordinary tick: no cheer",
+   "pass": true,
+   "said": [
+    {
+     "text": "Sauce is done. Grill has 1 left.",
+     "kind": "section",
+     "name": "Sauce",
+     "where": "slip",
+     "design": "S"
+    }
+   ]
+  },
+  {
+   "name": "s-one-line-section 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "s-list 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "s-list-settled 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S 390 cheers the finished list",
+   "pass": true,
+   "said": [
+    {
+     "text": "Sauce is done. Grill has 1 left.",
+     "kind": "section",
+     "name": "Sauce",
+     "where": "slip",
+     "design": "S"
+    },
+    {
+     "text": "Every line ticked. 6 of 6.",
+     "kind": "list",
+     "name": "",
+     "where": "card",
+     "design": "S"
+    }
+   ]
+  },
+  {
+   "name": "S 390 no redraw loop",
+   "pass": true
+  },
+  {
+   "name": "s-home-done 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "s-home 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S 390 start: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 390 start: no sideways scroll",
+   "pass": true,
+   "scrollW": 390
+  },
+  {
+   "name": "S 390 start: no extra Firestore calls",
+   "pass": true,
+   "base": 47,
+   "got": 47
+  },
+  {
+   "name": "S 390 start: the same lines in view",
+   "pass": true,
+   "base": 6,
+   "got": 6
+  },
+  {
+   "name": "S 390 ordinary: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 390 ordinary: no sideways scroll",
+   "pass": true,
+   "scrollW": 390
+  },
+  {
+   "name": "S 390 ordinary: no extra Firestore calls",
+   "pass": true,
+   "base": 48,
+   "got": 48
+  },
+  {
+   "name": "S 390 ordinary: the same lines in view",
+   "pass": true,
+   "base": 5,
+   "got": 5
+  },
+  {
+   "name": "S 390 ordinary: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    308,
+    656,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "S 390 section: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 390 section: no sideways scroll",
+   "pass": true,
+   "scrollW": 390
+  },
+  {
+   "name": "S 390 section: no extra Firestore calls",
+   "pass": true,
+   "base": 50,
+   "got": 50
+  },
+  {
+   "name": "S 390 section: the same lines in view",
+   "pass": true,
+   "base": 4,
+   "got": 4
+  },
+  {
+   "name": "S 390 section: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    308,
+    656,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "S 390 list: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 390 list: no sideways scroll",
+   "pass": true,
+   "scrollW": 390
+  },
+  {
+   "name": "S 390 list: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "S 390 list: the same lines in view",
+   "pass": true,
+   "base": 1,
+   "got": 1
+  },
+  {
+   "name": "S 390 list: the same Done today Undo links in view",
+   "pass": true,
+   "base": 1,
+   "got": 1
+  },
+  {
+   "name": "S 390 list: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    308,
+    656,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "S 390 settled: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 390 settled: no sideways scroll",
+   "pass": true,
+   "scrollW": 390
+  },
+  {
+   "name": "S 390 settled: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "S 390 settled: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "S 390 settled: the same Done today Undo links in view",
+   "pass": true,
+   "base": 2,
+   "got": 2
+  },
+  {
+   "name": "S 390 settled: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    308,
+    656,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "S 390 homeDone: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 390 homeDone: no sideways scroll",
+   "pass": true,
+   "scrollW": 390
+  },
+  {
+   "name": "S 390 homeDone: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "S 390 homeDone: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "S 390 home: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 390 home: no sideways scroll",
+   "pass": true,
+   "scrollW": 390
+  },
+  {
+   "name": "S 390 home: no extra Firestore calls",
+   "pass": true,
+   "base": 18,
+   "got": 18
+  },
+  {
+   "name": "S 390 home: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "base-section 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "base-list 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "base-list-settled 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "base-home-done 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "base-home 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "r-prep-start 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R 768 an ordinary tick does not cheer",
+   "pass": true,
+   "said": []
+  },
+  {
+   "name": "r-section 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R 768 says nothing on the work page while lines are left",
+   "pass": true,
+   "said": []
+  },
+  {
+   "name": "R 768 every sprite has settled, no timers left",
+   "pass": true,
+   "sprites": {}
+  },
+  {
+   "name": "R 768 a section of one line is an ordinary tick: no cheer",
+   "pass": true,
+   "said": []
+  },
+  {
+   "name": "r-list 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "r-list-settled 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R 768 cheers the finished list",
+   "pass": true,
+   "said": [
+    {
+     "text": "Every line ticked. 6 of 6.",
+     "kind": "list",
+     "name": "",
+     "where": "card",
+     "design": "R"
+    }
+   ]
+  },
+  {
+   "name": "R 768 no redraw loop",
+   "pass": true
+  },
+  {
+   "name": "r-home-done 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "r-home 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R 768 start: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 768 start: no sideways scroll",
+   "pass": true,
+   "scrollW": 768
+  },
+  {
+   "name": "R 768 start: no extra Firestore calls",
+   "pass": true,
+   "base": 47,
+   "got": 47
+  },
+  {
+   "name": "R 768 start: the same lines in view",
+   "pass": true,
+   "base": 6,
+   "got": 6
+  },
+  {
+   "name": "R 768 ordinary: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 768 ordinary: no sideways scroll",
+   "pass": true,
+   "scrollW": 768
+  },
+  {
+   "name": "R 768 ordinary: no extra Firestore calls",
+   "pass": true,
+   "base": 48,
+   "got": 48
+  },
+  {
+   "name": "R 768 ordinary: the same lines in view",
+   "pass": true,
+   "base": 6,
+   "got": 6
+  },
+  {
+   "name": "R 768 ordinary: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    573,
+    953.3,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "R 768 section: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 768 section: no sideways scroll",
+   "pass": true,
+   "scrollW": 768
+  },
+  {
+   "name": "R 768 section: no extra Firestore calls",
+   "pass": true,
+   "base": 50,
+   "got": 50
+  },
+  {
+   "name": "R 768 section: the same lines in view",
+   "pass": true,
+   "base": 4,
+   "got": 4
+  },
+  {
+   "name": "R 768 section: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    573,
+    953.3,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "R 768 list: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 768 list: no sideways scroll",
+   "pass": true,
+   "scrollW": 768
+  },
+  {
+   "name": "R 768 list: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "R 768 list: the same lines in view",
+   "pass": true,
+   "base": 1,
+   "got": 1
+  },
+  {
+   "name": "R 768 list: the same Done today Undo links in view",
+   "pass": false,
+   "base": 4,
+   "got": 3
+  },
+  {
+   "name": "R 768 list: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    573,
+    953.3,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "R 768 settled: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 768 settled: no sideways scroll",
+   "pass": true,
+   "scrollW": 768
+  },
+  {
+   "name": "R 768 settled: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "R 768 settled: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "R 768 settled: the same Done today Undo links in view",
+   "pass": true,
+   "base": 5,
+   "got": 5
+  },
+  {
+   "name": "R 768 settled: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    573,
+    953.3,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "R 768 homeDone: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 768 homeDone: no sideways scroll",
+   "pass": true,
+   "scrollW": 768
+  },
+  {
+   "name": "R 768 homeDone: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "R 768 homeDone: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "R 768 home: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 768 home: no sideways scroll",
+   "pass": true,
+   "scrollW": 768
+  },
+  {
+   "name": "R 768 home: no extra Firestore calls",
+   "pass": true,
+   "base": 18,
+   "got": 18
+  },
+  {
+   "name": "R 768 home: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "s-prep-start 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S 768 an ordinary tick does not cheer",
+   "pass": true,
+   "said": []
+  },
+  {
+   "name": "s-section 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S 768 cheers the finished section once, by name",
+   "pass": true,
+   "said": [
+    {
+     "text": "Sauce is done. Grill has 1 left.",
+     "kind": "section",
+     "name": "Sauce",
+     "where": "slip",
+     "design": "S"
+    }
+   ]
+  },
+  {
+   "name": "S 768 every sprite has settled, no timers left",
+   "pass": true,
+   "sprites": {}
+  },
+  {
+   "name": "S 768 a section of one line is an ordinary tick: no cheer",
+   "pass": true,
+   "said": [
+    {
+     "text": "Sauce is done. Grill has 1 left.",
+     "kind": "section",
+     "name": "Sauce",
+     "where": "slip",
+     "design": "S"
+    }
+   ]
+  },
+  {
+   "name": "s-list 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "s-list-settled 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S 768 cheers the finished list",
+   "pass": true,
+   "said": [
+    {
+     "text": "Sauce is done. Grill has 1 left.",
+     "kind": "section",
+     "name": "Sauce",
+     "where": "slip",
+     "design": "S"
+    },
+    {
+     "text": "Every line ticked. 6 of 6.",
+     "kind": "list",
+     "name": "",
+     "where": "card",
+     "design": "S"
+    }
+   ]
+  },
+  {
+   "name": "S 768 no redraw loop",
+   "pass": true
+  },
+  {
+   "name": "s-home-done 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "s-home 768 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S 768 start: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 768 start: no sideways scroll",
+   "pass": true,
+   "scrollW": 768
+  },
+  {
+   "name": "S 768 start: no extra Firestore calls",
+   "pass": true,
+   "base": 47,
+   "got": 47
+  },
+  {
+   "name": "S 768 start: the same lines in view",
+   "pass": true,
+   "base": 6,
+   "got": 6
+  },
+  {
+   "name": "S 768 ordinary: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 768 ordinary: no sideways scroll",
+   "pass": true,
+   "scrollW": 768
+  },
+  {
+   "name": "S 768 ordinary: no extra Firestore calls",
+   "pass": true,
+   "base": 48,
+   "got": 48
+  },
+  {
+   "name": "S 768 ordinary: the same lines in view",
+   "pass": true,
+   "base": 6,
+   "got": 6
+  },
+  {
+   "name": "S 768 ordinary: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    573,
+    953.3,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "S 768 section: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 768 section: no sideways scroll",
+   "pass": true,
+   "scrollW": 768
+  },
+  {
+   "name": "S 768 section: no extra Firestore calls",
+   "pass": true,
+   "base": 50,
+   "got": 50
+  },
+  {
+   "name": "S 768 section: the same lines in view",
+   "pass": true,
+   "base": 4,
+   "got": 4
+  },
+  {
+   "name": "S 768 section: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    573,
+    953.3,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "S 768 list: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 768 list: no sideways scroll",
+   "pass": true,
+   "scrollW": 768
+  },
+  {
+   "name": "S 768 list: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "S 768 list: the same lines in view",
+   "pass": true,
+   "base": 1,
+   "got": 1
+  },
+  {
+   "name": "S 768 list: the same Done today Undo links in view",
+   "pass": false,
+   "base": 4,
+   "got": 3
+  },
+  {
+   "name": "S 768 list: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    573,
+    953.3,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "S 768 settled: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 768 settled: no sideways scroll",
+   "pass": true,
+   "scrollW": 768
+  },
+  {
+   "name": "S 768 settled: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "S 768 settled: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "S 768 settled: the same Done today Undo links in view",
+   "pass": true,
+   "base": 5,
+   "got": 5
+  },
+  {
+   "name": "S 768 settled: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    573,
+    953.3,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "S 768 homeDone: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 768 homeDone: no sideways scroll",
+   "pass": true,
+   "scrollW": 768
+  },
+  {
+   "name": "S 768 homeDone: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "S 768 homeDone: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "S 768 home: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 768 home: no sideways scroll",
+   "pass": true,
+   "scrollW": 768
+  },
+  {
+   "name": "S 768 home: no extra Firestore calls",
+   "pass": true,
+   "base": 18,
+   "got": 18
+  },
+  {
+   "name": "S 768 home: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "base-section 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "base-list 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "base-list-settled 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "base-home-done 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "base-home 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "r-prep-start 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R 1280 an ordinary tick does not cheer",
+   "pass": true,
+   "said": []
+  },
+  {
+   "name": "r-section 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R 1280 says nothing on the work page while lines are left",
+   "pass": true,
+   "said": []
+  },
+  {
+   "name": "R 1280 every sprite has settled, no timers left",
+   "pass": true,
+   "sprites": {}
+  },
+  {
+   "name": "R 1280 a section of one line is an ordinary tick: no cheer",
+   "pass": true,
+   "said": []
+  },
+  {
+   "name": "r-list 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "r-list-settled 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R 1280 cheers the finished list",
+   "pass": true,
+   "said": [
+    {
+     "text": "Every line ticked. 6 of 6.",
+     "kind": "list",
+     "name": "",
+     "where": "card",
+     "design": "R"
+    }
+   ]
+  },
+  {
+   "name": "R 1280 no redraw loop",
+   "pass": true
+  },
+  {
+   "name": "r-home-done 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "r-home 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R 1280 start: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 1280 start: no sideways scroll",
+   "pass": true,
+   "scrollW": 1280
+  },
+  {
+   "name": "R 1280 start: no extra Firestore calls",
+   "pass": true,
+   "base": 47,
+   "got": 47
+  },
+  {
+   "name": "R 1280 start: the same lines in view",
+   "pass": true,
+   "base": 6,
+   "got": 6
+  },
+  {
+   "name": "R 1280 ordinary: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 1280 ordinary: no sideways scroll",
+   "pass": true,
+   "scrollW": 1280
+  },
+  {
+   "name": "R 1280 ordinary: no extra Firestore calls",
+   "pass": true,
+   "base": 48,
+   "got": 48
+  },
+  {
+   "name": "R 1280 ordinary: the same lines in view",
+   "pass": true,
+   "base": 6,
+   "got": 6
+  },
+  {
+   "name": "R 1280 ordinary: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    829,
+    829.3,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "R 1280 section: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 1280 section: no sideways scroll",
+   "pass": true,
+   "scrollW": 1280
+  },
+  {
+   "name": "R 1280 section: no extra Firestore calls",
+   "pass": true,
+   "base": 50,
+   "got": 50
+  },
+  {
+   "name": "R 1280 section: the same lines in view",
+   "pass": true,
+   "base": 4,
+   "got": 4
+  },
+  {
+   "name": "R 1280 section: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    829,
+    829.3,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "R 1280 list: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 1280 list: no sideways scroll",
+   "pass": true,
+   "scrollW": 1280
+  },
+  {
+   "name": "R 1280 list: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "R 1280 list: the same lines in view",
+   "pass": true,
+   "base": 1,
+   "got": 1
+  },
+  {
+   "name": "R 1280 list: the same Done today Undo links in view",
+   "pass": true,
+   "base": 6,
+   "got": 6
+  },
+  {
+   "name": "R 1280 list: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    829,
+    829.3,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "R 1280 settled: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 1280 settled: no sideways scroll",
+   "pass": true,
+   "scrollW": 1280
+  },
+  {
+   "name": "R 1280 settled: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "R 1280 settled: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "R 1280 settled: the same Done today Undo links in view",
+   "pass": true,
+   "base": 6,
+   "got": 6
+  },
+  {
+   "name": "R 1280 settled: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    829,
+    829.3,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "R 1280 homeDone: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 1280 homeDone: no sideways scroll",
+   "pass": true,
+   "scrollW": 1280
+  },
+  {
+   "name": "R 1280 homeDone: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "R 1280 homeDone: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "R 1280 home: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "R 1280 home: no sideways scroll",
+   "pass": true,
+   "scrollW": 1280
+  },
+  {
+   "name": "R 1280 home: no extra Firestore calls",
+   "pass": true,
+   "base": 18,
+   "got": 18
+  },
+  {
+   "name": "R 1280 home: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "s-prep-start 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S 1280 an ordinary tick does not cheer",
+   "pass": true,
+   "said": []
+  },
+  {
+   "name": "s-section 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S 1280 cheers the finished section once, by name",
+   "pass": true,
+   "said": [
+    {
+     "text": "Sauce is done. Grill has 1 left.",
+     "kind": "section",
+     "name": "Sauce",
+     "where": "slip",
+     "design": "S"
+    }
+   ]
+  },
+  {
+   "name": "S 1280 every sprite has settled, no timers left",
+   "pass": true,
+   "sprites": {}
+  },
+  {
+   "name": "S 1280 a section of one line is an ordinary tick: no cheer",
+   "pass": true,
+   "said": [
+    {
+     "text": "Sauce is done. Grill has 1 left.",
+     "kind": "section",
+     "name": "Sauce",
+     "where": "slip",
+     "design": "S"
+    }
+   ]
+  },
+  {
+   "name": "s-list 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "s-list-settled 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S 1280 cheers the finished list",
+   "pass": true,
+   "said": [
+    {
+     "text": "Sauce is done. Grill has 1 left.",
+     "kind": "section",
+     "name": "Sauce",
+     "where": "slip",
+     "design": "S"
+    },
+    {
+     "text": "Every line ticked. 6 of 6.",
+     "kind": "list",
+     "name": "",
+     "where": "card",
+     "design": "S"
+    }
+   ]
+  },
+  {
+   "name": "S 1280 no redraw loop",
+   "pass": true
+  },
+  {
+   "name": "s-home-done 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "s-home 1280 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S 1280 start: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 1280 start: no sideways scroll",
+   "pass": true,
+   "scrollW": 1280
+  },
+  {
+   "name": "S 1280 start: no extra Firestore calls",
+   "pass": true,
+   "base": 47,
+   "got": 47
+  },
+  {
+   "name": "S 1280 start: the same lines in view",
+   "pass": true,
+   "base": 6,
+   "got": 6
+  },
+  {
+   "name": "S 1280 ordinary: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 1280 ordinary: no sideways scroll",
+   "pass": true,
+   "scrollW": 1280
+  },
+  {
+   "name": "S 1280 ordinary: no extra Firestore calls",
+   "pass": true,
+   "base": 48,
+   "got": 48
+  },
+  {
+   "name": "S 1280 ordinary: the same lines in view",
+   "pass": true,
+   "base": 6,
+   "got": 6
+  },
+  {
+   "name": "S 1280 ordinary: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    829,
+    829.3,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "S 1280 section: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 1280 section: no sideways scroll",
+   "pass": true,
+   "scrollW": 1280
+  },
+  {
+   "name": "S 1280 section: no extra Firestore calls",
+   "pass": true,
+   "base": 50,
+   "got": 50
+  },
+  {
+   "name": "S 1280 section: the same lines in view",
+   "pass": true,
+   "base": 4,
+   "got": 4
+  },
+  {
+   "name": "S 1280 section: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    829,
+    829.3,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "S 1280 list: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 1280 list: no sideways scroll",
+   "pass": true,
+   "scrollW": 1280
+  },
+  {
+   "name": "S 1280 list: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "S 1280 list: the same lines in view",
+   "pass": true,
+   "base": 1,
+   "got": 1
+  },
+  {
+   "name": "S 1280 list: the same Done today Undo links in view",
+   "pass": true,
+   "base": 6,
+   "got": 6
+  },
+  {
+   "name": "S 1280 list: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    829,
+    829.3,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "S 1280 settled: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 1280 settled: no sideways scroll",
+   "pass": true,
+   "scrollW": 1280
+  },
+  {
+   "name": "S 1280 settled: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "S 1280 settled: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "S 1280 settled: the same Done today Undo links in view",
+   "pass": true,
+   "base": 6,
+   "got": 6
+  },
+  {
+   "name": "S 1280 settled: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    829,
+    829.3,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "S 1280 homeDone: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 1280 homeDone: no sideways scroll",
+   "pass": true,
+   "scrollW": 1280
+  },
+  {
+   "name": "S 1280 homeDone: no extra Firestore calls",
+   "pass": true,
+   "base": 53,
+   "got": 53
+  },
+  {
+   "name": "S 1280 homeDone: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "S 1280 home: every work rectangle stays put",
+   "pass": true,
+   "changes": []
+  },
+  {
+   "name": "S 1280 home: no sideways scroll",
+   "pass": true,
+   "scrollW": 1280
+  },
+  {
+   "name": "S 1280 home: no extra Firestore calls",
+   "pass": true,
+   "base": 18,
+   "got": 18
+  },
+  {
+   "name": "S 1280 home: the same lines in view",
+   "pass": true,
+   "base": 0,
+   "got": 0
+  },
+  {
+   "name": "R Undo takes the cheer back",
+   "pass": true,
+   "cheer": null,
+   "shows": false
+  },
+  {
+   "name": "R a tick waiting to be sent is not cheered",
+   "pass": true,
+   "said": [],
+   "sent": false
+  },
+  {
+   "name": "r-held 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R the cheer comes once the server has answered",
+   "pass": true,
+   "said": [
+    {
+     "text": "Every line ticked. 2 of 2.",
+     "kind": "list",
+     "name": "",
+     "where": "card",
+     "design": "R"
+    }
+   ],
+   "sent": true
+  },
+  {
+   "name": "r-released 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R a refused tick is not cheered",
+   "pass": true,
+   "said": [],
+   "bad": {
+    "slip": "Not saved: sign in again with your PIN.OK",
+    "red": true,
+    "say": false
+   }
+  },
+  {
+   "name": "R another phone's tick is counted but not cheered here",
+   "pass": true,
+   "other": {
+    "count": "2 of 2 done",
+    "say": false
+   },
+   "said": []
+  },
+  {
+   "name": "R reduced motion keeps the words and plays nothing",
+   "pass": true,
+   "said": [
+    {
+     "text": "Every line ticked. 2 of 2.",
+     "kind": "list",
+     "name": "",
+     "where": "card",
+     "design": "R"
+    }
+   ],
+   "requests": [
+    "burger-still.png"
+   ]
+  },
+  {
+   "name": "r-reduced-motion 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R missing art keeps the words and moves no work",
+   "pass": true,
+   "words": "Every line ticked. 2 of 2.",
+   "moved": []
+  },
+  {
+   "name": "r-no-art 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R long names: no sideways scroll, cheer stays on the page",
+   "pass": true,
+   "scrollW": 390,
+   "fit": true
+  },
+  {
+   "name": "R long names: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    308,
+    976.6,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "r-long 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R long names, Extra large text: no sideways scroll, cheer stays on the page",
+   "pass": true,
+   "scrollW": 390,
+   "fit": true
+  },
+  {
+   "name": "R long names, Extra large text: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    294.1,
+    1684,
+    85.9,
+    44
+   ]
+  },
+  {
+   "name": "r-long-xlarge 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R a finished section chip is not a finished list: no card",
+   "pass": true,
+   "tab": {
+    "card": false,
+    "book": "Nothing left to do in Larder. Ticked lines are under Done today in Handy."
+   },
+   "said": []
+  },
+  {
+   "name": "r-section-chip 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "R a finished list opened later shows the card as a still and says nothing again",
+   "pass": true,
+   "again": true,
+   "said": []
+  },
+  {
+   "name": "R quick ticks: each finished section said once, no stacked sprites",
+   "pass": true,
+   "said": [],
+   "kept": []
+  },
+  {
+   "name": "R leaving the page stops every sprite",
+   "pass": true,
+   "kept": []
+  },
+  {
+   "name": "R Orders: only the last line ordered cheers",
+   "pass": true,
+   "said": [
+    {
+     "text": "Every line ordered. 2 of 2.",
+     "kind": "list",
+     "name": "",
+     "where": "card",
+     "design": "R"
+    }
+   ]
+  },
+  {
+   "name": "r-orders-done 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S Undo takes the cheer back",
+   "pass": true,
+   "cheer": null,
+   "shows": false
+  },
+  {
+   "name": "S a tick waiting to be sent is not cheered",
+   "pass": true,
+   "said": [],
+   "sent": false
+  },
+  {
+   "name": "s-held 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S the cheer comes once the server has answered",
+   "pass": true,
+   "said": [
+    {
+     "text": "Sauce is done. Grill has 1 left.",
+     "kind": "section",
+     "name": "Sauce",
+     "where": "slip",
+     "design": "S"
+    }
+   ],
+   "sent": true
+  },
+  {
+   "name": "s-released 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S a refused tick is not cheered",
+   "pass": true,
+   "said": [],
+   "bad": {
+    "slip": "Not saved: sign in again with your PIN.OK",
+    "red": true,
+    "say": false
+   }
+  },
+  {
+   "name": "S another phone's tick is counted but not cheered here",
+   "pass": true,
+   "other": {
+    "count": "2 of 6 done",
+    "say": false
+   },
+   "said": []
+  },
+  {
+   "name": "S reduced motion keeps the words and plays nothing",
+   "pass": true,
+   "said": [
+    {
+     "text": "Sauce is done. Grill has 1 left.",
+     "kind": "section",
+     "name": "Sauce",
+     "where": "slip",
+     "design": "S"
+    }
+   ],
+   "requests": []
+  },
+  {
+   "name": "s-reduced-motion 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S missing art keeps the words and moves no work",
+   "pass": true,
+   "words": "Sauce is done. Grill has 1 left.",
+   "moved": []
+  },
+  {
+   "name": "s-no-art 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S long names: no sideways scroll, cheer stays on the page",
+   "pass": true,
+   "scrollW": 390,
+   "fit": true
+  },
+  {
+   "name": "S long names: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    308,
+    976.6,
+    72,
+    44
+   ]
+  },
+  {
+   "name": "s-long 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S long names, Extra large text: no sideways scroll, cheer stays on the page",
+   "pass": true,
+   "scrollW": 390,
+   "fit": true
+  },
+  {
+   "name": "S long names, Extra large text: Undo keeps a 44 px target",
+   "pass": true,
+   "undo": [
+    294.1,
+    1684,
+    85.9,
+    44
+   ]
+  },
+  {
+   "name": "s-long-xlarge 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S a finished section chip is not a finished list: no card",
+   "pass": true,
+   "tab": {
+    "card": false,
+    "book": "Nothing left to do in Larder. Ticked lines are under Done today in Handy."
+   },
+   "said": [
+    {
+     "text": "Larder is done.",
+     "kind": "section",
+     "name": "Larder",
+     "where": "slip",
+     "design": "S"
+    }
+   ]
+  },
+  {
+   "name": "s-section-chip 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S a finished list opened later shows the card as a still and says nothing again",
+   "pass": true,
+   "again": true,
+   "said": []
+  },
+  {
+   "name": "S a long line name in a one-word section: the slip is exactly today's height",
+   "pass": true,
+   "today": 66.8,
+   "got": 66.8,
+   "said": []
+  },
+  {
+   "name": "s-long-line 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S a long line name in a one-word section, Extra large text: the slip is exactly today's height",
+   "pass": true,
+   "today": 80,
+   "got": 80,
+   "said": []
+  },
+  {
+   "name": "s-long-line-xlarge 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  },
+  {
+   "name": "S quick ticks: each finished section said once, no stacked sprites",
+   "pass": true,
+   "said": [
+    {
+     "text": "Sauce is done. Grill has 1 left.",
+     "kind": "section",
+     "name": "Sauce",
+     "where": "slip",
+     "design": "S"
+    },
+    {
+     "text": "Larder is done. Grill has 1 left.",
+     "kind": "section",
+     "name": "Larder",
+     "where": "slip",
+     "design": "S"
+    }
+   ],
+   "kept": []
+  },
+  {
+   "name": "S a section finished a second time the same day is not cheered again",
+   "pass": true,
+   "said": [
+    {
+     "text": "Sauce is done. Grill has 1 left.",
+     "kind": "section",
+     "name": "Sauce",
+     "where": "slip",
+     "design": "S"
+    },
+    {
+     "text": "Larder is done. Grill has 1 left.",
+     "kind": "section",
+     "name": "Larder",
+     "where": "slip",
+     "design": "S"
+    }
+   ]
+  },
+  {
+   "name": "S leaving the page stops every sprite",
+   "pass": true,
+   "kept": []
+  },
+  {
+   "name": "S Orders: only the last line ordered cheers",
+   "pass": true,
+   "said": [
+    {
+     "text": "Every line ordered. 2 of 2.",
+     "kind": "list",
+     "name": "",
+     "where": "card",
+     "design": "S"
+    }
+   ]
+  },
+  {
+   "name": "s-orders-done 390 no JS exceptions",
+   "pass": true,
+   "errors": []
+  }
+ ],
+ "geometry": [
+  {
+   "design": "R",
+   "width": 390,
+   "step": "start",
+   "changes": [],
+   "rowsInView": [
+    6,
+    6
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    1099,
+    1099
+   ],
+   "scrollW": 390,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "R",
+   "width": 390,
+   "step": "ordinary",
+   "changes": [],
+   "rowsInView": [
+    5,
+    5
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    1230,
+    1230
+   ],
+   "scrollW": 390,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    308,
+    656,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "R",
+   "width": 390,
+   "step": "section",
+   "changes": [],
+   "rowsInView": [
+    4,
+    4
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    1242,
+    1242
+   ],
+   "scrollW": 390,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    308,
+    656,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "R",
+   "width": 390,
+   "step": "list",
+   "changes": [],
+   "rowsInView": [
+    1,
+    1
+   ],
+   "undoInView": [
+    1,
+    1
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    1202,
+    1197
+   ],
+   "scrollW": 390,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    308,
+    656,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "R",
+   "width": 390,
+   "step": "settled",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    2,
+    2
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    1129,
+    1129
+   ],
+   "scrollW": 390,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    308,
+    656,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "R",
+   "width": 390,
+   "step": "homeDone",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    916,
+    916
+   ],
+   "scrollW": 390,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "R",
+   "width": 390,
+   "step": "home",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    916,
+    916
+   ],
+   "scrollW": 390,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "S",
+   "width": 390,
+   "step": "start",
+   "changes": [],
+   "rowsInView": [
+    6,
+    6
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    1099,
+    1099
+   ],
+   "scrollW": 390,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "S",
+   "width": 390,
+   "step": "ordinary",
+   "changes": [],
+   "rowsInView": [
+    5,
+    5
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    1230,
+    1230
+   ],
+   "scrollW": 390,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    308,
+    656,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "S",
+   "width": 390,
+   "step": "section",
+   "changes": [],
+   "rowsInView": [
+    4,
+    4
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    1242,
+    1242
+   ],
+   "scrollW": 390,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    308,
+    656,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "S",
+   "width": 390,
+   "step": "list",
+   "changes": [],
+   "rowsInView": [
+    1,
+    1
+   ],
+   "undoInView": [
+    1,
+    1
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    1202,
+    1197
+   ],
+   "scrollW": 390,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    308,
+    656,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "S",
+   "width": 390,
+   "step": "settled",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    2,
+    2
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    1129,
+    1129
+   ],
+   "scrollW": 390,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    308,
+    656,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "S",
+   "width": 390,
+   "step": "homeDone",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    916,
+    916
+   ],
+   "scrollW": 390,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "S",
+   "width": 390,
+   "step": "home",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    916,
+    916
+   ],
+   "scrollW": 390,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "R",
+   "width": 768,
+   "step": "start",
+   "changes": [],
+   "rowsInView": [
+    6,
+    6
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    1077,
+    1077
+   ],
+   "scrollW": 768,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "R",
+   "width": 768,
+   "step": "ordinary",
+   "changes": [],
+   "rowsInView": [
+    6,
+    6
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    1145,
+    1145
+   ],
+   "scrollW": 768,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    573,
+    953.3,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "R",
+   "width": 768,
+   "step": "section",
+   "changes": [],
+   "rowsInView": [
+    4,
+    4
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    1152,
+    1152
+   ],
+   "scrollW": 768,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    573,
+    953.3,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "R",
+   "width": 768,
+   "step": "list",
+   "changes": [],
+   "rowsInView": [
+    1,
+    1
+   ],
+   "undoInView": [
+    4,
+    3
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    1067,
+    1099
+   ],
+   "scrollW": 768,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    573,
+    953.3,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "R",
+   "width": 768,
+   "step": "settled",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    5,
+    5
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    1024,
+    1024
+   ],
+   "scrollW": 768,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    573,
+    953.3,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "R",
+   "width": 768,
+   "step": "homeDone",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    1025,
+    1025
+   ],
+   "scrollW": 768,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "R",
+   "width": 768,
+   "step": "home",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    1025,
+    1025
+   ],
+   "scrollW": 768,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "S",
+   "width": 768,
+   "step": "start",
+   "changes": [],
+   "rowsInView": [
+    6,
+    6
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    1077,
+    1077
+   ],
+   "scrollW": 768,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "S",
+   "width": 768,
+   "step": "ordinary",
+   "changes": [],
+   "rowsInView": [
+    6,
+    6
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    1145,
+    1145
+   ],
+   "scrollW": 768,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    573,
+    953.3,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "S",
+   "width": 768,
+   "step": "section",
+   "changes": [],
+   "rowsInView": [
+    4,
+    4
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    1152,
+    1152
+   ],
+   "scrollW": 768,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    573,
+    953.3,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "S",
+   "width": 768,
+   "step": "list",
+   "changes": [],
+   "rowsInView": [
+    1,
+    1
+   ],
+   "undoInView": [
+    4,
+    3
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    1067,
+    1099
+   ],
+   "scrollW": 768,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    573,
+    953.3,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "S",
+   "width": 768,
+   "step": "settled",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    5,
+    5
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    1024,
+    1024
+   ],
+   "scrollW": 768,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    573,
+    953.3,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "S",
+   "width": 768,
+   "step": "homeDone",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    1025,
+    1025
+   ],
+   "scrollW": 768,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "S",
+   "width": 768,
+   "step": "home",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    1025,
+    1025
+   ],
+   "scrollW": 768,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "R",
+   "width": 1280,
+   "step": "start",
+   "changes": [],
+   "rowsInView": [
+    6,
+    6
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    900,
+    900
+   ],
+   "scrollW": 1280,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "R",
+   "width": 1280,
+   "step": "ordinary",
+   "changes": [],
+   "rowsInView": [
+    6,
+    6
+   ],
+   "undoInView": [
+    1,
+    1
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    900,
+    900
+   ],
+   "scrollW": 1280,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    829,
+    829.3,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "R",
+   "width": 1280,
+   "step": "section",
+   "changes": [],
+   "rowsInView": [
+    4,
+    4
+   ],
+   "undoInView": [
+    3,
+    3
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    900,
+    900
+   ],
+   "scrollW": 1280,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    829,
+    829.3,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "R",
+   "width": 1280,
+   "step": "list",
+   "changes": [],
+   "rowsInView": [
+    1,
+    1
+   ],
+   "undoInView": [
+    6,
+    6
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    900,
+    900
+   ],
+   "scrollW": 1280,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    829,
+    829.3,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "R",
+   "width": 1280,
+   "step": "settled",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    6,
+    6
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    900,
+    900
+   ],
+   "scrollW": 1280,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    829,
+    829.3,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "R",
+   "width": 1280,
+   "step": "homeDone",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    901,
+    901
+   ],
+   "scrollW": 1280,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "R",
+   "width": 1280,
+   "step": "home",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    901,
+    901
+   ],
+   "scrollW": 1280,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "S",
+   "width": 1280,
+   "step": "start",
+   "changes": [],
+   "rowsInView": [
+    6,
+    6
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    900,
+    900
+   ],
+   "scrollW": 1280,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "S",
+   "width": 1280,
+   "step": "ordinary",
+   "changes": [],
+   "rowsInView": [
+    6,
+    6
+   ],
+   "undoInView": [
+    1,
+    1
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    900,
+    900
+   ],
+   "scrollW": 1280,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    829,
+    829.3,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "S",
+   "width": 1280,
+   "step": "section",
+   "changes": [],
+   "rowsInView": [
+    4,
+    4
+   ],
+   "undoInView": [
+    3,
+    3
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    900,
+    900
+   ],
+   "scrollW": 1280,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    829,
+    829.3,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "S",
+   "width": 1280,
+   "step": "list",
+   "changes": [],
+   "rowsInView": [
+    1,
+    1
+   ],
+   "undoInView": [
+    6,
+    6
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    900,
+    900
+   ],
+   "scrollW": 1280,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    829,
+    829.3,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "S",
+   "width": 1280,
+   "step": "settled",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    6,
+    6
+   ],
+   "slipHeight": [
+    60,
+    60
+   ],
+   "slipDelta": 0,
+   "pageHeight": [
+    900,
+    900
+   ],
+   "scrollW": 1280,
+   "extraFirestoreCalls": 0,
+   "undo": [
+    829,
+    829.3,
+    72,
+    44
+   ]
+  },
+  {
+   "design": "S",
+   "width": 1280,
+   "step": "homeDone",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    901,
+    901
+   ],
+   "scrollW": 1280,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  },
+  {
+   "design": "S",
+   "width": 1280,
+   "step": "home",
+   "changes": [],
+   "rowsInView": [
+    0,
+    0
+   ],
+   "undoInView": [
+    0,
+    0
+   ],
+   "slipHeight": null,
+   "slipDelta": null,
+   "pageHeight": [
+    901,
+    901
+   ],
+   "scrollW": 1280,
+   "extraFirestoreCalls": 0,
+   "undo": null
+  }
+ ],
+ "measures": {
+  "base-390": {
+   "rowsInView": {
+    "start": 6,
+    "ordinary": 5,
+    "section": 4,
+    "list": 1,
+    "settled": 0,
+    "homeDone": 0,
+    "home": 0
+   },
+   "slip": [
+    0,
+    647,
+    390,
+    60
+   ],
+   "header": [
+    33,
+    136.6,
+    324,
+    90.3
+   ]
+  },
+  "R-390-contrast-section": {
+   "say": null,
+   "bubble": null,
+   "sub": null,
+   "flag": null
+  },
+  "R-390-contrast-list": {
+   "say": null,
+   "bubble": {
+    "fg": "rgb(35, 115, 71)",
+    "bg": "rgb(234, 245, 238)",
+    "ratio": 5.2,
+    "size": "16px",
+    "weight": "700"
+   },
+   "sub": null,
+   "flag": null
+  },
+  "R-390-said": [
+   {
+    "text": "Every line ticked. 6 of 6.",
+    "kind": "list",
+    "name": "",
+    "where": "card",
+    "design": "R"
+   }
+  ],
+  "S-390-contrast-section": {
+   "say": {
+    "fg": "rgb(35, 115, 71)",
+    "bg": "rgb(255, 254, 250)",
+    "ratio": 5.76,
+    "size": "16px",
+    "weight": "700"
+   },
+   "bubble": null,
+   "sub": null,
+   "flag": null
+  },
+  "S-390-contrast-list": {
+   "say": null,
+   "bubble": {
+    "fg": "rgb(35, 115, 71)",
+    "bg": "rgb(234, 245, 238)",
+    "ratio": 5.2,
+    "size": "16px",
+    "weight": "700"
+   },
+   "sub": null,
+   "flag": null
+  },
+  "S-390-said": [
+   {
+    "text": "Sauce is done. Grill has 1 left.",
+    "kind": "section",
+    "name": "Sauce",
+    "where": "slip",
+    "design": "S"
+   },
+   {
+    "text": "Every line ticked. 6 of 6.",
+    "kind": "list",
+    "name": "",
+    "where": "card",
+    "design": "S"
+   }
+  ],
+  "base-768": {
+   "rowsInView": {
+    "start": 6,
+    "ordinary": 6,
+    "section": 4,
+    "list": 1,
+    "settled": 0,
+    "homeDone": 0,
+    "home": 0
+   },
+   "slip": [
+    112,
+    944.8,
+    544,
+    60
+   ],
+   "header": [
+    37,
+    212.6,
+    694,
+    98.9
+   ]
+  },
+  "R-768-contrast-section": {
+   "say": null,
+   "bubble": null,
+   "sub": null,
+   "flag": null
+  },
+  "R-768-contrast-list": {
+   "say": null,
+   "bubble": {
+    "fg": "rgb(35, 115, 71)",
+    "bg": "rgb(234, 245, 238)",
+    "ratio": 5.2,
+    "size": "16px",
+    "weight": "700"
+   },
+   "sub": null,
+   "flag": null
+  },
+  "R-768-said": [
+   {
+    "text": "Every line ticked. 6 of 6.",
+    "kind": "list",
+    "name": "",
+    "where": "card",
+    "design": "R"
+   }
+  ],
+  "S-768-contrast-section": {
+   "say": {
+    "fg": "rgb(35, 115, 71)",
+    "bg": "rgb(255, 254, 250)",
+    "ratio": 5.76,
+    "size": "16px",
+    "weight": "700"
+   },
+   "bubble": null,
+   "sub": null,
+   "flag": null
+  },
+  "S-768-contrast-list": {
+   "say": null,
+   "bubble": {
+    "fg": "rgb(35, 115, 71)",
+    "bg": "rgb(234, 245, 238)",
+    "ratio": 5.2,
+    "size": "16px",
+    "weight": "700"
+   },
+   "sub": null,
+   "flag": null
+  },
+  "S-768-said": [
+   {
+    "text": "Sauce is done. Grill has 1 left.",
+    "kind": "section",
+    "name": "Sauce",
+    "where": "slip",
+    "design": "S"
+   },
+   {
+    "text": "Every line ticked. 6 of 6.",
+    "kind": "list",
+    "name": "",
+    "where": "card",
+    "design": "S"
+   }
+  ],
+  "base-1280": {
+   "rowsInView": {
+    "start": 6,
+    "ordinary": 6,
+    "section": 4,
+    "list": 1,
+    "settled": 0,
+    "homeDone": 0,
+    "home": 0
+   },
+   "slip": [
+    368,
+    820.8,
+    544,
+    60
+   ],
+   "header": [
+    76.2,
+    157,
+    536.4,
+    98.9
+   ]
+  },
+  "R-1280-contrast-section": {
+   "say": null,
+   "bubble": null,
+   "sub": null,
+   "flag": null
+  },
+  "R-1280-contrast-list": {
+   "say": null,
+   "bubble": {
+    "fg": "rgb(35, 115, 71)",
+    "bg": "rgb(234, 245, 238)",
+    "ratio": 5.2,
+    "size": "16px",
+    "weight": "700"
+   },
+   "sub": null,
+   "flag": null
+  },
+  "R-1280-said": [
+   {
+    "text": "Every line ticked. 6 of 6.",
+    "kind": "list",
+    "name": "",
+    "where": "card",
+    "design": "R"
+   }
+  ],
+  "S-1280-contrast-section": {
+   "say": {
+    "fg": "rgb(35, 115, 71)",
+    "bg": "rgb(255, 254, 250)",
+    "ratio": 5.76,
+    "size": "16px",
+    "weight": "700"
+   },
+   "bubble": null,
+   "sub": null,
+   "flag": null
+  },
+  "S-1280-contrast-list": {
+   "say": null,
+   "bubble": {
+    "fg": "rgb(35, 115, 71)",
+    "bg": "rgb(234, 245, 238)",
+    "ratio": 5.2,
+    "size": "16px",
+    "weight": "700"
+   },
+   "sub": null,
+   "flag": null
+  },
+  "S-1280-said": [
+   {
+    "text": "Sauce is done. Grill has 1 left.",
+    "kind": "section",
+    "name": "Sauce",
+    "where": "slip",
+    "design": "S"
+   },
+   {
+    "text": "Every line ticked. 6 of 6.",
+    "kind": "list",
+    "name": "",
+    "where": "card",
+    "design": "S"
+   }
+  ],
+  "R-long": {
+   "slip": [
+    0,
+    964.2,
+    390,
+    66.8
+   ],
+   "undo": [
+    308,
+    976.6,
+    72,
+    44
+   ]
+  },
+  "R-long-xlarge": {
+   "slip": [
+    0,
+    1665,
+    390,
+    80
+   ],
+   "undo": [
+    294.1,
+    1684,
+    85.9,
+    44
+   ]
+  },
+  "S-long": {
+   "slip": [
+    0,
+    964.2,
+    390,
+    66.8
+   ],
+   "undo": [
+    308,
+    976.6,
+    72,
+    44
+   ]
+  },
+  "S-long-xlarge": {
+   "slip": [
+    0,
+    1665,
+    390,
+    80
+   ],
+   "undo": [
+    294.1,
+    1684,
+    85.9,
+    44
+   ]
+  },
+  "S-longline": {
+   "today": 66.8,
+   "got": 66.8,
+   "said": 0
+  },
+  "S-longline-xlarge": {
+   "today": 80,
+   "got": 80,
+   "said": 0
+  }
+ },
+ "screens": [
+  {
+   "file": "evidence/base-prep-start-390.png",
+   "note": "Prep before any tick.",
+   "kept": true
+  },
+  {
+   "file": "evidence/base-ordinary-390.png",
+   "note": "An ordinary tick: the slip names the line, as today.",
+   "kept": true
+  },
+  {
+   "file": "evidence/base-section-390.png",
+   "note": "The tick that finishes Sauce (2 of 2).",
+   "kept": true
+  },
+  {
+   "file": "evidence/base-list-390.png",
+   "note": "The tick that finishes the whole list.",
+   "kept": true
+  },
+  {
+   "file": "evidence/base-list-settled-390.png",
+   "note": "The finished list, after the ticked lines have left.",
+   "kept": true
+  },
+  {
+   "file": "evidence/base-home-done-390.png",
+   "note": "Home with prep finished.",
+   "kept": true
+  },
+  {
+   "file": "evidence/base-home-390.png",
+   "note": "Home at the start of the shift.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-prep-start-390.png",
+   "note": "Prep before any tick.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-ordinary-390.png",
+   "note": "An ordinary tick: the slip names the line, as today.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-section-390.png",
+   "note": "The tick that finishes Sauce (2 of 2).",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-one-line-section-390.png",
+   "note": "Grill has one line: ticking it is an ordinary tick.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-list-390.png",
+   "note": "The tick that finishes the whole list.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-list-settled-390.png",
+   "note": "The finished list, after the ticked lines have left.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-home-done-390.png",
+   "note": "Home with prep finished.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-home-390.png",
+   "note": "Home at the start of the shift.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-prep-start-390.png",
+   "note": "Prep before any tick.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-ordinary-390.png",
+   "note": "An ordinary tick: the slip names the line, as today.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-section-390.png",
+   "note": "The tick that finishes Sauce (2 of 2).",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-one-line-section-390.png",
+   "note": "Grill has one line: ticking it is an ordinary tick.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-list-390.png",
+   "note": "The tick that finishes the whole list.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-list-settled-390.png",
+   "note": "The finished list, after the ticked lines have left.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-home-done-390.png",
+   "note": "Home with prep finished.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-home-390.png",
+   "note": "Home at the start of the shift.",
+   "kept": true
+  },
+  {
+   "file": "evidence/base-section-768.png",
+   "note": "The tick that finishes Sauce (2 of 2).",
+   "kept": true
+  },
+  {
+   "file": "evidence/base-list-768.png",
+   "note": "The tick that finishes the whole list.",
+   "kept": false
+  },
+  {
+   "file": "evidence/base-list-settled-768.png",
+   "note": "The finished list, after the ticked lines have left.",
+   "kept": true
+  },
+  {
+   "file": "evidence/base-home-done-768.png",
+   "note": "Home with prep finished.",
+   "kept": false
+  },
+  {
+   "file": "evidence/base-home-768.png",
+   "note": "Home at the start of the shift.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-prep-start-768.png",
+   "note": "Prep before any tick.",
+   "kept": false
+  },
+  {
+   "file": "evidence/r-section-768.png",
+   "note": "The tick that finishes Sauce (2 of 2).",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-list-768.png",
+   "note": "The tick that finishes the whole list.",
+   "kept": false
+  },
+  {
+   "file": "evidence/r-list-settled-768.png",
+   "note": "The finished list, after the ticked lines have left.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-home-done-768.png",
+   "note": "Home with prep finished.",
+   "kept": false
+  },
+  {
+   "file": "evidence/r-home-768.png",
+   "note": "Home at the start of the shift.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-prep-start-768.png",
+   "note": "Prep before any tick.",
+   "kept": false
+  },
+  {
+   "file": "evidence/s-section-768.png",
+   "note": "The tick that finishes Sauce (2 of 2).",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-list-768.png",
+   "note": "The tick that finishes the whole list.",
+   "kept": false
+  },
+  {
+   "file": "evidence/s-list-settled-768.png",
+   "note": "The finished list, after the ticked lines have left.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-home-done-768.png",
+   "note": "Home with prep finished.",
+   "kept": false
+  },
+  {
+   "file": "evidence/s-home-768.png",
+   "note": "Home at the start of the shift.",
+   "kept": true
+  },
+  {
+   "file": "evidence/base-section-1280.png",
+   "note": "The tick that finishes Sauce (2 of 2).",
+   "kept": true
+  },
+  {
+   "file": "evidence/base-list-1280.png",
+   "note": "The tick that finishes the whole list.",
+   "kept": false
+  },
+  {
+   "file": "evidence/base-list-settled-1280.png",
+   "note": "The finished list, after the ticked lines have left.",
+   "kept": true
+  },
+  {
+   "file": "evidence/base-home-done-1280.png",
+   "note": "Home with prep finished.",
+   "kept": false
+  },
+  {
+   "file": "evidence/base-home-1280.png",
+   "note": "Home at the start of the shift.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-prep-start-1280.png",
+   "note": "Prep before any tick.",
+   "kept": false
+  },
+  {
+   "file": "evidence/r-section-1280.png",
+   "note": "The tick that finishes Sauce (2 of 2).",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-list-1280.png",
+   "note": "The tick that finishes the whole list.",
+   "kept": false
+  },
+  {
+   "file": "evidence/r-list-settled-1280.png",
+   "note": "The finished list, after the ticked lines have left.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-home-done-1280.png",
+   "note": "Home with prep finished.",
+   "kept": false
+  },
+  {
+   "file": "evidence/r-home-1280.png",
+   "note": "Home at the start of the shift.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-prep-start-1280.png",
+   "note": "Prep before any tick.",
+   "kept": false
+  },
+  {
+   "file": "evidence/s-section-1280.png",
+   "note": "The tick that finishes Sauce (2 of 2).",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-list-1280.png",
+   "note": "The tick that finishes the whole list.",
+   "kept": false
+  },
+  {
+   "file": "evidence/s-list-settled-1280.png",
+   "note": "The finished list, after the ticked lines have left.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-home-done-1280.png",
+   "note": "Home with prep finished.",
+   "kept": false
+  },
+  {
+   "file": "evidence/s-home-1280.png",
+   "note": "Home at the start of the shift.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-held-390.png",
+   "note": "The finishing tick has not reached the server: no cheer.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-released-390.png",
+   "note": "The server answered: the cheer shows.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-reduced-motion-390.png",
+   "note": "Reduced motion: a still and the words.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-no-art-390.png",
+   "note": "The artwork did not load: the words still show.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-long-390.png",
+   "note": "A 47 letter line in a long section name.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-long-xlarge-390.png",
+   "note": "A 47 letter line in a long section name, Extra large text.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-section-chip-390.png",
+   "note": "The Larder chip with Larder finished and other sections open: the book's own words, no card.",
+   "kept": true
+  },
+  {
+   "file": "evidence/r-orders-done-390.png",
+   "note": "Orders, sous chef: every line ordered.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-held-390.png",
+   "note": "The finishing tick has not reached the server: no cheer.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-released-390.png",
+   "note": "The server answered: the cheer shows.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-reduced-motion-390.png",
+   "note": "Reduced motion: a still and the words.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-no-art-390.png",
+   "note": "The artwork did not load: the words still show.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-long-390.png",
+   "note": "A 47 letter line in a long section name.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-long-xlarge-390.png",
+   "note": "A 47 letter line in a long section name, Extra large text.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-section-chip-390.png",
+   "note": "The Larder chip with Larder finished and other sections open: the book's own words, no card.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-long-line-390.png",
+   "note": "A 47 letter line in Sauce: the ticked name wraps, so no sentence is added.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-long-line-xlarge-390.png",
+   "note": "A 47 letter line in Sauce, Extra large text: the ticked name wraps, so no sentence is added.",
+   "kept": true
+  },
+  {
+   "file": "evidence/s-orders-done-390.png",
+   "note": "Orders, sous chef: every line ordered.",
+   "kept": true
+  }
+ ],
+ "films": [
+  {
+   "file": "evidence/r-section.gif",
+   "frames": 62,
+   "fps": 15,
+   "note": "Real time, phone width."
+  },
+  {
+   "file": "evidence/r-list.gif",
+   "frames": 97,
+   "fps": 15,
+   "note": "Real time, phone width."
+  },
+  {
+   "file": "evidence/s-section.gif",
+   "frames": 61,
+   "fps": 15,
+   "note": "Real time, phone width."
+  },
+  {
+   "file": "evidence/s-list.gif",
+   "frames": 98,
+   "fps": 15,
+   "note": "Real time, phone width."
+  }
+ ],
+ "art": {
+  "R-390": [
+   "burger-still.png",
+   "manifest.json",
+   "burger-sheet-compact.webp"
+  ],
+  "S-390": [
+   "burger-still.png",
+   "manifest.json",
+   "burger-sheet-compact.webp"
+  ],
+  "R-768": [
+   "burger-still.png",
+   "manifest.json",
+   "burger-sheet-compact.webp"
+  ],
+  "S-768": [
+   "burger-still.png",
+   "manifest.json",
+   "burger-sheet-compact.webp"
+  ],
+  "R-1280": [
+   "burger-still.png",
+   "manifest.json",
+   "burger-sheet-compact.webp"
+  ],
+  "S-1280": [
+   "burger-still.png",
+   "manifest.json",
+   "burger-sheet-compact.webp"
+  ],
+  "bytes": {
+   "manifest.json": 4264,
+   "welcome-still.png": 44100,
+   "burger-still.png": 48415,
+   "look-around-still.png": 44308,
+   "burger-sheet-compact.webp": 291720
+  }
+ },
+ "limitations": [
+  "The preview finds a finish line by reading the page before and after a tick. An implementation takes it from the tick handler and the write's own answer.",
+  "The server's answer is modelled by the stand-in (hold, deny, release). No real network, no saved shell, no service worker.",
+  "No staff usability study, no physical kitchen legibility, no screen reader in use.",
+  "The shared tablet's Who did this? sheet was not exercised."
+ ],
+ "summary": {
+  "checks": 350,
+  "failed": [
+   "R 768 list: the same Done today Undo links in view",
+   "S 768 list: the same Done today Undo links in view"
+  ],
+  "screens": 75,
+  "films": 4
+ },
+ "pruned": {
+  "note": "Not kept in the repo to save space; the capture script makes them again. Kept screens are saved with a 200 colour palette.",
+  "files": [
+   "evidence/base-home-done-768.png",
+   "evidence/base-list-1280.png",
+   "evidence/base-list-768.png",
+   "evidence/r-home-done-1280.png",
+   "evidence/r-home-done-768.png",
+   "evidence/r-list-1280.png",
+   "evidence/r-list-768.png",
+   "evidence/r-prep-start-1280.png",
+   "evidence/r-prep-start-768.png",
+   "evidence/s-home-done-1280.png",
+   "evidence/s-home-done-768.png",
+   "evidence/s-list-1280.png",
+   "evidence/s-list-768.png",
+   "evidence/s-prep-start-1280.png",
+   "evidence/s-prep-start-768.png"
+  ]
+ }
+}
