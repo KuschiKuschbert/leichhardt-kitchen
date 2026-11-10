@@ -12902,8 +12902,43 @@
       else if (r.top < 8) window.scrollBy(0, r.top - 8);
     }
   }
+  /* Cross-training hints on the planner (head chef, 10 Nov 2026, docs/cross-training-options/brief.md): "Not on Pans in
+     30 days. Alex is on Pans in this plan." only where a pairing is possible in this draft: the person has no shift on
+     that section in the last 30 days and someone with 5 or more there is on it on the same service. At most two a
+     service, one per mentor, sections the fewest people worked first, then the person with the fewest shifts. Never
+     for someone who is the only cook on this service with 5 or more shifts on their own section. Counts come from
+     teamsum/main (by section name, read once a day); with no count, a failed or stale one, there are no hints. */
+  function tmLearnHints() {
+    var out = Object.create(null), r = tsum.rec;
+    if (!tmf || !tsCan() || tsum.st !== 'ok' || !r || !r.day || r.day < shift(dayNow(), -1)) return out;
+    var cnt = Object.create(null), ppl = Object.create(null), tot = Object.create(null);
+    r.days.forEach(function (d) { d.s.forEach(function (v) { var c = cnt[v.p] = cnt[v.p] || Object.create(null); if (!c[v.sec]) ppl[v.sec] = (ppl[v.sec] || 0) + 1; c[v.sec] = (c[v.sec] || 0) + 1; tot[v.p] = (tot[v.p] || 0) + 1; }); });
+    var of = function (id, k) { return (cnt[id] && cnt[id][k]) || 0; }, names = kitSecs().map(function (x) { return x.name; });
+    kitShifts().forEach(function (sh) {
+      var on = tmDayPeople().filter(function (p) { return tmOnShift(p.id, sh.id); }).map(function (p) { return p.id; }), sec = Object.create(null);
+      on.forEach(function (id) { sec[id] = tmSecName(tmf.on[id][sh.id]); });
+      var lead = function (id) { var k = sec[id]; return !!k && of(id, k) >= 5 && !on.some(function (o) { return o !== id && sec[o] === k && of(o, k) >= 5; }); };
+      var cand = [];
+      on.forEach(function (id) {
+        if (lead(id)) return;
+        names.forEach(function (k) {
+          if (!k || sec[id] === k || of(id, k)) return;
+          var m = on.filter(function (o) { return o !== id && sec[o] === k && of(o, k) >= 5; })[0];
+          if (m) cand.push({ id: id, k: k, m: m, n: ppl[k] || 0, t: tot[id] || 0 });
+        });
+      });
+      cand.sort(function (a, b) { return a.n - b.n || a.t - b.t || mnName(a.id).localeCompare(mnName(b.id)); });
+      var used = 0, who = Object.create(null), mentor = Object.create(null);
+      cand.forEach(function (c) {
+        if (used >= 2 || who[c.id] || mentor[c.m]) return;
+        who[c.id] = mentor[c.m] = 1; used++;
+        out[c.id + '|' + sh.id] = 'Not on ' + c.k + ' in 30 days. ' + mnName(c.m) + ' is on ' + c.k + ' in this plan.';
+      });
+    });
+    return out;
+  }
   function tmPersonListHTML() {
-    var q = tmFind.toLowerCase().trim();
+    var q = tmFind.toLowerCase().trim(), learn = tmLearnHints();
     var list = tmDayPeople().filter(function (p) { var sh = tmRowService(p.id), current = tmOnShift(p.id, sh) ? tmSecName(tmf.on[p.id][sh]) : ''; return !q || (p.name + ' ' + current).toLowerCase().indexOf(q) >= 0; });
     if (!list.length) return '<li class="hint">No people match. Change the search.</li>';
     return list.map(function (p) {
@@ -12913,7 +12948,7 @@
       var options = [['', chefP(p) ? (p.role === 'head' ? 'Head chef' : 'Sous chef') : 'No section']].concat(kitSecs().map(function (x) { return [x.id, x.name]; }));
       return '<li class="tm-person-row' + (on ? '' : ' is-off') + (tmUi.focus === p.id ? ' is-focused' : '') + '" data-id="' + esc(p.id) + '" data-sh="' + esc(s.id) + '"><div class="tm-person-head"><span class="tm-person-name">' + esc(p.name) + '</span><div class="tm-row-fields">' +
         '<div class="tm-person-service">' + tmSel('tm-row-sh:' + p.id, 'Service to edit for ' + p.name, tmServiceChoices().map(function (x) { return [x.id, x.name]; }), s.id) + '</div><div class="tm-person-section">' + tmSel('tm-sec:' + p.id, 'Section for ' + p.name + ' on ' + s.name, options, current, false, !on) + '</div></div></div>' +
-        '<div class="tm-row-summary"><span class="tm-person-breaks">' + esc(detail || breaks) + '</span><button type="button" class="btn" data-p="tm-focus" data-id="' + esc(p.id) + '" aria-expanded="' + (tmUi.focus === p.id) + '" aria-label="' + esc('Edit breaks for ' + p.name + ' on ' + s.name) + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>Edit breaks</button></div></li>';
+        '<div class="tm-row-summary"><span class="tm-person-breaks">' + esc(detail || breaks) + '</span><button type="button" class="btn" data-p="tm-focus" data-id="' + esc(p.id) + '" aria-expanded="' + (tmUi.focus === p.id) + '" aria-label="' + esc('Edit breaks for ' + p.name + ' on ' + s.name) + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>Edit breaks</button></div>' + (learn[p.id + '|' + s.id] ? '<p class="tm-learn">' + esc(learn[p.id + '|' + s.id]) + '</p>' : '') + '</li>';
     }).join('');
   }
   function tmFocusHTML() {

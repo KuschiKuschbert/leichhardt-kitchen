@@ -807,6 +807,8 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .sk-key { flex-wrap: wrap; }
 /* Reports, Team: the ticks table behind a fold under Who has worked where (10 Nov 2026) */
 .sk-ticks { margin-top: 1rem; }
+/* Today's team planner: a cross-training hint under a person's row, plain words, no fill (10 Nov 2026) */
+.tm-learn { grid-column: 1 / -1; margin: .25rem 0 0; color: var(--muted); font-size: .9375rem; line-height: 1.35; }
 .sk-ticks > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
 .sk-key i { border: 1px solid var(--edge); }
 .a-list { margin: 0.4rem 0 0; padding-left: 1.1rem; }

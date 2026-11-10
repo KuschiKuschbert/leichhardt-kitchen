@@ -310,6 +310,28 @@ const withoutViewChoice = async p => {
   ok(await p.evaluate(() => window.__fake.reads.filter(r => /\/teamsum\//.test(r)).length + window.__fake.refused.filter(r => /\/teamsum\//.test(r.path)).length) === 0, 'staff: the training numbers are never read');
   await p.context().close();
 
+  // Cross-training hint on the planner (10 Nov 2026): Bo has no Pans shifts and Ann, with 6, is on Pans this service, so
+  // Bo's row says so; Ann, the only cook here with 5 or more on her own section, gets none. No hint when the counts failed
+  // to load or are older than yesterday.
+  const learnDays = [0, 1, 2, 3, 4, 5].map(i => ({ day: L.ymd(new Date(L.NOW - (i + 2) * 86400000)), s: [{ p: 'ann', sec: 'Pans', sh: 'lunch' }].concat(i < 2 ? [{ p: 'bo', sec: 'Grill', sh: 'lunch' }] : []) }));
+  const learnSum = { ...tsumRec, days: learnDays, usual: {} };
+  const learnPlan = { day: today, on: [{ id: 'ann', sh: 'lunch', sec: 'pans' }, { id: 'bo', sh: 'lunch', sec: 'grill' }], br: [], v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam' };
+  const learnHints = async q => q.$$eval('.tm-person-row', rows => rows.map(r => [r.getAttribute('data-id'), (r.querySelector('.tm-learn') || {}).textContent || '']));
+  p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(cfg(), { [TSUM]: learnSum, [TEAM]: learnPlan }), wait: 1800 });
+  await L.waitFor(p, () => !!document.querySelector('.tm-learn'), null, 8000).catch(() => {});
+  let hints = await learnHints(p);
+  ok(JSON.stringify(hints.filter(h => h[1])) === JSON.stringify([['bo', 'Not on Pans in 30 days. Ann is on Pans in this plan.']]), 'learn: only Bo gets a hint, pairing him with Ann on Pans (' + JSON.stringify(hints) + ')');
+  ok(!(await L.overflow(p)) && p.errors.length === 0, 'learn: no sideways scroll or page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(cfg(), { [TSUM]: learnSum, [TEAM]: learnPlan }), failReads: '/teamsum/', wait: 1800 });
+  await L.settle(p, 1200);
+  ok(await p.locator('.tm-learn').count() === 0 && await p.locator('.tm-person-row').count() > 0, 'learn: no hint when the counts could not load');
+  await p.context().close();
+  p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(cfg(), { [TSUM]: { ...learnSum, day: L.ymd(new Date(L.NOW - 3 * 86400000)) }, [TEAM]: learnPlan }), wait: 1800 });
+  await L.settle(p, 1200);
+  ok(await p.locator('.tm-learn').count() === 0, 'learn: no hint from counts older than yesterday');
+  await p.context().close();
+
   // the admin: Who worked where counts the shifts, Reports, Team has a shifts table (Training retired 10 Nov 2026)
   p = await L.open(b, '#/admin', { admin: true, who: '', width: 1280, height: 900, adminPage: '', wait: 2500, extra: Object.assign(withSum(), { [fsKey(['shifts', today + '_ann'])]: { day: today, sec: 'larder', name: 'Larder', auto: false, at: L.NOW - 3600000, by: 'ann' } }) });
   await L.kitchenRow(p, 'secs', 600);
