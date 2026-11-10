@@ -53,7 +53,10 @@ const homeWait = p => L.waitFor(p, () => { const e = document.getElementById('fn
     ok(/FUNCTION THIS WEEK/i.test(g.cardText) && /2 this week/i.test(g.cardText) && /Smith 60th/.test(g.cardText) && /in 2 days/i.test(g.cardText), 'it names the nearest function, how many this week, and how soon (' + g.cardText.slice(0, 90) + ')');
     ok(/60 guests/.test(g.cardText) && /18:30 and 19:15 \(2 rounds\)/.test(g.cardText) && /5 × Antipasto \(5\)/.test(g.cardText), 'guests, food times and platters on the card, no tap');
     ok(/4 gluten free, 1 nut allergy at table 4\./.test(g.cardText), 'the notes as typed: the allergy keeps its words');
-    ok(/Also this week: SAT 14 NOV Jones wedding/i.test(g.cardText), 'the other function this week is named in one line');
+    // the day is worked out from the booking's own date (4 days on), as the book writes it: Sat 14 Nov. The check held
+    // "SAT 14 NOV", which was only true on the day it was written (10 Nov 2026), so it was red from the next day on
+    const jd = new Date(JONES.date + 'T00:00:00Z'), also = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][jd.getUTCDay()] + ' ' + jd.getUTCDate() + ' ' + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][jd.getUTCMonth()];
+    ok(new RegExp('Also this week: ' + also + ' Jones wedding', 'i').test(g.cardText), 'the other function this week is named in one line (' + also + ')');
     ok(!/Smith 60th/.test(g.up), 'Coming up does not repeat the function on the card');
     ok(!(await L.overflow(p)), '390: no sideways scroll');
   });

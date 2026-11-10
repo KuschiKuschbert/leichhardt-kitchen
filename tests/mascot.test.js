@@ -53,7 +53,18 @@ const realErrors = p => p.errors.filter(e => !/Failed to load resource/.test(e))
     ok(s.playing && s.plays === 1, 'the first Home view of the day plays today’s action: ' + JSON.stringify(s));
     ok(r1 && r1.today && r1.bag.length === 10 && r1.day === day, 'today’s action drawn from a full set of 11: ' + JSON.stringify(r1));
     const box = await p.locator('.mascot').boundingBox(), h = await p.locator('#rtitle').boundingBox(), bar = await p.locator('.wtop').boundingBox();
-    ok(box.width === 64 && Math.round(box.height) === 85, 'mascot is 64 x 85 px on a phone: ' + JSON.stringify(box));
+    // The corner takes the largest size that clears every word: 64 x 85 px, or 48 x 64 px when a word is within
+    // 12 px of the larger one. The date line is the day's own ("Wednesday 11 November · 14:00") and the tests'
+    // stand-in fonts differ from machine to machine: on GitHub's runner, wider, a Wednesday's date reaches the
+    // larger one (red there every Wednesday before, 11 Nov 2026). So the words are measured here, the way
+    // corner() in js/mascot.js measures them, and each answer has its one size.
+    const fit = await p.evaluate(() => {
+      const m = document.querySelector('.mascot'), t = document.querySelector('#rtitle'), d = document.querySelector('.wall-date'), next = d.nextElementSibling;
+      const bottom = Math.min(d.getBoundingClientRect().bottom + 4, next ? next.getBoundingClientRect().top - 4 : Infinity), left = t.getBoundingClientRect().right - 64, top = bottom - 64 * 4 / 3;
+      const words = e => { const out = [], w = document.createTreeWalker(e, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { if (!n.textContent.trim()) continue; const r = document.createRange(); r.selectNodeContents(n); out.push(...r.getClientRects()); } return out; };
+      return { spot: m.getAttribute('data-spot'), reach: words(t).concat(words(d)).some(r => r.right > left - 12 && r.left < left + 64 + 12 && r.bottom > top && r.top < bottom), date: d.textContent };
+    });
+    ok(fit.spot === 'corner' && (fit.reach ? box.width === 48 && Math.round(box.height) === 64 : box.width === 64 && Math.round(box.height) === 85), 'mascot is 64 x 85 px in the corner on a phone, or 48 x 64 px when a word reaches the larger one: ' + JSON.stringify([fit, box]));
     ok(Math.abs(box.x + box.width - (h.x + h.width)) < 1, 'it stands at the right end of the Welcome row');
     ok(box.y >= bar.y + bar.height, 'it stays under the top bar');
     ok(await p.evaluate(() => !document.querySelector('#rtitle .mascot') && document.querySelector('#rtitle').textContent === 'Welcome, Ann'), 'the heading reads only the name');
