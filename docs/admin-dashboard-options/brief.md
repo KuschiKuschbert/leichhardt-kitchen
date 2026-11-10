@@ -58,7 +58,7 @@ Checked: no sideways scroll at 390, 768 and 1440 px, no script errors, real Barl
 
 ## The Dashboard as built
 
-Synthetic test data only.
+Synthetic test data only. These pictures are from 3 November 2026, before the four rooms, the Inbox and the dark rail. The current Inbox and Dashboard, drawn on 10 November 2026 from `main` at `fbbc5dd`, are in [the restyle review](../admin-dashboard-restyle-options/brief.md).
 
 | Desktop | Phone |
 | --- | --- |
