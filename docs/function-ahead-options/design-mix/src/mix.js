@@ -75,16 +75,16 @@
     if (hadFocus) { var lb = a.n.querySelector('.fa-next-b'); if (lb) lb.focus({ preventScroll: true }); }
   }
   window.fmaAckEnd = endAck;   // the capture script uses this to show the line after the 9 s
-  function startAck(line, words, said, back) {
+  function startAck(line, words, said, back, quiet) {
     endAck();
     var n = line.querySelector('.fa-next'); if (!n) return;
     n.querySelector('.fa-next-ack').textContent = words;
     var sr = n.querySelector('[data-fma-sr]'); if (sr) sr.textContent = said;
     n.classList.add('is-ack');
     ack = { n: n, back: back, timer: html.hasAttribute('data-fma-hold') ? 0 : setTimeout(endAck, 9000) };
-    var lb = n.querySelector('.fa-next-b'); if (lb) lb.focus({ preventScroll: true });
+    var lb = n.querySelector('.fa-next-b'); if (lb) lb.focus({ preventScroll: true, focusVisible: !quiet });
   }
-  function gotIt(got) {
+  function gotIt(got, quiet) {
     var card = got.closest('[data-fma-part]'), snap = snapshot();
     (got.getAttribute('data-hide') || '').split(' ').filter(Boolean).forEach(function (id) { var x = document.getElementById(id); if (x) x.hidden = true; });
     (got.getAttribute('data-show') || '').split(' ').filter(Boolean).forEach(function (id) { var x = document.getElementById(id); if (x) x.hidden = false; });
@@ -93,7 +93,7 @@
     if (!line) return;
     startAck(line, got.getAttribute('data-ack') || 'Got it. Kept here as one line', got.getAttribute('data-said') || '', function () {
       restore(snap); var g = card.querySelector('[data-fma="got"]'); if (g) g.focus({ preventScroll: true });
-    });
+    }, quiet);
   }
 
   document.addEventListener('click', function (e) {
@@ -125,9 +125,9 @@
     (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () {
       lock();
       var sim = html.getAttribute('data-fma-sim');
-      if (sim) window.fmaSim(sim);
+      if (sim && !/[?&]nosim\b/.test(location.search)) window.fmaSim(sim);
       var auto = html.getAttribute('data-fma-auto');   // a frame that shows the moment just after Got it
-      if (auto) auto.split(' ').forEach(function (id) { var g = document.querySelector('#' + id + ' [data-fma="got"]'); if (g) gotIt(g); });
+      if (auto) auto.split(' ').forEach(function (id) { var g = document.querySelector('#' + id + ' [data-fma="got"]'); if (g) gotIt(g, true); });
       html.setAttribute('data-fma-ready', '1');
     });
   });

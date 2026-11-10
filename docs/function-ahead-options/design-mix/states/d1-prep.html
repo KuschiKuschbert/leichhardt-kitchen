@@ -103,8 +103,10 @@
 .fa-next-s { flex: none; }
 .fa-next-d { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--small-ink); }
 .fa-next-stop { color: var(--bad-ink); }
-/* row 2: the name is the only part that shortens */
-.fa-next-t { display: flex; min-width: 0; white-space: nowrap; font-size: 1rem; line-height: 1.3; color: #3b3a36; }
+/* row 2: one line. The name (with its Stock: prefix) shortens with an ellipsis; the short part after it (guests, the
+   day, the food time) shows whole or, when a long name needs the room, steps onto a hidden second line */
+.fa-next-t { display: flex; flex-wrap: wrap; align-content: flex-start; min-width: 0; height: 1.3em; overflow: hidden; white-space: nowrap; font-size: 1rem; line-height: 1.3; color: #3b3a36; }
+.fa-next-nm { flex: 0 1 auto; display: flex; min-width: 0; max-width: 100%; }
 .fa-next-n { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink); font-weight: 700; }
 .fa-next-p, .fa-next-x { flex: none; }
 .fa-next-b:hover .fa-next-n { text-decoration: underline; text-underline-offset: 2px; }
@@ -116,6 +118,10 @@
 @media (max-width: 479px) {
   .fa-next-more { flex-direction: column; justify-content: center; padding: 0.1rem 0.55rem; line-height: 1.12; text-align: center; }
   .fa-next-more .fa-m2 { margin-left: 0; font-size: 0.8rem; font-weight: 500; }
+  /* extra-large text on a phone: the work-page chevron gives its room to the status words, and row 1 sits a little
+     tighter, so "Cancelled · Do not prep" and the date still fit whole (measured in measurements.json textSizes) */
+  html[data-text="xlarge"] .fn-band .fa-next-chev { display: none; }
+  html[data-text="xlarge"] .fa-next-l { letter-spacing: 0.08em; }
 }
 /* the minus: the band's own round control, at the full 44 px tap size (the designer found 36 px, Not evidenced) */
 .fa-next .fn-fold { width: 44px; height: 44px; margin-left: 0; }

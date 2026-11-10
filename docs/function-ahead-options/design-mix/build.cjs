@@ -89,7 +89,7 @@ function lineInner(o) {
   const undo = o.home ? '<button type="button" class="fa-next-undo" data-fma="undo">Undo</button>' : '';
   const sr = o.home ? '<span class="visually-hidden" role="status" aria-live="polite" data-fma-sr></span>' : '';
   return '<div class="fa-next' + (st === 'cancelled' ? ' is-cancelled' : '') + '"><button type="button" class="fa-next-b" data-fn="open" data-id="' + f.id + '" aria-haspopup="dialog" aria-label="' + aria + '">' +
-    '<span class="fa-next-tx"><span class="fa-next-l"><span class="fa-next-s">' + s + '</span>' + d + ackW + '</span><span class="fa-next-t">' + pre + '<b class="fa-next-n">' + name + '</b>' + (x ? '<span class="fa-next-x">' + x + '</span>' : '') + '</span></span>' +
+    '<span class="fa-next-tx"><span class="fa-next-l"><span class="fa-next-s">' + s + '</span>' + d + ackW + '</span><span class="fa-next-t"><span class="fa-next-nm">' + pre + '<b class="fa-next-n">' + name + '</b></span>' + (x ? '<span class="fa-next-x">' + x + '</span>' : '') + '</span></span>' +
     CHEV + '</button>' + undo + more + fold + sr + '</div>';
 }
 // the band slot on a work page: quiet reference paper, sized and locked at open (data-fma-lock)
