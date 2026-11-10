@@ -1,0 +1,1676 @@
+{
+  "source": "Preview: static snapshots of the implemented app (baseline snapshots of main 184174e, recorded in a32e341) with css/app.css, bundled preview fonts, synthetic data, Tue 10 Nov 2026 14:00 Queensland, deviceScaleFactor 1",
+  "pages": {
+    "home-390": {
+      "firstMention": 211,
+      "firstScreenEnds": 776,
+      "onFirstScreen": true,
+      "stripTop": 163,
+      "stripHeight": 112,
+      "yourDayTop": 293,
+      "withBottom": 863,
+      "band": 0,
+      "addedAboveList": 0,
+      "firstRowTop": null,
+      "addButtonTop": null,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "mascotOverStrip": false,
+      "spillingCells": 0,
+      "pageHeight": 1240,
+      "errors": []
+    },
+    "home-768": {
+      "firstMention": 314,
+      "firstScreenEnds": 1024,
+      "onFirstScreen": true,
+      "stripTop": 264,
+      "stripHeight": 119,
+      "yourDayTop": 401,
+      "withBottom": 752,
+      "band": 0,
+      "addedAboveList": 0,
+      "firstRowTop": null,
+      "addButtonTop": null,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "mascotOverStrip": false,
+      "spillingCells": 0,
+      "pageHeight": 1050,
+      "overflowOpen": 0
+    },
+    "prep-390": {
+      "firstMention": 242,
+      "firstScreenEnds": 776,
+      "onFirstScreen": true,
+      "stripTop": null,
+      "stripHeight": 0,
+      "yourDayTop": null,
+      "withBottom": null,
+      "band": 0,
+      "addedAboveList": 46,
+      "firstRowTop": 311,
+      "addButtonTop": 716,
+      "rowsFullyVisible": 5,
+      "overflow": 0,
+      "mascotOverStrip": false,
+      "spillingCells": 0,
+      "pageHeight": 1147,
+      "openAdded": 242
+    },
+    "orders-390": {
+      "firstMention": null,
+      "firstScreenEnds": 776,
+      "onFirstScreen": false,
+      "stripTop": null,
+      "stripHeight": 0,
+      "yourDayTop": null,
+      "withBottom": null,
+      "band": 0,
+      "addedAboveList": 0,
+      "firstRowTop": 171,
+      "addButtonTop": 716,
+      "rowsFullyVisible": 3,
+      "overflow": 0,
+      "mascotOverStrip": false,
+      "spillingCells": 0,
+      "pageHeight": 844
+    },
+    "home-head-1280": {
+      "firstMention": 293,
+      "firstScreenEnds": 900,
+      "onFirstScreen": true,
+      "stripTop": 242,
+      "stripHeight": 122,
+      "yourDayTop": 381,
+      "withBottom": 747,
+      "band": 0,
+      "addedAboveList": 0,
+      "firstRowTop": null,
+      "addButtonTop": null,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "mascotOverStrip": false,
+      "spillingCells": 0,
+      "pageHeight": 963
+    },
+    "runup-1440": {
+      "overflow": 0,
+      "frames": 27
+    }
+  },
+  "baseline": {
+    "home-staff": {
+      "firstMention": 998,
+      "firstScreenEnds": 776,
+      "onFirstScreen": false,
+      "stripTop": null,
+      "stripHeight": 0,
+      "yourDayTop": 169,
+      "withBottom": 739,
+      "band": 0,
+      "addedAboveList": 0,
+      "firstRowTop": null,
+      "addButtonTop": null,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "mascotOverStrip": false,
+      "spillingCells": 0,
+      "pageHeight": 1319
+    },
+    "prep-staff": {
+      "firstMention": null,
+      "firstScreenEnds": 776,
+      "onFirstScreen": false,
+      "stripTop": null,
+      "stripHeight": 0,
+      "yourDayTop": null,
+      "withBottom": null,
+      "band": 0,
+      "addedAboveList": 0,
+      "firstRowTop": 263,
+      "addButtonTop": 716,
+      "rowsFullyVisible": 6,
+      "overflow": 0,
+      "mascotOverStrip": false,
+      "spillingCells": 0,
+      "pageHeight": 1099
+    },
+    "orders-staff": {
+      "firstMention": null,
+      "firstScreenEnds": 776,
+      "onFirstScreen": false,
+      "stripTop": null,
+      "stripHeight": 0,
+      "yourDayTop": null,
+      "withBottom": null,
+      "band": 0,
+      "addedAboveList": 0,
+      "firstRowTop": 171,
+      "addButtonTop": 716,
+      "rowsFullyVisible": 2,
+      "overflow": 0,
+      "mascotOverStrip": false,
+      "spillingCells": 0,
+      "pageHeight": 844
+    },
+    "prep-staff-day-before": {
+      "firstMention": 123,
+      "firstScreenEnds": 776,
+      "onFirstScreen": true,
+      "stripTop": null,
+      "stripHeight": 0,
+      "yourDayTop": null,
+      "withBottom": null,
+      "band": 113,
+      "addedAboveList": 0,
+      "firstRowTop": 376,
+      "addButtonTop": 716,
+      "rowsFullyVisible": 4,
+      "overflow": 0,
+      "mascotOverStrip": false,
+      "spillingCells": 0,
+      "pageHeight": 1262
+    },
+    "prep-staff-on-the-day": {
+      "firstMention": 124,
+      "firstScreenEnds": 776,
+      "onFirstScreen": true,
+      "stripTop": null,
+      "stripHeight": 0,
+      "yourDayTop": null,
+      "withBottom": null,
+      "band": 116,
+      "addedAboveList": 0,
+      "firstRowTop": 379,
+      "addButtonTop": 716,
+      "rowsFullyVisible": 4,
+      "overflow": 0,
+      "mascotOverStrip": false,
+      "spillingCells": 0,
+      "pageHeight": 1215
+    },
+    "home-head-1280": {
+      "firstMention": 801,
+      "firstScreenEnds": 900,
+      "onFirstScreen": true,
+      "stripTop": null,
+      "stripHeight": 0,
+      "yourDayTop": 251,
+      "withBottom": 617,
+      "band": 0,
+      "addedAboveList": 0,
+      "firstRowTop": null,
+      "addButtonTop": null,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "mascotOverStrip": false,
+      "spillingCells": 0,
+      "pageHeight": 1020
+    }
+  },
+  "states": {
+    "d0-home": {
+      "firstMention": 211,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "d0-orders": {
+      "firstMention": null,
+      "onFirstScreen": false,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": 2,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "d0-prep": {
+      "firstMention": 124,
+      "onFirstScreen": true,
+      "band": 116,
+      "addedAboveList": 0,
+      "rowsFullyVisible": 4,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "d1-home": {
+      "firstMention": 213,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "d1-orders": {
+      "firstMention": null,
+      "onFirstScreen": false,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": 2,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "d1-prep": {
+      "firstMention": 242,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 135,
+      "rowsFullyVisible": 4,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "d2-home": {
+      "firstMention": 211,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "d2-orders": {
+      "firstMention": null,
+      "onFirstScreen": false,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": 3,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "d2-prep": {
+      "firstMention": 242,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 46,
+      "rowsFullyVisible": 5,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "d5-home": {
+      "firstMention": 211,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "d5-orders": {
+      "firstMention": null,
+      "onFirstScreen": false,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": 2,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "d5-prep": {
+      "firstMention": 242,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 46,
+      "rowsFullyVisible": 5,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "od-home": {
+      "firstMention": 213,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "od-orders": {
+      "firstMention": 172,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": 4,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "od-prep": {
+      "firstMention": 243,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 46,
+      "rowsFullyVisible": 5,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "x-head-open": {
+      "firstMention": 211,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "x-home-err": {
+      "firstMention": null,
+      "onFirstScreen": false,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "x-home-none": {
+      "firstMention": null,
+      "onFirstScreen": false,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "x-home-off": {
+      "firstMention": 211,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "x-home-open": {
+      "firstMention": 211,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "x-home-stale": {
+      "firstMention": 211,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "x-home-two": {
+      "firstMention": 211,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 0,
+      "rowsFullyVisible": null,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "x-prep-ahead-shut": {
+      "firstMention": 242,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 46,
+      "rowsFullyVisible": 5,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "x-prep-off": {
+      "firstMention": 242,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 207,
+      "rowsFullyVisible": 3,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "x-prep-open": {
+      "firstMention": 242,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 242,
+      "rowsFullyVisible": 3,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "x-prep-stale": {
+      "firstMention": 242,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 266,
+      "rowsFullyVisible": 2,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    },
+    "x-prep-two": {
+      "firstMention": 242,
+      "onFirstScreen": true,
+      "band": 0,
+      "addedAboveList": 329,
+      "rowsFullyVisible": 1,
+      "overflow": 0,
+      "spillingCells": 0,
+      "errors": []
+    }
+  },
+  "taps": {
+    "homeToSmith": {
+      "from": "Home (390)",
+      "taps": 1,
+      "shown": true,
+      "bottom": 715,
+      "withinFirstScreen": true
+    },
+    "prepToSmith": {
+      "from": "Prep (390)",
+      "taps": 1,
+      "shown": true,
+      "bottom": 464,
+      "withinFirstScreen": true
+    },
+    "headToSmith": {
+      "from": "Home, head chef (1280)",
+      "taps": 1,
+      "shown": true,
+      "bottom": 611,
+      "withinFirstScreen": true
+    }
+  },
+  "contrast": {
+    "home.html": [
+      {
+        "name": "strip label",
+        "ratio": 14.69,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "700"
+      },
+      {
+        "name": "strip count",
+        "ratio": 6.21,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "600"
+      },
+      {
+        "name": "plain weekday",
+        "ratio": 6.21,
+        "need": 4.5,
+        "pass": true,
+        "px": 11,
+        "weight": "700"
+      },
+      {
+        "name": "plain date",
+        "ratio": 14.69,
+        "need": 4.5,
+        "pass": true,
+        "px": 17,
+        "weight": "700"
+      },
+      {
+        "name": "today disc",
+        "ratio": 13.53,
+        "need": 4.5,
+        "pass": true,
+        "px": 17,
+        "weight": "700"
+      },
+      {
+        "name": "function day head",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 11,
+        "weight": "700"
+      },
+      {
+        "name": "function name",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 14,
+        "weight": "700"
+      },
+      {
+        "name": "guests",
+        "ratio": 6.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "400"
+      }
+    ],
+    "states/x-home-open.html": [
+      {
+        "name": "strip label",
+        "ratio": 14.69,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "700"
+      },
+      {
+        "name": "strip count",
+        "ratio": 6.21,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "600"
+      },
+      {
+        "name": "plain weekday",
+        "ratio": 6.21,
+        "need": 4.5,
+        "pass": true,
+        "px": 11,
+        "weight": "700"
+      },
+      {
+        "name": "plain date",
+        "ratio": 14.69,
+        "need": 4.5,
+        "pass": true,
+        "px": 17,
+        "weight": "700"
+      },
+      {
+        "name": "today disc",
+        "ratio": 13.53,
+        "need": 4.5,
+        "pass": true,
+        "px": 17,
+        "weight": "700"
+      },
+      {
+        "name": "function day head",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 11,
+        "weight": "700"
+      },
+      {
+        "name": "function name",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 14,
+        "weight": "700"
+      },
+      {
+        "name": "guests",
+        "ratio": 6.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "400"
+      },
+      {
+        "name": "open day name",
+        "ratio": 5.05,
+        "need": 4.5,
+        "pass": true,
+        "px": 14,
+        "weight": "700"
+      },
+      {
+        "name": "open day guests",
+        "ratio": 5.05,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "400"
+      },
+      {
+        "name": "card small line",
+        "ratio": 6.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "700"
+      },
+      {
+        "name": "card step words",
+        "ratio": 6.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "400"
+      },
+      {
+        "name": "card past step",
+        "ratio": 6.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 15,
+        "weight": "700"
+      },
+      {
+        "name": "card To come",
+        "ratio": 6.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "400"
+      },
+      {
+        "name": "card dietaries",
+        "ratio": 14.69,
+        "need": 4.5,
+        "pass": true,
+        "px": 15,
+        "weight": "600"
+      },
+      {
+        "name": "card Next tag",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 11,
+        "weight": "700"
+      }
+    ],
+    "states/od-home.html": [
+      {
+        "name": "strip label",
+        "ratio": 14.69,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "700"
+      },
+      {
+        "name": "strip count",
+        "ratio": 6.21,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "600"
+      },
+      {
+        "name": "plain weekday",
+        "ratio": 6.21,
+        "need": 4.5,
+        "pass": true,
+        "px": 11,
+        "weight": "700"
+      },
+      {
+        "name": "plain date",
+        "ratio": 14.69,
+        "need": 4.5,
+        "pass": true,
+        "px": 17,
+        "weight": "700"
+      },
+      {
+        "name": "today disc",
+        "ratio": 13.53,
+        "need": 4.5,
+        "pass": true,
+        "px": 17,
+        "weight": "700"
+      },
+      {
+        "name": "function day head",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 11,
+        "weight": "700"
+      },
+      {
+        "name": "function name",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 14,
+        "weight": "700"
+      },
+      {
+        "name": "guests",
+        "ratio": 6.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "400"
+      },
+      {
+        "name": "milestone tag",
+        "ratio": 13.48,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "600"
+      }
+    ],
+    "states/d0-home.html": [
+      {
+        "name": "strip label",
+        "ratio": 14.69,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "700"
+      },
+      {
+        "name": "strip count",
+        "ratio": 6.21,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "600"
+      },
+      {
+        "name": "plain weekday",
+        "ratio": 6.21,
+        "need": 4.5,
+        "pass": true,
+        "px": 11,
+        "weight": "700"
+      },
+      {
+        "name": "plain date",
+        "ratio": 14.69,
+        "need": 4.5,
+        "pass": true,
+        "px": 17,
+        "weight": "700"
+      },
+      {
+        "name": "function day head",
+        "ratio": 13.53,
+        "need": 4.5,
+        "pass": true,
+        "px": 11,
+        "weight": "700"
+      },
+      {
+        "name": "function name",
+        "ratio": 13.53,
+        "need": 4.5,
+        "pass": true,
+        "px": 14,
+        "weight": "700"
+      },
+      {
+        "name": "guests",
+        "ratio": 13.53,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "400"
+      },
+      {
+        "name": "today function name",
+        "ratio": 13.53,
+        "need": 4.5,
+        "pass": true,
+        "px": 14,
+        "weight": "700"
+      },
+      {
+        "name": "today function guests",
+        "ratio": 13.53,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "400"
+      }
+    ],
+    "states/x-home-off.html": [
+      {
+        "name": "strip label",
+        "ratio": 14.69,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "700"
+      },
+      {
+        "name": "strip count",
+        "ratio": 6.21,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "600"
+      },
+      {
+        "name": "plain weekday",
+        "ratio": 6.21,
+        "need": 4.5,
+        "pass": true,
+        "px": 11,
+        "weight": "700"
+      },
+      {
+        "name": "plain date",
+        "ratio": 14.69,
+        "need": 4.5,
+        "pass": true,
+        "px": 17,
+        "weight": "700"
+      },
+      {
+        "name": "today disc",
+        "ratio": 13.53,
+        "need": 4.5,
+        "pass": true,
+        "px": 17,
+        "weight": "700"
+      },
+      {
+        "name": "function day head",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 11,
+        "weight": "700"
+      },
+      {
+        "name": "function name",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 14,
+        "weight": "700"
+      },
+      {
+        "name": "guests",
+        "ratio": 6.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "400"
+      },
+      {
+        "name": "open day name",
+        "ratio": 14.37,
+        "need": 4.5,
+        "pass": true,
+        "px": 14,
+        "weight": "700"
+      },
+      {
+        "name": "open day guests",
+        "ratio": 6.64,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "700"
+      },
+      {
+        "name": "card small line",
+        "ratio": 6.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "700"
+      },
+      {
+        "name": "cancelled day word",
+        "ratio": 6.64,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "700"
+      },
+      {
+        "name": "cancelled note",
+        "ratio": 6.64,
+        "need": 4.5,
+        "pass": true,
+        "px": 15,
+        "weight": "400"
+      }
+    ],
+    "states/x-home-stale.html": [
+      {
+        "name": "strip label",
+        "ratio": 14.69,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "700"
+      },
+      {
+        "name": "strip count",
+        "ratio": 6.21,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "600"
+      },
+      {
+        "name": "plain weekday",
+        "ratio": 6.21,
+        "need": 4.5,
+        "pass": true,
+        "px": 11,
+        "weight": "700"
+      },
+      {
+        "name": "plain date",
+        "ratio": 14.69,
+        "need": 4.5,
+        "pass": true,
+        "px": 17,
+        "weight": "700"
+      },
+      {
+        "name": "today disc",
+        "ratio": 13.53,
+        "need": 4.5,
+        "pass": true,
+        "px": 17,
+        "weight": "700"
+      },
+      {
+        "name": "function day head",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 11,
+        "weight": "700"
+      },
+      {
+        "name": "function name",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 14,
+        "weight": "700"
+      },
+      {
+        "name": "guests",
+        "ratio": 6.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "400"
+      },
+      {
+        "name": "no signal line",
+        "ratio": 6.21,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "400"
+      }
+    ],
+    "states/x-home-err.html": [
+      {
+        "name": "strip label",
+        "ratio": 14.69,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "700"
+      },
+      {
+        "name": "failed read line",
+        "ratio": 6.78,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "600"
+      }
+    ],
+    "prep.html": [
+      {
+        "name": "This week label",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "700"
+      },
+      {
+        "name": "This week names",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 14,
+        "weight": "600"
+      },
+      {
+        "name": "Show cue",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "700"
+      }
+    ],
+    "states/x-prep-open.html": [
+      {
+        "name": "This week label",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "700"
+      },
+      {
+        "name": "This week names",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 14,
+        "weight": "600"
+      },
+      {
+        "name": "Show cue",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "700"
+      },
+      {
+        "name": "row date",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "700"
+      },
+      {
+        "name": "row guests",
+        "ratio": 10.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "400"
+      },
+      {
+        "name": "row platters",
+        "ratio": 10.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "400"
+      },
+      {
+        "name": "row next",
+        "ratio": 6.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "600"
+      }
+    ],
+    "states/od-prep.html": [
+      {
+        "name": "This week label",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "700"
+      },
+      {
+        "name": "This week names",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 14,
+        "weight": "600"
+      },
+      {
+        "name": "Show cue",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "700"
+      },
+      {
+        "name": "Order today tag",
+        "ratio": 13.48,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "600"
+      }
+    ],
+    "states/d1-prep.html": [
+      {
+        "name": "This week label",
+        "ratio": 4.76,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "700"
+      },
+      {
+        "name": "This week names",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 14,
+        "weight": "600"
+      },
+      {
+        "name": "Show cue",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "700"
+      },
+      {
+        "name": "Prep ahead label",
+        "ratio": 4.76,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "700"
+      },
+      {
+        "name": "Prep ahead To come",
+        "ratio": 6.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "400"
+      }
+    ],
+    "states/x-prep-off.html": [
+      {
+        "name": "This week label",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "700"
+      },
+      {
+        "name": "This week names",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 14,
+        "weight": "600"
+      },
+      {
+        "name": "Show cue",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "700"
+      },
+      {
+        "name": "row date",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "700"
+      },
+      {
+        "name": "row guests",
+        "ratio": 10.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "400"
+      },
+      {
+        "name": "row platters",
+        "ratio": 10.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "400"
+      },
+      {
+        "name": "row next",
+        "ratio": 6.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "600"
+      },
+      {
+        "name": "cancelled tag",
+        "ratio": 6.64,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "600"
+      }
+    ],
+    "states/x-prep-stale.html": [
+      {
+        "name": "This week label",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "700"
+      },
+      {
+        "name": "This week names",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 14,
+        "weight": "600"
+      },
+      {
+        "name": "Show cue",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "700"
+      },
+      {
+        "name": "row date",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "700"
+      },
+      {
+        "name": "row guests",
+        "ratio": 10.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "400"
+      },
+      {
+        "name": "row platters",
+        "ratio": 10.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "400"
+      },
+      {
+        "name": "row next",
+        "ratio": 6.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "600"
+      },
+      {
+        "name": "no signal line",
+        "ratio": 6.73,
+        "need": 4.5,
+        "pass": true,
+        "px": 13,
+        "weight": "400"
+      }
+    ],
+    "orders.html": [
+      {
+        "name": "Not ordered yet tag",
+        "ratio": 13.48,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "600"
+      },
+      {
+        "name": "For line",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "600"
+      }
+    ],
+    "states/od-orders.html": [
+      {
+        "name": "Not ordered yet tag",
+        "ratio": 13.48,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "600"
+      },
+      {
+        "name": "For line",
+        "ratio": 15.9,
+        "need": 4.5,
+        "pass": true,
+        "px": 12,
+        "weight": "600"
+      }
+    ]
+  },
+  "contrastWorst": {
+    "strip label": {
+      "name": "strip label",
+      "ratio": 14.69,
+      "need": 4.5,
+      "pass": true,
+      "px": 12,
+      "weight": "700"
+    },
+    "strip count": {
+      "name": "strip count",
+      "ratio": 6.21,
+      "need": 4.5,
+      "pass": true,
+      "px": 12,
+      "weight": "600"
+    },
+    "plain weekday": {
+      "name": "plain weekday",
+      "ratio": 6.21,
+      "need": 4.5,
+      "pass": true,
+      "px": 11,
+      "weight": "700"
+    },
+    "plain date": {
+      "name": "plain date",
+      "ratio": 14.69,
+      "need": 4.5,
+      "pass": true,
+      "px": 17,
+      "weight": "700"
+    },
+    "today disc": {
+      "name": "today disc",
+      "ratio": 13.53,
+      "need": 4.5,
+      "pass": true,
+      "px": 17,
+      "weight": "700"
+    },
+    "function day head": {
+      "name": "function day head",
+      "ratio": 13.53,
+      "need": 4.5,
+      "pass": true,
+      "px": 11,
+      "weight": "700"
+    },
+    "function name": {
+      "name": "function name",
+      "ratio": 13.53,
+      "need": 4.5,
+      "pass": true,
+      "px": 14,
+      "weight": "700"
+    },
+    "guests": {
+      "name": "guests",
+      "ratio": 6.73,
+      "need": 4.5,
+      "pass": true,
+      "px": 12,
+      "weight": "400"
+    },
+    "open day name": {
+      "name": "open day name",
+      "ratio": 5.05,
+      "need": 4.5,
+      "pass": true,
+      "px": 14,
+      "weight": "700"
+    },
+    "open day guests": {
+      "name": "open day guests",
+      "ratio": 5.05,
+      "need": 4.5,
+      "pass": true,
+      "px": 12,
+      "weight": "400"
+    },
+    "card small line": {
+      "name": "card small line",
+      "ratio": 6.73,
+      "need": 4.5,
+      "pass": true,
+      "px": 12,
+      "weight": "700"
+    },
+    "card step words": {
+      "name": "card step words",
+      "ratio": 6.73,
+      "need": 4.5,
+      "pass": true,
+      "px": 13,
+      "weight": "400"
+    },
+    "card past step": {
+      "name": "card past step",
+      "ratio": 6.73,
+      "need": 4.5,
+      "pass": true,
+      "px": 15,
+      "weight": "700"
+    },
+    "card To come": {
+      "name": "card To come",
+      "ratio": 6.73,
+      "need": 4.5,
+      "pass": true,
+      "px": 13,
+      "weight": "400"
+    },
+    "card dietaries": {
+      "name": "card dietaries",
+      "ratio": 14.69,
+      "need": 4.5,
+      "pass": true,
+      "px": 15,
+      "weight": "600"
+    },
+    "card Next tag": {
+      "name": "card Next tag",
+      "ratio": 15.9,
+      "need": 4.5,
+      "pass": true,
+      "px": 11,
+      "weight": "700"
+    },
+    "milestone tag": {
+      "name": "milestone tag",
+      "ratio": 13.48,
+      "need": 4.5,
+      "pass": true,
+      "px": 12,
+      "weight": "600"
+    },
+    "today function name": {
+      "name": "today function name",
+      "ratio": 13.53,
+      "need": 4.5,
+      "pass": true,
+      "px": 14,
+      "weight": "700"
+    },
+    "today function guests": {
+      "name": "today function guests",
+      "ratio": 13.53,
+      "need": 4.5,
+      "pass": true,
+      "px": 12,
+      "weight": "400"
+    },
+    "cancelled day word": {
+      "name": "cancelled day word",
+      "ratio": 6.64,
+      "need": 4.5,
+      "pass": true,
+      "px": 12,
+      "weight": "700"
+    },
+    "cancelled note": {
+      "name": "cancelled note",
+      "ratio": 6.64,
+      "need": 4.5,
+      "pass": true,
+      "px": 15,
+      "weight": "400"
+    },
+    "no signal line": {
+      "name": "no signal line",
+      "ratio": 6.21,
+      "need": 4.5,
+      "pass": true,
+      "px": 13,
+      "weight": "400"
+    },
+    "failed read line": {
+      "name": "failed read line",
+      "ratio": 6.78,
+      "need": 4.5,
+      "pass": true,
+      "px": 13,
+      "weight": "600"
+    },
+    "This week label": {
+      "name": "This week label",
+      "ratio": 4.76,
+      "need": 4.5,
+      "pass": true,
+      "px": 13,
+      "weight": "700"
+    },
+    "This week names": {
+      "name": "This week names",
+      "ratio": 15.9,
+      "need": 4.5,
+      "pass": true,
+      "px": 14,
+      "weight": "600"
+    },
+    "Show cue": {
+      "name": "Show cue",
+      "ratio": 15.9,
+      "need": 4.5,
+      "pass": true,
+      "px": 13,
+      "weight": "700"
+    },
+    "row date": {
+      "name": "row date",
+      "ratio": 15.9,
+      "need": 4.5,
+      "pass": true,
+      "px": 13,
+      "weight": "700"
+    },
+    "row guests": {
+      "name": "row guests",
+      "ratio": 10.73,
+      "need": 4.5,
+      "pass": true,
+      "px": 13,
+      "weight": "400"
+    },
+    "row platters": {
+      "name": "row platters",
+      "ratio": 10.73,
+      "need": 4.5,
+      "pass": true,
+      "px": 13,
+      "weight": "400"
+    },
+    "row next": {
+      "name": "row next",
+      "ratio": 6.73,
+      "need": 4.5,
+      "pass": true,
+      "px": 13,
+      "weight": "600"
+    },
+    "Order today tag": {
+      "name": "Order today tag",
+      "ratio": 13.48,
+      "need": 4.5,
+      "pass": true,
+      "px": 12,
+      "weight": "600"
+    },
+    "Prep ahead label": {
+      "name": "Prep ahead label",
+      "ratio": 4.76,
+      "need": 4.5,
+      "pass": true,
+      "px": 13,
+      "weight": "700"
+    },
+    "Prep ahead To come": {
+      "name": "Prep ahead To come",
+      "ratio": 6.73,
+      "need": 4.5,
+      "pass": true,
+      "px": 13,
+      "weight": "400"
+    },
+    "cancelled tag": {
+      "name": "cancelled tag",
+      "ratio": 6.64,
+      "need": 4.5,
+      "pass": true,
+      "px": 12,
+      "weight": "600"
+    },
+    "Not ordered yet tag": {
+      "name": "Not ordered yet tag",
+      "ratio": 13.48,
+      "need": 4.5,
+      "pass": true,
+      "px": 12,
+      "weight": "600"
+    },
+    "For line": {
+      "name": "For line",
+      "ratio": 15.9,
+      "need": 4.5,
+      "pass": true,
+      "px": 12,
+      "weight": "600"
+    }
+  },
+  "checks": {
+    "overflowZeroEverywhere": true,
+    "overflowPages": [],
+    "spillingCells": [],
+    "mascotOverStrip": [],
+    "contrastFails": []
+  }
+}

@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Functions ahead of time, 10 November 2026
+
+The head chef could not find a Saturday function on Tuesday and asked how to get everyone's attention on a function during the week. The band shows a function only on its order day, the day before and the day; Home's Coming up sits at 955 px on a 390 px phone with a team saved (Implemented app). Round 1: Build smaller, 5 of 5. Round 2: A (quiet Next function line) 39, C (once-per-person heads-up card) 38, B (week strip and milestones) 26; five of six recommend a mix (A's line as the base, C's card under Your day collapsing to the line, B's open-only rule and Orders tag), previewed in `design-mix/` and endorsed with changes by all six and re-checked by four. **Chosen 10 Nov 2026: the mix**, line kept for everyone, Function tomorrow card shown to everyone once more. Build in three pull requests (brief, Build plan). [Brief](function-ahead-options/brief.md), [evidence](function-ahead-options/evidence.md). Previews only; no app file changed.
+
 ## Kitchen mascot on Home, 9 November 2026
 
 The owner chose a per-person shuffled daily action of all 11 mascot actions, design A (plays once, then the Welcome pose) at the right end of the Welcome row, and a tap that replays today's action. `js/mascot.js` (lazy, `LK_MASCOT.api` 1, loaded by `mascotSync()` in `js/app.js`), `art/mascot/` (11 compact sprite sheets and 11 stills, loaded with `?v=1` so `sw.js` never keeps them), `LK_PREP.whoId()`, `.mascot` and `.mascot-host` in `css/app.css`, `tests/mascot.test.js` (92 checks). No reads, writes or rules. Since 10 Nov 2026, when the varied welcome fills the corner it stands on the Your day card, then makes room (`.mascot-room`) ([note](kitchen-mascot.md)). [Feature note](kitchen-mascot.md). The artwork, both council rounds and the placement mock are in pull request #654.

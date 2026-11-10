@@ -1,0 +1,128 @@
+/* Design B, "The run-up" (preview only, 10 Nov 2026). Built on css/app.css and its tokens: no new palette.
+   Home: a This week strip under the greeting (quiet reference surface), function days as paper buttons,
+   today's function in the live charcoal, the open day in the chosen-chip orange; a run-up card opens in place.
+   Prep: a This week line inside the list's own frame; on the day before it opens as the Prep ahead entry.
+   Orders: the function stock line carries its own milestone tag. */
+
+/* ---------- Home: This week strip ---------- */
+.ru-strip { margin: -0.35rem 0 1.1rem; padding: 0.45rem 0.45rem 0.5rem; border-radius: 12px; background: var(--surface-reference); color: var(--ink); box-shadow: 0 3px 0 rgba(28, 29, 31, 0.12); }
+.ru-sh { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; margin: 0 0.2rem 0.3rem; }
+.ru-st { margin: 0; font: 700 0.75rem/1.2 var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink); }
+.ru-sc { font-size: 0.75rem; font-weight: 600; color: var(--muted); white-space: nowrap; }
+.ru-sh .fn-tag { margin-left: auto; font-family: var(--body); color: var(--ink); }
+.ru-sh .fn-t-order { color: var(--ink); }
+.ru-days { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ru-day { min-width: 0; display: flex; }
+.ru-d { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 1px; min-height: 58px; padding: 6px 1px 4px; border: 1.5px solid transparent; border-radius: var(--r-act); color: var(--ink); text-align: center; }
+.ru-wd { max-width: 100%; font: 700 0.6875rem/1.2 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ru-dn { display: inline-grid; place-items: center; min-width: 26px; height: 26px; font: 700 1.0625rem/1 var(--display); }
+.ru-day.is-today .ru-dn { border-radius: 50%; background: var(--bar); color: var(--bar-text); }
+button.ru-fn { align-items: flex-start; gap: 0; padding: 5px 7px; border-color: var(--ink); background: var(--surface-paper); font: inherit; text-align: left; cursor: pointer; box-shadow: 0 2px 0 rgba(28, 29, 31, 0.16); }
+.ru-fn .ru-wd { color: var(--ink); }
+.ru-n { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; max-width: 100%; font: 700 0.875rem/1.2 var(--body); overflow: hidden; overflow-wrap: anywhere; }
+.ru-g { max-width: 100%; font-size: 0.75rem; line-height: 1.3; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ru-gw, .ru-nx { display: none; }
+.ru-fn:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 2px; }
+/* a function today: the live charcoal, as the band and Your day */
+.ru-day.is-today button.ru-fn { border-color: var(--bar); background: var(--bar); color: var(--bar-text); }
+.ru-day.is-today .ru-fn :is(.ru-wd, .ru-g, .ru-nx) { color: rgba(251, 248, 241, 0.85); }
+/* the day whose card is open: the chosen-chip orange, with aria-expanded */
+button.ru-fn[aria-expanded="true"] { border-color: var(--accent-ink); background: var(--accent-ink); color: #fff; box-shadow: none; }
+button.ru-fn[aria-expanded="true"] :is(.ru-wd, .ru-g, .ru-nx) { color: #fff; }
+/* cancelled: struck through, with the word, in the error family */
+button.ru-fn.is-off { border-color: var(--bad-ink); background: var(--bad-tint); }
+button.ru-fn.is-off .ru-n { text-decoration: line-through; }
+button.ru-fn.is-off .ru-g { font-weight: 700; color: var(--bad-ink); }
+button.ru-fn.is-off[aria-expanded="true"] { border-color: var(--bad-ink); background: var(--bad-tint); color: var(--ink); box-shadow: inset 0 0 0 2px var(--bad-ink); }
+button.ru-fn.is-off[aria-expanded="true"] .ru-wd { color: var(--ink); }
+button.ru-fn.is-off[aria-expanded="true"] .ru-g { color: var(--bad-ink); }
+.ru-stale { margin: 0.4rem 0.2rem 0; font-size: 0.8125rem; line-height: 1.35; color: var(--muted); }
+.ru-stale.is-err { color: var(--bad-ink); font-weight: 600; }
+
+/* ---------- Home: the run-up card, opened in place under the strip ---------- */
+.ru-card { margin-top: 0.5rem; padding: 0.7rem 0.8rem 0.5rem; border: 1.5px solid var(--ink); border-radius: 12px; background: var(--surface-paper); color: var(--ink); }
+.ru-card[hidden] { display: none; }
+.ru-fc + .ru-fc { margin-top: 0.7rem; padding-top: 0.7rem; border-top: 1.5px solid var(--line); }
+.ru-cn { margin: 0.1rem 0 0.15rem; font: 700 1.45rem/1.15 var(--display); }
+.ru-cl { margin: 0; font-size: 0.9375rem; line-height: 1.4; color: #3b3a36; }
+.ru-cl b { color: var(--ink); }
+.ru-diet { margin: 0.35rem 0 0; padding: 0.3rem 0.55rem; border-left: 4px solid var(--ink); background: var(--surface-reference); font-size: 0.9375rem; font-weight: 600; line-height: 1.35; }
+.ru-dl { margin-right: 0.3rem; font: 700 0.72rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.ru-off-note { margin: 0.1rem 0 0.3rem; padding: 0.35rem 0.55rem; border-left: 4px solid var(--bad-ink); border-radius: 4px; background: var(--bad-tint); color: var(--bad-ink); font-size: 0.9375rem; }
+.ru-rh { margin: 0.65rem 0 0.1rem; font: 700 0.75rem/1.2 var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink); }
+.ru-steps { list-style: none; margin: 0; padding: 0; }
+.ru-steps li { position: relative; display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 0.5rem; padding: 0.3rem 0; }
+.ru-steps li + li::before { content: ''; position: absolute; left: 8px; top: -0.55rem; height: 0.9rem; border-left: 2px solid var(--edge); }
+.ru-dot { width: 14px; height: 14px; margin-top: 3px; border: 2px solid var(--ink); border-radius: 50%; background: var(--surface-paper); }
+.ru-steps li.is-past .ru-dot { border-color: var(--faint); background: var(--faint); }
+.ru-steps li.is-next .ru-dot { background: var(--ink); }
+.ru-sw { min-width: 0; font-size: 0.9375rem; line-height: 1.35; }
+.ru-sw b { font-weight: 700; }
+.ru-steps li.is-past .ru-sw b { color: var(--muted); }
+.ru-sw small { display: block; font-size: 0.8125rem; line-height: 1.35; color: var(--muted); }
+.ru-next { display: inline-block; margin-left: 0.35rem; padding: 0 6px; border: 1.5px solid var(--ink); border-radius: 999px; font: 700 0.6875rem/1.4 var(--display); letter-spacing: 0.08em; text-transform: uppercase; vertical-align: 1px; }
+.ru-tc { font-style: italic; color: var(--muted); }
+.ru-chk { margin: 0.45rem 0 0; font-size: 0.875rem; color: #3b3a36; }
+.ru-chk b { font: 700 0.72rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-right: 0.3rem; }
+.ru-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1rem; margin-top: 0.45rem; }
+.ru-acts .ru-close { margin-left: auto; }
+.ru-acts .btn { min-height: 44px; padding: 0 1rem; font-size: 0.9375rem; }
+.ru-acts .linkish { min-height: 44px; }
+
+/* ---------- Prep: This week, inside the list's own frame ---------- */
+.ru-week { margin: 0.15rem 0 0.1rem; border-bottom: 2px dashed var(--rule, var(--line)); font-family: var(--body); }
+.ru-wsum { display: flex; align-items: center; gap: 0.5rem; width: 100%; min-height: 44px; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.ru-wsum:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 2px; border-radius: 4px; }
+.ru-wh { flex: 0 0 auto; font: 700 0.8125rem/1.2 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink); }
+.ru-wnames { flex: 1 1 auto; min-width: 0; font: 600 0.875rem/1.3 var(--body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ru-wnames .fn-tag { margin-right: 0.25rem; font-family: var(--body); }
+.ru-wcue { flex: 0 0 auto; font-size: 0.8125rem; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+.ru-wcue::after { content: ' \25BE'; text-decoration: none; display: inline-block; margin-left: 0.15rem; }
+.ru-wsum[aria-expanded="true"] .ru-wcue::after { content: ' \25B4'; }
+.ru-wlist { list-style: none; margin: 0 0 0.35rem; padding: 0; }
+.ru-wlist[hidden] { display: none; }
+.ru-wrow { display: grid; grid-template-columns: 4.4rem minmax(0, 1fr); gap: 0 0.5rem; width: 100%; min-height: 44px; padding: 0.4rem 0; border: 0; border-top: 1px solid var(--rule, var(--line)); background: none; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+.ru-wrow:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 2px; }
+.ru-wdate { grid-row: span 5; padding-top: 2px; font: 700 0.8125rem/1.25 var(--display); letter-spacing: 0.08em; text-transform: uppercase; }
+.ru-wt { font-size: 0.9375rem; line-height: 1.35; overflow-wrap: anywhere; }
+.ru-wg { font-size: 0.8125rem; line-height: 1.35; color: #3b3a36; overflow-wrap: anywhere; }
+.ru-wm b, .ru-tom b.ru-db { color: var(--ink); }
+.ru-wm { font-size: 0.8125rem; line-height: 1.35; color: #3b3a36; overflow-wrap: anywhere; }
+.ru-wn { font-size: 0.8125rem; line-height: 1.35; font-weight: 600; color: var(--muted); }
+.ru-wrow.is-off .ru-wt b { text-decoration: line-through; }
+.ru-week .ru-stale { margin: 0 0 0.35rem; }
+/* the day before: the Prep ahead entry, open by itself until Hide */
+.ru-tom { padding: 0 0 0.25rem; }
+.ru-tom p { margin: 0; font-size: 0.9375rem; line-height: 1.35; overflow-wrap: anywhere; }
+.ru-tom .ru-diet { margin-top: 0.25rem; }
+.ru-tom .fnn-sum { min-height: 44px; font-size: 0.875rem; }
+.ru-tomr { display: flex; flex-wrap: wrap; align-items: center; column-gap: 0.6rem; }
+.ru-tomr .ru-tc { font-size: 0.8125rem; }
+.ru-tom[hidden] { display: none; }
+.ru-week.is-ahead .ru-wh { color: var(--accent-ink); }
+/* the day itself: the line moves to the end of today's list */
+.ru-week.is-end { margin-top: 0.8rem; border-top: 2px dashed var(--rule, var(--line)); border-bottom: 0; }
+
+/* ---------- Orders: the function stock line carries its milestone ---------- */
+.nb-marks .fn-tag { font-family: var(--body); }
+/* the shared Order tag uses --accent-ink: 4.0:1 on its own tint (measured, 4.5 with --small-ink). Ink words, as the band
+   does on charcoal; the tint and orange edge keep the attention cue, the words keep the meaning. */
+.ru-wnames .fn-t-order, .nb-marks .fn-t-order { color: var(--ink); }
+.ru-ometa { font-weight: 600; color: var(--ink); }
+
+/* ---------- wider screens ---------- */
+@media (min-width: 720px) {
+  .ru-strip { margin-top: -0.6rem; padding: 0.6rem 0.6rem 0.65rem; }
+  .ru-days { gap: 6px; }
+  .ru-d { min-height: 64px; }
+  .ru-gw, .ru-nx { display: inline; }
+  .ru-nx { display: block; max-width: 100%; margin-top: 2px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ru-fc { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 2rem; align-items: start; }
+  .ru-fc > .ru-acts { grid-column: 1 / -1; }
+  .ru-fr .ru-rh { margin-top: 0.15rem; }
+}
+@media (min-width: 1100px) {
+  .ru-n { font-size: 1rem; }
+  .ru-d { padding-inline: 10px; }
+  .ru-day:not(.has-fn) .ru-d { padding-inline: 1px; }
+}

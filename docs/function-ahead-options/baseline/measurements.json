@@ -1,0 +1,63 @@
+{
+  "source": "Implemented app, click-test stand-in, synthetic data, 2026-11-10",
+  "notes": [
+    {
+      "name": "home-staff",
+      "hash": "#/",
+      "width": 390,
+      "band": 0,
+      "comingUpTop": 955,
+      "fnInComingUp": true,
+      "pageHeight": 1341,
+      "overflow": 0
+    },
+    {
+      "name": "prep-staff",
+      "hash": "#/prep",
+      "width": 390,
+      "band": 0,
+      "comingUpTop": null,
+      "fnInComingUp": false,
+      "pageHeight": 1176,
+      "overflow": 0
+    },
+    {
+      "name": "orders-staff",
+      "hash": "#/orders",
+      "width": 390,
+      "band": 0,
+      "comingUpTop": null,
+      "fnInComingUp": false,
+      "pageHeight": 844,
+      "overflow": 0
+    },
+    {
+      "name": "home-head",
+      "hash": "#/",
+      "width": 390,
+      "band": 0,
+      "comingUpTop": 970,
+      "fnInComingUp": true,
+      "pageHeight": 1356,
+      "overflow": 0
+    },
+    {
+      "name": "home-head-1280",
+      "hash": "#/",
+      "width": 1280,
+      "band": 0,
+      "comingUpTop": 758,
+      "fnInComingUp": true,
+      "pageHeight": 1020,
+      "overflow": 0
+    },
+    {
+      "name": "prep-staff-day-before",
+      "band": 113
+    },
+    {
+      "name": "prep-staff-on-the-day",
+      "band": 115
+    }
+  ]
+}
