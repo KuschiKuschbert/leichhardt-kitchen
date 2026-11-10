@@ -9,7 +9,7 @@ Council for the head chef's question of 10 November 2026: "If there is a functio
 - **Mix:** five of six reviewers recommended the same narrow mix. It has its own combined preview (`design-mix/`), which all six endorse with changes (8 to 8.5 out of 10). A revision pass fixed the two faults they reproduced. The four reviewers who found faults re-checked it and endorse it with changes (8 to 8.5), with six repairs listed for the build (see **Revisions and re-check**).
 - **Review status:** a lead synthesis, given a focused review by all six reviewers and re-checked by four. It is not a full council round on its own.
 - **Chosen (10 Nov 2026, head chef): the mix**, with the line kept for everyone on the work pages and the Function tomorrow card shown to everyone once more. See **Chosen** below.
-- **Build:** step 1 (the work-page line) built 10 Nov 2026, see **Build record**. Steps 2 and 3 to come.
+- **Build:** step 1 (the work-page line) and step 3 (the Orders tag) built 10 Nov 2026, see **Build record**. Step 2 (the Home card) to come.
 
 **Recommendation: the mix.** A's quiet Next function line is the base, on Home and in the band's place on every work page. Add C's heads-up card under Your day, which collapses into A's line after Got it. Add B's rule that the line only appears or changes size when a page opens, and B's "Not ordered yet" words on the Orders stock line. Also show `#/fn` Upcoming 7 days ahead and put the guests on the sheet. Leave out B's week strip, B's band changes, C's bell dot and any record of who has seen it.
 
@@ -213,7 +213,22 @@ No new reads, writes, rules or listeners in any step. Each step remeasures the i
 
 On plain main the new file fails 18 of 44.
 
-**Steps 2 and 3** (the Home card, the Orders tag) are still to build, with the repairs listed above.
+**Step 3, the Orders tag (10 Nov 2026, `feat/fn-order-tag`).** Built as chosen, checked in the click-test stand-in (`tests/fn-order-tag.test.js`, 45 checks: the rule in node, then staff and chef at 390, 768 and 1280 px and at extra-large text):
+
+- A confirmed function's own stock line on today's list, still to tick, says **Order today** on its order day (`od`) and **Not ordered yet** after it, up to and including the function's day. Not ordered yet adds "For Sat 14 Nov"; chefs also see "· order day was Sun 8 Nov", and their Since badge steps aside on that line, so they see the date once. Staff see no order day (head chef, 10 Nov 2026, in line with the staff age-label decision). Staff see both, so they can tell a chef.
+- The tag is the function Order tag's attention tint with ink words: 13.48:1 in the app (the shared tag's orange words are 4.04:1, B's finding; that tag elsewhere is left for its own fix).
+- The line is matched by its first id: the order day's line is `fn-<id>`, and every rolled copy keeps `root: fn-<id>` (the rollover does not copy `fn`). Its words must also name the function's day, so a line left from before the function moved to another day gets no tag. Only today's list: the order day's own line on a past day stays unticked once its rolled copy is ticked, so it never shows a tag.
+- No tag, never a guess, when the function is not in the list the phone holds (not loaded, removed, cancelled, past), on the Stock changed, Cancelled and Restored lines (their own ids), or on a ticked line.
+- It comes from `LK_FN.orderTag()` on the functions listener every phone holds. No new reads, writes, listeners or rules (read budget and roles unchanged).
+
+**Difference from the preview:**
+- **The day words have a line of their own** under the request's words, not the start of the who line. A tick changes the who line ("Ordered by Sam 13:59"), so a shared, wrapping line could change the row's height under the finger. Now a ticked line keeps the tag and the day words' room, empty and silent for a screen reader, like the ⋯, until it leaves the list. At 1280 this costs one short line on that row. Dates never break across two lines.
+- **Drawn with its row.** The order list is drawn again from the functions listener only when a tag would read differently: the first answer just after the page opens, or a function cancelled or moved, which also changes the order list. A booking edit or a shared-tablet `lk-who` draws nothing (checked: the list element and its rows stay put).
+- Chefs keep their Since badge beside the tag on a rolled line, as Orders C keeps chef age context.
+
+On plain main the new file fails 24 of 45; with the change 0 of 45.
+
+**Step 2** (the Home card) is still to build, with the repairs listed above.
 
 ## Files
 
