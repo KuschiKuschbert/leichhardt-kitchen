@@ -99,7 +99,8 @@
   document.addEventListener('click', function (e) {
     var t = e.target;
     var got = t.closest('[data-fma="got"]');
-    if (got) { e.preventDefault(); gotIt(got); return; }
+    // a tap (detail > 0) moves focus quietly; a keyboard Got it (detail 0) shows the focus ring on the line
+    if (got) { e.preventDefault(); gotIt(got, e.detail > 0); return; }
     var u = t.closest('[data-fma="undo"]');
     if (u) {
       e.preventDefault();
@@ -120,9 +121,23 @@
     var c = t.closest('[data-fn="close"]'); if (c) { c.closest('.fn-pop').className = 'fa-pop'; return; }
   });
 
+  /* lay every word set out once, out of sight, so the fonts they use (the tags' weights) are in before the slot is
+     measured; otherwise a set drawn in a stand-in font measures a pixel taller. The app has these fonts in its saved
+     shell, so its first paint after an open measures the real thing. */
+  function prime() {
+    var b = document.getElementById('fn-band'), t = all('template[data-sim]');
+    if (!b || !t.length) return Promise.resolve();
+    var box = document.createElement('div');
+    box.setAttribute('aria-hidden', 'true');
+    box.style.cssText = 'position:absolute;left:0;top:0;width:' + b.getBoundingClientRect().width + 'px;visibility:hidden;pointer-events:none';
+    box.className = b.className; box.innerHTML = t.map(function (x) { return x.innerHTML; }).join('');
+    box.removeAttribute('id');
+    document.body.appendChild(box);
+    return (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () { box.remove(); });
+  }
   // lock once the page and its fonts are in (the app sizes the slot on the first paint after an open)
   window.addEventListener('load', function () {
-    (document.fonts ? document.fonts.ready : Promise.resolve()).then(function () {
+    (document.fonts ? document.fonts.ready : Promise.resolve()).then(prime).then(function () {
       lock();
       var sim = html.getAttribute('data-fma-sim');
       if (sim && !/[?&]nosim\b/.test(location.search)) window.fmaSim(sim);

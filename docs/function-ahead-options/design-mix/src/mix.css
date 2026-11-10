@@ -1,9 +1,10 @@
-/* Combined preview (functions ahead of time, round 2, 10 Nov 2026): C's heads-up card under Your day, A's quiet
+/* Combined preview (functions ahead of time, round 2, 10 Nov 2026; revised after the focused review the same day):
+   C's card (now "Function this week") under Your day, A's quiet
    Next function line, B's open-only rule and B's Orders tag. Preview only: nothing here is loaded by the book.
    Every colour is an existing token from css/app.css :root; no new palette.
    Upcoming information stays quiet (paper and reference), never charcoal (live) and never amber (attention). */
 
-/* ---------- 1. C's Function heads-up card (src/c.css), placed under Your day ---------- */
+/* ---------- 1. C's card (src/c.css; named "Function this week" and "Function tomorrow"), placed under Your day ---------- */
 .fn-hu { padding: 0.8rem 1rem 0.7rem 1.15rem; box-shadow: inset 4px 0 0 var(--surface-work-edge), 0 4px 0 rgba(28, 29, 31, 0.14); }
 .fn-hu[hidden] { display: none; }
 .fn-hu .hm-ph { margin-bottom: 0.15rem; }
@@ -122,7 +123,7 @@
 .fa-hm-next .fa-next { max-width: none; margin: 0; padding: 0 0.6rem; }
 .fa-hm-next[hidden] { display: none; }
 
-/* Home order. Phone: Your day, then the heads-up card or the line, then On with you. Nothing above Your day.
+/* Home order. Phone: Your day, then the card or the line, then On with you. Nothing above Your day.
    720 to 1099 px (the shared tablet): Your day and On with you side by side as today, the slot full width under them,
    so the card's three facts sit side by side (C's tablet layout) instead of wrapping in the narrow left column.
    From 1100 px: the slot in the left column under Your day, in the space On with you leaves there. */

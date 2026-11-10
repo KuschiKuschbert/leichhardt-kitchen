@@ -81,7 +81,7 @@ function lineInner(o) {
     aria = 'Next function: ' + f.name + ', ' + (o.when || f.day) + ', ' + f.guests + ' guests. Open the function';
   }
   const more = o.more ? '<a class="fa-next-more" href="' + SELF + 'fn-week.html"' + (o.moreId ? ' id="' + o.moreId + '" data-fma-part' : '') + (o.moreHidden ? ' hidden' : '') +
-    ' aria-label="' + o.more + ' more ' + (o.more === 1 ? 'function' : 'functions') + ' this week. Open Functions, the next 7 days"><span class="fa-m1">+' + o.more + ' more</span><span class="fa-m2">this week</span></a>' : '';
+    ' aria-label="' + o.more + ' more ' + (o.more === 1 ? 'function' : 'functions') + ' this week. Open Functions, the next 7 days"><span class="fa-m1">+' + o.more + ' more</span> <span class="fa-m2">this week</span></a>' : '';
   // the minus: work pages only. It is about this person on this phone today (lk.fn.ahead.fold), not the band's minus
   const fold = o.fold ? '<button type="button" class="fn-fold" data-fn="fold" aria-label="Hide this line for you on this phone until tomorrow. Home still shows it." title="Hide for you today">−</button>' : '';
   // Home only: Got it answers inside the line (its words, Undo, and the same words for a screen reader)
@@ -150,7 +150,7 @@ function offCard(f, o) {
     '<p class="fn-hu-when">' + f.day + '</p><p class="fn-hu-name"><s>' + f.name + '</s></p>' +
     '<p class="fn-hu-sub"><b>Cancelled.</b> Do not prep or order for it. Its platters are off the prep and order lists.</p>' +
     '<div class="fn-hu-act">' + gotBtn(f, Object.assign({ plain: true }, o.got)) + '</div>' +
-    '<p class="fn-hu-foot">Cancelled by Gus, Tue 10 Nov 11:20. You had the heads-up on Sat 7 Nov.</p></section>';
+    '<p class="fn-hu-foot">Cancelled by Gus, Tue 10 Nov 11:20. You tapped Got it on Sat 7 Nov.</p></section>';
 }
 
 /* The busy week (focused review): when 3 or more functions in the next 7 days are not yet seen by this person, one card
@@ -223,7 +223,8 @@ function finish(html, o) {
   // the mascot shows its still (the app's canvas is not running in a static page)
   h = h.replace('<canvas width="192" height="256"></canvas>', '<img src="art/mascot/idle-still.png" alt="" width="64" height="85" style="width:100%;height:100%;object-fit:contain">');
   h = h.replace(/(class="mascot"[^>]*style="[^"]*?)left: (\d+)px;/, (m, a, x) => a + 'left: min(' + x + 'px, calc(100% - 80px));');
-  const sims = o.sims === 'long' ? SIMS_LONG : o.sims ? SIMS : '';
+  // every page with the locked slot carries the word sets it can become, so the slot is sized for the tallest at open
+  const sims = o.sims === 'long' ? SIMS_LONG : (o.sims || h.indexOf('data-fma-lock') > -1) ? SIMS : '';
   const extra = (o.sheets || ['smith', 'jones', 'lee', 'patel']).map(id => sheet(FN[id])).join('') + slipHTML(o.slip, !!o.slip) + sims + (o.homeSims || '') + '<script>\n' + JS + '</script>';
   h = h.replace(/<\/body>\s*<\/html>\s*$/, extra + '</body></html>');
   return h;

@@ -90,7 +90,8 @@ function clearOf(sel) {
   const e = document.querySelector(sel); if (!e || !e.getClientRects().length) return { found: false };
   const tab = document.querySelector('.tabbar'), tabOn = tab && getComputedStyle(tab).display !== 'none' && tab.getBoundingClientRect().height > 0;
   const lim = tabOn ? tab.getBoundingClientRect().top : innerHeight, b = e.getBoundingClientRect();
-  const pts = [[b.left + b.width / 2, b.top + b.height / 2], [b.left + 2, b.top + 2], [b.right - 2, b.top + 2], [b.left + 2, b.bottom - 2], [b.right - 2, b.bottom - 2]];
+  // the centre, a point in from each side (clear of rounded corners, which a tap does not reach either), top and bottom
+  const pts = [[b.left + b.width / 2, b.top + b.height / 2], [b.left + Math.min(b.height / 2, b.width / 4), b.top + b.height / 2], [b.right - Math.min(b.height / 2, b.width / 4), b.top + b.height / 2], [b.left + b.width / 2, b.top + 3], [b.left + b.width / 2, b.bottom - 3]];
   const hit = pts.map(([x, y]) => { const h = document.elementFromPoint(x, y); return !!h && (h === e || e.contains(h)); });
   return { found: true, top: Math.round(b.top), bottom: Math.round(b.bottom), firstScreenBottom: Math.round(lim), onFirstScreen: b.top >= 0 && b.bottom <= lim, unobstructed: hit.every(Boolean), pointsHit: hit.filter(Boolean).length + ' of 5' };
 }
@@ -147,7 +148,7 @@ const LINE_C = p => [['line label "Next function"', p + ' .fa-next-k'], ['line d
 (async () => {
   await new Promise(r => server.listen(PORT, '127.0.0.1', r));
   const browser = await chromium.launch({ executablePath: EXE });
-  const M = { source: 'Preview: the recommended mix, static pages built from the implemented-app snapshots at main 184174e (../baseline), synthetic data, bundled Barlow, Barlow Condensed and Caveat fonts, Chromium headless shell 1243, deviceScaleFactor 1, built ' + new Date().toISOString().slice(0, 10),
+  const M = { source: 'Preview: the recommended mix, revised after the focused review, static pages built from the implemented-app snapshots at main 184174e (../baseline), synthetic data, bundled Barlow, Barlow Condensed and Caveat fonts, Chromium headless shell 1243, deviceScaleFactor 1, built ' + new Date().toISOString().slice(0, 10),
     pages: {}, baseline: {}, gotIt: {}, minus: {}, openOnly: {}, taps: {}, contrast: {}, frames: {}, overflow: {}, jsErrors: [] };
   const ctxFor = (w, h) => browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
   const shot = (p, name, full) => p.screenshot({ path: path.join(shots, name + '.png'), fullPage: !!full });
@@ -340,6 +341,12 @@ const LINE_C = p => [['line label "Next function"', p + ' .fa-next-k'], ['line d
     p = await open(ctx, DIR + 'prep.html');
     await p.click('#fn-band .fa-next-more'); await p.waitForLoadState('load'); await p.evaluate(() => document.fonts.ready);
     M.taps.prepSaturday = { taps: 1, how: 'tap +1 more this week: Functions, the next 7 days', jonesCardTop: await p.evaluate(() => { const e = [...document.querySelectorAll('.fn-card')].find(c => /Jones wedding/.test(c.textContent)); return e ? Math.round(e.getBoundingClientRect().top + scrollY) : null; }) };
+    await p.close();
+    p = await open(ctx, DIR + 'states/s-busy5-home.html');
+    await p.click('#hu-week .fn-wk-r[data-id="brown"]'); await p.waitForTimeout(200);
+    M.taps.busyWeekRow = { taps: 1, how: 'tap a row on the Functions this week card (Brown christening, Sun 15 Nov)', sheetOpen: await p.evaluate(() => !!document.querySelector('#fa-sheet-brown.fn-pop')) };
+    M.taps.chevron = { home: await (async () => { const q = await open(ctx, DIR + 'states/d2-home-got.html'); const v = await q.evaluate(() => !!document.querySelector('#fma-line .fa-next-chev').getClientRects().length); await q.close(); return v; })(),
+      workPage390: 'see textSizes: shown at default and large text, left out at extra-large on a phone so the status words keep their room' };
     M.taps.baseline = 'From the baseline (design-a/spec.md, same snapshots): Home 1 tap after a scroll of about 360 px (Coming up at 955 to 998 px); Prep 2 taps and a scroll (chef hat, Functions); Saturday 3 taps from Prep (#/fn showed 3 days).';
     await ctx.close(); }
 
@@ -394,6 +401,6 @@ const LINE_C = p => [['line label "Next function"', p + ' .fa-next-k'], ['line d
     await ctx.close(); }
 
   fs.writeFileSync(path.join(here, 'measurements.json'), JSON.stringify(M, null, 2) + '\n');
-  console.log(JSON.stringify({ pages: M.pages, gotIt: M.gotIt, minus: M.minus, taps: M.taps, overflowNonZero: M.overflowNonZero, overflowChecks: M.overflowChecks, jsErrors: M.jsErrors }, null, 1));
+  console.log(JSON.stringify({ gotIt: M.gotIt, textSizes: M.textSizes.summary, openOnly: { checks: M.openOnly.checks, maxListMoved: M.openOnly.maxListMoved, allWordsFit: M.openOnly.allWordsFit, today: M.openOnly['prep-390-today'] }, homeLock: M.homeLock, minus: M.minus, overflowNonZero: M.overflowNonZero, overflowChecks: M.overflowChecks, jsErrors: M.jsErrors }, null, 1));
   await browser.close(); server.close(); process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });
