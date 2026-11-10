@@ -16,9 +16,11 @@ function booking(date, min, name) {
     rounds: [{ at, note: '' }], lines: [{ rid: 'pizza-platter', name: 'Pizza Platter', unit: 'platter', spec: '', fp: '', qty: 2, u: M.toU([2]) }],
     was: {}, chg: [], cBy: 'sam', cAt: L.NOW - 86400000, confBy: 'sam', confAt: L.NOW - 86400000, by: 'sam', upd: L.NOW - 3600000 });
 }
-const current = booking(day, 850, 'Example service'), future = booking(tomorrow, 1080, 'Example tomorrow');
+// tomorrow's goes on Home's Function tomorrow card (10 Nov 2026), so a second one later in the week keeps Coming up's
+// function group in these layout checks
+const current = booking(day, 850, 'Example service'), future = booking(tomorrow, 1080, 'Example tomorrow'), later = booking(M.addDays(day, 3), 1080, 'Example later');
 const fixture = busy => ({ [key(['config', 'main'])]: config, [key(['team', day])]: plan,
-  ...(busy ? { [key(['functions', 'service'])]: current, [key(['functions', 'future'])]: future } : {}) });
+  ...(busy ? { [key(['functions', 'service'])]: current, [key(['functions', 'future'])]: future, [key(['functions', 'later'])]: later } : {}) });
 const near = (a, b) => Math.abs(a - b) <= 1;
 const geometry = p => p.evaluate(() => {
   const rect = s => { const r = document.querySelector(s).getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom }; };
@@ -46,7 +48,7 @@ function below(g) { return g.work.top >= Math.max(g.day.bottom, g.crew.bottom) -
   });
   for (const width of [1100, 1280, 1440]) for (const who of ['ann', 'sam']) await step('busy ' + who + ' ' + width, async () => {
     p = await L.open(browser, '#/', { who, extra: fixture(true), width, height: 900, wait: 1200 });
-    await L.waitFor(p, () => /Example service/.test(document.querySelector('#hm-board')?.textContent || '') && /Example tomorrow/.test(document.querySelector('.hm-up')?.textContent || ''));
+    await L.waitFor(p, () => /Example service/.test(document.querySelector('#hm-board')?.textContent || '') && /Example later/.test(document.querySelector('.hm-up')?.textContent || ''));
     let g = await geometry(p);
     ok(aligned(g), who + '/' + width + ': work and Prep align with the day/team columns (' + JSON.stringify(g) + ')');
     ok(below(g) && near(g.future.left, g.day.left) && near(g.future.right, g.crew.right), who + '/' + width + ': Coming up follows both work cards on a complete row');
@@ -68,7 +70,7 @@ function below(g) { return g.work.top >= Math.max(g.day.bottom, g.crew.bottom) -
     { name: 'functions only', cuts: false, functions: true }, { name: 'both groups', cuts: true, functions: true }]) await step('Coming up ' + state.name, async () => {
     const extra = fixture(false);
     extra[key(['config', 'main'])] = { ...config, cutoffs: state.cuts ? [{ id: 'pfd', name: 'Example Foods', dd: [0, 1, 2, 3, 4, 5, 6], at: 900, pre: 1 }] : [] };
-    if (state.functions) extra[key(['functions', 'future'])] = future;
+    if (state.functions) { extra[key(['functions', 'future'])] = future; extra[key(['functions', 'later'])] = later; }
     p = await L.open(browser, '#/', { who: 'sam', extra, width: 1280, height: 900, wait: 1200 });
     await L.waitFor(p, wanted => {
       const cuts = document.querySelector('#hm-cuts'), functions = document.querySelector('#fn-land');
@@ -83,7 +85,7 @@ function below(g) { return g.work.top >= Math.max(g.day.bottom, g.crew.bottom) -
       });
       if (state.cuts && state.functions) ok(near(groups.cuts.top, groups.functions.top) && groups.cuts.right <= groups.functions.left + 1, 'both groups: supplier reminders and functions sit side by side without overlap');
       else { const only = state.cuts ? groups.cuts : groups.functions; ok(only.width >= groups.card.width * 0.85, state.name + ': the only upcoming group uses the available row'); }
-      ok((!state.cuts || /Example Foods/.test(await L.txt(p, '#hm-cuts'))) && (!state.functions || /Example tomorrow/.test(await L.txt(p, '#fn-land'))), state.name + ': the actual reminder words remain visible');
+      ok((!state.cuts || /Example Foods/.test(await L.txt(p, '#hm-cuts'))) && (!state.functions || /Example later/.test(await L.txt(p, '#fn-land'))), state.name + ': the actual reminder words remain visible');
     }
     ok(!(await L.overflow(p)), state.name + ': no sideways scroll');
   });

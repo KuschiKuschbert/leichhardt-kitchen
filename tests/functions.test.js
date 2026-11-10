@@ -379,11 +379,12 @@ function hasPrivateContact(value) {
   await p.context().close();
 
   // the landing card (23 Oct 2026): it lists the functions up to 3 days out, by day, then by when food goes out, times TBC
-  // last in a day. Since Home's board (8 Nov 2026, redesign step 2) it is in Coming up, and leaves out only today's
-  // functions the board shows (tomorrow's are in the card: Home has no band)
+  // last in a day. Since Home's board (8 Nov 2026, redesign step 2) it is in Coming up, and leaves out today's functions
+  // the board shows. Since 10 Nov 2026 (functions ahead of time) it also leaves out the one on Home's Function this
+  // week card or Next function line: here tomorrow's, on the Function tomorrow card
   p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith, tm }), wait: 1500 });
-  await L.waitFor(p, () => /Tomorrow do/.test((document.getElementById('fn-land') || {}).textContent || ''));
-  ok(/Smith 50th/.test(await txt(p, '#hm-board') || '') && await p.evaluate(() => { const e = document.getElementById('fn-land'); return !!e && !e.hidden && /Tomorrow Tomorrow do/.test(e.textContent) && !/Smith 50th/.test(e.textContent); }), 'landing: today\'s function on the board, tomorrow\'s in Coming up');
+  await L.waitFor(p, () => /Tomorrow do/.test((document.getElementById('fn-hm') || {}).textContent || ''));
+  ok(/Smith 50th/.test(await txt(p, '#hm-board') || '') && /Function tomorrow/i.test(await txt(p, '#fn-hm') || '') && await p.evaluate(() => { const e = document.getElementById('fn-land'); return !e || e.hidden || !/Tomorrow do|Smith 50th/.test(e.textContent); }), 'landing: today\'s function on the board, tomorrow\'s on the Function tomorrow card, neither again in Coming up');
   await p.context().close();
   // names against the alphabet, so only a sort by time passes: Zed at 12:00, Brown at 18:30, Adams with times TBC
   const zed = fn({ name: 'Zed lunch', date: day2, start: '11:30', rounds: ['12:00'] });
@@ -393,29 +394,30 @@ function hasPrivateContact(value) {
   // 8 days out: further off than the week Coming up looks ahead on Home (8 Nov 2026; it was 4 days with the 3-day window)
   const far = fn({ name: 'Far off', date: M.addDays(today, 8) });
   p = await L.open(b, '#/', { who: 'ann', extra: extra({ smith, tm, wake, brown, zed, green, far }), wait: 1500 });
-  // four at most: with tomorrow's in it since 8 Nov 2026, Green 30th is the one more
+  // four at most: tomorrow's is on the Function tomorrow card since 10 Nov 2026, so Green 30th is the fourth
   await L.waitFor(p, () => /Adams wake/.test((document.getElementById('fn-land') || {}).textContent || ''));
   let land = (await txt(p, '#fn-land') || '').replace(/\s+/g, ' ');
-  ok(/Smith 50th/.test(await txt(p, '#hm-board') || '') && !/Smith 50th|Far off/.test(land) && /Tomorrow Tomorrow do/.test(land), 'landing: Coming up leaves out today\'s function (on the board) and the ones further off, tomorrow first (' + land + ')');
-  ok(new RegExp(M.dayName(day2) + ' Zed lunch, food 12:00.*' + M.dayName(day2) + ' Brown 21st, food 18:30.*' + M.dayName(day2) + ' Adams wake, food TBC').test(land) && !/Green 30th/.test(land), 'landing: 2 and 3 days out, by day, then by food time, times TBC last in a day (' + land + ')');
-  ok(/Open functions, 1 more$/.test(land) && await p.$eval('#fn-land .fn-land-go', e => e.getAttribute('href')) === '#/fn', 'landing: the card opens Functions, and says one more');
+  ok(/Smith 50th/.test(await txt(p, '#hm-board') || '') && !/Smith 50th|Far off|Tomorrow do/.test(land) && /Tomorrow do/.test(await txt(p, '#fn-hm') || ''), 'landing: Coming up leaves out today\'s function (on the board), tomorrow\'s (on the card) and the ones further off (' + land + ')');
+  ok(new RegExp(M.dayName(day2) + ' Zed lunch, food 12:00.*' + M.dayName(day2) + ' Brown 21st, food 18:30.*' + M.dayName(day2) + ' Adams wake, food TBC.*Green 30th').test(land), 'landing: 2 and 3 days out, by day, then by food time, times TBC last in a day (' + land + ')');
+  ok(/Open functions$/.test(land) && await p.$eval('#fn-land .fn-land-go', e => e.getAttribute('href')) === '#/fn', 'landing: the card opens Functions');
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'landing: no sideways scroll, no page errors ' + p.errors.join(' | '));
   await p.context().close();
   // a busy Sunday: three functions today and two order reminders. Home's board shows every one of today's still to go
-  // and the order reminders; Coming up names tomorrow's; one already over today is left out. On another page the band
+  // and the order reminders; the Function tomorrow card names tomorrow's; one already over today is left out. On another page the band
   // shows two of today's and the order reminders, then +2 more.
   const ward = fn({ name: 'Ward 60th', start: '16:30', rounds: ['17:00'] }), lee = fn({ name: 'Lee 18th', start: '17:30', rounds: ['18:00'] });
   const abbott = fn({ name: 'Abbott do', start: '18:30', rounds: ['19:00'] }), brekky = fn({ name: 'Brekky do', start: '07:00', rounds: ['07:30'] });
   const kerr = fn({ name: 'Kerr lunch', date: tomorrow, start: '11:30', rounds: ['12:00'] });
   const o5 = fn({ name: 'Order five', date: M.addDays(today, 5) }), o6 = fn({ name: 'Order six', date: M.addDays(today, 6) }); o5.od = today; o6.od = today;
   p = await L.open(b, '#/', { who: 'ann', extra: extra({ ward, lee, abbott, brekky, kerr, o5, o6 }), wait: 1500 });
-  await L.waitFor(p, () => /Kerr lunch/.test((document.getElementById('fn-land') || {}).textContent || ''));
+  await L.waitFor(p, () => /Order five/.test((document.getElementById('fn-land') || {}).textContent || ''));
   const brd = (await txt(p, '#hm-board') || '').replace(/\s+/g, ' ');
   land = (await txt(p, '#fn-land') || '').replace(/\s+/g, ' ');
   ok(/Ward 60th/.test(brd) && /Lee 18th/.test(brd) && /Abbott do/.test(brd) && /Order the stock for Order five/.test(brd) && /Order the stock for Order six/.test(brd) && !/Brekky do|Kerr lunch/.test(brd), 'landing: the board shows today\'s three still to go and the two order reminders, not one already over (' + brd.slice(0, 260) + ')');
   // since 8 Nov 2026 Coming up looks a week ahead on Home, so the two functions whose stock is ordered today are named
   // on their own days too (the board has the order reminders)
-  ok(/Tomorrow Kerr lunch, food 12:00.*Order five, food .*Order six, food /.test(land) && !/Ward 60th|Lee 18th|Abbott do|Brekky do/.test(land), 'landing: Coming up names tomorrow\'s function first, then the week\'s, not today\'s (' + land + ')');
+  // since 10 Nov 2026 tomorrow's is on the Function tomorrow card under Your day, so Coming up names the rest of the week
+  ok(/Kerr lunch/.test(await txt(p, '#fn-hm') || '') && /Order five, food .*Order six, food /.test(land) && !/Kerr lunch|Ward 60th|Lee 18th|Abbott do|Brekky do/.test(land), 'landing: tomorrow\'s function on its card, Coming up names the week\'s, not today\'s (' + land + ')');
   ok(!(await L.overflow(p)) && p.errors.length === 0, 'landing busy day: no sideways scroll, no page errors ' + p.errors.join(' | '));
   await p.goto(L.BASE + '#/recipes'); await L.settle(p, 900);
   await L.waitFor(p, () => /\+2 more/.test((document.getElementById('fn-band') || {}).textContent || ''));

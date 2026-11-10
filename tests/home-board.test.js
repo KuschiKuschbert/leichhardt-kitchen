@@ -71,7 +71,8 @@ const shut = async p => { if (await p.$('.nt-wrap')) { await p.keyboard.press('E
   ok(!rows.some(r => /^You are on/.test(r.t)) && !rows.some(r => /break/.test(r.t)), 'a sous chef with no section and no break on the plan: neither row');
   let s = await secs(p);
   ok(s.join() === 'Larder:3 left,Grill:1 left,Sauce:2 left' && /0 of 6 done/.test(await txt(p, '#hm-prep .hm-pc') || ''), 'Prep by section: each section and its lines left, 0 of 6 done (' + s.join() + ')');
-  ok(/Wedding reception/.test(await txt(p, '.hm-up') || '') && !/Birthday/.test(await txt(p, '.hm-up #fn-land') || ''), 'Coming up: tomorrow\'s wedding, not today\'s birthday the board shows');
+  // since 10 Nov 2026 (functions ahead of time) tomorrow's wedding is on the Function tomorrow card under Your day
+  ok(/Wedding reception/.test(await txt(p, '#fn-hm') || '') && !/Wedding reception|Birthday/.test(await txt(p, '.hm-up #fn-land') || ''), 'tomorrow\'s wedding on the Function tomorrow card, not again in Coming up; not today\'s birthday the board shows');
   // the audit of the redesign (8 Nov 2026): a week of functions and each supplier's next cut-off in Coming up, chevrons
   ok(/Quiz night/.test(await txt(p, '.hm-up #fn-land') || ''), 'Coming up: a function 6 days out (Quiz night)');
   const cuts = await p.$$eval('#hm-cuts li a', l => l.map(a => ({ t: a.textContent, href: a.getAttribute('href') })));
