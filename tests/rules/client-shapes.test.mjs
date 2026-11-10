@@ -400,6 +400,10 @@ row('js/prep.js ptSave() Who\'s on it?: the shared device stamps the cook picked
 row('js/prep.js stampNow(): I\'m on it, on a function\'s platter line', { ok: TICKS, asks: TICKS,
   prep: r => put({ [`days/${TODAY}/items/fn-st${r}-pizza`]: Object.assign(pline('st' + r), { deleted: false, addedBy: 'Fay', addedById: 'fay', addedAt: NOW - 3 * DAY, by: 'fay' }) }),
   run: (db, w, r) => W(r, [['upd', `days/${TODAY}/items/fn-st${r}-pizza`, { onBy: NAME[r] || 'Kit', onById: w, onAt: Date.now() }]]) });
+row('js/prep.js tickNow(): the tick keeps the On it stamp, for the time on it (10 Nov 2026)', { ok: TICKS, asks: TICKS,
+  prep: (r, w) => put({ [`days/${TODAY}/items/${MINE(r)}`]: line({ onBy: NAME[r] || 'Kit', onById: w, onAt: NOW - 60000 }) }),
+  run: (db, w, r) => { const stamp = Date.now(); return W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { done: true, doneBy: NAME[r], doneById: w, doneAt: stamp, preparedBy: NAME[r], preparedById: w, preparedAt: stamp }]]); } });
+// before 10 Nov 2026, and older copies of the book still on a phone: the tick clears the stamp
 row('js/prep.js tickNow(): the second tap ticks a stamped line and clears the stamp', { ok: TICKS, asks: TICKS,
   prep: (r, w) => put({ [`days/${TODAY}/items/${MINE(r)}`]: line({ onBy: NAME[r] || 'Kit', onById: w, onAt: NOW - 60000 }) }),
   run: (db, w, r) => { const stamp = Date.now(); return W(r, [['upd', `days/${TODAY}/items/${MINE(r)}`, { done: true, doneBy: NAME[r], doneById: w, doneAt: stamp, preparedBy: NAME[r], preparedById: w, preparedAt: stamp, onBy: '', onById: '', onAt: 0 }]]); } });

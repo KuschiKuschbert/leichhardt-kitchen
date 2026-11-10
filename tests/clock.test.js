@@ -25,7 +25,7 @@ const near = (a, b, ms) => typeof a === 'number' && Math.abs(a - b) <= ms;
   ok(near(gap, 3 * H, 5000), 'slow phone: the gap to the server is learned (' + Math.round(gap / 1000) + ' s)');
   ok(near(await p.evaluate(() => window.LK_TIME.now()), L.NOW, 60000), 'slow phone: now() is the server\'s time');
   ok(/Slice onions/.test(await txt(p, '.nb')), 'slow phone: today\'s list is shown');
-  ok(/Waiting since 13:00/.test(await txt(p, '.nb')), 'slow phone in another zone: Waiting since is in kitchen time');
+  ok(/Sam 13:00/.test(await L.row(p, 'i1')), 'slow phone in another zone: the time a line was written is in kitchen time');
   await p.fill('#p-text', 'Zest lemons');
   await p.press('#p-text', 'Enter');
   await L.settle(p, 800);
