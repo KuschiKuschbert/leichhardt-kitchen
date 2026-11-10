@@ -96,7 +96,7 @@ function grid() {
   function lv(v) { return !v ? 0 : v <= 2 ? 1 : v <= 5 ? 2 : v <= 10 ? 3 : 4; }
   return '<div class="legend"><span>Shifts worked:</span>' + [['none recorded', 0], ['1 to 2', 1], ['3 to 5', 2], ['6 to 10', 3], ['over 10', 4]].map(function (k) { return '<span><i style="background:' + C[k[1]] + '"></i>' + k[0] + '</span>'; }).join('') + '</div>' +
     '<div class="tablewrap"><table class="grid"><thead><tr><th>Person</th>' + SECS.map(function (s) { return '<th>' + s + '</th>'; }).join('') + '</tr></thead><tbody>' +
-    PPL.map(function (p) { return '<tr><th scope="row" style="color:var(--ink);font-size:1rem">' + p.n + '</th>' + p.s.map(function (v) { return '<td class="c" style="background:' + C[lv(v)] + ';color:' + (lv(v) === 4 ? '#fff' : 'var(--ink)') + '">' + v + '</td>'; }).join('') + '</tr>'; }).join('') +
+    PPL.map(function (p) { return '<tr><th scope="row" style="color:var(--ink);font-size:1rem">' + p.n + '</th>' + p.s.map(function (v) { return '<td class="c" style="background:' + C[lv(v)] + ';color:var(--ink)">' + v + '</td>'; }).join('') + '</tr>'; }).join('') +
     '<tr><th scope="row">People</th>' + SECS.map(function (s, i) { return '<td class="c">' + PPL.filter(function (p) { return p.s[i]; }).length + '</td>'; }).join('') + '</tr></tbody></table></div>';
 }
 function wordsB() {
@@ -125,12 +125,17 @@ function plannerR() {
       if (m) cand.push({ p: p, sec: sec, m: m, n: PPL.filter(function (o) { return o.s[i]; }).length });
     });
   });
-  cand.sort(function (a, b) { return a.n - b.n || a.p.n.localeCompare(b.p.n); });
-  var pick = {}, used = 0;
-  cand.forEach(function (c) { if (used < 2 && !pick[c.p.n]) { pick[c.p.n] = c; used++; } });
+  // never take a section's only experienced cook (5 or more shifts) off it; one hint per mentor; fewest-people
+  // sections first, then the person with the fewest shifts overall, so newer cooks come first
+  function onlyLead(p) { var i = SECS.indexOf(p.today); return p.s[i] >= 5 && PPL.filter(function (o) { return o.s[i] >= 5; }).length === 1; }
+  var tot = function (p) { return p.s.reduce(function (a, b) { return a + b; }, 0); };
+  cand = cand.filter(function (c) { return !onlyLead(c.p); });
+  cand.sort(function (a, b) { return a.n - b.n || tot(a.p) - tot(b.p); });
+  var pick = {}, used = 0, mentors = {};
+  cand.forEach(function (c) { if (used < 2 && !pick[c.p.n] && !mentors[c.m.n]) { pick[c.p.n] = c; mentors[c.m.n] = 1; used++; } });
   PPL.forEach(function (p) {
     var c = !ERR && pick[p.n];
-    h += '<div class="prow"><span class="nm">' + p.n + '</span><span class="sec">' + p.today + ' &#9662;</span>' + (p.usual ? '<span class="meta">' + p.usual + '</span>' : '') +
+    h += '<div class="prow"><span class="nm">' + p.n + '</span><span class="sec">' + p.today + ' &#9662;</span>' + (p.usual && !ERR ? '<span class="meta">' + p.usual + '</span>' : '') +
       (c ? '<div class="grow">Not on ' + c.sec + ' in 30 days. ' + c.m.n + ' is on ' + c.sec + ' in this plan.</div>' : '') + '</div>';
   });
   return h + '</div><p class="hint">At most two hints a shift. They follow this draft and are only a prompt: who goes where is still your call.</p>';
