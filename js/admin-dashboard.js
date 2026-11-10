@@ -112,7 +112,7 @@
         else if (p < Math.min.apply(null, others)) { tone = 'bad'; note = 'The lowest ' + name + ' in ' + same.length + ' weeks.'; }
         else note = 'A usual ' + name + ': the middle of the last ' + same.length + ' was ' + median(others.concat([p])) + '%.';
       }
-      out.push({ tone: tone, tag: tone === 'good' ? 'Better' : tone === 'bad' ? 'Worse' : 'Steady', open: 'insights',
+      out.push({ tone: tone, tag: (tone === 'good' ? 'Better' : tone === 'bad' ? 'Worse' : 'Steady') + ', ' + name, open: 'insights',
         h: p + '% of ' + name + '\'s prep list was ticked off.', p: (note ? note + ' ' : '') + last.p.t + ' of ' + last.p.n + ' lines, ' + last.p.r + ' rolled over from earlier days.' });
     }
     var w7 = rowsOf(7, 0), w14 = rowsOf(7, 7);
@@ -120,7 +120,7 @@
       var a = sum(w7, function (r) { return r.w.n; }), b = sum(w14, function (r) { return r.w.n; });
       if (a || b) {
         var reasons = w7.reduce(function (o, r) { return addTo(o, r.w.reason); }, {}), secs = w7.reduce(function (o, r) { return addTo(o, r.w.sec); }, {}), tr = top(reasons), ts = top(secs);
-        out.push({ tone: a > b ? 'bad' : a < b ? 'good' : 'flat', tag: a > b ? 'Worse' : a < b ? 'Better' : 'Steady', open: 'waste',
+        out.push({ tone: a > b ? 'bad' : a < b ? 'good' : 'flat', tag: (a > b ? 'Worse' : a < b ? 'Better' : 'Steady') + ', last 7 days', open: 'waste',
           h: a === b ? 'Waste is the same as the week before: ' + a + ' lines.' : 'Waste is ' + (a > b ? 'up' : 'down') + ': ' + a + ' lines in the last 7 days, ' + b + ' the 7 before.',
           p: a ? 'The most common reason was ' + reasonName(tr[0]) + ' (' + tr[1] + ' of ' + a + ').' + (ts ? ' ' + ts[0] + ' logged the most (' + ts[1] + ').' : '') : 'No waste was logged in the last 7 days.' });
       }
@@ -132,7 +132,7 @@
       if (slow.length >= 2) {
         var before = w14 ? allMins(w14, slow[0][0]) : [], was = before.length >= 3 ? median(before) : null, fast = slow[slow.length - 1];
         var change = was == null ? '' : Math.abs(was - slow[0][1]) < 5 ? ' About the same as the week before.' : ' ' + dur(Math.abs(was - slow[0][1])) + (slow[0][1] < was ? ' quicker' : ' slower') + ' than the week before.';
-        out.push({ tone: was == null || Math.abs(was - slow[0][1]) < 5 ? 'flat' : slow[0][1] < was ? 'good' : 'bad', tag: 'Slowest section', open: 'insights',
+        out.push({ tone: was == null || Math.abs(was - slow[0][1]) < 5 ? 'flat' : slow[0][1] < was ? 'good' : 'bad', tag: 'Slowest section, last 7 days', open: 'insights',
           h: slow[0][0] + ' was the slowest section to tick: typical ' + dur(slow[0][1]) + '.', p: 'From writing a line to ticking it, last 7 days.' + change + ' ' + fast[0] + ' was quickest at ' + dur(fast[1]) + '.' });
       }
     }
@@ -142,52 +142,38 @@
     var h = headlines();
     if (!h.length) return '';
     return '<section class="dsh-heads" aria-label="What changed"><h3 class="dsh-h">What changed</h3><div class="dsh-head-list">' + h.map(function (x) {
-      return '<article class="dsh-head"><p class="dsh-tag dsh-tag-' + x.tone + '">' + esc(x.tag) + '</p><h4>' + esc(x.h) + '</h4><p>' + esc(x.p) + '</p><button type="button" class="dsh-more" data-dsh="open" data-t="' + x.open + '">Look into it</button></article>';
+      return '<article class="dsh-head"><p class="dsh-tag dsh-tag-' + x.tone + '">' + esc(x.tag) + '</p><h4>' + esc(x.h) + '</h4><p>' + esc(x.p) + '</p><button type="button" class="dsh-more" data-dsh="open" data-t="' + x.open + '">' + (x.open === 'waste' ? 'Open Wastage' : 'Open Insights') + '</button></article>';
     }).join('') + '</div></section>';
   }
 
-  /* ---------- tiles ---------- */
-  function tilesHTML(cur, prev, len) {
-    var big = len === 90, cmp = !!prev, noPrev = 'No earlier ' + len + ' days to compare';
-    function series(f) { return big ? weeks(cur).map(function (w) { return f(w); }) : cur.map(function (r) { return f([r]); }); }
-    var p = pct(cur), pp = cmp ? pct(prev) : null;
-    var tm = median(allMins(cur)), tp = cmp ? median(allMins(prev)) : null;
-    var r = sum(cur, function (x) { return x.p.r; }), rp = cmp ? sum(prev, function (x) { return x.p.r; }) : null;
-    var w = sum(cur, function (x) { return x.w.n; }), wp = cmp ? sum(prev, function (x) { return x.w.n; }) : null;
-    var xo = sum(cur, function (x) { return x.x.out; }), xi = sum(cur, function (x) { return x.x.in; });
-    var tiles = [
-      ['insights', 'Prep list ticked off', p == null ? 'No lines' : p + '<small>%</small>', delta(p, pp, true, ' pts', null, noPrev), series(pct), sum(cur, function (x) { return x.p.t; }) + ' of ' + sum(cur, function (x) { return x.p.n; }) + ' lines'],
-      ['insights', 'Lines rolled over', String(r), delta(r, rp, false, '', null, noPrev), series(function (rs) { return sum(rs, function (x) { return x.p.r; }); }), 'Not finished, moved on'],
-      ['insights', 'Typical time to tick', tileDur(tm), delta(tm, tp, false, '', dur, noPrev), series(function (rs) { return median(allMins(rs)); }), 'From written to ticked'],
-      ['waste', 'Wastage lines', String(w), delta(w, wp, false, '', null, noPrev), series(function (rs) { return sum(rs, function (x) { return x.w.n; }); }), 'Lines logged, not dollars'],
-      ['transfers', 'Transfers out / in', xo + ' / ' + xi, '<span class="dsh-delta dsh-flat">Lines with other venues</span>', series(function (rs) { return sum(rs, function (x) { return x.x.out + x.x.in; }); }), 'Out to and in from other venues']
+  /* ---------- Last N days against the N before (head chef, 10 Nov 2026, docs/admin-dashboard-restyle-options/brief.md):
+     one table in place of the five tiles, the same numbers Insights counts, the change in words by today's delta() rule.
+     Each measure's name opens its report. ---------- */
+  function cmpHTML(cur, prev, len) {
+    var cmp = !!prev, noPrev = 'No earlier ' + len + ' days to compare', none = 'No earlier ' + len + ' days';
+    function tot(rows, f) { return rows ? sum(rows, f) : null; }
+    var p = pct(cur), pp = cmp ? pct(prev) : null, tm = median(allMins(cur)), tp = cmp ? median(allMins(prev)) : null;
+    var rf = function (x) { return x.p.r; }, wf = function (x) { return x.w.n; }, of = function (x) { return x.x.out; }, inf = function (x) { return x.x.in; };
+    var r = tot(cur, rf), rp = cmp ? tot(prev, rf) : null, w = tot(cur, wf), wp = cmp ? tot(prev, wf) : null;
+    var xo = tot(cur, of), xop = cmp ? tot(prev, of) : null, xi = tot(cur, inf), xip = cmp ? tot(prev, inf) : null;
+    // transfers are neither better nor worse: the difference in words only
+    function plain(v, b) { if (b == null) return '<span class="dsh-delta dsh-flat">' + esc(noPrev) + '</span>'; var d = v - b; return '<span class="dsh-delta dsh-flat">' + (!d ? 'Same as before' : (d > 0 ? 'Up ' : 'Down ') + Math.abs(d)) + '</span>'; }
+    function pc(v) { return v == null ? 'No lines' : v + '%'; }
+    var rows = [
+      ['insights', 'Prep list ticked off', pc(p), cmp ? pc(pp) : none, delta(p, pp, true, ' pts', null, noPrev)],
+      ['insights', 'Lines rolled over', String(r), cmp ? String(rp) : none, delta(r, rp, false, '', null, noPrev)],
+      ['insights', 'Typical time to tick', dur(tm), cmp ? dur(tp) : none, delta(tm, tp, false, '', dur, noPrev)],
+      ['waste', 'Wastage lines', String(w), cmp ? String(wp) : none, delta(w, wp, false, '', null, noPrev)],
+      ['transfers', 'Transfers out', String(xo), cmp ? String(xop) : none, plain(xo, xop)],
+      ['transfers', 'Transfers in', String(xi), cmp ? String(xip) : none, plain(xi, xip)]
     ];
-    return '<div class="dsh-tiles">' + tiles.map(function (t) {
-      return '<button type="button" class="dsh-tile" data-dsh="open" data-t="' + t[0] + '"><span class="dsh-tile-lab">' + esc(t[1]) + '</span><span class="dsh-tile-num">' + t[2] + '</span>' + t[3] + spark(t[4]) + '<span class="dsh-tile-sub">' + esc(t[5]) + '<span class="sr-only">. Opens the report.</span></span></button>';
-    }).join('') + '</div>';
+    return '<section class="dsh-cmp" aria-label="' + esc('Last ' + len + ' days against the ' + len + ' before') + '"><h3 class="a-ch-h">Last ' + len + ' days against the ' + len + ' before</h3>' +
+      '<div class="a-tablewrap" tabindex="0" role="region" aria-label="Comparison table, scrolls sideways"><table class="a-table a-plain dsh-cmp-t" data-ux-table="off"><thead><tr><th scope="col">Measure</th><th scope="col">Last ' + len + ' days</th><th scope="col">' + len + ' days before</th><th scope="col">Change</th></tr></thead><tbody>' +
+      rows.map(function (x) { return '<tr><th scope="row"><button type="button" class="dsh-more" data-dsh="open" data-t="' + x[0] + '">' + esc(x[1]) + '</button></th><td>' + esc(x[2]) + '</td><td>' + esc(x[3]) + '</td><td>' + x[4] + '</td></tr>'; }).join('') +
+      '</tbody></table></div><p class="hint">Change is the exact difference. Same as before only when nothing changed.</p></section>';
   }
 
   /* ---------- charts ---------- */
-  function lineHTML(cur, len) {
-    var big = len === 90, groups = big ? weeks(cur) : cur.map(function (r) { return [r]; });
-    var labels = groups.map(function (g) { return (big ? 'Week of ' : '') + dayLabel(g[0].day); });
-    var wr = groups.map(function (g) { return sum(g, function (r) { return r.p.w; }); }), tk = groups.map(function (g) { return sum(g, function (r) { return r.p.t; }); });
-    var max = niceMax(Math.max.apply(null, wr.concat(tk))), id = 'line' + len;
-    charts[id] = { labels: labels, series: [['Written', 'dsh-c-w', wr], ['Ticked off', 'dsh-c-t', tk]], max: max };
-    function path(v) { return 'M' + v.map(function (x, i) { return (v.length === 1 ? 50 : i / (v.length - 1) * 100).toFixed(2) + ' ' + (100 - x / max * 100).toFixed(2); }).join(' L'); }
-    var ticks = [0, max / 2, max].map(function (t) { return '<span class="dsh-ytick" style="bottom:' + (t / max * 100) + '%">' + num(t) + '</span>'; }).join('');
-    var step = Math.max(1, Math.ceil(labels.length / 5)), xl = '';
-    for (var i = 0; i < labels.length; i += step) xl += '<span style="left:' + (labels.length === 1 ? 50 : i / (labels.length - 1) * 100) + '%">' + esc(big ? shortDay(groups[i][0].day) : shortDay(groups[i][0].day)) + '</span>';
-    var ends = charts[id].series.map(function (s) { var v = s[2][s[2].length - 1]; return '<i class="dsh-end ' + s[1] + '" style="bottom:' + (v / max * 100) + '%"></i>'; }).join('');
-    var table = '<details class="a-details"><summary>Show these numbers as a table</summary><div class="a-scroll"><table class="a-table"><thead><tr><th scope="col">' + (big ? 'Week of' : 'Day') + '</th><th scope="col">Written</th><th scope="col">Ticked off</th></tr></thead><tbody>' +
-      labels.map(function (l, i) { return '<tr><th scope="row">' + esc(big ? dayLabel(groups[i][0].day) : l) + '</th><td>' + wr[i] + '</td><td>' + tk[i] + '</td></tr>'; }).join('') + '</tbody></table></div></details>';
-    return '<div class="dsh-panel dsh-wide"><div class="dsh-panel-head"><h3 class="a-ch-h">Prep list ' + (big ? 'each week' : 'each day') + '</h3><button type="button" class="dsh-more" data-dsh="open" data-t="insights">Open Insights</button></div>' +
-      '<p class="dsh-legend"><span><i class="dsh-c-w"></i>Written</span><span><i class="dsh-c-t"></i>Ticked off</span></p>' +
-      '<div class="dsh-line"><div class="dsh-plot" tabindex="0" role="img" data-dsh-chart="' + id + '" aria-label="Prep lines written and ticked off. Use the arrow keys to read each ' + (big ? 'week' : 'day') + ', or open the table below.">' + ticks +
-      '<svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false" aria-hidden="true"><line x1="0" x2="100" y1="50" y2="50" class="dsh-gridline"/><line x1="0" x2="100" y1="100" y2="100" class="dsh-gridline"/>' +
-      charts[id].series.map(function (s) { return '<path class="' + s[1] + '" d="' + path(s[2]) + '"/>'; }).join('') + '</svg>' +
-      '<div class="dsh-ends" aria-hidden="true">' + ends + '</div><div class="dsh-cross" hidden></div><div class="dsh-tip" role="status" hidden></div></div><div class="dsh-xticks" aria-hidden="true">' + xl + '</div></div>' + table + '</div>';
-  }
   function reasonsHTML(cur, prev) {
     var a = cur.reduce(function (o, r) { return addTo(o, r.w.reason); }, {}), b = prev ? prev.reduce(function (o, r) { return addTo(o, r.w.reason); }, {}) : null;
     var keys = Object.keys(a).concat(b ? Object.keys(b) : []).filter(function (k, i, all) { return all.indexOf(k) === i; }).sort(function (x, y) { return (a[y] || 0) - (a[x] || 0) || (b ? (b[y] || 0) - (b[x] || 0) : 0); }).slice(0, 6);
@@ -243,36 +229,18 @@
      place; every other row opens its page. Shown before the numbers, so it never waits for the nightly record. ---------- */
   var MAIL_MAX = 8;
   function daysSince(day, today) { return Math.max(0, Math.round((Date.parse(today + 'T12:00:00Z') - Date.parse(day + 'T12:00:00Z')) / 86400000)); }
-  /* Gap fix (8 Nov 2026, the audit of the redesign against its drawing e-admin-b-1280): on a laptop the Inbox row the
-     head chef picks opens beside the list with what it is and its action, the row's own button (the page where it is
-     done). Only what the book already does: no new writes. On a phone the rows stay as they were. The pick is kept in
-     this tab's memory only (state.pick, by the row's page or title); a pick that has gone falls back to the first row. */
-  var picks = [], pickOn = false;
+  /* One Inbox row: its state word, title, detail and the button to the page where it is done. The laptop picked-row pane
+     (8 Nov 2026) was removed on 10 Nov 2026 (head chef, docs/admin-dashboard-restyle-options/brief.md): it repeated the row. */
   function needRow(kind, tag, title, detail, open, label) {
-    var i = picks.length, key = open || title;
-    picks.push({ kind: kind, tag: tag, title: title, detail: detail, open: open, label: label, key: key });
-    var tagCls = 'dsh-tag dsh-tag-' + (kind === 'due' ? 'bad' : kind === 'ok' ? 'good' : 'flat');
-    return '<li class="dsh-need dsh-need-' + kind + (pickOn ? '\u0001C' + i + '\u0001' : '') + '"><span class="dsh-need-mark" aria-hidden="true"></span><div><p class="' + tagCls + '">' + esc(tag) + '</p>' +
-      (pickOn ? '<button type="button" class="dsh-need-pick" data-dsh="pick" data-v="' + esc(key) + '" aria-pressed="\u0001P' + i + '\u0001">' + esc(title) + '</button>' : '') + '<p class="dsh-need-title">' + esc(title) + '</p>' +
-      (detail ? '<p class="dsh-need-detail">' + esc(detail) + '</p>' : '') + '</div>' + (open ? '<button type="button" class="btn" data-dsh="open" data-t="' + open + '">' + esc(label) + '</button>' : '') + '</li>';
-  }
-  // the picked row beside the list (a laptop only, by CSS): its tag, title, detail and its own action
-  function pickHTML(x) {
-    if (!x) return '';
-    return '<aside class="dsh-pick" aria-label="' + esc('Picked: ' + x.title) + '"><p class="dsh-tag dsh-tag-' + (x.kind === 'due' ? 'bad' : x.kind === 'ok' ? 'good' : 'flat') + '">' + esc(x.tag) + '</p><p class="dsh-pick-t">' + esc(x.title) + '</p>' +
-      (x.detail ? '<p class="dsh-pick-d">' + esc(x.detail) + '</p>' : '') + (x.open === 'mail' ? '<p class="hint">Tick a mail done, or change how soon, on its row in the list.</p>' : '') +
-      (x.open ? '<div class="btn-row"><button type="button" class="btn dark" data-dsh="open" data-t="' + x.open + '">' + esc(x.label) + '</button></div>' : '<p class="hint">Still loading. It opens here when it is in.</p>') + '</aside>';
-  }
-  // the token placeholders needRow() left: the picked row is marked once every row is known
-  function pickMark(html, sel) {
-    return html.replace(/\u0001([CP])(\d+)\u0001/g, function (m, k, i) { var on = +i === sel; return k === 'C' ? (on ? ' is-picked' : '') : String(on); });
+    var tagCls = 'dsh-tag dsh-tag-' + (kind === 'due' ? 'bad' : kind === 'att' ? 'att' : kind === 'ok' ? 'good' : 'flat');
+    return '<li class="dsh-need dsh-need-' + kind + '"><span class="dsh-need-mark" aria-hidden="true"></span><div><p class="' + tagCls + '">' + esc(tag) + '</p><p class="dsh-need-title">' + esc(title) + '</p>' +
+      (detail ? '<p class="dsh-need-detail">' + esc(detail) + '</p>' : '') + '</div>' + (open ? '<button type="button" class="btn' + (kind === 'att' ? ' dark' : '') + '" data-dsh="open" data-t="' + open + '">' + esc(label) + '</button>' : '') + '</li>';
   }
   function needsHTML(inbox) {
     var nd = api.needs ? api.needs() : {}, rows = [], clear = [], today = api.today();
-    picks = []; pickOn = !!inbox;
     // Today's team (7 Nov 2026): not set yet for today, from what js/prep.js already read (no read of its own); an older
     // book sends nothing here and the row stays away
-    if (nd.team === 'unset') rows.push(needRow('due', 'Not set', 'Today\'s team', 'Who is on which shift, their sections and breaks.', 'team', 'Set today\'s team'));
+    if (nd.team === 'unset') rows.push(needRow('att', 'Not set', 'Today\'s team', 'Who is on which shift, their sections and breaks.', 'team', 'Set today\'s team'));
     else if (nd.team === 'error') rows.push(needRow('wait', 'Not checked', 'Today\'s team', 'Could not load today\'s team. The book tries again by itself.', 'team', 'Open Today\'s team'));
     else if (nd.team === 'set') clear.push('today\'s team');
     // Kitchen mail: the open messages the panel already read when the book opened.
@@ -319,12 +287,7 @@
     // the Inbox count beside Inbox in the laptop rail: the rows that need a look, not the ones still loading
     state.count = rows.filter(function (r) { return r.indexOf('>Checking<') < 0; }).length;
     var title = inbox ? 'Inbox' : 'To do';
-    var sel = -1;
-    if (inbox && picks.length) { picks.forEach(function (x, i) { if (sel < 0 && x.key === state.pick) sel = i; }); if (sel < 0) sel = 0; }
-    var list = rows.length ? '<ul class="dsh-need-list">' + rows.join('') + '</ul>' : '', out;
-    pickOn = false;
-    if (inbox && rows.length) out = '<div class="dsh-need-wrap">' + pickMark(list, sel) + pickHTML(picks[sel]) + '</div>';
-    else out = list;
+    var out = rows.length ? '<ul class="dsh-need-list">' + rows.join('') + '</ul>' : '';
     return '<section class="dsh-panel dsh-needs" aria-label="' + title + '"><div class="dsh-panel-head"><h3 class="a-ch-h">' + title + '</h3><span class="hint">' + (rows.length ? rows.length + ' to look at' : 'All clear') + '</span></div>' +
       out + ok + '</section>';
   }
@@ -341,7 +304,7 @@
   function weekHTML() {
     var w = api.week ? api.week() : null;
     if (!w) return '';
-    var u = usual(), body = w.days.map(function (d, i) {
+    var u = usual(), quiet = [], body = w.days.map(function (d, i) {
       var name = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : DAYS[d.dow];
       var items = d.fns.map(function (f) {
         return '<li class="dsh-wk-fn"><span class="dsh-wk-kind">' + (f.draft ? 'Draft' : 'Function') + '</span><a href="#/fn/' + encodeURIComponent(f.id) + '">' + esc(f.name) + '</a>' +
@@ -349,6 +312,8 @@
       }).concat((d.cuts || []).map(function (c) { return '<li class="dsh-wk-cut"><span class="dsh-wk-kind">Cut-off</span>' + esc(c.name) + ' ' + esc(c.at) + ', ' + esc(c.what) + '</li>'; }));
       var a = u.avg[d.dow], busy = a != null && u.mean && a >= u.mean * 1.2;
       if (busy) items.push('<li class="dsh-wk-busy"><span class="dsh-wk-kind">Usually busy</span>About ' + Math.round(a) + ' prep lines</li>');
+      // a day with nothing on joins one quiet line under the list (head chef, 10 Nov 2026)
+      if (!items.length) { quiet.push(i === 0 ? 'today' : i === 1 ? 'tomorrow' : DAYS[d.dow].slice(0, 3) + ' ' + Number(d.day.slice(8))); return ''; }
       return '<li class="dsh-wk-day"><p class="dsh-wk-d">' + esc(name) + '<small>' + esc(dayLabel(d.day)) + '</small></p>' +
         (items.length ? '<ul>' + items.join('') + '</ul>' : '<p class="dsh-wk-none">Nothing booked</p>') +
         (a != null ? '<span class="dsh-wk-load" role="img" aria-label="' + esc('Usual prep load on ' + DAYS[d.dow] + ': about ' + Math.round(a) + ' lines') + '"><i style="width:' + Math.round(100 * a / u.max) + '%"></i></span>' : '<span></span>') + '</li>';
@@ -358,7 +323,7 @@
       w.fns === 'loading' ? '<p class="hint" role="status">Loading the functions...</p>' : w.fns === 'none' ? '<p class="hint">Functions are not loaded on this device.</p>' : '';
     var cutNote = w.days[0].cuts === null ? '<p class="hint">Cut-offs could not be worked out on this device.</p>' : '';
     return '<section class="dsh-panel dsh-week" aria-label="The week ahead"><div class="dsh-panel-head"><h3 class="a-ch-h">The week ahead</h3><span class="dsh-wk-links"><a class="dsh-more" href="#/fn">Functions</a><button type="button" class="dsh-more" data-dsh="open" data-t="cutoffs">Cut-offs</button></span></div>' +
-      note + cutNote + '<p class="dsh-legend"><span><i class="dsh-c-load"></i>Usual prep load for the weekday, last 4 weeks</span></p><ul class="dsh-wk">' + body + '</ul></section>';
+      note + cutNote + '<p class="dsh-legend"><span><i class="dsh-c-load"></i>Usual prep load for the weekday, last 4 weeks</span></p>' + (body ? '<ul class="dsh-wk">' + body + '</ul>' : '') + (quiet.length ? '<p class="hint dsh-wk-quiet">Nothing booked ' + esc(quiet.join(', ').replace(/, ([^,]*)$/, ' and $1')) + '.</p>' : '') + '</section>';
   }
 
   /* ---------- The watch list: pinned sections, wasted items and people, with their trend (4 Nov 2026) ---------- */
@@ -412,7 +377,7 @@
     return tot + ' waste line' + (tot === 1 ? '' : 's') + (a ? ', ' + a : '') + '.' + before;
   }
   function watchHTML(cur, prev, len) {
-    var w = state.watch, head = '<div class="dsh-panel-head"><h3 class="a-ch-h">Watch list</h3><span class="hint">' + (w && w.list ? w.list.length + ' of ' + WATCH_MAX : '') + '</span></div>';
+    var w = state.watch, head = '<div class="dsh-panel-head"><h3 class="a-ch-h">Watch list, last ' + len + ' days</h3><span class="hint">' + (w && w.list ? w.list.length + ' of ' + WATCH_MAX : '') + '</span></div>';
     var msg = state.msg ? '<p class="' + (/^Could not|^Not saved/.test(state.msg) ? 'p-err' : 'hint') + '" role="status">' + esc(state.msg) + '</p>' : '';
     if (w === undefined) return '<section class="dsh-panel dsh-watch" aria-label="Watch list">' + head + '<p class="hint" role="status">Loading the watch list...</p></section>';
     if (w === 'error') return '<section class="dsh-panel dsh-watch" aria-label="Watch list">' + head + '<p class="p-err" role="status">Could not load the watch list. Tap Refresh to try again.</p></section>';
@@ -499,7 +464,7 @@
     if (api.seen) api.seen();
     // Since redesign step 8 the panel asks for the Inbox or the Dashboard; an older book asks for neither and gets both, as before
     var view = api.view === 'inbox' || api.view === 'dashboard' ? api.view : 'all';
-    if (view === 'inbox') return '<section class="set-block dsh dsh-inbox">' + dayHTML() + needsHTML(true) + '</section>';
+    if (view === 'inbox') return '<section class="set-block dsh dsh-inbox">' + needsHTML(true) + dayHTML() + '</section>';
     var head = '<section class="set-block dsh">' + (view === 'all' ? needsHTML(false) : '') + toolsHTML();
     if (state.loading && state.data === undefined) return head + api.wait('Loading the dashboard...') + '</section>';
     if (state.error) return head + '<p class="p-err" role="status">Could not load the dashboard numbers. Check the connection and tap Refresh.</p></section>';
@@ -509,8 +474,15 @@
     charts = {};
     return head + freshHTML() + '<p class="hint dsh-range">' + esc(dayLabel(cur[0].day) + ' to ' + dayLabel(cur[cur.length - 1].day)) +
       (have < len ? '. Only ' + have + ' finished days so far.' : prev ? ', compared with the ' + len + ' days before.' : '. The nightly run keeps 90 days, so there is no earlier period to compare.') + ' Today is counted tonight.</p>' +
-      headlinesHTML() + tilesHTML(cur, have >= len ? prev : null, len) + weekHTML() + watchHTML(cur, have >= len ? prev : null, len) +
-      '<div class="dsh-grid">' + lineHTML(cur, len) + reasonsHTML(cur, have >= len ? prev : null) + heatHTML(cur) + itemsHTML(cur, have >= len ? prev : null) + '</div></section>';
+      headlinesHTML() + weekHTML() + cmpHTML(cur, have >= len ? prev : null, len) + watchHTML(cur, have >= len ? prev : null, len) + chartsHTML(cur, have >= len ? prev : null, len) + '</section>';
+  }
+  /* The charts wait behind one button (head chef, 10 Nov 2026): wastage reasons, most wasted and load by weekday. Open or
+     shut is kept in this module's memory (state.charts), so a redraw (a functions list change, a period) keeps it. */
+  function chartsHTML(cur, prev, len) {
+    var open = !!state.charts;
+    return '<section class="dsh-charts" aria-label="Charts"><button type="button" class="dsh-charts-btn" data-dsh="charts" aria-expanded="' + open + '" aria-controls="dsh-charts-body"><span class="dsh-charts-t">Charts, last ' + len + ' days</span>' +
+      '<span class="dsh-charts-s">' + (open ? 'Hide the charts' : 'Show wastage reasons, most wasted and load by weekday') + '</span></button>' +
+      '<div class="dsh-grid" id="dsh-charts-body"' + (open ? '' : ' hidden') + '>' + (open ? reasonsHTML(cur, prev) + heatHTML(cur) + itemsHTML(cur, prev) : '') + '</div></section>';
   }
 
   /* ---------- reading a chart: pointer, touch and arrow keys ---------- */
@@ -559,9 +531,8 @@
   function click(el) {
     if (!valid()) return;
     var a = el.getAttribute('data-dsh');
+    if (a === 'charts') { state.charts = !state.charts; redraw(); setTimeout(function () { var b = document.querySelector('[data-dsh="charts"]'); if (b) b.focus(); }, 0); return; }
     if (a === 'period') { var v = +el.getAttribute('data-v'); if ([7, 30, 90].indexOf(v) >= 0) { state.period = v; redraw(); } return; }
-    // an Inbox row picked on a laptop opens beside the list (gap fix, 8 Nov 2026); focus stays on the row's button
-    if (a === 'pick') { var pk = el.getAttribute('data-v') || ''; state.pick = pk; redraw(); setTimeout(function () { var b = [].filter.call(document.querySelectorAll('[data-dsh="pick"]'), function (x) { return x.getAttribute('data-v') === pk; })[0]; if (b) b.focus(); }, 0); return; }
     if (a === 'refresh') { if (!state.loading) { state.data = undefined; state.msg = ''; load(true); redraw(); } return; }
     if (a === 'watch-add') { state.add = { t: 'sec', q: '' }; state.msg = ''; redraw(); return; }
     if (a === 'watch-cancel') { state.add = null; redraw(); return; }

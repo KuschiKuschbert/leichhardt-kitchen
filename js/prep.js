@@ -6027,7 +6027,7 @@
       '<p class="hint a-forget">To use a different kitchen PIN on this device, open Settings, This phone.</p></section>');
     var resume = INTELLIGENCE_PAGES.indexOf(at) < 0 && intelligenceAllowed() && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_INTELLIGENCE.resumeHTML ? window.LK_INTELLIGENCE.resumeHTML(at) : '';
     if (at !== 'proofreader' && intelligenceAllowed() && proofModule()) resume += proofModule().resumeHTML(proofAdapter());
-    return panelShellHTML(bar, railHTML(), findBtn('a-find-head') + '<p class="ad-eyebrow">Kitchen administration</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + ag[1] + '</h2><p class="ad-intro">' + A_GROUP_NOTES[ag[0]] + '</p>', tabsBar, (owner ? idCardHTML() : '') + resume + pane);
+    return panelShellHTML(bar, railHTML(), findBtn('a-find-head') + adminHeadingHTML(ag, at), tabsBar, (owner ? idCardHTML() : '') + resume + pane);
   }
   // The owner and PIN chefs use one responsive panel shell. Each supplies its own permitted rooms and real pages.
   function panelShellHTML(bar, rail, heading, tabs, pane, extra) {
@@ -6233,6 +6233,12 @@
       (supplierEdit() ? '<div class="btn-row"><a class="btn dark" href="#/suppliers/manage">Manage catalogue</a><a class="btn" href="#/suppliers">Supplier order</a></div>' : '<p class="hint">Only the head chef changes suppliers and pars. Sous chefs can use <a href="#/suppliers">Supplier order</a>.</p>') + '</section>';
   }
   var A_TAB_NAMES = { 'prep-standards': 'Section standards', 'kitchen-home': 'Overview', inbox: 'Inbox', dashboard: 'Dashboard', overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
+  /* The admin heading: the room, or on the Inbox and the Dashboard the page's own name under Today (head chef,
+     10 Nov 2026, docs/admin-dashboard-restyle-options/brief.md), so one place has one name. */
+  function adminHeadingHTML(ag, at) {
+    var page = at === 'inbox' ? ['Inbox', 'What needs you today.'] : at === 'dashboard' ? ['Dashboard', 'How the kitchen is going, and where to look next.'] : null;
+    return '<p class="ad-eyebrow">' + (page ? 'Today' : 'Kitchen administration') + '</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + (page ? page[0] : ag[1]) + '</h2><p class="ad-intro">' + (page ? page[1] : A_GROUP_NOTES[ag[0]]) + '</p>';
+  }
   /* The admin page the panel opens on: the Inbox on a first visit (redesign step 8, 8 Nov 2026; until then the
      Dashboard: both read the same nightly record), then the last one used. After an update nobody asked
      for (the idle update or the 04:00 refresh, flagged by js/upkeep.js in lk.upd.auto for this tab only) a report page

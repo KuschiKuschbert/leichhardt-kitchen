@@ -37,13 +37,13 @@ const findList = p => p.$$eval('#fd-list .sheet-o', els => els.map(e => e.queryS
   for (const width of [390, 768, 1280]) {
     const p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width, height: 900, extra, wait: 1600 });
     await nums(p).catch(() => {});
-    ok(await txt(p, '.ad-title') === 'Today' && await atab(p) === 'inbox', width + ': Today opens on the Inbox');
+    ok(await txt(p, '.ad-title') === 'Inbox' && await atab(p) === 'inbox', width + ': Today opens on the Inbox, named Inbox');
     const tiles = await p.$$eval('.dsh-dtile', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
     ok(tiles.length === 3 && new RegExp('^Prep ticked, \\w+day ' + pctLast + ' ?% ' + lastDay.p.t + ' of ' + lastDay.p.n + ' lines').test(tiles[0]), width + ': the first number is yesterday\'s prep ticked, from the nightly record (' + tiles[0] + ')');
     ok(new RegExp('^Waste, last 7 days ' + w7 + ' ?lines ' + (w7 - w14) + ' more than the 7 days before').test(tiles[1]), width + ': waste in lines against the 7 days before (' + tiles[1] + ')');
     ok(/^Functions today 1 60 guests, the first at 18:00/.test(tiles[2]), width + ': today\'s functions from the live list, with guests and the first start (' + tiles[2] + ')');
-    const order = await p.evaluate(() => { const d = document.querySelector('.dsh-day'), n = document.querySelector('.dsh-needs'); return !!d && !!n && !!(d.compareDocumentPosition(n) & Node.DOCUMENT_POSITION_FOLLOWING) && /Inbox/.test(n.querySelector('h3').textContent); });
-    ok(order, width + ': today\'s numbers sit above the Inbox');
+    const order = await p.evaluate(() => { const d = document.querySelector('.dsh-day'), n = document.querySelector('.dsh-needs'); return !!d && !!n && !!(n.compareDocumentPosition(d) & Node.DOCUMENT_POSITION_FOLLOWING) && /Inbox/.test(n.querySelector('h3').textContent); });
+    ok(order, width + ': what needs you sits above today\'s numbers (10 Nov 2026)');
     ok(await p.locator('.dsh-tools, .dsh-heads, .dsh-week').count() === 0, width + ': the period chips, headlines and the week ahead stay on the Dashboard');
     const dashReads = await p.evaluate(() => window.__fake.bill.filter(x => /\/analysis\/(dashboard|health)$/.test(x.path)).length);
     ok(dashReads === 2, width + ': the Inbox reads the nightly record once, two records (' + dashReads + ')');
@@ -60,26 +60,15 @@ const findList = p => p.$$eval('#fd-list .sheet-o', els => els.map(e => e.queryS
       ok(lay.count && new RegExp('^' + lay.count + ' to look at').test(lay.rows), width + ': the rail counts the Inbox rows (' + lay.count + ', ' + lay.rows + ')');
     } else ok(!lay.railFind && lay.headFind && !lay.quick, width + ': Find sits in the heading and the rooms stay one row (' + JSON.stringify(lay) + ')');
     ok(lay.find44, width + ': Find is at least 44 px');
-    // gap fix (8 Nov 2026, the audit against e-admin-b-1280): on a laptop the picked row opens beside the list with its
-    // own action, and Inbox and Dashboard show once (in the rail); a phone keeps the rows and the tabs as they were
-    const pane = () => p.evaluate(() => {
-      const vis = e => !!e && e.getClientRects().length > 0;
-      const pk = [...document.querySelectorAll('.dsh-need-pick')], pane = document.querySelector('.dsh-pick');
-      return { picks: pk.filter(vis).length, pressed: pk.filter(e => e.getAttribute('aria-pressed') === 'true').map(e => e.textContent), pane: vis(pane) ? pane.querySelector('.dsh-pick-t').textContent : '',
-        act: vis(pane) && pane.querySelector('[data-dsh="open"]') ? pane.querySelector('[data-dsh="open"]').getAttribute('data-t') : '', beside: vis(pane) && pane.getBoundingClientRect().left > document.querySelector('.dsh-need-list').getBoundingClientRect().right - 1,
-        tabs: ['inbox', 'dashboard'].filter(t => vis(document.querySelector('.a-tab[data-t="' + t + '"]'))).length };
+    // restyle (head chef, 10 Nov 2026): what needs you comes first, today's numbers follow, and no picked-row pane repeats a
+    // row; Inbox and Dashboard still show once on a laptop (in the rail) and as tabs on a phone
+    const inboxOrder = await p.evaluate(() => {
+      const vis = e => !!e && e.getClientRects().length > 0, needs = document.querySelector('.dsh-inbox .dsh-needs'), day = document.querySelector('.dsh-inbox .dsh-day');
+      return { first: !!needs && !!day && needs.getBoundingClientRect().top < day.getBoundingClientRect().top, pane: document.querySelectorAll('.dsh-pick, .dsh-need-pick').length,
+        title: (document.querySelector('.ad-title') || {}).textContent, tabs: ['inbox', 'dashboard'].filter(t => vis(document.querySelector('.a-tab[data-t="' + t + '"]'))).length };
     });
-    let pv = await pane();
-    if (width >= 1000) {
-      ok(pv.picks >= 2 && pv.pressed.length === 1 && pv.pane === pv.pressed[0] && pv.beside && !!pv.act, width + ': the first Inbox row is open beside the list, with its own action (' + JSON.stringify(pv) + ')');
-      ok(pv.tabs === 0, width + ': Inbox and Dashboard show once, in the rail, not again in the Today tabs');
-      await closeMail(p);
-      const second = await p.$$eval('.dsh-need-pick', els => els[1].textContent);
-      const rb = await bill(p);
-      await p.locator('.dsh-need-pick').nth(1).click(); await L.settle(p, 300);
-      pv = await pane();
-      ok(pv.pane === second && pv.pressed.length === 1 && pv.pressed[0] === second && await p.evaluate(() => document.activeElement && document.activeElement.classList.contains('dsh-need-pick')) && await bill(p) === rb, width + ': a tap on another row opens it beside the list, keeps focus on the row and reads nothing (' + pv.pane + ')');
-    } else ok(pv.picks === 0 && !pv.pane && pv.tabs === 2, width + ': a phone or tablet keeps the rows and the Inbox and Dashboard tabs as they were (' + JSON.stringify(pv) + ')');
+    ok(inboxOrder.first && inboxOrder.pane === 0 && inboxOrder.title === 'Inbox', width + ': the Inbox is called Inbox, puts what needs you before the numbers and has no side pane (' + JSON.stringify(inboxOrder) + ')');
+    ok(inboxOrder.tabs === (width >= 1000 ? 0 : 2), width + ': Inbox and Dashboard show once on a laptop, as tabs on a phone');
     ok(!(await L.overflow(p)) && p.errors.length === 0, width + ': no sideways scroll, no page errors ' + p.errors.join(' | '));
 
     // a number opens its report for the last 7 days
@@ -132,7 +121,7 @@ const findList = p => p.$$eval('#fd-list .sheet-o', els => els.map(e => e.queryS
     // the laptop rail's Dashboard is one tap from any room
     if (width >= 1000) {
       await p.click('.a-quick[data-v="dashboard"]'); await L.settle(p, 400);
-      ok(await atab(p) === 'dashboard' && await p.evaluate(() => document.querySelector('.a-quick[data-v="dashboard"]').getAttribute('aria-current')) === 'true' && await txt(p, '.ad-title') === 'Today', width + ': the rail\'s Dashboard opens the Dashboard in Today');
+      ok(await atab(p) === 'dashboard' && await p.evaluate(() => document.querySelector('.a-quick[data-v="dashboard"]').getAttribute('aria-current')) === 'true' && await txt(p, '.ad-title') === 'Dashboard' && await txt(p, '.ad-eyebrow') === 'Today', width + ': the rail\'s Dashboard opens the Dashboard, named under Today');
     }
     await p.context().close();
   }
