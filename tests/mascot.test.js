@@ -10,7 +10,8 @@ function fixture(name) {
   const cfg = L.seed()[key(['config', 'main'])];
   if (name) cfg.people = cfg.people.map(p => p.id === 'ann' ? { ...p, name } : p);
   cfg.kitSecs = [{ id: 'larder', name: 'Larder' }, { id: 'grill', name: 'Grill' }];
-  cfg.kitShifts = [{ id: 'lunch', name: 'Lunch', from: 600, to: 900 }];
+  // A full day with no shift moment at 14:00, so the welcome stays on its ordinary words (docs/staff-personalisation-options/brief.md).
+  cfg.kitShifts = [{ id: 'lunch', name: 'Lunch', from: 600, to: 1260 }];
   return { [key(['config', 'main'])]: cfg, [key(['team', day])]: { day, on: [{ id: 'ann', sh: 'lunch', sec: 'larder' }, { id: 'sam', sh: 'lunch', sec: 'grill' }],
     br: [{ id: 'ann', sh: 'lunch', at: 870, len: 30 }], v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam' } };
 }
@@ -25,7 +26,8 @@ const realErrors = p => p.errors.filter(e => !/Failed to load resource/.test(e))
 (async () => {
   const b = await L.start(); let p = null;
   async function open(o = {}) {
-    p = await L.open(b, '#/', { who: 'ann', width: 390, height: 844, extra: fixture(o.name), wait: 1200, ...o });
+    // Math.random 0 keeps the varied welcome on Welcome, the words this mascot's layout checks were measured with.
+    p = await L.open(b, '#/', { who: 'ann', width: 390, height: 844, extra: fixture(o.name), wait: 1200, init: () => { Math.random = () => 0; }, ...o });
     p.__sheets = []; p.on('request', r => { if (/art\/mascot\/.*sheet/.test(r.url())) p.__sheets.push(r.url()); });
     await L.waitFor(p, () => !!document.querySelector('#rtitle.hm-welcome'), null, 6000);
     return p;
@@ -114,17 +116,24 @@ const realErrors = p => p.errors.filter(e => !/Failed to load resource/.test(e))
     ok((await st(p)).plays === 0, 'a return to Home stays still with storage refused');
   });
 
+  // Missing art removes the mascot when the blocked download fails, which is network time, not the page clock:
+  // wait for it to go rather than for a fixed time.
   await step('missing art', async () => {
-    p = await L.open(b, '#/', { who: 'ann', width: 390, height: 844, extra: fixture(), wait: 1200, block: 'art/mascot/' });
-    await L.waitFor(p, () => !!window.LK_MASCOT, null, 6000); await run(p, 1500);
+    p = await L.open(b, '#/', { who: 'ann', width: 390, height: 844, extra: fixture(), wait: 1200, init: () => { Math.random = () => 0; }, block: 'art/mascot/' });
+    await L.waitFor(p, () => !!window.LK_MASCOT, null, 6000); await L.waitFor(p, () => !document.querySelector('.mascot-host'), null, 10000); await run(p, 1500);
     ok(!(await p.locator('.mascot').count()), 'missing art: no mascot');
     const r = await rec(p); ok(!r || !r.played, 'missing art leaves today unplayed');
     ok(await p.evaluate(() => !document.querySelector('.mascot-host')), 'Home is left exactly as it was');
+    // New welcome words or a seasonal change move a mascot that is there; they never start another download.
+    let asks = 0; p.on('request', q => { if (/art\/mascot\//.test(q.url())) asks++; });
+    await p.evaluate(() => { window.dispatchEvent(new Event('lk-greet')); document.dispatchEvent(new Event('kb-seasonal-state')); });
+    await run(p, 1500);
+    ok(asks === 0 && !(await p.locator('.mascot').count()), 'a new greeting or seasonal change does not try the missing art again (' + asks + ' requests)');
   });
 
   for (const [w, h] of [[390, 844], [768, 1024], [1280, 900]]) await step('layout ' + w, async () => {
-    p = await L.open(b, '#/', { who: 'ann', width: w, height: h, extra: fixture(), wait: 1200, block: 'art/mascot/' });
-    await L.waitFor(p, () => !!window.LK_MASCOT, null, 6000); await run(p, 600); const plain = await geometry(p); await p.context().close();
+    p = await L.open(b, '#/', { who: 'ann', width: w, height: h, extra: fixture(), wait: 1200, init: () => { Math.random = () => 0; }, block: 'art/mascot/' });
+    await L.waitFor(p, () => !!window.LK_MASCOT, null, 6000); await L.waitFor(p, () => !document.querySelector('.mascot-host'), null, 10000); await run(p, 600); const plain = await geometry(p); await p.context().close();
     await open({ width: w, height: h }); await mounted(); await run(p, 600);
     ok(JSON.stringify(await geometry(p)) === JSON.stringify(plain), `${w} px: every Home rectangle stays where it was`);
     ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${w} px: no sideways scroll`);
@@ -145,12 +154,55 @@ const realErrors = p => p.errors.filter(e => !/Failed to load resource/.test(e))
     const c = await clearOfWords(); ok(c === 'clear' || c === 'left out', `${w} px, 40-character name: the mascot never covers a word (${c})`);
     ok(await p.evaluate(n => document.querySelector('#rtitle').textContent === 'Welcome, ' + n, LONG), 'the full name shows');
   });
-  await step('name reaching the corner', async () => {
-    const WIDE = 'WWWWWWWWWWWWW'; // one word that cannot wrap, wider than the space left of the corner
-    await open({ name: WIDE }); await L.waitFor(p, () => !!window.LK_MASCOT, null, 6000); await run(p, 1500);
-    const s = await st(p), c = await clearOfWords();
-    ok(c === 'left out', 'a name that reaches the corner leaves the mascot out: ' + c + ' ' + JSON.stringify(s));
-    const r = await rec(p); ok(!r || !r.played, 'an action is not used up while the mascot is left out');
+  // When the words fill the corner (owner, 10 Nov 2026): the Your day card (B), then room in the heading (A), and
+  // only a word that cannot wrap leaves it out. Each place keeps clear of every word; B moves nothing on Home.
+  const spot = () => p.evaluate(() => { const m = document.querySelector('.mascot'); return !m || m.hidden ? 'left out' : m.getAttribute('data-spot'); });
+  const room = () => p.evaluate(() => document.querySelector('#rtitle').classList.contains('mascot-room'));
+  const WIDE = 'WWWWWWWWWWWWW'; // one word that cannot wrap, wider than the space left of the corner
+  await step('words fill the corner: on the Your day card', async () => {
+    p = await L.open(b, '#/', { who: 'ann', width: 390, height: 844, extra: fixture(WIDE), wait: 1200, init: () => { Math.random = () => 0; }, block: 'art/mascot/' });
+    await L.waitFor(p, () => !!window.LK_MASCOT, null, 6000); await L.waitFor(p, () => !document.querySelector('.mascot-host'), null, 10000); await run(p, 600); const plain = await geometry(p); await p.context().close();
+    await open({ name: WIDE }); await mounted(); await run(p, 600);
+    ok(await spot() === 'card' && !(await room()), 'the corner is full, so it stands on the Your day card: ' + await spot());
+    ok(await clearOfWords() === 'clear', 'it covers no word of the welcome or date');
+    ok(JSON.stringify(await geometry(p)) === JSON.stringify(plain), 'every Home rectangle stays where it was');
+    const m = await p.locator('.mascot').boundingBox(), card = await p.locator('#hm-day').boundingBox(), clock = await p.locator('.hm-clock').boundingBox();
+    const title = await p.locator('.hm-bt').boundingBox(), bar = await p.locator('.wtop').boundingBox();
+    ok([48, 44].includes(m.width) && m.x + m.width <= clock.x - 11 && m.x >= title.x + title.width, '48 or 44 px wide, between the card title and its clock: ' + JSON.stringify(m));
+    ok(m.y < card.y && m.y + m.height > card.y && m.y >= bar.y + bar.height, 'it peeks over the card top, under the top bar');
+    ok(m.x >= card.x + card.width / 2 + 23, 'it stays clear of the card pin');
+    ok((await st(p)).plays === 1, 'today’s action plays there');
+    await p.locator('.mascot').click(); await run(p, 300);
+    ok((await st(p)).playing, 'a tap on the card replays it');
+    ok(await p.evaluate(n => document.querySelector('#rtitle').textContent === 'Welcome, ' + n, WIDE), 'the full name shows');
+  });
+  for (const [label, clock] of [['08:30', 'T08:30:00+10:00'], ['Wednesday 30 September', '2026-09-30T14:00:00+10:00']]) await step('a wider date line: still on the card (' + label + ')', async () => {
+    const at = label === '08:30' ? Date.parse(day + clock) : Date.parse(clock);
+    await open({ name: WIDE, clock: at }); await mounted(); await run(p, 600);
+    ok(await spot() === 'card' && !(await room()), 'the card still takes it: ' + await spot());
+    ok(await clearOfWords() === 'clear', 'it covers no word of the welcome or date');
+  });
+  await step('words fill the corner and no Your day card: room in the heading and date', async () => {
+    // Functions-only Home has no Your day card, so a name that fills the corner makes the words wrap before it.
+    const cfg = fixture(WIDE)[key(['config', 'main'])];
+    cfg.people = cfg.people.map(x => x.id === 'ann' ? { ...x, role: 'fnc', add: false, tick: false, fn: true } : x);
+    cfg.fnOnlyIds = ['ann']; cfg.fnIds = ['ann']; cfg.addIds = ['sam', 'bo']; cfg.tickIds = ['sam', 'bo'];
+    const long = { width: 390, height: 844, extra: { [key(['config', 'main'])]: cfg } };
+    p = await L.open(b, '#/', { who: 'ann', wait: 1200, init: () => { Math.random = () => 0; }, block: 'art/mascot/', ...long });
+    await L.waitFor(p, () => !!window.LK_MASCOT, null, 6000); await L.waitFor(p, () => !document.querySelector('.mascot-host'), null, 10000); await run(p, 600); const plain = await geometry(p); await p.context().close();
+    await open(long); await mounted(); await run(p, 600);
+    ok(!(await p.locator('#hm-day:not([hidden])').count()), 'Functions-only Home has no Your day card');
+    ok(await spot() === 'room', 'neither the corner nor the card is free, so the words make room: ' + await spot());
+    ok(await p.evaluate(() => document.querySelector('#rtitle').classList.contains('mascot-room') && document.querySelector('.wall-date').classList.contains('mascot-room')), 'the heading and date both keep the room');
+    ok(await clearOfWords() === 'clear', 'it covers no word');
+    const grew = (await geometry(p))[0][4] - plain[0][4];
+    ok(grew >= 0 && grew <= 60, 'the heading grows by one line at most: ' + grew + ' px');
+    ok(await p.evaluate(n => document.querySelector('#rtitle').textContent === 'Welcome, ' + n, WIDE), 'the full name shows');
+    await go(p, '#/recipes');
+    await go(p, '#/'); await mounted();
+    ok((await spot()) === 'room', 'back on Home it makes room again');
+    await p.evaluate(() => LK_MASCOT.unmount());
+    ok(await p.evaluate(() => !document.querySelector('.mascot-room')), 'without the mascot the heading and date are as they were');
   });
 
   await step('two people on one device', async () => {

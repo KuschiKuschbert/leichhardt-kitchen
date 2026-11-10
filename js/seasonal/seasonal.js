@@ -49,7 +49,8 @@
     const scheduled = automatic ? window.KB_SEASONAL_CALENDAR?.resolve(day) : null;
     const theme = byId.get(design || scheduled?.id) || null;
     const soon = automatic ? upcoming(day, 2, 7) : [], count = automatic && theme ? dayCount(scheduled, day) : null;
-    const next = (theme?.id || 'off') + '|' + prefs.motion + '|' + prefs.density + '|' + soon.map(item => item.id + item.when).join(',') + '|' + (count ? count.n + '/' + count.of : '');
+    // Publish a new kitchen day even with celebrations Off, including Home without the staff clock.
+    const next = day + '|' + (theme?.id || 'off') + '|' + prefs.motion + '|' + prefs.density + '|' + soon.map(item => item.id + item.when).join(',') + '|' + (count ? count.n + '/' + count.of : '');
     activeId = theme?.id || '';
     if (next !== signature) { signature = next; window.KB_THEME_BRIDGE.configure({ theme, mode: prefs.motion, density: prefs.density, upcoming: soon, dayCount: count }); }
     paintSettings();

@@ -12,6 +12,14 @@ function named(name, fnOnly) {
   return { [CFG]: c };
 }
 const title = p => txt(p, '#rtitle');
+async function namedWelcome(p, name) {
+  const heading = await title(p);
+  return !!(await p.$('#rtitle.hm-welcome')) && ['Welcome', 'Hello', 'Hi there', 'G’day', 'Morning', 'Good morning', 'Afternoon', 'Good afternoon', 'Evening', 'Good evening', 'Late one', 'Good to see you', 'Welcome in', 'Enjoy your break', 'Have a good break', 'Welcome back', 'Back at it', 'Last stretch', 'Nearly there', 'Thanks for today', 'Good work today'].some(prefix => heading === prefix + ', ' + name);
+}
+async function neutralWelcome(p) {
+  const heading = await title(p);
+  return !(await p.$('#rtitle.hm-welcome')) && (heading === 'Pick a docket' || ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].includes(heading));
+}
 const reads = p => p.evaluate(() => __fake.reads.length);
 async function go(p, route) { await p.evaluate(r => { location.hash = r; }, route); await L.settle(p, 300); }
 async function ready(p, name) { await L.waitFor(p, n => window.LK_PREP && LK_PREP.whoName() === n && LK_PREP.privateAccess(), name, 7000); }
@@ -44,7 +52,7 @@ async function unlock(p, pin) {
     const name = 'Ana María O’Neill';
     p = await L.open(b, '#/', { who: 'ann', extra: named(name), width, wait: 1500 });
     await ready(p, name);
-    ok(await title(p) === 'Welcome, ' + name, width + ': Home welcomes the full stored name (' + await title(p) + ')');
+    ok(await namedWelcome(p, name), width + ': Home welcomes the full stored name (' + await title(p) + ')');
     const date = await txt(p, '.wall-date');
     const weekday = new Date(L.NOW).toLocaleDateString('en-AU', { weekday: 'long', timeZone: 'Australia/Brisbane' });
     ok(date.includes(weekday) && /\d{2}:\d{2}/.test(date), width + ': weekday and kitchen time remain below the welcome (' + date + ')');
@@ -58,7 +66,7 @@ async function unlock(p, pin) {
     const name = 'Ana María';
     p = await L.open(b, '#/', { who: 'ann', extra: named(name, true), wait: 1500 });
     await ready(p, name);
-    ok(await title(p) === 'Welcome, ' + name, 'Functions-only Home receives the same welcome');
+    ok(await namedWelcome(p, name), 'Functions-only Home receives a welcome with the complete name');
     ok(!!(await p.$('#main a[href="#/functions"]')) && !(await p.$('#hm-day')) && !(await p.$('#hm-prep')), 'Functions-only welcome keeps permitted destinations without staff work cards');
   });
 
@@ -68,7 +76,7 @@ async function unlock(p, pin) {
     { label: 'remembered Google without PIN', opts: { who: '', ownerGoogle: true, adminGrant: false } }
   ]) await step(state.label, async () => {
     p = await L.open(b, '#/', { ...state.opts, wait: 1500 });
-    ok(!/^Welcome,/.test(await title(p)), state.label + ': neutral Home does not claim an authenticated person');
+    ok(await neutralWelcome(p), state.label + ': neutral Home does not claim an authenticated person');
     ok(!(await p.$('.wtop-av')) && !/Signed in as/.test(await p.getAttribute('.wtop-who', 'aria-label')), state.label + ': global identity stays neutral');
   });
 
@@ -78,7 +86,7 @@ async function unlock(p, pin) {
     await p.locator('.wm a[href="#/settings"]').focus();
     const before = await reads(p);
     await rename(p, 'Ana María');
-    ok(await title(p) === 'Welcome, Ana María', 'live rename updates the Home greeting');
+    ok(await namedWelcome(p, 'Ana María'), 'live rename updates the Home greeting');
     ok((await p.getAttribute('.wtop-who', 'aria-label')).includes('Ana María'), 'live rename updates the hat accessible name');
     ok(await txt(p, '.wm-me-n b') === 'Ana María' && (await txt(p, '.wm-out b') || '').includes('Ana María'), 'already-open menu follows the renamed person');
     ok(await p.evaluate(() => document.activeElement === document.querySelector('.wm a[href="#/settings"]')), 'live rename preserves keyboard focus on the same menu action');
@@ -91,7 +99,7 @@ async function unlock(p, pin) {
 
   for (const person of [{ name: '李明', initial: '李' }, { name: 'محمد', initial: 'م' }]) await step('Unicode identity ' + person.name, async () => {
     p = await L.open(b, '#/', { who: 'ann', extra: named(person.name), wait: 1500 }); await ready(p, person.name);
-    ok(await title(p) === 'Welcome, ' + person.name, 'Home keeps the full non-Latin name ' + person.name);
+    ok(await namedWelcome(p, person.name), 'Home keeps the full non-Latin name ' + person.name);
     const hat = await txt(p, '.wtop-av');
     await L.tap(p, '.wtop-who'); const menu = await txt(p, '.wm-av');
     await p.keyboard.press('Escape'); await go(p, '#/settings');
@@ -102,7 +110,7 @@ async function unlock(p, pin) {
   await step('name text remains text', async () => {
     const name = '<img src=x onerror=alert(1)>';
     p = await L.open(b, '#/', { who: 'ann', extra: named(name), wait: 1500 }); await ready(p, name);
-    ok(await title(p) === 'Welcome, ' + name, 'HTML-like staff name renders literally in the welcome');
+    ok(await namedWelcome(p, name), 'HTML-like staff name renders literally in the welcome');
     await L.tap(p, '.wtop-who');
     ok(await txt(p, '.wm-me-n b') === name && !(await p.$('#rtitle img, .wm-me img, .wm-out img')), 'name adds no HTML to the heading or identity menu');
     ok(!(await L.overflow(p)), 'unbroken name text does not overflow the phone');
@@ -125,19 +133,19 @@ async function unlock(p, pin) {
   await step('daily lock and same person', async () => {
     p = await L.open(b, '#/', { who: 'ann', clock: cutoff - 60000, wait: 1500 }); await ready(p, 'Ann');
     await p.clock.runFor(90000); await L.settle(p, 300);
-    ok(!/^Welcome,/.test(await title(p)) && !(await p.$('.wtop-av')), '04:00 lock removes the private welcome and current-person mark');
+    ok(await neutralWelcome(p) && !(await p.$('.wtop-av')), '04:00 lock removes the private welcome and current-person mark');
     await go(p, '#/prep'); await unlock(p, '2222'); await go(p, '#/');
-    ok(await title(p) === 'Welcome, Ann', 'same-person PIN restores the correct welcome after daily lock');
+    ok(await namedWelcome(p, 'Ann'), 'same-person PIN restores the correct welcome after daily lock');
   });
 
   await step('shared-screen handover and idle lock', async () => {
     p = await L.open(b, '#/', { who: 'ann', deviceMode: 'shared', wait: 1500 }); await ready(p, 'Ann');
     await L.tap(p, '.wtop-who'); await p.click('.wm-out'); await L.settle(p, 300);
-    ok(!/^Welcome,/.test(await title(p)) && !(await p.$('.wtop-av')), 'voluntary handover immediately clears the previous welcome');
+    ok(await neutralWelcome(p) && !(await p.$('.wtop-av')), 'voluntary handover immediately clears the previous welcome');
     await go(p, '#/prep'); await p.click('.p-name[data-id="bo"]'); await unlock(p, '3333'); await go(p, '#/');
-    ok(await title(p) === 'Welcome, Bo' && (await p.getAttribute('.wtop-who', 'aria-label')).includes('Bo'), 'next staff member receives their own welcome and hat identity');
+    ok(await namedWelcome(p, 'Bo') && (await p.getAttribute('.wtop-who', 'aria-label')).includes('Bo'), 'next staff member receives their own welcome and hat identity');
     await L.tap(p, '.wtop-who'); await p.clock.runFor(11 * 60000); await L.settle(p, 300);
-    ok(!/^Welcome,/.test(await title(p)) && !(await p.$('.wm')) && !(await p.$('.wtop-av')), 'shared idle lock clears welcome, open menu and person mark');
+    ok(await neutralWelcome(p) && !(await p.$('.wm')) && !(await p.$('.wtop-av')), 'shared idle lock clears welcome, open menu and person mark');
   });
 
   await b.close(); L.report(R);

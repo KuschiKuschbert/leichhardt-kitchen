@@ -10641,6 +10641,26 @@
     if (d.state === 'stale') return 'Today\'s saved plan needs checking.';
     return 'Checking today\'s team...';
   }
+  /* The shift moment for the Home welcome (owner, 10 Nov 2026; docs/staff-personalisation-options/brief.md): before the
+     first shift, on a break, up to 30 minutes after one, the last hour of the last shift, after it. '' when none fits or the
+     saved plan is not ready or not trusted. Only shifts with hours count. From the plan already held: no read of its own. */
+  var HOME_BACK = 30, HOME_LAST = 60;
+  function homeGreet() {
+    var d = homePlanData(); if (!d || d.state !== 'ready') return '';
+    var p = me(), m = T.mins();
+    if ((d.rec.uncheckedBr || []).some(function (x) { return x.id === p.id; })) return '';
+    var mine = tmMy(p.id).filter(function (x) { return x.s.from != null && x.s.to != null && x.s.from < x.s.to; });
+    if (!mine.length) return '';
+    var start = Math.min.apply(null, mine.map(function (x) { return x.s.from; })), end = Math.max.apply(null, mine.map(function (x) { return x.s.to; }));
+    var brs = tmMyBreaks(p.id).filter(function (b) { return mine.some(function (x) { return x.s.id === b.sh; }); });
+    if (brs.some(function (b) { return tmOnBreak(b, m); })) return 'break';
+    if (m < start) return 'before';
+    if (m >= end) return 'done';
+    if (!mine.some(function (x) { return x.s.from <= m && m < x.s.to; })) return '';
+    if (brs.some(function (b) { return b.at + b.len <= m && m - (b.at + b.len) < HOME_BACK; })) return 'back';
+    return end - m <= HOME_LAST ? 'last' : '';
+  }
+  var homeGreetSeen = '';
   function homeShiftHours(s) { return s.from != null && s.to != null ? tmHHMM(s.from) + ' to ' + tmHHMM(s.to) : 'Hours not set'; }
   function homeDayHTML() {
     var d = homePlanData(); if (!d) return '';
@@ -10796,6 +10816,8 @@
     return first + '<section class="hm-board" id="hm-board" aria-labelledby="hm-board-h"' + (b ? '' : ' hidden') + '>' + b + '</section>' + prep;
   }
   function homePaint() {
+    // The welcome in js/app.js picks its words once per moment: tell it when the shift moment or the hour moves on.
+    var g = document.querySelector('.hm-welcome') ? homeGreet() + '|' + T.hour(now()) : homeGreetSeen; if (g !== homeGreetSeen) { homeGreetSeen = g; try { window.dispatchEvent(new CustomEvent('lk-greet')); } catch (e) {} }
     var t = document.getElementById('hm-time'); if (t) { var c = T.clock(now()); if (t.textContent !== c) t.textContent = c; }
     var dy = document.getElementById('hm-day'); if (dy) {
       var dh = homeDayHTML();
@@ -13918,6 +13940,7 @@
     featOn: featOn,
     ownerHere: ownerHere,
     whoName: whoName,
+    homeGreet: homeGreet,
     // The signed-in person's staff id, only while their name shows (the kitchen mascot keeps one shuffled set per person).
     whoId: function () { return whoName() ? S.who : ''; },
     // the no-signal sentence while the kitchen's settings are not loaded and there is no signal, otherwise '' (js/app.js)

@@ -2,7 +2,7 @@
 
 ## Kitchen mascot on Home, 9 November 2026
 
-The owner chose a per-person shuffled daily action of all 11 mascot actions, design A (plays once, then the Welcome pose) at the right end of the Welcome row, and a tap that replays today's action. `js/mascot.js` (lazy, `LK_MASCOT.api` 1, loaded by `mascotSync()` in `js/app.js`), `art/mascot/` (11 compact sprite sheets and 11 stills, loaded with `?v=1` so `sw.js` never keeps them), `LK_PREP.whoId()`, `.mascot` and `.mascot-host` in `css/app.css`, `tests/mascot.test.js` (69 checks). No reads, writes or rules. [Feature note](kitchen-mascot.md). The artwork, both council rounds and the placement mock are in pull request #654.
+The owner chose a per-person shuffled daily action of all 11 mascot actions, design A (plays once, then the Welcome pose) at the right end of the Welcome row, and a tap that replays today's action. `js/mascot.js` (lazy, `LK_MASCOT.api` 1, loaded by `mascotSync()` in `js/app.js`), `art/mascot/` (11 compact sprite sheets and 11 stills, loaded with `?v=1` so `sw.js` never keeps them), `LK_PREP.whoId()`, `.mascot` and `.mascot-host` in `css/app.css`, `tests/mascot.test.js` (92 checks). No reads, writes or rules. Since 10 Nov 2026, when the varied welcome fills the corner it stands on the Your day card, then makes room (`.mascot-room`) ([note](kitchen-mascot.md)). [Feature note](kitchen-mascot.md). The artwork, both council rounds and the placement mock are in pull request #654.
 
 ## Per-person service and section review, 10 November 2026
 
@@ -15,6 +15,10 @@ The owner approved expiry at 21:00 Queensland even for an unfinished batch, a vi
 ## Operandio shared confirmation, 10 November 2026
 
 The owner approved the audit’s recommendation and live implementation: one explicit staff declaration clears each stage’s reminder for the kitchen, while **Not yet** leaves a quiet check on the existing clock. The same stage presents once per device across page changes, reloads and logins. `js/cooling-core.js`, `js/cooling.js` and the existing UI handle independent confirmation states and accepted-write feedback; `js/prep.js` supplies the second named subscription, write authority, local presentation storage and browser export. This earlier release added the bounded `cooling/recorded` record without changing `cooling/current`, publishing its additive rules before the client. `scripts/nightly-backup.mjs` and `scripts/backup-recovery-check.mjs` preserve exact confirmation timestamps and actors. The extra live document costs one read on subscription and each accepted confirmation; ticks do no database work. The later daily window above bounds outstanding checks and adds a stamp to new timer records. [Decision, quick check and validation](operandio-cooling.md#shared-confirmation-10-november-2026).
+
+## Varied Home welcomes, 10 November 2026
+
+`js/app.js` extends the chosen named welcome with short random phrases and authored wishes for the active celebratory calendar occasion. Keep the phrase through paints and renames, change on Home re-entry/day/identity/occasion, avoid the previous phrase, and retain neutral locked/public headings. Existing compact sizing counts the complete heading. No saved name/history, network read, timer, new asset or rule. The [feature record](staff-personalisation-options/brief.md#varied-welcomes-10-november-2026) owns the quick check, failure scenarios and verification; `tests/home-welcome-randomiser.test.js` covers the new behaviour. Since 10 Nov 2026 it also adds Queensland time of day words and the person's shift moment from the held plan (`LK_PREP.homeGreet()`, `lk-greet`) ([record](staff-personalisation-options/brief.md#shift-and-time-of-day-welcomes-10-november-2026)).
 
 ## Staff welcome A and personalisation audit, 9 to 10 November 2026
 

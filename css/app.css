@@ -5234,6 +5234,8 @@ html:has(.tm-focus-page) {
 .mascot-host { position: relative; }
 .mascot { position: absolute; z-index: 1; margin: 0; padding: 0; border: 0; background: none; box-shadow: none; border-radius: var(--r-act); cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .mascot[hidden] { display: none; }
+/* The heading and date keep room for the mascot only when neither the corner nor the Your day card has it (js/mascot.js fit()). */
+#rtitle.mascot-room, .wall-date.mascot-room { padding-right: 76px; }
 .mascot:hover { box-shadow: none; }
 .mascot canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; pointer-events: none; }
 .mascot:focus { outline: none; }

@@ -37,7 +37,7 @@ const homeGeometry = p => p.evaluate(() => {
   const hb = h.getBoundingClientRect(), text = [...range.getClientRects()];
   // Caveat's font box extends vertically beyond its line box even for the unchanged short heading.
   // Check actual horizontal text bounds and that overflow is not clipped, rather than asserting font metrics.
-  return { heading: h.textContent, nameFits: text.every(r => r.left >= hb.left - 1 && r.right <= hb.right + 1) && getComputedStyle(h).overflowY === 'visible',
+  return { heading: h.textContent, prefix: h.textContent.slice(0, h.textContent.indexOf(', ')), named: h.classList.contains('hm-welcome'), nameFits: text.every(r => r.left >= hb.left - 1 && r.right <= hb.right + 1) && getComputedStyle(h).overflowY === 'visible',
     own: b(own), team: b(team), visible: [...document.querySelectorAll('#hm-with-body .hm-tp')].filter(e => e.getBoundingClientRect().bottom <= limit + 0.5).length,
     fullTeam: document.querySelector('#hm-full-team > summary').getBoundingClientRect().bottom <= limit + 0.5,
     section: document.querySelector('[data-hm-priority="section"]').textContent,
@@ -50,7 +50,8 @@ const homeGeometry = p => p.evaluate(() => {
     finally { if (p) { ok(!p.errors.length, label + ': no browser errors ' + p.errors.join(' | ')); await p.context().close(); p = null; } }
   }
   const open = async (name, options = {}) => {
-    p = await L.open(browser, '#/', { who: 'ann', width: 390, height: 844, extra: fixture(name), wait: 1200, ...options });
+    // Compare the same ordinary prefix for every name so random copy cannot change the density baseline.
+    p = await L.open(browser, '#/', { who: 'ann', width: 390, height: 844, extra: fixture(name), wait: 1200, init: () => { Math.random = () => 0; }, ...options });
     await L.waitFor(p, () => document.querySelectorAll('#hm-with-body .hm-tp').length === 3, null, 6000);
   };
   let short;
@@ -61,7 +62,7 @@ const homeGeometry = p => p.evaluate(() => {
     }
     await L.settle(p, 250);
     const g = await homeGeometry(p);
-    ok(g.heading === 'Welcome, ' + name && g.nameFits, 'real fonts: complete display name stays inside its heading (' + name + ')');
+    ok(g.named && g.heading === g.prefix + ', ' + name && g.nameFits, 'real fonts: complete display name stays inside its heading (' + name + ')');
     ok(g.visible === 3 && g.fullTeam, 'real fonts: three scheduled coworkers and full-team control remain above the phone tabs (' + JSON.stringify(g) + ')');
     ok(!g.overflow && /Larder/.test(g.section), 'real fonts: personal section remains visible without sideways scroll');
     if (name === 'Ann') short = g;
@@ -71,7 +72,7 @@ const homeGeometry = p => p.evaluate(() => {
   for (const name of [LONG, 'अदिति शर्मा', '李明', 'W'.repeat(40)]) await step('fallback ' + name, async () => {
     await open(name, { settings: { text: 'xlarge' } });
     const g = await homeGeometry(p);
-    ok(g.heading === 'Welcome, ' + name && g.nameFits && !g.overflow, 'fallback: full name is readable and wraps without horizontal clipping (' + name + ')');
+    ok(g.named && g.heading === g.prefix + ', ' + name && g.nameFits && !g.overflow, 'fallback: full name is readable and wraps without horizontal clipping (' + name + ')');
     ok(/Larder/.test(g.section), 'fallback: the personal section remains available');
     if (name === LONG) ok(g.visible === 3, 'fallback: the representative 40-character name preserves three visible coworkers at enlarged text');
   });
@@ -101,7 +102,7 @@ const homeGeometry = p => p.evaluate(() => {
       const ornaments = [...document.querySelectorAll('.wall-main > .kb-hang .kb-hang-item')].filter(e => e.getClientRects().length);
       const hit = ornaments.some(e => { const a = e.getBoundingClientRect(); return text.some(b => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top); });
       return { hit, visible: ornaments.length, note: !!document.querySelector('.kb-season-note'), ambient: KB_EFFECTS.status().ambientCount,
-        heading: document.querySelector('#rtitle').textContent, overflow: document.documentElement.scrollWidth > innerWidth };
+        heading: document.querySelector('#rtitle').textContent, named: document.querySelector('#rtitle').classList.contains('hm-welcome'), overflow: document.documentElement.scrollWidth > innerWidth };
     });
     async function theme(selection, motion = 'gentle') {
       await p.evaluate(value => KB_SEASONAL.configure(value), { selection, motion, density: 'festive' });
@@ -116,14 +117,14 @@ const homeGeometry = p => p.evaluate(() => {
           __fake.write(cfg, c);
           __fake.write(roster, Object.fromEntries(['people', 'staffIds', 'sousIds', 'headId', 'fnIds', 'fnOnlyIds'].filter(k => c[k] !== undefined).map(k => [k, c[k]])));
         }, [key(['config', 'main']), key(['login', 'roster']), name]);
-        await L.waitFor(p, n => document.querySelector('#rtitle').textContent === 'Welcome, ' + n, name);
+        await L.waitFor(p, n => document.querySelector('#rtitle.hm-welcome')?.textContent.endsWith(', ' + n), name);
         const renamed = await facts();
         ok(!renamed.hit && renamed.note && !renamed.overflow, 'active celebration stays clear immediately after live rename to ' + name);
       }
       for (const id of ['in-diwali', 'np-tihar', 'ph-lunar-new-year', 'bali-galungan']) {
         await theme(id);
         const f = await facts();
-        ok(!f.hit && f.note && f.ambient > 0 && !f.overflow && f.heading === 'Welcome, ' + name,
+        ok(!f.hit && f.note && f.ambient > 0 && !f.overflow && f.named && f.heading.endsWith(', ' + name),
           id + ': complete enlarged welcome and date stay clear while celebration note and ambience remain (' + name + ')');
       }
     }
@@ -138,7 +139,7 @@ const homeGeometry = p => p.evaluate(() => {
   await step('seasonal neutral Home', async () => {
     p = await L.open(browser, '#/', { who: '', width: 390, height: 844, seasonal: { selection: 'np-tihar', motion: 'gentle', density: 'festive' }, wait: 1200 });
     await L.waitFor(p, () => document.querySelector('#app')?.dataset.kbTheme === 'np-tihar');
-    ok(await p.evaluate(() => document.querySelector('#rtitle').textContent === 'Pick a docket' &&
+    ok(await p.evaluate(() => !document.querySelector('#rtitle.hm-welcome') && document.querySelector('#rtitle').textContent === 'Pick a docket' &&
       [...document.querySelectorAll('.kb-hang-item')].filter(e => e.getClientRects().length).length > 0 &&
       !!document.querySelector('.kb-season-note') && KB_EFFECTS.status().ambientCount > 0), 'neutral Home keeps its anchored ornaments, explanation and ambience');
   });

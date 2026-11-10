@@ -627,11 +627,65 @@
   var DOCKETS = [['01', 'Recipes', '#/recipes', 'recipes'], ['02', 'Prep list', '#/prep', 'prep'], ['03', 'Orders', '#/orders', 'orders'], ['04', 'Wastage', '#/waste', 'waste'], ['05', 'Transfers', '#/transfers', 'transfers', 'What other venues took from us, and what we took from them'], ['06', 'Cleaning', '#/cleaning', 'cleaning', 'The kitchen cleaning jobs for today and the week']];
   // Chosen welcome A (10 Nov 2026): the complete authenticated staff name, with the kitchen date below.
   // Only presentation of the held identity; public and locked visitors retain their neutral heading.
+  var HOME_WELCOMES = ['Welcome', 'Hello', 'Hi there', 'G’day'];
+  // Time of day in Queensland joins the ordinary words (owner, 10 Nov 2026). 04:00 starts the kitchen day.
+  var HOME_TIME_WELCOMES = { morning: ['Morning', 'Good morning'], afternoon: ['Afternoon', 'Good afternoon'], evening: ['Evening', 'Good evening'], late: ['Late one', 'Good evening'] };
+  function homeWelcomePeriod() {
+    var h = window.LK_TIME.hour(window.LK_TIME.now());
+    return h >= 4 && h < 12 ? 'morning' : h >= 12 && h < 17 ? 'afternoon' : h >= 17 && h < 22 ? 'evening' : 'late';
+  }
+  // The person's own shift from the saved plan Home already holds (LK_PREP.homeGreet(), no read). Wins over time of day.
+  var HOME_SHIFT_WELCOMES = { before: ['Good to see you', 'Welcome in'], 'break': ['Enjoy your break', 'Have a good break'],
+    back: ['Welcome back', 'Back at it'], last: ['Last stretch', 'Nearly there'], done: ['Thanks for today', 'Good work today'] };
+  // Short, authored wishes use the same occasion as the existing calendar decoration. No staff background is inferred.
+  var HOME_OCCASION_WELCOMES = {
+    'au-new-years-eve': ['New Year wishes', 'Warm wishes'], 'au-new-years-day': ['Happy New Year', 'New Year wishes'],
+    'au-easter-sunday': ['Happy Easter', 'Easter wishes'], 'au-mothers-day': ['Warm wishes', 'Hello'],
+    'au-fathers-day': ['Warm wishes', 'Hello'], 'au-melbourne-cup': ['Happy Cup Day', 'Hello'],
+    'au-christmas-eve': ['Christmas wishes', 'Warm wishes'], 'au-christmas-day': ['Merry Christmas', 'Christmas wishes'],
+    'au-boxing-day': ['Happy Boxing Day', 'Warm wishes'], 'fun-star-wars-day': ['May the fourth be with you', 'Hello'],
+    'fun-chefs-day': ['Happy Chefs Day', 'Hello'], 'fun-world-food-day': ['Happy Food Day', 'Hello'],
+    'fun-coffee-day': ['Happy Coffee Day', 'Hello'], 'fun-halloween': ['Happy Halloween', 'Halloween wishes'],
+    'fun-valentines-day': ['Warm wishes', 'Hello'], 'fun-st-patricks-day': ['Happy St Patrick’s Day', 'Warm wishes'],
+    'in-diwali': ['Happy Diwali', 'Diwali wishes'], 'in-holi': ['Happy Holi', 'Holi wishes'],
+    'in-pongal': ['Happy Pongal', 'Pongal wishes'], 'in-onam': ['Happy Onam', 'Onam wishes'],
+    'in-ganesh-chaturthi': ['Happy Ganesh Chaturthi', 'Warm wishes'], 'in-navaratri': ['Happy Navaratri', 'Navaratri wishes'],
+    'in-durga-puja': ['Happy Durga Puja', 'Durga Puja wishes'], 'in-dussehra': ['Happy Dussehra', 'Dussehra wishes'],
+    'np-dashain': ['Happy Dashain', 'Dashain wishes'], 'np-tihar': ['Happy Tihar', 'Tihar wishes'],
+    'np-nepali-new-year': ['Happy Nepali New Year', 'New Year wishes'],
+    'bali-galungan': ['Happy Galungan', 'Galungan wishes'], 'bali-kuningan': ['Happy Kuningan', 'Kuningan wishes'],
+    'ph-pahiyas': ['Happy Pahiyas', 'Pahiyas wishes'], 'ph-panagbenga': ['Happy Panagbenga', 'Panagbenga wishes'],
+    'ph-kadayawan': ['Happy Kadayawan', 'Kadayawan wishes'], 'ph-sinulog': ['Sinulog wishes', 'Warm wishes'],
+    'ph-lunar-new-year': ['Happy Lunar New Year', 'New Year wishes'],
+    'ph-eid-al-fitr': ['Eid Mubarak', 'Eid wishes'], 'ph-eid-al-adha': ['Eid Mubarak', 'Eid wishes']
+  };
+  // Memory only: one choice per Home visit, identity, kitchen day and occasion. Repaints and renames keep it.
+  // Keep only the previous public phrase between visits to avoid consecutive repeats; reload starts fresh.
+  var homeWelcomeKey = '', homeWelcomePrefix = '';
+  function homeWelcomeWords(n) {
+    if (!n) { homeWelcomeKey = ''; return ''; }
+    var P = window.LK_PREP, bridge = window.KB_THEME_BRIDGE && window.KB_THEME_BRIDGE.status();
+    var themeId = window.LK_TIME.ready() && bridge && !bridge.gated ? bridge.themeId : '';
+    var theme = (window.KB_COMPLETE_ART || []).find(function (item) { return item.id === themeId; });
+    // Celebration first, then the person's shift, then the ordinary words with the time of day.
+    var party = theme && theme.classification === 'celebratory' && HOME_OCCASION_WELCOMES[themeId];
+    var shift = !party && P && P.homeGreet ? P.homeGreet() : '', period = party || HOME_SHIFT_WELCOMES[shift] ? '' : homeWelcomePeriod();
+    var prefixes = party || HOME_SHIFT_WELCOMES[shift] || HOME_WELCOMES.concat(HOME_TIME_WELCOMES[period]);
+    var key = (P && P.identity ? P.identity() : n) + '|' + window.LK_TIME.day() + '|' + (themeId || 'off') + '|' + (shift || period);
+    if (key !== homeWelcomeKey) {
+      var choices = prefixes.filter(function (prefix) { return prefix !== homeWelcomePrefix; });
+      if (!choices.length) choices = prefixes;
+      homeWelcomePrefix = choices[Math.floor(Math.random() * choices.length)];
+      homeWelcomeKey = key;
+    }
+    return homeWelcomePrefix + ', ' + n;
+  }
   function homeHeading(dt, board) {
     var P = window.LK_PREP, n = P && P.whoName ? P.whoName() : '';
-    var words = n ? 'Welcome, ' + n : board ? dt.toLocaleDateString('en-AU', { weekday: 'long' }) : 'Pick a docket';
+    var welcome = homeWelcomeWords(n), words = welcome || (board ? dt.toLocaleDateString('en-AU', { weekday: 'long' }) : 'Pick a docket');
+    var size = Math.max(Array.from(words).length, Array.from(n).length + 9);
     var date = dt.toLocaleDateString('en-AU', { weekday: n || !board ? 'long' : undefined, day: 'numeric', month: 'long' });
-    return '<h2 class="wall-h' + (board ? ' hm-day' : '') + (n ? ' hm-welcome' : '') + (n && Array.from(n).length > 12 ? ' hm-welcome-long' : '') + (n && Array.from(n).length > 28 ? ' hm-welcome-compact' : '') + '" id="rtitle" tabindex="-1" data-home-heading="' + (board ? 'board' : 'dockets') + '">' + esc(words) + '</h2><p class="wall-date"><span data-home-date>' + esc(date) + '</span>' + (board ? ' · <span id="hm-time">' + esc(window.LK_TIME.clock(window.LK_TIME.now())) + '</span>' : '') + '</p>';
+    return '<h2 class="wall-h' + (board ? ' hm-day' : '') + (n ? ' hm-welcome' : '') + (n && size > 21 ? ' hm-welcome-long' : '') + (n && size > 37 ? ' hm-welcome-compact' : '') + '" id="rtitle" tabindex="-1" data-home-heading="' + (board ? 'board' : 'dockets') + '">' + esc(words) + '</h2><p class="wall-date"><span data-home-date>' + esc(date) + '</span>' + (board ? ' · <span id="hm-time">' + esc(window.LK_TIME.clock(window.LK_TIME.now())) + '</span>' : '') + '</p>';
   }
   function homeWelcomePaint() {
     if (parseRoute().name !== 'landing') return;
@@ -639,10 +693,14 @@
     if (!h || !date) return;
     var P = window.LK_PREP, n = P && P.whoName ? P.whoName() : '', board = h.getAttribute('data-home-heading') === 'board';
     var parts = window.LK_TIME.day().split('-'), dt = new Date(+parts[0], +parts[1] - 1, +parts[2], 12);
-    h.textContent = n ? 'Welcome, ' + n : board ? dt.toLocaleDateString('en-AU', { weekday: 'long' }) : 'Pick a docket';
-    h.classList.toggle('hm-welcome', !!n); h.classList.toggle('hm-welcome-long', !!n && Array.from(n).length > 12);
-    h.classList.toggle('hm-welcome-compact', !!n && Array.from(n).length > 28);
-    date.textContent = dt.toLocaleDateString('en-AU', { weekday: n || !board ? 'long' : undefined, day: 'numeric', month: 'long' });
+    var words = homeWelcomeWords(n) || (board ? dt.toLocaleDateString('en-AU', { weekday: 'long' }) : 'Pick a docket');
+    var size = Math.max(Array.from(words).length, Array.from(n).length + 9);
+    // The seasonal bridge observes child changes. Leave settled text alone so its state event cannot repaint forever.
+    if (h.textContent !== words) h.textContent = words;
+    h.classList.toggle('hm-welcome', !!n); h.classList.toggle('hm-welcome-long', !!n && size > 21);
+    h.classList.toggle('hm-welcome-compact', !!n && size > 37);
+    var dateWords = dt.toLocaleDateString('en-AU', { weekday: n || !board ? 'long' : undefined, day: 'numeric', month: 'long' });
+    if (date.textContent !== dateWords) date.textContent = dateWords;
   }
   /* Home (redesign step 2, 8 Nov 2026, head chef; docs/whole-app-redesign-options/brief.md): on the kraft board, the day as
      the heading, then personal section/shift and break/return, scheduled coworkers, work and Prep by section
@@ -1175,6 +1233,12 @@
     if (window.LK_MASCOT) { if (window.LK_MASCOT.api === 1) window.LK_MASCOT.mount(app, { id: id }); return; }
     if (!mascotLoad) mascotLoad = mgScript('js/mascot.js?v=1').then(function () { mascotSync(); }, function () { mascotLoad = null; });
   }
+  // New words or a seasonal change move a mascot already on Home to its new place. Never a new one: a failed
+  // download waits for the next Home view (docs/kitchen-mascot.md).
+  function mascotPlace() {
+    var M = window.LK_MASCOT, s = M && M.api === 1 && M.state();
+    if (s && s.mounted && parseRoute().name === 'landing') mascotSync();
+  }
   /* Private tools load only on their page. A failed download leaves a Retry action.
      Protected data is fetched only after the current sign-in has been checked. */
   var deliveryLoad = null;
@@ -1648,6 +1712,7 @@
     if (navBackTarget && (!history.state || history.state.lkPage !== navBackTarget)) return;
     var returning = navVisit();
     var route = parseRoute();
+    if (route.name !== 'landing') homeWelcomeKey = '';
     var changed = location.hash !== lastHash;
     if (changed) { ui.pick = null; }
     var keepHeading = document.activeElement && document.activeElement.id === 'rtitle';
@@ -2047,6 +2112,19 @@
     var el = app.querySelector('.wtop-who'); if (el) el.outerHTML = whoMark(!!(e.detail && e.detail.signedIn));
     homeWelcomePaint(); mascotSync();
   });
+  // Reuse the calendar's settled state for clock corrections, midnight and the device's On/Off choice.
+  /* The seasonal bridge publishes on every page change, many a second while snow falls. Only a new occasion, its
+     On/Off gate, the kitchen day, clock readiness or page changes the welcome (Christmas at rest: 25 ms of main
+     thread a second when it repainted on each one, 13 ms on main before the varied welcome). */
+  var seasonalSeen = '';
+  document.addEventListener('kb-seasonal-state', function (e) {
+    var d = e.detail || {}, k = [d.themeId || '', !!d.gated, window.LK_TIME.day(), window.LK_TIME.ready(), location.hash].join('|');
+    if (k === seasonalSeen) return;
+    seasonalSeen = k; homeWelcomePaint(); mascotPlace();
+  });
+  // js/prep.js says when the person's shift moment or the hour changes (homePaint(), on its 30 second tick).
+  // New words can reach the mascot's corner: let it check its place again (it steps aside when it would touch them).
+  window.addEventListener('lk-greet', function () { homeWelcomePaint(); mascotPlace(); });
   // "Skip to content" must not change the address: #main is not a page, so the router would open the landing page
   document.addEventListener('click', function (e) {
     var sk = e.target.closest && e.target.closest('a.skip');

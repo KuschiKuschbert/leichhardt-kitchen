@@ -3,7 +3,8 @@
    Each person has their own shuffled set of all 11 actions, kept on this device. On the first Home view
    of the kitchen day where it can play, today's action plays once at the right end of the Welcome row,
    then the mascot rests on the Welcome pose. A tap replays today's action and never draws a new one.
-   No reads, no writes, nothing over a list. The full name always wins: no room, no mascot. */
+   No reads, no writes, nothing over a list. The full name always wins: when the words fill the corner it stands on
+   the Your day card, then the heading keeps it room; only a name that cannot wrap leaves it out. */
 (function () {
   'use strict';
   var API = 1, KEY = 'lk.mascot.', ART = 'art/mascot/', V = '?v=1';
@@ -56,20 +57,58 @@
   }
   // Where the mascot fits: the right end of the Welcome row, standing on the date line, under the top bar and
   // above the first card. The largest whole-pixel size that clears every word of the name and date.
-  function fit(host) {
+  function clashes(words, left, w, top, bottom, gap) {
+    return words.some(function (r) { return r.right > left - gap && r.left < left + w + gap && r.bottom > top && r.top < bottom; }) ||
+      Array.prototype.some.call(document.querySelectorAll('.kb-hang-item'), function (e) { var r = e.getBoundingClientRect(); return r.width && r.left < left + w && r.right > left && r.top < bottom && r.bottom > top; });
+  }
+  function corner(host) {
     var h = host.querySelector('#rtitle.hm-welcome'), d = host.querySelector('.wall-date');
     if (!h || !d) return null;
     var next = d.nextElementSibling, hb = h.getBoundingClientRect(), db = d.getBoundingClientRect(), mb = host.getBoundingClientRect();
     var bar = document.querySelector('.wtop'), top = bar ? bar.getBoundingClientRect().bottom + 4 : mb.top;
     var bottom = Math.min(db.bottom + 4, next ? next.getBoundingClientRect().top - 4 : db.bottom + 4), words = textBoxes(h).concat(textBoxes(d));
-    var sizes = [64, 48], i, w, ht, left, clash;
+    var sizes = [64, 48], i, w, ht, left;
     for (i = 0; i < sizes.length; i++) {
       w = sizes[i]; ht = w * 4 / 3; left = hb.right - w;
       if (bottom - ht < top) continue;
-      clash = words.some(function (r) { return r.right > left - 12 && r.bottom > bottom - ht && r.top < bottom; }) ||
-        Array.prototype.some.call(document.querySelectorAll('.kb-hang-item'), function (e) { var r = e.getBoundingClientRect(); return r.width && r.left < left + w && r.right > left && r.top < bottom && r.bottom > bottom - ht; });
-      if (!clash) return { w: w, left: left - mb.left, top: bottom - ht - mb.top };
+      if (!clashes(words, left, w, bottom - ht, bottom, 12)) return { w: w, left: left - mb.left, top: bottom - ht - mb.top };
     }
+    return null;
+  }
+  /* When the welcome words fill the corner (owner, 10 Nov 2026, B): standing on the Your day card's header line,
+     left of its clock, peeking over the card's top edge. Nothing on Home moves. 48 x 64 px, or 44 x 59 px, which
+     stays under the date line when a long date ("Wednesday 30 September") reaches across. Clear of every word of the
+     welcome, the date and the card's title, the card's pin, the top bar and seasonal ornaments. */
+  function onCard(host) {
+    var card = host.querySelector('#hm-day'), h = host.querySelector('#rtitle.hm-welcome'), d = host.querySelector('.wall-date');
+    if (!card || card.hidden || !h || !d) return null;
+    var head = card.querySelector('.hm-bh'), clock = card.querySelector('.hm-clock'), title = card.querySelector('.hm-bt');
+    if (!head || !clock || !title) return null;
+    var cb = card.getBoundingClientRect(), hd = head.getBoundingClientRect(), ck = clock.getBoundingClientRect(), mb = host.getBoundingClientRect();
+    var bar = document.querySelector('.wtop'), words = textBoxes(h).concat(textBoxes(d), textBoxes(title)), sizes = [48, 44], i, w, ht, left, top;
+    var bottom = hd.bottom + 2;
+    for (i = 0; i < sizes.length; i++) {
+      w = sizes[i]; ht = Math.round(w * 4 / 3); left = ck.left - 12 - w; top = bottom - ht;
+      if (bar && top < bar.getBoundingClientRect().bottom + 4) continue;
+      if (left < cb.left + cb.width / 2 + 24) continue;
+      // 6 px, not the corner's 12: beside the card only its head can reach the date line.
+      if (!clashes(words, left, w, top, bottom, 6)) return { w: w, left: left - mb.left, top: top - mb.top, spot: 'card' };
+    }
+    return null;
+  }
+  /* The corner first, then the card. When neither fits (a long date at a large text size), the heading and date keep
+     room for the mascot (A): their words wrap before the corner. Only when even that fails is it left out,
+     so the full name always wins. The room is checked by measuring without it, so a resize never loops. */
+  function room(host, on) { Array.prototype.forEach.call(host.querySelectorAll('#rtitle, .wall-date'), function (e) { e.classList.toggle('mascot-room', on); }); }
+  function fit(host) {
+    var f;
+    room(host, false);
+    f = corner(host) || onCard(host);
+    if (f || !host.querySelector('#rtitle.hm-welcome')) return f;
+    room(host, true);
+    f = corner(host);
+    if (f) { f.spot = 'room'; return f; }
+    room(host, false);
     return null;
   }
 
@@ -128,7 +167,7 @@
     this.place = function () {
       var f = fit(host);
       if (!f) { btn.hidden = true; if (playing) rest(); return false; }
-      btn.hidden = false; btn.style.width = f.w + 'px'; btn.style.height = (f.w * 4 / 3) + 'px'; btn.style.left = f.left + 'px'; btn.style.top = f.top + 'px';
+      btn.hidden = false; btn.setAttribute('data-spot', f.spot || 'corner'); btn.style.width = f.w + 'px'; btn.style.height = (f.w * 4 / 3) + 'px'; btn.style.left = f.left + 'px'; btn.style.top = f.top + 'px';
       return true;
     };
     this.start = function () {
@@ -152,6 +191,7 @@
       gone = true; stop(); clearTimeout(holdTimer); if (io) io.disconnect(); if (ro) ro.disconnect();
       document.removeEventListener('visibilitychange', onVis); btn.removeEventListener('click', onTap);
       if (btn.parentNode) btn.parentNode.removeChild(btn); host.classList.remove('mascot-host');
+      room(host, false);
     };
   }
 
