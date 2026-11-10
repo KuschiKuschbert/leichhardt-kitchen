@@ -39,7 +39,7 @@ const flat = s => (s || '').replace(/\s+/g, ' ').trim();
   let p = await L.open(b, '#/fn', { who: 'sam', extra: extra(), width: 390, height: 844, wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.fn-list-page .fn-card'));
   const secs = await p.$$eval('.fn-list-page .fn-sec-h', l => l.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
-  ok(secs.length === 2 && /^Today /.test(secs[0]) && /^Upcoming functions the next 3 days$/.test(secs[1]), 'list: Today, then Upcoming functions, as headings on one page (' + secs.join(' | ') + ')');
+  ok(secs.length === 2 && /^Today /.test(secs[0]) && /^Upcoming functions the next 7 days$/.test(secs[1]), 'list: Today, then Upcoming functions, as headings on one page (' + secs.join(' | ') + ')');
   const cards = await p.$$eval('.fn-list-page .fn-card', l => l.map(c => ({ eb: (c.querySelector('.fn-c0') || {}).textContent, name: c.querySelector('.fn-c1 b').textContent,
     next: ((c.querySelector('.fn-cnext') || {}).textContent || '').replace(/\s+/g, ' ').trim(), note: ((c.querySelector('.fn-cnote') || {}).textContent || ''),
     noteHtml: !!(c.querySelector('.fn-cnote b')), last: c.lastElementChild.className, cancel: !!c.querySelector('.fn-card-actions [data-fn="status"]') })));
@@ -51,7 +51,7 @@ const flat = s => (s || '').replace(/\s+/g, ' ').trim();
   ok(cards.every(c => c.last === 'fn-card-actions' && c.cancel), 'Cancel is the last thing on every card');
   const days = await p.$$eval('.fn-list-page .fn-day h4', l => l.map(e => e.textContent));
   const quiet = await txt(p, '.fn-quiet') || '';
-  ok(days.join() === [M.dayName(M.addDays(today, 1)), M.dayName(M.addDays(today, 3))].join() && quiet === 'Nothing booked on ' + M.dayName(M.addDays(today, 2)) + '.', 'Upcoming: only the booked days; the empty one in one line (' + days.join() + ' / ' + quiet + ')');
+  ok(days.join() === [M.dayName(M.addDays(today, 1)), M.dayName(M.addDays(today, 3))].join() && quiet === 'Nothing booked on the other 5 days.', 'Upcoming, a week ahead (10 Nov 2026): only the booked days; the 5 empty ones in one line (' + days.join() + ' / ' + quiet + ')');
   ok((await p.$$('.fn-list-page [data-fn="print-prep"]')).length === 3, 'Print prep sheet: today and each booked day only');
   ok(p.errors.length === 0 && !(await L.overflow(p)), '390 px list: no page errors, no sideways scroll ' + p.errors.join(' | '));
   await p.click('[data-fn="days"][data-v="14"]'); await L.settle(p, 300);
@@ -124,7 +124,7 @@ const flat = s => (s || '').replace(/\s+/g, ' ').trim();
   // 5. nothing booked at all in the coming days: one line
   p = await L.open(b, '#/fn', { who: 'sam', extra: extra({ b60: F.b60 }), width: 390, wait: 1500 });
   await L.waitFor(p, () => !!document.querySelector('.fn-quiet'));
-  ok(await txt(p, '.fn-quiet') === 'Nothing booked in the next 3 days.' && !(await p.$('.fn-day')), 'no function in the coming days: one line, no empty days');
+  ok(await txt(p, '.fn-quiet') === 'Nothing booked in the next 7 days.' && !(await p.$('.fn-day')), 'no function in the coming days: one line, no empty days');
   await p.context().close();
 
   // 6. every size: no sideways scroll, no errors, Cancel at the card's end

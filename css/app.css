@@ -4041,6 +4041,49 @@ html.tm-open, html.tm-open body { overflow: hidden; }
 .fn-band .fn-more { border-color: rgba(251, 248, 241, 0.7); background: transparent; color: var(--bar-text); }
 .fn-band a.fn-svc { border-color: var(--bar-accent); background: var(--bar-accent); color: var(--bar); }
 .fn-band .fn-stale { color: var(--bar-text); }
+/* The Next function line (functions ahead of time, head chef 10 Nov 2026, docs/function-ahead-options/brief.md): on a
+   day the band would draw nothing, the slot holds one quiet line on reference paper (an upcoming function is not live,
+   so not the band's dark, and not attention, so not amber). Two rows that never wrap: row 1 starts with what it is
+   (Next function, Cancelled · Do not prep, Order today, Tomorrow, No signal), never cut; row 2 is the name, shortened
+   with an ellipsis. Every state is the same height, so its words can change without moving the list below. */
+.fn-band.is-ahead { background: var(--surface-reference); color: var(--ink); border-bottom: 1.5px solid var(--ink); box-shadow: none; }
+.fn-ahead { display: flex; align-items: center; gap: 0.5rem; max-width: 1240px; margin: 0 auto; padding: 0.15rem 0.75rem; }
+.fn-ahead-b { flex: 1 1 auto; min-width: 0; min-height: 44px; display: flex; align-items: center; justify-content: flex-start; gap: 0.35rem; margin: 0; padding: 0.2rem 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; text-decoration: none; cursor: pointer; }
+.fn-ahead-tx { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 1px; }
+.fn-ahead-b:focus-visible, .fn-ahead-more:focus-visible, .fn-band.is-ahead .fn-ahead-hide:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 2px; border-radius: 4px; }
+.fn-band.is-ahead .fn-ahead-hide:focus-visible { border-radius: 50%; }
+/* the line sits right under the top bar: its focus ring is drawn inside, so its top edge is never hidden */
+.fn-ahead-b:focus-visible { outline-offset: -3px; }
+.fn-ahead-l { display: flex; align-items: baseline; min-width: 0; white-space: nowrap; font: 700 0.8rem/1.25 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.fn-ahead-s { flex: none; }
+.fn-ahead-d { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--small-ink); }
+.fn-ahead-stop { color: var(--bad-ink); font-weight: 700; }
+.fn-ahead-k.is-pending { color: var(--small-ink); }
+.fn-ahead-t { display: flex; flex-wrap: wrap; align-content: flex-start; min-width: 0; height: 1.3em; overflow: hidden; white-space: nowrap; font-size: 1rem; line-height: 1.3; color: var(--ink-soft, #3b3a36); }
+.fn-ahead-nm { flex: 0 1 auto; display: flex; min-width: 0; max-width: 100%; }
+.fn-ahead-n { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; color: var(--ink); font-weight: 700; }
+.fn-ahead-p, .fn-ahead-x { flex: none; }
+.fn-ahead-b:hover .fn-ahead-n { text-decoration: underline; text-underline-offset: 2px; }
+.fn-ahead-chev { flex: none; width: 14px; height: 14px; color: var(--muted); }
+.fn-ahead-more { flex: 0 0 auto; display: inline-flex; align-items: center; min-height: 44px; padding: 0 0.55rem; border: 1.5px solid var(--ink); border-radius: var(--r-act); background: var(--paper); color: var(--ink); font-size: 0.875rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.fn-ahead-more .fn-ahead-m2 { margin-left: 0.25em; }
+.fn-band.is-ahead .fn-ahead-hide { width: 44px; height: 44px; margin-left: 0; border-color: var(--ink); background: var(--paper); color: var(--ink); }
+.fn-ahead.is-cancelled { box-shadow: inset 4px 0 0 var(--bad-ink); padding-left: 0.95rem; }
+.fn-ahead.is-cancelled .fn-ahead-n s { text-decoration-thickness: 2px; }
+.fn-ahead .fn-tag { padding: 0 4px; font-size: 0.7rem; line-height: 1.05; vertical-align: 0.5px; color: var(--ink); }
+.fn-ahead .fn-t-off { color: var(--bad-ink); }
+.fn-ahead-l .fn-t-order, .fn-ahead-l .fn-t-tom { letter-spacing: 0.04em; }
+/* phones: "+1 more" over "this week", so the words on row 1 keep their room at every text size */
+@media (max-width: 479px) {
+  .fn-ahead-more { flex-direction: column; justify-content: center; padding: 0.1rem 0.55rem; line-height: 1.12; text-align: center; }
+  .fn-ahead-more .fn-ahead-m2 { margin-left: 0; font-size: 0.8rem; font-weight: 500; }
+  html[data-text="xlarge"] .fn-ahead-chev { display: none; }
+  html[data-text="xlarge"] .fn-ahead-l { letter-spacing: 0.08em; }
+}
+@media (min-width: 720px) {
+  .fn-ahead-tx { flex: 0 1 auto; flex-direction: row; align-items: baseline; gap: 0 0.9rem; }
+  .fn-ahead-l { flex: none; max-width: 60%; }
+}
 /* the one line that stays pinned once the band has scrolled off: the same dark */
 .fn-strip { background: var(--bar); border-bottom: 0; color: var(--bar-text); box-shadow: inset 0 -3px 0 var(--accent-ink), 0 2px 8px rgba(0, 0, 0, 0.18); }
 /* Functions: Today, then Upcoming (two headings on one page, not tabs). Each function is one card: a small line with the
