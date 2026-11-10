@@ -2555,6 +2555,14 @@ html.has-upd .dw-studio .dw-stage { top: 0; }
 .fn-plist, .fn-chg { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.3rem; }
 .fn-plist small { display: block; color: var(--muted); }
 .fn-chg span { color: var(--muted); font-size: 0.9rem; }
+/* Who has seen it, on a function's page for chefs (10 Nov 2026, js/functions.js seenHTML()): three plain rows under
+   their own heading, names wrap, times quiet; no box (writing pages stay quiet) */
+.fn-seen { margin: 1rem 0 0.5rem; }
+.fn-seen .btn { margin-top: 0.5rem; }
+.fn-seen-l { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.55rem; }
+.fn-seen-r { display: flex; flex-direction: column; gap: 0.1rem; overflow-wrap: anywhere; }
+.fn-seen-r b { font-weight: 700; }
+.fn-seen-t { color: var(--muted); font-size: 0.9rem; white-space: nowrap; }
 .fn-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 .fn-kc { margin-top: 1rem; padding: 0.6rem 0.8rem 0.7rem; border: 2px solid #E2A04E; border-radius: 10px; background: #FFF8EC; }
 .fn-kc .fn-h { margin-top: 0; }

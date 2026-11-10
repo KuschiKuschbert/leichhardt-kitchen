@@ -3085,7 +3085,7 @@
       .then(function () { return all('drawings'); }).then(function (r) { out.drawings = r; return subs(r, 'drawings', 'hist', out.drawingsHist); })
       .then(function () { return all('drawtpl'); }).then(function (r) { out.drawtpl = r; return all('drawlib'); }).then(function (r) { out.drawlib = r; })
       .then(function () { out.functionsHist = {}; return all('functions'); }).then(function (r) { out.functions = r; return subs(r, 'functions', 'hist', out.functionsHist); })
-      .then(function () { return all('fncontact'); }).then(function (r) { out.fncontact = r; return all('fnsent'); }).then(function (r) { out.fnsent = r; })
+      .then(function () { return all('fncontact'); }).then(function (r) { out.fncontact = r; return all('fnsent'); }).then(function (r) { out.fnsent = r; return all('fnseen'); }).then(function (r) { out.fnseen = r; })
       .then(function () { S.exporting = 'Reading shift pings and minutes...'; draw(); return all('notes'); }).then(function (r) { out.notes = r; return subs(r, 'notes', 'seen', out.notesSeen); })
       .then(function () { return all('directnotes'); }).then(function (r) { out.directnotes = r; out.directnotesSeen = {}; return subs(r, 'directnotes', 'seen', out.directnotesSeen); })
       .then(function () { return all('minutes'); }).then(function (r) { out.minutes = r; return Promise.all([subs(r, 'minutes', 'hist', out.minutesHist), subs(r, 'minutes', 'signs', out.minutesSigns)]); })
@@ -3230,7 +3230,7 @@
       .then(function () { return bookDocs(old).then(function (l) { reads += Math.max(1, l.length); step(l.map(function (d) { return { ref: nd('book', d.id), data: d.data() }; })); }); }).then(function () { return readCol('recipes'); }).then(function () { return readSub('recipes', 'hist'); })
       .then(function () { return readCol('drawings'); }).then(function () { return readSub('drawings', 'hist'); })
       .then(function () { return readCol('drawtpl'); }).then(function () { return readCol('drawlib'); })
-      .then(function () { return readCol('functions'); }).then(function () { return readSub('functions', 'hist'); }).then(function () { return readCol('fncontact'); }).then(function () { return readCol('fnsent'); })
+      .then(function () { return readCol('functions'); }).then(function () { return readSub('functions', 'hist'); }).then(function () { return readCol('fncontact'); }).then(function () { return readCol('fnsent'); }).then(function () { return readCol('fnseen'); })
       // the supplier workspace reads its own records (js/supplier-store.js) and writes them in its own step, from the same read
       .then(function () { return supplierTools().then(function (store) { return store.exportAll().then(function (out) {
         var m = (out.suppliers || []).length + (out.supplierlinks || []).length;
@@ -14131,6 +14131,10 @@
     bookState: bookState,
     fnOK: fnOK, fnCancelOK: fnCancelOK, toast: toast, btnPatch: btnPatch,
     fnState: fnState,
+    // Who has seen a function (10 Nov 2026, js/functions.js seenHTML()): the head chef, the sous chefs and the admin ask;
+    // the kitchen people who could have (active, on the staff list, not functions only), by id and name
+    fnSeenOK: chefAllowed,
+    fnPeople: function () { return ptPeople().map(function (p) { return { id: p.id, name: p.name }; }); },
     todoOK: todoOK, cleaningOK: cleaningOK, cleaning: cleaningApi,
     // Today's team (7 Nov 2026): the chef chip in the top bar and its icon for the chef hat tile (js/app.js)
     teamOK: teamOK, teamChip: teamChipHTML, teamIcon: tmIcon,

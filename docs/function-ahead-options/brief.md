@@ -9,9 +9,9 @@ Council for the head chef's question of 10 November 2026: "If there is a functio
 - **Mix:** five of six reviewers recommended the same narrow mix. It has its own combined preview (`design-mix/`), which all six endorse with changes (8 to 8.5 out of 10). A revision pass fixed the two faults they reproduced. The four reviewers who found faults re-checked it and endorse it with changes (8 to 8.5), with six repairs listed for the build (see **Revisions and re-check**).
 - **Review status:** a lead synthesis, given a focused review by all six reviewers and re-checked by four. It is not a full council round on its own.
 - **Chosen (10 Nov 2026, head chef): the mix**, with the line kept for everyone on the work pages and the Function tomorrow card shown to everyone once more. See **Chosen** below.
-- **Build:** steps 1 (the work-page line), 2 (the Home card) and 3 (the Orders tag) built 10 Nov 2026, see **Build record**.
+- **Build:** steps 1 (the work-page line), 2 (the Home card) and 3 (the Orders tag) built 10 Nov 2026, see **Build record**. Step 4 (who has said Got it, for the chefs) asked for and built the same evening after a quick check, see **Step 4 quick check**.
 
-**Recommendation: the mix.** A's quiet Next function line is the base, on Home and in the band's place on every work page. Add C's heads-up card under Your day, which collapses into A's line after Got it. Add B's rule that the line only appears or changes size when a page opens, and B's "Not ordered yet" words on the Orders stock line. Also show `#/fn` Upcoming 7 days ahead and put the guests on the sheet. Leave out B's week strip, B's band changes, C's bell dot and any record of who has seen it.
+**Recommendation: the mix.** A's quiet Next function line is the base, on Home and in the band's place on every work page. Add C's heads-up card under Your day, which collapses into A's line after Got it. Add B's rule that the line only appears or changes size when a page opens, and B's "Not ordered yet" words on the Orders stock line. Also show `#/fn` Upcoming 7 days ahead and put the guests on the sheet. Leave out B's week strip, B's band changes, C's bell dot and any record of who has seen it. (Later the same day the head chef asked for Got it on the Home card to be recorded for the chefs: step 4.)
 
 ## When a function shows today
 
@@ -188,8 +188,22 @@ Build in the order below, with the six repairs from the re-check, each step its 
 1. **Work-page line** with the open-only rule, `#/fn` 7 days, guests on the sheet. The header-height click test goes first: a booking, no signal, midnight, a cancel and a same-day booking while Prep is open (repair 4). The head chef reviewer asked for this order because it fixes his Tuesday problem.
 2. **Home card** under Your day, collapsing to the line. Includes the busy-week card with dietaries as typed (repair 1), the double-tap guard (repair 2), the large-text scroll (repair 3), the version stamp (repair 5), the per-person Got it key and the shared-tablet test.
 3. **Orders "Not ordered yet" tag.**
+4. **Who has seen it** (asked for after steps 1 to 3): Got it on the Home card is recorded once for the chefs, who see it on the function's own page.
 
-No new reads, writes, rules or listeners in any step. Each step remeasures the implemented app at 390, 768 and 1280 px.
+No new reads, writes, rules or listeners in steps 1 to 3. Step 4 adds one small write per Got it, one read when a chef asks, and a rule (looser: publish before the client). Each step remeasures the implemented app at 390, 768 and 1280 px.
+
+## Step 4 quick check: who has seen it (10 Nov 2026)
+
+The head chef asked to track whether the team taps Got it on Home's function card ("can we just track that") and chose **who has and who hasn't** over "only who has, like pings" and "not now". He also asked where the ping tracker is: Shift pings (the bell's Write or edit pings, or the chef panel's Today, Shift pings), Who has seen it today on each of today's pings; pings are unchanged. This reverses "no record of who has seen it" above for the Home card only.
+
+- **Verdict: Build** (small change on existing pages, so the quick check, no extra agents for the verdict). No new tab, top bar or tab bar button, pop-up or step.
+- **Needed and adds value.** Got it was kept only on each phone, so nobody could tell whether the team had seen a function. The Not yet names say who to tell in person; nobody has to ask around.
+- **Taps and lines (390 px).** Staff: Got it is still 1 tap and nothing moves; the card's foot line now says "Your chefs see who has" (same one line). Chefs: open the function (1 tap from the band, Home or `#/fn`), then 1 tap on Check who has seen it. The section sits under the function's card, below everything a cook needs on that page; no line is lost on a work page.
+- **Contract fit.** Service rules: Works (nothing over a list, no new button on a bar). Surfaces: Works (quiet writing page, no box or colour per row; red only for a failed read). Staff-first Home: Works (the card keeps its place). Pings precedent: Works (one small record per Got it, read by chefs on a tap). Access: Works (the rules let only the head chef, the sous chefs and the admin read; a person creates only their own; functions-only accounts neither). Reads: Works (no read on open; one query when asked).
+- **Design references.** Linear and Todoist (activity as a quiet line under the item, not a dashboard): Works. Flighty (state in plain words with when): Works for the Got it times. Duolingo and Headspace (streaks, nudges): Not relevant by choice: no score and no nudge to staff.
+- **Try to break it.** (1) Undo within 9 seconds: nothing is sent (tested). (2) Two phones, or a cleared phone, send the same Got it: an exact retry is accepted, a later time moves the record on, an older one is refused (rules tested). (3) No signal: nothing waits to be sent, since a waiting record would hold Sign out and the 04:00 refresh; it goes at the next open with a signal (tested). (4) A shared tablet: only the signed-in person's own marks go, in their name; the rules refuse any other name (tested). (5) The client before the rules: the write is refused, counted on the mark and tried again at a later load (up to 5), so nothing is lost in the minutes before the rules are published (tested with a refusal). The rules are published from the branch before the merge as well. (6) Got its made since step 2 went live (21:31): sent at the next open of Home with their own time (tested). (7) A failed read never shows everyone as Not yet (tested).
+- **What it cannot know.** Got it on a phone with nobody signed in, or on a copy of the book from before this change, is not counted; seeing a card is not Got it. The chef's section says it counts Got it on Home's card. The Next function line is not tracked: seeing a line is not a tap.
+- **For the head chef.** Function managers (functions-only accounts) do not see it; tell me if they should.
 
 ## Build record
 
@@ -255,6 +269,26 @@ Head chef choices applied: the work-page line stays for everyone; everyone sees 
 - Chefs see the order day once: their Since badge steps aside on a tagged line. Staff see no order day (head chef, 10 Nov 2026).
 
 On plain main the new file fails 24 of 45; with the change 0 of 45.
+
+**Step 4, who has seen it (10 Nov 2026, `feat/fn-seen`).** Built as in the quick check above, checked in the click-test stand-in (`tests/fn-seen.test.js`, 60 checks at 390 and 1280 px and extra large text) and on the Firestore emulator:
+
+- **The record.** `fnseen/<function id>_<staff id>_<card>_<g>`: `{ fid, g, s, day, at, by }`, card `week`, `tom` or `off`, `g` the booking's `kitchenSig()` when the card was seen, `at` the tap. Sent by `huSync()` in `js/functions.js` once the Got it's Undo has gone (9 seconds, another Got it, or the next open of Home), only with a signal and the functions list from the server, only for the signed-in person's own marks; the mark keeps `w: 1` once sent. Undo writes nothing.
+- **The rule** (`fnSeenOk()` in `firestore.rules`): created by that person on their own session (or copied as it is by the verified admin in a PIN move), its id from its fields, six fields only; an exact retry changes nothing; a later Got it by that person to the same card and version moves only its time forward; never deleted. Read by the head chef, the sous chefs and the admin only. Looser: published before the client.
+- **The chef's section.** `seenHTML()` on `#/fn/<id>` (not in the sheet, so the manager's preview and the popup are unchanged), for `LK_PREP.fnSeenOK()` while the function is confirmed and to come. One `getDocsFromServer` by `fid` on the tap; then Got it with when, Before the last change (an older `g`, or last heard it was cancelled), and Not yet from `LK_PREP.fnPeople()` (active, on the staff list, not functions only). A record from someone off the list, or a damaged one, is left out. The result is said once for a screen reader.
+- **Backups.** The admin Backup, the nightly backup, its recovery check and the kitchen PIN move copy `fnseen`.
+- **Stand-in.** `tests/fake/firebase-firestore.js` refuses staff reads and mirrors the create-only rule.
+- **Rules tests.** 20 checks in `tests/rules/rules.test.mjs`, 9 rows in `tests/rules/client-shapes.test.mjs`, and `fnseen/x` in `tests/rules/access.test.mjs`. `tests/locked-reads.test.js` probes the read for staff, a sous chef and a function manager; `tests/admin-tools.test.js` checks the backup and the PIN move.
+
+**An independent review** (four lenses, each finding checked by two skeptics; 8 of 13 findings confirmed, 4 distinct) found, and this pull request fixes:
+
+- A second Got it to the same card and version (after a cancel and restore, or an edit and its undo) was refused as a change and counted as sent, so the chefs saw that person under Before the last change. The rule now lets that person move the record's time forward.
+- Every refusal counted as sent, so Got its sent in the minutes before the rules were published would have been lost. A refusal is now counted on the mark and tried again at a later load, up to 5 times.
+- Check who has seen it could stay on Checking... on a half-dropped signal. After 6 seconds it is a failed check, with the button back.
+- The cancelled card's Got it told screen readers that chefs see who has said Got it; they do not for a cancelled function, so it no longer says so.
+
+Left as it is (low): on a shared tablet handed over within the 9 seconds of Undo, the first person's Got it goes the next time they sign in on that tablet. Rejected by the skeptics: a write holding Sign out (nothing is sent with no signal), planted records (the rules allow only one's own), the weekday-only time (Got it is at most 7 days old), and growth (a few records a week).
+
+On plain main the new file fails 13 of 34 (its steps stop at the first missing piece); with the change 0 of 60.
 
 
 ## Files

@@ -54,7 +54,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Wastage history and CSV reports | `docs/wastage-history.md`, `docs/report-exports.md` |
 | Transfer storage and returns | `docs/transfer-returns.md` (publish rules from the feature branch first: it indexes loans) |
 | Functions: cancel, Undo, delete, print | `docs/function-cancellation.md`, `docs/function-printing.md` |
-| Functions ahead of time: the chosen mix (Function this week card, Next function line, Orders tag), when a function shows before its day | `docs/function-ahead-options/brief.md` (Chosen, build plan) |
+| Functions ahead of time: the chosen mix (Function this week card, Next function line, Orders tag, who has said Got it), when a function shows before its day | `docs/function-ahead-options/brief.md` (Chosen, build plan) |
 | Operandio cooling: manual stages, shared confirmation, quiet reminders and 10:00–21:00 Queensland window with nightly expiry | `docs/operandio-cooling.md`, `docs/operandio-cooling-options/brief.md` |
 | Operandio clock motion: chosen B desktop pill and fixed mobile ring, implementation and release checks | `docs/operandio-clock-motion-options/brief.md` |
 | Pings: who gets them, the sound | `docs/ping-recipients.md`, `docs/ping-sound.md` |

@@ -332,7 +332,7 @@
   }
   function watch() {
     var prep = P(); if (!prep || !prep.state) return;
-    if (!prep.privateAccess()) { stop(); sheetClose(false, true); var printed = document.getElementById('fn-print'); if (printed) printed.remove(); F.list = []; F.all = null; F.sent = {}; F.state = 'idle'; lsSet('lk.fn', null); changed(); return; }
+    if (!prep.privateAccess()) { stop(); sheetClose(false, true); SEEN = { who: '', by: {} }; var printed = document.getElementById('fn-print'); if (printed) printed.remove(); F.list = []; F.all = null; F.sent = {}; F.state = 'idle'; lsSet('lk.fn', null); changed(); return; }
     var st = prep.state;
     if (!/^\d{4,6}$/.test(st.pin || '') || st.configState !== 'ok') return;
     var key = st.pin + '|' + T.day();
@@ -606,8 +606,9 @@
   function huOK() { var p = window.LK_PREP; return !!p && p.privateAccess() && !(p.functionOnly && p.functionOnly()); }
   function huKey() { return 'lk.fn.hu.' + (ahWho() || 'device'); }
   // lk.fn.hu.<staff id>: { <function id>: { s: 'week' | 'tom' | 'off', g: what the card showed (huSig()), d: its date,
-  // t: when (now()) } }, this person on this phone. Out of date for a function once its day has passed (dropped at an
-  // open, huOpen()); a booking whose kitchen words changed since (g) brings its card back once, marked Changed.
+  // t: when (now()), w: 1 once the chefs have it (fnseen, huSync()), n: refusals so far, w: 2 after 5 } }, this person
+  // on this phone. Out of date for a function once its day has passed (dropped at an open, huOpen()); a booking whose
+  // kitchen words changed since (g) brings its card back once, marked Changed.
   function huGet() { try { var m = JSON.parse(lsGet(huKey()) || '{}'); return m && typeof m === 'object' && !Array.isArray(m) ? m : {}; } catch (e) { return {}; } }
   function huPut(m) { lsSet(huKey(), Object.keys(m).length ? JSON.stringify(m) : null); }
   var huSig = kitchenSig;
@@ -665,6 +666,7 @@
       Object.keys(m).forEach(function (id) { if (!m[id] || !isYmd(m[id].d) || m[id].d < today) { delete m[id]; gone++; } });
       if (gone) huPut(m);
     }
+    huSync();
   }
   function huFirst() {
     if (!HU.pending || F.state !== 'ok' && !F.list.length) return;
@@ -685,8 +687,9 @@
   // the notes as they were typed (service and dietary notes), never shortened by rule: an allergy keeps its words
   function huNotes(f) { return f.notes ? esc(f.notes) : 'None entered'; }
   function huPlatters(f) { var tot = totalQty(f); return esc(linesText(f)) + (tot ? ' (' + tot + ')' : ''); }
+  // the chefs see who has said Got it only while a function is on (seenHTML()), so the cancelled card does not say so
   function huGotBtn(ids, s, name, plain) {
-    return '<button type="button" class="btn' + (plain ? '' : ' dark') + ' fn-hu-got" data-fn="hu-got" data-ids="' + esc(ids.join(',')) + '" data-s="' + s + '" aria-label="' + esc('Got it: ' + name + '. Just for you. It stays on Home as one line.') + '">Got it</button>';
+    return '<button type="button" class="btn' + (plain ? '' : ' dark') + ' fn-hu-got" data-fn="hu-got" data-ids="' + esc(ids.join(',')) + '" data-s="' + s + '" aria-label="' + esc('Got it: ' + name + '. It stays on Home as one line for you.' + (s === 'off' ? '' : ' Your chefs see who has said Got it.')) + '">Got it</button>';
   }
   // opens the function's sheet over Home (a button: the page under it stays Home)
   function huOpenB(f) { return '<button type="button" class="fn-hu-open" data-fn="open" data-id="' + esc(f.id) + '" aria-haspopup="dialog">Open the function</button>'; }
@@ -705,7 +708,7 @@
             '<span class="fn-wk-2">' + (huGone(f) ? 'Do not prep or order for it' : (f.first ? 'Food ' + esc(kclock(f.first)) : 'Times TBC') + ' · ' + totalQty(f) + ' platters') + '</span>' +
             (f.notes && !huGone(f) ? '<span class="fn-wk-3">' + esc(f.notes) + '</span>' : '') + '</span>' + AH_CHEV + '</button></li>';
         }).join('') + '</ul><div class="fn-hu-act">' + huGotBtn(fs.map(function (f) { return f.id; }), 'week', 'all ' + fs.length + ' functions this week') + '<a class="fn-hu-open" href="#/fn">Open Functions</a></div>' +
-        '<p class="fn-hu-foot">One Got it for all ' + fs.length + '. Just for you, until the day before each one.</p></section>';
+        '<p class="fn-hu-foot">One Got it for all ' + fs.length + ', until the day before each one. Your chefs see who has.</p></section>';
     }
     var f = huFn(c.id); if (!f) return '';
     // what the card says follows the booking now: cancelled or removed since the open shows as such, in place
@@ -727,7 +730,7 @@
       '<p class="fn-hu-when">' + esc(dayName(f.date)) + ' · ' + huDays(f, t) + '</p><p class="fn-hu-name">' + esc(f.name) + '</p><p class="fn-hu-sub">' + esc(sub) + '</p>' + facts +
       '<div class="fn-hu-act">' + huGotBtn([f.id], kind, f.name) + huOpenB(f) + '</div>' +
       (other ? '<p class="fn-hu-also">Also this week: <b>' + esc(dayName(other.date)) + '</b> ' + (huGone(other) ? '<s>' + esc(other.name) + '</s>' : esc(other.name)) + '</p>' : '') +
-      '<p class="fn-hu-foot">' + (kind === 'tom' ? 'Everyone sees this once, the day before. Got it hides it only for you.' : 'Got it is just for you, until the day before.') + '</p></section>';
+      '<p class="fn-hu-foot">' + (kind === 'tom' ? 'Everyone sees this once, the day before. Your chefs see who has said Got it.' : 'Got it hides it for you until the day before. Your chefs see who has.') + '</p></section>';
   }
   // the Next function line on Home: the work pages' line on a quiet card, no minus; it says "Got it" with Undo after one
   function huLineHTML(f, t) {
@@ -779,6 +782,7 @@
     var first = huFn(ids[0]);
     // the card folds into the line in its place, naming the function it was about (a cancelled one says Cancelled)
     var ack = HU.ack = { line: ids[0], prev: prev };
+    huSync();   // an earlier Got it whose Undo this one replaced goes to the chefs now
     HU.plan = huPlan(t, first ? ids[0] : null);
     if (HU.plan.line !== ids[0]) ack.line = '';
     if (HU.plan.card) HU.shown = Date.now();
@@ -787,9 +791,9 @@
     // after 9 s the line says Next function again and names the nearest one (the same two rows: words only); the focus,
     // if it was on Undo, moves to the line
     setTimeout(function () {
-      if (HU.ack !== ack) return;
+      if (HU.ack !== ack) { huSync(); return; }
       var had = document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('fn-hu-undo');
-      HU.ack = null; if (HU.plan) HU.plan.line = huPlan(now()).line || HU.plan.line; paint();
+      HU.ack = null; if (HU.plan) HU.plan.line = huPlan(now()).line || HU.plan.line; paint(); huSync();
       if (had) { var lb = document.querySelector('#fn-hm .fn-ahead-b'); if (lb && lb.focus) lb.focus({ preventScroll: true }); }
     }, 9000);
     var u = document.querySelector('#fn-hm .fn-hu-undo'); if (u) u.focus({ preventScroll: true });
@@ -805,6 +809,41 @@
     HU.plan = huPlan(now()); HU.shown = Date.now(); paint();
     huSay('Undone. The card is back.');
     var g = document.querySelector('#fn-hm .fn-hu-got'); if (g) g.focus({ preventScroll: true });
+  }
+  /* Got it reaches the chefs (head chef, 10 Nov 2026; brief step 4): each of this person's marks goes to
+     fnseen/<function id>_<staff id>_<card>_<g> once, after its Undo has gone (the 9 seconds, another Got it or the next
+     open of Home), so an Undo writes nothing. Marks made before this change go at the next open. One small write per
+     Got it, never a read. Only with a signal and the functions list from the server: a receipt waiting with no signal
+     would hold Sign out and the 04:00 refresh for nothing. A later Got it to the same card and version moves the
+     record's time forward (the rules allow that one change). A refusal is not taken as sent: the rules may not be
+     published yet, or the session was reset. The mark counts it (n) and tries again at a later load of the book; after
+     5 refusals it stops (w: 2; another phone may hold a newer record). The mark keeps w: 1 once it is in. */
+  var huSending = {};
+  function huSync() {
+    var prep = P(), api = prep && prep.book && prep.book();
+    if (!api || !huOK() || F.state !== 'ok' || F.offline || navigator.onLine === false) return;
+    var me = api.who(), ctx = api.writeContext ? api.writeContext() : null;
+    if (!me || ahWho() !== me || !ctx || ctx.by !== me) return;
+    var key = huKey(), m = huGet(), wait = HU.ack ? HU.ack.prev : {};
+    Object.keys(m).forEach(function (id) {
+      var r = m[id];
+      if (!r || r.w || Object.prototype.hasOwnProperty.call(wait, id) || ['week', 'tom', 'off'].indexOf(r.s) < 0) return;
+      if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(id) || !/^[0-9a-z]{1,24}$/.test(String(r.g || ''))) return;
+      var sid = id + '_' + me + '_' + r.s + '_' + r.g; if (huSending[sid]) return;
+      huSending[sid] = 1;
+      var at = typeof r.t === 'number' && r.t > 0 && r.t <= now() ? Math.round(r.t) : Math.round(now());
+      var rec = { fid: id, g: r.g, s: r.s, day: kday(at), at: at };
+      var done = function (refused) {
+        if (huKey() !== key) return;   // the phone has someone else on it now: their marks are their own
+        var m2 = huGet(), x = m2[id];
+        if (!x || x.s !== r.s || x.g !== r.g || x.w) return;
+        if (!refused) x.w = 1; else { x.n = (+x.n || 0) + 1; if (x.n >= 5) x.w = 2; }
+        huPut(m2);
+      };
+      // a refused one waits for the next load of the book (huSending stays set in this one): no retry loop
+      api.ready().then(function () { return api.W([['set', api.docRef('fnseen', sid), rec]]); })
+        .then(function () { done(false); }, function (e) { if (e && e.code === 'permission-denied') done(true); else delete huSending[sid]; });
+    });
   }
   // js/app.js draws the empty slot under the top bar; this fills it, and refills it when anything changes
   var lastBand = null;
@@ -1322,6 +1361,68 @@
   }
   // the list has come from the server at least once (an empty answer from the copy in memory is not known)
   function known() { return F.state === 'ok' || !!F.at; }
+  /* Who has seen it (head chef, 10 Nov 2026; brief step 4): on a function's own page, for the head chef, the sous chefs
+     and the admin (LK_PREP.fnSeenOK()), while the function is still to come. One query by fid from the server when they
+     tap (max(1, records) reads; never by itself, never from the phone's memory), then worked out on the page: who said
+     Got it to what the kitchen needs now, who said it before the last change (or last heard it was cancelled), and who
+     has not yet, from the kitchen people on the staff list (LK_PREP.fnPeople()). Kept in memory for the person who asked
+     only (SEEN.who); a failed read says so and never shows "Not yet" for everyone. */
+  var SEEN = { who: '', by: {} };
+  function seenOK() { var p = P(); return !!(p && p.fnSeenOK && p.fnPeople && p.book && p.fnSeenOK()); }
+  function seenFor() { var api = P().book(); return api.identity ? api.identity() : ''; }
+  function seenWhen(at) { var d = kday(at); return (d === kday(now()) ? 'today' : dayName(d).slice(0, 3)) + ' ' + kclock(at); }
+  // each kitchen person once: the latest thing they said Got it to (a record from someone off the list is left out)
+  function seenSort(f, docs) {
+    var cur = huSig(f), out = { got: [], old: [], not: [] }, last = {}, people = P().fnPeople();
+    var named = {}; people.forEach(function (p) { named[p.id] = p.name; });
+    (docs || []).forEach(function (d) {
+      if (!d || d.fid !== f.id || typeof d.by !== 'string' || !named[d.by] || typeof d.at !== 'number' || !isFinite(d.at)) return;
+      if (['week', 'tom', 'off'].indexOf(d.s) < 0 || typeof d.g !== 'string') return;
+      if (!last[d.by] || d.at > last[d.by].at) last[d.by] = d;
+    });
+    people.forEach(function (p) {
+      var d = last[p.id];
+      if (!d) out.not.push({ name: p.name }); else (d.s !== 'off' && d.g === cur ? out.got : out.old).push({ name: p.name, at: d.at });
+    });
+    var byName = function (a, b) { return String(a.name).localeCompare(String(b.name)); };
+    out.got.sort(byName); out.old.sort(byName); out.not.sort(byName);
+    return out;
+  }
+  function seenHTML(f) {
+    if (!seenOK() || f.status !== 'confirmed' || !isYmd(f.date) || f.date < kday(now())) return '';
+    if (SEEN.who !== seenFor()) SEEN = { who: seenFor(), by: {} };
+    var st = SEEN.by[f.id], out = '<div class="fn-seen" id="fn-seen"><h3 class="fn-h">Who has seen it</h3>';
+    var btn = function (w, busy) { return '<button type="button" class="btn fn-seen-b" data-fn="seen" data-id="' + esc(f.id) + '"' + (busy ? ' aria-disabled="true"' : '') + '>' + w + '</button>'; };
+    if (!st || st.state === 'error') {
+      return out + '<p class="hint">Who said Got it on Home, and who has not yet.</p>' + (st ? '<p class="p-err" role="alert">Could not check. Check the signal and try again.</p>' : '') + btn('Check who has seen it') + '</div>';
+    }
+    if (st.state === 'loading') return out + '<p class="hint" role="status">Checking who has seen it...</p>' + btn('Checking...', true) + '</div>';
+    var g = seenSort(f, st.docs), row = function (cls, word, list, times) {
+      return '<li class="fn-seen-r ' + cls + '"><b>' + word + ' (' + list.length + ')</b><span>' + (list.length ? list.map(function (x) { return esc(x.name) + (times ? ' <span class="fn-seen-t">' + esc(seenWhen(x.at)) + '</span>' : ''); }).join(', ') : 'Nobody') + '</span></li>';
+    };
+    return out + '<ul class="fn-seen-l">' + row('is-got', 'Got it', g.got, true) + (g.old.length ? row('is-old', 'Before the last change', g.old, true) : '') + row('is-not', 'Not yet', g.not, false) + '</ul>' +
+      '<p class="hint">Checked ' + esc(kclock(st.at)) + '. It counts Got it on Home\'s function card.</p>' + btn('Check again') + '</div>';
+  }
+  function seenLoad(id) {
+    var prep = P(), api = prep && prep.book && prep.book(), f = byId(id);
+    if (!api || !f || !seenOK()) return;
+    if (SEEN.who !== seenFor()) SEEN = { who: seenFor(), by: {} };
+    var who = SEEN.who, st = SEEN.by[id] = { state: 'loading' };
+    changed();
+    // a server read on a half-dropped signal can wait a long time without failing: after 6 seconds it is a failed check,
+    // like fromServer() in js/prep.js, so Check who has seen it comes back
+    var late = new Promise(function (res, rej) { setTimeout(function () { rej({ code: 'deadline-exceeded' }); }, 6000); });
+    Promise.race([api.ready().then(function () { var fs = api.fs(); return fs.getDocsFromServer(fs.query(api.colRef('fnseen'), fs.where('fid', '==', id))); }), late]).then(function (snap) {
+      if (SEEN.who !== who || SEEN.by[id] !== st || seenFor() !== who) return;
+      SEEN.by[id] = { state: 'ok', docs: snap.docs.map(function (d) { return d.data(); }), at: now() };
+      changed();
+      var g = byId(id) ? seenSort(byId(id), SEEN.by[id].docs) : null;
+      if (g && api.say) api.say('Got it: ' + g.got.length + '. ' + (g.old.length ? 'Before the last change: ' + g.old.length + '. ' : '') + 'Not yet: ' + g.not.length + '.');
+    }, function () {
+      if (SEEN.who !== who || SEEN.by[id] !== st) return;
+      SEEN.by[id] = { state: 'error' }; changed();
+    });
+  }
   // what a page says while the list is not known yet: no signal, or still loading
   function waitHTML() { return F.state === 'offline' ? '<p role="status">No signal. Functions show here when the phone is back online.</p>' : '<p role="status">Loading functions...</p>'; }
   function pageHTML(id) {
@@ -1333,7 +1434,7 @@
       var f = byId(id);
       if (!f) return '<section class="set-block"><h2 id="rtitle" tabindex="-1">Function</h2>' + (known() ? '<p>This function is not on the kitchen\'s list: it may be a draft, over, or cancelled a while ago.</p>' : waitHTML()) + stateNote() + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
       // the function as one card (redesign step 5): the eyebrow and the name, then the sheet on its paper
-      return '<section class="set-block fn-page fn-one"><span class="fn-eb">Function</span><h2 id="rtitle" tabindex="-1">' + esc(f.name) + '</h2><div class="fn-cardbox">' + sheetHTML(f, false) + '</div>' + stateNote() + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
+      return '<section class="set-block fn-page fn-one"><span class="fn-eb">Function</span><h2 id="rtitle" tabindex="-1">' + esc(f.name) + '</h2><div class="fn-cardbox">' + sheetHTML(f, false) + '</div>' + seenHTML(f) + stateNote() + '<div class="btn-row"><a class="btn" href="#/fn">All functions</a></div></section>';
     }
     /* Today, then Upcoming (redesign step 5, 8 Nov 2026): two headings on one page, not tabs, so the coming days need no
        extra tap. Upcoming shows only the days with a function, each with its Print prep sheet; the days with nothing
@@ -1466,6 +1567,7 @@
     if (a === 'fold') { lsSet('lk.fn.fold', lsGet('lk.fn.fold') === kday(now()) ? null : kday(now())); lastBand = null; paint(); var fb = document.querySelector('#fn-band [data-fn="fold"]'); if (fb) fb.focus({ preventScroll: true }); return; }
     // the Next function line's minus: this person, this phone, until tomorrow (lk.fn.ahead.fold), with Undo in the slip
     if (a === 'hu-got') { huGot(el); return; }
+    if (a === 'seen') { if (el.getAttribute('aria-disabled') !== 'true') seenLoad(el.getAttribute('data-id')); return; }
     if (a === 'hu-undo') { huUndo(); return; }
     if (a === 'ahead-hide') {
       var hk = kday(now()) + '|' + ahWho();

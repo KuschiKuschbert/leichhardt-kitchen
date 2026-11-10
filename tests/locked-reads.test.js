@@ -122,7 +122,8 @@ const minIds = p => p.evaluate(() => (window.LK_PREP.state.mins || []).map(m => 
       contacts: () => fs.getDocs(col('fncontact')),
       everyPing: () => fs.getDocsFromServer(fs.query(col('directnotes'), fs.where('until', '>=', day))),
       seen: () => fs.getDocs(fs.query(col('directnotes', 'd1', 'seen'), fs.where('day', '==', day))),
-      myPings: () => fs.getDocsFromServer(fs.query(col('directnotes'), fs.where('until', '>=', day), fs.where('to', '==', 'ann')))
+      myPings: () => fs.getDocsFromServer(fs.query(col('directnotes'), fs.where('until', '>=', day), fs.where('to', '==', 'ann'))),
+      fnSeen: () => fs.getDocsFromServer(fs.query(col('fnseen'), fs.where('fid', '==', 'smith')))
     };
     const out = {};
     for (const n of Object.keys(tries)) out[n] = await tries[n]().then(() => 'read', e => e.code === 'permission-denied' ? 'refused' : e.code);
@@ -130,18 +131,18 @@ const minIds = p => p.evaluate(() => (window.LK_PREP.state.mins || []).map(m => 
   }, [L.PIN, today]);
   const want = (got, w) => Object.keys(w).filter(n => got[n] !== w[n]).map(n => n + ' ' + got[n]);
   p = await L.open(b, '#/prep', { who: 'ann', extra: lockExtra, wait: 1500 });
-  let got = await probe(p), bad = want(got, { cutdone: 'refused', cutListen: 'refused', mail: 'refused', hist: 'refused', histList: 'refused', contacts: 'refused', everyPing: 'refused', seen: 'refused', myPings: 'read' });
-  ok(!bad.length, 'staff: supplier ticks (a query and a listener), mail, a function\'s history, the contact list, others\' personal pings and who saw them are refused; Ann\'s own pings are not (' + (bad.join(', ') || 'as the rules') + ')');
+  let got = await probe(p), bad = want(got, { cutdone: 'refused', cutListen: 'refused', mail: 'refused', hist: 'refused', histList: 'refused', contacts: 'refused', everyPing: 'refused', seen: 'refused', myPings: 'read', fnSeen: 'refused' });
+  ok(!bad.length, 'staff: supplier ticks (a query and a listener), mail, a function\'s history, the contact list, others\' personal pings and who saw them, and who said Got it to a function are refused; Ann\'s own pings are not (' + (bad.join(', ') || 'as the rules') + ')');
   const listed = await p.evaluate(() => window.__fake.refused.map(x => x.kind + ' ' + x.path.split('/').slice(2).join('/')));
-  ok(listed.length === 8, 'staff: each refusal is listed in __fake.refused (' + listed.join(', ') + ')');
+  ok(listed.length === 9, 'staff: each refusal is listed in __fake.refused (' + listed.join(', ') + ')');
   await p.context().close();
   p = await L.open(b, '#/prep', { who: 'sam', extra: lockExtra, wait: 1500 });
-  got = await probe(p); bad = want(got, { cutdone: 'read', cutListen: 'read', mail: 'refused', hist: 'read', histList: 'read', contacts: 'refused', everyPing: 'read', seen: 'read', myPings: 'read' });
+  got = await probe(p); bad = want(got, { cutdone: 'read', cutListen: 'read', mail: 'refused', hist: 'read', histList: 'read', contacts: 'refused', everyPing: 'read', seen: 'read', myPings: 'read', fnSeen: 'read' });
   ok(!bad.length, 'sous chef: the chefs\' reads work; mail stays the head chef\'s while sous chef mail is off, and only the Google account lists contacts (' + (bad.join(', ') || 'as the rules') + ')');
   await p.context().close();
   p = await L.open(b, '#/functions/smith', { who: 'finn', extra: lockExtra, wait: 1500 });
-  got = await probe(p); bad = want(got, { hist: 'read', histList: 'read', cutdone: 'refused', mail: 'refused', everyPing: 'refused' });
-  ok(!bad.length, 'function manager: the function\'s history, nothing of the kitchen\'s (' + (bad.join(', ') || 'as the rules') + ')');
+  got = await probe(p); bad = want(got, { hist: 'read', histList: 'read', cutdone: 'refused', mail: 'refused', everyPing: 'refused', fnSeen: 'refused' });
+  ok(!bad.length, 'function manager: the function\'s history, nothing of the kitchen\'s, not who said Got it (' + (bad.join(', ') || 'as the rules') + ')');
   await p.context().close();
 
   await b.close();

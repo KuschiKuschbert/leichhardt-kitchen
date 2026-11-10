@@ -289,6 +289,8 @@ function readRefused(ref) {
     return !(chefReader(ref) || (by && parent && parent.to === by && store[k] && store[k].by === by));
   }
   if (/\/todos\/[^/]+$/.test(k)) return !chefReader(ref);
+  // who said Got it to a function (fnseen, 10 Nov 2026): chefs and the admin, never staff
+  if (at3(k, 'fnseen/[^/]+$')) return !chefReader(ref);
   // the nightly training numbers for Today's team (teamsum/main, 7 Nov 2026): chefs and the admin, never staff
   if (/\/teamsum\/[^/]+$/.test(k)) return !chefReader(ref);
   if (at3(k, '(suppliers|supplierlinks|cutdone)(/|$)')) return !chefReader(ref);
@@ -317,6 +319,7 @@ function rulesDenied(ref) {
   if (ref.group && !isAdmin(ref)) return true;
   if (colRefused(ref, true)) return true;
   if (/^kitchens\/[^/]+\/todos$/.test(k) && !chefReader(ref)) return true;
+  if (at3(k, 'fnseen$') && !chefReader(ref)) return true;   // who said Got it to a function: chefs only
   if (/^kitchens\/[^/]+\/minutes\/[^/]+\/signs$/.test(k) && !chefReader(ref)) return true;   // the register, chefs only
   if (at3(k, '(suppliers|supplierlinks|cutdone)(/|$)') && !chefReader(ref)) return true;
   if (/^kitchens\/[^/]+\/minutes$/.test(k) && !isAdmin(ref) && !(ref.c || []).some(x => x.k === 'where' && x.f === 'pubAt' && (x.op === '>=' || x.op === '>') && x.v >= 1)) return true;
@@ -915,6 +918,22 @@ function commitOps(ops) {
     return a.sent === true && !(old && old.sent === true) && a.sentBy !== (a.by || '');
   });
   if (badSent) return Promise.reject({ code: 'permission-denied' });
+  // who said Got it to a function (fnseen, 10 Nov 2026), like fnSeenOk() in the rules: created as the writer (or copied
+  // as it is by the admin), its id from its fields; an exact retry changes nothing; a later Got it by that person moves
+  // only at and day forward; never deleted
+  const badSeen = ops.some(o => {
+    if (!/^kitchens\/[^/]+\/fnseen\/[^/]+$/.test(key(o.ref.path))) return false;
+    if (o.kind === 'delete') return true;
+    const a = after(o), old = store[key(o.ref.path)];
+    const same = (x, y, skip) => JSON.stringify(Object.keys(x).filter(k => !skip.includes(k)).sort().map(k => [k, x[k]])) === JSON.stringify(Object.keys(y).filter(k => !skip.includes(k)).sort().map(k => [k, y[k]]));
+    if (old && same(a, old, [])) return false;
+    if (old && ((admin && a.by !== cfgOf(o.ref).headId) || !same(a, old, ['at', 'day']) || !Number.isInteger(a.at) || !(a.at > old.at))) return true;
+    const keys = Object.keys(a).every(x => ['fid', 'g', 's', 'day', 'at', 'by'].includes(x));
+    return !keys || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(a.fid || '') || !/^[0-9a-z]{1,24}$/.test(a.g || '') || !['week', 'tom', 'off'].includes(a.s) ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(a.day || '') || !Number.isInteger(a.at) || !(a.at > 0) || typeof a.by !== 'string' || !a.by ||
+      o.ref.path.at(-1) !== a.fid + '_' + a.by + '_' + a.s + '_' + a.g || (!admin && (cfgOf(o.ref).fnOnlyIds || []).includes(a.by));
+  });
+  if (badSeen) return Promise.reject({ code: 'permission-denied' });
   // Today's team (7 Nov 2026): team/<day> is written by the head chef and the sous chefs (or the admin), each save the
   // next version of the stored one, its day its own, and when it was first set kept, like teamOk() in the rules
   const badTeam = ops.some(o => {

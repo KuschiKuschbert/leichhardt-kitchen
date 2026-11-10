@@ -109,7 +109,9 @@ out.supplierAudit = await subs(out.suppliers, 'suppliers', 'audit'); out.supplie
 reads += out.suppliers.length + out.supplierlinks.length;
 // function bookings (21 Oct 2026), their earlier versions and the booking contacts
 out.functions = await all('functions'); out.functionsHist = await subs(out.functions, 'functions', 'hist'); out.fncontact = await all('fncontact'); out.fnsent = await all('fnsent');
-reads += out.functions.length + out.fncontact.length;
+// who said Got it to a function on Home (fnseen, 10 Nov 2026)
+out.fnseen = await all('fnseen');
+reads += out.functions.length + out.fncontact.length + out.fnsent.length + out.fnseen.length;
 reads += out.book.length + out.recipes.length + out.drawings.length;
 out.pins = (await all('pinset')).map(x => ({ id: x.id, name: x.name, setAt: x.setAt }));
 reads += out.notes.length + out.directnotes.length + out.minutes.length + out.pins.length;
