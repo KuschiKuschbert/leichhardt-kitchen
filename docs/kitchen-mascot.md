@@ -17,7 +17,7 @@ Built 9 November 2026 (owner). The Smashed Burger star robot with the navy banda
 
 ## Under a finished prep list
 
-Built 10 November 2026 (owner: "yes i trust your recommendations", after the service council in pull request #670: round 1 Build smaller, 5 of 5; round 2, five of six rank this design first).
+Built 10 November 2026 (owner: "yes i trust your recommendations", after the service council, [the mascot cheer study](mascot-cheer-options/brief.md), first in pull request #670: round 1 Build smaller, 5 of 5; round 2, five of six rank this design first).
 
 - **What shows.** When every line of today's own prep list is ticked and the server has every tick, the mascot stands beside the words where the page already says the list is ticked off: "Every line ticked. 6 of 6." in a green speech shape, above the page's own "See Done today under Handy." The finish is said once. In the page, never over it, and not a control.
 - **A state, not an event.** It is worked out from the lines the phone already holds (`finOk()` in `js/prep.js`). Nothing shows while a line is left, or while any change to the day's own lines is waiting to be sent or refused, a removal included. Undo, a new line, another phone's tick and a reload all correct it by themselves, with no flag to keep in step.
@@ -27,7 +27,7 @@ Built 10 November 2026 (owner: "yes i trust your recommendations", after the ser
 
 ## A finished section, on the slip
 
-Built 10 November 2026 (owner: "yeah go ahead", the same evening step 1 went live). This is step 2 of the council's recommendation in pull request #670. The council split three to three on it, and the recommendation was to let step 1 run about four weeks first; the owner chose to go ahead. Words only: the mascot is not on the slip.
+Built 10 November 2026 (owner: "yeah go ahead", the same evening step 1 went live). This is step 2 of the council's recommendation in [the mascot cheer study](mascot-cheer-options/brief.md). The council split three to three on it, and the recommendation was to let step 1 run about four weeks first; the owner chose to go ahead. Words only: the mascot is not on the slip.
 
 - **What shows.** The slip that answers a tick ("Ticked Laksa", Undo, 9 seconds) gains one line of words under it when that tick finished a section: "Sauce is done. Grill has 1 left." It names the section and what is next, never a person, the clock or speed. A name that ends in one s, or joins two things, reads as more than one: "Pans are done. Fryers have 2 left."
 - **Only after the server has the tick.** The words come when the tick's own write is answered (`secSay()` in `js/prep.js`), never from the listener alone and never from a cached answer. A tick waiting to be sent shows the plain slip; a refused tick shows the book's red slip only. On the shared tablet the slip is only made once the server has answered, so the words come with it.
