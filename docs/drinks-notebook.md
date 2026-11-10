@@ -10,10 +10,18 @@ The order is read from the left page on laptops from 1100 px, with Your usual an
 
 Changing a usual uses the existing single form on one notebook sheet. The team still steps aside while editing. Resizing keeps the same draft and controls. First-PIN One more thing, the usual-drink nudge, session authority, Save and Cancel, grouping and caching keep their existing contracts in `docs/prep-book.md` and `docs/code-contracts.md`.
 
+## One drink each (10 November 2026)
+
+The owner said the order showed all possible drinks for the people on shift. A usual can hold a coffee and a soft drink, and the order counted both, so one person with both added two drinks to the run. The owner chose **coffee first** from three options (the others were a main drink marked in the usual, and a pick for today on each row, which both need a new saved field and a rules change).
+
+**Verdict: Build (quick check).** One drink per person on today goes on the order: `dkPick()` is the coffee, otherwise the soft drink and anything else (`dkCold()`). The row shows the other as "(or ...)" and Your usual says "Or" instead of "Also", so whoever does the run knows what to swap to. Same taps (0 to read the order), same lines; the order has fewer lines when people have both. No new read, field, rule or saved copy. The "Anything else for the run" words go with the soft drink, so they reach the order only when there is no coffee.
+
+Tests: `tests/drinks.test.js` and `tests/drinks-notebook.test.js` count one drink each and check a person with only a soft drink still gets it (7 failed on the old code, 0 with the change).
+
 ## Preserved behaviour
 
 - Change is one tap; Save my usual is one tap after choosing or typing. Existing folds and Show them each take one opening tap. No new tap is added.
-- The order counts the same hot and cold drinks separately for the same people who opened the book today. It is rendered once. A tick still means the person opened the book with their PIN, not that a runner has collected their drink.
+- The order counts one drink for each person who opened the book today (10 Nov 2026: the coffee, or the soft drink when there is no coffee), the same drinks together. It is rendered once. A tick still means the person opened the book with their PIN, not that a runner has collected their drink.
 - A checked empty order says Nothing on the order yet. Loading and failed reads stay distinct and retain Try again.
 - One form writes only the signed-in person's existing drinks record. No new listener, read, storage, role, schema or rule is introduced.
 - Text still goes through the existing escaping helpers. The notebook uses existing colour and font tokens.

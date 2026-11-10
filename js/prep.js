@@ -10194,10 +10194,13 @@
   }
   /* the cold drink and anything else, together: "Coke No Sugar, no ice" */
   function dkCold(d) { return d ? [dkLabel(DK_COLD, d.cold), d.other || ''].filter(Boolean).join(', ') : ''; }
+  /* one drink goes on the run (10 Nov 2026): the coffee when there is one, otherwise the cold drink. The other is
+     what they would take instead, so it reads "or", never "also" */
   function dkSum(d) {
     var c = dkCoffee(d), o = dkCold(d);
-    return c && o ? c + '. Also ' + o : c || o;
+    return c && o ? c + '. Or ' + o : c || o;
   }
+  function dkPick(d) { return dkCoffee(d) || dkCold(d); }
   function dkMine() { return dkList && S.who ? dkList[S.who] || null : null; }
   function dkEdit() {
     var m = dkMine() || {};
@@ -10330,8 +10333,8 @@
       '<div class="btn-row"><a class="btn dark" href="#/drinks" data-p="dk-set">Set my usual</a><button type="button" class="btn" data-p="dk-later">Not now</button></div></div>';
   }
   function dkTeam() { return people().slice().sort(function (a, b) { return a.name.localeCompare(b.name); }); }
-  /* one short line per person: "Reg oat flat white, 1 sugar. Coke No Sugar" */
-  function dkLine(d) { return [dkCoffee(d).replace(/^Regular /, 'Reg '), dkCold(d)].filter(Boolean).join('. '); }
+  /* one short line per person: "Reg oat flat white, 1 sugar (or Coke No Sugar)": the drink on the order first */
+  function dkLine(d) { var c = dkCoffee(d).replace(/^Regular /, 'Reg '), o = dkCold(d); return c && o ? c + ' (or ' + o + ')' : c || o; }
   /* a list to read, nobody is ticked by hand: a tick means the person opened the book with their PIN today */
   function dkListHTML(l, ticked) {
     var none = [], rows = l.map(function (p) {
@@ -10350,13 +10353,14 @@
       (!off.length ? '' : dkAll ? dkCount('Not signed in today', off.length) + dkListHTML(off, false) + '<button type="button" class="dr-more" data-p="dk-all" aria-expanded="true">Hide them</button>'
         : '<button type="button" class="dr-more" data-p="dk-all" aria-expanded="false">Not signed in today: ' + off.length + ' more. Show them</button>');
   }
-  /* the order: everyone on today with a usual, the same drinks counted together */
+  /* the order: everyone on today with a usual, one drink each (dkPick()), the same drinks counted together */
   function dkRunList() { return dkTeam().filter(function (p) { return dkToday(p.id) && dkSum(dkList ? dkList[p.id] : null); }); }
   function dkGroups(l) {
     var g = {}, order = [];
     l.forEach(function (p) {
-      var d = dkList[p.id];
-      [dkCoffee(d), dkCold(d)].forEach(function (t) { if (!t) return; var key = t.toLowerCase(); if (!g[key]) { g[key] = { t: t, n: 0 }; order.push(key); } g[key].n++; });
+      var t = dkPick(dkList[p.id]), key = t.toLowerCase();
+      if (!g[key]) { g[key] = { t: t, n: 0 }; order.push(key); }
+      g[key].n++;
     });
     return order.map(function (k) { return g[k]; });
   }
