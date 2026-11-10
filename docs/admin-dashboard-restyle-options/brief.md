@@ -2,7 +2,7 @@
 
 Requested by the head chef, 10 November 2026: "should we restyle the admin panel dashboard?", then "do the dashboard too".
 
-**Status: council finished, waiting for the head chef's choice. Nothing in the app has changed.**
+**Chosen 10 November 2026: R, the recommendation below** (owner: "yes most definitely"). Built on branch `ccr-87b66b00-enk63u`, pull request #666.
 
 Source: `main` at `fbbc5dd`. Proposal: [proposal.md](proposal.md). Previews: [index.html](index.html) (`?d=A|B|C|M|R&p=inbox|dash`, `&open=1` opens the charts). Today's pages in the click-test stand-in with synthetic data: [Inbox 1280](today-inbox-1280.png), [Inbox 390](today-inbox-390.png), [Dashboard 1280](today-dashboard-1280.png), [Dashboard 390](today-dashboard-390.png). Role-based analysis, not research with real staff; example data only.
 

@@ -2,7 +2,7 @@
 
 Requested by the head chef, 10 November 2026: improve staff cross-training and remove the assessments as they work now ("I don't need to write manual assessments just yet").
 
-**Status: council finished, waiting for the head chef's choice. Nothing in the app has changed.**
+**Chosen 10 November 2026: R, the recommendation below** (owner: "yes most definitely"). Built on branch `ccr-87b66b00-enk63u`, pull request #666.
 
 Source: `main` at `fbbc5dd`. Proposal: [proposal.md](proposal.md). Previews: [index.html](index.html) (`?d=A|B|C|M|R&p=plan|reports`, `&err=1` for a failed count). This is role-based analysis by council agents, not research with real staff. All names and counts in the previews are made up.
 
