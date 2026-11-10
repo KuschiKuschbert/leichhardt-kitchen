@@ -14,7 +14,7 @@ const js = jsFiles.map(read).join('\n');
 
 // the names docs/design-patterns.md uses, by section
 const CLASSES = [
-  'hm-welcome', 'hm-welcome-long', 'hm-welcome-compact', 'mascot', 'mascot-host', 'mascot-still', 'nb-fin', 'nb-fin-art', 'nb-fin-w', 'nb-fin-say',
+  'hm-welcome', 'hm-welcome-long', 'hm-welcome-compact', 'mascot', 'mascot-host', 'mascot-still', 'nb-fin', 'nb-fin-art', 'nb-fin-w', 'nb-fin-say', 'p-toast-two', 'p-toast-say',
   'su-last-kind', 'su-last-wide', 'su-last-dow',
   'cooling-clock', 'cooling-clock-status', 'cooling-chip', 'cooling-menu', 'cooling-row', 'cooling-start', 'cooling-status', 'cooling-error',
   'ux-swipe', 'ux-swipe-handle', 'ux-swipe-dragging',
