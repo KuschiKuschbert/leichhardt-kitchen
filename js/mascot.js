@@ -9,6 +9,9 @@
    that can play one action once. */
 (function () {
   'use strict';
+  // Home and the finished prep list each ask for this file. A second run would replace LK_MASCOT and lose hold of
+  // a mascot already on Home, so a copy that is already here with sprite() stays.
+  if (window.LK_MASCOT && typeof window.LK_MASCOT.sprite === 'function') return;
   var API = 1, KEY = 'lk.mascot.', ART = 'art/mascot/', V = '?v=1';
   // Frame times (ms) for the 8 frames of each 4 x 2 sheet of 192 x 256 px poses.
   var CLIPS = {

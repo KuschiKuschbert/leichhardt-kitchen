@@ -4994,14 +4994,17 @@
      A list of one line is an ordinary tick, and the wall board and a section's own tab keep their plain words.
      On the phone whose tick finished the list he plays Serve once, after the ticked lines have left, at most once a
      kitchen day. Then he rests on the Welcome pose, never holding the burger (a held Serve pose can read as
-     "order up"). lk.mascot.fin keeps the kitchen day he last played on this device: out of date on the next
-     kitchen day (finPlayed is the same day in this tab's memory, for a phone that refuses storage). finCheer is
+     "order up"). lk.fin.day keeps the kitchen day he last played on this device: out of date on the next
+     kitchen day (finPlayed is the same day in this tab's memory, for a phone that refuses storage). The name
+     stays out of lk.mascot.<staff id>, where js/mascot.js keeps each person's set. finCheer is
      this tab's memory only: the person and line whose tick finished the list. It goes when that tick is undone or
      refused, when someone else signs in, and after two minutes (Date.now() is only time passing here), so a tick
      that never reached the server cannot make him play later for a finish this phone did not make. */
-  var FIN_KEY = 'lk.mascot.fin', finSprite = null, finLoad = null, finOff = false, finCheer = null, finPlayed = '';
+  var FIN_KEY = 'lk.fin.day', finSprite = null, finLoad = null, finOff = false, finCheer = null, finPlayed = '';
   function finOk(live, doneN, today) {
-    return S.date === today && !S.tab && !wallOn() && S.itemsState === 'ok' && live.length > 1 && doneN === live.length && !live.some(function (x) { return x._unsent; });
+    // every change to the day's own lines must have reached the server, a removal too: a removed line is out of
+    // the count at once, but the server still holds it open until it answers
+    return S.date === today && !S.tab && !wallOn() && S.itemsState === 'ok' && live.length > 1 && doneN === live.length && !S.items.some(function (x) { return x._unsent && !x.fn; });
   }
   // The list is finished and sent, and the page still shows its plain "ticked off" words where the card goes.
   function finDue() {
@@ -5013,9 +5016,13 @@
     return '<div class="nb-fin"><span class="nb-fin-art" data-fin-art aria-hidden="true"></span><div class="nb-fin-w"><p class="nb-fin-say">Every line ticked. ' + doneN + ' of ' + n + '.</p><p class="nb-empty">See Done today under Handy.</p></div></div>';
   }
   // This phone's own tick just finished today's list (or an untick took it back): he may play once when the card shows.
+  // Only a line of the day's own list counts, and only a list of more than one line: a function's platter has its
+  // own tab and count, and leaves the cheer as it was.
   function finNote(date, id, done) {
-    if (!done || date !== dayNow()) { finCheer = null; return; }
-    finCheer = S.items.some(function (x) { return !x.deleted && !x.fn && !x.done && x.id !== id; }) ? null : { day: date, id: id, who: S.who, at: Date.now(), seen: false, said: false };
+    var daily = S.items.filter(function (x) { return !x.deleted && !x.fn; }), it = daily.filter(function (x) { return x.id === id; })[0];
+    if (!it) return;
+    if (!done || date !== dayNow() || daily.length < 2) { finCheer = null; return; }
+    finCheer = daily.some(function (x) { return !x.done && x.id !== id; }) ? null : { day: date, id: id, who: S.who, at: Date.now(), seen: false, said: false };
   }
   // Is the finish this phone made still true? The line shows ticked by this person once the phone's own change is
   // in the list (seen). After that, a line that is open again (Undo, a refusal) ends it; a line ticked by someone
@@ -5028,24 +5035,36 @@
     if (finCheer && (finCheer.who !== S.who || finCheer.day !== dayNow() || Date.now() - finCheer.at > 120000)) finCheer = null;
     return !!(finCheer && finCheer.seen);
   }
+  // A new try at his file and his art: when the card has gone, and on each new visit to a prep page (mount).
+  function finFresh() {
+    finOff = false;
+    if (finSprite && finSprite.state().failed) { finSprite.dispose(); finSprite = null; }
+  }
   /* After each draw: put the still mascot in its place and play once when this phone earned it. js/mascot.js (about
      14 KB, once) and its art load only when a finished list first shows; no read. A failed download leaves the words
      and waits for the next time the card shows, never a retry on every redraw. */
   function finPaint() {
     // the mascot is decoration: nothing it does may break a draw
     try {
-      var live = finStill(), slot = S.root && S.root.querySelector('[data-fin-art]'), M = window.LK_MASCOT;
-      if (!slot) { finOff = false; return; }
+      var live = finStill(), slot = S.root && document.body.contains(S.root) && S.root.querySelector('[data-fin-art]'), M = window.LK_MASCOT;
+      // the card is gone: the next time it shows gets one new try at the file, and at art that failed to load
+      if (!slot) { finFresh(); return; }
+      // not while a ticked line still lingers above him: he speaks and plays once the list has emptied. The words
+      // are read out whether or not his file loads, and after the slip's own "Ticked ..." has been read.
+      var gone = !S.root.querySelector('.nb-left .nb-rows .nb-row');
+      if (live && gone && !finCheer.said) { finCheer.said = true; var say = S.root.querySelector('.nb-fin-say'); if (say) liveSay(say.textContent); }
       if (!M || typeof M.sprite !== 'function') {
-        if (!finLoad && !finOff && window.LK_APP && window.LK_APP.load) finLoad = window.LK_APP.load('js/mascot.js?v=2').then(function () { finLoad = null; finPaint(); }, function () { finLoad = null; finOff = true; });
+        // An answer without sprite() is an older saved copy (the saved shell hands that back with no signal):
+        // one try, like a failed download, never a loop.
+        if (!finLoad && !finOff && window.LK_APP && window.LK_APP.load) finLoad = window.LK_APP.load('js/mascot.js?v=2').then(function () {
+          finLoad = null;
+          if (window.LK_MASCOT && typeof window.LK_MASCOT.sprite === 'function') finPaint(); else finOff = true;
+        }, function () { finLoad = null; finOff = true; });
         return;
       }
       if (!finSprite) finSprite = M.sprite();
       if (finSprite.el.parentNode !== slot) slot.appendChild(finSprite.el);
-      if (!live) return;
-      if (!finCheer.said) { finCheer.said = true; var say = S.root.querySelector('.nb-fin-say'); if (say) liveSay(say.textContent); }
-      // not while a ticked line still lingers above him: he plays in full view, once the list has emptied
-      if (S.root.querySelector('.nb-left .nb-rows .nb-row')) return;
+      if (!live || !gone) return;
       var day = finCheer.day;
       if (finPlayed === day || lsGet(FIN_KEY) === day) { finCheer = null; return; }
       if (finSprite.play('burger', function () { finPlayed = day; lsSet(FIN_KEY, day); })) finCheer = null;
@@ -14068,6 +14087,7 @@
     mount: function (name, root, sel) {
       wire();
       S.name = name; S.root = root;
+      try { finFresh(); } catch (e) {}
       if (name === 'guides') { if ((sel || '') !== S.gSel) S.gSel = sel || ''; }
       if (name === 'admin') S.draft = S.draft || null;
       draw();
