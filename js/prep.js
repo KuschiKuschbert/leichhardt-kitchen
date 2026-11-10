@@ -10808,7 +10808,9 @@
     var day = homeDayHTML(), crew = homeWithHTML(), b = homeBoardHTML(), pp = homePrepHTML(), tt = homeTeamHTML(), staff = !teamOK();
     var prep = '<section class="hm-paper hm-prep" id="hm-prep" aria-label="Prep by section"' + (pp ? '' : ' hidden') + '>' + pp + '</section>';
     var team = '<section class="hm-paper hm-team' + (staff ? ' hm-team-staff' : '') + '" id="hm-team" aria-label="On today"' + (tt ? '' : ' hidden') + '>' + tt + '</section>';
-    var first = '<div class="hm-staff-first"><section class="hm-board" id="hm-day" aria-labelledby="hm-day-h"' + (day ? '' : ' hidden') + '>' + day + '</section>' +
+    // functions ahead of time (10 Nov 2026): the Function this week card or the Next function line, under Your day
+    var ahead = window.LK_FN && window.LK_FN.homeAhead ? window.LK_FN.homeAhead() : '';
+    var first = '<div class="hm-staff-first"><section class="hm-board" id="hm-day" aria-labelledby="hm-day-h"' + (day ? '' : ' hidden') + '>' + day + '</section>' + ahead +
       '<section class="hm-paper hm-with" id="hm-with" aria-label="Your team"><div id="hm-with-body">' + crew + '</div>' +
       '<details class="hm-full-team" id="hm-full-team"' + (homeFold ? '' : ' hidden') + '><summary>View today\'s full team</summary>' + team + '</details></section></div>';
     return first + '<section class="hm-board" id="hm-board" aria-labelledby="hm-board-h"' + (b ? '' : ' hidden') + '>' + b + '</section>' + prep;
