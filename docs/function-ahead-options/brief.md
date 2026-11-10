@@ -8,7 +8,7 @@ Council for the head chef's question of 10 November 2026: "If there is a functio
 - **Round 2 (10 Nov 2026):** three designs, A, B and C, scored by six reviewers. The scores were A 39, C 38 and B 26, and B came last with every reviewer.
 - **Mix:** five of six reviewers recommended the same narrow mix. It has its own combined preview (`design-mix/`), which all six endorse with changes (8 to 8.5 out of 10). A revision pass fixed the two faults they reproduced. The four reviewers who found faults re-checked it and endorse it with changes (8 to 8.5), with six repairs listed for the build (see **Revisions and re-check**).
 - **Review status:** a lead synthesis, given a focused review by all six reviewers and re-checked by four. It is not a full council round on its own.
-- **Chosen:** waiting on the head chef.
+- **Chosen (10 Nov 2026, head chef): the mix**, with the line kept for everyone on the work pages and the Function tomorrow card shown to everyone once more. See **Chosen** below.
 
 **Recommendation: the mix.** A's quiet Next function line is the base, on Home and in the band's place on every work page. Add C's heads-up card under Your day, which collapses into A's line after Got it. Add B's rule that the line only appears or changes size when a page opens, and B's "Not ordered yet" words on the Orders stock line. Also show `#/fn` Upcoming 7 days ahead and put the guests on the sheet. Leave out B's week strip, B's band changes, C's bell dot and any record of who has seen it.
 
@@ -165,7 +165,17 @@ The mix preview was revised after the focused review ([design-mix/spec.md](desig
 
 Still **Not evidenced**: the click tests on the app's real `paint()` and listener (booking, no signal, 23:59:30 to 00:00:30 Queensland, cancel, two staff on one tablet), the implemented-app measurements at 390, 768 and 1280 px with the stand-in fonts and the head chef's cut-off bar, focus rings, dark variants, roles, and a walk-through with a new starter.
 
-## Questions for the head chef
+## Chosen
+
+**10 November 2026, the head chef chose the mix** (recorded in [head-chef-decisions.md](../head-chef-decisions.md)):
+
+1. **Design:** the mix, as previewed in `design-mix/` after the revision.
+2. **Prep line:** keep it for everyone on the work pages on days the band would be empty, until the band takes over. The minus hides it for the day on that phone and resets for a new person on a shared device. It does not step aside after Got it.
+3. **Function tomorrow card:** everyone sees it once more the day before, even if they tapped Got it on the week card.
+
+Build in the order below, with the six repairs from the re-check, each step its own pull request with a Council line pointing here.
+
+## Questions for the head chef (answered above)
 
 1. Take the mix, pure A, or something else?
 2. Home order: the card, and then the line, sit between Your day and On with you. That is a departure from staff-first Home. Until Got it, the team board is off the first screen.
