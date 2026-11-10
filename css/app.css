@@ -4092,6 +4092,74 @@ html.tm-open, html.tm-open body { overflow: hidden; }
   .fn-ahead-tx { flex: 0 1 auto; flex-direction: row; align-items: baseline; gap: 0 0.9rem; }
   .fn-ahead-l { flex: none; max-width: 60%; }
 }
+/* Home's Function this week card and Next function line (step 2, head chef 10 Nov 2026, docs/function-ahead-options/
+   brief.md): under Your day. The card is quiet paper with the work edge, never charcoal (live) and never amber; Got it
+   is the one orange action. The line is the work pages' line on a quiet card, and says "Got it" with Undo after one. */
+.fn-hm { display: grid; gap: 1.1rem; min-width: 0; }
+.fn-hm[hidden] { display: none; }
+.fn-hm-line { padding: 0.3rem 0.25rem; background: var(--surface-reference); }
+.fn-hm-line .fn-ahead { max-width: none; margin: 0; padding: 0 0.6rem; }
+.fn-hm-line .fn-ahead.is-cancelled { padding-left: 0.95rem; }
+/* the Got it words may shorten at the end (extra-large text on a narrow phone), never push the page sideways */
+.fn-ahead.is-ack .fn-ahead-s { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.fn-ahead-ack { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; font: 700 0.95rem/1rem var(--display); letter-spacing: 0.02em; text-transform: none; color: var(--ink); }
+.fn-hu-undo { flex: none; min-height: 44px; min-width: 72px; padding: 0 1rem; border: 0; border-radius: var(--r-act); background: var(--ink); color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+.fn-hu-undo:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 2px; }
+.fn-hu { padding: 0.8rem 1rem 0.7rem 1.15rem; box-shadow: inset 4px 0 0 var(--surface-work-edge), 0 4px 0 rgba(28, 29, 31, 0.14); }
+.fn-hu .hm-ph { margin-bottom: 0.15rem; }
+.fn-hu .hm-pt { color: var(--small-ink); }
+.fn-hu-n { font: 700 0.8rem/1.2 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.fn-hu-when { margin: 0.3rem 0 0; font: 700 0.85rem/1.2 var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--small-ink); }
+.fn-hu-name { margin: 0.1rem 0 0; font: 700 1.75rem/1.1 var(--display); overflow-wrap: anywhere; }
+.fn-hu.is-tom .fn-hu-name { font-size: 1.45rem; }
+.fn-hu-sub { margin: 0.15rem 0 0; font-weight: 600; color: var(--muted); overflow-wrap: anywhere; }
+.fn-hu-facts { margin: 0.55rem 0 0; border-top: 1px solid var(--line); }
+.fn-hu-facts > div { display: grid; grid-template-columns: 5.6rem minmax(0, 1fr); gap: 0.6rem; padding: 0.26rem 0; border-bottom: 1px solid var(--line); }
+.fn-hu-facts dt { padding-top: 0.12rem; font: 700 0.75rem/1.5 var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.fn-hu-facts dd { margin: 0; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+.fn-hu-act { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 1.1rem; margin-top: 0.6rem; }
+.fn-hu-got { min-width: 8.5rem; }
+.fn-hu-open { display: inline-flex; align-items: center; min-height: 44px; margin: 0; padding: 0; border: 0; background: none; font: inherit; font-weight: 700; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.fn-hu-also { margin: 0.4rem 0 0; font-size: 0.95rem; overflow-wrap: anywhere; }
+.fn-hu-also b { font: 700 0.8rem var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--small-ink); }
+.fn-hu-foot { margin: 0.25rem 0 0; font-size: 0.85rem; color: var(--muted); }
+.fn-hu .btn:focus-visible, .fn-hu-open:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+/* cancelled after this person was told: the failure family with words; Got it is the plain button here */
+.fn-hu.is-off { background: var(--bad-tint); box-shadow: inset 4px 0 0 var(--bad-ink), 0 4px 0 rgba(28, 29, 31, 0.14); }
+.fn-hu.is-off .hm-pt, .fn-hu.is-off .fn-hu-when { color: var(--bad-ink); }
+.fn-hu.is-off .fn-hu-name s { text-decoration-thickness: 2px; }
+.fn-hu.is-off .fn-hu-sub { color: var(--ink); }
+.fn-hu.is-off .btn { border-color: var(--ink); background: var(--paper); color: var(--ink); }
+/* three or more in a week: one compact row each; the notes as typed, cut only at the end of their second line */
+.fn-wk { margin: 0.45rem 0 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.fn-wk li { border-bottom: 1px solid var(--line); }
+.fn-wk-r { display: grid; grid-template-columns: 2.9rem minmax(0, 1fr) 14px; align-items: center; column-gap: 0.6rem; width: 100%; min-height: 44px; margin: 0; padding: 0.3rem 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.fn-wk-r:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; border-radius: 4px; }
+.fn-wk-d { display: flex; flex-direction: column; font: 700 0.8rem/1.15 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--small-ink); }
+.fn-wk-d b { font-size: 0.95rem; color: var(--ink); letter-spacing: 0.06em; }
+.fn-wk-m { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.fn-wk-1 { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.fn-wk-n { min-width: 0; font-weight: 700; font-size: 1.05rem; line-height: 1.2; overflow-wrap: anywhere; }
+.fn-wk-g { flex: none; font-weight: 600; font-size: 0.9rem; color: var(--muted); }
+.fn-wk-2, .fn-wk-3 { font-size: 0.9rem; font-weight: 600; line-height: 1.3; color: var(--ink-soft, #3b3a36); overflow-wrap: anywhere; }
+.fn-wk-3 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-weight: 500; }
+.fn-wk-r:hover .fn-wk-n { text-decoration: underline; text-underline-offset: 2px; }
+/* Home order. Phone: Your day, the card or the line, then On with you. 720 to 1099 px (the shared tablet): Your day
+   and On with you side by side, the slot full width under them, its facts side by side. From 1100 px: the slot in the
+   left column under Your day, On with you beside both. */
+@media (min-width: 720px) and (max-width: 1099px) {
+  .is-home .hm-staff-first > #hm-with { grid-column: 2; grid-row: 1; }
+  .is-home .hm-staff-first > #fn-hm { grid-column: 1 / -1; }
+  .fn-hu-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 1.5rem; border-bottom: 1px solid var(--line); }
+  .fn-hu-facts > div { grid-template-columns: minmax(0, 1fr); gap: 0.05rem; padding: 0.35rem 0; border-bottom: 0; }
+}
+/* from 1100 px with a card or line: two rows, Your day sized by itself (auto), the card under it, On with you beside
+   both; its extra height goes to the flexible second row, so Your day and the card never drift apart */
+@media (min-width: 1100px) {
+  .is-home .hm-staff-first:has(> #fn-hm:not([hidden])) { grid-template-rows: auto 1fr; }
+  .is-home .hm-staff-first > #fn-hm { grid-column: 1; grid-row: 2; }
+  .is-home .hm-staff-first:has(> #fn-hm:not([hidden])) > #hm-with { grid-column: 2; grid-row: 1 / span 2; }
+}
 /* the one line that stays pinned once the band has scrolled off: the same dark */
 .fn-strip { background: var(--bar); border-bottom: 0; color: var(--bar-text); box-shadow: inset 0 -3px 0 var(--accent-ink), 0 2px 8px rgba(0, 0, 0, 0.18); }
 /* Functions: Today, then Upcoming (two headings on one page, not tabs). Each function is one card: a small line with the

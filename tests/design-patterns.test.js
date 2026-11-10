@@ -37,6 +37,7 @@ const CLASSES = [
   'cln-chef-page', 'cln-fold', 'cln-fold-toggle', 'cln-repeat-browser', 'cln-repeat-layout', 'cln-template-summary', 'cln-editor',
   'dr-notebook', 'dr-book', 'dr-bookhead', 'dr-usual', 'dr-work', 'dr-spine', 'dr-people',
   'fn-ahead', 'fn-ahead-b', 'fn-ahead-l', 'fn-ahead-t', 'fn-ahead-n', 'fn-ahead-p', 'fn-ahead-more', 'fn-ahead-hide', 'is-ahead',
+  'fn-hm', 'fn-hm-line', 'fn-hu', 'fn-hu-got', 'fn-hu-undo', 'fn-ahead-ack', 'fn-wk',
   'o-fn-tag', 'o-fn-when', 'o-fn-for', 'o-fn-held'
 ];
 const TOKENS = ['--ink', '--paper', '--bg', '--muted', '--faint', '--line', '--accent', '--accent-ink', '--tag', '--done', '--done-ink',

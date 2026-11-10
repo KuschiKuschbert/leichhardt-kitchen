@@ -9,7 +9,7 @@ Council for the head chef's question of 10 November 2026: "If there is a functio
 - **Mix:** five of six reviewers recommended the same narrow mix. It has its own combined preview (`design-mix/`), which all six endorse with changes (8 to 8.5 out of 10). A revision pass fixed the two faults they reproduced. The four reviewers who found faults re-checked it and endorse it with changes (8 to 8.5), with six repairs listed for the build (see **Revisions and re-check**).
 - **Review status:** a lead synthesis, given a focused review by all six reviewers and re-checked by four. It is not a full council round on its own.
 - **Chosen (10 Nov 2026, head chef): the mix**, with the line kept for everyone on the work pages and the Function tomorrow card shown to everyone once more. See **Chosen** below.
-- **Build:** step 1 (the work-page line) and step 3 (the Orders tag) built 10 Nov 2026, see **Build record**. Step 2 (the Home card) to come.
+- **Build:** steps 1 (the work-page line), 2 (the Home card) and 3 (the Orders tag) built 10 Nov 2026, see **Build record**.
 
 **Recommendation: the mix.** A's quiet Next function line is the base, on Home and in the band's place on every work page. Add C's heads-up card under Your day, which collapses into A's line after Got it. Add B's rule that the line only appears or changes size when a page opens, and B's "Not ordered yet" words on the Orders stock line. Also show `#/fn` Upcoming 7 days ahead and put the guests on the sheet. Leave out B's week strip, B's band changes, C's bell dot and any record of who has seen it.
 
@@ -213,6 +213,34 @@ No new reads, writes, rules or listeners in any step. Each step remeasures the i
 
 On plain main the new file fails 18 of 44.
 
+**Step 2, the Home card (10 Nov 2026, `feat/fn-home-card`).** Built as chosen with the repairs from the re-check, in the Implemented app (`tests/fn-home-card.test.js`, 50 checks at 390, 768 and 1280 px):
+
+- The Function this week card sits under Your day, on the first screen at 390 px with a team saved (the head chef's chosen departure from staff-first Home).
+- Got it folds it into the line in the same place, with Undo inside the line. The next card follows.
+- The line names the nearest function again once the Got it words go.
+
+The repairs:
+1. **Notes as typed.** The "Dietaries" fact is the booking's notes as typed (labelled Notes, since the field holds service and dietary notes), never shortened by rule. The busy card shows them too, cut only at the end of their second line.
+2. **Double tap.** A card that appeared in the last 600 ms ignores Got it. A double tap put away only the first card.
+3. **Large text.** At extra-large text, the next card's Got it is scrolled clear of the tab bar.
+4. **Version stamp.** Got it stores the booking's version the card showed (`upd`), not the time of the tap. A change after that brings the card back marked Changed.
+
+Head chef choices applied: the work-page line stays for everyone; everyone sees Function tomorrow once more.
+
+**The independent review of step 2** used four lenses (state, data, access and layout), and each finding was verified against the code. All the confirmed findings are fixed and have a check in `tests/fn-home-card.test.js` (69 checks):
+- **Got it on a tablet or laptop scrolled the page away.** The tab bar is hidden there and measured as the top of the screen.
+- **A cancellation or removal while the card was open did not show.** The card now follows the booking's status in place, as words.
+- **Any save brought the card back as Changed,** even one that only changed the customer's phone. The mark now keeps what the kitchen saw (`kitchenSig()`). A change inside the busy card shows on its row.
+- **"Also this week" was worked out on every paint,** so a booking from another phone could add a row. It is now decided at the open.
+- **From 1100 px, Your day and the card drifted apart.**
+- **Smaller ones:**
+  - "1 of N" restarted after each Got it; it is now "N this week".
+  - "in 0 days" showed at midnight.
+  - Open the function also changed the page under the sheet.
+  - The Got it words could push the page sideways at extra-large text.
+  - Focus fell to the top of the page when Undo went.
+  - The spoken status kept old words across people.
+
 **Step 3, the Orders tag (10 Nov 2026, `feat/fn-order-tag`).** Built as chosen, checked in the click-test stand-in (`tests/fn-order-tag.test.js`, 45 checks: the rule in node, then staff and chef at 390, 768 and 1280 px and at extra-large text):
 
 - A confirmed function's own stock line on today's list, still to tick, says **Order today** on its order day (`od`) and **Not ordered yet** after it, up to and including the function's day. Not ordered yet adds "For Sat 14 Nov"; chefs also see "· order day was Sun 8 Nov", and their Since badge steps aside on that line, so they see the date once. Staff see no order day (head chef, 10 Nov 2026, in line with the staff age-label decision). Staff see both, so they can tell a chef.
@@ -224,11 +252,10 @@ On plain main the new file fails 18 of 44.
 **Difference from the preview:**
 - **The day words have a line of their own** under the request's words, not the start of the who line. A tick changes the who line ("Ordered by Sam 13:59"), so a shared, wrapping line could change the row's height under the finger. Now a ticked line keeps the tag and the day words' room, empty and silent for a screen reader, like the ⋯, until it leaves the list. At 1280 this costs one short line on that row. Dates never break across two lines.
 - **Drawn with its row.** The order list is drawn again from the functions listener only when a tag would read differently: the first answer just after the page opens, or a function cancelled or moved, which also changes the order list. A booking edit or a shared-tablet `lk-who` draws nothing (checked: the list element and its rows stay put).
-- Chefs keep their Since badge beside the tag on a rolled line, as Orders C keeps chef age context.
+- Chefs see the order day once: their Since badge steps aside on a tagged line. Staff see no order day (head chef, 10 Nov 2026).
 
 On plain main the new file fails 24 of 45; with the change 0 of 45.
 
-**Step 2** (the Home card) is still to build, with the repairs listed above.
 
 ## Files
 
