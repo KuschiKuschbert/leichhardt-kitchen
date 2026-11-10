@@ -2746,11 +2746,14 @@
     take(open.filter(function (x) { return rolledN(x); }).sort(function (a, b) { return rolledN(b) - rolledN(a); }), function (x) { return 'Rolled over' + (rolledN(x) > 1 ? ' x' + rolledN(x) : ''); });
     var slow = open.map(function (x) { return { x: x, m: ((S.hist || {})[lkey(x.text)] || {}).med || 0 }; }).filter(function (o) { return o.m >= 2 * 3600000; }).sort(function (a, b) { return b.m - a.m; }).map(function (o) { return o.x; });
     take(slow, function (x) { return 'Usually takes ' + dur(((S.hist || {})[lkey(x.text)] || {}).med); });
-    take(open.slice().sort(function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); }), function (x) { return x.addedAt ? 'Waiting since ' + clock(x.addedAt) : 'Waiting longest'; });
+    // waiting longest by when each line was really written (firstAt()), not when a copy rolled onto today: a line
+    // written after last night's cut is copied just after midnight. No time in the tag (council quick check, 10 Nov
+    // 2026): the line's second line already says who wrote it and when, and the copy's time read as "since 00:08".
+    take(open.slice().sort(byFirst), function () { return 'Waiting longest'; });
     return picked;
   }
   /* Start here, numbered in place (3 Nov 2026, work pages redesign A): the three lines to do first carry 1, 2 and 3 on
-     the list itself, with why when the line does not say it already (Usually takes, Waiting since). Same picks as
+     the list itself, with why when the line does not say it already (Usually takes, Waiting longest). Same picks as
      before (startHere()), the same rule for when they show: today, for someone who may tick, 4 or more open lines. */
   /* The page's add button (work pages redesign A, 3 Nov 2026, as drawn in the agreed options page): one full-width bar
      with a plus, docked above the tab bar on a phone (.wk-dock), in the page header on wider screens, the count beside it.

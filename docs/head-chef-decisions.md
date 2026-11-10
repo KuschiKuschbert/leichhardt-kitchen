@@ -1,5 +1,7 @@
 # Head chef decisions
 
+- **10 November 2026, Start here says "Waiting longest" with no time.** The owner asked why lines showed "Waiting since 0:08": it was the time a line written last night after the cut was copied onto today, just after midnight, and it confused the kitchen. A council quick check found the time repeated the line's own "who and when" line, so the tag lost its time and the order goes by when each line was really written. The owner said "yes, build it".
+
 - **10 November 2026, the mascot stays visible when the welcome fills its corner.** The varied welcome often reaches the mascot's corner on a phone, and it was left out. The owner said "I still want it to be visible when it has to move". From three mocked spots (keep the corner, on the Your day card, in the top bar) they took the recommendation: it stands on the Your day card, left of the clock, and nothing moves; with no card, the heading and date make room. [Kitchen mascot](kitchen-mascot.md).
 
 - **10 November 2026, the welcome follows the time of day and your shift.** The owner asked to improve the varied welcome first, then do the mascot. From four upgrades they chose time of day and shift-aware ("Good morning", "Enjoy your break", "Last stretch", "Thanks for today"). Celebration wishes still come first. Team languages and more festival words were not chosen. [Behaviour and checks](staff-personalisation-options/brief.md#shift-and-time-of-day-welcomes-10-november-2026).
