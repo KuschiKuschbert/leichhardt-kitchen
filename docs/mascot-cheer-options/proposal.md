@@ -2,7 +2,7 @@
 
 10 November 2026, Queensland. Written for round 1 of the service council, before any design was scored. No app code has changed.
 
-**Note added after the council.** This page is kept as the reviewers saw it. It was written against the study's own branch (`main` at `7f85629`). On `main` since then: the daily mascot on Home is built (`docs/kitchen-mascot.md`), its player and art ship in `js/mascot.js` and `art/mascot/`, and the tick keeps the On it stamp for the head chef's Time on it card (#664). See the brief, "What main has now".
+**Note added after the council.** This page is kept as the reviewers saw it. It was written against the study's own branch (`main` at `7f85629`). On `main` since then: the daily mascot on Home is built (`docs/kitchen-mascot.md`), its player and art ship in `js/mascot.js` and `art/mascot/`, and the tick keeps the On it stamp for the head chef's Time on it card (#664). Two parts of this proposal are built too: the card under a finished list (#671) and the section's sentence on the slip, in words only (#673). The Settings row in "The change" is not built. See the brief, "What main has now" and "Chosen".
 
 ## The problem in the kitchen
 

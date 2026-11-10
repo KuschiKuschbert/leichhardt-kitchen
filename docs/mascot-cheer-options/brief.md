@@ -1,10 +1,10 @@
 # The mascot cheers real finished work
 
-10 November 2026, Queensland. **Round 1: Build smaller, 5 of 5. Round 2: five of six rank B first, all six rank C last. Recommended B cut down: one compact card under a finished list (step 1), then A's sentence on the slip as words only (step 2, after step 1 has run). The owner chose both and both are built and live: step 1 in #671, step 2 in #673 (Chosen, at the end).** The study itself changed no app code.
+10 November 2026, Queensland. **Round 1: Build smaller, 5 of 5. Round 2: five of six rank B first, all six rank C last. Recommended B cut down: one compact card under a finished list (step 1), then A's sentence on the slip as words only (step 2, after step 1 has run). The owner chose both and both are built and live: step 1 in #671, step 2 in #673 (Chosen, near the end).** The study itself changed no app code.
 
 [The idea list](ideas.md) · [Proposal](proposal.md) · [Evidence packet](evidence-packet.md) · [Designs and measurements](designs.md) · [Pictures kept here](#pictures-kept-here)
 
-**Where the rest is.** On `main` since 11 November 2026: this brief, the idea list, the proposal, the evidence packet, the designs and ten pictures. The review-only preview (`candidate.js`, `candidate.css`, `cheer-core.js`, `capture.mjs`, `index.html`), both verification files and the other 166 screens and films are in pull request #670. That pull request stayed off `main`: it sat on the mascot studies branch, whose own pull request was closed, and was about 48 MB with it. The current contract for what was built is `docs/kitchen-mascot.md`.
+**Where the rest is.** On `main` (pull request #675): this brief, the idea list, the proposal, the evidence packet, the designs and ten pictures. The review-only preview (`candidate.js`, `candidate.css`, `cheer-core.js`, `capture.mjs`, `index.html`), both verification files and the other 166 screens and films are in pull request #670. That pull request stayed off `main`: it sat on the mascot studies branch, whose own pull request was closed, and was about 48 MB with it. The current contract for what was built is `docs/kitchen-mascot.md`.
 
 This is role-based council analysis, not research with staff. Every measurement is a **Preview**: a review-only injection into the real app with the click tests' Firebase stand-in and made-up people. Nothing was measured in the implemented app or in the kitchen. Source: the study's own branch on top of the mascot studies (`71cbf84`, pull request #670); the app files match `main` at `7f85629`.
 
@@ -12,12 +12,12 @@ This is role-based council analysis, not research with staff. Every measurement 
 
 The study ran on its own branch, whose app files are `main` at `7f85629`. By the time it finished, `main` (`f495019`) had moved, and four things matter here:
 
-- **The daily mascot is built and live on Home** (`docs/kitchen-mascot.md` on `main`): one shuffled action a day per person, once then the Welcome pose, tap to replay, in the heading corner or on the Your day card when the words fill the corner. The council's packet called it "chosen, not built", which was true on the study's branch. The studies' own pull request, #654, was closed unmerged; this study sat on the same branch for the same reason.
+- **The daily mascot is built and live on Home** (`docs/kitchen-mascot.md` on `main`): one shuffled action a day per person, once then the Welcome pose, tap to replay, in the heading corner or on the Your day card when the words fill the corner. The council's packet called it "chosen, not built", which was true on the study's branch. The studies' own pull request, #654, was closed unmerged; this study's pull request, #670, sat on that branch and stays off `main` too.
 - **The player and the art already ship.** `js/mascot.js` is lazy and `art/mascot/` holds every still and sprite sheet, loaded with `?v=1` so the saved copy never keeps them. A build of step 1 reuses both and adds no art file. The keeper's "move the art out of `docs/`" is done.
 - **The tick keeps the On it stamp** (#664, 10 November), hidden on a ticked line, for the head chef's Time on it card. The map for this study read "the tick clears the On it time". The rule here does not change: no cheer ever uses time taken.
 - **Home's welcome already follows the time of day and the shift** ("Good morning", "Thanks for today"; #656, #661). Ideas 12 and 13 overlap with it and should start from it.
 
-Unchanged on `main`, checked in source: the finished-list sentence, the tick slip, the 3.5 second linger and the Top tickers strip. So the recommended card has the same place to stand. The previews were not re-run on `f495019`: that is the first check of an implementation.
+Unchanged on `main` at that point (`f495019`), checked in source: the finished-list sentence, the tick slip, the 3.5 second linger and the Top tickers strip. So the recommended card had the same place to stand. The previews were not re-run on `f495019`: that was left to the build. Since then #671 has put the card where the finished-list sentence stood, and #673 has added the section's sentence to the tick slip. The 3.5 second linger and the Top tickers strip are as they were.
 
 ## What the owner asked
 
@@ -139,7 +139,7 @@ No access, data-loss or service-blocking fault was found in the bounded previews
 
 **Recommend B cut down, in two steps.**
 
-**Step 1, build first: one compact card under a finished list on Prep.** When every line is ticked and the server has every tick, the mascot stands beside the book's own sentence with one bubble, "Every line ticked. 6 of 6." The book's sentence keeps its second half, "See Done today under Handy.", so the finish is said once. The card is the list's state: it shows on every device and after a reload, as a still. On the device whose tick finished the list he plays Serve once, after the ticked lines have left, then rests. Undo takes it back. Nothing shows while lines are left, nothing on the slip, nothing new on Home (the daily action, live on `main` since 9 November, is Home's mascot), no setting, no reads.
+**Step 1, build first: one compact card under a finished list on Prep.** When every line is ticked and the server has every tick, the mascot stands beside the book's own sentence with one bubble, "Every line ticked. 6 of 6." The book's sentence keeps its second half, "See Done today under Handy.", so the finish is said once. The card is the list's state: it shows on every device and after a reload, as a still. On the device whose tick finished the list he plays Serve once, after the ticked lines have left, then rests. Undo takes it back. Nothing shows while lines are left, nothing on the slip, nothing new on Home (the daily action, chosen on 9 November and live on `main` since 10 November (#660), is Home's mascot), no setting, no reads.
 
 **Step 2, after step 1 has run about four weeks: the sentence on the slip.** At a finished section of two or more lines the slip adds one line of words, "Sauce is done. Larder has 2 left.", with no art. One line or nothing: if the ticked name already wraps, or the sentence would not fit, the slip is exactly today's. Only while that tick's own slip is up, never late.
 
@@ -147,7 +147,7 @@ No access, data-loss or service-blocking fault was found in the bounded previews
 
 **Main downside.** It is seen at most once a day, and on days the list is not cleared, never. A finished section, the more common finish line, says nothing new until step 2. Whether any of it changes how much prep gets done is Not evidenced, and the research says novelty fades in about four weeks. The head chef reviewer named what would flip the order: if a whole list is rarely finished in a shift, the section sentence is where the value is and step 2 should come first.
 
-**Review status.** Steps 1 and 2 are a lead synthesis after round 2, built as one preview (`R` and `S` in `candidate.js`, pull request #670) and measured. They were not re-reviewed: every change traces to a reviewer's request in the table above and adds no flow the council did not see. The three-to-three split on the slip sentence stands and is the head chef's to settle.
+**Review status.** Steps 1 and 2 are a lead synthesis after round 2, built as one preview (`R` and `S` in `candidate.js`, pull request #670) and measured. They were not re-reviewed: every change traces to a reviewer's request in the table above and adds no flow the council did not see. The three-to-three split on the slip sentence stood and was the head chef's to settle; the owner chose to build it (Chosen).
 
 ### The recommended preview, measured
 
@@ -176,6 +176,8 @@ The owner's own example, started then finished, has one preview screen as a late
 
 ## Decisions for the head chef
 
+As put to the owner on 10 November. Decided since (see Chosen): 1, yes (#671). 2, Serve once, then the Welcome pose, so the burger is never held. 3, now (#673). Still open: 4 to 7.
+
 1. **Build step 1?** The compact card under a finished Prep list.
 2. **Clip or still.** Serve once (five of six) or a still (skeptic). And his resting pose: holding the burger, or neutral, given the earlier "order up" record.
 3. **The slip sentence.** Now, as step 2, or not at all. The council split three to three.
@@ -185,6 +187,8 @@ The owner's own example, started then finished, has one preview screen as a late
 7. **Later ideas, each its own council.** Thanks from Chef carried by the mascot (the strongest idea in the evidence), started-and-finished (your own example; one preview screen exists, `evidence/a-started-finished-390.png`), the pack down card when Cleaning is on for the team.
 
 ## Before release (implementation, not this preview)
+
+Written before the build, as the list an implementation had to meet. #671 and #673 are that implementation; what they do and how they are tested is in `docs/kitchen-mascot.md` (Contract, Tests).
 
 - Take the finish line from the tick handler and the write's own answer, not from reading the page. Never from a cached answer.
 - Reuse `js/mascot.js` and `art/mascot/` from `main` (the Serve sheet and still are already there, loaded with `?v=1` so the saved copy never keeps them). No new art, nothing in `SHELL`.
@@ -196,7 +200,7 @@ The owner's own example, started then finished, has one preview screen as a late
 ## Chosen
 
 - **Step 1, 10 November 2026.** The owner said "yes i trust your recommendations". Built as pull request #671: the compact card under a finished prep list, Serve once, then the Welcome pose. Live at 22:47 Queensland time; the live click tests passed.
-- **Step 2, 11 November 2026.** The owner said "yeah go ahead" the same evening, then "lets merge". The recommendation here was to wait about four weeks; the owner chose now. Built as pull request #673: one line of words on the slip when a tick finishes a section, no art. Live at 01:37 Queensland time; the live click tests passed.
+- **Step 2, chosen 10 November 2026, live 11 November.** The owner said "yeah go ahead" on the evening step 1 went live, then "lets merge". The recommendation here was to wait about four weeks; the owner chose now. Built as pull request #673: one line of words on the slip when a tick finishes a section, no art. Merged at 01:05 and live at 01:37 Queensland time on 11 November; the live click tests passed at 01:48.
 
 The build of step 2 is stricter than the preview drawn here, after two break-it reviews before the code and an independent review of it. It is silent whenever the All list, a section's own tab and Home would count a section differently; it says "Pans are done. Fryers have 2 left." for plural names; it never says Prep, Kitchen, a time of day or a person's name; and it is kept as said only once it has stood 2 seconds. The current contract is `docs/kitchen-mascot.md` on `main`, "A finished section, on the slip".
 
@@ -209,12 +213,12 @@ Every one is a Preview from the study, with made-up people and prep lines, not t
 | Picture | What it shows |
 | --- | --- |
 | [`sheet-today-390.png`](evidence/sheet-today-390.png) | The book before the study, on a phone |
-| [`sheet-a-390.png`](evidence/sheet-a-390.png) | Design A, the slip speaks |
+| [`sheet-a-390.png`](evidence/sheet-a-390.png) | Design A, the slip speaks. Frame 3 reads "Every line ticked. 6 of 6."; `designs.md` gives that sentence as "Prep is done. 6 of 6." |
 | [`sheet-b-390.png`](evidence/sheet-b-390.png) | Design B, he waits at the edges |
 | [`sheet-c-390.png`](evidence/sheet-c-390.png) | Design C, the star on the bar |
 | [`sheet-m-390.png`](evidence/sheet-m-390.png) | M, the lead's draft mix after round 1 |
 | [`sheet-r-390.png`](evidence/sheet-r-390.png) | R, the recommended step 1: the compact card under a finished list |
 | [`sheet-s-390.png`](evidence/sheet-s-390.png) | S, the recommended step 2: the sentence on the slip |
-| [`r-list.gif`](evidence/r-list.gif) | Film of step 1: the last tick, then the card |
+| [`r-list.gif`](evidence/r-list.gif) | Film of step 1: the card under the last ticked line, the line leaves, he plays Serve once |
 | [`s-section.gif`](evidence/s-section.gif) | Film of step 2: the tick that finishes a section |
 | [`a-started-finished-390.png`](evidence/a-started-finished-390.png) | A later idea, not built: "Started and finished." on the slip |

@@ -29,7 +29,12 @@ Sources and the full findings are with the session's working files, summarised i
 
 ## The ideas
 
-Written on the study's own branch, before any of it was built. Since then `main` has built the daily mascot on Home with tap to replay (`docs/kitchen-mascot.md`), so idea 14 is done, and Home's welcome already follows the time of day and the shift, so ideas 12 and 13 start from that.
+Written on the study's own branch, before any of it was built, and kept as written. The marks below are the brainstorm's, not today's state. On `main` since then:
+
+- **Built:** idea 1, as words only on the slip, no art (#673). Idea 2, as the card under a finished list (#671): it says "Every line ticked. 6 of 6.", not "Prep is done." The tap in idea 14: a tap on Home's mascot replays today's action, with no line of words. All three are in `docs/kitchen-mascot.md`.
+- **Drawn and not taken:** ideas 9 and 10 (design C), ideas 12 and 23 (parts of design B). See [the brief](brief.md), All-three mix.
+- **Not built with the first build:** idea 25 (the first hello) and idea 30 (the budget and the Cheers, Words only, Off setting). The book has no such setting.
+- **Still open:** the rest. Home's welcome already follows the time of day and the shift, so idea 13, and any new try at idea 12, starts from that.
 
 Marks: **First** worth designing first. **Later** good, after the first step proves itself. **Your call** needs the head chef's decision because it changes a rule or adds a workflow. **Cut** left out, with the reason.
 

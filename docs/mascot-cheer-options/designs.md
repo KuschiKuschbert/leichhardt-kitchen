@@ -2,6 +2,8 @@
 
 10 November 2026, Queensland. Written for the six round 2 reviewers, with no recommendation in it. Read with the [evidence packet](evidence-packet.md). Every screen is a **Preview**: a review-only injection (`candidate.js`, `candidate.css`, `cheer-core.js`, all in pull request #670) into the real app, with the click tests' Firebase stand-in, made-up people (Ann, staff, Lunch on Larder; Sam, sous chef) and local Barlow, Barlow Condensed and Caveat fonts. Nothing is built into the book.
 
+**Note added after the council.** This page is kept as the reviewers saw it on 10 November. Since then the daily mascot on Home is built, and two parts of these designs are built and live on `main`: B's card under a finished list, cut down (#671), and A's sentence on the slip, as words only (#673). The built versions differ from these drawings, and nothing else here is built. The Not evidenced list at the end is as it stood that day. The current contract is `docs/kitchen-mascot.md`; the recommendation and what was chosen are in [the brief](brief.md).
+
 ## Round 1, in short
 
 Build smaller, 5 of 5. The reviewers judged the proposal from today's screens only, before any design existed. All five: the words are the feature ("Larder is done. Grill has 2 left."); Prep and Home only; no clips on a work page; no other pages and no Settings row yet. All five accepted the edges of the work. Two accepted the slip as words only at its 60 px height with Undo unmoved (cook, new starter); three rejected the slip (head chef, skeptic, keeper). All five rejected art on the progress bars from the description. The skeptic would cheer the finished list only. Their leading failure cases were built into the checks below.

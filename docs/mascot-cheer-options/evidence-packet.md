@@ -2,7 +2,7 @@
 
 10 November 2026, Queensland. The same packet for every reviewer in both rounds. Source: branch `ccr-cdd67156-ujemkx` on top of the mascot studies (`71cbf84`); the app files match `main` at `7f85629`. Screens are **Preview**: the real app with the click tests' Firebase stand-in, made-up people (Ann, staff, Lunch on Larder; Sam, sous chef) and local Barlow, Barlow Condensed and Caveat fonts. Nothing was measured in the live kitchen. This is role-based analysis, not research with staff.
 
-**Note added after the council.** This page is kept as the reviewers saw it. It was written against the study's own branch (`main` at `7f85629`). On `main` since then: the daily mascot on Home is built (`docs/kitchen-mascot.md`), its player and art ship in `js/mascot.js` and `art/mascot/`, and the tick keeps the On it stamp for the head chef's Time on it card (#664). See the brief, "What main has now".
+**Note added after the council.** This page is kept as the reviewers saw it. It was written against the study's own branch (`main` at `7f85629`). On `main` since then: the daily mascot on Home is built (`docs/kitchen-mascot.md`), its player and art ship in `js/mascot.js` and `art/mascot/`, and the tick keeps the On it stamp for the head chef's Time on it card (#664). Both steps the council recommended are built too: the card under a finished list (#671) and the section's sentence on the slip, in words only (#673). So "A finished section or list: nothing of its own" below is the book before the study. See the brief, "What main has now" and "Chosen".
 
 ## Today's book (see [`evidence/sheet-today-390.png`](evidence/sheet-today-390.png))
 
