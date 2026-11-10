@@ -37,7 +37,8 @@ const CLASSES = [
   'cln-chef-page', 'cln-fold', 'cln-fold-toggle', 'cln-repeat-browser', 'cln-repeat-layout', 'cln-template-summary', 'cln-editor',
   'dr-notebook', 'dr-book', 'dr-bookhead', 'dr-usual', 'dr-work', 'dr-spine', 'dr-people',
   'fn-ahead', 'fn-ahead-b', 'fn-ahead-l', 'fn-ahead-t', 'fn-ahead-n', 'fn-ahead-p', 'fn-ahead-more', 'fn-ahead-hide', 'is-ahead',
-  'fn-hm', 'fn-hm-line', 'fn-hu', 'fn-hu-got', 'fn-hu-undo', 'fn-ahead-ack', 'fn-wk'
+  'fn-hm', 'fn-hm-line', 'fn-hu', 'fn-hu-got', 'fn-hu-undo', 'fn-ahead-ack', 'fn-wk',
+  'o-fn-tag', 'o-fn-when', 'o-fn-for', 'o-fn-held'
 ];
 const TOKENS = ['--ink', '--paper', '--bg', '--muted', '--faint', '--line', '--accent', '--accent-ink', '--tag', '--done', '--done-ink',
   '--bar', '--bar-text', '--display', '--body', '--r-act', '--r-pick', '--small-ink', '--hit',
@@ -45,7 +46,8 @@ const TOKENS = ['--ink', '--paper', '--bg', '--muted', '--faint', '--line', '--a
   '--surface-work', '--surface-work-edge', '--surface-people', '--surface-people-edge', '--surface-paper', '--surface-reference'];
 const HELPERS = ['homeHeading', 'homeWelcomeWords', 'homeWelcomePaint', 'whoNamePaint', 'tmIcon', 'retrySoon', 'waiting', 'cacheOnly', 'inkLabel', 'inkWait', 'mnName', 'AdaptivePicker', 'SwipeDismiss', 'ModalFrame', 'enhance',
   'svButton', 'svStart', 'svDone', 'svFail', 'svLine', 'errMsg', 'failed', 'toast', 'slipName', 'arm', 'armed', 'W', 'canW',
-  'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'homeRotaHTML', 'tmAwayHTML', 'tmNextHTML', 'tmAwayPaint', 'tmAwayHidden', 'dkRunHTML', 'dkTeamHTML', 'dkFormHTML', 'panelShellHTML', 'psPanelHTML', 'psHintHTML', 'psReferenceHTML', 'psRolloutHTML'];
+  'ovPush', 'ovDone', 'trapTab', 'sheetOpen', 'sheetBusy', 'sheetNext', 'lvHTML', 'homeSlot', 'homePaint', 'homeRotaHTML', 'tmAwayHTML', 'tmNextHTML', 'tmAwayPaint', 'tmAwayHidden', 'dkRunHTML', 'dkTeamHTML', 'dkFormHTML', 'panelShellHTML', 'psPanelHTML', 'psHintHTML', 'psReferenceHTML', 'psRolloutHTML',
+  'fnOrdTag', 'orderTag'];
 const GLOBALS = ['ICON', 'LK_UX', 'LK_PREP_STANDARDS'];
 
 const missing = [];

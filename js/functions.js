@@ -274,12 +274,27 @@
     for (i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
     return h.toString(36);
   }
+  /* The Orders tag (functions ahead of time, step 3, head chef 10 Nov 2026): a function's own stock line on today's order
+     list, still to tick, says Order today on its order day (od) and Not ordered yet after it, up to the function's day.
+     The line is the function's when its first id (root, kept by every rolled copy) is fn-<function id> and its words
+     name the function's day. The Changed, Cancelled and Restored lines have their own ids, so they never match. null
+     when the line is not one, or the function is not in the list given (not loaded, removed, cancelled, past, moved to
+     another day): never a guess. today is the kitchen day. */
+  function orderTag(list, x, today) {
+    if (!x || x.ordered || x.deleted || !isYmd(today) || x.date !== today) return null;
+    var key = String(x.root || x.id || ''), f = null;
+    (list || []).forEach(function (g) { if (!f && g && g.id && ('fn-' + g.id).slice(0, 120) === key) f = g; });
+    if (!f || f.status !== 'confirmed' || !isYmd(f.date) || !isYmd(f.od) || f.date < today || f.od > today) return null;
+    if (x.fn && x.fn !== f.id) return null;
+    if (String(x.text || '').indexOf(', ' + dayName(f.date) + ':') < 0) return null;
+    return { id: f.id, kind: f.od === today ? 'today' : 'late', day: dayName(f.date), od: dayName(f.od) };
+  }
   var M = {
     MIN: MIN, HOUR: HOUR, DAY: DAY, MAX_LINES: MAX_LINES, MAX_ROUNDS: MAX_ROUNDS, MAX_QTY: MAX_QTY, MAX_PER: MAX_PER,
     kday: kday, kat: kat, kclock: kclock, dayStart: dayStart, addDays: addDays, isYmd: isYmd, hmMin: hmMin, dayName: dayName, when: when,
     even: even, toU: toU, fromU: fromU, sum: sum, roundTimes: roundTimes, windowOf: windowOf, derive: derive, counts: counts,
     short: short, unitOf: unitOf, totalQty: totalQty, guestsText: guestsText, problems: problems, changes: changes, dayTotals: dayTotals,
-    overlaps: overlaps, showing: showing, service: service, soon: soon, orderDay: orderDay, orderOn: orderOn, nextRound: nextRound, nextOpen: nextOpen, fingerprint: fingerprint, kitchenSig: kitchenSig, prepBody: prepBody, orderBody: orderBody, effects: effects
+    overlaps: overlaps, showing: showing, service: service, soon: soon, orderDay: orderDay, orderOn: orderOn, nextRound: nextRound, nextOpen: nextOpen, fingerprint: fingerprint, kitchenSig: kitchenSig, prepBody: prepBody, orderBody: orderBody, effects: effects, orderTag: orderTag
   };
   if (typeof module === 'object' && module.exports) { module.exports = M; return; }
 
@@ -1528,6 +1543,8 @@
     homeAhead: function () { huOpen(); var h = huHTML(); return '<div class="fn-hm" id="fn-hm"' + (h ? '' : ' hidden') + '>' + h + '</div><span class="visually-hidden" role="status" id="fn-hm-say"></span>'; },
     checkSlot: function () { var h = checkHTML(); return '<div id="fn-check"' + (h ? '' : ' hidden') + '>' + h + '</div>'; },
     hatLine: hatLine, page: pageHTML, watch: watch, paint: paint, catalogue: catalogue, recipeOf: recipeOf, nameOf: nameOf, sheetHTML: sheetHTML, print: printFunctions, esc: esc,
+    // the Orders tag for an order line, from the functions this phone already holds (M.orderTag()): no read
+    orderTag: function (x, today) { return orderTag(F.list, x, today || kday(now())); },
     statusHTML: statusHTML, setStatus: setStatus, statusBusy: function (id) { return !!F.jobs[id]; }, prepOps: prepOps, orderOps: orderOps
   };
   watch();
