@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cross-training Options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@600;700&family=Caveat:wght@700&display=swap">
+<link rel="stylesheet" href="../admin-dashboard-restyle-options/kit.css">
+<style>
+/* Preview only: synthetic people and counts, no reads, no saves. */
+.picker { display: flex; gap: .5rem; flex-wrap: wrap; padding: .6rem 1rem; background: var(--beige); border-bottom: 1px solid var(--line); }
+.picker a { text-decoration: none; }
+.book { border: 1px solid var(--surface-people-edge); border-radius: 12px; overflow: hidden; background: var(--surface-paper); }
+.book-h { background: var(--surface-people); padding: .8rem 1rem; border-bottom: 1px solid var(--surface-people-edge); }
+.book-h b { font: 700 1.9rem/1.1 'Caveat', cursive; }
+.book-h p { margin: .2rem 0 0; color: var(--done-ink); font-size: .9rem; }
+.prow { display: grid; grid-template-columns: 1fr auto; gap: .2rem .8rem; padding: .7rem 1rem; border-bottom: 1px solid var(--line); }
+.prow .nm { font: 700 1.15rem/1.2 var(--body); }
+.prow .sec { display: inline-flex; align-items: center; min-height: 44px; padding: .3rem .8rem; border: 1.5px solid var(--ink); border-radius: var(--r-pick); font-weight: 600; background: var(--paper); }
+.prow .meta { grid-column: 1 / -1; color: var(--muted); font-size: .9rem; }
+.prow .grow { grid-column: 1 / -1; font-size: .92rem; }
+.grow b { color: var(--ink); }
+.headline { padding: .6rem 1rem; border-bottom: 1px solid var(--line); font-size: .92rem; }
+.sheet { border: 1px solid var(--edge); border-radius: 14px 14px 0 0; background: var(--paper); box-shadow: 0 -6px 24px rgba(0,0,0,.12); padding: 1rem; margin-top: 1rem; }
+.sheet h3 { margin-top: 0; }
+.opt { display: flex; justify-content: space-between; align-items: center; gap: .6rem; min-height: 52px; padding: .5rem .7rem; border-bottom: 1px solid var(--line); }
+.opt b { font-size: 1.05rem; }
+.opt span { color: var(--muted); font-size: .9rem; text-align: right; }
+.opt.on { background: var(--hit); box-shadow: inset 3px 0 var(--accent); }
+.grp { font: 700 .75rem/1 var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: .8rem .7rem .3rem; }
+.grid td.c { text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; border: 2px solid var(--bg); }
+.legend { display: flex; gap: .8rem; flex-wrap: wrap; font-size: .85rem; color: var(--muted); margin: .3rem 0 .6rem; }
+.legend i { display: inline-block; width: 14px; height: 14px; vertical-align: -2px; margin-right: .3rem; border: 1px solid var(--line); }
+ul.words { padding-left: 1.1rem; } ul.words li { margin: .35rem 0; }
+.split2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; align-items: start; }
+@media (max-width: 760px) { .split2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="pv-note">Preview for the council, 10 Nov 2026. Made-up names and counts. Nothing here reads or saves.</div>
+<nav class="picker" id="picker"></nav>
+<header class="top"><div><small>Leichhardt Hotel Kitchen</small><b>Kitchen Book</b></div><div class="ic"><i></i><i></i><i></i></div></header>
+<div class="shell"><aside class="rail" id="rail"></aside><main id="main"></main></div>
+<script>
+// Layout: ?d=A|B|C|M and ?p=plan|reports. Shifts worked in the last 30 days, from the nightly teamsum record (chefs and admin only).
+var q = new URLSearchParams(location.search), D = (q.get('d') || 'A').toUpperCase(), P = q.get('p') || 'plan';
+var NAMES = { A: 'A. One line in the planner', B: 'B. One page in Reports', C: 'C. Counts in the section picker', M: 'Mix: A line + C same-shift + B page' };
+var SECS = ['Grill', 'Larder', 'Pans', 'Garnish', 'Fryer'];
+var PPL = [ // shifts worked per section, last 30 days
+  { n: 'Alex', s: [2, 1, 12, 0, 1], today: 'Pans', usual: 'Usually Pans, 7 of the last 8 Saturdays' },
+  { n: 'Bo', s: [11, 0, 0, 1, 0], today: 'Grill', usual: 'Usually Grill, 8 of the last 8 Saturdays' },
+  { n: 'Cy', s: [3, 9, 0, 2, 0], today: 'Larder', usual: 'Usually Larder, 5 of the last 8 Saturdays' },
+  { n: 'Dee', s: [0, 2, 0, 6, 4], today: 'Garnish', usual: '' },
+  { n: 'Eli', s: [1, 0, 0, 0, 0], today: 'Fryer', usual: '', fresh: true }
+];
+function el(id) { return document.getElementById(id); }
+el('picker').innerHTML = ['A', 'B', 'C', 'M'].map(function (d) { return '<a class="pill' + (d === D ? ' on' : '') + '" href="?d=' + d + '&p=' + P + '">' + NAMES[d] + '</a>'; }).join('') +
+  '<a class="pill' + (P === 'plan' ? ' on' : '') + '" href="?d=' + D + '&p=plan">Today\'s team planner</a><a class="pill' + (P === 'reports' ? ' on' : '') + '" href="?d=' + D + '&p=reports">Reports, Team</a>';
+el('rail').innerHTML = '<div class="find">Find</div><a>Inbox <em>3</em></a><a>Dashboard</a><div class="lab">' + (P === 'plan' ? 'Chef panel' : 'Admin panel') + '</div><a class="room">Today</a><a class="room">Reports</a><a class="room on">Team</a><a class="room">Kitchen</a><a class="room">Prep</a>';
+function rooms(on) { return '<div class="rooms">' + ['Today', 'Reports', 'Team', 'Kitchen'].map(function (r) { return '<span' + (r === on ? ' class="on"' : '') + '>' + r + '</span>'; }).join('') + '</div>'; }
+// the busiest section (most shifts across the team) this person has the fewest shifts on, and who has the most there
+function gap(p) {
+  var tot = SECS.map(function (_, i) { return PPL.reduce(function (s, x) { return s + x.s[i]; }, 0); });
+  var best = -1; SECS.forEach(function (_, i) { if (p.s[i] === 0 && tot[i] >= 5 && (best < 0 || tot[i] > tot[best])) best = i; });
+  if (best < 0) return null;
+  var lead = PPL.slice().sort(function (a, b) { return b.s[best] - a.s[best]; })[0];
+  return { sec: SECS[best], lead: lead };
+}
+function few() { return SECS.map(function (s, i) { var who = PPL.filter(function (p) { return p.s[i] > 0; }); return { s: s, n: who.length, who: who, i: i }; }).filter(function (x) { return x.n <= 2; }); }
+function planner(kind) {
+  var h = '<div class="book"><div class="book-h"><b>Saturday 15 November</b><p>Dinner. Draft, not saved yet.</p></div>';
+  if (kind === 'C') h += '<div class="headline">Few people worked lately: ' + few().map(function (x) { return '<b>' + x.s + '</b> (' + x.n + (x.n === 1 ? ' person' : ' people') + ')'; }).join(', ') + '. Counts from shifts in the last 30 days.</div>';
+  PPL.forEach(function (p) {
+    var g = gap(p), line = '';
+    if ((kind === 'A' || kind === 'M') && g && !p.fresh) {
+      line = '<div class="grow">New to <b>' + g.sec + '</b>: 0 shifts in 30 days. ' + g.lead.n + ' has ' + g.lead.s[SECS.indexOf(g.sec)] + '.' + (kind === 'M' && g.lead.today === g.sec ? ' <b>' + g.lead.n + ' is on ' + g.sec + ' this shift.</b>' : '') + '</div>';
+    }
+    if ((kind === 'A' || kind === 'M') && p.fresh) line = '<div class="grow">1 shift in the last 30 days. Counts start once the nightly run has their shifts.</div>';
+    h += '<div class="prow"><span class="nm">' + p.n + '</span><span class="sec">' + p.today + ' &#9662;</span>' + (p.usual ? '<span class="meta">' + p.usual + '</span>' : '') + line + '</div>';
+  });
+  h += '</div>';
+  if (kind === 'C') {
+    h += '<div class="sheet"><h3>Dee\'s section, Saturday dinner</h3><p class="hint">Shifts Dee worked in the last 30 days.</p><div class="grp">Worked lately</div>' +
+      '<div class="opt on"><b>Garnish</b><span>6 shifts</span></div><div class="opt"><b>Fryer</b><span>4 shifts</span></div><div class="opt"><b>Larder</b><span>2 shifts</span></div>' +
+      '<div class="grp">New to Dee</div><div class="opt"><b>Pans</b><span>0 shifts. Alex is on Pans this shift</span></div><div class="opt"><b>Grill</b><span>0 shifts. Bo is on Grill this shift</span></div>' +
+      '<div class="opt"><b>No section</b><span></span></div></div>';
+  }
+  return h;
+}
+function grid() {
+  var C = ['#FFFFFF', '#FCE3D5', '#F8C3A4', '#F29A6A', '#EB6834'];
+  function lv(v) { return !v ? 0 : v <= 2 ? 1 : v <= 5 ? 2 : v <= 10 ? 3 : 4; }
+  return '<div class="legend"><span>Shifts worked:</span>' + [['none recorded', 0], ['1 to 2', 1], ['3 to 5', 2], ['6 to 10', 3], ['over 10', 4]].map(function (k) { return '<span><i style="background:' + C[k[1]] + '"></i>' + k[0] + '</span>'; }).join('') + '</div>' +
+    '<div class="tablewrap"><table class="grid"><thead><tr><th>Person</th>' + SECS.map(function (s) { return '<th>' + s + '</th>'; }).join('') + '</tr></thead><tbody>' +
+    PPL.map(function (p) { return '<tr><th scope="row" style="color:var(--ink);font-size:1rem">' + p.n + '</th>' + p.s.map(function (v) { return '<td class="c" style="background:' + C[lv(v)] + ';color:' + (lv(v) === 4 ? '#fff' : 'var(--ink)') + '">' + v + '</td>'; }).join('') + '</tr>'; }).join('') +
+    '<tr><th scope="row">People</th>' + SECS.map(function (s, i) { return '<td class="c">' + PPL.filter(function (p) { return p.s[i]; }).length + '</td>'; }).join('') + '</tr></tbody></table></div>';
+}
+function wordsB() {
+  return '<h3>Sections few people worked lately</h3><ul class="words">' + few().map(function (x) { return '<li><b>' + x.s + ':</b> ' + x.n + (x.n === 1 ? ' person' : ' people') + ' in 30 days (' + x.who.map(function (p) { return p.n + ', ' + p.s[x.i]; }).join('; ') + ' shifts).</li>'; }).join('') + '</ul>' +
+    '<h3>Mostly on one section</h3><ul class="words"><li><b>Bo:</b> 11 of 12 shifts on Grill.</li><li><b>Alex:</b> 12 of 16 shifts on Pans.</li></ul>' +
+    '<p class="hint">Counted from shifts in the chef\'s plans and each cook\'s own section changes. A count is activity, not a sign someone can run a section alone.</p>';
+}
+function reportsOld() {
+  return '<h2>Team</h2><p class="hint">As now: Recorded station activity (ticks), Cross-training chances, Section habits and Shifts on each section stay as four parts. Only the chances list changes:</p>' +
+    '<h3>Cross-training chances</h3><p class="hint">Busy sections and people with no shifts there in 30 days. Pair them with someone who has.</p><ul class="words"><li><b>Pans:</b> Bo, Cy, Dee have no shifts here. Pair them with Alex (12).</li><li><b>Grill:</b> Dee has no shifts here. Pair with Bo (11).</li></ul>' +
+    '<p class="hint">The note "Check assessments before pairing people" goes.</p>';
+}
+var main = '';
+if (P === 'plan') {
+  main = rooms('Team') + '<p class="kicker">Chef panel</p><h1>Team</h1><p class="sub">Today\'s team, planned ahead.</p><hr class="rule"><div class="tabs"><span class="on">Today\'s team</span><span>Manage staff</span><span>Meeting minutes</span></div>' +
+    (D === 'B' ? '<p class="hint">B leaves the planner as it is now, without the "In training" line.</p>' + planner('B') : planner(D));
+} else {
+  main = rooms('Reports') + '<p class="kicker">Admin panel</p><h1>Reports</h1><p class="sub">Read the recorded activity and follow it back to its source.</p><hr class="rule"><div class="tabs"><span>Insights</span><span>Wastage</span><span>Transfers</span><span class="on">Team</span><span>Item evidence</span></div>' +
+    (D === 'B' || D === 'M' ? '<h2>Who has worked where</h2><p><span class="pill">7 days</span> <span class="pill">14 days</span> <span class="pill on">30 days</span></p><div class="split2"><div>' + grid() + '</div><div>' + wordsB() + '</div></div><p class="hint">Replaces four parts: ticks per section, Cross-training chances, Section habits and Shifts on each section. Ticks stay in Insights.</p>' : reportsOld());
+}
+if (q.get('bare')) { el('picker').style.display = 'none'; document.querySelector('.pv-note').textContent = 'Preview, example data. ' + NAMES[D]; }
+el('main').innerHTML = main;
+</script>
+</body>
+</html>

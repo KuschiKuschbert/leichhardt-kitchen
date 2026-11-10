@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Today Restyle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<link rel="stylesheet" href="kit.css">
+<style>
+/* Design-specific pieces. Preview only: synthetic data, no reads, no saves. */
+.picker { display: flex; gap: .5rem; flex-wrap: wrap; padding: .6rem 1rem; background: var(--beige); border-bottom: 1px solid var(--line); }
+.picker a { text-decoration: none; }
+.needs { display: grid; grid-template-columns: 1fr; gap: 0; }
+.need { display: grid; grid-template-columns: 1fr auto; gap: .3rem 1rem; padding: .85rem 0 .85rem .9rem; border-bottom: 1px solid var(--line); border-left: 3px solid var(--edge); }
+.need.due { border-left-color: var(--bad-ink); }
+.need h4 { margin: .15rem 0 .1rem; font: 700 1.1rem/1.2 var(--body); }
+.need p { margin: 0; color: var(--muted); font-size: .92rem; }
+.need .btn { align-self: center; }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .9fr); gap: 1.5rem; align-items: start; }
+.pane { background: var(--surface-reference); border-radius: 10px; padding: 1.1rem 1.2rem; }
+.pane h4 { font: 700 1.5rem/1.15 var(--display); margin: .3rem 0; }
+.pane.empty { color: var(--muted); }
+.compact .need { grid-template-columns: 1fr; padding: .6rem .8rem; cursor: pointer; }
+.compact .need p, .compact .need .btn { display: none; }
+.compact .need.on { background: var(--hit); }
+.figs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--line); }
+.figs.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fig { padding: .8rem .9rem .9rem 0; }
+.fig + .fig { border-left: 1px solid var(--line); padding-left: .9rem; }
+.fig .k { font: 600 .82rem/1.2 var(--body); color: var(--muted); }
+.fig .v { font: 700 2.2rem/1.05 var(--display); margin: .2rem 0; }
+.fig .v small { font-size: 1rem; }
+.fig p { margin: .15rem 0 0; font-size: .85rem; color: var(--muted); }
+.strip { display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; padding: .6rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: .95rem; }
+.strip b { font: 700 1.25rem/1 var(--display); }
+.heads { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.4rem; border-top: 1px solid var(--line); padding-top: .7rem; }
+.heads h4 { margin: .25rem 0; font: 700 1.2rem/1.2 var(--body); }
+.heads p { margin: 0 0 .4rem; color: var(--muted); font-size: .92rem; }
+.heads.short h4 { font-size: 1.1rem; }
+.week { margin: 0; padding: 0; list-style: none; }
+.week li { display: grid; grid-template-columns: 7.5rem 1fr auto; gap: .8rem; padding: .55rem 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+.week li b { font-weight: 700; }
+.week li.quiet { display: block; color: var(--muted); font-size: .9rem; padding-top: .5rem; }
+.days7 { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid var(--ink); }
+.days7 div { padding: .5rem .4rem; border-left: 1px solid var(--line); min-height: 5.5rem; font-size: .85rem; }
+.days7 div:first-child { border-left: 0; }
+.days7 b { display: block; font-size: .95rem; }
+.days7 .busy { color: var(--small-ink); font-weight: 600; }
+.bars .row { display: grid; grid-template-columns: 9rem 1fr 3rem; gap: .6rem; align-items: center; padding: .3rem 0; }
+.bars .track { position: relative; height: 14px; background: var(--beige); border-radius: 3px; }
+.bars .fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 3px; }
+.bars .was { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
+.heat td { text-align: center; font-weight: 600; border: 2px solid var(--bg); }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; }
+.watch { display: flex; flex-wrap: wrap; gap: .5rem 1.4rem; }
+.watch div { min-width: 12rem; border-top: 2px solid var(--ink); padding-top: .4rem; }
+.cmp td:nth-child(4) { white-space: nowrap; }
+@media (max-width: 760px) {
+  .figs, .figs.three { grid-template-columns: 1fr 1fr; }
+  .fig + .fig { border-left: 0; padding-left: 0; }
+  .fig:nth-child(even) { border-left: 1px solid var(--line); padding-left: .9rem; }
+  .heads, .two, .split { grid-template-columns: 1fr; }
+  .need { grid-template-columns: 1fr; }
+  .need .btn { justify-self: start; }
+  .days7 { grid-template-columns: 1fr; } .days7 div { border-left: 0; border-bottom: 1px solid var(--line); min-height: 0; }
+  .week li { grid-template-columns: 6rem 1fr; } .week li span:last-child { grid-column: 2; }
+  .cmp th:nth-child(3), .cmp td:nth-child(3) { display: none; }
+  .compact .need p, .compact .need .btn { display: block; }
+  .compact .need .btn { display: inline-flex; }
+  .pane.side { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="pv-note">Preview for the council, 10 Nov 2026. Example data and names only. Nothing here reads or saves.</div>
+<nav class="picker" id="picker"></nav>
+<header class="top"><div><small>Leichhardt Hotel Kitchen</small><b>Kitchen Book</b></div><div class="ic"><i></i><i></i><i></i></div></header>
+<div class="shell">
+  <aside class="rail" id="rail"></aside>
+  <main id="main"></main>
+</div>
+<script>
+// Layout: query ?d=A|B|C|M and ?p=inbox|dash. Every design uses the same synthetic numbers.
+var q = new URLSearchParams(location.search), D = (q.get('d') || 'A').toUpperCase(), P = q.get('p') || 'inbox';
+var NAMES = { A: 'A. Tidy in place', B: 'B. Needs first, trends folded', C: 'C. List and detail, one comparison table', M: 'Mix: B order + C table + A inbox' };
+var NEEDS = [
+  { kind: 'due', tag: 'Not set', title: "Today's team", detail: 'Who is on which shift, their sections and breaks.', act: "Set today's team" },
+  { kind: 'wait', tag: 'New', title: '2 kitchen mails open', detail: '1 not read yet. Oldest from Bo, Sun 9 Nov.', act: 'Open mail' },
+  { kind: 'wait', tag: 'To review', title: '4 item links to check', detail: 'Recorded names with no confirmed recipe or supplier link. Counted at 03:00.', act: 'Item links' },
+  { kind: 'wait', tag: 'Not back', title: '1 transfer not returned', detail: 'Brisket, 2 kg, to the Rocky venue on Fri 7 Nov.', act: 'Open Transfers' }
+];
+function el(id) { return document.getElementById(id); }
+function picker() {
+  var h = '';
+  ['A', 'B', 'C', 'M'].forEach(function (d) { h += '<a class="pill' + (d === D ? ' on' : '') + '" href="?d=' + d + '&p=' + P + '">' + NAMES[d] + '</a>'; });
+  h += '<a class="pill' + (P === 'inbox' ? ' on' : '') + '" href="?d=' + D + '&p=inbox">Inbox</a><a class="pill' + (P === 'dash' ? ' on' : '') + '" href="?d=' + D + '&p=dash">Dashboard</a>';
+  el('picker').innerHTML = h;
+}
+function rail() {
+  el('rail').innerHTML = '<div class="find">Find</div><a' + (P === 'inbox' ? ' class="on"' : '') + '>Inbox <em>4</em></a><a' + (P === 'dash' ? ' class="on"' : '') + '>Dashboard</a><div class="lab">Admin panel</div><a class="room on">Today</a><a class="room">Reports</a><a class="room">Team</a><a class="room">Kitchen</a><a class="room">Prep</a>';
+}
+function head(title, sub, tabs) {
+  var t = '<div class="rooms"><span class="on">Today</span><span>Reports</span><span>Team</span><span>Kitchen</span></div>';
+  t += '<p class="kicker">' + (title === 'Today' ? 'Kitchen administration' : 'Today') + '</p><h1>' + title + '</h1><p class="sub">' + sub + '</p><hr class="rule">';
+  if (tabs) t += '<div class="tabs">' + tabs.map(function (x, i) { return '<span' + (x[1] ? ' class="on"' : '') + '>' + x[0] + '</span>'; }).join('') + '</div>';
+  return t;
+}
+function needRow(n, opts) {
+  return '<div class="need ' + n.kind + (opts && opts.on ? ' on' : '') + '"><div><span class="tag ' + n.kind + '">' + n.tag + '</span><h4>' + n.title + '</h4><p>' + n.detail + '</p></div><a class="btn' + (n.kind === 'due' ? ' dark' : '') + '">' + n.act + '</a></div>';
+}
+var TODAY3 = [['Prep ticked, Monday', '90<small>%</small>', '18 of 20 lines, 2 rolled over'], ['Waste, last 7 days', '21 <small>lines</small>', '<span class="worse">14 more than the 7 days before</span>'], ['Functions today', '0', 'None booked']];
+function figs(list, cls) { return '<div class="figs ' + (cls || '') + '">' + list.map(function (f) { return '<div class="fig"><div class="k">' + f[0] + '</div><div class="v">' + f[1] + '</div><p>' + f[2] + '</p></div>'; }).join('') + '</div>'; }
+function stamp() { return '<p class="hint"><span class="dot"></span>Numbers from the nightly run, Tue 10 Nov at 03:00. <a class="link">Refresh</a></p>'; }
+var TILES = [['Prep list ticked off', '87<small>%</small>', '<span class="same">Same as before</span> 687 of 790 lines'], ['Lines rolled over', '60', '<span class="same">Same as before</span> Not finished, moved on'], ['Typical time to tick', '1<small>h</small> 10<small>m</small>', '<span class="same">Same as before</span> Written to ticked'], ['Wastage lines', '44', '<span class="worse">Up 14, worse</span> Lines, not dollars'], ['Transfers out / in', '30 / 15', 'Lines with other venues']];
+var CMP = [['Prep list ticked off', '87%', '85%', '<span class="same">About the same</span>'], ['Lines rolled over', '60', '58', '<span class="same">About the same</span>'], ['Typical time to tick', '1 h 10 m', '1 h 05 m', '<span class="same">About the same</span>'], ['Wastage lines', '44', '30', '<span class="worse">Up 14, worse</span>'], ['Transfers out', '30', '27', '<span class="same">About the same</span>'], ['Transfers in', '15', '16', '<span class="same">About the same</span>']];
+function cmpTable() { return '<div class="tablewrap"><table class="cmp"><thead><tr><th>Measure</th><th class="num">Last 30 days</th><th class="num">30 before</th><th>Change</th><th></th></tr></thead><tbody>' + CMP.map(function (r) { return '<tr><th scope="row" style="color:var(--ink);font-size:1rem">' + r[0] + '</th><td class="num">' + r[1] + '</td><td class="num">' + r[2] + '</td><td>' + r[3] + '</td><td><a class="link">Open</a></td></tr>'; }).join('') + '</tbody></table></div>'; }
+function periods() { return '<p><span class="pill">7 days</span> <span class="pill on">30 days</span> <span class="pill">90 days</span></p>'; }
+function headlines(short) {
+  var H = [['Steady', '', short ? '90% of Monday\'s prep ticked off.' : '90% of Monday\'s prep list was ticked off.', 'A usual Monday is 85%.'], ['Worse', 'due', short ? 'Waste up: 21 lines in 7 days, 7 before.' : 'Waste is up: 21 lines in the last 7 days, 7 the 7 before.', 'Mostly Excess production. Larder logged the most.'], ['Slowest section', '', short ? 'Garnish slowest: typical 3 h 30 min.' : 'Garnish was the slowest section to tick: typical 3 h 30 min.', 'Grill was quickest at 45 min.']];
+  return '<h2>What changed</h2><div class="heads' + (short ? ' short' : '') + '">' + H.map(function (h) { return '<div><span class="tag ' + h[1] + '">' + h[0] + '</span><h4>' + h[2] + '</h4><p>' + h[3] + '</p><a class="link">Look into it</a></div>'; }).join('') + '</div>';
+}
+function weekBusy() {
+  return '<h2>The week ahead</h2><ul class="week"><li><b>Fri 14 Nov</b><span><span class="tag wait">Usually busy</span> About 39 prep lines</span><span></span></li><li><b>Sat 15 Nov</b><span>Function: Smith 60th, 60 guests, 18:00. <span class="tag wait">Usually busy</span> About 39 prep lines</span><span><a class="link">Function</a></span></li><li class="quiet">Nothing booked Tue 11, Wed 12, Thu 13, Sun 16 and Mon 17. Usual load about 20 prep lines.</li></ul>';
+}
+function week7() {
+  var d = [['Today', 'Tue 11', 'Nothing booked'], ['Wed', 'Wed 12', 'Nothing booked'], ['Thu', 'Thu 13', 'Nothing booked'], ['Fri', 'Fri 14', '<span class="busy">Usually busy</span>, about 39 lines'], ['Sat', 'Sat 15', 'Smith 60th, 60 guests. <span class="busy">Usually busy</span>'], ['Sun', 'Sun 16', 'Nothing booked'], ['Mon', 'Mon 17', 'Nothing booked']];
+  return '<h2>The week ahead</h2><div class="days7">' + d.map(function (x) { return '<div><b>' + x[0] + '</b><span class="hint">' + x[1] + '</span><br>' + x[2] + '</div>'; }).join('') + '</div>';
+}
+function watch() { return '<h2>Watch list</h2><div class="watch"><div><b>Larder</b><p class="hint">Waste lines 21, <span class="worse">up 9</span>. Time to tick 1 h 10 m.</p></div><div><b>Brisket (kg)</b><p class="hint">41 lines, 20.5 kg. <span class="worse">Up 11 lines</span>.</p></div></div><p><a class="link">Add to the watch list</a></p>'; }
+function wasteReasons() { return '<h3>Wastage by reason</h3><p class="hint">Lines logged. The dark mark is the period before.</p><div class="bars"><div class="row"><span>Excess production</span><span class="track"><span class="fill" style="width:84%"></span><span class="was" style="left:68%"></span></span><b class="num">37</b></div><div class="row"><span>Expired stock</span><span class="track"><span class="fill" style="width:16%"></span><span class="was" style="left:9%"></span></span><b class="num">7</b></div></div><p><a class="link">Open Wastage</a></p>'; }
+function heat() {
+  var S = [['Larder', [8, 8, 8, 8, 16, 16, 8]], ['Grill', [6, 6, 6, 6, 12, 12, 6]], ['Garnish', [4, 4, 4, 4, 8, 8, 4]]], C = ['#FCE3D5', '#F8C3A4', '#F29A6A', '#EB6834', '#B83F15'];
+  function c(v) { return v >= 16 ? C[4] : v >= 12 ? C[3] : v >= 8 ? C[2] : v >= 6 ? C[1] : C[0]; }
+  return '<h3>Load by weekday</h3><p class="hint">Prep lines written, on average a day. Darker is busier; every cell has its number.</p><div class="tablewrap"><table class="heat"><thead><tr><th></th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th><th>S</th></tr></thead><tbody>' + S.map(function (s) { return '<tr><th scope="row">' + s[0] + '</th>' + s[1].map(function (v) { return '<td style="background:' + c(v) + ';color:' + (v >= 12 ? '#fff' : 'var(--ink)') + '">' + v + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+}
+function wasted() { return '<h3>Most wasted</h3><p class="hint">By lines logged. Amounts as typed, by unit.</p><table><thead><tr><th>Item</th><th class="num">Lines</th><th class="num">Amount</th><th>Before</th></tr></thead><tbody><tr><td><b>Brisket</b></td><td class="num">41</td><td class="num">20.5 kg</td><td>30, <span class="worse">more now</span></td></tr><tr><td><b>Chips</b></td><td class="num">3</td><td class="num">1.5 kg</td><td>0, <span class="worse">more now</span></td></tr></tbody></table>'; }
+var TABS_TODAY = [['Item links'], ['Proofreader'], ['Kitchen mail']];
+
+function inboxA() {
+  return head('Inbox', 'What needs you today.', TABS_TODAY) + '<h2>Today\'s numbers</h2>' + figs(TODAY3, 'three') + stamp() +
+    '<h2>Needs you <span class="hint">4 to look at</span></h2><div class="needs">' + NEEDS.map(function (n) { return needRow(n); }).join('') + '</div><p class="hint"><span class="dot"></span>Nothing waiting for minutes. The nightly run finished.</p>';
+}
+function dashA() {
+  return head('Dashboard', 'How the kitchen is going, and where to look next.', TABS_TODAY) + periods() + stamp() + '<p class="hint">Sun 11 Oct to Mon 9 Nov, compared with the 30 days before.</p>' + headlines(false) +
+    '<h2>Last 30 days</h2>' + figs(TILES) + weekBusy() + watch() + '<div class="two"><div>' + wasteReasons() + '</div><div>' + wasted() + '</div></div>' + heat();
+}
+function inboxB() {
+  return head('Inbox', 'What needs you today.', TABS_TODAY) + '<div class="needs">' + NEEDS.map(function (n) { return needRow(n); }).join('') + '</div><p class="hint"><span class="dot"></span>Nothing waiting for minutes. The nightly run finished.</p>' +
+    '<h2>Today</h2><div class="strip"><span>Prep ticked Monday <b>90%</b></span><span>Waste 7 days <b>21</b> lines, <span class="worse">14 more</span></span><span>Functions today <b>0</b></span></div>' + stamp();
+}
+function dashB() {
+  return head('Dashboard', 'How the kitchen is going, and where to look next.', TABS_TODAY) + stamp() + headlines(true) + weekBusy() + watch() +
+    '<details><summary>Numbers and charts, last 30 days</summary>' + periods() + figs(TILES) + '<div class="two"><div>' + wasteReasons() + '</div><div>' + wasted() + '</div></div>' + heat() + '</details>';
+}
+function inboxC() {
+  return head('Inbox', 'What needs you today.', TABS_TODAY) + '<div class="split"><div class="needs compact">' + NEEDS.map(function (n, i) { return needRow(n, { on: i === 0 }); }).join('') + '</div><div class="pane side"><span class="tag due">Not set</span><h4>Today\'s team</h4><p>Who is on which shift, their sections and breaks. Staff see their section on Home once it is saved.</p><a class="btn dark">Set today\'s team</a></div></div>' +
+    '<h2>Today\'s numbers</h2>' + figs(TODAY3, 'three') + stamp();
+}
+function dashC() {
+  return head('Dashboard', 'How the kitchen is going, and where to look next.', TABS_TODAY) + periods() + stamp() + headlines(true) + '<h2>Last 30 days against the 30 before</h2>' + cmpTable() + week7() + '<div class="two"><div>' + heat() + '</div><div>' + wasted() + '</div></div>' + watch();
+}
+function inboxM() {
+  return head('Inbox', 'What needs you today.', TABS_TODAY) + '<div class="needs">' + NEEDS.map(function (n) { return needRow(n); }).join('') + '</div><p class="hint"><span class="dot"></span>Nothing waiting for minutes. The nightly run finished. Tap a row\'s button to open its page.</p>' +
+    '<h2>Today</h2><div class="strip"><span>Prep ticked Monday <b>90%</b></span><span>Waste 7 days <b>21</b> lines, <span class="worse">14 more</span></span><span>Functions today <b>0</b></span></div>' + stamp();
+}
+function dashM() {
+  return head('Dashboard', 'How the kitchen is going, and where to look next.', TABS_TODAY) + stamp() + headlines(true) + weekBusy() + watch() +
+    '<details><summary>Numbers and charts, last 30 days</summary>' + periods() + '<h3>Against the 30 days before</h3>' + cmpTable() + '<div class="two"><div>' + wasteReasons() + '</div><div>' + wasted() + '</div></div>' + heat() + '</details>';
+}
+var R = { A: [inboxA, dashA], B: [inboxB, dashB], C: [inboxC, dashC], M: [inboxM, dashM] }[D] || [inboxA, dashA];
+picker(); rail();
+if (q.get('bare')) { el('picker').style.display = 'none'; document.querySelector('.pv-note').textContent = 'Preview, example data. ' + NAMES[D]; }
+el('main').innerHTML = (P === 'dash' ? R[1] : R[0])();
+if (q.get('open') === '1') Array.prototype.forEach.call(document.querySelectorAll('details'), function (d) { d.open = true; });
+document.title = 'Admin Today Restyle';
+</script>
+</body>
+</html>
