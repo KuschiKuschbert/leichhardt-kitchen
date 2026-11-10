@@ -23,7 +23,7 @@ const last30 = days.slice(-30), pct30 = Math.round(100 * sum(last30, r => r.p.t)
 const extra = { [path('analysis', 'dashboard')]: { v: 1, generation: 'g1', at: L.NOW - 11 * 3600000, from: days[0].day, to: last, days },
   [path('analysis', 'health')]: { at: L.NOW - 11 * 3600000, status: 'ok' } };
 const dashReads = p => p.evaluate(() => window.__fake.bill.filter(b => /\/analysis\/(dashboard|health)$/.test(b.path)).length);
-const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-tile').length === 5, null, 10000);
+const ready = p => L.waitFor(p, () => document.querySelectorAll('.dsh-cmp-t tbody tr').length === 6, null, 10000);
 // Since redesign step 8 (8 Nov 2026) Today opens on the Inbox (today's numbers, then what needs you, the To do before)
 // and the Dashboard is the page beside it: the same nightly record, read once for both.
 const inbox = p => L.waitFor(p, () => !!document.querySelector('.dsh-inbox .dsh-needs'), null, 10000);
@@ -35,32 +35,36 @@ const toDash = async p => { await L.adminTab(p, 'dashboard'); await ready(p); };
   for (const width of [390, 768, 1280]) {
     const p = await L.open(b, '#/admin', { admin: true, adminPage: '', who: '', width, height: 900, extra, wait: 1600 });
     await inboxNums(p);
-    ok(await L.txt(p, '.ad-title') === 'Today' && await p.evaluate(() => LK_PREP.state.atab) === 'inbox', width + ': a first visit opens Today on the Inbox');
+    ok(await L.txt(p, '.ad-title') === 'Inbox' && await L.txt(p, '.ad-eyebrow') === 'Today' && await p.evaluate(() => LK_PREP.state.atab) === 'inbox', width + ': a first visit opens the Inbox, named Inbox under Today');
     await toDash(p);
     ok(await p.locator('.dsh-needs').count() === 0 && await p.locator('.dsh-dtile').count() === 0, width + ': the Dashboard leaves today\'s numbers and the Inbox to the Inbox');
-    ok(await p.locator('.dsh-head').count() === 3, width + ': three written headlines sit above the tiles');
+    ok(await p.locator('.dsh-head').count() === 3 && await L.txt(p, '.ad-title') === 'Dashboard', width + ': the Dashboard is named Dashboard, with three written headlines');
+    ok(/Worse, last 7 days/.test(await L.txt(p, '.dsh-heads')) && await p.locator('.dsh-head .dsh-more').evaluateAll(b => b.every(x => /^Open (Insights|Wastage)$/.test(x.textContent))), width + ': each headline names its period and the report it opens');
     const heads = await L.txt(p, '.dsh-heads');
     ok(/Waste is up: \d+ lines in the last 7 days, 7 the 7 before\./.test(heads) && /Garnish was the slowest section to tick/.test(heads), width + ': headlines say what changed in plain words (' + heads.slice(0, 160) + ')');
-    const tile = await L.txt(p, '.dsh-tile:first-child .dsh-tile-num');
-    ok(tile.replace(/\s/g, '') === pct30 + '%', width + ': ticked off counts all lines like Insights (' + tile + ' vs ' + pct30 + '%)');
+    const cell = await L.txt(p, '.dsh-cmp-t tbody tr:first-child td');
+    ok(cell.replace(/\s/g, '') === pct30 + '%', width + ': ticked off counts all lines like Insights (' + cell + ' vs ' + pct30 + '%)');
+    ok(await p.locator('.dsh-tile, .dsh-plot').count() === 0 && /Up 14, worse|worse/.test(await L.txt(p, '.dsh-cmp')), width + ': one comparison table in place of the tiles and the prep chart, the change in words');
+    ok(await p.locator('#dsh-charts-body[hidden]').count() === 1 && await p.locator('[data-dsh="charts"][aria-expanded="false"]').count() === 1, width + ': the charts wait behind one button');
     ok(/30 days before/.test(await L.txt(p, '.dsh-range')), width + ': the 30 days are compared with the 30 before');
     ok(await dashReads(p) === 2, width + ': opening the Dashboard reads two records');
     ok(!await L.overflow(p), width + ': no sideways scroll');
 
     await p.click('[data-dsh="period"][data-v="90"]'); await L.settle(p, 200);
-    ok(/no earlier period/.test(await L.txt(p, '.dsh-range')) && /No earlier 90 days/.test(await L.txt(p, '.dsh-tiles')) && /each week/.test(await L.txt(p, '.dsh-grid')), width + ': 90 days shows weeks and says there is nothing earlier to compare');
+    ok(/no earlier period/.test(await L.txt(p, '.dsh-range')) && /No earlier 90 days/.test(await L.txt(p, '.dsh-cmp')) && !/Same as before/.test(await L.txt(p, '.dsh-cmp-t tbody')), width + ': 90 days says there is nothing earlier to compare');
     await p.click('[data-dsh="period"][data-v="7"]'); await L.settle(p, 200);
     ok(/7 days before/.test(await L.txt(p, '.dsh-range')) && await dashReads(p) === 2, width + ': changing the period reads nothing more');
     ok(!await L.overflow(p), width + ': no sideways scroll after changing the period');
 
-    await p.focus('.dsh-plot'); await p.keyboard.press('ArrowLeft');
-    const tip = await L.txt(p, '.dsh-plot .dsh-tip');
-    ok(/Written \d+/.test(tip) && /Ticked off \d+/.test(tip), width + ': the arrow keys read the chart (' + tip + ')');
+    await p.click('[data-dsh="charts"]'); await L.settle(p, 200);
+    ok(await p.locator('#dsh-charts-body:not([hidden]) .dsh-bar').count() > 0 && await p.evaluate(() => document.activeElement && document.activeElement.getAttribute('data-dsh') === 'charts') && await dashReads(p) === 2, width + ': Show opens the charts in place, keeps focus on the button and reads nothing');
+    await p.click('[data-dsh="period"][data-v="7"]'); await L.settle(p, 200);
+    ok(await p.locator('[data-dsh="charts"][aria-expanded="true"]').count() === 1, width + ': the charts stay open through a redraw');
     await p.focus('.dsh-bar');
     ok(/lines/.test(await L.txt(p, '.dsh-panel > .dsh-tip')), width + ': a focused bar says its numbers');
     ok(await p.evaluate(() => window.__dshInjected) === undefined && (await L.txt(p, '.dsh-items')).includes('<img'), width + ': item names from the record are shown as words, never markup');
 
-    await p.click('.dsh-tile[data-t="waste"]'); await L.settle(p, 300);
+    await p.click('.dsh-cmp-t [data-t="waste"]'); await L.settle(p, 300);
     ok(await p.evaluate(() => LK_PREP.state.atab) === 'waste' && await p.evaluate(() => LK_PREP.state.statsRange) === 7 && await p.evaluate(() => (LK_PREP.state.wh || {}).period) === '7', width + ': a tile opens its report with the same period, and Wastage shows it');
     await L.adminTab(p, 'dashboard');
     await ready(p);
@@ -87,7 +91,7 @@ const toDash = async p => { await L.adminTab(p, 'dashboard'); await ready(p); };
     ok(/3 kitchen mails open/.test(needs), width + ': Needs you counts the open kitchen mail (' + needs.slice(0, 200) + ')');
     // To do (4 Nov 2026, design B), the Inbox since redesign step 8 (8 Nov 2026): Today opens on it, today's numbers above
     // it, with the open mail itself, most urgent first, worked in place
-    ok(await q.evaluate(() => { const t = document.querySelector('.dsh-needs'), day = document.querySelector('.dsh-day'); return !!t && !!day && /Inbox/.test(t.querySelector('h3').textContent) && !!(day.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING); }), width + ': the Inbox is Today\'s first page, today\'s numbers above it');
+    ok(await q.evaluate(() => { const t = document.querySelector('.dsh-needs'), day = document.querySelector('.dsh-day'); return !!t && !!day && /Inbox/.test(t.querySelector('h3').textContent) && !!(t.compareDocumentPosition(day) & Node.DOCUMENT_POSITION_FOLLOWING); }), width + ': the Inbox is Today\'s first page, what needs you above today\'s numbers');
     const rows = await q.$$eval('.dsh-needs .dsh-ml .ml-row', els => els.map(e => e.querySelector('.ml-text').textContent));
     ok(rows.length === 3 && /Cool room door seal/.test(rows[0]) && /Fryer 2/.test(rows[1]), width + ': To do lists the open mail, food safety first (' + rows.join(' | ') + ')');
     await L.waitFor(q, () => ['m1', 'm2', 'm3'].every(id => (window.__fake.dump()['kitchens/000000/mail/' + id] || {}).seen === true), null, 8000).catch(() => {});
@@ -98,7 +102,7 @@ const toDash = async p => { await L.adminTab(p, 'dashboard'); await ready(p); };
     ok(await q.evaluate(() => (window.__fake.dump()['kitchens/000000/mail/m2'] || {}).done === true) && /2 kitchen mails open/.test(await L.txt(q, '.dsh-needs')) && await q.locator('.dsh-needs .dsh-ml .ml-row').count() === 2, width + ': ticking a line in To do marks it done and takes it off the list');
     ok(/Late/.test(needs) && /still to sign/.test(needs) && /1 of \d+ signed/.test(needs), width + ': Needs you says who has not signed the late minutes');
     ok(/1 meeting action past the date/.test(needs), width + ': Needs you lists the overdue meeting action');
-    ok(/3 item links to check/.test(needs) && /5 training reviews/.test(needs) && /2 in training/.test(needs), width + ': Needs you shows the Review desk counts from the nightly run');
+    ok(/3 item links to check/.test(needs) && !/training review/.test(needs) && !/in training/i.test(needs), width + ': Needs you shows the item links count from the nightly run, and no training reviews (retired 10 Nov 2026) though the record still has them');
     ok(/1 transfer not returned/.test(needs) && /Oldest: Butter to Venue B, 9 days/.test(needs), width + ': Needs you lists the transfer not back, with the oldest');
     ok(/The nightly run finished\./.test(needs), width + ': the nightly run counts as clear when it finished');
     ok(!await L.overflow(q), width + ': no sideways scroll with Needs you');
@@ -127,7 +131,8 @@ const toDash = async p => { await L.adminTab(p, 'dashboard'); await ready(p); };
     await toDash(q);
     await L.waitFor(q, () => /Smith 50th/.test((document.querySelector('.dsh-week') || {}).textContent || ''), null, 10000).catch(() => {});
     const days = await q.$$eval('.dsh-wk-day', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
-    ok(days.length === 7 && /^Today/.test(days[0]) && /^Tomorrow/.test(days[1]), width + ': the week ahead shows today and the next 6 days (' + days.length + ')');
+    const quiet = await q.evaluate(() => (document.querySelector('.dsh-wk-quiet') || {}).textContent || '');
+    ok(/^Today/.test(days[0]) && /^Tomorrow/.test(days[1]) && days.every(d => !/Nothing booked/.test(d)) && (days.length === 7 ? !quiet : new RegExp('^Nothing booked .+\\.$').test(quiet)), width + ': the week ahead lists the days with something on, the rest in one quiet line (' + days.length + ', ' + quiet + ')');
     ok(/Smith 50th, 18:00, 60 guests/.test(days[2]), width + ': a booking shows on its day with its time and guests (' + days[2] + ')');
     ok(!/Called off/.test(days.join(' ')), width + ': a cancelled booking is left out');
     ok(/Cut-off ?PFD 15:00/.test(days[1]), width + ': the supplier cut-off shows on the day the order closes (' + days[1] + ')');

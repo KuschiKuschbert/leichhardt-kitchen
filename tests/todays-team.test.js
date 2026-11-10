@@ -288,7 +288,7 @@ const withoutViewChoice = async p => {
   await p.context().close();
 
   // Step 4, the nightly training numbers (teamsum/main): on the chef's page a cook's usual section for today's weekday
-  // and shift fills in on a tick, and their row says it and what they are In training on; staff never read them
+  // and shift fills in on a tick, and their row says it (no In training line since 10 Nov 2026); staff never read them
   const at12 = d => new Date(d + 'T12:00:00Z'), dowToday = at12(today).getUTCDay(), wdName = at12(today).toLocaleDateString('en-AU', { weekday: 'long', timeZone: 'UTC' });
   const yday = L.ymd(new Date(L.NOW - 86400000)), d3 = L.ymd(new Date(L.NOW - 3 * 86400000)), TSUM = fsKey(['teamsum', 'main']);
   const tsumRec = { v: 1, at: L.NOW - 36000000, day: today, from: L.ymd(new Date(L.NOW - 30 * 86400000)), to: yday,
@@ -299,7 +299,7 @@ const withoutViewChoice = async p => {
   ok(await onShift(p, 'ann'), 'usual: Ann is ticked onto Lunch');
   ok(await p.$eval('select[data-k="tm-sec:ann"]', e => e.value) === 'grill', 'usual: she starts on her usual section, Grill');
   const annRow = await txt(p, '.tm-detail-workbench') || '';
-  ok(annRow.includes('Usually Grill, 6 of the last 8 ' + wdName + 's') && annRow.includes('In training: Pans'), 'usual: her workbench says her usual section and what she is in training on (' + annRow + ')');
+  ok(annRow.includes('Usually Grill, 6 of the last 8 ' + wdName + 's') && !/In training/.test(annRow), 'usual: her workbench says her usual section, and no In training line though the record has one (' + annRow + ')');
   await onShift(p, 'bo');
   ok(await p.$eval('select[data-k="tm-sec:bo"]', e => e.value) === '', 'usual: a section taken off the list is not filled in');
   ok(await p.evaluate(() => window.__fake.reads.filter(r => /\/teamsum\//.test(r)).length) === 1, 'usual: the numbers are read once');
@@ -310,7 +310,29 @@ const withoutViewChoice = async p => {
   ok(await p.evaluate(() => window.__fake.reads.filter(r => /\/teamsum\//.test(r)).length + window.__fake.refused.filter(r => /\/teamsum\//.test(r.path)).length) === 0, 'staff: the training numbers are never read');
   await p.context().close();
 
-  // the admin: Who worked where counts the shifts, Reports, Team has a shifts table, Training shows shifts beside ticks
+  // Cross-training hint on the planner (10 Nov 2026): Bo has no Pans shifts and Ann, with 6, is on Pans this service, so
+  // Bo's row says so; Ann, the only cook here with 5 or more on her own section, gets none. No hint when the counts failed
+  // to load or are older than yesterday.
+  const learnDays = [0, 1, 2, 3, 4, 5].map(i => ({ day: L.ymd(new Date(L.NOW - (i + 2) * 86400000)), s: [{ p: 'ann', sec: 'Pans', sh: 'lunch' }].concat(i < 2 ? [{ p: 'bo', sec: 'Grill', sh: 'lunch' }] : []) }));
+  const learnSum = { ...tsumRec, days: learnDays, usual: {} };
+  const learnPlan = { day: today, on: [{ id: 'ann', sh: 'lunch', sec: 'pans' }, { id: 'bo', sh: 'lunch', sec: 'grill' }], br: [], v: 1, at: L.NOW - 3600000, upd: L.NOW - 3600000, by: 'sam' };
+  const learnHints = async q => q.$$eval('.tm-person-row', rows => rows.map(r => [r.getAttribute('data-id'), (r.querySelector('.tm-learn') || {}).textContent || '']));
+  p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(cfg(), { [TSUM]: learnSum, [TEAM]: learnPlan }), wait: 1800 });
+  await L.waitFor(p, () => !!document.querySelector('.tm-learn'), null, 8000).catch(() => {});
+  let hints = await learnHints(p);
+  ok(JSON.stringify(hints.filter(h => h[1])) === JSON.stringify([['bo', 'Not on Pans in 30 days. Ann is on Pans in this plan.']]), 'learn: only Bo gets a hint, pairing him with Ann on Pans (' + JSON.stringify(hints) + ')');
+  ok(!(await L.overflow(p)) && p.errors.length === 0, 'learn: no sideways scroll or page errors ' + p.errors.join(' | '));
+  await p.context().close();
+  p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(cfg(), { [TSUM]: learnSum, [TEAM]: learnPlan }), failReads: '/teamsum/', wait: 1800 });
+  await L.settle(p, 1200);
+  ok(await p.locator('.tm-learn').count() === 0 && await p.locator('.tm-person-row').count() > 0, 'learn: no hint when the counts could not load');
+  await p.context().close();
+  p = await L.open(b, '#/team', { who: 'sam', extra: Object.assign(cfg(), { [TSUM]: { ...learnSum, day: L.ymd(new Date(L.NOW - 3 * 86400000)) }, [TEAM]: learnPlan }), wait: 1800 });
+  await L.settle(p, 1200);
+  ok(await p.locator('.tm-learn').count() === 0, 'learn: no hint from counts older than yesterday');
+  await p.context().close();
+
+  // the admin: Who worked where counts the shifts, Reports, Team has a shifts table (Training retired 10 Nov 2026)
   p = await L.open(b, '#/admin', { admin: true, who: '', width: 1280, height: 900, adminPage: '', wait: 2500, extra: Object.assign(withSum(), { [fsKey(['shifts', today + '_ann'])]: { day: today, sec: 'larder', name: 'Larder', auto: false, at: L.NOW - 3600000, by: 'ann' } }) });
   await L.kitchenRow(p, 'secs', 600);
   await L.waitFor(p, () => /Pans 1/.test((document.querySelector('[data-lvb="ks-days"]') || {}).textContent || ''), null, 6000).catch(() => {});
@@ -320,10 +342,10 @@ const withoutViewChoice = async p => {
   await L.waitFor(p, () => !!document.querySelector('.sk-shifts'), null, 8000).catch(() => {});
   const grid = await txt(p, '.sk-shifts') || '';
   ok(/Grill/.test(grid) && /Pans/.test(grid) && /Ann/.test(grid) && /Bo/.test(grid), 'admin: the Team report has shifts on each section (' + grid.slice(0, 160) + ')');
-  await L.adminTab(p, 'training');
-  await L.waitFor(p, () => /shifts? on it in the last 30 days/.test((document.querySelector('.ai-workspace') || {}).textContent || ''), null, 8000).catch(() => {});
-  const train = await txt(p, '.ai-workspace') || '';
-  ok(/Ann: Grill[^]*2 shifts on it in the last 30 days/.test(train), 'admin: Training shows the shifts on a section beside the ticks (' + (train.match(/Ann: Grill.{0,160}/) || [''])[0] + ')');
+  // Who has worked where (10 Nov 2026): one page from shifts, sections few people worked in words, ticks behind a fold
+  const team = await txt(p, '.a-pane') || '';
+  ok(/Who has worked where/.test(team) && /Pans: 1 person in 30 days \(Ann, 1 shift\)\./.test(team) && !/Cross-training chances|Section habits|Shifts on each section/.test(team), 'admin: Who has worked where replaces the four parts and names Pans as a section few people worked (' + ((team.match(/Sections few people.{0,200}/) || [''])[0]) + ')');
+  ok(await p.locator('details.sk-ticks').count() === 1 && !(await p.$eval('details.sk-ticks', e => e.open)), 'admin: the ticks table waits behind a closed fold');
   ok(!(await L.overflow(p)), 'admin: no sideways scroll');
   ok(p.errors.length === 0, 'admin: no page errors ' + p.errors.join(' | '));
   await p.context().close();

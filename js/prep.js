@@ -5378,7 +5378,7 @@
     var flag = tot >= 8 && ((share >= 0.7 && wd.length >= 5) || streak >= 5);
     return { top: top, share: share, streak: streak, tot: tot, also: secs.slice(1, 3), suggest: flag ? alt : '', flag: flag, basis: useT ? 'ticks' : 'writing' };
   }
-  /* Skills matrix: how many lines each person ticked in each section. Gaps are cross-training chances. */
+  /* Lines each person ticked in each section (behind a fold under Who has worked where since 10 Nov 2026). */
   var SK = ['#FFFFFF', '#FCE3D5', '#F8C3A4', '#F29A6A', '#EB6834'];
   function skLevel(v) { return !v ? 0 : v <= 2 ? 1 : v <= 5 ? 2 : v <= 10 ? 3 : 4; }
   function skillsHTML(rows, td) {
@@ -5394,15 +5394,7 @@
       }).join('') + '<td>' + have + ' of ' + secs.length + '</td></tr>';
     }).join('');
     var key = '<div class="a-legend sk-key"><span>Lines ticked:</span>' + [['no recorded activity', 0], ['1 to 2', 1], ['3 to 5', 2], ['6 to 10', 3], ['over 10', 4]].map(function (k) { return '<span><i style="background:' + SK[k[1]] + '"></i>' + k[0] + '</span>'; }).join('') + '</div>';
-    var gaps = secs.filter(function (k) { return td.tickSec[k] >= 5; }).map(function (k) {
-      var pros = ppl.filter(function (x) { return ((x.r.tsecs || {})[k] || 0) >= 3; }).sort(function (a, b) { return b.r.tsecs[k] - a.r.tsecs[k]; }).slice(0, 2);
-      var never = ppl.filter(function (x) { return x.r.t >= 5 && !(x.r.tsecs || {})[k]; });
-      if (!never.length || !pros.length) return '';
-      return '<li><strong>' + esc(k) + ':</strong> ' + esc(never.map(function (x) { return x.p.name; }).join(', ')) + (never.length === 1 ? ' has' : ' have') + ' not ticked a line here. Pair them with ' + esc(pros.map(function (x) { return x.p.name + ' (' + x.r.tsecs[k] + ')'; }).join(' or ')) + '.</li>';
-    }).filter(Boolean).join('');
-    return key + '<div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain sk-t"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
-      '<h3 class="a-ch-h">Cross-training chances</h3><span class="hint">Sections with at least 5 recorded ticks, people with 5 or more ticks overall and none recorded there in this period. Check assessments before pairing people; ticks do not establish competence.</span>' +
-      (gaps ? '<ul class="a-list">' + gaps + '</ul>' : '<p class="hint">No gaps worth flagging in this time.</p>');
+    return key + '<div class="a-tablewrap" tabindex="0" role="region" aria-label="Table, scrolls sideways"><table class="a-table a-plain sk-t"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
   }
   function teamHTML() {
     var st = S.stats;
@@ -5411,21 +5403,6 @@
     var n = S.statsRange, td = teamData(n), people = (S.config.people || []).filter(function (p) { return p.active !== false; });
     var rows = people.map(function (p) { var r = td.per[p.id] || blankRec(p.id); return { p: p, r: r, h: habit(r, td), wd: Object.keys(r.days).length, tdN: Object.keys(r.tdays).length }; });
     var chips = toolsHTML('team', 'Team') + filtersHTML('team') + statsMiss(st);
-    var habRows = rows.filter(function (x) { return x.h.tot; });
-    var hab = habRows.length ? lvHTML({
-      key: 'team-habits', items: habRows, step: 10, tools: 10, noun: ['person', 'people'], ph: 'Search names',
-      find: function (x) { return x.p.name + ' ' + x.h.top; },
-      filters: [['all', 'Everyone'], ['flag', 'Consider rotating', function (x) { return !!x.h.flag; }]],
-      sorts: [['flag', 'Flagged first', function (a, b) { return (b.h.flag ? 1 : 0) - (a.h.flag ? 1 : 0) || b.h.streak - a.h.streak; }], ['az', 'A to Z', function (a, b) { return a.p.name.toLowerCase().localeCompare(b.p.name.toLowerCase()); }], ['streak', 'Longest in a row', function (a, b) { return b.h.streak - a.h.streak; }]],
-      cols: [
-        { h: 'Person', th: true, html: function (x) { return esc(x.p.name); } },
-        { h: 'Lines', html: function (x) { return x.h.tot + ' <span class="o-who-i">' + (x.h.basis === 'ticks' ? 'ticked' : 'written') + '</span>'; } },
-        { h: 'Main section', html: function (x) { return esc(x.h.top) + ' <span class="o-who-i">' + Math.round(x.h.share * 100) + '%</span>'; } },
-        { h: 'Also', html: function (x) { return esc(x.h.also.join(', ') || 'none'); } },
-        { h: 'In a row', html: function (x) { return x.h.streak + (x.h.streak === 1 ? ' day' : ' days'); } },
-        { h: 'Rotation', wide: true, html: function (x) { return x.h.flag ? '<span class="a-flag">Consider rotating' + (x.h.suggest ? ' to ' + esc(x.h.suggest) : '') + '</span>' : '<span class="o-who-i">Fine for now</span>'; } }
-      ]
-    }) : '';
     var act = rows.length ? lvHTML({
       key: 'team-writers', items: rows.map(function (x) { x.quiet = td.nActive >= 3 && (td.nActive ? x.wd / td.nActive : 0) < 0.3; return x; }), step: 10, tools: 10, noun: ['person', 'people'], ph: 'Search names',
       find: function (x) { return x.p.name; },
@@ -5440,10 +5417,11 @@
         { h: 'Note', html: function (x) { return x.quiet ? '<span class="a-flag">Writes rarely</span>' : '<span class="o-who-i">OK</span>'; } }
       ]
     }) : '';
-    return '<section class="set-block">' + chips + '<span class="hint">Worked out from the section each line sits under, who ticked it and who wrote it. Ticks record activity, so they count first. They do not confirm competence. Use it as a prompt for a chat, not a verdict.</span>' +
-      '<h3 class="a-ch-h">Recorded station activity</h3><span class="hint">Lines each person ticked in each section (the 8 busiest sections).</span>' + skillsHTML(rows, td) + (tsCan() ? tsShiftsHTML(n) : '') +
-      '<h3 class="a-ch-h">Section habits</h3><span class="hint">Based on ticks for anyone with 8 or more ticked lines, otherwise on the lines they wrote. Flagged when 70% or more of them over 5 or more days, or the last 5 or more days, were in one section. The suggestion is the section they have done least.</span>' +
-      (hab || '<p class="hint">No lines with a section in this time.</p>') +
+    // Who has worked where (head chef, 10 Nov 2026, docs/cross-training-options/brief.md): one answer from shifts worked
+    // replaces the ticks matrix, Cross-training chances, Section habits and Shifts on each section; ticks stay in a fold
+    var ticks = '<span class="hint">Lines each person ticked in each section (the 8 busiest sections). Ticks record activity, not skill.</span>' + skillsHTML(rows, td);
+    return '<section class="set-block">' + chips + (tsCan() ? whoWorkedHTML(n) + '<details class="sk-ticks"><summary class="a-ch-h">Lines ticked in each section</summary>' + ticks + '</details>' :
+      '<h3 class="a-ch-h">Lines ticked in each section</h3>' + ticks) +
       '<h3 class="a-ch-h">Who writes, and who does not</h3><span class="hint">Days written is out of the ' + td.nActive + ' days in this time that had any lines written. Fewest first. Ticks are shown so you can tell someone who works but does not write.</span>' +
       (act || '<p class="hint">No people on the list.</p>') + '</section>' + orderStatsHTML(td, n);
   }
@@ -5547,7 +5525,7 @@
     var top = '<section class="set-block a-personpage">' + back + '<span class="label">' + esc(p.name || 'No name yet') + '</span>' +
       '<p class="a-pp-role"><b>' + esc((ROLES[p.role] || {}).name || 'No role') + '</b>' + (p.active === false ? ', off the list' : '') + '. Can: ' + esc(can.length ? can.join(', ') : 'read only') + '.</p>' +
       '<p class="hint">Change the role and ticks in the team list, then save.</p>';
-    return top + personActivityHTML(id) + personTrainingHTML(p) + '</section>' + saveBlock;
+    return top + personActivityHTML(id) + '</section>' + saveBlock;
   }
   // the person's last N days over the shared report period, counted by the Team report's own code
   function personActivityHTML(id) {
@@ -5562,22 +5540,6 @@
     return h3 + miss + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' +
       (secs.length ? '<p class="a-pp-secs">Ticked off by section: ' + secs.slice(0, 6).map(function (k) { return esc(k) + ' ' + r.tsecs[k]; }).join(', ') + '.</p>' : '') +
       (r.last ? '<p class="hint">Last wrote a line on ' + esc(dayShort(r.last)) + '. The period is the one every report shares.</p>' : '') + note;
-  }
-  /* the person's saved assessments (step 5, part 2), from the list the Assessments page reads, through the workspace
-     module (js/admin-intelligence.js, lazy): one read per record, once per visit, nothing more once Assessments has read
-     them. A book without the module's personTraining() keeps the link to Assessments. */
-  function personTrainingHTML(p) {
-    if (!intelligenceAllowed()) return '';
-    var h3 = '<h3 class="a-ch-h">Assessments</h3>', open = '<div class="btn-row"><button type="button" class="btn" data-p="a-person-assess" data-id="' + esc(p.id) + '">Open ' + esc(p.name || 'their') + (p.name ? '\'s' : '') + ' assessments</button></div>';
-    if (!intelligenceReady()) return h3 + (intelligenceError ? '<p class="p-err" role="status">Could not load the assessments. Check the connection and reload this page.</p>' : inkWait('Loading assessments...', 'chef', 3));
-    if (typeof window.LK_INTELLIGENCE.personTraining !== 'function') return h3 + '<p class="hint">Saved assessments are under Assessments.</p>' + open;
-    var rows = window.LK_INTELLIGENCE.personTraining(p.id, intelligenceAdapter());
-    if (rows === undefined) return h3 + inkWait('Loading assessments...', 'chef', 3);
-    if (rows === null) return h3 + '<p class="p-err" role="status">Could not load the assessments. Check the connection and reload this page.</p>' + open;
-    if (!rows.length) return h3 + '<p class="hint">No saved assessments yet.</p>' + open;
-    return h3 + '<ul class="a-pp-assess">' + rows.slice(0, 8).map(function (r) {
-      return '<li><b>' + esc(r.subject || 'No section') + '</b>: ' + esc(r.status) + '. <small>' + esc(r.scope) + ' assessment, ' + esc(r.day) + ', assessor ' + esc(r.assessor) + '.</small></li>';
-    }).join('') + '</ul>' + (rows.length > 8 ? '<p class="hint">' + (rows.length - 8) + ' more under Assessments.</p>' : '') + open;
   }
   /* The sous chef's Staff page: a short list of names with Remove. Same helper, rows as cards. */
   function staffListHTML(d) {
@@ -5905,12 +5867,12 @@
       },
       open: function (tab, days) {
         if (tab === 'team') { if (teamOK()) location.hash = '#/team'; return; }
-        if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references', 'training'].indexOf(tab) < 0 || (tab === 'mail' && !mlOwner())) return;
+        if (['insights', 'waste', 'transfers', 'mail', 'minutes', 'cutoffs', 'references'].indexOf(tab) < 0 || (tab === 'mail' && !mlOwner())) return;
         if (tab === 'insights' || tab === 'waste' || tab === 'transfers') setReportDays(days === 7 ? 7 : 30);
         S.atab = tab; S.agLast = S.agLast || {}; S.agLast[adminGroupOf(tab)[0]] = tab; lsSet('lk.prep.atab', tab); draw(); adminToTop();
       }
     });
-    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=3').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
+    if (!dashLoading && !dashError) dashLoading = window.LK_APP.load('js/admin-dashboard.js?v=4').then(function () { if (!dashModule()) throw { code: 'workspace-version' }; dashLoading = null; if (intelligenceAllowed()) draw(); }).catch(function () { dashLoading = null; dashError = true; if (intelligenceAllowed()) draw(); });
     return '<section class="set-block"><h3 class="label">Dashboard</h3><p class="hint" role="status">' + (dashError ? 'Could not load the dashboard. Check the connection and reload this page.' : inkLabel('Loading...', 'chef')) + '</p></section>';
   }
   function dashWeek() {
@@ -5936,7 +5898,9 @@
   var intelligenceLoading = null, intelligenceError = false;
   function intelligenceAllowed() { return !!fb && S.level === 'owner' && ownerHere() && !!S.user; }
   function intelligenceContext() { return S.pin + '|' + (S.user ? S.user.uid : '') + '|' + S.who + '|' + accessEpoch; }
-  var INTELLIGENCE_PAGES = ['overview', 'analysis', 'references', 'training', 'reference-records', 'training-records'];
+  /* Written assessments were retired from the screens on 10 Nov 2026 (head chef, docs/cross-training-options/brief.md):
+     'training' and 'training-records' are no longer pages. Saved training/* records, their rules and the backup stay. */
+  var INTELLIGENCE_PAGES = ['overview', 'analysis', 'references', 'reference-records'];
   function intelligenceVisible() {
     return intelligenceAllowed() && S.name === 'admin' && S.root && document.body.contains(S.root) &&
       S.root.querySelector('.ai-workspace') && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3;
@@ -6063,7 +6027,7 @@
       '<p class="hint a-forget">To use a different kitchen PIN on this device, open Settings, This phone.</p></section>');
     var resume = INTELLIGENCE_PAGES.indexOf(at) < 0 && intelligenceAllowed() && window.LK_INTELLIGENCE && window.LK_INTELLIGENCE.API === 3 && window.LK_INTELLIGENCE.resumeHTML ? window.LK_INTELLIGENCE.resumeHTML(at) : '';
     if (at !== 'proofreader' && intelligenceAllowed() && proofModule()) resume += proofModule().resumeHTML(proofAdapter());
-    return panelShellHTML(bar, railHTML(), findBtn('a-find-head') + '<p class="ad-eyebrow">Kitchen administration</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + ag[1] + '</h2><p class="ad-intro">' + A_GROUP_NOTES[ag[0]] + '</p>', tabsBar, (owner ? idCardHTML() : '') + resume + pane);
+    return panelShellHTML(bar, railHTML(), findBtn('a-find-head') + adminHeadingHTML(ag, at), tabsBar, (owner ? idCardHTML() : '') + resume + pane);
   }
   // The owner and PIN chefs use one responsive panel shell. Each supplies its own permitted rooms and real pages.
   function panelShellHTML(bar, rail, heading, tabs, pane, extra) {
@@ -6269,6 +6233,12 @@
       (supplierEdit() ? '<div class="btn-row"><a class="btn dark" href="#/suppliers/manage">Manage catalogue</a><a class="btn" href="#/suppliers">Supplier order</a></div>' : '<p class="hint">Only the head chef changes suppliers and pars. Sous chefs can use <a href="#/suppliers">Supplier order</a>.</p>') + '</section>';
   }
   var A_TAB_NAMES = { 'prep-standards': 'Section standards', 'kitchen-home': 'Overview', inbox: 'Inbox', dashboard: 'Dashboard', overview: 'Review desk', analysis: 'Item evidence', references: 'Item links', training: 'Training', proofreader: 'Proofreader', 'reference-records': 'Confirmed links', 'training-records': 'Assessments', mail: 'Kitchen mail', notes: 'Shift pings', insights: 'Insights', team: 'Team', waste: 'Wastage', transfers: 'Transfers', learning: 'Learning', people: 'People', minutes: 'Minutes', guides: 'Guides', tools: 'Backup and PIN', cutoffs: 'Order cut-offs', suppliers: 'Suppliers & pars' };
+  /* The admin heading: the room, or on the Inbox and the Dashboard the page's own name under Today (head chef,
+     10 Nov 2026, docs/admin-dashboard-restyle-options/brief.md), so one place has one name. */
+  function adminHeadingHTML(ag, at) {
+    var page = at === 'inbox' ? ['Inbox', 'What needs you today.'] : at === 'dashboard' ? ['Dashboard', 'How the kitchen is going, and where to look next.'] : null;
+    return '<p class="ad-eyebrow">' + (page ? 'Today' : 'Kitchen administration') + '</p><h2 class="ad-title p-h" id="rtitle" tabindex="-1">' + (page ? page[0] : ag[1]) + '</h2><p class="ad-intro">' + (page ? page[1] : A_GROUP_NOTES[ag[0]]) + '</p>';
+  }
   /* The admin page the panel opens on: the Inbox on a first visit (redesign step 8, 8 Nov 2026; until then the
      Dashboard: both read the same nightly record), then the last one used. After an update nobody asked
      for (the idle update or the 04:00 refresh, flagged by js/upkeep.js in lk.upd.auto for this tab only) a report page
@@ -6277,13 +6247,16 @@
      a laptop left on one paid it at every update. The Inbox reads about 140. The report is one tap away. */
   function startTab() {
     var t = (lsGet('lk.dash.intro') && lsGet('lk.prep.atab')) || 'inbox', auto = false;
+    // a saved page that is no longer in a room (Training and Assessments, retired 10 Nov 2026) opens the Inbox
+    // (a fixed list: startTab() runs before A_GROUPS below is set)
+    if (t === 'training' || t === 'training-records') { t = 'inbox'; lsSet('lk.prep.atab', t); }
     try { auto = !!sessionStorage.getItem('lk.upd.auto'); sessionStorage.removeItem('lk.upd.auto'); } catch (e) {}
     if (!auto || !/^#\/admin/.test(location.hash) || ['insights', 'team', 'waste', 'transfers', 'learning', 'proofreader'].indexOf(t) < 0) return t;
     lsSet('lk.prep.atab', 'inbox');   // the page on screen, so a reload by hand stays on it
     return 'inbox';
   }
-  var A_GROUPS = [['today', 'Today', ['inbox', 'dashboard', 'overview', 'references', 'training', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people', 'training-records']], ['kitchen', 'Kitchen', ['kitchen-home', 'cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']], ['prep', 'Prep', ['prep-standards']]];
-  var A_GROUP_NOTES = { prep: 'The prep each section should have ready before service.', today: 'What needs you, and how the kitchen is going.', reports: 'Read the recorded activity and follow it back to its source.', team: 'Who is in the kitchen, what each person may do, and their assessments.', kitchen: 'How the kitchen is set up, its records, the backup and the PIN.' };
+  var A_GROUPS = [['today', 'Today', ['inbox', 'dashboard', 'overview', 'references', 'proofreader', 'mail']], ['reports', 'Reports', ['insights', 'waste', 'transfers', 'team', 'analysis', 'learning']], ['team', 'Team', ['people']], ['kitchen', 'Kitchen', ['kitchen-home', 'cutoffs', 'suppliers', 'notes', 'minutes', 'guides', 'reference-records', 'tools']], ['prep', 'Prep', ['prep-standards']]];
+  var A_GROUP_NOTES = { prep: 'The prep each section should have ready before service.', today: 'What needs you, and how the kitchen is going.', reports: 'Read the recorded activity and follow it back to its source.', team: 'Who is in the kitchen and what each person may do.', kitchen: 'How the kitchen is set up, its records, the backup and the PIN.' };
   function adminGroupOf(t) { return A_GROUPS.filter(function (g) { return g[2].indexOf(t) >= 0; })[0] || A_GROUPS[1]; }
   /* "On this page": one chip per heading of the open page (the numbered Insights sections, otherwise each block's label
      and the chart headings in it), so a long page is one tap from any part. Built from the page after each draw, so a
@@ -11771,8 +11744,6 @@
     // a person's page (admin pages step 5): open it from their row, and back to the list (also the top bar's Back)
     if (a === 'a-person') { S.personId = id; draw(); adminToTop(); return; }
     if (a === 'a-person-back') { S.personId = ''; draw(); adminToTop(); return; }
-    // Assessments, opened on this person (the workspace module's person filter, when the module has it)
-    if (a === 'a-person-assess') { if (intelligenceBusy()) return; S.personId = ''; if (window.LK_INTELLIGENCE && typeof window.LK_INTELLIGENCE.showPerson === 'function') window.LK_INTELLIGENCE.showPerson(id); S.atab = 'training-records'; S.agLast = S.agLast || {}; S.agLast.team = 'training-records'; lsSet('lk.prep.atab', 'training-records'); draw(); adminToTop(); return; }
     if (a === 'range') { var rv = el.getAttribute('data-v'); if (S.atab === 'waste') { if (!whCanChange()) return; whState().period = rv; if (/^(7|14|30)$/.test(rv)) S.statsRange = +rv; } else setReportDays(+rv); draw(); return; }
     // on Team, the order days too (28 Oct 2026): a day that could not load stayed under "Refresh reads the newest"
     if (a === 'stats-refresh') { loadStats(true); if (el.getAttribute('data-v') === 'team') loadOrdStats(true); draw(); return; }
@@ -12838,10 +12809,10 @@
   function tmRow(p, s) {
     var on = tmOnShift(p.id, s.id), chef = chefP(p), others = [];
     Object.keys((tmf.on[p.id] || {})).forEach(function (sh) { if (sh !== s.id) { var o = tmShift(sh); if (o) others.push(o.name + (tmSecName(tmf.on[p.id][sh]) ? ': ' + tmSecName(tmf.on[p.id][sh]) : '')); } });
-    // a cook's usual section on this weekday's shift and what they are In training on (step 4, the nightly teamsum)
-    var u = tmUsual(p.id, s.id), learn = tmLearning(p.id);
+    // a cook's usual section on this weekday's shift (step 4, the nightly teamsum)
+    var u = tmUsual(p.id, s.id);
     var sub = [chef ? (p.role === 'head' ? 'Head chef' : 'Sous chef') : '', others.length ? 'Also on ' + others.join(', ') : '',
-      u ? 'Usually ' + tmSecName(u.sec) + ', ' + u.n + ' of the last ' + u.of + ' ' + tmWeekday(tmPlanDay()) + 's' : '', learn.length ? 'In training: ' + learn.join(', ') : ''].filter(Boolean).join('. ');
+      u ? 'Usually ' + tmSecName(u.sec) + ', ' + u.n + ' of the last ' + u.of + ' ' + tmWeekday(tmPlanDay()) + 's' : ''].filter(Boolean).join('. ');
     var picks = '';
     if (on) {
       // The section picker lives beside the name in the worksheet, once per person.
@@ -12937,8 +12908,43 @@
       else if (r.top < 8) window.scrollBy(0, r.top - 8);
     }
   }
+  /* Cross-training hints on the planner (head chef, 10 Nov 2026, docs/cross-training-options/brief.md): "Not on Pans in
+     30 days. Alex is on Pans in this plan." only where a pairing is possible in this draft: the person has no shift on
+     that section in the last 30 days and someone with 5 or more there is on it on the same service. At most two a
+     service, one per mentor, sections the fewest people worked first, then the person with the fewest shifts. Never
+     for someone who is the only cook on this service with 5 or more shifts on their own section. Counts come from
+     teamsum/main (by section name, read once a day); with no count, a failed or stale one, there are no hints. */
+  function tmLearnHints() {
+    var out = Object.create(null), r = tsum.rec;
+    if (!tmf || !tsCan() || tsum.st !== 'ok' || !r || !r.day || r.day < shift(dayNow(), -1)) return out;
+    var cnt = Object.create(null), ppl = Object.create(null), tot = Object.create(null);
+    r.days.forEach(function (d) { d.s.forEach(function (v) { var c = cnt[v.p] = cnt[v.p] || Object.create(null); if (!c[v.sec]) ppl[v.sec] = (ppl[v.sec] || 0) + 1; c[v.sec] = (c[v.sec] || 0) + 1; tot[v.p] = (tot[v.p] || 0) + 1; }); });
+    var of = function (id, k) { return (cnt[id] && cnt[id][k]) || 0; }, names = kitSecs().map(function (x) { return x.name; });
+    kitShifts().forEach(function (sh) {
+      var on = tmDayPeople().filter(function (p) { return tmOnShift(p.id, sh.id); }).map(function (p) { return p.id; }), sec = Object.create(null);
+      on.forEach(function (id) { sec[id] = tmSecName(tmf.on[id][sh.id]); });
+      var lead = function (id) { var k = sec[id]; return !!k && of(id, k) >= 5 && !on.some(function (o) { return o !== id && sec[o] === k && of(o, k) >= 5; }); };
+      var cand = [];
+      on.forEach(function (id) {
+        if (lead(id)) return;
+        names.forEach(function (k) {
+          if (!k || sec[id] === k || of(id, k)) return;
+          var m = on.filter(function (o) { return o !== id && sec[o] === k && of(o, k) >= 5; })[0];
+          if (m) cand.push({ id: id, k: k, m: m, n: ppl[k] || 0, t: tot[id] || 0 });
+        });
+      });
+      cand.sort(function (a, b) { return a.n - b.n || a.t - b.t || mnName(a.id).localeCompare(mnName(b.id)); });
+      var used = 0, who = Object.create(null), mentor = Object.create(null);
+      cand.forEach(function (c) {
+        if (used >= 2 || who[c.id] || mentor[c.m]) return;
+        who[c.id] = mentor[c.m] = 1; used++;
+        out[c.id + '|' + sh.id] = 'Not on ' + c.k + ' in 30 days. ' + mnName(c.m) + ' is on ' + c.k + ' in this plan.';
+      });
+    });
+    return out;
+  }
   function tmPersonListHTML() {
-    var q = tmFind.toLowerCase().trim();
+    var q = tmFind.toLowerCase().trim(), learn = tmLearnHints();
     var list = tmDayPeople().filter(function (p) { var sh = tmRowService(p.id), current = tmOnShift(p.id, sh) ? tmSecName(tmf.on[p.id][sh]) : ''; return !q || (p.name + ' ' + current).toLowerCase().indexOf(q) >= 0; });
     if (!list.length) return '<li class="hint">No people match. Change the search.</li>';
     return list.map(function (p) {
@@ -12948,7 +12954,7 @@
       var options = [['', chefP(p) ? (p.role === 'head' ? 'Head chef' : 'Sous chef') : 'No section']].concat(kitSecs().map(function (x) { return [x.id, x.name]; }));
       return '<li class="tm-person-row' + (on ? '' : ' is-off') + (tmUi.focus === p.id ? ' is-focused' : '') + '" data-id="' + esc(p.id) + '" data-sh="' + esc(s.id) + '"><div class="tm-person-head"><span class="tm-person-name">' + esc(p.name) + '</span><div class="tm-row-fields">' +
         '<div class="tm-person-service">' + tmSel('tm-row-sh:' + p.id, 'Service to edit for ' + p.name, tmServiceChoices().map(function (x) { return [x.id, x.name]; }), s.id) + '</div><div class="tm-person-section">' + tmSel('tm-sec:' + p.id, 'Section for ' + p.name + ' on ' + s.name, options, current, false, !on) + '</div></div></div>' +
-        '<div class="tm-row-summary"><span class="tm-person-breaks">' + esc(detail || breaks) + '</span><button type="button" class="btn" data-p="tm-focus" data-id="' + esc(p.id) + '" aria-expanded="' + (tmUi.focus === p.id) + '" aria-label="' + esc('Edit breaks for ' + p.name + ' on ' + s.name) + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>Edit breaks</button></div></li>';
+        '<div class="tm-row-summary"><span class="tm-person-breaks">' + esc(detail || breaks) + '</span><button type="button" class="btn" data-p="tm-focus" data-id="' + esc(p.id) + '" aria-expanded="' + (tmUi.focus === p.id) + '" aria-label="' + esc('Edit breaks for ' + p.name + ' on ' + s.name) + '"' + (svOf('t') === 'busy' ? ' disabled' : '') + '>Edit breaks</button></div>' + (learn[p.id + '|' + s.id] ? '<p class="tm-learn">' + esc(learn[p.id + '|' + s.id]) + '</p>' : '') + '</li>';
     }).join('');
   }
   function tmFocusHTML() {
@@ -13667,36 +13673,48 @@
       var o = usual[k] = mapOf();
       Object.keys(u[k]).forEach(function (id) { var v = u[k][id]; if (str(id, 80) && Array.isArray(v) && str(v[0], 40) && typeof v[1] === 'number' && typeof v[2] === 'number') o[id] = { sec: v[0], n: v[1], of: v[2] }; });
     });
-    var learn = mapOf(), l = x.learn && typeof x.learn === 'object' ? x.learn : {};
-    Object.keys(l).forEach(function (id) { if (str(id, 80) && Array.isArray(l[id])) learn[id] = l[id].filter(function (v) { return str(v, 40); }); });
-    return { day: str(x.day, 10), days: days, usual: usual, learn: learn };
+    // x.learn (who is In training, from assessments) is no longer shown since 10 Nov 2026 and is left unread
+    return { day: str(x.day, 10), days: days, usual: usual };
   }
   // a cook's usual section on today's weekday and this shift, while that section is still on the list
   function tmUsual(id, sh) {
     var r = tsum.rec, u = r && r.usual[parseYmd(tmPlanDay()).getDay() + '|' + sh], v = u && u[id];
     return v && kitSecs().some(function (x) { return x.id === v.sec; }) ? v : null;
   }
-  function tmLearning(id) { var r = tsum.rec; return r && r.learn[id] ? r.learn[id] : []; }
-  /* Admin, Reports, Team: shifts worked on each section, beside the ticks (the last 7, 14 or 30 days of the report) */
-  function tsShiftsHTML(n) {
+  /* Admin, Reports, Team: Who has worked where (head chef, 10 Nov 2026, docs/cross-training-options/brief.md). Shifts
+     worked on each section the kitchen has now, from teamsum/main (read once a kitchen day, tsLoad()), the report's
+     last 7, 14 or 30 days to yesterday. Counts only, never a verdict: a section few people worked, and anyone mostly on
+     one section, in words. teamsum keeps section names, so a section taken off or renamed drops out of the table. */
+  function whoWorkedHTML(n) {
     tsLoad();
-    var h = '<h3 class="a-ch-h">Shifts on each section</h3><span class="hint">From Today\'s team and each cook\'s own section picks, the last ' + n + ' days to yesterday. A shift on a section is a chance to learn it, not proof of skill.</span>';
-    if (tsum.st === 'err') return h + '<p class="p-err" role="status">Could not load the shifts. Check the signal. The book tries again by itself in a few minutes.</p>';
+    var h = '<h3 class="a-ch-h">Who has worked where</h3><span class="hint">Shifts from Today\'s team and each cook\'s own section picks, the last ' + n + ' days to yesterday. A count is activity, not a sign someone can run a section alone.</span>';
+    if (tsum.st === 'err') return h + '<p class="p-err" role="status">Could not load the shift counts. Check the signal. The book tries again by itself in a few minutes.</p>';
     if (tsum.st !== 'ok') return h + '<p class="hint">' + inkLabel('Loading...', 'chef') + '</p>';
-    var from = shift(dayNow(), -n), c = Object.create(null), tot = Object.create(null);
-    (tsum.rec ? tsum.rec.days : []).forEach(function (d) { if (d.day < from) return; d.s.forEach(function (v) { var p = c[v.p] = c[v.p] || Object.create(null); p[v.sec] = (p[v.sec] || 0) + 1; tot[v.sec] = (tot[v.sec] || 0) + 1; }); });
-    var secs = Object.keys(tot).sort(function (a, b) { return tot[b] - tot[a] || a.localeCompare(b); }).slice(0, 8), ids = Object.keys(c);
     if (!tsum.rec) return h + '<p class="hint">Nothing counted yet. The nightly job counts the shifts from Today\'s team.</p>';
-    if (!secs.length || !ids.length) return h + '<p class="hint">No shifts on a section in this time yet.</p>';
+    var secs = kitSecs().map(function (x) { return String(x.name).trim(); }).filter(function (k, i, a) { return k && a.indexOf(k) === i; });
+    var from = shift(dayNow(), -n), c = Object.create(null);
+    tsum.rec.days.forEach(function (d) { if (d.day < from) return; d.s.forEach(function (v) { if (secs.indexOf(v.sec) < 0) return; var p = c[v.p] = c[v.p] || Object.create(null); p[v.sec] = (p[v.sec] || 0) + 1; }); });
+    var ids = Object.keys(c);
+    if (!secs.length) return h + '<p class="hint">No kitchen sections are set up.</p>';
+    if (!ids.length) return h + '<p class="hint">No shifts on a section in the last ' + n + ' days.</p>';
     var rows = ids.map(function (id) { var t = 0; secs.forEach(function (k) { t += c[id][k] || 0; }); return { id: id, name: mnName(id), t: t }; }).sort(function (a, b) { return b.t - a.t || a.name.localeCompare(b.name); });
-    var head = '<tr><th scope="col">Person</th>' + secs.map(function (k) { return '<th scope="col">' + esc(k) + '</th>'; }).join('') + '<th scope="col">Sections</th></tr>';
+    var people = secs.map(function (k) { return rows.filter(function (r) { return c[r.id][k]; }); });
+    var head = '<tr><th scope="col">Person</th>' + secs.map(function (k) { return '<th scope="col">' + esc(k) + '</th>'; }).join('') + '</tr>';
     var body = rows.map(function (r) {
       return '<tr><th scope="row">' + esc(r.name) + '</th>' + secs.map(function (k) {
         var v = c[r.id][k] || 0;
-        return '<td class="sk-c" style="background:' + SK[skLevel(v)] + '" title="' + esc(r.name + ', ' + k + ': ' + v + (v === 1 ? ' shift' : ' shifts')) + '">' + (v || '<span class="sk-0">0</span>') + '</td>';
-      }).join('') + '<td>' + secs.filter(function (k) { return c[r.id][k]; }).length + ' of ' + secs.length + '</td></tr>';
+        return '<td class="sk-c" style="background:' + SK[skLevel(v)] + '" title="' + esc(r.name + ', ' + k + ': ' + v + (v === 1 ? ' shift' : ' shifts')) + '">' + v + '</td>';
+      }).join('') + '</tr>';
+    }).join('') + '<tr class="sk-tot"><th scope="row">People</th>' + people.map(function (l) { return '<td>' + l.length + '</td>'; }).join('') + '</tr>';
+    var key = '<div class="a-legend sk-key"><span>Shifts worked:</span>' + [['0, no shifts recorded', 0], ['1 to 2', 1], ['3 to 5', 2], ['6 to 10', 3], ['over 10', 4]].map(function (k) { return '<span><i style="background:' + SK[k[1]] + '"></i>' + k[0] + '</span>'; }).join('') + '</div>';
+    var few = secs.map(function (k, i) { return { k: k, l: people[i] }; }).filter(function (x) { return x.l.length <= 2; }).map(function (x) {
+      return '<li><strong>' + esc(x.k) + ':</strong> ' + (x.l.length ? x.l.length + (x.l.length === 1 ? ' person' : ' people') + ' in ' + n + ' days (' + x.l.map(function (r) { return esc(r.name) + ', ' + c[r.id][x.k]; }).join('; ') + (x.l.length === 1 && c[x.l[0].id][x.k] === 1 ? ' shift' : ' shifts') + ').' : 'nobody in ' + n + ' days.') + '</li>';
     }).join('');
-    return h + '<div class="a-tablewrap" tabindex="0" role="region" aria-label="Shifts on each section, table, scrolls sideways"><table class="a-table a-plain sk-t sk-shifts"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
+    var one = rows.filter(function (r) { return r.t >= 5; }).map(function (r) { var top = secs.slice().sort(function (a, b) { return (c[r.id][b] || 0) - (c[r.id][a] || 0); })[0]; return { r: r, k: top, v: c[r.id][top] || 0 }; })
+      .filter(function (x) { return x.v / x.r.t >= 0.8; }).map(function (x) { return '<li><strong>' + esc(x.r.name) + ':</strong> ' + x.v + ' of ' + x.r.t + ' shifts on ' + esc(x.k) + '.</li>'; }).join('');
+    return h + key + '<div class="a-tablewrap" tabindex="0" role="region" aria-label="Who has worked where, table, scrolls sideways"><table class="a-table a-plain sk-t sk-shifts"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
+      '<h3 class="a-ch-h">Sections few people worked lately</h3>' + (few ? '<ul class="a-list sk-few">' + few + '</ul>' : '<p class="hint">Every section had three or more people in the last ' + n + ' days.</p>') +
+      '<h3 class="a-ch-h">Mostly on one section</h3>' + (one ? '<ul class="a-list sk-one">' + one + '</ul>' : '<p class="hint">Nobody with 5 or more shifts spent 80% of them on one section.</p>');
   }
 
   /* ---------- public bits used by app.js ---------- */

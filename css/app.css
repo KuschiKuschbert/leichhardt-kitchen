@@ -805,6 +805,11 @@ html .a-table input[type=checkbox], html .a-check input[type=checkbox] { width: 
 .a-table.sk-t tbody tr:nth-child(even) { background: transparent; }
 .sk-tot td, .sk-tot th { font-weight: 700; border-top: 1.5px solid var(--ink); }
 .sk-key { flex-wrap: wrap; }
+/* Reports, Team: the ticks table behind a fold under Who has worked where (10 Nov 2026) */
+.sk-ticks { margin-top: 1rem; }
+/* Today's team planner: a cross-training hint under a person's row, plain words, no fill (10 Nov 2026) */
+.tm-learn { grid-column: 1 / -1; margin: .25rem 0 0; color: var(--muted); font-size: .9375rem; line-height: 1.35; }
+.sk-ticks > summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
 .sk-key i { border: 1px solid var(--edge); }
 .a-list { margin: 0.4rem 0 0; padding-left: 1.1rem; }
 .a-list li { margin: 0.3rem 0; }
@@ -3488,7 +3493,7 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 /* worse in red, shared by the Dashboard and the reports' tiles (5 Nov 2026) */
 .p-admin.ad-admin { --dsh-bad: var(--bad-ink); --dsh-bad-tint: var(--bad-tint); }
 .dsh { --dsh-w: #2A78D6; --dsh-t: #EB6834;
-  --dsh-h1: #FCEBDF; --dsh-h2: #F7C8A8; --dsh-h3: #EE9A66; --dsh-h4: #C9531F; --dsh-h5: #8E3613; display: grid; gap: 1.1rem; }
+  --dsh-h1: #FCEBDF; --dsh-h2: #F7C8A8; --dsh-h3: #EE9A66; --dsh-h4: #C2451A; --dsh-h5: #8E3613; display: grid; gap: 1.1rem; }
 .dsh .hint { margin: 0; }
 .dsh-tools { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; justify-content: space-between; }
 .dsh-periods { display: flex; flex-wrap: wrap; gap: .4rem; }
@@ -4559,22 +4564,43 @@ body:has(.dr-notebook .dr-form) .ux-picker-option[aria-selected="true"] { backgr
 .fd-none { margin: .8rem .2rem; }
 
 /* ---------- Gap fix: admin (8 Nov 2026) ---------- */
-/* The audit of the redesign against e-admin-b-1280: on a laptop the picked Inbox row opens beside the list with its
-   action, and Inbox and Dashboard show once (in the rail), not again in the Today tabs. A phone keeps the rows as they
-   were: no pick buttons, no pane. */
-.dsh-need-pick, .dsh-pick { display: none; }
+/* Inbox and Dashboard show once on a laptop (in the rail), not again in the Today tabs. The picked-row pane was removed on
+   10 Nov 2026 (head chef, docs/admin-dashboard-restyle-options/brief.md): it repeated the row. */
 @media (min-width: 1000px) {
   .p-admin.ad-admin:has(.a-quick-list) .a-tab[data-t="inbox"], .p-admin.ad-admin:has(.a-quick-list) .a-tab[data-t="dashboard"] { display: none; }
-  .dsh-inbox .dsh-need-wrap { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
-  .dsh-inbox .dsh-need-pick { display: flex; align-items: center; width: 100%; min-height: 44px; margin: 0; padding: 0; border: 0; background: none; color: var(--ink); font: 700 1rem/1.25 var(--body); text-align: left; cursor: pointer; }
-  .dsh-inbox .dsh-need-pick:hover { text-decoration: underline; }
-  .dsh-inbox .dsh-need-pick + .dsh-need-title { display: none; }
-  .dsh-inbox .dsh-need.is-picked { background: #FCEDE3; box-shadow: inset 3px 0 0 var(--accent); }
-  .dsh-inbox .dsh-pick { display: block; padding: 1rem 1.1rem 1.1rem; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--paper); }
-  .dsh-pick .dsh-pick-t { margin: .2rem 0 .35rem; font: 700 1.35rem/1.2 var(--display); }
-  .dsh-pick .dsh-pick-d { margin: 0 0 .75rem; color: var(--ink); line-height: 1.4; }
-  .dsh-pick .btn-row { margin-top: .5rem; }
 }
+/* ---------- Admin Today restyle (head chef, 10 Nov 2026, docs/admin-dashboard-restyle-options/brief.md) ---------- */
+/* Headings, rules and space instead of boxes: a block keeps its work-surface heading band, not a frame. */
+.dsh > .dsh-panel, .dsh .dsh-grid > .dsh-panel { padding: 0 0 .4rem; border: 0; border-radius: 0; background: none; }
+/* today's team not set: attention, not failure (its words and the filled button carry it) */
+.dsh-tag-att { color: var(--small-ink); }
+.dsh-need-att .dsh-need-mark { background: var(--accent); }
+/* today's numbers on the Inbox: one line each, a tap into its report */
+.dsh-inbox .dsh-dtiles { grid-template-columns: minmax(0, 1fr); gap: 0; margin: 0; }
+.dsh-inbox .dsh-dtile { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: .15rem .5rem; padding: .55rem 0; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; text-align: left; }
+.dsh-inbox .dsh-dtile-num { font-size: 1.35rem; }
+.dsh-inbox .dsh-dtile-lab { min-width: 10.5rem; }
+/* the comparison table: measure names are the links to their reports */
+.dsh-cmp { display: grid; gap: .4rem; min-width: 0; }
+.dsh-cmp .a-ch-h { margin: 0; }
+.dsh-cmp-t td { font-variant-numeric: tabular-nums; }
+.p-admin.ad-admin .a-pane .dsh .a-table.dsh-cmp-t, .dsh .a-table.dsh-cmp-t { width: 100%; min-width: 0; table-layout: fixed; }
+.dsh-cmp-t th, .dsh-cmp-t td { white-space: normal; overflow-wrap: anywhere; }
+.dsh-cmp-t .dsh-more { white-space: normal; line-height: 1.25; }
+.dsh-cmp-t th[scope="row"] .dsh-more { font-size: 1rem; text-align: left; }
+.dsh-wk-quiet { margin: .3rem 0 0; }
+/* the usual-load tag is neutral information, not attention */
+.dsh-wk-busy .dsh-wk-kind { color: var(--muted); }
+/* a phone keeps the measure, this period and the change in words; the earlier number is in the change */
+@media (max-width: 600px) { .dsh-cmp-t th:nth-child(3), .dsh-cmp-t td:nth-child(3) { display: none; } .dsh-cmp-t th, .dsh-cmp-t td { padding-left: .3rem; padding-right: .3rem; } }
+/* the charts behind one button, open or shut kept in memory */
+.dsh-charts { display: grid; gap: .8rem; min-width: 0; }
+.dsh-charts-btn { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem 1rem; width: 100%; min-height: 48px; padding: .6rem 0; border: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: none; color: var(--ink); text-align: left; cursor: pointer; font: inherit; }
+.dsh-charts-t { font: 700 1.15rem/1.2 var(--display); }
+.dsh-charts-t::before { content: '\25B8'; display: inline-block; margin-right: .4rem; }
+.dsh-charts-btn[aria-expanded="true"] .dsh-charts-t::before { content: '\25BE'; }
+.dsh-charts-s { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.dsh-charts-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 /* ---------- Gap fix: polish (8 Nov 2026) ---------- */
 /* the audit's small gaps against the chosen drawings (docs/whole-app-redesign-options/every-page.html) */
 /* Orders: a link pill centres its words (they sat at the top edge of the 44 px pill) */

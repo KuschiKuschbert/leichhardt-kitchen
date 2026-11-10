@@ -35,15 +35,8 @@ const editSavedReference = async (p, label) => {
     ok(/^Link confirmed: Milk\.$/.test(await p.evaluate(() => { const e = document.querySelector('.p-toast[data-toast="new"] .p-toast-msg') || document.querySelector('.p-toast .p-toast-msg'); return e ? e.textContent.trim() : ''; })), width + ': Save says Link confirmed on the slip (' + await p.evaluate(() => { const e = document.querySelector('.p-toast[data-toast="new"] .p-toast-msg') || document.querySelector('.p-toast .p-toast-msg'); return e ? e.textContent.trim() : ''; }) + ')');
     const dump = await p.evaluate(() => window.__fake.dump());
     ok(dump[path('references', 'ai-milk')].v === 2 && dump[path('references', 'ai-milk')].alias === 'Milk' && dump[path('references', 'ai-milk')].label === 'Milk reference' && dump[path('references', 'ai-milk', 'hist', '1')].label === 'Milk', width + ': prior revision retained ' + JSON.stringify({ current: dump[path('references', 'ai-milk')], previous: dump[path('references', 'ai-milk', 'hist', '1')] }));
-    await L.adminTab(p, 'training'); await p.click('[data-ai="new-training"]');
-    await L.pick(p, '#ai-personId', 'ann'); await L.pick(p, '#ai-section', 'Larder');
-    await L.pick(p, '#ai-status', 'in-training'); await L.pick(p, '#ai-assessorId', 'sam');
-    await p.click('[data-ai="save"]');
-    await L.waitFor(p, () => Object.keys(window.__fake.dump()).some(k => /\/training\/[^/]+$/.test(k)));
-    const saved = await p.evaluate(() => Object.entries(window.__fake.dump()).filter(([k]) => /\/training\/[^/]+$/.test(k)).map(([, v]) => v));
-    ok(saved.length === 1 && saved[0].status === 'in-training', width + ': explicit training assessment saved');
-    await L.pick(p, '#ai-person-filter', 'ann');
-    ok(/Larder/.test(await L.txt(p, '.ai-workspace')), width + ': person activity accessible');
+    // the Training page was retired on 10 Nov 2026: Today has no Training tab and nothing writes training records
+    ok(await p.locator('[data-t="training"], [data-ai="new-training"]').count() === 0, width + ': no Training page or Add assessment');
     ok(!(await L.overflow(p)), width + ': no overflow');
     ok(p.errors.length === 0, width + ': no browser errors ' + p.errors.join(' | '));
     await p.context().close();

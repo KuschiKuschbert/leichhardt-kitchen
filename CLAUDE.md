@@ -36,6 +36,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | A whole-app audit | `docs/whole-app-audit.md`, `docs/ux-council-audit.md`, `docs/whole-app-inventory.md` |
 | Shared surface and operational colours, banners and category exceptions | `docs/surface-colours.md` (chosen hybrid), `docs/colour-coding.md`, `docs/design-patterns.md` |
 | Admin: analysis, proofreader, dashboard, pages, look | `docs/admin-intelligence.md`, `docs/proofreader-admin.md`, `docs/admin-dashboard-options/brief.md`, `docs/admin-pages-options/brief.md`, `docs/admin-design-options/brief.md`, `docs/admin-flow-spec.md` |
+| Cross-training without written assessments (Who has worked where, the planner hint); admin Inbox and Dashboard (chosen R, 10 Nov 2026) | `docs/cross-training-options/brief.md`, `docs/admin-dashboard-restyle-options/brief.md` |
 | Head chef / sous chef panel, chosen dedicated admin-style panel | `docs/chef-panel-options/brief.md` (Chosen implementation, permissions, reads and verification) |
 | Prep, Orders, Wastage, Transfers and the chef hat; who did a Prep line on a shared screen | `docs/work-pages-design-options/brief.md`, `docs/shared-prep-attribution.md` |
 | Orders as a shared request list with compact supplier cut-offs (chosen C) | `docs/order-list-options/brief.md` |
@@ -128,7 +129,7 @@ These hold for every session, every message and every change, however small. A h
 
 ## Keeping usage down (3 Nov 2026)
 Measured on 2 and 3 November 2026: about 45 pull requests in two days, 100 Click tests runs at 20 minutes each (33 hours of runner time; 21 cancelled by a newer push, 16 failed on timing), and 52 "merge `main` into the branch" commits across 40 pull requests. Most of the cost was repeated test runs and reading big files, not the work itself.
-- **Read big files in parts.** `docs/prep-book.md` is about 290 KB, `README.md` about 120 KB, and `docs/ux-council-audit.md`, `docs/whole-app-audit.md` and `docs/whole-app-inventory.md` are 30 to 72 KB each. Never read one whole: search for the heading or word you need (Grep), then read that part only. The audit notes are for audit work only.
+- **Read big files in parts.** `docs/prep-book.md` is about 300 KB, `README.md` about 160 KB, `docs/head-chef-decisions.md` about 90 KB, and `docs/ux-council-audit.md`, `docs/whole-app-audit.md` and `docs/whole-app-inventory.md` are 30 to 72 KB each. Never read one whole: search for the heading or word you need (Grep), then read that part only. The audit notes are for audit work only.
 - **Keep this file short** (8 Nov 2026). It loads in every session and every agent, so every 4 KB here costs about 1,000 tokens each time. A new note or file gets one short row here; its dates, the design chosen, its tests and the detail go in `docs/session-map.md` or its own note.
 - **Let the queue bring `main` in.** It updates one ready pull request at a time (How changes ship, step 7). Merge `main` in yourself only to fix a conflict, once. Every merge of `main` starts another Click tests run (about 6 minutes on five runners); with several sessions open that multiplies.
 - **Push when the work is finished.** Each push cancels the running Click tests and starts again. Make the fixes, run the files you changed (How changes ship, step 2), then push once.

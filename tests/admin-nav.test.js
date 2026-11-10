@@ -9,12 +9,12 @@ const L = require('./lib'); const { R, ok } = L.results();
     ok(await p.locator('.a-groups').isVisible() && await p.locator('[data-k="ai-section"]').count() === 0, width + ': the rooms are buttons at every width, with no section picker');
     if (width >= 1000) ok(await p.evaluate(() => getComputedStyle(document.querySelector('.a-groups')).boxShadow) === 'none', width + ': the laptop rail has no outline box (the phone row draws one)');
     await p.click('[data-g="today"]'); await L.settle(p, 200);
-    ok(await p.locator('[data-t="dashboard"]').count() === 1 && await p.locator('[data-t="references"]').count() === 1 && await p.locator('[data-t="training"]').count() === 1, width + ': Today offers the Dashboard, item links and training');
+    ok(await p.locator('[data-t="dashboard"]').count() === 1 && await p.locator('[data-t="references"]').count() === 1 && await p.locator('[data-t="training"]').count() === 0, width + ': Today offers the Dashboard and item links, and no Training page (retired 10 Nov 2026)');
     await L.adminTab(p, 'reference-records');
     ok(await p.locator('[data-g="kitchen"][aria-current="page"]').count() === 1 && await p.locator('[data-t="tools"]').count() === 1, width + ': confirmed links sit in Kitchen with Backup and PIN');
-    await L.adminTab(p, 'training-records');
-    ok(await p.locator('[data-g="team"][aria-current="page"]').count() === 1 && await p.locator('[data-t="people"]').count() === 1, width + ': assessments sit in Team with People');
-    for (const tab of ['references', 'training', 'reference-records', 'training-records', 'analysis', 'insights', 'team', 'waste', 'transfers', 'learning', 'people', 'tools', 'cutoffs', 'minutes', 'guides']) {
+    await p.click('[data-g="team"]'); await L.settle(p, 200);
+    ok(await p.locator('[data-g="team"][aria-current="page"]').count() === 1 && await p.evaluate(() => LK_PREP.state.atab) === 'people' && await p.locator('[data-t="training-records"]').count() === 0, width + ': Team opens People, with no Assessments page');
+    for (const tab of ['references', 'reference-records', 'analysis', 'insights', 'team', 'waste', 'transfers', 'learning', 'people', 'tools', 'cutoffs', 'minutes', 'guides']) {
       await L.adminTab(p, tab);
       ok(await p.evaluate(t => LK_PREP.state.atab === t, tab), width + ': retained page id ' + tab);
     }
@@ -32,6 +32,13 @@ const L = require('./lib'); const { R, ok } = L.results();
     const q = await L.open(b, '#/admin', { admin: true, adminPage: 'overview', width, height: 900, wait: 1800 });
     ok(await q.evaluate(() => LK_PREP.state.atab) === 'overview' && await q.locator('[data-g="today"][aria-current="page"]').count() === 1 && await q.locator('[data-t="references"][aria-pressed="true"]').count() === 1, width + ': the retained page id overview opens Today on Item links');
     await q.context().close();
+    // a device whose last page was Training or Assessments (retired 10 Nov 2026) opens the Inbox, not a blank pane
+    for (const old of ['training', 'training-records']) {
+      const r = await L.open(b, '#/admin', { admin: true, adminPage: old, width, height: 900, wait: 1800 });
+      ok(await r.evaluate(() => LK_PREP.state.atab) === 'inbox' && await r.evaluate(() => localStorage.getItem('lk.prep.atab')) === 'inbox' && await r.locator('.dsh-inbox').count() === 1, width + ': a saved ' + old + ' page opens the Inbox');
+      ok(r.errors.length === 0, width + ': no page errors after a retired saved page ' + r.errors.join(' | '));
+      await r.context().close();
+    }
   }
   await b.close(); L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
