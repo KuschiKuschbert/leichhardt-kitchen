@@ -5796,7 +5796,7 @@
       (act || '<p class="hint">No people on the list.</p>') + '</section>' + orderStatsHTML(td, n);
   }
   /* Items that keep coming back onto the order list in the last 14 days: candidates for a standing order. */
-  function standingHTML(all) {
+  function standingHTML(all, miss) {
     var from = shift(dayNow(), -13), m = {};
     all.filter(function (x) { return !x.deleted && x.date >= from; }).forEach(function (x) {
       var k = okey(x.text); if (!k) return;
@@ -5807,7 +5807,10 @@
     var rows = Object.keys(m).map(function (k) { return m[k]; }).filter(function (e) { return Object.keys(e.days).length >= 3; })
       .sort(function (a, b) { return Object.keys(b.days).length - Object.keys(a.days).length; });
     var head = '<h3 class="a-ch-h">Standing order candidates</h3><span class="hint">On the order list on 3 or more different days in the last 14 days. A standing order with the supplier saves writing them every time.</span>';
-    if (!rows.length) return head + '<p class="hint">Nothing comes back often enough yet.</p>';
+    // a day that did not load is not a day with no orders: say how many, so a missing item is not read as "not ordered"
+    var lost = (miss || []).filter(function (d) { return d >= from; }).length;
+    if (lost) head += '<p class="p-err" role="status">' + lost + ' of the last 14 days did not load, so an item may be missing here. The book tries again by itself in a few minutes.</p>';
+    if (!rows.length) return head + '<p class="hint">' + (lost ? 'Nothing comes back often enough in the days that loaded.' : 'Nothing comes back often enough yet.') + '</p>';
     return head + lvHTML({
       key: 'ord-standing', items: rows, step: 10, tools: 8, noun: ['item', 'items'], ph: 'Search items',
       find: function (e) { return e.text; },
@@ -5854,7 +5857,7 @@
     return '<section class="set-block"><span class="label">Order list</span><span class="hint">Who put what on the order list and on which days, over the same time range. No scores, just a record.</span>' + statsMiss(os) +
       '<div class="a-tiles"><div class="a-tile"><strong>' + lines.length + '</strong><span>lines written</span></div><div class="a-tile"><strong>' + ordered + '</strong><span>ticked as ordered</span></div><div class="a-tile"><strong>' + (lines.length - ordered) + '</strong><span>not yet ordered</span></div>' +
       '<div class="a-tile"><strong>' + (lag.length ? dur(lag[Math.floor(lag.length / 2)]) : 'n/a') + '</strong><span>typical time from written to ordered</span></div><div class="a-tile"><strong>' + old + '</strong><span>waiting more than 3 days</span></div></div>' +
-      standingHTML(os.lines) +
+      standingHTML(os.lines, os.miss) +
       (lines.length ? '<h3 class="a-ch-h">By day</h3>' + dayList + '<h3 class="a-ch-h">By person</h3>' + perList + '<h3 class="a-ch-h">Ordered most often</h3>' + itemList : '<p class="hint">Nothing has been written on the order list in this time.</p>') + '</section>';
   }
 
@@ -14087,7 +14090,9 @@
       Object.keys(u[k]).forEach(function (id) { var v = u[k][id]; if (str(id, 80) && Array.isArray(v) && str(v[0], 40) && typeof v[1] === 'number' && typeof v[2] === 'number') o[id] = { sec: v[0], n: v[1], of: v[2] }; });
     });
     // x.learn (who is In training, from assessments) is no longer shown since 10 Nov 2026 and is left unread
-    return { day: str(x.day, 10), days: days, usual: usual };
+    // to: the last day counted (yesterday when the run was on time); an older record says so on the Team report
+    var to = /^\d{4}-\d{2}-\d{2}$/.test(x.to) ? x.to : '';
+    return { day: str(x.day, 10), to: to, days: days, usual: usual };
   }
   // a cook's usual section on today's weekday and this shift, while that section is still on the list
   function tmUsual(id, sh) {
@@ -14097,16 +14102,24 @@
   /* Admin, Reports, Team: Who has worked where (head chef, 10 Nov 2026, docs/cross-training-options/brief.md). Shifts
      worked on each section the kitchen has now, from teamsum/main (read once a kitchen day, tsLoad()), the report's
      last 7, 14 or 30 days to yesterday. Counts only, never a verdict: a section few people worked, and anyone mostly on
-     one section, in words. teamsum keeps section names, so a section taken off or renamed drops out of the table. */
+     one section, in words. teamsum keeps section names, so a section taken off or renamed drops out of the table and its
+     shifts are said by name under it; a count that stops before yesterday says how many days are missing (12 Nov 2026). */
   function whoWorkedHTML(n) {
     tsLoad();
     var h = '<h3 class="a-ch-h">Who has worked where</h3><span class="hint">Shifts from Today\'s team and each cook\'s own section picks, the last ' + n + ' days to yesterday. A count is activity, not a sign someone can run a section alone.</span>';
-    if (tsum.st === 'err') return h + '<p class="p-err" role="status">Could not load the shift counts. Check the signal. The book tries again by itself in a few minutes.</p>';
+    if (tsum.st === 'err') return h + '<p class="p-err" role="status">Could not load the shift counts. This does not mean nobody worked a section. Check the signal. The book tries again by itself in a few minutes.</p>';
     if (tsum.st !== 'ok') return h + '<p class="hint">' + inkLabel('Loading...', 'chef') + '</p>';
     if (!tsum.rec) return h + '<p class="hint">Nothing counted yet. The nightly job counts the shifts from Today\'s team.</p>';
     var secs = kitSecs().map(function (x) { return String(x.name).trim(); }).filter(function (k, i, a) { return k && a.indexOf(k) === i; });
-    var from = shift(dayNow(), -n), c = Object.create(null);
-    tsum.rec.days.forEach(function (d) { if (d.day < from) return; d.s.forEach(function (v) { if (secs.indexOf(v.sec) < 0) return; var p = c[v.p] = c[v.p] || Object.create(null); p[v.sec] = (p[v.sec] || 0) + 1; }); });
+    var from = shift(dayNow(), -n), c = Object.create(null), gone = Object.create(null);
+    tsum.rec.days.forEach(function (d) { if (d.day < from) return; d.s.forEach(function (v) { if (secs.indexOf(v.sec) < 0) { gone[v.sec] = (gone[v.sec] || 0) + 1; return; } var p = c[v.p] = c[v.p] || Object.create(null); p[v.sec] = (p[v.sec] || 0) + 1; }); });
+    // A record that stops before yesterday (the nightly run has not finished since) says how many days are missing,
+    // so a short count is never read as the whole time (12 Nov 2026)
+    var yday = shift(dayNow(), -1), to = tsum.rec.to || (tsum.rec.day ? shift(tsum.rec.day, -1) : '');
+    if (to && to < yday) { var lost = Math.round((parseYmd(yday) - parseYmd(to)) / 86400000); h += '<p class="hint" role="status"><span class="a-flag">Old counts</span> Shift counts only go to ' + esc(dayShort(to)) + '. The nightly run has not finished since, so the last ' + lost + (lost === 1 ? ' day is' : ' days are') + ' missing.</p>'; }
+    // Shifts under a name no longer on the section list (taken off or renamed) are not counted, and are said by name
+    var goneNames = Object.keys(gone).sort();
+    if (goneNames.length) h += '<p class="hint">Not counted: shifts under names no longer on the section list: ' + goneNames.map(function (k) { return esc(k) + ' (' + gone[k] + ')'; }).join(', ') + '. A renamed section starts again from 0 under its new name.</p>';
     var ids = Object.keys(c);
     if (!secs.length) return h + '<p class="hint">No kitchen sections are set up.</p>';
     if (!ids.length) return h + '<p class="hint">No shifts on a section in the last ' + n + ' days.</p>';
@@ -14121,7 +14134,7 @@
     }).join('') + '<tr class="sk-tot"><th scope="row">People</th>' + people.map(function (l) { return '<td>' + l.length + '</td>'; }).join('') + '</tr>';
     var key = '<div class="a-legend sk-key"><span>Shifts worked:</span>' + [['0, no shifts recorded', 0], ['1 to 2', 1], ['3 to 5', 2], ['6 to 10', 3], ['over 10', 4]].map(function (k) { return '<span><i style="background:' + SK[k[1]] + '"></i>' + k[0] + '</span>'; }).join('') + '</div>';
     var few = secs.map(function (k, i) { return { k: k, l: people[i] }; }).filter(function (x) { return x.l.length <= 2; }).map(function (x) {
-      return '<li><strong>' + esc(x.k) + ':</strong> ' + (x.l.length ? x.l.length + (x.l.length === 1 ? ' person' : ' people') + ' in ' + n + ' days (' + x.l.map(function (r) { return esc(r.name) + ', ' + c[r.id][x.k]; }).join('; ') + (x.l.length === 1 && c[x.l[0].id][x.k] === 1 ? ' shift' : ' shifts') + ').' : 'nobody in ' + n + ' days.') + '</li>';
+      return '<li><strong>' + esc(x.k) + ':</strong> ' + (x.l.length ? x.l.length + (x.l.length === 1 ? ' person' : ' people') + ' in ' + n + ' days (' + x.l.map(function (r) { return esc(r.name) + ', ' + c[r.id][x.k]; }).join('; ') + (x.l.length === 1 && c[x.l[0].id][x.k] === 1 ? ' shift' : ' shifts') + ').' : 'no shifts under this name in the last ' + n + ' days.') + '</li>';
     }).join('');
     var one = rows.filter(function (r) { return r.t >= 5; }).map(function (r) { var top = secs.slice().sort(function (a, b) { return (c[r.id][b] || 0) - (c[r.id][a] || 0); })[0]; return { r: r, k: top, v: c[r.id][top] || 0 }; })
       .filter(function (x) { return x.v / x.r.t >= 0.8; }).map(function (x) { return '<li><strong>' + esc(x.r.name) + ':</strong> ' + x.v + ' of ' + x.r.t + ' shifts on ' + esc(x.k) + '.</li>'; }).join('');
