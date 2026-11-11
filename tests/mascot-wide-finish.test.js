@@ -513,6 +513,26 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
     ok(v.sec && v.lines[0] === 'Sauce is done.', 'the name is chosen and the server has it: the finished words: ' + JSON.stringify(v.lines));
   });
 
+  await step('a shared kitchen screen locks', async () => {
+    // The kitchen's five screens are shared (owner, 11 Nov 2026). A shared screen locks ten minutes after the last
+    // touch: the finished words are page content and go with the page, and they are back, a still, after the next PIN.
+    const s0 = L.seed(), done = Object.fromEntries(['i4', 'i5'].map(i => [item(i), Object.assign({}, s0[item(i)], ticked('Bo'))]));
+    await open({ deviceMode: 'shared', extra: done }); await tab(p, 'Sauce'); await scene(); await rested(p); let v = await view(p);
+    ok(v.sec && v.lines[0] === 'Sauce is done.', 'a finished section on a shared screen: ' + JSON.stringify(v.lines));
+    await p.clock.runFor(11 * 60000); await L.settle(p, 400);
+    const locked = await p.evaluate(() => ({ pin: !!document.querySelector('#pf1'), priv: window.LK_PREP.privateAccess(), fin: !!document.querySelector('.nb-fin, .nb-scene, .nb-fin-sec'), still: !!document.querySelector('.mascot-still'), page: !!document.querySelector('.nb-left') }));
+    ok(locked.pin && !locked.priv, 'eleven minutes without a touch: the screen asks for a PIN: ' + JSON.stringify(locked));
+    ok(!locked.fin && !locked.still && !locked.page, 'and nothing of the finished words or the mascot is on the locked screen: ' + JSON.stringify(locked));
+    const name = p.locator('.p-name[data-id="ann"]');
+    if (await name.count() && await name.isVisible()) { await name.click(); await L.settle(p, 200); }
+    await p.fill('#pf1', '2222');
+    await L.waitFor(p, () => window.LK_PREP.privateAccess() && !!document.querySelector('.nb-left'), null, 8000); await L.settle(p, 400);
+    if (!(await p.evaluate(() => { const t = document.querySelector('.nb-tab[aria-pressed="true"]'); return !!t && t.getAttribute('data-v') === 'Sauce'; }))) await tab(p, 'Sauce');
+    await scene(); await rested(p); await run(p, 4500); v = await view(p);
+    ok(v.sec && v.lines[0] === 'Sauce is done.' && v.sprite, 'after the next PIN the finished words are back: ' + JSON.stringify([v.sec, v.lines, v.sprite]));
+    ok(v.still && v.still.plays === 0 && !v.still.playing, 'as a still: nothing plays after the lock: ' + JSON.stringify(v.still));
+  });
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
