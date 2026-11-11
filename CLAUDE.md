@@ -22,6 +22,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Staff-first Home: personal shift, break/return, scheduled coworkers and full-team disclosure | `docs/home-staff-first.md` |
 | The kitchen mascot: a shuffled daily action per person on Home, tap to replay; the card under a finished prep list; the section's sentence on the slip | `docs/kitchen-mascot.md` |
 | The study behind the mascot's cheers: the idea list, both council rounds, the designs; the ideas not built yet | `docs/mascot-cheer-options/brief.md` (both steps chosen and built) and its `ideas.md` |
+| The mascot on the kitchen's wide section screens: bigger finished states | `docs/mascot-desktop-options/brief.md` (round 1 Build smaller; recommended blend of A and B; the owner's choice pending; not built) |
 | Named staff welcome, current identity and personalisation audit | `docs/staff-personalisation-options/brief.md` (chosen A, long-name treatment and implementation checks) |
 | Login, who can read or write what, recipes, function writes | `docs/private-kitchen-access.md` (wins over anything older in this file) |
 | Device choice, Google, daily PIN unlock, Update, Settings | `docs/device-sessions.md` (replaces earlier session wording), `docs/settings-options/brief.md` |
