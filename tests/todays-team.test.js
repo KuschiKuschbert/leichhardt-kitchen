@@ -344,7 +344,7 @@ const withoutViewChoice = async p => {
   ok(/Grill/.test(grid) && /Pans/.test(grid) && /Ann/.test(grid) && /Bo/.test(grid), 'admin: the Team report has shifts on each section (' + grid.slice(0, 160) + ')');
   // Who has worked where (10 Nov 2026): one page from shifts, sections few people worked in words, ticks behind a fold
   const team = await txt(p, '.a-pane') || '';
-  ok(/Who has worked where/.test(team) && /Pans: 1 person in 30 days \(Ann, 1 shift\)\./.test(team) && !/Cross-training chances|Section habits|Shifts on each section/.test(team), 'admin: Who has worked where replaces the four parts and names Pans as a section few people worked (' + ((team.match(/Sections few people.{0,200}/) || [''])[0]) + ')');
+  ok(/Who has worked where/.test(team) && /At a glance/.test(team) && /Only Ann worked Pans\s*1 shift\./.test(team) && !/Cross-training chances|Section habits|Shifts on each section/.test(team), 'admin: Who has worked where replaces the four parts and names Pans as a section few people worked (' + ((team.match(/Sections few people.{0,200}/) || [''])[0]) + ')');
   ok(await p.locator('details.sk-ticks').count() === 1 && !(await p.$eval('details.sk-ticks', e => e.open)), 'admin: the ticks table waits behind a closed fold');
   // Plain words in the report's filters and counts (12 Nov 2026): "Everyone", "All sections", never "All person" or "1 days"
   const firsts = await p.$$eval('.a-pane select[aria-label^="Filter "]', s => s.map(e => e.options[0].textContent));

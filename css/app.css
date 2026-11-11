@@ -3530,6 +3530,8 @@ span.ux-inline-pair { width: var(--ux-pair-width); }
 .dsh-h { font: 700 1.5rem/1.1 var(--display); margin: 0 0 .5rem; }
 .dsh-heads { border-top: 2px solid var(--ink); padding-top: .9rem; }
 .dsh-head-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: .4rem 1.6rem; }
+/* At a glance on Reports, Team (12 Nov 2026): the Dashboard's headline cards, with room before the table under them */
+.tm-glance { margin: .3rem 0 1.6rem; }
 .dsh-head { display: grid; gap: .3rem; align-content: start; padding: .6rem 0; border-top: 1px solid var(--line); min-width: 0; }
 .dsh-head h4 { font: 700 1.3rem/1.15 var(--display); margin: 0; text-wrap: balance; }
 .dsh-head p { margin: 0; }
