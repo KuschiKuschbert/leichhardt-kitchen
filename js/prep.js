@@ -5232,12 +5232,13 @@
      changes: from 900 px wide the finished list's card, and a finished section's tab, say it large with the mascot
      under his words. Words first: one size of words for both finished states on a screen, 40 px from 1280 px wide
      where the room in view above the slip holds them, 28 px otherwise, and today's book where neither fits. Then the
-     largest mascot that still fits, measured, then none. On a section's tab he is 96 x 128 px at most, never taller
-     than his words; his drawn size, 192 x 256 px, is kept for the whole finished list. Nothing here moves a line or a
-     button: the page is empty at both states, and the scene never adds a scroll to it.
+     largest mascot that still fits, measured, then none. On a section's tab he is 96 x 128 px at most and never
+     taller than his words (64 x 85 or 48 x 64 px under smaller or fewer words); his drawn size, 192 x 256 px, is kept
+     for the whole finished list. Nothing here moves a line or a button: the page is empty at both states, and the
+     scene never adds a scroll to it. The finished list's card stays small while its last ticked line lingers.
      Under 900 px, with no signal (the browser's word, or the list's own: its last answer came from memory), or with
      an older saved stylesheet, the book is exactly as it was: the tab's plain words and the small card. The words are the page's own and never wait for the mascot's file or art. */
-  var FIN_CLS = ['nb-scene', 'nb-w40', 'nb-w28', 'nb-f192', 'nb-f96', 'nb-f64', 'nb-f0'];
+  var FIN_CLS = ['nb-scene', 'nb-w40', 'nb-w28', 'nb-f192', 'nb-f96', 'nb-f64', 'nb-f48', 'nb-f0'];
   function finFit() {
     try {
       var body = S.root && document.body.contains(S.root) && S.root.querySelector('.nb-left .nb-body');
@@ -5248,13 +5249,19 @@
       if (plain) plain.style.display = '';
       if (card) FIN_CLS.forEach(function (c) { card.classList.remove(c); });
       if ((!card && !plain) || window.innerWidth < 900 || offline || itemsCold) return;
+      // While a ticked line still lingers above the finished list's card it stays the small card. The large words
+      // come when the list has emptied, on the draw he speaks and plays on, so their size is chosen once and does
+      // not change a few seconds after the finish. (A section's tab says nothing new while a line lingers.)
+      if (card && S.root.querySelector('.nb-left .nb-rows .nb-row')) return;
       var base = body.scrollHeight - body.clientHeight, el = card;
       if (!el) {
         el = document.createElement('div'); el.className = 'nb-fin nb-fin-sec';
         var art = document.createElement('span'), w = document.createElement('div'), say = document.createElement('p'), note = document.createElement('p');
         art.className = 'nb-fin-art'; art.setAttribute('data-fin-art', 'sec'); art.setAttribute('aria-hidden', 'true');
         w.className = 'nb-fin-w'; say.className = 'nb-fin-say'; note.className = 'nb-empty'; note.textContent = 'See Done today under Handy.';
-        plain.getAttribute('data-fin-sec').split('\n').forEach(function (t) { if (!t) return; var line = document.createElement('span'); line.textContent = t; say.appendChild(line); });
+        // one span a sentence, with a space between them so the words still read as two sentences where the
+        // scene's styles do not apply (a printed page, a copy and paste)
+        plain.getAttribute('data-fin-sec').split('\n').forEach(function (t) { if (!t) return; var line = document.createElement('span'); line.textContent = t; if (say.firstChild) say.appendChild(document.createTextNode(' ')); say.appendChild(line); });
         w.appendChild(say); w.appendChild(note); el.appendChild(art); el.appendChild(w);
         plain.parentNode.insertBefore(el, plain.nextSibling); plain.style.display = 'none';
       }
@@ -5266,14 +5273,18 @@
       // The room in view above the slip, with the window where it rests (not scrolled): on a window shorter than the
       // book the size must not turn on how far the window happens to be scrolled when the page is drawn.
       var r = body.getBoundingClientRect(), at = window.pageYOffset || 0, rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16, room = Math.min(r.bottom + at, window.innerHeight - 80) - (r.top + at);
-      // two lines of words in their shape and the margins; the page's pointer under them; one ticked line still lingering
-      var words = function (f) { return 2 * 1.2 * f * rem + (f > 2 ? 32 : 24) + 1.8 * rem; }, note2 = 10 + 1.5 * rem, linger = 3.75 * rem;
-      var top = window.innerWidth >= 1280 && room >= words(2.5) + note2 + linger ? 40 : room >= words(1.75) + note2 + linger ? 28 : 0;
+      // two lines of words in their shape and the margins, and the page's pointer under them at the height it has
+      var pointer = el.querySelector('.nb-fin-w .nb-empty'), words = function (f) { return 2 * 1.2 * f * rem + (f > 2 ? 32 : 24) + 1.8 * rem; }, note2 = 10 + (pointer ? pointer.getBoundingClientRect().height : 1.5 * rem);
+      var top = window.innerWidth >= 1280 && room >= words(2.5) + note2 ? 40 : room >= words(1.75) + note2 ? 28 : 0;
       if (!top) { back(); return; }
-      var list = el === card, sizes = list ? [192, 96, 64, 0] : [96, 0];
-      // with him under the finished list's words, room is kept for the ticked line that still lingers above the card
-      var fits = function (f) { return el.getBoundingClientRect().height + 1.8 * rem + (list && f ? linger : 0) <= room && body.scrollHeight - body.clientHeight <= base; };
-      // a long name that will not fit at the screen's size of words drops a size
+      // His drawn size is for the whole finished list only. On a section's tab he is never taller than his words:
+      // 96 x 128 px under two lines of 40 px words, a smaller size under smaller or fewer words, or none.
+      var list = el === card, sizes = list ? [192, 96, 64, 0] : [96, 64, 48, 0], shape = el.querySelector('.nb-fin-say');
+      var fits = function (f) {
+        if (el.getBoundingClientRect().height + 1.8 * rem > room || body.scrollHeight - body.clientHeight > base) return false;
+        return list || !f || f * 4 / 3 <= shape.getBoundingClientRect().height + 0.5;
+      };
+      // Long words wrap inside the page at the screen's size; they drop a size only when the wrapped words do not fit.
       for (var a = top === 40 ? [40, 28] : [28], i = 0; i < a.length; i++) {
         for (var j = 0; j < sizes.length; j++) { set(a[i], sizes[j]); if (fits(sizes[j])) return; }
       }

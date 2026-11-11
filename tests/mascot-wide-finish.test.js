@@ -37,6 +37,7 @@ const view = p => p.evaluate(() => {
     sec: !!sec, card: !!card, scene: !!(el && el.classList.contains('nb-scene')), cls: el ? [...el.classList].filter(c => /^nb-(w\d|f\d|noart)/.test(c)).join(' ') : '',
     lines: say ? (say.children.length ? [...say.children].map(e => e.textContent) : [say.textContent]) : [], kids: say ? say.querySelectorAll('*').length : 0,
     font: say ? Math.round(parseFloat(getComputedStyle(say).fontSize)) : 0, inks: say ? (say.children.length ? [...say.children] : [say]).map(e => getComputedStyle(e).color) : [], tint: say ? getComputedStyle(say).backgroundColor : '',
+    sayH: say ? Math.round(say.getBoundingClientRect().height) : 0, text: say ? say.textContent : '', scrollY: Math.round(window.scrollY),
     tail: say ? getComputedStyle(say, '::before').display : '', art: shown(art) ? size(art) : null, hidden: art ? art.getAttribute('aria-hidden') : '',
     sprite: !!(art && art.querySelector('.mascot-still:not([hidden])')), still: window.LK_MASCOT && window.LK_MASCOT.stillState ? window.LK_MASCOT.stillState() : null,
     note: note ? note.textContent : '', noteFont: note ? parseFloat(getComputedStyle(note).fontSize) : 0, plain: plain ? plain.textContent : '', plainShown: shown(plain), plainFont: plain ? parseFloat(getComputedStyle(plain).fontSize) : 0,
@@ -54,6 +55,20 @@ const rects = p => p.evaluate(() => {
   document.querySelectorAll('.nb-right .nb-body > *, .nb-right button, .nb-right a').forEach((e, i) => put('handy:' + i, e));
   return out;
 });
+// reads billed, reads asked for, writes sent and what is kept on the device: the finished words must change none of them
+const cost = p => p.evaluate(() => JSON.stringify([window.__fake.bill.length, window.__fake.reads.length, window.__fake.writes.length, Object.keys(localStorage).sort()]));
+// The size rule, said again apart from the code: with the room in view above the slip (the window at rest), the
+// mascot on screen fits, and no larger one of his sizes would. On a section's tab he is never taller than his words.
+const best = p => p.evaluate(() => {
+  const body = document.querySelector('.nb-left .nb-body'), el = body.querySelector('.nb-fin.nb-scene');
+  if (!el) return null;
+  const list = !el.classList.contains('nb-fin-sec'), say = el.querySelector('.nb-fin-say'), r = body.getBoundingClientRect(), rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const room = Math.min(r.bottom + window.scrollY, innerHeight - 80) - (r.top + window.scrollY), sizes = list ? [192, 96, 64, 0] : [96, 64, 48, 0], now = sizes.find(f => el.classList.contains('nb-f' + f));
+  const put = f => { sizes.forEach(x => el.classList.remove('nb-f' + x)); el.classList.add('nb-f' + f); };
+  const fits = f => { put(f); return el.getBoundingClientRect().height + 1.8 * rem <= room && body.scrollHeight <= body.clientHeight && (list || !f || f * 4 / 3 <= say.getBoundingClientRect().height + 0.5); };
+  const out = { now, fits: fits(now), bigger: sizes.filter(f => f > now).filter(fits) };
+  put(now); return out;
+});
 const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.stringify(b[k])).concat(Object.keys(b).filter(k => !(k in a)));
 
 (async () => {
@@ -68,6 +83,7 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
     try { await task(); } catch (e) { ok(false, label + ': ' + String(e.message || e).split('\n')[0]); }
     finally { if (p) { ok(!realErrors(p).length, label + ': no browser errors ' + realErrors(p).join(' | ')); await p.context().close(); p = null; } }
   }
+  async function shut(label) { ok(!realErrors(p).length, label + ': no browser errors ' + realErrors(p).join(' | ')); await p.context().close(); p = null; }
   // On the Sauce tab with Sauce's first line ticked and its slip gone: the next tick is the one that finishes Sauce
   async function ready(o) { await open(o); await tab(p, 'Sauce'); await tick(p, 'i4'); await run(p, 9500); }
   // The tick that finishes Sauce, its slip gone and the ticked line left
@@ -82,12 +98,20 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
     await tick(p, 'i5', 600); v = await view(p);
     ok(v.slip && v.slip[1] === 'Sauce is done. Grill has 1 left.', 'the slip keeps its own sentence at this width: ' + JSON.stringify(v.slip));
     ok(!v.sec && v.rows === 1, 'while the ticked line still lingers the page says nothing new: ' + JSON.stringify([v.sec, v.rows]));
-    await run(p, 4000); await rested(p); v = await view(p);
+    // the slip's sentence has stood its 2 seconds and is kept for the day; the ticked line still lingers
+    await run(p, 2000); const c0 = await cost(p);
+    // the words are read before the art is waited for: they do not need it, and the slip is still up
+    await run(p, 1700); v = await view(p); const c1 = await cost(p);
     ok(v.sec && v.scene && v.rows === 0, 'the line has left: the finished words stand in the page');
     ok(JSON.stringify(v.lines) === JSON.stringify(['Sauce is done.', 'Grill has 1 left.']), 'the slip\'s own sentence, word for word, on two lines: ' + JSON.stringify(v.lines));
+    ok(v.text === 'Sauce is done. Grill has 1 left.', 'and two sentences where the scene\'s styles do not reach (a printed page, a copy): ' + JSON.stringify(v.text));
     ok(v.slip && v.slip[1] === v.lines.join(' '), 'the slip and the page say the same thing while both are up: ' + JSON.stringify(v.slip));
+    ok(c0 === c1, 'no read, write or saved data for it: ' + c0 + ' then ' + c1);
     ok(v.font === 40, 'the words are 40 px: ' + v.font);
+    await rested(p); v = await view(p);
     ok(v.art && v.art[0] === 96 && v.art[1] === 128, 'he stands under them at 96 x 128 px, half his drawn size: ' + JSON.stringify(v.art));
+    ok(v.art && v.art[1] <= v.sayH, 'and is no taller than his words: ' + JSON.stringify([v.art, v.sayH]));
+    ok(v.tail !== 'none' && (await p.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.nb-left .nb-fin-sec .nb-fin-say'), '::before').borderTopWidth))) >= 14, 'the tail under 40 px words is 14 px, to be seen from the bench');
     ok(v.sprite && v.hidden === 'true', 'the mascot is there, and hidden from a screen reader');
     ok(v.plain && !v.plainShown, 'the plain sentence gives way: ' + JSON.stringify([v.plain.slice(0, 30), v.plainShown]));
     ok(v.note === 'See Done today under Handy.' && v.noteFont === v.plainFont, 'the page\'s pointer stays, at the book\'s own size: ' + JSON.stringify([v.note, v.noteFont, v.plainFont]));
@@ -96,7 +120,7 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
     ok(!v.control && v.cursor !== 'pointer', 'not a control: no button, link or pointer in it');
     ok(v.bodyScroll <= 0 && v.wide <= 0, 'no scroll is added, down or sideways: ' + JSON.stringify([v.bodyScroll, v.wide]));
     ok(v.bottom <= v.win - 80, 'it ends above the slip\'s place: ' + JSON.stringify([v.bottom, v.win]));
-    await run(p, 6000); v = await view(p);
+    await run(p, 7000); v = await view(p);
     ok(v.sec && !v.slip, 'the slip has gone and the page still says it');
     ok(v.still && v.still.plays === 0, 'a still: nothing played on a section\'s tab: ' + JSON.stringify(v.still));
     const asked = p.__art.slice(before);
@@ -162,14 +186,14 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
     // a section of one line is an ordinary tick
     await open(); await tab(p, 'Grill'); await tick(p, 'i3', 400); await run(p, 9500); let v = await view(p);
     ok(!v.sec && v.plainShown && /^Nothing left to do in Grill\./.test(v.plain), 'a section of one line: the plain words: ' + JSON.stringify([v.sec, v.plain.slice(0, 28)]));
-    await p.context().close(); p = null;
+    await shut('part way');
     // lines are left, but no section can be named for them: "Sauce is done." alone would read as nothing left
     await ready({ extra: { [item('i1')]: line('Slice onions', ''), [item('i2')]: line('Pick coriander', ''), [item('i6')]: line('Wash bok choy', ''), [item('i3')]: line('Portion rump', 'Grill', ticked('Sam')) } });
     await tick(p, 'i5', 500); v = await view(p);
     ok(v.slip && !v.slip[1], 'lines left with no section to name: the slip is plain: ' + JSON.stringify(v.slip));
     await run(p, 9500); v = await view(p);
     ok(!v.sec && v.plainShown, 'and the page keeps its plain words: ' + JSON.stringify([v.sec, v.plainShown]));
-    await p.context().close(); p = null;
+    await shut('part way');
     // a name the book does not say
     await open({ extra: { [item('i4')]: line('Make gravy', 'Prep', ticked('Sam')), [item('i5')]: line('Laksa', 'Prep') } });
     await tab(p, 'Prep'); await tick(p, 'i5', 400); await run(p, 9500); v = await view(p);
@@ -180,14 +204,22 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
     await ready({ extra: { [item('i1')]: line('Slice onions', 'Larder', ticked('Sam')), [item('i2')]: line('Pick coriander', 'Larder', ticked('Sam')), [item('i6')]: line('Wash bok choy', 'Larder', ticked('Sam')), [item('i3')]: line('Portion rump', 'Grill', ticked('Sam')) } });
     await tick(p, 'i5', 500); await run(p, 4000); await rested(p); let v = await view(p);
     ok(v.sec && JSON.stringify(v.lines) === JSON.stringify(['Sauce is done.']), 'nothing is left anywhere: "Sauce is done." stands alone: ' + JSON.stringify(v.lines));
+    ok(v.font === 40 && v.art && v.art[0] === 48 && v.art[1] <= v.sayH, 'one line of words, so he is 48 x 64 px, no taller than they are: ' + JSON.stringify([v.font, v.art, v.sayH]));
+    ok(!/Every line ticked/.test(v.live), 'the finished list is not read out from the tab: ' + JSON.stringify(v.live));
     await run(p, 5000); v = await view(p);
     ok(v.still && v.still.plays === 0, 'he is a still on the tab, even for the tick that finished the list: ' + JSON.stringify(v.still));
     await tab(p, ''); await L.waitFor(p, () => { const s = window.LK_MASCOT.stillState(); return !!s && s.plays === 1; }, null, 6000).catch(() => {}); v = await view(p);
     ok(v.card && v.scene && v.lines[0] === 'Every line ticked. 6 of 6.', 'on the All list the finished list\'s card says it: ' + JSON.stringify(v.lines));
     ok(v.still && v.still.plays === 1, 'and the one Serve play is his there: ' + JSON.stringify(v.still));
+    ok(/Every line ticked\. 6 of 6\./.test(v.live), 'and it is read out there, once: ' + JSON.stringify(v.live));
     ok(v.font === 40 && v.art && v.art[0] === 192 && v.art[1] === 256, 'the same size of words, and he is his drawn size, 192 x 256 px: ' + JSON.stringify([v.font, v.art]));
     ok(v.inks.length === 1 && v.inks[0] === GREEN, 'all of it is done, so all of it is green: ' + JSON.stringify(v.inks));
     ok(v.note === 'See Done today under Handy.' && v.bodyScroll <= 0 && v.wide <= 0 && v.bottom <= v.win - 80, 'the pointer under him, no scroll, above the slip\'s place: ' + JSON.stringify([v.bodyScroll, v.bottom]));
+    // nothing a cook works with has moved: the same page with the large words taken off the card
+    await run(p, 9500); const big = await rects(p);
+    await p.evaluate(() => { const c = document.querySelector('.nb-left .nb-fin'); ['nb-scene', 'nb-w40', 'nb-w28', 'nb-f192', 'nb-f96', 'nb-f64', 'nb-f0'].forEach(x => c.classList.remove(x)); });
+    const small = await rects(p), moved = same(small, big);
+    ok(Object.keys(big).length > 8 && !moved.length, 'no tab, header, count, button or Handy line moves for the large card (' + Object.keys(big).length + ' rectangles): ' + moved.join(', '));
   });
 
   await step('no signal', async () => {
@@ -209,7 +241,7 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
     ok(v.sec && v.font === 40 && v.lines.join(' ') === 'Sauce is done. Grill has 1 left.', 'his file cannot load: the words stand all the same: ' + JSON.stringify([v.sec, v.font, v.lines]));
     ok(!v.art && v.tail === 'none', 'alone, with no empty room where he would be and no tail: ' + JSON.stringify([v.art, v.tail, v.cls]));
     ok(p.__art.filter(u => /mascot\.js/.test(u)).length === 2, 'one try at his file (a fetch and a script tag), not one on every redraw: ' + p.__art.length);
-    await p.context().close(); p = null;
+    await shut('part way');
     await open(); await p.context().route(/art\/mascot\//, r => r.abort());
     await tab(p, 'Sauce'); await tick(p, 'i4'); await run(p, 9500); await tick(p, 'i5', 500); await run(p, 9500);
     await L.waitFor(p, () => !!document.querySelector('.nb-fin-sec .mascot-still[hidden]'), null, 6000).catch(() => {}); v = await view(p);
@@ -225,35 +257,39 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
   await step('words first, at every size', async () => {
     // [width, height, the words, the mascot on a section's tab, the mascot under the finished list]. Where the size
     // turns on how wide the stand-in fonts are, only what holds in any font is checked; 1920 x 1080 has room to spare.
-    const sizes = [[1920, 1080, 40, [96, 128], [192, 256]], [1280, 900, 40, [96, 128], null], [1280, 720, 40, null, null], [1366, 768, 40, null, null], [1024, 768, 28, null, null], [900, 1000, 28, [96, 128], null]];
+    const sizes = [[1920, 1080, 40, [96, 128], [192, 256]], [1280, 900, 40, [96, 128], null], [1280, 720, 40, null, null], [1366, 768, 40, null, null], [1280, 620, 40, 'none', null], [1280, 540, 28, 'none', null], [1024, 768, 28, null, null], [900, 1000, 28, [64, 85], null]];
     for (const [w, h, font, onTab, onList] of sizes) {
       const at = w + ' x ' + h;
-      await ready({ width: w, height: h }); await tick(p, 'i5', 500); await run(p, 9500); await rested(p); const s = await view(p);
+      await ready({ width: w, height: h }); await tick(p, 'i5', 500); await run(p, 9500); await rested(p); const s = await view(p), sb = await best(p);
       ok(s.sec && s.font === font, at + ': a finished section in ' + font + ' px words: ' + JSON.stringify([s.sec, s.font]));
-      ok(!s.art || (s.art[0] === 96 && s.art[1] === 128), at + ': he is 96 x 128 px there or not there, never bigger: ' + JSON.stringify(s.art));
-      if (onTab) ok(s.art && s.art[0] === onTab[0], at + ': and there is room for him: ' + JSON.stringify(s.art));
+      ok(!s.art || ([96, 64, 48].indexOf(s.art[0]) >= 0 && s.art[1] <= s.sayH), at + ': he is 96, 64 or 48 px wide there or not there, and never taller than his words: ' + JSON.stringify([s.art, s.sayH]));
+      ok(sb && sb.fits && !sb.bigger.length, at + ': the largest of his sizes that fits, and it fits: ' + JSON.stringify(sb));
+      if (onTab === 'none') ok(!s.art && s.tail === 'none' && /nb-f0/.test(s.cls), at + ': no room for him: the words alone, with no tail: ' + JSON.stringify([s.art, s.tail, s.cls]));
+      else if (onTab) ok(s.art && s.art[0] === onTab[0] && s.art[1] === onTab[1], at + ': and he is ' + onTab.join(' x ') + ' px: ' + JSON.stringify(s.art));
       ok(s.bodyScroll <= 0 && s.wide <= 0 && s.bottom <= s.win - 80, at + ': no scroll, and it ends above the slip\'s place: ' + JSON.stringify([s.bodyScroll, s.wide, s.bottom, s.win]));
-      await tab(p, ''); for (const id of ['i3', 'i1', 'i2']) { await tick(p, id); } await run(p, 9500); await tick(p, 'i6', 500); await run(p, 9500); await rested(p); const l = await view(p);
+      await tab(p, ''); for (const id of ['i3', 'i1', 'i2']) { await tick(p, id); } await run(p, 9500); await tick(p, 'i6', 500); await run(p, 9500); await rested(p); const l = await view(p), lb = await best(p);
       ok(l.card && l.scene && l.font === s.font, at + ': the finished list in the same size of words: ' + JSON.stringify([l.scene, l.font, s.font]));
       ok(!l.art || [192, 96, 64].indexOf(l.art[0]) >= 0, at + ': he is 192, 96 or 64 px wide there, or not there: ' + JSON.stringify(l.art));
+      ok(lb && lb.fits && !lb.bigger.length, at + ': the largest of his sizes that fits under the list, and it fits: ' + JSON.stringify(lb));
       if (onList) ok(l.art && l.art[0] === onList[0] && l.art[1] === onList[1], at + ': his drawn size: ' + JSON.stringify(l.art));
-      ok(l.bodyScroll <= 0 && l.wide <= 0, at + ': no scroll on the finished list: ' + JSON.stringify([l.bodyScroll, l.wide]));
+      ok(l.bodyScroll <= 0 && l.wide <= 0 && l.bottom <= l.win - 80, at + ': no scroll on the finished list, above the slip\'s place: ' + JSON.stringify([l.bodyScroll, l.wide, l.bottom]));
       ok(!realErrors(p).length, at + ': no browser errors ' + realErrors(p).join(' | ')); await p.context().close(); p = null;
     }
   });
 
   await step('no room: the book as it was', async () => {
-    await ready({ width: 1280, height: 520 }); await tick(p, 'i5', 500); await run(p, 9500); let v = await view(p);
+    await ready({ width: 1280, height: 480 }); await tick(p, 'i5', 500); await run(p, 9500); let v = await view(p);
     ok(!v.sec && v.plainShown, 'a window too short for the large words: the tab keeps its plain words: ' + JSON.stringify([v.sec, v.plainShown]));
     // The book is taller than this window, so the window itself scrolls. The size must not turn on how far it is
     // scrolled when the page is drawn (GitHub's runner scrolled to reach a tick box and got the large words).
     await p.evaluate(() => window.scrollTo(0, 240)); await p.evaluate(() => window.LK_PREP.toast('Redraw')); await L.settle(p, 300); v = await view(p);
-    ok(!v.sec && v.plainShown, 'and still its plain words with the window scrolled down: ' + JSON.stringify([v.sec, v.plainShown, await p.evaluate(() => Math.round(window.scrollY))]));
+    ok(v.scrollY > 100, 'the window is scrolled down: ' + v.scrollY);
+    ok(!v.sec && v.plainShown, 'and still its plain words with the window scrolled down: ' + JSON.stringify([v.sec, v.plainShown]));
     await p.evaluate(() => window.scrollTo(0, 0));
     await tab(p, ''); for (const id of ['i3', 'i1', 'i2']) { await tick(p, id); } await run(p, 9500); await tick(p, 'i6', 500); await run(p, 9500); v = await view(p);
     ok(v.card && !v.scene && v.font === 16 && v.art && v.art[0] === 64, 'and the finished list keeps the small card: ' + JSON.stringify([v.scene, v.font, v.art]));
     await p.evaluate(() => window.scrollTo(0, 240)); await p.evaluate(() => window.LK_PREP.toast('Redraw')); await L.settle(p, 300); v = await view(p);
-    ok(v.card && !v.scene && v.font === 16 && v.art && v.art[0] === 64, 'the same with the window scrolled down: ' + JSON.stringify([v.scene, v.font, v.art, await p.evaluate(() => Math.round(window.scrollY))]));
+    ok(v.scrollY > 100 && v.card && !v.scene && v.font === 16 && v.art && v.art[0] === 64, 'the same with the window scrolled down: ' + JSON.stringify([v.scrollY, v.scene, v.font, v.art]));
   });
 
   await step('Extra large text', async () => {
@@ -311,13 +347,13 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
     await open({ extra: { [item('i4')]: line('Make gravy', 'Sam', ticked('Bo')), [item('i5')]: line('Laksa', 'Sam') } });
     await tab(p, 'Sam'); await tick(p, 'i5', 400); await run(p, 9500); let v = await view(p);
     ok(!v.sec && v.plainShown, 'a section named after a person: the plain words: ' + JSON.stringify([v.sec, v.plainShown]));
-    await p.context().close(); p = null;
+    await shut('part way');
     // another day: a sous chef looks back at yesterday, where Sauce is ticked off
     const yesterday = L.ymd(new Date(L.NOW - 86400000)), old = id => key(['days', yesterday, 'items', id]);
     await open({ who: 'sam', extra: { [old('y1')]: line('Make gravy', 'Sauce', ticked('Bo', L.NOW - 90000000)), [old('y2')]: line('Laksa', 'Sauce', ticked('Bo', L.NOW - 90000000)), [old('y3')]: line('Portion rump', 'Grill') } });
     await p.click('[data-p="day"][data-d="-1"]'); await L.waitFor(p, () => !!document.querySelector('.nb-tab[data-v="Sauce"]'), null, 6000); await tab(p, 'Sauce'); await L.settle(p, 400); v = await view(p);
     ok(!v.sec && v.plainShown && /^Nothing left to do in Sauce\./.test(v.plain), 'yesterday\'s finished section keeps its plain words: ' + JSON.stringify([v.sec, v.plainShown, v.plain.slice(0, 28)]));
-    await p.context().close(); p = null;
+    await shut('part way');
     // a removal waiting to be sent: the removed line is out of the tab at once, but the server still holds it open
     await open({ who: 'sam', extra: { [item('i4')]: line('Make gravy', 'Sauce', ticked('Bo')), [item('i5')]: line('Laksa', 'Sauce', ticked('Bo')), [item('i8')]: line('Reduce stock', 'Sauce') } });
     await tab(p, 'Sauce'); await p.evaluate(() => { window.__fake.mode = 'hold'; });
@@ -327,6 +363,28 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
     await p.evaluate(() => { window.__fake.ack(); }); await scene(); await L.settle(p, 300); v = await view(p);
     ok(v.sec && v.lines[0] === 'Sauce is done.', 'the server has the removal: the finished words, with no other tap: ' + JSON.stringify(v.lines));
     await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
+  });
+
+  await step('the wall board, and the list\'s card when the book must be as it was', async () => {
+    // the wall board has no section's page: a finished section says nothing new there
+    let v = await finished({ width: 1920, height: 1080 });
+    ok(v.sec, 'Sauce is finished on its own tab');
+    await p.click('[data-p="wall"]'); await L.settle(p, 600);
+    ok(!(await p.evaluate(() => !!document.querySelector('.nb-fin-sec, .nb-scene'))) && (await p.evaluate(() => !!document.querySelector('.wb'))), 'on the wall board nothing of it shows');
+    await shut('the wall board');
+    // the finished list's card: small while its last ticked line lingers, large when the list has emptied
+    await open(); for (const id of ['i3', 'i1', 'i2', 'i4', 'i5']) { await tick(p, id); } await run(p, 9500); await tick(p, 'i6', 600); v = await view(p);
+    ok(v.card && !v.scene && v.font === 16 && v.rows === 1, 'the last ticked line still lingers: the small card: ' + JSON.stringify([v.scene, v.font, v.rows]));
+    await run(p, 4000); v = await view(p);
+    ok(v.card && v.scene && v.font === 40 && v.rows === 0, 'the list has emptied: the large words, chosen once: ' + JSON.stringify([v.scene, v.font, v.rows]));
+    await run(p, 9500); await rested(p);
+    const small = async why => { const x = await view(p); ok(x.card && !x.scene && x.font === 16 && x.art && x.art[0] === 64, why + ': the small card, as before: ' + JSON.stringify([x.scene, x.font, x.art])); };
+    const large = async why => { await L.waitFor(p, () => !!document.querySelector('.nb-left .nb-fin.nb-scene'), null, 4000).catch(() => {}); const x = await view(p); ok(x.card && x.scene && x.font === 40, why + ': the large words again: ' + JSON.stringify([x.scene, x.font])); };
+    await p.context().setOffline(true); await L.settle(p, 600); await small('no signal');
+    await p.context().setOffline(false); await L.settle(p, 400); await large('the signal is back');
+    await p.evaluate(() => { window.__fake.cold = /\/items$/; window.__fake.ack(); }); await L.settle(p, 500); await small('the list answers from memory');
+    await p.evaluate(() => { window.__fake.warm(); }); await L.settle(p, 400); await large('the server answers again');
+    await p.addStyleTag({ content: '.nb-fin.nb-scene { display: flex !important; }' }); await p.evaluate(() => window.LK_PREP.toast('Redraw')); await L.settle(p, 400); await small('a stylesheet that does not know the scene');
   });
 
   await step('the list out of touch with the server', async () => {
@@ -343,22 +401,32 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
 
   await step('the play is the finished list\'s', async () => {
     // He is asked to play under the finished list, his action sheet is slow, and the cook opens a finished section's
-    // tab before it comes: the play must not start, or carry on, on the tab.
+    // tab before it comes: the play must not start on the tab.
     await open({ width: 1280, height: 900 });
     let hold = null; const held = new Promise(r => { hold = r; });
     await p.context().route(/burger-sheet/, async r => { await held; await r.continue(); });
     for (const id of ['i3', 'i1', 'i2', 'i4', 'i5']) { await tick(p, id); } await run(p, 9500); await tick(p, 'i6', 500); await run(p, 4200);
-    await L.waitFor(p, () => !!document.querySelector('.nb-left .nb-fin:not(.nb-fin-sec) .mascot-still'), null, 6000).catch(() => {});
-    await L.waitFor(p, () => !!window.__askedBurger || performance.getEntriesByType('resource').some(e => /burger-sheet/.test(e.name)), null, 3000).catch(() => {});
-    const asked = p.__art.filter(u => /burger-sheet/.test(u)).length;
+    const burger = () => p.__art.filter(u => /burger-sheet/.test(u)).length;
+    for (let i = 0; i < 40 && !burger(); i++) await L.settle(p, 100);
+    ok(burger() > 0, 'his play is asked for under the finished list (' + burger() + ' request for the action sheet)');
     await tab(p, 'Larder'); await L.settle(p, 300); let v = await view(p);
     ok(v.sec && JSON.stringify(v.lines) === JSON.stringify(['Larder is done.']), 'the cook opens a finished section\'s tab: ' + JSON.stringify(v.lines));
     hold(); await L.settle(p, 1200); await run(p, 600);
     const state = await p.evaluate(() => { const e = document.querySelector('.nb-left .nb-fin-sec .mascot-still'); return e ? e.getAttribute('data-state') : 'none'; });
-    ok(asked > 0, 'his play had been asked for under the finished list (' + asked + ' request for the action sheet)');
-    ok(state !== 'playing', 'and it does not start or carry on on the section\'s tab: ' + state);
-    await rested(p); v = await view(p);
-    ok(v.sprite && v.still && !v.still.playing, 'a still stands there: ' + JSON.stringify(v.still));
+    ok(state !== 'playing', 'and it does not start on the section\'s tab when the sheet comes: ' + state);
+    await rested(p); await run(p, 4000); v = await view(p);
+    ok(v.sprite && v.still && !v.still.playing && v.still.plays === 0, 'a fresh still stands there, one that has never played: ' + JSON.stringify(v.still));
+    await shut('the slow sheet');
+    // the other way round: he is part way through the play when the cook opens the tab. It must not carry on there.
+    await open({ width: 1280, height: 900 });
+    for (const id of ['i3', 'i1', 'i2', 'i4', 'i5']) { await tick(p, id); } await run(p, 9500); await tick(p, 'i6', 500); await run(p, 4200);
+    await L.waitFor(p, () => { const e = document.querySelector('.nb-left .nb-fin .mascot-still'); return !!e && e.getAttribute('data-state') === 'playing'; }, null, 6000).catch(() => {});
+    const was = await p.evaluate(() => { const e = document.querySelector('.nb-left .nb-fin .mascot-still'); return e ? e.getAttribute('data-state') : 'none'; });
+    await tab(p, 'Larder'); await L.settle(p, 300); await rested(p);
+    const then = await p.evaluate(() => { const e = document.querySelector('.nb-left .nb-fin-sec .mascot-still'); return e ? e.getAttribute('data-state') : 'none'; });
+    v = await view(p);
+    ok(was === 'playing', 'he is playing under the finished list: ' + was);
+    ok(v.sec && then === 'rest' && v.still && v.still.plays === 0, 'the tab opened part way through gets a fresh still, and the play does not carry on: ' + JSON.stringify([then, v.still]));
   });
 
   await step('the tail waits for him, and the signal coming back asks for him again', async () => {
@@ -369,7 +437,15 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
     ok(v.sec && v.art && v.art[0] === 96 && v.tail === 'none', 'his art is on its way: his room is kept and the tail waits: ' + JSON.stringify([v.art, v.tail]));
     hold(); await rested(p); await L.settle(p, 300); v = await view(p);
     ok(v.sprite && v.tail !== 'none', 'he is there: so is the tail: ' + JSON.stringify([v.sprite, v.tail]));
-    await p.context().close(); p = null;
+    await shut('his art held');
+    await ready();
+    let hold2 = null; const held2 = new Promise(r => { hold2 = r; });
+    await p.context().route(/js\/mascot\.js/, async r => { await held2; await r.continue(); });
+    await tick(p, 'i5', 500); await run(p, 9500); v = await view(p);
+    ok(v.sec && v.font === 40 && v.art && v.art[0] === 96 && v.tail === 'none', 'his file is on its way: the words stand, his room is kept and the tail waits: ' + JSON.stringify([v.font, v.art, v.tail]));
+    hold2(); await rested(p); await L.settle(p, 300); v = await view(p);
+    ok(v.sprite && v.tail !== 'none', 'his file came: he is there with the tail: ' + JSON.stringify([v.sprite, v.tail]));
+    await shut('part way');
     // His file fails once, and a finished page can stand for hours: the signal coming back gives it one new try.
     // Under the finished list his room stays in the page while the signal is away, so nothing else would ask again.
     await open(); await p.context().route(/js\/mascot\.js/, r => r.abort());
