@@ -186,7 +186,7 @@ Taps to tick a line: 1 before, 1 after. List rows: every row where it is today.
 
 1. **The design.** Recommended: the blend above. Or B as drawn (full size on a section's tab too), A (words only), or nothing.
 2. **The rule it changes, by name.** From 900 px wide a finished section's own tab no longer keeps its plain words, and the finished-list card grows. Phones and tablets under 900 px stay exactly as they are.
-3. **What is left: ink or green.** As drawn, "Grill has 2 left." is in the page's ink and "Pans are done." in the done green. The other way keeps both lines green, as on the slip ([picture](evidence/8-blend-1920.png)).
+3. **What is left: ink or green.** As drawn, "Grill has 2 left." is in the page's ink and "Pans are done." in the done green. The other way keeps both lines green, as on the slip ([picture](evidence/8-blend-1920.png)). **Chosen 11 November 2026: green** (below).
 4. **Four facts about the five screens**, asked by every reviewer: which page each keeps open through the shift (its section's own tab, the All list or the wall board); shared kitchen screens or one person's sign-in; touch or mouse; resolution, zoom and text size. A photo of one screen with Prep open answers most of it. If they sit on the All list, this shows only when the whole list is finished, and the slip's sentence in larger type is the next small proposal.
 5. **Home.** All six said leave it. Drawn apart if the owner wants it anyway: under the cards at 192 x 256 px (1920 x 1080) or 96 x 128 px (1280 x 900), no card moves, and it changes the choice of 9 November.
 6. **Still open from 10 November:** the Top tickers strip (keep, switch off, or a no-names kitchen line), and the one measure to look at after four weeks.
@@ -205,7 +205,9 @@ Taps to tick a line: 1 before, 1 after. List rows: every row where it is today.
 
 ## Chosen
 
-**11 November 2026: the owner said "yea lets go".** Built as recommended, in the same pull request as this record (#677): from 900 px wide a finished section says the slip's own sentence large on its own tab with the mascot under his words, half size and a still; the finished list's card says it the same way and only there is he his drawn size, with the one Serve play he had. What is left is in the page's ink, as drawn: the owner did not ask for the other way.
+**11 November 2026: the owner said "yea lets go".** Built as recommended, in the same pull request as this record (#677): from 900 px wide a finished section says the slip's own sentence large on its own tab with the mascot under his words, half size and a still; the finished list's card says it the same way and only there is he his drawn size, with the one Serve play he had. What is left shipped in the page's ink, as drawn.
+
+**11 November 2026, after the build: the owner said "Green".** Decision 3 is settled the other way: both lines of a finished section's words on a wide screen are in the done green, like the slip. One colour in `css/app.css` and its check in `tests/mascot-wide-finish.test.js`; nothing else changes.
 
 Against "Before release" above:
 
