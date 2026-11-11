@@ -4572,7 +4572,7 @@
     var byDow = {}, occ = {};
     agg.dates.forEach(function (d) { var dw = parseYmd(d).getDay(); occ[dw] = (occ[dw] || 0) + 1; byDow[dw] = (byDow[dw] || 0) + agg.perDay[d].w + agg.perDay[d].r; });
     var hd = Object.keys(byDow).sort(function (x, y) { return byDow[y] / occ[y] - byDow[x] / occ[x]; })[0];
-    if (hd != null && a.dow === '' && byDow[hd]) out.push(DOWN[DOW.indexOf(+hd)] + ' is the heaviest day: about ' + Math.round(byDow[hd] / occ[hd]) + ' lines on the list.');
+    if (hd != null && a.dow === '' && byDow[hd]) out.push(DOWN[DOW.indexOf(+hd)] + ' is the heaviest day: about ' + Math.round(byDow[hd] / occ[hd]) + (Math.round(byDow[hd] / occ[hd]) === 1 ? ' line' : ' lines') + ' on the list.');
     var bh = -1, bm = 0, h; for (h = 0; h < 24; h++) if (agg.tHour[h] > bm) { bm = agg.tHour[h]; bh = h; }
     if (bh >= 0) out.push('Most lines get ticked between ' + (bh < 10 ? '0' : '') + bh + ':00 and ' + (bh + 1 < 10 ? '0' : '') + (bh + 1) + ':00.');
     if (!a.sec) {
@@ -5793,7 +5793,7 @@
     var tc = tsCan() ? tsCount(n) : null;
     return '<section class="set-block">' + chips + (tc ? glanceHTML(tc) + whoWorkedHTML(tc) + '<details class="sk-ticks"><summary class="a-ch-h">Lines ticked in each section</summary>' + ticks + '</details>' :
       '<h3 class="a-ch-h">Lines ticked in each section</h3>' + ticks) +
-      '<h3 class="a-ch-h">Who writes, and who does not</h3><span class="hint">Days written is out of the ' + td.nActive + ' days in this time that had any lines written. Fewest first. Ticks are shown so you can tell someone who works but does not write.</span>' +
+      '<h3 class="a-ch-h">Who writes, and who does not</h3><span class="hint">Days written is out of the ' + td.nActive + (td.nActive === 1 ? ' day' : ' days') + ' in this time that had any lines written. Fewest first. Ticks are shown so you can tell someone who works but does not write.</span>' +
       (act || '<p class="hint">No people on the list.</p>') + '</section>' + orderStatsHTML(td, n);
   }
   /* Items that keep coming back onto the order list in the last 14 days: candidates for a standing order. */
