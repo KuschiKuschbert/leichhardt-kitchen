@@ -5425,7 +5425,7 @@ html:has(.tm-focus-page) {
    it has measured the room: the words first (.nb-w40 or .nb-w28), then the largest mascot that fits (.nb-f192 for the
    whole list only, .nb-f96, .nb-f64, .nb-f48) or none (.nb-f0). Without the classes the card is the small card above and a
    section's tab keeps its plain words, so an older saved script or a screen under 900 px shows the book as it was.
-   On a section's tab what is done is in the green that means done and what is left is in the page's ink. Not a
+   On a section's tab both lines are in the green that means done, like the slip (owner, 11 Nov 2026). Not a
    control: no pointer, no pressed look. */
 @media (min-width: 900px) {
   .nb-fin.nb-scene { --him: 96px; --tail: 11px; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "say" "art" "note"; row-gap: 16px; align-items: start; justify-items: start; margin: 1.2rem 0 0.6rem; }
@@ -5437,7 +5437,7 @@ html:has(.tm-focus-page) {
   .nb-scene .nb-fin-say { grid-area: say; font-size: 1.75rem; line-height: 1.2; padding: 12px 18px; border-radius: 18px; }
   .nb-scene.nb-w40 .nb-fin-say { font-size: 2.5rem; padding: 16px 24px; border-radius: 22px; }
   .nb-scene .nb-fin-say > span { display: block; }
-  .nb-fin-sec .nb-fin-say > span + span { color: var(--ink); }
+  .nb-fin-sec .nb-fin-say > span + span { color: var(--done-ink); }
   /* the tail points down at him, over the middle of him, and grows with the words so it is seen from the bench */
   .nb-scene .nb-fin-say::before { left: calc(14px + var(--him) / 2 - var(--tail)); bottom: calc(1px - 2 * var(--tail)); border: var(--tail) solid transparent; border-top-color: var(--done-tint); }
   .nb-scene .nb-fin-art { grid-area: art; margin-left: 14px; width: var(--him); height: calc(var(--him) * 4 / 3); }
