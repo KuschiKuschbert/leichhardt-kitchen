@@ -38,15 +38,20 @@
   var FOR_LINE = { main: 'Plate', snack: 'Snack', side: 'Side', dessert: 'Dessert', batch: 'Batch', component: 'Component' };
   function slug(t) { return String(t || '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48); }
   function idOk(id) { return /^[a-z0-9][a-z0-9-]{0,47}$/.test(id); }
+  /* The book's one two-tap helper (js/prep.js arm(), armed() and unarm(), through LK_PREP.book(), 11 Nov 2026), drawing
+     this page again. Keys start mg: so they never meet a prep page's. A book without unarm() is older than this file:
+     the page keeps its own copy then, so MG_API stays as it is. */
+  function shared() { var b = B(); return b.arm && b.armed && b.unarm ? b : null; }
   function arm(k) {
+    var b = shared(); if (b) return b.arm('mg:' + k, draw);
     if (M.armed === k) { M.armed = ''; clearTimeout(M.armTimer); return true; }
     M.armed = k; clearTimeout(M.armTimer); M.armTimer = setTimeout(function () { M.armed = ''; draw(); }, 4000);
     draw(); return false;
   }
-  function armed(k) { return M.armed === k; }
+  function armed(k) { var b = shared(); return b ? !!b.armed('mg:' + k) : M.armed === k; }
   // a row moved or gone, or another copy in the form: an armed Remove would stay on whatever row now sits in that place
   // (29 Oct 2026), so it goes
-  function unarm() { M.armed = ''; clearTimeout(M.armTimer); }
+  function unarm() { var b = shared(); if (b) b.unarm(); M.armed = ''; clearTimeout(M.armTimer); }
   var toastEl = null, toastTimer = null;
   // bad: a failure (6 Nov 2026, docs/action-feedback.md): red, with OK, and it stays until OK, the next slip or the page
   // is left. Before, a failure looked like news and went after 4 s.

@@ -34,12 +34,18 @@
   function workLock() { var api = B(); return api.workLock ? api.workLock() : null; }
   function owned(owner) { var lock = workLock(); return E.identity === owner && (identity() === owner || lock && lock.identity === owner); }
   function active() { return !!(E.root && document.body.contains(E.root) && !workLock() && E.identity === identity() && P.fnOK()); }
+  /* The book's one two-tap helper (js/prep.js arm(), armed() and unarm(), through LK_PREP.book(), 11 Nov 2026), drawing
+     this page again. Keys start fe: so they never meet a prep page's. A book without unarm() is older than this file:
+     the page keeps its own copy then, so FE_API stays as it is. */
+  function shared() { var b = B(); return b.arm && b.armed && b.unarm ? b : null; }
   function arm(k) {
+    var b = shared(); if (b) return b.arm('fe:' + k, draw);
     if (E.armed === k) { E.armed = ''; clearTimeout(E.armTimer); return true; }
     E.armed = k; clearTimeout(E.armTimer); E.armTimer = setTimeout(function () { E.armed = ''; draw(); }, 4000);
     draw(); return false;
   }
-  function armed(k) { return E.armed === k; }
+  function armed(k) { var b = shared(); return b ? !!b.armed('fe:' + k) : E.armed === k; }
+  function unarm() { var b = shared(); if (b) b.unarm(); E.armed = ''; clearTimeout(E.armTimer); }
   var toastEl = null, toastTimer = null;
   /* bad: a failure (5 Nov 2026, docs/action-feedback.md): red, with OK, and it stays until OK or the next slip, never on a
      timer (before, "Not changed" looked like news and went after 4 s) */
@@ -220,7 +226,7 @@
     if (!view || !P.fnOK() || E.removing[view.id] || FN.statusBusy(view.id)) return;
     if (removed ? view.removed || view.status === 'confirmed' : !view.removed) return;
     var api = B(), id = view.id, me = api.who(), owner = E.identity, context = api.writeContext ? api.writeContext() : null;
-    E.removing[id] = view; E.armed = ''; clearTimeout(E.armTimer); draw();
+    E.removing[id] = view; unarm(); draw();
     api.ready().then(function () { return api.fromServer(api.docRef('functions', id)); }).then(function (sn) {
       if (!owned(owner)) throw { code: 'context' };
       if (!sn.exists()) throw new Error('This function is no longer available. Read the list again.');
@@ -718,7 +724,7 @@
     if (window.LK_APP && window.LK_APP.noteRoute) window.LK_APP.noteRoute(true);
     E.sub = [e.id]; e.canonical = false;
   }
-  function drop() { clearTimeout(E.armTimer); E.armed = ''; E.pending = {}; E.ed = null; E.list = null; E.listAsk = 0; E.removing = {}; E.sub = []; E.identity = ''; E.suspended = false; E.root = null; }
+  function drop() { unarm(); E.pending = {}; E.ed = null; E.list = null; E.listAsk = 0; E.removing = {}; E.sub = []; E.identity = ''; E.suspended = false; E.root = null; }
   function unmount() {
     var hadRoot = !!E.root, lock = workLock();
     flushPending(); E.root = null;
