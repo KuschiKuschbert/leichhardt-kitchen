@@ -21,7 +21,7 @@ const tab = async (p, name) => { await p.click('.nb-tab[data-v="' + name + '"]')
 // another screen's write: the fields change under this page (the rest of the line stays) and its listeners hear
 const other = (p, id, data) => p.evaluate(([path, d]) => window.__fake.write(path, Object.assign({}, window.__fake.dump()[path] || {}, d)), [item(id), data]);
 const put = (p, id, data) => p.evaluate(([path, d]) => window.__fake.write(path, d), [item(id), data]);
-const GREEN = 'rgb(35, 115, 71)', INK = 'rgb(28, 29, 31)';
+const GREEN = 'rgb(35, 115, 71)';
 const lum = c => { const m = c.match(/[\d.]+/g).slice(0, 3).map(Number).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]; };
 const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
 // The art and the file are fetched in real time while the tests' clock only moves timers, so a check on the
@@ -116,7 +116,7 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
     ok(v.sprite && v.hidden === 'true', 'the mascot is there, and hidden from a screen reader');
     ok(v.plain && !v.plainShown, 'the plain sentence gives way: ' + JSON.stringify([v.plain.slice(0, 30), v.plainShown]));
     ok(v.note === 'See Done today under Handy.' && v.noteFont === v.plainFont, 'the page\'s pointer stays, at the book\'s own size: ' + JSON.stringify([v.note, v.noteFont, v.plainFont]));
-    ok(v.inks[0] === GREEN && v.inks[1] === INK, 'what is done is in the done green, what is left in the page\'s ink: ' + JSON.stringify(v.inks));
+    ok(v.inks.length === 2 && v.inks[0] === GREEN && v.inks[1] === GREEN, 'both lines are in the done green, like the slip (owner, 11 Nov 2026): ' + JSON.stringify(v.inks));
     ok(contrast(v.inks[0], v.tint) >= 4.5 && contrast(v.inks[1], v.tint) >= 4.5, 'both read on the tint: ' + contrast(v.inks[0], v.tint).toFixed(1) + ' and ' + contrast(v.inks[1], v.tint).toFixed(1) + ' to 1');
     ok(!v.control && v.cursor !== 'pointer', 'not a control: no button, link or pointer in it');
     ok(v.bodyScroll <= 0 && v.wide <= 0, 'no scroll is added, down or sideways: ' + JSON.stringify([v.bodyScroll, v.wide]));
