@@ -594,6 +594,12 @@
       if (bar.children.length) badge('Reset All Filters', reset);
       count.textContent = shown.length + ' of ' + rows.length + ' rows'; empty.hidden = shown.length !== 0;
     }
+    // The filter's first choice in plain words: "Everyone", "All sections", never "All person" or "All section".
+    function allOf(label) {
+      var w = label.toLowerCase(), many = { person: 'Everyone', who: 'Everyone', status: 'Every status', category: 'All categories' };
+      if (many[w]) return many[w];
+      return 'All ' + (/^(role|reason|section|feature|venue)$/.test(w) ? w + 's' : w);
+    }
     // Calendar and hour-grid columns are coordinates, not sortable record attributes.
     var matrix = table.matches('.cal,.hr') || heads.every(function (h) { return /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)$/i.test(h.textContent.trim()); });
     heads.forEach(function (h, i) {
@@ -603,7 +609,7 @@
         b.addEventListener('click', function () { state.direction = state.col === i ? state.direction === 1 ? -1 : state.direction === -1 ? 0 : 1 : 1; state.col = i; refresh(); }); h.setAttribute('aria-sort', 'none');
         var values = Array.from(new Set(rows.map(function (r) { return String(cell(r, i)); }))).filter(Boolean);
         if (values.length > 1 && /status|role|category|reason|section|feature|venue|person|who/i.test(label)) {
-          var select = node('select'); select.setAttribute('aria-label', 'Filter ' + label); select.appendChild(new Option('All ' + label.toLowerCase(), ''));
+          var select = node('select'); select.setAttribute('aria-label', 'Filter ' + label); select.appendChild(new Option(allOf(label), ''));
           values.sort().forEach(function (v) { select.appendChild(new Option(v, v)); }); tools.appendChild(select); filters.push({ index: i, select: select, label: label });
           select.addEventListener('change', function () { state.filters[i] = select.value; refresh(); });
         }
