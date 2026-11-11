@@ -1,0 +1,79 @@
+/* Review-only styles for the wide-screen mascot designs (second drawing, after round 1).
+   Nothing here applies under 900 px wide. The script picks the size by measuring: full (.dk-full, from 1280 px wide),
+   half (.dk-half) or none, whichever is the largest that fits the empty list page with no scroll. */
+.dk-stage, .dk-perch { display: none; }
+:is(.dk-w40, .dk-w28).dk-p .dk-stage { display: grid; }
+.dk-bubble { position: relative; display: inline-block; margin: 0; padding: 12px 18px; border-radius: 18px; background: var(--done-tint); color: var(--done-ink); font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.dk-bubble span { display: block; }
+.dk-art { flex: none; display: block; }
+
+@media (min-width: 900px) {
+  /* A, B and the mix: a finished section on its own tab, and the finished list, say it large.
+     The words sit above, he stands under them, the page's own pointer beside him. */
+  :is(.dk-half, .dk-full) .dk-stage, :is(.dk-half, .dk-full):is(.dk-a, .dk-b, .dk-m) .nb-fin { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "say say" "art note"; column-gap: 18px; row-gap: 16px; align-items: center; justify-items: start; margin: 1.2rem 0 0.6rem; }
+  :is(.dk-half, .dk-full):is(.dk-a, .dk-b, .dk-m) .nb-fin-w { display: contents; }
+  .dk-stage .dk-bubble, :is(.dk-half, .dk-full):is(.dk-a, .dk-b, .dk-m) .nb-fin-say { grid-area: say; font-size: 1.75rem; line-height: 1.2; padding: 12px 18px; border-radius: 18px; }
+  .dk-stage .nb-empty, :is(.dk-half, .dk-full):is(.dk-a, .dk-b, .dk-m) .nb-fin-w .nb-empty { grid-area: note; margin: 0; }
+  .dk-stage .dk-art, :is(.dk-half, .dk-full):is(.dk-a, .dk-b, .dk-m) .nb-fin-art { grid-area: art; margin-left: 14px; }
+  /* the tail points down at him */
+  .dk-stage:not(.dk-words) .dk-bubble::before, :is(.dk-half, .dk-full):is(.dk-a, .dk-b, .dk-m) .nb-fin-say::before { content: ""; position: absolute; left: 36px; bottom: -17px; border: 9px solid transparent; border-top-color: var(--done-tint); }
+  :is(.dk-half, .dk-full):is(.dk-b, .dk-m) .nb-fin-say::before, .dk-stage:not(.dk-words) .dk-bubble::before { left: 52px; }
+  /* A is words first: no new art. The card keeps the small still it has; a section's tab has words only */
+  .dk-stage.dk-words { grid-template-areas: "say" "note"; grid-template-columns: minmax(0, 1fr); row-gap: 10px; }
+  .dk-stage .dk-art, :is(.dk-half, .dk-full):is(.dk-b, .dk-m) .nb-fin-art { width: 96px; height: 128px; }
+}
+@media (min-width: 1280px) {
+  .dk-full .dk-stage .dk-bubble, .dk-full:is(.dk-a, .dk-b, .dk-m) .nb-fin-say { font-size: 2.5rem; padding: 16px 24px; border-radius: 22px; }
+  .dk-full .dk-stage .dk-art, .dk-full:is(.dk-b, .dk-m) .nb-fin-art { width: 192px; height: 256px; }
+  .dk-full:is(.dk-b, .dk-m) .nb-fin-say::before, .dk-full .dk-stage:not(.dk-words) .dk-bubble::before { left: 100px; }
+  .dk-full .dk-stage .nb-empty, .dk-full:is(.dk-a, .dk-b, .dk-m) .nb-fin-w .nb-empty { font-size: 1.15rem; }
+}
+
+/* P, the blend round 2 asked for: B's scene in the page with A's order of sizes. The words are sized first and are
+   the same size in both finished states on a screen (.dk-w40 from 1280 px wide where they fit, else .dk-w28). Then the
+   largest mascot that still fits, then none: on a finished section's own tab he is never taller than his words
+   (.dk-f96 or .dk-f0); his drawn size is kept for the whole finished list (.dk-f192, then .dk-f96, .dk-f64, .dk-f0).
+   The script sets the classes from the room in view above the slip. The page's pointer keeps the book's own size,
+   under the scene. */
+@media (min-width: 900px) {
+  :is(.dk-w40, .dk-w28).dk-p .dk-stage, :is(.dk-w40, .dk-w28).dk-p .nb-fin { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "say" "art" "note"; row-gap: 16px; align-items: start; justify-items: start; margin: 1.2rem 0 0.6rem; }
+  :is(.dk-w40, .dk-w28).dk-p .nb-fin-w { display: contents; }
+  .dk-p .dk-stage .dk-bubble, :is(.dk-w40, .dk-w28).dk-p .nb-fin-say { grid-area: say; font-size: 1.75rem; line-height: 1.2; padding: 12px 18px; border-radius: 18px; }
+  .dk-w40.dk-p .dk-stage .dk-bubble, .dk-w40.dk-p .nb-fin-say { font-size: 2.5rem; padding: 16px 24px; border-radius: 22px; }
+  .dk-p .dk-stage .nb-empty, :is(.dk-w40, .dk-w28).dk-p .nb-fin-w .nb-empty { grid-area: note; margin: 0; }
+  /* what is left is not done: the second line is in the page's ink (the slip keeps its one colour) */
+  .dk-p .dk-stage .dk-bubble span + span { color: var(--ink); }
+  .dk-allgreen.dk-p .dk-stage .dk-bubble span + span { color: inherit; }   /* the other way, for one picture: both lines green, as on the slip */
+  .dk-p .dk-stage .dk-art, :is(.dk-w40, .dk-w28).dk-p .nb-fin-art { grid-area: art; margin-left: 14px; width: 96px; height: 128px; }
+  .dk-f192.dk-p .nb-fin-art { width: 192px; height: 256px; }
+  .dk-f64.dk-p .nb-fin-art { width: 64px; height: calc(64px * 4 / 3); }
+  /* the tail points down at him */
+  .dk-p .dk-stage:not(.dk-words) .dk-bubble::before, :is(.dk-w40, .dk-w28).dk-p .nb-fin-say::before { content: ""; position: absolute; left: 52px; bottom: -17px; border: 9px solid transparent; border-top-color: var(--done-tint); }
+  .dk-f192.dk-p .nb-fin-say::before { left: 100px; }
+  .dk-f64.dk-p .nb-fin-say::before { left: 36px; }
+  /* no room for him, or no art: the words stand alone, with no tail and no empty room */
+  .dk-f0.dk-p .dk-stage .dk-art, .dk-f0.dk-p .nb-fin-art { display: none; }
+  .dk-f0.dk-p .dk-stage .dk-bubble::before, .dk-f0.dk-p .nb-fin-say::before { display: none; }
+  .dk-p .dk-stage.dk-words, .dk-f0.dk-p .dk-stage, .dk-f0.dk-p .nb-fin { grid-template-areas: "say" "note"; row-gap: 10px; }
+  .dk-p .dk-stage.dk-words .dk-art { display: none; }
+}
+
+/* C and the mix: he comes to the finish beside the page, in the gutter, from 1600 px wide (the page stops at 1240).
+   He is there only while there is a finish to say. */
+@media (min-width: 1600px) {
+  :is(.dk-c, .dk-m) .dk-perch { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 16px; position: fixed; z-index: 5; bottom: 28px; left: calc(50vw + 620px + 20px); width: calc(50vw - 620px - 40px); pointer-events: none; }
+  :is(.dk-c, .dk-m) .dk-perch .dk-art { width: 96px; height: 128px; }
+  :is(.dk-c, .dk-m) .dk-perch .dk-bubble { font-size: 1.5rem; text-align: left; max-width: 100%; box-sizing: border-box; }
+  :is(.dk-c, .dk-m) .dk-perch .dk-bubble::before { content: ""; position: absolute; left: calc(50% - 9px); bottom: -17px; border: 9px solid transparent; border-top-color: var(--done-tint); }
+  :is(.dk-c, .dk-m) .dk-perch[hidden] { display: none; }
+  /* one mascot at a time: beside the page he takes over from the card's small still */
+  .dk-c .nb-fin-art { display: none; }
+  .dk-c .nb-fin-say::before { display: none; }
+}
+@media (min-width: 1800px) and (min-height: 900px) {
+  :is(.dk-c, .dk-m) .dk-perch .dk-art { width: 192px; height: 256px; }
+  :is(.dk-c, .dk-m) .dk-perch .dk-bubble { font-size: 2rem; padding: 14px 20px; }
+}
+
+/* Home, drawn apart from the three designs (H): he stands in the empty room under the cards when it holds him */
+.dk-h.dk-home .mascot { left: var(--dk-hl) !important; top: var(--dk-ht) !important; width: var(--dk-hw) !important; height: calc(var(--dk-hw) * 4 / 3) !important; }
