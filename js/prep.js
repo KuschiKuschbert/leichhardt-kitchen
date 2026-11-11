@@ -5235,10 +5235,11 @@
      largest mascot that still fits, measured, then none. On a section's tab he is 96 x 128 px at most and never
      taller than his words (64 x 85 or 48 x 64 px under smaller or fewer words); his drawn size, 192 x 256 px, is kept
      for the whole finished list. Nothing here moves a line or a button: the page is empty at both states, and the
-     scene never adds a scroll to it. The finished list's card stays small while its last ticked line lingers.
+     scene never adds a scroll to it. The book is as it was while a line still shows on the list page (a ticked line
+     lingering above the card, or removed lines a chef has asked to see).
      Under 900 px, with no signal (the browser's word, or the list's own: its last answer came from memory), or with
      an older saved stylesheet, the book is exactly as it was: the tab's plain words and the small card. The words are the page's own and never wait for the mascot's file or art. */
-  var FIN_CLS = ['nb-scene', 'nb-w40', 'nb-w28', 'nb-f192', 'nb-f96', 'nb-f64', 'nb-f48', 'nb-f0'];
+  var FIN_CLS = ['nb-scene', 'nb-w40', 'nb-w28', 'nb-f192', 'nb-f96', 'nb-f64', 'nb-f48', 'nb-f0'], finWait = 0;
   function finFit() {
     try {
       var body = S.root && document.body.contains(S.root) && S.root.querySelector('.nb-left .nb-body');
@@ -5249,10 +5250,17 @@
       if (plain) plain.style.display = '';
       if (card) FIN_CLS.forEach(function (c) { card.classList.remove(c); });
       if ((!card && !plain) || window.innerWidth < 900 || offline || itemsCold) return;
-      // While a ticked line still lingers above the finished list's card it stays the small card. The large words
-      // come when the list has emptied, on the draw he speaks and plays on, so their size is chosen once and does
-      // not change a few seconds after the finish. (A section's tab says nothing new while a line lingers.)
-      if (card && S.root.querySelector('.nb-left .nb-rows .nb-row')) return;
+      // While a line still shows on the list page the book is as it was: a ticked line lingering above the finished
+      // list's card, or removed lines a chef has asked to see. The large words come when the page has emptied, on
+      // the draw he speaks and plays on, so their size is chosen once and does not change a few seconds after the
+      // finish, and they never stand under a row. (A section's tab says nothing new while a line lingers.)
+      if (S.root.querySelector('.nb-left .nb-rows .nb-row')) {
+        // A line this person ticked on another screen lingers here too, and only the screen that made the tick set
+        // the draw that ends it: one draw when the linger is over, so the card does not wait small for some later
+        // draw. Time passing only, and only while a line really lingers.
+        if (card && !finWait && S.items.some(function (x) { return !x.fn && lingers(x); })) finWait = setTimeout(function () { finWait = 0; draw(); }, LINGER + 100);
+        return;
+      }
       var base = body.scrollHeight - body.clientHeight, el = card;
       if (!el) {
         el = document.createElement('div'); el.className = 'nb-fin nb-fin-sec';

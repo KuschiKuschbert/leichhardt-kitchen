@@ -108,7 +108,8 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
     ok(v.slip && v.slip[1] === v.lines.join(' '), 'the slip and the page say the same thing while both are up: ' + JSON.stringify(v.slip));
     ok(c0 === c1, 'no read, write or saved data for it: ' + c0 + ' then ' + c1);
     ok(v.font === 40, 'the words are 40 px: ' + v.font);
-    await rested(p); v = await view(p);
+    await rested(p); v = await view(p); const c2 = await cost(p);
+    ok(c0 === c2, 'and none when his file and his art have come: ' + c2);
     ok(v.art && v.art[0] === 96 && v.art[1] === 128, 'he stands under them at 96 x 128 px, half his drawn size: ' + JSON.stringify(v.art));
     ok(v.art && v.art[1] <= v.sayH, 'and is no taller than his words: ' + JSON.stringify([v.art, v.sayH]));
     ok(v.tail !== 'none' && (await p.evaluate(() => parseFloat(getComputedStyle(document.querySelector('.nb-left .nb-fin-sec .nb-fin-say'), '::before').borderTopWidth))) >= 14, 'the tail under 40 px words is 14 px, to be seen from the bench');
@@ -222,6 +223,39 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
     ok(Object.keys(big).length > 8 && !moved.length, 'no tab, header, count, button or Handy line moves for the large card (' + Object.keys(big).length + ' rectangles): ' + moved.join(', '));
   });
 
+  await step('one line of 28 px words', async () => {
+    await ready({ width: 1024, height: 768, extra: { [item('i1')]: line('Slice onions', 'Larder', ticked('Sam')), [item('i2')]: line('Pick coriander', 'Larder', ticked('Sam')), [item('i6')]: line('Wash bok choy', 'Larder', ticked('Sam')), [item('i3')]: line('Portion rump', 'Grill', ticked('Sam')) } });
+    await tick(p, 'i5', 500); await run(p, 9500); const v = await view(p), vb = await best(p);
+    ok(v.sec && JSON.stringify(v.lines) === JSON.stringify(['Sauce is done.']) && v.font === 28, 'the whole list finished from a tab at 1024 px: one line of 28 px words: ' + JSON.stringify([v.lines, v.font]));
+    ok(!v.art && v.tail === 'none' && /nb-f0/.test(v.cls), 'his smallest size is taller than they are, so he is not there: ' + JSON.stringify([v.art, v.tail, v.cls, v.sayH]));
+    ok(vb && vb.fits && !vb.bigger.length, 'and none of his sizes would fit the rule: ' + JSON.stringify(vb));
+  });
+
+  await step('ticked on your other screen', async () => {
+    // The same person is signed in on two screens and ticks the list's last line on the other one. The line lingers
+    // here too, and only the screen that made the tick set the draw that ends the linger: the card must not wait
+    // small for some later draw.
+    const s0 = L.seed(), rest = Object.fromEntries(['i1', 'i2', 'i3', 'i4', 'i5'].map(i => [item(i), Object.assign({}, s0[item(i)], ticked('Sam'))]));
+    await open({ extra: rest }); await run(p, 500); let v = await view(p);
+    ok(!v.card && v.rows === 1, 'one line left on the All list: ' + JSON.stringify([v.card, v.rows]));
+    const at = await p.evaluate(() => Date.now());
+    await other(p, 'i6', ticked('Ann', at)); await L.settle(p, 500); v = await view(p);
+    ok(v.card && !v.scene && v.rows === 1, 'her tick from the other screen: the line lingers here and the card is small: ' + JSON.stringify([v.card, v.scene, v.rows]));
+    await run(p, 4000); await L.settle(p, 300); v = await view(p);
+    ok(v.card && v.scene && v.font === 40 && v.rows === 0, 'the linger ends by itself, with no tap here: the large words: ' + JSON.stringify([v.scene, v.font, v.rows]));
+    ok(v.still === null || v.still.plays === 0, 'a still: this screen did not finish the list: ' + JSON.stringify(v.still));
+  });
+
+  await step('removed lines a chef has asked to see', async () => {
+    await open({ who: 'sam', width: 1280, height: 900, extra: { [item('i4')]: line('Make gravy', 'Sauce', ticked('Bo')), [item('i5')]: line('Laksa', 'Sauce', ticked('Bo')), [item('i8')]: line('Old stock', 'Sauce', { deleted: true }) } });
+    await tab(p, 'Sauce'); await scene(); let v = await view(p);
+    ok(v.sec && v.rows === 0, 'a finished section with a removed line out of sight: the finished words: ' + JSON.stringify([v.sec, v.rows]));
+    await p.click('.nb-left [data-p="removed"]'); await L.settle(p, 500); v = await view(p);
+    ok(!v.sec && v.rows === 1 && v.plainShown, 'Show removed: a line stands on the page, so the words under it are the plain ones: ' + JSON.stringify([v.sec, v.rows, v.plainShown]));
+    await p.click('.nb-left [data-p="removed"]'); await scene(); v = await view(p);
+    ok(v.sec && v.rows === 0, 'Hide removed: the finished words again: ' + JSON.stringify([v.sec, v.rows]));
+  });
+
   await step('no signal', async () => {
     let v = await finished();
     ok(v.sec, 'finished, with the signal there');
@@ -257,7 +291,15 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
   await step('words first, at every size', async () => {
     // [width, height, the words, the mascot on a section's tab, the mascot under the finished list]. Where the size
     // turns on how wide the stand-in fonts are, only what holds in any font is checked; 1920 x 1080 has room to spare.
-    const sizes = [[1920, 1080, 40, [96, 128], [192, 256]], [1280, 900, 40, [96, 128], null], [1280, 720, 40, null, null], [1366, 768, 40, null, null], [1280, 620, 40, 'none', null], [1280, 540, 28, 'none', null], [1024, 768, 28, null, null], [900, 1000, 28, [64, 85], null]];
+    // Two rows are windows with room for the words and none for him. Their heights are taken from where the list
+    // page starts on this machine (it turns on the header's fonts): 246 px of room holds 40 px words alone (204 to
+    // 290 px), 185 px holds 28 px words alone (167 to 204 px). The room is the window less 80 px less that start.
+    // Measured after a tick (the Top tickers strip above the book shows from the first tick and moves it down) and
+    // in a short window like the two it is used for (a taller window starts the page lower).
+    await ready({ width: 1280, height: 600 });
+    const start = await p.evaluate(() => Math.round(document.querySelector('.nb-left .nb-body').getBoundingClientRect().top + window.scrollY)); await shut('the list page\'s start');
+    ok(start > 150 && start < 500, 'the list page starts ' + start + ' px down in a short window 1280 px wide');
+    const sizes = [[1920, 1080, 40, [96, 128], [192, 256]], [1280, 900, 40, [96, 128], null], [1280, 720, 40, 'there', null], [1366, 768, 40, null, null], [1280, start + 80 + 246, 40, 'none', null], [1280, start + 80 + 185, 28, 'none', null], [1024, 768, 28, null, null], [900, 1000, 28, [64, 85], null]];
     for (const [w, h, font, onTab, onList] of sizes) {
       const at = w + ' x ' + h;
       await ready({ width: w, height: h }); await tick(p, 'i5', 500); await run(p, 9500); await rested(p); const s = await view(p), sb = await best(p);
@@ -265,6 +307,7 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
       ok(!s.art || ([96, 64, 48].indexOf(s.art[0]) >= 0 && s.art[1] <= s.sayH), at + ': he is 96, 64 or 48 px wide there or not there, and never taller than his words: ' + JSON.stringify([s.art, s.sayH]));
       ok(sb && sb.fits && !sb.bigger.length, at + ': the largest of his sizes that fits, and it fits: ' + JSON.stringify(sb));
       if (onTab === 'none') ok(!s.art && s.tail === 'none' && /nb-f0/.test(s.cls), at + ': no room for him: the words alone, with no tail: ' + JSON.stringify([s.art, s.tail, s.cls]));
+      else if (onTab === 'there') ok(s.art && [96, 64].indexOf(s.art[0]) >= 0, at + ': a 1920 x 1080 screen zoomed to 150%: he is there, 96 or 64 px wide: ' + JSON.stringify(s.art));
       else if (onTab) ok(s.art && s.art[0] === onTab[0] && s.art[1] === onTab[1], at + ': and he is ' + onTab.join(' x ') + ' px: ' + JSON.stringify(s.art));
       ok(s.bodyScroll <= 0 && s.wide <= 0 && s.bottom <= s.win - 80, at + ': no scroll, and it ends above the slip\'s place: ' + JSON.stringify([s.bodyScroll, s.wide, s.bottom, s.win]));
       await tab(p, ''); for (const id of ['i3', 'i1', 'i2']) { await tick(p, id); } await run(p, 9500); await tick(p, 'i6', 500); await run(p, 9500); await rested(p); const l = await view(p), lb = await best(p);
