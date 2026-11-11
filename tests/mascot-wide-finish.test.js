@@ -245,8 +245,15 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
   await step('no room: the book as it was', async () => {
     await ready({ width: 1280, height: 520 }); await tick(p, 'i5', 500); await run(p, 9500); let v = await view(p);
     ok(!v.sec && v.plainShown, 'a window too short for the large words: the tab keeps its plain words: ' + JSON.stringify([v.sec, v.plainShown]));
+    // The book is taller than this window, so the window itself scrolls. The size must not turn on how far it is
+    // scrolled when the page is drawn (GitHub's runner scrolled to reach a tick box and got the large words).
+    await p.evaluate(() => window.scrollTo(0, 240)); await p.evaluate(() => window.LK_PREP.toast('Redraw')); await L.settle(p, 300); v = await view(p);
+    ok(!v.sec && v.plainShown, 'and still its plain words with the window scrolled down: ' + JSON.stringify([v.sec, v.plainShown, await p.evaluate(() => Math.round(window.scrollY))]));
+    await p.evaluate(() => window.scrollTo(0, 0));
     await tab(p, ''); for (const id of ['i3', 'i1', 'i2']) { await tick(p, id); } await run(p, 9500); await tick(p, 'i6', 500); await run(p, 9500); v = await view(p);
     ok(v.card && !v.scene && v.font === 16 && v.art && v.art[0] === 64, 'and the finished list keeps the small card: ' + JSON.stringify([v.scene, v.font, v.art]));
+    await p.evaluate(() => window.scrollTo(0, 240)); await p.evaluate(() => window.LK_PREP.toast('Redraw')); await L.settle(p, 300); v = await view(p);
+    ok(v.card && !v.scene && v.font === 16 && v.art && v.art[0] === 64, 'the same with the window scrolled down: ' + JSON.stringify([v.scene, v.font, v.art, await p.evaluate(() => Math.round(window.scrollY))]));
   });
 
   await step('Extra large text', async () => {
@@ -297,6 +304,83 @@ const same = (a, b) => Object.keys(a).filter(k => JSON.stringify(a[k]) !== JSON.
       ok(v.card && !v.scene && v.font === 16 && v.art && v.art[0] === 48 && v.art[1] === 64, w + ' px: the finished list keeps the small card, 48 x 64 px, 16 px words: ' + JSON.stringify([v.scene, v.font, v.art]));
       ok(!realErrors(p).length, w + ' px: no browser errors ' + realErrors(p).join(' | ')); await p.context().close(); p = null;
     }
+  });
+
+  await step('where the page must stay plain', async () => {
+    // a tab named after a person on the staff list
+    await open({ extra: { [item('i4')]: line('Make gravy', 'Sam', ticked('Bo')), [item('i5')]: line('Laksa', 'Sam') } });
+    await tab(p, 'Sam'); await tick(p, 'i5', 400); await run(p, 9500); let v = await view(p);
+    ok(!v.sec && v.plainShown, 'a section named after a person: the plain words: ' + JSON.stringify([v.sec, v.plainShown]));
+    await p.context().close(); p = null;
+    // another day: a sous chef looks back at yesterday, where Sauce is ticked off
+    const yesterday = L.ymd(new Date(L.NOW - 86400000)), old = id => key(['days', yesterday, 'items', id]);
+    await open({ who: 'sam', extra: { [old('y1')]: line('Make gravy', 'Sauce', ticked('Bo', L.NOW - 90000000)), [old('y2')]: line('Laksa', 'Sauce', ticked('Bo', L.NOW - 90000000)), [old('y3')]: line('Portion rump', 'Grill') } });
+    await p.click('[data-p="day"][data-d="-1"]'); await L.waitFor(p, () => !!document.querySelector('.nb-tab[data-v="Sauce"]'), null, 6000); await tab(p, 'Sauce'); await L.settle(p, 400); v = await view(p);
+    ok(!v.sec && v.plainShown && /^Nothing left to do in Sauce\./.test(v.plain), 'yesterday\'s finished section keeps its plain words: ' + JSON.stringify([v.sec, v.plainShown, v.plain.slice(0, 28)]));
+    await p.context().close(); p = null;
+    // a removal waiting to be sent: the removed line is out of the tab at once, but the server still holds it open
+    await open({ who: 'sam', extra: { [item('i4')]: line('Make gravy', 'Sauce', ticked('Bo')), [item('i5')]: line('Laksa', 'Sauce', ticked('Bo')), [item('i8')]: line('Reduce stock', 'Sauce') } });
+    await tab(p, 'Sauce'); await p.evaluate(() => { window.__fake.mode = 'hold'; });
+    await p.click('.nb-more[data-id="i8"]'); await L.waitFor(p, () => !!document.querySelector('[data-lm="act"]'), null, 5000);
+    await p.click('[data-lm="act"]'); await L.settle(p, 500); v = await view(p);
+    ok(!v.sec && v.plainShown && v.rows === 0, 'the removal is not sent yet: the tab is empty and keeps its plain words: ' + JSON.stringify([v.sec, v.plainShown, v.rows]));
+    await p.evaluate(() => { window.__fake.ack(); }); await scene(); await L.settle(p, 300); v = await view(p);
+    ok(v.sec && v.lines[0] === 'Sauce is done.', 'the server has the removal: the finished words, with no other tap: ' + JSON.stringify(v.lines));
+    await p.evaluate(() => { window.__fake.mode = 'ok'; window.__fake.release(); });
+  });
+
+  await step('the list out of touch with the server', async () => {
+    // The wifi up and the internet down: the browser still says online, but the list's own answer comes from memory.
+    let v = await finished();
+    ok(v.sec, 'finished, with the list in touch');
+    await p.evaluate(() => { window.__fake.cold = /\/items$/; window.__fake.ack(); }); await L.settle(p, 500); v = await view(p);
+    ok(!v.sec && v.plainShown, 'the list answers from memory: the finished words give way: ' + JSON.stringify([v.sec, v.plainShown]));
+    await p.evaluate(() => window.LK_PREP.toast('Redraw')); await L.settle(p, 300); v = await view(p);
+    ok(!v.sec && v.plainShown, 'and a redraw does not bring them back');
+    await p.evaluate(() => { window.__fake.warm(); }); await scene(); await L.settle(p, 300); v = await view(p);
+    ok(v.sec && v.lines[0] === 'Sauce is done.', 'the server answers again: so do they: ' + JSON.stringify(v.lines));
+  });
+
+  await step('the play is the finished list\'s', async () => {
+    // He is asked to play under the finished list, his action sheet is slow, and the cook opens a finished section's
+    // tab before it comes: the play must not start, or carry on, on the tab.
+    await open({ width: 1280, height: 900 });
+    let hold = null; const held = new Promise(r => { hold = r; });
+    await p.context().route(/burger-sheet/, async r => { await held; await r.continue(); });
+    for (const id of ['i3', 'i1', 'i2', 'i4', 'i5']) { await tick(p, id); } await run(p, 9500); await tick(p, 'i6', 500); await run(p, 4200);
+    await L.waitFor(p, () => !!document.querySelector('.nb-left .nb-fin:not(.nb-fin-sec) .mascot-still'), null, 6000).catch(() => {});
+    await L.waitFor(p, () => !!window.__askedBurger || performance.getEntriesByType('resource').some(e => /burger-sheet/.test(e.name)), null, 3000).catch(() => {});
+    const asked = p.__art.filter(u => /burger-sheet/.test(u)).length;
+    await tab(p, 'Larder'); await L.settle(p, 300); let v = await view(p);
+    ok(v.sec && JSON.stringify(v.lines) === JSON.stringify(['Larder is done.']), 'the cook opens a finished section\'s tab: ' + JSON.stringify(v.lines));
+    hold(); await L.settle(p, 1200); await run(p, 600);
+    const state = await p.evaluate(() => { const e = document.querySelector('.nb-left .nb-fin-sec .mascot-still'); return e ? e.getAttribute('data-state') : 'none'; });
+    ok(asked > 0, 'his play had been asked for under the finished list (' + asked + ' request for the action sheet)');
+    ok(state !== 'playing', 'and it does not start or carry on on the section\'s tab: ' + state);
+    await rested(p); v = await view(p);
+    ok(v.sprite && v.still && !v.still.playing, 'a still stands there: ' + JSON.stringify(v.still));
+  });
+
+  await step('the tail waits for him, and the signal coming back asks for him again', async () => {
+    await ready();
+    let hold = null; const held = new Promise(r => { hold = r; });
+    await p.context().route(/welcome-still/, async r => { await held; await r.continue(); });
+    await tick(p, 'i5', 500); await run(p, 9500); let v = await view(p);
+    ok(v.sec && v.art && v.art[0] === 96 && v.tail === 'none', 'his art is on its way: his room is kept and the tail waits: ' + JSON.stringify([v.art, v.tail]));
+    hold(); await rested(p); await L.settle(p, 300); v = await view(p);
+    ok(v.sprite && v.tail !== 'none', 'he is there: so is the tail: ' + JSON.stringify([v.sprite, v.tail]));
+    await p.context().close(); p = null;
+    // His file fails once, and a finished page can stand for hours: the signal coming back gives it one new try.
+    // Under the finished list his room stays in the page while the signal is away, so nothing else would ask again.
+    await open(); await p.context().route(/js\/mascot\.js/, r => r.abort());
+    for (const id of ['i3', 'i1', 'i2', 'i4', 'i5']) { await tick(p, id); } await run(p, 9500); await tick(p, 'i6', 500); await run(p, 9500); v = await view(p);
+    const tries = p.__art.filter(u => /mascot\.js/.test(u)).length;
+    ok(v.card && v.scene && !v.art && v.tail === 'none' && tries === 2, 'his file failed under the finished list: the words alone, one try: ' + JSON.stringify([v.scene, v.art, v.tail, tries]));
+    await p.context().unroute(/js\/mascot\.js/);
+    await p.context().setOffline(true); await L.settle(p, 500); await p.context().setOffline(false);
+    await L.waitFor(p, () => !!document.querySelector('.nb-left .nb-fin .mascot-still:not([hidden])'), null, 6000).catch(() => {}); await rested(p); await L.settle(p, 300); v = await view(p);
+    const again = p.__art.filter(u => /mascot\.js/.test(u)).length - tries;
+    ok(v.card && v.sprite && again > 0 && again <= 2, 'the signal comes back: one new try, and he is in his place: ' + JSON.stringify([v.sprite, again]));
   });
 
   await step('a shared kitchen screen', async () => {

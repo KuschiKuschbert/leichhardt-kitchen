@@ -589,17 +589,21 @@
   }
   function patchUnsent() { patchLines(S.items, S.date); }
   var itemsLast = {};   // listSnap's memory for the prep list's listener
+  // The prep list's last answer came from memory, not the server: the browser can say it is online while the list is
+  // out of touch (the wifi up, the internet down). The finished words on a wide screen give way then (finFit()).
+  var itemsCold = false;
   function watchItems() {
     if (!kitchenAccess() || !S.configFull) return;
     if (S.configState !== 'ok' || !fb) return;
     var key = S.pin + '|' + S.date;
     if (key === itemsKey && unsubItems) return;
     if (unsubItems) unsubItems();
-    itemsKey = key; S.itemsState = 'loading'; itemsLast = {};
+    itemsKey = key; S.itemsState = 'loading'; itemsLast = {}; itemsCold = false;
     unsubItems = fb.fs.onSnapshot(itemsCol(S.date), { includeMetadataChanges: true }, function (snap) {
       // no signal and this day not loaded yet (a day the phone moved to, or today again after another day): 'offline',
       // with only the lines this phone wrote since, never "nothing written"
-      var k = listSnap(snap, S.itemsState, itemsLast);
+      var k = listSnap(snap, S.itemsState, itemsLast), coldTurn = cacheOnly(snap) !== itemsCold;
+      itemsCold = cacheOnly(snap);
       S.items = snapLines(snap, '');
       if (pt && (pt.busy || pt.uncertain) && ptContext(pt)) S.items = S.items.map(function (x) {
         if (x.id !== pt.id) return x;
@@ -610,7 +614,8 @@
       // the server's answer changes no line, so the page is only patched: draw it when that answer is the one
       // the finished list was waiting for (finDue(), 10 Nov 2026), or the card would wait for some later draw;
       // the same for a finished section on its own tab (secDue(), 11 Nov 2026)
-      if (k === 'same') { patchOrDraw(function () { patchUnsent(); if (finDue() || secDue()) draw(); }); return; }
+      // and when only the list's touch with the server changed, the finished words on a wide screen decide again
+      if (k === 'same') { patchOrDraw(function () { patchUnsent(); if (finDue() || secDue()) draw(); else if (coldTurn) { finFit(); finPaint(); } }); return; }
       S.itemsState = k === 'wait' ? 'offline' : 'ok'; draw();
     }, function () { S.itemsState = 'error'; draw(); });
   }
@@ -1070,8 +1075,9 @@
   // memory until it is sent. Before, the Google device got the marks' room but never the strip.
   function stripOn() { return privateAccess() ? syncState() : ''; }
   function syncDraw() { var st = syncState(); if (st !== lastSync) { lastSync = st; draw(); } }
-  // the finished words on a wide screen give way to the plain ones while there is no signal (finFit(), 11 Nov 2026)
-  window.addEventListener('online', function () { offline = false; syncDraw(); finFit(); finPaint(); });
+  // the finished words on a wide screen give way to the plain ones while there is no signal (finFit(), 11 Nov 2026);
+  // when it is back his file, if it failed, gets one new try (finFresh()), since a finished page can stand for hours
+  window.addEventListener('online', function () { offline = false; try { finFresh(); } catch (e) {} syncDraw(); finFit(); finPaint(); });
   window.addEventListener('offline', function () { offline = true; syncDraw(); finFit(); finPaint(); });
   // a reload or closing the tab while writes wait would lose them, so the browser asks first (27 Oct 2026). A phone that
   // closes the app in the background does not ask, which is why the strip says to keep the book open.
@@ -5017,7 +5023,7 @@
      this tab's memory only: the person and line whose tick finished the list. It goes when that tick is undone or
      refused, when someone else signs in, and after two minutes (Date.now() is only time passing here), so a tick
      that never reached the server cannot make him play later for a finish this phone did not make. */
-  var FIN_KEY = 'lk.fin.day', finSprite = null, finLoad = null, finOff = false, finCheer = null, finPlayed = '';
+  var FIN_KEY = 'lk.fin.day', finSprite = null, finLoad = null, finOff = false, finCheer = null, finPlayed = '', finBusy = false;
   function finOk(live, doneN, today) {
     // every change to the day's own lines must have reached the server, a removal too: a removed line is out of
     // the count at once, but the server still holds it open until it answers
@@ -5055,7 +5061,7 @@
   // A new try at his file and his art: when the card has gone, and on each new visit to a prep page (mount).
   function finFresh() {
     finOff = false;
-    if (finSprite && finSprite.state().failed) { finSprite.dispose(); finSprite = null; }
+    if (finSprite && finSprite.state().failed) { finSprite.dispose(); finSprite = null; finBusy = false; }
   }
   /* After each draw: put the still mascot in its place and play once when this phone earned it. js/mascot.js (about
      14 KB, once) and its art load only when a finished list first shows; no read. A failed download leaves the words
@@ -5084,12 +5090,15 @@
         if (finOff) { var none = slot.closest ? slot.closest('.nb-scene') : null; if (none) none.classList.add('nb-noart'); }
         return;
       }
+      // He was asked to play under the finished list, and the cook has opened a finished section's tab before the
+      // play ended: the play is the list's, so it ends here and the tab gets a fresh still.
+      if (sec && finBusy && finSprite) { finSprite.dispose(); finSprite = null; finBusy = false; }
       if (!finSprite) finSprite = M.sprite();
       if (finSprite.el.parentNode !== slot) slot.appendChild(finSprite.el);
       if (sec || !live || !gone) return;
       var day = finCheer.day;
       if (finPlayed === day || lsGet(FIN_KEY) === day) { finCheer = null; return; }
-      if (finSprite.play('burger', function () { finPlayed = day; lsSet(FIN_KEY, day); })) finCheer = null;
+      if (finSprite.play('burger', function () { finBusy = false; finPlayed = day; lsSet(FIN_KEY, day); })) { finBusy = true; finCheer = null; }
     } catch (e) { finOff = true; }
   }
   /* A finished section, on the slip (owner, 10 Nov 2026; docs/kitchen-mascot.md; the council's record is pull
@@ -5153,16 +5162,19 @@
     }
     return null;
   }
+  // The prep page, on today's own loaded list, in a view the words may stand in: not the Functions tab, the wall
+  // board, the Prep room view or another day. One copy, for the slip (secWords()) and the page (secPage()).
+  function secView(date) { return S.name === 'prep' && S.date === date && date === dayNow() && S.itemsState === 'ok' && S.tab !== FN_TAB && !wallOn() && !(psEnabled() && psView === 'reference'); }
+  // Something of the day's own list is waiting to be sent: a removal, a move to another section or a new line the
+  // server does not hold yet could make a section look finished here when it is not there.
+  function secWaiting() { return S.items.some(function (x) { return !x.fn && !secSent(x); }); }
   /* The sentence for this slip now, or ''. Worked out again on every draw from the lines this phone holds, so it
      stays true while it shows: a line added to the section, or one unticked on another phone, takes it away, and
      the count follows the list. It runs inside draw(), so it never throws: anything it does not expect is ''. */
   function secWords(act) {
     try {
       var m = act && act.sec, date = m && m.date;
-      if (!m || S.name !== 'prep' || S.date !== date || date !== dayNow() || S.itemsState !== 'ok' || S.tab !== m.tab || S.tab === FN_TAB || wallOn() || (psEnabled() && psView === 'reference')) return '';
-      // nothing of the day's own list is waiting to be sent: a removal, a move to another section or a new line the
-      // server does not hold yet could make the section look finished here when it is not there
-      if (S.items.some(function (x) { return !x.fn && !secSent(x); })) return '';
+      if (!m || !secView(date) || S.tab !== m.tab || secWaiting()) return '';
       var daily = S.items.filter(function (x) { return !x.deleted && !x.fn; }), it = daily.filter(function (x) { return x.id === m.id; })[0];
       // this person's own tick, still standing
       if (!it || !it.done || it.doneById !== m.who || m.who !== S.who) return '';
@@ -5201,8 +5213,7 @@
      no control, no play: he is a still here, and Serve stays with the finished list's card. */
   function secPage(daily, date) {
     try {
-      if (S.name !== 'prep' || S.date !== date || date !== dayNow() || S.itemsState !== 'ok' || !S.tab || typeof S.tab !== 'string' || S.tab === FN_TAB || wallOn() || (psEnabled() && psView === 'reference')) return null;
-      if (S.items.some(function (x) { return !x.fn && !secSent(x); })) return null;
+      if (!secView(date) || !S.tab || typeof S.tab !== 'string' || secWaiting()) return null;
       return secName(S.tab) ? secSaid(date, daily, S.tab) : null;
     } catch (e) { return null; }
   }
@@ -5224,8 +5235,8 @@
      largest mascot that still fits, measured, then none. On a section's tab he is 96 x 128 px at most, never taller
      than his words; his drawn size, 192 x 256 px, is kept for the whole finished list. Nothing here moves a line or a
      button: the page is empty at both states, and the scene never adds a scroll to it.
-     Under 900 px, with no signal, or with an older saved stylesheet, the book is exactly as it was: the tab's plain
-     words and the small card. The words are the page's own and never wait for the mascot's file or art. */
+     Under 900 px, with no signal (the browser's word, or the list's own: its last answer came from memory), or with
+     an older saved stylesheet, the book is exactly as it was: the tab's plain words and the small card. The words are the page's own and never wait for the mascot's file or art. */
   var FIN_CLS = ['nb-scene', 'nb-w40', 'nb-w28', 'nb-f192', 'nb-f96', 'nb-f64', 'nb-f0'];
   function finFit() {
     try {
@@ -5236,7 +5247,7 @@
       if (old) old.parentNode.removeChild(old);
       if (plain) plain.style.display = '';
       if (card) FIN_CLS.forEach(function (c) { card.classList.remove(c); });
-      if ((!card && !plain) || window.innerWidth < 900 || offline) return;
+      if ((!card && !plain) || window.innerWidth < 900 || offline || itemsCold) return;
       var base = body.scrollHeight - body.clientHeight, el = card;
       if (!el) {
         el = document.createElement('div'); el.className = 'nb-fin nb-fin-sec';
@@ -5252,7 +5263,9 @@
       el.classList.add('nb-scene');
       // an older saved stylesheet does not know the scene: today's book stays
       if (getComputedStyle(el).display !== 'grid') { back(); return; }
-      var r = body.getBoundingClientRect(), rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16, room = Math.min(r.bottom, window.innerHeight - 80) - r.top;
+      // The room in view above the slip, with the window where it rests (not scrolled): on a window shorter than the
+      // book the size must not turn on how far the window happens to be scrolled when the page is drawn.
+      var r = body.getBoundingClientRect(), at = window.pageYOffset || 0, rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16, room = Math.min(r.bottom + at, window.innerHeight - 80) - (r.top + at);
       // two lines of words in their shape and the margins; the page's pointer under them; one ticked line still lingering
       var words = function (f) { return 2 * 1.2 * f * rem + (f > 2 ? 32 : 24) + 1.8 * rem; }, note2 = 10 + 1.5 * rem, linger = 3.75 * rem;
       var top = window.innerWidth >= 1280 && room >= words(2.5) + note2 + linger ? 40 : room >= words(1.75) + note2 + linger ? 28 : 0;
