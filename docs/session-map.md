@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Housekeeping, 11 November 2026
+
+`CLAUDE.md` went from 48 KB to 35 KB. Four long sections moved word for word into notes, and `CLAUDE.md` keeps a short version of each under the same heading: `docs/keeping-usage-down.md` (Keeping usage down, What GitHub enforces), `docs/easy-to-break.md` (Things that are easy to break, Changes that went wrong before) and `docs/coding-rules.md` (Coding rules). The legacy session diagnostic (`scripts/session-check.mjs` and its workflow, 22 Oct 2026) is removed: it was run by hand only and nothing called it. Current session and grant checks: `docs/device-sessions.md`, `tests/rules/device-auth.test.mjs`.
+
 ## Cross-training and admin Today, chosen and built 10 November 2026
 
 The head chef asked to remove written assessments, improve cross-training and consider restyling the admin dashboard. Both rounds ran on synthetic previews. Cross-training: Build smaller (5 of 5); recommended R retires the assessment screens (data kept), one Reports page "Who has worked where" from shifts in `teamsum/main`, and a planner line only where a pairing is possible in this plan, at most two a shift. Admin Today: Build smaller (3 of 5); recommended R puts needs first, keeps one always-visible comparison table with today's change rule, folds only the charts and removes the laptop picked-row pane (a departure from 8 Nov for the head chef). Chosen by the owner and built the same day: `js/prep.js` (Training and Assessments pages out, a saved retired page opens the Inbox, `whoWorkedHTML()`, `tmLearnHints()`, `adminHeadingHTML()`), `js/admin-dashboard.js` (loader `?v=4`, `LK_DASH` API 1 kept: needs first, no picked-row pane, `cmpHTML()`, `chartsHTML()`), `css/app.css`; tests in `admin-nav`, `admin-dashboard`, `admin-inbox`, `todays-team`, `team-person` and the other admin files. No reads, rules or saved fields changed; `training/*` kept. [Cross-training brief](cross-training-options/brief.md), [Admin Today brief](admin-dashboard-restyle-options/brief.md).
@@ -264,5 +268,4 @@ Section prep standards, chosen 8 November 2026: `docs/prep-standards.md` records
 | `scripts/cutoff-push.mjs`, `.github/workflows/cutoff-push.yml` | Phone pushes for order cut-offs every 10 minutes (`push`, once each in `pushsent`, none once ticked in `cutdone`) |
 | `scripts/access-bootstrap.mjs`, `scripts/ping-index.mjs`, `scripts/transfer-index.mjs`, `scripts/*-check.mjs` | One-off index and migration jobs the Publish rules workflow runs before a rules change that needs them, and the emulator checks that prove them and the server jobs. Read the matching `docs/` note before running one |
 | `scripts/fold-recipes.mjs` | Folds the head chef's recipe changes from a Backup file into `js/data.js`: run it without `--write` first. Never commit the Backup file. `tests/fold-recipes.test.js` |
-| `scripts/session-check.mjs`, `.github/workflows/session-check.yml` | Legacy session diagnostic (by hand, prints by list place and role only). Current session and grant checks: `docs/device-sessions.md`, `tests/rules/device-auth.test.mjs` |
 
