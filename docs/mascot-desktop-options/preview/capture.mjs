@@ -80,8 +80,9 @@ async function walk(d, w, h) {
   // the signal drops with the scene standing, then comes back
   await p.context().setOffline(true); await L.settle(p, 1500); await shot(p, '5e-no-signal');
   await p.context().setOffline(false); await L.settle(p, 1500); await shot(p, '5f-signal-back');
-  // another screen ticks a Grill line: what is next follows the list
-  await other(p, 'i3', { done: true, doneAt: L.NOW - 60000, doneBy: 'Sam', doneById: 'sam' });   // before every tick here, so Done today keeps one order from run to run await L.settle(p, 700); await p.clock.runFor(4000); await L.settle(p, 700); await shot(p, '5b-follows');
+  // another screen ticks a Grill line: what is next follows the list. Its time is before every tick here, so Done
+  // today keeps one order from run to run
+  await other(p, 'i3', { done: true, doneAt: L.NOW - 60000, doneBy: 'Sam', doneById: 'sam' }); await L.settle(p, 700); await p.clock.runFor(4000); await L.settle(p, 700); await shot(p, '5b-follows');
   // another screen writes a new Pans line: the finished state is no longer true
   await p.evaluate(([path, d]) => window.__fake.write(path, d), [item('i10'), line('Blanch beans', PANS, { qty: '2 kg', addedBy: 'Sam', addedById: 'sam', addedAt: L.NOW + 120000 })]); await L.settle(p, 900); await shot(p, '5c-new-line');
   await tick(p, 'i10', 800); await p.clock.runFor(4000); await L.settle(p, 1400); await shot(p, '5d-again');

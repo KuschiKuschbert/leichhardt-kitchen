@@ -5419,3 +5419,31 @@ html:has(.tm-focus-page) {
 .mascot-still[hidden] { display: none; }
 .mascot-still canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 @media (min-width: 900px) { .nb-fin-art { width: 64px; height: calc(64px * 4 / 3); } }
+/* The finished words on a wide screen (owner, 11 Nov 2026; docs/mascot-desktop-options/brief.md; docs/kitchen-mascot.md).
+   From 900 px wide the finished list's card, and a finished section on its own tab, say it large in the empty list
+   page, with the mascot under his words and the page's pointer under him. js/prep.js finFit() adds the classes after
+   it has measured the room: the words first (.nb-w40 or .nb-w28), then the largest mascot that fits (.nb-f192 for the
+   whole list only, .nb-f96, .nb-f64) or none (.nb-f0). Without the classes the card is the small card above and a
+   section's tab keeps its plain words, so an older saved script or a screen under 900 px shows the book as it was.
+   On a section's tab what is done is in the green that means done and what is left is in the page's ink. Not a
+   control: no pointer, no pressed look. */
+@media (min-width: 900px) {
+  .nb-fin.nb-scene { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "say" "art" "note"; row-gap: 16px; align-items: start; justify-items: start; margin: 1.2rem 0 0.6rem; }
+  .nb-scene .nb-fin-w { display: contents; }
+  .nb-scene .nb-fin-say { grid-area: say; font-size: 1.75rem; line-height: 1.2; padding: 12px 18px; border-radius: 18px; }
+  .nb-scene.nb-w40 .nb-fin-say { font-size: 2.5rem; padding: 16px 24px; border-radius: 22px; }
+  .nb-scene .nb-fin-say > span { display: block; }
+  .nb-fin-sec .nb-fin-say > span + span { color: var(--ink); }
+  /* the tail points down at him */
+  .nb-scene .nb-fin-say::before { left: 52px; bottom: -17px; border: 9px solid transparent; border-top-color: var(--done-tint); }
+  .nb-scene.nb-f192 .nb-fin-say::before { left: 100px; }
+  .nb-scene.nb-f64 .nb-fin-say::before { left: 36px; }
+  .nb-scene .nb-fin-art { grid-area: art; margin-left: 14px; width: 96px; height: 128px; }
+  .nb-scene.nb-f192 .nb-fin-art { width: 192px; height: 256px; }
+  .nb-scene.nb-f64 .nb-fin-art { width: 64px; height: calc(64px * 4 / 3); }
+  .nb-scene .nb-fin-w .nb-empty { grid-area: note; margin: 0; }
+  /* no room for him, his file did not come or his art did not load: the words stand alone, with no tail and no
+     empty room where he would be */
+  .nb-scene:is(.nb-f0, .nb-noart, :has(.mascot-still[hidden])) { grid-template-areas: "say" "note"; row-gap: 10px; }
+  .nb-scene:is(.nb-f0, .nb-noart, :has(.mascot-still[hidden])) .nb-fin-art, .nb-scene:is(.nb-f0, .nb-noart, :has(.mascot-still[hidden])) .nb-fin-say::before { display: none; }
+}

@@ -608,8 +608,9 @@
       });
       if (pt && pt.uncertain && pt.latestServer) { var confirming = pt;Promise.resolve().then(function () { ptReconcile(confirming); }); }
       // the server's answer changes no line, so the page is only patched: draw it when that answer is the one
-      // the finished list was waiting for (finDue(), 10 Nov 2026), or the card would wait for some later draw
-      if (k === 'same') { patchOrDraw(function () { patchUnsent(); if (finDue()) draw(); }); return; }
+      // the finished list was waiting for (finDue(), 10 Nov 2026), or the card would wait for some later draw;
+      // the same for a finished section on its own tab (secDue(), 11 Nov 2026)
+      if (k === 'same') { patchOrDraw(function () { patchUnsent(); if (finDue() || secDue()) draw(); }); return; }
       S.itemsState = k === 'wait' ? 'offline' : 'ok'; draw();
     }, function () { S.itemsState = 'error'; draw(); });
   }
@@ -1069,8 +1070,9 @@
   // memory until it is sent. Before, the Google device got the marks' room but never the strip.
   function stripOn() { return privateAccess() ? syncState() : ''; }
   function syncDraw() { var st = syncState(); if (st !== lastSync) { lastSync = st; draw(); } }
-  window.addEventListener('online', function () { offline = false; syncDraw(); });
-  window.addEventListener('offline', function () { offline = true; syncDraw(); });
+  // the finished words on a wide screen give way to the plain ones while there is no signal (finFit(), 11 Nov 2026)
+  window.addEventListener('online', function () { offline = false; syncDraw(); finFit(); finPaint(); });
+  window.addEventListener('offline', function () { offline = true; syncDraw(); finFit(); finPaint(); });
   // a reload or closing the tab while writes wait would lose them, so the browser asks first (27 Oct 2026). A phone that
   // closes the app in the background does not ask, which is why the strip says to keep the book open.
   window.addEventListener('beforeunload', function (e) { if (sendingNow()) { e.preventDefault(); e.returnValue = ''; } });
@@ -5066,20 +5068,25 @@
       if (!slot) { finFresh(); return; }
       // not while a ticked line still lingers above him: he speaks and plays once the list has emptied. The words
       // are read out whether or not his file loads, and after the slip's own "Ticked ..." has been read.
+      // on a finished section's own tab (finFit()) he is a still: the slip has read the sentence out, and the one
+      // play belongs to the finished list, even when the tick that finished the list was made on this tab
+      var sec = slot.getAttribute('data-fin-art') === 'sec';
       var gone = !S.root.querySelector('.nb-left .nb-rows .nb-row');
-      if (live && gone && !finCheer.said) { finCheer.said = true; var say = S.root.querySelector('.nb-fin-say'); if (say) liveSay(say.textContent); }
+      if (!sec && live && gone && !finCheer.said) { finCheer.said = true; var say = S.root.querySelector('.nb-fin-say'); if (say) liveSay(say.textContent); }
       if (!M || typeof M.sprite !== 'function') {
         // An answer without sprite() is an older saved copy (the saved shell hands that back with no signal):
         // one try, like a failed download, never a loop.
         if (!finLoad && !finOff && window.LK_APP && window.LK_APP.load) finLoad = window.LK_APP.load('js/mascot.js?v=2').then(function () {
           finLoad = null;
-          if (window.LK_MASCOT && typeof window.LK_MASCOT.sprite === 'function') finPaint(); else finOff = true;
-        }, function () { finLoad = null; finOff = true; });
+          if (window.LK_MASCOT && typeof window.LK_MASCOT.sprite === 'function') finPaint(); else { finOff = true; finPaint(); }
+        }, function () { finLoad = null; finOff = true; finPaint(); });
+        // his file is not coming: on a wide screen the words stand alone, with no empty room where he would be
+        if (finOff) { var none = slot.closest ? slot.closest('.nb-scene') : null; if (none) none.classList.add('nb-noart'); }
         return;
       }
       if (!finSprite) finSprite = M.sprite();
       if (finSprite.el.parentNode !== slot) slot.appendChild(finSprite.el);
-      if (!live || !gone) return;
+      if (sec || !live || !gone) return;
       var day = finCheer.day;
       if (finPlayed === day || lsGet(FIN_KEY) === day) { finCheer = null; return; }
       if (finSprite.play('burger', function () { finPlayed = day; lsSet(FIN_KEY, day); })) finCheer = null;
@@ -5162,18 +5169,103 @@
       // the heading the line sits under: the tab's on a section's own tab, the line's own section on All
       var name = S.tab || it.station || '';
       if (typeof name !== 'string' || !secName(name) || (m.name && m.name !== name)) return '';
-      var group = secLines(daily, name);
-      // a section of one line is an ordinary tick
-      if (group.length < 2 || group.indexOf(it) < 0 || group.some(function (x) { return !x.done; })) return '';
-      var open = daily.filter(function (x) { return !x.done; }).length;
-      if (!open && !S.tab) return '';
+      // the ticked line is one of the section's own, and the section is finished (secSaid())
+      var said = secLines(daily, name).indexOf(it) >= 0 ? secSaid(date, daily, name) : null;
+      if (!said || (!said.open && !S.tab)) return '';
       // once a kitchen day for each section on this device
       if (!act.shown && secDay().s.indexOf(name) >= 0) return '';
-      var next = open ? secNext(date, daily, name) : null;
-      if (open && !next) return '';
       m.name = name;
-      return name + (secMany(name) ? ' are' : ' is') + ' done.' + (next ? ' ' + next.name + (secMany(next.name) ? ' have ' : ' has ') + next.left + ' left.' : '');
+      return said.done + (said.next ? ' ' + said.next : '');
     } catch (e) { return ''; }
+  }
+  /* The words for a finished section, or null. One function for the slip (secWords()) and for the section's own tab on
+     a wide screen (secPage()), so the two can never say different things. A section of one line is an ordinary tick.
+     When lines are left but no section can be named for them, nothing is said, so "X is done." never reads as
+     "nothing is left": it stands alone only when the whole list is finished. */
+  function secSaid(date, daily, name) {
+    var group = secLines(daily, name);
+    if (group.length < 2 || group.some(function (x) { return !x.done; })) return null;
+    var open = daily.filter(function (x) { return !x.done; }).length, next = open ? secNext(date, daily, name) : null;
+    if (open && !next) return null;
+    return { open: open, done: name + (secMany(name) ? ' are' : ' is') + ' done.', next: next ? next.name + (secMany(next.name) ? ' have ' : ' has ') + next.left + ' left.' : '' };
+  }
+  /* A finished section, on its own tab (owner, 11 Nov 2026: "yea lets go"; docs/mascot-desktop-options/brief.md, the
+     blend four of six reviewers named; docs/kitchen-mascot.md). The kitchen works on a wide screen in every section,
+     and a screen kept on its section's tab saw the finish as 16 px words on the slip for 9 seconds and the mascot not
+     at all. From 900 px wide, where the tab's page says "Nothing left to do in Pans.", it says the slip's own sentence
+     large, "Pans are done." and "Grill has 2 left.", with the mascot under his words (finFit()).
+     It is the page's state, like the finished list's card: worked out on every draw from the lines this screen holds,
+     with the slip sentence's own rules (secSaid(), secName(), secSent()): today's own list only, two lines or more,
+     every one ticked and on the server, nothing waiting to be sent. Not on the Functions tab, the wall board, the
+     Prep room view or another day. Where those rules are silent the page keeps its plain words. No read, no write,
+     no control, no play: he is a still here, and Serve stays with the finished list's card. */
+  function secPage(daily, date) {
+    try {
+      if (S.name !== 'prep' || S.date !== date || date !== dayNow() || S.itemsState !== 'ok' || !S.tab || typeof S.tab !== 'string' || S.tab === FN_TAB || wallOn() || (psEnabled() && psView === 'reference')) return null;
+      if (S.items.some(function (x) { return !x.fn && !secSent(x); })) return null;
+      return secName(S.tab) ? secSaid(date, daily, S.tab) : null;
+    } catch (e) { return null; }
+  }
+  // The tab still shows its plain words and the finished words are due: the server's answer changed no line, so
+  // the listener only patches the page (finDue() does the same for the finished list's card).
+  function secDue() {
+    try {
+      if (S.name !== 'prep' || !S.root || !S.tab) return false;
+      var plain = S.root.querySelector('.nb-left .nb-body > .nb-empty');
+      if (!plain || plain.hasAttribute('data-fin-sec')) return false;
+      var daily = S.items.filter(function (x) { return !x.deleted && !x.fn; });
+      return !daily.some(function (x) { return inTab(x) && (!x.done || lingers(x)); }) && !!secPage(daily, S.date);
+    } catch (e) { return false; }
+  }
+  /* The finished words on a wide screen (owner, 11 Nov 2026). After each draw, and when the window or the signal
+     changes: from 900 px wide the finished list's card, and a finished section's tab, say it large with the mascot
+     under his words. Words first: one size of words for both finished states on a screen, 40 px from 1280 px wide
+     where the room in view above the slip holds them, 28 px otherwise, and today's book where neither fits. Then the
+     largest mascot that still fits, measured, then none. On a section's tab he is 96 x 128 px at most, never taller
+     than his words; his drawn size, 192 x 256 px, is kept for the whole finished list. Nothing here moves a line or a
+     button: the page is empty at both states, and the scene never adds a scroll to it.
+     Under 900 px, with no signal, or with an older saved stylesheet, the book is exactly as it was: the tab's plain
+     words and the small card. The words are the page's own and never wait for the mascot's file or art. */
+  var FIN_CLS = ['nb-scene', 'nb-w40', 'nb-w28', 'nb-f192', 'nb-f96', 'nb-f64', 'nb-f0'];
+  function finFit() {
+    try {
+      var body = S.root && document.body.contains(S.root) && S.root.querySelector('.nb-left .nb-body');
+      if (!body) return;
+      var card = body.querySelector('.nb-fin:not(.nb-fin-sec)'), plain = body.querySelector('.nb-empty[data-fin-sec]'), old = body.querySelector('.nb-fin-sec');
+      // decided again each time, from today's book
+      if (old) old.parentNode.removeChild(old);
+      if (plain) plain.style.display = '';
+      if (card) FIN_CLS.forEach(function (c) { card.classList.remove(c); });
+      if ((!card && !plain) || window.innerWidth < 900 || offline) return;
+      var base = body.scrollHeight - body.clientHeight, el = card;
+      if (!el) {
+        el = document.createElement('div'); el.className = 'nb-fin nb-fin-sec';
+        var art = document.createElement('span'), w = document.createElement('div'), say = document.createElement('p'), note = document.createElement('p');
+        art.className = 'nb-fin-art'; art.setAttribute('data-fin-art', 'sec'); art.setAttribute('aria-hidden', 'true');
+        w.className = 'nb-fin-w'; say.className = 'nb-fin-say'; note.className = 'nb-empty'; note.textContent = 'See Done today under Handy.';
+        plain.getAttribute('data-fin-sec').split('\n').forEach(function (t) { if (!t) return; var line = document.createElement('span'); line.textContent = t; say.appendChild(line); });
+        w.appendChild(say); w.appendChild(note); el.appendChild(art); el.appendChild(w);
+        plain.parentNode.insertBefore(el, plain.nextSibling); plain.style.display = 'none';
+      }
+      var back = function () { if (el === card) FIN_CLS.forEach(function (c) { card.classList.remove(c); }); else { el.parentNode.removeChild(el); plain.style.display = ''; } };
+      var set = function (ww, f) { FIN_CLS.forEach(function (c) { el.classList.remove(c); }); el.classList.add('nb-scene', 'nb-w' + ww, 'nb-f' + f); };
+      el.classList.add('nb-scene');
+      // an older saved stylesheet does not know the scene: today's book stays
+      if (getComputedStyle(el).display !== 'grid') { back(); return; }
+      var r = body.getBoundingClientRect(), rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16, room = Math.min(r.bottom, window.innerHeight - 80) - r.top;
+      // two lines of words in their shape and the margins; the page's pointer under them; one ticked line still lingering
+      var words = function (f) { return 2 * 1.2 * f * rem + (f > 2 ? 32 : 24) + 1.8 * rem; }, note2 = 10 + 1.5 * rem, linger = 3.75 * rem;
+      var top = window.innerWidth >= 1280 && room >= words(2.5) + note2 + linger ? 40 : room >= words(1.75) + note2 + linger ? 28 : 0;
+      if (!top) { back(); return; }
+      var list = el === card, sizes = list ? [192, 96, 64, 0] : [96, 0];
+      // with him under the finished list's words, room is kept for the ticked line that still lingers above the card
+      var fits = function (f) { return el.getBoundingClientRect().height + 1.8 * rem + (list && f ? linger : 0) <= room && body.scrollHeight - body.clientHeight <= base; };
+      // a long name that will not fit at the screen's size of words drops a size
+      for (var a = top === 40 ? [40, 28] : [28], i = 0; i < a.length; i++) {
+        for (var j = 0; j < sizes.length; j++) { set(a[i], sizes[j]); if (fits(sizes[j])) return; }
+      }
+      back();
+    } catch (e) {}
   }
   /* The server has answered this phone's tick (the write's own promise; on the shared tablet the slip is only made
      then). at: the time ticked, as written. who: the person whose tick it is. act: that tick's own Undo. */
@@ -5223,7 +5315,7 @@
     } catch (e) {}
   }
   // a turned phone or a resized window: measure again, so the words are never cut short
-  window.addEventListener('resize', function () { secFit(); });
+  window.addEventListener('resize', function () { finFit(); finPaint(); secFit(); });
   function pageBody(items, date, board) {
     /* ticked lines leave the list and show under Done today in Handy. Sections with nothing left to do are hidden.
        board: the wall board (wallOn()): every section, each in its own column, function platters in theirs, no removed
@@ -5471,7 +5563,11 @@
     var todayEmpty = !live.length && S.itemsState === 'ok' ? '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet.</p>' : '';
     if (!S.items.length && S.itemsState === 'loading') todayEmpty = inkWait('Loading the prep list...', 'prep', 4);
     if (live.length && doneN === live.length && !S.tab) todayEmpty = finOk(live, doneN, today) ? finHTML(doneN, live.length) : '<p class="nb-empty">Everything on this list is ticked off. See Done today under Handy.</p>';
-    if (S.itemsState === 'ok' && S.tab && !live.some(function (x) { return inTab(x) && (!x.done || lingers(x)); })) todayEmpty = '<p class="nb-empty">Nothing left to do in ' + esc(S.tab === FN_TAB ? 'Functions' : S.tab) + '. Ticked lines are under Done today in Handy.</p>';
+    if (S.itemsState === 'ok' && S.tab && !live.some(function (x) { return inTab(x) && (!x.done || lingers(x)); })) {
+      // a finished section on its own tab: the plain words carry the finished ones for a wide screen (finFit())
+      var secDone = secPage(daily, S.date);
+      todayEmpty = '<p class="nb-empty"' + (secDone ? ' data-fin-sec="' + esc(secDone.done + (secDone.next ? '\n' + secDone.next : '')) + '"' : '') + '>Nothing left to do in ' + esc(S.tab === FN_TAB ? 'Functions' : S.tab) + '. Ticked lines are under Done today in Handy.</p>';
+    }
     if (!S.tab && !daily.length && fnLive.length && S.itemsState === 'ok') todayEmpty = '<p class="nb-empty">Nothing written for ' + esc(dayName(S.date).toLowerCase()) + ' yet. Function platters are on the Functions tab.</p>';
     // no signal and this day not loaded yet: the note first, then only the lines this phone wrote since (listSnap)
     var offNote = S.itemsState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
@@ -6838,6 +6934,7 @@
     bandSync();
     if (S.name === 'orders') cutPaint();
     tmPaint();
+    finFit();
     finPaint();
     secFit();
     window.dispatchEvent(new Event('lk-back'));

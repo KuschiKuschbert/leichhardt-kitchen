@@ -1,10 +1,10 @@
 # The mascot on the kitchen's wide screens
 
-11 November 2026, Queensland. **Round 1: Build smaller, 5 of 5. Round 2: B first for four of six, C last for all six. Recommended: a blend of A and B that four of six reviewers named. The finished states are said large in the page and the mascot stands under his words: half size on a finished section's own tab, his full drawn size only when the whole list is finished. Not chosen yet: the owner picks. Nothing in the app has changed.**
+11 November 2026, Queensland. **Round 1: Build smaller, 5 of 5. Round 2: B first for four of six, C last for all six. Recommended: a blend of A and B that four of six reviewers named. The finished states are said large in the page and the mascot stands under his words: half size on a finished section's own tab, his full drawn size only when the whole list is finished. The owner chose it on 11 November ("yea lets go") and it is built in pull request #677 (Chosen, near the end).** The study itself changed no app code.
 
 [Proposal](proposal.md) · [Evidence packet](evidence-packet.md) · [Designs and measurements](designs.md) · [Pictures](#pictures) · Preview source: `preview/`
 
-This is role-based council analysis, not research with staff. Every measurement is a **Preview**: review-only styles and a script switched on over the real book (`main` at 925d985) with the click tests' Firebase stand-in, made-up people and prep lines, and the book's real fonts. Nothing was measured in the kitchen or on a real section screen, and no app code changed.
+This is role-based council analysis, not research with staff. Every measurement is a **Preview**: review-only styles and a script switched on over the real book (`main` at 925d985) with the click tests' Firebase stand-in, made-up people and prep lines, and the book's real fonts. Nothing was measured in the kitchen or on a real section screen. What was then measured in the built app is under Chosen.
 
 ## What the owner asked
 
@@ -205,7 +205,17 @@ Taps to tick a line: 1 before, 1 after. List rows: every row where it is today.
 
 ## Chosen
 
-Not chosen yet. The owner picks; nothing in the app changes until then.
+**11 November 2026: the owner said "yea lets go".** Built as recommended, in the same pull request as this record (#677): from 900 px wide a finished section says the slip's own sentence large on its own tab with the mascot under his words, half size and a still; the finished list's card says it the same way and only there is he his drawn size, with the one Serve play he had. What is left is in the page's ink, as drawn: the owner did not ask for the other way.
+
+Against "Before release" above:
+
+- Done and tested: one function for the slip and the page (`secSaid()`); the words are the page's own and never wait for his file or art; they come with the server's answer (`secDue()`, a held-write check that fails without it); quiet with no signal; Serve stays with the All list's card; not a control; click tests at 1920 x 1080 and five other window sizes, Extra large text, long names, another screen's tick, a new line, Undo, missing file and art, reduced motion, a refused tick, the shared screen's sheet, a window too short, an older stylesheet, and a tablet and a phone unchanged. `docs/kitchen-mascot.md`, the pattern in `docs/design-patterns.md` and both test lists changed with it.
+- Measured in the built app (`tests/mascot-wide-finish.test.js`, 138 checks, stand-in data): at 1920 x 1080, 40 px words, 96 x 128 px on a finished section's tab, 192 x 256 px under the finished list, no tab, header, count, button or Handy line moved, no scroll added, the scene above the slip's place; the computed colours of both lines at 4.5 to 1 or better on the tint. 49 of 129 checks fail on the files before the change.
+- Not done: the shared screen's idle lock and PIN screen with the finished words standing, and Queensland midnight and the 04:00 refresh, are not exercised by a test (the finished words are page content, and the gate asks for today's date); a screen reader; a real touch screen; reading from 1.5 m on one real section screen; asking three staff what the screen says from the pass.
+
+The current contract for what is built is `docs/kitchen-mascot.md`, "The finished words on a wide screen". The pictures here are Previews, not the built book.
+
+Still the owner's to say: which page each of the five screens keeps open, shared or personal, touch or mouse, zoom and text size; the Top tickers strip; one measure after four weeks.
 
 ## Pictures
 

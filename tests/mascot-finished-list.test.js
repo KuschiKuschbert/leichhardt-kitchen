@@ -260,10 +260,12 @@ const view = p => p.evaluate(() => {
   });
 
   await step('tablet and laptop', async () => {
-    for (const [w, h, want] of [[768, 1024, [48, 64]], [1280, 900, [64, 85]]]) {
+    // From 900 px wide the card says it large with him under his words (11 Nov 2026, tests/mascot-wide-finish.test.js
+    // holds the sizes): which of his sizes fits a 1280 x 900 window turns on how wide the stand-in fonts are.
+    for (const [w, h, want] of [[768, 1024, [[48, 64]]], [1280, 900, [[192, 256], [96, 128], [64, 85]]]]) {
       await open({ width: w, height: h }); await allBut(p, 'i6'); await tick(p, 'i6', 600); await run(p, 4500);
       const v = await view(p), wide = await L.overflow(p);
-      ok(v.card && v.slot && v.slot[0] === want[0] && v.slot[1] === want[1], w + ' px: the card, with the mascot at ' + want.join(' x ') + ' px: ' + JSON.stringify(v.slot));
+      ok(v.card && v.slot && want.some(x => v.slot[0] === x[0] && v.slot[1] === x[1]), w + ' px: the card, with the mascot at ' + want.map(x => x.join(' x ')).join(' or ') + ' px: ' + JSON.stringify(v.slot));
       ok(!wide, w + ' px: no sideways scroll');
       ok(!realErrors(p).length, w + ' px: no browser errors'); await p.context().close(); p = null;
     }
