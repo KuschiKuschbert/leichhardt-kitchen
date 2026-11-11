@@ -31,7 +31,7 @@ const ready = p => L.waitFor(p, () => /Who has worked where/.test((document.quer
   await ready(p);
   let t = await pane(p);
   ok(/Old counts\s*Shift counts only go to [^.]+\. The nightly run has not finished since, so the last 3 days are missing\./.test(t), 'old counts say so, with the days missing (' + ((t.match(/Old counts.{0,160}/) || [''])[0]) + ')');
-  ok(/Sauce: no shifts under this name in the last 30 days\./.test(t) && !/nobody/i.test(t), 'a section with no shifts under its current name never reads "nobody" (' + ((t.match(/Sauce:.{0,80}/) || [''])[0]) + ')');
+  ok(/No Sauce shifts counted\s*No shifts under this name in the last 30 days\./.test(t) && !/nobody/i.test(t.replace('This does not mean nobody worked a section', '')), 'a section with no shifts under its current name never reads "nobody" (' + ((t.match(/No Sauce shifts.{0,80}/) || [''])[0]) + ')');
   ok(/Not counted: shifts under names no longer on the section list: Sauces \(\d+\)\./.test(t), 'shifts under an old section name are said by name, not dropped silently (' + ((t.match(/Not counted.{0,120}/) || [''])[0]) + ')');
   ok(/1 of the last 14 days did not load, so an item may be missing here\./.test(t) && /Milk/.test((t.split('Standing order candidates')[1] || '')), 'an order day that did not load is said beside the standing order candidates, and Milk still shows from the days that loaded');
   ok(!(await L.overflow(p)), 'no sideways scroll');
@@ -45,7 +45,7 @@ const ready = p => L.waitFor(p, () => /Who has worked where/.test((document.quer
   await ready(p);
   t = await pane(p);
   ok(!/Old counts|Not counted|did not load/.test(t), 'on time and all loaded: no warning lines');
-  ok(/Sauce: 1 person in 30 days \(Bo, 30 shifts\)\./.test(t), 'the renamed section counts again once its shifts carry its name (' + ((t.match(/Sauce:.{0,60}/) || [''])[0]) + ')');
+  ok(/Only Bo worked Sauce\s*30 shifts\./.test(t), 'the renamed section counts again once its shifts carry its name (' + ((t.match(/Only Bo worked Sauce.{0,60}/s) || [''])[0]) + ')');
   ok(!(await L.overflow(p)), 'phone: no sideways scroll');
   ok(p.errors.length === 0, 'phone: no page errors ' + p.errors.join(' | '));
   await p.context().close();

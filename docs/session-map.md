@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## At a glance on Reports, Team, chosen and built 12 November 2026
+
+The owner asked whether the admin panel says what the book records in clear, easy language. Round 1 Build smaller (5 of 5): no new "Worth a look" box; the Team page's findings first, worded as time-bound activity. Round 2 A first (6 of 6) over Dashboard cards (B) and a weekly Inbox row (C); the owner asked for a better look and chose Look 1, the Dashboard's headline cards. The council's break-it review found three faults in the Team report (a renamed section read "nobody", old counts showed as the whole time, missing order days dropped standing order candidates), fixed first in #682 (`tests/team-report-truth.test.js`). Built in #683: `tsCount()`, `tsStatus()`, `glanceHTML()`, `whoWorkedHTML()`, `standingRows()`, `standingLost()` in `js/prep.js`, `.tm-glance` in `css/app.css`, `tests/team-glance.test.js`. Record: `docs/team-glance-options/brief.md`.
+
 ## Housekeeping, 11 November 2026
 
 `CLAUDE.md` went from 48 KB to 35 KB. Four long sections moved word for word into notes, and `CLAUDE.md` keeps a short version of each under the same heading: `docs/keeping-usage-down.md` (Keeping usage down, What GitHub enforces), `docs/easy-to-break.md` (Things that are easy to break, Changes that went wrong before) and `docs/coding-rules.md` (Coding rules). The legacy session diagnostic (`scripts/session-check.mjs` and its workflow, 22 Oct 2026) is removed: it was run by hand only and nothing called it. Current session and grant checks: `docs/device-sessions.md`, `tests/rules/device-auth.test.mjs`.
