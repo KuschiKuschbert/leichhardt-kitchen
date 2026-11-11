@@ -137,7 +137,9 @@ const homeGeometry = p => p.evaluate(() => {
     ok(!desktop.hit && desktop.note && desktop.ambient > 0 && !desktop.overflow, 'desktop long welcome also stays clear of seasonal ornaments');
   });
   await step('seasonal neutral Home', async () => {
-    p = await L.open(browser, '#/', { who: '', width: 390, height: 844, seasonal: { selection: 'np-tihar', motion: 'gentle', density: 'festive' }, wait: 1200 });
+    // A day in Tihar (7 to 11 Nov 2026), not today: a celebration saved on the device is not kept, Home follows the calendar.
+    const tiharDay = Date.parse('2026-11-09T04:00:00Z');
+    p = await L.open(browser, '#/', { who: '', width: 390, height: 844, clock: tiharDay, server: tiharDay, seasonal: { selection: 'auto', motion: 'gentle', density: 'festive' }, wait: 1200 });
     await L.waitFor(p, () => document.querySelector('#app')?.dataset.kbTheme === 'np-tihar');
     ok(await p.evaluate(() => !document.querySelector('#rtitle.hm-welcome') && document.querySelector('#rtitle').textContent === 'Pick a docket' &&
       [...document.querySelectorAll('.kb-hang-item')].filter(e => e.getClientRects().length).length > 0 &&
