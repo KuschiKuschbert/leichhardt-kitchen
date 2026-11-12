@@ -153,7 +153,11 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
   await L.reveal(p, '#mg-name'); await p.fill('#mg-name', 'Burger');
   await p.click('[data-mg="save"]'); await L.settle(p, 300);
   ok(/already used/.test(await txt(p, '.mg-errs') || ''), 'checks: a new recipe cannot take an id in use');
-  await p.click('[data-mg="undo-all"]'); await p.click('[data-mg="undo-all"]'); await L.settle(p, 200);
+  // the two-tap button runs on the book's one helper (11 Nov 2026): the first tap arms it there, under the page's mg: key
+  await p.click('[data-mg="undo-all"]'); await L.settle(p, 100);
+  ok(/Tap again to undo all/.test(await txt(p, '[data-mg="undo-all"]') || '') && await p.evaluate(() => { const b = window.LK_PREP.book(); return b.armed('mg:undo-all') && !b.armed('undo-all'); }), 'two taps: the first tap arms the book helper under an mg: key');
+  await p.click('[data-mg="undo-all"]'); await L.settle(p, 200);
+  ok(await p.evaluate(() => !window.LK_PREP.book().armed('mg:undo-all')), 'two taps: the second tap undoes all and nothing stays armed');
 
   // a change saved on another device after the form opened: the head chef picks
   await go(p, '#/manage/r/burger'); await editor(p);

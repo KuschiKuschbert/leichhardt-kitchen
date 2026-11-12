@@ -669,6 +669,7 @@ async function safe(label, fn) { try { await fn(); } catch (e) { ok(false, label
     await wait(p, () => !!document.querySelector('[data-ff="a0_2"]'), null, 10000);
     const grid = () => S(p, () => [0, 1, 2].map(r => document.querySelector('[data-ff="a0_' + r + '"]').value).join(','));
     await p.click('[data-fe="even"]'); await L.settle(p, 200);
+    ok(await p.evaluate(() => window.LK_PREP.book().armed('fe:even')), 'functions: the two-tap button runs on the book helper under an fe: key (11 Nov 2026)');
     ok(await grid() === '1,1,4' && await txt(p, '[data-fe="even"]') === 'Tap again to split evenly', 'functions: a split by hand keeps its numbers on the first tap of Split evenly again (' + await grid() + ')');
     await p.click('[data-fe="even"]'); await L.settle(p, 200);
     ok(await grid() === '2,2,2', 'functions: the second tap splits evenly (' + await grid() + ')');

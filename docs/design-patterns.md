@@ -50,7 +50,7 @@ The rules behind them are in `CLAUDE.md` (Service rules, Coding rules, Things th
 
 - **A form's Save:** `svButton()` draws it (off while nothing changed: `save()` refuses then too), `svStart()` when it goes, `svDone()` only when the server answers, `svFail()` on a refusal, `svLine()` for the line under it. Red failure words come from `errMsg()`; an unknown refusal goes through `failed()`.
 - **A tap on a list line** answers on the slip with the line's name and Undo: `toast()`, `slipName()`. Answer the six questions in `docs/action-feedback.md` for every new button.
-- **Destroying something typed** asks a second tap in place: `arm()` and `armed()` turn the button into "Tap again to remove". No pop-up.
+- **Destroying something typed** asks a second tap in place: `arm()` and `armed()` turn the button into "Tap again to remove". No pop-up. The book has one helper (`js/prep.js`, through `LK_PREP.book()`: `arm(key, redraw)`, `armed(key)`, `unarm()`); a lazy page prefixes its keys (`mg:`, `fe:`) and keeps its own copy only as the fallback for an older book.
 - **Every write** goes through `W()`; ask `canW()` first.
 
 ## Over the page

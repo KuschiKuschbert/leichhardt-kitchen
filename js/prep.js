@@ -1170,6 +1170,8 @@
     armKey = k; armTimer = setTimeout(function () { armKey = ''; re(); }, 4000); re();
     return false;
   }
+  // nothing armed any more (js/manage.js and js/fnedit.js, when a row moves or the form goes)
+  function unarm() { clearTimeout(armTimer); armKey = ''; }
 
   function sha(str) {
     return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function (b) {
@@ -1810,9 +1812,9 @@
       edit: bookEdit, changed: rxChanged, fromServer: fromServer,
       // what a list listener's snapshot means with no signal (27 Oct 2026, js/deliveries.js): see listSnap()
       listSnap: listSnap,
-      // the book's one two-tap helper (28 Oct 2026, js/draw.js and js/deliveries.js): arm(key, redraw) and armed(key).
-      // js/fnedit.js keeps its own for now and does not use these, so FE_API stays as it is (README, Bringing the code in line)
-      arm: arm, armed: armed,
+      // the book's one two-tap helper: arm(key, redraw), armed(key) and unarm(). js/draw.js and js/deliveries.js since
+      // 28 Oct 2026; js/manage.js and js/fnedit.js since 11 Nov 2026, each falling back to its own with an older book
+      arm: arm, armed: armed, unarm: unarm,
       // the order cut-offs already on the phone (config/main, no read of its own): js/deliveries.js names the suppliers
       // due today from their delivery days (3 Nov 2026). Empty where config/main is not readable (Functions-only)
       cuts: cutList,
