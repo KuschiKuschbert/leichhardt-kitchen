@@ -4574,7 +4574,7 @@
     var byDow = {}, occ = {};
     agg.dates.forEach(function (d) { var dw = parseYmd(d).getDay(); occ[dw] = (occ[dw] || 0) + 1; byDow[dw] = (byDow[dw] || 0) + agg.perDay[d].w + agg.perDay[d].r; });
     var hd = Object.keys(byDow).sort(function (x, y) { return byDow[y] / occ[y] - byDow[x] / occ[x]; })[0];
-    if (hd != null && a.dow === '' && byDow[hd]) out.push(DOWN[DOW.indexOf(+hd)] + ' is the heaviest day: about ' + Math.round(byDow[hd] / occ[hd]) + ' lines on the list.');
+    if (hd != null && a.dow === '' && byDow[hd]) out.push(DOWN[DOW.indexOf(+hd)] + ' is the heaviest day: about ' + Math.round(byDow[hd] / occ[hd]) + (Math.round(byDow[hd] / occ[hd]) === 1 ? ' line' : ' lines') + ' on the list.');
     var bh = -1, bm = 0, h; for (h = 0; h < 24; h++) if (agg.tHour[h] > bm) { bm = agg.tHour[h]; bh = h; }
     if (bh >= 0) out.push('Most lines get ticked between ' + (bh < 10 ? '0' : '') + bh + ':00 and ' + (bh + 1 < 10 ? '0' : '') + (bh + 1) + ':00.');
     if (!a.sec) {
@@ -5792,13 +5792,14 @@
     // Who has worked where (head chef, 10 Nov 2026, docs/cross-training-options/brief.md): one answer from shifts worked
     // replaces the ticks matrix, Cross-training chances, Section habits and Shifts on each section; ticks stay in a fold
     var ticks = '<span class="hint">Lines each person ticked in each section (the 8 busiest sections). Ticks record activity, not skill.</span>' + skillsHTML(rows, td);
-    return '<section class="set-block">' + chips + (tsCan() ? whoWorkedHTML(n) + '<details class="sk-ticks"><summary class="a-ch-h">Lines ticked in each section</summary>' + ticks + '</details>' :
+    var tc = tsCan() ? tsCount(n) : null;
+    return '<section class="set-block">' + chips + (tc ? glanceHTML(tc) + whoWorkedHTML(tc) + '<details class="sk-ticks"><summary class="a-ch-h">Lines ticked in each section</summary>' + ticks + '</details>' :
       '<h3 class="a-ch-h">Lines ticked in each section</h3>' + ticks) +
-      '<h3 class="a-ch-h">Who writes, and who does not</h3><span class="hint">Days written is out of the ' + td.nActive + ' days in this time that had any lines written. Fewest first. Ticks are shown so you can tell someone who works but does not write.</span>' +
+      '<h3 class="a-ch-h">Who writes, and who does not</h3><span class="hint">Days written is out of the ' + td.nActive + (td.nActive === 1 ? ' day' : ' days') + ' in this time that had any lines written. Fewest first. Ticks are shown so you can tell someone who works but does not write.</span>' +
       (act || '<p class="hint">No people on the list.</p>') + '</section>' + orderStatsHTML(td, n);
   }
   /* Items that keep coming back onto the order list in the last 14 days: candidates for a standing order. */
-  function standingHTML(all) {
+  function standingRows(all) {
     var from = shift(dayNow(), -13), m = {};
     all.filter(function (x) { return !x.deleted && x.date >= from; }).forEach(function (x) {
       var k = okey(x.text); if (!k) return;
@@ -5806,10 +5807,18 @@
       if (!e.days[x.date]) { e.days[x.date] = 1; var dw = parseYmd(x.date).getDay(); e.dow[dw] = (e.dow[dw] || 0) + 1; }
       if (x.qty) e.q[x.qty] = (e.q[x.qty] || 0) + 1;
     });
-    var rows = Object.keys(m).map(function (k) { return m[k]; }).filter(function (e) { return Object.keys(e.days).length >= 3; })
+    return Object.keys(m).map(function (k) { return m[k]; }).filter(function (e) { return Object.keys(e.days).length >= 3; })
       .sort(function (a, b) { return Object.keys(b.days).length - Object.keys(a.days).length; });
-    var head = '<h3 class="a-ch-h">Standing order candidates</h3><span class="hint">On the order list on 3 or more different days in the last 14 days. A standing order with the supplier saves writing them every time.</span>';
-    if (!rows.length) return head + '<p class="hint">Nothing comes back often enough yet.</p>';
+  }
+  // the days of the last 14 that did not load (loadOrdStats): an item may be missing from the candidates
+  function standingLost(miss) { var from = shift(dayNow(), -13); return (miss || []).filter(function (d) { return d >= from; }).length; }
+  function standingHTML(all, miss) {
+    var rows = standingRows(all);
+    var head = '<h3 class="a-ch-h" id="tm-standing">Standing order candidates</h3><span class="hint">On the order list on 3 or more different days in the last 14 days. A standing order with the supplier saves writing them every time.</span>';
+    // a day that did not load is not a day with no orders: say how many, so a missing item is not read as "not ordered"
+    var lost = standingLost(miss);
+    if (lost) head += '<p class="p-err" role="status">' + lost + ' of the last 14 days did not load, so an item may be missing here. The book tries again by itself in a few minutes.</p>';
+    if (!rows.length) return head + '<p class="hint">' + (lost ? 'Nothing comes back often enough in the days that loaded.' : 'Nothing comes back often enough yet.') + '</p>';
     return head + lvHTML({
       key: 'ord-standing', items: rows, step: 10, tools: 8, noun: ['item', 'items'], ph: 'Search items',
       find: function (e) { return e.text; },
@@ -5856,7 +5865,7 @@
     return '<section class="set-block"><span class="label">Order list</span><span class="hint">Who put what on the order list and on which days, over the same time range. No scores, just a record.</span>' + statsMiss(os) +
       '<div class="a-tiles"><div class="a-tile"><strong>' + lines.length + '</strong><span>lines written</span></div><div class="a-tile"><strong>' + ordered + '</strong><span>ticked as ordered</span></div><div class="a-tile"><strong>' + (lines.length - ordered) + '</strong><span>not yet ordered</span></div>' +
       '<div class="a-tile"><strong>' + (lag.length ? dur(lag[Math.floor(lag.length / 2)]) : 'n/a') + '</strong><span>typical time from written to ordered</span></div><div class="a-tile"><strong>' + old + '</strong><span>waiting more than 3 days</span></div></div>' +
-      standingHTML(os.lines) +
+      standingHTML(os.lines, os.miss) +
       (lines.length ? '<h3 class="a-ch-h">By day</h3>' + dayList + '<h3 class="a-ch-h">By person</h3>' + perList + '<h3 class="a-ch-h">Ordered most often</h3>' + itemList : '<p class="hint">Nothing has been written on the order list in this time.</p>') + '</section>';
   }
 
@@ -14089,7 +14098,9 @@
       Object.keys(u[k]).forEach(function (id) { var v = u[k][id]; if (str(id, 80) && Array.isArray(v) && str(v[0], 40) && typeof v[1] === 'number' && typeof v[2] === 'number') o[id] = { sec: v[0], n: v[1], of: v[2] }; });
     });
     // x.learn (who is In training, from assessments) is no longer shown since 10 Nov 2026 and is left unread
-    return { day: str(x.day, 10), days: days, usual: usual };
+    // to: the last day counted (yesterday when the run was on time); an older record says so on the Team report
+    var to = /^\d{4}-\d{2}-\d{2}$/.test(x.to) ? x.to : '';
+    return { day: str(x.day, 10), to: to, days: days, usual: usual };
   }
   // a cook's usual section on today's weekday and this shift, while that section is still on the list
   function tmUsual(id, sh) {
@@ -14098,38 +14109,81 @@
   }
   /* Admin, Reports, Team: Who has worked where (head chef, 10 Nov 2026, docs/cross-training-options/brief.md). Shifts
      worked on each section the kitchen has now, from teamsum/main (read once a kitchen day, tsLoad()), the report's
-     last 7, 14 or 30 days to yesterday. Counts only, never a verdict: a section few people worked, and anyone mostly on
-     one section, in words. teamsum keeps section names, so a section taken off or renamed drops out of the table. */
-  function whoWorkedHTML(n) {
+     last 7, 14 or 30 days to yesterday. Counts only, never a verdict. teamsum keeps section names, so a section taken off
+     or renamed drops out of the table and its shifts are said by name; a count that stops before yesterday says how many
+     days are missing (12 Nov 2026). tsCount() works the counts out once for At a glance and the table, so they agree. */
+  function tsCount(n) {
     tsLoad();
-    var h = '<h3 class="a-ch-h">Who has worked where</h3><span class="hint">Shifts from Today\'s team and each cook\'s own section picks, the last ' + n + ' days to yesterday. A count is activity, not a sign someone can run a section alone.</span>';
-    if (tsum.st === 'err') return h + '<p class="p-err" role="status">Could not load the shift counts. Check the signal. The book tries again by itself in a few minutes.</p>';
-    if (tsum.st !== 'ok') return h + '<p class="hint">' + inkLabel('Loading...', 'chef') + '</p>';
-    if (!tsum.rec) return h + '<p class="hint">Nothing counted yet. The nightly job counts the shifts from Today\'s team.</p>';
+    if (tsum.st === 'err') return { st: 'err', n: n };
+    if (tsum.st !== 'ok') return { st: 'wait', n: n };
+    if (!tsum.rec) return { st: 'none', n: n };
     var secs = kitSecs().map(function (x) { return String(x.name).trim(); }).filter(function (k, i, a) { return k && a.indexOf(k) === i; });
-    var from = shift(dayNow(), -n), c = Object.create(null);
-    tsum.rec.days.forEach(function (d) { if (d.day < from) return; d.s.forEach(function (v) { if (secs.indexOf(v.sec) < 0) return; var p = c[v.p] = c[v.p] || Object.create(null); p[v.sec] = (p[v.sec] || 0) + 1; }); });
-    var ids = Object.keys(c);
-    if (!secs.length) return h + '<p class="hint">No kitchen sections are set up.</p>';
-    if (!ids.length) return h + '<p class="hint">No shifts on a section in the last ' + n + ' days.</p>';
-    var rows = ids.map(function (id) { var t = 0; secs.forEach(function (k) { t += c[id][k] || 0; }); return { id: id, name: mnName(id), t: t }; }).sort(function (a, b) { return b.t - a.t || a.name.localeCompare(b.name); });
-    var people = secs.map(function (k) { return rows.filter(function (r) { return c[r.id][k]; }); });
+    var from = shift(dayNow(), -n), c = Object.create(null), gone = Object.create(null);
+    tsum.rec.days.forEach(function (d) { if (d.day < from) return; d.s.forEach(function (v) { if (secs.indexOf(v.sec) < 0) { gone[v.sec] = (gone[v.sec] || 0) + 1; return; } var p = c[v.p] = c[v.p] || Object.create(null); p[v.sec] = (p[v.sec] || 0) + 1; }); });
+    // A record that stops before yesterday (the nightly run has not finished since) says how many days are missing
+    var yday = shift(dayNow(), -1), to = tsum.rec.to || (tsum.rec.day ? shift(tsum.rec.day, -1) : ''), lost = to && to < yday ? Math.round((parseYmd(yday) - parseYmd(to)) / 86400000) : 0;
+    var rows = Object.keys(c).map(function (id) { var t = 0; secs.forEach(function (k) { t += c[id][k] || 0; }); return { id: id, name: mnName(id), t: t }; }).sort(function (a, b) { return b.t - a.t || a.name.localeCompare(b.name); });
+    return { st: !secs.length ? 'nosec' : !rows.length ? 'empty' : 'ok', n: n, secs: secs, c: c, rows: rows, to: to, lost: lost,
+      gone: Object.keys(gone).sort().map(function (k) { return [k, gone[k]]; }), people: secs.map(function (k) { return rows.filter(function (r) { return c[r.id][k]; }); }) };
+  }
+  // the status of the counts in words: when they run to, or that they are old, and the names no longer counted
+  function tsStatus(x) {
+    if (x.st === 'err') return '<p class="p-err" role="status">Could not load the shift counts. This does not mean nobody worked a section. Check the signal. The book tries again by itself in a few minutes.</p>';
+    if (x.st === 'wait') return '<p class="hint">' + inkLabel('Loading...', 'chef') + '</p>';
+    if (x.st === 'none') return '<p class="hint">Nothing counted yet. The nightly job counts the shifts from Today\'s team.</p>';
+    var h = x.lost ? '<p class="hint" role="status"><span class="a-flag">Old counts</span> Shift counts only go to ' + esc(dayShort(x.to)) + '. The nightly run has not finished since, so the last ' + x.lost + (x.lost === 1 ? ' day is' : ' days are') + ' missing.</p>'
+      : '<p class="hint">' + (x.to ? 'Shift counts to ' + esc(dayShort(x.to)) + ', from the nightly run. ' : '') + 'A count of shifts is activity, not a sign someone can run a section alone.</p>';
+    if (x.gone.length) h += '<p class="hint">Not counted: shifts under names no longer on the section list: ' + x.gone.map(function (g) { return esc(g[0]) + ' (' + g[1] + ')'; }).join(', ') + '. A renamed section starts again from 0 under its new name.</p>';
+    return h;
+  }
+  // a list of names in words: "Ann and Sam", "Ann, Bo and Sam", the first four and how many more
+  function andList(l) { var a = l.slice(0, 4).concat(l.length > 4 ? [(l.length - 4) + ' more'] : []); return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
+  /* At a glance (head chef, 12 Nov 2026, Look 1, docs/team-glance-options/brief.md): the Team report's findings first,
+     as cards in the Dashboard's own headline form, each a tap to its detail further down. Sections one cook or none
+     worked, sections only two worked, anyone mostly on one section, and the standing order candidates. Built from
+     tsCount() and the order lines the page already reads: no reads of its own. */
+  function glanceHTML(x) {
+    var n = x.n, card = function (tag, h, p, v, link) { return '<article class="dsh-head"><p class="dsh-tag">' + esc(tag) + '</p><h4>' + esc(h) + '</h4><p>' + esc(p) + '</p><button type="button" class="dsh-more" data-p="jump" data-v="' + v + '">' + link + '</button></article>'; };
+    var out = [], days = ', last ' + n + ' days';
+    if (x.st === 'ok') {
+      x.secs.forEach(function (k, i) {
+        var l = x.people[i];
+        if (l.length === 1) {
+          var r = l[0], v = x.c[r.id][k], others = x.rows.filter(function (o) { return o.id !== r.id; }).map(function (o) { return o.name; });
+          out.push(card('Few cooks' + days, 'Only ' + r.name + ' worked ' + k, v + (v === 1 ? ' shift. ' : ' shifts. ') + (others.length ? andList(others) + ' had no ' + k + ' shifts.' : 'No one else had a ' + k + ' shift.'), 'tm-where', 'See the table'));
+        } else if (!l.length) out.push(card('Few cooks' + days, 'No ' + k + ' shifts counted', 'No shifts under this name in the last ' + n + ' days.' + (x.gone.length ? ' Shifts under names no longer on the list are named above.' : ''), 'tm-where', 'See the table'));
+      });
+      var two = x.secs.map(function (k, i) { return { k: k, l: x.people[i] }; }).filter(function (o) { return o.l.length === 2; });
+      if (two.length) out.push(card('Two cooks only' + days, 'Two cooks only: ' + andList(two.map(function (o) { return o.k; })), two.map(function (o) { return o.k + ': ' + o.l.map(function (r) { return r.name + ' (' + x.c[r.id][o.k] + ')'; }).join(' and ') + '.'; }).join(' '), 'tm-where', 'See the table'));
+      var one = x.rows.filter(function (r) { return r.t >= 5; }).map(function (r) { var top = x.secs.slice().sort(function (a, b) { return (x.c[r.id][b] || 0) - (x.c[r.id][a] || 0); })[0]; return { r: r, k: top, v: x.c[r.id][top] || 0 }; }).filter(function (o) { return o.v / o.r.t >= 0.8; });
+      if (one.length === 1) out.push(card('One section' + days, one[0].v === one[0].r.t ? one[0].r.name + ' was on ' + one[0].k + ' every shift' : one[0].r.name + ' was mostly on ' + one[0].k, one[0].v + ' of ' + one[0].r.t + ' shifts on ' + one[0].k + '.', 'tm-where', 'See the table'));
+      else if (one.length) out.push(card('One section' + days, one.length + ' cooks mostly on one section', one.map(function (o) { return o.r.name + ': ' + o.v + ' of ' + o.r.t + ' on ' + o.k + '.'; }).join(' '), 'tm-where', 'See the table'));
+    }
+    var os = S.ordStats;
+    if (os && !os.loading) {
+      var st = standingRows(os.lines), lost = standingLost(os.miss);
+      if (st.length) out.push(card('Standing order?, last 14 days', st[0].text + ' was on the order list on ' + Object.keys(st[0].days).length + ' days',
+        (st.length > 1 ? 'Also ' + andList(st.slice(1).map(function (e) { return e.text + ' (' + Object.keys(e.days).length + ' days)'; })) + '. ' : '') + 'A standing order with the supplier saves writing it each time.' + (lost ? ' ' + lost + ' of the last 14 days did not load.' : ''), 'tm-standing', 'See the order list'));
+    }
+    var quiet = x.st === 'ok' && !out.length ? '<p class="hint">Nothing stands out: every section had three or more cooks in the last ' + n + ' days, and no one spent most shifts on one section.</p>' : '';
+    return '<h3 class="a-ch-h tm-glance-h">At a glance</h3>' + tsStatus(x) + (out.length ? '<div class="dsh-head-list tm-glance">' + out.join('') + '</div>' : quiet);
+  }
+  function whoWorkedHTML(x) {
+    var n = x.n, h = '<h3 class="a-ch-h" id="tm-where">Who has worked where</h3><span class="hint">Shifts from Today\'s team and each cook\'s own section picks, the last ' + n + ' days to yesterday. A count is activity, not a sign someone can run a section alone.</span>';
+    // the state of the counts is said once, under At a glance
+    if (x.st === 'err' || x.st === 'wait' || x.st === 'none') return h + '<p class="hint">No table yet: see At a glance above.</p>';
+    if (x.st === 'nosec') return h + '<p class="hint">No kitchen sections are set up.</p>';
+    if (x.st === 'empty') return h + '<p class="hint">No shifts on a section in the last ' + n + ' days.</p>';
+    var c = x.c, secs = x.secs, rows = x.rows;
     var head = '<tr><th scope="col">Person</th>' + secs.map(function (k) { return '<th scope="col">' + esc(k) + '</th>'; }).join('') + '</tr>';
     var body = rows.map(function (r) {
       return '<tr><th scope="row">' + esc(r.name) + '</th>' + secs.map(function (k) {
         var v = c[r.id][k] || 0;
         return '<td class="sk-c" style="background:' + SK[skLevel(v)] + '" title="' + esc(r.name + ', ' + k + ': ' + v + (v === 1 ? ' shift' : ' shifts')) + '">' + v + '</td>';
       }).join('') + '</tr>';
-    }).join('') + '<tr class="sk-tot"><th scope="row">People</th>' + people.map(function (l) { return '<td>' + l.length + '</td>'; }).join('') + '</tr>';
+    }).join('') + '<tr class="sk-tot"><th scope="row">People</th>' + x.people.map(function (l) { return '<td>' + l.length + '</td>'; }).join('') + '</tr>';
     var key = '<div class="a-legend sk-key"><span>Shifts worked:</span>' + [['0, no shifts recorded', 0], ['1 to 2', 1], ['3 to 5', 2], ['6 to 10', 3], ['over 10', 4]].map(function (k) { return '<span><i style="background:' + SK[k[1]] + '"></i>' + k[0] + '</span>'; }).join('') + '</div>';
-    var few = secs.map(function (k, i) { return { k: k, l: people[i] }; }).filter(function (x) { return x.l.length <= 2; }).map(function (x) {
-      return '<li><strong>' + esc(x.k) + ':</strong> ' + (x.l.length ? x.l.length + (x.l.length === 1 ? ' person' : ' people') + ' in ' + n + ' days (' + x.l.map(function (r) { return esc(r.name) + ', ' + c[r.id][x.k]; }).join('; ') + (x.l.length === 1 && c[x.l[0].id][x.k] === 1 ? ' shift' : ' shifts') + ').' : 'nobody in ' + n + ' days.') + '</li>';
-    }).join('');
-    var one = rows.filter(function (r) { return r.t >= 5; }).map(function (r) { var top = secs.slice().sort(function (a, b) { return (c[r.id][b] || 0) - (c[r.id][a] || 0); })[0]; return { r: r, k: top, v: c[r.id][top] || 0 }; })
-      .filter(function (x) { return x.v / x.r.t >= 0.8; }).map(function (x) { return '<li><strong>' + esc(x.r.name) + ':</strong> ' + x.v + ' of ' + x.r.t + ' shifts on ' + esc(x.k) + '.</li>'; }).join('');
-    return h + key + '<div class="a-tablewrap" tabindex="0" role="region" aria-label="Who has worked where, table, scrolls sideways"><table class="a-table a-plain sk-t sk-shifts"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>' +
-      '<h3 class="a-ch-h">Sections few people worked lately</h3>' + (few ? '<ul class="a-list sk-few">' + few + '</ul>' : '<p class="hint">Every section had three or more people in the last ' + n + ' days.</p>') +
-      '<h3 class="a-ch-h">Mostly on one section</h3>' + (one ? '<ul class="a-list sk-one">' + one + '</ul>' : '<p class="hint">Nobody with 5 or more shifts spent 80% of them on one section.</p>');
+    return h + key + '<div class="a-tablewrap" tabindex="0" role="region" aria-label="Who has worked where, table, scrolls sideways"><table class="a-table a-plain sk-t sk-shifts"><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>';
   }
 
   /* ---------- public bits used by app.js ---------- */
