@@ -132,7 +132,7 @@ These hold for every session, every message and every change, however small. A h
 
 ## Keeping usage down (3 Nov 2026)
 Measured on 2 and 3 November 2026: most of the cost was repeated test runs and reading big files, not the work. The numbers and the reason for each rule: `docs/keeping-usage-down.md`.
-- **Read big files in parts.** `docs/prep-book.md` (about 290 KB), `README.md` (about 120 KB) and the audit notes: search (Grep), then read that part only. Never read one whole.
+- **Read big files in parts.** `docs/prep-book.md` (about 290 KB), `README.md` (about 100 KB) and the audit notes: search (Grep), then read that part only. Never read one whole.
 - **Keep this file short** (8 Nov 2026). It loads in every session and every agent. A new note or file gets one short row here; the detail goes in `docs/session-map.md` or its own note.
 - **Let the queue bring `main` in.** Merge `main` in yourself only to fix a conflict, once.
 - **Push when the work is finished.** Each push cancels the running Click tests and starts again.
