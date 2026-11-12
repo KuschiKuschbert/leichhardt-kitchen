@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## README split and housekeeping decisions, 12 November 2026
+
+`README.md` went from 169 KB to 104 KB. Three sections moved word for word into their own notes, with a short summary left under the same heading: [The first screen on a phone](phone-screens.md) (34 KB, what each page shows first under 900 px), [Testing](testing.md) (21 KB, the story behind particular checks) and [Supplier order and catalogue](supplier-order.md) (11 KB; its data contract stays in `supplier-workspace.md`). Links in the moved text now point from `docs/`. The owner also chose to keep Chicken Adobo and Pork Knuckle hidden (`head-chef-decisions.md`) and to keep the three page toasts as they are (`open-work.md`, Checked and kept).
+
 ## At a glance on Reports, Team, chosen and built 12 November 2026
 
 The owner asked whether the admin panel says what the book records in clear, easy language. Round 1 Build smaller (5 of 5): no new "Worth a look" box; the Team page's findings first, worded as time-bound activity. Round 2 A first (6 of 6) over Dashboard cards (B) and a weekly Inbox row (C); the owner asked for a better look and chose Look 1, the Dashboard's headline cards. The council's break-it review found three faults in the Team report (a renamed section read "nobody", old counts showed as the whole time, missing order days dropped standing order candidates), fixed first in #682 (`tests/team-report-truth.test.js`). Built in #683: `tsCount()`, `tsStatus()`, `glanceHTML()`, `whoWorkedHTML()`, `standingRows()`, `standingLost()` in `js/prep.js`, `.tm-glance` in `css/app.css`, `tests/team-glance.test.js`. Record: `docs/team-glance-options/brief.md`.
