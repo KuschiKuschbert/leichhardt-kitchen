@@ -181,7 +181,7 @@
     retryAt: {}, wDate: dayNow(), wLines: [], wState: 'idle', rvDate: '', wReview: null, wReviewFor: '', wrA: null, wrC: null, wpA: null, wpC: null, wLog: false, wRv: false, wAgain: {}, xLog: false, pLog: false, oLog: false, oDoneOpen: false, oCutOpen: false, startN: {}, wf: { text: '', amt: '', unit: 'kg', reason: '', sec: '', act: '' }, wSum: null, wsugg: [], wNote: null, wNoteFor: '', wStats: null, xDate: dayNow(), xLines: [], xState: 'idle', xf: xBlank(), xSum: null, xsugg: [], xStats: null, misses: null, heat: 'w', hist: {}, notes: null, notesFor: '', notesAt: 0, notesBusy: false, notesOpen: false, nf: null, nMsg: '', nSaving: false,
     mins: null, minsFor: '', minsAt: 0, minsBusy: false, mmine: {}, msigns: {}, mSel: '', mf: null, mMsg: '', mSaving: false, mSigning: false, minOpen: false, mErr: '',
     guides: null, guidesFor: '', guidesAt: 0, gBusy: false, gRetry: 0, gq: '', gcat: 'all', gSel: '', gf: null, gfSnap: '', gMsg: '',
-    adminsFor: '', adminsOff: null, level: '', stats: null, statsRange: 30, week: null, weekAt: 0, weekBusy: false,
+    adminsFor: '', adminsOff: null, adminsWhy: '', level: '', stats: null, statsRange: 30, week: null, weekAt: 0, weekBusy: false,
     user: null, authState: 'idle', draft: null, saveMsg: '', busy: false, toast: '', toastAct: null
   };
   var accessEpoch = 0;
@@ -482,6 +482,11 @@
   }
   // a list that could not load: with the reads used up the line at the top says why, so no "check the connection"
   function pageErr() { return quotaOn() ? 'Could not load this page.' : 'Could not load this page. Check the connection.'; }
+  /* No signal is said only when the signal is the cause (13 Nov 2026, docs/open-work.md): the phone says it is offline,
+     or the server did not answer (unavailable, deadline-exceeded; an answer only from the copy in memory is unavailable
+     too, sdk()). The reads used up, a refusal or any other failure says it could not check, so nobody goes to check the
+     wifi for nothing. */
+  function noSignal(e) { return navigator.onLine === false || (!!e && (e.code === 'unavailable' || e.code === 'deadline-exceeded')); }
   function quotaHTML() { return quotaOn() && S.configState !== 'error' ? '<p class="p-err quota-note" role="status">' + esc(quotaText()) + '</p>' : ''; }
   var cfgLast = '';   // what the settings listener now running last had: '' nothing yet, 'offline' only the empty copy, 'ok'
   var liveFor = '';   // the device identity and person the live lists were started for (connect(), accessChanged())
@@ -1332,7 +1337,8 @@
     S.who = id; lsSet('lk.prep.who', id); lsSet('lk.prep.tok', ''); S.authed = false; S.tok = ''; S.pf1 = S.pf2 = ''; S.pinMsg = ''; S.pinStep = 'checking'; S.pinOff = false; featSync(); draw(); whoSync();
     // one read: does this person have a PIN yet. An answer for a name picked before (another name since, or a handover)
     // is dropped. With no signal (28 Oct 2026, r2-2-2) the screen says so, and the same read goes again by itself once
-    // the phone is back online, if this person is still on the screen; a refusal keeps the old words
+    // the phone is back online, if this person is still on the screen. Any other failure (the reads used up, a refusal)
+    // says it could not check, never No signal (13 Nov 2026, noSignal())
     fb.fs.getDoc(docRef('pinset', id)).then(function (s) {
       if (S.who !== id) return;
       var d = s.exists() ? s.data() : null;
@@ -1340,8 +1346,9 @@
       if (/^\d{4}$/.test(S.pf1)) { if (S.pinStep === 'enter') submitPin(); else focusK('pf2'); }
     }, function (e) {
       if (S.who !== id || (e && e.code === 'cancelled')) return;
-      S.pinStep = 'error'; S.pinOff = !(e && e.code === 'permission-denied');
-      if (S.pinOff) onlineRetry.pick = function () { if (S.who === id && S.pinStep === 'error') pickName(id); };
+      var refused = !!e && e.code === 'permission-denied';
+      S.pinStep = 'error'; S.pinOff = !refused && noSignal(e);
+      if (!refused) onlineRetry.pick = function () { if (S.who === id && S.pinStep === 'error') pickName(id); };
       draw();
     });
   }
@@ -2532,7 +2539,7 @@
       d.uncertain = false;ptRestore(d, x);ptSave(d.selected);
     }, function () {
       if (pt !== d || !ptContext(d)) return;
-      d.busy = false;d.error = 'Could not confirm whether this tick saved. Your choice is kept. Try again to check before recording it again.';ptDraw();whoSync();
+      d.busy = false;d.error = 'Not sure this tick was saved. Your choice is kept. Try again checks first, so it never saves twice.';ptDraw();whoSync();
     });
   }
   function ptSave(id) {
@@ -2551,7 +2558,7 @@
       if (d.latestServer && d.latest && d.latest.done) { ptRestore(d, d.latest);d.stale = true;d.error = 'This line was ticked elsewhere. Close and review the list.'; }
       else {
         ptRestore(d);d.uncertain = !(error && error.code === 'permission-denied');
-        d.error = d.uncertain ? 'Could not confirm whether this tick saved. Your choice is kept. Try again to check before recording it again.' : 'Could not save. The line is not ticked. Your choice is kept. Try again.';
+        d.error = d.uncertain ? 'Not sure this tick was saved. Your choice is kept. Try again checks first, so it never saves twice.' : 'Could not save. The line is not ticked. Your choice is kept. Try again.';
       }
       draw();ptDraw();whoSync();
       var retry = ptPop && ptPop.querySelector('[data-pt="retry"]');if (retry) retry.focus({ preventScroll: true });
@@ -3594,7 +3601,7 @@
     var rb = fb.fs.writeBatch(fb.db); rb.delete(docRef('staffpins', id)); rb.delete(docRef('pinset', id));
     var po = {}; po[id] = now() + PIN_RESET_MIN * 60000; rb.set(cfgDoc(), { pinOpen: po }, { merge: true });   // they may set a new one for 30 minutes
     var who2 = (people().filter(function (x) { return x.id === id; })[0] || {}).name || 'Their';
-    track(rb.commit()).then(function () { toast(who2 + (who2 === 'Their' ? ' PIN is reset.' : '\'s PIN is reset.') + ' They set a new one next time they sign in.'); }, function (e) { toast(e && e.code === 'permission-denied' ? 'Could not reset. Sign in as the admin.' : 'Could not reset. Check the connection and try again.', { label: 'OK', fn: function () {} }, 0, 'bad'); });
+    track(rb.commit()).then(function () { toast(who2 + (who2 === 'Their' ? ' PIN is reset.' : '\'s PIN is reset.') + ' They set a new one next time they sign in.'); }, function (e) { toast(e && e.code === 'permission-denied' ? 'Could not reset. Sign in again as the head chef.' : 'Could not reset. Check the connection and try again.', { label: 'OK', fn: function () {} }, 0, 'bad'); });
   }
   function hideSection(id, hidden) {
     var sc = (S.sections || []).filter(function (x) { return x.id === id; })[0], nm = sc && sc.name ? slipName(sc.name) : 'The section';
@@ -3746,8 +3753,9 @@
     }).catch(function (e) {
       var wasW = !!S.adminsOff;
       if (e && e.code === 'cancelled') return;
+      quotaSeen(e);   // the owner's reads are not wrapped (sdk()): the reads used up say so at the top here too
       if (e && e.code === 'permission-denied') { S.level = S.ownerVerified ? 'pin' : 'none'; S.adminsOff = null; admMark(false); }
-      else { S.adminsFor = ''; if (!(e && e.code === 'cancelled')) { S.adminsOff = em; retrySoon('admins', loadAdmins, e); } }
+      else { S.adminsFor = ''; if (!(e && e.code === 'cancelled')) { S.adminsOff = em; S.adminsWhy = noSignal(e) ? 'signal' : 'other'; retrySoon('admins', loadAdmins, e); } }
       if (wasW !== !!S.adminsOff) offSay();   // js/app.js: the start page and the chef hat follow offline()
       featSync(); draw(); cutPaint();
     });
@@ -4863,7 +4871,7 @@
   function ownPinHTML() {
     var p = who(), step = S.pinStep;
     if (!p) return whoHTML();
-    if (step === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + esc(p.name) + '</h2>' + (S.pinOff ? '<p class="p-err" role="status">No signal. You can sign in once the phone is back online.</p>' : '<p class="p-err">Could not check your PIN. Check the connection.</p>') + '<div class="btn-row"><button type="button" class="btn dark" data-p="who" data-id="' + esc(p.id) + '">Try again</button><button type="button" class="btn" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Not me') + '</button></div></section>';
+    if (step === 'error') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">' + esc(p.name) + '</h2>' + (S.pinOff ? '<p class="p-err" role="status">No signal. You can sign in once the phone is back online.</p>' : '<p class="p-err" role="status">Could not check your PIN.</p>') + '<div class="btn-row"><button type="button" class="btn dark" data-p="who" data-id="' + esc(p.id) + '">Try again</button><button type="button" class="btn" data-p="who-change">' + (armed('who-change') ? 'Discard work and change person' : 'Not me') + '</button></div></section>';
     var setting = step === 'set', checking = step !== 'set' && step !== 'enter';
     // while the book checks whether this person has a PIN yet, the box is already there: it takes the keyboard inside
     // the tap on the name (an iPhone opens the keyboard only inside a tap), and a PIN typed early is sent once it knows
@@ -6430,7 +6438,7 @@
     loadAdmins();
     if (S.level === 'setup') return bootstrapHTML();
     if (S.level === 'pin' && S.ownerVerified) return '<p class="hint">Your Google account is recognised. Enter your head chef PIN to unlock this device until 04:00.</p>' + ownPinHTML() + '<p><button type="button" class="p-link" data-p="owner-reset">' + (armed('owner-reset') ? 'Confirm reset of the head chef PIN' : 'Forgot the head chef PIN?') + '</button></p>' + (S.saveMsg ? msgHTML(S.saveMsg) : '');
-    if (!S.level) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + (S.adminsOff === (S.user.email || '') ? '<p class="p-err" role="status">No signal. The admin panel opens when the phone is back online.</p><div class="btn-row"><button type="button" class="btn dark" data-p="admins-retry">Try again</button><a class="btn" href="#/prep">Back to the prep book</a></div>' : inkWait('Checking your access...', 'chef')) + '</section>';
+    if (!S.level) return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2>' + (S.adminsOff === (S.user.email || '') ? '<p class="p-err" role="status">' + (S.adminsWhy === 'signal' ? 'No signal. The admin panel opens when the phone is back online.' : 'Could not check your access yet. The admin panel opens once it is checked.') + '</p><div class="btn-row"><button type="button" class="btn dark" data-p="admins-retry">Try again</button><a class="btn" href="#/prep">Back to the prep book</a></div>' : inkWait('Checking your access...', 'chef')) + '</section>';
     if (S.level === 'none') return '<section class="p-card"><h2 class="p-h" id="rtitle" tabindex="-1">Admin panel</h2><p class="p-err">' + esc(S.user.email) + ' is not the head chef\'s Google account, so it cannot open the admin panel. Sign out and sign in with the head chef\'s account.</p><div class="btn-row"><button type="button" class="btn dark" data-p="signout">' + (armed('signout') ? notSaved() + '. Tap again' : 'Sign out') + '</button><a class="btn" href="#/prep">Back to the prep book</a></div></section>';
     if (!ownerHere()) {
       var op = who();
@@ -6563,7 +6571,7 @@
       st.loading = false; draw();
     }, function (e) {
       if (!chefAllowed() || epoch !== accessEpoch || S.chefHistory !== st) return;
-      st.loading = false; st.error = quotaOn() ? quotaText() : e && e.code === 'permission-denied' ? 'This session cannot read that day. Sign in again or ask the admin.' : 'Could not load this day. Check the connection and try again.';
+      st.loading = false; st.error = quotaOn() ? quotaText() : e && e.code === 'permission-denied' ? 'This sign-in cannot open that day. Sign in again or ask the head chef.' : 'Could not load this day. Check the connection and try again.';
       draw();
     });
   }
@@ -6615,7 +6623,7 @@
     else if (at === 'notes') { loadNotes(); pane = notesEditorHTML(); }
     else if (at === 'people') pane = staffContentHTML(true);
     else if (at === 'minutes') pane = minAdminHTML();
-    else if (at === 'mail') pane = mlListHTML('Kitchen mail', 'Shared with the chefs by the admin. Tick a message when it is dealt with. Seen still means the owner has read it.');
+    else if (at === 'mail') pane = mlListHTML('Kitchen mail', mlSousSay());
     else if (at === 'prep-history' || at === 'order-history') pane = chefHistoryHTML();
     else pane = chefKitchenHTML(at);
     pane = pane.replace(/ id="rtitle"/g, '');
@@ -6935,7 +6943,7 @@
   function staffContentHTML(heading) {
     var d = S.draft || (startDraft(), S.draft);
     var bulk = '<div class="field"><label class="label" for="a-bulk">Add several names</label><textarea id="a-bulk" class="p-bulk" data-k="a-bulk" rows="3" placeholder="One name per line">' + esc(S.bulk || '') + '</textarea></div><div class="btn-row"><button type="button" class="btn" data-p="a-bulk-add">Add these names as Staff</button></div>';
-    return '<section class="set-block">' + (heading ? '<h3 class="a-ch-h">Manage staff</h3>' : '') + '<span class="hint">Add a person or remove one, then save. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the admin.</span>' + staffListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + saveBarHTML();
+    return '<section class="set-block">' + (heading ? '<h3 class="a-ch-h">Manage staff</h3>' : '') + '<span class="hint">Add a person or remove one, then save. New people start as Staff. Removing someone keeps their name on old lines. Roles and PINs are looked after by the head chef.</span>' + staffListHTML(d) + '<div class="btn-row"><button type="button" class="btn" data-p="a-add-person">Add a person</button></div>' + bulk + '</section>' + saveBarHTML();
   }
   /* While connecting, show the page that is opening (not a generic prep book card), so nothing flashes. */
   // the pages other scripts draw are named too: before the kitchen's settings are in, they show this card (27 Oct 2026)
@@ -10659,7 +10667,7 @@
       S.gRetry = 0; draw(); loadGuides(true);
     }, function (e) {
       f.saving = false; f.busy = ''; f.progress = null;
-      f.msg = errMsg(e && e.code === 'permission-denied' ? 'Not saved: the security rules refused it. Sign in again with the head chef\'s Google account.' : 'Not saved. Check the connection and try again. Nothing typed or chosen is lost.');
+      f.msg = errMsg(e && e.code === 'permission-denied' ? 'Not saved: this sign-in may not change it. Sign in again with the head chef\'s Google account.' : 'Not saved. Check the connection and try again. Nothing typed or chosen is lost.');
       svFail('g', S.gf === f, function () { f.msg = ''; });
       draw();
     });
@@ -11572,9 +11580,11 @@
     pushKeepDone = t;
     pushToken().then(function (tok) { return pushSave(tok, who); }).catch(function () {});
   }
+  /* A push can come late (13 Nov 2026): GitHub starts the 10-minute push job only 3 to 7 times a day (docs/firestore-usage.md,
+     7.1 to 7.3), so the words promise no exact time until Google's scheduler runs it (Plan C). */
   function pushHTML() {
     var st = pushState(), on = st === 'on';
-    return '<div class="cut-push"><p class="cut-push-l">' + (on ? 'Pushes are on for this phone.' : 'Get a push on this phone when a reminder starts and an hour before each cut-off, even with the book closed. Only for suppliers nobody has ticked off yet.') + '</p>' +
+    return '<div class="cut-push"><p class="cut-push-l">' + (on ? 'Pushes are on for this phone. A push can come late, so still check here.' : 'Get a push on this phone when a reminder starts and before each cut-off, even with the book closed, for suppliers nobody has ticked off yet. A push can come late, so still check here.') + '</p>' +
       '<button type="button" class="btn' + (on ? '' : ' dark') + '" data-p="' + (on ? 'cut-push-off' : 'cut-push-on') + '"' + (S.pushBusy ? ' disabled' : '') + '>' + (on ? 'Turn pushes off' : 'Turn pushes on') + '</button>' +
       (S.pushMsg ? '<p class="hint cut-push-msg" role="status">' + esc(S.pushMsg) + '</p>' : (st === 'ios' || st === 'denied' ? '<p class="hint cut-push-msg">' + esc(PUSH_SAY[st]) + '</p>' : '')) + '</div>';
   }
@@ -12579,7 +12589,7 @@
       '<span class="hint ml-left" id="ml-left">' + (left < 100 ? left + ' characters left' : '') + '</span></div>' +
       (mlMsg ? '<p class="p-err" role="alert">' + esc(mlMsg) + '</p>' : '') +
       '<div class="btn-row"><button type="button" class="btn dark" data-p="ml-send"' + (mlBusy ? ' disabled' : '') + '>' + (mlBusy ? 'Sending...' : 'Send to Chef') + '</button></div></section>' + mlSentHTML() +
-      (mlSous() ? '<section class="p-card">' + mlListHTML('Mail to Chef', 'What the team wrote to Chef, most urgent first. Chef has let the sous chefs read it. Tick a line when it is dealt with. Seen is still for Chef.') + '</section>' : '');
+      (mlSous() ? '<section class="p-card">' + mlListHTML('Mail to Chef', mlSousSay()) + '</section>' : '');
   }
 
   /* ---- the head chef's side ---- */
@@ -12662,8 +12672,11 @@
   }
   function mlFind(x) { return x.text + ' ' + mnName(x.from) + ' ' + mlCat(x.cat) + ' ' + mlPri(x.pri); }
   function mlFilters() { return [['all', 'All']].concat(ML_CATS.map(function (c) { return [c[0], c[1], function (x) { return x.cat === c[0]; }]; })); }
+  // what a sous chef reads above kitchen mail, in the chef panel and the chef hat's page alike (13 Nov 2026: the chef
+  // panel said "the admin" and "the owner" for Chef)
+  function mlSousSay() { return 'What the team wrote to Chef, most urgent first. Chef has let the sous chefs read it. Tick a line when it is dealt with. Seen still means Chef has read it.'; }
   function mailAdminHTML() {
-    if (!mlHead()) return mlListHTML('Kitchen mail', 'What the team wrote to Chef, most urgent first. Chef has let the sous chefs read it. Tick a line when it is dealt with. Seen is still for Chef.');
+    if (!mlHead()) return mlListHTML('Kitchen mail', mlSousSay());
     return mlListHTML('Kitchen mail', ['What the team wrote to you, most urgent first. Tick a line when it is dealt with.', 'Food safety comes first, then Today, This week and Whenever, oldest first. Opening this list marks everything on it as seen, so the sender knows you have read it.'],
       '<div class="ml-sous"><label class="a-check"><input type="checkbox" data-k="ml-sous"' + (mlSousOn() ? ' checked' : '') + '> Sous chefs can read kitchen mail and tick it off</label>' +
       '<span class="hint">Off: only you read it. On: a sous chef signed in with their PIN reads it under Kitchen mail in the chef hat menu, ticks lines off and changes how soon they matter. Seen still means you have read it.</span></div>');
@@ -12834,8 +12847,8 @@
       tdBusy = false; tdAt = Date.now();
       tdOpen = l; tdErr = false; tdDone = tdDrop(l, tdDone); draw();
       if (tdSay) { tdSay = false; toast('To-do list read again at ' + clock(now()) + '.'); }
-    }, function () {
-      tdBusy = false; tdSay = false; tdErr = true; tdAt = Date.now() - TD_STALE + TD_RETRY; draw();
+    }, function (e) {
+      tdBusy = false; tdSay = false; tdErr = noSignal(e) ? 'signal' : 'other'; tdAt = Date.now() - TD_STALE + TD_RETRY; draw();
     });
   }
   /* the jobs ticked in the last 30 days (doneAt is 0 while open, so open jobs are not read; a removed job that was done
@@ -12848,7 +12861,7 @@
       var l = mlGrab(sn).filter(function (x) { return x.st === 'done'; });
       tdDoneBusy = false; tdDoneAt = Date.now();
       tdDone = l; tdDoneErr = false; tdOpen = tdDrop(l, tdOpen); draw();
-    }, function () { tdDoneBusy = false; tdDoneErr = true; tdDoneAt = Date.now() - TD_STALE + TD_RETRY; draw(); });
+    }, function (e) { tdDoneBusy = false; tdDoneErr = noSignal(e) ? 'signal' : 'other'; tdDoneAt = Date.now() - TD_STALE + TD_RETRY; draw(); });
   }
   function todoSave() {
     if (!todoOK()) return;
@@ -12960,15 +12973,15 @@
     if (tdDoneOpen) todoLoadDone();
     var again = ' <button type="button" class="p-link" data-p="todo-refresh">Try again</button>';
     var open = tdNeedPin() ? '<p class="hint">Type your PIN again to see the list.</p><div class="btn-row"><button type="button" class="btn dark" data-p="todo-pin">Type my PIN</button></div>'
-      : !tdOpen ? (tdErr ? '<p class="p-err">Could not load the to-do list. Check the signal.</p><div class="btn-row"><button type="button" class="btn" data-p="todo-refresh">Try again</button></div>' : '<p class="hint">Loading...</p>')
-      : (tdErr ? '<p class="hint todo-stale" role="status">No signal. This is the list as this device last read it.' + again + '</p>' : '') +
+      : !tdOpen ? (tdErr ? '<p class="p-err">Could not load the to-do list.' + (tdErr === 'signal' ? ' Check the signal.' : '') + '</p><div class="btn-row"><button type="button" class="btn" data-p="todo-refresh">Try again</button></div>' : '<p class="hint">Loading...</p>')
+      : (tdErr ? '<p class="hint todo-stale" role="status">' + (tdErr === 'signal' ? 'No signal. ' : 'Could not check for changes. ') + 'This is the list as this device last read it.' + again + '</p>' : '') +
         lvHTML({ key: 'todo', items: tdOpen, step: 20, noun: ['job', 'jobs'], ph: 'Search the list', find: tdFindText, filters: tdFilters(),
           sorts: [['due', 'Due first', tdByDue], ['new', 'Newest first', function (a, b) { return tdNum(b.at) - tdNum(a.at); }], ['old', 'Oldest first', function (a, b) { return tdNum(a.at) - tdNum(b.at); }]],
           card: todoRow, empty: 'Nothing on the list. Write a new job to start.' });
     var done = (tdDone || []).slice().sort(function (a, b) { return tdNum(b.doneAt) - tdNum(a.doneAt); });
-    var doneIn = tdDone ? (tdDoneErr ? '<p class="hint todo-stale" role="status">No signal. This is what this device last read.' + again + '</p>' : '') +
+    var doneIn = tdDone ? (tdDoneErr ? '<p class="hint todo-stale" role="status">' + (tdDoneErr === 'signal' ? 'No signal. ' : 'Could not check for changes. ') + 'This is what this device last read.' + again + '</p>' : '') +
         lvHTML({ key: 'tododone', items: done, step: 15, noun: ['job', 'jobs'], ph: 'Search done jobs', find: tdFindText, card: todoRow, empty: 'Nothing ticked off in the last 30 days.' })
-      : tdDoneErr ? '<p class="p-err">Could not load. Check the signal.' + again + '</p>' : '<p class="hint">Loading...</p>';
+      : tdDoneErr ? '<p class="p-err">Could not load.' + (tdDoneErr === 'signal' ? ' Check the signal.' : '') + again + '</p>' : '<p class="hint">Loading...</p>';
     // Counts use the open jobs already read. A failed read never becomes a known total.
     var count = tdOpen && !tdErr && !tdNeedPin() ? '<span class="todo-status">' + tdOpen.length + (tdOpen.length === 1 ? ' job' : ' jobs') + '<small>still to do</small></span>' : '';
     return '<section class="todo-page todo-notebook" aria-labelledby="rtitle">' +
