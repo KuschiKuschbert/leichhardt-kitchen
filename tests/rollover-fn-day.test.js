@@ -31,6 +31,24 @@ const line = x => Object.assign({ text: 'Make stock', station: 'Sauce', qty: '10
   ok(before >= 1, 'the first open read the day it rolled from (' + before + ')');
   await p.context().close();
 
+  // A copy rolled onto yesterday and removed there stays gone (13 Nov 2026): the rollover took two days ago as its source
+  // again, because yesterday held no line still on it. A line added and removed yesterday that has nothing to do with it
+  // does not stop the others rolling. The copy's id carries its first line's id (the phone's past days keep no root).
+  const ydC = yday.replace(/-/g, ''), rem = {};
+  rem[fsKey(['days', day2, 'items', 'c1'])] = line({ text: 'Cut chips' });
+  rem[fsKey(['days', day2, 'items', 'c2'])] = line({ text: 'Pick parsley' });
+  rem[fsKey(['days', yday, 'items', 'r' + ydC + '-c1'])] = line({ text: 'Cut chips', addedBy: 'Rolled over', addedById: '', rolled: 1, root: 'c1', from: 'c1', rolledFrom: day2, deleted: true, deletedBy: 'Sam' });
+  rem[fsKey(['days', yday, 'items', 'u1'])] = line({ text: 'Typo line', deleted: true, deletedBy: 'Ann' });
+  const q = await L.open(b, '#/prep', { extra: rem, wait: 3000 });
+  const cp = id => fsKey(['days', today, 'items', 'r' + today.replace(/-/g, '') + '-' + id]);
+  await L.waitFor(q, id => !!window.__fake.dump()[id], cp('c2'), 8000).catch(() => {});
+  await L.settle(q, 300);
+  const st2 = await q.evaluate(() => window.__fake.dump());
+  ok(!st2[cp('c1')], 'a copy removed yesterday does not roll from two days ago again');
+  ok(!!st2[cp('c2')], 'the open line from two days ago still rolls past a day that only had removed lines');
+  ok(q.errors.length === 0, 'removed copy: no page errors ' + q.errors.join(' | '));
+  await q.context().close();
+
   await b.close();
   R.forEach(r => console.log(r));
   const bad = R.filter(r => r.startsWith('FAIL')).length;

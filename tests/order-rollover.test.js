@@ -64,6 +64,35 @@ const rid = id => 'r' + today.replace(/-/g, '') + '-' + id;
   ok(past === 0, 'reload: no past order days read again (' + past + ' reads)');
   await p.context().close();
 
+  // A copy rolled onto yesterday and removed there stays gone (13 Nov 2026). The rollover took the last day with a line
+  // still on it as its source, so with yesterday's only copy removed it rolled two days ago's line again. A line added and
+  // removed yesterday that has nothing to do with it does not stop the other lines rolling.
+  const ydC = yday.replace(/-/g, '');
+  const gone = {};
+  gone[fsKey(['orders', ago2, 'lines', 'g1'])] = line('Saffron', { qty: '1 jar' });
+  gone[fsKey(['orders', ago2, 'lines', 'g2'])] = line('Salt', { qty: '1 box' });
+  gone[fsKey(['orders', yday, 'lines', 'r' + ydC + '-g1'])] = line('Saffron', { qty: '1 jar', addedBy: 'Rolled over', addedById: '', rolled: 1, root: 'g1', from: 'g1', rolledFrom: ago2, since: ago2, deleted: true, deletedBy: 'Sam' });
+  gone[fsKey(['orders', yday, 'lines', 'u1'])] = line('Typo line', { deleted: true, deletedBy: 'Ann' });
+  // the same days from the night's digests: the rollover then reads only the day it copies from
+  const night = L.NOW - 11 * 3600000, withDigests = Object.assign({}, gone), dIdx = {};
+  for (let d = 1; d <= 7; d++) {
+    const k = L.ymd(new Date(L.NOW - d * 86400000)), pre = fsKey(['orders', k, 'lines', '']);
+    const orders = Object.keys(gone).filter(x => x.indexOf(pre) === 0).map(x => Object.assign({}, gone[x], { id: x.slice(pre.length) }));
+    withDigests[fsKey(['digest', k])] = { v: 1, day: k, at: night, prep: [], orders };
+    dIdx[k] = 'fp' + d;
+  }
+  withDigests[fsKey(['digest', '_index'])] = { v: 1, at: night, days: dIdx };
+  for (const [name, seed] of [['lines', gone], ['digests', withDigests]]) {
+    p = await L.open(b, '#/orders', { who: 'ann', wait: 2000, extra: seed });
+    await L.waitFor(p, k => !!window.__fake.dump()[k], fsKey(['orders', today, 'lines', rid('g2')]), 8000).catch(() => {});
+    await L.settle(p, 300);
+    s = await store(p);
+    ok(!s[fsKey(['orders', today, 'lines', rid('g1')])], name + ': a copy removed yesterday does not roll from two days ago again');
+    ok(!!s[fsKey(['orders', today, 'lines', rid('g2')])], name + ': the line still not ordered two days ago rolls past a day that only had removed lines');
+    ok(p.errors.length === 0, name + ': removed copy, no page errors ' + p.errors.join(' | '));
+    await p.context().close();
+  }
+
   await b.close();
   L.report(R);
 })();

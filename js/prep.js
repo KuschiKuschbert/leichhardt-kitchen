@@ -2579,6 +2579,13 @@
   function retryDone(k) { delete S.retryAt[k]; delete onlineRetry[k]; }
   // a line that makes its day the last written day: anything not removed, apart from a function's platter lines
   function rollSource(x) { return !x.deleted && !x.fn; }
+  /* The first line (root) of every line on a day newer than the day a rollover copies from, removed ones included
+     (13 Nov 2026): a copy rolled onto Tuesday and removed there must not roll from Monday again on Wednesday. Its root
+     comes from root, or from a rolled copy's id (r<day>-<root>) for a copy kept without it (lk.past keeps no root). */
+  function rollGone(gone, lines) {
+    (lines || []).forEach(function (x) { var r = /^r\d{8}-(.+)$/.exec(x.id || ''); gone[x.root || (r && r[1]) || x.id] = 1; });
+    return gone;
+  }
   function maybeRoll() {
     var today = dayNow();
     // lk.prep.rolled: the kitchen day this phone last rolled the prep list over (22 Oct 2026; it was kept in memory only,
@@ -2597,9 +2604,12 @@
     // copy (a read that failed) means all seven are read, as before.
     // A day that holds only a function's platter lines (written by the function's booking, js/fnedit.js) is not a
     // written day: those lines never roll, so the day before it is the one to roll from (22 Oct 2026).
+    // gone: the lines on the days newer than the one rolled from, removed ones too (rollGone()), from the copy here
+    var gone = {};
     if (dates.every(function (d) { return S.past && S.past[d]; })) {
       var last = dates.filter(function (d) { return S.past[d].some(rollSource); })[0];
       if (!last) { lsSet('lk.prep.rolled', today); return; }
+      dates.slice(0, dates.indexOf(last)).forEach(function (d) { rollGone(gone, S.past[d]); });
       dates = [last];
     }
     Promise.all([fb.fs.getDocs(itemsCol(today))].concat(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)); }))).then(function (res) {
@@ -2607,8 +2617,8 @@
       res[0].docs.forEach(function (d) { have[d.id] = true; });
       var src = null, j;
       for (j = 1; j < res.length && !src; j++) {
-        var docs = res[j].docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }).filter(function (x) { return !x.deleted; });
-        if (docs.some(rollSource)) src = { date: dates[j - 1], items: docs };
+        var all = res[j].docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }), docs = all.filter(function (x) { return !x.deleted; });
+        if (docs.some(rollSource)) src = { date: dates[j - 1], items: docs }; else rollGone(gone, all);
       }
       if (!src) { lsSet('lk.prep.rolled', today); return; }
       // when that day's night list started, from its lines as they are on the server now
@@ -2616,7 +2626,7 @@
       src.items.forEach(function (x) {
         if (x.done || x.fn) return;   // a function's platters belong to its day (js/fnedit.js), they never roll over
         var root = x.root || x.id, id = 'r' + today.replace(/-/g, '') + '-' + root;
-        if (have[id]) return;
+        if (have[id] || gone[root]) return;
         have[id] = true;
         jobs.push(['set', itemRef(today, id), {
           text: x.text, station: x.station || '', qty: x.qty || '', recipe: x.recipe || '',
@@ -7039,17 +7049,24 @@
     // the day digests say which day was written last (5 Nov 2026), so only that day is read from the server (for its
     // ticks as they are now), with today: one day of lines instead of seven. A day without a current digest means all
     // seven are read, as before.
+    // gone: the lines on days newer than the source, removed ones too (rollGone()). The newer days hold only removed
+    // lines (or the source would be one of them), and their digests already say which: no read of their own.
+    var gone = {};
     digestRead(dates).then(function (m) {
       var known = dates.map(function (d) { return digestLines(m, 'o', d); });
-      if (known.every(Boolean)) dates = dates.filter(function (d, i) { return known[i].some(function (x) { return !x.deleted; }); }).slice(0, 1);
+      if (known.every(Boolean)) {
+        var at = known.map(function (l) { return l.some(function (x) { return !x.deleted; }); }).indexOf(true);
+        known.slice(0, at < 0 ? known.length : at).forEach(function (l) { rollGone(gone, l); });
+        dates = at < 0 ? [] : [dates[at]];
+      }
       return Promise.all([fb.fs.getDocs(ordCol(today))].concat(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)); })));
     }).then(function (res) {
       var have = {};
       res[0].docs.forEach(function (d) { have[d.id] = true; });
       var src = null, j;
       for (j = 1; j < res.length && !src; j++) {
-        var docs = res[j].docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }).filter(function (x) { return !x.deleted; });
-        if (docs.length) src = { date: dates[j - 1], items: docs };
+        var all = res[j].docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }), docs = all.filter(function (x) { return !x.deleted; });
+        if (docs.length) src = { date: dates[j - 1], items: docs }; else rollGone(gone, all);
       }
       // the order list goes by the prep list's night list (head chef, 22 Oct 2026): that day's prep lines when this phone
       // has them (the past days on the phone), else the time the server clocked or the usual time
@@ -7057,7 +7074,7 @@
       (src ? src.items : []).forEach(function (x) {
         if (x.ordered) return;
         var root = x.root || x.id, id = 'r' + today.replace(/-/g, '') + '-' + root;
-        if (have[id]) return;
+        if (have[id] || gone[root]) return;
         have[id] = true;
         jobs.push(['set', ordRef(today, id), {
           text: x.text, qty: x.qty || '', need: needOf(x), recipes: x.recipes || [], addedBy: 'Rolled over', addedById: '', addedAt: now(), ordered: false, deleted: false,
