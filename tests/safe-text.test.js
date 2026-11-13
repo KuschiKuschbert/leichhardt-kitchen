@@ -99,6 +99,22 @@ async function check(b, hash, o, name, see, then) {
   for (const t of ['waste', 'transfers', 'notes', 'mail', 'people', 'insights']) {
     await check(b, '#/admin', { admin: true, who: '' }, 'admin ' + t, t === 'waste' ? 'Waste' : t === 'transfers' ? 'Transfer' : t === 'notes' ? 'Ping' : t === 'mail' ? 'Mail' : null, async p => { await L.adminTab(p, t); });
   }
+  // Records (13 Nov 2026): the nightly count's supplier, note, receiver and task names, on the month, the day and Everything
+  const yd = L.ymd(new Date(L.NOW - 2 * 86400000)), rx = Object.assign({}, extra, {
+    [fsKey(['analysis', 'dashboard'])]: { v: 1, generation: 'g1', at: L.NOW - 3600000, from: yd, to: yd, days: [{ day: yd, p: { n: 1, w: 1, t: 1, r: 0 }, w: {}, x: {},
+      fs: { v: 1, del: [{ at: '07:42', s: 'Supplier ' + P, c: 3, f: null, n: 'Note ' + P, by: 'By ' + P }], c: { cv: 1, due: 2, done: 0, miss: ['Task ' + P], missN: 1, unable: [{ t: 'Unable ' + P, n: 'Why ' + P }], unableN: 1, wait: [], waitN: 0, ev: 0, evRec: 0 } } }] } });
+  await check(b, '#/admin', { admin: true, who: '', extra: rx }, 'admin records', 'Supplier', async p => {
+    await L.adminTab(p, 'records'); await L.waitFor(p, () => !!document.querySelector('.rec-dayrow'), null, 5000).catch(() => {});
+    // clicks in the page: the fixture's shift ping note sits over it on a phone-sized check
+    await p.evaluate(d => document.querySelector('.rec-dayrow[data-d="' + d + '"]').click(), yd); await L.settle(p, 300);
+    await p.evaluate(() => document.querySelector('[data-p="rec-show"][data-v="all"]').click()); await L.settle(p, 500);
+  });
+  // Filled for you (13 Nov 2026): the line under the boxes names the section from the nightly summary
+  await check(b, '#/waste', { who: 'bo', touch: true }, 'wastage filled line', null, async p => {
+    await L.wLog(p); await p.fill('#w-text', 'Often ' + P); await p.evaluate(() => { const el = document.querySelector('#w-text'); el.dispatchEvent(new Event('change', { bubbles: true })); el.blur(); });
+    await L.settle(p, 300);
+    ok(/Last time \(logged 3 times in the last 2 weeks\): SecZz<i id="pwn">/.test(await p.textContent('#w-fill') || ''), 'wastage filled line: the section shows as typed');
+  });
   // Today's team (7 Nov 2026): a shift and a section named with markup, on the staff side (the day line, Your day, the
   // chef hat) and on the chef's page
   const tmPeople = [{ id: 'sam', name: 'Sam', role: 'sous', add: true, tick: true, del: true, active: true }, { id: 'ann', name: 'Ann', role: 'staff', add: true, tick: true, del: false, active: true }, { id: 'bo', name: 'Bo', role: 'staff', add: true, tick: true, del: false, active: true }];

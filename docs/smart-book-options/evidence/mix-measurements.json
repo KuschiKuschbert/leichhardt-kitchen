@@ -1,0 +1,174 @@
+{
+  "source": "Preview over the implemented admin panel and work sheets, click-test stand-in, synthetic data, test fallback fonts",
+  "notes": [
+    {
+      "set": 1,
+      "name": "mix-records-month-two-none-1280",
+      "width": 1280,
+      "pageHeight": 1611,
+      "overflow": 0,
+      "firstRecordTop": 782,
+      "rowsOnFirstScreen": 1
+    },
+    {
+      "set": 1,
+      "name": "mix-records-month-two-fs-1280",
+      "width": 1280,
+      "pageHeight": 1611,
+      "overflow": 0,
+      "firstRecordTop": 782,
+      "rowsOnFirstScreen": 7
+    },
+    {
+      "set": 1,
+      "name": "mix-records-month-two-all-1280",
+      "width": 1280,
+      "pageHeight": 1611,
+      "overflow": 0,
+      "firstRecordTop": 782,
+      "rowsOnFirstScreen": 4
+    },
+    {
+      "set": 1,
+      "name": "mix-records-month-list-768",
+      "width": 768,
+      "pageHeight": 1500,
+      "overflow": 0,
+      "firstRecordTop": 703,
+      "rowsOnFirstScreen": 3
+    },
+    {
+      "set": 1,
+      "name": "mix-records-day-fs-768",
+      "width": 768,
+      "pageHeight": 1109,
+      "overflow": 0,
+      "firstRecordTop": 747,
+      "rowsOnFirstScreen": 3
+    },
+    {
+      "set": 1,
+      "name": "mix-records-month-list-390",
+      "width": 390,
+      "pageHeight": 1595,
+      "overflow": 0,
+      "firstRecordTop": 695,
+      "rowsOnFirstScreen": 2
+    },
+    {
+      "set": 1,
+      "name": "mix-records-day-fs-390",
+      "width": 390,
+      "pageHeight": 1321,
+      "overflow": 0,
+      "firstRecordTop": 641,
+      "rowsOnFirstScreen": 2
+    },
+    {
+      "set": 1,
+      "name": "mix-records-day-all-390",
+      "width": 390,
+      "pageHeight": 1936,
+      "overflow": 0,
+      "firstRecordTop": 841,
+      "rowsOnFirstScreen": 0
+    },
+    {
+      "set": 2,
+      "name": "mix-fill-start-390",
+      "width": 390,
+      "line": {
+        "top": 454,
+        "onFirstScreen": true
+      },
+      "weigh": {
+        "top": 397,
+        "onFirstScreen": true
+      },
+      "log": {
+        "top": 1126,
+        "onFirstScreen": false
+      },
+      "why": {
+        "top": 1138,
+        "onFirstScreen": false
+      },
+      "clear": 44,
+      "overflow": 0
+    },
+    {
+      "set": 2,
+      "name": "mix-fill-typed-390",
+      "width": 390,
+      "line": {
+        "top": 454,
+        "onFirstScreen": true
+      },
+      "weigh": {
+        "top": 397,
+        "onFirstScreen": true
+      },
+      "log": {
+        "top": 1054,
+        "onFirstScreen": false
+      },
+      "why": null,
+      "clear": 44,
+      "overflow": 0
+    },
+    {
+      "set": 2,
+      "name": "mix-fill-start-768",
+      "width": 768,
+      "line": {
+        "top": 406,
+        "onFirstScreen": true
+      },
+      "weigh": {
+        "top": 350,
+        "onFirstScreen": true
+      },
+      "log": {
+        "top": 941,
+        "onFirstScreen": false
+      },
+      "why": {
+        "top": 952,
+        "onFirstScreen": false
+      },
+      "clear": 44,
+      "overflow": 0
+    },
+    {
+      "set": 2,
+      "name": "mix-fill-start-1280",
+      "width": 1280,
+      "line": {
+        "top": 406,
+        "onFirstScreen": true
+      },
+      "weigh": {
+        "top": 350,
+        "onFirstScreen": true
+      },
+      "log": {
+        "top": 941,
+        "onFirstScreen": false
+      },
+      "why": {
+        "top": 952,
+        "onFirstScreen": false
+      },
+      "clear": 44,
+      "overflow": 0
+    },
+    {
+      "set": 2,
+      "name": "mix-fill-orders-390",
+      "todayWords": [
+        "Usual amount filled in: 2 tubs."
+      ],
+      "orderHeader": "0 of 2 ordered"
+    }
+  ]
+}

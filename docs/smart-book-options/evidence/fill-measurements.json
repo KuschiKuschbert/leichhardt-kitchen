@@ -1,0 +1,287 @@
+{
+  "source": "Preview over the implemented Wastage and Orders sheets, click-test stand-in, synthetic data, test fallback fonts",
+  "notes": [
+    {
+      "design": "a",
+      "page": "waste",
+      "width": 390,
+      "fill": {
+        "top": 454,
+        "bottom": 510,
+        "onFirstScreen": true
+      },
+      "reason": {
+        "top": 903,
+        "bottom": 975,
+        "onFirstScreen": false
+      },
+      "log": {
+        "top": 989,
+        "bottom": 1033,
+        "onFirstScreen": false
+      },
+      "overflow": 0
+    },
+    {
+      "design": "a",
+      "page": "waste",
+      "width": 768,
+      "fill": {
+        "top": 406,
+        "bottom": 463,
+        "onFirstScreen": true
+      },
+      "reason": {
+        "top": 840,
+        "bottom": 912,
+        "onFirstScreen": false
+      },
+      "log": {
+        "top": 926,
+        "bottom": 970,
+        "onFirstScreen": false
+      },
+      "overflow": 0
+    },
+    {
+      "design": "a",
+      "page": "waste",
+      "width": 1280,
+      "fill": {
+        "top": 406,
+        "bottom": 463,
+        "onFirstScreen": true
+      },
+      "reason": {
+        "top": 840,
+        "bottom": 912,
+        "onFirstScreen": false
+      },
+      "log": {
+        "top": 926,
+        "bottom": 970,
+        "onFirstScreen": false
+      },
+      "overflow": 0
+    },
+    {
+      "design": "b",
+      "page": "waste",
+      "width": 390,
+      "fill": {
+        "top": 454,
+        "bottom": 531,
+        "onFirstScreen": true
+      },
+      "reason": {
+        "top": 912,
+        "bottom": 984,
+        "onFirstScreen": false
+      },
+      "log": {
+        "top": 998,
+        "bottom": 1042,
+        "onFirstScreen": false
+      },
+      "overflow": 0
+    },
+    {
+      "design": "b",
+      "page": "waste",
+      "width": 768,
+      "fill": {
+        "top": 406,
+        "bottom": 464,
+        "onFirstScreen": true
+      },
+      "reason": {
+        "top": 829,
+        "bottom": 901,
+        "onFirstScreen": false
+      },
+      "log": {
+        "top": 915,
+        "bottom": 959,
+        "onFirstScreen": false
+      },
+      "overflow": 0
+    },
+    {
+      "design": "b",
+      "page": "waste",
+      "width": 1280,
+      "fill": {
+        "top": 406,
+        "bottom": 464,
+        "onFirstScreen": true
+      },
+      "reason": {
+        "top": 829,
+        "bottom": 901,
+        "onFirstScreen": false
+      },
+      "log": {
+        "top": 915,
+        "bottom": 959,
+        "onFirstScreen": false
+      },
+      "overflow": 0
+    },
+    {
+      "design": "b-after",
+      "page": "waste",
+      "width": 390,
+      "fill": {
+        "top": 454,
+        "bottom": 534,
+        "onFirstScreen": true
+      },
+      "reason": {
+        "top": 927,
+        "bottom": 999,
+        "onFirstScreen": false
+      },
+      "log": {
+        "top": 1013,
+        "bottom": 1057,
+        "onFirstScreen": false
+      },
+      "overflow": 0
+    },
+    {
+      "design": "c",
+      "page": "waste",
+      "width": 390,
+      "fill": {
+        "top": 454,
+        "bottom": 530,
+        "onFirstScreen": true
+      },
+      "reason": {
+        "top": 924,
+        "bottom": 995,
+        "onFirstScreen": false
+      },
+      "log": {
+        "top": 1009,
+        "bottom": 1053,
+        "onFirstScreen": false
+      },
+      "overflow": 0
+    },
+    {
+      "design": "c",
+      "page": "waste",
+      "width": 768,
+      "fill": {
+        "top": 406,
+        "bottom": 463,
+        "onFirstScreen": true
+      },
+      "reason": {
+        "top": 840,
+        "bottom": 912,
+        "onFirstScreen": false
+      },
+      "log": {
+        "top": 926,
+        "bottom": 970,
+        "onFirstScreen": false
+      },
+      "overflow": 0
+    },
+    {
+      "design": "c",
+      "page": "waste",
+      "width": 1280,
+      "fill": {
+        "top": 406,
+        "bottom": 463,
+        "onFirstScreen": true
+      },
+      "reason": {
+        "top": 840,
+        "bottom": 912,
+        "onFirstScreen": false
+      },
+      "log": {
+        "top": 926,
+        "bottom": 970,
+        "onFirstScreen": false
+      },
+      "overflow": 0
+    },
+    {
+      "design": "c-after",
+      "page": "waste",
+      "width": 390,
+      "fill": {
+        "top": 454,
+        "bottom": 510,
+        "onFirstScreen": true
+      },
+      "reason": {
+        "top": 903,
+        "bottom": 975,
+        "onFirstScreen": false
+      },
+      "log": {
+        "top": 989,
+        "bottom": 1033,
+        "onFirstScreen": false
+      },
+      "overflow": 0
+    },
+    {
+      "design": "a",
+      "page": "orders",
+      "width": 390,
+      "fill": {
+        "top": 420,
+        "bottom": 476,
+        "onFirstScreen": true
+      },
+      "reason": null,
+      "log": {
+        "top": 363,
+        "bottom": 409,
+        "onFirstScreen": true
+      },
+      "overflow": 0
+    },
+    {
+      "design": "b",
+      "page": "orders",
+      "width": 390,
+      "fill": {
+        "top": 419,
+        "bottom": 476,
+        "onFirstScreen": true
+      },
+      "reason": null,
+      "log": {
+        "top": 363,
+        "bottom": 409,
+        "onFirstScreen": true
+      },
+      "overflow": 0
+    },
+    {
+      "design": "c",
+      "page": "orders",
+      "width": 390,
+      "fill": {
+        "top": 440,
+        "bottom": 476,
+        "onFirstScreen": true
+      },
+      "reason": null,
+      "log": {
+        "top": 384,
+        "bottom": 430,
+        "onFirstScreen": true
+      },
+      "overflow": 0
+    }
+  ]
+}

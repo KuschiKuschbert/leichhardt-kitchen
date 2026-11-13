@@ -1,5 +1,9 @@
 # Firestore reads and writes: audit, 5 November 2026
 
+## Records and Filled for you, 13 November 2026
+
+[Records](smart-book-options/brief.md) (admin only): opening the page reads `analysis/dashboard` once (kept in memory until Refresh; a reload opens with no day chosen, so it reads nothing more). A finished day's Food safety part reads nothing; Everything reads that day's wastage and transfer lines, `team/<day>` and `analysisDaily/<generation>_<day>` (about 10 to 30 reads, in memory); Print this month and Export CSV read nothing. The nightly analysis job adds the cleaning count (`scripts/records-core.mjs`): the open task revisions and each not yet counted day's completions, about 35 reads a day, once per day; deliveries come from the read it already makes. Filled for you (Wastage, Transfers, Orders) reads nothing: `summary/waste`, `summary/transfers`, the order learning and today's live lines are already on the phone.
+
 ## Who has said Got it to a function, 10 November 2026
 
 [Functions ahead of time, step 4](function-ahead-options/brief.md): each Got it on Home's function card writes one small record (`fnseen`) once its Undo has gone, one per person, function, card and booking version, with no read; marks from before the change go once at the next open of Home. Nothing is sent with no signal. A chef's tap of Check who has seen it on a function's page is one query by `fid`, billed one read per record returned (at least 1), plus the rules' own lookups; never on open, no listener, no polling, nothing kept on the phone. The admin Backup and the nightly backup read the whole list once (a few records a week). These are source-derived costs, not measured live usage.

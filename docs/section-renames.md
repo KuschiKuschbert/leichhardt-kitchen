@@ -14,7 +14,7 @@ Asked by the owner, 13 November 2026: "I might rename sections." Before this, a 
 | Part | How |
 | --- | --- |
 | Prep list: tabs, Also, the section done card, Home's Prep by section, Move to section, wastage's day line and row | `lineSec()` and `alsoNow()` |
-| Section box, suggestions, a line's learned usual section (`bestSection()` adds old and new counts), wastage suggestions (`wLast()`, `wOften()`) | `secNow()` |
+| Section box, suggestions, a line's learned usual section (`bestSection()` adds old and new counts), wastage suggestions and Filled for you (`wLast()`, `wOften()`, `wLastAll()`), the Records page's wastage lines | `secNow()`, `lineSec()` |
 | Prep Insights, its filters, heat map, time to tick and CSV; wastage history, its filter and CSV; the history search (finds both names) | `lineSec()` |
 | Reports, Team, a person's page, Who has worked where, At a glance and the planner's cross-training line | `lineSec()` and `secNow()` on the nightly `teamsum` names |
 | Admin On today and today's section picks | `ksSecNow()`: by the pick's section id, else its name |
