@@ -16,6 +16,14 @@ extra[fsKey(['days', ago(3), 'items', 'a1'])] = line('Peel carrots', 'Larder', {
 extra[fsKey(['training', 'ai-sam-larder'])] = { personId: 'sam', section: 'Larder', recipeId: '', guideId: '', status: 'confirmed', assessorId: 'ann', day: ago(2), v: 1, at: L.NOW - 2 * 86400000, by: 'owner' };
 extra[fsKey(['training', 'ai-sam-grill'])] = { personId: 'sam', section: 'Grill', recipeId: '', guideId: '', status: 'in-training', assessorId: 'ann', day: ago(9), v: 1, at: L.NOW - 9 * 86400000, by: 'owner' };
 extra[fsKey(['training', 'ai-ann-larder'])] = { personId: 'ann', section: 'Larder', recipeId: '', guideId: '', status: 'confirmed', assessorId: 'sam', day: ago(4), v: 1, at: L.NOW - 4 * 86400000, by: 'owner' };
+// Shifts by section (14 Nov 2026): the nightly shift counts, as on Who has worked where. Sam had 22 Larder and 8 Grill
+// shifts in the last 30 days, Ann 30 on Grill, Bo none.
+const SECS = [{ id: 'larder', name: 'Larder', off: false }, { id: 'grill', name: 'Grill', off: false }];
+const CFG = fsKey(['config', 'main']);
+extra[CFG] = Object.assign({}, L.seed()[CFG], { kitSecs: SECS });
+const tsum = to => { const days = []; for (let i = 1; i <= 30; i++) days.push({ day: ago(i), s: [{ p: 'sam', sec: i % 4 === 1 ? 'Grill' : 'Larder', sh: 'lunch' }, { p: 'ann', sec: 'Grill', sh: 'lunch' }] }); return { v: 1, at: L.NOW - 11 * 3600000, day: ago(0), from: ago(30), to: ago(to), days, usual: {}, learn: {} }; };
+extra[fsKey(['teamsum', 'main'])] = tsum(1);
+const shiftLine = p => p.evaluate(() => { const e = [...document.querySelectorAll('.a-personpage p')].filter(x => /shift/i.test(x.textContent))[0]; return e ? { t: e.textContent, err: e.classList.contains('p-err') } : null; });
 (async () => {
   const b = await L.start();
   for (const width of [390, 1280]) {
@@ -32,7 +40,9 @@ extra[fsKey(['training', 'ai-ann-larder'])] = { personId: 'ann', section: 'Larde
     const tiles = await p.$$eval('.a-personpage .a-tile', els => els.map(e => e.textContent.replace(/\s+/g, ' ').trim()));
     const num = re => { const t = tiles.find(x => re.test(x)); return t ? parseInt(t, 10) : -1; };
     ok(num(/lines written/) >= 3 && num(/lines ticked off/) >= 2 && tiles.some(t => /in Larder, the main section/.test(t)), width + ': Sam\'s last 30 days: written, ticked off and the main section (' + tiles.join(' | ') + ')');
-    ok(/Ticks record activity\. They do not confirm skill\./.test(page), width + ': the page says ticks are activity, not skill');
+    ok(/Ticks and shifts record activity\. They do not confirm skill\./.test(page), width + ': the page says ticks and shifts are activity, not skill');
+    const sl = await shiftLine(p);
+    ok(sl && /^Shifts by section: Larder 22, Grill 8\. Counted to [^.]+\.$/.test(sl.t) && !sl.err, width + ': Sam\'s shifts by section, most first, and the day they are counted to (' + (sl && sl.t) + ')');
     // part 2 retired 10 Nov 2026: the page shows no assessments, though Sam has saved ones, and reads nothing more
     await L.settle(p, 600);
     ok(await p.locator('.a-pp-assess, [data-p="a-person-assess"]').count() === 0 && !/Assessments/.test(await L.txt(p, '.a-personpage') || ''), width + ': Sam\'s page shows no assessments block');
@@ -56,9 +66,45 @@ extra[fsKey(['training', 'ai-ann-larder'])] = { personId: 'ann', section: 'Larde
     ok(await p.locator('[data-p="a-save"]').count() === 1, width + ': an unsaved change in the list keeps its Save bar on the person page');
     const bo = await L.txt(p, '.a-personpage') || '';
     ok(/No lines written or ticked off in the last 30 days/.test(bo), width + ': a person with nothing in the period says so in words (' + bo.slice(0, 160) + ')');
+    ok(/No shifts on a section in the last 30 days\./.test(bo), width + ': a person with no shifts says so, with no count of 0');
     ok(p.errors.length === 0, width + ': no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
+
+  // People opened straight away: the counts are read once for the day, and a second person reads nothing more
+  let p = await L.open(b, '#/admin', { admin: true, adminPage: 'people', who: '', width: 1280, height: 900, extra, wait: 2000 });
+  await L.waitFor(p, () => !!document.querySelector('[data-p="a-person"][data-id="sam"]'), null, 8000).catch(() => {});
+  await L.tap(p, '[data-p="a-person"][data-id="sam"]');
+  await L.waitFor(p, () => /Shifts by section/.test((document.querySelector('.a-personpage') || {}).textContent || ''), null, 8000).catch(() => {});
+  await L.adminTab(p, 'people'); await L.settle(p, 300);
+  await L.tap(p, '[data-p="a-person"][data-id="ann"]'); await L.settle(p, 500);
+  const ann = await shiftLine(p);
+  const tsReads = await p.evaluate(() => window.__fake.reads.filter(r => /\/teamsum\/main$/.test(r)).length);
+  ok(ann && /^Shifts by section: Grill 30\./.test(ann.t), 'people first: Ann\'s 30 Grill shifts (' + (ann && ann.t) + ')');
+  ok(tsReads === 1, 'people first: the shift counts are read once for both pages (' + tsReads + ')');
+  ok(p.errors.length === 0, 'people first: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // the counts did not load: said in red, never as no shifts
+  p = await L.open(b, '#/admin', { admin: true, adminPage: 'people', who: '', width: 390, height: 844, extra, wait: 2000, failReads: '/teamsum/main' });
+  await L.waitFor(p, () => !!document.querySelector('[data-p="a-person"][data-id="sam"]'), null, 8000).catch(() => {});
+  await L.tap(p, '[data-p="a-person"][data-id="sam"]');
+  await L.waitFor(p, () => /shift counts/.test((document.querySelector('.a-personpage') || {}).textContent || ''), null, 8000).catch(() => {});
+  const failed = await shiftLine(p), fp = await L.txt(p, '.a-personpage') || '';
+  ok(failed && failed.err && /Could not load the shift counts\. This does not mean no shifts\./.test(failed.t) && !/No shifts on a section/.test(fp), 'failed: the page says the counts did not load, in red, and never no shifts (' + (failed && failed.t) + ')');
+  ok(p.errors.length === 0, 'failed: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  // the nightly run is late: the line says how many days are missing
+  const late = Object.assign({}, extra, { [fsKey(['teamsum', 'main'])]: tsum(3) });
+  p = await L.open(b, '#/admin', { admin: true, adminPage: 'people', who: '', width: 1280, height: 900, extra: late, wait: 2000 });
+  await L.waitFor(p, () => !!document.querySelector('[data-p="a-person"][data-id="sam"]'), null, 8000).catch(() => {});
+  await L.tap(p, '[data-p="a-person"][data-id="sam"]');
+  await L.waitFor(p, () => /Shifts by section/.test((document.querySelector('.a-personpage') || {}).textContent || ''), null, 8000).catch(() => {});
+  const old = await shiftLine(p);
+  ok(old && /Counted to [A-Z][a-z]{2}, \d+ [A-Z][a-z]{2}, the last 2 days missing\.$/.test(old.t), 'late: the line says the last 2 days are missing (' + (old && old.t) + ')');
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

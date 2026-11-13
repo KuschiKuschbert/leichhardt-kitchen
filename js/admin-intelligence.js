@@ -5,6 +5,10 @@
   var labels = { prep: 'Prep lines', orders: 'Staff order lines', waste: 'Waste entries', transfers: 'Transfer entries', supplierOrders: 'Supplier order lines', deliveries: 'Delivery receipts', functions: 'Confirmed functions' };
   function reset() { context = ''; state = { cache: {}, loading: {}, errors: {}, request: 0, range: 30, referenceQuery: '', referenceSearchDraft: '', referenceLimit: 20, confirmedLimit: 20, item: '', evidence: null, draft: null, message: '', busy: false, page: '', draftOpen: false, draftPage: '', origin: null, disclosures: {}, selectedRef: '', selectedTraining: '', trainingLimit: 12, savedTrainingLimit: 20, reviewedTraining: [] }; }
   reset();
+  /* A renamed section's old name counts under its name now (head chef, 13 Nov 2026, docs/section-renames.md). The
+     published analysis keeps the names lines were written under; an older book sends no secNow, and names stay. */
+  function secFold(name) { var f = api && typeof api.secNow === 'function' ? api.secNow(name) : name; return typeof f === 'string' && f ? f : name; }
+  function foldDay(d) { return d && Array.isArray(d.entries) ? Object.assign({}, d, { entries: d.entries.map(function (e) { return e && e.section ? Object.assign({}, e, { section: secFold(e.section) }) : e; }) }) : d; }
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   function button(action, text, value, disabled) { return '<button type="button" class="btn" data-ai="' + action + '" data-value="' + esc(value || '') + '"' + (disabled ? ' disabled' : '') + '>' + esc(text) + '</button>'; }
   function block(title, body, cls) { return '<section class="set-block' + (cls ? ' ' + esc(cls) : '') + '"><h3 class="label">' + esc(title) + '</h3>' + body + '</section>'; }
@@ -140,7 +144,8 @@
     if (s === undefined) return block('Item analysis', waiting('analysis/range-' + state.range));
     if (!s) return block('Item evidence', '<p class="hint">No completed-day analysis is available yet.</p>' + help('Analysis health', analysisHealth()));
     var changedGeneration = current && current.generation !== s.generation ? '<p class="hint" role="status">Newer analysis is available. Refresh to update this report.</p>' : '';
-    var sectionOptions = Object.keys(s.sections || {}).map(function (name) { return { id: name, name: name }; });
+    // a renamed section's old name is offered and counted as its name now (api.secNow, 13 Nov 2026)
+    var sectionOptions = Object.keys(s.sections || {}).map(secFold).filter(function (name, i, a) { return name && a.indexOf(name) === i; }).map(function (name) { return { id: name, name: name }; });
     if (state.section) {
       var cacheKey = 'section:' + s.generation + ':' + state.range + ':' + state.section;
       if (!state.cache[cacheKey] && !state.loading[cacheKey] && !state.errors[cacheKey]) {
@@ -148,7 +153,7 @@
         Promise.all(s.dates.map(function (d) { return api.get('analysisDaily/' + original.generation + '_' + d.day); })).then(function (days) {
           if (state !== st || request !== st.request || ctx !== api.context() || !api.allowed()) return;
           if (days.some(function (d) { return !d; })) throw new Error('expired');
-          st.cache[cacheKey] = window.LK_ANALYSIS.aggregate(days, chosen); st.loading[cacheKey] = false; redraw();
+          st.cache[cacheKey] = window.LK_ANALYSIS.aggregate(days.map(foldDay), chosen); st.loading[cacheKey] = false; redraw();
         }).catch(function () { if (state === st && request === st.request && ctx === api.context() && api.allowed()) { st.loading[cacheKey] = false; st.errors[cacheKey] = true; redraw(); } });
       }
       if (!state.cache[cacheKey]) return block('Section evidence', filters() + button('clear-section', 'All sections') + waiting(cacheKey));

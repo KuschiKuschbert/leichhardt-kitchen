@@ -118,11 +118,11 @@ const searchReferences = async (p, text) => {
   await p.context().close();
 
   p = await L.open(b, '#/admin', { admin: true, who: '', extra, wait: 1400 });
-  await p.route('**/js/admin-intelligence.js?v=7', route => route.fulfill({ contentType: 'text/javascript', body: 'window.LK_INTELLIGENCE = { API: 2 };' }));
+  await p.route('**/js/admin-intelligence.js?v=8', route => route.fulfill({ contentType: 'text/javascript', body: 'window.LK_INTELLIGENCE = { API: 2 };' }));
   await L.adminTab(p, 'references');
   await L.waitFor(p, () => /Could not load the workspace/.test(document.body.textContent));
   await L.settle(p, 300);
-  ok(p.urls.filter(url => /admin-intelligence\.js\?v=7/.test(url)).length === 2, 'an old cached module shows a recoverable error without repeated load or render loops');
+  ok(p.urls.filter(url => /admin-intelligence\.js\?v=8/.test(url)).length === 2, 'an old cached module shows a recoverable error without repeated load or render loops');
   ok(p.errors.length === 0, 'mixed module version has no uncaught browser errors');
   await p.context().close();
 
