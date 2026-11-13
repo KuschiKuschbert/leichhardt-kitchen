@@ -5452,3 +5452,20 @@ html:has(.tm-focus-page) {
   .nb-scene:is(.nb-f0, .nb-noart, :has(.mascot-still[hidden])) { grid-template-areas: "say" "note"; row-gap: 10px; }
   .nb-scene:is(.nb-f0, .nb-noart, :has(.mascot-still[hidden])) .nb-fin-art, .nb-scene:is(.nb-f0, .nb-noart, :has(.mascot-still[hidden])) .nb-fin-say::before { display: none; }
 }
+
+/* Filled for you (head chef, 13 Nov 2026, docs/smart-book-options/brief.md, design-patterns.md): a box the book
+   filled from last time carries a word tag inside it, a label carries the same tag, and one line under the boxes says
+   what was filled and where from. The tag is a neutral word in a box: never green (not Saved), never orange (not late). */
+.lk-fb { position: relative; display: flex; }
+.lk-fb > .nb-in { flex: 1 1 auto; width: 100%; min-width: 0; }
+.lk-fb.is-filled > .nb-in { padding-right: 6.4rem; background: var(--surface-reference); }
+.lk-ftag { display: inline-flex; align-items: center; min-height: 20px; padding: 0 .35rem; border: 1.5px solid var(--muted); border-radius: 4px; background: var(--paper); color: var(--ink); font: 700 .6875rem/1 var(--display); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; vertical-align: .1em; }
+.lk-fb > .lk-ftag { position: absolute; right: .35rem; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.nb-ql .lk-ftag { margin-left: .4rem; }
+.lk-fillnote { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .6rem; margin: .25rem 0 .5rem; padding: .5rem .65rem; border-left: 3px solid var(--ink); background: var(--surface-reference); font-size: .9375rem; line-height: 1.35; }
+.lk-fillnote p { margin: 0; flex: 1 1 14rem; }
+.lk-fillnote .chip { min-height: 44px; }
+.nb-in.lk-weigh { outline: 2.5px solid var(--accent); outline-offset: 1px; }
+.lk-why { align-self: center; font-size: .875rem; font-weight: 700; color: var(--ink); }
+.nb-addbtn[aria-disabled="true"] { background: #b9b3a8; border-color: #b9b3a8; }
+.lk-fillnote[hidden], .lk-ftag[hidden], .lk-why[hidden] { display: none; }

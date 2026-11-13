@@ -32,7 +32,8 @@ const store = page => page.evaluate(() => window.__fake.dump());
   await p.keyboard.type('Paper towels');
   await L.settle(p, 200);
   // the usual amount fills in by itself once the name is typed in full (22 Oct 2026, review F2), and the hint says so
-  ok(await p.inputValue('#o-qty') === '6 rolls' && /Usual amount filled in: 6 rolls/.test(await txt(p, '#o-hint') || ''), 'typing the full name: the usual amount fills in and the hint says so');
+  // since 13 Nov 2026 (filled for you) the words sit right under the box, with a USUAL tag in it
+  ok(await p.inputValue('#o-qty') === '6 rolls' && /^Filled with the usual amount: 6 rolls\b/.test(await txt(p, '#o-fill') || '') && !!(await p.$('.lk-fb.is-filled #o-qty')), 'typing the full name: the usual amount fills in and the line under the box says so');
   await p.keyboard.type(' XL'); await L.settle(p, 150);
   ok(await p.inputValue('#o-qty') === '', 'a name that no longer matches takes the filled amount away');
   await p.keyboard.press('Backspace'); await p.keyboard.press('Backspace'); await p.keyboard.press('Backspace'); await L.settle(p, 150);

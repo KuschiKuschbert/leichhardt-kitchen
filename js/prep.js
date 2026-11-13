@@ -5507,8 +5507,21 @@
       S.oqtyAuto = want;
     }
     if (oh) oh.textContent = oHintFull();
+    oFillPatch();
   }
-  function oHintFull() { return (S.oqtyAuto && S.oqty === S.oqtyAuto ? 'Usual amount filled in: ' + S.oqtyAuto + '. ' : '') + oHintText(S.otext); }
+  // the usual amount the book filled is said right under the box, with a USUAL tag in it (filled for you, 13 Nov 2026)
+  function oHintFull() { return oHintText(S.otext); }
+  function oFilled() { return !!S.oqtyAuto && S.oqty === S.oqtyAuto; }
+  function oFillNoteHTML() {
+    if (!oFilled()) return '';
+    var top = ordQtyList(S.otext)[0], n = top && top.q === S.oqtyAuto ? top.n : 0;
+    return '<p><b>Filled with the usual amount:</b> ' + esc(S.oqtyAuto) + (n >= 2 ? ' (ordered ' + n + ' times with this amount)' : '') + '. Change it if you need more or less.</p>';
+  }
+  function oFillPatch() {
+    var box = S.root && S.root.querySelector('[data-k="o-qty"]'); if (!box) return;
+    fbSet(box, oFilled()); if (oFilled()) box.setAttribute('aria-describedby', 'o-fill'); else box.removeAttribute('aria-describedby');
+    noteSet(S.root.querySelector('#o-fill'), oFillNoteHTML());
+  }
   function oHintText(t) {
     var w = t && t.trim().length > 2 ? wasteFor(t, ['expired']) : null;
     return w ? 'Expired stock logged ' + w.n + (w.n === 1 ? ' time' : ' times') + ' in 14 days. Order a little less?' : '';
@@ -7439,7 +7452,8 @@
       (onToday ? '<a class="chip o-deliv" href="#/deliveries">Delivery received</a>' : '<button type="button" class="chip" data-p="otoday">Back to today</button>') + '</div>' : '';
     var add = can('add') && S.ordDate === today ?
       '<form class="nb-add" data-p-form="oadd"><div class="nb-add-row"><label class="visually-hidden" for="o-text">Item to order</label><input id="o-text" class="nb-in nb-in-text" data-k="o-text" enterkeyhint="done" autocomplete="off" placeholder="What do we need to order?" maxlength="120" value="' + esc(S.otext) + '">' +
-      '<label class="visually-hidden" for="o-qty">Amount</label><input id="o-qty" class="nb-in nb-in-qty" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"><button type="submit" class="nb-addbtn">Add</button></div>' + justHTML('o') +
+      '<label class="visually-hidden" for="o-qty">Amount</label>' + fbHTML('nb-in-qty', '<input id="o-qty" class="nb-in" data-k="o-qty" enterkeyhint="done" autocomplete="off" placeholder="Amount" maxlength="40" value="' + esc(S.oqty) + '"' + (oFilled() ? ' aria-describedby="o-fill"' : '') + '>', 'Usual', oFilled()) + '<button type="submit" class="nb-addbtn">Add</button></div>' +
+      '<div class="lk-fillnote" id="o-fill" role="status"' + (oFilled() ? '' : ' hidden') + '>' + oFillNoteHTML() + '</div>' + justHTML('o') +
       '<div class="w-pick nb-units" id="o-units">' + unitChipsHTML('o', S.oqty) + '</div>' + needChipsHTML() + '<div class="nb-sugg" id="o-sugg">' + ordSuggHTML() + '</div><p class="nb-hint" id="o-hint" aria-live="polite">' + esc(oHintFull()) + '</p>' + oRegsHTML() + '</form>' : '';
     var byAdded = function (a, b) { return (a.addedAt || 0) - (b.addedAt || 0); };
     // Chef requests stay together: Out first, then oldest source day, then creation time. Completion is deliberately
@@ -7591,6 +7605,82 @@
     var k = okey(t), x = (S.wSum || []).filter(function (e) { return okey(e.t) === k; })[0], l = x && x.last;
     return l ? { unit: l.unit || '', reason: l.reason || '', station: l.sec || '', amt: wAmt(x.amt) || wAmt(l.amt) } : null;
   }
+  /* Filled for you (head chef, 13 Nov 2026, docs/smart-book-options/brief.md, design-patterns.md "Filled for you"):
+     the item typed in full, once the cook leaves the box, fills what describes it (section, reason, unit) from its last
+     2 weeks and today's own lines, never the amount: the cook weighs or counts it. Only empty boxes are filled, never over
+     what was typed or picked; a FILLED box carries a LAST TIME tag and one line says what came from where; a new name
+     takes the filled values away again, and Empty these boxes does the same. Everything is patched in place (no redraw),
+     so a tap that left the box still lands. 0 reads: summary/waste and today's live lines are already on the phone. */
+  function wLastAll(t) {
+    var k = okey(t); if (!k) return null;
+    var today = (S.wLines || []).filter(function (x) { return !x.deleted && okey(x.text) === k; }).sort(function (a, b) { return (b.addedAt || 0) - (a.addedAt || 0); });
+    var x = (S.wSum || []).filter(function (e) { return okey(e.t) === k; })[0], l = x && x.last, n = ((x && +x.n) || 0) + today.length;
+    var d = today[0] ? { unit: today[0].unit, reason: today[0].reason, station: today[0].station } : l ? { unit: l.unit, reason: l.reason, station: l.sec } : null;
+    if (!d) return null;
+    return { n: n, unit: UNITS.indexOf(d.unit) >= 0 ? d.unit : '', reason: REASONS.some(function (r) { return r[0] === d.reason; }) ? d.reason : '', station: typeof d.station === 'string' ? d.station.slice(0, 40) : '' };
+  }
+  function wfOn(k) { return !!(S.wf.fill && S.wf.fill[k]); }
+  function wWeigh() { return !!S.wf.fill && !String(S.wf.amt).trim(); }
+  function wTypedFill() {
+    var f = S.wf, k = okey(f.text);
+    if (S.name !== 'waste' || !S.wLog || !k || f.noFill === k || (f.fill && f.fill.from === k)) return;
+    var l = wLastAll(f.text); if (!l) return;
+    var x = { from: k, n: l.n, sec: '', reason: '', unit: '', prevSec: f.sec, prevUnit: f.unit };
+    if (l.station && !String(f.sec || '').trim() && !mySec()) { f.sec = l.station; x.sec = l.station; }
+    if (l.reason && !f.reason) { f.reason = l.reason; x.reason = l.reason; }
+    // a unit changes only before an amount is written: "2" typed in kg must not become 2 portions
+    if (l.unit && l.unit !== f.unit && !String(f.amt).trim()) { f.unit = l.unit; x.unit = l.unit; }
+    if (!x.sec && !x.reason && !x.unit) return;
+    f.fill = x; f.emptied = false; wFillPatch();
+  }
+  /* the filled values go again, where they are still what the book put there (a changed one is the cook's now). A new
+     name keeps the unit once an amount is written in it (the cook wrote "1.5" in portions); Empty these boxes does not. */
+  function wUnfill(all) {
+    var f = S.wf, x = f.fill; if (!x) return;
+    if (x.sec && f.sec === x.sec) f.sec = x.prevSec || '';
+    if (x.reason && f.reason === x.reason) f.reason = '';
+    if (x.unit && f.unit === x.unit && (all || !String(f.amt).trim())) f.unit = x.prevUnit || f.unit;
+    f.fill = null;
+  }
+  function wFillTidy() { var x = S.wf.fill; if (x && !x.sec && !x.reason && !x.unit) S.wf.fill = null; }
+  function wFillNoteHTML() {
+    var f = S.wf, x = f.fill;
+    if (!x) return f.emptied ? '<p>Emptied the boxes from last time.</p>' : '';
+    var parts = [], rn = x.reason ? (REASONS.filter(function (r) { return r[0] === x.reason; })[0] || [])[1] : '';
+    if (x.sec) parts.push(x.sec); if (rn) parts.push(rn); if (x.unit) parts.push('in ' + x.unit);
+    return '<p><b>Last time</b> (logged ' + (x.n === 1 ? 'once' : x.n + ' times') + ' in the last 2 weeks): ' + esc(parts.join(', ')) + '. ' +
+      (String(f.amt).trim() ? 'Change anything before you log it.' : 'Weigh or count it and write today\'s amount.') + '</p><button type="button" class="chip" data-p="w-unfill">Empty these boxes</button>';
+  }
+  // Log it says what it will save once there is an item and an amount ("Log 1.5 kg Chips")
+  function wLogBtn() {
+    var f = S.wf, a = parseFloat(String(f.amt).replace(',', '.')), t = f.text.trim();
+    var say = a > 0 && a < 100000 && t ? 'Log ' + num(a) + ' ' + f.unit + ' ' + (t.length > 24 ? t.slice(0, 22) + '...' : t) : 'Log it';
+    return '<button type="submit" class="nb-addbtn"' + (wWeigh() ? ' aria-disabled="true"' : '') + '>' + esc(say) + '</button>';
+  }
+  function fbHTML(cls, input, tag, on) { return '<span class="lk-fb ' + cls + (on ? ' is-filled' : '') + '">' + input + '<span class="lk-ftag" aria-hidden="true"' + (on ? '' : ' hidden') + '>' + esc(tag) + '</span></span>'; }
+  function ftagHTML(on) { return '<span class="lk-ftag"' + (on ? '' : ' hidden') + '>Last time</span>'; }
+  function fbSet(input, on) { var w = input && input.parentElement; if (!w || !w.classList.contains('lk-fb')) return; w.classList.toggle('is-filled', !!on); var t = w.querySelector('.lk-ftag'); if (t) t.hidden = !on; }
+  function noteSet(el, h) { if (!el) return; if (el.lkHtml !== h) { el.innerHTML = h; el.lkHtml = h; } el.hidden = !h; }
+  function wFillPatch() {
+    var form = S.root && S.root.querySelector('.w-add'), f = S.wf; if (!form) return;
+    var sec = form.querySelector('#w-sec'), sv = f.sec || mySec() || '';
+    if (sec) { if (sec.value !== sv && document.activeElement !== sec) sec.value = sv; fbSet(sec, wfOn('sec')); if (wfOn('sec')) sec.setAttribute('aria-describedby', 'w-fill'); else sec.removeAttribute('aria-describedby'); }
+    Array.prototype.forEach.call(form.querySelectorAll('[data-p="sec-pick"][data-sk="w-sec"]'), function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-v').toLowerCase() === sv.trim().toLowerCase())); });
+    Array.prototype.forEach.call(form.querySelectorAll('[data-p="wreason"]'), function (b) { b.setAttribute('aria-checked', String(b.getAttribute('data-v') === f.reason)); });
+    Array.prototype.forEach.call(form.querySelectorAll('[data-p="wunit"]'), function (b) { b.setAttribute('aria-checked', String(b.getAttribute('data-v') === f.unit)); });
+    var ut = form.querySelector('#w-unit-l .lk-ftag'), rt = form.querySelector('#w-reason-l .lk-ftag');
+    if (ut) ut.hidden = !wfOn('unit'); if (rt) rt.hidden = !wfOn('reason');
+    var amt = form.querySelector('#w-amt'); if (amt) { amt.placeholder = 'Amount (' + (f.unit || 'unit') + ')'; amt.classList.toggle('lk-weigh', wWeigh()); }
+    noteSet(form.querySelector('#w-fill'), wFillNoteHTML());
+    var why = form.querySelector('#w-why'); if (why) why.hidden = !wWeigh();
+    var btn = form.querySelector('.nb-addbtn'); if (btn) btnPatch(btn, wLogBtn());
+  }
+  /* A box left by tapping something else sends change between the finger going down and coming up: a fill then would
+     move what is under the finger. It waits for the finger to come up, after the tap has done its job. */
+  var fillPtr = false, fillLater = null;
+  function fillPtrDown() { fillPtr = true; }
+  function fillPtrUp() { fillPtr = false; if (fillLater) { var fn = fillLater; fillLater = null; setTimeout(fn, 0); } }
+  function fillAfterTap(fn) { if (fillPtr) fillLater = fn; else fn(); }
   function addWaste() {
     var f = S.wf, p = me();
     if (!can('add')) return;
@@ -7607,7 +7697,8 @@
     sset(ref, practiceOn({ text: t, amount: amt, unit: f.unit, reason: f.reason, action: f.act.trim().slice(0, 120), station: sec, recipe: rm ? rm.id : '',
       addedBy: p ? p.name : '', addedById: p ? p.id : '', addedAt: now(), deleted: false })).catch(function (e) { failed(e, function () { if (!S.wf.text.trim()) S.wf = f; }); });
     if (sec) noteSection(sec);
-    S.wf = { text: '', amt: '', unit: f.unit, reason: '', sec: sec, act: '' };
+    // a section the book filled for this item is not kept for the next one (like keptSection() on Prep); a typed one is
+    S.wf = { text: '', amt: '', unit: f.fill && f.fill.unit && f.unit === f.fill.unit ? f.fill.prevUnit || f.unit : f.unit, reason: '', sec: f.fill && f.fill.sec && f.sec === f.fill.sec ? '' : sec, act: '' };
     draw(); focusK('w-text');
     /* Undo like the other lists. The rules let only the head chef or a sous chef change a wastage entry, so staff are told who can fix it. */
     justMark(ref.id);
@@ -7771,18 +7862,18 @@
     var often = wOften();
     var add = can('add') ?
       '<form class="nb-add w-add" data-p-form="wadd">' + (often.length ? '<div class="w-often"><span class="nb-ql">Logged often</span><div class="chiprow">' + often.map(function (e, i) { return '<button type="button" class="chip sq" data-p="woften" data-i="' + i + '">' + esc(e.text) + '</button>'; }).join('') + '</div></div>' : '') +
-      '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label><input id="w-sec" class="nb-in nb-in-sec" data-k="w-sec" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec || mySec()) + '">' +
+      '<div class="nb-add-row"><label class="visually-hidden" for="w-sec">Section</label>' + fbHTML('nb-in-sec', '<input id="w-sec" class="nb-in" data-k="w-sec" enterkeyhint="next" autocomplete="off" placeholder="Section" maxlength="40" value="' + esc(f.sec || mySec()) + '"' + (wfOn('sec') ? ' aria-describedby="w-fill"' : '') + '>', 'Last time', wfOn('sec')) +
       '<label class="visually-hidden" for="w-text">Item</label><input id="w-text" class="nb-in nb-in-text" data-k="w-text" enterkeyhint="next" autocomplete="off" placeholder="What was wasted?" maxlength="80" value="' + esc(f.text) + '">' +
-      '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty" data-k="w-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit || 'unit') + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' + justHTML('w') +
+      '<label class="visually-hidden" for="w-amt">Amount</label><input id="w-amt" class="nb-in nb-in-qty' + (wWeigh() ? ' lk-weigh' : '') + '" data-k="w-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit || 'unit') + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' + '<div class="lk-fillnote" id="w-fill" role="status"' + (wFillNoteHTML() ? '' : ' hidden') + '>' + wFillNoteHTML() + '</div>' + justHTML('w') +
       secChipsHTML('w-sec', f.sec || mySec()) + '<div class="nb-sugg" id="w-sugg">' + wSuggHTML() + '</div>' +
-      '<div class="w-pick"><span class="nb-ql" id="w-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="w-unit-l">' + UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="wunit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
+      '<div class="w-pick"><span class="nb-ql" id="w-unit-l">Unit' + ftagHTML(wfOn('unit')) + '</span><div class="seg" role="radiogroup" aria-labelledby="w-unit-l">' + UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="wunit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
       // the five reasons as big chips with what each means, on every screen (3 Nov 2026): no second sheet over this one,
       // and data-adaptive="fixed" keeps js/controls.js from folding them into a Choose button
-      '<div class="w-pick w-rpick"><span class="nb-ql" id="w-reason-l">Reason</span><div class="w-rbig" role="radiogroup" aria-labelledby="w-reason-l" data-adaptive="fixed">' + REASONS.map(function (r) { return '<button type="button" class="chip w-rchip" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (f.reason === r[0]) + '"><strong>' + esc(r[1]) + '</strong><span>' + esc(REASON_HINT[r[0]] || '') + '</span></button>'; }).join('') + '</div></div>' +
+      '<div class="w-pick w-rpick"><span class="nb-ql" id="w-reason-l">Reason' + ftagHTML(wfOn('reason')) + '</span><div class="w-rbig" role="radiogroup" aria-labelledby="w-reason-l" data-adaptive="fixed">' + REASONS.map(function (r) { return '<button type="button" class="chip w-rchip" role="radio" data-p="wreason" data-v="' + r[0] + '" aria-checked="' + (f.reason === r[0]) + '"><strong>' + esc(r[1]) + '</strong><span>' + esc(REASON_HINT[r[0]] || '') + '</span></button>'; }).join('') + '</div></div>' +
       // the action is optional, so it folds until wanted (22 Oct 2026, Option B); a chip that fills it opens it
       '<div class="nb-add-row">' + (f.act || f.actOpen ? '<label class="visually-hidden" for="w-act">Action or how to stop it happening again</label><input id="w-act" class="nb-in nb-in-text" data-k="w-act" autocomplete="off" placeholder="Action or how to stop it happening again (optional)" maxlength="120" value="' + esc(f.act) + '">'
         : '<button type="button" class="w-actbtn" data-p="w-act-open">+ Add an action (optional)</button>') +
-      '<button type="submit" class="nb-addbtn">Log it</button></div></form>' : '';
+      '<span class="lk-why" id="w-why"' + (wWeigh() ? '' : ' hidden') + '>Write the amount first.</span>' + wLogBtn() + '</div></form>' : '';
     // no signal and not loaded yet: the note, then only the lines this phone wrote since (listSnap), and no totals
     var offW = S.wState === 'offline' ? '<p class="nb-empty" role="status">' + OFF_LIST + '</p>' : '';
     var tot = offW ? '' : totalsText(wTotals(live));
@@ -8017,6 +8108,28 @@
     var x = ((S.xSum && S.xSum.items) || []).filter(function (e) { return e && okey(e.t) === k; })[0];
     return x ? { unit: X_UNITS.indexOf(x.unit) >= 0 ? x.unit : '', amt: wAmt(x.amt) } : null;
   }
+  /* Filled for you on Transfers (13 Nov 2026): the item typed in full fills its unit from today's lines or the summary,
+     never the amount, with the same tag, line and Put back as Wastage. 0 reads. */
+  function xWeigh() { return !!S.xf.fill && !String(S.xf.amt).trim(); }
+  function xTypedFill() {
+    var f = S.xf, k = okey(f.text);
+    if (S.name !== 'transfers' || !S.xLog || !k || f.noFill === k || (f.fill && f.fill.from === k) || String(f.amt).trim()) return;
+    var l = xLast(f.text); if (!l || !l.unit || l.unit === f.unit) return;
+    f.fill = { from: k, unit: l.unit, prevUnit: f.unit }; f.unit = l.unit; f.emptied = false; xFillPatch();
+  }
+  function xUnfill() { var f = S.xf, x = f.fill; if (!x) return; if (f.unit === x.unit) f.unit = x.prevUnit || f.unit; f.fill = null; }
+  function xFillNoteHTML() {
+    var f = S.xf, x = f.fill;
+    if (!x) return f.emptied ? '<p>Put the unit back.</p>' : '';
+    return '<p><b>Last time</b> it was in ' + esc(x.unit) + '. ' + (String(f.amt).trim() ? 'Change it before you log it if it is different today.' : 'Write today\'s amount.') + '</p><button type="button" class="chip" data-p="tr-unfill">Put back ' + esc(x.prevUnit) + '</button>';
+  }
+  function xFillPatch() {
+    var form = S.root && S.root.querySelector('.tr-add'), f = S.xf; if (!form) return;
+    Array.prototype.forEach.call(form.querySelectorAll('[data-p="tr-unit"]'), function (b) { b.setAttribute('aria-checked', String(b.getAttribute('data-v') === f.unit)); });
+    var t = form.querySelector('#tr-unit-l .lk-ftag'); if (t) t.hidden = !(f.fill && f.fill.unit);
+    var amt = form.querySelector('#tr-amt'); if (amt) { amt.placeholder = 'Amount (' + f.unit + ')'; amt.classList.toggle('lk-weigh', xWeigh()); }
+    noteSet(form.querySelector('#tr-fill'), xFillNoteHTML());
+  }
   function xFill(o) {
     var f = S.xf;
     if (!o) return;
@@ -8196,9 +8309,9 @@
       '<div class="tr-field"><label class="visually-hidden" for="tr-person">' + (out ? 'Who came for it' : 'Who gave it') + '</label><input id="tr-person" class="nb-in tr-box" data-k="tr-person" enterkeyhint="next" autocomplete="off" autocapitalize="words" placeholder="' + (out ? 'Who came for it?' : 'Who gave it? (optional)') + '" maxlength="40" value="' + esc(f.person) + '"><div id="tr-pchips">' + xPeopleChips() + '</div></div></div>' +
       '<div id="tr-often">' + xOftenHTML() + '</div>' +
       '<div class="nb-add-row"><label class="visually-hidden" for="tr-text">Item</label><input id="tr-text" class="nb-in nb-in-text" data-k="tr-text" enterkeyhint="next" autocomplete="off" placeholder="' + (out ? 'What did they take?' : 'What did we take?') + '" maxlength="80" value="' + esc(f.text) + '">' +
-      '<label class="visually-hidden" for="tr-amt">Amount</label><input id="tr-amt" class="nb-in nb-in-qty" data-k="tr-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit) + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' + justHTML('x') +
+      '<label class="visually-hidden" for="tr-amt">Amount</label><input id="tr-amt" class="nb-in nb-in-qty' + (xWeigh() ? ' lk-weigh' : '') + '" data-k="tr-amt" inputmode="decimal" enterkeyhint="next" autocomplete="off" placeholder="Amount (' + esc(f.unit) + ')" maxlength="8" value="' + esc(f.amt) + '"></div>' + '<div class="lk-fillnote" id="tr-fill" role="status"' + (xFillNoteHTML() ? '' : ' hidden') + '>' + xFillNoteHTML() + '</div>' + justHTML('x') +
       '<div class="nb-sugg" id="tr-sugg">' + xSuggHTML() + '</div>' +
-      '<div class="w-pick tr-units"><span class="nb-ql" id="tr-unit-l">Unit</span><div class="seg" role="radiogroup" aria-labelledby="tr-unit-l">' + X_UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="tr-unit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
+      '<div class="w-pick tr-units"><span class="nb-ql" id="tr-unit-l">Unit' + ftagHTML(!!(f.fill && f.fill.unit)) + '</span><div class="seg" role="radiogroup" aria-labelledby="tr-unit-l">' + X_UNITS.map(function (u) { return '<button type="button" class="seg-b" role="radio" data-p="tr-unit" data-v="' + u + '" aria-checked="' + (f.unit === u) + '">' + u + '</button>'; }).join('') + '</div></div>' +
       // the note is optional, so it folds until wanted, like the wastage action
       '<div class="nb-add-row">' + (f.note || f.noteOpen ? '<label class="visually-hidden" for="tr-note">Note</label><input id="tr-note" class="nb-in nb-in-text tr-note" data-k="tr-note" autocomplete="off" placeholder="Note, for example: giving it back Friday (optional)" maxlength="120" value="' + esc(f.note) + '">'
         : '<button type="button" class="w-actbtn" data-p="tr-note-open">+ Add a note (optional)</button>') + '</div>' +
@@ -8251,8 +8364,13 @@
   }
   function trInput(k, el) {
     var f = S.xf;
-    if (k === 'tr-text') { f.text = el.value; var g = S.root.querySelector('#tr-sugg'); if (g) g.innerHTML = xSuggHTML(); return; }
-    if (k === 'tr-amt') { f.amt = el.value.replace(/[^0-9.,]/g, ''); f.amtAuto = false; if (el.value !== f.amt) el.value = f.amt; return; }
+    if (k === 'tr-text') {
+      f.text = el.value; var g = S.root.querySelector('#tr-sugg'); if (g) g.innerHTML = xSuggHTML();
+      var xk = okey(el.value); if (f.noFill && f.noFill !== xk) f.noFill = ''; if (f.emptied) f.emptied = false;
+      if (f.fill && f.fill.from !== xk) xUnfill();
+      xFillPatch(); return;
+    }
+    if (k === 'tr-amt') { f.amt = el.value.replace(/[^0-9.,]/g, ''); f.amtAuto = false; if (el.value !== f.amt) el.value = f.amt; xFillPatch(); return; }
     if (k === 'tr-venue') { f.venue = el.value; xChipsSync(); return; }
     if (k === 'tr-person') { f.person = el.value; var pc = S.root.querySelector('#tr-pchips'); if (pc) pc.innerHTML = xPeopleChips(); return; }
     if (k === 'tr-note') { f.note = el.value; }
@@ -8263,11 +8381,12 @@
     if (a === 'tr-bk-add') { xBasketAdd(); return; }
     if (a === 'tr-bk-del') { f.basket = (f.basket || []).filter(function (x, k) { return k !== i; }); draw(); focusK('tr-text'); return; }
     if (a === 'tr-dir') { f.dir = v === 'in' ? 'in' : 'out'; draw(); return; }
-    if (a === 'tr-unit') { if (X_UNITS.indexOf(v) >= 0) f.unit = v; draw(); return; }
+    if (a === 'tr-unit') { if (X_UNITS.indexOf(v) >= 0) f.unit = v; f.fill = null; draw(); return; }
+    if (a === 'tr-unfill') { xUnfill(); f.noFill = okey(f.text); f.emptied = true; xFillPatch(); return; }
     if (a === 'tr-vpick') { f.venue = xStr(v, 40); draw(); focusK(f.person.trim() ? (f.text.trim() ? 'tr-amt' : 'tr-text') : 'tr-person'); return; }
     if (a === 'tr-ppick') { f.person = xStr(v, 40); draw(); focusK(f.text.trim() ? 'tr-amt' : 'tr-text'); return; }
-    if (a === 'tr-sugg') { var t = (S.xsugg || [])[i]; if (t) { f.text = t; xFill(xLast(t)); draw(); focusFilled('tr-amt'); } return; }
-    if (a === 'tr-often') { var o = xOften()[i]; if (o) { f.text = o.text; xFill(o); draw(); focusFilled('tr-amt'); } return; }
+    if (a === 'tr-sugg') { var t = (S.xsugg || [])[i]; if (t) { xUnfill(); f.emptied = false; f.text = t; xFill(xLast(t)); draw(); focusFilled('tr-amt'); } return; }
+    if (a === 'tr-often') { var o = xOften()[i]; if (o) { xUnfill(); f.emptied = false; f.text = o.text; xFill(o); draw(); focusFilled('tr-amt'); } return; }
     if (a === 'tr-note-open') { f.noteOpen = true; draw(); focusSel('#tr-note'); return; }
     if (a === 'tr-unreturn') { returnXfer(dt, id, true); return; }
     if (a === 'tr-return') { returnXfer(dt, id); return; }
@@ -12176,23 +12295,24 @@
     if (a === 'close-hide') { lsSet('lk.closeout', dayNow()); draw(); return; }
     if (a === 'oreg') { var orr = (S.oregs || [])[i]; if (orr) addOrder(true, orr); return; }
     // Last 7 days always counts today from the live list, whatever day was being browsed; the past days come from the day cache
-    if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); draw(); return; }
+    if (a === 'wunit') { S.wf.unit = el.getAttribute('data-v'); if (S.wf.fill) { S.wf.fill.unit = ''; wFillTidy(); } draw(); return; }
+    if (a === 'w-unfill') { wUnfill(true); S.wf.noFill = okey(S.wf.text); S.wf.emptied = true; wFillPatch(); return; }
     if (a === 'w-act-open') { S.wf.actOpen = true; draw(); focusSel('#w-act'); return; }
     if (a === 'w-log') { wSheetOpen('log'); return; }
     if (a === 'w-rv') { wSheetOpen('rv'); return; }
     if (a === 'w-again') { wAgain(dt, id); return; }
-    if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); if (S.sheet) wasteSheetClose(); else draw(); return; }
+    if (a === 'wreason') { S.wf.reason = el.getAttribute('data-v'); if (S.wf.fill) { S.wf.fill.reason = ''; wFillTidy(); } if (S.sheet) wasteSheetClose(); else draw(); return; }
     if (a === 'sheet') {
       S.sheet = 'reason';
-      window.LK_UX.AdaptivePicker({ label: 'Why was it wasted?', trigger: el, value: [S.wf.reason], items: REASONS.map(function (r) { return { value: r[0], label: r[1] }; }), onChange: function (v) { S.sheet = ''; S.wf.reason = v[0]; draw(); }, onDismiss: function () { S.sheet = ''; } }); return;
+      window.LK_UX.AdaptivePicker({ label: 'Why was it wasted?', trigger: el, value: [S.wf.reason], items: REASONS.map(function (r) { return { value: r[0], label: r[1] }; }), onChange: function (v) { S.sheet = ''; S.wf.reason = v[0]; if (S.wf.fill) { S.wf.fill.reason = ''; wFillTidy(); } draw(); }, onDismiss: function () { S.sheet = ''; } }); return;
     }
     if (a === 'sec-pick') {
       var sk = el.getAttribute('data-sk'), sv = el.getAttribute('data-v') || '', lit = el.getAttribute('aria-pressed') === 'true';
-      if (sk === 'p-section') { S.section = lit ? '' : sv; S.secTyped = !lit; } else if (sk === 'w-sec') S.wf.sec = lit ? '' : sv;
+      if (sk === 'p-section') { S.section = lit ? '' : sv; S.secTyped = !lit; } else if (sk === 'w-sec') { S.wf.sec = lit ? '' : sv; if (S.wf.fill) { S.wf.fill.sec = ''; wFillTidy(); } }
       draw(); focusSel('[data-p="sec-pick"][data-sk="' + sk + '"][data-v="' + CSS.escape(sv) + '"]'); return;
     }
-    if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { S.wf.text = wt; var wl = wLast(wt); if (wl) { if (wl.unit) S.wf.unit = wl.unit; if (wl.reason && !S.wf.reason) S.wf.reason = wl.reason; if (wl.station && !S.wf.sec && !mySec()) S.wf.sec = wl.station; if (wl.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wl.amt; S.wf.amtAuto = true; } } draw(); focusFilled('w-amt'); } return; }
-    if (a === 'woften') { var wo = wOften()[i]; if (wo) { S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; if (wo.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wo.amt; S.wf.amtAuto = true; } draw(); focusFilled('w-amt'); } return; }
+    if (a === 'wsugg') { var wt = (S.wsugg || [])[i]; if (wt) { wUnfill(); S.wf.emptied = false; S.wf.text = wt; var wl = wLast(wt); if (wl) { if (wl.unit) S.wf.unit = wl.unit; if (wl.reason && !S.wf.reason) S.wf.reason = wl.reason; if (wl.station && !S.wf.sec && !mySec()) S.wf.sec = wl.station; if (wl.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wl.amt; S.wf.amtAuto = true; } } draw(); focusFilled('w-amt'); } return; }
+    if (a === 'woften') { var wo = wOften()[i]; if (wo) { wUnfill(); S.wf.emptied = false; S.wf.text = wo.text; if (wo.unit) S.wf.unit = wo.unit; if (wo.reason) S.wf.reason = wo.reason; if (wo.sec && !S.wf.sec && !mySec()) S.wf.sec = wo.sec; if (wo.amt && (S.wf.amtAuto || !String(S.wf.amt).trim())) { S.wf.amt = wo.amt; S.wf.amtAuto = true; } draw(); focusFilled('w-amt'); } return; }
     if (a === 'wdel') { removeWaste(dt, id); return; }
     if (a === 'wrestore') { removeWaste(dt, id, true); return; }
     if (a === 'rv-day') { if (!whCanChange()) return; var rr = whRange(), rd = shift(S.rvDate || rr.to, +el.getAttribute('data-d')); if (rd <= rr.to && rd >= rr.from) { S.rvDate = rd; S.wrA = S.wrC = null; } draw(); return; }
@@ -12380,8 +12500,8 @@
     }
     if (k === 'pf2') { var p2 = S.pf2.length; S.pf2 = el.value.replace(/\D/g, '').slice(0, 4); el.value = S.pf2; pinCells(el); if (p2 < 4 && S.pf2.length === 4 && /^\d{4}$/.test(S.pf1)) submitPin(); return; }
     if (k === 'p-text') { S.text = el.value; var hn = S.root.querySelector('#p-hint'); if (hn) hn.textContent = hintText(S.text); var suggestionBox = S.root.querySelector('#p-sugg'); if (suggestionBox) suggestionBox.innerHTML = suggestHTML(); var qs = S.root.querySelector('#p-qsugg'); if (qs) qs.innerHTML = qtyChipsHTML(); psHintPaint(); return; }
-    if (k === 'o-text') { S.otext = el.value; var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); oAutoQty(); return; }
-    if (k === 'o-qty') { if (S.oqtyAuto && S.oqtyAuto !== el.value) sg('ordfill', 'e'); S.oqty = el.value; S.oqtyAuto = ''; var ou2 = S.root.querySelector('#o-units'); if (ou2) ou2.innerHTML = unitChipsHTML('o', S.oqty); return; }
+    if (k === 'o-text') { S.otext = el.value; oAutoQty(); var og = S.root.querySelector('#o-sugg'); if (og) og.innerHTML = ordSuggHTML(); return; }
+    if (k === 'o-qty') { if (S.oqtyAuto && S.oqtyAuto !== el.value) sg('ordfill', 'e'); S.oqty = el.value; S.oqtyAuto = ''; var ou2 = S.root.querySelector('#o-units'); if (ou2) ou2.innerHTML = unitChipsHTML('o', S.oqty); oFillPatch(); return; }
     if (k === 'g-q') { S.gq = el.value; var gl = S.root.querySelector('#g-list'); if (gl) gl.innerHTML = gListHTML(); var gWrap = el.closest('.g-qwrap'); if (gWrap) gWrap.classList.toggle('has-q', !!S.gq); return; }
     if (k === 'g-title' || k === 'g-sum' || k === 'g-steps' || k === 'g-kw') {
       if (!S.gf) return;
@@ -12391,9 +12511,15 @@
     }
     if (k === 'n-text') { if (S.nf) S.nf.text = el.value; var nc = S.root.querySelector('#n-count'); if (nc) nc.textContent = el.value.length + ' of 400. Ctrl+Enter saves.'; var npv = S.root.querySelector('#n-prev'); if (npv && S.nf) npv.innerHTML = draftPreviewHTML(S.nf); saveSync(); return; }
     if (k && k.indexOf('tr-') === 0) { trInput(k, el); return; }
-    if (k === 'w-text') { S.wf.text = el.value; var wg = S.root.querySelector('#w-sugg'); if (wg) wg.innerHTML = wSuggHTML(); return; }
-    if (k === 'w-amt') { S.wf.amt = el.value.replace(/[^0-9.,]/g, ''); S.wf.amtAuto = false; if (el.value !== S.wf.amt) el.value = S.wf.amt; return; }
-    if (k === 'w-sec') { S.wf.sec = el.value; return; }
+    if (k === 'w-text') {
+      S.wf.text = el.value; var wg = S.root.querySelector('#w-sugg'); if (wg) wg.innerHTML = wSuggHTML();
+      // a new name: what the book filled for the old one goes (filled for you, 13 Nov 2026)
+      var wk = okey(el.value); if (S.wf.noFill && S.wf.noFill !== wk) S.wf.noFill = ''; if (S.wf.emptied) S.wf.emptied = false;
+      if (S.wf.fill && S.wf.fill.from !== wk) wUnfill();
+      wFillPatch(); return;
+    }
+    if (k === 'w-amt') { S.wf.amt = el.value.replace(/[^0-9.,]/g, ''); S.wf.amtAuto = false; if (el.value !== S.wf.amt) el.value = S.wf.amt; wFillPatch(); return; }
+    if (k === 'w-sec') { S.wf.sec = el.value; if (S.wf.fill && S.wf.fill.sec && el.value !== S.wf.fill.sec) { S.wf.fill.sec = ''; wFillTidy(); wFillPatch(); } return; }
     if (k === 'w-act') { S.wf.act = el.value; return; }
     // the admin panel's Daily reviews form and the wastage page each keep their own (rvTyped())
     if (k === 'w-ra' || k === 'w-rc') { if (el.closest('.a-rvform')) { if (k === 'w-ra') S.wrA = el.value; else S.wrC = el.value; } else if (k === 'w-ra') S.wpA = el.value; else S.wpC = el.value; saveSync(); return; }
@@ -12435,6 +12561,8 @@
     if (k === 'n-to') { if (S.nf && !S.nf.id) { S.nf.to = el.value; } return; }
     if (k === 'n-tm') { if (S.nf) { S.nf.tm = el.value; draw(); } return; }
     if (k === 'p-section' || k === 'w-sec') { checkSectionBox(el, k); return; }
+    if (k === 'w-text') { fillAfterTap(wTypedFill); return; }
+    if (k === 'tr-text') { fillAfterTap(xTypedFill); return; }
     if (k === 'af-sec' || k === 'af-who' || k === 'af-dow' || k === 'af-reason' || k === 'af-venue') { AF()[k.slice(3)] = el.value; afSave(); draw(); return; }
     var a = el.getAttribute && el.getAttribute('data-a');
     if (!a || !S.draft) return;
@@ -12488,6 +12616,8 @@
     app.addEventListener('click', onClick);
     app.addEventListener('pointerdown', toastDown);
     app.addEventListener('pointerdown', fillTapDown, true);
+    app.addEventListener('pointerdown', fillPtrDown, true);
+    ['pointerup', 'pointercancel'].forEach(function (ev) { document.addEventListener(ev, fillPtrUp, true); });
     app.addEventListener('click', fillTap, true);
     app.addEventListener('pointermove', toastMove);
     app.addEventListener('pointerup', toastUp);
