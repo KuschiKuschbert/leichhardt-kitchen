@@ -8035,8 +8035,15 @@
     var original = Object.assign({}, it);
     var by = restore ? '' : (me() || {}).name || 'Head chef', at = restore ? 0 : now();
     mine.forEach(function (x) { if (x.id === id && x.date === date) { x.deleted = !restore; x.deletedBy = by; x.deletedAt = at; } });
-    // a past day's change reaches the head chef's other devices: their saved copy of that day is read again (pastRead)
-    xWrite(date, id, { deleted: !restore, deletedBy: by, deletedAt: at }, original).then(function () { markPast('x', date); }, failed);
+    // a past day's change reaches the head chef's other devices: their saved copy of that day is read again (pastRead).
+    // A write that is refused puts the log's copy back as it was, and failed() says it was not saved (13 Nov 2026: the
+    // log showed a loan as removed when it was not). The log's copy is not read again on another device's stamp
+    // (pastEdit.x names no day, so that would read all 30 days again): Refresh does that, on a tap.
+    var was = { deleted: !!original.deleted, deletedBy: original.deletedBy || '', deletedAt: original.deletedAt || 0 };
+    xWrite(date, id, { deleted: !restore, deletedBy: by, deletedAt: at }, original).then(function () { markPast('x', date); }, function (e) {
+      mine.forEach(function (x) { if (x.id === id && x.date === date) Object.assign(x, was); });
+      failed(e); draw();
+    });
     if (!restore) toast('Removed ' + (it ? slipName(it.text) : 'the transfer') + ' from the transfer list', { label: 'Undo', fn: function () { removeXfer(date, id, true); } });
     else toast('Put back ' + (it ? slipName(it.text) : 'the transfer'));
     draw();

@@ -165,6 +165,15 @@ extra[fsKey(['summary', 'transfers'])] = { day: today, from: yest, to: yest, at:
     s = await store(p);
     ok(s[fsKey(['transfers', yest, 'lines', 'y1'])].deleted === false, 'admin: Put back restores it');
     ok((await lineReads(p)).length === reads, 'admin: Remove and Put back read nothing again');
+    // a Remove the server refuses is put back on screen and says it was not saved (13 Nov 2026: the log showed the loan
+    // as removed when it was not)
+    await p.evaluate(() => { window.__fake.deny = /\/transfers\//; });
+    await p.click('[data-lv="xfer-log"] [data-p="tr-del"][data-id="y1"]'); await L.settle(p, 600);
+    s = await store(p);
+    ok(s[fsKey(['transfers', yest, 'lines', 'y1'])].deleted === false, 'admin: a refused Remove leaves Milk on the server');
+    ok(!!(await p.$('[data-lv="xfer-log"] [data-p="tr-del"][data-id="y1"]')) && !(await p.$('[data-lv="xfer-log"] [data-p="tr-restore"][data-id="y1"]')), 'admin: a refused Remove shows Milk not removed again, with Remove');
+    ok(/Not saved/.test(await txt(p, '.p-toast') || ''), 'admin: a refused Remove says it was not saved (' + (await txt(p, '.p-toast') || '') + ')');
+    await p.evaluate(() => { window.__fake.deny = null; });
     ok(!!(await p.$('[data-p="csv"][data-v="transfers"]')), 'admin: Export has a CSV of the transfers');
     // the venue filter
     await L.pick(p, '[data-k="af-venue"]', 'Riviera'); await L.settle(p, 300);
