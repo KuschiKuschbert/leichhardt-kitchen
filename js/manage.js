@@ -719,7 +719,8 @@
       var o = { q: trimStr(i.q), name: trimStr(i.name) };
       if (i.link) o.link = i.link;
       if (trimStr(i.note)) o.note = trimStr(i.note);
-      if (!i.link && i.tags && i.tags.length) o.tags = i.tags.slice();
+      // a linked ingredient keeps its tags too: they are its only allergens while the linked card is to come
+      if (i.tags && i.tags.length) o.tags = i.tags.slice();
       return o;
     });
     out.pins = (d.pins || []).filter(function (p) { return trimStr(p.label); }).map(function (p) {
