@@ -6759,7 +6759,24 @@
     var r = recRows()[day];
     if (!r || !r.fs) return '<span class="rec-wait">Count not ready.</span> The nightly run counts this day at 03:00.';
     var n = (r.fs.del || []).length;
-    return (n === 1 ? '1 delivery' : n + ' deliveries') + ' · ' + recClean(r.fs.c).short;
+    var cl = recCool(r.fs.cool);
+    return (n === 1 ? '1 delivery' : n + ' deliveries') + ' · ' + recClean(r.fs.c).short + (cl ? ' · ' + cl.short : '');
+  }
+  /* Cooling (14 Nov 2026): the nightly run keeps each day's Operandio batch on its row (fs.cool, scripts/records-core.mjs):
+     who started each stage and who confirmed it recorded in Operandio. Confirmed in the book is not the check itself: the
+     temperatures are in Operandio. Muted words, never red: a stage not confirmed here may still be in Operandio. */
+  function recCool(c) {
+    if (!c || !c.k) return null;
+    if (c.k === 'none') return { short: 'Cooling: no batch', line: 'Cooling: no batch was started.' };
+    if (c.k === 'gone') return { short: '<span class="rec-wait">Cooling: not kept</span>', line: 'Cooling: not kept. A newer batch replaced it before the nightly run could keep it.' };
+    if (c.k === 'before') return { short: '<span class="rec-wait">Cooling: not kept</span>', line: 'Cooling: not kept. The book keeps each day\'s batch since 14 November 2026.' };
+    var m = c.s2 ? 2 : 1, n = (c.r1 ? 1 : 0) + (c.r2 ? 1 : 0);
+    return { short: 'Cooling: ' + n + ' of ' + m + (m === 1 ? ' stage' : ' stages') + ' confirmed', line: '' };
+  }
+  function recCoolEvents(c) {
+    if (!c || c.k !== 'batch') return [];
+    return [[c.start, 'Cooling', 'Batch started, 2 hour stage' + (c.by ? ' · ' + c.by : '')], [c.r1, 'Cooling', '2 hour stage recorded in Operandio' + (c.r1by ? ' · ' + c.r1by : '')],
+      [c.s2, 'Cooling', '4 hour stage started' + (c.s2by ? ' · ' + c.s2by : '')], [c.r2, 'Cooling', '4 hour stage recorded in Operandio' + (c.r2by ? ' · ' + c.r2by : '')]].filter(function (e) { return e[0]; });
   }
   function recTemps(x) { return [typeof x.c === 'number' ? num(x.c) + ' °C chilled' : '', typeof x.f === 'number' ? num(x.f) + ' °C frozen' : ''].filter(Boolean).join(', ') || 'no temperature'; }
   function recPart(day, k) { var dd = REC.days[day]; return dd && dd[k]; }
@@ -6787,6 +6804,7 @@
   function recEvents(day, all) {
     var r = recRows()[day], ev = [];
     ((r && r.fs && r.fs.del) || []).forEach(function (x) { ev.push([x.at, 'Delivery', x.s + ' · ' + recTemps(x) + (x.by ? ' · ' + x.by : '') + (x.n ? ' · ' + x.n : '')]); });
+    recCoolEvents(r && r.fs && r.fs.cool).forEach(function (e) { ev.push(e); });
     if (all) {
       var w = recPart(day, 'w'), x2 = recPart(day, 'x');
       if (w && w.s === 'ok') w.v.forEach(function (l) { ev.push([clock(l.addedAt), 'Wastage, time logged', l.text + ' ' + num(l.amount) + ' ' + l.unit + ' · ' + ((REASONS.filter(function (q) { return q[0] === l.reason; })[0] || [])[1] || 'No reason') + (l.station ? ' · ' + l.station : '') + (l.addedBy ? ' · ' + l.addedBy : '')]); });
@@ -6804,7 +6822,7 @@
     if (c.ev) out.push('Each-service tasks: ' + c.evRec + ' of ' + c.ev + ' with something recorded.');
     return out;
   }
-  var REC_COOL = 'Cooling is recorded in Operandio. The book keeps only today\'s batch.';
+  var REC_COOL = 'Cooling: the book keeps who started each stage and who confirmed it recorded in Operandio, since 14 November 2026. The temperatures are in Operandio.';
   function recDayHTML(day) {
     var r = recRows()[day], all = REC.all, counted = !!(r && r.fs), c = counted ? r.fs.c : null, y = shift(dayNow(), -1);
     var prev = shift(day, -1), next = shift(day, 1), first = (REC.board && REC.board.from) || day;
@@ -6817,7 +6835,8 @@
       });
     }
     var status = !counted ? '<p class="rec-line"><span class="rec-wait">Count not ready.</span> The nightly run counts this day at 03:00. Delivery received and the Cleaning page show it now.</p>'
-      : '<p class="rec-line">' + (all ? 'Shown: deliveries, cleaning' + (parts.length ? ', ' + esc(parts.join(', ').toLowerCase()) : '') + '.' : 'All shown: deliveries and cleaning.' + (c ? '' : ' Cleaning: count not ready.')) + '</p>';
+      : '<p class="rec-line">' + (all ? 'Shown: deliveries, cleaning, cooling' + (parts.length ? ', ' + esc(parts.join(', ').toLowerCase()) : '') + '.' : 'All shown: deliveries, cleaning and cooling.' + (c ? '' : ' Cleaning: count not ready.')) + '</p>' +
+        (recCool(r.fs.cool) && recCool(r.fs.cool).line ? '<p class="rec-line">' + esc(recCool(r.fs.cool).line) + '</p>' : '');
     var fails = bad.map(function (b) { return '<div class="rec-bad" role="alert"><span>' + esc(b) + ' could not load. ' + esc(b) + ' may have records that are not shown.</span><button type="button" class="chip" data-p="rec-retry">Try again</button></div>'; }).join('');
     var extra = '';
     if (all) {
@@ -6873,6 +6892,7 @@
         var del = r.fs.del || [];
         out.push(['p', del.length ? del.map(function (x) { return x.at + ' ' + x.s + ': ' + recTemps(x) + (x.by ? ', ' + x.by : '') + (x.n ? ' (' + x.n + ')' : ''); }).join('. ') + '.' : 'No deliveries recorded.']);
         recCleanLines(r.fs.c).forEach(function (l) { out.push(['p', l]); });
+        var pc = recCool(r.fs.cool); if (pc) out.push(['p', pc.line || recCoolEvents(r.fs.cool).map(function (e) { return e[0] + ' ' + e[2]; }).join('. ') + '.']);
       });
     } else {
       var day = REC.day; out.push(['h', 'Kitchen records, ' + recLong(day)]);
@@ -6901,6 +6921,7 @@
       (r.fs.del || []).forEach(function (x) { out.push([d, 'Delivery', x.at, x.s, recTemps(x) + (x.n ? '. ' + x.n : ''), x.by]); });
       if (all) recEvents(d, true).filter(function (e) { return e[1] !== 'Delivery'; }).forEach(function (e) { out.push([d, e[1], e[0], e[2], '', '']); });
       var cl = recCleanLines(r.fs.c); out.push([d, 'Cleaning', '', cl[0], cl.slice(1).join(' '), '']);
+      var cc = recCool(r.fs.cool); if (cc) { if (cc.line) out.push([d, 'Cooling', '', cc.line, '', '']); else if (!all) recCoolEvents(r.fs.cool).forEach(function (e) { out.push([d, 'Cooling', e[0], e[2], '', '']); }); }
     }
     if (kind === 'month') { var m = REC.month || y.slice(0, 7); recDays(m).slice().reverse().forEach(function (d) { day(d, false); }); downloadCSV('records-' + m + '.csv', out); }
     else if (REC.day) { day(REC.day, REC.all); downloadCSV('records-' + REC.day + '.csv', out); }

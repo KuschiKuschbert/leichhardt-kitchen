@@ -60,3 +60,24 @@ export function dayDeliveries(list, day) {
     .sort((a, b) => a.receivedAt - b.receivedAt).slice(0, 40)
     .map(r => ({ at: clock(r.receivedAt), s: text(r.supplier, 60), c: temp(r.chilled), f: temp(r.frozen), n: text(r.note, 160), by: text(r.receivedBy, 60) }));
 }
+
+/* Cooling (head chef, 14 Nov 2026, "Yes yes": keep each day's Operandio cooling confirmations). The book keeps only the
+   current batch (cooling/current, cooling/recorded), replaced by the next day's first Start (from 10:00). The nightly
+   job (03:00) reads both and puts the batch on the row of its day: who started each stage and who confirmed each stage
+   recorded in Operandio, with the times. The temperatures themselves are in Operandio. A day is decided once:
+   batch (the times), none (no batch was started: the current one is older), gone (a newer batch replaced it before a
+   nightly run could keep it) or before (the book did not keep cooling yet). */
+const ms = v => !v ? 0 : typeof v.toMillis === 'function' ? v.toMillis() : typeof v === 'number' ? v : typeof v.seconds === 'number' ? v.seconds * 1000 + Math.floor((v.nanoseconds || 0) / 1000000) : 0;
+export const qldDay = t => new Date(t + ZONE).toISOString().slice(0, 10);
+export function coolBatchDay(current) { const t = current && (Number.isInteger(current.windowAt) ? current.windowAt : ms(current.firstAt)); return t ? qldDay(t) : ''; }
+export function coolDay(current, recorded, day, names, firstRun, yesterday) {
+  const bd = coolBatchDay(current);
+  if (firstRun && day < yesterday && bd !== day) return { k: 'before' };
+  if (!bd || bd < day) return { k: 'none' };
+  if (bd > day) return { k: 'gone' };
+  const who = id => typeof id === 'string' && id ? (names[id] || 'Someone') : '';
+  const at = v => { const t = ms(v); return t ? clock(t) : ''; };
+  const rec = recorded && recorded.run === current.run ? recorded : {};
+  return { k: 'batch', start: at(current.firstAt), by: who(current.firstBy), s2: at(current.secondAt), s2by: current.secondAt ? who(current.secondBy) : '',
+    r1: at(rec.firstAt), r1by: rec.firstAt ? who(rec.firstBy) : '', r2: at(rec.secondAt), r2by: rec.secondAt ? who(rec.secondBy) : '' };
+}

@@ -16,7 +16,8 @@ for (let i = 40; i >= 2; i--) {
   rows.push({ day: d, p: { n: 20, w: 18, t: 17, r: 2, sec: {}, mins: {}, who: {} }, w: { n: 0, reason: {}, sec: {}, items: [] }, x: { out: 0, in: 0 },
     fs: { v: 1, del: d === target ? [{ at: '07:42', s: 'Bidfood', c: 3.1, f: null, n: 'All there', by: 'Ann' }, { at: '10:20', s: 'Seafood', c: 1.8, f: -19.5, n: '', by: 'Bo' }] : [],
       c: d === counted ? null : d === target ? { cv: 1, due: 35, done: 31, miss: ['Fryer oil change', 'Cool room floor'], missN: 2, unable: [{ t: 'Hood filters', n: 'No degreaser' }], unableN: 1, wait: ['Probe check'], waitN: 1, ev: 0, evRec: 0 }
-        : { cv: 1, due: 30, done: 30, miss: [], missN: 0, unable: [], unableN: 0, wait: [], waitN: 0, ev: 0, evRec: 0 } } });
+        : { cv: 1, due: 30, done: 30, miss: [], missN: 0, unable: [], unableN: 0, wait: [], waitN: 0, ev: 0, evRec: 0 },
+      cool: d === target ? { k: 'batch', start: '14:05', by: 'Bo', s2: '16:10', s2by: 'Bo', r1: '16:07', r1by: 'Bo', r2: '', r2by: '' } : i > 20 ? { k: 'before' } : { k: 'none' } } });
 }
 const extra = {
   [fsKey(['analysis', 'dashboard'])]: { v: 1, generation: 'g1', at: L.NOW - 11 * 3600000, from: day(40), to: day(2), days: rows },
@@ -36,8 +37,8 @@ const reads = p => p.evaluate(() => window.__fake.bill.filter(b => /analysis|was
   await go(p);
   const list = await p.evaluate(() => [...document.querySelectorAll('.rec-dayrow')].map(b => [b.getAttribute('data-d'), b.querySelector('.rec-d').textContent, b.querySelector('.rec-t').textContent.replace(/\s+/g, ' ').trim()]));
   const row = d => list.find(x => x[0] === d) || [];
-  ok(row(target)[1] === short(target) && row(target)[2] === '2 deliveries · Cleaning: 2 missed, 1 not possible, 1 awaiting Pass check', 'a day says its deliveries and cleaning, with its own weekday (' + JSON.stringify(row(target)) + ')');
-  ok(/^0 deliveries · Cleaning: count not ready$/.test(row(counted)[2] || ''), 'a day whose cleaning was not counted says so, never 0 missed (' + row(counted)[2] + ')');
+  ok(row(target)[1] === short(target) && row(target)[2] === '2 deliveries · Cleaning: 2 missed, 1 not possible, 1 awaiting Pass check · Cooling: 1 of 2 stages confirmed', 'a day says its deliveries and cleaning, with its own weekday (' + JSON.stringify(row(target)) + ')');
+  ok(/^0 deliveries · Cleaning: count not ready · Cooling: no batch$/.test(row(counted)[2] || ''), 'a day whose cleaning was not counted says so, never 0 missed (' + row(counted)[2] + ')');
   ok(/^Count not ready\. The nightly run counts this day at 03:00\.$/.test(row(notCounted)[2] || ''), 'yesterday, after the last count, says it is not counted yet (' + row(notCounted)[2] + ')');
   ok(!!(await p.$('.rec-pick')) && await p.isVisible('.rec-pick'), 'the laptop opens with no day chosen: no day is read on open');
   const open1 = await reads(p);
@@ -49,7 +50,8 @@ const reads = p => p.evaluate(() => window.__fake.bill.filter(b => /analysis|was
   const fsView = await dayText(p);
   ok(/07:42 Delivery Bidfood · 3\.1 °C chilled · Ann · All there/.test(fsView) && /10:20 Delivery Seafood · 1\.8 °C chilled, -19\.5 °C frozen · Bo/.test(fsView), 'the day lists its deliveries in time order with the temperatures as recorded');
   ok(/Cleaning: 31 of 35 done\./.test(fsView) && /Missed: Fryer oil change, Cool room floor\./.test(fsView) && /Not possible: Hood filters \(No degreaser\)\./.test(fsView) && /Awaiting Pass check: Probe check\./.test(fsView), 'the day says cleaning done, missed, not possible and awaiting Pass check');
-  ok(/All shown: deliveries and cleaning\./.test(fsView) && /Cooling is recorded in Operandio/.test(fsView), 'one status line, and where cooling is recorded');
+  ok(/All shown: deliveries, cleaning and cooling\./.test(fsView) && /The temperatures are in Operandio/.test(fsView), 'one status line, and where the cooling temperatures are');
+  ok(/14:05 Cooling Batch started, 2 hour stage · Bo/.test(fsView) && /16:07 Cooling 2 hour stage recorded in Operandio · Bo/.test(fsView) && /16:10 Cooling 4 hour stage started · Bo/.test(fsView) && !/4 hour stage recorded/.test(fsView), 'the day\'s cooling batch in time order: started, confirmed recorded in Operandio');
   ok((await reads(p)).length === 0, 'a counted day\'s food safety part reads nothing more (' + (await reads(p)).join(', ') + ')');
 
   // Everything: that day's wastage, transfers, team plan and day record; a part that fails says so
