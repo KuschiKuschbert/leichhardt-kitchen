@@ -7212,7 +7212,8 @@
   }
   function tickOrderLine(date, id, on) {
     var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0], nm = it ? ' ' + slipName(it.text) : '';
-    setOrdered(date, id, on).then(function () { ordPatch(date, id, { ordered: on }); }, failed);
+    // an earlier day's tick names that day as changed, like a remove, so other phones read it again (markPast())
+    setOrdered(date, id, on).then(function () { ordPatch(date, id, { ordered: on }); markPast('o', date); }, failed);
     if (on) toast('Ordered' + nm, { label: 'Undo', fn: function () { tickOrderLine(date, id, false); } });
     else toast((it ? slipName(it.text) + ' is' : 'It is') + ' back on the order list.');
   }

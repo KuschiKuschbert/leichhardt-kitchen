@@ -93,6 +93,23 @@ const rid = id => 'r' + today.replace(/-/g, '') + '-' + id;
     await p.context().close();
   }
 
+  // A tick on an earlier day's order line names that day as changed (13 Nov 2026), like a remove does, so other
+  // phones read that day again instead of keeping their copy with the line not ordered
+  const tk = {};
+  tk[fsKey(['orders', yday, 'lines', 'm1'])] = line('Mint', { qty: '2 bunches' });
+  p = await L.open(b, '#/orders', { who: 'sam', wait: 1600, extra: tk });
+  await p.locator('#o-day').waitFor();
+  await p.fill('#o-day', yday); await p.locator('#o-day').dispatchEvent('change');
+  await L.waitFor(p, d => LK_PREP.state.ordDate === d && LK_PREP.state.ordState === 'ok' && LK_PREP.state.ordLines.some(x => x.id === 'm1'), yday);
+  await p.click('.o-main [data-p="otick"][data-id="m1"]');
+  await L.waitFor(p, k => !!(((window.__fake.dump()[k] || {}).pastEdit || {}).o), fsKey(['config', 'main']), 8000).catch(() => {});
+  s = await store(p);
+  const pe = (s[fsKey(['config', 'main'])] || {}).pastEdit || {};
+  ok(s[fsKey(['orders', yday, 'lines', 'm1'])].ordered === true, 'past tick: yesterday\'s line is marked ordered');
+  ok(pe.o > 0 && Array.isArray(pe.oDays) && pe.oDays.indexOf(yday) >= 0, 'past tick: it names yesterday as changed for the other phones (' + JSON.stringify(pe) + ')');
+  ok(p.errors.length === 0, 'past tick: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })();
