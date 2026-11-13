@@ -1,5 +1,6 @@
 /*
-  Nightly backup for the Kitchen Book. Run by .github/workflows/nightly-backup.yml at 03:30 kitchen time.
+  The encrypted backup for the Kitchen Book. Run by .github/workflows/nightly-backup.yml on Sundays at 03:30 kitchen time
+  (weekly since Plan C 4.3; Firestore's own daily and weekly backups are the first copy, docs/backup-recovery.md).
 
   Reads what the Backup button in the admin panel reads (js/prep.js, exportAll) and writes it as one JSON file in the
   same shape: config (people), prep lines, order lines, wastage and reviews, and transfers between venues (23 Oct 2026)

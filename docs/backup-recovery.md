@@ -1,10 +1,37 @@
 # Protected backup and recovery checks
 
-The nightly job reads the existing included-data export, encrypts it, decrypts it again into a private temporary file and compares the bytes before upload. It keeps only the encrypted artifact for 90 days. New archives use format version 1 with authenticated encryption. The artifact name, `kitchen-book-<UTC date>.json.enc` filename and schedule stay the same. The backup key stays in the existing `BACKUP_KEY` repository secret and the owner's password manager. No new service or package is needed.
+The weekly job (Sundays 03:30 kitchen time since Plan C, nightly before) reads the existing included-data export, encrypts it, decrypts it again into a private temporary file and compares the bytes before upload. It keeps only the encrypted artifact for 90 days. New archives use format version 1 with authenticated encryption. The artifact name, `kitchen-book-<UTC date>.json.enc` filename and schedule stay the same. The backup key stays in the existing `BACKUP_KEY` repository secret and the owner's password manager. No new service or package is needed.
 
 **Older days from last night's file** (Plan B 4.2, 7 Nov 2026, `docs/firestore-usage.md`). Before it reads, the workflow downloads the last successful run's encrypted file and decrypts it into the runner's temporary folder only (`PREV_BACKUP`, removed with tonight's plaintext). The prep, order, wastage, review and transfer days older than 14 that no past-day fix names (`config/main.pastEdit`: `pDays`, `oDays`, and `wDays` for a wastage line or review since 7 Nov 2026) are taken from it, not read again. Every file is still the whole window, so any one file is enough for a repair. Every day is read on Sundays (kitchen time), without a usable earlier file (missing, unreadable or more than 36 hours old), after a past transfer fix (its stamp names no day) or a stamp that cannot tell. The log says how many days were taken. `scripts/backup-reuse-check.mjs` proves it on the emulator.
 
 This is an included-data backup, not a complete disaster-recovery image. The source export uses several reads, not one transactional database snapshot. Authentication and the runner's round trip confirm the exact included JSON bytes and format parameters, not freshness or cross-document consistency. Check the run, source revision and decrypted `exportedAt`, and reconcile relevant records before a real repair.
+
+## Google's own backups (Plan C 4.3)
+
+The head chef chose Plan C on 13 November 2026 (`docs/firestore-usage.md`). Firestore's own scheduled backups are now the first copy, and the encrypted GitHub file above is kept weekly as the copy outside Google. The head chef sets the schedules once, in Cloud Shell (console.cloud.google.com, the `>_` button), with billing on:
+
+```
+gcloud config set project leichhardt-kitchen
+gcloud firestore backups schedules create --database='(default)' --recurrence=daily --retention=7d
+gcloud firestore backups schedules create --database='(default)' --recurrence=weekly --day-of-week=SUN --retention=14w
+gcloud firestore backups schedules list --database='(default)'
+```
+
+- **What they hold.** The whole database at one moment, including what the encrypted file leaves out on purpose (PIN fingerprints, sessions and device grants, guide page pictures, push addresses). Not in them: the security rules, sign-in accounts (Firebase Authentication) and anything outside Firestore.
+- **Limits.** One daily and one weekly schedule per database, the longest kept 14 weeks. Google picks the time of day. A deleted backup cannot be brought back. Backups stay in the database's location and outlive the database.
+- **Cost.** Billed for storage and for a restore, by size; no reads. With this book's size that is a fraction of a cent a day (prices in `docs/firestore-usage.md`).
+- **See them.** `gcloud firestore backups list --format="table(name, database, state)"`.
+- **Restore.** A restore always makes a new database; it never writes over `(default)`. Pick a backup from the list, then:
+
+```
+gcloud firestore databases restore \
+  --source-backup=projects/leichhardt-kitchen/locations/LOCATION/backups/BACKUP_ID \
+  --destination-database=restore-YYYYMMDD
+gcloud firestore operations list --database=restore-YYYYMMDD
+```
+
+  The new database starts with no security rules: nobody's phone can read it, which is right for a recovery copy. Compare it with the live book, then bring back only what was lost with a reviewed script, the same care as the encrypted file below (Isolated recovery assurance). Never point the book at it, and delete it when done (`gcloud firestore databases delete --database=restore-YYYYMMDD`), as it is billed while it exists.
+- **Checked from the docs, not yet rehearsed.** Commands from Google's Firestore backup page (read 14 November 2026). A restore has not been tried on this project yet; try one on a quiet day and note the result here.
 
 ## Read a new archive
 

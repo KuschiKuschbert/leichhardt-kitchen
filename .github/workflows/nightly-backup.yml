@@ -1,15 +1,18 @@
-# Nightly backup: every night at 03:30 kitchen time (17:30 UTC) the book is read the way the admin panel's Backup
+# Weekly backup: every Sunday at 03:30 kitchen time (Saturday 17:30 UTC) the book is read the way the admin panel's Backup
 # button reads it (scripts/nightly-backup.mjs), encrypted with the BACKUP_KEY secret and kept as a GitHub artifact for
 # 90 days. The repository is public and anyone signed in to GitHub can download an artifact, so the file is never kept
 # in the clear. Needs three repository secrets: FIREBASE_SA (service account key, JSON), KITCHEN_PIN and BACKUP_KEY
 # (a long random passphrase; keep a copy in your password manager, a lost key means unreadable backups).
 # Recovery commands and the explicit trusted legacy format are documented in docs/backup-recovery.md.
 # Run it by hand from the Actions tab with "Run workflow".
-name: Nightly backup
+# Weekly since Plan C (4.3, docs/firestore-usage.md): Firestore's own scheduled backups (daily, kept 7 days; weekly,
+# kept 14 weeks) are the first copy, with no reads. This encrypted copy is the one kept outside Google. A week-old
+# earlier file is too old to reuse (scripts/nightly-backup.mjs, 36 hours), so each run reads the whole window.
+name: Weekly backup
 
 on:
   schedule:
-    - cron: '30 17 * * *'
+    - cron: '30 17 * * 6'
   workflow_dispatch:
 
 permissions:
