@@ -73,6 +73,35 @@ const said = async p => ((await txt(p, 'main')) || '').replace(/\s+/g, ' ');
   ok(p.errors.length === 0, 'live list refused, orders: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // No signal is said only when the signal is the cause (13 Nov 2026). With the reads used up, the line at the top says
+  // so, and the card under it said "No signal" as well: a name picked on a shared tablet, the head chef's own check
+  // on the admin panel, and the chef to-do list.
+  const noWifi = t => !/No signal|Check the (connection|signal)/.test(t);
+  p = await L.open(b, '#/prep', { who: '', settings: { shared: true }, exhausted: '/pinset/bo$', wait: 1500 });
+  await p.click('.p-name[data-id="bo"]');
+  await L.waitFor(p, () => window.LK_PREP.state.pinStep === 'error', null, 8000).catch(() => {});
+  t = await said(p);
+  ok(/used up today's free reads/.test(t) && /Could not check your PIN/.test(t) && noWifi(t), 'reads used up, a name picked: the top line says why and the card does not say No signal (' + t.slice(0, 220) + ')');
+  ok(!!(await p.$('[data-p="who"][data-id="bo"]')), 'reads used up, a name picked: Try again stays');
+  ok(p.errors.length === 0 && !(await L.overflow(p)), 'reads used up, a name picked: no page errors, no sideways scroll ' + p.errors.join(' | '));
+  await p.context().close();
+
+  p = await L.open(b, '#/admin', { admin: true, exhausted: SPENT_LISTS + '|/config/admins$', width: 1280, wait: 1500, init: () => { localStorage.setItem('lk.admin', '1'); } });
+  await L.waitFor(p, () => !!window.LK_PREP.state.adminsOff, null, 8000).catch(() => {});
+  await L.settle(p, 300);
+  t = ((await txt(p, '#prep-root')) || '').replace(/\s+/g, ' ');
+  ok(/Could not check your access yet/.test(t) && noWifi(t), 'reads used up, the head chef\'s check: the admin panel does not say No signal (' + t.slice(0, 160) + ')');
+  ok(/used up today's free reads/.test(await said(p)), 'reads used up, the head chef\'s check: the line at the top says why');
+  ok(p.errors.length === 0, 'reads used up, admin panel: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
+  p = await L.open(b, '#/todo', { who: 'sam', exhausted: '/todos$', wait: 1500 });
+  await L.waitFor(p, () => /Could not load the to-do list/.test(document.body.textContent), null, 8000).catch(() => {});
+  t = await said(p);
+  ok(/Could not load the to-do list/.test(t) && noWifi(t), 'reads used up, chef to-do: says it could not load, not Check the signal (' + (t.match(/Could not load[^.]*\.[^.]*\.?/) || [''])[0] + ')');
+  ok(p.errors.length === 0 && !(await L.overflow(p)), 'reads used up, chef to-do: no page errors, no sideways scroll ' + p.errors.join(' | '));
+  await p.context().close();
+
   // the time comes from California's midnight, worked out on the phone
   p = await L.open(b, '#/', { who: 'sam', wait: 800 });
   const back = await p.evaluate(() => { const T = window.LK_TIME; if (typeof T.quotaBack !== 'function') return ['missing']; const t0 = T.at('2026-11-05', 14 * 60), t1 = T.at('2026-07-05', 14 * 60), t2 = T.at('2026-11-05', 19 * 60); return [T.clock(T.quotaBack(t0)), T.day(T.quotaBack(t0)), T.clock(T.quotaBack(t1)), T.day(T.quotaBack(t2))]; });
