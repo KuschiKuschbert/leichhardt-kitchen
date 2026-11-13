@@ -63,7 +63,7 @@ Admin means the owner's verified Google identity plus this device's live head-ch
 | Pings: who gets them, the sound | `docs/ping-recipients.md`, `docs/ping-sound.md` |
 | Back arrow and page trail | `docs/navigation.md` |
 | Merging, the queue, `urgent` | `docs/auto-merge.md` |
-| Publishing the site: only a merge that changes a file the phones load republishes and offers an update | `docs/site-publishing.md` |
+| Publishing the site: only a merge that changes a file the phones load republishes; the book then updates silently when safe (no band unless asked) | `docs/site-publishing.md` |
 | Nightly backup and recovery | `docs/backup-recovery.md` |
 | Seasonal celebrations and festival dates | `docs/seasonal-celebrations.md`, `docs/seasonal-calendar.md`, `docs/celebration-options/brief.md` |
 

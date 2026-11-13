@@ -34,6 +34,10 @@ In GitHub: Settings, Pages, Build and deployment, Source: **GitHub Actions**. Un
 
 To go back: set Source to Deploy from a branch (`main`, root). GitHub's own publish then runs on every push again and the two followers still answer it.
 
+## Silent updates (13 Nov 2026)
+
+After the switch the owner still saw the offer for the last branch publish and asked: "can't we just silently update?" A version the book finds by itself now shows no band (`js/upkeep.js`). It updates when it is safe, by the same rules as before: nobody has touched it for 2 minutes and nothing is typed, unsaved or waiting to send; or it is brought back after 5 minutes away; or 04:00. The band shows only for an update someone asked for (Update now in Settings, which says Update now once a new version is known; the Reload buttons), with its usual words, and for a saved book that cannot be used. Trade-off: a screen used without a 2-minute break runs the older version until it rests or until 04:00.
+
 ## What does not change
 
 The book's update check, the service worker, the 10-minute and 1-hour reload limits and the 04:00 refresh are unchanged. A merge that does change a file the book loads still offers the update, so grouping app changes into fewer merges still means fewer updates (the release windows in `docs/auto-merge.md`).
