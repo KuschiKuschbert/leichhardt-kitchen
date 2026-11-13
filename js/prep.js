@@ -6021,14 +6021,31 @@
     var st = S.stats, n = S.statsRange, h3 = '<h3 class="a-ch-h">Last ' + n + ' days</h3>';
     if (!st || st.loading) return h3 + inkWait('Loading the last ' + n + ' days...', 'chef', 3);
     var miss = st.miss && st.miss.length ? '<p class="p-err" role="status">' + st.miss.length + ' day' + (st.miss.length === 1 ? '' : 's') + ' could not be read, so these numbers may be low. The book tries again by itself.</p>' : '';
-    var td = teamData(n), r = td.per[id], note = '<p class="hint">Ticks record activity. They do not confirm skill. Use them as a prompt for a chat, not a verdict.</p>';
-    if (!r || !r.w && !r.t) return h3 + miss + '<p class="hint">No lines written or ticked off in the last ' + n + ' days.</p>' + note;
+    var td = teamData(n), r = td.per[id], note = '<p class="hint">Ticks and shifts record activity. They do not confirm skill. Use them as a prompt for a chat, not a verdict.</p>';
+    var shifts = personShiftsHTML(id, n);
+    if (!r || !r.w && !r.t) return h3 + miss + '<p class="hint">No lines written or ticked off in the last ' + n + ' days.</p>' + shifts + note;
     var h = habit(r, td), daysW = Object.keys(r.days).length, secs = Object.keys(r.tsecs).sort(function (a, b) { return r.tsecs[b] - r.tsecs[a]; });
     var tiles = [[r.w, 'lines written'], [r.t, 'lines ticked off'], [daysW + ' of ' + n, 'days with lines written']];
     if (h.top) tiles.push([Math.round(h.share * 100) + '%', 'in ' + h.top + ', the main section']);
     return h3 + miss + '<div class="a-tiles">' + tiles.map(tileHTML).join('') + '</div>' +
       (secs.length ? '<p class="a-pp-secs">Ticked off by section: ' + secs.slice(0, 6).map(function (k) { return esc(k) + ' ' + r.tsecs[k]; }).join(', ') + '.</p>' : '') +
+      shifts +
       (r.last ? '<p class="hint">Last wrote a line on ' + esc(dayShort(r.last)) + '. The period is the one every report shares.</p>' : '') + note;
+  }
+  /* Shifts by section on a person's page (head chef, 14 Nov 2026, docs/admin-pages-options/brief.md, step 5): where they
+     were rostered or picked, beside what they ticked. Counted by tsCount(), the same code as Who has worked where, so
+     the two always agree; teamsum/main is read once a kitchen day (1 read, shared with the Team report and the chef's
+     planner). Counts to yesterday, so the line says how far. A failed read never shows as no shifts. */
+  function personShiftsHTML(id, n) {
+    var x = tsCount(n);
+    if (x.st === 'err') return '<p class="p-err" role="status">Could not load the shift counts. This does not mean no shifts. The book tries again by itself in a few minutes.</p>';
+    if (x.st === 'wait') return '<p class="hint">' + inkLabel('Loading the shift counts...', 'chef') + '</p>';
+    if (x.st === 'none') return '<p class="hint">No shift counts yet. The nightly job counts them from Today\'s team.</p>';
+    if (x.st === 'nosec') return '';
+    var c = x.c[id] || {}, ks = x.secs.filter(function (k) { return c[k]; }).sort(function (a, b) { return c[b] - c[a]; });
+    var to = x.to ? ' Counted to ' + esc(dayShort(x.to)) + (x.lost ? ', the last ' + x.lost + (x.lost === 1 ? ' day' : ' days') + ' missing' : '') + '.' : '';
+    return ks.length ? '<p class="a-pp-secs">Shifts by section: ' + ks.map(function (k) { return esc(k) + ' ' + c[k]; }).join(', ') + '.' + to + '</p>'
+      : '<p class="hint">No shifts on a section in the last ' + n + ' days.' + to + '</p>';
   }
   /* The sous chef's Staff page: a short list of names with Remove. Same helper, rows as cards. */
   function staffListHTML(d) {
