@@ -65,6 +65,24 @@ const saved = async (p, name) => Object.values(await store(p)).filter(x => x && 
   ok(p.errors.length === 0, 'TBC: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // 2. staggered rounds 18:00, 18:30 and 19:00; round 3 typed as 20:00 and saved; the date moves a day and 20:00 stays
+  const stag = fn({ name: 'Stagger do', date: day2, start: '18:00', rounds: ['18:00', '18:30', '19:00'], lines: [['pizza-platter', 'Pizza Platter', [1, 1, 1]]] });
+  p = await L.open(b, '#/functions/stag', { who: 'fay', extra: extra({ stag }), wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('[data-ff="rt2"]'));
+  await setV(p, '[data-ff="rt2"]', '20:00');
+  await tap(p, '[data-fe="save"]');
+  await L.waitFor(p, () => /Version 2/.test((document.getElementById('fe-root') || {}).textContent || ''), null, 6000).catch(() => {});
+  ok((await store(p))[fsKey(['functions', 'stag'])].rounds[2].at === at(day2, '20:00'), 'staggered: round 3 saved at 20:00');
+  await setV(p, '[data-ff="date"]', day3);
+  const times = await p.$$eval('[data-ff^="rt"]', els => els.map(e => e.value));
+  ok(JSON.stringify(times) === JSON.stringify(['18:00', '18:30', '20:00']), 'staggered: moving the date keeps every round\'s time, 20:00 included (' + times.join(', ') + ')');
+  await tap(p, '[data-fe="save"]');
+  await L.waitFor(p, () => /Version 3/.test((document.getElementById('fe-root') || {}).textContent || ''), null, 6000).catch(() => {});
+  const moved = (await store(p))[fsKey(['functions', 'stag'])];
+  ok(moved.date === day3 && JSON.stringify(moved.rounds.map(r => r.at)) === JSON.stringify([at(day3, '18:00'), at(day3, '18:30'), at(day3, '20:00')]), 'staggered: saved on the new day with round 3 at 20:00');
+  ok(p.errors.length === 0, 'staggered: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

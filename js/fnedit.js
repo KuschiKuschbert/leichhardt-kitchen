@@ -586,7 +586,9 @@
     var d = e.d, m;
     if (k === 'pq') { e.pq = v; draw(); return; }
     if (k === 'startT' || k === 'foodT' || /^rt\d+$/.test(k)) v = normT(v);
-    if (k === 'date') { moveDate(e, v); if (!d.foodSet) retime(e); else if (d.mode === 'stag') realloc(e); }
+    // rounds that have times (worked out or typed by hand) move with the date, each by the same days, so a round typed
+    // as 20:00 stays 20:00. Only rounds with no times yet are worked out again from the start (13 Nov 2026).
+    if (k === 'date') { var timed = d.rounds.some(function (r) { return M.hmMin(r.t) === M.hmMin(r.t); }); moveDate(e, v); if (!d.foodSet && !timed) retime(e); else if (d.mode === 'stag') realloc(e); }
     else if (k === 'startT') { d.startT = v; if (!d.foodSet) retime(e); }
     else if (k === 'foodDate' || k === 'foodT') { d[k] = v; d.foodSet = true; retime(e); }
     else if (k === 'n' || k === 'gap') { d[k] = v; if (structural) retime(e); }
