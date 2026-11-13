@@ -119,3 +119,23 @@ Take A's "Log 2 kg Chips" (Airbnb). Take B's "logged 3 times in the last 2 weeks
 Contract fit: the words carry the state in both sets. Set 2 only half meets "a filled box says so in words". The orange "Kept from" stamp looks like the red failure stamp.
 
 Not evidenced: the text on Log it and what shows after the tap; "Write the amount first" when Log it is off; the tag going away when a filled value changes; editing the name keeping typed values; italic in Barlow; what "Add 2 tubs" does; "tubs" matching no unit chip; a part read from the cache never saying "Shown".
+
+## The head chef
+
+**Set 1.** Structurally different: yes. Rank C, A, B.
+- C: the inspector's month takes 3 taps and the misses stand out; "I would print it after a visit." It cannot answer a complaint about a dish (who was on, the function).
+- A: answers both tasks, but nine folds and 2168 px on a phone. "I would not open it by choice."
+- B: "the one I would open after a complaint or an incident", but no range, so an inspector's month is about 60 taps.
+
+Reject A's nine folds (Linear). Take B's day in time order; replace the nine status chips that fill the phone's first screen with one line (Headspace). Take C's Print this month; reject the calendar grid and use its phone day list at every width, no new look to learn. A blend, without A: C's month list, tapping a day opens it in B's time order, Food safety first and Everything one tap away; C's note that everything else stays on its own page has to go; about 4 pull requests. Recommendation: that mix, but ship the dated cooling copy first, on its own: every day without it is "Not kept" for good, and it is most of the value. Downside: a new nightly write on the server; if the 03:00 run fails, that day must say "Not counted", never "0 deliveries". R5: no (the 10 Nov council cut those tiles). R3: no evidence here to judge it.
+
+**Set 2.** Rank C, A, B.
+- C: the waste log keeps real weights, and the reason (below the fold) is filled. Log it off until an amount is in needs its own words.
+- A: fewest taps, but logs a guess, against the sheet's own "Write the actual amount".
+- B: nothing saved that was not tapped, but a cook who taps it out of habit gets A's guess plus a tap; on Orders it repeats "Add 2 tubs".
+
+Take A's amount fill for Orders only: an order is a request the head chef checks before ordering. Take B's Undo fill; reject its button (two controls for one job). Take C's "Weigh it"; reject hint-only on Orders (it takes away a fill cooks use and adds no safety). Blend: C on Wastage and Transfers, plus B's Undo fill; Orders keeps today's fill with A's named line. Cost: staff learn two rules, one for records and one for requests. Downside: the Logged often chip still fills 2 kg: leave the chip as it is until the E1 counts show whether filled amounts ever get changed.
+
+Contract fit: both sets fit (admin only, read when opened, no listeners, every state in words). One fault: A and B show cooling for 2 to 8 Nov under "Kept from 14 Nov"; C's "Cooling not kept" for those days is correct.
+
+Not evidenced: Try again, and a print that marks a part that did not load; real month read costs against the cleaning 7-day cap; a whole month on the phone list (the preview shows 4 days); Queensland midnight for a late Pass check; the named line staying above an open keyboard; the words on a switched-off Log it; editing the name after a fill clears the filled values; Transfers, which was not drawn.
