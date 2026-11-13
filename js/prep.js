@@ -2362,7 +2362,7 @@
     var before = onOf(it);
     supd(itemRef(date, id), { onBy: p.name, onById: p.id, onAt: now() }).then(function () { markPast('p', date); }, failed);
     toast((before ? 'Taken over from ' + before.name + '. ' : '') + 'You\'re on it. Tick it when it is done.', { label: 'Undo', stampFor: id, fn: function () {
-      var y = ptItem(id); if (!y || y.done || y.onById !== p.id) return;
+      var y = S.date === date && ptItem(id); if (!y || y.done || y.onById !== p.id) return undoMiss(date, it.text);
       supd(itemRef(date, id), before ? { onBy: before.name, onById: before.id, onAt: before.at || now() } : { onBy: '', onById: '', onAt: 0 }).then(null, failed);
     } });
   }
@@ -2374,7 +2374,7 @@
     var mine = onMine(it) && !shared();
     supd(itemRef(date, id), { onBy: '', onById: '', onAt: 0 }).then(function () { markPast('p', date); }, failed);
     toast((mine ? 'You are' : o.name + ' is') + ' off ' + it.text + '.', { label: 'Undo', stampFor: id, fn: function () {
-      var y = ptItem(id); if (!y || y.done || y.deleted || onOf(y)) return;
+      var y = S.date === date && ptItem(id); if (!y || y.done || y.deleted || onOf(y)) return undoMiss(date, it.text);
       supd(itemRef(date, id), { onBy: o.name, onById: o.id, onAt: o.at || now() }).then(null, failed);
     } });
   }
@@ -2467,14 +2467,14 @@
     }
     d.finished = true;d.busy = false;d.uncertain = false;ptRestore(d, d.value);markPast('p', d.date);
     if (d.mode === 'on') {
-      var who = d.value.onBy;
-      ptClose();batch(function () { toast(who + ' is on it. Tick it when it is done.', { label: 'Undo', stampFor: d.id, fn: function () { var y = ptItem(d.id); if (y && !y.done && y.onById === d.value.onById) supd(itemRef(d.date, d.id), { onBy: d.before.onBy || '', onById: d.before.onById || '', onAt: d.before.onAt || 0 }).then(null, failed); } });draw(); });
+      var who = d.value.onBy, was = (ptItem(d.id) || {}).text;
+      ptClose();batch(function () { toast(who + ' is on it. Tick it when it is done.', { label: 'Undo', stampFor: d.id, fn: function () { var y = S.date === d.date && ptItem(d.id); if (!y || y.done || y.onById !== d.value.onById) return undoMiss(d.date, was); supd(itemRef(d.date, d.id), { onBy: d.before.onBy || '', onById: d.before.onById || '', onAt: d.before.onAt || 0 }).then(null, failed); } });draw(); });
       return;
     }
     bump({ ticked: 1 });
     finNote(d.date, d.id, true);
     if (S.toastAct && S.toastAct.stampFor === d.id) { S.toast = ''; S.toastAct = null; }
-    var dn = ptItem(d.id), act = { label: 'Undo', fn: function () { tick(d.date, d.id, false); } };
+    var dn = ptItem(d.id), act = { label: 'Undo', fn: function () { return tick(d.date, d.id, false) || undoMiss(d.date, dn && dn.text); } };
     // the server has answered, so the section's sentence comes with the slip (secSay())
     ptClose();batch(function () { toast('Ticked' + (dn ? ' ' + slipName(dn.text) : ''), act);secSay(d.date, d.id, d.value.doneAt, d.value.doneById, act);draw(); });setTimeout(draw, LINGER + 100);
   }
@@ -2539,24 +2539,36 @@
   }
   // want: true or false from an Undo, which only ever sets the line back and does nothing if it is already that way
   // (4 Nov 2026, LF-01: a toggle ticked a line again when the tick had failed or was undone on another phone)
+  // true when the tap changed the line (or opened Who did this?), false when it did nothing, so an Undo that finds the
+  // line gone from the list on screen never says Undone (13 Nov 2026, undoMiss())
   function tick(date, id, want) {
-    var item = ptItem(id);if (pt && pt.busy) return;if (typeof want === 'boolean' && item && !!item.done === want) return;
+    var item = ptItem(id);if (pt && pt.busy) return false;if (typeof want === 'boolean' && item && !!item.done === want) return false;
     // one tap = done (I'm on it has its own button, onTap()); the shared device asks Who did this? first, the cook on
     // the line at the top, and saves through the picker's careful save
-    if (item && !item.done && shared() && S.name === 'prep') { ptOpen(date, id, 'tick'); return; }
-    batch(function () { tickNow(date, id, want); });
+    if (item && !item.done && shared() && S.name === 'prep') { ptOpen(date, id, 'tick'); return true; }
+    var r = false;
+    batch(function () { r = tickNow(date, id, want); });
+    return r;
+  }
+  /* An Undo whose line is not on the list on screen any more (the person moved to another day, or someone changed it
+     since): it changes nothing and says so, and returns false so the toast never says Undone (undoneSay()). */
+  function undoMiss(date, text) {
+    var d = dayName(date), nm = slipName(text || 'The line');
+    toast(S.date !== date ? 'Nothing changed. ' + nm + ' is on ' + (/^(Today|Yesterday|Tomorrow)$/.test(d) ? d.toLowerCase() : d) + '\'s list.' : 'Nothing changed. ' + nm + ' has changed since.');
+    return false;
   }
   function tickNow(date, id, want) {
     var it = S.items.filter(function (x) { return x.id === id; })[0], p = me();
-    if (!it || !can('tick')) return;
-    if (typeof want === 'boolean' && !!it.done === want) return;
-    if (!p) { toast('Choose your name before ticking prep.');return; }
+    if (S.date !== date) it = null;   // another day's list is on screen: its lines are not this day's
+    if (!it || !can('tick')) return false;
+    if (typeof want === 'boolean' && !!it.done === want) return false;
+    if (!p) { toast('Choose your name before ticking prep.');return false; }
     var done = !it.done;
-    if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return; }
+    if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return false; }
     // the tick keeps the On it stamp (10 Nov 2026): doneAt less onAt is how long the job took (onItHTML())
     var at = done ? now() : 0, w = p;
     // the tick's own slip (its Undo): once the server has the tick it may gain the section's sentence (secSay())
-    var act = done ? { label: 'Undo', fn: function () { tick(date, id, false); } } : null;
+    var act = done ? { label: 'Undo', fn: function () { return tick(date, id, false) || undoMiss(date, it.text); } } : null;
     supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: at, preparedBy: done ? w.name : '', preparedById: done ? w.id : '', preparedAt: at }).then(function () { markPast('p', date); if (done) secSay(date, id, at, p.id, act); }, failed);
     // the stamp's Undo means nothing once the line is ticked: the Ticked toast takes its place, not a chip above it
     if (done && S.toastAct && S.toastAct.stampFor === id) { S.toast = ''; S.toastAct = null; }
@@ -2564,6 +2576,7 @@
     if (done) { bump({ ticked: 1 }); toast('Ticked ' + slipName(it.text), act); setTimeout(draw, LINGER + 100); }
     else toast('Unticked ' + slipName(it.text) + '. It is open again.');
     if (!done && it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
+    return true;
   }
   function removeItem(date, id, restore) {
     var p = me(), it = S.items.filter(function (x) { return x.id === id; })[0];
@@ -12104,9 +12117,10 @@
     // the section's sentence is not a control: a tap on it does nothing, so it cannot throw Undo away by mistake
     if (a === 'toast-hide') { if (e.target.closest('.p-toast-say')) return; toastAway('all'); return; }
     // an Undo says what it undid (5 Nov 2026, docs/action-feedback.md), unless what it ran said so itself (Put back...)
-    if (a === 'toast-old') { var to = S.toastOld; S.toastOld = null; clearTimeout(toastOldTimer); if (to && to.act && to.act.fn) { to.act.fn(); undoneSay(to.act, to.msg); } draw(); return; }
+    // an Undo that returns false changed nothing and said why (undoMiss()): no Undone then
+    if (a === 'toast-old') { var to = S.toastOld; S.toastOld = null; clearTimeout(toastOldTimer); if (to && to.act && to.act.fn) { if (to.act.fn() !== false) undoneSay(to.act, to.msg); } draw(); return; }
     if (a === 'just-undo') { justUndo(el.getAttribute('data-id')); return; }
-    if (a === 'toast-act') { var ta = S.toastAct, tm = S.toast; S.toast = ''; S.toastAct = null; if (ta && ta.fn) { ta.fn(); undoneSay(ta, tm); } draw(); return; }
+    if (a === 'toast-act') { var ta = S.toastAct, tm = S.toast; S.toast = ''; S.toastAct = null; if (ta && ta.fn) { if (ta.fn() !== false) undoneSay(ta, tm); } draw(); return; }
     if (a === 'export') { exportAll(); return; }
     if (a === 'move-pin') { movePin(); return; }
     if (a === 'sugg') { pickSugg(i); return; }

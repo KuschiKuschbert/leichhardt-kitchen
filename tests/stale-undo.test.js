@@ -73,6 +73,21 @@ const item = (p, id) => p.evaluate(k => window.__fake.dump()[k] || {}, fsKey(['d
   ok(p.errors.length === 0, 'scroll: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // 5. Undo after moving to another day changes nothing and never says Undone (13 Nov 2026: the line is not on the list
+  // on screen, so nothing was unticked, but the toast said "Undone: ticked ...")
+  p = await L.open(b, '#/prep', { who: 'sam', wait: 1500 });
+  await L.tap(p, '[data-p="tick"][data-id="i5"]'); await L.settle(p, 400);
+  ok((await item(p, 'i5')).done === true, 'other day: the line is ticked');
+  await p.click('[data-p="day"][data-d="-1"]'); await L.settle(p, 500);
+  const undo = await p.$('[data-p="toast-act"]') ? '[data-p="toast-act"]' : '[data-p="toast-old"]';
+  ok(!!(await p.$(undo)), 'other day: the Ticked Undo is still on screen');
+  if (await p.$(undo)) { await p.click(undo); await L.settle(p, 500); }
+  const said = (await p.evaluate(() => [...document.querySelectorAll('.p-toast')].map(t => t.textContent).join(' | '))) || '';
+  ok((await item(p, 'i5')).done === true, 'other day: Undo leaves today\'s line ticked');
+  ok(!/Undone/.test(said) && /Nothing changed/.test(said), 'other day: Undo says nothing changed, not Undone (' + said + ')');
+  ok(p.errors.length === 0, 'other day: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
