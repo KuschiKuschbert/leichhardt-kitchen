@@ -6,6 +6,8 @@ Round 1 asked for two designed screens (see [brief.md](brief.md)): **Set 1, one 
 
 ## Set 1: one records page for the head chef
 
+> **Correction (round 2 review):** the A, B and C pictures call 8 November a Saturday. 8 November 2026 is a Sunday (found by the skeptic and the keeper). A and B also show cooling lines for days before "Kept from 14 Nov", and B shows "None" for Functions above a function row. These were faults in the lead's made-up preview data, not in the book; the combined preview in [brief.md](brief.md) uses Saturday 7 November and builds every status from the same rows.
+
 **The task:** (T1) "Show me everything for last Saturday"; (T2) "Print this month's food safety records for an inspector". The head chef opens it from the admin panel, on the laptop mostly, sometimes the phone.
 
 **Today (Implemented app, source-read taps from the admin panel):** T1 is about 7 places and 15 to 20 taps, and that day's cooling is gone. T2 is the delivery CSV (Delivery received is outside the admin panel: 4+ taps) plus cleaning one day at a time (3 taps, then 1 a day back, no print), and no cooling at all.

@@ -150,3 +150,41 @@ Five of the same reviewers (resumed with their round 2 context) judged the combi
 2. Beats my first choice: yes, both (my pick plus the word fixes I asked for).
 3. New problems (Preview, nothing tapped): "Shown: … Nothing missing." sits above "2 missed": say "All parts shown". "Ann (logged)" reads like Ann logged in; put it in the kind label, "WASTAGE, TIME LOGGED". "Clear last time" can read as "delete the last record": say "Empty these boxes". The Logged often chip still fills the amount, so chip and typing teach two rules (Not evidenced). "Write the amount first." and "Log 1.5 kg Chips" appear in no picture (Log it is below the first screen). "tubs" still matches no unit chip.
 4. First change: on Orders, drop the old usual-amount row: one "usual" and one Add.
+
+## The skeptic
+
+Both mixes beat my first choices; each has one fault the head chef should not see yet.
+
+Set 1: coherent (one list of days and one day view, the same rows at every width). One clash at 1280: two unlabelled ‹ › pairs side by side, one for the month, one for the day. Beats C: yes (the inspector print still 3 taps, everything for last Saturday now 4, the team shown as a plan, not as events). My S1 is fixed in the pictures (Functions has its row, Transfers says "not shown", cooling rows only from 3 Nov); my S2 is fixed (Sun 1, Sat 7 and Fri 13 are the right weekdays). New problem: "Nothing missing." sits directly above "2 missed: Fryer oil change, Cool room floor" (mix-records-month-two-fs-1280, mix-records-day-fs-390): **Reproduced (Preview)**. Risk, Not evidenced: "Cleaning: 0 missed" on a day with no Pass check would read as "all done". Change first: say "All three loaded." instead of "Nothing missing."
+
+Set 2: Wastage coherent. Orders still shows the usual amount three times, and two buttons add it, "Add" and "Add 2 tubs" (mix-fill-orders-390): **Reproduced (Preview)**. Beats my blend: yes (it drops "Last time was 2 kg", which invited copying, and each filled box carries its own words). New problem: the Fryer chip moving to the front reflows the Section row; "Chips" is the start of two other item names ("Chips + salad", "Chips and salad"), so typing either could fill, move the chip, then clear mid-word: the chips jump under the thumb (Risk, Not evidenced). Log it also moves further down: 1054 to 1126 px, against 989 today. Change first: keep the chip order fixed; the dark chip already shows Fryer.
+
+## The kitchen screen designer
+
+Earlier fixes: four fixed (Fryer chip in front, kg has no tag, kind labels muted, "Kept from" gone). Not fixed: Orders fills "2 tubs" with no unit chosen.
+
+Set 1: coherent (one list, one day, one status line, a clean Back to November on the phone). Clash: at 1280, two unlabelled ‹ › pairs. Beats my first choice: yes (T1 4 taps not about 8, T2 3 not 5, the month 1 to 2 reads not about 1,500). New: "Count not ready" is red, so a pending count looks like a failure; "Nothing missing" above "2 missed" can read as no missed tasks (Preview only). Change: "Count not ready" in muted ink, and say "All three loaded".
+
+Set 2: Wastage coherent; Clear last time is 44 px. Clash: the Logged often chip fills 2 kg but typing "Chips" does not: two rules 80 px apart (untested). Orders has a duplicate: the filled box with Add, and "Add 2 tubs" below. Beats my first choice: Wastage yes; Orders no, because of that duplicate. New: Log it moves to 1126 px, 137 px lower than today; "Write the amount first" Not evidenced. Change: on Orders, keep the box fill or "Add 2 tubs", not both.
+
+## The head chef
+
+Set 1: coherent (one path from the month list to a day, Food safety first, then Everything). One clash: at 1280 two identical ‹ › pairs (month and day); whether that confuses anyone is untested. Beats my first choice: yes (the inspector's month 3 taps, last Saturday 4, no calendar look to learn, the list 1 to 2 reads). Two faults seen in the pictures: Sat 7's row says "2 deliveries" but the day shows 3; the status line says "Nothing missing" right above "2 missed". Untested: which number wins when the nightly count and the day's own read differ. Change: make the row and the day agree; where they cannot, the row says so in words ("Count differs. Open the day."); the status line reads "All three loaded."
+
+Set 2: coherent on Wastage. Orders has three things doing one job (the filled "2 tubs" box, its line and the old "Add 2 tubs" button), and "Usual amount" is said twice. Beats C alone: yes (Clear last time undoes a wrong fill; Orders keeps a fill cooks use). Log it moves down from 989 to 1126 px. Not evidenced: the "Write the amount first." words, and whether Clear last time keeps an amount the cook typed. Known clash: the Logged often chip still fills 2 kg next to "Weigh or count it". Change: hide "Add 2 tubs" when the box already holds the usual amount.
+
+## The keeper of the book
+
+Set 1: coherent; the only clash, at 1280, the month arrows beside the day arrows; what the day's › does after Fri 13 or across a month is not evidenced. Better than my first choice: it is my first choice plus Everything on a tap (about 30 more reads). New problems: at 1280 a day is already open when the page loads; the admin panel reopens on its last page and the laptop reloads 10 to 30 times a day, so at 40 to 70 reads each time that is 400 to 2,100 reads a day (estimate from the source): open with no day chosen, or keep finished days with `dayCache`. "Nothing missing" just above "2 missed". Tue 10 "Count not ready" between counted days means a missed nightly run is never caught up. Change: "Nothing missing" becomes "All 3 parts loaded."
+
+Set 2: coherent on Wastage; on Orders two controls set one value (seen); Transfers has no picture. Better: it is my first choice. New problems: "Last time" appears three times, but `summary/waste` is built at 03:00 without today's entries; if someone logs the item differently today the line is wrong (source, not tested). Fryer jumping to the front can move a chip under the thumb (not tested). Change: build "Last time" from the summary plus today's live entries (0 reads).
+
+Smallest set of checks before it is ready:
+- Rules on the emulator, cooling copy: written in the same write as Start, the second stage and Confirm; key the Queensland date of `windowAt`; add only, never delete; staff refused a read, the admin can read; `client-shapes` rows.
+- Rules on the emulator, nightly count: no app can write it; staff cannot read it.
+- Nightly job test: with the clock at 17:00 UTC it counts the Queensland day just ended; it catches up a missed day and reads only missing days.
+- `read-budget`: opening Records costs 2 reads or fewer; reopening the panel reads no finished day twice; Print costs reads only when tapped.
+- Records click tests: the weekday label is right; a late answer does not land under the wrong day; the Transfers failure shows on the page and in the printout; a Count not ready row says so.
+- Wastage click tests: the amount stays empty and Log it is off with its words; change the name after typing 1.5: the filled boxes clear and 1.5 stays; Clear last time keeps typed values.
+- Backup: backup, Export and Move PIN include the cooling copy (an emulator round trip).
+- Rules release: the change loosens the rules, so publish them before the app, then run the live Lock probe.
