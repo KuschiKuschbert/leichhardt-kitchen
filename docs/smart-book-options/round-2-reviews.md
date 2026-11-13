@@ -75,3 +75,25 @@ Contract fit: status words, FILLED tags and no-limits wording fit. S1 breaks the
 Not evidenced: the print; Log it's words and switched-off state below 989 px; Undo restoring what the cook typed; changing the name clearing only filled fields; C's failed nightly count saying "Not counted", never "0 deliveries" or "Cleaning done"; a Pass check after Queensland midnight landing on the right day; measured read counts; sous chef and staff refused, on the emulator.
 
 Lead's check: 8 November 2026 is a Sunday (confirmed). The preview's day labels and status chips were the lead's synthetic fixture, not the book's code; both faults are corrected in the combined preview.
+
+## The kitchen screen designer
+
+**Set 1.** Structurally different: yes. Ranked:
+- A: the Wastage frame, covers both tasks. But the first record is at 858 px on a 390 phone, and the folds show nothing that says they open.
+- C: T2 in 3 taps. But a new look with 12 px text in the cells, and "Cooling not kept" in 13 of 14 cells hides the misses.
+- B: one day in order. But no range, and the phone's first screen is all status chips.
+
+Take A's frame and range print (Linear). Take B's one day in time order (Airbnb); reject its orange DELIVERY, COOLING and CLEANING labels: orange is for action, not for a kind. Reject C's grid; keep a "days with a miss" line (Things 3). A blend: yes, if the period decides the body: one day shows time order, a range shows folds; Print stays in one place and says "Print this day" or "Print food safety". Cost: two renderers; C's nightly count adds a server field and a rule. Recommendation: A, with B's time order as the One day period and C's miss line in the Cleaning fold. Downside: a month costs about 1,500 reads unless it is counted nightly.
+
+**Set 2.** Only B differs in structure (an offer); A and C share one layout and differ in the fill rule and Log it's state. Ranked:
+- C: the orange "Weigh it" box draws the eye, and typed "1.5" looks unlike italic "Fryer". But Log it is off at 1009 px, so the reason it is off must sit by it.
+- B: nothing filled without a tap. But it repeats the Logged often chip, Orders shows "Use the usual" beside "Add 2 tubs", and Undo fill is a link about 20 px tall.
+- A: fewest taps. But on a wet phone the italic "2" reads as the cook's own entry.
+
+Take A's "Log 2 kg Chips". Take B's Undo fill, made a 44 px button. Take C's fill rule: no amount guessed (Todoist, Duolingo). No blend of all three: B's offer conflicts with C's quiet fill. Recommendation: C with a 44 px Undo fill; on Orders, "Add 2 tubs" stays the one way to use the usual amount. Downside: the cook types the amount every time.
+
+Fixes whichever is chosen: at 390 the filled Fryer chip hides behind the fade at the end of its row; the FILLED tag sits on Unit even though kg was already the default; Orders A fills "2 tubs" with no unit chosen.
+
+Contract fit: the Chef's Desk frame is kept, and FILLED is a neutral stamp, not green, so it does not read as Saved. Faults: "Kept from 14 Nov" in orange beside the red Could not load reads as a fault: say "Not kept before 14 Nov" in muted ink. Evidence fault: A's "3 stages confirmed" and B's 8 Nov cooling lines contradict "not kept": redraw them. C must never show "0 deliveries" for a day that was not counted.
+
+Not evidenced: rendered contrast, keyboard focus, reduced motion, line lengths in Barlow, row heights on a phone, print output, Try again, and the words shown when Log it is off.
