@@ -67,6 +67,17 @@ About 800 writes a day (4% of the free 20,000) and 30 to 50 deletes (under 1%). 
 
 One real risk: **Move PIN** copies every record with one read and one write each. Once about 160 days of data exist it needs more than 20,000 writes, and a year of data is about 50,000 reads and 50,000 writes in one tap, which would stop the book for the day.
 
+## Plan C chosen (head chef, 13 November 2026)
+
+The head chef chose **Plan C**: Plan B's small reads stay, and the Firebase project moves to the pay as you go (Blaze) plan with a budget alert. A day past the free 50,000 reads then costs a cent or two instead of stopping the book until 18:00, as it did at 13:00 on 5 November. The server jobs alone grow from about 6,000 to 11,000 or 12,000 reads a day by mid-January (above), so the margin shrinks without it.
+
+What the head chef does (a session cannot: it needs the billing account):
+1. Firebase console, the project, Upgrade (bottom left, under the plan's name), choose Blaze, and pick or create the billing account.
+2. Google Cloud console, Billing, Budgets and alerts, Create budget for this project only: US$5 a month (or the same in the account's currency), alerts at 50%, 90% and 100% to the head chef's email. A budget alert warns; it does not stop spending, so a runaway read loop shows as an email, not an outage.
+3. Tell the next session it is on. Nothing in the book changes for the switch itself: the free amounts still apply each day, and the read budget test (`tests/read-budget.test.js`) keeps the reads small.
+
+What follows, each its own pull request once the plan is on: Google's scheduler runs the cut-off push job (7.3), so pushes come on time; Firestore's own scheduled backups replace the read-heavy nightly backup, keeping a weekly encrypted copy (4.3); later, the twice-daily check of the real read count (6.1). Until 7.3 is built the cut-off push offer says a push can come late (`pushHTML()` in `js/prep.js`, 13 Nov 2026).
+
 ## The decision: Plan B now, Plan C later (head chef, 5 November 2026)
 
 The head chef chose **Plan B, free with headroom**: stay on the free plan and read less, aiming at 12,000 to 20,000 reads on a normal day. **Plan C** (Plan B plus the pay as you go plan as a safety net) comes later, on the head chef's word. The four plans and every option, with what each saves, are on the head chef's page "Kitchen Book Read Budget"; this note keeps the same numbers so any session can carry on.
@@ -74,8 +85,8 @@ The head chef chose **Plan B, free with headroom**: stay on the free plan and re
 | Plan | What it is | Reads a normal day | Cost |
 | --- | --- | --- | --- |
 | A, free, tidied up | 1.1, 2.4 to 2.7, 4.1, 5.4, 6.2 | 35,000 to 50,000 | free, still near the limit on busy days |
-| **B, free with headroom (chosen)** | A, plus 2.1 to 2.3 and 4.2 | 12,000 to 20,000 | free |
-| C, free with a safety net (later) | B, plus pay as you go with a budget alert, 4.3 and 7.3 | 12,000 to 20,000 | normally US$0; a day like 5 Nov a cent or two |
+| B, free with headroom (chosen 5 Nov 2026, kept in C) | A, plus 2.1 to 2.3 and 4.2 | 12,000 to 20,000 | free |
+| **C, free with a safety net (chosen 13 Nov 2026)** | B, plus pay as you go with a budget alert, 4.3 and 7.3 | 12,000 to 20,000 | normally US$0; a day like 5 Nov a cent or two |
 | D, just pay | pay as you go and 1.1 only | 60,000 to 100,000 | under US$0.50 a month now, growing, no cap |
 
 ## Every option
@@ -100,7 +111,7 @@ Saves: reads a day on a normal day. Head chef: changes how the book works for th
 | 3.2 | PIN sign-in as a claim on the account (a server function), so rules read no session records | 5,000 to 10,000 | medium to high, needs pay as you go | Plan C or later |
 | 4.1 | Trim the nightly jobs: delete old analysis without reading it, skip days before the book started, recent learning claims only, one range query for the summaries | about 1,200 now | low | built 7 Nov: the first three (`scripts/analysis.mjs`, `scripts/nightly-learn.mjs`, `scripts/analysis-check.mjs`); the summaries' one range query left out (it needs a collection-group query on `lines` and its index in production, for about 40 reads a night) |
 | 4.2 | Analysis and backup read only changed days, full run on Sundays | 1,700 now, 8,000 by January | medium | built 7 Nov: the analysis reads the last 14 days and the days a fix names, the rest taken as published (`REUSE_DAYS`, `scripts/analysis-check.mjs`); the backup takes the same older days from last night's encrypted file (`PREV_BACKUP`, `scripts/backup-reuse-check.mjs`); every day on Sundays; past wastage fixes name their days too (`wDays`, 7 Nov 2026) |
-| 4.3 | Firestore's own scheduled backups (storage, no reads) replace the read-heavy nightly backup; keep a weekly encrypted copy | 2,500 to 4,000 | medium, head chef, needs pay as you go | Plan C |
+| 4.3 | Firestore's own scheduled backups (storage, no reads) replace the read-heavy nightly backup; keep a weekly encrypted copy | 2,500 to 4,000 | medium, head chef, needs pay as you go | Plan C, chosen 13 Nov 2026: next once the plan is on |
 | 5.1 | Visits counted once a day; adds and ticks counted nightly | about 300 writes | low | not chosen |
 | 5.2 | Stop indexing free-text fields | stored size down 50 to 70% | medium | later |
 | 5.3 | Keep 13 months of lines, older ones as monthly digests | keeps storage flat | medium, head chef | later |
@@ -110,7 +121,7 @@ Saves: reads a day on a normal day. Head chef: changes how the book works for th
 | 6.3 | The pages say when the reads are used up and when they come back | | | done 5 Nov |
 | 7.1 | Cut-off push schedule off the busy minutes | some missed pushes | low | until Plan C |
 | 7.2 | A free outside timer starts the push job every 10 minutes | most missed pushes | medium (a token outside GitHub) | not chosen |
-| 7.3 | Google's own scheduler runs the push job | all missed pushes | low, needs pay as you go | Plan C |
+| 7.3 | Google's own scheduler runs the push job | all missed pushes | low, needs pay as you go | Plan C, chosen 13 Nov 2026: next once the plan is on |
 
 Build order for Plan B: 1.1 and 2.6 (done 5 Nov), then 2.1 with 2.4 (one rules change: the digests and day-named stamps), then 2.2 and 2.3, then 2.7, 5.4 and 6.2, then 4.1 and 4.2. 2.2 and 2.3 measured on the stand-in (`tests/read-budget.test.js`, a week of history with the nightly summaries): a staff phone's first open of the day (prep, orders, wastage, transfers) from 284 reads to 79, and the admin panel's past prep and order lines from 257 reads to 60 (the index and 59 digests). With this kitchen's real numbers (50 prep and 20 order lines a day) that is about 1,200 down to about 90 per phone per first open, and 3,600 down to about 100 per admin open. 2.7 measured on the stand-in with a 40-line day and 12 sections (`tests/live-lists.test.js`): the admin unlock read today's prep list twice (92 reads) and the sections twice (24), because the owner grant on top of the head chef's PIN started every live list again; now once each (46 and 12). A line added under a section on another phone cost every open phone a read; now none, and a reload the same day reads no sections. With this kitchen's numbers (50 lines a day, about 15 sections, the admin device reloaded 10 to 30 times a day and 3 or 4 phones open) that is about 1,500 to 3,000 reads a day. The functions list: asked for again while the Firebase files loaded (an access change and its event, a sign-in), `watch()` started a listener each time and could stop only the last, so on every open two or three listeners read every booking ahead and kept reading every change to one, on every device with the book open. Now one (`tests/live-lists.test.js`: 3 starts and 36 reads for 12 bookings before, 1 and 12 now; a booking changed on another phone 3 reads before, 1 now). Its 15-day bound is left out: the listener starts only on a reload or a new kitchen day, and the function sheet, its print copy, `#/fn/<id>` and Manage functions find a booking in it by id, so a bound needs a second read for those. It saves about 1 read per booking more than 15 days ahead per reload. Look again if the Firebase console shows `functions` among the top readers.
 
