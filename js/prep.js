@@ -1845,6 +1845,12 @@
   function cleaningChef() { return chefAllowed(); }
   function cleaningPermissionsReady() { return S.configState === 'ok' && !!S.configFull; }
   function cleaningTickOK() { return cleaningOK() && canW() && can('tick'); }
+  /* Who can do a Pass check: on the team, not Functions only, has Tick, and has Cleaning (a chef, or Cleaning is on
+     for the team). The same test the rules make on a verify, so the setup never offers a checker who is refused. */
+  function cleaningCanCheck(id) {
+    var c = S.config || {}, chef = id === c.headId || (c.sousIds || []).indexOf(id) >= 0;
+    return !!ptPerson(id) && (id === c.headId || (c.tickIds || []).indexOf(id) >= 0) && (chef || (c.staffSee || {}).cleaning === true);
+  }
   function cleaningError(code) { return { code: code }; }
   function cleaningDate(day) { return typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day) && T.day(T.at(day)) === day; }
   function cleaningDue(task, day) {
@@ -2053,6 +2059,7 @@
   function cleaningApi() {
     return { allowed: cleaningOK, chef: cleaningChef, permissionsReady: cleaningPermissionsReady, canTick: cleaningTickOK, identity: stableIdentity, context: cleaningContext,
       shared: shared, workers: function () { return ptPeople().map(function (p) { return { id: p.id, name: p.name }; }); }, recent: hereGet,
+      checkers: function () { return ptPeople().filter(function (p) { return cleaningCanCheck(p.id); }).map(function (p) { return { id: p.id, name: p.name }; }); }, canCheck: cleaningCanCheck,
       sections: function () { return kitSecs().map(function (s) { return { id: s.id, name: s.name }; }); },
       guides: function () { return featOn('guides') ? gLive().map(function (g) { return { id: g.id, title: g.title }; }) : []; }, loadGuides: loadGuides,
       box: function (done) { return done ? TICK : BOX; }, sheetBusy: function () { return sheetOpen() || ksWait || ovBack || dkFirstUp(); }, sheetNext: sheetNext,

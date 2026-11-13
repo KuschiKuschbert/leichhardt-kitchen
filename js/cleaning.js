@@ -236,7 +236,15 @@
   }
   function templateLabel(task) { var label = DAYS.filter(function (day) { return task.dows.indexOf(day[0]) >= 0; }).map(function (day) { return day[1]; }).join(', '), repeat = task.plan && task.plan.repeat; return label + (repeat ? ' · Every ' + repeat.days + ' days' + (repeat.anchor ? ' from ' + shortDay(repeat.anchor) : '; start date not set') : ''); }
   function draftFor(task) { var draft = { text: task ? task.text : '', area: task ? task.area : '', section: task ? task.section : '', shared: !!(task && task.shared), dows: task ? task.dows.slice() : [], guide: task ? task.guide || '' : '' }; if (hasPlan(task)) draft.plan = JSON.parse(JSON.stringify(task.plan)); return draft; }
-  function verifierChoices(ids, attribute) { return '<div class="cln-checks cln-verifiers">' + C.workers().map(function (person) { return '<label><input type="checkbox" ' + attribute + '="' + esc(person.id) + '"' + (ids.indexOf(person.id) >= 0 ? ' checked' : '') + (M.saveBusy || M.importBusy ? ' disabled' : '') + '><span>' + esc(person.name) + '</span></label>'; }).join('') + '</div>'; }
+  /* Only people who can do the Pass check are offered. A saved checker who can no longer do it stays listed, ticked
+     and marked, so the chef can untick them; Save says so until they do. */
+  function checkerName(id) { var person = C.workers().filter(function (p) { return p.id === id; })[0]; return person ? person.name : 'A person no longer on the team'; }
+  function cannotCheck(ids) { return C.canCheck ? ids.filter(function (id) { return !C.canCheck(id); }) : []; }
+  function verifierChoices(ids, attribute) {
+    var offered = (C.checkers ? C.checkers() : C.workers()).map(function (person) { return { id: person.id, name: person.name, ok: true }; });
+    offered = offered.concat(ids.filter(function (id) { return !offered.some(function (person) { return person.id === id; }); }).map(function (id) { return { id: id, name: checkerName(id), ok: false }; }));
+    return '<div class="cln-checks cln-verifiers">' + offered.map(function (person) { return '<label><input type="checkbox" ' + attribute + '="' + esc(person.id) + '"' + (ids.indexOf(person.id) >= 0 ? ' checked' : '') + (M.saveBusy || M.importBusy ? ' disabled' : '') + '><span>' + esc(person.name) + (person.ok ? '' : ' · cannot do the Pass check') + '</span></label>'; }).join('') + '</div>';
+  }
   function planEditor(draft) {
     if (!draft.plan) return '';
     var plan = draft.plan, timings = [['daily', 'Once each day'], ['service', 'After each service'], ['prep-service', 'After prep and each service'], ['food', 'Start of day, end of night and after prep'], ['use', 'After each use'], ['close', 'End of day']];
@@ -440,7 +448,7 @@
   function save() {
     if (!C.chef() || !M.draft || !dirtyDraft() || M.saveBusy) return;
     if (M.state !== 'ok' || M.editId && !taskById(M.editId)) { M.saveError = 'Refresh cleaning before saving this task. Your changes are kept.'; draw(); return; }
-    var d = M.draft, error = !d.text.trim() ? 'Write the cleaning task.' : !d.area.trim() ? 'Choose or write the area or equipment.' : !d.shared && !C.sections().some(function (s) { return s.id === d.section; }) ? 'Choose the responsible section.' : !d.dows.length ? 'Choose at least one repeat day.' : d.plan && d.plan.repeat && !(Number.isInteger(d.plan.repeat.days) && d.plan.repeat.days >= 2 && d.plan.repeat.days <= 30) ? 'Repeat every 2 to 30 days, whole days only.' : '';
+    var d = M.draft, error = !d.text.trim() ? 'Write the cleaning task.' : !d.area.trim() ? 'Choose or write the area or equipment.' : !d.shared && !C.sections().some(function (s) { return s.id === d.section; }) ? 'Choose the responsible section.' : !d.dows.length ? 'Choose at least one repeat day.' : d.plan && d.plan.repeat && !(Number.isInteger(d.plan.repeat.days) && d.plan.repeat.days >= 2 && d.plan.repeat.days <= 30) ? 'Repeat every 2 to 30 days, whole days only.' : d.plan && d.plan.verification && cannotCheck(d.plan.verifiers).length ? cannotCheck(d.plan.verifiers).map(checkerName).join(', ') + ' cannot do the Pass check. Untick them, or give them Tick in Staff.' : '';
     if (error) { M.saveError = error; M.saveState = 'error'; draw(); return; }
     var model = M, old = M.editId ? taskById(M.editId) : null; M.saveBusy = true; M.saveError = M.savedText = ''; M.saveState = 'busy'; draw();
     C.saveTask(Object.assign({}, d, { text: d.text.trim(), area: d.area.trim(), dows: d.dows.slice() }), old).then(function (result) {
