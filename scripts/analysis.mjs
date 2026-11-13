@@ -4,6 +4,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { dashDay } from './dashboard.mjs';
+import { CLEAN_V, cleanDay, dayDeliveries, at as qldAt } from './records-core.mjs';
 const core = createRequire(import.meta.url)('../js/analysis-core.js');
 const shift = (day, n) => new Date(Date.parse(day + 'T12:00:00Z') + n * 86400000).toISOString().slice(0, 10);
 const bytes = x => Buffer.byteLength(JSON.stringify(x));
@@ -30,7 +31,7 @@ const hash = x => createHash('sha256').update(typeof x === 'string' ? x : JSON.s
    every day: on Sundays (kitchen time), with options.full, after a past transfer fix (its stamp names no day) or a
    stamp that cannot tell. Past prep, order and (since 7 Nov 2026, wDays) wastage fixes name their days. */
 export const REUSE_DAYS = 14;
-const CODE = hash(['../js/analysis-core.js', './dashboard.mjs', './analysis.mjs'].map(f => readFileSync(new URL(f, import.meta.url), 'utf8')).join('\n'));
+const CODE = hash(['../js/analysis-core.js', './dashboard.mjs', './analysis.mjs', './records-core.mjs'].map(f => readFileSync(new URL(f, import.meta.url), 'utf8')).join('\n'));
 // the past days a stamp names as changed since `since`, like pastChanged() in js/prep.js: [] none, null cannot tell
 function namedSince(pe, kind, since) {
   const p = +pe[kind] || 0, days = pe[kind + 'Days'];
@@ -133,6 +134,34 @@ export async function analyse(K, options = {}) {
     days.push(contribution);
     dash.push(dashDay(day, input));
   }
+  /* Records (13 Nov 2026, docs/smart-book-options/brief.md, scripts/records-core.mjs): each row gets the day's food
+     safety summary, fs. Deliveries come from the read above (no new reads). Cleaning is counted once per finished day
+     (its records cannot change after the day) and carried from the last board after that: the first night reads the
+     window's completions once, a normal night one day (about 35 reads) plus the open task revisions. A failure here
+     leaves the cleaning count out ("Count not ready" on the page) and never stops the rest from publishing. */
+  let recReads = 0;
+  try {
+    let prevRows = oldRows;
+    if (!Object.keys(prevRows).length) {
+      const ob = await K.collection('analysis').doc('dashboard').get(); reads += 1; recReads += 1;
+      prevRows = {}; if (ob.exists) (ob.data().days || []).forEach(r => { if (r && isDay(r.day)) prevRows[r.day] = r; });
+    }
+    const counted = day => { const f = prevRows[day] && prevRows[day].fs; return f && f.c && f.c.cv === CLEAN_V ? f.c : null; };
+    const need = dash.filter(r => r && isDay(r.day) && !counted(r.day)).map(r => r.day).sort();
+    let tasks = [], done = [];
+    if (need.length) {
+      const r0 = reads;
+      tasks = await read(K.collection('cleaningTasks').where('until', '>', qldAt(need[0])));
+      if (need.length > 3) done = await read(K.collection('cleaningDone').where('day', '>=', need[0]).where('day', '<=', need[need.length - 1]));
+      else for (const d of need) done = done.concat(await read(K.collection('cleaningDone').where('day', '==', d)));
+      recReads += reads - r0;
+    }
+    dash.forEach(row => { if (row && isDay(row.day)) row.fs = { v: 1, del: dayDeliveries(deliveries, row.day), c: counted(row.day) || cleanDay(tasks, done, row.day) }; });
+  } catch (e) {
+    console.log('Records: the cleaning count was left out tonight (' + (e && e.message ? String(e.message).slice(0, 60) : 'error') + ')');
+    dash.forEach(row => { if (row && isDay(row.day) && !row.fs) row.fs = { v: 1, del: dayDeliveries(deliveries, row.day), c: null }; });
+  }
+  console.log('Records: ' + dash.length + ' days, ' + recReads + ' reads for the cleaning count');
   const publications = [];
   for (const n of [7, 30, 90]) {
     const selected = days.slice(-n), all = core.aggregate(selected);
@@ -207,5 +236,5 @@ export async function analyse(K, options = {}) {
     for (let i = 0; i < refs.length; i += 400) { const b = K.firestore.batch(); refs.slice(i, i + 400).forEach(r => b.delete(r)); await b.commit(); }
     removed = refs.length;
   } catch (e) { await K.collection('analysis').doc('health').set({ at, status: 'ok', generation, reads, cleanup: 'pending' }).catch(() => {}); }
-  return { days: window, reads, full, first, reused, cleanup, removed, digests: { written: write.length, deleted: gone.length }, team: { days: teamsum.days.length, plans: plans.length, picks: picks.length } };
+  return { days: window, reads, full, first, reused, cleanup, removed, digests: { written: write.length, deleted: gone.length }, records: { reads: recReads }, team: { days: teamsum.days.length, plans: plans.length, picks: picks.length } };
 }

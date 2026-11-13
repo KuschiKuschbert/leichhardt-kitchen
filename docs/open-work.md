@@ -37,6 +37,8 @@ Still to do:
 
 - a nit from the review of the no-signal fixes (28 Oct 2026), needing more than a line: the cut-off bar keeps its no-signal words after its listener is refused (`cutWatch()`'s error callback leaves `cutState` at `'offline'`; the stand-in needs to refuse a listener started with no signal once the signal is back to check it). Its partner is done (13 Nov 2026): `pickName()`, `loadAdmins()` and the chef to-do say No signal only for `unavailable` or `deadline-exceeded` (`noSignal()`); `loadMine()` already said "Could not check your sign-off".
 
+- Records' nightly cleaning count (`scripts/records-core.mjs`, 13 Nov 2026) follows `js/cleaning.js` for a past day (`cleaningDue()`, `flowSummary()`, `flowState()`) in a copy of its own, because `js/cleaning.js` is a browser page that node cannot load. One shared core used by both (like `js/analysis-core.js`) would make them one; until then a change to how Cleaning reads a past day changes `scripts/records-core.mjs` and its `CLEAN_V` with it.
+
 Code that breaks a coding rule from now on is fixed in the same branch, or added here.
 
 Checked and kept as it is (12 Nov 2026, owner): the recipe editor, the function form and the drawing studio each keep their own small toast (`js/manage.js`, `js/fnedit.js`, `js/draw.js`). The three match each other, and differ from the book's `plainToast()` in `js/prep.js`: a failure there has an OK button, a save shows the tick, and each is cleared when its page is locked or left. One shared toast would mean changing the book's own, for three short copies in pages only chefs open, so the owner chose to leave them.

@@ -5469,3 +5469,45 @@ html:has(.tm-focus-page) {
 .lk-why { align-self: center; font-size: .875rem; font-weight: 700; color: var(--ink); }
 .nb-addbtn[aria-disabled="true"] { background: #b9b3a8; border-color: #b9b3a8; }
 .lk-fillnote[hidden], .lk-ftag[hidden], .lk-why[hidden] { display: none; }
+
+/* Records (head chef, 13 Nov 2026, docs/smart-book-options/brief.md): the month as a list of finished days, a picked
+   day in time order beside it from 1100 px (the Review desk's pattern), on its own view with Back below that. Kind
+   labels are muted words; only a missed task or a part that could not load is red; a count not ready is muted. */
+.rec-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+.rec-wrap.has-day .rec-month { display: none; }
+.rec-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
+.rec-acts { display: flex; flex-wrap: wrap; gap: .5rem; }
+.rec-days { list-style: none; margin: .3rem 0 0; padding: 0; }
+.rec-dayrow { display: grid; grid-template-columns: 4.2rem minmax(0, 1fr) 1rem; gap: .5rem; align-items: center; width: 100%; min-height: 56px; padding: .45rem .5rem; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; font: 500 .875rem/1.35 var(--body); color: var(--ink); cursor: pointer; }
+.rec-dayrow .rec-d b { font: 700 1rem var(--display); }
+.rec-dayrow .rec-go { color: var(--muted); font-size: 1.25rem; }
+.rec-dayrow.is-on { background: var(--surface-reference); box-shadow: inset 3px 0 0 var(--ink); }
+.rec-dayrow:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.rec-adv { color: var(--bad-ink); font-weight: 700; }
+.rec-wait { color: var(--muted); font-weight: 700; }
+.rec-dt { margin: 0; font: 700 1.35rem var(--display); }
+.rec-line { margin: .25rem 0; font-size: .9375rem; }
+.rec-bad { margin: .3rem 0; padding: .5rem .7rem; border-left: 3px solid var(--bad-ink); background: var(--bad-tint); color: var(--bad-ink); font-weight: 700; font-size: .875rem; display: flex; justify-content: space-between; align-items: center; gap: .6rem; }
+.rec-tl { list-style: none; margin: .4rem 0 0; padding: 0; }
+.rec-tl li { display: grid; grid-template-columns: 3.4rem 5.6rem minmax(0, 1fr); gap: .6rem; padding: .5rem 0; border-bottom: 1px solid var(--line); font-size: .9375rem; align-items: baseline; }
+.rec-tl li time { font-variant-numeric: tabular-nums; font-weight: 700; }
+.rec-tl .rec-k { font: 700 .75rem var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.rec-clean { margin-top: .5rem; }
+.rec-pick { padding: 1rem; border: 1.5px dashed var(--line); border-radius: 8px; color: var(--muted); display: none; }
+.rec-back { justify-self: start; }
+@media (max-width: 640px) { .rec-tl li { grid-template-columns: 3.2rem minmax(0, 1fr); } .rec-tl .rec-k, .rec-tl li span:last-child { grid-column: 2; } }
+@media (min-width: 1100px) {
+  .rec-wrap { grid-template-columns: minmax(300px, 380px) minmax(0, 1fr); align-items: start; }
+  .rec-wrap.has-day .rec-month { display: block; }
+  .rec-wrap .rec-dayv { border-left: 1px solid var(--line); padding-left: 1rem; }
+  .rec-pick { display: block; }
+  .rec-back { display: none; }
+}
+#rec-print { display: none; }
+@media print {
+  body.rec-printing > *:not(#rec-print) { display: none !important; }
+  body.rec-printing #rec-print { display: block; color: #000; font: 11pt/1.4 var(--body); }
+  #rec-print h1 { font: 700 18pt var(--display); margin: 0 0 6pt; }
+  #rec-print h2 { font: 700 12pt var(--display); margin: 10pt 0 2pt; break-after: avoid; }
+  #rec-print p { margin: 0 0 2pt; }
+}
