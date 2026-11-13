@@ -76,7 +76,34 @@ async function safeRelease({ projectId, rulesetName, releaseName, patch, create,
   return RELEASE_NAME;
 }
 
-function install(cliRoot, evidence, environment = process.env) {
+// A ruleset upload with an uncertain answer (13 Nov 2026: HTTP 503 seven times in a row while each ruleset was stored all
+// the same, so the run stopped before the release). Read the stored rulesets back once and accept one only if it was made
+// in the last 15 minutes and holds exactly the files sent; otherwise keep the original error. Never retry the upload.
+// The evidence is booleans and counts only, and only on this path.
+function sameFiles(a, b) {
+  return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.length > 0
+    && a.every((f, i) => object(f) && object(b[i]) && f.name === b[i].name && typeof f.content === 'string' && f.content === b[i].content);
+}
+async function safeUpload({ projectId, files, create, list, read, now = Date.now, evidence = () => {} }) {
+  try { return await create(projectId, files); } catch (error) {
+    const report = { uploadStatus: responseStatus(error), uploadAmbiguous: ambiguous(error), candidates: 0, storedMatched: false, readFailed: false };
+    if (projectId !== PROJECT || !report.uploadAmbiguous) throw error;
+    let found = '';
+    try {
+      const since = now() - 15 * 60000, all = await list(projectId);
+      const recent = (Array.isArray(all) ? all : []).filter(x => object(x) && intendedName(x.name) && Date.parse(x.createTime) >= since)
+        .sort((a, b) => String(b.createTime).localeCompare(String(a.createTime))).slice(0, 3);
+      report.candidates = recent.length;
+      for (const x of recent) { if (sameFiles(await read(x.name), files)) { found = x.name; break; } }
+    } catch (readError) { report.readFailed = true; }
+    report.storedMatched = !!found;
+    evidence(report);
+    if (!found) throw error;
+    return found;
+  }
+}
+
+function install(cliRoot, evidence, environment = process.env, uploadEvidence = () => {}) {
   validateInvocation([], environment);
   const pkg = require(path.join(cliRoot, 'package.json'));
   if (pkg.version !== VERSION) throw Error('Unexpected Firebase CLI version; review the release adapter before using it.');
@@ -84,7 +111,8 @@ function install(cliRoot, evidence, environment = process.env) {
   const { Client } = require(path.join(cliRoot, 'lib/apiv2.js'));
   const { FirebaseError } = require(path.join(cliRoot, 'lib/error.js'));
   const client = new Client({ urlPrefix: 'https://firebaserules.googleapis.com', apiVersion: 'v1' });
-  const patch = rules.updateRelease, create = rules.createRelease;
+  const patch = rules.updateRelease, create = rules.createRelease, upload = rules.createRuleset;
+  rules.createRuleset = (projectId, files) => safeUpload({ projectId, files, create: upload, list: rules.listAllRulesets, read: rules.getRulesetContent, evidence: uploadEvidence });
   rules.updateOrCreateRelease = async (projectId, rulesetName, releaseName) => { try { return await safeRelease({ projectId, rulesetName, releaseName, patch, create, evidence,
     get: async name => {
       const r = await client.get('/' + name, { redirect: 'error', retryCodes: [], signal: AbortSignal.timeout(15000), skipLog: { resBody: true } });
@@ -106,11 +134,12 @@ function install(cliRoot, evidence, environment = process.env) {
       throw wrapped;
     } };
 }
-module.exports = { safeRelease, install, responseStatus, validateInvocation };
+module.exports = { safeRelease, safeUpload, install, responseStatus, validateInvocation };
 if (require.main === module) {
   validateInvocation(process.argv.slice(2), process.env);
   const cliRoot = path.dirname(require.resolve('../tests/rules/node_modules/firebase-tools/package.json'));
-  install(cliRoot, report => console.log('Rules activation evidence: ' + JSON.stringify(report)));
+  install(cliRoot, report => console.log('Rules activation evidence: ' + JSON.stringify(report)), process.env,
+    report => console.log('Ruleset upload evidence: ' + JSON.stringify(report)));
   process.argv = [process.execPath, path.join(cliRoot, 'lib/bin/firebase.js'), 'deploy', '--only', 'firestore:rules', '--project', PROJECT, '--non-interactive'];
   require(path.join(cliRoot, 'lib/bin/firebase.js'));
 }

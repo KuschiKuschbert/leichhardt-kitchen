@@ -2,7 +2,7 @@
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs'), os = require('node:os');
-const { safeRelease, responseStatus, install, validateInvocation } = require('./publish-rules.cjs');
+const { safeRelease, safeUpload, responseStatus, install, validateInvocation } = require('./publish-rules.cjs');
 const PROJECT = 'leichhardt-kitchen', RELEASE = 'cloud.firestore', name = `projects/${PROJECT}/releases/${RELEASE}`;
 const intended = `projects/${PROJECT}/rulesets/synthetic-intended`, old = `projects/${PROJECT}/rulesets/synthetic-old`;
 function http(status) { return Object.assign(Error('SYNTHETIC_ORIGINAL_PATCH_ERROR'), { status, context: { response: { statusCode: status }, body: 'SYNTHETIC_PRIVATE_RESPONSE_BODY' } }); }
@@ -63,6 +63,32 @@ async function scenario(change = {}) {
   for (const releaseName of [RELEASE + '/named', RELEASE + '/(default)/extra', RELEASE + '/(default)\n', 'firebase.storage']) {
     r = await scenario({ input: { releaseName } }); assert(r.error); assert.equal(r.calls.length, 0); assert(!r.reports[0].defaultReleaseAccepted);
   }
+  // An upload with an uncertain answer (13 Nov 2026): accept only a ruleset stored in the last 15 minutes with exactly the
+  // files sent; anything else keeps the original error. The upload itself is never repeated.
+  const files = [{ name: 'firestore.rules', content: 'synthetic rules A' }], T0 = Date.parse('2026-11-13T16:30:00Z');
+  const stored = (minutesAgo, content, id) => ({ name: `projects/${PROJECT}/rulesets/${id || 'synthetic-stored'}`, createTime: new Date(T0 - minutesAgo * 60000).toISOString(), content });
+  async function upload(change = {}) {
+    const calls = [], reports = [], listed = change.listed || [];
+    const opts = { projectId: PROJECT, files, now: () => T0, evidence: r => reports.push({ ...r }),
+      create: async () => { calls.push('UPLOAD'); if (change.uploadError) throw change.uploadError; return intended; },
+      list: async () => { calls.push('LIST'); if (change.listError) throw change.listError; return listed.map(x => ({ name: x.name, createTime: x.createTime })); },
+      read: async n => { calls.push('READ'); const x = listed.find(y => y.name === n); return x ? [{ name: 'firestore.rules', content: x.content }] : []; }, ...change.input };
+    let result, error;
+    try { result = await safeUpload(opts); } catch (e) { error = e; }
+    assert.equal(calls.filter(x => x === 'UPLOAD').length, 1); assert(calls.filter(x => x === 'LIST').length <= 1); assert(calls.filter(x => x === 'READ').length <= 3);
+    for (const report of reports) { assert(Object.values(report).every(v => typeof v === 'boolean' || Number.isInteger(v))); assert(!JSON.stringify(report).includes('synthetic')); }
+    groups++; return { calls, reports, result, error };
+  }
+  let u = await upload(); assert.equal(u.result, intended); assert.deepEqual(u.calls, ['UPLOAD']); assert.equal(u.reports.length, 0);
+  for (const status of [400, 403, 409, 429]) { const e = http(status); u = await upload({ uploadError: e }); assert.equal(u.error, e); assert.deepEqual(u.calls, ['UPLOAD']); }
+  const busy = http(503), match = stored(1, 'synthetic rules A');
+  u = await upload({ uploadError: busy, listed: [match] }); assert.equal(u.result, match.name); assert(u.reports[0].uploadAmbiguous && u.reports[0].storedMatched);
+  u = await upload({ uploadError: Error('lost upload response'), listed: [stored(2, 'synthetic rules B', 'other'), match] }); assert.equal(u.result, match.name);
+  for (const listed of [[], [stored(1, 'synthetic rules B')], [stored(20, 'synthetic rules A')], [{ name: 'https://evil.test/x', createTime: match.createTime, content: 'synthetic rules A' }]]) {
+    u = await upload({ uploadError: busy, listed }); assert.equal(u.error, busy); assert(!u.result); assert(!u.reports[0].storedMatched);
+  }
+  u = await upload({ uploadError: busy, listError: http(403) }); assert.equal(u.error, busy); assert(u.reports[0].readFailed);
+  u = await upload({ uploadError: busy, listed: [match], input: { projectId: 'other' } }); assert.equal(u.error, busy); assert.deepEqual(u.calls, ['UPLOAD']);
   // Prove the integration really replaces the export consumed by the installed pinned RulesDeploy.
   const cliRoot = path.dirname(require.resolve('../tests/rules/node_modules/firebase-tools/package.json'));
   const rules = require(cliRoot + '/lib/gcp/rules.js'), { RulesDeploy } = require(cliRoot + '/lib/rulesDeploy.js');

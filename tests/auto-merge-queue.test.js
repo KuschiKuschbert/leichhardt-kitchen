@@ -424,17 +424,17 @@ ok(/needs: \[switch, backfill, wait\]/.test(job('queue')) && /actions: write/.te
 ok(/inputs\.now/.test(job('backfill')), 'the backfill (auto-merge on for every ready one) runs only on Release now, never on the waiting run');
 ok(/run-name: .*'Release now'.*'Waiting for the release window'/.test(yml), 'Release now and the waiting run carry the names the queue looks for');
 
-// 11. The owner's one-off extension ends at 08:00 Queensland on 10 Nov 2026. A full date keeps it from reopening
+// 11. The owner's one-off extension ends at 09:30 Queensland on 14 Nov 2026 (the one before ended 08:00 on 10 Nov). A full date keeps it from reopening
 // the next morning. NOW_EPOCH stands in for the runner's UTC clock; the normal-window cases above have no override.
-const cutoff = '2026-11-09T22:00:00Z', cutoffEpoch = Date.parse(cutoff) / 1000;
-ok(RELEASE_UNTIL === cutoff, 'the one-off release ends at 08:00 Queensland on 10 November 2026');
+const cutoff = '2026-11-13T23:30:00Z', cutoffEpoch = Date.parse(cutoff) / 1000;
+ok(RELEASE_UNTIL === cutoff, 'the one-off release ends at 09:30 Queensland on 14 November 2026');
 const extended = (hhmm, epoch, value) => ({ NOW_HHMM: hhmm, NOW_EPOCH: String(epoch), RELEASE_UNTIL: value == null ? cutoff : value });
 for (const [name, hhmm, epoch, open] of [
-  ['02:30 during the extension', '0230', cutoffEpoch - 19800, true],
-  ['07:59:59 before expiry', '0759', cutoffEpoch - 1, true],
-  ['08:00 exactly at expiry', '0800', cutoffEpoch, false],
-  ['08:01 after expiry', '0801', cutoffEpoch + 60, false],
-  ['07:59:59 the following day', '0759', cutoffEpoch + 86399, false]
+  ['5 h 30 min before expiry', '0230', cutoffEpoch - 19800, true],
+  ['1 second before expiry', '0759', cutoffEpoch - 1, true],
+  ['exactly at expiry', '0800', cutoffEpoch, false],
+  ['a minute after expiry', '0801', cutoffEpoch + 60, false],
+  ['a day later, 1 second before the same time', '0759', cutoffEpoch + 86399, false]
 ]) {
   const env = extended(hhmm, epoch);
   r = pass('dated window: ' + name, { list: [pr(740, 'BEHIND', null, open ? off : {})] }, win(hhmm, env));
