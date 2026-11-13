@@ -1786,6 +1786,38 @@
      the original recorder's tickets. Reauthenticating that same person can finish them without changing the writer. */
   function sendFirst() { return sendingNow(); }
   var SEND_FIRST = 'Not sent yet. Sign out once it is sent.';
+  /* Saves the server accepted while the book was locked (13 Nov 2026). Their answer waits for the same person's PIN,
+     but nothing in them is left to send. Before, they held Not me on the lock screen ("Not sent yet") until that
+     person came back, so nobody else could sign in. Nothing waiting to send, and no cooling stage on its way. */
+  function savedOnly() { return !!workLock() && writeTickets.length > 0 && writeTickets.every(function (t) { return t.phase === 'acked'; }) && !coolingBusy(); }
+  /* A handover lets those saves answer while still locked, as the person who made them. A save that follows on from
+     one (the next part of a long list) is then kept behind the lock like any other unsent work. done() runs once
+     every answer has run: sendingNow() is true again only if such a follow-on is waiting. */
+  function releaseSaved(done) {
+    writeTickets.slice().forEach(function (t) { if (t.phase !== 'acked' || t.retired) return; t.retired = true; writeTickets.splice(writeTickets.indexOf(t), 1); t.resolve(); });
+    notifySent(); setTimeout(done, 0);
+  }
+  // Not sent yet on a lock screen names the one person whose PIN finishes sending it (nobody is signed in to sign out)
+  function sendFirstMsg() { var name = workLock() && personName(blockedRecorder()); return name ? 'Not sent yet. ' + name.split(' ')[0] + '\'s PIN finishes sending it. Keep the book open.' : SEND_FIRST; }
+  /* Not me, Not you? and Change person (data-p="who-change"). e is null when it runs again after releaseSaved(). */
+  function whoChange(e) {
+    // something not saved asks a second tap wherever this hands the device over: a person signed in, or the head
+    // chef's Google account with nobody on a PIN (its lone Not you? and the admin card's Sign in, 28 Oct 2026: they
+    // signed Google out in one tap over a typed line). The admin card's links to the prep list stay put until then.
+    // On the head chef's own Google device a change waiting to send holds it, and no second tap gets past it (29 Oct
+    // 2026, sendFirst()). A lock screen whose saves all reached the server goes on (13 Nov 2026, savedOnly())
+    if (sendFirst()) {
+      if (e) e.preventDefault();
+      if (savedOnly()) { releaseSaved(function () { if (!workLock()) return; if (S.toast && !S.toastBad) toastAway('new'); whoChange(null); }); return; }
+      if (!armed('who-change:sent')) arm('who-change:sent'); toast(sendFirstMsg()); return;
+    }
+    if ((S.authed || S.user || workLock()) && window.LK_PREP.unsaved() && !arm('who-change')) { if (e) e.preventDefault(); return; }
+    // the PIN screens' Not me: nobody is signed in yet (picking a name signs Google out first), so it goes in one tap.
+    // The head chef's Google account handing over (the lone Not you?, the admin card's Sign in) takes what it left on
+    // the device, like Sign out (29 Oct 2026: function, recipe and drawing drafts stayed for the next person)
+    if (!S.authed) { if (S.user || workLock()) forgetMine(S.lockRecorder || S.who); S.picking = true; S.pending = null; leave(); dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.', { label: 'OK', fn: function () {} }, 0, 'bad'); }); return; }
+    signOutPerson(true, true);
+  }
   /* Manage Recipes & Drawings (#/manage, 21 Oct 2026): the head chef only. With their own PIN as Head chef on any device,
      or on the head chef's Google device while nobody else is signed in with a PIN. The rules check the same on the
      server (bookBy() in firestore.rules), so this only decides what the page shows. */
@@ -12020,20 +12052,7 @@
     if (a === 'o-done-toggle') { e.preventDefault(); S.oDoneOpen = !S.oDoneOpen; draw(); return; }
     if (a === 'osugg') { var st = (S.osugg || [])[i]; if (st) { S.otext = st; if (!S.oqty.trim()) S.oqty = (ordQtyList(st)[0] || {}).q || ''; draw(); var oe = S.root.querySelector('[data-k="o-text"]'); if (oe) { oe.focus(); try { oe.setSelectionRange(oe.value.length, oe.value.length); } catch (x) {} } } return; }
     if (a === 'who') { pickName(id); return; }
-    if (a === 'who-change') {
-      // something not saved asks a second tap wherever this hands the device over: a person signed in, or the head
-      // chef's Google account with nobody on a PIN (its lone Not you? and the admin card's Sign in, 28 Oct 2026: they
-      // signed Google out in one tap over a typed line). The admin card's links to the prep list stay put until then.
-      // On the head chef's own Google device a change waiting to send holds it, and no second tap gets past it (29 Oct
-      // 2026, sendFirst())
-      if (sendFirst()) { e.preventDefault(); if (!armed('who-change:sent')) arm('who-change:sent'); toast(SEND_FIRST); return; }
-      if ((S.authed || S.user || workLock()) && window.LK_PREP.unsaved() && !arm('who-change')) { e.preventDefault(); return; }
-      // the PIN screens' Not me: nobody is signed in yet (picking a name signs Google out first), so it goes in one tap.
-      // The head chef's Google account handing over (the lone Not you?, the admin card's Sign in) takes what it left on
-      // the device, like Sign out (29 Oct 2026: function, recipe and drawing drafts stayed for the next person)
-      if (!S.authed) { if (S.user || workLock()) forgetMine(S.lockRecorder || S.who); S.picking = true; S.pending = null; leave(); dropGoogle().then(accessChanged).catch(function () { toast('Sign-out could not finish. Close this tab before handing over the device.', { label: 'OK', fn: function () {} }, 0, 'bad'); }); return; }
-      signOutPerson(true, true); return;
-    }
+    if (a === 'who-change') { whoChange(e); return; }
     if (a === 'guest-who') { guestAsk(null); return; }
     if (a === 'who-back') { S.picking = false; S.pending = null; leave(); return; }
     if (a === 'day') { S.date = shift(S.date, +el.getAttribute('data-d')); S.tab = ''; watchItems(); draw(); return; }
