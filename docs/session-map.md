@@ -1,5 +1,9 @@
 # Session map: which note to read, and every file
 
+## Shifts by section on a person's page, 14 November 2026
+
+From the same staff-data audit as the section renames: the person page showed only prep lines. Quick check Build (small); the owner said yes. `personShiftsHTML()` in `js/prep.js` uses `tsCount()` (Who has worked where), so no new read shape: `teamsum/main` once a kitchen day. `tests/team-person.test.js`: the line, a person with none, a failed read, late counts and one read for two pages (10 of 36 fail on the old code). Note: `docs/admin-pages-options/brief.md`, step 5, part 3.
+
 ## Renamed kitchen sections keep their history, 13 November 2026
 
 The owner asked whether staff data should be linked together more. An audit found people already linked by a fixed staff ID, but sections stored by name in prep lines, wastage, the learned usual section and the nightly summaries, so a rename split their history. The owner: "I might rename sections." Chosen: option A of the audit (old names kept, folded on read), not ids on every line. Council quick check (small change). `kitSecs[].was` saved by `ksClean()`; `secFold()`, `secNow()`, `lineSec()`, `alsoNow()`, `ksSecNow()`, `ksWasHTML()` in `js/prep.js`; `api.secNow` folds in `js/admin-dashboard.js` (v5) and `js/admin-intelligence.js` (v8). Nightly jobs unchanged. `tests/section-renames.test.js` (17 of 25 fail on the old code). Note: `docs/section-renames.md`.
