@@ -144,6 +144,20 @@ const saved = async (p, name) => Object.values(await store(p)).filter(x => x && 
     await p.context().close();
   }
 
+  // 6. a function moved off today while its start and food times are TBC (0): the band and the sheet say TBC and the old
+  // day, never "event 10:00" or "Thu 1 Jan"
+  const tbcMoved = M.derive(Object.assign(fn({ name: 'Brown TBC', date: day2 }), { start: 0, st: true, rounds: [{ at: 0, note: '' }],
+    was: { date: today, start: 0, first: 0, from: at(today, '00:00'), until: at(tomorrow, '00:00') } }));
+  p = await L.open(b, '#/recipes', { who: 'ann', extra: extra({ tbcMoved }), wait: 1200 });
+  await L.waitFor(p, () => /Brown TBC/.test((document.getElementById('fn-band') || {}).textContent || ''));
+  const mv = (await txt(p, '#fn-band .fn-row.is-moved') || '').replace(/\s+/g, ' ');
+  ok(/Rescheduled/.test(mv) && new RegExp('now ' + M.dayName(day2) + ', event TBC, food TBC').test(mv) && !/10:00/.test(mv), 'moved, times TBC: the band says event TBC, food TBC (' + mv + ')');
+  await tap(p, '#fn-band .fn-row'); await L.settle(p, 200);
+  const ban = (await txt(p, '.fn-sheet .fn-banner.is-moved') || '').replace(/\s+/g, ' ');
+  ok(new RegExp('Not on ' + M.dayName(today) + ' any more: now ' + M.dayName(day2)).test(ban) && !/1 Jan/.test(ban), 'moved, times TBC: the sheet names the old day from its saved date (' + ban + ')');
+  ok(p.errors.length === 0, 'moved, times TBC: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });
