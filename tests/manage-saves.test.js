@@ -79,6 +79,33 @@ async function go(p, hash) { await p.evaluate(h => { location.hash = h; }, hash)
     await p.context().close();
   }
 
+  // 5. a method step longer than the book keeps, or too many steps, is refused with a clear message, never cut on Save
+  p = await L.open(b, '#/manage/r/burger', { who: 'ann', extra: cfg(), wait: 1400 });
+  await editor(p);
+  await L.chapter(p, 'method');
+  const longStep = ('Fold gently. ').repeat(50).trim() + ' Done';   // 604 characters
+  await L.reveal(p, '#mg-ss-0'); await p.fill('#mg-ss-0', 'Toast the buns.\n' + longStep);
+  await L.settle(p, 200);
+  await p.click('[data-mg="save"]'); await L.settle(p, 300);
+  const errsText = () => txt(p, '.mg-errs').then(t => t || '');
+  ok(/Method, Cooking: step 2 is over 600 characters\./.test(await errsText()), 'long step: Save says Method, Cooking: step 2 is over 600 characters (' + await errsText() + ')');
+  ok(!(await store(p))[fsKey(['recipes', 'burger'])], 'long step: nothing is saved');
+  ok(/\bmethod\*?!/.test(await p.evaluate(() => [...document.querySelectorAll('.mg-chb')].map(c => c.getAttribute('data-v') + (c.getAttribute('aria-current') ? '*' : '') + (c.querySelector('.mg-chx') ? '!' : '')).join(' '))), 'long step: the Method chapter is marked to fix');
+  await L.reveal(p, '#mg-ss-1'); await p.fill('#mg-ss-1', Array.from({ length: 61 }, (_, i) => 'Layer ' + (i + 1) + '.').join('\n'));
+  await L.reveal(p, '#mg-ss-0'); await p.fill('#mg-ss-0', 'Toast the buns.\n' + longStep.slice(0, 600));
+  await L.settle(p, 200);
+  await p.click('[data-mg="save"]'); await L.settle(p, 300);
+  ok(/Method, Plating, bottom to top: 60 steps at most\./.test(await errsText()) && !/over 600/.test(await errsText()), 'too many steps: Save says Method, Plating, bottom to top: 60 steps at most (' + await errsText() + ')');
+  ok(!(await store(p))[fsKey(['recipes', 'burger'])], 'too many steps: nothing is saved');
+  await L.reveal(p, '#mg-ss-1'); await p.fill('#mg-ss-1', Array.from({ length: 60 }, (_, i) => 'Layer ' + (i + 1) + '.').join('\n'));
+  await L.settle(p, 200);
+  await p.click('[data-mg="save"]');
+  await savedAt(p, 'burger', 1);
+  const bs = ((await store(p))[fsKey(['recipes', 'burger'])] || {}).r || {};
+  ok(bs.sections && bs.sections[0].steps[1] === longStep.slice(0, 600) && bs.sections[1].steps.length === 60, 'at the limits: a 600 character step and 60 steps save whole');
+  ok(p.errors.length === 0, 'long steps: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })().catch(e => { console.log(R.join('\n')); console.error(e); process.exit(1); });

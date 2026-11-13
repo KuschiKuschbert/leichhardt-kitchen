@@ -676,7 +676,7 @@
   }
   function chNavHTML(e) {
     var cur = chOf(e), chg = chChanged(e), bad = {};
-    (e.errs || []).forEach(function (x) { bad[AT_CH[x.at] || 'card'] = 1; });
+    (e.errs || []).forEach(function (x) { bad[AT_CH[x.at] || (/^mg-ss-/.test(x.at) ? 'method' : 'card')] = 1; });
     return '<nav class="mg-chs" aria-label="Parts of this recipe">' + CHS.filter(function (c) { return !(c[0] === 'hist' && e.isNew); }).map(function (c, n) {
       var k = c[0];
       return '<button type="button" class="mg-chb" data-mg="ch" data-v="' + k + '" data-i="' + n + '"' + (cur === k ? ' aria-current="true"' : '') + '><span class="mg-chn">' + c[1] + '</span><small>' + esc(chSum(e, k)) + '</small>' +
@@ -755,6 +755,12 @@
     (d.ingredients || []).forEach(function (i, k) { if (trimStr(i.q) && !trimStr(i.name)) errs.push({ at: 'mg-h-ing', msg: 'Ingredient ' + (k + 1) + ' has an amount but no name.' }); });
     if ((d.ingredients || []).length > 100) errs.push({ at: 'mg-h-ing', msg: 'At most 100 ingredients.' });
     if ((d.sections || []).length > 30) errs.push({ at: 'mg-h-method', msg: 'At most 30 method sections.' });
+    // the book keeps 60 steps a section and 600 characters a step (js/overlay.js tidy): say so, never cut them on Save
+    (d.sections || []).forEach(function (sc, k) {
+      var steps = (sc.steps || []).map(trimStr).filter(Boolean), name = 'Method, ' + (trimStr(sc.title) || 'Method');
+      if (steps.length > 60) errs.push({ at: 'mg-ss-' + k, msg: name + ': 60 steps at most.' });
+      steps.forEach(function (t, n) { if (t.length > 600) errs.push({ at: 'mg-ss-' + k, msg: name + ': step ' + (n + 1) + ' is over 600 characters.' }); });
+    });
     var no = trimStr(d.no);
     if (no) {
       var same = Object.keys(ids).filter(function (id) { if (id === e.id) return false; var r = A.byId(id) || (X.change(id) || {}).r || X.pristine(id); return r && String(r.no) === no; });
