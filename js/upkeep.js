@@ -227,7 +227,7 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
      tapped: no note in the strip, and a touch does not call it off. */
   function reloadNow(tapped, back, asked) {
     if (run || confirmation) return;
-    /* Once per 10 minutes at most, so a flapping header can never cause a reload loop. The strip still offers Update now.
+    /* Once per 10 minutes at most, so a flapping header can never cause a reload loop. Silent meanwhile unless someone asked (13 Nov 2026).
        An update nobody asked for on a screen that stays open (a tablet on the pass, a laptop tab): once an hour at most
        (5 Nov 2026). Each reload reads the open page's lists again from the server, and on 4 and 5 November 48 new
        versions in a day made such a screen reload up to about 40 times; with the other phones that used up the free
@@ -442,7 +442,7 @@ function lkIdle() { return !lkTyping() && Date.now() - lkTouch > 120000; }
      the book has heard of ('ready' when an update was found, 'current' after an answer, '' before one); copied() is when
      the copy running was published (its Last-Modified, ms, 0 when not known yet); check() is Check for an update: the same
      look as the automatic one (a header-only request, no Firestore) and it answers 'ready', 'current' or 'nosignal'. A new
-     version found this way shows the Update now strip like any other. */
+     version found this way shows no strip (silent, 13 Nov 2026): Settings then offers Update now. */
   window.LK_UPDATE = { now: updateNow, letGo: function () { return !!letGoAt && Date.now() - letGoAt < 3000; },
     state: function () { return found ? 'ready' : base === null ? '' : 'current'; },
     copied: function () { var t = base ? Date.parse(base.split('|')[0]) : NaN; return isFinite(t) ? t : 0; },
