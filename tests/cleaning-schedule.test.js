@@ -131,6 +131,14 @@ const row = code => '.cln-plan-row[data-id="' + id(code) + '"]';
     await p.fill('#cln-repeat-search', task('pd-grill-03').text);
     await p.click('[data-cln="edit"][data-id="' + id('pd-grill-03') + '"]');
     ok(await p.inputValue('#cln-repeat-days') === '2' && await p.inputValue('#cln-repeat-anchor') === '2026-11-09', 'pack down setup: the two-day interval and confirmed anchor are visible for prospective editing');
+    // A blank, decimal or out of range repeat says what to fix before any write, not "Could not save".
+    for (const days of ['', '2.5', '1', '31']) {
+      await p.fill('#cln-repeat-days', days); await p.click('[data-cln="save"]');
+      await L.waitFor(p, () => /\S/.test((document.querySelector('.cln-save-note') || {}).textContent || ''));
+      const said = await p.locator('.cln-save-note').innerText();
+      ok(/Repeat every 2 to 30 days, whole days only\./.test(said), 'pack down setup: repeat every "' + days + '" days is refused with a clear message (' + said + ')');
+    }
+    await p.fill('#cln-repeat-days', '2');
     await p.click('[data-cln="cancel-edit"]');
     await p.click('[data-cln="today"]');
     await p.click('[data-cln="group"][data-group="hot"]');
@@ -222,6 +230,28 @@ const row = code => '.cln-plan-row[data-id="' + id(code) + '"]';
     await p.reload(); await reopened(p);
     const persisted = await records(p, 'cleaningDone');
     ok(persisted.some(r => r.flow.slot === 'start' && r.done && r.flow.verifiedBy === 'sam') && persisted.some(r => r.flow.slot === 'close' && !r.done), 'food: performance, verification and independent pending work survive refresh');
+  });
+
+  await step('Pass checkers are people who can check', async () => {
+    // Bo lost Tick after being saved as the checker; Vi is View only and was never chosen. Neither can verify.
+    const cfg = L.seed()[key('config', 'main')];
+    const people = cfg.people.map(x => x.id === 'bo' ? { ...x, tick: false } : x).concat([{ id: 'vi', name: 'Vi', role: 'view', add: false, tick: false, del: false, active: true }]);
+    const food = task('c11'); food.plan.verifiers = ['bo'];
+    p = await open(b, { extra: { [key('config', 'main')]: { people, sousIds: ['sam'], showBadges: true, staffSee: { cleaning: true } }, [key('cleaningTasks', id('c11'))]: food } });
+    await p.locator('[data-cln="setup"]').first().click();
+    await p.fill('#cln-repeat-search', food.text);
+    await p.click('[data-cln="edit"][data-id="' + id('c11') + '"]');
+    const offered = await p.$$eval('[data-cln-verifier]', es => es.map(e => e.getAttribute('data-cln-verifier') + ':' + e.checked + ':' + e.closest('label').textContent));
+    ok(offered.some(x => x.startsWith('sam:false:')) && offered.some(x => x.startsWith('ann:false:')) && !offered.some(x => x.startsWith('vi:')), 'checkers: only people with Tick are offered, View only is not (' + offered.join(' | ') + ')');
+    ok(offered.some(x => x === 'bo:true:Bo · cannot do the Pass check'), 'checkers: a saved checker who lost Tick stays ticked and is marked (' + offered.join(' | ') + ')');
+    await p.fill('#cln-text', food.text + ' edited'); await p.click('[data-cln="save"]');
+    await L.waitFor(p, () => /\S/.test((document.querySelector('.cln-save-note') || {}).textContent || ''));
+    ok(/Bo cannot do the Pass check\. Untick them, or give them Tick in Staff\./.test(await p.locator('.cln-save-note').innerText()), 'checkers: Save says who cannot check (' + await p.locator('.cln-save-note').innerText() + ')');
+    ok((await records(p, 'cleaningTasks')).every(t => t.text === food.text), 'checkers: nothing is saved while a checker cannot check');
+    await p.uncheck('[data-cln-verifier="bo"]'); await p.check('[data-cln-verifier="sam"]'); await p.click('[data-cln="save"]');
+    await L.waitFor(p, () => /Saved/.test((document.querySelector('.cln-save-note') || {}).textContent || '') && !LK_PREP.unsent());
+    const saved = (await records(p, 'cleaningTasks')).filter(t => t.text === food.text + ' edited');
+    ok(saved.length === 1 && saved[0].plan.verifiers.join(',') === 'sam', 'checkers: after unticking, Save stores the checker who can check');
   });
 
   await step('weekday and date scope', async () => {

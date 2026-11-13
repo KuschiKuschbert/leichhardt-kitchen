@@ -23,6 +23,16 @@ for (const text of ['', '[Qty]', 'to taste', 'handful', '600 g or 300 g', '6 or 
   ok(A.scale(text, 2) === null, 'multiply: leaves ' + JSON.stringify(text) + ' for the chef to check');
 }
 for (const factor of [0, -2, NaN, Infinity, '2', 1e-20, 1e20]) ok(A.scale('1 g', factor) === null, 'multiply: refuses invalid or unrepresentable factor ' + factor);
+// "1-1/2 kg" is one and a half (a whole number, a dash, a fraction under one), not a range (13 Nov 2026); "2-3 kg" is still a range
+for (const [text, factor, expected] of [['1-1/2 kg', 2, '3 kg'], ['1 - 1/2 L', 2, '3 L'], ['About 2-1/4 kg', 2, 'About 4.5 kg'], ['2-3 kg', 2, '4-6 kg'], ['6-8ea', 0.5, '3-4ea'], ['1-3/2 kg', 2, '2-3 kg']]) {
+  ok(A.scale(text, factor) === expected, 'multiply: ' + text + ' by ' + factor + ' gives ' + expected + ' (' + A.scale(text, factor) + ')');
+}
+// A comma between groups of three digits is a thousands comma (13 Nov 2026): "1,000 g" is a kilo, not 1 g. "1,5" stays 1.5.
+same('1,000 g', 1000, 'g'); same('12,500', 12500, ''); same('1,500.5 kg', 1500.5, 'kg'); same('2,500g', 2500, 'g'); same('1,50 kg', 1.5, 'kg');
+ok(A.parse('100,000 g') === null, '"100,000 g" is over the limit, not read (null)');
+for (const [text, factor, expected] of [['1,000 g', 2, '2000 g'], ['1,500.5 ml', 2, '3001 ml'], ['1,000-1,500 g', 2, '2000-3000 g'], ['1,5kg', 2, '3kg']]) {
+  ok(A.scale(text, factor) === expected, 'multiply: ' + text + ' by ' + factor + ' gives ' + expected + ' (' + A.scale(text, factor) + ')');
+}
 R.forEach(r => console.log(r));
 const bad = R.filter(r => r.startsWith('FAIL')).length;
 console.log(bad + ' failed of ' + R.length);

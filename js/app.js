@@ -60,7 +60,8 @@
     });
   }
   function index() {
-    byId = {}; usedIn = {}; rolled = {}; rows = {}; tags = {}; hay = {}; missing = {};
+    // byId has no prototype, so a link or address such as constructor or toString is not a recipe
+    byId = Object.create(null); usedIn = {}; rolled = {}; rows = {}; tags = {}; hay = {}; missing = {};
     D.recipes.forEach(function (r) {
       r.ingredients = r.ingredients || []; r.sections = r.sections || []; r.pins = r.pins || [];
       if (!r.contains && !r.check) fromTags(r);
@@ -1549,8 +1550,10 @@
   }
 
   /* ---------- routing and drawing ---------- */
+  // a part with a stray % cannot be decoded: it stays as typed, so it matches nothing and the page is not found
+  function routePart(v) { try { return decodeURIComponent(v); } catch (e) { return v; } }
   function parseRoute(hash) {
-    var parts = (hash == null ? location.hash : hash).replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
+    var parts = (hash == null ? location.hash : hash).replace(/^#\/?/, '').split('/').filter(Boolean).map(routePart);
     if (parts[0] === 'suppliers') {
       var valid = function (v) { return /^[a-zA-Z0-9_-]{1,80}$/.test(v || '') ? v : ''; };
       if (parts[1] === 'cutoff') return { name: 'suppliers', stack: [], sid: '', mode: 'order', cutoffId: valid(parts[2]), cutoffDay: /^\d{4}-\d{2}-\d{2}$/.test(parts[3] || '') ? parts[3] : '' };

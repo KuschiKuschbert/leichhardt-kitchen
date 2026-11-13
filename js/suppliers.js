@@ -81,8 +81,16 @@
   function occurrence() {
     var s = supplier(); if (!s || !s.cutoffId) return null;
     var list = occurrences().filter(function (o) { return o.cutoffId === s.cutoffId; });
-    if (M.route.cutoffId && M.route.cutoffDay) return list.filter(function (o) { return o.cutoffId === M.route.cutoffId && o.day === M.route.cutoffDay; })[0] || { cutoffId: M.route.cutoffId, day: M.route.cutoffDay, label: 'Selected order cut-off', done: false, deliveryDay: '' };
-    return list.filter(function (o) { return o.day === day(); })[0] || list.filter(function (o) { return o.at >= epoch(); })[0] || null;
+    // An order recorded after a cut-off has closed counts for the next order cycle (head chef, 13 Nov 2026): the next
+    // open cut-off for this supplier, also when the sheet was opened from a reminder for the closed one.
+    var next = list.filter(function (o) { return !o.past; })[0] || null;
+    if (M.route.cutoffId && M.route.cutoffDay) {
+      var linked = list.filter(function (o) { return o.cutoffId === M.route.cutoffId && o.day === M.route.cutoffDay; })[0];
+      // a link to an earlier day's cut-off (no longer in the list) has closed too
+      if (next && (linked ? linked.past : M.route.cutoffDay < day())) return next;
+      return linked || { cutoffId: M.route.cutoffId, day: M.route.cutoffDay, label: 'Selected order cut-off', done: false, deliveryDay: '' };
+    }
+    return next;
   }
   /* A reminder link (the bar, the tick list, a push) names a cut-off. Only a cut-off with exactly one catalogue supplier
      opens a sheet. None (a supported state) or more than one gets a short card instead, never another supplier's sheet:

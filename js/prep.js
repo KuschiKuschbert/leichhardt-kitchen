@@ -491,7 +491,20 @@
   function stopLive() {
     [unsubCfg, unsubItems, unsubAct, unsubOrd, unsubW, unsubX, unsubXO].forEach(function (u) { if (u) u(); });
     unsubCfg = unsubItems = unsubAct = unsubOrd = unsubW = unsubX = unsubXO = null; S.xOpen = []; S.xOpenState = 'idle'; cfgKey = itemsKey = ordKey = wKey = xKey = '';
+    Object.keys(liveT).forEach(function (k) { clearTimeout(liveT[k]); retryDone(k); }); liveT = {};
     cutStop();
+  }
+  /* A live list whose listener failed (13 Nov 2026: the free reads used up, a refused read, a connection the SDK gave
+     up on) hears nothing ever again. Its caller clears it and its key, and this starts it again by itself: after the
+     5-minute wait or once the phone is back online, whichever comes first (retrySoon()). One timer per list (k), time
+     passing on the phone. Each try costs what opening that list costs (one read per line, one for an empty list), at
+     most once in 5 minutes per list while it keeps failing; a refused try reads nothing. */
+  var liveT = {};
+  function liveRetry(k, fn, e) {
+    clearTimeout(liveT[k]); delete liveT[k];
+    if (e && e.code === 'cancelled') return;   // the person on the phone changed: their own lists start afresh
+    retrySoon(k, function () { clearTimeout(liveT[k]); delete liveT[k]; fn(); }, e);
+    liveT[k] = setTimeout(function () { delete liveT[k]; retryDone(k); fn(); }, RETRY_WAIT);
   }
   /* "Not sent": a line this phone changed that the server has not confirmed yet, from the listener's own
      hasPendingWrites (no reads; metadata changes are not billed). Since 26 Oct 2026 (#387) such a change waits only in
@@ -599,7 +612,7 @@
     if (key === itemsKey && unsubItems) return;
     if (unsubItems) unsubItems();
     itemsKey = key; S.itemsState = 'loading'; itemsLast = {}; itemsCold = false;
-    unsubItems = fb.fs.onSnapshot(itemsCol(S.date), { includeMetadataChanges: true }, function (snap) {
+    var u = unsubItems = fb.fs.onSnapshot(itemsCol(S.date), { includeMetadataChanges: true }, function (snap) {
       // no signal and this day not loaded yet (a day the phone moved to, or today again after another day): 'offline',
       // with only the lines this phone wrote since, never "nothing written"
       var k = listSnap(snap, S.itemsState, itemsLast), coldTurn = cacheOnly(snap) !== itemsCold;
@@ -617,7 +630,10 @@
       // and when only the list's touch with the server changed, the finished words on a wide screen decide again
       if (k === 'same') { patchOrDraw(function () { patchUnsent(); if (finDue() || secDue()) draw(); else if (coldTurn) { finFit(); finPaint(); } }); return; }
       S.itemsState = k === 'wait' ? 'offline' : 'ok'; draw();
-    }, function () { S.itemsState = 'error'; draw(); });
+    }, function (e) {
+      if (unsubItems !== u) return;
+      unsubItems(); unsubItems = null; itemsKey = ''; S.itemsState = 'error'; liveRetry('items', watchItems, e); draw();
+    });
   }
   /* What the prep list learned, for suggestions, Quick add and the Learning tab: the 500 most used items. The collection
      gains a record for every distinct line ever written and nothing prunes it, so the read is bounded here (the
@@ -1861,6 +1877,12 @@
   function cleaningChef() { return chefAllowed(); }
   function cleaningPermissionsReady() { return S.configState === 'ok' && !!S.configFull; }
   function cleaningTickOK() { return cleaningOK() && canW() && can('tick'); }
+  /* Who can do a Pass check: on the team, not Functions only, has Tick, and has Cleaning (a chef, or Cleaning is on
+     for the team). The same test the rules make on a verify, so the setup never offers a checker who is refused. */
+  function cleaningCanCheck(id) {
+    var c = S.config || {}, chef = id === c.headId || (c.sousIds || []).indexOf(id) >= 0;
+    return !!ptPerson(id) && (id === c.headId || (c.tickIds || []).indexOf(id) >= 0) && (chef || (c.staffSee || {}).cleaning === true);
+  }
   function cleaningError(code) { return { code: code }; }
   function cleaningDate(day) { return typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day) && T.day(T.at(day)) === day; }
   function cleaningDue(task, day) {
@@ -2069,6 +2091,7 @@
   function cleaningApi() {
     return { allowed: cleaningOK, chef: cleaningChef, permissionsReady: cleaningPermissionsReady, canTick: cleaningTickOK, identity: stableIdentity, context: cleaningContext,
       shared: shared, workers: function () { return ptPeople().map(function (p) { return { id: p.id, name: p.name }; }); }, recent: hereGet,
+      checkers: function () { return ptPeople().filter(function (p) { return cleaningCanCheck(p.id); }).map(function (p) { return { id: p.id, name: p.name }; }); }, canCheck: cleaningCanCheck,
       sections: function () { return kitSecs().map(function (s) { return { id: s.id, name: s.name }; }); },
       guides: function () { return featOn('guides') ? gLive().map(function (g) { return { id: g.id, title: g.title }; }) : []; }, loadGuides: loadGuides,
       box: function (done) { return done ? TICK : BOX; }, sheetBusy: function () { return sheetOpen() || ksWait || ovBack || dkFirstUp(); }, sheetNext: sheetNext,
@@ -2378,7 +2401,7 @@
     var before = onOf(it);
     supd(itemRef(date, id), { onBy: p.name, onById: p.id, onAt: now() }).then(function () { markPast('p', date); }, failed);
     toast((before ? 'Taken over from ' + before.name + '. ' : '') + 'You\'re on it. Tick it when it is done.', { label: 'Undo', stampFor: id, fn: function () {
-      var y = ptItem(id); if (!y || y.done || y.onById !== p.id) return;
+      var y = S.date === date && ptItem(id); if (!y || y.done || y.onById !== p.id) return undoMiss(date, it.text);
       supd(itemRef(date, id), before ? { onBy: before.name, onById: before.id, onAt: before.at || now() } : { onBy: '', onById: '', onAt: 0 }).then(null, failed);
     } });
   }
@@ -2390,7 +2413,7 @@
     var mine = onMine(it) && !shared();
     supd(itemRef(date, id), { onBy: '', onById: '', onAt: 0 }).then(function () { markPast('p', date); }, failed);
     toast((mine ? 'You are' : o.name + ' is') + ' off ' + it.text + '.', { label: 'Undo', stampFor: id, fn: function () {
-      var y = ptItem(id); if (!y || y.done || y.deleted || onOf(y)) return;
+      var y = S.date === date && ptItem(id); if (!y || y.done || y.deleted || onOf(y)) return undoMiss(date, it.text);
       supd(itemRef(date, id), { onBy: o.name, onById: o.id, onAt: o.at || now() }).then(null, failed);
     } });
   }
@@ -2483,14 +2506,14 @@
     }
     d.finished = true;d.busy = false;d.uncertain = false;ptRestore(d, d.value);markPast('p', d.date);
     if (d.mode === 'on') {
-      var who = d.value.onBy;
-      ptClose();batch(function () { toast(who + ' is on it. Tick it when it is done.', { label: 'Undo', stampFor: d.id, fn: function () { var y = ptItem(d.id); if (y && !y.done && y.onById === d.value.onById) supd(itemRef(d.date, d.id), { onBy: d.before.onBy || '', onById: d.before.onById || '', onAt: d.before.onAt || 0 }).then(null, failed); } });draw(); });
+      var who = d.value.onBy, was = (ptItem(d.id) || {}).text;
+      ptClose();batch(function () { toast(who + ' is on it. Tick it when it is done.', { label: 'Undo', stampFor: d.id, fn: function () { var y = S.date === d.date && ptItem(d.id); if (!y || y.done || y.onById !== d.value.onById) return undoMiss(d.date, was); supd(itemRef(d.date, d.id), { onBy: d.before.onBy || '', onById: d.before.onById || '', onAt: d.before.onAt || 0 }).then(null, failed); } });draw(); });
       return;
     }
     bump({ ticked: 1 });
     finNote(d.date, d.id, true);
     if (S.toastAct && S.toastAct.stampFor === d.id) { S.toast = ''; S.toastAct = null; }
-    var dn = ptItem(d.id), act = { label: 'Undo', fn: function () { tick(d.date, d.id, false); } };
+    var dn = ptItem(d.id), act = { label: 'Undo', fn: function () { return tick(d.date, d.id, false) || undoMiss(d.date, dn && dn.text); } };
     // the server has answered, so the section's sentence comes with the slip (secSay())
     ptClose();batch(function () { toast('Ticked' + (dn ? ' ' + slipName(dn.text) : ''), act);secSay(d.date, d.id, d.value.doneAt, d.value.doneById, act);draw(); });setTimeout(draw, LINGER + 100);
   }
@@ -2555,24 +2578,36 @@
   }
   // want: true or false from an Undo, which only ever sets the line back and does nothing if it is already that way
   // (4 Nov 2026, LF-01: a toggle ticked a line again when the tick had failed or was undone on another phone)
+  // true when the tap changed the line (or opened Who did this?), false when it did nothing, so an Undo that finds the
+  // line gone from the list on screen never says Undone (13 Nov 2026, undoMiss())
   function tick(date, id, want) {
-    var item = ptItem(id);if (pt && pt.busy) return;if (typeof want === 'boolean' && item && !!item.done === want) return;
+    var item = ptItem(id);if (pt && pt.busy) return false;if (typeof want === 'boolean' && item && !!item.done === want) return false;
     // one tap = done (I'm on it has its own button, onTap()); the shared device asks Who did this? first, the cook on
     // the line at the top, and saves through the picker's careful save
-    if (item && !item.done && shared() && S.name === 'prep') { ptOpen(date, id, 'tick'); return; }
-    batch(function () { tickNow(date, id, want); });
+    if (item && !item.done && shared() && S.name === 'prep') { ptOpen(date, id, 'tick'); return true; }
+    var r = false;
+    batch(function () { r = tickNow(date, id, want); });
+    return r;
+  }
+  /* An Undo whose line is not on the list on screen any more (the person moved to another day, or someone changed it
+     since): it changes nothing and says so, and returns false so the toast never says Undone (undoneSay()). */
+  function undoMiss(date, text) {
+    var d = dayName(date), nm = slipName(text || 'The line');
+    toast(S.date !== date ? 'Nothing changed. ' + nm + ' is on ' + (/^(Today|Yesterday|Tomorrow)$/.test(d) ? d.toLowerCase() : d) + '\'s list.' : 'Nothing changed. ' + nm + ' has changed since.');
+    return false;
   }
   function tickNow(date, id, want) {
     var it = S.items.filter(function (x) { return x.id === id; })[0], p = me();
-    if (!it || !can('tick')) return;
-    if (typeof want === 'boolean' && !!it.done === want) return;
-    if (!p) { toast('Choose your name before ticking prep.');return; }
+    if (S.date !== date) it = null;   // another day's list is on screen: its lines are not this day's
+    if (!it || !can('tick')) return false;
+    if (typeof want === 'boolean' && !!it.done === want) return false;
+    if (!p) { toast('Choose your name before ticking prep.');return false; }
     var done = !it.done;
-    if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return; }
+    if (!done && !canUntick(it)) { toast('Ticked lines stay ticked. Ask the head chef or sous chef to undo it.'); return false; }
     // the tick keeps the On it stamp (10 Nov 2026): doneAt less onAt is how long the job took (onItHTML())
     var at = done ? now() : 0, w = p;
     // the tick's own slip (its Undo): once the server has the tick it may gain the section's sentence (secSay())
-    var act = done ? { label: 'Undo', fn: function () { tick(date, id, false); } } : null;
+    var act = done ? { label: 'Undo', fn: function () { return tick(date, id, false) || undoMiss(date, it.text); } } : null;
     supd(itemRef(date, id), { done: done, doneBy: done ? p.name : '', doneById: done ? p.id : '', doneAt: at, preparedBy: done ? w.name : '', preparedById: done ? w.id : '', preparedAt: at }).then(function () { markPast('p', date); if (done) secSay(date, id, at, p.id, act); }, failed);
     // the stamp's Undo means nothing once the line is ticked: the Ticked toast takes its place, not a chip above it
     if (done && S.toastAct && S.toastAct.stampFor === id) { S.toast = ''; S.toastAct = null; }
@@ -2580,6 +2615,7 @@
     if (done) { bump({ ticked: 1 }); toast('Ticked ' + slipName(it.text), act); setTimeout(draw, LINGER + 100); }
     else toast('Unticked ' + slipName(it.text) + '. It is open again.');
     if (!done && it.doneById && fb) sset(docRef('activity', it.doneById), { name: it.doneBy || '', ticked: fb.fs.increment(-1) }, true).catch(function () {});
+    return true;
   }
   function removeItem(date, id, restore) {
     var p = me(), it = S.items.filter(function (x) { return x.id === id; })[0];
@@ -2611,6 +2647,13 @@
   function retryDone(k) { delete S.retryAt[k]; delete onlineRetry[k]; }
   // a line that makes its day the last written day: anything not removed, apart from a function's platter lines
   function rollSource(x) { return !x.deleted && !x.fn; }
+  /* The first line (root) of every line on a day newer than the day a rollover copies from, removed ones included
+     (13 Nov 2026): a copy rolled onto Tuesday and removed there must not roll from Monday again on Wednesday. Its root
+     comes from root, or from a rolled copy's id (r<day>-<root>) for a copy kept without it (lk.past keeps no root). */
+  function rollGone(gone, lines) {
+    (lines || []).forEach(function (x) { var r = /^r\d{8}-(.+)$/.exec(x.id || ''); gone[x.root || (r && r[1]) || x.id] = 1; });
+    return gone;
+  }
   function maybeRoll() {
     var today = dayNow();
     // lk.prep.rolled: the kitchen day this phone last rolled the prep list over (22 Oct 2026; it was kept in memory only,
@@ -2629,9 +2672,12 @@
     // copy (a read that failed) means all seven are read, as before.
     // A day that holds only a function's platter lines (written by the function's booking, js/fnedit.js) is not a
     // written day: those lines never roll, so the day before it is the one to roll from (22 Oct 2026).
+    // gone: the lines on the days newer than the one rolled from, removed ones too (rollGone()), from the copy here
+    var gone = {};
     if (dates.every(function (d) { return S.past && S.past[d]; })) {
       var last = dates.filter(function (d) { return S.past[d].some(rollSource); })[0];
       if (!last) { lsSet('lk.prep.rolled', today); return; }
+      dates.slice(0, dates.indexOf(last)).forEach(function (d) { rollGone(gone, S.past[d]); });
       dates = [last];
     }
     Promise.all([fb.fs.getDocs(itemsCol(today))].concat(dates.map(function (d) { return fb.fs.getDocs(itemsCol(d)); }))).then(function (res) {
@@ -2639,8 +2685,8 @@
       res[0].docs.forEach(function (d) { have[d.id] = true; });
       var src = null, j;
       for (j = 1; j < res.length && !src; j++) {
-        var docs = res[j].docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }).filter(function (x) { return !x.deleted; });
-        if (docs.some(rollSource)) src = { date: dates[j - 1], items: docs };
+        var all = res[j].docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }), docs = all.filter(function (x) { return !x.deleted; });
+        if (docs.some(rollSource)) src = { date: dates[j - 1], items: docs }; else rollGone(gone, all);
       }
       if (!src) { lsSet('lk.prep.rolled', today); return; }
       // when that day's night list started, from its lines as they are on the server now
@@ -2648,7 +2694,7 @@
       src.items.forEach(function (x) {
         if (x.done || x.fn) return;   // a function's platters belong to its day (js/fnedit.js), they never roll over
         var root = x.root || x.id, id = 'r' + today.replace(/-/g, '') + '-' + root;
-        if (have[id]) return;
+        if (have[id] || gone[root]) return;
         have[id] = true;
         jobs.push(['set', itemRef(today, id), {
           text: x.text, station: x.station || '', qty: x.qty || '', recipe: x.recipe || '',
@@ -7042,13 +7088,16 @@
     if (key === ordKey && unsubOrd) return;
     if (unsubOrd) unsubOrd();
     ordKey = key; S.ordState = 'loading'; ordSnap = {};
-    unsubOrd = fb.fs.onSnapshot(ordCol(S.ordDate), { includeMetadataChanges: true }, function (snap) {
+    var u = unsubOrd = fb.fs.onSnapshot(ordCol(S.ordDate), { includeMetadataChanges: true }, function (snap) {
       // 'wait': no signal and not loaded yet, so only this phone's unsent lines (see listSnap)
       var k = listSnap(snap, S.ordState, ordSnap);
       S.ordLines = snapLines(snap, S.ordDate);
       if (k === 'same') { patchOrDraw(function () { patchLines(S.ordLines); }); return; }
       S.ordState = k === 'wait' ? 'offline' : 'ok'; draw();
-    }, function () { S.ordState = 'error'; draw(); });
+    }, function (e) {
+      if (unsubOrd !== u) return;
+      unsubOrd(); unsubOrd = null; ordKey = ''; S.ordState = 'error'; liveRetry('orders', watchOrders, e); draw();
+    });
   }
 
   /* Everything to order is read once (14 days) and then kept in step on the phone: today's lines come from the live list,
@@ -7071,17 +7120,24 @@
     // the day digests say which day was written last (5 Nov 2026), so only that day is read from the server (for its
     // ticks as they are now), with today: one day of lines instead of seven. A day without a current digest means all
     // seven are read, as before.
+    // gone: the lines on days newer than the source, removed ones too (rollGone()). The newer days hold only removed
+    // lines (or the source would be one of them), and their digests already say which: no read of their own.
+    var gone = {};
     digestRead(dates).then(function (m) {
       var known = dates.map(function (d) { return digestLines(m, 'o', d); });
-      if (known.every(Boolean)) dates = dates.filter(function (d, i) { return known[i].some(function (x) { return !x.deleted; }); }).slice(0, 1);
+      if (known.every(Boolean)) {
+        var at = known.map(function (l) { return l.some(function (x) { return !x.deleted; }); }).indexOf(true);
+        known.slice(0, at < 0 ? known.length : at).forEach(function (l) { rollGone(gone, l); });
+        dates = at < 0 ? [] : [dates[at]];
+      }
       return Promise.all([fb.fs.getDocs(ordCol(today))].concat(dates.map(function (d) { return fb.fs.getDocs(ordCol(d)); })));
     }).then(function (res) {
       var have = {};
       res[0].docs.forEach(function (d) { have[d.id] = true; });
       var src = null, j;
       for (j = 1; j < res.length && !src; j++) {
-        var docs = res[j].docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }).filter(function (x) { return !x.deleted; });
-        if (docs.length) src = { date: dates[j - 1], items: docs };
+        var all = res[j].docs.map(function (d) { var x = d.data(); x.id = d.id; return x; }), docs = all.filter(function (x) { return !x.deleted; });
+        if (docs.length) src = { date: dates[j - 1], items: docs }; else rollGone(gone, all);
       }
       // the order list goes by the prep list's night list (head chef, 22 Oct 2026): that day's prep lines when this phone
       // has them (the past days on the phone), else the time the server clocked or the usual time
@@ -7089,7 +7145,7 @@
       (src ? src.items : []).forEach(function (x) {
         if (x.ordered) return;
         var root = x.root || x.id, id = 'r' + today.replace(/-/g, '') + '-' + root;
-        if (have[id]) return;
+        if (have[id] || gone[root]) return;
         have[id] = true;
         jobs.push(['set', ordRef(today, id), {
           text: x.text, qty: x.qty || '', need: needOf(x), recipes: x.recipes || [], addedBy: 'Rolled over', addedById: '', addedAt: now(), ordered: false, deleted: false,
@@ -7208,7 +7264,8 @@
   }
   function tickOrderLine(date, id, on) {
     var it = (S.ordLines || []).concat(S.ordAll || []).filter(function (x) { return x.id === id; })[0], nm = it ? ' ' + slipName(it.text) : '';
-    setOrdered(date, id, on).then(function () { ordPatch(date, id, { ordered: on }); }, failed);
+    // an earlier day's tick names that day as changed, like a remove, so other phones read it again (markPast())
+    setOrdered(date, id, on).then(function () { ordPatch(date, id, { ordered: on }); markPast('o', date); }, failed);
     if (on) toast('Ordered' + nm, { label: 'Undo', fn: function () { tickOrderLine(date, id, false); } });
     else toast((it ? slipName(it.text) + ' is' : 'It is') + ' back on the order list.');
   }
@@ -7427,12 +7484,15 @@
     if (key === wKey && unsubW) return;
     if (unsubW) unsubW();
     wKey = key; S.wState = 'loading'; wSnap = {};
-    unsubW = fb.fs.onSnapshot(wCol(S.wDate), { includeMetadataChanges: true }, function (snap) {
+    var u = unsubW = fb.fs.onSnapshot(wCol(S.wDate), { includeMetadataChanges: true }, function (snap) {
       var k = listSnap(snap, S.wState, wSnap);   // 'wait': only this phone's unsent lines (see listSnap)
       S.wLines = snapLines(snap, S.wDate);
       if (k === 'same') { patchOrDraw(function () { patchLines(S.wLines); }); return; }
       S.wState = k === 'wait' ? 'offline' : 'ok'; draw();
-    }, function () { S.wState = 'error'; draw(); });
+    }, function (e) {
+      if (unsubW !== u) return;
+      unsubW(); unsubW = null; wKey = ''; S.wState = 'error'; liveRetry('waste', watchWaste, e); draw();
+    });
     loadWSum();
   }
   /* Past days hardly change, so these reads are kept on the phone for the day (like lk.past): tag is kitchen PIN and day. */
@@ -7828,14 +7888,17 @@
     if (unsubXO || !fb) return;
     S.xOpenState = 'loading'; xoSnap = {};
     var col = fb.fs.collection.apply(null, [fb.db].concat(base(), ['transferOpen']));
-    unsubXO = fb.fs.onSnapshot(fb.fs.query(col, fb.fs.where('open', '==', true)), { includeMetadataChanges: true }, function (snap) {
+    var u = unsubXO = fb.fs.onSnapshot(fb.fs.query(col, fb.fs.where('open', '==', true)), { includeMetadataChanges: true }, function (snap) {
       // 'wait': no signal and not loaded yet. A transfer logged now writes its open record too (xWrite), so the copy
       // holds today's unsent loans only: Still outstanding keeps its no-signal note until the server answers
       var k = listSnap(snap, S.xOpenState, xoSnap);
       if (k === 'same') return;
       S.xOpen = snap.docs.map(function (d) { var v = d.data(); return Object.assign({}, v.record, { date: v.date, id: v.lineId }); });
       S.xOpenState = k === 'wait' ? 'offline' : 'ok'; draw();
-    }, function () { S.xOpenState = 'error'; draw(); });
+    }, function (e) {
+      if (unsubXO !== u) return;
+      unsubXO(); unsubXO = null; S.xOpenState = 'error'; liveRetry('xopen', watchXOpen, e); draw();
+    });
   }
   function returnXfer(date, id, undo, original) {
     if ((!can('tick') && !wAll()) || !fb) return;
@@ -7861,12 +7924,15 @@
     if (unsubX) unsubX();
     // a new day starts empty, so yesterday's lines never show under today's date while the read comes in
     xKey = key; S.xState = 'loading'; S.xLines = []; xSnap = {};
-    unsubX = fb.fs.onSnapshot(xCol(S.xDate), { includeMetadataChanges: true }, function (snap) {
+    var u = unsubX = fb.fs.onSnapshot(xCol(S.xDate), { includeMetadataChanges: true }, function (snap) {
       var k = listSnap(snap, S.xState, xSnap);   // 'wait': only this phone's unsent lines (see listSnap)
       S.xLines = snapLines(snap, S.xDate);
       if (k === 'same') { patchOrDraw(function () { patchLines(S.xLines); }); return; }
       S.xState = k === 'wait' ? 'offline' : 'ok'; draw();
-    }, function () { S.xState = 'error'; draw(); });
+    }, function (e) {
+      if (unsubX !== u) return;
+      unsubX(); unsubX = null; xKey = ''; S.xState = 'error'; liveRetry('xfer', watchXfer, e); draw();
+    });
     watchXOpen(); loadXSum();
   }
   function xSumDoc() { return fb.fs.doc.apply(null, [fb.db].concat(base(), ['summary', 'transfers'])); }
@@ -8021,8 +8087,15 @@
     var original = Object.assign({}, it);
     var by = restore ? '' : (me() || {}).name || 'Head chef', at = restore ? 0 : now();
     mine.forEach(function (x) { if (x.id === id && x.date === date) { x.deleted = !restore; x.deletedBy = by; x.deletedAt = at; } });
-    // a past day's change reaches the head chef's other devices: their saved copy of that day is read again (pastRead)
-    xWrite(date, id, { deleted: !restore, deletedBy: by, deletedAt: at }, original).then(function () { markPast('x', date); }, failed);
+    // a past day's change reaches the head chef's other devices: their saved copy of that day is read again (pastRead).
+    // A write that is refused puts the log's copy back as it was, and failed() says it was not saved (13 Nov 2026: the
+    // log showed a loan as removed when it was not). The log's copy is not read again on another device's stamp
+    // (pastEdit.x names no day, so that would read all 30 days again): Refresh does that, on a tap.
+    var was = { deleted: !!original.deleted, deletedBy: original.deletedBy || '', deletedAt: original.deletedAt || 0 };
+    xWrite(date, id, { deleted: !restore, deletedBy: by, deletedAt: at }, original).then(function () { markPast('x', date); }, function (e) {
+      mine.forEach(function (x) { if (x.id === id && x.date === date) Object.assign(x, was); });
+      failed(e); draw();
+    });
     if (!restore) toast('Removed ' + (it ? slipName(it.text) : 'the transfer') + ' from the transfer list', { label: 'Undo', fn: function () { removeXfer(date, id, true); } });
     else toast('Put back ' + (it ? slipName(it.text) : 'the transfer'));
     draw();
@@ -12070,9 +12143,10 @@
     // the section's sentence is not a control: a tap on it does nothing, so it cannot throw Undo away by mistake
     if (a === 'toast-hide') { if (e.target.closest('.p-toast-say')) return; toastAway('all'); return; }
     // an Undo says what it undid (5 Nov 2026, docs/action-feedback.md), unless what it ran said so itself (Put back...)
-    if (a === 'toast-old') { var to = S.toastOld; S.toastOld = null; clearTimeout(toastOldTimer); if (to && to.act && to.act.fn) { to.act.fn(); undoneSay(to.act, to.msg); } draw(); return; }
+    // an Undo that returns false changed nothing and said why (undoMiss()): no Undone then
+    if (a === 'toast-old') { var to = S.toastOld; S.toastOld = null; clearTimeout(toastOldTimer); if (to && to.act && to.act.fn) { if (to.act.fn() !== false) undoneSay(to.act, to.msg); } draw(); return; }
     if (a === 'just-undo') { justUndo(el.getAttribute('data-id')); return; }
-    if (a === 'toast-act') { var ta = S.toastAct, tm = S.toast; S.toast = ''; S.toastAct = null; if (ta && ta.fn) { ta.fn(); undoneSay(ta, tm); } draw(); return; }
+    if (a === 'toast-act') { var ta = S.toastAct, tm = S.toast; S.toast = ''; S.toastAct = null; if (ta && ta.fn) { if (ta.fn() !== false) undoneSay(ta, tm); } draw(); return; }
     if (a === 'export') { exportAll(); return; }
     if (a === 'move-pin') { movePin(); return; }
     if (a === 'sugg') { pickSugg(i); return; }

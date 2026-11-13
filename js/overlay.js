@@ -95,11 +95,16 @@
     if (r.done === true) out.done = true;
     return out;
   }
-  // the guest menu order the head chef set in the book; none (or an empty list) means the order in js/data.js
+  // the guest menu order the head chef set in the book; none (or an empty list) means the order in js/data.js.
+  // seen (13 Nov 2026, on the first section of a menu saved by the book): every dish js/data.js had on the guest menu
+  // when the head chef saved it. A dish in it that the saved menu does not have was taken off by the head chef.
+  function idList(v, max) { return v.filter(function (id) { return typeof id === 'string'; }).slice(0, max); }
   function tidyMenu(m) {
     if (!Array.isArray(m)) return null;
     var out = m.filter(function (sec) { return sec && typeof sec.title === 'string' && Array.isArray(sec.ids); }).slice(0, 40).map(function (sec) {
-      return { title: s(sec.title, 60), ids: sec.ids.filter(function (id) { return typeof id === 'string'; }).slice(0, 200) };
+      var o = { title: s(sec.title, 60), ids: idList(sec.ids, 200) };
+      if (Array.isArray(sec.seen)) o.seen = idList(sec.seen, 600);
+      return o;
     });
     return out.length ? out : null;
   }
@@ -147,13 +152,17 @@
     D.recipes.length = 0;
     Array.prototype.push.apply(D.recipes, list);
     var menu = (!plain && tidyMenu(cache.idx.menu)) || clone(b.menu);
-    // a dish js/data.js puts on the menu that the changed menu does not have yet still shows, in its own section
+    // a dish js/data.js puts on the menu that the changed menu does not have yet still shows, in its own section;
+    // a dish the head chef took off (seen when the menu was saved) stays off. A menu saved before seen re-adds them all.
     if (!plain && cache.idx.menu) {
-      var placed = {};
-      menu.forEach(function (sec) { sec.ids.forEach(function (id) { placed[id] = 1; }); });
+      var placed = Object.create(null), seen = Object.create(null);
+      menu.forEach(function (sec) {
+        sec.ids.forEach(function (id) { placed[id] = 1; });
+        if (sec.seen) { sec.seen.forEach(function (id) { seen[id] = 1; }); delete sec.seen; }
+      });
       b.menu.forEach(function (bs) {
         bs.ids.forEach(function (id) {
-          if (placed[id]) return;
+          if (placed[id] || seen[id]) return;
           var to = menu.filter(function (sec) { return sec.title === bs.title; })[0];
           if (!to) { to = { title: bs.title, ids: [] }; menu.push(to); }
           to.ids.push(id); placed[id] = 1;

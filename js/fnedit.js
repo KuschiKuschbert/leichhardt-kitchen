@@ -76,9 +76,11 @@
     d.name = f.name || ''; d.date = f.date || ''; d.startT = f.start ? M.kclock(f.start) : ''; d.st = !!f.st; d.loc = f.loc || ''; d.guests = f.guests ? String(f.guests) : ''; d.gu = !!f.gu;
     d.cname = (c && c.cname) || ''; d.phone = (c && c.phone) || ''; d.email = (c && c.email) || '';
     d.mode = f.mode || 'all'; d.notes = f.notes || ''; d.kc = f.kc || '';
-    d.rounds = (f.rounds || []).map(function (r) { return { d: M.kday(r.at), t: M.kclock(r.at), note: r.note || '' }; });
+    // a round with no time yet (at 0: the start is TBC) comes back on the function's date with an empty time. Before, it
+    // came back as 01/01/1970 10:00 and the next Save changes was refused (13 Nov 2026).
+    d.rounds = (f.rounds || []).map(function (r) { return r.at ? { d: M.kday(r.at), t: M.kclock(r.at), note: r.note || '' } : { d: d.date, t: '', note: r.note || '' }; });
     if (d.rounds.length) { d.foodDate = d.rounds[0].d; d.foodT = d.rounds[0].t; d.foodSet = f.rounds[0].at !== f.start; }
-    d.n = String(Math.max(2, n)); d.gap = n > 1 ? String(Math.max(1, Math.round((f.rounds[1].at - f.rounds[0].at) / M.MIN))) : '30';
+    d.n = String(Math.max(2, n)); d.gap = n > 1 && f.rounds[0].at && f.rounds[1].at ? String(Math.max(1, Math.round((f.rounds[1].at - f.rounds[0].at) / M.MIN))) : '30';
     d.lines = (f.lines || []).map(function (l) { return { rid: l.rid, name: l.name, unit: l.unit || 'platter', spec: l.spec || '', fp: l.fp || '', qty: String(l.qty), a: M.fromU(l.u, Math.max(1, n)) }; });
     d.custom = d.mode === 'stag' && d.lines.some(function (l) { return JSON.stringify(l.a) !== JSON.stringify(M.even(+l.qty || 0, n)); });
     return d;
@@ -106,7 +108,8 @@
   // everything wrong for confirming: the schedule's problems, the typed numbers and the contact
   function check(e) {
     var d = e.d, f = toDoc(e), out = M.problems(f);
-    if (!d.gu && int(d.guests) !== int(d.guests) && String(d.guests).trim()) out.push({ k: 'guests', t: 'Guests: a whole number.' });
+    // one guests message: the schedule's own when it has one, else the save limit (up to 2000)
+    if (!out.some(function (x) { return x.k === 'guests'; })) out = out.concat(guestProblems(d));
     d.lines.forEach(function (l, i) {
       if (int(l.qty) !== int(l.qty)) out.push({ k: 'qty' + i, t: M.short(l.name) + ': whole platters only.' });
       l.a.forEach(function (x, r) { var v = int(x); if (r < d.rounds.length && (v !== v || v < 0)) out.push({ k: 'a' + i + '_' + r, t: M.short(l.name) + ', round ' + (r + 1) + ': a whole number, 0 or more.' }); });
@@ -114,6 +117,12 @@
     d.rounds.forEach(function (r, i) { if (!atOf(r.d, r.t) && !(d.st && d.mode === 'all' && !String(r.t).trim())) out.push({ k: 'round' + i, t: 'Round ' + (i + 1) + ': set its date and time.' }); });
     if (d.mode === 'stag' && !(int(d.gap) >= 1)) out.push({ k: 'gap', t: 'The gap between rounds is 1 minute or more.' });
     return out.concat(contactProblems(d));
+  }
+  // guests the book cannot save: checked on every save, a draft too, since the rules take only a whole number up to
+  // 2000 (before, a draft sent "1.5" as NaN and the refusal blamed Functions access, 13 Nov 2026)
+  function guestProblems(d) {
+    var v = int(d.guests);
+    return !d.gu && String(d.guests == null ? '' : d.guests).trim() && !(v >= 0 && v <= 2000) ? [{ k: 'guests', t: 'Guests: a whole number up to 2000.' }] : [];
   }
   function contactProblems(d) {
     var out = [];
@@ -146,14 +155,18 @@
       else { var a = l.a.slice(0, n); while (a.length < n) a.push(0); l.a = a; }
     });
   }
-  // the date moved: every time on the function moves with it, so 18:30 stays 18:30 (a reschedule)
+  // days from one date to another (whole kitchen days)
+  function daysTo(from, to) { return Math.round((M.kat(to, 0) - M.kat(from, 0)) / M.DAY); }
+  // the date moved: every time on the function moves with it, so 18:30 stays 18:30 (a reschedule). Each round keeps its
+  // day after the event date, so food at 00:30 the next day stays on the next day. While there is no date (a copy, or the
+  // date taken out) a round keeps that day count in o until a date is picked (13 Nov 2026).
   function moveDate(e, to) {
-    var d = e.d, from = d.date;
-    if (!M.isYmd(to)) { d.date = to; return; }
-    var shift = M.isYmd(from) ? Math.round((M.kat(to, 0) - M.kat(from, 0)) / M.DAY) : 0;
+    var d = e.d, from = d.date, known = M.isYmd(from);
+    if (!M.isYmd(to)) { if (known) d.rounds.forEach(function (r) { if (M.isYmd(r.d)) r.o = daysTo(from, r.d); }); d.date = to; return; }
+    var shift = known ? daysTo(from, to) : 0;
     d.date = to;
-    d.foodDate = M.isYmd(d.foodDate) && shift ? M.addDays(d.foodDate, shift) : (M.isYmd(d.foodDate) && M.isYmd(from) ? d.foodDate : to);
-    d.rounds.forEach(function (r) { r.d = M.isYmd(r.d) && M.isYmd(from) ? M.addDays(r.d, shift) : to; });
+    d.rounds.forEach(function (r) { r.d = known && M.isYmd(r.d) ? M.addDays(r.d, shift) : M.addDays(to, +r.o || 0); delete r.o; });
+    d.foodDate = known && M.isYmd(d.foodDate) ? M.addDays(d.foodDate, shift) : d.rounds.length ? d.rounds[0].d : to;
   }
 
   /* ---------- the list (#/functions) ---------- */
@@ -268,7 +281,8 @@
     if (!e) {
       e = { id: newId(''), isNew: true, v: 0, status: 'draft', saved: null, savedC: null, d: blank() };
       if (copyOf) {
-        e.d = clone(copyOf); e.d.date = ''; e.d.foodDate = ''; e.d.rounds.forEach(function (r) { r.d = ''; }); e.d.kc = copyOf.kc; e.d.name = copyOf.name + ' (copy)';
+        // each round keeps its day after the event date (o), so the date picked next puts food after midnight on the next day
+        e.d = clone(copyOf); e.d.date = ''; e.d.foodDate = ''; e.d.rounds.forEach(function (r) { r.o = M.isYmd(copyOf.date) && M.isYmd(r.d) ? daysTo(copyOf.date, r.d) : +r.o || 0; r.d = ''; }); e.d.kc = copyOf.kc; e.d.name = copyOf.name + ' (copy)';
         toast('Copied as a new draft. Pick its date, then confirm.');
       }
     }
@@ -389,7 +403,9 @@
     var f = toDoc(e);
     f.id = e.id; f.kcBy = B().who(); f.kcAt = now(); f.by = B().who(); f.upd = now(); f.chg = [];
     return '<section class="set-block fe-review" aria-labelledby="fe-rv-h"><h3 id="fe-rv-h" tabindex="-1">Check before confirming</h3><p class="hint">This is what the kitchen will see. Confirming puts it in the band under the top bar from 00:00 on ' + esc(M.dayName(f.date)) + '.</p>' +
-      FN.sheetHTML(f, false).replace(/<div class="btn-row">[\s\S]*?<\/div>$/, '') + msgHTML(e) +
+      // only what the kitchen sees: the sheet without its own buttons (an older js/functions.js ignores bare, so its
+      // buttons are cut off from the button row on, 13 Nov 2026)
+      FN.sheetHTML(f, false, true).replace(/<div class="btn-row(?: fn-acts)?">[\s\S]*$/, '') + msgHTML(e) +
       '<div class="btn-row"><button type="button" class="btn dark ink-busy-button" data-fe="confirm"' + (e.saving ? ' disabled aria-busy="true"' : '') + '>' + (e.saving ? inkLabel('Saving...') : e.status === 'cancelled' ? 'Put it back on' : 'Confirm function') + '</button><button type="button" class="btn" data-fe="print">Print function</button></div></section>';
   }
   function editHTML() {
@@ -481,7 +497,7 @@
     if (!P.fnOK()) { e.msg = 'Not saved: you are not ticked for Functions any more. Your changes are kept on this device.'; draw(); return; }
     var next = kind === 'confirm' ? 'confirmed' : kind === 'cancel' ? 'cancelled' : e.status;
     var probs = check({ d: e.d, status: next });
-    var contactBad = contactProblems(e.d);
+    var contactBad = guestProblems(e.d).concat(contactProblems(e.d));
     if ((next === 'confirmed' && probs.length) || contactBad.length) { e.shown = next === 'confirmed' ? probs : contactBad; e.review = false; draw(); goto(e.shown[0].k); return; }
     var api = B(), id = e.id, me = api.who(), owner = E.identity, submitted = clone(e.d), context = api.writeContext ? api.writeContext() : null;
     e.saving = 'Saving...'; e.shown = []; draw();
@@ -584,7 +600,9 @@
     var d = e.d, m;
     if (k === 'pq') { e.pq = v; draw(); return; }
     if (k === 'startT' || k === 'foodT' || /^rt\d+$/.test(k)) v = normT(v);
-    if (k === 'date') { moveDate(e, v); if (!d.foodSet) retime(e); else if (d.mode === 'stag') realloc(e); }
+    // rounds that have times (worked out or typed by hand) move with the date, each by the same days, so a round typed
+    // as 20:00 stays 20:00. Only rounds with no times yet are worked out again from the start (13 Nov 2026).
+    if (k === 'date') { var timed = d.rounds.some(function (r) { return M.hmMin(r.t) === M.hmMin(r.t); }); moveDate(e, v); if (!d.foodSet && !timed) retime(e); else if (d.mode === 'stag') realloc(e); }
     else if (k === 'startT') { d.startT = v; if (!d.foodSet) retime(e); }
     else if (k === 'foodDate' || k === 'foodT') { d[k] = v; d.foodSet = true; retime(e); }
     else if (k === 'n' || k === 'gap') { d[k] = v; if (structural) retime(e); }

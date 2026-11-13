@@ -143,6 +143,22 @@ async function waitForJump(p, id, allowEnd) {
     ok(p.errors.length === 0, w + ' px side salad: no page errors ' + p.errors.join(' | '));
     await p.context().close();
   }
+  // an odd recipe address (13 Nov 2026): a stray % or a name every object has shows the page for a recipe not found,
+  // the same as an id the book does not have, never a blank book
+  p = await L.open(b, '#/recipes', { wait: 800 });
+  const pageOf = async hash => {
+    await p.evaluate(h => { location.hash = h; }, hash); await L.settle(p, 400);
+    return p.evaluate(() => { const m = document.querySelector('main'); return m ? (m.id || '') + '|' + m.className + '|' + !!document.querySelector('.card-head') : 'no main'; });
+  };
+  const notFound = await pageOf('#/r/no-such-recipe');
+  for (const hash of ['#/r/50%', '#/r/constructor', '#/r/toString', '#/r/__proto__']) {
+    const got = await pageOf(hash);
+    ok(got === notFound, 'odd address ' + hash + ': shows the not found page, as for an unknown id (' + got + ' vs ' + notFound + ')');
+  }
+  ok(/\|true$/.test(await pageOf('#/r/burger/%E0%A4%A')), 'odd address: a recipe with a part that cannot be read after it still opens');
+  ok(!/\|true$/.test(notFound), 'odd address: an unknown id shows no recipe card (' + notFound + ')');
+  ok(p.errors.length === 0, 'odd address: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); console.log(R.join('\n')); process.exit(1); });

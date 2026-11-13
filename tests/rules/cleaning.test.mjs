@@ -297,6 +297,16 @@ try {
   await check('blocked requires a reason', () => flowWrite(dbs.staff, blocked, 'block'), false);
   blocked.flow.note = 'Equipment in use.';
   await check('blocked work is persisted without counting complete', () => flowWrite(dbs.staff, blocked, 'block'));
+  // The note box allows line breaks: a three-line reason must save on block and on reopen. A note of only spaces or line breaks is still refused.
+  await put({ [taskPath('lines')]: task('lines', { plan: plan() }) });
+  const lines = 'Fryer still hot.\nOil change at 15:00.\nWill clean after.';
+  const blankLines = flowRecord('lines', 'staff'); blankLines.flow.status = 'blocked'; blankLines.flow.note = '\n\n';
+  await check('blocked refuses a reason of only line breaks', () => flowWrite(dbs.staff, blankLines, 'block'), false);
+  const blockLines = flowRecord('lines', 'staff'); blockLines.flow.status = 'blocked'; blockLines.flow.note = lines;
+  await check('blocked accepts a three-line reason', () => flowWrite(dbs.staff, blockLines, 'block'));
+  await check('perform after a three-line block', () => flowWrite(dbs.staff, performed({ ...flowRecord('lines', 'staff'), version: 2, flow: { ...blockLines.flow, status: 'pending' } }, 'staff'), 'perform'));
+  const reopenLines = flowRecord('lines', 'staff', { version: 3 }); reopenLines.flow.note = lines;
+  await check('reopen accepts a three-line reason', () => flowWrite(dbs.staff, reopenLines, 'reopen'));
   const invalidSlot = { ...blocked, version: 5, flow: { ...blocked.flow, slot: 'service-one', kind: 'service' } };
   await check('daily task refuses an arbitrary service slot', () => flowWrite(dbs.staff, invalidSlot, 'save'), false);
   await put({ [taskPath('food')]: task('food', { plan: plan({ timing: 'food', verification: true, verifiers: ['sous'] }) }) });

@@ -127,6 +127,18 @@ test('stock counts have priority over repeats; zero stock and compatible mass un
   assert.strictEqual(C.suggestQuantity(item(), last, '3 bags'), null, 'unknown stock conversion must not fall back to repeat');
   assert.strictEqual(C.suggestQuantity(item(), last, '12 kg'), null);
 });
+test('a comma between groups of three digits is a thousands comma in pars, counts and top-ups (13 Nov 2026)', () => {
+  assert.strictEqual(C.cleanPar('1,000'), '1,000'); assert.strictEqual(C.cleanPar('1,500.5'), '1,500.5'); assert.strictEqual(C.cleanPar('1,5'), '1,5');
+  assert.strictEqual(C.cleanPar('100,000'), null);
+  assert.deepStrictEqual(C.parseQuantity('2,500'), { qty: '2,500', amount: 2500, unit: '' });
+  assert.deepStrictEqual(C.parseQuantity('1,000 g'), { qty: '1,000 g', amount: 1000, unit: 'g' });
+  assert.deepStrictEqual(C.parseQuantity('1,200 ctn'), { qty: '1,200 ctn', amount: 1200, unit: 'cartons' });
+  assert.deepStrictEqual(C.parseStock('2,500', 'g'), { qty: '2,500 g', amount: 2500, unit: 'g' });
+  const topup = C.suggestQuantity(item(), null, '2,500 g');
+  assert.strictEqual(topup && topup.qty, '7.5 kg', 'par 10 kg, counted 2,500 g: order 7.5 kg (' + (topup && topup.qty) + ')');
+  const grams = C.suggestQuantity(item({ par: '2,000', parUnit: 'g', orderUnit: 'g' }), null, '500 g');
+  assert.strictEqual(grams && grams.qty, '1500 g', 'par 2,000 g, counted 500 g: order 1500 g (' + (grams && grams.qty) + ')');
+});
 test('numeric stock counts use the confirmed par unit before calculating compatible top-ups', () => {
   assert.strictEqual(C.suggestQuantity(item(), null, '0').qty, '10 kg');
   assert.strictEqual(C.suggestQuantity(item(), null, '3.5').qty, '6.5 kg');

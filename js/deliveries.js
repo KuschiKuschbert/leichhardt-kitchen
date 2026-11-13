@@ -238,7 +238,9 @@
       if (M !== hold || id !== identity() || !allowed()) throw { code: 'context' };
       if (!attempt) {
         var by = B.who() || 'owner';
-        attempt = { id: B.fs().doc(B.colRef('deliveries')).id, data: { day: M.form.day, receivedAt: receivedAt(M.form), recordedAt: T.now(), supplier: M.form.supplier.trim(),
+        // A time in the next minute is allowed, and the rules need the record time on or after it.
+        var at = receivedAt(M.form);
+        attempt = { id: B.fs().doc(B.colRef('deliveries')).id, data: { day: M.form.day, receivedAt: at, recordedAt: Math.max(T.now(), at), supplier: M.form.supplier.trim(),
           chilled: shows('chilled') ? temp(M.form.chilled) : null, frozen: shows('frozen') ? temp(M.form.frozen) : null, note: M.form.note.trim(), receivedBy: P.whoName() || 'Admin', receivedById: by, by: by } };
         M.attempt = attempt;
       }

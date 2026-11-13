@@ -500,7 +500,16 @@
     });
     e.scaleSkipped = skipped;
     e.scaleMsg = changed.length ? changed.length + ' ingredient amounts multiplied by ' + factor + '. Review them, then Save.' : 'No amounts could be multiplied. Check them by hand.';
-    if (changed.length) { e.scaled = changed; e.multiplier = '1'; unarm(); keepNow(); }
+    // a second multiplier before Undo keeps each amount from before the first one, so Undo goes back to it
+    if (changed.length) {
+      var was = e.scaled || [];
+      changed.forEach(function (c) {
+        var had = was.filter(function (x) { return x.ing === c.ing; })[0];
+        if (!had) was.push(c);
+        else { if (had.after !== c.before) had.before = c.before; had.after = c.after; }
+      });
+      e.scaled = was; e.multiplier = '1'; unarm(); keepNow();
+    }
     draw();
   }
   function methodHTML(e) {
@@ -676,7 +685,7 @@
   }
   function chNavHTML(e) {
     var cur = chOf(e), chg = chChanged(e), bad = {};
-    (e.errs || []).forEach(function (x) { bad[AT_CH[x.at] || 'card'] = 1; });
+    (e.errs || []).forEach(function (x) { bad[AT_CH[x.at] || (/^mg-ss-/.test(x.at) ? 'method' : 'card')] = 1; });
     return '<nav class="mg-chs" aria-label="Parts of this recipe">' + CHS.filter(function (c) { return !(c[0] === 'hist' && e.isNew); }).map(function (c, n) {
       var k = c[0];
       return '<button type="button" class="mg-chb" data-mg="ch" data-v="' + k + '" data-i="' + n + '"' + (cur === k ? ' aria-current="true"' : '') + '><span class="mg-chn">' + c[1] + '</span><small>' + esc(chSum(e, k)) + '</small>' +
@@ -719,7 +728,8 @@
       var o = { q: trimStr(i.q), name: trimStr(i.name) };
       if (i.link) o.link = i.link;
       if (trimStr(i.note)) o.note = trimStr(i.note);
-      if (!i.link && i.tags && i.tags.length) o.tags = i.tags.slice();
+      // a linked ingredient keeps its tags too: they are its only allergens while the linked card is to come
+      if (i.tags && i.tags.length) o.tags = i.tags.slice();
       return o;
     });
     out.pins = (d.pins || []).filter(function (p) { return trimStr(p.label); }).map(function (p) {
@@ -754,6 +764,12 @@
     (d.ingredients || []).forEach(function (i, k) { if (trimStr(i.q) && !trimStr(i.name)) errs.push({ at: 'mg-h-ing', msg: 'Ingredient ' + (k + 1) + ' has an amount but no name.' }); });
     if ((d.ingredients || []).length > 100) errs.push({ at: 'mg-h-ing', msg: 'At most 100 ingredients.' });
     if ((d.sections || []).length > 30) errs.push({ at: 'mg-h-method', msg: 'At most 30 method sections.' });
+    // the book keeps 60 steps a section and 600 characters a step (js/overlay.js tidy): say so, never cut them on Save
+    (d.sections || []).forEach(function (sc, k) {
+      var steps = (sc.steps || []).map(trimStr).filter(Boolean), name = 'Method, ' + (trimStr(sc.title) || 'Method');
+      if (steps.length > 60) errs.push({ at: 'mg-ss-' + k, msg: name + ': 60 steps at most.' });
+      steps.forEach(function (t, n) { if (t.length > 600) errs.push({ at: 'mg-ss-' + k, msg: name + ': step ' + (n + 1) + ' is over 600 characters.' }); });
+    });
     var no = trimStr(d.no);
     if (no) {
       var same = Object.keys(ids).filter(function (id) { if (id === e.id) return false; var r = A.byId(id) || (X.change(id) || {}).r || X.pristine(id); return r && String(r.no) === no; });
@@ -777,6 +793,9 @@
       if (at < 0) at = s.ids.length;
       s.ids.splice(at, 0, e.id);
     }
+    // seen: the dishes js/data.js has on the guest menu now, so one taken off here stays off (js/overlay.js tidyMenu)
+    menu.forEach(function (x) { delete x.seen; });
+    if (menu.length) menu[0].seen = [].concat.apply([], X.baseMenu().map(function (x) { return x.ids; }));
     return menu;
   }
   function lastOf(sec, id) { var s = (D.menuOrder || []).filter(function (x) { return x.title === sec; })[0]; return s && s.ids[s.ids.length - 1] === id ? (s.ids.length > 1 ? s.ids[s.ids.length - 2] : '^') : ''; }

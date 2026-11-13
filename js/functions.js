@@ -414,7 +414,7 @@
     }
     if (x.kind === 'moved') {
       return out + '<span class="fn-r1"><span class="fn-tag fn-t-moved">Rescheduled</span><b>' + esc(f.name) + '</b></span>' +
-        '<span class="fn-r2">Not today any more: now ' + esc(dayName(f.date)) + ', event ' + esc(kclock(f.start)) + ', food ' + esc(when(f.first, f.date)) + '.</span></button></li>';
+        '<span class="fn-r2">Not today any more: now ' + esc(dayName(f.date)) + ', event ' + esc(when(f.start, f.date)) + ', food ' + esc(when(f.first, f.date)) + '.</span></button></li>';
     }
     // two lines (22 Oct 2026): the time of the next round not sent, the name and place; then what goes in it
     var c = recent(f), w = nowOf(f, t);
@@ -986,10 +986,13 @@
         return '<li><b>' + l.qty + '</b> \u00d7 ' + (r ? '<a href="#/r/' + encodeURIComponent(l.rid) + '">' + esc(l.name) + '</a>' : esc(l.name)) + '</li>';
       }).join('') + '</ul></section>';
   }
-  function sheetHTML(f, inPop) {
+  // the day a moved function was on: its saved date first, since a start and food time still TBC are 0 (never 1 Jan 1970)
+  function wasDay(f) { var w = f.was || {}, ms = w.start || w.first; return isYmd(w.date) ? dayName(w.date) : ms ? dayName(kday(ms)) : ''; }
+  // bare: leave out the sheet's own buttons (Print, Change this function, Cancel), for the form's Check before confirming
+  function sheetHTML(f, inPop, bare) {
     var t = now(), c = f.chg || [];
     var status = f.status === 'cancelled' ? '<p class="fn-banner is-off" role="note"><b>Cancelled.</b> Do not send these platters.' + (f.canAt ? ' Cancelled by ' + esc(nameOf(f.canBy)) + ', ' + esc(dayName(kday(f.canAt)) + ' ' + kclock(f.canAt)) + '.' : '') + '</p>' :
-      f.was && f.was.until && f.was.from <= t && t < f.was.until && !(f.from <= t && t < f.until) ? '<p class="fn-banner is-moved" role="note"><b>Rescheduled.</b> Not on ' + esc(dayName(kday(f.was.start || f.was.first))) + ' any more: now ' + esc(dayName(f.date)) + '.</p>' :
+      f.was && f.was.until && f.was.from <= t && t < f.was.until && !(f.from <= t && t < f.until) ? '<p class="fn-banner is-moved" role="note"><b>Rescheduled.</b> Not on ' + esc(wasDay(f) || 'its old day') + ' any more: now ' + esc(dayName(f.date)) + '.</p>' :
       f.status === 'draft' ? '<p class="fn-banner" role="note"><b>Draft.</b> Not confirmed yet: the kitchen does not see it.</p>' : '';
     // one quiet line for the day, the place, the event start and the guests (10 Nov 2026); then what goes out next, every round, the comment
     var sub = [dayName(f.date), f.loc, 'event ' + when(f.start, f.date), guestsText(f)].filter(Boolean).join(' · ');
@@ -1001,6 +1004,7 @@
     if (f.notes) out += '<h3 class="fn-h">Service and dietary notes</h3><p class="fn-text">' + esc(f.notes) + '</p>';
     if (c.length) out += '<h3 class="fn-h">Changes</h3><ul class="fn-chg">' + c.slice(0, 5).map(function (x) { return '<li><span>' + esc(dayName(kday(x.at)) + ' ' + kclock(x.at)) + ', ' + esc(nameOf(x.by)) + '</span> ' + esc(x.what) + '</li>'; }).join('') + '</ul>';
     out += '<p class="fn-by fn-last">Last changed by ' + esc(nameOf(f.by)) + ', ' + esc(dayName(kday(f.upd)) + ' ' + kclock(f.upd)) + '.</p>';
+    if (bare) return out;
     var can = P() && P().fnOK && P().fnOK();
     out += '<div class="btn-row fn-acts"><button type="button" class="btn" data-fn="print" data-id="' + esc(f.id) + '">Print function</button>' +
       (inPop ? '<a class="btn dark" href="#/fn/' + encodeURIComponent(f.id) + '" data-fn="go">Open the full sheet</a>' : '') +
