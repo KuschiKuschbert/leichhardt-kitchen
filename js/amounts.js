@@ -24,6 +24,8 @@
     doz: 'dozen', dozen: 'dozen', case: 'cases', cases: 'cases', carton: 'cartons', cartons: 'cartons', loaf: 'loaves', loaves: 'loaves'
   };
   var FRAC = { '½': 0.5, '¼': 0.25, '¾': 0.75, '⅓': 1 / 3, '⅔': 2 / 3 };
+  // "1,000" and "12,500.5" use the comma between groups of three digits (Australian); "1,5" is still 1.5
+  var THOUSANDS = /^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/;
   function num(s) {
     s = String(s).trim();
     if (FRAC[s] != null) return FRAC[s];
@@ -33,6 +35,7 @@
     if (m) return +m[2] ? +m[1] / +m[2] : NaN;
     m = s.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)$/);
     if (m) return +m[3] ? +m[1] + +m[2] / +m[3] : NaN;
+    if (THOUSANDS.test(s)) return +s.replace(/,/g, '');
     if (/^\d+([.,]\d+)?$/.test(s)) return +s.replace(',', '.');
     return NaN;
   }
@@ -41,7 +44,7 @@
     // "300 g total" on a platter card is the same as "300 g"
     var t = String(text == null ? '' : text).trim().toLowerCase().replace(/\s+/g, ' ').replace(/ total$/, '');
     if (!t || t.length > 40) return null;
-    var m = t.match(/^(\d+(?:[.,]\d+)?(?:\s*\/\s*\d+)?|\d+\s+\d+\s*\/\s*\d+|\d*\s*[½¼¾⅓⅔])\s*([a-z]+)?\.?$/);
+    var m = t.match(/^(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:[.,]\d+)?(?:\s*\/\s*\d+)?|\d+\s+\d+\s*\/\s*\d+|\d*\s*[½¼¾⅓⅔])\s*([a-z]+)?\.?$/);
     if (!m) return null;
     var n = num(m[1].replace(/\s+(?=[½¼¾⅓⅔])/, ''));
     if (!(n > 0) || n >= 100000) return null;
@@ -69,7 +72,7 @@
     if (typeof factor !== 'number' || !isFinite(factor) || factor <= 0) return null;
     var t = String(text == null ? '' : text).trim();
     if (!t || t.length > 40) return null;
-    var number = '(?:\\d+\\s+\\d+\\s*\\/\\s*\\d+|\\d+\\s*\\/\\s*\\d+|\\d*\\s*[½¼¾⅓⅔]|\\d+(?:[.,]\\d+)?)';
+    var number = '(?:\\d+\\s+\\d+\\s*\\/\\s*\\d+|\\d+\\s*\\/\\s*\\d+|\\d*\\s*[½¼¾⅓⅔]|\\d{1,3}(?:,\\d{3})+(?:\\.\\d+)?|\\d+(?:[.,]\\d+)?)';
     var m = new RegExp('^(about\\s+|approx\\.?\\s+)?(' + number + ')(?:(\\s*(?:to|-)\\s*)(' + number + '))?(\\s*[a-z]+(?:\\s+total)?\\.?)?$', 'i').exec(t);
     if (!m) return null;
     var suffix = m[5] || '', unit = suffix.trim().toLowerCase().replace(/\.$/, '').replace(/ total$/, '');
@@ -83,7 +86,7 @@
     var out = (m[1] || '') + first + (m[4] ? m[3] + last : '') + suffix;
     return out.length <= 40 ? out : null;
   }
-  var A = { parse: parse, key: key, say: say, scale: scale, UNITS: UNITS };
+  var A = { parse: parse, key: key, say: say, scale: scale, num: num, UNITS: UNITS };
   if (typeof module === 'object' && module.exports) { module.exports = A; return; }
   window.LK_AMT = A;
 })();

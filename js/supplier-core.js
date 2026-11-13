@@ -31,13 +31,17 @@
     return v;
   }
   function copy(o) { return JSON.parse(JSON.stringify(o)); }
+  // A plain decimal: "2", "1.5", "1,5", or "2,500" and "1,500.5" with a comma between groups of three digits.
+  var DECIMAL = /^(?:\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:[.,]\d+)?)$/;
+  // Reads it with the book's amount parser; an older saved amounts.js without num() keeps the comma as a decimal.
+  function decimal(t) { t = String(t).trim(); return !DECIMAL.test(t) ? NaN : A && A.num ? A.num(t) : Number(t.replace(',', '.')); }
   // An empty par and the explicit zero are different values. Keep spelling such as 1.50 from the source.
   function cleanPar(v) {
     if (v == null || v === '') return '';
     if (typeof v !== 'string' && typeof v !== 'number') return null;
-    var t = String(v).trim(), n = Number(t.replace(',', '.'));
+    var t = String(v).trim(), n = decimal(t);
     if (!t) return '';
-    return t.length <= 40 && /^\d+(?:[.,]\d+)?$/.test(t) && isFinite(n) && n >= 0 && n < MAX_AMOUNT ? t : null;
+    return t.length <= 40 && DECIMAL.test(t) && isFinite(n) && n >= 0 && n < MAX_AMOUNT ? t : null;
   }
   function normaliseUnit(v) {
     if (typeof v !== 'string') return '';
@@ -59,8 +63,8 @@
       if (raw.length > 40) return null;
       parsed = A.parse(raw); unit = parsed && parsed.u; amount = parsed && parsed.n;
     }
-    if (!confirmed && !unit && /^\d+(?:[.,]\d+)?$/.test(raw)) {
-      var count = Number(raw.replace(',', '.'));
+    if (!confirmed && !unit && DECIMAL.test(raw)) {
+      var count = decimal(raw);
       return isFinite(count) && count >= (zero ? 0 : 0.000001) && count < MAX_AMOUNT ? { qty: raw, amount: count, unit: '' } : null;
     }
     // Canonical decimals keep a number-only fraction readable by the previous client too.
@@ -69,7 +73,7 @@
     }
     if (!parsed || !unit) {
       // A custom unit still requires one unambiguous decimal amount. The book reads the number.
-      var m = raw.match(/^(\d+(?:[.,]\d+)?)\s*([a-z]+(?:[ -][a-z]+)*)\.?$/i);
+      var m = raw.match(/^(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:[.,]\d+)?)\s*([a-z]+(?:[ -][a-z]+)*)\.?$/i);
       unit = m && normaliseUnit(m[2]);
       if (!unit) return null;
       var wasZero = /^0+(?:[.,]0+)?$/.test(m[1]);
@@ -346,7 +350,7 @@
       var stock = parseStock(stockText, typeof stockUnit === 'string' ? stockUnit : item.parUnit), target = cleanPar(item.par), counted = stock && convert(stock.amount, stock.unit, item.parUnit);
       var factor = item.factor > 0 ? item.factor : convert(1, item.orderUnit, item.parUnit);
       if (!stock || target === '' || target === null || counted === null || !(factor > 0) || !item.orderUnit) return null;
-      var needed = Math.max(0, Number(target.replace(',', '.')) - counted), amount = needed / factor;
+      var needed = Math.max(0, decimal(target) - counted), amount = needed / factor;
       if (!(amount > 0)) return null;
       amount = FRACTIONAL_UNITS.indexOf(item.orderUnit) >= 0 ? Math.ceil((amount - 0.000000001) * 1000) / 1000 : Math.ceil(amount - 0.000000001);
       if (!(amount > 0) || amount >= MAX_AMOUNT) return null;
