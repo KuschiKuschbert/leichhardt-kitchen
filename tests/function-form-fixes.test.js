@@ -111,6 +111,25 @@ const saved = async (p, name) => Object.values(await store(p)).filter(x => x && 
   ok(p.errors.length === 0, 'date taken out: no page errors ' + p.errors.join(' | '));
   await p.context().close();
 
+  // 4. guests the rules refuse (not a whole number, or over 2000) are named on Save draft too, and nothing is sent
+  p = await L.open(b, '#/functions/new', { who: 'fay', extra: base, wait: 1500 });
+  await L.waitFor(p, () => !!document.querySelector('[data-ff="guests"]'));
+  await p.fill('[data-ff="name"]', 'Guest check');
+  const fnDocs = async () => Object.keys(await store(p)).filter(k => /\/functions\/[^/]+$/.test(k)).length;
+  for (const g of ['1.5', '-2', '1e3', '2500']) {
+    await p.fill('[data-ff="guests"]', g);
+    await tap(p, '[data-fe="save"]'); await L.settle(p, 300);
+    ok(await fnDocs() === 0 && /Guests: a whole number up to 2000\./.test(await txt(p, '.fe-probs') || '') && !/Functions/.test(await txt(p, '#fe-root .p-err') || ''),
+      'guests "' + g + '": Save draft says guests are a whole number up to 2000 and sends nothing (' + ((await txt(p, '.fe-probs')) || (await txt(p, '#fe-root .p-err')) || 'nothing said') + ')');
+  }
+  await p.fill('[data-ff="guests"]', '2000');
+  await tap(p, '[data-fe="save"]');
+  await L.waitFor(p, () => /Version 1\./.test((document.getElementById('fe-root') || {}).textContent || ''), null, 6000).catch(() => {});
+  const gc = await saved(p, 'Guest check');
+  ok(!!gc && gc.guests === 2000 && gc.status === 'draft', 'guests 2000: the draft saves');
+  ok(p.errors.length === 0, 'guests: no page errors ' + p.errors.join(' | '));
+  await p.context().close();
+
   await b.close();
   L.report(R);
 })().catch(e => { console.error(e); process.exit(1); });

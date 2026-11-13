@@ -107,8 +107,7 @@
   }
   // everything wrong for confirming: the schedule's problems, the typed numbers and the contact
   function check(e) {
-    var d = e.d, f = toDoc(e), out = M.problems(f);
-    if (!d.gu && int(d.guests) !== int(d.guests) && String(d.guests).trim()) out.push({ k: 'guests', t: 'Guests: a whole number.' });
+    var d = e.d, f = toDoc(e), out = M.problems(f).concat(guestProblems(d));
     d.lines.forEach(function (l, i) {
       if (int(l.qty) !== int(l.qty)) out.push({ k: 'qty' + i, t: M.short(l.name) + ': whole platters only.' });
       l.a.forEach(function (x, r) { var v = int(x); if (r < d.rounds.length && (v !== v || v < 0)) out.push({ k: 'a' + i + '_' + r, t: M.short(l.name) + ', round ' + (r + 1) + ': a whole number, 0 or more.' }); });
@@ -116,6 +115,12 @@
     d.rounds.forEach(function (r, i) { if (!atOf(r.d, r.t) && !(d.st && d.mode === 'all' && !String(r.t).trim())) out.push({ k: 'round' + i, t: 'Round ' + (i + 1) + ': set its date and time.' }); });
     if (d.mode === 'stag' && !(int(d.gap) >= 1)) out.push({ k: 'gap', t: 'The gap between rounds is 1 minute or more.' });
     return out.concat(contactProblems(d));
+  }
+  // guests the book cannot save: checked on every save, a draft too, since the rules take only a whole number up to
+  // 2000 (before, a draft sent "1.5" as NaN and the refusal blamed Functions access, 13 Nov 2026)
+  function guestProblems(d) {
+    var v = int(d.guests);
+    return !d.gu && String(d.guests == null ? '' : d.guests).trim() && !(v >= 0 && v <= 2000) ? [{ k: 'guests', t: 'Guests: a whole number up to 2000.' }] : [];
   }
   function contactProblems(d) {
     var out = [];
@@ -488,7 +493,7 @@
     if (!P.fnOK()) { e.msg = 'Not saved: you are not ticked for Functions any more. Your changes are kept on this device.'; draw(); return; }
     var next = kind === 'confirm' ? 'confirmed' : kind === 'cancel' ? 'cancelled' : e.status;
     var probs = check({ d: e.d, status: next });
-    var contactBad = contactProblems(e.d);
+    var contactBad = guestProblems(e.d).concat(contactProblems(e.d));
     if ((next === 'confirmed' && probs.length) || contactBad.length) { e.shown = next === 'confirmed' ? probs : contactBad; e.review = false; draw(); goto(e.shown[0].k); return; }
     var api = B(), id = e.id, me = api.who(), owner = E.identity, submitted = clone(e.d), context = api.writeContext ? api.writeContext() : null;
     e.saving = 'Saving...'; e.shown = []; draw();
