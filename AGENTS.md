@@ -4,4 +4,4 @@ At the start of every task in this repository, read [CLAUDE.md](./CLAUDE.md) in 
 
 Read the notes and skills that `CLAUDE.md` requires for the task. Resolve its repository paths from the root of the current checkout or worktree.
 
-Keep shared working rules in `CLAUDE.md`. This file is the Codex entry point and should refer to those rules rather than duplicate them.
+Keep shared working rules in `CLAUDE.md`. This file is the entry point for Codex, Antigravity and any other agent, and should refer to those rules rather than duplicate them. The Claude Code hooks in `.claude/settings.json` do not run for other agents, so follow the ground rules in `CLAUDE.md` by hand: fetch `origin main` first, work in a new worktree on its own branch, never on `main`.
