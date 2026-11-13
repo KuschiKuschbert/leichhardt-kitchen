@@ -622,4 +622,13 @@ async function dwAdd(page) {
   }
   await waitFor(page, () => !!document.getElementById('dw-q'), null, 15000);
 }
-module.exports = { docked, oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, dwAdd, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, kitchenRow, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
+/* Updates are silent (13 Nov 2026, docs/site-publishing.md): no band offers a new version found by itself; the book
+   updates when it is safe. updateNow() is the update someone asks for (Update now in Settings, a Reload button, all
+   LK_UPDATE.now()): it waits until the book knows of a new version, then asks for it, and the band shows what it does
+   (Checking the signal..., Updating..., Not sent yet..., No signal...). ms: how long to wait for the new version. */
+async function updateNow(page, ms) {
+  await waitFor(page, () => !!(window.LK_UPDATE && window.LK_UPDATE.state() === 'ready'), null, ms || 8000);
+  await page.evaluate(() => window.LK_UPDATE.now());
+  await waitFor(page, () => !!document.querySelector('.upd-bar.is-on'), null, 3000).catch(() => {});
+}
+module.exports = { updateNow, docked, oLog, pLog, whoIs, notYou, wLog, wReview, xLog, openRow, reveal, chapter, dwShow, dwAdd, clear, choose, pick, lineAct, wasteSum, chromeOpts, chromium, settle, sleep, waitFor, chefItems, admItem, chef, setRow, adminTab, kitchenRow, start, open, overflow, check, report, results, txt, tap, row, seed, guides, mail, sha, ymd, PIN, NOW, BASE, PNG };
