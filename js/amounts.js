@@ -81,6 +81,12 @@
       var n = num(s) * factor, rounded = Math.round(n * 1000000) / 1000000;
       return isFinite(n) && n > 0 && n <= 9007199254740991 && rounded > 0 ? String(rounded) : null;
     }
+    // "1-1/2 kg" is one and a half, not a range: a whole number, a dash, then a fraction under one
+    var frac = m[4] && /^\s*-\s*$/.test(m[3]) && /^\d+$/.test(m[2]) && /^(\d+)\s*\/\s*(\d+)$/.exec(m[4]);
+    if (frac && +m[2] > 0 && +frac[1] < +frac[2]) {
+      var mixed = times(m[2] + ' ' + frac[1] + '/' + frac[2]);
+      return mixed === null || ((m[1] || '') + mixed + suffix).length > 40 ? null : (m[1] || '') + mixed + suffix;
+    }
     var first = times(m[2]), last = m[4] ? times(m[4]) : '';
     if (first === null || last === null) return null;
     var out = (m[1] || '') + first + (m[4] ? m[3] + last : '') + suffix;
