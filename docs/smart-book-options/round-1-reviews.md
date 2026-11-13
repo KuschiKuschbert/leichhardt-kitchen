@@ -134,3 +134,33 @@ Break it (all Risk / Not evidenced unless said):
 - C. The wrong request ticked. Sous chef, I7, records milk; a loose match catches Ann's "Milk bun" (the Orders picture offers Milk bun for "Milk"); bulk "Mark matched ordered". Feared: the bun request is ticked, stops rolling over, buns run out. Repair: no bulk tick, or tick only the exact item when the amount ordered is at least the amount asked. Milk / Milk bun test case.
 
 One change: split the bundle. Ship I1 (smaller), I2, R4, E1 and the dated cooling copy now. Hold every other suggestion until E1 has two weeks of numbers. Round 2 needs one designed screen: R1 merged with R2, with failure states shown.
+
+## The new starter
+
+| Id | Verdict | Reason |
+|---|---|---|
+| R1 | Not my concern | Admin only. |
+| R2 | Not my concern | Admin only. |
+| R3 | Your call | Staff can't see the order; blank must not mean "nothing short". |
+| R4 | Not my concern | No staff screen. |
+| R5 | Not my concern | Admin only. |
+| I1 | Build smaller | Fill unit and section; offer amount and reason in words, not silently. |
+| I2 | Build | Stops a real double-up; the list is hidden behind the sheet. |
+| I3 | Build smaller | Warn in words ("in 2 weeks", not "fortnight"); still show an amount. |
+| I4 | Build | Only with Orders' "Usual amount filled in" line, next to Add. |
+| I5 | Build smaller | Chefs only; I could not see which five lines I added. |
+| I6 | Build smaller | Moving chips confuse me; tomorrow's chips must say "Tomorrow". |
+| I7 | Your call | A false "ordered" tells me my request is coming. |
+| I8 | Build smaller | Drop planned-cook-first on shared screens: I'd tap the top name. |
+| I9 | Not my concern | Chefs only. |
+| E1 | Build | Only evidence of trust; cannot catch a wrong fill nobody changed. |
+| E2 | Not my concern | No screen. |
+| E3 | Don't build | I would trust invented amounts as the head chef's. |
+
+Main reasons: (1) a filled box looks like my typing: in orders-milk-390 "6 L" is in the same font as typed text, Add sits beside it, and the only cue is orange text four rows down; in waste-exact-390 the reason grid runs off the screen, so a filled reason would be hidden at Save; a wrong amount or reason becomes a false record nobody notices. (2) Things that move: I6 reorders chips and adds tomorrow's at night; I8 lists the planned cook first on a shared screen, which I would read as the default (untested). (3) Words and states: "fortnight", "9x", "Amount to" (cut off), "Add anyway" and the help sentence are hard in a second language; name chips with no label (Fish and Chips) sit under SECTION, so I read them as sections; I5 and I7 show no pending, part-saved or failed state (Not evidenced).
+
+Contract fit: I2 fits rule 3 (stops a mistake, inside the sheet), but only catches the exact name, so it misses "Full cream milk" offered right under Milk. I1 does not meet Todoist's "defaults visible". I5 needs the head chef's OK (a proposed change, not a broken rule).
+
+One change: one "filled for you" pattern in `docs/design-patterns.md`, used for every fill: the box carries a word tag that goes away when I type; a line beside Add names each filled value; amount and reason are never filled unless that line shows at Save. Test it with colour turned off.
+
+Round 2: I1, sharing the pattern with I4 (how a filled box is shown is a design choice). I5: each added line, saved or failed, and the one Undo.
