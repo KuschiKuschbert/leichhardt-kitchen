@@ -1,8 +1,8 @@
 # Admin visual design options
 
-Requested 1 November 2026. Status: three new design drafts, awaiting the user's choice. The earlier Review desk behaviour remains the working baseline; its previous selection does not select a visual direction for this new round.
+Selected 1 November 2026: A, The Chef's Desk. The user requested implementation in the app. The existing Review desk behaviour remains the working baseline.
 
-The user wants the whole admin panel to share the Kitchen Book's visual language and feel simpler and more fluent. This is a design comparison only. No production app, roles, storage, rules or backend behaviour changes in this branch.
+The user wants the whole admin panel to share the Kitchen Book's visual language and feel simpler and more fluent. The comparison remains example-only. The implementation applies chapter navigation, ruled lists, condensed headings and focused phone actions to the existing admin panel. Roles, storage, rules and backend behaviour are unchanged.
 
 ## What needs improving
 
@@ -18,7 +18,7 @@ All options reuse the real Barlow, Barlow Condensed and Caveat typefaces, warm p
 | B. The Docket Rail | Kitchen dockets in task lanes, followed by focused review. Phone shows one lane at a time. | Quick check-ins between service. | Long queues take more space. |
 | C. The Kitchen Book | Printed chapter contents and an open-book spread, then a short focused review sequence. | Deliberate, calm work with fewer controls at once. | More navigation between chapters. |
 
-Recommendation: A keeps the proven review behaviour while giving it a clearer, calmer hierarchy. B is the closest to the kitchen wall and landing-page dockets. C has the strongest printed-book character. The final choice belongs to the user.
+Recommendation: A keeps the proven review behaviour while giving it a clearer, calmer hierarchy. B is the closest to the kitchen wall and landing-page dockets. C has the strongest printed-book character. The user selected A.
 
 ## Shared scope
 
@@ -35,6 +35,6 @@ After a choice, apply that direction consistently across the admin panel, includ
 
 ## Verification and next step
 
-Verify all initial layouts at 390, 768 and 1440 px, keyboard navigation, example-only labelling, task Back/Resume, explicit link/assessment saves, stored assessment scope, settings, modal focus and the comparison controls. This verifies the design drafts, not a production implementation. The user's A/B/C choice is required before implementation or publication.
+Verify all initial layouts at 390, 768 and 1440 px, keyboard navigation, example-only labelling, task Back/Resume, explicit link/assessment saves, stored assessment scope, settings, modal focus and the comparison controls. This verifies the design drafts, not a production implementation. A is selected for implementation. Local verification is recorded in `docs/admin-flow-spec.md`; this selection does not establish deployment.
 
 Completed checks: all three layouts fit 390, 768 and 1440 px without horizontal overflow, with the actual Barlow, Barlow Condensed and Caveat fonts loaded. Phone review actions stay above the existing navigation, and fields scroll clear of them. A preserves draft and queue context; B passes 36 focused checks including full assessment records, modal keyboard behaviour, text size and saved shift notes; C preserves recipe-only assessment scope in summaries, reports and saved records. The normal and portable comparisons pass 58 browser checks across phone and desktop, including all three previews, keyboard selection, preserved example state, downloads and full-size views. Final comparison captures have no recorded browser errors.

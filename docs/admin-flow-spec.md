@@ -1,6 +1,6 @@
 # Admin flow redesign
 
-New visual design round, 1 November 2026: the user has requested three fresh layouts and will choose before implementation. See [current visual options](admin-design-options/brief.md). The selected flow below describes the existing baseline, not a selection in the new visual round.
+Visual direction selected 1 November 2026: A, The Chef's Desk. The user requested implementation. See [visual options](admin-design-options/brief.md). This applies the selected visual hierarchy to the existing Review desk flow and all operational/settings pages, preserving data and access contracts.
 
 Status: A selected and implemented. Local verification is recorded below; [PR #427](https://github.com/KuschiKuschbert/leichhardt-kitchen/pull/427) tracks required CI and deployment evidence. The user selected A on 1 November 2026; no further layout approval is needed.
 
@@ -65,3 +65,9 @@ The untouched previous implementation failed all four initial visibility/focus a
 ## Resume
 
 Read PR #427 for current CI, merge and live-verification results. If it is open, complete those release gates; if merged, verify its Pages/live result before starting new work. The selected flow and focused regression work are already implemented. Worktree: `.claude/worktrees/admin-workflow`; branch: `design/admin-workflow`. The prototype, comparison image and this note are the only new files for the comparison. README and the existing admin note record the design status and completed previous release.
+
+## Chef's Desk visual implementation
+
+The admin shell uses numbered chapters, a condensed current-page heading and quiet secondary navigation. Review queues use ruled rows and adjacent context or editors on desktop. Phones retain focused tasks, with save actions above the kitchen navigation and Back/Cancel as separate quiet actions. Existing selectors, routes, draft resumption, version checks and writers are retained. No new reads, schema, permissions or production writes are introduced by the layout.
+
+Eleven focused browser test files passed locally, including 56 new Chef's Desk assertions. Synthetic checks cover phone, tablet and desktop layouts, navigation through review, reports, saved records, Operations and Settings, plus existing review, training, access, safe-text and read-budget regressions. Deployment and live account verification are separate release work.

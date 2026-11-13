@@ -184,8 +184,8 @@
     return '<div class="ai-editor">' + (state.cache[kind] === undefined ? waiting(kind) : '') + heading(kind === 'references' ? 'Review ' + (d.alias || 'item link') : 'Training assessment', kind === 'references' ? 'Check the recorded name and its target. Saving confirms this link.' : 'Record an explicit assessment. Prep ticks do not confirm skill.') + evidence +
       '<fieldset class="ai-fields" aria-label="Review fields"' + (state.busy ? ' disabled' : '') + '>' + body + '</fieldset>' +
       '<p class="hint">' + (ready(d) ? 'Save records this decision with revision history.' : kind === 'references' ? 'Choose a recipe or a complete supplier item before confirming.' : 'Choose the person, section or recipe, assessor and assessment date.') + '</p>' +
-      '<div class="btn-row ai-actions">' + (next ? '<button type="button" class="btn dark" data-ai="save-next"' + (state.busy || !ready(d) ? ' disabled' : '') + '>' + (state.busy ? 'Saving...' : 'Save and next') + '</button>' : '') +
-      '<button type="button" class="btn' + (!next ? ' dark' : '') + '" data-ai="save"' + (state.busy || !ready(d) ? ' disabled' : '') + '>' + (state.busy ? 'Saving...' : 'Save and return') + '</button>' + button('back', 'Back to list', '', state.busy) + button('cancel', 'Cancel changes', '', state.busy) + '</div></div>';
+      '<div class="btn-row ai-actions ai-save-actions">' + (next ? '<button type="button" class="btn dark" data-ai="save-next"' + (state.busy || !ready(d) ? ' disabled' : '') + '>' + (state.busy ? 'Saving...' : 'Save and next') + '</button>' : '') +
+      '<button type="button" class="btn' + (!next ? ' dark' : '') + '" data-ai="save"' + (state.busy || !ready(d) ? ' disabled' : '') + '>' + (state.busy ? 'Saving...' : 'Save and return') + '</button></div><div class="btn-row ai-actions ai-leave-actions">' + button('back', 'Back to list', '', state.busy) + button('cancel', 'Cancel changes', '', state.busy) + '</div></div>';
   }
 
   function referenceItems(s, refs) {
